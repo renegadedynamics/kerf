@@ -26,8 +26,8 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 ## 1. The split
 
 [tools/api-classify.cs](../../tools/api-classify.cs) reads the four assemblies' metadata and classifies every public
-type by [classification-rules.txt](classification-rules.txt): a rule per OCCT package (about 290), and exceptions by type
-(about 300). It fails if a type has no rule, if two types would get one name, or if a public type takes a common .NET
+type by [classification-rules.txt](classification-rules.txt): a rule per OCCT package (246), and exceptions by type
+(298). It fails if a type has no rule, if two types would get one name, or if a public type takes a common .NET
 type's name. Regenerate with `dotnet run tools/api-classify.cs` (from `kernel/`, after a Release build).
 
 - **Public API:** the type itself becomes a public Kerf type, renamed, and reshaped by 10L (properties, 0-based
