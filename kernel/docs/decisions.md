@@ -15417,7 +15417,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        inconsistent-accessibility errors named (14 rounds). They go internal with the areas that show them.
 1521. **Tests.** Every suite keeps its count. The call sites the renames touched in the tests were rewritten by the tool
        (669 files of the kernel's tests, 7 of the modelling layer's), and seven tests changed by hand, one for one:
-       16605's three; `DiagnosticShapesTests`' two `Built` tests, which take a `ShapeHistory`;
+       decision 1518's three; `DiagnosticShapesTests`' two `Built` tests, which take a `ShapeHistory`;
        `TopoDS_ShapeTests.Generated_subtypes_are_up_to_date`, as the typed shapes now have members of their own beside
        Shape's and Shape the casts; and `PublicBuilderTests`' theory `TheModellingLayersMembersArePublic`, now
        `…AreReachable` (public, or internal with `InternalsVisibleTo` to the modelling layer: `BrepBuilder` is internal). New:
