@@ -1758,3 +1758,20 @@ Phase 10 (part): state (unit 10I).
 - Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
   the modelling layer's parts on many threads, each giving its serial BRep text.
 
+
+Phase 10 (part): no copy at entry in construction (unit 10H3).
+- Prisms, revolutions, pipes, lofts (`BRepOffsetAPI_ThruSections`, `BRepFill_Generator`), ruled faces and shells,
+  evolved shapes, BRepLib's functional twins, the face of a planar wire and the wire maker's merges no longer copy their
+  inputs: they run OCCT's in-place code on the caller's shapes in a working overlay, which copies only what they write
+  into. Results, and what they share with their inputs, are as before: the prism of a polygon face holds the caller's
+  face, its edges and vertices; of a circle face, a new face (the circle takes the cylinder's pcurve, decision 1102).
+- Histories answer for the caller's sub-shapes directly. `BRepLib_MakeWire`'s `Modified` records only the edges and
+  vertices a merge changed (it recorded every sub-shape of the wire built so far). `BRepPrimAPI_MakeRevol.Degenerated()`
+  gives a generating shape's degenerated edge as it stands in the result.
+- An algorithm another operation runs (a sweep inside an evolved shape, a loft's generator) writes into that
+  operation's overlay, as OCCT writes in place (`WorkingOverlay.BeginUnlessInside`).
+- Removed (internal): `BRep_Builder.UpdateVertexOfFrozen`, BRepLib's `UnfreezeResult`, MakeWire's copies for write.
+- A construction benchmark (`Kerf.Kernel.Benchmarks -- construction`): allocation falls by up to a third where an input
+  was copied whole; Bento's benchmark is unchanged.
+- Seven oracle replays whose wires MakeWire builds compare at plan 3.2's second level (`Tape.AcceptOtherArguments`): the
+  wires differ from the recordings' only in the Free flag of the caller's edges they now keep.

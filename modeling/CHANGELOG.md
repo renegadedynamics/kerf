@@ -95,3 +95,6 @@ The first packages, for Bento's 3D-models extension.
   diagnostics are the kernel's (a failed Boolean's alerts, with their codes and shapes) and whose inner exception is the
   kernel's own (OCCT.NET's exception type before). A STEP file that can't be read keeps its `ArgumentException`, with
   the exchange status's message. The 2D chamfer's history is read without an exception per vertex.
+- Kerf's unit 10H3: the kernel's extrusions, revolutions, sweeps and lofts no longer copy their inputs. Results are
+  as before: extruding a face taken from another part gives a solid that shares the face, its edges and vertices with
+  the part, which stays unchanged (new tests: `ConstructionInputsUnchangedTests`).
