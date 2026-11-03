@@ -104,3 +104,6 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10H3: the kernel's extrusions, revolutions, sweeps and lofts no longer copy their inputs. Results are
   as before: extruding a face taken from another part gives a solid that shares the face, its edges and vertices with
   the part, which stays unchanged (new tests: `ConstructionInputsUnchangedTests`).
+- Kerf's unit 10H5: fillets, chamfers, offsets, shells, thickenings and drafts no longer copy the part at the kernel's
+  entry: the results share the faces the operation left alone, and the part is never written. Results are otherwise as
+  before.

@@ -10,6 +10,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -28,9 +29,9 @@ namespace Kerf.Engine.Features.Local;
 /// <remarks>
 /// <para>
 /// As in OCCT, it writes into both shapes: it splits the basis shape (point representations of its vertices), adds
-/// pcurves to the new shape's edges, and sets the continuities of the edges. So both are worked on as copies when
-/// frozen, sharing their copies (decision 1013): <see cref="Perform"/> splits, generates and recodes the regularities
-/// on the copies, then gives back the caller's sub-shapes left unchanged. The shapes it hands out are frozen; ported
+/// pcurves to the new shape's edges, and sets the continuities of the edges. So <see cref="Perform"/> splits, generates
+/// and recodes the regularities in one working overlay (decision 1013, unit 10H5: <see cref="WorkingShapes"/>), and the
+/// result holds new TShapes only for the caller's sub-shapes that changed. The shapes it hands out are frozen; ported
 /// callers (BRepFeat) read the <c>Internal</c> forms.
 /// </para>
 /// </remarks>
@@ -172,10 +173,12 @@ public sealed class LocalGluer
             throw new ConstructionErrorException();
         }
 
-        // OCCT.NET: the basis shape and the new shape as worked on (their copies if frozen); the bindings are mapped
+        // Kerf: the basis shape and the new shape are written in the working overlay, shared with the wires on the shape
+        // and the generator (unit 10H5)
         _work = new WorkingShapes();
-        Shape sb = _work.Working(_sb);
-        Shape sn = _work.Working(_sn);
+        using WorkingOverlay.Scope scope = _work.Enter();
+        Shape sb = _sb;
+        Shape sn = _sn;
 
         WiresOnShape theWOnS = new(sb, _work);
         GluedShape theGS = new(sn);
@@ -184,10 +187,10 @@ public sealed class LocalGluer
 
         for (ind = 1; ind <= lmap; ind++)
         {
-            Shape s = _work.Working(_mapEF.FindKey(ind));
+            Shape s = _mapEF.FindKey(ind);
             if (s.ShapeType() == ShapeType.Edge)
             {
-                Shape s2 = _work.Working(_mapEF[ind]);
+                Shape s2 = _mapEF[ind];
                 if (!s2.IsNull)
                 {
                     theWOnS.Bind(ShapeCasts.Edge(s), ShapeCasts.Face(s2));
@@ -201,7 +204,7 @@ public sealed class LocalGluer
 
         foreach (KeyValuePair<Shape, Shape> itm in _mapEE)
         {
-            theWOnS.Bind(ShapeCasts.Edge(_work.Working(itm.Key)), ShapeCasts.Edge(_work.Working(itm.Value)));
+            theWOnS.Bind(ShapeCasts.Edge(itm.Key), ShapeCasts.Edge(itm.Value));
         }
 
         theWOnS.BindAll();
@@ -339,8 +342,8 @@ public sealed class LocalGluer
 
         // recodage eventuel des regularites sur cet edge
 
-        // OCCT.NET: the end of the working shapes: the caller's sub-shapes left unchanged come back
-        if (_work.IsCopied)
+        // Kerf: the end of the working overlay: new TShapes for the caller's sub-shapes changed (unit 10H5)
+        if (_work.IsWritten)
         {
             var shapes = new List<Shape> { _res };
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _descF)
@@ -383,7 +386,7 @@ public sealed class LocalGluer
         global::Kerf.Engine.Features.Local.WorkingShapes.Published(InternalDescendantFaces(f));
 
     /// <summary>
-    /// <see cref="DescendantFaces"/> without freezing, for ported code (of the caller's face or of its working copy).
+    /// <see cref="DescendantFaces"/> without freezing, for ported code.
     /// </summary>
     internal NCollection_List<Shape> InternalDescendantFaces(in Face f)
     {
@@ -391,7 +394,7 @@ public sealed class LocalGluer
         {
             throw new NotDoneException();
         }
-        Shape aF = _work.Copied(f);
+        Shape aF = f;
         if (_descF.IsBound(aF))
         {
             return _descF[aF];

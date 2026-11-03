@@ -35,8 +35,8 @@ namespace Kerf.Engine.Features.Local;
 /// <para>
 /// As in OCCT, binding the edges (<see cref="BindAll"/>, which the edge iterator runs) writes into them and into the
 /// shape: pcurves and same-parameter on the edges, raised vertex tolerances, and the edges crossing others are split.
-/// So the shape and every edge given are worked on as copies when frozen (decision 1013): <see cref="Spliter"/>
-/// goes on with the same copies, and gives back the caller's unchanged sub-shapes at its end. A WiresOnShape serves one
+/// So each public call writes in the working overlay of the splitting (decision 1013, unit 10H5:
+/// <see cref="WorkingShapes"/>): <see cref="Spliter"/> goes on in the same overlay, and ends it. A WiresOnShape serves one
 /// splitting.
 /// </para>
 /// <para>
@@ -60,7 +60,7 @@ public sealed class WiresOnShape : Transient
     public WiresOnShape(in Shape s)
     {
         _work = new WorkingShapes();
-        _shape = _work.Working(s);
+        _shape = s;
         _checkInterior = true;
         _done = false;
         _index = -1;
@@ -70,7 +70,7 @@ public sealed class WiresOnShape : Transient
     internal WiresOnShape(in Shape s, WorkingShapes work)
     {
         _work = work;
-        _shape = work.Working(s);
+        _shape = s;
         _checkInterior = true;
         _done = false;
         _index = -1;
@@ -79,13 +79,13 @@ public sealed class WiresOnShape : Transient
     /// <summary>The working shapes of the splitting (shared with the spliter).</summary>
     internal WorkingShapes WorkingShapes() => _work;
 
-    /// <summary>The shape, as worked on (its copy if it was frozen).</summary>
+    /// <summary>The shape worked on.</summary>
     internal Shape InternalShape() => _shape;
 
     public void Init(in Shape s)
     {
         _work = new WorkingShapes();
-        _shape = _work.Working(s);
+        _shape = s;
         _checkInterior = true;
         _done = false;
         _map.Clear();
@@ -98,12 +98,13 @@ public sealed class WiresOnShape : Transient
     /// </summary>
     public bool Add(NCollection_Sequence<Shape> edges)
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         NCollection_Sequence<Shape> anEdges = new();
         int i = 1, nb = edges.Length();
         NCollection_Array1<Box> edgeBoxes = new(1, nb);
         for (; i <= nb; i++)
         {
-            Shape curSplit = _work.Working(edges[i]);
+            Shape curSplit = edges[i];
             Explorer expE = new(curSplit, global::Kerf.Topology.ShapeType.Edge);
             for (; expE.More(); expE.Next())
             {
@@ -212,8 +213,9 @@ public sealed class WiresOnShape : Transient
 
     public void Bind(in Wire w, in Face f)
     {
-        Shape aW = _work.Working(w);
-        Face aF = ShapeCasts.Face(_work.Working(f));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        Shape aW = w;
+        Face aF = ShapeCasts.Face(f);
         for (Explorer exp = new(aW, global::Kerf.Topology.ShapeType.Edge); exp.More(); exp.Next())
         {
             BindCore(ShapeCasts.Edge(exp.Current()), aF);
@@ -222,8 +224,9 @@ public sealed class WiresOnShape : Transient
 
     public void Bind(in Compound comp, in Face f)
     {
-        Shape aComp = _work.Working(comp);
-        Face aF = ShapeCasts.Face(_work.Working(f));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        Shape aComp = comp;
+        Face aF = ShapeCasts.Face(f);
         for (Explorer exp = new(aComp, global::Kerf.Topology.ShapeType.Edge); exp.More(); exp.Next())
         {
             BindCore(ShapeCasts.Edge(exp.Current()), aF);
@@ -233,7 +236,8 @@ public sealed class WiresOnShape : Transient
 
     public void Bind(in Edge e, in Face f)
     {
-        BindCore(ShapeCasts.Edge(_work.Working(e)), ShapeCasts.Face(_work.Working(f)));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        BindCore(ShapeCasts.Edge(e), ShapeCasts.Face(f));
     }
 
     // Bind(E, F) on working shapes
@@ -262,11 +266,13 @@ public sealed class WiresOnShape : Transient
 
     public void Bind(in Edge efromW, in Edge eonFace)
     {
-        _map.Bind(_work.Working(efromW), _work.Working(eonFace));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        _map.Bind(efromW, eonFace);
     }
 
     public void BindAll()
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         if (_done)
         {
             return;
@@ -459,13 +465,13 @@ public sealed class WiresOnShape : Transient
     public bool MoreEdge() => _index <= _mapEF.Extent();
 
     /// <summary>The current edge (the caller's edge if it was copied).</summary>
-    public Edge Edge() => ShapeCasts.Edge(_work.Original(InternalEdge()));
+    public Edge Edge() => ShapeCasts.Edge(InternalEdge());
 
     /// <summary><see cref="Edge"/> as worked on, for ported code.</summary>
     internal Edge InternalEdge() => ShapeCasts.Edge(_mapEF.FindKey(_index));
 
     /// <summary>Returns the face of the shape on which the current edge is projected (the caller's face).</summary>
-    public Face OnFace() => ShapeCasts.Face(_work.Original(InternalOnFace()));
+    public Face OnFace() => ShapeCasts.Face(InternalOnFace());
 
     /// <summary><see cref="OnFace"/> as worked on, for ported code.</summary>
     internal Face InternalOnFace() => ShapeCasts.Face(_mapEF[_index]);
@@ -476,8 +482,8 @@ public sealed class WiresOnShape : Transient
     /// </summary>
     public bool OnEdge(out Edge e)
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         bool isOn = InternalOnEdge(out e);
-        e = ShapeCasts.Edge(_work.Original(e));
         return isOn;
     }
 
@@ -504,8 +510,8 @@ public sealed class WiresOnShape : Transient
     /// </summary>
     public bool OnVertex(in Vertex vw, out Vertex vs)
     {
-        bool isOn = InternalOnVertex(ShapeCasts.Vertex(_work.Copied(vw)), out vs);
-        vs = ShapeCasts.Vertex(_work.Original(vs));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        bool isOn = InternalOnVertex(ShapeCasts.Vertex(vw), out vs);
         return isOn;
     }
 
@@ -532,8 +538,8 @@ public sealed class WiresOnShape : Transient
     /// </summary>
     public bool OnEdge(in Vertex v, out Edge ed, out double prm)
     {
-        bool isOn = InternalOnEdge(ShapeCasts.Vertex(_work.Copied(v)), out ed, out prm);
-        ed = ShapeCasts.Edge(_work.Original(ed));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        bool isOn = InternalOnEdge(ShapeCasts.Vertex(v), out ed, out prm);
         return isOn;
     }
 
@@ -558,8 +564,8 @@ public sealed class WiresOnShape : Transient
     /// </summary>
     public bool OnEdge(in Vertex v, in Edge edgeFrom, out Edge ed, out double prm)
     {
-        bool isOn = InternalOnEdge(ShapeCasts.Vertex(_work.Copied(v)), ShapeCasts.Edge(_work.Copied(edgeFrom)), out ed, out prm);
-        ed = ShapeCasts.Edge(_work.Original(ed));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        bool isOn = InternalOnEdge(ShapeCasts.Vertex(v), ShapeCasts.Edge(edgeFrom), out ed, out prm);
         return isOn;
     }
 
@@ -599,7 +605,7 @@ public sealed class WiresOnShape : Transient
     }
 
     /// <summary>Tells if the face is to be split by a section (a compound bound to it).</summary>
-    public bool IsFaceWithSection(in Shape aFace) => InternalIsFaceWithSection(_work.Copied(aFace));
+    public bool IsFaceWithSection(in Shape aFace) => InternalIsFaceWithSection(aFace);
 
     /// <summary><see cref="IsFaceWithSection"/> on working shapes.</summary>
     internal bool InternalIsFaceWithSection(in Shape aFace) => _facesWithSection.Contains(aFace);

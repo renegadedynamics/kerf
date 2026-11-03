@@ -2042,3 +2042,9 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | BRepFill_Filling::BuildWires with frozen boundary edges | Not OCCT's: MakeWire moves a wire vertex in place natively, and goes on with a copy of the wire in the port; the filling built its final edges from the caller's edges, not the copies | The face lost an edge (3 for 4, bugs/filling/bug23380). **Fixed** (decision 1308) | settled |
 | tests/lowalgos/extss/bug29712_44 | Runs `extrema s1 s1` and `extrema s2 s2` (each plane against itself) and expects 10, the distance between s1 and s2 | Fails natively too (distance 0). Attributed (decision 1309) | leave |
 | resources/samples/tcl/ANC101.tcl (demo/samples/anc101) | Blends `_model_27`, then `_model_28` from the same `explode`, an edge the first blend replaced | "There are no suitable edges for chamfer or fillet", natively too on the same Booleans. Attributed (decision 1310) | leave |
+
+## Phase 10: unit 10H5, offsets, fillets and features
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| BRepOffset_MakeOffset `Initialize`, `Clear` | Leave BRepOffset_Analyse's edge types and ancestors from the last run; its next `Perform` appends to them | A second run on one object, on the same shapes, fails (`UnknownError`); the port's copies at the entry hid it (each run had new shapes). The port clears the analysis at `Initialize` (decision 1422) | fix |

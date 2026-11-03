@@ -55,11 +55,14 @@ namespace Kerf.Engine.Offsets;
 /// A working object (decision 21). OCCT's algorithm writes into the shape it works on: tolerances
 /// (<c>UpdateTolerance</c> unlocks the shape with <c>Locked(false)</c>), pcurves on the free boundary edges
 /// (<c>MakeMissingWalls</c>), <c>Free(true)</c> before re-adding sub-shapes. So <see cref="MakeOffsetShape"/> and
-/// <see cref="MakeThickSolid"/> first copy the caller's shape when it holds frozen TShapes (decision 1005, with
-/// <see cref="CopyAtEntry"/>), map the closing faces and the faces with their own offsets onto the copy, and
-/// run OCCT's code unchanged on the copy. At the end the copied sub-shapes the algorithm left unchanged are the
-/// caller's own again in the result (a thick solid holds the caller's faces), and the history
-/// (<see cref="Generated"/>, <see cref="Modified"/>, <see cref="IsDeleted"/>) answers for the caller's sub-shapes.
+/// <see cref="MakeThickSolid"/> run OCCT's code on the caller's shape in a working overlay (unit 10H5,
+/// <see cref="WorkingOverlay"/>; in place inside an operation's overlay that takes writes): the writes into the
+/// caller's frozen TShapes go to working copies, and at the end the result holds new TShapes only for the sub-shapes
+/// that changed (a thick solid holds the caller's faces it left alone). The thickening mode still copies the caller's
+/// shape at the entry (<see cref="CopyAtEntry"/>, decision 1005) and works on the copy: its walls are made by
+/// BRepLib_MakeFace, which copies frozen edges itself until construction runs in an overlay (decision 1421). The
+/// history (<see cref="Generated"/>, <see cref="Modified"/>, <see cref="IsDeleted"/>) answers for the caller's
+/// sub-shapes, as OCCT's.
 /// </para>
 /// <para>
 /// <see cref="Shape"/>, <see cref="Generated"/>, <see cref="Modified"/>, <see cref="ClosingFaces"/>,
@@ -105,7 +108,13 @@ public sealed partial class MakeOffset
     private readonly NCollection_List<Shape> _generated = new();
     private readonly HashSet<Shape> _resMap = new(ShapeHasher.Instance);
 
-    // OCCT.NET: the copy at the entry (decision 1005); null until a run starts, and after Initialize.
+    // Kerf: the working overlay of the last run (unit 10H5); null until a run starts, after Initialize, and for a run
+    // in place inside an operation's overlay.
+    private WorkingOverlay? _overlay;
+    private Dictionary<TShape, TShape>? _copies;    // a caller's unfrozen TShapes -> their copies (BeginOverlay)
+    private Dictionary<TShape, TShape>? _originals; // the inverse
+    // OCCT.NET: the copy at the entry of a run in the thickening mode (decision 1005; left by unit 10H5, decision
+    // 1421); null until such a run starts, and after Initialize.
     private CopyAtEntry? _entry;
     private bool _isEntryFinished; // OCCT.NET: a second run without Initialize finds the entry finished
 
@@ -465,8 +474,14 @@ public sealed partial class MakeOffset
         _done = false;
         _isPerformSewing = false;
         _isPlanar = false;
+        _overlay = null;
+        _copies = null;
+        _originals = null;
         _entry = null;
         _isEntryFinished = false;
+        // Kerf: OCCT's analysis keeps its edge types and ancestors from the last run, which a run on the same shapes
+        // then doubles (occt-issues.md); with the copies at the entry each run had new shapes (unit 10H5)
+        _analyse.Clear();
         Clear();
     }
 
@@ -637,8 +652,76 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     /// <summary>
-    /// Copies the caller's shape at the entry of a run (decision 1005) when it holds frozen TShapes, and maps the closing
-    /// faces and the faces with their own offsets onto the copy. Once per <see cref="Initialize"/>.
+    /// Opens the working overlay of a run on the caller's shape (unit 10H5): null when an operation's overlay that
+    /// takes writes is open here, which the run then writes into, as OCCT's into the shape it is given. A caller's
+    /// unfrozen shape (a shell or compound it built of frozen faces) is worked on with its unfrozen TShapes copied
+    /// (<see cref="WorkingOverlay.WithUnfrozenCopied"/>), so that the run never writes into it either; the closing faces
+    /// and the faces with their own offsets are mapped onto the copies.
+    /// </summary>
+    private WorkingOverlay? BeginOverlay()
+    {
+        if (_thickening || _entry is not null)
+        {
+            // Kerf: the thickening mode stays on its copy at the entry (decision 1421): its walls are made by
+            // BRepLib_MakeFace, which copies frozen edges at its entry until construction's overlay (unit 10H3), so in
+            // a working overlay a wall would hold copies of the caller's edges and vertices beside the caller's own
+            EnterCopy();
+            return null;
+        }
+        if (WorkingOverlay.Writing is not null)
+        {
+            _overlay = null;
+            return null;
+        }
+        if (_copies is null)
+        {
+            _shape = WorkingOverlay.WithUnfrozenCopied(_shape, out _copies);
+            if (_copies is not null)
+            {
+                _originals = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
+                foreach (KeyValuePair<TShape, TShape> pair in _copies)
+                {
+                    _originals[pair.Value] = pair.Key;
+                }
+                NCollection_IndexedMap<Shape> originalFaces = new(_originalFaces);
+                _originalFaces.Clear();
+                for (int i = 1; i <= originalFaces.Extent(); ++i)
+                {
+                    _originalFaces.Add(InternalCopied(originalFaces[i]));
+                }
+                NCollection_DataMap<Shape, double> faceOffset = new(_faceOffset);
+                _faceOffset.Clear();
+                foreach (KeyValuePair<Shape, double> it in faceOffset)
+                {
+                    _faceOffset.Bind(InternalCopied(it.Key), it.Value);
+                }
+            }
+        }
+        _overlay = WorkingOverlay.Begin(_shape);
+        return _overlay;
+    }
+
+    /// <summary>
+    /// Ends a run: the result holds new TShapes for the caller's sub-shapes the run changed, the caller's own for the
+    /// rest (and for the unfrozen ones copied at the start that it left equal). Finished for a null result too, so that
+    /// the history can be read after a run reported done with a null shape (decision 1049).
+    /// </summary>
+    private void FinishOverlay(WorkingOverlay? overlay)
+    {
+        if (overlay is not null)
+        {
+            _offsetShape = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(_offsetShape), _copies);
+        }
+        else if (_entry is not null)
+        {
+            FinishCopy();
+        }
+    }
+
+    /// <summary>
+    /// Copies the caller's shape at the entry of a run in the thickening mode (decision 1005) when it holds frozen
+    /// TShapes, and maps the closing faces and the faces with their own offsets onto the copy. Once per
+    /// <see cref="Initialize"/>.
     /// </summary>
     private void EnterCopy()
     {
@@ -667,7 +750,8 @@ public sealed partial class MakeOffset
     }
 
     /// <summary>
-    /// Ends a run: the copied sub-shapes left unchanged are the caller's own again in the result (decision 1005).
+    /// Ends a run on the copy at the entry: the copied sub-shapes left unchanged are the caller's own again in the
+    /// result (decision 1005).
     /// </summary>
     private void FinishCopy()
     {
@@ -681,21 +765,46 @@ public sealed partial class MakeOffset
         _isEntryFinished = true;
     }
 
-    /// <summary>The working copy of a sub-shape of the caller's shape (itself when the shape wasn't copied).</summary>
-    internal Shape InternalCopied(in Shape s) => _entry is null ? s : _entry.Copied(s);
+    /// <summary>
+    /// The shape a run works on for a caller's sub-shape <paramref name="s"/>: itself, or its copy for an unfrozen
+    /// sub-shape of an unfrozen input (see <see cref="BeginOverlay"/>).
+    /// </summary>
+    internal Shape InternalCopied(in Shape s) => _entry is not null ? _entry.Copied(s) : WorkingOverlay.CopiedIn(s, _copies);
 
-    /// <summary>What stands in the result for a shape of the run (see <see cref="CopyAtEntry.Final"/>).</summary>
-    internal Shape InternalFinal(in Shape s) =>
-        _entry is null || !_entry.IsCopied || s.IsNull ? s : _entry.Final(s);
+    // The caller's sub-shape a shape of the run stands for (the inverse of InternalCopied).
+    private Shape InternalOriginal(in Shape s)
+    {
+        if (_entry is not null)
+        {
+            return _entry.IsCopied ? _entry.Original(s) : s;
+        }
+        if (_originals is null || s.IsNull || !_originals.TryGetValue(s.TShape()!, out TShape? original))
+        {
+            return s;
+        }
+        Shape aShape = s;
+        aShape.TShape(original);
+        return aShape;
+    }
+
+    /// <summary>What stands in the result for a shape of the run (see <see cref="WorkingOverlay.Final"/>).</summary>
+    internal Shape InternalFinal(in Shape s)
+    {
+        if (_entry is not null)
+        {
+            return !_entry.IsCopied || s.IsNull ? s : _entry.Final(s);
+        }
+        return _overlay is null || !_overlay.IsFinished || s.IsNull ? s : _overlay.Final(s);
+    }
 
     //=================================================================================================
 
     /// <summary>Makes the offset shape (a shell, or a solid for a solid input).</summary>
     public void MakeOffsetShape(ProgressRange range = default)
     {
-        EnterCopy();
+        using WorkingOverlay? overlay = BeginOverlay();
         InternalMakeOffsetShape(range);
-        FinishCopy();
+        FinishOverlay(overlay);
     }
 
     private void InternalMakeOffsetShape(ProgressRange range)
@@ -953,9 +1062,9 @@ public sealed partial class MakeOffset
     /// </summary>
     public void MakeThickSolid(ProgressRange range = default)
     {
-        EnterCopy();
+        using WorkingOverlay? overlay = BeginOverlay();
         InternalMakeThickSolid(range);
-        FinishCopy();
+        FinishOverlay(overlay);
     }
 
     private void InternalMakeThickSolid(ProgressRange range)
@@ -3577,7 +3686,7 @@ public sealed partial class MakeOffset
     /// </summary>
     public ShapeImage OffsetFacesFromShapes() => PublishImage(_initOffsetFace);
 
-    /// <summary>The links between the initial shapes and the offset faces, of the working copy, for ported code.</summary>
+    /// <summary>The links between the initial shapes and the offset faces, unfrozen, for ported code.</summary>
     internal ShapeImage InternalOffsetFacesFromShapes() => _initOffsetFace;
 
     //  Modified by skv - Tue Mar 15 16:20:43 2005 Begin
@@ -3595,7 +3704,7 @@ public sealed partial class MakeOffset
     /// </summary>
     public ShapeImage OffsetEdgesFromShapes() => PublishImage(_initOffsetEdge);
 
-    /// <summary>The links between the initial shapes and the offset edges, of the working copy, for ported code.</summary>
+    /// <summary>The links between the initial shapes and the offset edges, unfrozen, for ported code.</summary>
     internal ShapeImage InternalOffsetEdgesFromShapes() => _initOffsetEdge;
 
     //  Modified by skv - Tue Mar 15 16:20:43 2005 End
@@ -3613,12 +3722,8 @@ public sealed partial class MakeOffset
         return faces;
     }
 
-    /// <summary>The closing faces, of the working copy, for ported code.</summary>
+    /// <summary>The closing faces, for ported code.</summary>
     internal NCollection_IndexedMap<Shape> InternalClosingFaces() => _originalFaces;
-
-    /// <summary>The caller's sub-shape a working copy's sub-shape was made from (itself when there is none).</summary>
-    private Shape InternalOriginal(in Shape s) =>
-        _entry is null || !_entry.IsCopied ? s : _entry.Original(s);
 
     /// <summary>
     /// A copy of an image whose roots are the caller's sub-shapes and whose images stand for the result's shapes, all
@@ -3884,7 +3989,7 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     // OCCT.NET: Locked(false) acts on the offset's own shapes: the result's new edges and vertices, and, in the
-    // thickening mode, the copy of the caller's shape made at the entry (decision 1005).
+    // thickening mode, the caller's shape in the run's working overlay (unit 10H5).
     private static void UpdateTolerance(ref Shape s, NCollection_IndexedMap<Shape> faces,
                                         in Shape initShape)
     {
@@ -4894,7 +4999,7 @@ public sealed partial class MakeOffset
 
     /// <summary>
     /// OCCT's <c>Generated</c>, without freezing: the algorithm's own list (cleared by the next call), for the caller's
-    /// sub-shape <paramref name="s0"/>, holding the shapes that stand for the result's (decision 1005).
+    /// sub-shape <paramref name="s0"/>, holding the shapes that stand for the result's (unit 10H5).
     /// </summary>
     internal NCollection_List<Shape> InternalGenerated(in Shape s0)
     {
@@ -4978,7 +5083,7 @@ public sealed partial class MakeOffset
             Exploration.MapShapes(_offsetShape, _resMap);
         }
 
-        // OCCT.NET: the working copy's shapes are replaced by what stands for them in the result (decision 1005).
+        // Kerf: the run's shapes are replaced by what stands for them in the result (unit 10H5).
         for (NCollection_List<Shape>.Iterator it = new(_generated); it.More(); it.Next())
         {
             it.ChangeValue() = InternalFinal(it.Value());
@@ -5003,7 +5108,7 @@ public sealed partial class MakeOffset
 
     /// <summary>
     /// OCCT's <c>Modified</c>, without freezing: the algorithm's own list (cleared by the next call), for the caller's
-    /// sub-shape <paramref name="shape0"/> (decision 1005).
+    /// sub-shape <paramref name="shape0"/>.
     /// </summary>
     internal NCollection_List<Shape> InternalModified(in Shape shape0)
     {
@@ -5035,7 +5140,7 @@ public sealed partial class MakeOffset
             }
         }
 
-        // OCCT.NET: the working copy's shapes are replaced by what stands for them in the result (decision 1005).
+        // Kerf: the run's shapes are replaced by what stands for them in the result (unit 10H5).
         for (NCollection_List<Shape>.Iterator it = new(_generated); it.More(); it.Next())
         {
             it.ChangeValue() = InternalFinal(it.Value());
@@ -5054,9 +5159,9 @@ public sealed partial class MakeOffset
             Exploration.MapShapes(_offsetShape, _resMap);
         }
 
-        // OCCT.NET: a sub-shape of the caller's that OCCT keeps in its result, changed in place (a thickened shell's
-        // edge given a pcurve), is in the port's result as its changed copy (decision 1005).
-        if (_resMap.Contains(s) || _resMap.Contains(InternalCopied(s)))
+        // Kerf: a sub-shape of the caller's that OCCT keeps in its result, changed in place (a thickened shell's edge
+        // given a pcurve), is in the result as what stands for it (unit 10H5).
+        if (_resMap.Contains(s) || _resMap.Contains(InternalFinal(InternalCopied(s))))
         {
             return false;
         }
@@ -5339,7 +5444,7 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     /// <summary>
-    /// The analysis of the working copy (OCCT's <c>GetAnalyse</c>): internal, since its tangent treatment holds the
+    /// The analysis of the run (OCCT's <c>GetAnalyse</c>): internal, since its tangent treatment holds the
     /// offset's working shapes (decision 1007).
     /// </summary>
     internal Analyse GetAnalyse() => _analyse;

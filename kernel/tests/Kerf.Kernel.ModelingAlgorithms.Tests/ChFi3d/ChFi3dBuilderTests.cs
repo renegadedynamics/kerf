@@ -48,34 +48,31 @@ public class ChFi3dBuilderTests
     }
 
     [Fact]
-    public void TheFrozenInputIsCopiedAndLeftUnchanged()
+    public void TheFrozenInputIsWrittenInAWorkingOverlayAndLeftUnchanged()
     {
         // OCCT raises the tolerances of the vertices the fillets end at (ChFi3d_IndexPointInDS, Compute's
-        // UpdateVertex) and gives the elementary spines' edges 3D curves: on the builder's working copy, never on the
-        // caller's frozen shape (decisions 1005, 1087)
+        // UpdateVertex) and gives the elementary spines' edges 3D curves: in the builder's working overlay, never in
+        // the caller's frozen shape (decision 1087, unit 10H5)
         Shape aBox = Box();
         Assert.True(BrepTools.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
         (FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 10)));
         Assert.Equal(1, aRec.NbPerform);
-        Assert.False(aB.WorkingShape().IsSame(aBox));
+        Assert.True(aB.WorkingShape().IsSame(aBox));
         Assert.Equal(aBefore, VertexTolerances(aBox));
-        // every shape of the data structure is the working copy's
+        // every shape of the data structure is the caller's own
         DsDataStructure DS = aRec.HDS!.DS();
-        NCollection_IndexedMap<Shape> aWork = new(ShapeHasher.Instance);
-        Exploration.MapShapes(aB.WorkingShape(), aWork);
         NCollection_IndexedMap<Shape> anInput = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, anInput);
         for (int i = 1; i <= DS.NbShapes(); i++)
         {
-            Assert.True(aWork.Contains(DS.Shape(i)));
-            Assert.False(anInput.Contains(DS.Shape(i)));
+            Assert.True(anInput.Contains(DS.Shape(i)));
         }
     }
 
     [Fact]
-    public void TheCallersEdgesAndVerticesAreMappedOntoTheWorkingCopy()
+    public void TheCallersEdgesAndVerticesAreTheBuildersOwn()
     {
         Shape aBox = Box();
         Edge E = ChFi3dBuilderNativeTests.EdgeOf(aBox, 5);

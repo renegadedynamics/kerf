@@ -31,9 +31,10 @@ namespace Kerf.Engine.Features;
 /// <para>The mode is 0 for a groove (a cut), 1 for a rib (a fusion). With sliding (<c>Modify</c>), the rib slides on
 /// the faces of the basis shape it meets.</para>
 /// <para>The basis shape and the contour are read, never written. OCCT raises the tolerance of a vertex of the profile
-/// it builds, which may be the contour's own, and translates the plane it is given: a frozen contour is worked on as a
-/// copy (its unchanged sub-shapes come back in the result, its edges answer <see cref="MakeShape.Generated"/>),
-/// a frozen plane is translated on a copy (decision 1052).</para>
+/// it builds, which may be the contour's own, and translates the plane it is given: the contour is written in a working
+/// overlay kept from <see cref="Init"/> to the end of <see cref="Perform"/> (unit 10H5; the result holds new TShapes
+/// only for what changed, and the contour's edges answer <see cref="MakeShape.Generated"/>), a frozen plane is
+/// translated on a copy (decision 1052).</para>
 /// </remarks>
 public sealed class MakeLinearForm : RibSlot
 {
@@ -47,8 +48,9 @@ public sealed class MakeLinearForm : RibSlot
     private NCollection_DataMap<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _listOfEdges = new();
     private double _tol;
-    // OCCT.NET: the contour's copy for write (decision 1052), ended after the first Perform
-    private CopyAtEntry? _wireCopy;
+    // Kerf: the working overlay the contour is written in (unit 10H5), detached, entered by Init and Perform and finished
+    // by the first Perform; null when Init ran in place inside an operation's overlay that takes writes.
+    private WorkingOverlay? _contourOverlay;
 
     /// <summary>An empty linear form.</summary>
     public MakeLinearForm()
@@ -94,10 +96,11 @@ public sealed class MakeLinearForm : RibSlot
         _listOfEdges.Clear();
         _slface.Clear();
 
-        // OCCT.NET: the profile is built of the contour's vertices, one of which may get a raised tolerance: a frozen
-        // contour is worked on as a copy (decision 1052)
-        _wireCopy = new CopyAtEntry(W);
-        Shape localShapeW = _wireCopy.Shape().Oriented(Forward);
+        // Kerf: the profile is built of the contour's vertices, one of which may get a raised tolerance: in a working
+        // overlay (decision 1052, unit 10H5)
+        _contourOverlay = WorkingOverlay.Writing is null ? WorkingOverlay.Detached(W) : null;
+        using WorkingOverlay.Scope scope = _contourOverlay?.Enter() ?? default;
+        Shape localShapeW = W.Oriented(Forward);
         _wire = ShapeCasts.Wire(localShapeW);
         _dir = direc;
         _dir1 = direc1;
@@ -764,6 +767,7 @@ public sealed class MakeLinearForm : RibSlot
             return;
         }
 
+        using WorkingOverlay.Scope scope = _contourOverlay?.Enter() ?? default;
         Vector3D nulldir = new(0, 0, 0);
 
         double length = _dir.Magnitude() + _dir1.Magnitude();
@@ -825,16 +829,15 @@ public sealed class MakeLinearForm : RibSlot
         FinishTheContour();
     }
 
-    // OCCT.NET: ends the contour's copy (decision 1052): the result and the history get the caller's sub-shapes back
-    // where the construction left them unchanged
+    // Kerf: ends the contour's working overlay (decision 1052, unit 10H5): new TShapes in the result and the history for
+    // the sub-shapes the construction changed
     private void FinishTheContour()
     {
-        if (_wireCopy is null || !_wireCopy.IsCopied)
+        if (_contourOverlay is null || _contourOverlay.IsFinished)
         {
             return;
         }
-        CopyAtEntry copy = _wireCopy;
-        _wireCopy = null;
+        WorkingOverlay overlay = _contourOverlay;
         var others = new List<Shape>();
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _map)
         {
@@ -847,31 +850,18 @@ public sealed class MakeLinearForm : RibSlot
         others.AddRange(_newEdges);
         others.AddRange(_tgtEdges);
         others.AddRange(_facesForDraft);
-        _shape = copy.Finish(_shape, others);
+        _shape = overlay.Finish(_shape, others);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = Final(copy, _map[key]);
+            _map[key] = Final(overlay, _map[key]);
         }
-        // the contour's edges answer Generated: keyed by the caller's edges
-        var lfMap = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _lfMap)
+        foreach (Shape key in _lfMap.Keys.ToList())
         {
-            lfMap.Bind(copy.Original(item.Key), Final(copy, item.Value));
+            _lfMap[key] = Final(overlay, _lfMap[key]);
         }
-        _lfMap = lfMap;
-        _newEdges = Final(copy, _newEdges);
-        _tgtEdges = Final(copy, _tgtEdges);
-        _facesForDraft = Final(copy, _facesForDraft);
-    }
-
-    private static NCollection_List<Shape> Final(CopyAtEntry copy, NCollection_List<Shape> list)
-    {
-        NCollection_List<Shape> aList = new();
-        for (NCollection_List<Shape>.Iterator it = new(list); it.More(); it.Next())
-        {
-            aList.Append(copy.Final(it.Value()));
-        }
-        return aList;
+        _newEdges = Final(overlay, _newEdges);
+        _tgtEdges = Final(overlay, _tgtEdges);
+        _facesForDraft = Final(overlay, _facesForDraft);
     }
 
     /// <summary>Limitation of the shape until the case of infinite faces: does nothing (as in OCCT).</summary>

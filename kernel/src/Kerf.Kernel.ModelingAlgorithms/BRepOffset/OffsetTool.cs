@@ -3266,11 +3266,13 @@ public static class OffsetTool
     //=================================================================================================
 
     // OCCT.NET: stands for OCCT's change in place of the surface theOld of the face F into theNew (see EnLargeFace):
-    // F and the pcurves of its edges on theOld are put on theNew. Nothing is done where F or one of its edges is frozen
-    // (a caller's face keeps its surface, decision 1101).
+    // F and the pcurves of its edges on theOld are put on theNew. Nothing is done where F or one of its edges is locked
+    // (decision 1101): frozen with no working overlay here to take the write (a caller's face outside an operation
+    // keeps its surface). Inside the offset's overlay a caller's face is changed as OCCT changes it, on its working
+    // copy (OCC5805's thick solid, unit 10H5).
     private static void PutSurfaceInPlace(in Face f, Surface old, Surface theNew, in Placement l)
     {
-        if (f.TShape()!.Locked())
+        if (WorkingOverlay.IsLocked(f.TShape()!))
         {
             return;
         }
@@ -3278,7 +3280,7 @@ public static class OffsetTool
         Exploration.MapShapes(f, ShapeType.Edge, edges);
         for (int i = 1; i <= edges.Extent(); i++)
         {
-            if (edges[i].TShape()!.Locked())
+            if (WorkingOverlay.IsLocked(edges[i].TShape()!))
             {
                 return;
             }
