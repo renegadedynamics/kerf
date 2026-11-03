@@ -228,8 +228,11 @@ internal static partial class TopoUtil
         operation.SetRunParallel(true);
         // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
         operation.SetNonDestructive(true);
-        operation.Build();
-        ThrowIfFailed(operation);
+        Failures.Doing(() => BooleanName(operation), () =>
+        {
+            operation.Build();
+            ThrowIfFailed(operation);
+        });
         var result = Downcast(operation.Shape());
         return result.IsCompound() ? UnwrapCompound(ShapeCasts.Compound(result)) : result;
     }
@@ -246,13 +249,13 @@ internal static partial class TopoUtil
     };
 
     /// <summary>
-    /// Throws if a built boolean failed, naming OCCT's reasons ("BOPAlgo_AlertSelfInterferingShape", say) where a bare
-    /// <c>Shape()</c> would say only StdFail_NotDone.
+    /// Throws if a built boolean failed, with OCCT's reasons as diagnostics ("boolean.self-interfering-shape", say) where
+    /// a bare <c>Shape()</c> would say only StdFail_NotDone.
     /// </summary>
     internal static void ThrowIfFailed(Algo operation)
     {
         if (operation.HasErrors)
-            throw new NotDoneException(Extras.AlgoErrors(operation) ?? "");
+            throw Failures.Boolean(operation);
     }
 
     internal static void SetTools(BuilderAlgo operation, NCollection_List<global::Kerf.Topology.Shape> tools)

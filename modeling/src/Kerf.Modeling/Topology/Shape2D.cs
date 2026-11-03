@@ -37,7 +37,7 @@ public abstract partial class Shape2D : Shape
         {
             sum = new Shell(faces);
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
         {
             throw new ArgumentException(
                 "Unable to sew faces into a single connected Shell - faces must meet along shared edges, "

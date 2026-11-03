@@ -313,7 +313,7 @@ public sealed class Selector : IEquatable<Selector>
             {
                 return get();
             }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or NotSupportedException
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or KerfException or NotSupportedException
                                        or NotImplementedException)
             {
                 return null;

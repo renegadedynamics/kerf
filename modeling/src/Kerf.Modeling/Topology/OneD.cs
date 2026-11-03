@@ -53,7 +53,7 @@ public static class OneD
                 {
                     sum = JoinedWire(summandEdges, [], brought);
                 }
-                catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
                 {
                     sum = summands[0].Fuse(summands.Skip(1));
                     if (sum.History is not null)
@@ -67,7 +67,7 @@ public static class OneD
             {
                 sum = JoinedWire([.. self.Edges(), .. summandEdges], [self.TopoShape], brought);
             }
-            catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException)
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or FailureException or KerfException)
             {
                 sum = self.Fuse(summands);
             }

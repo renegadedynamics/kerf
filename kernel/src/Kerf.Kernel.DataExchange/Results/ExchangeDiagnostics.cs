@@ -11,23 +11,16 @@ namespace Kerf.Engine.Foundation;
 /// </summary>
 public static class ExchangeDiagnostics
 {
-    /// <summary>
-    /// The error a reader's or writer's status reports, or null if it did its work; <paramref name="what"/> says what
-    /// was being read or written ("the STEP file").
-    /// </summary>
-    public static Diagnostic? ToDiagnostic(ReturnStatus status, string what)
+    /// <summary>The error a reader's or writer's status reports, or null if it did its work.</summary>
+    public static Diagnostic? ToDiagnostic(ReturnStatus status) => status switch
     {
-        ArgumentException.ThrowIfNullOrEmpty(what);
-        return status switch
-        {
-            ReturnStatus.RetDone => null,
-            ReturnStatus.RetVoid => Error("exchange.nothing-done", $"Nothing was done with {what}."),
-            ReturnStatus.RetError => Error("exchange.invalid-data", $"The data of {what} isn't correct."),
-            ReturnStatus.RetFail => Error("exchange.failed", $"Reading or writing {what} failed."),
-            ReturnStatus.RetStop => Error("exchange.stopped", $"Reading or writing {what} was stopped."),
-            _ => Diagnostic.Error(FailureDiagnostics.Fault, $"An unknown {nameof(ReturnStatus)} status ({status})."),
-        };
-    }
+        ReturnStatus.RetDone => null,
+        ReturnStatus.RetVoid => Error("exchange.nothing-done", "Nothing was read or written."),
+        ReturnStatus.RetError => Error("exchange.invalid-data", "The data isn't correct."),
+        ReturnStatus.RetFail => Error("exchange.failed", "Reading or writing failed."),
+        ReturnStatus.RetStop => Error("exchange.stopped", "Reading or writing was stopped."),
+        _ => Diagnostic.Error(FailureDiagnostics.Fault, $"An unknown {nameof(ReturnStatus)} status ({status})."),
+    };
 
     private static Diagnostic Error(string code, string message) => Diagnostic.Error(new DiagnosticCode(code), message);
 }

@@ -189,7 +189,7 @@ public readonly struct Result
 
 /// <summary>
 /// The exception for callers who take a failed <see cref="Result{T}"/>'s value: it carries the result's diagnostics,
-/// and its message is the error's.
+/// and its message is the first error's (saying how many more there are).
 /// </summary>
 public sealed class KerfException : Exception
 {
@@ -212,7 +212,16 @@ public sealed class KerfException : Exception
     /// <summary>The first error.</summary>
     public Diagnostic Error => Diagnostic.FirstError(Diagnostics)!;
 
-    // The errors' messages: the first alone when there is one
-    private static string Compose(ImmutableArray<Diagnostic> diagnostics) =>
-        string.Join("; ", diagnostics.Where(d => d.IsError).Select(d => d.Message));
+    // The first error's message, and how many more there are
+    private static string Compose(ImmutableArray<Diagnostic> diagnostics)
+    {
+        var errors = diagnostics.Count(d => d.IsError);
+        var first = Diagnostic.FirstError(diagnostics)!.Message;
+        return errors switch
+        {
+            1 => first,
+            2 => $"{first} (and 1 more error)",
+            _ => $"{first} (and {errors - 1} more errors)",
+        };
+    }
 }

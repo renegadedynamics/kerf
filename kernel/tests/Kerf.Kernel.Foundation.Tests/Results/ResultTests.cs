@@ -188,7 +188,7 @@ public class ResultTests
         var result = Result<int>.Failure([Careful, Bad, other]);
         Assert.Same(Bad, result.Error);
         var e = Assert.Throws<KerfException>(() => result.Value);
-        Assert.Equal("Bad input.; Self-interfering.", e.Message);
+        Assert.Equal("Bad input. (and 1 more error)", e.Message);
     }
 
     [Fact]
