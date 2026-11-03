@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Run by tools/pack.ps1 after packing: it loads the packages, not the projects, so it references neither -->
+  <!-- Loads build123d.NET from a build output folder (B3D_OCCTNET_LIB), not its projects, so it references neither -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

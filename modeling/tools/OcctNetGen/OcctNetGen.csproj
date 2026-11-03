@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <!-- Reads the two assemblies by reflection only; nothing of either runs -->
-    <NoWarn>$(NoWarn);IL2026;IL2072;IL2075;IL2070;IL2067</NoWarn>
-  </PropertyGroup>
-
-</Project>

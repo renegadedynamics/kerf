@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -22,14 +22,14 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>A copy of another location, sharing its OCCT location.</summary>
     public Location(Location location) : this(location.Wrapped, owned: true) { }
 
-    /// <summary>A location from an OCCT TopLoc_Location (copied, keeping its identity).</summary>
-    public Location(TopLoc_Location location) : this(new TopLoc_Location(location), owned: true) { }
+    /// <summary>A location from an OCCT TopLoc_Location (keeping its identity).</summary>
+    public Location(TopLoc_Location location) : this(location, owned: true) { }
 
     /// <summary>A location from an OCCT transformation.</summary>
     public Location(gp_Trsf trsf) : this(new TopLoc_Location(trsf), owned: true) { }
 
     /// <summary>A location at a position, without rotation.</summary>
-    public Location(Vector position) : this(Build(position, trsf => { }), owned: true) { }
+    public Location(Vector position) : this(Build(position, trsf => trsf), owned: true) { }
 
     /// <summary>A location at a position, rotated about the Z axis by an angle in degrees.</summary>
     public Location(Vector position, double angle) : this(position, new Vector(0, 0, 1), angle) { }
@@ -38,10 +38,10 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Vector position, Vector direction, double angle)
         : this(Build(position, trsf =>
         {
-            using var origin = new gp_Pnt(0, 0, 0);
-            using var dir = direction.ToGpDir();
-            using var axis = new gp_Ax1(origin, dir);
-            trsf.SetRotation(axis, angle * Constants.DegToRad);
+            var origin = new gp_Pnt(0, 0, 0);
+            var dir = direction.ToGpDir();
+            var axis = new gp_Ax1(origin, dir);
+            return trsf.WithRotation(axis, angle * Constants.DegToRad);
         }), owned: true)
     {
     }
@@ -53,10 +53,9 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Location(Vector position, Vector orientation, RotationOrder ordering = default)
         : this(Build(position, trsf =>
         {
-            using var q = new gp_Quaternion();
-            q.SetEulerAngles(ordering.ToOcct(), orientation.X * Constants.DegToRad,
-                             orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
-            trsf.SetRotation(q);
+            var q = new gp_Quaternion().WithEulerAngles(ordering.ToOcct(), orientation.X * Constants.DegToRad,
+                                                        orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
+            return trsf.WithRotation(q);
         }), owned: true)
     {
     }
@@ -70,29 +69,28 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>Wraps a new TopLoc_Location this location takes ownership of.</summary>
     static Location Own(TopLoc_Location location) => new(location, owned: true);
 
-    static TopLoc_Location Build(Vector position, Action<gp_Trsf> rotate)
+    static TopLoc_Location Build(Vector position, Func<gp_Trsf, gp_Trsf> rotate)
     {
-        using var trsf = new gp_Trsf();
-        rotate(trsf);
-        using var translation = position.ToGpVec();
-        trsf.SetTranslationPart(translation);
+        var trsf = rotate(new gp_Trsf());
+        var translation = position.ToGpVec();
+        trsf = trsf.WithTranslationPart(translation);
         return new TopLoc_Location(trsf);
     }
 
     static TopLoc_Location FromPlane(Plane plane)
     {
-        using var origin = plane.Origin.ToGpPnt();
-        using var z = plane.ZDir.ToGpDir();
-        using var x = plane.XDir.ToGpDir();
-        using var cs = new gp_Ax3(origin, z, x);
-        using var trsf = new gp_Trsf();
-        trsf.SetTransformation(cs);
-        trsf.Invert();
+        var origin = plane.Origin.ToGpPnt();
+        var z = plane.ZDir.ToGpDir();
+        var x = plane.XDir.ToGpDir();
+        var cs = new gp_Ax3(origin, z, x);
+        var trsf = new gp_Trsf();
+        trsf = trsf.WithTransformation(cs);
+        trsf = trsf.Inverted();
         return new TopLoc_Location(trsf);
     }
 
-    /// <summary>The OCCT location, as a new TopLoc_Location sharing this one's identity.</summary>
-    public TopLoc_Location ToTopLoc() => new(Wrapped);
+    /// <summary>The OCCT location (the same identity).</summary>
+    public TopLoc_Location ToTopLoc() => Wrapped;
 
     /// <summary>A new OCCT gp_Trsf for this location's transformation.</summary>
     public gp_Trsf ToGpTrsf() => Wrapped.Transformation();
@@ -102,8 +100,8 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            using var trsf = Wrapped.Transformation();
-            using var t = trsf.TranslationPart();
+            var trsf = Wrapped.Transformation();
+            var t = trsf.TranslationPart();
             return new Vector(t);
         }
     }
@@ -113,10 +111,10 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            using var trsf = Wrapped.Transformation();
-            using var q = trsf.GetRotation();
+            var trsf = Wrapped.Transformation();
+            var q = trsf.GetRotation();
             double a = 0, b = 0, c = 0;
-            q.GetEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, ref a, ref b, ref c);
+            q.GetEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, out a, out b, out c);
             return new Vector(a * Constants.RadToDeg, b * Constants.RadToDeg, c * Constants.RadToDeg);
         }
     }
@@ -127,31 +125,30 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>This location with a new position and the same orientation.</summary>
     public Location WithPosition(Vector position)
     {
-        using var trsfPosition = new gp_Trsf();
-        using var v = position.ToGpVec();
-        trsfPosition.SetTranslationPart(v);
-        using var current = Wrapped.Transformation();
-        using var rotation = current.GetRotation();
-        using var trsfOrientation = new gp_Trsf();
-        trsfOrientation.SetRotation(rotation);
-        using var combined = trsfPosition.Multiplied(trsfOrientation);
+        var trsfPosition = new gp_Trsf();
+        var v = position.ToGpVec();
+        trsfPosition = trsfPosition.WithTranslationPart(v);
+        var current = Wrapped.Transformation();
+        var rotation = current.GetRotation();
+        var trsfOrientation = new gp_Trsf();
+        trsfOrientation = trsfOrientation.WithRotation(rotation);
+        var combined = trsfPosition.Multiplied(trsfOrientation);
         return Own(new TopLoc_Location(combined));
     }
 
     /// <summary>This location with a new orientation (intrinsic XYZ Euler angles in degrees) and the same position.</summary>
     public Location WithOrientation(Vector orientation)
     {
-        using var current = Wrapped.Transformation();
-        using var xyz = current.TranslationPart();
-        using var trsfPosition = new gp_Trsf();
-        using var v = new gp_Vec(xyz.X(), xyz.Y(), xyz.Z());
-        trsfPosition.SetTranslationPart(v);
-        using var q = new gp_Quaternion();
-        q.SetEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, orientation.X * Constants.DegToRad,
-                         orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
-        using var trsfOrientation = new gp_Trsf();
-        trsfOrientation.SetRotation(q);
-        using var combined = trsfPosition.Multiplied(trsfOrientation);
+        var current = Wrapped.Transformation();
+        var xyz = current.TranslationPart();
+        var trsfPosition = new gp_Trsf();
+        var v = new gp_Vec(xyz.X(), xyz.Y(), xyz.Z());
+        trsfPosition = trsfPosition.WithTranslationPart(v);
+        var q = new gp_Quaternion().WithEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, orientation.X * Constants.DegToRad,
+                                                    orientation.Y * Constants.DegToRad, orientation.Z * Constants.DegToRad);
+        var trsfOrientation = new gp_Trsf();
+        trsfOrientation = trsfOrientation.WithRotation(q);
+        var combined = trsfPosition.Multiplied(trsfOrientation);
         return Own(new TopLoc_Location(combined));
     }
 
@@ -231,8 +228,8 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            using var trsf = Wrapped.Transformation();
-            using var q = trsf.GetRotation();
+            var trsf = Wrapped.Transformation();
+            var q = trsf.GetRotation();
             return (Position.Key, GeomKey.Quaternion(q));
         }
     }
@@ -281,11 +278,11 @@ public class Rotation : Location
 
     static TopLoc_Location AboutAxis(Axis axis, double angle)
     {
-        using var trsf = new gp_Trsf();
+        var trsf = new gp_Trsf();
         if (angle != 0.0)
         {
-            using var ax1 = axis.ToGpAx1();
-            trsf.SetRotation(ax1, angle * Constants.DegToRad);
+            var ax1 = axis.ToGpAx1();
+            trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         }
         return new TopLoc_Location(trsf);
     }

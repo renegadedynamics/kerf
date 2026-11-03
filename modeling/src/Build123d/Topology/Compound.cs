@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -36,7 +36,7 @@ public partial class Compound : Shape3D
     public Compound WithAssemblyChildren(IEnumerable<Shape> children)
     {
         var list = children.ToList();
-        using var location = TopoShape.Location();
+        var location = TopoShape.Location();
         var rebuilt = TopoUtil.MakeCompound(list.Select(c => c.TopoShape)).Located(location);
         var copy = (Compound)Rewrapped(rebuilt);
         copy.AssemblyChildren = list;
@@ -64,7 +64,7 @@ public partial class Compound : Shape3D
     {
         if (IsEmpty)
             yield break;
-        using var it = new TopoDS_Iterator(TopoShape);
+        var it = new TopoDS_Iterator(TopoShape);
         for (; it.More(); it.Next())
             yield return CastLike(it.Value());
     }
@@ -78,9 +78,9 @@ public partial class Compound : Shape3D
     /// <summary>This compound and the compounds directly inside it.</summary>
     public override ShapeList<Compound> Compounds()
     {
-        if (IsEmpty || TopoShape is not TopoDS_Compound)
+        if (IsEmpty || !TopoShape.IsCompound())
             return [];
-        return [.. Children().OfType<Compound>().Where(c => c.TopoShape is TopoDS_Compound), this];
+        return [.. Children().OfType<Compound>().Where(c => c.TopoShape.IsCompound()), this];
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public partial class Compound : Shape3D
         var results = new List<T>();
         foreach (var comp in Compounds())
         {
-            using var it = new TopoDS_Iterator();
+            var it = new TopoDS_Iterator();
             it.Initialize(comp.TopoShape);
             for (; it.More(); it.Next())
             {
@@ -227,7 +227,7 @@ public partial class Compound : Shape3D
         var summands = GetTopLevelShapes().Concat(brought).ToList();
         if (summands.Count <= 1)
             return MakeComposite(summands.Take(1), Dim);
-        using var fuse = new BRepAlgoAPI_Fuse();
+        var fuse = new BRepAlgoAPI_Fuse();
         fuse.SetFuzzyValue(Constants.Tolerance);
         summands[0] = CopyAttributesTo(summands[0]);
         var result = BoolOp(summands.Take(1), summands.Skip(1), fuse);
@@ -268,7 +268,7 @@ public partial class Compound : Shape3D
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
             {
-                using var props = new GProp_GProps();
+                var props = new GProp_GProps();
                 switch (TopoUtil.UnwrappedShapeType(this))
                 {
                     case TopAbs_ShapeEnum.TopAbs_VERTEX:
@@ -283,7 +283,7 @@ public partial class Compound : Shape3D
                         BRepGProp.VolumeProperties(TopoShape, props);
                         break;
                 }
-                using var c = props.CentreOfMass();
+                var c = props.CentreOfMass();
                 return new Vector(c);
             }
             default:

@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -36,13 +36,13 @@ public partial class Wire
         record = record.Merge(ShapeHistory.FromRelocation(filleted.TopoShape, globalized.TopoShape));
 
         // Back to the original location rather than the plane's
-        using var ownLocation = TopoShape.Location();
+        var ownLocation = TopoShape.Location();
         var geometryAdjust = new Location(ownLocation).Inverse() * globalized.Location;
-        using var trsf = geometryAdjust.ToTopLoc().Transformation();
-        using var identity = new TopLoc_Location();
+        var trsf = geometryAdjust.ToTopLoc().Transformation();
+        var identity = new TopLoc_Location();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
-        using var transformer = new BRepBuilderAPI_Transform(baseWire, trsf, true);
+        var transformer = new BRepBuilderAPI_Transform(baseWire, trsf, true);
         var transformed = TopoDS.Wire(transformer.Shape());
         record = record.Merge(ShapeHistory.FromAlgorithm(transformer, [baseWire], transformed));
         var located = TopoDS.Wire(transformed.Located(ownLocation));
@@ -90,24 +90,24 @@ internal static class WireFillet
 
     private static bool EdgeContainsVertex(TopoDS_Edge edge, TopoDS_Vertex vertex)
     {
-        using var v0 = TopExp.FirstVertex(edge);
-        using var v1 = TopExp.LastVertex(edge);
-        using var p = BRep_Tool.Pnt(vertex);
-        using var p0 = BRep_Tool.Pnt(v0);
-        using var p1 = BRep_Tool.Pnt(v1);
+        var v0 = TopExp.FirstVertex(edge);
+        var v1 = TopExp.LastVertex(edge);
+        var p = BRep_Tool.Pnt(vertex);
+        var p0 = BRep_Tool.Pnt(v0);
+        var p1 = BRep_Tool.Pnt(v1);
         return p0.Distance(p) < Constants.Tolerance || p1.Distance(p) < Constants.Tolerance;
     }
 
     private static List<TopoDS_Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        using var splitter = new BOPAlgo_Splitter();
+        var splitter = new BOPAlgo_Splitter();
         splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
         splitter.AddArgument(edge.TopoShape);
         splitter.AddTool(splitVertex.TopoShape);
         splitter.Perform();
-        using var split = splitter.Shape();
+        var split = splitter.Shape();
         var edges = new List<TopoDS_Edge>();
-        using var explorer = new TopExp_Explorer(split, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_SHAPE);
+        var explorer = new TopExp_Explorer(split, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_SHAPE);
         for (; explorer.More(); explorer.Next())
             edges.Add(TopoDS.Edge(explorer.Current()));
         return edges;
@@ -129,7 +129,7 @@ internal static class WireFillet
         var reflected = new List<Vector>();
         foreach (var edge in corner.ConnectedEdges)
         {
-            using var first = TopExp.FirstVertex(edge.TopoEdge);
+            var first = TopExp.FirstVertex(edge.TopoEdge);
             var samplePoint = first.IsSame(corner.Vertex.TopoShape)
                 ? edge.PositionAt(sampleLength, PositionMode.Length)
                 : edge.PositionAt(edge.Length - sampleLength, PositionMode.Length);
@@ -151,15 +151,15 @@ internal static class WireFillet
         {
             var other = connected.Vertices().First(v => v != corner.Vertex);
             var filletVertex = arc.Vertices().SortByDistance(connected)[0];
-            using var pnt = filletVertex.ToVector().ToGpPnt();
-            using var maker = new BRepBuilderAPI_MakeVertex(pnt);
+            var pnt = filletVertex.ToVector().ToGpPnt();
+            var maker = new BRepBuilderAPI_MakeVertex(pnt);
             var splitVertex = new Vertex(maker.Vertex());
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire
-            using var copier = new BRepBuilderAPI_Copy(connected.TopoShape);
+            var copier = new BRepBuilderAPI_Copy(connected.TopoShape);
             var pieces = SplitEdgeAtVertex(new Edge(TopoDS.Edge(copier.Shape())), splitVertex);
-            using var otherV = TopoDS.Vertex(other.TopoShape);
-            using var cornerV = TopoDS.Vertex(corner.Vertex.TopoShape);
-            trimmed.Add(pieces.FirstOrDefault(e => EdgeContainsVertex(e, otherV) && !EdgeContainsVertex(e, cornerV)));
+            var otherV = TopoDS.Vertex(other.TopoShape);
+            var cornerV = TopoDS.Vertex(corner.Vertex.TopoShape);
+            trimmed.Add(pieces.Where(e => EdgeContainsVertex(e, otherV) && !EdgeContainsVertex(e, cornerV)).Select(e => (TopoDS_Edge?)e).FirstOrDefault());
         }
         return new Solution(trimmed, arc.TopoEdge);
     }
@@ -174,7 +174,7 @@ internal static class WireFillet
         var edges = corner.AllEdges.Select(e => (TopoDS_Edge?)e.TopoEdge).ToList();
         // Which original edge each entry came from, for the record
         var sources = corner.AllEdges.Select(e => (TopoDS_Shape?)e.TopoShape).ToList();
-        using var history = new BRepTools_History();
+        var history = new BRepTools_History();
 
         var toRemove = new HashSet<int>();
         for (int i = 0; i < solution.TrimmedEdges.Count; i++)
@@ -207,16 +207,16 @@ internal static class WireFillet
 
         // MakeWire copies each edge so neighbours share vertices: record each as the finished wire places it
         var cornerVertex = corner.Vertex.TopoShape;
-        using var builder = new BRepBuilderAPI_MakeWire();
+        var builder = new BRepBuilderAPI_MakeWire();
         foreach (var edge in edges)
-            builder.Add(edge!);
+            builder.Add(edge!.Value);
         builder.Build();
         // The edges as the finished wire holds them, in the order added: a later merge may have moved or enlarged an
         // earlier edge's vertex, which native OCCT does in place and OCCT.NET in a copy of the wire built so far
         var placedEdges = new List<TopoDS_Shape>();
-        using (var wireIt = new TopoDS_Iterator(builder.Wire()))
-            for (; wireIt.More(); wireIt.Next())
-                placedEdges.Add(wireIt.Value());
+        var wireIt = new TopoDS_Iterator(builder.Wire());
+        for (; wireIt.More(); wireIt.Next())
+            placedEdges.Add(wireIt.Value());
         for (int i = 0; i < edges.Count; i++)
         {
             var placed = placedEdges[i];

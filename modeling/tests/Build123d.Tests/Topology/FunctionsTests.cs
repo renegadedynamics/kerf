@@ -2,7 +2,7 @@
 // Omitted:
 // - Functions.parse_intersect_args: a TypeError for intersecting with a tuple of strings, which the compiler rules out.
 // - MakeTopodsFaceFromWires.builder_failure: patches BRepBuilderAPI_MakeFace with a MagicMock.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Topology;
 
@@ -60,17 +60,17 @@ public class FunctionsTests
         var c3 = new Compound([c2]);
         var c4 = new Compound([c3]);
         Assert.Equal(1, c4.Wrapped.NbChildren());
-        var c5 = new Compound(TopoUtil.UnwrapCompound((TopoDS_Compound)c4.Wrapped, false));
+        var c5 = new Compound(TopoUtil.UnwrapCompound(TopoDS.Compound(c4.Wrapped), false));
         Assert.Equal(2, c5.Wrapped.NbChildren());
 
         // unwrap fully
         var c0 = new Compound([b1]);
         c1 = new Compound([c0]);
-        var result = Shape.Cast(TopoUtil.UnwrapCompound((TopoDS_Compound)c1.Wrapped, true));
+        var result = Shape.Cast(TopoUtil.UnwrapCompound(TopoDS.Compound(c1.Wrapped), true));
         Assert.IsAssignableFrom<Solid>(result);
 
         // unwrap not fully
-        result = Shape.Cast(TopoUtil.UnwrapCompound((TopoDS_Compound)c1.Wrapped, false));
+        result = Shape.Cast(TopoUtil.UnwrapCompound(TopoDS.Compound(c1.Wrapped), false));
         Assert.IsAssignableFrom<Compound>(result);
     }
 }

@@ -113,7 +113,7 @@ for (int pass = 0; pass < passes; pass++)
 }
 
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-    $"Bento's examples on {typeof(Shape).Assembly.GetReferencedAssemblies().First(a => a.Name!.StartsWith("Build123d.Occt", StringComparison.Ordinal)).Name}, {passes} passes, {total.Elapsed.TotalSeconds:F1} s"));
+    $"Bento's examples on OCCT.NET, {passes} passes, {total.Elapsed.TotalSeconds:F1} s"));
 Console.WriteLine("example                    first ms  median ms   alloc MB  result");
 double firstSum = 0, medianSum = 0;
 for (int i = 0; i < examples.Length; i++)

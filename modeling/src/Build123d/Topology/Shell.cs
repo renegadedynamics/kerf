@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -31,7 +31,7 @@ public partial class Shell : Shape2D
         return TopoUtil.MakeShell(faces.Select(f => f.TopoFace), tolerance);
     }
 
-    internal TopoDS_Shell TopoShell => (TopoDS_Shell)TopoShape;
+    internal TopoDS_Shell TopoShell => TopoDS.Shell(TopoShape);
 
     internal override double Order => 2.5;
 
@@ -44,9 +44,9 @@ public partial class Shell : Shape2D
         {
             if (!IsManifold)
                 return 0.0;
-            using var fix = new ShapeFix_Solid();
-            using var solid = fix.SolidFromShell(TopoShell);
-            using var props = new GProp_GProps();
+            var fix = new ShapeFix_Solid();
+            var solid = fix.SolidFromShell(TopoShell);
+            var props = new GProp_GProps();
             MassProperties(solid, props);
             return props.Mass();
         }
@@ -56,9 +56,9 @@ public partial class Shell : Shape2D
     public override Vector Center()
     {
         NeedsGeometry("center");
-        using var props = new GProp_GProps();
+        var props = new GProp_GProps();
         BRepGProp.LinearProperties(TopoShape, props);
-        using var c = props.CentreOfMass();
+        var c = props.CentreOfMass();
         return new Vector(c);
     }
 
@@ -83,8 +83,8 @@ public partial class Shell : Shape2D
     public static Shell Revolve(Shape profile, double angle, Axis axis)
     {
         var wire = new Wire(profile.Edges());
-        using var ax1 = axis.ToGpAx1();
-        using var builder = new BRepPrimAPI_MakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
+        var ax1 = axis.ToGpAx1();
+        var builder = new BRepPrimAPI_MakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
         return new Shell(TopoDS.Shell(builder.Shape()));
     }
 
@@ -93,7 +93,7 @@ public partial class Shell : Shape2D
     {
         var profileWire = new Wire(profile.Edges());
         var pathWire = new Wire(new Wire(path.Edges()).OrderEdges());
-        using var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+        var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
         builder.Add(profileWire.TopoShape, false, false);
         builder.SetTransitionMode(Face.TransitionMode(transition));
         builder.Build();
@@ -207,17 +207,14 @@ public partial class Shell : Shape2D
             if (face.GeomType == GeomType.Cylinder && face.Radius is not > 0)
                 throw new ArgumentException("a sheet's cylindrical faces need a positive radius");
         }
-        using var sewing = new BRepBuilderAPI_Sewing();
+        var sewing = new BRepBuilderAPI_Sewing();
         foreach (var face in faces)
             sewing.Add(face.TopoShape);
         sewing.Perform();
         var sewn = TopoUtil.Downcast(sewing.SewedShape());
-        var shell = sewn switch
-        {
-            TopoDS_Face f => new Shell(new Face(f)),   // one face is a sheet of one face
-            TopoDS_Shell s => new Shell(s),
-            _ => throw new ArgumentException("Sheet faces must sew into one connected shell"),
-        };
+        var shell = sewn.IsFace() ? new Shell(new Face(TopoDS.Face(sewn)))   // one face is a sheet of one face
+            : sewn.IsShell() ? new Shell(TopoDS.Shell(sewn))
+            : throw new ArgumentException("Sheet faces must sew into one connected shell");
         if (!shell.IsValid)
             throw new ArgumentException("Sheet faces produced an invalid shell");
         if (shell.Edges().Any(e => OneD.ConnectedFaces(e, shell).Count > 2))
@@ -247,14 +244,14 @@ public static class TwoD
     /// <summary>The pieces of an edge split at a vertex (<c>BOPAlgo_Splitter</c>).</summary>
     internal static List<TopoDS_Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        using var splitter = new BOPAlgo_Splitter();
+        var splitter = new BOPAlgo_Splitter();
         splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
         splitter.AddArgument(edge.TopoShape);
         splitter.AddTool(splitVertex.TopoShape);
         splitter.Perform();
-        using var result = splitter.Shape();
+        var result = splitter.Shape();
         var edges = new List<TopoDS_Edge>();
-        using var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
         for (; explorer.More(); explorer.Next())
             edges.Add(TopoDS.Edge(explorer.Current()));
         return edges;

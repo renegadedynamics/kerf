@@ -25,8 +25,8 @@ Requirements: the .NET 10 SDK and git.
 dotnet test
 ```
 
-`tests/OcctNet.Oracle.Tests` compares the port with native OCCT and needs a sibling build123d.NET checkout with
-its native build: see [docs/oracle-testing.md](docs/oracle-testing.md).
+`tests/OcctNet.Oracle.Tests` compares the port with native OCCT's results, recorded when native OCCT was still built
+(unit 10A) and frozen since it went (unit 10B): see [docs/oracle-testing.md](docs/oracle-testing.md).
 
 ## Contributing a port
 

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Immutability;
@@ -115,7 +115,6 @@ public class InputsUnchangedTests
             C("export brep", [Fused], () => Exporters3D.ExportBrep(Fused, new MemoryStream())),
             C("export step", [Fused, MovedBox], () => Exporters3D.ExportStep(Compound.Assembly([Fused, MovedBox]), new MemoryStream())),
         };
-#if OCCTNET
         // The mesh formats are OCCT.NET's (the native binding doesn't bind them)
         cases.AddRange(
         [
@@ -123,7 +122,6 @@ public class InputsUnchangedTests
             C("export gltf", [Fused, MovedBox], () => Exporters3D.ExportGltf(Compound.Assembly([Fused, MovedBox.WithColor(new Color("red"))]), new MemoryStream(), binary: true)),
             C("export 3mf", [Fused, Sphere], () => Exporters3D.Export3mf(Compound.Assembly([Fused, Sphere]), new MemoryStream())),
         ]);
-#endif
         return cases;
     }
 
@@ -171,7 +169,7 @@ public class InputsUnchangedTests
         {
             c.Run();
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
         {
             // Failing is allowed; changing the inputs isn't
         }
@@ -248,7 +246,7 @@ public class InputsUnchangedTests
                 var value => value?.ToString() ?? "null",
             };
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
         {
             return e.GetType().Name + ": " + e.Message;
         }

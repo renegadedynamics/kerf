@@ -10,9 +10,8 @@ OpenCascade (OCCT).
 | Target framework | .NET 10 |
 | Platforms | Windows, Linux and macOS (x64 and arm64) from the start |
 | Naming | Idiomatic .NET (PascalCase, `Try*`, properties instead of getters). A Python → .NET name map is kept in `docs/name-map.md`. |
-| OCCT | 8.0.x, built from source and linked dynamically (OCCT is LGPL 2.1 with an exception) |
-| Bindings | A thin C ABI over the subset of OCCT that build123d uses, generated from a whitelist, with C# `SafeHandle` wrappers on top |
-| Managed backend (the default) | `Build123d` builds on OCCT.NET, the managed port, through a second implementation of `Build123d.Occt`'s public API (`src/Build123d.OcctNet`) that forwards to OCCT.NET and is generated. Native is opt-in with `-p:Build123dBackend=Native`, as the oracle's reference, and is no longer published. See "The OCCT.NET backend" |
+| OCCT | OCCT.NET, the managed port of OCCT 8.0.1 (LGPL 2.1 with OCCT's exception), the repository's `kernel` folder |
+| Kernel calls | `Build123d` calls OCCT.NET's types directly, under OCCT's names (unit 10B). The native backend (a C ABI shim over native OCCT, with generated `SafeHandle` wrappers) and the generated forwarding layer that gave OCCT.NET its API went in unit 10B. See "The kernel" |
 
 ## Principles
 
@@ -48,37 +47,12 @@ no aliasing surprises.
   The cache is harmless, but meshing the same geometry from several threads at once must be
   serialised.
 
-### 2. Thin, generated bindings; idiomatic API above them
+### 2. OCCT's names below; idiomatic API above them
 
-`Build123d.Occt` mirrors OCCT class and method names, so Python lines like
-`BRepAlgoAPI_Cut(a, b).Shape()` port almost one-to-one. Only `Build123d` itself exposes idiomatic
-.NET names. `Shape.Wrapped` remains as an escape hatch to the raw OCCT handle.
-
-#### How the bindings work
-
-`tools/OcctGen` parses the OCCT headers with ClangSharp and binds every class (or namespace) listed in
-`bindings/occt.txt`. It emits a C++ shim (`native/shim/generated`, built into `b3docct`) and C# wrappers
-(`src/Build123d.Occt/Generated`). The generated code is committed, so building needs no libclang.
-`bindings/occt.skipped.txt` lists every member left out, and why.
-
-- **Objects** cross the C ABI as opaque pointers.
-  - Value classes (`gp_Pnt`, `TopoDS_Shape`, …) are heap copies that the wrapper owns.
-  - Transients (`Standard_Transient` subclasses, held by `occ::handle`) are handed out with one
-    reference taken, which the wrapper releases.
-  - Wrappers free their object on `Dispose()` or finalisation.
-  - An object that walks another without holding it keeps that one's wrapper alive. OCCT 8's `TopoDS_Iterator`
-    holds an iterator into the shape's child list, not the shape, so once the shape's wrapper was unreachable its
-    finaliser could free the shape mid-iteration (found by OCCT.NET's oracle under GC pressure). Its wrapper keeps the
-    wrapper of the shape it was last given (`KeepShapeAlive` in `CsEmitter`).
-- **Returns** of `const T&` are copied. Returns of a non-const `T&` are skipped, because a copy can't
-  honour writes into the object's state.
-- **Errors:** each shim function catches C++ exceptions and reports them through a trailing out-parameter,
-  which the wrapper turns into `OcctException` (with `OcctType`, e.g. `Standard_DomainError`).
-- **Inheritance** mirrors OCCT. A class's C# base is its nearest whitelisted ancestor. Methods of
-  ancestors that aren't whitelisted are flattened into the class. Base-class pointers come from generated
-  cast functions, which is needed because OCCT uses some multiple inheritance.
-- **Default arguments** become one overload per arity, because OCCT defaults are often non-constant.
-- **Namespaces of free functions** (OCCT 8 turned `TopoDS` into one) become static classes.
+`Build123d` calls OCCT.NET's classes under OCCT's names, so Python lines like `BRepAlgoAPI_Cut(a, b).Shape()` port
+almost one-to-one. Only `Build123d` itself exposes idiomatic .NET names. `Shape.Wrapped` remains as an escape hatch to
+the raw OCCT shape. Until unit 10B the calls went through `Build123d.Occt`, a binding with OCCT's API: native OCCT
+through a generated C shim, or OCCT.NET through a generated forwarding layer (see "The kernel").
 
 #### Geometry values
 
@@ -89,11 +63,11 @@ no aliasing surprises.
     the exceptions match build123d. This covers angles, axis tests, rotation, and sRGB ↔ linear
     colour conversion.
 - **`Location`, `Plane`, `Matrix`, `BoundBox` and `OrientedBoundBox` are immutable classes**, each
-  holding one private OCCT object that is never modified.
+  holding one OCCT value (OCCT.NET's structs, immutable themselves).
   - A `Location` keeps its `TopLoc_Location` for life. OCCT compares shape locations by identity, so
     shapes placed with the same `Location` instance share their location, as in build123d.
-  - Public accessors (`ToGpPln()`, `ToGpGTrsf()`, …) return copies. `ToTopLoc()` returns a
-    `TopLoc_Location` that shares the location's identity.
+  - Public accessors (`ToGpPln()`, `ToGpGTrsf()`, …) return the values. `ToTopLoc()` returns the
+    `TopLoc_Location`, which keeps the location's identity.
 - **`IGeometry`.** Intersections between geometric values can return several types, so they return
   `IGeometry?` for pattern matching.
 - **Names** are listed in [name-map.md](name-map.md), with the deliberate differences from build123d.
@@ -110,8 +84,8 @@ no aliasing surprises.
 - **History** (`ShapeHistory`, behind `Select.Last` and `Select.New`) is immutable: `Merge` returns a new
   record built on a copy of the OCCT `BRepTools_History`, so shapes sharing a record never see it change.
 - **Collections.** `ShapeList<T>` is an immutable list over Schematiq.Collections' `ISchematiqList<T>`. OCCT's
-  template collections (`NCollection_List<TopoDS_Shape>` and friends) are bound under their legacy names
-  (`TopTools_ListOfShape`, …) and enumerate as `IEnumerable`.
+  collections are OCCT.NET's (`NCollection_List<TopoDS_Shape>` and friends, which OCCT names `TopTools_ListOfShape`…),
+  maps of shapes made with `TopTools_ShapeMapHasher`, as OCCT's typedefs are.
 
 #### Immutability in the kernel
 
@@ -147,9 +121,9 @@ change every shape sharing it, and race between threads. So:
 - **`Triangulate` is for viewers and picking**, and leaves `Tessellate` as build123d has it. It meshes
   a private copy of the shape. The copy has the shape's structure, so its `Faces()`, `Edges()` and
   `Vertices()` come in the same order: index *i* of the mesh is index *i* of the shape.
-- **The shim copies out the whole mesh in two calls**
-  ([b3d_mesh.cpp](../native/shim/src/b3d_mesh.cpp)): one gathers every face's nodes, normals and
-  triangles and every edge's polyline into flat buffers, and the next copies them out. A face's normals
+- **The whole mesh is copied out in one call** (OCCT.NET's `MeshExtraction`, once the native shim's b3d_mesh.cpp,
+  which it matches float for float): every face's nodes, normals and triangles and every edge's polyline go into flat
+  buffers. A face's normals
   come from its surface (`BRepLib_ToolTriangulatedShape::ComputeNormals`). Its winding is flipped for a
   reversed face or a mirroring location. An edge's polyline is its polygon on an adjacent face's
   triangulation, so it lies exactly on the shading. The faces and edges of a `ShapeMesh` are read-only
@@ -160,35 +134,15 @@ change every shape sharing it, and race between threads. So:
 
 #### Errors and memory
 
-- **Faults come back as exceptions.** The shim is built with `/EHa`, so its `catch (...)` stops an
-  access violation in OCCT from ending the process. On Windows each shim function also starts with
-  `B3D_TRY`, which installs OCCT's structured-exception translator (`OSD::SetThreadLocalSignal`) the
-  first time a thread calls in.
-  - With the translator, a fault is a typed `Standard_Failure`, such as `OSD_Exception_ACCESS_VIOLATION`
-    with the address, so OCCT's own algorithms can catch it and recover as they were designed to.
-  - Floating-point traps stay off, as .NET expects.
-  - On Linux and macOS, OCCT's handlers would be process-wide signal handlers that take over the
-    runtime's own, so nothing is installed there.
-  - A stack overflow, or heap corruption that has already happened, can still end the process.
-  - `Occt.FaultForTesting` makes a deliberate fault for the tests.
-- **Failures say what was being done.** `OcctContext.Doing("extrude")` scopes nest per thread, and an
-  `OcctException` thrown inside them starts with them: "box 0.0 × 1.0 × 1.0 failed:
-  Standard_DomainError". These scopes are set:
-  - on primitives and on extrude, revolve, loft, sweep and thicken;
-  - on booleans, as "fuse of a Box with 2 Cylinders";
-  - on triangulation.
-
-  A boolean that fails reports OCCT's alerts (`BOPAlgo_Alert…`) instead of a bare `StdFail_NotDone`.
-  build123d's own messages (fillet, chamfer, offset) stand, with OCCT's exception inside.
-- **Memory pressure goes on results.** `Shape.Result`, called from `MadeBy`, `Rewrapped` and the
-  feature factories, gives the result's `TopoDS_Shape` wrapper an estimate of its native memory, and
-  calls `GC.AddMemoryPressure` with it. The estimate is one walk over its unique sub-shapes, curves,
-  surfaces and triangulations.
-  - The pressure is removed when that wrapper is disposed or finalised.
-  - Results under 4 KB, and sub-shapes taken out of a result, aren't counted, so shared geometry isn't
-    counted many times over.
-  - Triangulation frees its private meshed copy as soon as the mesh is copied out, rather than leaving
-    it for finalisation.
+- **OCCT's failures are OCCT.NET's exceptions**, `Standard_Failure` and its subclasses (`Standard_DomainError`,
+  `StdFail_NotDone`…, with `OcctType`), as OCCT.NET throws them (unit 10B), until results replace expected exceptions
+  (unit 10F). The native backend's `OcctException`, with the operation being done ("box 0.0 × 1.0 × 1.0 failed: …",
+  from `OcctContext.Doing` scopes), went with the forwarding layer that made it.
+  - A boolean that fails reports OCCT's alerts (`BOPAlgo_Alert…`) instead of a bare `StdFail_NotDone`.
+  - build123d's own messages (fillet, chamfer, offset) stand, with OCCT's exception inside.
+- **No native faults, no memory pressure.** OCCT.NET is managed code: an access violation can't happen inside it, and
+  the GC counts its memory. The native backend's fault translation and its `GC.AddMemoryPressure` on results went with
+  it. `Extras.EstimateMemory` (the shim's estimate of a shape's memory) remains, for diagnostics.
 - **Untrusted BRep.** OCCT's reader trusts its input. At the end of truncated data it loops for ever,
   reusing the last word it read, and it reads words into fixed buffers with no length limit. So
   `ReadBRep` first refuses NULs and words of 200 characters or more, then reads with stream exceptions
@@ -234,106 +188,44 @@ change every shape sharing it, and race between threads. So:
 - **Python's union arguments** become overloads: an arc's size is a `double` or a `CurveLimit` (a shape,
   axis, location, plane or point it's trimmed to). Constrained arcs and lines take `Tangent` targets.
 
-#### The OCCT.NET backend
+#### The kernel
 
-`Build123d` running on OCCT.NET, the managed C# port of OCCT 8 (class for class), with no native code. A spike
-until OCCT.NET's phase 9, which made it the default backend.
+`Build123d` runs on OCCT.NET, the managed C# port of OCCT 8.0.1 (class for class, the repository's `kernel` folder),
+with no native code, and calls its types directly (unit 10B).
 
-- **The switch.** `Build123dBackend` (`OcctNet` by default, or `Native`) chooses which project `Build123d`
-  references: `src/Build123d.OcctNet` or `src/Build123d.Occt` (the shim). `OCCTNET` is defined for the tests' few
-  backend-specific cases.
-- **Where OCCT.NET comes from.** By default the `OcctNet.*` packages on nuget.org, at `OcctNetVersion`
-  (`Directory.Build.props`), so a fresh clone builds and tests with a plain `dotnet test`. With `OcctNetRoot` given,
-  `Build123d.OcctNet` references that OCCT.NET checkout's projects instead: for working on both together, and for
-  OCCT.NET's `tools/pack-nuget.ps1`, which packs `Build123d.OcctNet` and `Build123d` that way (the project references
-  become the same package dependencies).
-- **Native** (`-p:Build123dBackend=Native`) stays buildable and tested, as the reference: OCCT.NET's oracle tests
-  reference `Build123d` and `Build123d.Occt` with `Build123dBackend=Native` on the project reference, whatever the
-  default (and restore by the project graph, as NuGet's default walk would restore them on the default backend).
-  `Build123dNativeRoot` (this checkout by default) says whose `.deps/install` and `native/out` it copies, so a
-  worktree can use another checkout's native build. It isn't published: `Build123d.Occt` and native `Build123d` are
-  packable only through `tools/pack.ps1` (which passes the staged natives, `NativeStageDir`), into the local feed,
-  versioned `0.1.0-native`, for the load-context test.
-- **Output folders.** Each backend builds into folders of its own, so the two sit side by side: the default into
-  `bin` and `obj`, native into `bin-native` and `obj-native`. (Before the switch, OCCT.NET built into `bin-occtnet` and
-  `obj-occtnet`; those are still excluded from the projects' items, in case an old checkout has them.)
-- **Tests on one backend only.** `Build123d.Occt.Tests`, the binding's tests, is a test project on the native backend
-  only (`IsTestProject` false otherwise, so `dotnet test` skips it). In `Build123d.Tests`, `NativeFact` skips the
-  shim's tests under OCCT.NET.
-  The packaging tests skip without their inputs: the native packages (`B3D_PACKAGES`, set by `tools/pack.ps1`) or
-  OCCT.NET's build output (`B3D_OCCTNET_LIB`).
-- **Why a second `Build123d.Occt`, rather than `Build123d` compiled against `Occt` directly.** OCCT.NET's API differs
-  from OCCT's in ways `Build123d` relies on:
-  - its shapes and `gp` types are structs, so `TopoDS_Edge` isn't a `TopoDS_Shape` and can't be null or
-    pattern-matched;
-  - its builders and in-place forms are internal, because it freezes every shape it hands out;
-  - its exceptions are `Standard_Failure`s, not `OcctException`s.
-
-  Adapting `Build123d` would touch most of its 18,000 lines and change its semantics. Instead
-  `src/Build123d.OcctNet` has the same namespace, types and members as `Build123d.Occt`, so `Build123d` compiles
-  unchanged against either.
-- **Generated.** `tools/OcctNetGen` reads both assemblies by reflection and writes a wrapper per class.
-  - A wrapper holds its OCCT.NET object: by reference for a class, or as a field of its own for a struct, as the
-    native wrapper holds a heap copy.
-  - Each member is matched to its OCCT.NET counterpart (overloads, optional parameters, `in`/`out`/`ref`, implicit
-    shape conversions) and forwards with conversions.
-  - Results are wrapped by the native signature's type, as the native binding's are. A collection OCCT returns by
-    reference is copied.
-  - Where OCCT.NET has only a functional twin of an in-place form on a struct (`gp_Trsf.SetRotation` as
-    `WithRotation`, `Bnd_Box.Add` as `Added`), the wrapper's struct is replaced by the twin's result.
-  - `bindings/occtnet.unforwarded.txt` lists what can't be forwarded, and why. `bindings/occtnet.handwritten.txt`
-    lists what `src/Build123d.OcctNet/Runtime` writes by hand.
-- **Errors.** Every forwarding call turns OCCT.NET's `Standard_Failure` into an `OcctException` with the same
-  `OcctType` (`StdFail_NotDone`…) and `OcctContext` operation, with OCCT.NET's exception as the inner one. Other
-  exceptions, such as an OCCT.NET bug's `NullReferenceException`, pass through unchanged, so they're seen.
-- **What isn't ported** throws `NotSupportedException`, with no native fallback:
-  - a class OCCT.NET doesn't have yet says "not yet ported to OCCT.NET: …". Since OCCT.NET's phase 8 (STEP, forwarded
-    from `OcctNet.DataExchange`) there is none;
-  - a member with no public counterpart says "not available through OCCT.NET's public API: …", such as the copy
-    constructors of the phase 7 algorithms (`BRepFilletAPI_MakeFillet`, `BRepOffset_MakeOffset`…) and of
-    `STEPControl_Reader` and `Writer`, which OCCT.NET doesn't offer.
-- **Written by hand** (`Runtime`):
-  - the runtime classes;
-  - `Extras`, over OCCT.NET's `MeshExtraction`, BRep text I/O and alerts;
-  - a port of `Quantity_Color`, which OCCT.NET doesn't have;
-  - `TopoDS_Builder`: a shape it makes stays open while it's built, and is frozen the first time anything else reads
-    it, so OCCT.NET's frozen-shape guarantee holds for every shape `Build123d` passes on;
-  - `BRepMesh_IncrementalMesh`: OCCT.NET meshes a copy and returns it, so the wrapper it's given takes the meshed
-    shape, as the native one would carry the mesh (`Build123d` meshes only private copies);
-  - `BRepLib.BuildCurves3d`, over its functional twin, the same way;
-  - the shape's in-place forms (`Location(loc)`, `Reverse()`…), on the wrapper's own copy;
-  - data exchange (`Runtime/Exchange.cs`): the STEP reader's and writer's stream forms, with OCCT.NET's limits and
-    cancellation, and the mesh formats (see "Import and export").
-- **OCCT.NET internals.** Four things have no public way in OCCT.NET yet, so they're reached with `UnsafeAccessor`
-  (no reflection). They're listed for OCCT.NET to make public:
-  - building shells and solids from parts: `TopoDS_Builder`'s internal constructor and its `Make*` and `Add`;
-  - freezing the result: `FreezeGraph`;
-  - copying a `BRepTools_History` as it is;
-  - a face holding only a triangulation (STL import): the internal `BRep_Builder`'s `MakeFace(face, triangulation)`,
-    named with `UnsafeAccessorType`, as the class itself is internal.
-- **Semantics kept.**
-  - Immutability: `InputsUnchangedTests` passes, the concurrent cases included.
-  - Exception types and messages, and thread safety.
-  - Tessellation (`Triangulate`, `ShapeMesh`), which matches native float for float.
-  - Native memory pressure doesn't apply: OCCT.NET's memory is managed, so the GC already counts it.
-- **Differences from native.**
-  - OCCT.NET never writes a caller's shape. Where OCCT adds pcurves to a profile it was given, OCCT.NET's result
-    holds a copy instead, so the prism of a circular face doesn't share the face. `Solid.ExtrudeUntil` then finds the
-    piece that holds the profile by place.
-  - The tests that depend on the native shim (faults, memory pressure) are `NativeFact`s, skipped under OCCT.NET.
-- **Packaging.** No native library is needed. `Build123d`, `Build123d.OcctNet` and OCCT.NET's four assemblies load
-  and unload through a collectible `AssemblyLoadContext`: `OcctNetBackendTests` in the packaging tests, given the
-  build output as `B3D_OCCTNET_LIB`.
-- **Measured** (OCCT.NET at be3b97db, with its phase 8 through STEPCAFControl; Windows x64):
-  - 1,876 of 1,881 tests pass and 5 are skipped. `Fillet2DTests.FilletRecord` failed until OCCT.NET's phase 9: the 2D
-    fillet recorded each edge MakeWire returned as it went, and when the wire closed, OCCT.NET's MakeWire enlarged the
-    first vertex's tolerance in a copy where native does it in place, so the first vertex had two modified shapes. The
-    fillet now records the finished wire's edges (OCCT.NET's unit 9F2; the same shapes natively). Natively 1,851 of 1,858 pass and 7 are skipped (the mesh formats' tests among them). At 140ceb00
-    (STEPControl), 1,856 of 1,862 passed; at 991bbe6, with
-    phase 7, 1,813 of 1,819 passed; at bad099b, before it, 1,676 passed and 130 failed, 128 of them on phase 7;
-  - the 37 introductory examples (all but 34, text) match native's volume to a part in 10⁹ and its face count
-    (`IntroductoryExamplesTests`), the seven with fillets, chamfers, offsets and extrusion until among them;
-  - the suite takes 27 s against native's 5 s, 7.6 times summed over the tests both pass.
+- **Where OCCT.NET comes from.** The kernel's projects (`OcctNetRoot`, `../kernel/` by default), which pack as the
+  `OcctNet.*` package dependencies (`kernel/tools/pack-nuget.ps1`). `Build123d` uses kernel members the published
+  packages (0.1.0-preview.3) don't make public, so it no longer builds against them.
+- **OCCT.NET's types as they are.** Shapes and `gp` values are structs: `TopoDS_Edge` converts to `TopoDS_Shape`
+  rather than deriving from it, so a shape's kind is asked of it (`IsCompound()`, `TopoDS.Compound(shape)`;
+  `Kernel/ShapeExtensions.cs`), and an absent shape is a nullable one or a null shape (`IsNull()`). Values are
+  changed through their functional twins (`gp_Trsf.WithRotation`, `Bnd_Box.Added`); outputs are `out` and `ref`
+  parameters. Nothing is disposed.
+- **Building shapes.** OCCT.NET freezes every shape it hands out. Its builders (`TopoDS_Builder`, `BRep_Builder`'s face
+  of a triangulation) build a shape that stays open until `TopoDS_TShape.FreezeGraph`, made public for this in unit
+  10B, as they were reached before with `UnsafeAccessor`; `Build123d` mostly uses the builders' frozen forms
+  (`TopoDS_Builder.MakeCompound`, `MakeShell`, `MakeSolid`).
+- **Meshing** (`BRepMesh_IncrementalMesh`) meshes a copy of a frozen shape and hands it back from `Shape()`; so do
+  OCCT.NET's functional twins of OCCT's in-place forms (`BRepLib.Curves3dBuilt` for `BuildCurves3d`).
+- **The modelling layer's own glue** (`src/Build123d/Kernel`, internal): BRep text as bytes, with the checks the native
+  reader needed; the memory estimate; an algorithm's alerts; STEP through STEPCAFControl over OCCT.NET's assembly tree
+  (`XdeDoc_Tree`), the mesh formats, and the exchange limits (see "Import and export"). Unit 10L designs their public
+  form in the kernel.
+- **Semantics kept.** `InputsUnchangedTests` passes, the concurrent cases included; tessellation matches what native
+  OCCT gave float for float; the differential run against native OCCT's recorded log (OCCT.NET's unit 10A) shows no
+  open difference.
+- **Differences from native OCCT.** OCCT.NET never writes a caller's shape. Where OCCT adds pcurves to a profile it was
+  given, OCCT.NET's result holds a copy instead, so the prism of a circular face doesn't share the face.
+  `Solid.ExtrudeUntil` then finds the piece that holds the profile by place.
+- **Packaging.** `Build123d` and OCCT.NET's four assemblies load and unload through a collectible
+  `AssemblyLoadContext` with no native library (`OcctNetBackendTests` in the packaging tests, given the build output
+  as `B3D_OCCTNET_LIB`).
+- **History.** Until unit 10B, `Build123d` compiled against `Build123d.Occt`, a binding with OCCT's API, on either of
+  two backends: native OCCT through a generated C shim (`b3docct`, from `tools/OcctGen`), the reference OCCT.NET's
+  oracle compared against, or OCCT.NET through a generated forwarding layer (`Build123d.OcctNet`, from
+  `tools/OcctNetGen`, with 3,300 lines written by hand), the default from OCCT.NET's phase 9. Both went in unit 10B:
+  about 136,000 lines for native, 71,000 for the forwarding layer. Measured then: 1,876 of 1,881 tests passed on
+  OCCT.NET and 5 native-only ones were skipped; the suite took 27 s against native's 5 s.
 
 #### Import and export
 
@@ -347,29 +239,17 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
 - **Hostile input.** `ImportLimits` (bytes, STEP records, nesting depth, triangles, glTF nodes; generous defaults)
   is passed to the readers, which stop with an error rather than allocate past it. Data past a limit throws
   `InvalidDataException`; data that isn't the format throws `ArgumentException` (build123d's ValueError), or for
-  BREP `OcctException` (`Storage_StreamFormatError`, as before).
-- **Cancellation.** Every function takes a `CancellationToken`. On OCCT.NET it becomes a `Message_ProgressIndicator`,
-  which OCCT's readers and writers poll as they run; natively it is checked between OCCT's calls.
-- **Through the backend's API.** `Build123d` reaches the readers and writers through members both backends have:
-  - STEP through `STEPControl_Reader` and `Writer`, with hand-written stream forms (`ReadStream`, `WriteStream`,
-    `TransferRoots(token)`, `Transfer(shape, mode, StepWriteSettings, token)`). On OCCT.NET they forward to its stream
-    forms with `StepFile_ReadLimits` and a progress range. Natively OCCT's stream forms (`std::istream`) aren't bound,
-    so they go through a temporary file: only the byte limit applies, and only OCCT's default writing parameters
-    (millimetres, pcurves, average precision). Other units, `writePcurves: false` and other precision modes need
-    `Interface_Static`, which isn't bound, and throw `NotSupportedException`;
-  - the mesh formats through `Extras` (`WriteStl`, `ReadStl`, `WriteGltf`, `Write3mf`, `ReadGltf`) and
-    `ExchangeNode`, a backend-neutral assembly tree (name, colour, shape or children and location).
-- **The mesh formats need the OCCT.NET backend** (a decision): natively they throw `NotSupportedException`.
-  - Native OCCT's STL (TKDESTL) and mesh writers (TKRWMesh) would need new bindings and shim code, and its glTF
-    writer RapidJSON in the superbuild (phase 6), for formats OCCT.NET already has: `RWStl` and `StlAPI_Writer`
-    (ported), and `RWGltf_TreeWriter`, `RW3mf_TreeWriter` and `RWGltf_TreeReader` (written fresh over its assembly
-    tree, `XdeDoc_Tree`).
-  - Writing them in `Build123d` itself would have duplicated OCCT.NET's writers.
-  - Bento runs on OCCT.NET, so it has every format.
-- **STEP's names, colours and assemblies on the OCCT.NET backend.** build123d writes and reads STEP through XCAF
-  (`STEPCAFControl`); the OCCT.NET backend does the same through OCCT.NET's STEPCAFControl over its assembly
-  document (`XdeDoc_Document`, frozen into an `XdeDoc_Tree`), reached through `Extras.ReadStep` and `WriteStep` on
-  `ExchangeNode`s (`Extras.StepKeepsAssemblies` says which backend has them).
+  BREP OCCT.NET's `Storage_StreamFormatError`.
+- **Cancellation.** Every function takes a `CancellationToken`. It becomes a `Message_ProgressIndicator`, which OCCT's
+  readers and writers poll as they run.
+- **Through the modelling layer's glue** (`src/Build123d/Kernel`): `Extras` (`WriteStl`, `ReadStl`, `WriteGltf`,
+  `Write3mf`, `ReadGltf`, `ReadStep`, `WriteStep`) over `ExchangeNode`, an assembly tree (name, colour, shape or
+  children and location). The mesh formats are OCCT.NET's: `RWStl` and `StlAPI_Writer` (ported), and
+  `RWGltf_TreeWriter`, `RW3mf_TreeWriter` and `RWGltf_TreeReader` (written fresh over its assembly tree,
+  `XdeDoc_Tree`). The native backend had neither them nor XCAF, which were OCCT.NET's only until it went (unit 10B).
+- **STEP's names, colours and assemblies.** build123d writes and reads STEP through XCAF (`STEPCAFControl`);
+  `Build123d` does the same through OCCT.NET's STEPCAFControl over its assembly document (`XdeDoc_Document`, frozen
+  into an `XdeDoc_Tree`), reached through `Extras.ReadStep` and `WriteStep` on `ExchangeNode`s.
   - `ExportStep` writes a compound with `AssemblyChildren` as an assembly, each child a component at its location, a
     product per part and assembly named by its label and coloured by its colour (a surface colour, or a curve colour
     for a shape without faces). Children of one shape, label and colour share a product, placed once per child, as
@@ -387,13 +267,9 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   - **External references.** OCCT reads the other files a STEP file refers to from the disk while transferring.
     The file form reads them from the file's folder, as OCCT does; the stream form refuses such data
     (`InvalidDataException`), since a stream has no folder and a hostile file could name any path.
-  - **Natively** OCCT's XCAF documents and STEPCAFControl aren't bound (a decision: binding them means new toolkits,
-    TKXCAF, TKLCAF and TKCAF, and OCAF's document framework in the shim, for what Bento, the user that needs them,
-    gets on OCCT.NET). Native STEP stays shapes alone, through `STEPControl`: an assembly is written as its compound,
-    and a file's shapes come back as one shape or a compound of them, without labels.
-  - The FILE_NAME header is build123d's on both backends: the shape's label, the time stamp given (for repeatable
-    output) and "build123d" as the originating system. Native OCCT's header maker (`APIHeaderSection_MakeHeader`)
-    isn't bound, so the record is rewritten in the text, the same way on both.
+  - The FILE_NAME header is build123d's: the shape's label, the time stamp given (for repeatable output) and
+    "build123d" as the originating system. The record is rewritten in the text, as it was when native OCCT's header
+    maker wasn't bound.
 - **glTF and 3MF keep the tree.** An assembly is a node (3MF: a components object) per child, named by its label,
   with a material per colour. A part is meshed on a private copy with build123d's deflections (relative to each
   edge), as `Shape.mesh` does. glTF turns Z-up into Y-up and the unit into metres, as build123d's does (by the
@@ -403,9 +279,9 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
 - **Compared with native** (`StepNativeTests`, Reference/Exchange): ten shapes built natively and kept as BRep (solids
   of each surface type, a fillet, a loft, a face, a wire, a compound). Their STEP is byte for byte native OCCT's
   STEPControl's (with the time stamp fixed and the product name's index masked, which native counts
-  process-wide) on both backends, but for the compound on OCCT.NET, whose STEPCAFControl orders the compound's
-  representations differently; the STEP read back gives native's BRep text exactly on both.
-- **Compared with OCCT.NET's STEPCAFControl** (`StepAssemblyTests`, OCCT.NET backend): the ten shapes and an assembly
+  process-wide), but for the compound, whose STEPCAFControl orders the compound's representations differently; the
+  STEP read back gives native's BRep text exactly. The references were written natively and are kept.
+- **Compared with OCCT.NET's STEPCAFControl** (`StepAssemblyTests`): the ten shapes and an assembly
   (nested, placed, rotated, a part placed twice, names, colours, a translucent one) are written as OCCT.NET's
   STEPCAFControl_Writer writes a document built with XCAF's calls (`AddShape`, `NewShape`, `AddComponent`,
   `SetName`, `SetColor`), which OCCT.NET's unit 8G2 compared with native XCAF; the assembly reads back with its
@@ -449,7 +325,6 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
    6. **Bytes in and out** for BREP, STEP and STL, through streams, with limits for untrusted input.
    7. **Cancellation and progress** (`CancellationToken`, `IProgress<double>`) and the missing measurements.
 5. Builders (`build_common`, BuildLine, BuildSketch, BuildPart), including `Fork()`.
-6. Import and export: SVG, DXF, 3MF and glTF (STEP, STL and BREP come in phase 4; STL, glTF and 3MF are on the
-   OCCT.NET backend already, see "Import and export"). Natively, glTF needs OCCT's
-   `TKDEGLTF`, which builds only with RapidJSON, so add RapidJSON to the native superbuild first.
+6. Import and export: SVG, DXF, 3MF and glTF (STEP, STL and BREP come in phase 4; STL, glTF and 3MF are OCCT.NET's,
+   see "Import and export").
 7. Advanced: joints, drafting, text, sheet metal, `brep_from_stl`, `uv_write`.

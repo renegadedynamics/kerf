@@ -23,10 +23,10 @@ namespace OcctNet.Oracle.Tests;
 /// port's frozen, as a caller's, and checked unchanged after the run). Results are compared as BRep text, the Free
 /// column masked (open question 1), then canonically (decision 581) where native's own result varies from run to run
 /// (five more native runs measure that). The solvers are compared token for token through the Geom2dGcc oracle's
-/// records (solutions, tangencies, every double bit for bit). Since unit 10A the scenarios run only when recording
-/// (<c>Build123dConstructionScenarios.cs</c>): each case is recorded with native OCCT's side, and replayed from there.
+/// records (solutions, tangencies, every double bit for bit). Since unit 10A each case is recorded with native OCCT's side, and
+/// replayed from there; the scenarios that made the cases went with native OCCT in unit 10B.
 /// </remarks>
-public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper output) : IDisposable
+public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ShapeFixOracleRun myRun = new(output, "b3dc");
 
@@ -279,9 +279,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     // ---------------------------------------------------------------------------------------------------------------
     // The cases, recorded (unit 10A)
     //
-    // The scenarios build their operands with build123d.NET on native OCCT (Build123dConstructionScenarios.cs), so they
-    // run only when recording. Each case they make (its kind, its operands as native OCCT writes them, and its plain
-    // data) is recorded, then run as below; a replay runs the recorded cases, its native side replayed from the tape.
+    // The scenarios built their operands with build123d.NET on native OCCT, so they ran only when recording, and went
+    // with native OCCT (unit 10B). Each case they made (its kind, its operands as native OCCT writes them, and its plain
+    // data) is recorded; the tests run the recorded cases, their native side replayed from the tape.
 
     /// <summary>A point or vector of build123d.NET's, as plain numbers.</summary>
     internal readonly record struct Vec3(double X, double Y, double Z);
@@ -293,32 +293,17 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
 
     private static T Data<T>(Case theCase) => JsonSerializer.Deserialize<T>(theCase.Data, s_json)!;
 
-    private static Case? Recorded(Func<Case?> theCase) => Tape.Value("case", theCase, static (w, c) =>
-    {
-        w.Value(c is null ? null : new object?[] { c.Kind, c.Name, c.Operands, c.Data });
-    }, static r => r.Value() is object?[] a ? new Case((string)a[0]!, (string)a[1]!, (string)a[2]!, (string)a[3]!) : null);
+    private static Case? Recorded() => Tape.Value("case",
+        static r => r.Value() is object?[] a ? new Case((string)a[0]!, (string)a[1]!, (string)a[2]!, (string)a[3]!) : null);
 
-    /// <summary>
-    /// The cases of a test: recorded from build123d.NET's scenarios when native OCCT runs (<paramref name="theScenarios"/>
-    /// makes and runs them through <see cref="Run{T}"/>), else replayed.
-    /// </summary>
-    private void Cases(Action theScenarios)
+    /// <summary>The recorded cases of a test, each run in turn.</summary>
+    private void Cases()
     {
-        if (Tape.RunsNative)
-        {
-            theScenarios();
-            Recorded(() => null);
-            return;
-        }
-        while (Recorded(() => throw new InvalidOperationException("Replaying, the scenarios don't run")) is Case aCase)
+        while (Recorded() is Case aCase)
         {
             Run(aCase);
         }
     }
-
-    /// <summary>A case made by a scenario: recorded (its operands written by native OCCT), then run.</summary>
-    private void Run<T>(string theKind, string theName, Func<string> theOperands, T theData)
-        => Run(Recorded(() => new Case(theKind, theName, theOperands(), JsonSerializer.Serialize(theData, s_json)))!);
 
     private sealed record SweepCase(SweepCall Call, int NbProfiles);
 
@@ -471,11 +456,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Sweeps_of_build123d_tests_as_native()
     {
-        Cases(() => RecordSweeps());
+        Cases();
         Report();
     }
-
-    partial void RecordSweeps();
 
     // ---------------------------------------------------------------------------------------------------------------
     // Lofts: BRepOffsetAPI_ThruSections
@@ -523,11 +506,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Lofts_of_build123d_tests_as_native()
     {
-        Cases(() => RecordLofts());
+        Cases();
         Report();
     }
-
-    partial void RecordLofts();
 
     // ---------------------------------------------------------------------------------------------------------------
     // Surfaces: BRepOffsetAPI_MakeFilling, GeomAPI_PointsToBSplineSurface, BRepFill::Face and Shell
@@ -683,11 +664,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Surfaces_of_build123d_tests_as_native()
     {
-        Cases(() => RecordSurfaces());
+        Cases();
         Report();
     }
-
-    partial void RecordSurfaces();
 
     // ---------------------------------------------------------------------------------------------------------------
     // Projections: BRepProj_Projection
@@ -714,11 +693,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Projections_of_build123d_tests_as_native()
     {
-        Cases(() => RecordProjections());
+        Cases();
         Report();
     }
-
-    partial void RecordProjections();
 
     // ---------------------------------------------------------------------------------------------------------------
     // 2D chamfers: BRepFilletAPI_MakeFillet2d
@@ -772,11 +749,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Chamfers_2d_of_build123d_tests_as_native()
     {
-        Cases(() => RecordChamfers2D());
+        Cases();
         Report();
     }
-
-    partial void RecordChamfers2D();
 
     // ---------------------------------------------------------------------------------------------------------------
     // 2D offsets: BRepOffsetAPI_MakeOffset
@@ -820,11 +795,9 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Offsets_2d_of_build123d_tests_as_native()
     {
-        Cases(() => RecordOffsets2D());
+        Cases();
         Report();
     }
-
-    partial void RecordOffsets2D();
 
     // ---------------------------------------------------------------------------------------------------------------
     // Constrained arcs and lines: the Geom2dGcc solvers
@@ -1048,9 +1021,7 @@ public sealed partial class Build123dConstructionOracleTests(ITestOutputHelper o
     [Fact]
     public void Constrained_arcs_and_lines_of_build123d_tests_as_native()
     {
-        Cases(() => RecordConstrained());
+        Cases();
         Report();
     }
-
-    partial void RecordConstrained();
 }

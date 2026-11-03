@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -29,7 +29,7 @@ public partial class Wire : Shape1D
     public Wire(IEnumerable<Edge> edges, bool sequenced = false, string label = "", Color? color = null)
         : base(MakeWireOrNull(edges, sequenced), label, color) { }
 
-    internal TopoDS_Wire TopoWire => (TopoDS_Wire)TopoShape;
+    internal TopoDS_Wire TopoWire => TopoDS.Wire(TopoShape);
 
     internal override double Order => 1.5;
 
@@ -60,8 +60,8 @@ public partial class Wire : Shape1D
             }
             list = placed;
         }
-        using var builder = new BRepBuilderAPI_MakeWire();
-        using var combined = TopoUtil.ListOf(list.Where(e => !e.IsEmpty).Select(e => e.TopoShape));
+        var builder = new BRepBuilderAPI_MakeWire();
+        var combined = TopoUtil.ListOf(list.Where(e => !e.IsEmpty).Select(e => e.TopoShape));
         builder.Add(combined);
         builder.Build();
         if (!builder.IsDone())
@@ -105,10 +105,10 @@ public partial class Wire : Shape1D
         var vectors = vertices.ToList();
         if ((vectors[0] - vectors[^1]).Length > Constants.Tolerance && close)
             vectors.Add(vectors[0]);
-        using var builder = new BRepBuilderAPI_MakePolygon();
+        var builder = new BRepBuilderAPI_MakePolygon();
         foreach (var v in vectors)
         {
-            using var p = v.ToGpPnt();
+            var p = v.ToGpPnt();
             builder.Add(p);
         }
         return new Wire(builder.Wire());
@@ -198,21 +198,21 @@ public partial class Wire : Shape1D
         if (IsEmpty)
             return [];
         var edges = new List<Edge>();
-        using var explored = new TopTools_MapOfShape();
-        using (var explorer = new BRepTools_WireExplorer(TopoWire))
-            for (; explorer.More(); explorer.Next())
-            {
-                var edge = explorer.Current();
-                explored.Add(edge);
-                edges.Add((Edge)new Edge(edge).ExtractedFrom(this));
-            }
-        using (var all = new TopExp_Explorer(TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE))
-            for (; all.More(); all.Next())
-            {
-                var edge = all.Current();
-                if (explored.Add(edge))
-                    edges.Add((Edge)new Edge(TopoDS.Edge(edge)).ExtractedFrom(this));
-            }
+        var explored = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var explorer = new BRepTools_WireExplorer(TopoWire);
+        for (; explorer.More(); explorer.Next())
+        {
+            var edge = explorer.Current();
+            explored.Add(edge);
+            edges.Add((Edge)new Edge(edge).ExtractedFrom(this));
+        }
+        var all = new TopExp_Explorer(TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE);
+        for (; all.More(); all.Next())
+        {
+            var edge = all.Current();
+            if (explored.Add(edge))
+                edges.Add((Edge)new Edge(TopoDS.Edge(edge)).ExtractedFrom(this));
+        }
         return SelectFrom(new ShapeList<Edge>(edges), select);
     }
 
@@ -240,10 +240,10 @@ public partial class Wire : Shape1D
     /// <summary>The parameter of the wire's <c>BRepAdaptor_CompCurve</c> at a position (not an edge parameter).</summary>
     public override double ParamAt(double position)
     {
-        using var curve = GeomAdaptor();
+        var curve = GeomAdaptor();
         var target = PositionAt(position);
-        using var pnt = target.ToGpPnt();
-        using var extrema = new Extrema_ExtPC(pnt, curve);
+        var pnt = target.ToGpPnt();
+        var extrema = new Extrema_ExtPC(pnt, curve);
         if (!extrema.IsDone() || extrema.NbExt() == 0)
             throw new InvalidOperationException("Failed to find point on curve");
         double minDist = double.PositiveInfinity;
@@ -255,8 +255,8 @@ public partial class Wire : Shape1D
             if (dist < minDist)
             {
                 minDist = dist;
-                using var point = extrema.Point(i);
-                using var value = point.Value();
+                var point = extrema.Point(i);
+                var value = point.Value();
                 closest = new Vector(value);
                 closestParam = point.Parameter();
             }
@@ -276,7 +276,7 @@ public partial class Wire : Shape1D
         var separation = DistanceTo(point);
         if (!TopologyUtils.IsCloseB(separation, 0, absTol: Constants.Tolerance))
             throw new ArgumentException($"point ({point}) is {separation} from wire");
-        using var extrema = new BRepExtrema_DistShapeShape(vertex.TopoShape, TopoShape);
+        var extrema = new BRepExtrema_DistShapeShape(vertex.TopoShape, TopoShape);
         extrema.Perform();
         if (!extrema.IsDone() || extrema.NbSolution() == 0)
             throw new ArgumentException("point is not on Wire");
@@ -288,14 +288,14 @@ public partial class Wire : Shape1D
             case BRepExtrema_SupportType.BRepExtrema_IsOnEdge:
                 closestEdge = TopoDS.Edge(extrema.SupportOnShape2(1));
                 closestParam = 0;
-                extrema.ParOnEdgeS2(1, ref closestParam);
+                extrema.ParOnEdgeS2(1, out closestParam);
                 break;
             case BRepExtrema_SupportType.BRepExtrema_IsVertex:
             {
-                using var hit = TopoDS.Vertex(extrema.SupportOnShape2(1));
-                using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+                var hit = TopoDS.Vertex(extrema.SupportOnShape2(1));
+                var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
                 TopExp.MapShapesAndAncestors(TopoShape, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
-                using var edges = map.FindFromKey(hit);
+                var edges = map.FindFromKey(hit);
                 closestEdge = TopoDS.Edge(edges.First());
                 closestParam = BRep_Tool.Parameter(hit, closestEdge);
                 break;
@@ -305,10 +305,10 @@ public partial class Wire : Shape1D
         }
 
         double distanceAlongWire;
-        using (var adaptor = new BRepAdaptor_Curve(closestEdge))
         {
+            var adaptor = new BRepAdaptor_Curve(closestEdge);
             double paramMin = 0, paramMax = 0;
-            BRep_Tool.Range(closestEdge, ref paramMin, ref paramMax);
+            BRep_Tool.Range(closestEdge, out paramMin, out paramMax);
             if (adaptor.IsPeriodic())
                 closestParam = PyMath.Mod(closestParam - paramMin, adaptor.Period()) + paramMin;
             distanceAlongWire = closestEdge.Orientation() == TopAbs_Orientation.TopAbs_FORWARD
@@ -316,17 +316,17 @@ public partial class Wire : Shape1D
                 : GCPnts_AbscissaPoint.Length(adaptor, closestParam, paramMax);
         }
         // The lengths of the edges before the closest one
-        using (var explorer = new BRepTools_WireExplorer(TopoWire))
-            for (; explorer.More(); explorer.Next())
-            {
-                var edge = explorer.Current();
-                if (BRep_Tool.Degenerated(edge))
-                    continue;
-                if (edge.IsEqual(closestEdge))
-                    break;
-                using var adaptor = new BRepAdaptor_Curve(edge);
-                distanceAlongWire += GCPnts_AbscissaPoint.Length(adaptor);
-            }
+        var explorer = new BRepTools_WireExplorer(TopoWire);
+        for (; explorer.More(); explorer.Next())
+        {
+            var edge = explorer.Current();
+            if (BRep_Tool.Degenerated(edge))
+                continue;
+            if (edge.IsEqual(closestEdge))
+                break;
+            var adaptor = new BRepAdaptor_Curve(edge);
+            distanceAlongWire += GCPnts_AbscissaPoint.Length(adaptor);
+        }
         // The explorer follows the wire's orientation while positions measure a reversed wire from its other end
         var u = distanceAlongWire / Length;
         var normalized = IsForward ? u : 1 - u;
@@ -401,28 +401,29 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't chamfer empty wire");
-        using var unchamfered = TopoUtil.MakeFaceFromWires(TopoWire);
-        using var builder = new BRepFilletAPI_MakeFillet2d(unchamfered);
-        using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+        var unchamfered = TopoUtil.MakeFaceFromWires(TopoWire);
+        var builder = new BRepFilletAPI_MakeFillet2d(unchamfered);
+        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(unchamfered, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
         foreach (var v in vertices)
         {
             if (v.IsEmpty)
                 continue;
-            using var list = map.FindFromKey(v.TopoShape);
+            var list = map.FindFromKey(v.TopoShape);
             var pair = (new Edge(TopoDS.Edge(list.First())), new Edge(TopoDS.Edge(list.Last())));
             var (edge1, edge2) = OrderChamferEdges(edge, pair);
             if (!edge1.IsEmpty && !edge2.IsEmpty)
                 builder.AddChamfer(edge1.TopoEdge, edge2.TopoEdge, distance, distance2);
         }
         builder.Build();
-        using var chamfered = builder.Shape();
+        var chamfered = builder.Shape();
         // The chamfered face shares the wire's other edges, which ShapeFix would edit: it fixes a copy
-        using var fix = new ShapeFix_Shape(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
+        var fix = new ShapeFix_Shape(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
         fix.Perform();
-        var fixedFace = TopoUtil.Downcast(fix.Shape()) as TopoDS_Face
-                        ?? throw new InvalidOperationException("An internal error occured creating the chamfer");
-        var result = new Wire(BRepTools.OuterWire(fixedFace));
+        var fixedShape = TopoUtil.Downcast(fix.Shape());
+        if (!fixedShape.IsFace())
+            throw new InvalidOperationException("An internal error occured creating the chamfer");
+        var result = new Wire(BRepTools.OuterWire(TopoDS.Face(fixedShape)));
         return (Wire)result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
     }
 
@@ -431,12 +432,12 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't fix an empty edge");
-        using var fix = new ShapeFix_Wireframe(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
+        var fix = new ShapeFix_Wireframe(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
         fix.SetPrecision(precision);
         fix.SetMaxTolerance(1e-6);
         fix.FixSmallEdges();
         fix.FixWireGaps();
-        return new Wire((TopoDS_Wire)TopoUtil.Downcast(fix.Shape()));
+        return new Wire(TopoDS.Wire(TopoUtil.Downcast(fix.Shape())));
     }
 
     /// <summary>This wire joined to another.</summary>
@@ -444,7 +445,7 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty || other.IsEmpty)
             throw new InvalidOperationException("Can't stitch empty wires");
-        using var builder = new BRepBuilderAPI_MakeWire();
+        var builder = new BRepBuilderAPI_MakeWire();
         builder.Add(TopoWire);
         builder.Add(other.TopoWire);
         builder.Build();
@@ -459,23 +460,23 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't convert an empty wire");
-        using var builder = new GeomConvert_CompCurveToBSplineCurve();
-        using (var explorer = new BRepTools_WireExplorer(TopoWire))
-            for (; explorer.More(); explorer.Next())
-            {
-                var edge = explorer.Current();
-                if (BRep_Tool.Degenerated(edge))
-                    continue;
-                double first = 0, last = 0;
-                BRep_Tool.Range(edge, ref first, ref last);
-                double f = 0, l = 0;
-                using var curve = BRep_Tool.Curve(edge, ref f, ref l);
-                using var trimmed = new Geom_TrimmedCurve(curve, first, last);
-                if (!builder.Add(trimmed, Constants.Tolerance))
-                    throw new InvalidOperationException("Failed to build bspline.");
-            }
-        using var spline = builder.BSplineCurve();
-        using var maker = new BRepBuilderAPI_MakeEdge(spline);
+        var builder = new GeomConvert_CompCurveToBSplineCurve();
+        var explorer = new BRepTools_WireExplorer(TopoWire);
+        for (; explorer.More(); explorer.Next())
+        {
+            var edge = explorer.Current();
+            if (BRep_Tool.Degenerated(edge))
+                continue;
+            double first = 0, last = 0;
+            BRep_Tool.Range(edge, out first, out last);
+            double f = 0, l = 0;
+            var curve = BRep_Tool.Curve(edge, out f, out l);
+            var trimmed = new Geom_TrimmedCurve(curve!, first, last);
+            if (!builder.Add(trimmed, Constants.Tolerance))
+                throw new InvalidOperationException("Failed to build bspline.");
+        }
+        var spline = builder.BSplineCurve();
+        var maker = new BRepBuilderAPI_MakeEdge(spline!);
         if (!maker.IsDone())
             throw new InvalidOperationException("Failed to build bspline.");
         return new Edge(maker.Edge());
@@ -552,16 +553,15 @@ public partial class Wire : Shape1D
         BRepProj_Projection projection;
         if (directionVector is { } dv)
         {
-            using var dir = dv.ToGpDir();
+            var dir = dv.ToGpDir();
             projection = new BRepProj_Projection(TopoShape, targetObject.TopoShape, dir);
         }
         else
         {
-            using var pnt = centerPoint.ToGpPnt();
+            var pnt = centerPoint.ToGpPnt();
             projection = new BRepProj_Projection(TopoShape, targetObject.TopoShape, pnt);
         }
         var output = new List<Wire>();
-        using (projection)
         {
             var orientation = TopoShape.Orientation();
             for (; projection.More(); projection.Next())

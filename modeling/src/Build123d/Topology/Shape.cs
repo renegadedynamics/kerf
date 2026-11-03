@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -32,7 +32,7 @@ public abstract partial class Shape : IEquatable<Shape>
 
     private protected Shape(TopoDS_Shape? obj, string label = "", Color? color = null)
     {
-        _wrapped = obj is null ? TopoUtil.EmptyCompound() : TopoUtil.Downcast(obj);
+        _wrapped = obj is { } shape ? TopoUtil.Downcast(shape) : TopoUtil.EmptyCompound();
         Label = label;
         Color = color;
         if (ShapeLog.Folder is not null)
@@ -149,15 +149,10 @@ public abstract partial class Shape : IEquatable<Shape>
     }
 
     /// <summary>
-    /// A new result, whose native memory the GC is told about (once; see <see cref="Extras.AddMemoryPressure"/>), so
-    /// it collects before native memory balloons when results are dropped rather than disposed. Sub-shapes taken
-    /// out of a result aren't counted again.
+    /// A new result. The native backend told the GC here about the native memory a result held; OCCT.NET's memory is
+    /// managed, so nothing is added (unit 10B).
     /// </summary>
-    internal static T Result<T>(T shape) where T : Shape
-    {
-        Extras.AddMemoryPressure(shape._wrapped);
-        return shape;
-    }
+    internal static T Result<T>(T shape) where T : Shape => shape;
 
     /// <summary>A copy of this shape noting that it was taken out of <paramref name="source"/>.</summary>
     internal Shape ExtractedFrom(Shape source)
@@ -222,10 +217,10 @@ public abstract partial class Shape : IEquatable<Shape>
     {
         if (History is null)
             return null;
-        using var here = _wrapped.Location();
-        if (_historyAt is null || _historyAt.IsEqual(here))
+        var here = _wrapped.Location();
+        if (_historyAt is not { } at || at.IsEqual(here))
             return History;
-        using var recorded = _wrapped.Located(_historyAt);
+        var recorded = _wrapped.Located(at);
         return new ShapeHistory(History.Before, History.Brought)
             .Merge(History)
             .Merge(ShapeHistory.FromRelocation(recorded, _wrapped));

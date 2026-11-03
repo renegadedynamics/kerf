@@ -13753,3 +13753,72 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        to need nothing native: the 30 STEP references (`Reference/Exchange`: `StepNativeTests` and `StepAssemblyTests`,
        30 tests) and Python build123d's `geometry.json`/`topology.json` (`ReferenceTests`, `TopologyReferenceTests`),
        116 tests passing on OCCT.NET with no Python and no native build.
+
+## Phase 10: unit 10B, build123d.NET on OCCT.NET alone
+
+1342. **OCCT.NET's exceptions reach build123d.NET's callers as they are** (the brief: "OCCT.NET's exceptions stay as
+       they are until 10F"). A failure in the kernel is OCCT.NET's `Standard_Failure` subclass (`Standard_DomainError`,
+       `StdFail_NotDone`…, with `OcctType`) with OCCT's message; where build123d.NET threw `OcctException` itself it
+       throws the OCCT.NET type it named (`Standard_ConstructionError`, `Storage_StreamFormatError`). `OcctException`
+       and `OcctContext` went with the forwarding layer that made them: the message no longer starts with what was
+       being done ("box 0.0 × 1.0 × 1.0 failed: …"), which Bento shows in a cell until 10F's diagnostics replace it.
+       Catch sites catch `Standard_Failure`; the tests assert OCCT.NET's types (`ThrowsAny<Standard_Failure>`), and
+       the three tests of `OcctContext`'s scopes went.
+1343. **The oracle replays only; the recordings are frozen** (decision 1341). Gone: recording
+       (`OCCTNET_ORACLE_RECORD`, `HAS_ORACLE`, `Recorded/Native.Record.g.cs`, `RecordedNative`), the live mode
+       (`OracleDirect`), `tools/oracle-facade.cs` (the facade `Recorded/Native.g.cs` is committed code now, frozen),
+       build123d.NET's scenarios that ran on native OCCT (`Build123dConstructionScenarios.cs` and the captures'
+       scenario code: their results are recorded values, read with `Tape.Value(what, read)`), `Build123dNativeRoot`,
+       `Build123dNativeProperties`, the static-graph restore settings (and both `Directory.Solution.props`) native's
+       project references needed, `b3d-differential.ps1 -Record -NativeRoot` and `B3D_DIFF_RECORD`. The tape's
+       recording code went (`TapeWriter`, `Recorders`); the sampled limits stay (`Tape.Cases` is the recorded count,
+       the corpus floors their recorded values). 383 tests pass, as recorded. The benchmarks lose their native
+       comparisons (`HAS_NATIVE`, the phase 7 suite, the Bento benchmark's native project); their tables' native
+       columns repeat the port's, as without native before. They build again: since 10A they needed native OCCT to
+       compile.
+1344. **build123d.NET calls OCCT.NET's types directly; `Build123d.OcctNet` is gone** (plan 2.9). Its 257 generated
+       wrappers and 3,310 hand-written lines went; nothing of it is left. What the runtime did:
+       - `Quantity_Color` (its 1,670-line port): OCCT.NET's own, ported since.
+       - `Extras.ExtractMesh`, `MeshBuffers`: OCCT.NET's `MeshExtraction`, called directly.
+       - `Extras.CopyHistory`: `BRepTools_History`'s public copy constructor (decision 1104).
+       - `TopoDS_Builder`, the open-until-read shape, `BRep_Builder`: the kernel's builders (decision 1346), mostly
+         their frozen forms (`TopoDS_Builder.MakeCompound`, `MakeShell`, `MakeSolid`).
+       - `BRepMesh_IncrementalMesh`, `BRepLib.BuildCurves3d`, the shape's in-place forms: their callers take the
+         meshed shape from `Shape()`, `BRepLib.Curves3dBuilt`'s result, `Located`/`Reversed`.
+       - `Collections.cs`: OCCT.NET's NCollection types, maps of shapes with `TopTools_ShapeMapHasher`.
+       - `Extras` (BRep bytes with the native reader's checks, the memory estimate, alerts, an edge's own curve) and
+         `Exchange.cs` (STEP through STEPCAFControl, the mesh formats, `ExchangeNode` and the limits): build123d.NET's
+         glue, internal in `src/Build123d/Kernel`, until 10L gives them a public form in the kernel (questions 59, 60
+         and 62). The STEPControl stream forms went, with the native fallback that used them.
+       - `OcctObject`, `Occt.Version`, `FaultForTesting`, memory pressure (`AddMemoryPressure`, `Shape.Result` now the
+         identity), `StepKeepsAssemblies` (always true): gone with native.
+       OCCT.NET's values are structs, so `Build123d` asks a shape its kind (`IsCompound()`, `TopoDS.Compound(shape)`,
+       `Kernel/ShapeExtensions.cs`) where it matched the wrappers' subclasses, takes outputs as `out`/`ref`, changes
+       values through their twins (`WithRotation`, `Added`), uses nullable structs for absent shapes, and disposes
+       nothing. No behaviour changed but decision 1345's: the 1,876 tests that passed pass.
+1345. **A wire's `Triangulate` and `TriangulateTree` work** (found by the differential run). They threw
+       `InvalidCastException` on both backends: the binding returned the meshed copy as a plain `TopoDS_Shape` wrapper,
+       which `Wire.Edges` couldn't cast to `TopoDS_Wire`. On OCCT.NET's structs the cast is a check of the kind, and
+       passes. Kept, with a test (`ShapeMeshTests.AWireTriangulates`); the differential run attributes the copy's edges
+       native never logged (`InputsUnchangedTests.NoParameterlessMemberChangesItsShape`). The run: 999 tests, 939 the same
+       throughout, 18 in another order, 9 where native varies, 7 attributed, 26 logged by one side only (renamed or
+       removed tests among them), 0 open.
+1346. **The members the `UnsafeAccessor`s reached are public**, as engine API until 10L makes the engine internal:
+       `TopoDS_Builder`'s constructor, `MakeWire`, `MakeShell`, `MakeSolid`, `MakeCompSolid`, `MakeCompound` (by
+       `ref`), `Add` and `Remove`; `BRep_Builder` (the class) and its `MakeFace(ref face, triangulation)`;
+       `TopoDS_TShape.FreezeGraph`. That is 11 of the 14 accessors; the other three read `BRepTools_History`'s maps to
+       copy it, which its public copy constructor does, so its fields stay private. `PublicBuilderTests` checks the
+       members are public, and that a shape they build stays open until frozen.
+1347. **`UseOcctNetPackages` is gone**, with `OcctNetVersion`: `Build123d` uses decision 1346's members, which
+       0.1.0-preview.3 doesn't make public, so it builds against the kernel's projects only (`OcctNetRoot`), which
+       pack as the package dependencies. `kernel/tools/pack-nuget.ps1` packs the five assemblies from the repository's
+       HEAD (no second checkout), into `nuget-release` beside the repository; `Build123d.Packaging.Tests` loads
+       `Build123d` and the kernel's four assemblies. Gone with native: `modeling/tools/pack.ps1` and the native
+       packages' load-context test.
+1348. **The native backend is gone** (decision 1341): `Build123d.Occt` (its 269 generated and hand-written files),
+       `Build123d.Occt.Tests`, `tools/OcctGen`, `tools/OcctNetGen`, `generate-bindings.ps1`, `generate-occtnet.ps1`,
+       `bindings`, `native` (the superbuild and the shim), the `Build123dBackend` switch, `bin-native`/`obj-native`,
+       the `OCCTNET` define (its code kept), the five `NativeFact` tests. About 137,000 lines for native and 70,000 for
+       the forwarding layer. build123d.NET's suite: 1,872 tests (1,881, less the five `NativeFact`s, the forwarding
+       layer's `WhatIsntPortedSaysSo`, three `OcctContext` scope tests and a memory-pressure test, plus decision
+       1345's), all passing. The tests keep their names where native's differential log is recorded under them.

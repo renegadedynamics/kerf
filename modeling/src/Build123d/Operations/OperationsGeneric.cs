@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -388,7 +388,7 @@ public static partial class Operations
                     var offsetWire = AsWire(innerWire.Offset2D(-amount, kind));
                     innerWires.Add(minEdgeLength is { } innerMin ? offsetWire.FixDegenerateEdges(innerMin) : offsetWire);
                 }
-                catch (Exception e) when (e is InvalidOperationException or OcctException)
+                catch (Exception e) when (e is InvalidOperationException or Standard_Failure)
                 {
                     // The hole closed up
                 }

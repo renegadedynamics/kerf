@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -64,24 +64,13 @@ public sealed class ShapeMesh
     {
         if (shape.IsEmpty)
             return Empty;
-        using var doing = OcctContext.Doing("triangulate");
         var copy = shape.MeshedCopy(tolerances.Linear, tolerances.Angular, tolerances.Relative);
         // The copy has the shape's structure, so its faces, edges and vertices come in the same order
         var meshed = shape.Placed(copy);
         var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
         var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
-        MeshBuffers buffers;
-        try
-        {
-            var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
-            buffers = Extras.ExtractMesh(copy, faces, edges, deflection, tolerances.Angular);
-        }
-        finally
-        {
-            // The copy's triangulation is all native memory, and nothing else holds it: freed now, not at finalisation
-            foreach (var handle in faces.Concat(edges).Append(copy))
-                handle.Dispose();
-        }
+        var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
+        var buffers = OcctNet.MeshExtraction.Extract(copy, faces, edges, deflection, tolerances.Angular);
 
         var faceMeshes = new FaceMesh[faces.Count];
         for (int i = 0; i < faceMeshes.Length; i++)
@@ -206,7 +195,7 @@ public sealed class MeshNode
         foreach (var (key, mesh) in cache)
             if (key.IsPartner(shape.TopoShape) && key.Orientation() == shape.TopoShape.Orientation())
                 return mesh;
-        using var identity = new TopLoc_Location();
+        var identity = new TopLoc_Location();
         var unplaced = shape.Placed(shape.TopoShape.Located(identity));
         var made = ShapeMesh.Of(unplaced, tolerances);
         cache.Add((shape.TopoShape, made));

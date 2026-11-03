@@ -1,7 +1,7 @@
 // Ported from build123d tests/test_direct_api/test_location.py and test_rotation.py. Cases that need
 // topology (Edge, Solid) or builders (GridLocations) follow with those ports; argument-type validation
 // is the compiler's job in C#.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -9,15 +9,15 @@ public class LocationTests
 {
     static Vector Translation(Location loc)
     {
-        using var trsf = loc.ToGpTrsf();
-        using var t = trsf.TranslationPart();
+        var trsf = loc.ToGpTrsf();
+        var t = trsf.TranslationPart();
         return new Vector(t);
     }
 
     static double RotationAngle(Location loc)
     {
-        using var trsf = loc.ToGpTrsf();
-        using var q = trsf.GetRotation();
+        var trsf = loc.ToGpTrsf();
+        var q = trsf.GetRotation();
         return q.GetRotationAngle() * 180 / Math.PI;
     }
 
@@ -37,13 +37,13 @@ public class LocationTests
         Check.AlmostEqual(45, RotationAngle(loc2));
 
         // gp_Trsf
-        using var t = new gp_Trsf();
-        using var tz = new gp_Vec(0, 0, 1);
-        t.SetTranslation(tz);
+        var t = new gp_Trsf();
+        var tz = new gp_Vec(0, 0, 1);
+        t = t.WithTranslation(tz);
         var loc3 = new Location(t);
         Assert.Equal(Translation(loc1).Z, Translation(loc3).Z);
 
-        using var identity = new gp_Trsf();
+        var identity = new gp_Trsf();
         var (position, orientation) = new Location(identity);
         Check.AlmostEqual((0, 0, 0), position, 5);
         Check.AlmostEqual((0, 0, 0), orientation, 5);
@@ -72,18 +72,18 @@ public class LocationTests
             double aboutY = random.NextDouble() * 4 * Math.PI - 2 * Math.PI;
             double aboutZ = random.NextDouble() * 4 * Math.PI - 2 * Math.PI;
 
-            using var origin = new gp_Pnt(0, 0, 0);
-            using var rotX = Rotate(origin, (1, 0, 0), aboutX);
-            using var rotY = Rotate(origin, (0, 1, 0), aboutY);
-            using var rotZ = Rotate(origin, (0, 0, 1), aboutZ);
-            using var xy = rotX.Multiplied(rotY);
-            using var xyz = xy.Multiplied(rotZ);
+            var origin = new gp_Pnt(0, 0, 0);
+            var rotX = Rotate(origin, (1, 0, 0), aboutX);
+            var rotY = Rotate(origin, (0, 1, 0), aboutY);
+            var rotZ = Rotate(origin, (0, 0, 1), aboutZ);
+            var xy = rotX.Multiplied(rotY);
+            var xyz = xy.Multiplied(rotZ);
             var loc1 = new Location(xyz);
 
-            using var q = new gp_Quaternion();
-            q.SetEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, aboutX, aboutY, aboutZ);
-            using var t = new gp_Trsf();
-            t.SetRotationPart(q);
+            var q = new gp_Quaternion();
+            q = q.WithEulerAngles(gp_EulerSequence.gp_Intrinsic_XYZ, aboutX, aboutY, aboutZ);
+            var t = new gp_Trsf();
+            t = t.WithRotationPart(q);
             var loc2 = new Location(t);
 
             Check.AlmostEqual(loc1.Position, loc2.Position, 5);
@@ -93,9 +93,9 @@ public class LocationTests
         static gp_Trsf Rotate(gp_Pnt origin, Vector dir, double angle)
         {
             var trsf = new gp_Trsf();
-            using var d = dir.ToGpDir();
-            using var ax = new gp_Ax1(origin, d);
-            trsf.SetRotation(ax, angle);
+            var d = dir.ToGpDir();
+            var ax = new gp_Ax1(origin, d);
+            trsf = trsf.WithRotation(ax, angle);
             return trsf;
         }
     }
@@ -257,9 +257,9 @@ public class LocationTests
     {
         // OCCT compares locations by identity: copies of one Location share it, separate equal ones don't
         var loc = new Location((1, 2, 3));
-        using var a = loc.ToTopLoc();
-        using var b = new Location(loc).ToTopLoc();
-        using var c = new Location((1, 2, 3)).ToTopLoc();
+        var a = loc.ToTopLoc();
+        var b = new Location(loc).ToTopLoc();
+        var c = new Location((1, 2, 3)).ToTopLoc();
         Assert.True(a.IsEqual(b));
         Assert.False(a.IsEqual(c));
     }

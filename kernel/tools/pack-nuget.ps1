@@ -3,9 +3,9 @@
   Packs OCCT.NET's four assemblies and build123d.NET on OCCT.NET as NuGet packages, ready for nuget.org.
 .DESCRIPTION
   OcctNet.Foundation, OcctNet.ModelingData, OcctNet.ModelingAlgorithms and OcctNet.DataExchange, then build123d.NET's
-  Build123d.OcctNet (its OCCT API over OCCT.NET) and Build123d built on it (Build123dBackend=OcctNet: no native code),
-  in Release with symbol packages, each depending on the one below at the same version. Each checkout's committed HEAD
-  is copied (git archive) into a work folder and built there, so nothing is written into the checkouts.
+  Build123d, which calls OCCT.NET directly (unit 10B: no native code, no forwarding layer), in Release with symbol
+  packages, each depending on the one below at the same version. The repository's committed HEAD is copied (git
+  archive) into a work folder and built there, so nothing is written into the checkout.
   Schematiq.Collections, which OcctNet.Foundation and Build123d depend on, comes from nuget.org.
 
   Each assembly is compiled ahead of time (ReadyToRun) for win-x64, as Bento runs, keeping its IL: elsewhere .NET ignores
@@ -18,8 +18,6 @@
   filleted, drilled box written to STEP and glTF and read back, with no native library in its output.
 .PARAMETER Suffix
   The prerelease label after the projects' VersionPrefix (0.1.0): preview.1 gives 0.1.0-preview.1.
-.PARAMETER Build123d
-  The build123d.NET checkout.
 .PARAMETER Out
   The folder for the packages.
 .PARAMETER Work
@@ -31,8 +29,7 @@
 #>
 param(
   [Parameter(Mandatory)] [string] $Suffix,
-  [string] $Build123d = (Join-Path $PSScriptRoot '..\..\build123d.net'),
-  [string] $Out = (Join-Path $PSScriptRoot "..\..\nuget-release\0.1.0-$Suffix"),
+  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.1.0-$Suffix"),
   [string] $Work = (Join-Path ([IO.Path]::GetTempPath()) ('occtnet-pack-' + [guid]::NewGuid().ToString('N'))),
   [switch] $SkipVerify,
   [switch] $NoReadyToRun
@@ -50,11 +47,11 @@ function Export-Checkout([string] $checkout, [string] $to) {
 }
 
 New-Item -ItemType Directory -Force $Work, $Out | Out-Null
-$occt = Join-Path $Work 'OCCT.NET'
-$b3d = Join-Path $Work 'build123d.net'
-$occtCommit = Export-Checkout (Join-Path $PSScriptRoot '..') $occt
-$b3dCommit = Export-Checkout $Build123d $b3d
-"OCCT.NET $occtCommit, build123d.NET $b3dCommit"
+$repo = Join-Path $Work 'kerf'
+$commit = Export-Checkout (Join-Path $PSScriptRoot '..\..') $repo
+$occt = Join-Path $repo 'kernel'
+$b3d = Join-Path $repo 'modeling'
+"Kerf $commit"
 
 # Whether an assembly holds ReadyToRun code: its CLI header's ManagedNativeHeader directory is set (read by hand, as
 # Windows PowerShell's .NET Framework has no PEReader)
@@ -79,12 +76,12 @@ function Test-ReadyToRun([string] $assembly) {
 }
 
 $properties = @('-c', 'Release', '-nologo', "-p:VersionSuffix=$Suffix", '-p:ContinuousIntegrationBuild=true')
-$b3dProperties = @('-p:Build123dBackend=OcctNet', "-p:OcctNetRoot=$occt/")
+$b3dProperties = @("-p:OcctNetRoot=$occt/")
 $projects = @(
   foreach ($p in 'OcctNet.Foundation', 'OcctNet.ModelingData', 'OcctNet.ModelingAlgorithms', 'OcctNet.DataExchange') {
     @{ Name = $p; Path = (Join-Path $occt "src/$p/$p.csproj"); Extra = @() }
   }
-  foreach ($p in 'Build123d.OcctNet', 'Build123d') {
+  foreach ($p in 'Build123d') {
     @{ Name = $p; Path = (Join-Path $b3d "src/$p/$p.csproj"); Extra = $b3dProperties }
   }
 )
@@ -163,7 +160,7 @@ Console.WriteLine($"Smoke test passed: volume {part.Volume:F6}, STEP {step.Lengt
       $restored = Get-ChildItem -Recurse (Join-Path $smoke 'bin') -Filter "$($p.Name).dll" | Select-Object -First 1
       if (-not (Test-ReadyToRun $restored.FullName)) { throw "$($p.Name) from the packages isn't ReadyToRun" }
     }
-    'The six assemblies from the packages are ReadyToRun'
+    'The five assemblies from the packages are ReadyToRun'
   }
 }
 "The packages are in $Out"

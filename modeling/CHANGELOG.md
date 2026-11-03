@@ -5,6 +5,15 @@ All notable changes to the build123d.NET packages. Versions follow [SemVer](http
 
 ## 0.1.0 (unreleased)
 
+- Kerf's unit 10B: `Build123d` calls OCCT.NET's types directly, under OCCT's names: OCCT.NET's structs, nothing
+  disposed. `Build123d.OcctNet` (the generated layer that gave OCCT.NET the native binding's API) is gone, and so is the
+  native backend (`Build123d.Occt`, its shim, bindings, generator and native build, `tools/pack.ps1`,
+  `-p:Build123dBackend`). `Build123d` builds against the repository's kernel only: `UseOcctNetPackages` and
+  `OcctNetVersion` are gone, as it uses kernel members the published packages don't make public.
+- OCCT's failures reach the caller as OCCT.NET's exceptions (`Standard_Failure` and its subclasses, with `OcctType`),
+  until results replace them: `OcctException`, `OcctContext` and the "… failed:" prefix are gone. No more native
+  faults or memory pressure (`Extras.AddMemoryPressure`, `MemoryPressureOf`).
+- A wire's `Triangulate` and `TriangulateTree` work: they threw `InvalidCastException`.
 - `Wire.Fillet2D`'s history matches native's on OCCT.NET: the fillet records the finished wire's edges, not each edge
   MakeWire returned on the way, which OCCT.NET may since have replaced in a copy (`Fillet2DTests.FilletRecord`).
 - `ShapeList<T>` is over Schematiq.Collections (`ISchematiqList<T>`, 1.0.0-beta.1 from nuget.org), the version Bento

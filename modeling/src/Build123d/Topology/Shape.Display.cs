@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -48,7 +48,7 @@ public abstract partial class Shape
             ? BoundBox.FromTopoDS(shape).Center().ToString(".6g")
             : new Location(shape.Location()).Position.ToString(".6g"));
         var children = new List<DisplayNode>();
-        using var it = new TopoDS_Iterator();
+        var it = new TopoDS_Iterator();
         it.Initialize(shape);
         for (; it.More(); it.Next())
         {
@@ -136,22 +136,22 @@ internal static class SurfaceIntersection
     {
         if (shape.IsEmpty)
             return [];
-        using var ax1 = axis.ToGpAx1();
-        using var makeLin = new gce_MakeLin(ax1);
-        using var line = makeLin.Value();
-        using var inter = new BRepIntCurveSurface_Inter();
+        var ax1 = axis.ToGpAx1();
+        var makeLin = new gce_MakeLin(ax1);
+        var line = makeLin.Value();
+        var inter = new BRepIntCurveSurface_Inter();
         inter.Init(shape.TopoShape, line, tolerance);
         var plane = new Plane(axis);
         var found = new List<(TopoDS_Face Face, Vector Point, double Distance)>();
         for (; inter.More(); inter.Next())
         {
-            using var p = inter.Pnt();
+            var p = inter.Pnt();
             var point = new Vector(p);
             found.Add((inter.Face(), point, plane.ToLocalCoords(point).Z));
         }
         return [.. found.OrderBy(f => f.Distance).Select(f =>
         {
-            using var pnt = f.Point.ToGpPnt();
+            var pnt = f.Point.ToGpPnt();
             return (f.Point, TopoUtil.FaceNormalAt(f.Face, pnt));
         })];
     }

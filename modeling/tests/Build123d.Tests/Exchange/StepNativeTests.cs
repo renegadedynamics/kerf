@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Exchange;
@@ -61,13 +61,11 @@ public partial class StepNativeTests
     [MemberData(nameof(Names))]
     public void WritesAsNative(string name)
     {
-#if OCCTNET
         // The OCCT.NET backend writes STEP through STEPCAFControl, as build123d does, and native's reference is
         // STEPControl's: they write the same text but for a compound, whose representations STEPCAFControl orders
         // differently (StepAssemblyTests compares it with OCCT.NET's STEPCAFControl_Writer)
         if (name == "compound")
             return;
-#endif
         var shape = Importers.ImportBrep(Path.Combine(Folder, name + ".brep"));
         Assert.Equal(Masked(File.ReadAllBytes(Path.Combine(Folder, name + ".step"))), Masked(Write(shape)));
     }
@@ -81,23 +79,4 @@ public partial class StepNativeTests
         Assert.Equal(expected, Encoding.ASCII.GetString(Extras.WriteBRep(read.Wrapped)));
     }
 
-#if !OCCTNET
-    [Fact]
-    public void WriteTheReference()
-    {
-        var folder = Environment.GetEnvironmentVariable("B3D_WRITE_EXCHANGE_REFERENCE");
-        if (string.IsNullOrEmpty(folder))
-            return;
-        Directory.CreateDirectory(folder);
-        foreach (var (name, make) in Shapes())
-        {
-            var brep = Extras.WriteBRep(make().Wrapped);
-            File.WriteAllBytes(Path.Combine(folder, name + ".brep"), brep);
-            var step = Write(Shape.Cast(Extras.ReadBRep(brep)));
-            File.WriteAllBytes(Path.Combine(folder, name + ".step"), step);
-            var read = Importers.ImportStep(new MemoryStream(step));
-            File.WriteAllBytes(Path.Combine(folder, name + ".read.brep"), Extras.WriteBRep(read.Wrapped));
-        }
-    }
-#endif
 }

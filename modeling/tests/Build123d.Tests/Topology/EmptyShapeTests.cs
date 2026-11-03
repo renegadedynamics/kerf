@@ -12,7 +12,7 @@
 // - TestEmptyShapeExport: the exporters aren't ported yet.
 // - test_a_kernel_empty_is_the_zero_of_any_class's Face(empty): the Face constructor takes a TopoDS_Face, and
 //   Shape.Cast is static, so Solid.cast's class-specific result is checked through the internal CastLike.
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -53,7 +53,7 @@ public class EmptyShapeDefinitionTests
             var zero = make();
             Assert.IsType(cls, zero);
             Assert.True(zero.IsEmpty);
-            Assert.IsType<TopoDS_Compound>(zero.Wrapped);
+            Assert.Equal(TopAbs_ShapeEnum.TopAbs_COMPOUND, zero.Wrapped.ShapeType());
             Assert.Equal(dim, zero.Dim);
         }
     }

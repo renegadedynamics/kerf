@@ -73,7 +73,6 @@ aText.Append("""
     tests, the Draw-lite tests as they run by default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset)
     and the modeling layer's suite on OCCT.NET; the oracle tests only with `-WithOracle`. A package is the folder under
     the assembly (OCCT's package for the kernel). Lines are the coverable lines Microsoft's code coverage counts.
-    `Build123d.OcctNet` is the forwarding layer unit 10B removes.
 
 
     """);

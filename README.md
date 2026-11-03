@@ -36,14 +36,12 @@ Requirements: the .NET 10 SDK and git.
 dotnet test Kerf.slnx
 ```
 
-The modelling layer builds against the kernel's projects in this repository. `-p:UseOcctNetPackages=true` builds it
-against the published packages instead.
+The modelling layer builds against the kernel's projects in this repository and calls the kernel's types directly.
+Nothing native is built or loaded: native OCCT, and the modelling layer's native backend, went in phase 10 (unit 10B).
 
-The kernel's oracle tests compare with native OCCT, through the modelling layer's native backend. They are outside
-`Kerf.slnx`, because one restore can't serve the modelling projects on both backends at once. Phase 10 retires them.
-- **Running them:** `dotnet test kernel/tests/OcctNet.Oracle.Tests -p:Build123dNativeRoot=<folder>`, where the folder
-  holds a native build (`native/out` and `.deps/install`, from `modeling/native`'s scripts).
-- **Without a native build,** they are compiled out.
+The kernel's oracle tests compare the port with native OCCT's results as recorded (unit 10A), so they run in
+`Kerf.slnx` like any other tests. The recordings can't be made again: they are frozen
+([kernel/docs/oracle-testing.md](kernel/docs/oracle-testing.md)).
 
 ## Credits
 

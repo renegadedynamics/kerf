@@ -16,7 +16,7 @@
 // (test_location test_intersection's e1.intersect("line") is kept as the ArgumentException the port's object
 // overload throws.)
 // - test_rotation.py and test_matrix.py: no cases use topology.
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Geometry;
@@ -88,7 +88,7 @@ public class PlaneWithShapesTests
         // From a face
         var f = Face.MakeRect(1, 2).Located(new Location((1, 2, 3), (45, 0, 45)));
         var pFromFace = new Plane(f);
-        using var pln = pFromFace.ToGpPln();
+        var pln = pFromFace.ToGpPln();
         foreach (var p in new[] { pFromFace, new Plane(face: f), new Plane(pln) })
         {
             Check.AlmostEqual((1, 2, 3), p.Origin, 6);
@@ -122,10 +122,10 @@ public class PlaneWithShapesTests
         for (int i = 0; i < faces.Count; i++)
         {
             var p = new Plane(faces[i]);
-            using var props = new GProp_GProps();
-            using (var face = faces[i].Wrapped)
-                BRepGProp.SurfaceProperties(face, props);
-            using var centre = props.CentreOfMass();
+            var props = new GProp_GProps();
+            var face = faces[i].Wrapped;
+            BRepGProp.SurfaceProperties(face, props);
+            var centre = props.CentreOfMass();
             Check.AlmostEqual(new Vector(centre), p.Origin, 6);
             Check.AlmostEqual(expected[i].X, p.XDir, 6);
             Check.AlmostEqual(expected[i].Y, p.YDir, 6);
@@ -228,8 +228,8 @@ public class BoundBoxWithShapesTests
 {
     static BoundBox Box(Vector min, Vector max)
     {
-        using var bnd = new Bnd_Box();
-        bnd.Update(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
+        var bnd = new Bnd_Box();
+        bnd = bnd.Updated(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
         return BoundBox.FromBndBox(bnd);
     }
 
@@ -306,11 +306,11 @@ public class BoundBoxWithShapesTests
         Check.AlmostEqual(9, bb2.Measure, 5);
 
         // A box from a shape: low accuracy, as the box is a little larger than the shape
-        using var cylinder = Solid.MakeCylinder(1, 1).Wrapped;
+        var cylinder = Solid.MakeCylinder(1, 1).Wrapped;
         bb1 = BoundBox.FromTopoDS(cylinder, optimal: false);
         Check.AlmostEqual((2, 2, 1), bb1.Size, 1);
 
-        using var small = Solid.MakeCylinder(0.5, 0.5).Translate((0, 0, 0.1)).Wrapped;
+        var small = Solid.MakeCylinder(0.5, 0.5).Translate((0, 0, 0.1)).Wrapped;
         bb2 = BoundBox.FromTopoDS(small, optimal: false);
         Assert.True(bb2.Within(bb1));
     }

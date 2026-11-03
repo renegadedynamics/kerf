@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -6,14 +6,10 @@ namespace Build123d;
 /// build123d's importers (<c>importers.py</c>): shapes from BREP, STEP and STL data, and from glTF (not in build123d).
 /// Each reads a stream, with limits for hostile data and cancellation; the file forms open the file and read it as a
 /// stream. Bad data throws <see cref="ArgumentException"/> (build123d's ValueError) or, for BREP, OCCT's
-/// <see cref="OcctException"/> (<c>Storage_StreamFormatError</c>); data past a limit throws
+/// <see cref="Standard_Failure"/> (<c>Storage_StreamFormatError</c>); data past a limit throws
 /// <see cref="InvalidDataException"/>.
 /// </summary>
-/// <remarks>
-/// STEP keeps its names, colours and assemblies on the OCCT.NET backend (OCCT.NET's STEPCAFControl); natively, OCCT's
-/// XCAF isn't bound, so a model's shapes come back as one shape, or a compound of them (OCCT's
-/// <c>STEPControl_Reader</c>). STL and glTF need the OCCT.NET backend.
-/// </remarks>
+/// <remarks>STEP keeps its names, colours and assemblies (OCCT.NET's STEPCAFControl).</remarks>
 public static class Importers
 {
     /// <summary>A shape from BREP data (OCCT's text format).</summary>
@@ -32,11 +28,10 @@ public static class Importers
     }
 
     /// <summary>
-    /// The model of STEP data, as build123d's <c>import_step</c>: on the OCCT.NET backend, the file's assembly tree as
-    /// compounds whose <see cref="Compound.AssemblyChildren"/> are its components, each placed by its location, with
-    /// the product names as labels and the colours (a shape's own, else its product's); one free shape is returned as
-    /// it is, several in a compound of them. Natively, the shapes alone (OCCT's <c>STEPControl_Reader</c>): the one
-    /// shape, or a compound of them. <paramref name="name"/> names the data in OCCT's messages. Data that refers to
+    /// The model of STEP data, as build123d's <c>import_step</c>: the file's assembly tree as compounds whose
+    /// <see cref="Compound.AssemblyChildren"/> are its components, each placed by its location, with the product names
+    /// as labels and the colours (a shape's own, else its product's); one free shape is returned as it is, several in a
+    /// compound of them. <paramref name="name"/> names the data in OCCT's messages. Data that refers to
     /// other STEP files is refused, as there is no folder to read them from.
     /// </summary>
     public static Shape ImportStep(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default,
@@ -57,28 +52,16 @@ public static class Importers
     {
         ArgumentNullException.ThrowIfNull(stream);
         var exchangeLimits = (limits ?? ImportLimits.Default).ToExchange();
-        if (Extras.StepKeepsAssemblies)
-        {
-            var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
-            if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
-                throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
-            return root is null ? new Compound() : Shape.Result(FromNode(root));
-        }
-        using var reader = new STEPControl_Reader();
-        var read = reader.ReadStream(name, stream, exchangeLimits, cancellationToken);
-        if (read != IFSelect_ReturnStatus.IFSelect_RetDone)
-            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({read})");
-        reader.TransferRoots(cancellationToken);
-        var shape = reader.OneShape();
-        if (shape.IsNull())
-            return new Compound();
-        return Shape.Result(Shape.Cast(shape));
+        var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
+        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
+            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
+        return root is null ? new Compound() : Shape.Result(FromNode(root));
     }
 
     /// <summary>
     /// A face holding the triangles of STL data (binary or ASCII), with no surface: fast to read and to show, as
     /// build123d's. <paramref name="modelUnit"/> is the data's unit, scaled to millimetres (Blender writes metres).
-    /// Needs the OCCT.NET backend.
+    ///
     /// </summary>
     public static Face ImportStl(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                  CancellationToken cancellationToken = default)
@@ -88,7 +71,7 @@ public static class Importers
         return new Face(Extras.ReadStl(stream, scale, (limits ?? ImportLimits.Default).ToExchange(), cancellationToken));
     }
 
-    /// <summary>A face holding the triangles of an STL file. Needs the OCCT.NET backend.</summary>
+    /// <summary>A face holding the triangles of an STL file.</summary>
     public static Face ImportStl(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                  CancellationToken cancellationToken = default)
     {
@@ -100,7 +83,7 @@ public static class Importers
     /// The model of glTF 2.0 data (<c>.glb</c>, or <c>.gltf</c> with its buffers embedded), Y-up turned Z-up, in
     /// <paramref name="modelUnit"/>: a part is a compound of faces holding only triangles, with the mesh's name and
     /// colour; a scene of several parts or a node hierarchy is an assembly (<see cref="Compound.AssemblyChildren"/>).
-    /// Not in build123d. Needs the OCCT.NET backend.
+    /// Not in build123d.
     /// </summary>
     public static Shape ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
@@ -111,7 +94,7 @@ public static class Importers
         return FromNode(root);
     }
 
-    /// <summary>The model of a glTF 2.0 file. External buffers aren't read. Needs the OCCT.NET backend.</summary>
+    /// <summary>The model of a glTF 2.0 file. External buffers aren't read.</summary>
     public static Shape ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
                                    CancellationToken cancellationToken = default)
     {
@@ -125,8 +108,8 @@ public static class Importers
         Color? color = null;
         if (node.Color is { } c)
         {
-            using var rgb = new Quantity_Color(c.R, c.G, c.B, Quantity_TypeOfColor.Quantity_TOC_RGB);
-            using var rgba = new Quantity_ColorRGBA(rgb, (float)c.A);
+            var rgb = new Quantity_Color(c.R, c.G, c.B, Quantity_TypeOfColor.Quantity_TOC_RGB);
+            var rgba = new Quantity_ColorRGBA(rgb, (float)c.A);
             color = new Color(rgba);
         }
         if (node.Shape is { } shape)

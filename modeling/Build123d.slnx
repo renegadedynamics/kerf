@@ -1,14 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Build123d.Occt/Build123d.Occt.csproj" />
-    <Project Path="src/Build123d.OcctNet/Build123d.OcctNet.csproj" />
     <Project Path="src/Build123d/Build123d.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Build123d.Occt.Tests/Build123d.Occt.Tests.csproj" />
     <Project Path="tests/Build123d.Tests/Build123d.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tools/">
-    <Project Path="tools/OcctGen/OcctGen.csproj" />
   </Folder>
 </Solution>

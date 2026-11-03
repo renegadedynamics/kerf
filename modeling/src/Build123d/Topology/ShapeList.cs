@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -163,15 +163,15 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         var expanded = new List<Shape>();
         foreach (var shape in this)
         {
-            switch (shape.TopoShape)
+            switch (shape.TopoShape.ShapeType())
             {
-                case TopoDS_Compound:
+                case TopAbs_ShapeEnum.TopAbs_COMPOUND:
                     expanded.AddRange(new ShapeList<Shape>(shape is Compound c ? c.Children() : []).Expand());
                     break;
-                case TopoDS_Shell:
+                case TopAbs_ShapeEnum.TopAbs_SHELL:
                     expanded.AddRange(shape.Faces());
                     break;
-                case TopoDS_Wire:
+                case TopAbs_ShapeEnum.TopAbs_WIRE:
                     expanded.AddRange(shape.Edges());
                     break;
                 default:
@@ -276,16 +276,16 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         if (shape is Face face && face.IsPlanarSurface())
         {
             double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-            BRepTools.UVBounds(face.TopoFace, ref u0, ref u1, ref v0, ref v1);
+            BRepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
             shapeAxis = new Axis(shape.Center(), face.NormalAtParameters(u0, v0));
         }
         else if (shape is Edge edge && shape.GeomType == GeomType.Line)
         {
-            using var curve = edge.GeomAdaptor();
-            using var pnt = new gp_Pnt();
-            using var d1 = new gp_Vec();
-            curve.D1(curve.FirstParameter(), pnt, d1);
-            using var dir = new gp_Dir(d1);
+            var curve = edge.GeomAdaptor();
+            var pnt = new gp_Pnt();
+            var d1 = new gp_Vec();
+            curve.D1(curve.FirstParameter(), out pnt, out d1);
+            var dir = new gp_Dir(d1);
             shapeAxis = new Axis(new Vector(pnt), new Vector(dir));
         }
         else
@@ -300,7 +300,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
             case Face face when face.IsPlanarSurface():
             {
                 double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
-                BRepTools.UVBounds(face.TopoFace, ref u0, ref u1, ref v0, ref v1);
+                BRepTools.UVBounds(face.TopoFace, out u0, out u1, out v0, out v1);
                 return planeAxis.IsParallel(new Axis(shape.Center(), face.NormalAtParameters(u0, v0)), tolerance);
             }
             case Wire wire:
@@ -308,7 +308,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
             case Edge edge:
             {
                 var local = edge.Location.Inverse() * plane;
-                using var normal = local.ZDir.ToGpXyz();
+                var normal = local.ZDir.ToGpXyz();
                 return Extras.EdgeCurve3DIsPlanar(edge.TopoEdge, normal, tolerance) ?? false;
             }
             default:
@@ -616,7 +616,7 @@ internal static class Measures
                 _ => null,
             };
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or Occt.OcctException or NotImplementedException)
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or Standard_Failure or NotImplementedException)
         {
             return null;
         }

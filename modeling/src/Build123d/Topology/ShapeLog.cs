@@ -2,14 +2,14 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
 /// <summary>
 /// The differential log (OCCT.NET's unit 9D2): with the environment variable <c>BUILD123D_SHAPE_LOG</c> naming a folder,
 /// every new kernel shape a <see cref="Shape"/> wraps is written there in OCCT's BRep text, so that a run of the test
-/// suite on each backend can be compared op by op. Off (one static field read) unless the variable is set.
+/// suite can be compared op by op with native OCCT's log, recorded (OCCT.NET's unit 10A). Off (one static field read) unless the variable is set.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -80,10 +80,10 @@ internal static class ShapeLog
     private static string ExactPoints(TopoDS_Shape shape)
     {
         var hash = 14695981039346656037UL;
-        using var explorer = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        var explorer = new TopExp_Explorer(shape, TopAbs_ShapeEnum.TopAbs_VERTEX);
         for (; explorer.More(); explorer.Next())
         {
-            using var point = BRep_Tool.Pnt(TopoDS.Vertex(explorer.Current()));
+            var point = BRep_Tool.Pnt(TopoDS.Vertex(explorer.Current()));
             foreach (var c in (ReadOnlySpan<double>)[point.X(), point.Y(), point.Z()])
                 hash = (hash ^ (ulong)BitConverter.DoubleToInt64Bits(c)) * 1099511628211UL;
         }
@@ -99,7 +99,7 @@ internal static class ShapeLog
         while (stack.Count > 0)
         {
             var current = stack.Pop();
-            using var it = new TopoDS_Iterator(current, false, false);
+            var it = new TopoDS_Iterator(current, false, false);
             for (; it.More(); it.Next())
             {
                 var child = it.Value();
@@ -113,7 +113,7 @@ internal static class ShapeLog
 
     private static bool Add(TopoDS_Shape shape)
     {
-        using var identity = new TopLoc_Location();
+        var identity = new TopLoc_Location();
         var bare = shape.Located(identity);
         var key = bare.StdHash();
         if (!s_seen.TryGetValue(key, out var bucket))

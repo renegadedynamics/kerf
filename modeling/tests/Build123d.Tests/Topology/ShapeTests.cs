@@ -15,7 +15,7 @@
 // - TestGlobalLocation: needs parent links and global_location, which the port's assemblies don't have.
 // - TestShapeCast.test_unregistered_type_is_reported, .test_registry_covers_every_wrapped_type and
 //   TestAsShape.test_registry_covers_the_geometry_types: Shape.Cast and AsShape are switches, not registries.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Topology;
 

@@ -7,7 +7,7 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -107,8 +107,8 @@ public class ShapeHistoryTests
     public void AlgorithmHistoryFromAPrism()
     {
         var square = Face.MakeRect(4, 4);
-        using var vec = new gp_Vec(0, 0, 5);
-        using var prism = new BRepPrimAPI_MakePrism(square.Wrapped, vec);
+        var vec = new gp_Vec(0, 0, 5);
+        var prism = new BRepPrimAPI_MakePrism(square.Wrapped, vec);
         prism.Build();
         var history = ShapeHistory.FromAlgorithm(prism, [square.Wrapped], prism.Shape());
         foreach (var edge in square.Edges())
@@ -124,7 +124,7 @@ public class ShapeHistoryTests
     {
         var left = Face.MakeRect(4, 4);
         var right = Face.MakeRect(4, 4, new Plane((4, 0, 0)));
-        using var sewing = new BRepBuilderAPI_Sewing(1e-6);
+        var sewing = new BRepBuilderAPI_Sewing(1e-6);
         sewing.Add(left.Wrapped);
         sewing.Add(right.Wrapped);
         sewing.Perform();
@@ -228,7 +228,7 @@ public class ShapeHistoryTests
         var expected = Answers(original);
         var actual = Answers(placed, s =>
         {
-            using var transform = new BRepBuilderAPI_Transform(s.Wrapped, inverse, true);
+            var transform = new BRepBuilderAPI_Transform(s.Wrapped, inverse, true);
             return Shape.Cast(transform.Shape());
         });
         foreach (var key in expected.Keys)
@@ -275,15 +275,15 @@ public class ShapeHistoryTests
         operations.Add(("rotated copy", recorded.Rotate(Axis.Z, 31, transform: true), new Rotation(0, 0, -31).ToGpTrsf()));
 
         var mirrorTransform = new gp_Trsf();
-        using (var origin = Plane.YZ.Origin.ToGpPnt())
-        using (var normal = Plane.YZ.ZDir.ToGpDir())
-        using (var ax2 = new gp_Ax2(origin, normal))
-            mirrorTransform.SetMirror(ax2);
+        var origin = Plane.YZ.Origin.ToGpPnt();
+        var normal = Plane.YZ.ZDir.ToGpDir();
+        var ax2 = new gp_Ax2(origin, normal);
+        mirrorTransform = mirrorTransform.WithMirror(ax2);
         operations.Add(("mirror copy", recorded.Mirror(Plane.YZ), mirrorTransform));
 
         var scaleInverse = new gp_Trsf();
-        using (var centre = new gp_Pnt(0, 0, 0))
-            scaleInverse.SetScale(centre, 0.5);
+        var centre = new gp_Pnt(0, 0, 0);
+        scaleInverse = scaleInverse.WithScale(centre, 0.5);
         operations.Add(("scale copy", recorded.Scale(2), scaleInverse));
 
         foreach (var (name, placed, inverse) in operations)
@@ -349,9 +349,9 @@ public class ShapeHistoryTests
     [Fact]
     public void Helpers()
     {
-        var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, null]);
+        var subs = ShapeHistory.TrackedSubshapes([_box.Wrapped, new TopoDS_Shape()]);
         Assert.Equal(8 + 12 + 6 + 1, subs.Length);
-        using var kernelList = new TopTools_ListOfShape();
+        var kernelList = new NCollection_List<TopoDS_Shape>();
         foreach (var face in _box.Faces())
             kernelList.Append(face.Wrapped);
         Assert.Equal(6, TopoUtil.Items(kernelList).Length);

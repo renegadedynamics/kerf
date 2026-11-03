@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -7,9 +7,7 @@ namespace Build123d;
 /// allocate without bound. The defaults allow any reasonable model.
 /// </summary>
 /// <remarks>
-/// Each backend applies what its readers can. On OCCT.NET every limit applies to the format it names, checked as the
-/// data is parsed; natively, STEP is read by OCCT from a temporary file, so only <see cref="MaxBytes"/> applies to it,
-/// and the mesh formats need the OCCT.NET backend.
+/// Every limit applies to the format it names, checked as the data is parsed.
 /// </remarks>
 /// <param name="MaxBytes">The most bytes read (every format).</param>
 /// <param name="MaxEntities">The most STEP records.</param>

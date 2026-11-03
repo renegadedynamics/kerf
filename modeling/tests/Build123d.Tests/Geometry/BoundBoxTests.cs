@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_bound_box.py. Boxes of shapes follow with the
 // topology port; here boxes are built from their corners, as the Python predicate tests do.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -8,8 +8,8 @@ public class BoundBoxTests
 {
     static BoundBox Box(Vector min, Vector max)
     {
-        using var bnd = new Bnd_Box();
-        bnd.Update(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
+        var bnd = new Bnd_Box();
+        bnd = bnd.Updated(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
         return BoundBox.FromBndBox(bnd);
     }
 

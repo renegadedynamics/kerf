@@ -12,25 +12,8 @@
     <OcctSourceDir>$(RepoRoot).deps/occt-src/</OcctSourceDir>
     <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->
     <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
-    <!-- build123d.NET, in the repository's modeling folder, whose native OCCT build the oracle tests compare against -->
+    <!-- build123d.NET, in the repository's modeling folder, which the Bento benchmark builds on this kernel -->
     <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../modeling/'))</Build123dNetRoot>
-    <!--
-      Where build123d.NET's native build (.deps/install, native/out) is: the modeling folder by default; give another
-      checkout's (-p:Build123dNativeRoot=...) where the modeling folder has none. Without one the oracle tests are
-      compiled out.
-    -->
-    <Build123dNativeRoot Condition="'$(Build123dNativeRoot)' == ''">$(Build123dNetRoot)</Build123dNativeRoot>
-    <!--
-      build123d.NET's projects as the oracle: always on its native backend, whatever its default (OCCT.NET since its
-      phase 9), with its native build from Build123dNativeRoot
-    -->
-    <Build123dNativeProperties>Build123dBackend=Native;Build123dNativeRoot=$(Build123dNativeRoot)</Build123dNativeProperties>
-    <!--
-      Restore by the project graph, which honours those properties, so build123d.NET's projects restore on the native
-      backend too (NuGet's default walk restores each project once, on its default backend). Directory.Solution.props
-      sets it for the solution.
-    -->
-    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->

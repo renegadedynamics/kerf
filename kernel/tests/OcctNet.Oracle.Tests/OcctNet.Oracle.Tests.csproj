@@ -3,28 +3,13 @@
   <!--
     Compares the port with native OCCT as recorded (unit 10A, decision 1336; docs/oracle-testing.md). The tests call
     native OCCT through N, the facade OcctNative (Recorded/), which replays native's results from the recordings embedded
-    here (Recordings/*.tape.gz): no native code runs. With native OCCT built in (the generated bindings of build123d.NET,
-    Build123dNetRoot, with the native build of Build123dNativeRoot: HAS_ORACLE), OCCTNET_ORACLE_RECORD=1 records them
-    again from native OCCT. OracleDirect=true compiles the tests against the native bindings themselves (N =
-    Build123d.Occt), live, as before 10A: tools/oracle-facade.cs reads that build to generate the facade.
+    here (Recordings/*.tape.gz): no native code runs. Native OCCT went in unit 10B, so the recordings are frozen.
   -->
-  <PropertyGroup>
-    <Build123dOcctProject>$(Build123dNetRoot)src/Build123d.Occt/Build123d.Occt.csproj</Build123dOcctProject>
-    <HasOracle Condition="Exists('$(Build123dOcctProject)') And Exists('$(Build123dNativeRoot)native/out/win-x64/bin/b3docct.dll')">true</HasOracle>
-    <DefineConstants Condition="'$(HasOracle)' == 'true'">$(DefineConstants);HAS_ORACLE</DefineConstants>
-    <DefineConstants Condition="'$(OracleDirect)' == 'true'">$(DefineConstants);ORACLE_DIRECT</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
-    <Using Include="OcctNative" Alias="N" Condition="'$(OracleDirect)' != 'true'" />
-    <Using Include="Build123d.Occt" Alias="N" Condition="'$(OracleDirect)' == 'true'" />
+    <Using Include="OcctNative" Alias="N" />
     <Using Include="OcctNative.Tape" Alias="Tape" />
     <!-- Native OCCT's results, one file per test class; native's log of build123d.NET's suite (decision 1338) -->
     <EmbeddedResource Include="Recordings\*.tape.gz;Recordings\*.native.gz" LogicalName="Recordings.%(Filename)%(Extension)" />
-    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>OracleRecordingsDir</_Parameter1>
-      <_Parameter2>$(MSBuildProjectDirectory)\Recordings\</_Parameter2>
-    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
@@ -34,9 +19,6 @@
     <ProjectReference Include="..\..\src\OcctNet.DataExchange\OcctNet.DataExchange.csproj" />
     <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
     <ProjectReference Include="..\OcctNet.DrawLite\OcctNet.DrawLite.csproj" />
-    <ProjectReference Include="$(Build123dOcctProject)" Condition="'$(HasOracle)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
-    <!-- build123d.NET itself, whose public API rebuilds the operands of its tests' Booleans (unit 6M, decision 947) -->
-    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" Condition="'$(HasOracle)' == 'true'" AdditionalProperties="$(Build123dNativeProperties)" />
     <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OcctSourceDir</_Parameter1>

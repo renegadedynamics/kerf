@@ -7,9 +7,6 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Occt;
-#if HAS_NATIVE
-using N = Build123d.Occt;
-#endif
 
 namespace OcctNet.Benchmarks;
 
@@ -41,12 +38,6 @@ public static class Booleans
 
     public static IEnumerable<BooleanCase> All()
     {
-#if HAS_NATIVE
-        foreach (BooleanCase aCase in Build123dCases())
-        {
-            yield return aCase;
-        }
-#endif
         foreach (BooleanCase aCase in SimpleCases())
         {
             yield return aCase;
@@ -57,33 +48,6 @@ public static class Booleans
         }
     }
 
-#if HAS_NATIVE
-    /// <summary>build123d.NET's tests' Booleans, as the oracle's capture records them.</summary>
-    private static IEnumerable<BooleanCase> Build123dCases()
-    {
-        var aCapture = OcctNet.Oracle.Tests.Build123dBooleanCapture.Capture(f => Console.Error.WriteLine("scenario failed: " + f));
-        foreach (OcctNet.Oracle.Tests.Build123dBooleanCapture.Call aCall in aCapture.Calls)
-        {
-            if (aCall.Kind == OcctNet.Oracle.Tests.Build123dBooleanCapture.Kind.Clean)
-            {
-                continue;
-            }
-            using var aBuilder = new N.BRep_Builder();
-            var aCompound = new N.TopoDS_Compound();
-            aBuilder.MakeCompound(aCompound);
-            foreach (N.TopoDS_Shape aShape in aCall.Arguments.Concat(aCall.Tools))
-            {
-                aBuilder.Add(aCompound, aShape);
-            }
-            string aFile = Path.Combine(Path.GetTempPath(), $"b3dbench-{Guid.NewGuid():N}.brep");
-            N.BRepTools.Write(aCompound, aFile, true, false, N.TopTools_FormatVersion.TopTools_FormatVersion_VERSION_3);
-            string aText = File.ReadAllText(aFile);
-            File.Delete(aFile);
-            yield return new BooleanCase("build123d", aCall.Name, aText, aCall.Arguments.Length, aCall.Kind.ToString(), aCall.Fuzzy,
-                                         aCall.Glue, aCall.Clean);
-        }
-    }
-#endif
 
     /// <summary>The corpus's bopfuse_simple grid, from tools/pfrec's recording (every case's arguments as one compound).</summary>
     private static IEnumerable<BooleanCase> SimpleCases()
@@ -268,62 +232,6 @@ public static class Booleans
         return aU.Shape();
     }
 
-#if HAS_NATIVE
-    private static (List<N.TopoDS_Shape> Objects, List<N.TopoDS_Shape> Tools) NativeArgs(BooleanCase theCase)
-    {
-        string aFile = Path.Combine(Path.GetTempPath(), $"b3dbench-{Guid.NewGuid():N}.brep");
-        File.WriteAllText(aFile, theCase.ArgsText);
-        N.TopoDS_Shape aC = Cases.NativeRead(aFile);
-        File.Delete(aFile);
-        var anObjects = new List<N.TopoDS_Shape>();
-        var aTools = new List<N.TopoDS_Shape>();
-        int i = 0;
-        for (var anIt = new N.TopoDS_Iterator(aC); anIt.More(); anIt.Next())
-        {
-            (i++ < theCase.NbObjects ? anObjects : aTools).Add(anIt.Value());
-        }
-        return (anObjects, aTools);
-    }
-
-    private static N.TopoDS_Shape NativeRun(BooleanCase theCase, List<N.TopoDS_Shape> theObjects, List<N.TopoDS_Shape> theTools, bool theParallel)
-    {
-        using N.BRepAlgoAPI_BuilderAlgo anOp = theCase.Op switch
-        {
-            "Fuse" => new N.BRepAlgoAPI_Fuse(),
-            "Cut" => new N.BRepAlgoAPI_Cut(),
-            "Common" => new N.BRepAlgoAPI_Common(),
-            "Section" => new N.BRepAlgoAPI_Section(),
-            _ => new N.BRepAlgoAPI_Splitter(),
-        };
-        using var anArgs = new N.TopTools_ListOfShape();
-        using var aTools = new N.TopTools_ListOfShape();
-        theObjects.ForEach(anArgs.Append);
-        theTools.ForEach(aTools.Append);
-        anOp.SetArguments(anArgs);
-        if (anOp is N.BRepAlgoAPI_BooleanOperation aBop)
-        {
-            aBop.SetTools(aTools);
-        }
-        else
-        {
-            ((N.BRepAlgoAPI_Splitter)anOp).SetTools(aTools);
-        }
-        anOp.SetRunParallel(theParallel);
-        anOp.SetNonDestructive(true);
-        anOp.SetFuzzyValue(theCase.Fuzzy);
-        anOp.SetGlue(theCase.Glue ? N.BOPAlgo_GlueEnum.BOPAlgo_GlueShift : N.BOPAlgo_GlueEnum.BOPAlgo_GlueOff);
-        anOp.Build();
-        return anOp.HasErrors() ? new N.TopoDS_Shape() : anOp.Shape();
-    }
-
-    private static void NativeClean(N.TopoDS_Shape theShape)
-    {
-        using var aU = new N.ShapeUpgrade_UnifySameDomain(theShape, true, true, true);
-        aU.AllowInternalEdges(false);
-        aU.Build();
-        aU.Shape().Dispose();
-    }
-#endif
 
     // ---------------------------------------------------------------------------------------------------------------
     // The timings
@@ -389,13 +297,6 @@ public static class Booleans
                 aPortClean = Measure(() => PortClean(aPResult));
             }
             double aNativeSerial = aPortSerial, aNativeParallel = aPortParallel, aNativeClean = aPortClean;
-#if HAS_NATIVE
-            (List<N.TopoDS_Shape> aNObjects, List<N.TopoDS_Shape> aNTools) = NativeArgs(aCase);
-            aNativeSerial = Measure(() => NativeRun(aCase, aNObjects, aNTools, false).Dispose());
-            aNativeParallel = Measure(() => NativeRun(aCase, aNObjects, aNTools, true).Dispose());
-            N.TopoDS_Shape aNResult = NativeRun(aCase, aNObjects, aNTools, false);
-            aNativeClean = aNResult.IsNull() ? 0 : Measure(() => NativeClean(aNResult));
-#endif
             if (!aTotals.TryGetValue(aCase.Group, out Totals? aT))
             {
                 aTotals[aCase.Group] = aT = new Totals();
@@ -482,10 +383,6 @@ public static class Booleans
             });
             double aFiller = Median(aFillers), aBuilder = Median(aBuilders);
             double aNative = aTotal;
-#if HAS_NATIVE
-            (List<N.TopoDS_Shape> aNObjects, List<N.TopoDS_Shape> aNTools) = NativeArgs(aCase);
-            aNative = Measure(() => NativeRun(aCase, aNObjects, aNTools, false).Dispose());
-#endif
             if (!aTotals.TryGetValue(aCase.Group, out double[]? aT))
             {
                 aTotals[aCase.Group] = aT = new double[5];

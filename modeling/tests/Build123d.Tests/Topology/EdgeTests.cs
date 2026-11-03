@@ -4,7 +4,7 @@
 // - TestEdge.test_make_spline_failure, test_make_spline_approx_failure: patch OCCT classes with mocks.
 // - TestEdgeParamAt.test_param_at_point_fallback_returns_native_parameter_in_both_modes,
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
-using Build123d.Occt;
+using Occt;
 using static Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -514,7 +514,7 @@ public class EdgeTests
         var rim = Edge.MakeSpline([.. Enumerable.Range(0, 11).Select(i => -10 + 2 * i).Select(x =>
             new Vector(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
-        using var sewing = new BRepBuilderAPI_Sewing(1e-6);
+        var sewing = new BRepBuilderAPI_Sewing(1e-6);
         sewing.Add(plate.Wrapped);
         sewing.Add(wall.Wrapped);
         sewing.Perform();
@@ -595,8 +595,8 @@ public class EdgeParamAtTests
     /// <summary>The point at a native OCCT parameter of the edge's curve.</summary>
     static Vector Evaluate(Edge edge, double param)
     {
-        using var adaptor = edge.GeomAdaptor();
-        using var p = adaptor.Value(param);
+        var adaptor = edge.GeomAdaptor();
+        var p = adaptor.Value(param);
         return new Vector(p);
     }
 
@@ -748,8 +748,8 @@ public class EdgeParamAtTests
 
         // Naive "parameter space" quarter, as if the parameter were the normalized length
         double first, last;
-        using (var adaptor = edge.GeomAdaptor())
-            (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
+        var adaptor = edge.GeomAdaptor();
+        (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
         var uNaive = first + 0.25 * (last - first);
         var ptNaive = Evaluate(edge, uNaive);
 

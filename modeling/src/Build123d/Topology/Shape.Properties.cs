@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -27,17 +27,17 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Cannot determine geometry type of an empty shape");
-            switch (_wrapped)
+            switch (_wrapped.ShapeType())
             {
-                case TopoDS_Edge edge:
+                case TopAbs_ShapeEnum.TopAbs_EDGE:
                 {
-                    using var curve = new BRepAdaptor_Curve(edge);
-                    return GeomTypeOf(curve.GetType_());
+                    var curve = new BRepAdaptor_Curve(TopoDS.Edge(_wrapped));
+                    return GeomTypeOf(curve.GetType());
                 }
-                case TopoDS_Face face:
+                case TopAbs_ShapeEnum.TopAbs_FACE:
                 {
-                    using var surface = new BRepAdaptor_Surface(face);
-                    return GeomTypeOf(surface.GetType_());
+                    var surface = new BRepAdaptor_Surface(TopoDS.Face(_wrapped));
+                    return GeomTypeOf(surface.GetType());
                 }
                 default:
                     return GeomType.Other;
@@ -138,9 +138,9 @@ public abstract partial class Shape
     /// <summary>The measure OCCT computes for the shape's kind: length, area or volume (build123d's <c>compute_volume</c>).</summary>
     public double ComputeVolume()
     {
-        if (IsEmpty || _wrapped is TopoDS_Vertex)
+        if (IsEmpty || _wrapped.IsVertex())
             return 0.0;
-        using var props = new GProp_GProps();
+        var props = new GProp_GProps();
         MassProperties(_wrapped, props);
         return props.Mass();
     }
@@ -152,9 +152,9 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-            using var props = new GProp_GProps();
+            var props = new GProp_GProps();
             BRepGProp.VolumeProperties(_wrapped, props);
-            using var m = props.MatrixOfInertia();
+            var m = props.MatrixOfInertia();
             return [.. Enumerable.Range(1, 3).Select(i => Enumerable.Range(1, 3).Select(j => m.Value(i, j)).ToArray())];
         }
     }
@@ -165,14 +165,14 @@ public abstract partial class Shape
         get
         {
             NeedsGeometry("principal axes");
-            using var props = new GProp_GProps();
+            var props = new GProp_GProps();
             BRepGProp.VolumeProperties(_wrapped, props);
-            using var principal = props.PrincipalProperties();
+            var principal = props.PrincipalProperties();
             double m1 = 0, m2 = 0, m3 = 0;
-            principal.Moments(ref m1, ref m2, ref m3);
-            using var a1 = principal.FirstAxisOfInertia();
-            using var a2 = principal.SecondAxisOfInertia();
-            using var a3 = principal.ThirdAxisOfInertia();
+            principal.Moments(out m1, out m2, out m3);
+            var a1 = principal.FirstAxisOfInertia();
+            var a2 = principal.SecondAxisOfInertia();
+            var a3 = principal.ThirdAxisOfInertia();
             return [(new Vector(a1), m1), (new Vector(a2), m2), (new Vector(a3), m3)];
         }
     }
@@ -184,10 +184,10 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return (0, 0, 0);
-            using var props = new GProp_GProps();
+            var props = new GProp_GProps();
             BRepGProp.VolumeProperties(_wrapped, props);
             double x = 0, y = 0, z = 0;
-            props.StaticMoments(ref x, ref y, ref z);
+            props.StaticMoments(out x, out y, out z);
             return (x, y, z);
         }
     }
@@ -196,9 +196,9 @@ public abstract partial class Shape
     public double RadiusOfGyration(Axis axis)
     {
         NeedsGeometry("radius of gyration");
-        using var props = new GProp_GProps();
+        var props = new GProp_GProps();
         BRepGProp.VolumeProperties(_wrapped, props);
-        using var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToGpAx1();
         return props.RadiusOfGyration(ax1);
     }
 
@@ -242,7 +242,7 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return true;
-            using var check = new BRepCheck_Analyzer(_wrapped);
+            var check = new BRepCheck_Analyzer(_wrapped);
             check.SetParallel(true);
             return check.IsValid();
         }
@@ -260,20 +260,20 @@ public abstract partial class Shape
                 return false;
             foreach (var shape in TopoUtil.TopLevelShapes(_wrapped))
             {
-                using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+                var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
                 TopExp.MapShapesAndAncestors(shape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
                 for (int i = 1; i <= map.Extent(); i++)
                 {
-                    using var edge = TopoDS.Edge(map.FindKey(i));
+                    var edge = TopoDS.Edge(map.FindKey(i));
                     // A degenerate edge (a sphere's pole, a cone's apex) belongs to one face only
                     if (BRep_Tool.Degenerated(edge))
                         continue;
-                    using var faces = map.FindFromIndex(i);
+                    var faces = map.FindFromIndex(i);
                     if (faces.Extent() != 2)
                         return false;
                 }
                 // In a closed shell each edge is used once in each direction
-                using var orientation = new ShapeAnalysis_Shell();
+                var orientation = new ShapeAnalysis_Shell();
                 orientation.LoadShells(shape);
                 orientation.CheckOrientedShells(shape, true, true);
                 if (orientation.HasBadEdges())
@@ -293,7 +293,7 @@ public abstract partial class Shape
     {
         var obb = new Bnd_OBB();
         if (!IsEmpty)
-            BRepBndLib.AddOBB(_wrapped, obb, true);
+            BRepBndLib.AddOBB(_wrapped, ref obb, true);
         return Build123d.OrientedBoundBox.Own(obb);
     }
 
@@ -305,7 +305,7 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        using var calc = new BRepExtrema_DistShapeShape(_wrapped, other._wrapped);
+        var calc = new BRepExtrema_DistShapeShape(_wrapped, other._wrapped);
         return calc.Value();
     }
 
@@ -342,20 +342,20 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        using var pnt = point.ToGpPnt();
-        using var maker = new BRepBuilderAPI_MakeVertex(pnt);
-        using var vertex = maker.Vertex();
+        var pnt = point.ToGpPnt();
+        var maker = new BRepBuilderAPI_MakeVertex(pnt);
+        var vertex = maker.Vertex();
         return DistanceToTopo(vertex);
     }
 
     private (double, Vector, Vector) DistanceToTopo(TopoDS_Shape other)
     {
-        using var calc = new BRepExtrema_DistShapeShape();
+        var calc = new BRepExtrema_DistShapeShape();
         calc.LoadS1(_wrapped);
         calc.LoadS2(other);
         calc.Perform();
-        using var p1 = calc.PointOnShape1(1);
-        using var p2 = calc.PointOnShape2(1);
+        var p1 = calc.PointOnShape1(1);
+        var p2 = calc.PointOnShape2(1);
         return (calc.Value(), new Vector(p1), new Vector(p2));
     }
 
@@ -364,7 +364,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        using var calc = new BRepExtrema_DistShapeShape();
+        var calc = new BRepExtrema_DistShapeShape();
         calc.LoadS1(_wrapped);
         foreach (var other in others)
         {
@@ -381,16 +381,16 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return [];
-        using var ax1 = axis.ToGpAx1();
-        using var makeLin = new gce_MakeLin(ax1);
-        using var line = makeLin.Value();
-        using var inter = new BRepIntCurveSurface_Inter();
+        var ax1 = axis.ToGpAx1();
+        var makeLin = new gce_MakeLin(ax1);
+        var line = makeLin.Value();
+        var inter = new BRepIntCurveSurface_Inter();
         inter.Init(_wrapped, line, tolerance);
-        using var origin = axis.Position.ToGpPnt();
+        var origin = axis.Position.ToGpPnt();
         var found = new List<(TopoDS_Face Face, double Distance)>();
         for (; inter.More(); inter.Next())
         {
-            using var point = inter.Pnt();
+            var point = inter.Pnt();
             found.Add((inter.Face(), Math.Abs(origin.SquareDistance(point))));
         }
         return new ShapeList<Face>(found.OrderBy(f => f.Distance).Select(f => (Face)CastLike(f.Face)));
@@ -407,9 +407,8 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
-        var copy = TopoUtil.PrivateCopy(_wrapped);
-        new BRepMesh_IncrementalMesh(copy, tolerance, relative, angularTolerance, true).Dispose();
-        return copy;
+        // OCCT.NET meshes a copy of a frozen shape and hands it back (its decision 489)
+        return new BRepMesh_IncrementalMesh(TopoUtil.PrivateCopy(_wrapped), tolerance, relative, angularTolerance, true).Shape();
     }
 
     /// <summary>A triangulated approximation: the vertices and the triangles as index triples into them.</summary>
@@ -423,22 +422,22 @@ public abstract partial class Shape
         int offset = 0;
         foreach (var face in meshed.Faces())
         {
-            using var loc = new TopLoc_Location();
-            using var poly = BRep_Tool.Triangulation(face.TopoFace, loc);
+            var loc = new TopLoc_Location();
+            var poly = BRep_Tool.Triangulation(face.TopoFace, out loc);
             if (poly is null)
                 continue;
-            using var trsf = loc.Transformation();
+            var trsf = loc.Transformation();
             bool reverse = face.TopoShape.Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
             int nodes = poly.NbNodes();
             for (int i = 1; i <= nodes; i++)
             {
-                using var node = poly.Node(i);
-                using var placed = node.Transformed(trsf);
+                var node = poly.Node(i);
+                var placed = node.Transformed(trsf);
                 vertices.Add(new Vector(placed.X(), placed.Y(), placed.Z()));
             }
             for (int i = 1; i <= poly.NbTriangles(); i++)
             {
-                using var t = poly.Triangle(i);
+                var t = poly.Triangle(i);
                 int a = t.Value(1) + offset - 1, b = t.Value(2) + offset - 1, c = t.Value(3) + offset - 1;
                 triangles.Add(reverse ? (a, c, b) : (a, b, c));
             }

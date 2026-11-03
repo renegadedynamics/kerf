@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -98,12 +98,12 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
 #pragma warning restore CS1591
 
     /// <summary>The vector scaled to length 1.</summary>
-    /// <exception cref="OcctException">The vector has zero length.</exception>
+    /// <exception cref="Standard_Failure">The vector has zero length.</exception>
     public Vector Normalized()
     {
         double d = Length;
         if (d <= GpResolution)   // as gp_Vec::Normalized checks
-            throw new OcctException("Standard_ConstructionError", "gp_Vec::Normalized() - vector has zero norm");
+            throw new Standard_ConstructionError("gp_Vec::Normalized() - vector has zero norm");
         return new Vector(X / d, Y / d, Z / d);
     }
 
@@ -116,8 +116,8 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>The unsigned angle to another vector, in degrees.</summary>
     public double GetAngle(Vector v)
     {
-        using var a = ToGpVec();
-        using var b = v.ToGpVec();
+        var a = ToGpVec();
+        var b = v.ToGpVec();
         return a.Angle(b) * Constants.RadToDeg;
     }
 
@@ -127,9 +127,9 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// </summary>
     public double GetSignedAngle(Vector v, Vector? normal = null)
     {
-        using var a = ToGpVec();
-        using var b = v.ToGpVec();
-        using var n = (normal ?? new Vector(0, 0, -1)).ToGpVec();
+        var a = ToGpVec();
+        var b = v.ToGpVec();
+        var n = (normal ?? new Vector(0, 0, -1)).ToGpVec();
         return a.AngleWithRef(b, n) * Constants.RadToDeg;
     }
 
@@ -143,7 +143,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     /// <summary>The unsigned distance to a plane.</summary>
     public double DistanceToPlane(Plane plane)
     {
-        using var p = ToGpPnt();
+        var p = ToGpPnt();
         return plane.Pln.Distance(p);
     }
 
@@ -166,23 +166,23 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     {
         // gp_GTrsf.Transforms applies the general transform directly; converting to a gp_Trsf first
         // would reject every matrix that isn't a similarity
-        using var coords = ToGpXyz();
-        transform.GTrsf.Transforms(coords);
+        var coords = ToGpXyz();
+        transform.GTrsf.Transforms(ref coords);
         if (!isDirection)
             return new Vector(coords);
 
         // A direction has no position: remove the translation by subtracting where the origin lands
-        using var origin = new gp_XYZ(0, 0, 0);
-        transform.GTrsf.Transforms(origin);
+        var origin = new gp_XYZ(0, 0, 0);
+        transform.GTrsf.Transforms(ref origin);
         return (new Vector(coords) - new Vector(origin)).Normalized();
     }
 
     /// <summary>This vector rotated about an axis by an angle in degrees.</summary>
     public Vector Rotate(Axis axis, double angle)
     {
-        using var v = ToGpVec();
-        using var ax = axis.ToGpAx1();
-        using var rotated = v.Rotated(ax, angle * Constants.DegToRad);
+        var v = ToGpVec();
+        var ax = axis.ToGpAx1();
+        var rotated = v.Rotated(ax, angle * Constants.DegToRad);
         return new Vector(rotated);
     }
 
@@ -205,7 +205,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public gp_Pnt ToGpPnt() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Dir in this direction.</summary>
-    /// <exception cref="OcctException">The vector has zero length.</exception>
+    /// <exception cref="Standard_Failure">The vector has zero length.</exception>
     public gp_Dir ToGpDir() => new(X, Y, Z);
 
     /// <summary>A new OCCT gp_Vec with these components.</summary>

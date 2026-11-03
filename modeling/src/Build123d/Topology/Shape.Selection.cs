@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -88,13 +88,13 @@ public abstract partial class Shape
             + "it is the result of no recorded operation");
         // The record names the sub-shapes where the shape was when it was recorded. If the shape has been
         // relocated since, map each sub-shape back there to look it up.
-        using var here = _wrapped.Location();
+        var here = _wrapped.Location();
         Func<Shape, TopoDS_Shape> key;
-        if (_historyAt is null || _historyAt.IsEqual(here))
+        if (_historyAt is not { } at || at.IsEqual(here))
             key = s => s.TopoShape;
         else
         {
-            var back = _historyAt.Multiplied(here.Inverted());
+            var back = at.Multiplied(here.Inverted());
             key = s => s.TopoShape.Moved(back);
         }
         return select switch
