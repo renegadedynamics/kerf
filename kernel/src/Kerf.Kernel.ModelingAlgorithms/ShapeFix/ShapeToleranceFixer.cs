@@ -219,9 +219,10 @@ public sealed class ShapeToleranceFixer
     public Shape ToleranceLimited(in Shape shape, double tmin, out bool isDone, double tmax = 0.0,
                                          ShapeType styp = ShapeType.Shape)
     {
-        using var overlay = WorkingOverlay.Begin(shape);
-        isDone = LimitTolerance(shape, tmin, tmax, styp);
-        Shape result = overlay.Finish(shape);
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        using var overlay = WorkingOverlay.Begin(work);
+        isDone = LimitTolerance(work, tmin, tmax, styp);
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
         result.TShape()?.FreezeGraph();
         return result;
     }
@@ -232,9 +233,10 @@ public sealed class ShapeToleranceFixer
     /// </summary>
     public Shape WithTolerance(in Shape shape, double preci, ShapeType styp = ShapeType.Shape)
     {
-        using var overlay = WorkingOverlay.Begin(shape);
-        SetTolerance(shape, preci, styp);
-        Shape result = overlay.Finish(shape);
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        using var overlay = WorkingOverlay.Begin(work);
+        SetTolerance(work, preci, styp);
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
         result.TShape()?.FreezeGraph();
         return result;
     }

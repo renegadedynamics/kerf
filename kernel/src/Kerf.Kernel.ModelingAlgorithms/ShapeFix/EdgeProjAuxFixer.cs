@@ -12,6 +12,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -577,7 +578,7 @@ public class EdgeProjAuxFixer : Transient
     {
         var reversed = (Curve2D)curve2d.Copy();
         reversed.Reverse();
-        if (!_edge.TShape()!.IsFrozen)
+        if (!WorkingOverlay.IsReadOnly(_edge.TShape()!))
         {
             EdgeFixer.InternalReplacePCurveObject(_edge, curve2d, reversed);
         }

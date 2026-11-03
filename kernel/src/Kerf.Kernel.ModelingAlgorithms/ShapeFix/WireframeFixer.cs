@@ -26,11 +26,12 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21). <see cref="Load"/> only records the shape. The fixes edit the shape they work on in
-/// place, as OCCT's: a shape holding frozen shapes (any shape a caller holds) is copied at the first fix
-/// (<see cref="CopyAtEntry"/>, decision 583), so the caller's shape never changes; set the context before the
-/// first fix. <see cref="Shape"/> ends the work: the copies the fixes left unchanged are the caller's own again, in the
-/// result and in the context (which answers for the caller's shapes), and the result is frozen. A fix after
-/// <see cref="Shape"/> copies again.
+/// place, as OCCT's, in a working overlay (Kerf unit 10H4) that takes the writes into frozen shapes (any shape a caller
+/// holds), so the caller's shape never changes: this tool's own from the first fix to <see cref="Shape"/>, or, inside
+/// another operation's overlay (ShapeFix_Shape's, ShapeProcess's), that one. Set the context before the first fix.
+/// <see cref="Shape"/> ends the work: the result holds new TShapes for what changed and the caller's own sub-shapes
+/// for the rest, the context records the sub-shapes changed in place (it answers for the caller's shapes), and the
+/// result is frozen. A fix after <see cref="Shape"/> starts a new overlay.
 /// </remarks>
 public class WireframeFixer : RootFixer
 {
@@ -42,8 +43,10 @@ public class WireframeFixer : RootFixer
     private int    _statusWireGaps;
     private int    _statusSmallEdges;
 
-    // The copy at the entry: from the first fix after a load (or a public result) to the next public result.
-    private CopyAtEntry? _entry;
+    // Kerf: the working overlay, from the first fix after a load (or a public result) to the next public result (unit
+    // 10H4): this tool's own (detached) or the current operation's, which it doesn't finish.
+    private WorkingOverlay? _overlay;
+    private bool                   _ownsOverlay;
     private bool                   _toEnter = true;
     // True when the first fix made the context (OCCT makes it in the fix, and then skips applying it).
     private bool                   _isNewContext;
@@ -80,7 +83,7 @@ public class WireframeFixer : RootFixer
     {
         ClearStatuses();
         _shape   = shape;
-        _entry   = null;
+        _overlay = null;
         _toEnter = true;
     }
 
@@ -91,7 +94,7 @@ public class WireframeFixer : RootFixer
     /// </summary>
     public bool FixWireGaps()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixWireGapsCore();
     }
 
@@ -468,7 +471,7 @@ public class WireframeFixer : RootFixer
     /// </summary>
     public bool FixSmallEdges()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixSmallEdgesCore();
     }
 
@@ -562,7 +565,7 @@ public class WireframeFixer : RootFixer
                                 NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
                                 NCollection_Map<Shape> multyEdges)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return CheckSmallEdgesCore(smallEdges, edgeToFaces, faceWithSmall, multyEdges);
     }
 
@@ -720,7 +723,7 @@ public class WireframeFixer : RootFixer
                                 bool modeDrop = false,
                                 double limitAngle = -1)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return MergeSmallEdgesCore(smallEdges, edgeToFaces, faceWithSmall, multyEdges, modeDrop, limitAngle);
     }
 
@@ -1903,8 +1906,8 @@ public class WireframeFixer : RootFixer
     public bool StatusSmallEdges(ExtendStatus status) => global::Kerf.Engine.Healing.Extend.ShapeExtend.DecodeStatus(_statusSmallEdges, status);
 
     /// <summary>
-    /// Returns the resulting shape, frozen; where the loaded shape was frozen, the sub-shapes the fixes left unchanged
-    /// are the caller's own, and the context records the ones they changed in place.
+    /// Returns the resulting shape, frozen: new TShapes for what the fixes changed and the caller's own sub-shapes for
+    /// the rest; the context records the ones changed in place.
     /// </summary>
     public Shape Shape()
     {
@@ -1928,41 +1931,38 @@ public class WireframeFixer : RootFixer
     /// <summary>The limit angle (-1: no limit).</summary>
     public double LimitAngle() => _limitAngle;
 
-    // The first fix after a load or a public result: copies the loaded shape when it holds frozen shapes.
-    private void EnterWork()
+    // Kerf: the first fix after a load or a public result takes the overlay the fixes work in; each fix enters it.
+    private WorkingOverlay.Scope EnterWork()
     {
-        if (!_toEnter)
+        if (_toEnter)
         {
-            return;
+            _toEnter     = false;
+            _overlay     = null;
+            _ownsOverlay = false;
+            if (!_shape.IsNull)
+            {
+                if (Context() is null)
+                {
+                    // OCCT makes the context in the fix; it is made here so that the overlay records into it
+                    SetContext(new ReShapeBuilder());
+                    _isNewContext = true;
+                }
+                _overlay = WorkingOverlay.ForTool(_shape, Context(), out _ownsOverlay);
+            }
         }
-        _toEnter = false;
-        _entry   = null;
-        if (_shape.IsNull)
-        {
-            return;
-        }
-        if (Context() is null)
-        {
-            // OCCT makes the context in the fix; it is made here so that the copy records into it
-            SetContext(new ReShapeBuilder());
-            _isNewContext = true;
-        }
-        if (BrepTools.HoldsFrozen(_shape))
-        {
-            _entry = new CopyAtEntry(_shape, Context());
-            _shape = _entry.Shape();
-        }
+        return _overlay?.Enter() ?? default;
     }
 
-    // Before a public result: the copies the fixes left unchanged are the caller's own again.
+    // Kerf: before a public result, finishes this tool's overlay.
     private void EndWork()
     {
         _toEnter = true;
-        CopyAtEntry? entry = _entry;
-        _entry = null;
-        if (entry is not null)
+        WorkingOverlay? overlay = _ownsOverlay ? _overlay : null;
+        _overlay     = null;
+        _ownsOverlay = false;
+        if (overlay is not null)
         {
-            _shape = entry.Finish(_shape);
+            _shape = overlay.Finish(_shape);
         }
     }
 }

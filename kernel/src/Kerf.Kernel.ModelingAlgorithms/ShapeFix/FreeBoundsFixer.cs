@@ -24,10 +24,10 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <remarks>
 /// <para>
 /// A working object (decision 21; OCCT uses it by value). The connection writes into the edges of the shape it is given
-/// (vertices removed and added). A shape holding frozen shapes (any shape a caller holds) is copied first
-/// (<see cref="CopyAtEntry"/>, decision 583): the caller's shape never changes, and
-/// <see cref="GetShape"/> is the modified copy with the caller's own sub-shapes wherever they are unchanged (the shape
-/// itself when nothing changed). The results are frozen.
+/// (vertices removed and added). It runs on the caller's shape in a working overlay (Kerf unit 10H4), which takes
+/// those writes: the caller's shape never changes, and <see cref="GetShape"/> holds new TShapes for what changed and
+/// the caller's own sub-shapes wherever they are unchanged (the shape itself when nothing changed). The results are
+/// frozen.
 /// </para>
 /// </remarks>
 public sealed class FreeBoundsFixer
@@ -103,9 +103,8 @@ public sealed class FreeBoundsFixer
 
     private bool Perform()
     {
-        // OCCT.NET: the connection writes into the shape's edges; a frozen shape is copied (decision 583).
-        var entry = new CopyAtEntry(_shape);
-        _shape = entry.Shape();
+        // Kerf: the connection writes into the shape's edges; it runs in a working overlay (unit 10H4).
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape);
 
         FreeBounds safb;
         if (_shared)
@@ -162,10 +161,13 @@ public sealed class FreeBoundsFixer
             }
         }
 
-        // OCCT.NET: the caller's own sub-shapes back wherever they are unchanged
-        _shape = entry.Finish(_shape, [_wires, _edges]);
-        _wires = _wires.IsNull ? _wires : ShapeCasts.Compound(entry.Final(_wires));
-        _edges = _edges.IsNull ? _edges : ShapeCasts.Compound(entry.Final(_edges));
+        // Kerf: the caller's own sub-shapes wherever they are unchanged
+        if (overlay is not null)
+        {
+            _shape = overlay.Finish(_shape, [_wires, _edges]);
+            _wires = _wires.IsNull ? _wires : ShapeCasts.Compound(overlay.Final(_wires));
+            _edges = _edges.IsNull ? _edges : ShapeCasts.Compound(overlay.Final(_edges));
+        }
         return true;
     }
 }

@@ -30,10 +30,12 @@ namespace Kerf.Engine.Healing.Fixes;
 /// A working object (decision 21). <see cref="Init"/> loads the shape; <see cref="Perform"/> (spot and strip faces),
 /// <see cref="FixSpotFace"/>, <see cref="FixStripFace"/>, <see cref="FixSplitFace"/> and <see cref="FixShape"/> fix it,
 /// recording the changes in the context. They also write into the shape in place (a merged strip's vertex tolerances,
-/// the faces' fixes), so a shape holding frozen shapes (any shape a caller holds) is copied at the first fix
-/// (<see cref="CopyAtEntry"/>, decision 583): set the context before it. <see cref="Shape"/> gives back the
-/// caller's own sub-shapes wherever they are unchanged (the shape itself when nothing changed), re-keys the context to
-/// the caller's shapes and freezes the result; a fix after it copies again.
+/// the faces' fixes), in a working overlay (Kerf unit 10H4) that takes the writes into frozen shapes (any shape a
+/// caller holds): this tool's own from the first fix to <see cref="Shape"/>, or, inside another operation's overlay,
+/// that one. Set the context before the first fix. <see cref="Shape"/> gives new TShapes for what changed and the
+/// caller's own sub-shapes for the rest (the shape itself when nothing changed), records in the context the
+/// sub-shapes changed in place, and freezes the result; a fix after it starts a new overlay. The shapes the fixes
+/// return show their changes only inside the overlay: read <see cref="Shape"/>.
 /// </para>
 /// <para>
 /// OCCT's public per-face steps (ReplaceVerticesInCaseOfSpot, RemoveFacesInCaseOfSpot, ReplaceInCaseOfStrip,
@@ -49,9 +51,11 @@ public class FixSmallFaceFixer : RootFixer
     private int _status;
     private readonly CheckSmallFaceAnalysis _analyzer;
 
-    // The copy at the entry, from the first fix to the public result (null when the shape holds no frozen shape).
-    private CopyAtEntry? _entry;
-    // True when the loaded shape must be checked (and copied if frozen) at the next fix.
+    // Kerf: the working overlay, from the first fix to the public result (unit 10H4): this tool's own (detached) or the
+    // current operation's, which it doesn't finish.
+    private WorkingOverlay? _overlay;
+    private bool _ownsOverlay;
+    // True when the next fix starts a new overlay.
     private bool _toEnter;
 
     /// <summary>Constructor (precision Confusion).</summary>
@@ -74,7 +78,7 @@ public class FixSmallFaceFixer : RootFixer
         }
         _result = _shape;
         Context()!.InternalApply(_shape);
-        _entry   = null;
+        _overlay = null;
         _toEnter = true;
     }
 
@@ -91,7 +95,7 @@ public class FixSmallFaceFixer : RootFixer
     /// </summary>
     public Shape FixSpotFace()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         // gp_Pnt spot;
         // double spotol;
         bool done = false;
@@ -250,7 +254,7 @@ public class FixSmallFaceFixer : RootFixer
     /// </summary>
     public Shape FixStripFace(bool wasdone = false)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         if (_shape.IsNull)
         {
             return _shape;
@@ -648,7 +652,7 @@ public class FixSmallFaceFixer : RootFixer
     /// </summary>
     public Shape FixSplitFace(in Shape s)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         if (_shape.IsNull)
         {
             return _shape;
@@ -925,7 +929,7 @@ public class FixSmallFaceFixer : RootFixer
     /// </summary>
     public Shape FixShape()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         Shape fixSh = new();
         if (_shape.IsNull)
         {
@@ -961,35 +965,30 @@ public class FixSmallFaceFixer : RootFixer
     /// <summary>Fixes a pin face: does nothing (OCCT's stub).</summary>
     public bool FixPinFace(ref Face f) => true;
 
-    // At the first fix after Init or a public result: copies the loaded shape when it holds a frozen shape.
-    private void EnterWork()
+    // Kerf: at the first fix after Init or a public result, takes the overlay the fixes work in; then enters it.
+    private WorkingOverlay.Scope EnterWork()
     {
-        if (!_toEnter)
+        if (_toEnter)
         {
-            return;
+            _toEnter = false;
+            _overlay = WorkingOverlay.ForTool(_shape, Context(), out _ownsOverlay);
         }
-        _toEnter = false;
-        _entry = new CopyAtEntry(_shape, Context());
-        if (!_entry.IsCopied)
-        {
-            _entry = null;
-            return;
-        }
-        _shape = _entry.Shape();
-        _result = _entry.Copied(_result);
+        return _overlay?.Enter() ?? default;
     }
 
-    // Before a public result: the caller's own sub-shapes back where unchanged, the context re-keyed.
+    // Kerf: before a public result, finishes this tool's overlay: new TShapes for what changed, the caller's own for
+    // the rest, the context brought up to date.
     private void EndWork()
     {
         _toEnter = true;
-        CopyAtEntry? entry = _entry;
-        _entry = null;
-        if (entry is null)
+        WorkingOverlay? overlay = _ownsOverlay ? _overlay : null;
+        _overlay     = null;
+        _ownsOverlay = false;
+        if (overlay is null)
         {
             return;
         }
-        _shape = entry.Finish(_shape, [_result]);
-        _result = entry.Final(_result);
+        _shape = overlay.Finish(_shape, [_result]);
+        _result = overlay.Final(_result);
     }
 }

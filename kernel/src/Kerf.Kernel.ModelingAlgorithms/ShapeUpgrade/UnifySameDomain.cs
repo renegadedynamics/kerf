@@ -40,18 +40,18 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// </para>
 /// <para>
 /// A working object (decision 21). <see cref="Build"/> edits the shape it works on in place, as OCCT's does (even in
-/// the safe input mode OCCT adds pcurves to the input's edges): a shape holding frozen shapes (any shape a caller
-/// holds) is copied first (<see cref="CopyAtEntry"/>, decision 583), so the caller's shape never changes,
-/// whatever <see cref="SetSafeInputMode"/> says; the algorithm then runs on the copy with the mode given, so its
-/// results are OCCT's for that mode. At the end the copied sub-shapes left unchanged are the caller's own again: a
-/// shape needing nothing gives back the input itself. An unfrozen input (ported code's) is worked on in place, as in
-/// OCCT.
+/// the safe input mode OCCT adds pcurves to the input's edges), in a working overlay (Kerf unit 10H4) that takes the
+/// writes into frozen shapes (any shape a caller holds), so the caller's shape never changes, whatever
+/// <see cref="SetSafeInputMode"/> says; the algorithm runs with the mode given, so its results are OCCT's for that
+/// mode. At the end the result holds new TShapes for what changed and the caller's own sub-shapes for the rest: a shape
+/// needing nothing gives back the input itself. The operation's own TShapes (ported code's), and every shape inside
+/// another operation's overlay, are worked on in place, as in OCCT.
 /// </para>
 /// <para>
 /// <see cref="Shape"/> and <see cref="History()"/> freeze the result (the history lists sub-shapes of the input and of
 /// the result); ported code that goes on building reads <see cref="InternalShape"/> and
-/// <see cref="InternalHistory"/>. The history answers for the caller's sub-shapes (decision 642's composition); a
-/// sub-shape changed in place (a pcurve added) is modified into its changed copy, where OCCT's history has no entry.
+/// <see cref="InternalHistory"/>. The history answers for the caller's sub-shapes, directly; a sub-shape changed in
+/// place (a pcurve added) is modified into what stands for it now, where OCCT's history has no entry.
 /// </para>
 /// </remarks>
 public partial class UnifySameDomain : Transient
@@ -66,7 +66,7 @@ public partial class UnifySameDomain : Transient
     private bool                          _safeInputMode;
     private Shape                  _shape;
     private readonly ReShapeBuilder   _context;
-    private NCollection_Map<Shape> _keepShapes = new(ShapeHasher.Instance);
+    private readonly NCollection_Map<Shape> _keepShapes = new(ShapeHasher.Instance);
     private readonly DataMapOfFacePlane   _facePlaneMap = new(ShapeHasher.Instance);
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _eFmap =
       new(ShapeHasher.Instance);
@@ -74,8 +74,8 @@ public partial class UnifySameDomain : Transient
 
     private History? _history; //!< The history.
 
-    // OCCT.NET: the history FillHistory made over the shape worked on, merged into myHistory by Build once the copy at
-    // the entry is finished (composed onto the caller's sub-shapes).
+    // OCCT.NET: the history FillHistory made over the shape worked on, merged into myHistory by Build once its working
+    // overlay is finished (composed with the changes made in place).
     private History? _usdHistory;
 
     /// <summary>Empty constructor.</summary>
@@ -242,37 +242,19 @@ public partial class UnifySameDomain : Transient
     /// <summary>Performs unification and builds the resulting shape.</summary>
     public void Build()
     {
-        // OCCT.NET: frozen. The copy at the entry (decision 583): OCCT writes into the shape it works on (pcurves added
-        // to the edges of the faces it unifies, even in the safe input mode)
-        var          entry    = new CopyAtEntry(_initShape, _context);
-        Shape input    = _initShape;
-        NCollection_Map<Shape> keepShapes = _keepShapes;
-        if (entry.IsCopied)
-        {
-            _initShape  = entry.Shape();
-            _shape      = entry.Shape();
-            _keepShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            foreach (Shape keepShape in keepShapes)
-            {
-                _keepShapes.Add(entry.Copied(keepShape));
-            }
-        }
+        // Kerf: the working overlay (unit 10H4; decision 583): OCCT writes into the shape it works on (pcurves added to
+        // the edges of the faces it unifies, even in the safe input mode)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_initShape, _context);
+        BuildCore();
 
-        try
+        if (overlay is not null)
         {
-            BuildCore();
+            _shape = overlay.Finish(_shape);
         }
-        finally
-        {
-            _initShape  = input;
-            _keepShapes = keepShapes;
-        }
-
-        _shape = entry.Finish(_shape);
         if (_usdHistory is not null)
         {
             // Merge the history of the operation into global history
-            _history!.Merge(entry.Composed(_usdHistory));
+            _history!.Merge(overlay is null ? _usdHistory : overlay.Composed(_usdHistory));
             _usdHistory = null;
         }
     }
@@ -1757,8 +1739,8 @@ public partial class UnifySameDomain : Transient
         }
 
         // Merge the history of the operation into global history
-        // OCCT.NET: frozen. Build merges it, composed onto the caller's sub-shapes, once the copy at the entry is
-        // finished (BRepTools_CopyAtEntry.Composed); for an input worked on in place that is OCCT's merge.
+        // OCCT.NET: Build merges it once its working overlay is finished, composed with the changes made in place
+        // (WorkingOverlay.Composed); inside another operation's overlay that is OCCT's merge.
         _usdHistory = usdHistory;
     }
 }

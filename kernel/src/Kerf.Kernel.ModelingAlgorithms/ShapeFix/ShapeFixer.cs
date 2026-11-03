@@ -24,11 +24,12 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <remarks>
 /// <para>
 /// A working object (decision 21). <see cref="Init"/> records the shape (and makes a context considering locations if
-/// none was set). <see cref="Perform"/> edits the shape it works on in place, as OCCT's: a shape holding frozen shapes
-/// (any shape a caller holds) is copied first (<see cref="CopyAtEntry"/>, decision 583), so the caller's
-/// shape never changes. At the end of <see cref="Perform"/> the copies the fixes left unchanged are the caller's own
-/// again, in the result and in the context, and the context records the sub-shapes changed in place, so it answers for
-/// the caller's shapes. A shape needing nothing gives back the input itself.
+/// none was set). <see cref="Perform"/> edits the shape it works on in place, as OCCT's, in a working overlay (Kerf
+/// unit 10H4) that takes the writes into frozen shapes (any shape a caller holds), so the caller's shape never changes.
+/// At the end of <see cref="Perform"/> the result holds new TShapes for what the fixes changed and the caller's own
+/// for the rest, and the context records the sub-shapes changed in place, so it answers for the caller's shapes. A
+/// shape needing nothing gives back the input itself. Inside another operation's overlay (ShapeProcess's), it runs in
+/// place in that one.
 /// </para>
 /// <para>
 /// <see cref="Shape"/> freezes the result; ported code fixing a shape it owns reads <see cref="InternalShape"/>. The
@@ -60,9 +61,6 @@ public class ShapeFixer : RootFixer
     protected int                           _fixVertexTolMode;
     /// <summary>The status.</summary>
     protected int                           _status;
-
-    // The shapes added to myMapFixingShape during the current Perform (keys over the working copy).
-    private List<Shape>? _addedKeys;
 
     /// <summary>Empty constructor.</summary>
     public ShapeFixer()
@@ -115,31 +113,12 @@ public class ShapeFixer : RootFixer
     /// </summary>
     public bool Perform(ProgressRange progress = default)
     {
-        // OCCT's early return (a shape this tool already fixed, or one the context made) runs on the caller's shape
-        Shape shapeNullLoc = _shape.Located(new Placement());
-        if (Context()!.IsNewShape(_shape) || _mapFixingShape.Contains(shapeNullLoc))
-        {
-            return PerformCore(progress);
-        }
-
-        var          entry = new CopyAtEntry(_shape, Context());
-        Shape input = _shape;
-        _shape     = entry.Shape();
-        _addedKeys = [];
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape, Context());
         bool status = PerformCore(progress);
-        _shape  = input;
-        _result = entry.Finish(_result);
-
-        // the shapes fixed, as the caller's (a further Perform on them takes OCCT's early return)
-        if (entry.IsCopied)
+        if (overlay is not null)
         {
-            foreach (Shape key in _addedKeys)
-            {
-                _mapFixingShape.Remove(key);
-                _mapFixingShape.Add(entry.Original(key));
-            }
+            _result = overlay.Finish(_result);
         }
-        _addedKeys = null;
         return status;
     }
 
@@ -174,7 +153,6 @@ public class ShapeFixer : RootFixer
             return status;
         }
         _mapFixingShape.Add(shapeNullLoc);
-        _addedKeys?.Add(shapeNullLoc);
         //---------------------------------------
         _shape.Location(l, false);
         Shape s = context.InternalApply(_shape);

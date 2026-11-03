@@ -345,20 +345,21 @@ public sealed class EdgeConnectFixer
     }
 
     /// <summary>
-    /// The functional form of <see cref="Build()"/>: builds the recorded connections on an exact copy of
-    /// <paramref name="shape"/>, which must hold every edge recorded, and returns it frozen, with the caller's own
-    /// sub-shapes wherever nothing changed (<paramref name="shape"/> itself when nothing did). Clears the connections.
+    /// The functional form of <see cref="Build()"/>: builds the recorded connections on <paramref name="shape"/>, which
+    /// must hold every edge recorded, in a working overlay, and returns it frozen, with the caller's own sub-shapes
+    /// wherever nothing changed (<paramref name="shape"/> itself when nothing did). Clears the connections.
     /// </summary>
     public Shape Built(in Shape shape)
     {
-        var entry = new CopyAtEntry(shape);
-        if (entry.IsCopied)
+        // the caller's unfrozen shapes (a compound of frozen edges) are copied, and the recorded shapes mapped onto
+        // the copies; the frozen ones are written in the overlay
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        if (copies is not null)
         {
-            // the recorded vertices and edges onto their copies
             var vertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, Shape> pair in _vertices)
             {
-                vertices.Bind(entry.Copied(pair.Key), entry.Copied(pair.Value));
+                vertices.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), WorkingOverlay.CopiedIn(pair.Value, copies));
             }
             var lists = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _lists)
@@ -366,15 +367,16 @@ public sealed class EdgeConnectFixer
                 var list = new NCollection_List<Shape>();
                 for (var it = new NCollection_List<Shape>.Iterator(pair.Value); it.More(); it.Next())
                 {
-                    list.Append(entry.Copied(it.Value()));
+                    list.Append(WorkingOverlay.CopiedIn(it.Value(), copies));
                 }
-                lists.Bind(entry.Copied(pair.Key), list);
+                lists.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), list);
             }
             _vertices = vertices;
             _lists    = lists;
         }
+        using var overlay = WorkingOverlay.Begin(work);
         Build();
-        Shape result = entry.Finish(entry.Shape());
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
         result.TShape()?.FreezeGraph();
         return result;
     }

@@ -465,7 +465,7 @@ public class ShapeFix_WireTests
     }
 
     [Fact]
-    public void LoadWireData_WithFrozenEdges_IsCopiedAtTheFirstFix()
+    public void LoadWireData_WithFrozenEdges_IsFixedInAWorkingOverlay()
     {
         Edge[] anE = Square(out _);
         foreach (Edge e in anE)
@@ -481,8 +481,9 @@ public class ShapeFix_WireTests
         sfw.Load(sbwd);
         sfw.SetFace(PlaneFace());
         Assert.True(sfw.Perform());
-        // between the first fix and the result the wire data holds copies
-        Assert.False(sbwd.Edge(1).TShape()!.IsFrozen);
+        // between the first fix and the result the wire data holds the caller's edges, whose changes are in the
+        // tool's working overlay (Kerf unit 10H4; a copy at the entry before)
+        Assert.True(sbwd.Edge(1).TShape()!.IsFrozen);
         Wire aRes = sfw.Wire();
         Assert.All(Edges(aRes), e => Assert.Contains(anE, c => Shares(c, e)));
     }

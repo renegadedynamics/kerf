@@ -30,10 +30,11 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <remarks>
 /// <para>
 /// A working object (decision 21). <see cref="Init"/> only records the shell. <see cref="Perform"/> and
-/// <see cref="FixFaceOrientation"/> edit the shell they work on in place, as OCCT's: a shell holding frozen shapes (any
-/// shell a caller holds) is copied first (<see cref="CopyAtEntry"/>, decision 583) and the caller's shell
-/// never changes. At the end of the fix the copies left unchanged are the caller's own again, and the context answers
-/// for the caller's sub-shapes. <see cref="Shell"/>, <see cref="Shape"/> and <see cref="ErrorFaces"/> freeze what they
+/// <see cref="FixFaceOrientation"/> edit the shell they work on in place, as OCCT's, in a working overlay (Kerf unit
+/// 10H4) that takes the writes into frozen shapes (any shell a caller holds), so the caller's shell never changes. At
+/// the end of the fix the results hold new TShapes for what changed and the caller's own for the rest, and the context
+/// answers for the caller's sub-shapes. Inside another operation's overlay (ShapeFix_Solid's) they run in place in
+/// that one. <see cref="Shell"/>, <see cref="Shape"/> and <see cref="ErrorFaces"/> freeze what they
 /// return; ported code that goes on building reads the internal forms.
 /// </para>
 /// </remarks>
@@ -103,11 +104,10 @@ public class ShellFixer : RootFixer
         {
             SetContext(new ReShapeBuilder());
         }
-        var entry = new CopyAtEntry(_shell, Context());
-        _shell = ShapeCasts.Shell(entry.Shape());
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shell, Context());
         _shape = _shell;
         bool status = PerformCore(progress);
-        Finish(entry);
+        Finish(overlay);
         return status;
     }
 
@@ -1370,12 +1370,12 @@ public class ShellFixer : RootFixer
     /// <paramref name="nonManifold"/>, one non-manifold shell may be made. Returns true if something was done; the
     /// replacement of the shell is recorded in the context.
     /// </summary>
-    /// <remarks>A shell holding frozen shapes is copied first (see the class's remarks).</remarks>
+    /// <remarks>It runs in a working overlay (see the class's remarks).</remarks>
     public bool FixFaceOrientation(in Shell shell, bool isAccountMultiConex = true, bool nonManifold = false)
     {
-        var entry = new CopyAtEntry(shell, Context());
-        bool done = FixFaceOrientationCore(ShapeCasts.Shell(entry.Shape()), isAccountMultiConex, nonManifold);
-        Finish(entry);
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(shell, Context());
+        bool done = FixFaceOrientationCore(shell, isAccountMultiConex, nonManifold);
+        Finish(overlay);
         return done;
     }
 
@@ -1661,18 +1661,17 @@ public class ShellFixer : RootFixer
         _nonManifold = isNonManifold;
     }
 
-    // The end of a fix of a copied shell: the copies left unchanged are the caller's again, in the results and in the
-    // context.
-    private void Finish(CopyAtEntry entry)
+    // The end of a fix in its own working overlay (none inside another operation's): the results with new TShapes for
+    // what changed and the caller's own for the rest, and the context answering for the caller's shapes.
+    private void Finish(WorkingOverlay? overlay)
     {
-        if (!entry.IsCopied)
+        if (overlay is null)
         {
-            entry.Finish(_shape);
             return;
         }
-        _shape    = entry.Finish(_shape, [_shell, _errFaces]);
-        _shell    = ShapeCasts.Shell(entry.Final(_shell));
-        _errFaces = ShapeCasts.Compound(entry.Final(_errFaces));
+        _shape    = overlay.Finish(_shape, [_shell, _errFaces]);
+        _shell    = ShapeCasts.Shell(overlay.Final(_shell));
+        _errFaces = ShapeCasts.Compound(overlay.Final(_errFaces));
     }
 
     private static Shape Published(in Shape shape)

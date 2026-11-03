@@ -24,16 +24,15 @@ namespace Kerf.Engine.Healing.Process;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The working copy</b> (decision 1022). OCCT's operators write into the shape they process: SetTolerance and
-/// SameParameter change tolerances and pcurves in place, the modifiers run BRepTools_Modifier in its mutable-input
-/// mode, which updates the input's vertices. A shape a caller holds is frozen, so while operators run
-/// (<see cref="ShapeProcess"/>'s Perform, or an operator run on its own) the context's result is an exact copy
-/// (<c>BRepTools_CopyAtEntry</c>) of a result holding frozen shapes, the operators work on it in place as OCCT's do,
-/// and the history keeps OCCT's keys: a sub-shape of <see cref="Shape"/> not yet in the map stands for its copy. At
-/// the end the copy's sub-shapes left unchanged are the caller's own again, in the result and in the map's values,
-/// so a shape that needed nothing comes back itself. The map has OCCT's entries: a sub-shape changed in place (a
-/// tolerance raised, a vertex updated) has none, as natively, where it is the same TShape; in the port the result
-/// holds a changed copy of it.
+/// <b>The working overlay</b> (decision 1022; Kerf unit 10H4). OCCT's operators write into the shape they process:
+/// SetTolerance and SameParameter change tolerances and pcurves in place, the modifiers run BRepTools_Modifier in its
+/// mutable-input mode, which updates the input's vertices. A shape a caller holds is frozen, so while operators run
+/// (<see cref="ShapeProcess"/>'s Perform, or an operator run on its own) they run on the context's result in a working
+/// overlay that takes those writes, as OCCT's run in place, and the history keeps OCCT's keys, the caller's own
+/// sub-shapes. At the end the result and the map's values hold new TShapes for what changed and the caller's own
+/// sub-shapes for the rest, so a shape that needed nothing comes back itself. The map has OCCT's entries: a sub-shape
+/// changed in place (a tolerance raised, a vertex updated) has none, as natively, where it is the same TShape; in Kerf
+/// the result holds a new TShape for it. Inside another operation's overlay the operators run in place in that one.
 /// </para>
 /// <para>
 /// <see cref="Result"/> and <see cref="Map"/> are publication points: they freeze the result and the map's values.
@@ -49,8 +48,9 @@ public class ShapeContext : ProcessContext
     private ShapeType _until;
     private bool _nonManifold;
 
-    // OCCT.NET: the working copy of the result while operators run (decision 1022)
-    private CopyAtEntry? _entry;
+    // Kerf: the working overlay of the result while operators run (decision 1022, unit 10H4); null when they run in
+    // another operation's
+    private WorkingOverlay? _overlay;
     private int _writeDepth;
 
     /// <summary>Creates a context with the resource file <paramref name="file"/> and the scope <paramref name="seq"/>.</summary>
@@ -153,25 +153,24 @@ public class ShapeContext : ProcessContext
     public bool IsNonManifold => _nonManifold;
 
     // ---------------------------------------------------------------------------------------------------------------
-    // OCCT.NET: the working copy (decision 1022)
+    // OCCT.NET: the working copy (decision 1022), a working overlay since Kerf unit 10H4
 
     /// <summary>
-    /// Starts a run of operators: at the outermost call, a result holding frozen shapes is replaced by an exact copy,
-    /// and the map's values by their copies.
+    /// Starts a run of operators: at the outermost call, opens a working overlay over the result (unless the run is
+    /// inside another operation's overlay, which then takes the operators' writes).
     /// </summary>
     internal void InternalBeginWrite()
     {
         if (_writeDepth++ > 0)
         {
-            InternalEnsureWritable();
             return;
         }
-        BeginCopy();
+        _overlay = _result.IsNull ? null : WorkingOverlay.BeginUnlessWriting(_result);
     }
 
     /// <summary>
-    /// Ends a run of operators: at the outermost call, the copy's sub-shapes left unchanged are the caller's own again,
-    /// in the result and in the map's values.
+    /// Ends a run of operators: at the outermost call, finishes the overlay: the result and the map's values hold new
+    /// TShapes for what the operators changed and the caller's own sub-shapes for the rest.
     /// </summary>
     internal void InternalEndWrite()
     {
@@ -179,102 +178,28 @@ public class ShapeContext : ProcessContext
         {
             return;
         }
-        EndCopy();
-    }
-
-    /// <summary>
-    /// Inside a run of operators, takes a new copy if the result holds frozen shapes again (an operator published it
-    /// through <see cref="Result"/>), so that the next operator can write into it.
-    /// </summary>
-    internal void InternalEnsureWritable()
-    {
-        if (_writeDepth > 0 && !_result.IsNull && BrepTools.HoldsFrozen(_result))
-        {
-            EndCopy();
-            BeginCopy();
-        }
-    }
-
-    private void BeginCopy()
-    {
-        _entry = null;
-        if (_result.IsNull || !BrepTools.HoldsFrozen(_result))
+        WorkingOverlay? overlay = _overlay;
+        _overlay = null;
+        if (overlay is null)
         {
             return;
         }
 
-        _entry = new CopyAtEntry(_result, null, true);
-        _result = _entry.Shape();
-        var keys = new List<Shape>(_map.Keys);
-        foreach (Shape key in keys)
+        using (overlay)
         {
-            _map.Bind(key, Copied(_map.Find(key)));
+            var values = new List<Shape>();
+            foreach (KeyValuePair<Shape, Shape> item in _map)
+            {
+                values.Add(item.Value);
+            }
+            _result = overlay.Finish(_result, values);
+            var keys = new List<Shape>(_map.Keys);
+            foreach (Shape key in keys)
+            {
+                _map.Bind(key, overlay.Final(_map.Find(key)));
+            }
         }
     }
-
-    private void EndCopy()
-    {
-        CopyAtEntry? entry = _entry;
-        _entry = null;
-        if (entry is null)
-        {
-            return;
-        }
-
-        var values = new List<Shape>();
-        foreach (KeyValuePair<Shape, Shape> item in _map)
-        {
-            values.Add(item.Value);
-        }
-        _result = entry.Finish(_result, values);
-        var keys = new List<Shape>(_map.Keys);
-        foreach (Shape key in keys)
-        {
-            _map.Bind(key, entry.Final(_map.Find(key)));
-        }
-    }
-
-    // The copy of a shape of the result (a compound made of them, as RecModif makes for a split shape, rebuilt on
-    // their copies; any other shape is itself).
-    private Shape Copied(in Shape shape)
-    {
-        if (shape.IsNull || _entry is null)
-        {
-            return shape;
-        }
-        Shape copy = _entry.Copied(shape);
-        if (!ReferenceEquals(copy.TShape(), shape.TShape()) || shape.ShapeType() != ShapeType.Compound)
-        {
-            return copy;
-        }
-
-        bool isChanged = false;
-        var children = new List<Shape>();
-        for (var it = new Iterator(shape, false, false); it.More(); it.Next())
-        {
-            Shape child = Copied(it.Value());
-            isChanged |= !ReferenceEquals(child.TShape(), it.Value().TShape());
-            children.Add(child);
-        }
-        if (!isChanged)
-        {
-            return shape;
-        }
-
-        Shape result = shape.EmptyCopied();
-        result.Orientation(Forward);
-        var b = new BrepBuilder();
-        foreach (Shape child in children)
-        {
-            b.Add(result, child);
-        }
-        result.Orientation(shape.Orientation());
-        result.Location(shape.Location(), false);
-        return result;
-    }
-
-    // What a sub-shape of the shape not yet in the map stands for: its working copy (itself when there is none)
-    private Shape Working(in Shape shape) => _entry is null ? shape : _entry.Copied(shape);
 
     // ---------------------------------------------------------------------------------------------------------------
 
@@ -283,8 +208,7 @@ public class ShapeContext : ProcessContext
                                  MsgRegistrator? msg,
                                  NCollection_DataMap<Shape, Shape> map,
                                  MsgRegistrator? myMsg,
-                                 ShapeType until,
-                                 ShapeContext context)
+                                 ShapeType until)
     {
         Shape r = s;
         // gka  -modification to keep history for shape with location (OCC21617)
@@ -295,10 +219,6 @@ public class ShapeContext : ProcessContext
         if (map.IsBound(r))
         {
             r = map.Find(r);
-        }
-        else
-        {
-            r = context.Working(r); // OCCT.NET: the working copy (decision 1022)
         }
         if (!r.IsNull)
         {
@@ -369,9 +289,9 @@ public class ShapeContext : ProcessContext
                     myMsg.Send(s, iter.Value(), Warning);
                 }
             }
-            else if (msgmap.IsBound(context.Working(s))) // OCCT.NET: S as the operator saw it (decision 1022)
+            else if (msgmap.IsBound(s))
             {
-                NCollection_List<Msg> msglist = msgmap.Find(context.Working(s));
+                NCollection_List<Msg> msglist = msgmap.Find(s);
                 for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
                     myMsg.Send(s, iter.Value(), Warning);
@@ -386,7 +306,7 @@ public class ShapeContext : ProcessContext
 
         for (var it = new Iterator(s); it.More(); it.Next())
         {
-            RecModif(it.Value(), repl, msg, map, myMsg, until, context);
+            RecModif(it.Value(), repl, msg, map, myMsg, until);
         }
     }
 
@@ -400,7 +320,7 @@ public class ShapeContext : ProcessContext
         {
             return;
         }
-        RecModif(_shape, repl, msg, _map, _msg, _until, this);
+        RecModif(_shape, repl, msg, _map, _msg, _until);
         if (_map.IsBound(_shape))
         {
             _result = _map.Find(_shape);
@@ -413,8 +333,7 @@ public class ShapeContext : ProcessContext
                                  MsgRegistrator? msg,
                                  NCollection_DataMap<Shape, Shape> map,
                                  MsgRegistrator? myMsg,
-                                 ShapeType until,
-                                 ShapeContext context)
+                                 ShapeType until)
     {
         if (s.IsNull)
         {
@@ -428,10 +347,6 @@ public class ShapeContext : ProcessContext
         if (map.IsBound(r))
         {
             r = map.Find(r);
-        }
-        else
-        {
-            r = context.Working(r); // OCCT.NET: the working copy (decision 1022)
         }
         if (!r.IsNull)
         {
@@ -457,10 +372,9 @@ public class ShapeContext : ProcessContext
         {
             Shape cur, next = r;
             NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-            Shape workS = context.Working(s); // OCCT.NET: S as the operator saw it (decision 1022)
-            if (msgmap.IsBound(workS))
+            if (msgmap.IsBound(s))
             {
-                next = workS;
+                next = s;
             }
             do
             {
@@ -484,7 +398,7 @@ public class ShapeContext : ProcessContext
 
         for (var it = new Iterator(s, false /*,false*/); it.More(); it.Next())
         {
-            RecModif(it.Value(), repl, msg, map, myMsg, until, context);
+            RecModif(it.Value(), repl, msg, map, myMsg, until);
         }
     }
 
@@ -494,7 +408,7 @@ public class ShapeContext : ProcessContext
     /// </summary>
     public void RecordModification(ReShapeBuilder repl, MsgRegistrator? msg)
     {
-        RecModif(_shape, repl, msg, _map, _msg, _until, this);
+        RecModif(_shape, repl, msg, _map, _msg, _until);
         if (_map.IsBound(_shape))
         {
             _result = _map.Find(_shape);

@@ -1,5 +1,5 @@
-// OCCT.NET: the functional twins of ShapeBuild_Edge's in-place methods (docs/phase3-design.md, section 4.6). Not a port
-// of an OCCT file.
+// OCCT.NET: the functional twins of ShapeBuild_Edge's in-place methods (docs/phase3-design.md, section 4.6), on the
+// working overlay since Kerf unit 10H4. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Topology;
@@ -12,9 +12,10 @@ namespace Kerf.Engine.Healing.Build;
 
 public sealed partial class BuildEdgeBuilder
 {
-    // The twin of an in-place method: the operation on an exact copy for write of the edge, whose sub-shapes it left
-    // unchanged are the input's own again (the input itself if nothing changed), frozen.
-    private static Edge OnCopy(in Edge edge, Action<Edge> operation, out History history)
+    // The twin of an in-place method (Kerf unit 10H4): the operation on the caller's edge in a working overlay, which
+    // takes its writes; the result holds new TShapes for what changed and the edge's own for the rest (the edge itself
+    // if nothing changed), frozen. The history is the overlay's, direct.
+    private static Edge InOverlay(in Edge edge, Action<Edge> operation, out History history)
     {
         if (edge.IsNull)
         {
@@ -22,9 +23,11 @@ public sealed partial class BuildEdgeBuilder
             return edge;
         }
 
-        Edge copy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(edge, out _));
-        operation(copy);
-        Shape result = BrepTools.KeepUnchanged(edge, copy, out history);
+        Edge work = ShapeCasts.Edge(WorkingOverlay.WithUnfrozenCopied(edge, out Dictionary<TShape, TShape>? copies));
+        using var overlay = WorkingOverlay.Begin(work);
+        operation(work);
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
+        history = overlay.History();
         result.TShape()!.FreezeGraph();
         return ShapeCasts.Edge(result);
     }
@@ -41,12 +44,12 @@ public sealed partial class BuildEdgeBuilder
                                     double beta = 1)
     {
         Edge aFrom = fromedge;
-        return OnCopy(toedge, aCopy => CopyRanges(aCopy, aFrom, alpha, beta), out history);
+        return InOverlay(toedge, anEdge => CopyRanges(anEdge, aFrom, alpha, beta), out history);
     }
 
     /// <summary>The functional twin of <see cref="SetRange3d"/>: the edge with the range of its 3D curve set.</summary>
     public Edge WithRange3d(in Edge edge, double first, double last)
-        => OnCopy(edge, aCopy => SetRange3d(aCopy, first, last), out _);
+        => InOverlay(edge, anEdge => SetRange3d(anEdge, first, last), out _);
 
     /// <summary>
     /// The functional twin of <see cref="CopyPCurves"/>: <paramref name="toedge"/> holding copies of
@@ -55,25 +58,25 @@ public sealed partial class BuildEdgeBuilder
     public Edge PCurvesCopied(in Edge toedge, in Edge fromedge)
     {
         Edge aFrom = fromedge;
-        return OnCopy(toedge, aCopy => CopyPCurves(aCopy, aFrom), out _);
+        return InOverlay(toedge, anEdge => CopyPCurves(anEdge, aFrom), out _);
     }
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, in Face)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, in Face face)
     {
         Face aFace = face;
-        return OnCopy(edge, aCopy => RemovePCurve(aCopy, aFace), out _);
+        return InOverlay(edge, anEdge => RemovePCurve(anEdge, aFace), out _);
     }
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, Surface)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, Surface? surf)
-        => OnCopy(edge, aCopy => RemovePCurve(aCopy, surf), out _);
+        => InOverlay(edge, anEdge => RemovePCurve(anEdge, surf), out _);
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, Surface, in Placement)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, Surface? surf, in Placement loc)
     {
         Placement aLoc = loc;
-        return OnCopy(edge, aCopy => RemovePCurve(aCopy, surf, aLoc), out _);
+        return InOverlay(edge, anEdge => RemovePCurve(anEdge, surf, aLoc), out _);
     }
 
     /// <summary>
@@ -83,7 +86,7 @@ public sealed partial class BuildEdgeBuilder
     public Edge PCurveReplaced(in Edge edge, Curve2D? pcurve, in Face face)
     {
         Face aFace = face;
-        return OnCopy(edge, aCopy => ReplacePCurve(aCopy, pcurve, aFace), out _);
+        return InOverlay(edge, anEdge => ReplacePCurve(anEdge, pcurve, aFace), out _);
     }
 
     /// <summary>
@@ -94,13 +97,13 @@ public sealed partial class BuildEdgeBuilder
     {
         Face anOld = old, aSub = sub;
         bool isDone = false;
-        Edge result = OnCopy(edge, aCopy => isDone = ReassignPCurve(aCopy, anOld, aSub), out _);
+        Edge result = InOverlay(edge, anEdge => isDone = ReassignPCurve(anEdge, anOld, aSub), out _);
         theIsDone = isDone;
         return result;
     }
 
     /// <summary>The functional twin of <see cref="RemoveCurve3d"/>: the edge without its 3D curve.</summary>
-    public Edge Curve3dRemoved(in Edge edge) => OnCopy(edge, aCopy => RemoveCurve3d(aCopy), out _);
+    public Edge Curve3dRemoved(in Edge edge) => InOverlay(edge, anEdge => RemoveCurve3d(anEdge), out _);
 
     /// <summary>
     /// The functional twin of <see cref="BuildCurve3d"/>: the edge with a 3D curve computed from its pcurve;
@@ -109,7 +112,7 @@ public sealed partial class BuildEdgeBuilder
     public Edge Curve3dBuilt(in Edge edge, out bool theIsDone)
     {
         bool isDone = false;
-        Edge result = OnCopy(edge, aCopy => isDone = BuildCurve3d(aCopy), out _);
+        Edge result = InOverlay(edge, anEdge => isDone = BuildCurve3d(anEdge), out _);
         theIsDone = isDone;
         return result;
     }

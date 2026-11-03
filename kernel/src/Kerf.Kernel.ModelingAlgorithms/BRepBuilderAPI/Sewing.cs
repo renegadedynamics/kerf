@@ -19,7 +19,6 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using System.Runtime.CompilerServices;
 using Schematiq.Collections;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -40,10 +39,11 @@ namespace Kerf.Engine.Healing;
 /// <see cref="ModifiedSubShape"/>. The internal forms (<see cref="InternalSewedShape"/>, ...) don't freeze, for ported
 /// code that goes on building.</para>
 /// <para>Sewing writes into the shapes it is given (OCCT works in place on its inputs and records the replacements in
-/// its context). When an input holds a frozen shape, <see cref="Perform"/> runs on an exact copy of the inputs
-/// (<c>BRepTools.ExactCopyForWrite</c>), and afterwards every sub-shape of the copy that sewing left unchanged is the
-/// caller's own again, in the result and in every answer (decision 583). The queries take the caller's shapes or the
-/// shapes they handed out. The context (<see cref="GetContext"/>) then records the working copies' sub-shapes.</para>
+/// its context). <see cref="Perform"/> runs on the inputs themselves in a working overlay (Kerf unit 10H4; decision
+/// 583), which takes the writes into frozen shapes; afterwards the result and every answer hold new TShapes for what
+/// sewing changed and the caller's own sub-shapes for the rest. The queries take the caller's shapes or the shapes they
+/// handed out. The context (<see cref="GetContext"/>) records the caller's sub-shapes, as OCCT's records its inputs'.
+/// Inside another operation's overlay, sewing runs in place in that one.</para>
 /// </remarks>
 public class Sewing : Transient
 {
@@ -86,10 +86,9 @@ public class Sewing : Transient
     private double _maxTolerance;
     private readonly NCollection_Map<Shape> _mergedEdges = new(ShapeHasher.Instance);
 
-    // OCCT.NET: copy at entry (decision 583). When an input holds a frozen shape, Perform works on an exact copy:
-    // sewing (the original where sewing left the copy unchanged, the copy otherwise). Both null otherwise.
-    private Dictionary<TShape, TShape>? _workCopies;
-    private Dictionary<TShape, TShape>? _workReplaced;
+    // Kerf: the working overlay of the last Perform (unit 10H4; decision 583), finished; null when sewing ran in place
+    // (inside another operation's overlay) or before Perform. The answers map what sewing worked with through it.
+    private WorkingOverlay? _overlay;
 
     /// <summary>
     /// Creates an object with the tolerance of connexity <paramref name="tolerance"/> and the options for sewing
@@ -161,75 +160,13 @@ public class Sewing : Transient
     public bool NonManifoldMode() => _nonmanifold;
 
     //=================================================================================================
-    // OCCT.NET: publication and the copy at entry (decision 583).
+    // OCCT.NET: publication and the working overlay (decision 583; Kerf unit 10H4).
 
-    // The shape the algorithm works on for a shape a caller passes: its working copy when the inputs were copied.
-    private Shape ToWork(in Shape shape)
-    {
-        Shape aShape = shape;
-        if (_workCopies is not null && !aShape.IsNull
-            && _workCopies.TryGetValue(aShape.TShape()!, out TShape? copy))
-        {
-            aShape.TShape(copy);
-        }
-        return aShape;
-    }
+    // The shape sewing worked with for a shape a caller passes: one it handed out stands for the shape it replaced.
+    private Shape ToWork(in Shape shape) => _overlay is null || shape.IsNull ? shape : _overlay.Initial(shape);
 
-    // The shape a caller sees for a working shape: each copy that sewing left unchanged is the caller's original again,
-    // in the shape's unfrozen graph (as BRepTools.KeepUnchangedIn does for the result) and at its top.
-    private Shape FromWork(in Shape shape)
-    {
-        Shape aShape = shape;
-        if (_workReplaced is null || _workReplaced.Count == 0 || aShape.IsNull)
-        {
-            return aShape;
-        }
-        if (_workReplaced.TryGetValue(aShape.TShape()!, out TShape? original))
-        {
-            aShape.TShape(original);
-            return aShape;
-        }
-        SubstituteTShapes(aShape.TShape()!, _workReplaced, new HashSet<TShape>(ReferenceEqualityComparer.Instance));
-        return aShape;
-    }
-
-    // Replaces, in the unfrozen TShapes reachable from theTShape, each child whose TShape is a key of the map by the
-    // map's value, keeping its place, location and orientation (BRepTools.KeepUnchangedIn's walk).
-    private static void SubstituteTShapes(TShape tShape, Dictionary<TShape, TShape> map,
-                                          HashSet<TShape> visited)
-    {
-        if (tShape.IsFrozen || !visited.Add(tShape))
-        {
-            return;
-        }
-
-        RuntimeHelpers.EnsureSufficientExecutionStack();
-        var children = new List<Shape>();
-        bool isChanged = false;
-        for (NCollection_List<Shape>.Iterator it = new(tShape._shapes); it.More(); it.Next())
-        {
-            Shape child = it.Value();
-            if (map.TryGetValue(child.TShape()!, out TShape? aNew))
-            {
-                child.TShape(aNew);
-                isChanged = true;
-            }
-            else
-            {
-                SubstituteTShapes(child.TShape()!, map, visited);
-            }
-            children.Add(child);
-        }
-
-        if (isChanged)
-        {
-            tShape._shapes.Clear();
-            foreach (Shape child in children)
-            {
-                tShape._shapes.Append(child);
-            }
-        }
-    }
+    // The shape a caller sees for a shape sewing worked with: what stands for it after the overlay.
+    private Shape FromWork(in Shape shape) => _overlay is null || shape.IsNull ? shape : _overlay.Final(shape);
 
     // A working shape handed to a caller: the caller's view of it (fromWork), frozen.
     private Shape Published(in Shape shape)
@@ -239,73 +176,52 @@ public class Sewing : Transient
         return aShape;
     }
 
-    // Before Perform: when an input holds a frozen shape, replaces the inputs by an exact copy of them all (one copy,
-    // so that sub-shapes shared between inputs stay shared). Returns the compound of the inputs and its copy.
-    private bool BeginWork(out Shape originals, out Shape copy,
-                           out Dictionary<TShape, TShape>? copies)
+    // Every shape the answers may hand out, for the overlay to assemble: the inputs' images, the edges and faces of the
+    // queries and the context's replacements.
+    private List<Shape> Answers()
     {
-        _workCopies = null;
-        _workReplaced = null;
-        copy = new Shape();
-        copies = null;
-
-        var b = new BrepBuilder();
-        var comp = new Compound();
-        b.MakeCompound(ref comp);
-        if (!_shape.IsNull)
-        {
-            b.Add(comp, _shape);
-        }
+        var shapes = new List<Shape>();
         for (int i = 1; i <= _oldShapes.Extent(); i++)
         {
-            if (!_oldShapes[i].IsNull)
+            shapes.Add(_oldShapes[i]);
+        }
+        for (int i = 1; i <= _degenerated.Extent(); i++)
+        {
+            shapes.Add(_degenerated[i]);
+        }
+        for (int i = 1; i <= _freeEdges.Extent(); i++)
+        {
+            shapes.Add(_freeEdges[i]);
+        }
+        for (int i = 1; i <= _multipleEdges.Extent(); i++)
+        {
+            shapes.Add(_multipleEdges[i]);
+        }
+        for (int i = 1; i <= _contigousEdges.Extent(); i++)
+        {
+            shapes.Add(_contigousEdges.FindKey(i));
+            for (var it = new NCollection_List<Shape>.Iterator(_contigousEdges[i]); it.More(); it.Next())
             {
-                b.Add(comp, _oldShapes[i]);
+                shapes.Add(it.Value());
             }
         }
-        originals = comp;
-        if (!BrepTools.HoldsFrozen(comp))
+        foreach (KeyValuePair<Shape, Shape> pair in _contigSecBound)
         {
-            return false;
+            shapes.Add(pair.Value);
         }
-
-        copy = BrepTools.ExactCopyForWrite(comp, out _, out Dictionary<TShape, TShape> aCopies);
-        copies = aCopies;
-        _workCopies = aCopies;
-        var it = new Iterator(copy);
-        if (!_shape.IsNull)
+        for (int i = 1; i <= _boundFaces.Extent(); i++)
         {
-            _shape = it.Value();
-            it.Next();
-        }
-        for (int i = 1; i <= _oldShapes.Extent(); i++)
-        {
-            if (!_oldShapes[i].IsNull)
+            for (var it = new NCollection_List<Shape>.Iterator(_boundFaces[i]); it.More(); it.Next())
             {
-                _oldShapes[i] = it.Value();
-                it.Next();
+                shapes.Add(it.Value());
             }
         }
-        return true;
-    }
-
-    // After Perform on copies: gives back the caller's sub-shapes wherever sewing left the copy unchanged, in the
-    // sewn shape (BRepTools.KeepUnchangedIn) and, through fromWork, in every answer.
-    private void EndWork(in Shape originals, in Shape copy,
-                         Dictionary<TShape, TShape> copies)
-    {
-        Shape result = _sewedShape;
-        Dictionary<TShape, TShape> final =
-            BrepTools.KeepUnchangedIn(originals, copy, copies, ref result, out _);
-        _sewedShape = result;
-        _workReplaced = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
-        foreach (KeyValuePair<TShape, TShape> cf in final)
+        for (int i = 1; i <= _littleFace.Extent(); i++)
         {
-            if (!ReferenceEquals(cf.Key, cf.Value))
-            {
-                _workReplaced[cf.Key] = cf.Value;
-            }
+            shapes.Add(_littleFace[i]);
         }
+        shapes.AddRange(_reShape.InternalReplacements());
+        return shapes;
     }
 
     //=================================================================================================
@@ -2160,9 +2076,8 @@ public class Sewing : Transient
         _cuttingNode.Clear();
         _sectionBound.Clear();
         _littleFace.Clear();
-        // OCCT.NET: forget a copy at entry.
-        _workCopies = null;
-        _workReplaced = null;
+        // Kerf: forget the last working overlay.
+        _overlay = null;
     }
 
     //=================================================================================================
@@ -2183,18 +2098,21 @@ public class Sewing : Transient
 
     /// <summary>Computes the sewing (or only the analysis, if the sewing option is off).</summary>
     /// <remarks>
-    /// When an input holds a frozen shape, the computation runs on an exact copy of the inputs, and the caller's own
-    /// sub-shapes are given back wherever sewing left them unchanged (decision 583). The inputs are never written.
+    /// The computation runs on the inputs in a working overlay (Kerf unit 10H4), which takes the writes into frozen
+    /// shapes: the result and the answers hold new TShapes for what changed and the caller's own sub-shapes for the
+    /// rest (decision 583). The inputs are never written.
     /// </remarks>
     public void Perform(ProgressRange progress = default)
     {
-        // OCCT.NET: copy at entry (decision 583).
-        bool isCopied = BeginWork(out Shape originals, out Shape copy,
-                                  out Dictionary<TShape, TShape>? copies);
+        // Kerf: the working overlay (unit 10H4; decision 583), over no input: sewing keeps no history over its inputs, and
+        // what it hands out goes through Finish
+        _overlay = null;
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
         PerformSewing(progress);
-        if (isCopied)
+        if (overlay is not null)
         {
-            EndWork(originals, copy, copies!);
+            _sewedShape = overlay.Finish(_sewedShape, Answers());
+            _overlay = overlay;
         }
     }
 

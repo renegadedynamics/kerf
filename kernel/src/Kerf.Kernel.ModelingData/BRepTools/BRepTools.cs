@@ -362,8 +362,9 @@ public static partial class BrepTools
     /// <summary>Updates the UV points of the face's edges, unless the face is checked, and marks it checked.</summary>
     internal static void Update(in Face f)
     {
-        // OCCT.NET: frozen: a frozen face can't have changed since it was frozen, and can't be marked
-        if (f.TShape()!.IsFrozen)
+        // OCCT.NET: frozen: a frozen face can't have changed since it was frozen, and can't be marked (but inside a working
+        // overlay it is written, as OCCT's)
+        if (WorkingOverlay.IsReadOnly(f.TShape()!))
         {
             return;
         }

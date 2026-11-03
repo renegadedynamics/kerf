@@ -108,11 +108,12 @@ public sealed class FaceConnectFixer
     /// </summary>
     public Shell Build(in Shell shell, double sewtoler, double fixtoler)
     {
-        // OCCT.NET: OCCT's algorithm writes into the shell's sub-shapes; a frozen shell is copied (decision 583), and the
-        // recorded faces are mapped onto their copies
-        var entry = new CopyAtEntry(shell);
+        // Kerf: OCCT's algorithm writes into the shell's sub-shapes; it runs on the caller's shell in a working overlay
+        // (unit 10H4)
+        // (the caller's unfrozen shapes are copied, and the recorded faces mapped onto the copies)
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shell, out Dictionary<TShape, TShape>? copies);
         NCollection_DataMap<Shape, NCollection_List<Shape>> connected = _connected;
-        if (entry.IsCopied)
+        if (copies is not null)
         {
             connected = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _connected)
@@ -120,14 +121,14 @@ public sealed class FaceConnectFixer
                 var list = new NCollection_List<Shape>();
                 for (var it = new NCollection_List<Shape>.Iterator(pair.Value); it.More(); it.Next())
                 {
-                    list.Append(entry.Copied(it.Value()));
+                    list.Append(WorkingOverlay.CopiedIn(it.Value(), copies));
                 }
-                connected.Bind(entry.Copied(pair.Key), list);
+                connected.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), list);
             }
         }
-
-        Shell result = BuildCore(connected, ShapeCasts.Shell(entry.Shape()), sewtoler, fixtoler);
-        Shape final = entry.Finish(result);
+        using var overlay = WorkingOverlay.Begin(work);
+        Shell result = BuildCore(connected, ShapeCasts.Shell(work), sewtoler, fixtoler);
+        Shape final = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(result), copies);
         final.TShape()?.FreezeGraph();
         return ShapeCasts.Shell(final);
     }

@@ -46,10 +46,11 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </para>
 /// <para>
 /// A working object (decision 21). It edits the edges of the face it is given (it splits them, records the splits in
-/// the context and replaces their vertices), as OCCT's. A face holding frozen shapes is copied at
-/// <see cref="Perform"/> (<see cref="CopyAtEntry"/>, decision 583); <see cref="Result"/> gives back the
-/// caller's own sub-shapes wherever they were left unchanged, re-keys the context to the caller's shapes and freezes
-/// the result. ShapeFix_Face runs it on its own unfrozen faces.
+/// the context and replaces their vertices), as OCCT's, in a working overlay (Kerf unit 10H4) that takes the writes
+/// into frozen shapes: this tool's own from <see cref="Perform"/> to <see cref="Result"/>, or, inside another
+/// operation's overlay (ShapeFix_Face's, ShapeUpgrade's dividers'), that one. <see cref="Result"/> gives new TShapes
+/// for what changed and the caller's own sub-shapes for the rest, records in the context the sub-shapes changed in
+/// place, and freezes the result.
 /// </para>
 /// </remarks>
 public class ComposeShellFixer : RootFixer
@@ -74,8 +75,10 @@ public class ComposeShellFixer : RootFixer
     private double                            _uPeriod;
     private double                            _vPeriod;
 
-    // OCCT.NET: the copy at the entry (decision 583); null when the face holds no frozen shape.
-    private CopyAtEntry? _entry;
+    // Kerf: the working overlay (unit 10H4): this tool's own (detached) or the current operation's, which it doesn't
+    // finish; null before Perform.
+    private WorkingOverlay? _overlay;
+    private bool _ownsOverlay;
     private bool _toEnter;
 
     /// <summary>Creates an empty tool.</summary>
@@ -205,7 +208,7 @@ public class ComposeShellFixer : RootFixer
             _vResolution = Kerf.Engine.Foundation.Precision.Parametric(1.0);
         }
         _toEnter = true;
-        _entry   = null;
+        _overlay = null;
     }
 
     /// <summary>
@@ -215,7 +218,7 @@ public class ComposeShellFixer : RootFixer
     /// </summary>
     public virtual bool Perform()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         _status           = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         _invertEdgeStatus = false;
 
@@ -271,7 +274,7 @@ public class ComposeShellFixer : RootFixer
     /// </summary>
     public void SplitEdges()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
 
         var seqw = new NCollection_Sequence<WireSegmentFixer>(); // working data: wire segments
@@ -299,18 +302,19 @@ public class ComposeShellFixer : RootFixer
 
     /// <summary>
     /// <see cref="Result"/> without freezing it, for ported callers that may give a frozen face (ShapeUpgrade's face
-    /// dividers): where the face given was copied at the entry, the copy's unchanged sub-shapes are given back and the
-    /// context re-keyed, as <see cref="Result"/> does; else the result is the one built in place.
+    /// dividers): where this tool's own overlay took the writes, it is finished, as <see cref="Result"/> does; else the
+    /// result is the one built in place.
     /// </summary>
     internal Shape InternalFinishedResult()
     {
         _toEnter = true;
-        CopyAtEntry? entry = _entry;
-        _entry = null;
-        if (entry is not null)
+        WorkingOverlay? overlay = _ownsOverlay ? _overlay : null;
+        _overlay     = null;
+        _ownsOverlay = false;
+        if (overlay is not null)
         {
-            _result = entry.Finish(_result, [_face]);
-            _face = ShapeCasts.Face(entry.Final(_face));
+            _result = overlay.Finish(_result, [_face]);
+            _face = ShapeCasts.Face(overlay.Final(_face));
         }
         return _result;
     }
@@ -318,21 +322,20 @@ public class ComposeShellFixer : RootFixer
     /// <summary>Queries the status of the last <see cref="Perform"/>.</summary>
     public bool Status(ExtendStatus status) => global::Kerf.Engine.Healing.Extend.ShapeExtend.DecodeStatus(_status, status);
 
-    // OCCT.NET: the copy at the entry of a frozen face (decision 583).
-    private void EnterWork()
+    // Kerf: takes the overlay the work runs in (after Init or a result), and enters it (unit 10H4).
+    private WorkingOverlay.Scope EnterWork()
     {
-        if (!_toEnter)
+        if (_toEnter)
         {
-            return;
+            _toEnter     = false;
+            _overlay     = null;
+            _ownsOverlay = false;
+            if (!_face.IsNull)
+            {
+                _overlay = WorkingOverlay.ForTool(_face, Context(), out _ownsOverlay);
+            }
         }
-        _toEnter = false;
-        _entry   = null;
-        if (_face.IsNull || !BrepTools.HoldsFrozen(_face))
-        {
-            return;
-        }
-        _entry = new CopyAtEntry(_face, Context());
-        _face  = ShapeCasts.Face(_entry.Shape());
+        return _overlay?.Enter() ?? default;
     }
 
     //=======================================================================

@@ -1,10 +1,11 @@
-// OCCT.NET: the functional twins of ShapeFix's in-place statics (docs/phase5-6-plan.md, section 2.7; decision 583).
-// Not a port of an OCCT file.
+// OCCT.NET: the functional twins of ShapeFix's in-place statics (docs/phase5-6-plan.md, section 2.7; decision 583),
+// on the working overlay since Kerf unit 10H4. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
@@ -15,8 +16,9 @@ public static partial class ShapeFixFixer
 {
     /// <summary>
     /// The functional twin of <see cref="SameParameter"/>: the shape with its edges made SameParameter by
-    /// ShapeFix_Edge and the tolerances of its edges on planes updated, frozen. A frozen shape is copied first, the
-    /// sub-shapes left unchanged are the caller's own, and a shape needing nothing is returned itself.
+    /// ShapeFix_Edge and the tolerances of its edges on planes updated, frozen. The fix runs on the caller's shape in a
+    /// working overlay: the sub-shapes left unchanged are the caller's own, and a shape needing nothing is returned
+    /// itself.
     /// <paramref name="isDone"/> is OCCT's result (false if an edge couldn't be made SameParameter, or on a user
     /// break).
     /// </summary>
@@ -24,9 +26,10 @@ public static partial class ShapeFixFixer
                                                ProgressRange progress = default,
                                                BasicMsgRegistrator? msgReg = null)
     {
-        var entry = new CopyAtEntry(shape);
-        isDone = SameParameter(entry.Shape(), enforce, preci, progress, msgReg);
-        return Frozen(entry.Finish(entry.Shape()));
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        using var overlay = WorkingOverlay.Begin(work);
+        isDone = SameParameter(work, enforce, preci, progress, msgReg);
+        return Frozen(WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies));
     }
 
     /// <summary>
@@ -35,9 +38,10 @@ public static partial class ShapeFixFixer
     /// </summary>
     public static Shape RegularityEncoded(in Shape shape, double tolang = 1.0e-10)
     {
-        var entry = new CopyAtEntry(shape);
-        EncodeRegularity(entry.Shape(), tolang);
-        return Frozen(entry.Finish(entry.Shape()));
+        Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        using var overlay = WorkingOverlay.Begin(work);
+        EncodeRegularity(work, tolang);
+        return Frozen(WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies));
     }
 
     /// <summary>
@@ -49,10 +53,10 @@ public static partial class ShapeFixFixer
     public static Shape VertexPositionFixed(in Shape theshape, double tolerance, ReShapeBuilder thecontext,
                                                    out bool isDone)
     {
-        var          entry = new CopyAtEntry(theshape, thecontext);
-        Shape work   = entry.Shape();
+        Shape work = WorkingOverlay.WithUnfrozenCopied(theshape, out Dictionary<TShape, TShape>? copies);
+        using var overlay = WorkingOverlay.Begin(work, thecontext);
         isDone = FixVertexPosition(ref work, tolerance, thecontext);
-        return Frozen(entry.Finish(work));
+        return Frozen(WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies));
     }
 
     private static Shape Frozen(in Shape shape)

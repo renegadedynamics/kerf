@@ -11,6 +11,8 @@
 //   ... -- booleans [filter]: the Booleans suite (unit 6M, phase5-6-plan 2.9): BRepAlgoAPI and build123d.NET's clean,
 //     serial and parallel, with allocation, over the corpus's simple and complex grids (Booleans.cs); ...
 //     -- booleans-profile [filter]: the port's pave filler and builder apart;
+//   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape and UnifySameDomain on the dataset's STEP
+//     files (unit 10H4, Healing.cs);
 //   ... -- stepfile [steprec-bench.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the port's fastest of 5
 //     parses from memory, against native's from tools/steprec/build.ps1 -Bench when its file is given (StepFileBench.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
@@ -62,6 +64,11 @@ if (args.Length > 0 && args[0] == "booleans")
 if (args.Length > 0 && args[0] == "booleans-profile")
 {
     Booleans.Profile(aFilter);
+    return 0;
+}
+if (args.Length > 0 && args[0] == "healing")
+{
+    Healing.Run(aFilter);
     return 0;
 }
 if (args.Length > 0 && args[0] == "stepfile")

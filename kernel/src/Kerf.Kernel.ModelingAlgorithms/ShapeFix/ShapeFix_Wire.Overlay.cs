@@ -1,5 +1,5 @@
-// OCCT.NET: the copy at the entry of ShapeFix_Wire (docs/phase5-6-plan.md, section 2.7; decision 583) and its public
-// results. Not a port of an OCCT file.
+// OCCT.NET: the working overlay of ShapeFix_Wire (a copy at the entry until Kerf unit 10H4; decision 583) and its
+// public results. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Healing.Extend;
@@ -16,18 +16,19 @@ namespace Kerf.Engine.Healing.Fixes;
 
 public partial class WireFixer
 {
-    // The copy of the loaded edges, from the first fix to the public result; null when the loaded edges hold no frozen
-    // shape (they are the caller's working shapes, fixed in place as in OCCT).
-    private CopyAtEntry? _entry;
+    // The working overlay of the loaded edges, from the first fix to the public result (Kerf unit 10H4): this tool's
+    // own (detached, entered by each fix), or the overlay of the operation that runs this tool (ShapeFix_Face's, ...),
+    // which this tool doesn't finish. Null before the first fix.
+    private WorkingOverlay? _overlay;
+    private bool _ownsOverlay;
 
-    // True when the loaded edges must be checked (and copied if frozen) before the next fix: after Load, Init and a
-    // public result.
+    // True when the next fix starts a new overlay: after Load, Init and a public result.
     private bool _toEnter;
 
     /// <summary>
-    /// Returns the resulting wire (made with a builder): the edges of <see cref="WireData"/>, frozen. Where the loaded
-    /// wire was frozen, the edges and vertices the fixes left unchanged are the caller's own, and the context records
-    /// the ones they changed in place.
+    /// Returns the resulting wire (made with a builder): the edges of <see cref="WireData"/>, frozen. It holds new
+    /// TShapes for the edges and vertices the fixes changed and the caller's own for the rest, and the context records
+    /// the ones changed in place.
     /// </summary>
     public Wire Wire()
     {
@@ -55,65 +56,51 @@ public partial class WireFixer
     internal Wire InternalWireAPIMake() => _analyzer.WireData()!.InternalWireAPIMake();
 
     /// <summary>
-    /// Called at the start of <see cref="Perform"/> and of every public fix: after a load or a public result, copies
-    /// the loaded edges (and the non-manifold ones) when they hold a frozen shape, and works on the copies.
+    /// Called at the start of <see cref="Perform"/> and of every public fix (Kerf unit 10H4): after a load or a public
+    /// result, takes the overlay the fixes work in (the current operation's, or a detached one of this tool's over the
+    /// loaded edges and the non-manifold ones); then makes it current until the returned scope is disposed. The fixes
+    /// run on the loaded edges themselves.
     /// </summary>
-    private void EnterWork()
+    private WorkingOverlay.Scope EnterWork()
     {
-        if (!_toEnter)
+        if (_toEnter)
         {
-            return;
+            _toEnter     = false;
+            _overlay     = WorkingOverlay.Writing;
+            _ownsOverlay = false;
+            ExtendWireData? sbwd = _analyzer.WireData();
+            if (_overlay is null && sbwd is not null)
+            {
+                _overlay     = WorkingOverlay.Detached(EdgesCompound(sbwd), Context());
+                _ownsOverlay = true;
+            }
         }
-        _toEnter = false;
-        _entry   = null;
-
-        ExtendWireData? sbwd = _analyzer.WireData();
-        if (sbwd is null)
-        {
-            return;
-        }
-        Compound edges = EdgesCompound(sbwd);
-        if (!BrepTools.HoldsFrozen(edges))
-        {
-            return;
-        }
-
-        _entry = new CopyAtEntry(edges, Context());
-        Shape copy = _entry.Shape();
-        SetEdges(sbwd, copy);
-
-        // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
-        // bit, which KeepUnchanged ignores), so the fixes that test E.Free() (FixConnected, ...) take OCCT's branch.
-        var original = new Iterator(edges, false, false);
-        for (var copied = new Iterator(copy, false, false); copied.More(); copied.Next(), original.Next())
-        {
-            copied.Value().TShape()!.Free(original.Value().TShape()!.Free());
-        }
+        return _overlay?.Enter() ?? default;
     }
 
     /// <summary>
-    /// Before a public result: gives back the caller's own edges and vertices wherever the fixes left the copies
-    /// unchanged, in the wire data and in the context, and records in the context the copies changed in place. The
-    /// next fix copies again (the published edges are frozen).
+    /// Before a public result: finishes this tool's overlay, so the wire data holds new TShapes for the edges the fixes
+    /// changed and the caller's own for the rest, and the context records the ones changed in place. The next fix
+    /// starts a new overlay (the published edges are frozen).
     /// </summary>
     private void EndWork()
     {
         _toEnter = true;
-        CopyAtEntry? entry = _entry;
-        _entry = null;
+        WorkingOverlay? overlay = _ownsOverlay ? _overlay : null;
+        _overlay     = null;
+        _ownsOverlay = false;
         ExtendWireData? sbwd = _analyzer.WireData();
-        if (entry is null || sbwd is null)
+        if (overlay is null || sbwd is null)
         {
             return;
         }
 
-        Compound worked = EdgesCompound(sbwd);
-        Shape final = entry.Finish(worked);
+        Shape final = overlay.Finish(EdgesCompound(sbwd));
         SetEdges(sbwd, final);
     }
 
     // The edges, then the non-manifold edges, of the wire data, appended to a new compound as they are (no Free flag
-    // changed).
+    // changed: Builder.Add would clear the frozen edges' outside an overlay).
     private static Compound EdgesCompound(ExtendWireData sbwd)
     {
         var compound = new Compound();
