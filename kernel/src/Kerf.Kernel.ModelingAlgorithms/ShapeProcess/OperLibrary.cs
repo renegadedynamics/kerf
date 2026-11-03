@@ -33,7 +33,7 @@ namespace Kerf.Engine.Healing.Process;
 /// <remarks>
 /// <see cref="Init"/> registers them once per process (OCCT's static <c>done</c> flag, plan 2.3), as
 /// <see cref="ShapeProcess"/>'s default operators, immutable once published (a one-time initialisation, unit 10I). The operators work on the context's
-/// <see cref="ShapeContext.InternalResult"/>, which is the context's working copy while they run
+/// <see cref="ShapeContext.InternalResult"/>, in the context's working overlay while they run
 /// (decision 1022), and read the tools' unfrozen results (decisions 973, 999); the context freezes at its own
 /// publication points.
 /// </remarks>
@@ -44,7 +44,8 @@ public static class OperLibrary
     /// <summary>
     /// Applies a BRepTools_Modification to a shape, taking the sharing of the components of compounds into account.
     /// With <paramref name="mutableInput"/>, the modifier may update the input's vertices in place; on a shape holding
-    /// frozen shapes the port then runs it in its immutable mode (decision 1022). The result is frozen.
+    /// frozen shapes outside a working overlay the port then runs it in its immutable mode (decision 1022). The result is
+    /// frozen.
     /// </summary>
     public static Shape ApplyModifier(in Shape s,
                                              ShapeContext context,
@@ -53,7 +54,7 @@ public static class OperLibrary
                                              MsgRegistrator? msg = null,
                                              bool mutableInput = false)
     {
-        Shape result = InternalApplyModifier(s, context, m, map, msg, mutableInput && !BrepTools.HoldsFrozen(s));
+        Shape result = InternalApplyModifier(s, context, m, map, msg, mutableInput && IsWritable(s));
         result.TShape()?.FreezeGraph();
         return result;
     }
@@ -119,13 +120,18 @@ public static class OperLibrary
     private static MsgRegistrator? NewMessages(ShapeContext ctx)
         => ctx.Messages() is not null ? new MsgRegistrator() : null;
 
-    // The modifiers run on the context's working copy, in the mutable-input mode as OCCT's (decision 1022)
+    // True if the modifier may write into the shape: inside a working overlay (the context's, while operators run),
+    // which takes the writes, or when it holds no frozen shape (Kerf unit 10H4).
+    private static bool IsWritable(in Shape s) => WorkingOverlay.Writing is not null || !BrepTools.HoldsFrozen(s);
+
+    // The modifiers run on the context's result in its working overlay, in the mutable-input mode as OCCT's (decision
+    // 1022)
     private static bool ApplyModification(ShapeContext ctx, Modification modification,
                                           MsgRegistrator? msg)
     {
         var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         Shape work = ctx.InternalResult();
-        Shape res = InternalApplyModifier(work, ctx, modification, map, msg, !BrepTools.HoldsFrozen(work));
+        Shape res = InternalApplyModifier(work, ctx, modification, map, msg, IsWritable(work));
         ctx.RecordModification(map, msg);
         ctx.SetResult(res);
         return true;

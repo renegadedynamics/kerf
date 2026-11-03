@@ -119,45 +119,39 @@ public class ShapeDivide
     /// </summary>
     public virtual bool Perform(bool newContext = true) => PerformAtEntry(newContext, PerformBody);
 
-    // OCCT.NET: the copy at the entry (decision 999). The face dividers' ShapeFix_ComposeShell edits the edges it splits
-    // in place (as do ShapeConvertToBezier's last step and the dividers called on a compound's children), and the
-    // edges shared by other faces see those edits natively; so the outermost Perform runs on an exact copy of a shape
-    // holding frozen shapes, and gives back the caller's own sub-shapes where nothing changed (decision 583). Nested
-    // calls (a compound's children, ShapeConvertToBezier's passes) run on the copy.
-    private int _entryDepth;
+    // OCCT.NET: the copy at the entry (decision 999), a working overlay since Kerf unit 10H4. The face dividers'
+    // ShapeFix_ComposeShell edits the edges it splits in place (as do ShapeConvertToBezier's last step and the dividers
+    // called on a compound's children), and the edges shared by other faces see those edits natively; so the outermost
+    // Perform runs on the caller's shape in an overlay that takes those writes, and the result holds new TShapes for
+    // what changed and the caller's own for the rest (decision 583). Nested calls (a compound's children,
+    // ShapeConvertToBezier's passes) and a Perform inside another operation's overlay run in place in that one.
 
     /// <summary>
-    /// Runs <paramref name="body"/> on a copy of the shape when it holds frozen shapes and this is the outermost
-    /// call, then gives back the caller's unchanged sub-shapes in the result, in the shape left in <c>myShape</c> and
-    /// in the context.
+    /// Runs <paramref name="body"/> in a working overlay unless one is open here, then assembles the result, the shape
+    /// left in <c>myShape</c> and the context's replacements, with the caller's own sub-shapes wherever they are
+    /// unchanged.
     /// </summary>
     protected bool PerformAtEntry(bool newContext, Func<bool, bool> body)
     {
-        if (_entryDepth > 0 || _shape.IsNull)
+        if (_shape.IsNull)
         {
             return body(newContext);
         }
 
-        // the requests already recorded in a kept context move onto the copies
-        var entry = new CopyAtEntry(_shape, newContext ? null : _context);
-        _shape = entry.Shape();
-        Shape copy = _shape;
-        bool res;
-        _entryDepth++;
-        try
+        // a kept context's requests are over the caller's sub-shapes, as the overlay's
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape, newContext ? null : _context);
+        if (overlay is null)
         {
-            res = body(newContext);
+            return body(newContext);
         }
-        finally
-        {
-            _entryDepth--;
-        }
+        Shape input = _shape;
+        bool res = body(newContext);
 
-        entry.AttachContext(_context);
+        overlay.AttachContext(_context);
         // ShapeConvertToBezier leaves myShape on the intermediate result of its surface conversion
-        bool isIntermediate = !_shape.IsNull && !ReferenceEquals(_shape.TShape(), copy.TShape());
-        _result = entry.Finish(_result, isIntermediate ? [_shape] : null);
-        _shape = entry.Final(_shape);
+        bool isIntermediate = !_shape.IsNull && !ReferenceEquals(_shape.TShape(), input.TShape());
+        _result = overlay.Finish(_result, isIntermediate ? [_shape] : null);
+        _shape = overlay.Final(_shape);
         return res;
     }
 
