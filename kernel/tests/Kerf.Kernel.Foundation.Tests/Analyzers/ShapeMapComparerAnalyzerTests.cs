@@ -8,6 +8,9 @@ using Kerf.Analyzers;
 
 namespace Kerf.Kernel.Foundation.Tests.Analyzers;
 
+// Roslyn's, not Kerf's (namespace Kerf's types come before the file's usings)
+using Diagnostic = Microsoft.CodeAnalysis.Diagnostic;
+
 public class ShapeMapComparerAnalyzerTests
 {
     // Stand-ins shaped like the port's: shape structs in Occt, NCollection maps with an optional comparer
