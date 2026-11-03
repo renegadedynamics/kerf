@@ -59,7 +59,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// own data. The cost when no overlay is open anywhere in the process is one static read per accessor.
 /// </para>
 /// </remarks>
-internal sealed class WorkingOverlay : IDisposable
+internal sealed partial class WorkingOverlay : IDisposable
 {
     // the number of overlays open in the process: zero means no accessor needs to look further
     private static int s_openCount;
@@ -83,9 +83,11 @@ internal sealed class WorkingOverlay : IDisposable
     private readonly long[] _filter = new long[FilterWords]; // a bit per hash of the written TShapes: most reads miss
     private volatile bool _isAssembling; // Finish reads the state before this overlay's writes
     private Dictionary<TShape, TShape>? _final;
+    private NCollection_IndexedMap<Shape>? _inputSubShapes; // the input's sub-shapes as Finish found them
     private History _history = new();
     private bool _isFinished;
     private bool _isDisposed;
+    private bool _isBegun; // opened by Begin (counted open until disposed), not detached
 
     private WorkingOverlay(WorkingOverlay? parent, in Shape input, ReShape? context)
     {
@@ -103,7 +105,7 @@ internal sealed class WorkingOverlay : IDisposable
     /// </summary>
     public static WorkingOverlay Begin(in Shape input, ReShape? context = null)
     {
-        var overlay = new WorkingOverlay(s_current.Value, input, context);
+        var overlay = new WorkingOverlay(s_current.Value, input, context) { _isBegun = true };
         s_current.Value = overlay;
         Interlocked.Increment(ref s_openCount);
         return overlay;
@@ -300,6 +302,12 @@ internal sealed class WorkingOverlay : IDisposable
         _isAssembling = true;
         try
         {
+            // the input's sub-shapes as the operation found them, mapped before the assembly replaces the children of
+            // its unfrozen TShapes (an input the operation's caller built, holding frozen sub-shapes it changed)
+            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            MapInput(subShapes);
+            _inputSubShapes = subShapes;
+
             _final = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
             Shape aResult = Assembled(result);
             if (others is not null)
@@ -310,9 +318,7 @@ internal sealed class WorkingOverlay : IDisposable
                 }
             }
 
-            // the input's sub-shapes as the operation found them, and what stands for each now
-            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            MapInput(subShapes);
+            // what stands for each of the input's sub-shapes now
             for (int i = 1; i <= subShapes.Extent(); i++)
             {
                 Shape sub = subShapes[i];
@@ -390,8 +396,7 @@ internal sealed class WorkingOverlay : IDisposable
         }
 
         var composed = new History();
-        var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        MapInput(subShapes);
+        NCollection_IndexedMap<Shape> subShapes = _inputSubShapes!;
         for (int i = 1; i <= subShapes.Extent(); i++)
         {
             Shape sub = subShapes[i];
@@ -466,6 +471,10 @@ internal sealed class WorkingOverlay : IDisposable
             return;
         }
         _isDisposed = true;
+        if (!_isBegun)
+        {
+            return; // a detached overlay is open only inside its Enter scopes
+        }
         if (ReferenceEquals(s_current.Value, this))
         {
             s_current.Value = _parent;

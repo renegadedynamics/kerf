@@ -19,6 +19,7 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -1133,16 +1134,19 @@ public static partial class BrepLibrary
 
     // OCCT copies the edge's list of representations (`theCList = aTE->ChangeCurves()`); the representations are the
     // edge's own either way, and the loop that follows changes them, not the list, so the port returns the list.
-    // It is read through Curves() (OCCT.NET: frozen): the ReShape form calls this on the caller's edge.
+    // It is read through Curves() (OCCT.NET: frozen): the ReShape form calls this on the caller's edge. Kerf (unit
+    // 10H4): when the representations are to be changed (forWrite) and a working overlay takes writes into the edge,
+    // they are its working copy's, through ChangeCurves(), as OCCT's are the edge's own.
     private static void GetCurve3d(in Edge edge,
                                    ref Curve3D? c3d,
                                    ref double f3d,
                                    ref double l3d,
                                    ref Placement loc3d,
-                                   out NCollection_List<CurveRepresentation> cList)
+                                   out NCollection_List<CurveRepresentation> cList,
+                                   bool forWrite = false)
     {
         BrepTEdge te = (BrepTEdge)edge.TShape()!;
-        cList = te.Curves();
+        cList = forWrite && te.IsFrozen && !WorkingOverlay.IsReadOnly(te) ? te.ChangeCurves() : te.Curves();
         var it = new NCollection_List<CurveRepresentation>.Iterator(cList);
         bool notDone = true;
         while (notDone && it.More())
@@ -1219,7 +1223,7 @@ public static partial class BrepLibrary
         Placement L3d = new();
         Curve3D? c3d = null;
         NCollection_List<CurveRepresentation> cList;
-        GetCurve3d(edge, ref c3d, ref f3d, ref l3d, ref L3d, out cList);
+        GetCurve3d(edge, ref c3d, ref f3d, ref l3d, ref L3d, out cList, isUseOldEdge);
         if (c3d is null)
         {
             return new Edge();
