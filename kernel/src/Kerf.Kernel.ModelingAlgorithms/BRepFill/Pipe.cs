@@ -1152,7 +1152,7 @@ public sealed class Pipe
                     }
                 }
             }
-            // OCCT.NET: the writes below reach the profile's own face when the pipe shares it (decision 910)
+            // the writes below reach the profile's own face when the pipe shares it: MakePipe's working overlay takes them
             wire.Free(true);
             for (ii = 1; ii <= initEdges.Length(); ii++)
             {

@@ -7,6 +7,7 @@ using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.ShapeType;
@@ -18,11 +19,10 @@ namespace Kerf.Engine.Construction.Api;
 /// with the profile. The spine must be G1 continuous.
 /// </summary>
 /// <remarks>
-/// <para>OCCT's pipe sweeps the profile in place and writes into the sub-shapes of it the result shares. A profile
-/// holding frozen TShapes (any shape a caller has) is swept as an exact copy, and the result holds the profile's own
-/// sub-shapes wherever the sweep left them unchanged, as <see cref="ApiMakePrism"/> does
-/// (<see cref="MakeSweep"/>, decision 910); the history answers for the caller's sub-shapes, and the
-/// profile is never changed.</para>
+/// <para>OCCT's pipe sweeps the profile in place and writes into the sub-shapes of it the result shares. Kerf sweeps the
+/// caller's profile itself in a working overlay, as <see cref="ApiMakePrism"/> does (<see cref="MakeSweep"/>, unit
+/// 10H3): the result holds the profile's own sub-shapes wherever the sweep left them unchanged, the history answers
+/// for the caller's sub-shapes directly, and the profile is never changed.</para>
 /// <para>The result, <see cref="MakeSweep.FirstShape()"/>, <see cref="MakeSweep.LastShape()"/>
 /// and the history are frozen when returned (design 4.2).</para>
 /// </remarks>
@@ -36,7 +36,8 @@ public class ApiMakePipe : MakeSweep
     /// <exception cref="DomainErrorException">The profile is a solid or a composite solid.</exception>
     public ApiMakePipe(in Wire spine, in Shape profile)
     {
-        _pipe = new Pipe(spine, GeneratingShapeForWrite(profile));
+        using WorkingOverlay? overlay = BeginGenerating(profile);
+        _pipe = new Pipe(spine, profile);
         Build();
     }
 
@@ -50,18 +51,19 @@ public class ApiMakePipe : MakeSweep
                                   Trihedron aMode,
                                   bool forceApproxC1 = false)
     {
-        _pipe = new Pipe(spine, GeneratingShapeForWrite(profile), aMode, forceApproxC1);
+        using WorkingOverlay? overlay = BeginGenerating(profile);
+        _pipe = new Pipe(spine, profile, aMode, forceApproxC1);
         Build();
     }
 
-    /// <summary>The internal pipe algorithm (on the copy of a frozen profile).</summary>
+    /// <summary>The internal pipe algorithm (keyed by the profile's own sub-shapes).</summary>
     internal Pipe Pipe() => _pipe;
 
     /// <summary>Builds the resulting shape (redefined from MakeShape).</summary>
     public override void Build(ProgressRange range = default)
     {
         _shape = _pipe.InternalShape();
-        KeepUnchangedGenerating(ref _shape);
+        FinishGenerating(ref _shape);
         // Check for emptiness of result
         NCollection_IndexedMap<Shape> theMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_shape, theMap);
@@ -83,7 +85,7 @@ public class ApiMakePipe : MakeSweep
     internal override NCollection_List<Shape> InternalGenerated(in Shape s)
     {
         NCollection_List<Shape> list = new();
-        _pipe.InternalGenerated(ToSwept(s), list);
+        _pipe.InternalGenerated(s, list);
         _generated.Clear();
         for (NCollection_List<Shape>.Iterator it = new(list); it.More(); it.Next())
         {
@@ -103,11 +105,11 @@ public class ApiMakePipe : MakeSweep
     {
         if (sProfile.ShapeType() == ShapeType.Edge)
         {
-            return FromSwept(_pipe.InternalFace(ShapeCasts.Edge(sSpine), ShapeCasts.Edge(ToSwept(sProfile))));
+            return FromSwept(_pipe.InternalFace(ShapeCasts.Edge(sSpine), ShapeCasts.Edge(sProfile)));
         }
         else if (sProfile.ShapeType() == ShapeType.Vertex)
         {
-            return FromSwept(_pipe.InternalEdge(ShapeCasts.Edge(sSpine), ShapeCasts.Vertex(ToSwept(sProfile))));
+            return FromSwept(_pipe.InternalEdge(ShapeCasts.Edge(sSpine), ShapeCasts.Vertex(sProfile)));
         }
 
         // POP pour NT

@@ -6,6 +6,7 @@
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.Orientation;
@@ -466,9 +467,11 @@ internal abstract class NumLinearRegularSweep
         if (_shapes[iGenS, iDirS].ShapeType() == ShapeType.Wire || _shapes[iGenS, iDirS].ShapeType() == ShapeType.Shell)
         {
             // OCCT.NET: frozen. OCCT sets the flag again on each call; a result already published (frozen), or a
-            // generating shape's own wire, is written only if the flag changes.
+            // generating shape's own wire, is written only if the flag changes, and only where a write is taken: after
+            // the sweep's working overlay is finished, the caller's wire keeps its flag (the result holds the wire as
+            // the sweep left it, which FromSwept gives).
             bool isClosed = Tool.IsClosed(_shapes[iGenS, iDirS]);
-            if (_shapes[iGenS, iDirS].Closed() != isClosed)
+            if (_shapes[iGenS, iDirS].Closed() != isClosed && !WorkingOverlay.IsLocked(_shapes[iGenS, iDirS].TShape()!))
             {
                 _shapes[iGenS, iDirS].Closed(isClosed);
             }

@@ -2,10 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
-using Occt;
 
 namespace Kerf.Engine.Construction.Api;
 
@@ -13,19 +11,17 @@ namespace Kerf.Engine.Construction.Api;
 /// <remarks>
 /// <para><see cref="FirstShape"/> and <see cref="LastShape"/> are publication points: they freeze what they return
 /// (design 4.2). OCCT's virtuals are the internal <see cref="InternalFirstShape"/> and <see cref="InternalLastShape"/>.</para>
-/// <para>OCCT.NET: a sweep without copy writes into its generating shape (pcurves of the profile's edges on the new faces,
-/// vertex parameters, 3D curves, tolerances) and shares its sub-shapes in the result. When the generating shape holds
-/// frozen TShapes, the derived algorithms sweep an exact copy of it and give back, in the result, the generating
-/// shape's own sub-shapes that the sweep left unchanged (design 4.6, decision 32xx-S2); the history answers for the
-/// caller's sub-shapes. These helpers are not OCCT's.</para>
+/// <para>Kerf: a sweep without copy writes into its generating shape (pcurves of the profile's edges on the new faces,
+/// vertex parameters, 3D curves, tolerances) and shares its sub-shapes in the result. The derived algorithms sweep the
+/// caller's shape itself in a working overlay (unit 10H3): the writes go to working copies, and the result holds the
+/// generating shape's own sub-shapes wherever the sweep left them unchanged. The sweep's tables and histories are
+/// keyed by the caller's sub-shapes; what they hand out is mapped to what stands for it in the result
+/// (<see cref="FromSwept"/>). These helpers are not OCCT's.</para>
 /// </remarks>
 public abstract class MakeSweep : MakeShape
 {
-    // OCCT.NET: the copy for write of a generating shape holding frozen TShapes
-    private Shape _genOriginal = new();
-    private Shape _genCopy = new();
-    private Dictionary<TShape, TShape>? _genCopies; // original's TShape -> copy's
-    private Dictionary<TShape, TShape>? _genFinal; // copy's TShape -> the one standing for it now
+    // Kerf: the working overlay the generating shape is swept in (unit 10H3)
+    private WorkingOverlay? _overlay;
 
     private protected MakeSweep()
     {
@@ -49,82 +45,47 @@ public abstract class MakeSweep : MakeShape
         return shape;
     }
 
-    // ------------------------------------------------------------ OCCT.NET: copy for write of the generating shape
+    // ------------------------------------------------------------ Kerf: the generating shape in a working overlay
 
     /// <summary>
-    /// The shape to sweep in place of <paramref name="s"/>: an exact copy of it when it holds frozen TShapes,
-    /// otherwise <paramref name="s"/> itself (OCCT's in-place sweep).
+    /// Opens the working overlay the sweep of <paramref name="s"/> runs in, current until disposed: the constructor
+    /// disposes it once <see cref="FinishGenerating"/> has assembled the result. Null when the sweep runs inside an
+    /// operation's overlay (an evolved shape's): its writes are that operation's, as OCCT's are in place.
     /// </summary>
-    private protected Shape GeneratingShapeForWrite(in Shape s)
+    private protected WorkingOverlay? BeginGenerating(in Shape s)
     {
-        _genOriginal = s;
-        if (s.IsNull || !HasFrozen(s.TShape()!, new HashSet<TShape>(ReferenceEqualityComparer.Instance)))
-        {
-            _genCopy = s;
-            _genCopies = null;
-            return s;
-        }
-        _genCopy = BrepTools.ExactCopyForWrite(s, out _, out _genCopies);
-        return _genCopy;
-    }
-
-    private static bool HasFrozen(TShape tShape, HashSet<TShape> visited)
-    {
-        if (tShape.IsFrozen)
-        {
-            return true;
-        }
-        if (!visited.Add(tShape))
-        {
-            return false;
-        }
-        for (var it = new Iterator(new Shape(tShape, new Placement(), Orientation.Forward));
-             it.More(); it.Next())
-        {
-            if (HasFrozen(it.Value().TShape()!, visited))
-            {
-                return true;
-            }
-        }
-        return false;
+        _overlay = WorkingOverlay.BeginUnlessInside(s);
+        return _overlay;
     }
 
     /// <summary>
-    /// After the sweep of a copy: gives back the generating shape's sub-shapes the sweep left unchanged, in the
-    /// result <paramref name="result"/> too (BRepTools.KeepUnchangedIn).
+    /// Assembles the result of the sweep: the generating shape's sub-shapes it changed are replaced by their new
+    /// TShapes, in <paramref name="result"/> and in the sweep's own graph. Once only (a second Build gets the same graph).
     /// </summary>
-    private protected void KeepUnchangedGenerating(ref Shape result)
+    private protected void FinishGenerating(ref Shape result)
     {
-        if (_genCopies is null || _genFinal is not null)
+        if (_overlay is null || _overlay.IsFinished)
         {
-            return; // nothing copied, or already done (a second Build gets the same graph back)
+            return;
         }
-        // the copy's graph is left as the sweep made it: the sweep reads it again for the history and the shapes it
-        // builds on demand (its seam test walks the generating shape's faces)
-        _genFinal = BrepTools.KeepUnchangedIn(_genOriginal, _genCopy, _genCopies, ref result, out _, true);
+        result = _overlay.Finish(result);
     }
 
-    /// <summary>The swept shape's sub-shape standing for the caller's sub-shape <paramref name="s"/> (itself without a copy).</summary>
-    private protected Shape ToSwept(in Shape s)
-    {
-        if (_genCopies is null || s.IsNull || !_genCopies.TryGetValue(s.TShape()!, out TShape? copy))
-        {
-            return s;
-        }
-        Shape aS = s;
-        aS.TShape(copy);
-        return aS;
-    }
+    /// <summary>
+    /// Opens, for a history query that may build on demand (OCCT's sweep builds the edge a vertex generates when no
+    /// face built it, and sets the vertex's parameter on it), an overlay that is dropped unfinished: the vertex is the
+    /// generating shape's, which the result shares, and the write would leave it as it is (a FORWARD or REVERSED
+    /// vertex gets only the new edge's ranges, and a tolerance of at least <c>Precision::PConfusion()</c>).
+    /// </summary>
+    private protected static WorkingOverlay BeginQuery() => WorkingOverlay.Begin(new Shape());
 
-    /// <summary>A shape the sweep returns, with a copy of the generating shape's sub-shape replaced by the one standing for it now.</summary>
+    /// <summary>A shape the sweep returns, with a sub-shape of the generating shape mapped to what stands for it now.</summary>
     private protected Shape FromSwept(in Shape s)
     {
-        if (_genFinal is null || s.IsNull || !_genFinal.TryGetValue(s.TShape()!, out TShape? now))
+        if (_overlay is null || !_overlay.IsFinished || s.IsNull)
         {
             return s;
         }
-        Shape aS = s;
-        aS.TShape(now);
-        return aS;
+        return _overlay.Final(s);
     }
 }
