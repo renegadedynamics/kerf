@@ -244,6 +244,54 @@ public class ChFi2d_BuilderTests
         Assert.Equal(ConstructionError.IsDone, aDirect.Status());
     }
 
+    // The fillet of radius theR of the corner of e1 and e2 (in that order) in the plane z = 0: its arc, and e1 and e2
+    // shrunk to it, each ending where the arc does; the arc tangent to both (its centre at theR from the line, at the
+    // circle's radius plus or minus theR from the circle's centre).
+    private static void CheckFillet(Edge theE1, Edge theE2, double theR)
+    {
+        var anAlgo = new AnaFilletAlgo(theE1, theE2, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        Assert.True(anAlgo.Perform(theR));
+        Edge M1 = new(), M2 = new();
+        Edge anArc = anAlgo.Result(ref M1, ref M2);
+        Assert.False(anArc.IsNull || M1.IsNull || M2.IsNull);
+        var aFillet = new EdgeCurveAdaptor(anArc);
+        Assert.Equal(theR, aFillet.Circle().Radius(), 1.0e-9);
+        Point3D aCentre = aFillet.Circle().Location();
+        foreach (Edge anE in new[] { theE1, theE2 })
+        {
+            var aC = new EdgeCurveAdaptor(anE);
+            double aGap = aC.GetType() == CurveKind.Line
+                              ? aC.Line().Distance(aCentre)
+                              : Math.Abs(Math.Abs(aC.Circle().Location().Distance(aCentre) - aC.Circle().Radius()));
+            Assert.Equal(theR, aGap, 1.0e-9);
+        }
+        // the arc's ends are the shrunk edges' ends at the corner
+        Point3D aStart = aFillet.Value(aFillet.FirstParameter()), anEnd = aFillet.Value(aFillet.LastParameter());
+        bool Touches(Edge theEdge, Point3D theP)
+        {
+            var aC = new EdgeCurveAdaptor(theEdge);
+            return aC.Value(aC.FirstParameter()).Distance(theP) < 1.0e-7 || aC.Value(aC.LastParameter()).Distance(theP) < 1.0e-7;
+        }
+        Assert.True((Touches(M1, aStart) && Touches(M2, anEnd)) || (Touches(M1, anEnd) && Touches(M2, aStart)));
+    }
+
+    [Fact]
+    public void A_fillet_of_a_moved_arc()
+    {
+        // a quarter arc of radius 5 about the origin, moved by (10, 0, 0): from (15, 0) to (10, 5), then up the line
+        // x = 10. OCCT's isCW took the arc's middle point without the edge's location, and its shrinking projected the
+        // located ends on the curve without it (occt-issues.md, unit 5R's ChFi2d_AnaFilletAlgo isCW row; decision
+        // 16715).
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        Edge anArc = new MakeEdge(aCircle, 0.0, Math.PI / 2).Edge();
+        Edge aMoved = ShapeCasts.Edge(anArc.Moved(new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)))));
+        Edge aLine = new MakeEdge(new Point3D(10, 5, 0), new Point3D(10, 15, 0)).Edge();
+        CheckFillet(aMoved, aLine, 1.0);
+        // the same arc built in place
+        Edge aPlaced = new MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(10, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0, Math.PI / 2).Edge();
+        CheckFillet(aPlaced, aLine, 1.0);
+    }
+
     [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {

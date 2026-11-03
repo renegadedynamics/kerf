@@ -15026,3 +15026,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        shell and solid, spherical shell and ball, torus shell and solid, half tori's centres) and partial patches
        against the integrals by Simpson's rule; GProp_ElementaryTests' twelve tests that checked the right values
        where OCCT had them and pinned its errors elsewhere are replaced by six.
+16715. **A 2D fillet of a moved arc goes the right way** (unit 5R's ChFi2d_AnaFilletAlgo isCW row). isCW took the
+       arc's middle point on the curve without the edge's location and its ends with it, so a moved arc's sense came out
+       at random; the shrinking of the neighbours then projected their located ends onto their curves without the
+       location, so it failed for any moved edge. The middle point is the adaptor's, and the shrunk edges are made on the
+       placed curves. Test: a quarter arc moved by (10, 0, 0) and a segment, filleted: an arc of the radius tangent to
+       both, the shrunk edges ending where it does; the same arc built in place gives the same.

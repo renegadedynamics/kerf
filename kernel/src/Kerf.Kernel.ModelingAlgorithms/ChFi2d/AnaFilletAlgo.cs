@@ -64,15 +64,14 @@ public sealed class AnaFilletAlgo
     {
         double f = ac.FirstParameter();
         double l = ac.LastParameter();
-        // OCCT: the middle point is taken on the edge's curve without the edge's location, the ends with it
-        CircleCurve3D circle = (ac.Curve().Curve() as CircleCurve3D)!; // OCCT dereferences down_cast's result unchecked
         Point3D start = ac.Value(f);
         Point3D end = ac.Value(l);
         Point3D center = ac.Circle().Location();
         CoordinateSystem plane = new(ac.Circle().Position());
 
-        // Get point on circle at half angle
-        circle.D0(0.5 * (f + l), out Point3D m);
+        // Get point on circle at half angle, placed as the ends are (OCCT took it on the curve without the edge's
+        // location: decision 16715)
+        Point3D m = ac.Value(0.5 * (f + l));
 
         // Compare angles between vectors to middle point and to the end point.
         Vector3D startv = new(center, start), endv = new(center, end), middlev = new(center, m);
@@ -484,7 +483,8 @@ public sealed class AnaFilletAlgo
             {
                 _fillet = mkEdge.Edge();
 
-                // Limit the neighbours.
+                // Limit the neighbours, on their curves placed as the edges are (OCCT took the curves without the
+                // edges' locations, so the shrinking of a moved edge failed: decision 16715).
                 // Left neighbour.
                 Point3D p1, p2;
                 _shrinke1.Nullify();
@@ -501,7 +501,7 @@ public sealed class AnaFilletAlgo
                 if (_segment1)
                 {
                     var mkSegment1 = new MakeEdge();
-                    mkSegment1.Init(ac1.Curve().Curve()!, p1, p2);
+                    mkSegment1.Init(Tool.Curve(_e1, out _, out _)!, p1, p2);
                     if (mkSegment1.IsDone)
                     {
                         _shrinke1 = mkSegment1.Edge();
@@ -510,7 +510,7 @@ public sealed class AnaFilletAlgo
                 else
                 {
                     var mkCirc1 = new MakeEdge();
-                    mkCirc1.Init(ac1.Curve().Curve()!, p1, p2);
+                    mkCirc1.Init(Tool.Curve(_e1, out _, out _)!, p1, p2);
                     if (mkCirc1.IsDone)
                     {
                         _shrinke1 = mkCirc1.Edge();
@@ -532,7 +532,7 @@ public sealed class AnaFilletAlgo
                 if (_segment2)
                 {
                     var mkSegment2 = new MakeEdge();
-                    mkSegment2.Init(ac2.Curve().Curve()!, p1, p2);
+                    mkSegment2.Init(Tool.Curve(_e2, out _, out _)!, p1, p2);
                     if (mkSegment2.IsDone)
                     {
                         _shrinke2 = mkSegment2.Edge();
@@ -541,7 +541,7 @@ public sealed class AnaFilletAlgo
                 else
                 {
                     var mkCirc2 = new MakeEdge();
-                    mkCirc2.Init(ac2.Curve().Curve()!, p1, p2);
+                    mkCirc2.Init(Tool.Curve(_e2, out _, out _)!, p1, p2);
                     if (mkCirc2.IsDone)
                     {
                         _shrinke2 = mkCirc2.Edge();
