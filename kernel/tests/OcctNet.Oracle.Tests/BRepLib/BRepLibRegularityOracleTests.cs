@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using Schematiq.Collections;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
 
@@ -115,7 +113,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     {
         var anOracle = new Oracle(output, 34101);
         var aTally = new Tally();
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, false);
             double aTolAng = anOracle.Bool() ? 1.0e-10 : anOracle.Real(1e-6, 0.1);
@@ -173,7 +171,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         var anOracle = new Oracle(output, 34102);
         var aCounts = new int[8];
         int aValues = 0;
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, false);
             var aNEF = new N.TopTools_IndexedDataMapOfShapeListOfShape();
@@ -211,7 +209,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     {
         var anOracle = new Oracle(output, 34103);
         int aValues = 0, aValidRanges = 0;
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, anOracle.Bool());
             (N.TopTools_IndexedMapOfShape aNFaces, NCollection_IndexedMap<TopoDS_Shape> aPFaces) = Map(aN, aP, TopAbs_FACE);
@@ -311,7 +309,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         var anOracle = new Oracle(output, 34104);
         var aTally = new Tally();
         int aPCurves = 0, aNativeInputsChanged = 0;
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             bool isPolygon = i % 3 == 2;
             (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = isPolygon ? PlanarPolygonFace(anOracle, i) : Scene(anOracle, i, false);
@@ -446,7 +444,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         var anOracle = new Oracle(output, 34105);
         var aTally = new Tally();
         int aCorrected = 0;
-        for (int i = 0; i < Scenes; i++)
+        foreach (int i in Tape.Budget(Scenes))
         {
             (N.TopoDS_Shape aN, TopoDS_Shape aP, string aWhat) = Scene(anOracle, i, true);
 
@@ -472,4 +470,3 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                          $"{aTally.Bytes} bytes, all byte-identical");
     }
 }
-#endif

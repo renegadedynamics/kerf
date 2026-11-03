@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -6,7 +5,6 @@ using System.Globalization;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.BRepOffset_Mode;
 using static Occt.GeomAbs_JoinType;
 using static Occt.TopAbs_ShapeEnum;
@@ -161,7 +159,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     {
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "offset");
-        foreach ((string aName, TopoDS_Shape aShape) in Solids())
+        foreach ((string aName, TopoDS_Shape aShape) in Tape.Budget(Solids()))
         {
             double aD = Diagonal(aShape) * 0.04;
             foreach (Run aCase in SolidRuns(aName, aD))
@@ -203,7 +201,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         using var aRun = new ShapeFixOracleRun(output, "offset");
         string aDir = Path.Combine(ShapeFixOracleRun.Metadata("OcctSourceDir"), "data", "occ");
         var aWatch = Stopwatch.StartNew();
-        foreach (string aFile in Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             if (new FileInfo(aFile).Length > 300_000)
             {
@@ -722,4 +720,3 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         Assert.Empty(theTally.HistoryDifferences);
     }
 }
-#endif

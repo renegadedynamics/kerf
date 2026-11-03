@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -114,7 +112,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
         int[] aDegrees = [1, 2, 3, 3, 5, 8];
         double[] aTolerances = [1e-3, 1e-3, 1e-2, 1e-4];
-        foreach ((string aName, N.TopoDS_Shape aShape) in Primitives(anOracle).Concat(ShapeUpgradeUnifySameDomainOracleTests.BooleanResults(anOracle, 120)))
+        foreach ((string aName, N.TopoDS_Shape aShape) in Tape.Budget(Primitives(anOracle).Concat(ShapeUpgradeUnifySameDomainOracleTests.BooleanResults(anOracle, 120))))
         {
             Compare(aRun, aName, aShape, ToSplines(3, 1e-3, false)); // build123d.NET's defaults
             Compare(aRun, aName, aShape, ToSplines(aDegrees[anOracle.Int(0, aDegrees.Length - 1)],
@@ -130,7 +128,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 20261102);
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
-        foreach ((string aName, N.TopoDS_Shape aShape) in Primitives(anOracle).Concat(Swept(anOracle)))
+        foreach ((string aName, N.TopoDS_Shape aShape) in Tape.Budget(Primitives(anOracle).Concat(Swept(anOracle))))
         {
             foreach (Op anOp in s_modifications)
             {
@@ -149,7 +147,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
-        foreach ((string aFile, string _) in aRun.Inputs(300_000))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -171,7 +169,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
-        foreach ((string aFile, string _) in aRun.Inputs(100_000))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(100_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -300,4 +298,3 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

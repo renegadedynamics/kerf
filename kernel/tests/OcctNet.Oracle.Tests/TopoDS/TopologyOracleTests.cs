@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -35,7 +33,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aCounts = new Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = RandomScene(anOracle, aScene);
             CompareFlags(anOracle, aShape);
@@ -165,7 +163,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
     public void In_place_statics_change_shapes_as_native_OCCT()
     {
         var anOracle = new Oracle(output);
-        for (int aRound = 0; aRound < 20; aRound++)
+        foreach (int aRound in Tape.Budget(20))
         {
             var aTwins = new TwinShapes();
             Twin<N.TopoDS_Shape, TopoDS_Shape> aBox =
@@ -643,4 +641,3 @@ public class TopologyOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

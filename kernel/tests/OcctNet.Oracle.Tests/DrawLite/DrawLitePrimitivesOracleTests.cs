@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -6,7 +5,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -201,7 +199,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     {
         var anO = new Oracle(output, 3260);
         var aDI = new DrawInterpreter(new StringWriter { NewLine = "\n" });
-        for (int aCase = 0; aCase < 1200; aCase++)
+        foreach (int aCase in Tape.Budget(1200))
         {
             int aKind = aCase % 24;
             double a = anO.Real(0.5, 10), b = anO.Real(0.5, 10), c = anO.Real(0.5, 10);
@@ -597,7 +595,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             output.WriteLine(aD);
         }
         Assert.Empty(myDifferences);
-        Assert.True(myFiles > 1000);
+        Assert.True(myFiles > (Tape.IsSampled ? 0 : 1000)); // as recorded, a budgeted sample (decision 1337)
     }
 
     // A plane for the [plane(ax2)] forms, bound to pl; its native gp_Ax2 (Pln().Position().Ax2(), as Draw reads it),
@@ -753,4 +751,3 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         return m.Solid();
     }
 }
-#endif

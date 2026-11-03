@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -7,7 +6,6 @@ using System.Text;
 using Xunit.Abstractions;
 using static Occt.TopAbs_ShapeEnum;
 using static Occt.TopTools_FormatVersion;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -439,7 +437,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
 
     /// <summary>data/occ's .brep files under 1 MB (as unit 4C's oracle).</summary>
     private static IEnumerable<string> DataOccFiles()
-        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= 1_000_000);
+        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= (Tape.IsSampled ? 60_000 : 1_000_000));
 
     /// <summary>The data files of OCCT's mesh group (tests/mesh/data) that the public dataset has.</summary>
     private static IEnumerable<string> MeshGroupFiles()
@@ -515,7 +513,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     private Tally RunFiles(IEnumerable<string> theFiles, Setting[] theSettings)
     {
         var aTally = new Tally();
-        foreach (string aFile in theFiles)
+        foreach (string aFile in Tape.Budget(theFiles, isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -695,7 +693,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 40401);
         var aTally = new Tally();
-        foreach ((string aName, string aF1) in RandomShapes(anOracle, 80))
+        foreach ((string aName, string aF1) in Tape.Budget(RandomShapes(anOracle, 80)))
         {
             foreach (Setting aSetting in new Setting[] { new(0.05, true, 0.5, false), new(-0.004, false, 0.3, true), new(0.1, true, 0.2, true) })
             {
@@ -714,7 +712,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     public void Remeshing_keeps_and_replaces_meshes_as_native()
     {
         var aTally = new Tally();
-        foreach (string aName in new[] { "solid.brep", "Room.brep", "mal_tige.brep", "fuse.brep", "face.brep", "bottle.brep", "Pump_Nut.brep", "MODERN_Table_1.brep" })
+        foreach (string aName in Tape.Budget(new[] { "solid.brep", "Room.brep", "mal_tige.brep", "fuse.brep", "face.brep", "bottle.brep", "Pump_Nut.brep", "MODERN_Table_1.brep" }))
         {
             string aF1 = F1(Path.Combine(DataOcc, aName));
             (string aF2, NativeTriangulation?[] _, int _) = NativeMesh(aF1, 0.05, new Setting(0.05, true, 0.5, false));
@@ -735,7 +733,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 40402);
         int aShapes = 0;
-        foreach (string aFile in DataOccFiles())
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true))
         {
             string aF1 = F1(aFile);
             foreach (Setting aSetting in new Setting[] { new(0.05, true, 0.5, false), new(0.02, true, 0.3, true) })
@@ -823,7 +821,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     {
         int aShapes = 0, aNativeDiffer = 0;
         IEnumerable<string> aFiles = DataOccFiles().Concat(MeshGroupFiles().Where((f, i) => i % 3 == 0));
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -860,4 +858,3 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                          + $"native parallel differs from native serial in {aNativeDiffer}");
     }
 }
-#endif

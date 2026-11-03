@@ -1,7 +1,5 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using N = Build123d.Occt;
 using static Occt.TopAbs_Orientation;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -421,4 +419,3 @@ internal static class ClassificationScenes
         return aPoints;
     }
 }
-#endif

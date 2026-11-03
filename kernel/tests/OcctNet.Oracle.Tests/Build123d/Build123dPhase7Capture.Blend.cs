@@ -1,13 +1,18 @@
-#if HAS_ORACLE || HAS_NATIVE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using System.Text;
+#if HAS_ORACLE || HAS_NATIVE
 using Build123d;
 using Occt;
 using B = Build123d;
-using N = Build123d.Occt;
+using W = Build123d.Occt;
 using Ops = Build123d.Operations;
+#endif
+
+#if HAS_NATIVE
+using N = Build123d.Occt;
+#endif
 
 namespace OcctNet.Oracle.Tests;
 
@@ -21,6 +26,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 internal static partial class Build123dPhase7Capture
 {
+#if HAS_ORACLE || HAS_NATIVE
     // ---------------------------------------------------------------------------------------------------------------
     // The calls
 
@@ -39,36 +45,36 @@ internal static partial class Build123dPhase7Capture
 
     private static int[] EdgeIndices(B.Shape theShape, IEnumerable<B.Edge> theEdges)
     {
-        using var aMap = new N.TopTools_IndexedMapOfShape();
-        N.TopExp.MapShapes(theShape.Wrapped, N.TopAbs_ShapeEnum.TopAbs_EDGE, aMap);
-        return [.. theEdges.Select(e => aMap.FindIndex(e.Wrapped) * (e.Wrapped.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? -1 : 1))];
+        using var aMap = new W.TopTools_IndexedMapOfShape();
+        W.TopExp.MapShapes(theShape.Wrapped, W.TopAbs_ShapeEnum.TopAbs_EDGE, aMap);
+        return [.. theEdges.Select(e => aMap.FindIndex(e.Wrapped) * (e.Wrapped.Orientation() == W.TopAbs_Orientation.TopAbs_REVERSED ? -1 : 1))];
     }
 
     // The shape build123d.NET's fillet and chamfer operations rebuild: the selection's first parent
     private static B.Shape TargetOf(IReadOnlyList<B.Edge> theEdges) => theEdges[0].TopoParent ?? throw new InvalidOperationException("no parent");
 
     /// <summary>Shape3D.Fillet (or the fillet operation): <c>Add(radius, edge)</c> for each selected edge, then <c>Shape()</c>.</summary>
-    private static void Fillet(List<P7Call> theCalls, string theTest, string theName, B.Shape3D? theShape, IEnumerable<B.Edge> theEdges,
+    private static void Fillet(List<W7Call> theCalls, string theTest, string theName, B.Shape3D? theShape, IEnumerable<B.Edge> theEdges,
                                double theRadius)
     {
         List<B.Edge> anEdges = [.. theEdges];
         (B.Shape? aResult, string? anError, string? aMessage) =
             OwnWithMessage(() => theShape is null ? Ops.Fillet(anEdges, theRadius) : theShape.Fillet(theRadius, anEdges));
         B.Shape aTarget = theShape ?? TargetOf(anEdges);
-        theCalls.Add(new P7Call(theName, theTest, P7Op.Fillet, [aTarget.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.Fillet, [aTarget.Wrapped],
                                 new P7Args(theRadius, Edges: EdgeIndices(aTarget, anEdges), Operation: theShape is null),
                                 P7Post.None, aResult, anError, aMessage));
     }
 
     /// <summary>The fillet operation (the shape is the selection's parent).</summary>
-    private static void FilletOperation(List<P7Call> theCalls, string theTest, string theName, IEnumerable<B.Edge> theEdges, double theRadius) =>
+    private static void FilletOperation(List<W7Call> theCalls, string theTest, string theName, IEnumerable<B.Edge> theEdges, double theRadius) =>
         Fillet(theCalls, theTest, theName, null, theEdges, theRadius);
 
     /// <summary>
     /// Shape3D.Chamfer (or the chamfer operation, which turns an angle into the second length first):
     /// <c>Add(length, length2 or length, edge, face)</c>, the face given or the edge's first ancestor, then <c>Shape()</c>.
     /// </summary>
-    private static void Chamfer(List<P7Call> theCalls, string theTest, string theName, B.Shape3D? theShape, IEnumerable<B.Edge> theEdges,
+    private static void Chamfer(List<W7Call> theCalls, string theTest, string theName, B.Shape3D? theShape, IEnumerable<B.Edge> theEdges,
                                 double theLength, double? theLength2 = null, double? theAngle = null, B.Face? theFace = null)
     {
         List<B.Edge> anEdges = [.. theEdges];
@@ -86,18 +92,18 @@ internal static partial class Build123dPhase7Capture
         int aFace = 0;
         if (theFace is not null)
         {
-            using var aMap = new N.TopTools_IndexedMapOfShape();
-            N.TopExp.MapShapes(aTarget.Wrapped, N.TopAbs_ShapeEnum.TopAbs_FACE, aMap);
+            using var aMap = new W.TopTools_IndexedMapOfShape();
+            W.TopExp.MapShapes(aTarget.Wrapped, W.TopAbs_ShapeEnum.TopAbs_FACE, aMap);
             aFace = aMap.FindIndex(theFace.Wrapped);
         }
-        theCalls.Add(new P7Call(theName, theTest, P7Op.Chamfer, [aTarget.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.Chamfer, [aTarget.Wrapped],
                                 new P7Args(theLength, Edges: EdgeIndices(aTarget, anEdges), Value2: aDistance2, Operation: theShape is null,
                                            Faces: [.. anEdges.Select(_ => aFace)]),
                                 P7Post.None, aResult, anError, aMessage));
     }
 
     /// <summary>Shape3D.MaxFillet: the binary search of fillets over (0, twice the bounding box's diagonal).</summary>
-    private static void MaxFillet(List<P7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IEnumerable<B.Edge> theEdges,
+    private static void MaxFillet(List<W7Call> theCalls, string theTest, string theName, B.Shape3D theShape, IEnumerable<B.Edge> theEdges,
                                   double theTolerance = 0.1, int theMaxIterations = 10)
     {
         List<B.Edge> anEdges = [.. theEdges];
@@ -111,7 +117,7 @@ internal static partial class Build123dPhase7Capture
             anError = ErrorOfB(e);
             aMessage = e.Message;
         }
-        theCalls.Add(new P7Call(theName, theTest, P7Op.MaxFillet, [theShape.Wrapped],
+        theCalls.Add(new W7Call(theName, theTest, P7Op.MaxFillet, [theShape.Wrapped],
                                 new P7Args(Tol: theTolerance, Edges: EdgeIndices(theShape, anEdges), Value2: theShape.BoundingBox().Diagonal,
                                            MaxIterations: theMaxIterations),
                                 P7Post.None, null, anError, aMessage));
@@ -124,7 +130,7 @@ internal static partial class Build123dPhase7Capture
 
     private static B.Part PCylinder(double r, double h) => new([B.Solid.MakeCylinder(r, h, new B.Plane((0, 0, -h / 2)))]);
 
-    private static IEnumerable<(string, Action<List<P7Call>, string>)> BlendScenarios()
+    private static IEnumerable<(string, Action<List<W7Call>, string>)> BlendScenarios()
     {
         // Shape3DTests.cs: FilletFailuresTests
         yield return ("FilletFailuresTests.Plate", (c, t) =>
@@ -156,7 +162,7 @@ internal static partial class Build123dPhase7Capture
         {
             var aPlate = PBox(20, 20, 2);
             var anEdges = aPlate.Edges();
-            var aReversed = new B.Edge(N.TopoDS.Edge(anEdges[1].Wrapped.Reversed()));
+            var aReversed = new B.Edge(W.TopoDS.Edge(anEdges[1].Wrapped.Reversed()));
             Fillet(c, t, "repeated and reversed", aPlate, [anEdges[3], anEdges[0], aReversed, anEdges[1]], 3);
         });
         // Shape3DTests
@@ -286,6 +292,8 @@ internal static partial class Build123dPhase7Capture
             Chamfer(c, t, "chamfer_asymmetric", aBlock, aBlock.Edges().GroupBy(B.Axis.Z).Last, 2, 1);
         });
     }
+
+#endif
 
     // ---------------------------------------------------------------------------------------------------------------
     // The runners
@@ -487,11 +495,24 @@ internal static partial class Build123dPhase7Capture
             aCentres.Add((Reason(aStripe), aList));
         }
         aStatus.Append(" details=").Append(Details(theEdges, aFaulty));
+        // build123d.NET's own formatting, so recorded (unit 10A)
+#if HAS_NATIVE
         string? aDetails = theMessage ? MessageDetails(theShape, theEdges, aCentres) : null;
+#else
+        string? aDetails = theMessage ? Tape.Value("message details", () =>
+        {
+#if HAS_ORACLE
+            return MessageDetails(theShape, theEdges, aCentres);
+#else
+            return Tape.NeedsNative<string>();
+#endif
+        }) : null;
+#endif
         string aHistory = theHistory && aRes is not null ? BlendHistory(theShape, aRes, aB) : "";
         return (anError, aStatus.ToString(), aRes, aHistory, aDetails);
     }
 
+#if HAS_ORACLE || HAS_NATIVE
     // build123d.NET's message details, from native's edges (their centres as build123d.NET prints them)
     private static string MessageDetails(N.TopoDS_Shape theShape, int[] theSelection, List<(string Reason, List<N.TopoDS_Edge> Edges)> theFaulty)
     {
@@ -508,14 +529,14 @@ internal static partial class Build123dPhase7Capture
             }
             foreach (N.TopoDS_Edge anE in aList)
             {
-                aSet.Add(new B.Edge(anE));
+                aSet.Add(new B.Edge(RecordedNative.Real<W.TopoDS_Edge>(anE)));
             }
         }
         if (aFaulty.Count == 0)
         {
             return "";
         }
-        List<B.Edge> aSelected = [.. theSelection.Select(k => new B.Edge(NEdge(anEdges, k)))];
+        List<B.Edge> aSelected = [.. theSelection.Select(k => new B.Edge(RecordedNative.Real<W.TopoDS_Edge>(NEdge(anEdges, k))))];
         var aRejected = new HashSet<int>();
         var aGroups = new List<string>();
         foreach (string aReason in anOrder)
@@ -539,6 +560,7 @@ internal static partial class Build123dPhase7Capture
         }
         return $" on {aRejected.Count} of {aSelected.Count} edges ({string.Join("; ", aGroups)})";
     }
+#endif
 
     private static (string? Error, string Status, TopoDS_Shape? Result, string History) PortFillet(TopoDS_Shape theShape, int[] theEdges,
                                                                                                     double theRadius, bool theHistory)
@@ -764,4 +786,3 @@ internal static partial class Build123dPhase7Capture
         }
     }
 }
-#endif

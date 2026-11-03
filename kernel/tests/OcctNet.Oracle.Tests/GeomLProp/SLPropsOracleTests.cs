@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -94,7 +92,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         var aGeomOracle = new Oracle(output);
         int aCurvatureFirst = 0;
         using var aBuilder = new N.BRep_Builder();
-        for (int i = 0; i < 1100; i++)
+        foreach (int i in Tape.Budget(1100))
         {
             int aKind = i % SurfaceKinds.Length;
             (N.Geom_Surface aNS, Geom_Surface aPS) = RandomSurface(anOracle, aKind);
@@ -209,4 +207,3 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         Assert.Equal(-0.5, aPProps.MaxCurvature(), 1e-15);
     }
 }
-#endif

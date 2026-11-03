@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -21,7 +19,7 @@ namespace OcctNet.Oracle.Tests;
 /// </remarks>
 public class GeomCurveOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 300;
+    private static readonly int Cases = Tape.Cases(300, 34);
 
     // ---------------------------------------------------------------------------------------------
     // Conversions and comparisons
@@ -1212,4 +1210,3 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         anOracle.Report("Geom_OffsetCurve at singular points");
     }
 }
-#endif

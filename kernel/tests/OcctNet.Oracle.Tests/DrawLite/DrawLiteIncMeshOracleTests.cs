@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
@@ -8,7 +7,6 @@ using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
 using static Occt.TopTools_FormatVersion;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -304,7 +302,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         aFiles.AddRange(MeshGroupFiles().Where((_, k) => k % 2 == 0));
         output.WriteLine($"{aDataOcc} data/occ files, {aFiles.Count - aDataOcc} mesh-group files");
 
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aName = Path.GetFileName(aFile);
             string aF1;
@@ -351,4 +349,3 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         Assert.Empty(myDisagreements);
     }
 }
-#endif

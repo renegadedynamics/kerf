@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
 using static Occt.Approx_ParametrizationType;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -16,7 +14,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 700;
+    private static readonly int Cases = Tape.Cases(700, 125);
 
     // Runs the native and the port computations; both must throw, or neither.
     private static bool Both(Oracle theO, Action theNative, Action thePort, string theWhat)
@@ -327,4 +325,3 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         anOracle.Report("GeomAPI_PointsToBSplineSurface");
     }
 }
-#endif

@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -322,7 +320,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var anO = new Oracle(output, 5851);
         var aTally = new Tally("BRepFill::Face");
         var aKinds = new Dictionary<string, int>();
-        for (int aCase = 0; aCase < 700; aCase++)
+        foreach (int aCase in Tape.Budget(700))
         {
             TopoDS_Edge aE1, aE2;
             string aKind;
@@ -505,7 +503,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     {
         var anO = new Oracle(output, 5852);
         var aTally = new Tally("BRepFill::Shell");
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             int aNb = anO.Int(1, 6);
             bool aClosed1 = anO.Int(0, 2) != 0, aClosed2 = anO.Int(0, 4) == 0 ? !aClosed1 : aClosed1;
@@ -575,7 +573,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var anO = new Oracle(output, 5853);
         var aTally = new Tally("BRepFill::Axe");
         var aModes = new int[3];
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             gp_Ax3 anAx = anO.Ax3();
             int aNb = anO.Int(3, 7);
@@ -712,7 +710,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     {
         var anO = new Oracle(output, 5854);
         var aTally = new Tally("BRepFill::ComputeACR");
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             TopoDS_Wire aW = AcrWire(anO, out int aNbEdges);
             (List<N.TopoDS_Shape> aN, List<TopoDS_Shape> aP, TopoDS_Shape anInput) = ReadBoth(Holder(aW));
@@ -740,7 +738,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         var anO = new Oracle(output, 5855);
         var aTally = new Tally("BRepFill::InsertACR");
         int aCut = 0;
-        for (int aCase = 0; aCase < 300; aCase++)
+        foreach (int aCase in Tape.Budget(300))
         {
             TopoDS_Wire aW = AcrWire(anO, out int aNbEdges);
             int aNbCuts = anO.Int(1, 6);
@@ -808,4 +806,3 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         Finish(aTally);
     }
 }
-#endif

@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.BRepCheck_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -139,4 +137,3 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
         anOracle.Report("BRepCheck_Shell through BRepCheck_Analyzer.IsValid");
     }
 }
-#endif

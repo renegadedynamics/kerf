@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -405,7 +403,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
     {
         var anOracle = new Oracle(output, 20261029);
         int[] aCounts = new int[11];
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             SceneSpec aSpec = NewScene(anOracle);
             for (int anOp = 0; anOp <= 10; anOp++)
@@ -544,7 +542,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         var anOracle = new Oracle(output, 20261030);
         int aCompared = 0, anIdentical = 0, aMasked = 0, aKeptEdges = 0, anEdges = 0, aThrown = 0;
         var aDifferences = new List<string>();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             SceneSpec aSpec = NewScene(anOracle);
             for (int anOp = 0; anOp <= 4; anOp++)
@@ -639,7 +637,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
     {
         var anOracle = new Oracle(output, 20261030);
         int aCases = 0, aReversed = 0, aFailed = 0;
-        for (int i = 0; i < 60; i++)
+        foreach (int i in Tape.Budget(60))
         {
             using var aP = new N.gp_Pnt(anOracle.Real(-10, 10), anOracle.Real(-10, 10), anOracle.Real(-10, 10));
             var aBox = new N.BRepPrimAPI_MakeBox(aP, anOracle.Real(0.5, 5), anOracle.Real(0.5, 5), anOracle.Real(0.5, 5));
@@ -691,4 +689,3 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
         output.WriteLine($"{aCases} solids: {aReversed} reversed, {aFailed} not orientable; all as native OCCT");
     }
 }
-#endif

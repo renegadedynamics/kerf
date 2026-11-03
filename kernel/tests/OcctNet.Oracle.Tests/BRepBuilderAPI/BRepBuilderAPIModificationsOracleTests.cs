@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Schematiq.Collections;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -73,7 +71,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
         int aMoved = 0;
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             (N.gp_Trsf aNT, gp_Trsf aT) = BRepToolsModifierOracleTests.RandomTrsf(anOracle, aScene % 4);
             using (aNT)
@@ -112,7 +110,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
     {
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene);
             bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
@@ -146,7 +144,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
     {
         var anOracle = new Oracle(output, 20261031);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape;
             if (aScene % 8 == 7)
@@ -192,7 +190,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         var aCounts = new TopologyOracleTests.Counts();
         const int Shapes = 60;
         int aSurfaceless = 0;
-        for (int k = 0; k < Shapes; k++)
+        foreach (int k in Tape.Budget(Shapes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out _));
             switch (k % 3)
@@ -260,4 +258,3 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         anOracle.Report("BRepBuilderAPI_Transform, Copy and GTransform on native shapes against native OCCT");
     }
 }
-#endif

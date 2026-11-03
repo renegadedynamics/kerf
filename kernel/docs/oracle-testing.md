@@ -2,15 +2,55 @@
 
 `tests/OcctNet.Oracle.Tests` runs the port and native OCCT on the same inputs and compares the results.
 
-## Setup
+## Native OCCT, recorded (unit 10A)
 
-The native side comes from a sibling checkout of build123d.NET (`../build123d.net`, or set the MSBuild property
-`Build123dNetRoot`), which builds the same OCCT release (V8_0_1) and generates .NET bindings for the classes it
-whitelists. That checkout needs its native build: `native/build-deps.ps1` and `native/build-shim.ps1` there. The
-test project references its `Build123d.Occt` project, which copies the native libraries into the test output.
+Since unit 10A the tests don't need native OCCT to run (decisions 1336 to 1338). They call it through `N.`, which
+names the facade `OcctNative` (`Recorded/Native.g.cs`): the members of build123d.NET's native wrappers
+(`Build123d.Occt`) that the tests use, each a step on the running test's **tape** (`Recorded/NativeTape.cs`).
 
-Without that checkout the project still builds, and its one test fails with a message saying what's missing, so
-a missing oracle never passes as "no differences".
+- **Replaying** (the default, and the only mode once native OCCT is gone): each call reads its results from the test's
+  recording, embedded in the assembly (`Recordings/<test class>.tape.gz`, one tape per test method or theory row), after
+  checking that the test asks the same thing: the member, and a check byte of a running hash of every call's arguments
+  (numbers to the bit, facade objects by their number on the tape, rooted paths by their file's content). The results:
+  values, the types of the objects returned, the exception thrown, the files written (`BRepTools::Write` to a path, a
+  STEP file). The port's side always runs, so a test compares the port with native's results as recorded, exactly as
+  it did live. If the port's results change what the test asks native OCCT, the replay fails at that call ("the
+  recording has ... here"): re-record while native exists, or compare differently (phase10-plan.md 3.2).
+- **Recording** (while native OCCT exists): build with native OCCT (the properties below: `HAS_ORACLE`) and set
+  `OCCTNET_ORACLE_RECORD=1`. Each call then runs natively (`Recorded/Native.Record.g.cs`) and is written to the tape,
+  which is saved into the source tree's `Recordings` when the test ends (replacing that test's earlier tape only, so a
+  filter re-records a subset):
+
+  ```
+  $env:OCCTNET_ORACLE_RECORD = '1'
+  dotnet test tests/OcctNet.Oracle.Tests -c Release -p:Build123dNativeRoot=<build123d.NET checkout with its native build>
+  Remove-Item Env:OCCTNET_ORACLE_RECORD
+  dotnet test tests/OcctNet.Oracle.Tests -c Release      # the replay, from the new recordings
+  ```
+- **Live** (`-p:OracleDirect=true`, with native OCCT): `N` names `Build123d.Occt` itself, as before 10A; nothing is
+  recorded and the budgets below don't apply. `tools/oracle-facade.cs` reads that build to generate the facade again
+  when tests use members it lacks:
+  `dotnet run tools/oracle-facade.cs -- tests/OcctNet.Oracle.Tests/bin/Release/net10.0/OcctNet.Oracle.Tests.dll tests/OcctNet.Oracle.Tests/Recorded`.
+
+Native objects are recorded per test, so none can live in a static field or be made in a constructor. build123d.NET's
+own scenarios (`Build123d/`) run build123d.NET on native OCCT, so only when recording: what they produce (the calls
+captured, their operands' native shapes, build123d.NET's message details) is recorded as values (`Tape.Value`), and
+`Build123dConstructionOracleTests` records its cases (kind, operands as native OCCT writes them, data) and runs them.
+
+**Budgets** (decision 1337). Recording everything native returned came to 2.3 GB compressed: whole corpora (data/occ,
+OCCT's test dataset) written as BRep text, meshes read triangle by triangle, thousands of random cases. The loops that
+made them run under `Tape.Budget`: when recording, items are taken while the loop's recording stays under 1.5 MB
+(uncompressed), a corpus's in a spread order (every seventh first) and with an item that alone takes over a quarter of
+that dropped again; the replay takes the items recorded. The random tests' case counts are `Tape.Cases(live,
+recorded)`. Live, every loop runs in full.
+
+## Setup for recording and live runs
+
+The native side comes from a build123d.NET checkout (`Build123dNetRoot`, the repository's `modeling` folder) with its
+native build (`Build123dNativeRoot`, `native/out` and `.deps/install`: `native/build-deps.ps1` and
+`native/build-shim.ps1` there), which builds the same OCCT release (V8_0_1). The test project then references its
+`Build123d.Occt` and `Build123d` projects, which copy the native libraries into the test output. Without them the
+project replays.
 
 ## Writing a test
 
@@ -74,4 +114,13 @@ build123d.NET's `Build123d` project (as well as `Build123d.Occt`) and rebuilds t
 - `Build123dConstructionOracleTests` does the same for the sweeps, lofts, filling, projections, constraint solvers,
   `Chamfer2D` and `Offset2D` (decision 952).
 
-A new build123d.NET test with Booleans is added to the replay by transcribing its construction as one more scenario.
+A new build123d.NET test with Booleans is added to the replay by transcribing its construction as one more scenario,
+then recording (while native OCCT exists).
+
+## The differential run (units 9D2 and 10A)
+
+`tools/b3d-differential.ps1` runs build123d.NET's suite on OCCT.NET with its shape log on, and
+`Build123dDifferentialTests` compares the log with native's, recorded in `Recordings/Build123dDifferential.native.gz`
+(decision 1338: per entry the digests of its BRep text as is and masked, its properties, and its text where OCCT.NET's
+differed when recorded). `-Record -NativeRoot <checkout>` records native's log again from six native runs, while
+native OCCT exists. Without `B3D_DIFF_LOGS` the test only checks the recording.

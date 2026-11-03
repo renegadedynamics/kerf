@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using OcctNet.TestHarness;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -133,7 +131,7 @@ public sealed partial class Build123dPhase7OracleTests
             myTranscription.Add($"{theWhat}: build123d.NET succeeded, the replay failed ({theN.Error ?? theN.Status})");
             return;
         }
-        string anExpected = Signature(theCall.Result.Wrapped), aReplayed = Signature(theN.Result!);
+        string anExpected = Signature(theCall.Result), aReplayed = Signature(theN.Result!);
         if (anExpected != aReplayed)
         {
             myTranscription.Add($"{theWhat}: build123d.NET's {anExpected}, the replay's {aReplayed}");
@@ -254,4 +252,3 @@ public sealed partial class Build123dPhase7OracleTests
         return aDiffs;
     }
 }
-#endif

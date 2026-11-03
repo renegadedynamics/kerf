@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -312,7 +310,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         var anOracle = new Oracle(output, 31011);
         const int Pairs = 800;
-        for (int k = 0; k < Pairs; k++)
+        foreach (int k in Tape.Budget(Pairs))
         {
             int aScene1 = anOracle.Int(0, 3 * ClassificationScenes.Kinds - 1);
             int aScene2 = anOracle.Int(0, 3 * ClassificationScenes.Kinds - 1);
@@ -379,7 +377,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         var anOracle = new Oracle(output, 31012);
         const int Pairs = 160;
-        for (int k = 0; k < Pairs; k++)
+        foreach (int k in Tape.Budget(Pairs))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape1 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out string aWhat1));
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape2 = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k + 5, out string aWhat2));
@@ -409,4 +407,3 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         Summary(anOracle, "BRepExtrema_DistShapeShape on native shapes");
     }
 }
-#endif

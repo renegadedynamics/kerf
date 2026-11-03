@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Reflection;
@@ -6,7 +5,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -161,7 +159,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         }
         var aCounts = new SortedDictionary<string, int>(StringComparer.Ordinal);
         var aDifferent = new List<string>();
-        foreach (string aPath in aFiles)
+        foreach (string aPath in Tape.Budget(aFiles, isSpread: true, theWeight: Tape.FileSize, theMaxWeight: 200_000))
         {
             ReadResult aNative = NativeRead(aPath);
             ReadResult aPort = PortRead(aPath);
@@ -303,7 +301,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             }
         }
 
-        foreach ((string aName, string aFile) in anInputs)
+        foreach ((string aName, string aFile) in Tape.Budget(anInputs, isSpread: true))
         {
             foreach ((STEPControl_StepModelType aPortMode, N.STEPControl_StepModelType aNativeMode) in ModelTypes)
             {
@@ -356,4 +354,3 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
     {
     };
 }
-#endif

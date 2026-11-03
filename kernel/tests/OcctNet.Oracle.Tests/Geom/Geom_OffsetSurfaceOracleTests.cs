@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
@@ -20,7 +18,7 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 150;
+    private static readonly int Cases = Tape.Cases(150, 10);
 
     private static void SameProperties(Oracle theO, N.Geom_OffsetSurface theN, Geom_OffsetSurface theP, string theWhat)
     {
@@ -346,7 +344,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
         for (int aKind = 0; aKind < aKinds.Length; aKind++)
         {
             var anOracle = new Oracle(output, 20261123 + aKind);
-            for (int i = 0; i < 25; i++)
+            foreach (int i in Tape.Budget(25, Tape.DefaultBudget / aKinds.Length))
             {
                 (N.Geom_Surface aNB, Geom_Surface aPB) = aKind switch
                 {
@@ -405,4 +403,3 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

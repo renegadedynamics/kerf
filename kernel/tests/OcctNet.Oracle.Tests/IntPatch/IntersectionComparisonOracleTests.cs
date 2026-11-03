@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -112,4 +110,3 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
         Assert.InRange(aCompare.MaxDeviation, 0.99e-8, 1.01e-8);
     }
 }
-#endif

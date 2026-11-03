@@ -1,11 +1,9 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -151,7 +149,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     {
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "draft");
-        foreach ((string aName, TopoDS_Shape aShape) in Solids())
+        foreach ((string aName, TopoDS_Shape aShape) in Tape.Budget(Solids()))
         {
             NCollection_IndexedMap<TopoDS_Shape> aFaces = FacesOf(aShape);
             (double z0, double z1) = ZRange(aShape);
@@ -185,7 +183,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "draft");
         // build123d.NET's Solid.Draft: every side face at once, one angle, one neutral plane
-        foreach ((string aName, TopoDS_Shape aShape) in Solids())
+        foreach ((string aName, TopoDS_Shape aShape) in Tape.Budget(Solids()))
         {
             NCollection_IndexedMap<TopoDS_Shape> aFaces = FacesOf(aShape);
             int[] aSides = Enumerable.Range(1, aFaces.Extent()).Where(i => IsSide(aFaces[i])).ToArray();
@@ -207,7 +205,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             }
         }
         // build123d.NET's ExtrudeTaper: the prism's sides drafted about the profile's plane, inner walls the other way
-        foreach ((string aName, TopoDS_Face aProfile, double aHeight) in Profiles())
+        foreach ((string aName, TopoDS_Face aProfile, double aHeight) in Tape.Budget(Profiles()))
         {
             BRepPrimAPI_MakePrism aMaker = new(aProfile, new gp_Vec(0, 0, aHeight));
             TopoDS_Shape aPrism = aMaker.Shape();
@@ -251,7 +249,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "draft");
         string aDir = Path.Combine(ShapeFixOracleRun.Metadata("OcctSourceDir"), "data", "occ");
-        foreach (string aFile in Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             if (new FileInfo(aFile).Length > 300_000)
             {
@@ -569,4 +567,3 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         Assert.Empty(theTally.HistoryDifferences);
     }
 }
-#endif

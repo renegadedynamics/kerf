@@ -1,11 +1,9 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using System.Reflection;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -547,7 +545,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     {
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 5941);
-        for (int c = 0; c < 60; c++)
+        foreach (int c in Tape.Budget(60))
         {
             List<N.TopoDS_Shape> anEdges = Contour(anOracle, c < 20 ? 0 : 2, out string aWhat);
             var aCase = new FillingCase { What = $"MakeSurface {c} ({aWhat})", Build123dParams = true, Inputs = anEdges };
@@ -657,7 +655,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     {
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 5942);
-        for (int c = 0; c < 30; c++)
+        foreach (int c in Tape.Budget(30))
         {
             GeomAbs_Shape anOrder = c % 3 == 2 ? GeomAbs_Shape.GeomAbs_G2 : GeomAbs_Shape.GeomAbs_G1;
             FillingCase aCase = BoxHole(anOracle, c, anOrder, false);
@@ -669,7 +667,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             aCase.Steps.Add(new Step(Op.Build));
             Run(aCase);
         }
-        for (int c = 0; c < 20; c++)
+        foreach (int c in Tape.Budget(20))
         {
             FillingCase aCase = CylinderCap(anOracle, c, c % 2 == 0 ? GeomAbs_Shape.GeomAbs_G1 : GeomAbs_Shape.GeomAbs_C0);
             aCase.Steps.Add(new Step(Op.Build));
@@ -684,7 +682,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     {
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 5943);
-        for (int c = 0; c < 20; c++)
+        foreach (int c in Tape.Budget(20))
         {
             // a contour, with free (unbound) curve constraints and points, built with default parameters
             List<N.TopoDS_Shape> anEdges = Contour(anOracle, 2, out string aWhat);
@@ -700,7 +698,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             aCase.Steps.Add(new Step(Op.Build));
             Run(aCase);
         }
-        for (int c = 0; c < 15; c++)
+        foreach (int c in Tape.Budget(15))
         {
             // a box hole with a point given by U, V on a side face
             FillingCase aCase = BoxHole(anOracle, c, GeomAbs_Shape.GeomAbs_G1, false);
@@ -1014,4 +1012,3 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         return aW.ToString();
     }
 }
-#endif

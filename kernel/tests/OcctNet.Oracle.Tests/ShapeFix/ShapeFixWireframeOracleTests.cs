@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.ShapeExtend_Status;
 
 namespace OcctNet.Oracle.Tests;
@@ -101,7 +99,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfwf-");
         var anOracle = new Oracle(output, 63401);
         double[] aPrecisions = [1.0e-5, 1.0e-3, 1.0e-2, 0.1];
-        for (int i = 0; i < 400; i++)
+        foreach (int i in Tape.Budget(400))
         {
             N.TopoDS_Shape aWire = ShapeFixWireOracleTests.RandomWire(anOracle, i, out string aWhat);
             double aPrec = aPrecisions[i % aPrecisions.Length];
@@ -121,7 +119,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfwh-");
         int aShapes = 0;
-        foreach ((string aFile, string aGrids) in aRun.Inputs(1_000_000))
+        foreach ((string aFile, string aGrids) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -141,4 +139,3 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
         Assert.Empty(aRun.Differences);
     }
 }
-#endif

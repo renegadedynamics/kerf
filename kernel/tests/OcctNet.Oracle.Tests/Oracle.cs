@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -498,4 +496,3 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         => output.WriteLine(string.Create(CultureInfo.InvariantCulture,
                                           $"{theWhat}: {myExact}/{myValues} values bit-identical, largest relative difference {myMaxDiff:E2}"));
 }
-#endif

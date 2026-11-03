@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -464,7 +462,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     {
         var anO = new Oracle(output, 3201);
         var aT = new Tally("prisms");
-        for (int aCase = 0; aCase < 480; aCase++)
+        foreach (int aCase in Tape.Budget(480))
         {
             gp_Ax3 anAx = Ax3(anO);
             double aScale = anO.Real(1, 10);
@@ -518,7 +516,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     {
         var anO = new Oracle(output, 3202);
         var aT = new Tally("revolutions");
-        for (int aCase = 0; aCase < 480; aCase++)
+        foreach (int aCase in Tape.Budget(480))
         {
             gp_Ax3 anAx = Ax3(anO);
             double aScale = anO.Real(1, 10);
@@ -664,4 +662,3 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         Finish(aT);
     }
 }
-#endif

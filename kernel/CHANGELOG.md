@@ -1671,3 +1671,11 @@ Phase 10 (part): the public API design (unit 10D).
 - Every public type classified as public API, engine or removed (`docs/api/classification.tsv`, from rules by package
   with `tools/api-classify.cs`), and the draft name map for the rename (`docs/api/kerf.map`).
 - No change to the libraries.
+Phase 10 (part): test independence (unit 10A).
+- The oracle tests no longer need native OCCT: native's results are recorded (`tests/OcctNet.Oracle.Tests/Recordings`,
+  109 MB) and replayed through a generated facade, the port compared with them exactly as before; they can be recorded
+  again while native OCCT exists. They join Kerf.slnx. The largest corpora and random runs are sampled in the
+  recordings (run in full live).
+- The differential run compares build123d.NET's suite on OCCT.NET with native's log as recorded (digests, properties,
+  and the texts that differed).
+- `tools/coverage.ps1` measures line coverage per OCCT package (`docs/coverage.md`).

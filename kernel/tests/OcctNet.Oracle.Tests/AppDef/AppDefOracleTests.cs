@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
 using static Occt.Approx_ParametrizationType;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -120,6 +118,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     [InlineData(Approx_IsoParametric)]
     public void PointsToBSpline_ParametrizationType(Approx_ParametrizationType theParType)
     {
+        Tape.Row(theParType);
         Oracle anOracle = new(output, 20261029 + (int)theParType);
         int aCompared = 0;
         for (int aCase = 0; aCase < Cases; aCase++)
@@ -329,4 +328,3 @@ public class AppDefOracleTests(ITestOutputHelper output)
         anOracle.Report($"GeomAPI_PointsToBSpline variational, {aDone} curves");
     }
 }
-#endif

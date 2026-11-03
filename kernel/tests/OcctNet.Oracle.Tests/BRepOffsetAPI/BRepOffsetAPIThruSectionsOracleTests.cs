@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Reflection;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -725,7 +723,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                              bool theVertices, bool theCheckOff, bool theLooping)
     {
         var anOracle = new Oracle(output, theSeed);
-        for (int aCase = 0; aCase < theNb; aCase++)
+        foreach (int aCase in Tape.Budget(theNb))
         {
             int aNbSect = anOracle.Int(theLooping ? 3 : 2, 5);
             bool isTilted = anOracle.Bool();
@@ -812,7 +810,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     public void Inconsistent_profiles_closed_and_open_mixed()
     {
         var anOracle = new Oracle(output, 20261106);
-        for (int aCase = 0; aCase < 40; aCase++)
+        foreach (int aCase in Tape.Budget(40))
         {
             int aNb = anOracle.Int(2, 4);
             int anOpen = anOracle.Int(0, aNb - 1);
@@ -834,7 +832,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     {
         // build123d.NET's MakeLoft: ThruSections(filled, ruled) with default options, wires (copies) and vertex ends
         var anOracle = new Oracle(output, 20261107);
-        for (int aCase = 0; aCase < 40; aCase++)
+        foreach (int aCase in Tape.Budget(40))
         {
             bool aFilled = anOracle.Bool(), aRuled = anOracle.Bool();
             int aNb = anOracle.Int(2, 4);
@@ -1075,4 +1073,3 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         return aRan;
     }
 }
-#endif

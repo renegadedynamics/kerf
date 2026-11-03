@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.GeomOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -356,4 +354,3 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         anOracle.Report("GeomLib_IsPlanarSurface");
     }
 }
-#endif

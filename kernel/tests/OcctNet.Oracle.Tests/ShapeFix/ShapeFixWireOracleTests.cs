@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -6,7 +5,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.ShapeExtend_Status;
 using static Occt.TopAbs_ShapeEnum;
 
@@ -415,7 +413,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
     {
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 62201);
-        for (int i = 0; i < 400; i++)
+        foreach (int i in Tape.Budget(400))
         {
             N.TopoDS_Shape aWire = RandomWire(anOracle, i, out string aWhat);
             Compare(aWire, $"random wire {i} ({aWhat})");
@@ -479,7 +477,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             output.WriteLine("OcctTestDataDir isn't set: data/occ only");
         }
 
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             if (NativeRead(aFile) is N.TopoDS_Shape aShape)
             {
@@ -492,4 +490,3 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         Assert.Empty(myDifferences);
     }
 }
-#endif

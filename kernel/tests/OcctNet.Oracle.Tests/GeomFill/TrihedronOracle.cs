@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -37,7 +35,7 @@ internal static class TrihedronOracle
                 continue;
             }
             var anOracle = new Oracle(theOutput, theSeed + aKind);
-            for (int i = 0; i < theCases; i++)
+            foreach (int i in Tape.Budget(theCases))
             {
                 (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)
@@ -269,4 +267,3 @@ internal static class TrihedronOracle
         }
     }
 }
-#endif

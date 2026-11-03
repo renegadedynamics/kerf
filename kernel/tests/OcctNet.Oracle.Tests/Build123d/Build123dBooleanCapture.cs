@@ -1,10 +1,14 @@
-#if HAS_ORACLE || HAS_NATIVE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+#if HAS_ORACLE || HAS_NATIVE
 using Build123d;
 using static Build123d.Operations;
 using B = Build123d;
+#endif
+
+#if HAS_NATIVE
 using N = Build123d.Occt;
+#endif
 
 namespace OcctNet.Oracle.Tests;
 
@@ -32,7 +36,7 @@ namespace OcctNet.Oracle.Tests;
 /// blocks (<c>Solid.Extrude</c>, <c>clean: false</c>...). The touches <c>includeTouched</c> adds are left out: they repeat
 /// the same Booleans.
 /// </remarks>
-internal sealed class Build123dBooleanCapture
+internal sealed partial class Build123dBooleanCapture
 {
     internal enum Kind { Fuse, Cut, Common, Section, Split, Clean }
 
@@ -45,6 +49,53 @@ internal sealed class Build123dBooleanCapture
                                 bool Clean, N.TopoDS_Shape? Result = null);
 
     internal readonly List<Call> Calls = [];
+
+#if !HAS_NATIVE
+    /// <summary>
+    /// The calls, as recorded (unit 10A): the capture runs build123d.NET on native OCCT, so only when recording; its calls'
+    /// shapes are native's, through the recorded facade, and the scenarios' failures are kept with them.
+    /// </summary>
+    internal static List<Call> Recorded(List<string> theFailures)
+    {
+        (List<Call> aCalls, List<string> aFailures) = Tape.Value("build123d.NET's Booleans", () =>
+        {
+#if HAS_ORACLE
+            var aFailed = new List<string>();
+            return (Capture(aFailed.Add).Calls, aFailed);
+#else
+            return Tape.NeedsNative<(List<Call>, List<string>)>();
+#endif
+        }, static (w, v) =>
+        {
+            w.Value(v.Item2.ToArray<object?>());
+            w.Int(v.Item1.Count);
+            foreach (Call c in v.Item1)
+            {
+                w.String(c.Name);
+                w.Int((int)c.Kind);
+                w.Value(c.Arguments.ToArray<object?>());
+                w.Value(c.Tools.ToArray<object?>());
+                w.Value(c.Fuzzy);
+                w.Value(c.Glue);
+                w.Value(c.Clean);
+                w.Object(c.Result);
+            }
+        }, static r =>
+        {
+            List<string> aFailed = [.. ((object?[])r.Value()!).Cast<string>()];
+            var aCalls = new List<Call>();
+            for (int i = r.Int(); i > 0; i--)
+            {
+                aCalls.Add(new Call(r.String()!, (Kind)r.Int(), Tape.Array<N.TopoDS_Shape>(r.Value()), Tape.Array<N.TopoDS_Shape>(r.Value()),
+                                    (double)r.Value()!, (bool)r.Value()!, (bool)r.Value()!, r.Object<N.TopoDS_Shape>()));
+            }
+            return (aCalls, aFailed);
+        });
+        theFailures.AddRange(aFailures);
+        return aCalls;
+    }
+#endif
+#if HAS_ORACLE || HAS_NATIVE
 
     private string myScenario = "";
     private int myIndex;
@@ -76,8 +127,8 @@ internal sealed class Build123dBooleanCapture
                         bool theClean = true)
     {
         // BoolOp drops empty operands; with no arguments or no tools it makes no native call
-        N.TopoDS_Shape[] anArgs = [.. theArgs.Where(s => !s.IsEmpty).Select(s => s.Wrapped)];
-        N.TopoDS_Shape[] aTools = [.. theTools.Where(s => !s.IsEmpty).Select(s => s.Wrapped)];
+        N.TopoDS_Shape[] anArgs = [.. theArgs.Where(s => !s.IsEmpty).Select(s => RecordedNative.Adopt(s.Wrapped))];
+        N.TopoDS_Shape[] aTools = [.. theTools.Where(s => !s.IsEmpty).Select(s => RecordedNative.Adopt(s.Wrapped))];
         if (anArgs.Length == 0 || aTools.Length == 0)
         {
             return;
@@ -90,7 +141,7 @@ internal sealed class Build123dBooleanCapture
     {
         if (Calls.Count == theCount + 1 && !theResult.IsEmpty)
         {
-            Calls[^1] = Calls[^1] with { Result = theResult.Wrapped };
+            Calls[^1] = Calls[^1] with { Result = RecordedNative.Adopt(theResult.Wrapped) };
         }
         return theResult;
     }
@@ -99,7 +150,7 @@ internal sealed class Build123dBooleanCapture
     {
         if (!theShape.IsEmpty)
         {
-            Calls.Add(new Call($"{myScenario} #{++myIndex}", Kind.Clean, [theShape.Wrapped], [], 0, false, false));
+            Calls.Add(new Call($"{myScenario} #{++myIndex}", Kind.Clean, [RecordedNative.Adopt(theShape.Wrapped)], [], 0, false, false));
         }
     }
 
@@ -773,5 +824,5 @@ internal sealed class Build123dBooleanCapture
             c.Add(c.Add(c.Sub(SBoxMin(2, 2, 0.5), SBoxMin(1, 1.2, 1)), new Pos(1, 0, 0) * SBoxMin(1, 1, 1)), SBoxMin(1, 2, 0.5));
         });
     }
-}
 #endif
+}

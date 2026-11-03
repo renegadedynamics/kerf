@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -12,9 +10,9 @@ namespace OcctNet.Oracle.Tests;
 /// </summary>
 public class BSplCLibOracleTests(ITestOutputHelper output)
 {
-    private const int Cases = 600;
-    private const int Cases2d = 300;
-    private const int CasesBezier = 200;
+    private static readonly int Cases = Tape.Cases(600, 81);
+    private static readonly int Cases2d = Tape.Cases(300, 41);
+    private static readonly int CasesBezier = Tape.Cases(200, 27);
 
     /// <summary>A random B-spline curve: the knots, multiplicities and weights the port and the native curve share.</summary>
     private sealed class Curve
@@ -508,4 +506,3 @@ public class BSplCLibOracleTests(ITestOutputHelper output)
         anOracle.Report("BSplCLib Bezier D0 to D3");
     }
 }
-#endif

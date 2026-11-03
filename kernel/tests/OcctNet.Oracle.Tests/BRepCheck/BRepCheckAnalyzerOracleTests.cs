@@ -1,11 +1,9 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopTools_FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
@@ -651,7 +649,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     {
         var anOracle = new Oracle(output, 33101);
         int aValid = 0;
-        for (int i = 0; i < 120; i++)
+        foreach (int i in Tape.Budget(120))
         {
             N.TopoDS_Shape aShape = BRepToolsIOOracleTests.NativeShape(anOracle, i, out string aWhat);
             if (Check("valid: " + aWhat.Split(',')[0], aShape, $"#{i} {aWhat}") == true)
@@ -669,7 +667,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     public void Broken_edges_and_vertices_are_found_as_native_OCCT_finds_them()
     {
         var anOracle = new Oracle(output, 33102);
-        for (int i = 0; i < 36 * theBreaks.Length; i++)
+        foreach (int i in Tape.Budget(36 * theBreaks.Length))
         {
             string aBreak = theBreaks[i % theBreaks.Length];
             N.TopoDS_Shape aShape = BRepToolsIOOracleTests.NativeShape(anOracle, i / theBreaks.Length, out string aWhat);
@@ -737,7 +735,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         Assert.Equal(37, aFiles.Length);
         var aWatch = Stopwatch.StartNew();
         int aValid = 0;
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aF1 = NativeF1(aFile)!;
             if (CheckFile("data/occ", aF1, Path.GetFileName(aFile), true, true) == true)
@@ -797,7 +795,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         var aWatch = Stopwatch.StartNew();
         int aChecked = 0, anUnreadable = 0, aLarge = 0, aHuge = 0, aValid = 0;
         var aSlowest = new List<(double, string)>();
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             if (new FileInfo(aFile).Length > 2_000_000)
             {
@@ -838,4 +836,3 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         Assert.Empty(myDisagreements);
     }
 }
-#endif

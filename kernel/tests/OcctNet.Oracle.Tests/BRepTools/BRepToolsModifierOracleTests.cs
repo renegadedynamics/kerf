@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Schematiq.Collections;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -28,7 +26,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = MeshedScene(anOracle, aScene);
             bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
@@ -46,7 +44,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = MeshedScene(anOracle, aScene);
             (N.gp_Trsf aNT, gp_Trsf aT) = RandomTrsf(anOracle, aScene % 4);
@@ -70,7 +68,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = BSplineScene(anOracle);
             (N.gp_GTrsf aNG, gp_GTrsf aG) = RandomGTrsf(anOracle);
@@ -103,7 +101,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261030);
         var aCounts = new TopologyOracleTests.Counts();
         int aReplaced = 0;
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             // the mesh-only tetrahedron (scene 7) has no geometry to convert
             (Twin<N.TopoDS_Shape, TopoDS_Shape> aShape, _) = BRepGPropOracleTests.RandomScene(anOracle, aScene % 7);
@@ -158,7 +156,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aCounts = new TopologyOracleTests.Counts();
-        for (int aScene = 0; aScene < Scenes; aScene++)
+        foreach (int aScene in Tape.Budget(Scenes))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = MeshedScene(anOracle, aScene);
             using var aNCopy = new N.BRepBuilderAPI_Copy(aShape.N, false, true);
@@ -195,7 +193,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aQueries = 0;
-        for (int aRound = 0; aRound < 200; aRound++)
+        foreach (int aRound in Tape.Budget(200))
         {
             Twin<N.TopoDS_Shape, TopoDS_Shape> aShape = TopologyOracleTests.RandomScene(anOracle, aRound);
             List<Twin<N.TopoDS_Shape, TopoDS_Shape>> aShapes = AllSubShapes(aShape)
@@ -538,4 +536,3 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         }
     }
 }
-#endif

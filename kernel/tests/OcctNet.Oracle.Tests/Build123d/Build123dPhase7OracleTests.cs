@@ -1,11 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using B = Build123d;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -27,6 +24,8 @@ namespace OcctNet.Oracle.Tests;
 public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ShapeFixOracleRun myRun = new(output, "b3d7");
+
+    private const double Build123dTolerance = 1e-6; // build123d.NET's Constants.Tolerance
 
     public void Dispose() => myRun.Dispose();
 
@@ -59,7 +58,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
     public void Build123d_phase7_operations_as_native()
     {
         var aFailures = new List<string>();
-        List<P7Call> aCalls = Build123dPhase7Capture.Capture(aFailures.Add);
+        List<P7Call> aCalls = Build123dPhase7Capture.Recorded(aFailures);
         foreach (string aFailure in aFailures)
         {
             output.WriteLine("scenario failed: " + aFailure);
@@ -473,7 +472,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                             aSides.AddRange(aFaces);
                             continue;
                         }
-                        using var aSewing = new N.BRepBuilderAPI_Sewing(B.Constants.Tolerance);
+                        using var aSewing = new N.BRepBuilderAPI_Sewing(Build123dTolerance);
                         aFaces.ForEach(aSewing.Add);
                         aSewing.Perform();
                         aSides.Add(aSewing.SewedShape());
@@ -582,7 +581,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                             aSides.AddRange(aFaces);
                             continue;
                         }
-                        var aSewing = new BRepBuilderAPI_Sewing(B.Constants.Tolerance);
+                        var aSewing = new BRepBuilderAPI_Sewing(Build123dTolerance);
                         aFaces.ForEach(f => aSewing.Add(f));
                         aSewing.Perform();
                         aSides.Add(aSewing.SewedShape());
@@ -628,7 +627,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
             myTranscription.Add($"{theWhat}: build123d.NET succeeded, the replay failed ({theN.Error ?? theN.Status})");
             return;
         }
-        string anExpected = Signature(theCall.Result.Wrapped), aReplayed = Signature(aReplay!);
+        string anExpected = Signature(theCall.Result), aReplayed = Signature(aReplay!);
         if (anExpected != aReplayed)
         {
             myTranscription.Add($"{theWhat}: build123d.NET's {anExpected}, the replay's {aReplayed}");
@@ -696,4 +695,3 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
         Assert.Empty(myTranscription);
     }
 }
-#endif

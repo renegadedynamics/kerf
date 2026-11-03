@@ -1,10 +1,8 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopAbs_ShapeEnum;
 
 namespace OcctNet.Oracle.Tests;
@@ -635,7 +633,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         var anOracle = new Oracle(output, 20261031);
         Mode[] aModes = [Mode.Default, Mode.CorrectedFrenet, Mode.Frenet, Mode.Discrete, Mode.Fixed, Mode.BiNormal];
         int aCase = 0;
-        for (int aRound = 0; aRound < 7; aRound++)
+        foreach (int aRound in Tape.Budget(7))
         {
             for (int aSpineKind = 0; aSpineKind < 6; aSpineKind++)
             {
@@ -670,7 +668,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     {
         var anOracle = new Oracle(output, 20261101);
         int aCase = 0;
-        for (int i = 0; i < 40; i++)
+        foreach (int i in Tape.Budget(40))
         {
             // two or three segments with corners of 20 to 120 degrees
             int aNb = anOracle.Int(2, 3);
@@ -710,7 +708,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     {
         var anOracle = new Oracle(output, 20261102);
         int aCase = 0;
-        for (int i = 0; i < 30; i++)
+        foreach (int i in Tape.Budget(30))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
             gp_Ax2 aFrame = StartFrame(aSpine);
@@ -807,7 +805,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     {
         var anOracle = new Oracle(output, 20261104);
         int aCase = 0;
-        for (int i = 0; i < 40; i++)
+        foreach (int i in Tape.Budget(40))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
             NCollection_IndexedMap<TopoDS_Shape> aVertices = new(TopTools_ShapeMapHasher.Instance);
@@ -861,7 +859,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // (SetMode(wire, true)), and its twisted extrusion (SetMode(auxSpine, false)).
         var anOracle = new Oracle(output, 20261105);
         int aCase = 0;
-        for (int i = 0; i < 30; i++)
+        foreach (int i in Tape.Budget(30))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
             gp_Ax2 aFrame = StartFrame(aSpine);
@@ -930,4 +928,3 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         }
     }
 }
-#endif

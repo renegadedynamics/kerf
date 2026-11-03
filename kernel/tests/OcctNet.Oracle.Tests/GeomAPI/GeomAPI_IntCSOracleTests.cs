@@ -1,9 +1,7 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -249,4 +247,3 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
 
     private const double TangentTolerance = 1.0e-5;
 }
-#endif

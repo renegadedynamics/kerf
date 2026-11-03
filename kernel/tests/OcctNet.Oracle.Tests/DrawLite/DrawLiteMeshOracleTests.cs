@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -8,7 +7,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopTools_FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
@@ -452,7 +450,8 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
     {
         var aWatch = Stopwatch.StartNew();
         var aFiles = new List<(string File, string What)>();
-        foreach (string aFile in Directory.EnumerateFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal), isSpread: true,
+                                             theWeight: Tape.FileSize, theMaxWeight: 100_000))
         {
             if (HasTriangulations(aFile) && NativeCopy(aFile, false) is { } aCopy)
             {
@@ -468,7 +467,8 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
         string aDataset = Path.Combine(Metadata("OcctTestDataDir"), "brep");
         if (Directory.Exists(aDataset))
         {
-            foreach (string aFile in Directory.EnumerateFiles(aDataset, "*.brep").Order(StringComparer.Ordinal))
+            foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(aDataset, "*.brep").Order(StringComparer.Ordinal), isSpread: true,
+                                                 theWeight: Tape.FileSize, theMaxWeight: 100_000))
             {
                 if (new FileInfo(aFile).Length <= 400_000 && HasTriangulations(aFile) && NativeCopy(aFile, false) is { } aCopy)
                 {
@@ -477,7 +477,7 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
             }
         }
 
-        foreach ((string aFile, string aWhat) in aFiles)
+        foreach ((string aFile, string aWhat) in Tape.Budget(aFiles, isSpread: true))
         {
             try
             {
@@ -496,4 +496,3 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
         Assert.Empty(myDisagreements);
     }
 }
-#endif

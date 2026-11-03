@@ -1,8 +1,6 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
 
 namespace OcctNet.Oracle.Tests;
@@ -177,4 +175,3 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
         return u < v ? (u, v) : (v, u);
     }
 }
-#endif

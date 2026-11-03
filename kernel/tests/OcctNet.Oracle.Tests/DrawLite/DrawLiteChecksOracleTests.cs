@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -7,7 +6,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.DrawLite;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 using static Occt.TopTools_FormatVersion;
 
 namespace OcctNet.Oracle.Tests;
@@ -388,7 +386,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         Assert.Equal(42, aFiles.Length);
         var anOracle = new Oracle(output);
         int aCheckshape = 0, aBounding = 0, aClassify = 0, aValid = 0;
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aName = Path.GetFileName(aFile);
             var aFileWatch = Stopwatch.StartNew();
@@ -454,7 +452,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         var anOracle = new Oracle(output);
         var aWatch = Stopwatch.StartNew();
         int aChecked = 0, aSkipped = 0, aCheckshape = 0, aBounding = 0, aClassify = 0;
-        foreach (string aFile in aFiles)
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             if (new FileInfo(aFile).Length > 2_000_000 || NativeRead(aFile) is not { } aRead)
             {
@@ -490,4 +488,3 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         Assert.Empty(myDisagreements);
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if HAS_ORACLE
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Diagnostics;
@@ -6,7 +5,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using N = Build123d.Occt;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -604,7 +602,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     {
         var aWatch = Stopwatch.StartNew();
         var anOracle = new Oracle(output, 63101);
-        for (int i = 0; i < 280; i++)
+        foreach (int i in Tape.Budget(280))
         {
             if (SurfaceFace(anOracle, i, out string aWhat) is N.TopoDS_Shape aFace)
             {
@@ -612,7 +610,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                 Compare(aFace, $"face {i} ({aWhat})", i % 2 == 0 ? Mode.SurfaceAndWires : Mode.SurfaceAndWiresReversed);
             }
         }
-        for (int i = 0; i < 150; i++)
+        foreach (int i in Tape.Budget(150))
         {
             if (PlanarFace(anOracle, out string aWhat) is N.TopoDS_Shape aFace)
             {
@@ -629,7 +627,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     {
         var aWatch = Stopwatch.StartNew();
         int aShapes = 0;
-        foreach (string aFile in HealGroupFiles(output))
+        foreach (string aFile in Tape.Budget(HealGroupFiles(output), isSpread: true))
         {
             if (NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -652,4 +650,3 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         Assert.Empty(myDifferences);
     }
 }
-#endif
