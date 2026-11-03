@@ -403,9 +403,9 @@ Sizes are rough, in OCCT.NET lines touched.
 | **10I** State | 2.7: statics and thread statics into per-operation context | 10E |
 | **10J** Heap and collections | 2.6: NCollection replaced, small maths on spans and inline arrays, capacities, returned types; measured with 9E's benchmarks | 10E |
 | **10K** OCCT's bugs | 2.8's triage, then the "fix" list | 10A |
-| **10L** Public API implementation | The reviewed public API (10D) over the engine, area by area | 10D, 10F, 10G |
+| **10L** Public API implementation | The reviewed public API (10D) over the engine, area by area; images (decision 15201): a hidden-line API and SVG writer, and a managed renderer of meshes with a PNG encoder | 10D, 10F, 10G |
 | **10M** build123d.NET's .NET API | 2.9: Python conventions removed; typed results; options; selectors; results for errors | 10B, 10L |
-| **10N** Bento | Bento's extension on Kerf.Modeling; explicit tables for its couplings; `CAD_` functions, parameters and option keys renamed to Kerf's names; standard .NET read-only types accepted, converted to Schematiq.Collections only when modified; `IReadOnlySet<T>` on Schematiq.Collections' hash set | 10M |
+| **10N** Bento | Bento's extension on Kerf.Modeling; explicit tables for its couplings; `CAD_` functions, parameters and option keys renamed to Kerf's names; standard .NET read-only types accepted, converted to Schematiq.Collections only when modified; `IReadOnlySet<T>` on Schematiq.Collections' hash set; functions making SVG drawings and PNG pictures | 10M |
 
 ### Running order
 
