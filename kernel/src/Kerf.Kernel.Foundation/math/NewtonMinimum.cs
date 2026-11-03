@@ -36,6 +36,12 @@ public class NewtonMinimum
     private bool _done;
     private int _itermax;
 
+    // The eigenvalue and LU solvers, kept from one iteration and one Perform to the next (unit 10J; performance.md's
+    // proposal 4): OCCT constructs both at every iteration, and in Bento's "extrude until" they were most of the bytes
+    // allocated. They hold no state between iterations: each Perform overwrites all of it.
+    private Jacobi? _eigen;
+    private Gauss? _lu;
+
     /// <summary>
     /// Prepares the algorithm; <see cref="Perform"/> does the job. Iterations stop if (!theWithSingularity) and the
     /// hessian is not definite positive (its smallest eigenvalue below theConvexity), or when
@@ -111,7 +117,8 @@ public class NewtonMinimum
 
             // Traitement de la non convexite
 
-            Jacobi calculVP = new(_theHessian);
+            Jacobi calculVP = _eigen ??= new Jacobi(_theHessian.RowNumber());
+            calculVP.Perform(_theHessian);
             if (!calculVP.IsDone)
             {
                 _done = false;
@@ -143,7 +150,8 @@ public class NewtonMinimum
 
             // Schemas de Newton
 
-            Gauss lu = new(_theHessian, _cTol / 100);
+            Gauss lu = _lu ??= new Gauss(_theHessian.RowNumber());
+            lu.Perform(_theHessian, _cTol / 100);
             if (!lu.IsDone)
             {
                 _done = false;

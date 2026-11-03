@@ -21,22 +21,40 @@ public class Jacobi
     private int _nbRotations;
     private math_Vector _eigenValues;
     private Matrix _eigenVectors;
+    private readonly math_Vector _work1;
+    private readonly math_Vector _work2;
 
     /// <summary>
     /// Computes the eigenvalues and eigenvectors of the n x n matrix <paramref name="a"/>. Throws
     /// <see cref="NotSquareException"/> if it is not square; that it is symmetric is not checked.
     /// </summary>
-    public Jacobi(Matrix a)
+    public Jacobi(Matrix a) : this(a.RowNumber())
+    {
+        Perform(a);
+    }
+
+    /// <summary>
+    /// The storage for n x n matrices, without a computation: <see cref="Perform"/> computes, as often as needed (unit
+    /// 10J: math_NewtonMinimum repeats it at every iteration).
+    /// </summary>
+    internal Jacobi(int n)
     {
         _done = false;
-        _aa = new Matrix(1, a.RowNumber(), 1, a.RowNumber());
+        _aa = new Matrix(1, n, 1, n);
         _nbRotations = 0;
-        _eigenValues = new math_Vector(1, a.RowNumber());
-        _eigenVectors = new Matrix(1, a.RowNumber(), 1, a.RowNumber());
+        _eigenValues = new math_Vector(1, n);
+        _eigenVectors = new Matrix(1, n, 1, n);
+        _work1 = new math_Vector(1, n);
+        _work2 = new math_Vector(1, n);
+    }
 
+    /// <summary>Computes the eigenvalues and eigenvectors of <paramref name="a"/>, of the size given at construction.</summary>
+    internal void Perform(Matrix a)
+    {
+        _done = false;
         math_NotSquare_Raise_if(a.RowNumber() != a.ColNumber(), " ");
         _aa.Initialized(a);
-        int error = Jacobi(_aa, _eigenValues, _eigenVectors, out _nbRotations);
+        int error = Jacobi(_aa, _eigenValues, _eigenVectors, out _nbRotations, _work1, _work2);
         _done = error == 0;
     }
 

@@ -21,6 +21,9 @@ public class Gauss
     protected double _d;
     protected bool _done;
 
+    // LU_Decompose's work vector, for Perform
+    private readonly math_Vector? _work;
+
     /// <summary>
     /// Performs the LU decomposition of the n x n matrix <paramref name="a"/>. If the largest pivot found is less than
     /// <paramref name="minPivot"/> the matrix is considered singular. Throws <see cref="NotSquareException"/> if A is not square.
@@ -35,6 +38,30 @@ public class Gauss
         math_NotSquare_Raise_if(a.RowNumber() != a.ColNumber(), " ");
         _lu.Initialized(a);
         int error = LU_Decompose(_lu, _index, out _d, minPivot, progress);
+        _done = error == 0;
+    }
+
+    /// <summary>
+    /// The storage for an n x n decomposition, without one: <see cref="Perform"/> decomposes, as often as needed (unit
+    /// 10J: math_NewtonMinimum repeats it at every iteration).
+    /// </summary>
+    internal Gauss(int n)
+    {
+        _lu = new Matrix(1, n, 1, n);
+        _index = new math_IntegerVector(1, n);
+        _work = new math_Vector(1, n);
+        _d = 0.0;
+        _done = false;
+    }
+
+    /// <summary>The LU decomposition of <paramref name="a"/>, of the size given at construction, as the constructor's.</summary>
+    internal void Perform(Matrix a, double minPivot = 1.0e-20)
+    {
+        _d = 0.0;
+        _done = false;
+        math_NotSquare_Raise_if(a.RowNumber() != a.ColNumber(), " ");
+        _lu.Initialized(a);
+        int error = LU_Decompose(_lu, _index, out _d, _work!, minPivot);
         _done = error == 0;
     }
 
