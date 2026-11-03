@@ -272,11 +272,23 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         return aW.ToString();
     }
 
+    // A face bounded by one full circle: MAT2d_Mat2d took the roots from the list of a bisector never built, and
+    // native OCCT crashed in Compute (an access violation, recorded as !SEH by tools/matrec; occt-issues.md, unit 5M).
+    // The map now fails and says so (Kerf unit 10K1, decision 16511). The 2D offset never meets it: it cuts a contour
+    // of one edge first.
+    [Fact]
+    public void A_contour_of_one_closed_edge_is_not_done()
+    {
+        Face aFace = MatRecordings.Face("M L 0 0 1 O 0 0 5");
+        MedialAxisExplorer anExplo = new(aFace);
+        BisectingLocus aLocus = new();
+        aLocus.Compute(anExplo);
+        Assert.False(aLocus.IsDone);
+    }
+
     // Where native OCCT crashes in Compute (an access violation, recorded as !SEH by tools/matrec), the port throws a
-    // .NET exception at the same place (occt-issues.md, unit 5M): a face bounded by one full circle (MAT2d_Mat2d
-    // takes the roots from the list of a bisector never built), and a holed face with Bezier sides.
+    // .NET exception at the same place (occt-issues.md, unit 5M): a holed face with Bezier sides.
     [Theory]
-    [InlineData("1 O 0 0 5")]
     [InlineData("2 W 1 4 0 0 S 4 -2 8 2 12 0 L 12 12 L 0 12 L W 1 4 4 4 L 4 8 L 8 8 S 7 6 9 5 8 4 L")]
     public void Throws_WhereNativeCrashes(string theFace)
     {

@@ -14730,3 +14730,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        small brep files). Test: OCCT's bug26359_parabola.brep, a revolved parabola, converts to a valid face of the same
        area. ShapeProcess's recordings on DSE3.rle, DSEwithTol1.rle and cts20960b.rle (the operator failed natively)
        move to the third level.
+16511. **The medial axis of one closed edge fails cleanly** (row 1121, guarded). MAT2d_Mat2d took the roots from the
+       empty list of the one bisector never built (a null dereference). The map now reports not done. A real medial axis
+       of a single closed curve is left (touch): the 2D offset never meets it, as it cuts a one-edge contour first, so
+       only BRepMAT2d_BisectingLocus's direct callers see it. The test that pinned the exception asserts IsDone false;
+       the four recorded full-circle cases (native crashed) move to the third level.
