@@ -14665,3 +14665,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        features 7 → 0); frozen-shape checks 187 → 177 (offsets 3 → 1, fillets 7 → 4: the `Locked()` tests and the frozen
        markers that now ask the overlay); the features' direct `_shapes` edit gone (50 → 49). Section 8 records 10H5's
        patterns for 10H6.
+
+## Phase 10: unit 10K1, OCCT's bugs: Booleans, boxes, distances, hangs and spurious failures
+
+16501. **BOPAlgo_BOP's fuse of solids checks every shared face** (occt-issues.md, unit 6F's first row). `BuildSolid`
+       scanned the face-to-solids map with `i < aNb`, so a solid whose only face shared with another was the map's last
+       was taken as untouched and kept apart. The scan now includes the last face. The case needs a solid adding no
+       face of its own after the shared one: a ball in a hollow ball sharing its sphere, as a compound or a compsolid,
+       fused with a box (`BOPAlgo_BuildSolidTests`: OCCT kept the two apart; now one ball and the box, with the ball's
+       volume and seven faces). No recording or corpus case moved.

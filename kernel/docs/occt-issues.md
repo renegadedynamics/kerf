@@ -1131,7 +1131,7 @@ in the oracle (decision 835).
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| `BOPAlgo_BOP::BuildSolid` | Scans the face-to-solids map with `for (i = 1; i < aNb; ++i)`: the last face is never checked for being shared by two argument solids | A solid whose only face shared with another is that last one is wrongly taken as possibly untouched | fix K1 |
+| `BOPAlgo_BOP::BuildSolid` | Scans the face-to-solids map with `for (i = 1; i < aNb; ++i)`: the last face is never checked for being shared by two argument solids | A solid whose only face shared with another is that last one is wrongly taken as possibly untouched | fixed (decision 16501) |
 | `BOPAlgo_Builder::BuildDraftFace` (Builder_2) | Changes the orientation of the edge splits stored in `myImages` in place (`ChangeValue` through a const reference) | Later readers of the images see each edge split's last orientation | touch |
 | `BOPAlgo_Builder::FillInternalVertices` (Builder_2) | Adds an internal vertex into a face split, which can be another argument's own face kept as its same-domain group's face | In the non-destructive mode an argument face can be changed in place. On a frozen argument the port throws (BOPAlgo_AlertBuilderFailed, decision 829). Not reached by the oracle | touch |
 | `BOPAlgo_Builder::FillInternalShapes` (Builder_3) | Adds internal vertices and edges into a split solid, which can be an argument's solid kept as the same-domain solid | As above, for solids | touch |

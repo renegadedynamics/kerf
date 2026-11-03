@@ -1085,7 +1085,7 @@ public class Bop : ToolsProvider
         // Find solids in input arguments sharing faces with other solids
         HashSet<Shape> mtSols = new(ShapeHasher.Instance);
         int i, nb = mfs.Extent();
-        for (i = 1; i < nb; ++i) // OCCT: the last face of the map is not checked
+        for (i = 1; i <= nb; ++i) // every face, the last too (OCCT stopped before it; decision 16501)
         {
             NCollection_List<Shape> lSols = mfs[i];
             if (lSols.Extent() > 1)
