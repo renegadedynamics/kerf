@@ -334,7 +334,18 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     // ---------------------------------------------------------------------------------------------------------
     // Comparison
 
-    private static void SameBox(Oracle theO, N.Bnd_Box theN, in Box theP, string theWhat, double theTol = Oracle.Tolerance)
+    // Plan 3.2's third level (occt-issues.md, unit 4B's GeomBndLib_Parabola row; Kerf unit 10K1, decision 16502): the
+    // box of a parabolic arc adds each coordinate's extremum, which OCCT's missed, so it contains native's box and may
+    // be larger. The recorded native calls stay the same, in the same order.
+    private static bool IsParabolic(Curve3D theCurve) => theCurve switch
+    {
+        ParabolaCurve3D => true,
+        TrimmedCurve3D aTrimmed => IsParabolic(aTrimmed.BasisCurve()),
+        _ => false,
+    };
+
+    private static void SameBox(Oracle theO, N.Bnd_Box theN, in Box theP, string theWhat, double theTol = Oracle.Tolerance,
+                                bool theIsParabolic = false)
     {
         theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
         if (theN.IsVoid())
@@ -347,6 +358,17 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         theO.Same(theN.IsOpenYmax(), theP.IsOpenYmax, theWhat + " IsOpenYmax");
         theO.Same(theN.IsOpenZmin(), theP.IsOpenZmin, theWhat + " IsOpenZmin");
         theO.Same(theN.IsOpenZmax(), theP.IsOpenZmax, theWhat + " IsOpenZmax");
+        if (theIsParabolic)
+        {
+            Below(theN.GetXMin(), theP.GetXMin(), theWhat + " Xmin");
+            Below(-theN.GetXMax(), -theP.GetXMax(), theWhat + " Xmax");
+            Below(theN.GetYMin(), theP.GetYMin(), theWhat + " Ymin");
+            Below(-theN.GetYMax(), -theP.GetYMax(), theWhat + " Ymax");
+            Below(theN.GetZMin(), theP.GetZMin(), theWhat + " Zmin");
+            Below(-theN.GetZMax(), -theP.GetZMax(), theWhat + " Zmax");
+            theO.Same(theN.GetGap(), theP.GetGap(), theWhat + " Gap", theTol);
+            return;
+        }
         theO.Same(theN.GetXMin(), theP.GetXMin(), theWhat + " Xmin", theTol);
         theO.Same(theN.GetXMax(), theP.GetXMax(), theWhat + " Xmax", theTol);
         theO.Same(theN.GetYMin(), theP.GetYMin(), theWhat + " Ymin", theTol);
@@ -356,7 +378,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         theO.Same(theN.GetGap(), theP.GetGap(), theWhat + " Gap", theTol);
     }
 
-    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in OrientedBox theP, string theWhat, double theTol)
+    // the port's bound at or beyond native's
+    private static void Below(double theNative, double thePort, string theWhat)
+        => Assert.True(thePort <= theNative + 1e-12 * Math.Max(1.0, Math.Abs(theNative)), $"{theWhat}: native {theNative}, port {thePort}");
+
+    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in OrientedBox theP, string theWhat, double theTol,
+                                bool theIsParabolic = false)
     {
         theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
         if (theN.IsVoid())
@@ -364,25 +391,51 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             return;
         }
         theO.Same(theN.IsAABox(), theP.IsAABox, theWhat + " IsAABox");
+        global::Kerf.Engine.Geometry.Xyz c, x, y, z;
         using (N.gp_XYZ aC = theN.Center())
         {
-            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aC.X(), aC.Y(), aC.Z()), theP.Center(), theWhat + " Center", theTol);
+            c = new global::Kerf.Engine.Geometry.Xyz(aC.X(), aC.Y(), aC.Z());
         }
         using (N.gp_XYZ aX = theN.XDirection())
         {
-            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aX.X(), aX.Y(), aX.Z()), theP.XDirection(), theWhat + " XDirection", theTol);
+            x = new global::Kerf.Engine.Geometry.Xyz(aX.X(), aX.Y(), aX.Z());
         }
         using (N.gp_XYZ aY = theN.YDirection())
         {
-            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aY.X(), aY.Y(), aY.Z()), theP.YDirection(), theWhat + " YDirection", theTol);
+            y = new global::Kerf.Engine.Geometry.Xyz(aY.X(), aY.Y(), aY.Z());
         }
         using (N.gp_XYZ aZ = theN.ZDirection())
         {
-            theO.Same(new global::Kerf.Engine.Geometry.Xyz(aZ.X(), aZ.Y(), aZ.Z()), theP.ZDirection(), theWhat + " ZDirection", theTol);
+            z = new global::Kerf.Engine.Geometry.Xyz(aZ.X(), aZ.Y(), aZ.Z());
         }
-        theO.Same(theN.XHSize(), theP.XHSize(), theWhat + " XHSize", theTol);
-        theO.Same(theN.YHSize(), theP.YHSize(), theWhat + " YHSize", theTol);
-        theO.Same(theN.ZHSize(), theP.ZHSize(), theWhat + " ZHSize", theTol);
+        double hx = theN.XHSize(), hy = theN.YHSize(), hz = theN.ZHSize();
+        if (theIsParabolic)
+        {
+            // the port's oriented box of a parabolic arc contains native's corners
+            double aTol = theTol * Math.Max(1.0, c.Modulus() + hx + hy + hz);
+            foreach (int i in new[] { -1, 1 })
+            {
+                foreach (int j in new[] { -1, 1 })
+                {
+                    foreach (int k in new[] { -1, 1 })
+                    {
+                        global::Kerf.Engine.Geometry.Xyz aCorner = c + x * (i * hx) + y * (j * hy) + z * (k * hz) - theP.Center();
+                        Assert.True(Math.Abs(aCorner.Dot(theP.XDirection())) <= theP.XHSize() + aTol
+                                    && Math.Abs(aCorner.Dot(theP.YDirection())) <= theP.YHSize() + aTol
+                                    && Math.Abs(aCorner.Dot(theP.ZDirection())) <= theP.ZHSize() + aTol,
+                                    theWhat + ": the port's oriented box doesn't contain native's");
+                    }
+                }
+            }
+            return;
+        }
+        theO.Same(c, theP.Center(), theWhat + " Center", theTol);
+        theO.Same(x, theP.XDirection(), theWhat + " XDirection", theTol);
+        theO.Same(y, theP.YDirection(), theWhat + " YDirection", theTol);
+        theO.Same(z, theP.ZDirection(), theWhat + " ZDirection", theTol);
+        theO.Same(hx, theP.XHSize(), theWhat + " XHSize", theTol);
+        theO.Same(hy, theP.YHSize(), theWhat + " YHSize", theTol);
+        theO.Same(hz, theP.ZHSize(), theWhat + " ZHSize", theTol);
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -721,12 +774,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 N.BRepBndLib.Add(aNE, aNB, false);
                 Box aPB = new();
                 PortAdd(null, default, 0, [anE], new Transform3D(), ref aPB);
-                SameBox(anOracle, aNB, aPB, aW);
+                SameBox(anOracle, aNB, aPB, aW, theIsParabolic: IsParabolic(aPC));
 
                 // useTriangulation = true: the edge has no polygon, so the same path
                 using var aNB2 = new N.Bnd_Box();
                 N.BRepBndLib.Add(aNE, aNB2, true);
-                SameBox(anOracle, aNB2, aPB, aW + " (useTriangulation)");
+                SameBox(anOracle, aNB2, aPB, aW + " (useTriangulation)", theIsParabolic: IsParabolic(aPC));
                 aCases++;
             }
         }
@@ -764,7 +817,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                         aLocBox.Get(out double x, out double y, out double z, out double X, out double Y, out double Z);
                         aPB.Update(x, y, z, X, Y, Z);
                     }
-                    SameBox(anOracle, aNB, aPB, $"{aW} useShapeTolerance={aUseTol}");
+                    SameBox(anOracle, aNB, aPB, $"{aW} useShapeTolerance={aUseTol}", theIsParabolic: IsParabolic(aPC));
                 }
                 aCases++;
             }
@@ -917,7 +970,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 using var aNOBB = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aNE, aNOBB);
                 OrientedBox aPOBB = PortOBB(aNE, null, default, 0, [anE], false);
-                SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance);
+                SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance, IsParabolic(aPC));
                 anEdges++;
             }
         }

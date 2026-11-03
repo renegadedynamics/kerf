@@ -14674,3 +14674,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        face of its own after the shared one: a ball in a hollow ball sharing its sphere, as a compound or a compsolid,
        fused with a box (`BOPAlgo_BuildSolidTests`: OCCT kept the two apart; now one ball and the box, with the ball's
        volume and seven faces). No recording or corpus case moved.
+16502. **Parabola and hyperbola arc boxes contain the arc** (rows 259, 263, 264). BndLib's 3D and 2D parabola,
+       BndLib's 2D hyperbola and GeomBndLib's parabolas added only the arc's ends and vertex. Each now adds the arc's
+       coordinate extrema: for a parabola x_k(U) = O_k + U²/(4F)·X_k + U·Y_k, extreme at U = −2F·Y_k/X_k (inside the
+       arc); the 2D hyperbola uses GeomBndLib's per-coordinate code, as the 3D one did. Tested against points sampled on
+       the arcs and the analytic extrema (`BndLibTurnedConicTests`; the two pinned GeomBndLib tests rewritten). The box
+       oracle's parabolic edges (`BndLibOracleTests`, three tests) move to plan 3.2's third level: the port's box, and
+       its oriented box, contain native's.
