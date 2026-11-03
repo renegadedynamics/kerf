@@ -6,6 +6,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using Occt;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace Kerf.Engine.Exchange.Documents;
 
@@ -23,8 +24,7 @@ namespace Kerf.Engine.Exchange.Documents;
 public sealed class DocumentProduct
 {
     private readonly Shape _shape;
-    private Shape? _assemblyShape;
-    private readonly Lock _lock = new();
+    private StrongBox<Shape>? _assemblyShape; // published once, without a lock (unit 10I)
 
     private DocumentProduct(Shape shape,
                            bool isAssembly,
@@ -95,12 +95,9 @@ public sealed class DocumentProduct
             {
                 return _shape;
             }
-            lock (_lock)
+            if (Volatile.Read(ref _assemblyShape) is { } made)
             {
-                if (_assemblyShape is Shape shape)
-                {
-                    return shape;
-                }
+                return made.Value;
             }
             var builder = new BrepBuilder();
             Compound compound = new();
@@ -115,11 +112,8 @@ public sealed class DocumentProduct
             }
             compound.TShape()!.FreezeGraph();
             // Racing threads build equal compounds; the first one stored wins
-            lock (_lock)
-            {
-                _assemblyShape ??= compound;
-                return _assemblyShape.Value;
-            }
+            var box = new StrongBox<Shape>(compound);
+            return (Interlocked.CompareExchange(ref _assemblyShape, box, null) ?? box).Value;
         }
     }
 

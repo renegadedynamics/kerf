@@ -30,8 +30,15 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// </remarks>
 public class CafController : StepController
 {
-    private static readonly object InitLock = new object();
-    private static CafController s_recorded;
+    // The controller recorded for STEP-XCAF, made once (a one-time initialisation, unit 10I)
+    private static readonly Lazy<CafController> TheRecorded = new(() =>
+    {
+        // self-registering
+        CafController stepctl = new CafController();
+        // OCCT's XSAlgo::Init() and the statics: per parameter set (InitStatics)
+        stepctl.AutoRecord();
+        return stepctl;
+    });
 
     /// <summary>Initializes the use of STEP Norm (the first time)</summary>
     public CafController()
@@ -81,17 +88,7 @@ public class CafController : StepController
     public new static bool Init()
     {
         StepController.Init();
-        lock (InitLock)
-        {
-            if (s_recorded is null)
-            {
-                // self-registering
-                CafController stepctl = new CafController();
-                // OCCT's XSAlgo::Init() and the statics: per parameter set (InitStatics)
-                stepctl.AutoRecord();
-                s_recorded = stepctl;
-            }
-        }
+        _ = TheRecorded.Value;
         return true;
     }
 
