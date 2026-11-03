@@ -14976,3 +14976,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        parameter must be kept (`KeepParam`) and |f(Yc)| isn't 1 the projection is approximated, as for a skew projection.
        The pinned test asserts focal 0.5 cos² on a plane tilted about the parabola's axis, the image of sampled points,
        and the kept parameter.
+16708. **GeomLProp::Continuity reports a junction at a B-spline knot at its order** (unit 3C's GeomLProp::Continuity
+       row). At an inner knot Degree − Multiplicity is the order of continuity, which OCCT compared with
+       GeomAbsToInteger's scale (2 for C1, 4 for C2), so a C2 knot compared first derivatives only and a C1 knot nothing.
+       The order is taken to that scale. Concatenation (GeomConvert, BRepAlgo) joins curves at their ends, never at an
+       inner knot, so its results don't move. The pinned test asserts C2, C1 and C0 at a cubic's simple, double and
+       triple knots.

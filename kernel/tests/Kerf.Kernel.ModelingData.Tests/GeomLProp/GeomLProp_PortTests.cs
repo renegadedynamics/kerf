@@ -146,19 +146,24 @@ public class GeomLProp_PortTests
     }
 
     /// <summary>
-    /// OCCT compares Degree - Multiplicity (the order of continuity at a knot) with its own scale, on which 2 is C1 and
-    /// 4 is C2 (occt-issues.md): a C2 knot is reported C1 at best, a C1 knot C0.
+    /// At an inner knot a cubic is C(3 - multiplicity): the junction of the curve with itself there is reported so
+    /// (OCCT compared Degree - Multiplicity with its own scale, on which 2 is C1 and 4 is C2, and reported a C2 knot C1
+    /// at best, a C1 knot C0: occt-issues.md, decision 16708).
     /// </summary>
     [Fact]
-    public void Continuity_at_a_BSpline_knot_is_reported_lower_as_in_OCCT()
+    public void Continuity_at_a_BSpline_knot_is_the_knots()
     {
-        // a cubic with a simple knot is C2 there: OCCT compares first derivatives only
+        // a cubic with a simple knot is C2 there
         BSplineCurve3D aC2 = CubicWithKnot(1);
-        Assert.Equal(C1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
+        Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
 
-        // with a double knot it is C1: OCCT compares nothing
+        // with a double knot, C1
         BSplineCurve3D aC1 = CubicWithKnot(2);
-        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+        Assert.Equal(C1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+
+        // with a triple knot, C0
+        BSplineCurve3D aC0 = CubicWithKnot(3);
+        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC0, aC0, 0.5, 0.5, false, false));
 
         // away from the knot (not a B-spline knot: cont 5, n 3) both are C2
         Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
