@@ -14963,3 +14963,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        ranges loaded the whole curves, so the total methods paired the ranges' end points with the curves' own end
        parameters and projected onto the whole curves. The adaptors are loaded on the ranges; the pinned test asserts √2
        at parameters (1, 1) on ranges [1, 2] of segments [0, 3].
+16706. **2D circle intersections give each circle's own parameters** (occt-issues.md, phase 1's IntAna2d row).
+       IntAna2d_AnaIntersection measured both parameters counterclockwise from each X axis whatever the circle's sense,
+       and left an external tangency's parameter on the second circle at 2π. The parameter on an indirect circle is
+       now 2π − a, in [0, 2π[, and 2π becomes 0. Tests: random circle pairs of both senses, each parameter giving the
+       point on its circle (the pinned test rewritten); an indirect tangency. The IntAna2d oracle's circle pairs move to
+       plan 3.2's third level for those parameters: native's a is accepted where the port's is 2π − a on an indirect
+       circle, or 0 for native's 2π.
