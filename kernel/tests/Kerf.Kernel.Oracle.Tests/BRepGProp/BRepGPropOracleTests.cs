@@ -68,7 +68,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
             }
         }
 
-        output.WriteLine($"{aCounts.Faces} faces, {aCounts.Edges} edges");
+        output.WriteLine($"{aCounts.Faces} faces, {aCounts.Edges} edges; {s_vKnotsFromU} native V knots that are U bounds (intended differences)");
         anOracle.Report("BRepGProp_Face");
     }
 
@@ -369,7 +369,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         theOracle.Same(aNF.SUIntSubs(), aNbU, aWhat + " SUIntSubs");
         theOracle.Same(aNF.SVIntSubs(), aNbV, aWhat + " SVIntSubs");
         CompareKnots(theOracle, aNbU + 1, a => aNF.UKnots(a), a => aPF.UKnots(a), aWhat + " UKnots");
-        CompareKnots(theOracle, aNbV + 1, a => aNF.VKnots(a), a => aPF.VKnots(a), aWhat + " VKnots");
+        CompareKnots(theOracle, aNbV + 1, a => aNF.VKnots(a), a => aPF.VKnots(a), aWhat + " VKnots", (u1, u2, v1, v2));
 
         for (int i = 0; i < 4; i++)
         {
@@ -442,8 +442,11 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         CompareHArray(theOracle, theNF.GetTKnots(f, l), thePF.GetTKnots(f, l), theWhat + " GetTKnots");
     }
 
+    private static int s_vKnotsFromU;
+
     private static void CompareKnots(Oracle theOracle, int theNb, Action<N.TColStd_Array1OfReal> theN,
-                                     Action<NCollection_Array1<double>> theP, string theWhat)
+                                     Action<NCollection_Array1<double>> theP, string theWhat,
+                                     (double U1, double U2, double V1, double V2)? theBounds = null)
     {
         using var aN = new N.TColStd_Array1OfReal(1, theNb);
         var aP = new NCollection_Array1<double>(1, theNb);
@@ -454,6 +457,20 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
 
         theN(aN);
         theP(aP);
+        // Plan 3.2's third level (occt-issues.md, unit 4E's BRepGProp_Face::VKnots row; Kerf decision 16710): native
+        // gave a plane's, cylinder's, cone's (and other surfaces') U bounds as their V knots, the port their V bounds
+        if (theBounds is var (u1, u2, v1, v2) && theNb == 2)
+        {
+            double n1 = aN.Value(1), n2 = aN.Value(2);
+            if ((n1 != aP[1] || n2 != aP[2]) && n1 == u1 && n2 == u2 && aP[1] == v1 && aP[2] == v2)
+            {
+                s_vKnotsFromU++;
+                return;
+            }
+            theOracle.Same(n1, aP[1], $"{theWhat}(1)");
+            theOracle.Same(n2, aP[2], $"{theWhat}(2)");
+            return;
+        }
         for (int i = 1; i <= theNb; i++)
         {
             theOracle.Same(aN.Value(i), aP[i], $"{theWhat}({i})");

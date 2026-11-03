@@ -618,6 +618,37 @@ public class BRepGPropKnownAnswerTests
     }
 
     [Fact]
+    public void Natural_faces_split_V_at_their_V_bounds()
+    {
+        // The V knots of a natural plane, cylinder or cone face are its V bounds (OCCT gave the U bounds:
+        // occt-issues.md, decision 16710), and the adaptive area is the closed form's
+        var aCyl = new CylindricalSurface(new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2.0);
+        Face aF = BRepGPropTestShapes.NaturalFace(new TrimmedSurface(aCyl, 0.0, 2 * Math.PI, -3.0, 9.0));
+        var aBF = new FaceIntegrand(aF);
+        Assert.True(aBF.NaturalRestriction());
+        var aKnots = new NCollection_Array1<double>(1, aBF.SVIntSubs() + 1);
+        aBF.VKnots(aKnots);
+        Assert.Equal(-3.0, aKnots[1]);
+        Assert.Equal(9.0, aKnots[aKnots.Upper()]);
+
+        var aProps = new Properties(new Point3D(0, 0, 0));
+        MassPropertiesBuilder.SurfaceProperties(aF, aProps, 1e-9);
+        Assert.Equal(2 * Math.PI * 2.0 * 12.0, aProps.Mass(), 1e-8);
+        AssertPnt(new Point3D(1, 2, 6), aProps.CentreOfMass(), 1e-8);
+
+        var aCone = new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 6, 1.0);
+        Face aCF = BRepGPropTestShapes.NaturalFace(new TrimmedSurface(aCone, 0.0, 2 * Math.PI, 0.5, 4.0));
+        var aCKnots = new NCollection_Array1<double>(1, new FaceIntegrand(aCF).SVIntSubs() + 1);
+        new FaceIntegrand(aCF).VKnots(aCKnots);
+        Assert.Equal(0.5, aCKnots[1]);
+        Assert.Equal(4.0, aCKnots[aCKnots.Upper()]);
+        // a frustum's lateral area: pi (r1 + r2) s, with r = 1 + v sin(pi/6) and slant s = 3.5
+        var aCProps = new Properties(new Point3D(0, 0, 0));
+        MassPropertiesBuilder.SurfaceProperties(aCF, aCProps, 1e-9);
+        Assert.Equal(Math.PI * (1.25 + 3.0) * 3.5, aCProps.Mass(), 1e-8);
+    }
+
+    [Fact]
     public void Gauss_asserts_the_type()
     {
         Face aF = BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(1, 1, 1)))[0];

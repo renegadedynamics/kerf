@@ -14998,3 +14998,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        image through the origin (they take a x + b y + c z − d where the plane is a x + b y + c z + d = 0), which a
        closed shell doesn't notice (its volume by any plane is the solid's) and an open one does; not a listed row, so
        it is recorded here for the module's rewrite. BRepGProp's statics by plane use VinertGK on shells.
+16710. **A natural face's V knots are its V bounds** (unit 3H's BRepGProp_Face::VKnots row). For planes, cylinders,
+       cones and the default case OCCT wrote the U bounds as the V knots, so the adaptive (Eps) integration of a natural
+       face started its V subdivision at U values. The V bounds are written. Test: natural cylinder and cone faces'
+       knots, and their adaptive areas against the closed forms. The BRepGProp face-tool oracle moves to plan 3.2's third
+       level for those knots (native's are its U bounds, the port's its V bounds); the properties' recordings didn't
+       move.

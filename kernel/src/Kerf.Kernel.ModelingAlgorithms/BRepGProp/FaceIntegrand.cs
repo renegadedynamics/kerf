@@ -416,9 +416,9 @@ public sealed class FaceIntegrand
             case Plane:
             case SurfaceKind.Cylinder:
             case SurfaceKind.Cone:
-                // OCCT takes the U bounds for the V knots of these surfaces (occt-issues.md)
-                knots[1] = _surface.FirstUParameter();
-                knots[2] = _surface.LastUParameter();
+                // the V bounds (OCCT took the U bounds, here and below: decision 16710)
+                knots[1] = _surface.FirstVParameter();
+                knots[2] = _surface.LastVParameter();
                 break;
             case SurfaceKind.Sphere:
                 knots[1] = -M_PI / 2.0;
@@ -442,8 +442,8 @@ public sealed class FaceIntegrand
 
                 break;
             default:
-                knots[1] = _surface.FirstUParameter();
-                knots[2] = _surface.LastUParameter();
+                knots[1] = _surface.FirstVParameter();
+                knots[2] = _surface.LastVParameter();
                 break;
         }
     }
