@@ -475,6 +475,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     [Fact]
     public void Random_polygons_and_arc_profiles()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anOracle = new Oracle(output, 5931);
         for (int i = 0; i < 400; i++)
         {

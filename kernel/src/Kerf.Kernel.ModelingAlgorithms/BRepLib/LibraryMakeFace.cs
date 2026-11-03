@@ -29,15 +29,14 @@ namespace Kerf.Engine.Construction.Library;
 /// reversed if the wire would bound an infinite area (unless <c>Inside</c> is false).</para>
 /// <para><see cref="Face"/> freezes the face (design 4.2); ported code reads <see cref="InternalFace"/>. Adding a
 /// wire after a public read goes on with a new face holding the same wires. The face from a planar wire updates the
-/// tolerances of the wire's edges and vertices and makes its edges same-parameter, as OCCT does; when the wire holds
-/// frozen sub-shapes, it does so on a copy of the wire for write (design 4.6) and then takes back the caller's own
-/// edges and vertices wherever the copy is unchanged (<c>BRepTools.KeepUnchanged</c>), so faces built on wires
-/// sharing edges still share them; <see cref="InternalHistory"/> records the ones replaced.</para>
+/// tolerances of the wire's edges and vertices and makes its edges same-parameter, as OCCT does, in a working overlay
+/// (unit 10H3): the face holds the caller's own edges and vertices wherever they are unchanged, so faces built on
+/// wires sharing edges still share them; <see cref="InternalHistory"/> records the ones replaced.</para>
 /// </remarks>
 public class LibraryMakeFace : LibraryMakeShape
 {
     private LibraryFaceError _error;
-    // OCCT.NET: the history of the copy for write of the wire (null if none).
+    // Kerf: the history of the wire's sub-shapes the face replaced (null if none).
     private History? _history;
 
     /// <summary>Not done.</summary>
@@ -192,64 +191,28 @@ public class LibraryMakeFace : LibraryMakeShape
             aW = w;
         }
 
-        // OCCT.NET: UpdateTolerances and SameParameter below write into the wire's edges and vertices, so a wire
-        // holding frozen sub-shapes is copied for write first (design 4.6), and the edges and vertices they leave
-        // unchanged are the caller's own again afterwards, so that faces built on wires sharing edges share them.
-        // UpdateTolerances raises every vertex by its rounding guard (2 * Epsilon(tol)); a raise of no more than that
-        // is ignored, else no frozen vertex could ever be kept.
-        Wire wOriginal = new();
-        if (HasFrozenSubShape(aW))
-        {
-            wOriginal = aW;
-            aW = ShapeCasts.Wire(BrepTools.ExactCopyForWrite(aW, out _));
-        }
-
+        // Kerf: UpdateTolerances and SameParameter below write into the wire's edges and vertices: in a working overlay
+        // (unit 10H3), so the face holds the caller's own edges and vertices wherever they are unchanged, and faces
+        // built on wires sharing edges share them. UpdateTolerances raises every vertex by its rounding guard
+        // (2 * Epsilon(tol)); a raise of no more than that is ignored, else no frozen vertex could ever be kept.
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(aW);
         Add(aW);
         //
         BrepLibrary.UpdateTolerances(_shape);
         //
         BrepLibrary.SameParameter(_shape, tol, true);
         //
-        if (!wOriginal.IsNull)
+        if (overlay is not null)
         {
-            aW = ShapeCasts.Wire(BrepTools.KeepUnchanged(wOriginal, aW, out History history, true));
-            _history = history;
-            if (!ReferenceEquals(aW.TShape(), _shape.TShape()!._shapes.First().TShape()))
-            {
-                // the face holds the copy: it gets the wire with the kept edges in its place
-                _shape.TShape()!._shapes.Clear();
-                Add(aW);
-            }
+            _shape = overlay.Finish(_shape, null, true);
+            _history = overlay.History();
+            aW = ShapeCasts.Wire(overlay.Final(aW));
         }
         //
         if (Tool.IsClosed(aW))
         {
             CheckInside();
         }
-    }
-
-    // True if the shape or any of its sub-shapes is frozen.
-    private static bool HasFrozenSubShape(in Shape shape)
-    {
-        if (shape.TShape()!.IsFrozen)
-        {
-            return true;
-        }
-        for (var exp = new Explorer(shape, ShapeType.Edge); exp.More(); exp.Next())
-        {
-            if (exp.Current().TShape()!.IsFrozen)
-            {
-                return true;
-            }
-        }
-        for (var exp = new Explorer(shape, ShapeType.Vertex); exp.More(); exp.Next())
-        {
-            if (exp.Current().TShape()!.IsFrozen)
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
     /// <summary>A face on the plane bounded by the wire; reversed if the wire would bound an infinite area.</summary>
@@ -840,10 +803,11 @@ public class LibraryMakeFace : LibraryMakeShape
     /// <summary>Adds the wire to the face (a hole, or another boundary); the face is no longer a natural restriction.</summary>
     public void Add(in Wire w)
     {
-        UnfreezeResult(); // OCCT.NET: frozen
+        WorkingOverlay? overlay = BeginResultChange(); // Kerf: a published face changes into a new one
         var b = new BrepBuilder();
         b.Add(_shape, w);
         b.NaturalRestriction(ShapeCasts.Face(_shape), false);
+        EndResultChange(overlay);
         Done();
     }
 

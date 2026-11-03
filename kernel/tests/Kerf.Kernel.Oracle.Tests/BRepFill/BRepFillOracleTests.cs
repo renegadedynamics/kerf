@@ -510,6 +510,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     [Fact]
     public void Shell_MatchesNative()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anO = new Oracle(output, 5852);
         var aTally = new Tally("BRepFill::Shell");
         foreach (int aCase in Tape.Budget(300))
@@ -717,6 +718,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     [Fact]
     public void ComputeACR_MatchesNative()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anO = new Oracle(output, 5854);
         var aTally = new Tally("BRepFill::ComputeACR");
         foreach (int aCase in Tape.Budget(300))
@@ -744,6 +746,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     [Fact]
     public void InsertACR_MatchesNative()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anO = new Oracle(output, 5855);
         var aTally = new Tally("BRepFill::InsertACR");
         int aCut = 0;

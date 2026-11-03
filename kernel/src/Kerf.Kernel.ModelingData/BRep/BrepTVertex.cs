@@ -49,6 +49,10 @@ public class BrepTVertex : TVertex
     /// <summary>Sets the tolerance to the max of <paramref name="t"/> and the current tolerance.</summary>
     internal void UpdateTolerance(double t)
     {
+        if (t <= Tolerance() && WorkingOverlay.TakesWrite(this))
+        {
+            return; // Kerf: nothing to raise (unit 10H3)
+        }
         if (WorkingOverlay.TryWritable(this, out TShape? working))
         {
             ((BrepTVertex)working).UpdateTolerance(t);
@@ -67,6 +71,10 @@ public class BrepTVertex : TVertex
 
     internal void Pnt(in Point3D p)
     {
+        if (WorkingOverlay.TakesWrite(this) && View()._pnt.Equals(p))
+        {
+            return; // Kerf: the same point (unit 10H3)
+        }
         if (WorkingOverlay.TryWritable(this, out TShape? working))
         {
             ((BrepTVertex)working).Pnt(p);

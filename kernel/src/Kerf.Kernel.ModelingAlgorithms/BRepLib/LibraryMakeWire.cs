@@ -29,9 +29,9 @@ namespace Kerf.Engine.Construction.Library;
 /// <para><see cref="Wire"/>, <see cref="Edge"/> and <see cref="Vertex"/> freeze the wire (design 4.2); ported code
 /// reads the internal forms. Adding after a public read goes on with a new wire holding the same edges.</para>
 /// <para>The caller's edges and vertices are frozen. Merging a vertex onto a wire vertex that must move or grow writes
-/// into that vertex, so when it is frozen the maker first copies the wire built so far for write (design 4.6) and
-/// goes on with the copy; <see cref="InternalHistory"/> then records the caller's edges and vertices as modified
-/// into the copies. Writes that would change nothing are skipped.</para>
+/// into that vertex, as OCCT does; the change runs in a working overlay (unit 10H3), so the wire holds new TShapes for
+/// what changed and the caller's own for the rest; <see cref="InternalHistory"/> records the caller's edges and
+/// vertices replaced.</para>
 /// </remarks>
 public class LibraryMakeWire : LibraryMakeShape
 {
@@ -42,7 +42,7 @@ public class LibraryMakeWire : LibraryMakeShape
     private Vertex _firstVertex = new();
     private Vertex _vf = new();
     private Vertex _vl = new();
-    // OCCT.NET: the history of the copies for write made so far (null if none).
+    // Kerf: the history of the caller's sub-shapes the changes replaced (null if none).
     private History? _history;
 
     /// <summary>Makes an empty wire: <see cref="Error"/> is BRepLib_EmptyWire until an edge is added.</summary>
@@ -107,7 +107,110 @@ public class LibraryMakeWire : LibraryMakeShape
     /// </summary>
     public void Add(in Edge e)
     {
-        Add(e, true);
+        WorkingOverlay? overlay = BeginChange(IsMerging(e));
+        try
+        {
+            Add(e, true);
+        }
+        finally
+        {
+            EndChange(overlay);
+        }
+    }
+
+    // ------------------------------------------------------------ Kerf: a change of the wire in a working overlay
+
+    // Kerf (unit 10H3, in place of decision 417's copies for write): a change writes, as OCCT's, into the caller's
+    // vertices (a vertex merged onto another is moved and enlarged, parameters are transferred) and into a wire a public
+    // accessor has published. It runs in a working overlay: when the wire is published, or when the edge may be merged
+    // (isNeeded), and unless the change runs inside an operation's overlay, whose writes these then are. At the end the
+    // wire holds new TShapes for what changed and the caller's own for the rest, the maker's state (its vertices, VF,
+    // VL, the last edge and vertex) is brought up to date, and InternalHistory records what was replaced.
+    private WorkingOverlay? BeginChange(bool isNeeded)
+    {
+        if (!_shape.IsNull && _shape.TShape()!.IsFrozen)
+        {
+            return WorkingOverlay.Begin(_shape);
+        }
+        return isNeeded ? WorkingOverlay.BeginUnlessInside(new Shape()) : null;
+    }
+
+    // True if adding the edge may merge one of its vertices onto the wire's: a vertex of it isn't one of the wire's.
+    private bool IsMerging(in Edge e)
+    {
+        if (_edge.IsNull)
+        {
+            return false;
+        }
+        for (var it = new Iterator(e); it.More(); it.Next())
+        {
+            if (!_vertices.Contains(it.Value()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void EndChange(WorkingOverlay? overlay)
+    {
+        if (overlay is null)
+        {
+            return;
+        }
+        try
+        {
+            if (_shape.IsNull || overlay.WorkingCount == 0)
+            {
+                return; // nothing was written (a merge that moved and enlarged nothing)
+            }
+            // the wire's sub-shapes and the maker's state as the change left them
+            var shapes = new List<Shape>();
+            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Exploration.MapShapes(_shape, subShapes);
+            for (int i = 1; i <= subShapes.Extent(); i++)
+            {
+                shapes.Add(subShapes[i]);
+            }
+            for (int i = 1; i <= _vertices.Extent(); i++)
+            {
+                shapes.Add(_vertices.FindKey(i));
+            }
+            shapes.Add(_vf);
+            shapes.Add(_vl);
+            shapes.Add(_firstVertex);
+            shapes.Add(_vertex);
+            shapes.Add(_edge);
+
+            _shape = overlay.Finish(_shape, shapes);
+            for (int i = 1; i <= _vertices.Extent(); i++)
+            {
+                _vertices.Substitute(i, overlay.Final(_vertices.FindKey(i)));
+            }
+            _vf = ShapeCasts.Vertex(overlay.Final(_vf));
+            _vl = ShapeCasts.Vertex(overlay.Final(_vl));
+            _firstVertex = ShapeCasts.Vertex(overlay.Final(_firstVertex));
+            _vertex = ShapeCasts.Vertex(overlay.Final(_vertex));
+            _edge = ShapeCasts.Edge(overlay.Final(_edge));
+
+            History images = overlay.Images(shapes);
+            if (!images.HasModified)
+            {
+                return;
+            }
+            if (_history is null)
+            {
+                _history = images;
+            }
+            else
+            {
+                _history.Merge(images);
+            }
+        }
+        finally
+        {
+            overlay.Dispose();
+        }
     }
 
     // PMN  19/03/1998  For the Problem of performance TopExp::Vertices are not used on wire
@@ -145,7 +248,6 @@ public class LibraryMakeWire : LibraryMakeShape
 
         else
         {
-            UnfreezeResult(); // OCCT.NET: frozen
             init = _shape.Closed(); // If it is closed no control
             Shape localShape = e.Oriented(Forward);
             Edge ee = ShapeCasts.Edge(localShape);
@@ -297,12 +399,6 @@ public class LibraryMakeWire : LibraryMakeShape
                 }
                 else
                 {
-                    // OCCT.NET: frozen. Copy the wire built so far for write if a frozen wire vertex must move or grow.
-                    if (NeedsWritableVertices(ee))
-                    {
-                        CopyForWrite();
-                    }
-
                     // copy the edge
                     Shape dummy = ee.EmptyCopied();
                     _edge = ShapeCasts.Edge(dummy);
@@ -325,18 +421,13 @@ public class LibraryMakeWire : LibraryMakeShape
                             {
                                 MergedVertex(pw, tolW, pe, tolE, l, out Point3D pc, out double maxtol);
 
-                                // OCCT.NET: frozen. A frozen VW here is one the update leaves as it is
-                                // (needsWritableVertices made the others writable).
-                                if (!vw.TShape()!.IsFrozen)
-                                {
-                                    b.UpdateVertex(vw, pc, maxtol);
-                                }
+                                b.UpdateVertex(vw, pc, maxtol);
 
                                 newvertex = true;
                                 _vertex = vw;
                                 _vertex.Orientation(ve.Orientation());
                                 b.Add(_edge, _vertex);
-                                Transfert(b, ee, _edge, ve, _vertex);
+                                b.Transfert(ee, _edge, ve, _vertex);
                                 break;
                             }
                         }
@@ -344,7 +435,7 @@ public class LibraryMakeWire : LibraryMakeShape
                         {
                             _vertices.Add(ve);
                             b.Add(_edge, ve);
-                            Transfert(b, ee, _edge, ve, ve);
+                            b.Transfert(ee, _edge, ve, ve);
                         }
                     }
                 }
@@ -456,156 +547,6 @@ public class LibraryMakeWire : LibraryMakeShape
                         cW * pw.Z() + cE * pe.Z());
     }
 
-    // OCCT.NET: frozen. True if merging the vertices of EE onto the wire's (as Add's copy loop does) would write into
-    // a frozen wire vertex: move it, raise its tolerance, or give it a point representation (an INTERNAL or EXTERNAL
-    // vertex). A frozen vertex of EE itself kept in the copied edge only receives its own tolerance (nothing
-    // changes) unless it isn't FORWARD or REVERSED.
-    private bool NeedsWritableVertices(in Edge ee)
-    {
-        for (var it = new Iterator(ee); it.More(); it.Next())
-        {
-            Vertex ve = ShapeCasts.Vertex(it.Value());
-            Point3D pe = Tool.Pnt(ve);
-            bool matched = false;
-            for (int i = 1; i <= _vertices.Extent(); i++)
-            {
-                Vertex vw = ShapeCasts.Vertex(_vertices.FindKey(i));
-                Point3D pw = Tool.Pnt(vw);
-                double l = pe.Distance(pw);
-                double tolW = Tool.Tolerance(vw);
-                double tolE = Tool.Tolerance(ve);
-                if ((l < tolE) || (l < tolW))
-                {
-                    matched = true;
-                    if (vw.TShape()!.IsFrozen)
-                    {
-                        MergedVertex(pw, tolW, pe, tolE, l, out Point3D pc, out double maxtol);
-                        if (maxtol > tolW || !SameBits(pc, pw) || !IsBoundary(ve) || tolE > maxtol)
-                        {
-                            return true;
-                        }
-                    }
-                    break;
-                }
-            }
-            if (!matched && ve.TShape()!.IsFrozen && !IsBoundary(ve))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static bool IsBoundary(in Shape v)
-        => v.Orientation() == Forward || v.Orientation() == Reversed;
-
-    private static bool SameBits(in Point3D p1, in Point3D p2)
-        => p1.X().Equals(p2.X()) && p1.Y().Equals(p2.Y()) && p1.Z().Equals(p2.Z());
-
-    // OCCT.NET: frozen. B.Transfert(Ein, Eout, Vin, Vout): sets on Eout the parameter of Vin on Ein for Vout, and raises
-    // Vout's tolerance to Vin's. On a frozen Vout (a caller's vertex, FORWARD or REVERSED in Eout, whose tolerance is
-    // already at least Vin's: see needsWritableVertices) only the edge's curve ranges change, as BRep_Builder's
-    // UpdateVertex(V, Par, E, Tol) changes them; the vertex is left as it is, which is what the builder would leave.
-    private static void Transfert(BrepBuilder b, in Edge ein, in Edge eout, in Vertex vin,
-                                  in Vertex vout)
-    {
-        if (!vout.TShape()!.IsFrozen)
-        {
-            b.Transfert(ein, eout, vin, vout);
-            return;
-        }
-
-        double tol = Tool.Tolerance(vin);
-        double parin = Tool.Parameter(vin, ein);
-        if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(parin) || global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(parin))
-        {
-            throw new DomainErrorException("BRep_Builder::Infinite parameter");
-        }
-        BrepTEdge te = (BrepTEdge)eout.TShape()!;
-
-        Orientation ori = Internal;
-        var itv = new Iterator(eout.Oriented(Forward));
-        if (!itv.More() && te.Degenerated())
-        {
-            ori = vout.Orientation();
-        }
-        while (itv.More())
-        {
-            Shape vcur = itv.Value();
-            if (vout.IsSame(vcur))
-            {
-                ori = vcur.Orientation();
-                if (ori == vout.Orientation())
-                {
-                    break;
-                }
-            }
-            itv.Next();
-        }
-
-        if ((ori != Forward && ori != Reversed) || tol > Tool.Tolerance(vout))
-        {
-            // Would write into the frozen vertex: let the builder throw TopoDS_LockedShape.
-            b.Transfert(ein, eout, vin, vout);
-            return;
-        }
-
-        for (var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.ChangeCurves()); itcr.More(); itcr.Next())
-        {
-            if (itcr.Value() is GCurve gc)
-            {
-                if (ori == Forward)
-                {
-                    gc.First(parin);
-                }
-                else
-                {
-                    gc.Last(parin);
-                }
-            }
-        }
-        te.Modified(true);
-    }
-
-    // OCCT.NET: frozen. Replaces the wire built so far by an exact copy for write (design 4.6) and maps the maker's state
-    // (the wire's vertices, VF, VL, the last edge and vertex) onto the copy, recording the copy in the history.
-    private void CopyForWrite()
-    {
-        Shape copy = BrepTools.ExactCopyForWrite(_shape, out History history);
-        for (int i = 1; i <= _vertices.Extent(); i++)
-        {
-            _vertices.Substitute(i, ImageOf(history, _vertices.FindKey(i)));
-        }
-        _vf = ShapeCasts.Vertex(ImageOf(history, _vf));
-        _vl = ShapeCasts.Vertex(ImageOf(history, _vl));
-        _firstVertex = ShapeCasts.Vertex(ImageOf(history, _firstVertex));
-        _vertex = ShapeCasts.Vertex(ImageOf(history, _vertex));
-        _edge = ShapeCasts.Edge(ImageOf(history, _edge));
-        _shape = copy;
-        if (_history is null)
-        {
-            _history = history;
-        }
-        else
-        {
-            _history.Merge(history);
-        }
-    }
-
-    // The copy of a shape of the wire, with the shape's orientation.
-    private static Shape ImageOf(History history, in Shape shape)
-    {
-        if (shape.IsNull)
-        {
-            return shape;
-        }
-        foreach (Shape modified in history.Modified(shape))
-        {
-            return modified.Oriented(shape.Orientation());
-        }
-        return shape;
-    }
-
     /// <summary>
     /// Adds the edges of a list, in any order: coincident vertices of the list and the wire are merged into one
     /// (an existing wire vertex enlarged, or a new vertex), and the edges are added by connection. Not done if some
@@ -616,21 +557,36 @@ public class LibraryMakeWire : LibraryMakeShape
         _error = LibraryWireError.WireDone;
         int lSize = 0;
         int refSize = l.Size();
+        WorkingOverlay? overlay = l.IsEmpty() ? null : BeginChange(true);
+        try
+        {
+            AddList(l, ref lSize);
+        }
+        finally
+        {
+            EndChange(overlay);
+        }
+        if (lSize == refSize)
+        {
+            Done();
+        }
+        else
+        {
+            NotDone();
+            _error = LibraryWireError.DisconnectedWire;
+        }
+    }
+
+    private void AddList(NCollection_List<Shape> l, ref int lSize)
+    {
         if (!l.IsEmpty())
         {
-            UnfreezeResult(); // OCCT.NET: frozen
             //
             var grVL = new NCollection_List<NCollection_List<Vertex>>();
 
             var mapVE = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
             CollectCoincidentVertices(l, grVL);
-
-            // OCCT.NET: frozen. Copy the wire for write if a frozen wire vertex must move or grow.
-            if (NeedsWritableVertices(grVL))
-            {
-                CopyForWrite(grVL);
-            }
 
             var o2NV = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
 
@@ -653,7 +609,7 @@ public class LibraryMakeWire : LibraryMakeShape
             {
                 // take the first edge from the list and add it
                 Edge fe = ShapeCasts.Edge(newEList.First());
-                Add(fe);
+                Add(fe, true); // Kerf: OCCT's Add(fe), in this change's overlay
                 processedEdges.Add(fe);
                 actEdges.Append(fe);
                 lSize++;
@@ -702,65 +658,6 @@ public class LibraryMakeWire : LibraryMakeShape
                 }
                 actEdges.Clear();
                 actEdges.Append(neighEdges);
-            }
-        }
-        if (lSize == refSize)
-        {
-            Done();
-        }
-        else
-        {
-            NotDone();
-            _error = LibraryWireError.DisconnectedWire;
-        }
-    }
-
-    // OCCT.NET: frozen. True if CreateNewVertices would move or enlarge a frozen vertex of the wire.
-    private bool NeedsWritableVertices(NCollection_List<NCollection_List<Vertex>> grVL)
-    {
-        for (var itLLV = new NCollection_List<NCollection_List<Vertex>>.Iterator(grVL); itLLV.More(); itLLV.Next())
-        {
-            Vertex newV = new();
-            var valList = new NCollection_List<Shape>();
-            for (var itLV = new NCollection_List<Vertex>.Iterator(itLLV.Value()); itLV.More(); itLV.Next())
-            {
-                valList.Append(itLV.Value());
-                if (_vertices.Contains(itLV.Value()))
-                {
-                    newV = itLV.Value();
-                }
-            }
-            if (newV.IsNull || !newV.TShape()!.IsFrozen)
-            {
-                continue;
-            }
-            double newTol = 0;
-            Point3D newC = new();
-            BrepLibrary.BoundingVertex(valList, ref newC, ref newTol);
-            if (newTol > Tool.Tolerance(newV) || !SameBits(newC, Tool.Pnt(newV)))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // OCCT.NET: frozen. copyForWrite, then the wire's vertices in the groups replaced by their copies.
-    private void CopyForWrite(NCollection_List<NCollection_List<Vertex>> grVL)
-    {
-        Shape old = _shape;
-        CopyForWrite();
-        History history = _history!;
-        var oldVertices = new HashSet<Shape>(ShapeHasher.Instance);
-        Exploration.MapShapes(old, oldVertices);
-        for (var itLLV = new NCollection_List<NCollection_List<Vertex>>.Iterator(grVL); itLLV.More(); itLLV.Next())
-        {
-            for (var itLV = new NCollection_List<Vertex>.Iterator(itLLV.ChangeValue()); itLV.More(); itLV.Next())
-            {
-                if (oldVertices.Contains(itLV.Value()))
-                {
-                    itLV.ChangeValue() = ShapeCasts.Vertex(ImageOf(history, itLV.Value()));
-                }
             }
         }
     }
@@ -988,13 +885,11 @@ public class LibraryMakeWire : LibraryMakeShape
                 newV = new LibraryMakeVertex(newC).InternalVertex();
                 bb.UpdateVertex(newV, newTol);
             }
-            else if (!newV.TShape()!.IsFrozen)
+            else
             {
                 // update already existing vertex
                 bb.UpdateVertex(newV, new Point3D(newC.XYZ()), newTol);
             }
-            // OCCT.NET: frozen. A frozen existing vertex here is one the update leaves as it is (needsWritableVertices
-            // made the others writable).
 
             // fill the map of old->new vertices
             itLV.Initialize(val);
@@ -1087,9 +982,10 @@ public class LibraryMakeWire : LibraryMakeShape
     internal Vertex InternalVertex() => _vertex;
 
     /// <summary>
-    /// OCCT.NET: the history of the copies for write the maker made when merging a vertex onto a frozen vertex of
-    /// the wire: each edge and vertex of the wire at the time, modified into its copy. Null if no copy was made, in
-    /// which case the wire holds the caller's edges themselves (or their copies made by OCCT's algorithm).
+    /// Kerf: the history of the changes that wrote into the caller's edges and vertices or into a published wire (unit
+    /// 10H3): each one that changed, modified into the new TShape standing for it in the wire. Null if no change ran in
+    /// a working overlay, in which case the wire holds the caller's edges themselves (or their copies made by OCCT's
+    /// algorithm).
     /// </summary>
     internal History? InternalHistory() => _history;
 }

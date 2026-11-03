@@ -14385,28 +14385,28 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        10H5 and 10H6.
 ## Phase 10: unit 10J, heap and collections
 
-16001. **10G's Booleans slowdown is not there to fix** (decision 1377 asked 10J to profile it). An EventPipe profile of
+1400. **10G's Booleans slowdown is not there to fix** (decision 1377 asked 10J to profile it). An EventPipe profile of
        the Booleans benchmark (`-- booleans simple`, 407 cases) puts everything to do with transforms
        (`Transform3D`'s returning forms, `Point3D.Transformed`, `Placement.Transformation`, the transformed adaptors) at
        under 0.5% of the samples: the hot paths already take `in` parameters (3 by-value `Transform3D`/`Matrix3x3`
        parameters remain, none hot), and the returning forms are called when transforms are built, not per point.
        Measured back to back, the commits either side of 10G's merge (296531cd, 348b565a), three runs each alternating:
        serial 2,864, 2,671, 2,879 ms before and 3,380, 2,722, 2,655 ms after, 8.25 MB per Boolean either way. The 13%
-       was the machine's noise. The profile's real hot spots were elsewhere, and 16002 to 16005 take them.
-16002. **A TShape draws its hash once** (performance.md's proposal 7): `TShape._hash`, from `Random.Shared` at
+       was the machine's noise. The profile's real hot spots were elsewhere, and 1401 to 1404 take them.
+1401. **A TShape draws its hash once** (performance.md's proposal 7): `TShape._hash`, from `Random.Shared` at
        construction, is the shapes' hash and the overlay's filter bit, in place of
        `RuntimeHelpers.GetHashCode`, whose slow path was 4.5% of the Booleans' samples. No result depends on it: the
        maps are .NET's hash tables, which iterate in insertion order whatever the hashes (the check proposal 7
        asked for), and nothing sorts or prints by a shape's hash (BRep dumps still print the identity hash). Placement's datums keep their identity hash (not hot).
-16003. **KERF0002 matched nothing since the rename.** It looked for `Occt.TopoDS_Shape` and its subtypes; since 10E the
+1402. **KERF0002 matched nothing since the rename.** It looked for `Occt.TopoDS_Shape` and its subtypes; since 10E the
        shapes are `Kerf.Topology.Shape`, `Edge`… It now looks for those, its tests use Kerf's names, and a probe confirms
        it fails the build on `new HashSet<Edge>()`. The kernel, the tests and the modelling layer had no violation.
-16004. **The mesher's circles are a `List<int>`** (proposal 3, without a linked list): `BRepMesh_CircleTool.Select` and
+1403. **The mesher's circles are a `List<int>`** (proposal 3, without a linked list): `BRepMesh_CircleTool.Select` and
        its inspector return the tool's own `List<int>`, and `BRepMesh_Delaun::createTrianglesOnNewVertices` overwrites
        a deleted triangle's entry with a marker rather than removing it, so the rest are visited in OCCT's order without
        being moved (the `List.RemoveAt` that was 7% of meshing in 9E's profile). The phase-10 plan's linked list "only
        where an algorithm splices" isn't needed here: a marker does it.
-16005. **Small fixed-size arrays and reused solvers** (plan 2.6's small maths, chosen by the profiles):
+1404. **Small fixed-size arrays and reused solvers** (plan 2.6's small maths, chosen by the profiles):
        - `Extrema_ExtElC` and `Extrema_ExtElC2d` hold their squared distances and point pairs in `[InlineArray]`
          fields, `_point[2 * i + j]` for OCCT's `myPoint[i][j]`, in place of a `double[]` and a rectangular
          `POnCurv[,]` per object (`Array.CreateInstanceMDArray` was 1.7% of the Booleans' samples).
@@ -14416,34 +14416,34 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          storage, so the arithmetic is the same to the bit.
        - Not done, in collections-plan.md: `math_VectorBase` over its own array, span scratch in `math_Recipes` and
          `math_FunctionSetRoot` (built per `Extrema_GenLocateExtPS.Perform`).
-16006. **`Grid<T>`** (docs/api/README.md section 6; decision 1374): a read-only struct in `Kerf.Geometry` over row-major
+1405. **`Grid<T>`** (docs/api/README.md section 6; decision 1374): a read-only struct in `Kerf.Geometry` over row-major
        `ReadOnlyMemory<T>`, with `RowCount`, `ColumnCount`, `this[row, column]` (0-based, checked), `Row`, `Values` and
        `ToArray`. `BSplineSurface` and `BezierSurface` return their `Poles()`, `Weights()` and `WeightsArray()` as grids
        (copies, rows in U); OCCT's deprecated copy-into overloads `Poles(array)`/`Weights(array)` are internal. The
        engine's two readers use `InternalPoles()`; the tests read the grids 0-based. Their public constructors still
        take `NCollection_Array2` (10L's builders take grids).
-16007. **`NCollection_Map` is `HashSet<T>`** (plan 2.6, the first NCollection class to go). The wrapper added only OCCT's
+1406. **`NCollection_Map` is `HashSet<T>`** (plan 2.6, the first NCollection class to go). The wrapper added only OCCT's
        names over a `HashSet`, so iteration order and results are the same by construction. A Roslyn rewrite from the
        compiler's symbols (scratch) changed 178 files, 1,011 edits, kernel, tests, benchmarks and the modelling layer:
        the type, `Extent()`/`Size()` to `Count`, `IsEmpty()` to `Count == 0` (or `!= 0` under a `!`), and the copy
        constructor to `new HashSet<T>(other, other.Comparer)`, keeping the comparer (KERF0002's exemption for
        NCollection copies doesn't cover `HashSet`). The one `Exchange` (a test) swaps the references. The 9E
        profile's other types follow in collections-plan.md's order.
-16008. **The constant tables 10I left as NCollection types are frozen:** STEP AP214's type-name and short-name tables
+1407. **The constant tables 10I left as NCollection types are frozen:** STEP AP214's type-name and short-name tables
        (`FrozenDictionary<string, int>`, ordinal), its protocol's type numbers (`FrozenDictionary<Type, int>`, built by
        a static initialiser in place of the static constructor's binds) and MoniTool's typed-value library (a frozen
        dictionary and its names in OCCT's order, which `LibList` returns). The shared static "empty" lists and the
        Bézier classes' shared knot arrays are left (collections-plan.md).
-16009. **Step 2 doesn't fit in one unit** (the brief's fallback): about 25,000 references to the NCollection types
-       (collections-plan.md counts them per type). 10J did the measured hot spots, one whole type (16007), the returned
+1408. **Step 2 doesn't fit in one unit** (the brief's fallback): about 25,000 references to the NCollection types
+       (collections-plan.md counts them per type). 10J did the measured hot spots, one whole type (1406), the returned
        grids and the constant tables; collections-plan.md orders the rest (DataMap, DynamicArray, the indexed maps with
        one small ordered type each, List, Sequence, the arrays, the math vectors), with the design of the indexed maps'
        replacement (`IndexedSet<T>`, `IndexedMap<TKey, TValue>`, 0-based, OCCT's swap-with-last removal; .NET 9's
        `OrderedDictionary` rejected because its removal shifts). Question 55's transient base goes with the arrays.
-16010. **Measured** (Release, back to back with `main` at 4052982b, two alternating runs each, on a machine shared with
+1409. **Measured** (Release, back to back with `main` at 4052982b, two alternating runs each, on a machine shared with
        other units, so timings carry up to 30% noise):
        - **Bento's benchmark** (11 examples, 7 passes, parallel rounds of 24 copies): "extrude until" allocates
-         **142 MB a recalculation, against 802 MB** (−82%: `math_NewtonMinimum`'s solvers, 16005); the other ten
+         **142 MB a recalculation, against 802 MB** (−82%: `math_NewtonMinimum`'s solvers, 1404); the other ten
          examples allocate as before (within 1 MB). A parallel round allocates **11.8 GB against 27.7 GB**, with 2,600
          gen-0 collections against 5,900. Median recalculation 1,402 and 2,121 ms after (the second under a load
          spike), 1,396 and 1,375 ms before; "extrude until" 888 and 1,199 ms after, 926 and 919 ms before; parallel
@@ -14455,3 +14455,118 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **Tests**, all passing with their counts: Foundation 2,297 (2,292 before, and 10J's 5: Grid's 4 and KERF0002's
          new case), ModelingData 3,145, ModelingAlgorithms 4,739 (9 skipped), DataExchange 273 (1 skipped), Oracle
          383, Draw-lite 687, the modelling layer 1,876. No comparison moved to level 2: no result changed.
+## Phase 10: unit 10H3, no copy at entry in construction
+
+1410. **Construction runs in working overlays** (overlay-survey.md section 6), all 38 of its copy-at-entry sites:
+       - **Sweeps** (`BRepPrimAPI_MakePrism`, `BRepPrimAPI_MakeRevol`, `BRepOffsetAPI_MakePipe`, through
+         `BRepPrimAPI_MakeSweep`): the generating shape is swept as it is, in an overlay opened in the constructor and
+         finished by `Build`, in place of `ExactCopyForWrite` and `KeepUnchangedIn` (decisions 468, 910). The sweep's
+         tables are keyed by the caller's sub-shapes, so `ToSwept` goes; what the sweep hands out (first and last shapes,
+         the history, MakeRevol's degenerated edges, now mapped too) goes through `Final`.
+       - **Lofts** (`BRepOffsetAPI_ThruSections`, `BRepFill_Generator`; decisions 936, 937), **ruled faces and shells**
+         (`BRepFill::Face`, `BRepFill::Shell`; 897), **evolved shapes** (`BRepFill_Evolved`, `BRepFill_AdvancedEvolved`;
+         642 to 644, 1047): OCCT's code on the caller's sections, spine and profile; the result, the first and last
+         faces, the generated lists and the working sections are finished together. The maps keyed by copies, and
+         `Working`/`Copied`/`Original`, go. A point section (`AddVertex`) of a caller's vertex is frozen with it: it is
+         the caller's, and `Wires()` hands it out as given (bugs/modalg_6/bug26150_5, _7, _17 found it).
+       - **BRepLib's functional twins** (`TolerancesUpdated`, `SameParametered`, `Curves3dBuilt`, `RegularityEncoded`,
+         `DeflectionUpdated`, `NormalConsistencyEnsured`, `InnerTolerancesUpdated`): the in-place static on the input in
+         its own overlay. `SameParameter` of an edge used in place asks the edge's representations with `ChangeCurves()`
+         when an overlay takes the write (it read the frozen list and edited it, which threw).
+       - **The makers**: `BRepLib_MakeFace` from a planar wire (decision 417's copy), `BRepLib_MakeWire`'s merges
+         (1413), and the changes of a published result (decisions 414, 455): `UnfreezeResult` goes; MakeFace's,
+         MakeSolid's and MakePolygon's `Add`/`Close` on a frozen result run in an overlay (`BeginResultChange`), whose
+         working copy is the new result, so the shape handed out never changes.
+       - **`BRepProj_Projection`**: its `HoldsFrozen` test goes. The pave filler already finds the caller's frozen faces
+         below the new compound and sections non-destructively (decision 1378), as the test made it.
+       - **`BRepSweep`'s `UpdateVertexOfFrozen`** (decision 981's second part) goes, and BRep_Builder's form with it:
+         `SetDirectingParameter` is OCCT's `UpdateVertex` again. The history builds on demand, after the result is
+         published, the edge a vertex generates when no face built it; MakePrism's and MakeRevol's `Generated` now run in
+         an overlay dropped unfinished (`BeginQuery`), so that write, which would leave the vertex as it is, goes nowhere.
+         The sweep's `Closed` write on a wire it hands out again is made only where a write is taken
+         (`!WorkingOverlay.IsLocked`): after the overlay, the caller's wire keeps its flag, and the result holds the
+         wire as the sweep left it.
+1411. **An algorithm another operation runs writes into that operation's overlay.** `WorkingOverlay.BeginUnlessInside`
+       opens an overlay unless an unfinished one is current, and then returns null: the sweeps, the generator, the
+       loft, the ruled faces, the evolved shapes, MakeFace's wire and MakeWire's merges run that way. OCCT writes in
+       place, and the calling operation reads the writes back (the loft reads its generator's pcurves, the evolved
+       shape its sweeps' and pipes') and assembles them into its own result. The copies gave the same: an operation's
+       copies were unfrozen, so the algorithms it ran wrote into them in place. Nested overlays (decision 1359) would
+       have given each sweep its own copies of the profile's edges. The functional twins and a published result's
+       change keep their own overlay: what they return they assemble themselves.
+1412. **`WorkingOverlay`'s additions**: `BeginUnlessInside` (1411); `TakesWrite`, for setters that skip a write of the
+       value already held (1417); `Finish`'s `ignoreToleranceGuard`, `KeepUnchanged`'s
+       (MakeFace's `UpdateTolerances` raises every vertex by its rounding guard, `2 * Epsilon(tol)`, which would
+       otherwise replace every vertex of the wire); a child replaced in an operation's own TShape has its Free flag
+       cleared, as `TopoDS_Builder::Add` clears it and the copies had it. The working copies' dictionary, the filter and
+       the history are made at the first write: an overlay nothing writes into (most makers' changes, a sweep of a
+       polygon face) costs an object and the `AsyncLocal`'s two changes.
+1413. **MakeWire merges in an overlay** (decision 417's copies go). A change (`Add` of an edge, of a list) runs in one
+       when the wire is published, or when the edge has a vertex that isn't one of the wire's (it may be merged); OCCT's
+       code is back (`UpdateVertex` of the wire's vertex, `Transfert`, CreateNewVertices' update), without
+       `NeedsWritableVertices`, `CopyForWrite` or the frozen `Transfert`. At the end the wire holds new TShapes for what
+       changed and the caller's own for the rest, the maker's state (its vertices, VF, VL, first vertex, last edge and
+       vertex) is mapped with `Final`, and `InternalHistory` (MakeWire's `Modified`, BRepFill_Filling's bindings)
+       records each sub-shape replaced, or stays null. With the copy, every edge and vertex of the wire built so far
+       was replaced, changed or not; now only the vertex that moved, the edges holding it and the wire are. The list
+       form calls its first `Add` within its own change.
+1414. **What the results share**, measured on frozen inputs (`ConstructionInputsUnchangedTests`): the overlay compares
+       a working copy with its original as `KeepUnchanged` compared a copy (`IsSameData`), so the sweeps, lofts, fills,
+       evolved shapes and twins share exactly what they shared. A prism of a polygon face holds the face, its edges and
+       vertices; of a circle face, the vertex (the circle takes the cylinder's pcurve, decision 1102, unchanged); a
+       revolution, the face's vertices (its edges take the new faces' pcurves); a face of a planar wire, the wire's
+       edges and vertices. Lofts, ruled faces, pipes and BRepLib's tolerance twins write into every edge or vertex
+       (pcurves, tolerances), as OCCT: their results hold new TShapes for them. The one change is MakeWire's (1413):
+       it keeps the caller's unchanged edges where it copied them.
+1415. **Seven oracle replays move to plan 3.2's second level** (`Tape.AcceptOtherArguments`, a new mode of the
+       recorded tape: the calls must be those recorded, their arguments may differ): BRepFill's `Shell`, `ComputeACR`
+       and `InsertACR`, MakeOffset's three random and build123d cases, MakeFillet2d's random profiles. Their inputs are
+       wires the test builds with MakeWire, merging vertices; the wire now holds the caller's unchanged edges, which,
+       frozen, keep the Free flag the copies had cleared, so the BRep text given to native differs in that flag only.
+       Native's recorded results answer the same geometry; each test's own comparisons (geometry and topology, the
+       Free flag masked) are unchanged and pass. The reason is `Tape.WireKeepsCallersEdges`. No other test moved; every
+       suite keeps its counts.
+1416. **The tests**: `ConstructionInputsUnchangedTests` in the kernel (17: prisms of polygon and circle faces,
+       revolutions by π and 2π, pipes, smoothed and ruled lofts, a loft between points, the generator, ruled faces and
+       shells, evolved shapes and volumes, projections on a solid and on a compound of its faces, half spaces, faces of
+       frozen wires, wires with a merge, changes of published polygons and faces, BRepLib's twins): the inputs untouched
+       (`ShapeSnapshot`) and the result holding what 1414 says. In the modelling layer (4): extrusions, revolutions,
+       sweeps and lofts of faces taken from other parts leave the parts' BRep text unchanged, and an extruded face is
+       shared with the solid with its edges (build123d revolves with copy, so a revolution shares nothing).
+1417. **Measured** (`benchmarks/Kerf.Kernel.Benchmarks -- construction`, new: each operation on frozen inputs, Release,
+       one thread, the median of 9 rounds; before is `main`, after this unit; other units ran beside, so times carry
+       the machine's noise, allocations don't):
+       | operation | µs before | µs after | KB before | KB after |
+       |---|---:|---:|---:|---:|
+       | prism of a square face | 47.0 | 30.9 | 79.4 | 54.8 |
+       | prism of a circle face | 16.2 | 15.5 | 36.3 | 31.6 |
+       | prism and the history of every edge | 31.2 | 20.6 | 81.1 | 57.5 |
+       | revolution of a face | 71.6 | 59.5 | 139.2 | 122.8 |
+       | pipe of a circle face | 646 | 565 | 617 | 607 |
+       | loft of three circles | 1,395 | 1,100 | 1,290 | 1,263 |
+       | ruled face of two edges | 61.9 | 46.0 | 173.7 | 165.7 |
+       | ruled shell of two wires | 123 | 82 | 343 | 327 |
+       | evolved | 325 | 191 | 436 | 392 |
+       | projection on a cylinder | 2,674 | 2,528 | 2,709 | 2,709 |
+       | face of a frozen polygon wire | 41.9 | 30.8 | 136.0 | 127.5 |
+       | face of a frozen circle | 41.5 | 34.6 | 88.0 | 86.9 |
+       | wire of four frozen edges, merged | 4.7 | 4.6 | 6.3 | 6.9 |
+       | pipe along a polyline | 589 | 475 | 900 | 872 |
+       | BRepLib's TolerancesUpdated twin | 42.6 | 31.2 | 101.8 | 66.7 |
+
+       Allocation falls by 2 to 34% wherever an input was copied whole (the twin −34%, a polygon face's prism −31%),
+       and is the same where the copy was a small part of the work (the projection's section). The wire maker costs
+       0.6 KB more per wire: an overlay for each merging `Add`, where the copy was made only when a vertex had to move.
+       A first version made the overlay's working copies on writes that change nothing (a merged vertex's tolerance
+       "raised" to its own value): 15.7 µs and 30.5 KB for the wire; the vertex's tolerance and point and the TShapes'
+       Modified flag are now not written when they already hold the value (`WorkingOverlay.TakesWrite`), and a change
+       that wrote nothing skips its assembly. 10H1's `WorkingOverlayTests` counted the working copy such a write made: it
+       now expects none (the result, the input itself, is unchanged). Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks -- 7 0`, 11 examples):
+       serial medians 1,320 ms before and 1,338 ms after, allocation per example unchanged (802 MB for the largest,
+       97.4 MB for the bottle). A run with other units' suites beside measured 2,441 ms; a run alone after it, 1,338 ms.
+1418. **The survey recounted** (overlay-survey.md): copy at entry 66 sites (Booleans 0, construction 0, healing 35,
+       offsets 5, fillets 2, features 7, other 17); frozen-shape checks 196 (construction 29, from 54; two new in `WorkingOverlay`); direct `_shapes`
+       edits 43 (LibraryMakeFace's two gone). Section 6 gains the rule of 1411. Construction's checks left are
+       geometry's (10G), BRepLib's writes skipped when they change nothing (needed outside an overlay), the sweep's
+       `Closed` flag, BRepFill_Filling's bindings of MakeWire's history, the pipe shell's, and 1410's point section
+       and `SameParameter`.

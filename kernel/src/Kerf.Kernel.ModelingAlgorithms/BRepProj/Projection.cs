@@ -127,13 +127,9 @@ public sealed class Projection
         sectionTool.ComputePCurveOn2(true);
         // Use Oriented Bounding Boxes inside Booleans to speed up calculation of the section
         sectionTool.SetUseOBB(true);
-        // OCCT.NET: the faces of a compound target are gathered in a new compound, which isn't locked, so the section
-        // would run destructively and write pcurves into the caller's (frozen) edges, as OCCT writes into its target.
-        // A target holding frozen shapes is sectioned non-destructively, as a frozen solid or face is (decision 939).
-        if (BrepTools.HoldsFrozen(aShape))
-        {
-            sectionTool.SetNonDestructive(true);
-        }
+        // Kerf: the faces of a compound target are gathered in a new compound, which isn't locked; the pave filler
+        // finds the caller's frozen faces below it and sections non-destructively, as it does a frozen solid or face
+        // (decisions 939, 1378). Inside an operation's overlay the section is destructive, as OCCT's.
         sectionTool.Build();
 
         // check for successful work of the section tool

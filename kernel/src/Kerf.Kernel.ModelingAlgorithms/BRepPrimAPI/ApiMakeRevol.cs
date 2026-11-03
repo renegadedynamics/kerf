@@ -10,6 +10,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -25,9 +26,9 @@ namespace Kerf.Engine.Construction.Api;
 /// wire to shell, face to solid, shell to compsolid. A degenerated edge shared by several faces is copied for each.
 /// </summary>
 /// <remarks>
-/// <para>Without copy, OCCT shares the generating shape's sub-shapes in the result and writes into them. A shape
-/// holding frozen TShapes is swept as an exact copy, and the result holds its own sub-shapes wherever the sweep left
-/// them unchanged (<see cref="MakeSweep"/>); the history answers for the caller's sub-shapes.</para>
+/// <para>Without copy, OCCT shares the generating shape's sub-shapes in the result and writes into them. Kerf sweeps
+/// the caller's shape itself in a working overlay (<see cref="MakeSweep"/>): the result holds its own sub-shapes
+/// wherever the sweep left them unchanged, and the history answers for the caller's sub-shapes directly.</para>
 /// <para>If an edge of the shape crosses the axis, the result is null (<see cref="MakeShape.Shape"/>
 /// returns a null shape, as OCCT does).</para>
 /// </remarks>
@@ -51,7 +52,8 @@ public class ApiMakeRevol : MakeSweep
     /// </summary>
     public ApiMakeRevol(in Shape s, in Axis3D a, double d, bool copy = false)
     {
-        Shape aS = GeneratingShapeForWrite(s);
+        using WorkingOverlay? overlay = BeginGenerating(s);
+        Shape aS = s;
         _revol = new Revol(CheckCore(aS), a, d, copy);
         _isBuild = false;
         if (!CheckValidity(CheckCore(aS), a))
@@ -68,7 +70,8 @@ public class ApiMakeRevol : MakeSweep
     /// <summary>The whole revolution of <paramref name="s"/> around <paramref name="a"/>.</summary>
     public ApiMakeRevol(in Shape s, in Axis3D a, bool copy = false)
     {
-        Shape aS = GeneratingShapeForWrite(s);
+        using WorkingOverlay? overlay = BeginGenerating(s);
+        Shape aS = s;
         _revol = new Revol(CheckCore(aS), a, 2.0 * Math.PI, copy);
         _isBuild = false;
         if (!CheckValidity(CheckCore(aS), a))
@@ -82,7 +85,7 @@ public class ApiMakeRevol : MakeSweep
         }
     }
 
-    /// <summary>The internal sweeping algorithm (on the copy of a frozen shape).</summary>
+    /// <summary>The internal sweeping algorithm (keyed by the generating shape's own sub-shapes).</summary>
     internal Revol Revol() => _revol;
 
     /// <summary>Builds the resulting shape (redefined from MakeShape).</summary>
@@ -224,7 +227,7 @@ public class ApiMakeRevol : MakeSweep
             }
         }
 
-        KeepUnchangedGenerating(ref _shape);
+        FinishGenerating(ref _shape);
     }
 
     // used in CheckValidity to find out is there
@@ -330,7 +333,8 @@ public class ApiMakeRevol : MakeSweep
     internal override NCollection_List<Shape> InternalGenerated(in Shape s)
     {
         _generated.Clear();
-        Shape ss = ToSwept(s);
+        using WorkingOverlay query = BeginQuery(); // Kerf: may build on demand
+        Shape ss = s;
 
         if (!_revol.IsUsed(ss))
         {
@@ -392,26 +396,35 @@ public class ApiMakeRevol : MakeSweep
     /// <summary>True if the shape <paramref name="s"/> has been deleted.</summary>
     public override bool IsDeleted(in Shape s)
     {
-        return !_revol.IsUsed(ToSwept(s));
+        return !_revol.IsUsed(s);
     }
 
     /// <summary>The shape at the beginning of the revolution generated with <paramref name="shape"/>, a sub-shape of the generating shape (frozen).</summary>
     public Shape FirstShape(in Shape shape) => Published(InternalFirstShape(shape));
 
     /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(ToSwept(shape)));
+    internal Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(shape));
 
     /// <summary>The shape at the end of the revolution generated with <paramref name="shape"/>, a sub-shape of the generating shape (frozen).</summary>
     public Shape LastShape(in Shape shape) => Published(InternalLastShape(shape));
 
     /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(ToSwept(shape)));
+    internal Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(shape));
 
     /// <summary>True if the result has degenerated edges.</summary>
     public bool HasDegenerated => !_degenerated.IsEmpty();
 
     /// <summary>The degenerated edges of the result (frozen).</summary>
-    public ISchematiqList<Shape> Degenerated() => PublishedList(_degenerated);
+    public ISchematiqList<Shape> Degenerated()
+    {
+        // Kerf: a degenerated edge of the generating shape, as it stands in the result
+        var degenerated = new NCollection_List<Shape>();
+        for (var it = new NCollection_List<Shape>.Iterator(_degenerated); it.More(); it.Next())
+        {
+            degenerated.Append(FromSwept(it.Value()));
+        }
+        return PublishedList(degenerated);
+    }
 
     /// <summary>The list of degenerated edges, unfrozen (OCCT's const reference).</summary>
     internal NCollection_List<Shape> InternalDegenerated() => _degenerated;

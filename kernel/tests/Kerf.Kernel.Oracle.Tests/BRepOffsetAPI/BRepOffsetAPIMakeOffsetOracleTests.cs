@@ -318,6 +318,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     [Fact]
     public void Random_closed_profiles_both_joins_and_signs()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anOracle = new Oracle(output, 5995);
         foreach (int i in Tape.Budget(300))
         {
@@ -364,6 +365,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     [Fact]
     public void Random_open_wires_closed_around_or_open()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anOracle = new Oracle(output, 5996);
         foreach (int i in Tape.Budget(300))
         {
@@ -467,6 +469,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     [Fact]
     public void Build123d_Offset2D_and_slots()
     {
+        Tape.AcceptOtherArguments(Tape.WireKeepsCallersEdges); // plan 3.2's second level (unit 10H3)
         var anOracle = new Oracle(output, 5997);
         Frame3D anXY = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         foreach (int i in Tape.Budget(120))

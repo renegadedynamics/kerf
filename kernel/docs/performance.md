@@ -160,7 +160,7 @@ Ranked by expected gain against cost. None changes results unless it says so.
 
 Anything beyond these (iteration order, different algorithms) waits for beyond-compatibility.md's decision point B.
 
-**Unit 10J** (decisions 16001 to 16010) took proposals 3, 4 and 7, and two hot spots of the Booleans' profile:
+**Unit 10J** (decisions 1400 to 1409) took proposals 3, 4 and 7, and two hot spots of the Booleans' profile:
 - **3:** the mesher's circle list no longer moves on removal (a marker in a `List<int>`, not a linked list).
 - **4:** `math_NewtonMinimum` keeps its `math_Jacobi` and `math_Gauss`: "extrude until" allocates 142 MB a
   recalculation, not 802 MB, and a parallel round of Bento's examples 11.8 GB, not 27.7 GB.

@@ -77,17 +77,20 @@ internal sealed partial class WorkingOverlay : IDisposable
     private readonly WorkingOverlay? _parent;
     private readonly Shape _input;
     private ReShape? _context;
-    private readonly ConcurrentDictionary<TShape, TShape> _working = new(ReferenceEqualityComparer.Instance);
+    // the working copies, and a bit per hash of their originals (most reads miss); both made at the first write, so an
+    // overlay nothing writes into costs little (unit 10H3: the makers open one per change)
+    private volatile ConcurrentDictionary<TShape, TShape>? _working;
     private readonly Lock _lock = new();
     private volatile int _workingCount;
-    private readonly long[] _filter = new long[FilterWords]; // a bit per hash of the written TShapes: most reads miss
+    private long[]? _filter;
     private volatile bool _isAssembling; // Finish reads the state before this overlay's writes
     private Dictionary<TShape, TShape>? _final;
     private NCollection_IndexedMap<Shape>? _inputSubShapes; // the input's sub-shapes as Finish found them
-    private History _history = new();
+    private History? _history;
     private bool _isFinished;
     private bool _isDisposed;
     private bool _isBegun; // opened by Begin (counted open until disposed), not detached
+    private bool _ignoreToleranceGuard;
 
     private WorkingOverlay(WorkingOverlay? parent, in Shape input, ReShape? context)
     {
@@ -110,6 +113,15 @@ internal sealed partial class WorkingOverlay : IDisposable
         Interlocked.Increment(ref s_openCount);
         return overlay;
     }
+
+    /// <summary>
+    /// Opens an overlay as <see cref="Begin"/> does, unless an operation's overlay is open here and unfinished: then
+    /// null, and the writes go to that overlay (unit 10H3). For an algorithm that another operation runs on shapes it
+    /// works on (a sweep of a profile in an evolved shape, the generator of a loft): OCCT writes in place, and the
+    /// calling operation reads the writes back and assembles them into its own result.
+    /// </summary>
+    public static WorkingOverlay? BeginUnlessInside(in Shape input, ReShape? context = null)
+        => Current is { IsFinished: false } ? null : Begin(input, context);
 
     /// <summary>The overlay current here, or null.</summary>
     public static WorkingOverlay? Current => Volatile.Read(ref s_openCount) == 0 ? null : t_current;
@@ -166,7 +178,7 @@ internal sealed partial class WorkingOverlay : IDisposable
         for (WorkingOverlay? overlay = current; overlay is not null; overlay = overlay._parent)
         {
             if (!overlay._isAssembling && overlay._workingCount != 0 && overlay.MayHold(tShape)
-                && overlay._working.TryGetValue(tShape, out view))
+                && overlay._working!.TryGetValue(tShape, out view))
             {
                 return true;
             }
@@ -223,19 +235,29 @@ internal sealed partial class WorkingOverlay : IDisposable
         return overlay is null || overlay._isFinished;
     }
 
+    /// <summary>
+    /// True if a write into <paramref name="tShape"/> would make its working copy here: it is frozen, not locked by its
+    /// flag, and an unfinished overlay is open. A setter whose value is already the TShape's skips the write then
+    /// (unit 10H3): the working copy would be given back as the original anyway, and making it costs.
+    /// </summary>
+    internal static bool TakesWrite(TShape tShape) => tShape.IsFrozen && !IsLocked(tShape);
+
     // The working copy of a frozen TShape, made at the first write from what the operation sees of it.
     private TShape Writable(TShape tShape)
     {
-        if (_working.TryGetValue(tShape, out TShape? working))
+        TShape? working = null;
+        if (_working?.TryGetValue(tShape, out working) == true)
         {
-            return working;
+            return working!;
         }
         lock (_lock)
         {
-            if (_working.TryGetValue(tShape, out working))
+            if (_working?.TryGetValue(tShape, out working) == true)
             {
-                return working;
+                return working!;
             }
+            _filter ??= new long[FilterWords];
+            _working ??= new ConcurrentDictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
             TShape source = ParentView(tShape);
             working = BrepTools.CopyData(source);
             for (var it = new NCollection_List<Shape>.Iterator(source._shapes); it.More(); it.Next())
@@ -244,7 +266,7 @@ internal sealed partial class WorkingOverlay : IDisposable
             }
             BrepTools.CopyFlags(source, working);
             (int word, long bit) = FilterBit(tShape);
-            Interlocked.Or(ref _filter[word], bit);
+            Interlocked.Or(ref _filter![word], bit);
             _working[tShape] = working;
             _workingCount++;
             return working;
@@ -262,7 +284,7 @@ internal sealed partial class WorkingOverlay : IDisposable
     private bool MayHold(TShape tShape)
     {
         (int word, long bit) = FilterBit(tShape);
-        return (Volatile.Read(ref _filter[word]) & bit) != 0;
+        return (Volatile.Read(ref _filter![word]) & bit) != 0;
     }
 
     // What the overlays this one is nested in make of the TShape (itself when none wrote into it).
@@ -270,7 +292,7 @@ internal sealed partial class WorkingOverlay : IDisposable
     {
         for (WorkingOverlay? overlay = _parent; overlay is not null; overlay = overlay._parent)
         {
-            if (overlay._workingCount != 0 && overlay._working.TryGetValue(tShape, out TShape? view))
+            if (overlay._workingCount != 0 && overlay._working!.TryGetValue(tShape, out TShape? view))
             {
                 return view;
             }
@@ -285,15 +307,18 @@ internal sealed partial class WorkingOverlay : IDisposable
     /// out), and the replacements its context records, with new TShapes for what changed and the input's own for the
     /// rest. In the context, a sub-shape of the input that changed without a request is recorded as replaced by what
     /// stands for it now (as <see cref="CopyAtEntry"/> does). Returns the assembled result, unfrozen. When nothing was
-    /// written, returns <paramref name="result"/> as it is.
+    /// written, returns <paramref name="result"/> as it is. With <paramref name="ignoreToleranceGuard"/>, a vertex whose
+    /// tolerance was only raised by BRepLib's rounding guard (<c>2 * Epsilon(tol)</c>) counts as unchanged, as in
+    /// <c>BrepTools.KeepUnchanged</c> (unit 10H3: the face of a planar wire, which updates every tolerance).
     /// </summary>
-    public Shape Finish(in Shape result, IEnumerable<Shape>? others = null)
+    public Shape Finish(in Shape result, IEnumerable<Shape>? others = null, bool ignoreToleranceGuard = false)
     {
         if (_isFinished)
         {
             throw new ProgramErrorException("WorkingOverlay::Finish called twice");
         }
         _isFinished = true;
+        _ignoreToleranceGuard = ignoreToleranceGuard;
         if (_workingCount == 0)
         {
             return result;
@@ -325,7 +350,7 @@ internal sealed partial class WorkingOverlay : IDisposable
                 Shape now = Assembled(sub);
                 if (!ReferenceEquals(now.TShape(), sub.TShape()) && global::Kerf.Engine.Topology.History.IsSupportedType(sub))
                 {
-                    _history.AddModified(sub, now);
+                    (_history ??= new History()).AddModified(sub, now);
                 }
             }
 
@@ -380,7 +405,7 @@ internal sealed partial class WorkingOverlay : IDisposable
     public History History()
     {
         CheckFinished();
-        return _history;
+        return _history ??= new History();
     }
 
     /// <summary>
@@ -528,7 +553,8 @@ internal sealed partial class WorkingOverlay : IDisposable
             return tShape;
         }
 
-        _working.TryGetValue(tShape, out TShape? working);
+        TShape? working = null;
+        _working?.TryGetValue(tShape, out working);
         TShape before = ParentView(tShape);
         NCollection_List<Shape> children = (working ?? before)._shapes;
         var assembled = new List<Shape>(children.Extent());
@@ -548,7 +574,7 @@ internal sealed partial class WorkingOverlay : IDisposable
 
         bool isDataChanged = working is not null
                              && (!IsSameChildren(before._shapes, working._shapes)
-                                 || !BrepTools.IsSameData(before, working, false));
+                                 || !BrepTools.IsSameData(before, working, _ignoreToleranceGuard));
         if (!isDataChanged && !isChildChanged)
         {
             _final[tShape] = tShape;
@@ -595,6 +621,10 @@ internal sealed partial class WorkingOverlay : IDisposable
             }
             if (changed is not null)
             {
+                if (!ReferenceEquals(now, childTShape) && !now.IsFrozen)
+                {
+                    now.Free(false); // as TopoDS_Builder::Add clears it (unit 10H3)
+                }
                 child.TShape(now);
                 changed.Add(child);
             }

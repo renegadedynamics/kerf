@@ -208,8 +208,7 @@ internal sealed class Rotation : Trsf
         }
         Vertex V_wnt = ShapeCasts.Vertex(aNewVertex);
         V_wnt.Orientation(ori);
-        // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
-        _builder.Builder().UpdateVertexOfFrozen(V_wnt, param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        _builder.Builder().UpdateVertex(V_wnt, param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in Shape aNewEdge, ref Shape aNewVertex, in Shape aGenE,

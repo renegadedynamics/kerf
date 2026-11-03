@@ -101,3 +101,6 @@ The first packages, for Bento's 3D-models extension.
 
 - Kerf's unit 10J: the kernel's `NCollection_Map` is `HashSet<T>`; the two places the layer used it (`ShapeHistory`,
   `Wire`) follow. No behaviour changes.
+- Kerf's unit 10H3: the kernel's extrusions, revolutions, sweeps and lofts no longer copy their inputs. Results are
+  as before: extruding a face taken from another part gives a solid that shares the face, its edges and vertices with
+  the part, which stays unchanged (new tests: `ConstructionInputsUnchangedTests`).

@@ -193,62 +193,42 @@ public sealed class Evolved
         PrivatePerform(spine, profile, axeProf, Join, solid);
     }
 
-    // OCCT.NET: the copy at entry (decisions 642-644). OCCT writes into the spine's own edges and vertices: the
-    // parallels at distance 0 (BRepFill_OffsetWire's Compute) and the uncut spine edges go into the result as they
-    // are, and Transfert, BRepLib.UpdateTolerances and the quilt write them (SameRange, SameParameter, tolerances,
-    // pcurves). A spine or profile holding frozen TShapes (a caller's) is copied exactly, the algorithm runs on the
-    // copies, and afterwards the caller's own sub-shapes come back wherever the algorithm left their copies unchanged
-    // (in the result, Top, Bottom and the generated lists), and the generated shapes are keyed by the caller's
-    // sub-shapes.
+    // Kerf: OCCT writes into the spine's own edges and vertices: the parallels at distance 0 (BRepFill_OffsetWire's
+    // Compute) and the uncut spine edges go into the result as they are, and Transfert, BRepLib.UpdateTolerances and the
+    // quilt write them (SameRange, SameParameter, tolerances, pcurves). The algorithm runs on the caller's spine and
+    // profile in a working overlay (unit 10H3, in place of decisions 642-644's copies): the result, Top, Bottom and the
+    // generated lists hold the caller's own sub-shapes wherever the algorithm left them unchanged, and the generated
+    // shapes are keyed by the caller's sub-shapes directly.
     private void PrivatePerform(in Face spine, in Wire profile, in CoordinateSystem axeProf, global::Kerf.Geometry.JoinKind Join, bool solid)
     {
-        CopyAtEntry spineEntry = new(spine);
-        CopyAtEntry profEntry = new(profile);
-        PrivatePerformInPlace(ShapeCasts.Face(spineEntry.Shape()), ShapeCasts.Wire(profEntry.Shape()), axeProf, Join, solid);
-        if (!spineEntry.IsCopied && !profEntry.IsCopied)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        PrivatePerformInPlace(spine, profile, axeProf, Join, solid);
+        if (overlay is null)
         {
             return;
         }
 
-        foreach (CopyAtEntry entry in new[] { profEntry, spineEntry })
+        List<Shape> others = [_top, _bottom];
+        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
         {
-            List<Shape> others = [_top, _bottom];
-            foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
             {
-                foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
-                {
-                    others.AddRange(byProf.Value);
-                }
+                others.AddRange(byProf.Value);
             }
-            _shape = entry.Finish(_shape, others);
-            _top = entry.Final(_top);
-            _bottom = entry.Final(_bottom);
-            foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
+        }
+        _shape = overlay.Finish(_shape, others);
+        _top = overlay.Final(_top);
+        _bottom = overlay.Final(_bottom);
+        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
+        {
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
             {
-                foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
+                for (NCollection_List<Shape>.Iterator it = new(byProf.Value); it.More(); it.Next())
                 {
-                    for (NCollection_List<Shape>.Iterator it = new(byProf.Value); it.More(); it.Next())
-                    {
-                        it.ChangeValue() = entry.Final(it.Value());
-                    }
+                    it.ChangeValue() = overlay.Final(it.Value());
                 }
             }
         }
-
-        // the keys: the caller's sub-shapes (spine first, then profile), in the same order
-        List<KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>>> entries = [.. _map];
-        _map.Clear();
-        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in entries)
-        {
-            NCollection_DataMap<Shape, NCollection_List<Shape>> byProf = NewProfMap();
-            foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in bySpine.Value)
-            {
-                byProf.Bind(profEntry.Original(item.Key), item.Value);
-            }
-            _map.Bind(spineEntry.Original(bySpine.Key), byProf);
-        }
-        _spine = ShapeCasts.Face(spine.Oriented(Forward));
-        _profile = ShapeCasts.Wire(profile.Oriented(Forward));
     }
 
     private void PrivatePerformInPlace(in Face spine, in Wire profile, in CoordinateSystem axeProf, global::Kerf.Geometry.JoinKind Join, bool solid)

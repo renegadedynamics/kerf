@@ -29,7 +29,7 @@ tests and benchmarks, and the modelling layer:
 
 ## What 10J did
 
-- **Measured first** (decisions 16001–16002): the Booleans' profile has no `Transform3D` cost to fix; its hot spots
+- **Measured first** (decisions 1400–1401): the Booleans' profile has no `Transform3D` cost to fix; its hot spots
   were the shapes' identity hash, a rectangular array per elementary extremum, and the mesher's list removal.
 - **Shape maps:** a TShape draws its hash once (`TShape._hash`); the maps iterate in insertion order, so nothing
   depends on its value. KERF0002 recognises Kerf's shape types again (it had matched nothing since the rename).
@@ -41,7 +41,7 @@ tests and benchmarks, and the modelling layer:
 - **Returned collections:** `BSplineSurface` and `BezierSurface` return `Grid<T>` (0-based) from `Poles()`,
   `Weights()` and `WeightsArray()`.
 - **Constant tables:** STEP AP214's type tables and MoniTool's typed-value library are frozen dictionaries.
-- **`NCollection_Map` is gone:** every use is a `HashSet<T>` (decision 16007), by a Roslyn rewrite from the compiler's
+- **`NCollection_Map` is gone:** every use is a `HashSet<T>` (decision 1406), by a Roslyn rewrite from the compiler's
   symbols (`Extent()`/`Size()` to `Count`, `IsEmpty()` to `Count == 0`, copies keeping the comparer).
 
 ## What is left, in order

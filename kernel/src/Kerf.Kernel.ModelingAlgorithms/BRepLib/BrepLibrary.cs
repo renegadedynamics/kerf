@@ -1236,6 +1236,12 @@ public static partial class BrepLibrary
         {
             ne = edge;
             nte = (BrepTEdge)edge.TShape()!;
+            if (nte.IsFrozen && !WorkingOverlay.IsLocked(nte))
+            {
+                // Kerf: the caller's edge in an operation's working overlay (unit 10H3): the loop below edits its
+                // representations, which are the working copy's
+                cList = nte.ChangeCurves();
+            }
         }
         else
         {

@@ -158,54 +158,6 @@ public static class Fill
         }
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // Copies of frozen inputs (decision 897)
-
-    /// <summary>
-    /// The two input shapes to write into: themselves when neither holds a
-    /// frozen TShape, else their copies, made at once so that the sub-shapes they share stay shared.
-    /// </summary>
-    private sealed class WriteCopies
-    {
-        public readonly Shape Original = new();
-        public readonly Shape Copy = new();
-        public readonly Dictionary<TShape, TShape>? Copies;
-        public readonly Shape S1, S2;
-
-        public WriteCopies(in Shape s1, in Shape s2)
-        {
-            S1 = s1;
-            S2 = s2;
-            if (!BrepTools.HoldsFrozen(s1) && !BrepTools.HoldsFrozen(s2))
-            {
-                return;
-            }
-
-            BrepBuilder b = new();
-            Compound holder = new();
-            b.MakeCompound(ref holder);
-            b.Add(holder, s1);
-            b.Add(holder, s2);
-            Original = holder;
-            Copy = BrepTools.ExactCopyForWrite(holder, out _, out Copies);
-            Iterator it = new(Copy, false, false);
-            S1 = it.Value();
-            it.Next();
-            S2 = it.Value();
-        }
-
-        /// <summary>Gives back in <paramref name="result"/> the caller's sub-shapes the algorithm left unchanged.</summary>
-        public Shape KeepUnchanged(in Shape result)
-        {
-            Shape aResult = result;
-            if (Copies is not null)
-            {
-                BrepTools.KeepUnchangedIn(Original, Copy, Copies, ref aResult, out _);
-            }
-            return aResult;
-        }
-    }
-
     //=================================================================================================
 
     /// <summary>
@@ -222,8 +174,12 @@ public static class Fill
     /// <summary><see cref="Face"/> without freezing the result, for ported callers that build on it.</summary>
     internal static Face InternalFace(in Edge edge1, in Edge edge2)
     {
-        WriteCopies copies = new(edge1, edge2);
-        return ShapeCasts.Face(copies.KeepUnchanged(FaceCore(ShapeCasts.Edge(copies.S1), ShapeCasts.Edge(copies.S2))));
+        // Kerf: OCCT writes into the edges (pcurves on the face, vertex parameters): in a working overlay (unit 10H3),
+        // so the face holds the caller's edges and vertices wherever it left them unchanged; inside an operation's
+        // overlay, the writes are that operation's
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        Face face = FaceCore(edge1, edge2);
+        return overlay is null ? face : ShapeCasts.Face(overlay.Finish(face));
     }
 
     private static Face FaceCore(Edge edge1, Edge edge2)
@@ -453,8 +409,9 @@ public static class Fill
     /// <summary><see cref="Shell"/> without freezing the result, for ported callers that build on it.</summary>
     internal static Shell InternalShell(in Wire wire1, in Wire wire2)
     {
-        WriteCopies copies = new(wire1, wire2);
-        return ShapeCasts.Shell(copies.KeepUnchanged(ShellCore(ShapeCasts.Wire(copies.S1), ShapeCasts.Wire(copies.S2))));
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape()); // Kerf: as InternalFace
+        Shell shell = ShellCore(wire1, wire2);
+        return overlay is null ? shell : ShapeCasts.Shell(overlay.Finish(shell));
     }
 
     private static Shell ShellCore(in Wire wire1, in Wire wire2)

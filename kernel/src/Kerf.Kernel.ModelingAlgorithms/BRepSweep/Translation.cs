@@ -136,8 +136,7 @@ internal sealed class Translation : Trsf
         {
             param = _vec.Magnitude();
         }
-        // OCCT.NET: frozen. Built on demand by the history after the result is published, the edge holds its vertices
-        _builder.Builder().UpdateVertexOfFrozen(ShapeCasts.Vertex(aNewVertex), param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     public override void SetGeneratingParameter(in Shape aNewEdge, ref Shape aNewVertex, in Shape aGenE,
