@@ -105,12 +105,18 @@ public class GeomAdaptor_PortTests
         Assert.Throws<DomainErrorException>(() => aGen.VPeriod());
         Assert.Equal(3, aGen.UDegree());
 
-        // OCCT (occt-issues.md): VTrim trims the curve, which carries U, and UTrim trims nothing
-        global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase aVTrim = aGen.VTrim(0.2, 0.6, 1e-7);
-        Assert.Equal((0.2, 0.6), (aVTrim.FirstUParameter(), aVTrim.LastUParameter()));
-        Assert.Equal(RealLast(), aVTrim.LastVParameter());
+        // VTrim bounds V, the distance along the direction, and UTrim the curve's parameter (OCCT's VTrim trimmed the
+        // curve and its UTrim nothing: occt-issues.md, GeomAdaptor_SurfaceOfLinearExtrusion; Kerf decision 16813)
+        global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase aVTrim = aGen.VTrim(-2.0, 7.0, 1e-7);
+        Assert.Equal((0.0, 1.0), (aVTrim.FirstUParameter(), aVTrim.LastUParameter()));
+        Assert.Equal((-2.0, 7.0), (aVTrim.FirstVParameter(), aVTrim.LastVParameter()));
+        AssertSameEval(aVTrim, aGeom, 0.3, -2.0);
         global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase aUTrim = aGen.UTrim(0.2, 0.6, 1e-7);
-        Assert.Equal((0.0, 1.0), (aUTrim.FirstUParameter(), aUTrim.LastUParameter()));
+        Assert.Equal((0.2, 0.6), (aUTrim.FirstUParameter(), aUTrim.LastUParameter()));
+        Assert.Equal(RealFirst(), aUTrim.FirstVParameter());
+        global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase aBoth = aVTrim.UTrim(0.2, 0.6, 1e-7);
+        Assert.Equal((0.2, 0.6, -2.0, 7.0), (aBoth.FirstUParameter(), aBoth.LastUParameter(), aBoth.FirstVParameter(), aBoth.LastVParameter()));
+        AssertSameEval(aBoth, aGeom, 0.5, 7.0);
     }
 
     [Fact]

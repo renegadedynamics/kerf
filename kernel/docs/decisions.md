@@ -15044,3 +15044,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        The five evaluators take the frame's Y direction, where OCCT turned X by +90° whatever the frame's sense. The
        test that pinned the mirroring checks the indirect parabola's grid against its own evaluation, its points
        equidistant from focus and directrix, on the side of the mirror axis the frame's Y says.
+16813. **An extrusion adaptor trims the direction it is asked to** (occt-issues.md,
+       GeomAdaptor_SurfaceOfLinearExtrusion::VTrim, UTrim). The adaptor keeps V bounds (unbounded until `VTrim` sets
+       them; OCCT had none); `VTrim` sets them and `UTrim` trims the curve, each keeping the other's. The test that
+       pinned the swap checks the bounds of each trim and of both, and their evaluation against the extrusion surface.
+       No recording moved: OCCT's algorithms reach extrusions through GeomAdaptor_Surface, not these trims.
