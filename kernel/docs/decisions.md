@@ -14970,3 +14970,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        point on its circle (the pinned test rewritten); an indirect tangency. The IntAna2d oracle's circle pairs move to
        plan 3.2's third level for those parameters: native's a is accepted where the port's is 2π − a on an indirect
        circle, or 0 for native's 2π.
+16707. **A parabola projected on a plane gets the right focal** (unit 6A's ProjLib_ProjectOnPlane::Load row). The
+       image of the parabola u ↦ O + u²/(4f) Xc + u Yc is O' + u²/(4f) f(Xc) + u f(Yc), a parabola of focal
+       f |f(Yc)|² / |f(Xc)| in the parameter u |f(Yc)|; OCCT dropped |f(Yc)|². The focal is now right, and where the
+       parameter must be kept (`KeepParam`) and |f(Yc)| isn't 1 the projection is approximated, as for a skew projection.
+       The pinned test asserts focal 0.5 cos² on a plane tilted about the parabola's axis, the image of sampled points,
+       and the kept parameter.

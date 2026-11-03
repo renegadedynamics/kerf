@@ -258,19 +258,27 @@ public class ProjLib_ProjectOnPlaneTests
     }
 
     [Fact]
-    public void Parabola_TiltedAboutItsXAxis_WrongFocal_OcctBug()
+    public void Parabola_TiltedAboutItsXAxis_IsParabola()
     {
-        // OCCT: the focal of the projected parabola is Focal / |f(Xc)|, which ignores the shortening of the Y
-        // direction: here the image is the parabola of focal 0.5 * cos^2, but OCCT builds focal 0.5.
+        // The projection shortens the parabola's Y direction only: x = y^2 / (4 * 0.5) becomes, with y' = y cos,
+        // x = y'^2 / (4 * 0.5 cos^2), focal 0.5 cos^2 (OCCT built focal 0.5: occt-issues.md, decision 16707).
         double a = M_PI / 6;
         CurveAdaptor aC = new(new ParabolaCurve3D(new Frame3D(new Point3D(0, 0, 4), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.5), -3.0, 2.0);
         ProjectOnPlane aProj = new(TiltedPlane());
         aProj.Load(aC, Tol, false);
         Assert.Equal(CurveKind.Parabola, aProj.GetType());
-        Assert.Equal(0.5, aProj.Parabola().Focal(), 1.0e-12);
-        Assert.NotEqual(0.5 * Math.Cos(a) * Math.Cos(a), aProj.Parabola().Focal(), 1.0e-3);
-        Point3D anImage = ProjectPnt(TiltedPlane(), TiltedPlane().Direction(), aC.Value(-3.0));
-        Assert.True(DistanceToCurve(aProj.GetResult()!.Curve()!, anImage) > 1.0e-2);
+        Assert.Equal(0.5 * Math.Cos(a) * Math.Cos(a), aProj.Parabola().Focal(), 1.0e-12);
+        AssertSameImage(aProj, aC, 1.0e-7);
+
+        // Keeping the parameter, the parabola's parameter would be scaled by cos: approximated, at the same parameter
+        ProjectOnPlane aKept = new(TiltedPlane());
+        aKept.Load(aC, Tol, true);
+        Assert.Equal(CurveKind.BSplineCurve, aKept.GetType());
+        for (int i = 0; i <= 10; i++)
+        {
+            double u = -3.0 + 0.5 * i;
+            Assert.True(aKept.Value(u).Distance(ProjectPnt(TiltedPlane(), TiltedPlane().Direction(), aC.Value(u))) < 1.0e-5);
+        }
     }
 
     [Fact]
