@@ -3,7 +3,10 @@ using System.Text;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Errors;
+namespace Build123d.Tests.Errors;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// Broken data and degenerate geometry give exceptions, never a crash or a hang: a test host that survives these

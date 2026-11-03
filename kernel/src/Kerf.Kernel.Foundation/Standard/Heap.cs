@@ -11,8 +11,8 @@ namespace Kerf.Engine.Foundation.Std;
 /// </summary>
 /// <remarks>
 /// Written from MSVC's <c>&lt;__msvc_heap_algorithms.hpp&gt;</c> (Visual Studio 2022, toolset 14.44:
-/// <c>_Push_heap_by_index</c>, <c>_Pop_heap_hole_by_index</c>, <c>_Pop_heap_hole_unchecked</c>,
-/// <c>_Pop_heap_unchecked</c>, <c>_Make_heap_unchecked</c>) and <c>&lt;algorithm&gt;</c> (<c>_Sort_heap_unchecked</c>):
+/// <c>PushHeapByIndex</c>, <c>PopHeapHoleByIndex</c>, <c>_Pop_heap_hole_unchecked</c>,
+/// <c>PopHeapUnchecked</c>, <c>_Make_heap_unchecked</c>) and <c>&lt;algorithm&gt;</c> (<c>_Sort_heap_unchecked</c>):
 /// the same holes, the same comparisons in the same order, the same moves. The predicate is C++'s "less", called as
 /// <c>_Pred(left, right)</c> exactly where MSVC calls it. Decision 491; the order is checked against orders recorded
 /// from MSVC-compiled programs (tests).
@@ -34,7 +34,7 @@ public static class Heap
             // reheap top half, bottom to top
             --_Hole;
             T _Val = range[_Hole];
-            _Pop_heap_hole_by_index(range, _Hole, _Bottom, _Val, pred);
+            PopHeapHoleByIndex(range, _Hole, _Bottom, _Val, pred);
         }
     }
 
@@ -44,13 +44,13 @@ public static class Heap
         // order heap by repeatedly popping
         for (int _Last = range.Length; _Last >= 2; --_Last)
         {
-            _Pop_heap_unchecked(range[.._Last], pred);
+            PopHeapUnchecked(range[.._Last], pred);
         }
     }
 
     /// <summary>Moves the largest element to the end and makes the rest a heap again (<c>std::pop_heap</c>).</summary>
     public static void pop_heap<T, TPred>(Span<T> range, TPred pred) where TPred : ILess<T>
-        => _Pop_heap_unchecked(range, pred);
+        => PopHeapUnchecked(range, pred);
 
     /// <summary>Pushes the last element onto the heap before it (<c>std::push_heap</c>).</summary>
     public static void push_heap<T, TPred>(Span<T> range, TPred pred) where TPred : ILess<T>
@@ -59,12 +59,12 @@ public static class Heap
         if (2 <= _Count)
         {
             T _Val = range[--_Count];
-            _Push_heap_by_index(range, _Count, 0, _Val, pred);
+            PushHeapByIndex(range, _Count, 0, _Val, pred);
         }
     }
 
     // percolate _Hole to _Top or where _Val belongs
-    private static void _Push_heap_by_index<T, TPred>(Span<T> _First, int _Hole, int _Top, T _Val, TPred _Pred)
+    private static void PushHeapByIndex<T, TPred>(Span<T> _First, int _Hole, int _Top, T _Val, TPred _Pred)
         where TPred : ILess<T>
     {
         for (int _Idx = (_Hole - 1) >> 1; _Top < _Hole && _Pred.Less(_First[_Idx], _Val); _Idx = (_Hole - 1) >> 1)
@@ -78,7 +78,7 @@ public static class Heap
     }
 
     // percolate _Hole to _Bottom, then push _Val
-    private static void _Pop_heap_hole_by_index<T, TPred>(Span<T> _First, int _Hole, int _Bottom, T _Val, TPred _Pred)
+    private static void PopHeapHoleByIndex<T, TPred>(Span<T> _First, int _Hole, int _Bottom, T _Val, TPred _Pred)
         where TPred : ILess<T>
     {
         int _Top = _Hole;
@@ -107,11 +107,11 @@ public static class Heap
             _Hole = _Bottom - 1;
         }
 
-        _Push_heap_by_index(_First, _Hole, _Top, _Val, _Pred);
+        PushHeapByIndex(_First, _Hole, _Top, _Val, _Pred);
     }
 
     // pop *_First to *(_Last - 1) and reheap
-    private static void _Pop_heap_unchecked<T, TPred>(Span<T> range, TPred _Pred) where TPred : ILess<T>
+    private static void PopHeapUnchecked<T, TPred>(Span<T> range, TPred _Pred) where TPred : ILess<T>
     {
         if (2 <= range.Length)
         {
@@ -119,7 +119,7 @@ public static class Heap
             T _Val = range[_Last];
             // _Pop_heap_hole_unchecked(_First, _Last, _Last, _Val): pop *_First to *_Dest and reheap
             range[_Last] = range[0];
-            _Pop_heap_hole_by_index(range, 0, _Last, _Val, _Pred);
+            PopHeapHoleByIndex(range, 0, _Last, _Val, _Pred);
         }
     }
 }

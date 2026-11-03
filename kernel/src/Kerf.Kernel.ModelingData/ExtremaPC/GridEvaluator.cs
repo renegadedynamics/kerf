@@ -70,8 +70,8 @@ public sealed class GridEvaluator
     /// Builds the grid from GeomGridEval D1 results at the given parameters (any bounds; ascending for B-spline
     /// evaluators, as GeomGridEval requires).
     /// </summary>
-    public void BuildGrid<GridEval>(GridEval eval, math_Vector theParams)
-        where GridEval : GeomGridEvalGrid.ICurveEvaluator
+    public void BuildGrid<TGridEval>(TGridEval eval, math_Vector theParams)
+        where TGridEval : GeomGridEvalGrid.ICurveEvaluator
     {
         // Use Array1() accessor to pass to GeomGridEval which expects NCollection_Array1
         NCollection_Array1<Curve3D.ResD1> d1Grid = eval.EvaluateGridD1(theParams.Array1());

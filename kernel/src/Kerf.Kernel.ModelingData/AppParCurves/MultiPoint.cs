@@ -63,7 +63,7 @@ public class MultiPoint
         NCollection_HArray1<Point3D> tab3d = new(1, _nbP);
         _ttabPoint = tab3d;
         int lower = tabP.Lower();
-        NCollection_Array1<Point3D> p3d = tabPoint.ChangeArray1();
+        NCollection_Array1<Point3D> p3d = TabPoint.ChangeArray1();
         for (int i = 1; i <= tabP.Length(); i++)
         {
             p3d.SetValue(i, tabP.Value(lower + i - 1));
@@ -78,7 +78,7 @@ public class MultiPoint
         NCollection_HArray1<Point2D> tab2d = new(1, _nbP2d);
         _ttabPoint2d = tab2d;
         int lower = tabP2d.Lower();
-        NCollection_Array1<Point2D> p2d = tabPoint2d.ChangeArray1();
+        NCollection_Array1<Point2D> p2d = TabPoint2d.ChangeArray1();
         for (int i = 1; i <= _nbP2d; i++)
         {
             p2d.SetValue(i, tabP2d.Value(lower + i - 1));
@@ -94,14 +94,14 @@ public class MultiPoint
         _ttabPoint = t3d;
         NCollection_HArray1<Point2D> t2d = new(1, _nbP2d);
         _ttabPoint2d = t2d;
-        NCollection_Array1<Point3D> p3d = tabPoint.ChangeArray1();
+        NCollection_Array1<Point3D> p3d = TabPoint.ChangeArray1();
         int i, lower = tabP.Lower();
         for (i = 1; i <= _nbP; i++)
         {
             p3d.SetValue(i, tabP.Value(lower + i - 1));
         }
         lower = tabP2d.Lower();
-        NCollection_Array1<Point2D> p2d = tabPoint2d.ChangeArray1();
+        NCollection_Array1<Point2D> p2d = TabPoint2d.ChangeArray1();
         for (i = 1; i <= _nbP2d; i++)
         {
             p2d.SetValue(i, tabP2d.Value(lower + i - 1));
@@ -117,10 +117,10 @@ public class MultiPoint
         _nbP2d = other._nbP2d;
     }
 
-    // OCCT's tabPoint and tabPoint2d macros (down-casts of the handles)
-    private NCollection_HArray1<Point3D> tabPoint => _ttabPoint!;
+    // OCCT's TabPoint and TabPoint2d macros (down-casts of the handles)
+    private NCollection_HArray1<Point3D> TabPoint => _ttabPoint!;
 
-    private NCollection_HArray1<Point2D> tabPoint2d => _ttabPoint2d!;
+    private NCollection_HArray1<Point2D> TabPoint2d => _ttabPoint2d!;
 
     /// <summary>The number of 3d points.</summary>
     public int PointCount => _nbP;
@@ -158,7 +158,7 @@ public class MultiPoint
         Point3D p, newP = new();
         p = Point(cuIndex);
         newP.SetCoord(x + p.X() * dx, y + p.Y() * dy, z + p.Z() * dz);
-        tabPoint.SetValue(cuIndex, newP);
+        TabPoint.SetValue(cuIndex, newP);
     }
 
     /// <summary>
@@ -180,14 +180,14 @@ public class MultiPoint
     public void SetPoint(int index, in Point3D point)
     {
         Standard_OutOfRange_Raise_if((index <= 0) || (index > _nbP), "AppParCurves_MultiPoint::SetPoint() - wrong index");
-        tabPoint.SetValue(index, point);
+        TabPoint.SetValue(index, point);
     }
 
     /// <summary>The 3d point of range <paramref name="index"/> (1 to NbPoints).</summary>
     public Point3D Point(int index)
     {
         Standard_OutOfRange_Raise_if((index <= 0) || (index > _nbP), "AppParCurves_MultiPoint::Point() - wrong index");
-        return tabPoint.Value(index);
+        return TabPoint.Value(index);
     }
 
     /// <summary>Sets the 2d point of range <paramref name="index"/> (NbPoints + 1 to NbPoints + NbPoints2d).</summary>
@@ -195,7 +195,7 @@ public class MultiPoint
     {
         Standard_OutOfRange_Raise_if((index <= _nbP) || (index > _nbP + _nbP2d),
                                      "AppParCurves_MultiPoint::SetPoint2d() - wrong index");
-        tabPoint2d.SetValue(index - _nbP, point);
+        TabPoint2d.SetValue(index - _nbP, point);
     }
 
     /// <summary>The 2d point of range <paramref name="index"/> (NbPoints + 1 to NbPoints + NbPoints2d).</summary>
@@ -203,7 +203,7 @@ public class MultiPoint
     {
         Standard_OutOfRange_Raise_if((index <= _nbP) || (index > _nbP + _nbP2d),
                                      "AppParCurves_MultiPoint::Point2d() - wrong index");
-        return tabPoint2d.Value(index - _nbP);
+        return TabPoint2d.Value(index - _nbP);
     }
 
     /// <summary>Writes the points.</summary>
@@ -214,21 +214,21 @@ public class MultiPoint
         o.Write("It contains " + Int(nbPnts3D) + " 3d points and " + Int(nbPnts2D) + " 2d points." + '\n');
         if (nbPnts3D > 0)
         {
-            for (int i = tabPoint.Lower(); i <= tabPoint.Upper(); i++)
+            for (int i = TabPoint.Lower(); i <= TabPoint.Upper(); i++)
             {
                 o.Write("3D-Point #" + Int(i) + '\n');
-                o.Write(" Pole x = " + Real(tabPoint.Value(i).X()) + '\n');
-                o.Write(" Pole y = " + Real(tabPoint.Value(i).Y()) + '\n');
-                o.Write(" Pole z = " + Real(tabPoint.Value(i).Z()) + '\n');
+                o.Write(" Pole x = " + Real(TabPoint.Value(i).X()) + '\n');
+                o.Write(" Pole y = " + Real(TabPoint.Value(i).Y()) + '\n');
+                o.Write(" Pole z = " + Real(TabPoint.Value(i).Z()) + '\n');
             }
         }
         if (nbPnts2D > 0)
         {
-            for (int i = tabPoint2d.Lower(); i <= tabPoint2d.Upper(); i++)
+            for (int i = TabPoint2d.Lower(); i <= TabPoint2d.Upper(); i++)
             {
                 o.Write("2D-Point #" + Int(i) + '\n');
-                o.Write(" Pole x = " + Real(tabPoint2d.Value(i).X()) + '\n');
-                o.Write(" Pole y = " + Real(tabPoint2d.Value(i).Y()) + '\n');
+                o.Write(" Pole x = " + Real(TabPoint2d.Value(i).X()) + '\n');
+                o.Write(" Pole y = " + Real(TabPoint2d.Value(i).Y()) + '\n');
             }
         }
     }

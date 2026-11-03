@@ -77,10 +77,10 @@ internal sealed class CopyAtEntry
             _originals[pair.Value] = pair.Key;
         }
 
-        context?.ReplaceTShapes(copies, S_noImages);
+        context?.ReplaceTShapes(copies, NoImages);
     }
 
-    private static readonly Dictionary<TShape, TShape> S_noImages = new(ReferenceEqualityComparer.Instance);
+    private static readonly Dictionary<TShape, TShape> NoImages = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Gives the helper the context an algorithm created after the entry (ShapeFix_Face's FixMissingSeam creates one

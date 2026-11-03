@@ -41,7 +41,7 @@ internal static class ShapeLog
     private static string? s_test;
     private static int s_seq;
     // The TShapes seen in the current test, by the hash of the shape without its location; IsPartner settles collisions
-    private static readonly Dictionary<ulong, List<global::Kerf.Topology.Shape>> s_seen = [];
+    private static readonly Dictionary<ulong, List<global::Kerf.Topology.Shape>> Seen = [];
 
     /// <summary>Logs <paramref name="wrapped"/> if it is new in the running test.</summary>
     internal static void Record(Shape shape, global::Kerf.Topology.Shape wrapped)
@@ -57,7 +57,7 @@ internal static class ShapeLog
                 {
                     s_test = test;
                     s_seq = 0;
-                    s_seen.Clear();
+                    Seen.Clear();
                 }
                 if (!Register(wrapped))
                     return;
@@ -119,8 +119,8 @@ internal static class ShapeLog
         var identity = new Placement();
         var bare = shape.Located(identity);
         var key = bare.StdHash();
-        if (!s_seen.TryGetValue(key, out var bucket))
-            s_seen[key] = bucket = [];
+        if (!Seen.TryGetValue(key, out var bucket))
+            Seen[key] = bucket = [];
         foreach (var seen in bucket)
             if (seen.IsPartner(bare))
                 return false;
@@ -128,7 +128,7 @@ internal static class ShapeLog
         return true;
     }
 
-    private static readonly Assembly s_library = typeof(ShapeLog).Assembly;
+    private static readonly Assembly Library = typeof(ShapeLog).Assembly;
 
     // Plumbing that wraps a kernel shape rather than making one
     private static readonly HashSet<string> s_plumbing =
@@ -147,7 +147,7 @@ internal static class ShapeLog
             if (method is null || type is null)
                 continue;
             var assembly = type.Assembly;
-            if (assembly == s_library)
+            if (assembly == Library)
             {
                 var name = Name(method);
                 if (inner is null && !s_plumbing.Contains(name.Method))

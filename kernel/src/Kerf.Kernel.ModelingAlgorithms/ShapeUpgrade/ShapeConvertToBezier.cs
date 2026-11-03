@@ -443,7 +443,7 @@ public class ShapeConvertToBezier : ShapeDivide
                         Point2D p2d1next = beziernext.Value(f2);
                         Point2D p2d2next = beziernext.Value(l2);
 
-                        void setPoles(int index, int indexNext, in Point2D pnt)
+                        void SetPoles(int index, int indexNext, in Point2D pnt)
                         {
                             Point2D aPnt = pnt;
                             change(edge, bezier!, b => b.SetPole(index, aPnt));
@@ -455,7 +455,7 @@ public class ShapeConvertToBezier : ShapeDivide
                             if (p2d2.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d1next.XY()));
-                                setPoles(bezier.PoleCount, 1, pmid);
+                                SetPoles(bezier.PoleCount, 1, pmid);
                             }
                         }
 
@@ -464,7 +464,7 @@ public class ShapeConvertToBezier : ShapeDivide
                             if (p2d2.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d2next.XY()));
-                                setPoles(bezier.PoleCount, beziernext.PoleCount, pmid);
+                                SetPoles(bezier.PoleCount, beziernext.PoleCount, pmid);
                             }
                         }
 
@@ -473,7 +473,7 @@ public class ShapeConvertToBezier : ShapeDivide
                             if (p2d1.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d1.XY() + p2d1next.XY()));
-                                setPoles(1, 1, pmid);
+                                SetPoles(1, 1, pmid);
                             }
                         }
 
@@ -482,7 +482,7 @@ public class ShapeConvertToBezier : ShapeDivide
                             if (p2d1.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d1.XY() + p2d2next.XY()));
-                                setPoles(1, beziernext.PoleCount, pmid);
+                                SetPoles(1, beziernext.PoleCount, pmid);
                             }
                         }
                     }

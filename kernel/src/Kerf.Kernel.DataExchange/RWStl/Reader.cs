@@ -238,7 +238,7 @@ public abstract class Reader : Transient
         return zero < 0 ? line : line[..zero];
     }
 
-    private static bool str_starts_with(ReadOnlySpan<byte> str, string word, int n)
+    private static bool StrStartsWith(ReadOnlySpan<byte> str, string word, int n)
     {
         int i = 0;
         while (i < str.Length && IsSpace(str[i]))
@@ -351,19 +351,19 @@ public abstract class Reader : Transient
                 global::Kerf.Engine.Foundation.Message.SendFail("Error: premature end of file");
                 return false;
             }
-            if (str_starts_with(CStr(line), "endsolid", 8))
+            if (StrStartsWith(CStr(line), "endsolid", 8))
             {
                 // end of STL code
                 break;
             }
-            if (!str_starts_with(CStr(line), "facet", 5))
+            if (!StrStartsWith(CStr(line), "facet", 5))
             {
                 global::Kerf.Engine.Foundation.Message.SendFail("Error: unexpected format of facet at line " + (nbLine + 1));
                 return false;
             }
 
             isLine = buffer.ReadLine(stream, out line); // "outer loop"
-            if (!isLine || !str_starts_with(CStr(line), "outer", 5))
+            if (!isLine || !StrStartsWith(CStr(line), "outer", 5))
             {
                 global::Kerf.Engine.Foundation.Message.SendFail("Error: unexpected format of facet at line " + (nbLine + 1));
                 return false;

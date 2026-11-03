@@ -202,12 +202,12 @@ public partial class PaveFiller
         UpdatePaveBlocksWithSDVertices();
     }
 
-    private static void UpdateIntfsWithSDVertices<InterfType>(DS ds, NCollection_DynamicArray<InterfType> interfs)
-        where InterfType : Interf
+    private static void UpdateIntfsWithSDVertices<TInterfType>(DS ds, NCollection_DynamicArray<TInterfType> interfs)
+        where TInterfType : Interf
     {
         for (int i = 0; i < interfs.Length(); i++)
         {
-            InterfType intf = interfs[i];
+            TInterfType intf = interfs[i];
             if (intf.HasIndexNew(out int ind))
             {
                 int indSD = 0;

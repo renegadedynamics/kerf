@@ -1,6 +1,9 @@
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// Every selector takes plain values, as a spreadsheet formula passes them: build123d's <c>property</c> arguments by

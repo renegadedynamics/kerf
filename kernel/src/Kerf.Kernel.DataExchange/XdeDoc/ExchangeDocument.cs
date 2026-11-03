@@ -1172,7 +1172,7 @@ public sealed class ExchangeDocument
 
     // ---------------------------------------------------------------------------------------------- removal
 
-    private static readonly ColorType[] S_colorTypes =
+    private static readonly ColorType[] ColorTypes =
         [ColorType.ColorGen, ColorType.ColorSurf, ColorType.ColorCurv];
 
     /// <summary>
@@ -1747,7 +1747,7 @@ public sealed class ExchangeDocument
         node.Attributes = attributes with { Layers = [], GenericColor = null, SurfaceColor = null, CurveColor = null };
         node.HasName = attributes.Name is not null;
         node.ColorRefs = null;
-        foreach (ColorType type in S_colorTypes)
+        foreach (ColorType type in ColorTypes)
         {
             if (attributes.Color(type) is ColorWithAlpha color)
             {
@@ -1775,7 +1775,7 @@ public sealed class ExchangeDocument
         var products = new Dictionary<int, DocumentProduct>();
         var inProgress = new HashSet<int>();
 
-        DocumentProduct productOf(int index)
+        DocumentProduct ProductOf(int index)
         {
             if (products.TryGetValue(index, out DocumentProduct? known))
             {
@@ -1795,7 +1795,7 @@ public sealed class ExchangeDocument
                 {
                     if (_nodes[child].Referred >= 0)
                     {
-                        components.Add(instanceOf(child));
+                        components.Add(InstanceOf(child));
                     }
                 }
                 product = DocumentProduct.Assembly(components, attributes);
@@ -1821,7 +1821,7 @@ public sealed class ExchangeDocument
             return product;
         }
 
-        Instance instanceOf(int theRef)
+        Instance InstanceOf(int theRef)
         {
             // a reference to a reference: the locations composed, the last product
             Placement location = _nodes[theRef].RefLocation;
@@ -1836,7 +1836,7 @@ public sealed class ExchangeDocument
                 location = location.Multiplied(_nodes[referred].RefLocation);
                 referred = _nodes[referred].Referred;
             }
-            return new Instance(productOf(referred), location, GetAttributes(Label(theRef)));
+            return new Instance(ProductOf(referred), location, GetAttributes(Label(theRef)));
         }
 
         var roots = new List<Instance>();
@@ -1845,8 +1845,8 @@ public sealed class ExchangeDocument
         foreach (Label root in free)
         {
             roots.Add(_nodes[root.Index].Referred >= 0
-                         ? instanceOf(root.Index)
-                         : new Instance(productOf(root.Index)));
+                         ? InstanceOf(root.Index)
+                         : new Instance(ProductOf(root.Index)));
         }
 
         var layers = new List<Layer>();
@@ -1884,7 +1884,7 @@ public sealed class ExchangeDocument
         }
 
         var labels = new Dictionary<DocumentProduct, int>(ReferenceEqualityComparer.Instance);
-        int labelOf(DocumentProduct product)
+        int LabelOf(DocumentProduct product)
         {
             if (labels.TryGetValue(product, out int known))
             {
@@ -1899,7 +1899,7 @@ public sealed class ExchangeDocument
                 node.IsAssembly = true;
                 foreach (Instance component in product.Components)
                 {
-                    int referred = labelOf(component.Product);
+                    int referred = LabelOf(component.Product);
                     int aRef = doc.NewChild(index);
                     doc.MakeReference(aRef, referred, component.Location, false);
                     doc.SetAttributes(doc.Label(aRef), component.Attributes);
@@ -1936,11 +1936,11 @@ public sealed class ExchangeDocument
         {
             if (root.Location.IsIdentity && root.Attributes.IsEmpty)
             {
-                labelOf(root.Product);
+                LabelOf(root.Product);
                 continue;
             }
             int aRef = doc.NewChild(ShapesIndex);
-            int referred = labelOf(root.Product);
+            int referred = LabelOf(root.Product);
             doc.MakeReference(aRef, referred, root.Location, false);
             doc.SetAttributes(doc.Label(aRef), root.Attributes);
         }

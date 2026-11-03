@@ -81,38 +81,38 @@ public sealed class SameParameter
     // of myMaxArraySize values; the port owns four arrays, swapped as OCCT swaps the pointers.
     private sealed class Approx_SameParameter_Data
     {
-        public CurveOnSurface myCOnS = null!; // Curve on surface.
-        public int myNbPnt;                             // Number of points.
-        public double[] myPC3d = null!;                 // Parameters on 3d curve.
-        public double[] myPC2d = null!;                 // Parameters on 2d curve.
+        public CurveOnSurface COnS = null!; // Curve on surface.
+        public int NbPnt;                             // Number of points.
+        public double[] PC3d = null!;                 // Parameters on 3d curve.
+        public double[] PC2d = null!;                 // Parameters on 2d curve.
 
         // Second data arrays. Used in loop over poles.
-        public double[] myNewPC3d = null!; // Parameters on 3d curve.
-        public double[] myNewPC2d = null!; // Parameters on 2d curve.
+        public double[] NewPC3d = null!; // Parameters on 3d curve.
+        public double[] NewPC2d = null!; // Parameters on 2d curve.
 
         // Parameters ranges.
-        public double myC3dPF; // Curve 3d Parameter First.
-        public double myC3dPL; // Curve 3d Parameter Last.
-        public double myC2dPF; // Curve 2d Parameter First.
-        public double myC2dPL; // Curve 2d Parameter Last.
+        public double C3dPF; // Curve 3d Parameter First.
+        public double C3dPL; // Curve 3d Parameter Last.
+        public double C2dPF; // Curve 2d Parameter First.
+        public double C2dPL; // Curve 2d Parameter Last.
 
         public double myTol; // Working tolerance.
 
         // Swap data arrays and update number of points.
         public void Swap(int newNbPoints)
         {
-            myNbPnt = newNbPoints;
+            NbPnt = newNbPoints;
             double[] temp;
 
             // 3-D
-            temp = myPC3d;
-            myPC3d = myNewPC3d;
-            myNewPC3d = temp;
+            temp = PC3d;
+            PC3d = NewPC3d;
+            NewPC3d = temp;
 
             // 2-D
-            temp = myPC2d;
-            myPC2d = myNewPC2d;
-            myNewPC2d = temp;
+            temp = PC2d;
+            PC2d = NewPC2d;
+            NewPC2d = temp;
         }
     }
 
@@ -370,16 +370,16 @@ public sealed class SameParameter
 
         // Create and fill data structure.
         Approx_SameParameter_Data data = new();
-        data.myCOnS = new CurveOnSurface(_hCurve2d, _surf);
-        data.myC2dPF = data.myCOnS.FirstParameter();
-        data.myC2dPL = data.myCOnS.LastParameter();
-        data.myC3dPF = _c3d.FirstParameter();
-        data.myC3dPL = _c3d.LastParameter();
-        data.myNbPnt = 0; // No points initially.
-        data.myPC2d = qpcons;
-        data.myPC3d = qpc3d;
-        data.myNewPC2d = qnewpcons;
-        data.myNewPC3d = qnewpc3d;
+        data.COnS = new CurveOnSurface(_hCurve2d, _surf);
+        data.C2dPF = data.COnS.FirstParameter();
+        data.C2dPL = data.COnS.LastParameter();
+        data.C3dPF = _c3d.FirstParameter();
+        data.C3dPL = _c3d.LastParameter();
+        data.NbPnt = 0; // No points initially.
+        data.PC2d = qpcons;
+        data.PC3d = qpc3d;
+        data.NewPC2d = qnewpcons;
+        data.NewPC3d = qnewpc3d;
         data.myTol = tolerance;
 
         // Build initial distribution.
@@ -393,11 +393,11 @@ public sealed class SameParameter
         // Check same parameter state on distribution.
         double maxSqDeviation = 0.0;
         const double percentOfBadProj = 0.3;
-        int nbPnt = data.myNbPnt - RealToInt(percentOfBadProj * data.myNbPnt);
+        int nbPnt = data.NbPnt - RealToInt(percentOfBadProj * data.NbPnt);
         _sameParameter = CheckSameParameter(data, out maxSqDeviation);
         if (_sameParameter)
         {
-            _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+            _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
             _done = true;
             return;
         }
@@ -406,9 +406,9 @@ public sealed class SameParameter
             // Control number of sample points after checking sameparameter
             // If number of points is less then initial one, it means that there are
             // problems with projection
-            if (data.myNbPnt < nbPnt)
+            if (data.NbPnt < nbPnt)
             {
-                _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+                _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
                 _curve2d = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(_hCurve2d);
                 _curve2dIsBuilt = false;
                 _done = false;
@@ -420,12 +420,12 @@ public sealed class SameParameter
         // reparametring is possible and calculate the tangents
         // at the extremities of the function of change of variable.
         double tangent0 = 0.0, tangent1 = 0.0;
-        if (!ComputeTangents(data.myCOnS, ref tangent0, ref tangent1))
+        if (!ComputeTangents(data.COnS, ref tangent0, ref tangent1))
         {
             // Cannot compute tangents.
             _sameParameter = false;
             _done = false;
-            _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+            _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
             return;
         }
 
@@ -443,8 +443,8 @@ public sealed class SameParameter
         do
         {
             // Interpolation data.
-            int num_knots = data.myNbPnt + 7;
-            int num_poles = data.myNbPnt + 3;
+            int num_knots = data.NbPnt + 7;
+            int num_poles = data.NbPnt + 3;
             NCollection_Array1<double> poles = new(1, num_poles);
             NCollection_Array1<double> flatKnots = new(1, num_knots);
 
@@ -453,13 +453,13 @@ public sealed class SameParameter
                 // Interpolation fails.
                 _sameParameter = false;
                 _done = false;
-                _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+                _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
                 return;
             }
 
             double algtol = Math.Sqrt(besttol2);
             interpolok =
-              Check(flatKnots, poles, data.myNbPnt + 1, data.myPC3d, _c3d, data.myCOnS, ref algtol, tolsov);
+              Check(flatKnots, poles, data.NbPnt + 1, data.PC3d, _c3d, data.COnS, ref algtol, tolsov);
             tolsov = algtol;
 
             // Try to build 2d curve and check it for validity.
@@ -481,8 +481,8 @@ public sealed class SameParameter
                                                                tol1d,
                                                                tol2d,
                                                                tol3d,
-                                                               data.myC3dPF,
-                                                               data.myC3dPL,
+                                                               data.C3dPF,
+                                                               data.C3dPL,
                                                                continuity,
                                                                maxDeg,
                                                                maxSeg,
@@ -492,12 +492,12 @@ public sealed class SameParameter
                 {
                     // OCCT copies the curve on surface to restore it below; only its 2D curve changes, so the port
                     // keeps that curve and loads it back.
-                    Curve2DAdaptorBase acs = data.myCOnS.GetCurve()!;
+                    Curve2DAdaptorBase acs = data.COnS.GetCurve()!;
                     MakeCurvefromApprox curveBuilder = new(approximator);
                     BSplineCurve2D c2d = curveBuilder.Curve2dFromTwo1d(1, 2);
                     Curve2DAdaptorBase hCurve2d = new CurveAdaptor2D(c2d);
-                    data.myCOnS.Load(hCurve2d);
-                    _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+                    data.COnS.Load(hCurve2d);
+                    _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
 
                     const double mult = 250.0; // To be tolerant with discrete tolerance.
                     if (_tolReached < mult * besttol)
@@ -508,10 +508,10 @@ public sealed class SameParameter
                         _done = true;
                         break;
                     }
-                    else if (data.myNbPnt < MaxArraySize - 1)
+                    else if (data.NbPnt < MaxArraySize - 1)
                     {
                         interpolok = false;
-                        data.myCOnS.Load(acs);
+                        data.COnS.Load(acs);
                     }
                     else
                     {
@@ -533,14 +533,14 @@ public sealed class SameParameter
             // deflection.
 
             // Original 2d curve.
-            data.myCOnS.Load(_hCurve2d);
-            _tolReached = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+            data.COnS.Load(_hCurve2d);
+            _tolReached = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
             _curve2d = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(_hCurve2d);
             _curve2dIsBuilt = false;
 
             // Approximation curve.
-            int num_knots = data.myNbPnt + 7;
-            int num_poles = data.myNbPnt + 3;
+            int num_knots = data.NbPnt + 7;
+            int num_poles = data.NbPnt + 3;
             NCollection_Array1<double> poles = new(1, num_poles);
             NCollection_Array1<double> flatKnots = new(1, num_knots);
 
@@ -560,8 +560,8 @@ public sealed class SameParameter
                                                            tol1d,
                                                            tol2d,
                                                            tol3d,
-                                                           data.myC3dPF,
-                                                           data.myC3dPL,
+                                                           data.C3dPF,
+                                                           data.C3dPL,
                                                            continuity,
                                                            11,
                                                            40,
@@ -576,9 +576,9 @@ public sealed class SameParameter
             MakeCurvefromApprox curveBuilder = new(approximator);
             BSplineCurve2D c2d = curveBuilder.Curve2dFromTwo1d(1, 2);
             Curve2DAdaptorBase hCurve2d = new CurveAdaptor2D(c2d);
-            data.myCOnS.Load(hCurve2d);
+            data.COnS.Load(hCurve2d);
 
-            double approxTol = ComputeTolReached(_c3d, data.myCOnS, 2 * NbSamples);
+            double approxTol = ComputeTolReached(_c3d, data.COnS, 2 * NbSamples);
             if (approxTol < _tolReached)
             {
                 _tolReached = approxTol;
@@ -589,7 +589,7 @@ public sealed class SameParameter
             _done = true;
         }
 
-        _curveOnSurface = (CurveOnSurface)data.myCOnS.ShallowCopy();
+        _curveOnSurface = (CurveOnSurface)data.COnS.ShallowCopy();
     }
 
     // Computes initial point distribution.
@@ -599,20 +599,20 @@ public sealed class SameParameter
         // at least the control points will be correct.
         // Take parameters with constant step on the curve on surface
         // and on curve 3d.
-        double deltacons = (data.myC2dPL - data.myC2dPF) / NbSamples;
-        double deltac3d = (data.myC3dPL - data.myC3dPF) / NbSamples;
-        double wcons = data.myC2dPF;
-        double wc3d = data.myC3dPF;
+        double deltacons = (data.C2dPL - data.C2dPF) / NbSamples;
+        double deltac3d = (data.C3dPL - data.C3dPF) / NbSamples;
+        double wcons = data.C2dPF;
+        double wc3d = data.C3dPF;
         for (int ii = 0; ii < NbSamples; ii++)
         {
-            data.myPC2d[ii] = wcons;
-            data.myPC3d[ii] = wc3d;
+            data.PC2d[ii] = wcons;
+            data.PC3d[ii] = wc3d;
             wcons += deltacons;
             wc3d += deltac3d;
         }
-        data.myNbPnt = NbSamples;
-        data.myPC2d[data.myNbPnt] = data.myC2dPL;
-        data.myPC3d[data.myNbPnt] = data.myC3dPL;
+        data.NbPnt = NbSamples;
+        data.PC2d[data.NbPnt] = data.C2dPL;
+        data.PC3d[data.NbPnt] = data.C3dPL;
 
         // Change number of points in case of C0 continuity.
         Continuity continuity = _hCurve2d.Continuity();
@@ -637,25 +637,25 @@ public sealed class SameParameter
         _hCurve2d.Intervals(c1Intervals, C1);
 
         int inter = 1;
-        while (inter <= nbInt && c1Intervals[inter] <= data.myC3dPF + _deltaMin)
+        while (inter <= nbInt && c1Intervals[inter] <= data.C3dPF + _deltaMin)
         {
             inter++;
         }
-        while (nbInt > 0 && c1Intervals[nbInt] >= data.myC3dPL - _deltaMin)
+        while (nbInt > 0 && c1Intervals[nbInt] >= data.C3dPL - _deltaMin)
         {
             nbInt--;
         }
 
         // Compute new parameters.
         NCollection_Sequence<double> newPar = new();
-        newPar.Append(data.myC3dPF);
+        newPar.Append(data.C3dPF);
         int ii = 1;
         while (inter <= nbInt || (ii < NbSamples && inter <= c1Intervals.Length()))
         {
-            if (c1Intervals[inter] < data.myPC2d[ii])
+            if (c1Intervals[inter] < data.PC2d[ii])
             {
                 newPar.Append(c1Intervals[inter]);
-                if ((data.myPC2d[ii] - c1Intervals[inter]) <= _deltaMin)
+                if ((data.PC2d[ii] - c1Intervals[inter]) <= _deltaMin)
                 {
                     ii++;
                     if (ii > NbSamples)
@@ -667,28 +667,28 @@ public sealed class SameParameter
             }
             else
             {
-                if ((c1Intervals[inter] - data.myPC2d[ii]) > _deltaMin)
+                if ((c1Intervals[inter] - data.PC2d[ii]) > _deltaMin)
                 {
-                    newPar.Append(data.myPC2d[ii]);
+                    newPar.Append(data.PC2d[ii]);
                 }
                 ii++;
             }
         }
         // Simple protection if theNewNbPoints > allocated elements in array but one
         // myMaxArraySize - 1 index may be filled after projection.
-        data.myNbPnt = newPar.Length();
-        if (data.myNbPnt > MaxArraySize - 1)
+        data.NbPnt = newPar.Length();
+        if (data.NbPnt > MaxArraySize - 1)
         {
             return false;
         }
 
-        for (ii = 1; ii < data.myNbPnt; ii++)
+        for (ii = 1; ii < data.NbPnt; ii++)
         {
             // Copy only internal points.
-            data.myPC2d[ii] = data.myPC3d[ii] = newPar.Value(ii + 1);
+            data.PC2d[ii] = data.PC3d[ii] = newPar.Value(ii + 1);
         }
-        data.myPC3d[data.myNbPnt] = data.myC3dPL;
-        data.myPC2d[data.myNbPnt] = data.myC2dPL;
+        data.PC3d[data.NbPnt] = data.C3dPL;
+        data.PC2d[data.NbPnt] = data.C2dPL;
 
         return true;
     }
@@ -701,32 +701,32 @@ public sealed class SameParameter
 
         // Compute initial distance on boundary points.
         Point3D pcons, pc3d;
-        data.myCOnS.D0(data.myC2dPF, out pcons);
-        _c3d.D0(data.myC3dPF, out pc3d);
+        data.COnS.D0(data.C2dPF, out pcons);
+        _c3d.D0(data.C3dPF, out pc3d);
         double dist2 = pcons.SquareDistance(pc3d);
         double dmax2 = dist2;
 
-        data.myCOnS.D0(data.myC2dPL, out pcons);
-        _c3d.D0(data.myC3dPL, out pc3d);
+        data.COnS.D0(data.C2dPL, out pcons);
+        _c3d.D0(data.C3dPL, out pc3d);
         dist2 = pcons.SquareDistance(pc3d);
         dmax2 = Max(dmax2, dist2);
 
         LocateExtPC projector = new();
-        projector.Initialize(_c3d, data.myC3dPF, data.myC3dPL, data.myTol);
+        projector.Initialize(_c3d, data.C3dPF, data.C3dPL, data.myTol);
 
         int count = 1;
-        double previousp = data.myC3dPF, initp = 0, curp = 0;
-        double bornesup = data.myC3dPL - _deltaMin;
+        double previousp = data.C3dPF, initp = 0, curp = 0;
+        double bornesup = data.C3dPL - _deltaMin;
         bool isProjOk = false;
-        for (int ii = 1; ii < data.myNbPnt; ii++)
+        for (int ii = 1; ii < data.NbPnt; ii++)
         {
-            data.myCOnS.D0(data.myPC2d[ii], out pcons);
-            _c3d.D0(data.myPC3d[ii], out pc3d);
+            data.COnS.D0(data.PC2d[ii], out pcons);
+            _c3d.D0(data.PC3d[ii], out pc3d);
             dist2 = pcons.SquareDistance(pc3d);
 
             // Same parameter point.
             bool isUseParam = (dist2 <= tol2 && // Good distance.
-                               (data.myPC3d[ii] > data.myPC3d[count - 1]
+                               (data.PC3d[ii] > data.PC3d[count - 1]
                                                        + _deltaMin)); // Point is separated from previous.
             if (isUseParam)
             {
@@ -734,8 +734,8 @@ public sealed class SameParameter
                 {
                     dmax2 = dist2;
                 }
-                initp = previousp = data.myPC3d[count] = data.myPC3d[ii];
-                data.myPC2d[count] = data.myPC2d[ii];
+                initp = previousp = data.PC3d[count] = data.PC3d[ii];
+                data.PC2d[count] = data.PC2d[ii];
                 count++;
                 continue;
             }
@@ -743,7 +743,7 @@ public sealed class SameParameter
             // Local search: local extrema and iterative projection algorithm.
             if (!isProjOk)
             {
-                initp = data.myPC3d[ii];
+                initp = data.PC3d[ii];
             }
             isProjOk = isSameParam = false;
             projector.Perform(pcons, initp);
@@ -762,14 +762,14 @@ public sealed class SameParameter
                        curp < bornesup;                 // Inside of parameter space.
             if (isProjOk)
             {
-                initp = previousp = data.myPC3d[count] = curp;
-                data.myPC2d[count] = data.myPC2d[ii];
+                initp = previousp = data.PC3d[count] = curp;
+                data.PC2d[count] = data.PC2d[ii];
                 count++;
                 continue;
             }
 
             // Whole parameter space search using general extrema.
-            CurvePointExtrema pr = new(pcons, _c3d, data.myC3dPF, data.myC3dPL, data.myTol);
+            CurvePointExtrema pr = new(pcons, _c3d, data.C3dPF, data.C3dPL, data.myTol);
             if (!pr.IsDone || pr.ExtCount == 0)
             { // Lazy evaluation is used.
                 continue;
@@ -793,16 +793,16 @@ public sealed class SameParameter
                 curp = pr.Point(indMin).Parameter();
                 if (curp > previousp + _deltaMin && curp < bornesup)
                 {
-                    initp = previousp = data.myPC3d[count] = curp;
-                    data.myPC2d[count] = data.myPC2d[ii];
+                    initp = previousp = data.PC3d[count] = curp;
+                    data.PC2d[count] = data.PC2d[ii];
                     count++;
                     isProjOk = true;
                 }
             }
         }
-        data.myNbPnt = count;
-        data.myPC2d[data.myNbPnt] = data.myC2dPL;
-        data.myPC3d[data.myNbPnt] = data.myC3dPL;
+        data.NbPnt = count;
+        data.PC2d[data.NbPnt] = data.C2dPL;
+        data.PC3d[data.NbPnt] = data.C3dPL;
 
         sqDist = dmax2;
         return isSameParam;
@@ -857,7 +857,7 @@ public sealed class SameParameter
                                     NCollection_Array1<double> poles,
                                     NCollection_Array1<double> flatKnots)
     {
-        int num_poles = data.myNbPnt + 3;
+        int num_poles = data.NbPnt + 3;
         NCollection_Array1<int> contactOrder = new(1, num_poles);
         NCollection_Array1<double> parameters = new(1, num_poles);
 
@@ -865,22 +865,22 @@ public sealed class SameParameter
         contactOrder.Init(0);
         contactOrder[2] = contactOrder[num_poles - 1] = 1;
 
-        flatKnots[1] = flatKnots[2] = flatKnots[3] = flatKnots[4] = data.myC3dPF;
+        flatKnots[1] = flatKnots[2] = flatKnots[3] = flatKnots[4] = data.C3dPF;
         flatKnots[num_poles + 1] = flatKnots[num_poles + 2] = flatKnots[num_poles + 3] =
-          flatKnots[num_poles + 4] = data.myC3dPL;
+          flatKnots[num_poles + 4] = data.C3dPL;
 
-        poles[1] = data.myC2dPF;
-        poles[num_poles] = data.myC2dPL;
+        poles[1] = data.C2dPF;
+        poles[num_poles] = data.C2dPL;
         poles[2] = aTangFirst;
         poles[num_poles - 1] = aTangLast;
 
-        parameters[1] = parameters[2] = data.myC3dPF;
-        parameters[num_poles - 1] = parameters[num_poles] = data.myC3dPL;
+        parameters[1] = parameters[2] = data.C3dPF;
+        parameters[num_poles - 1] = parameters[num_poles] = data.C3dPL;
 
         for (int ii = 3; ii <= num_poles - 2; ii++)
         {
-            poles[ii] = data.myPC2d[ii - 2];
-            parameters[ii] = flatKnots[ii + 2] = data.myPC3d[ii - 2];
+            poles[ii] = data.PC2d[ii - 2];
+            parameters[ii] = flatKnots[ii + 2] = data.PC3d[ii - 2];
         }
         int inversion_problem;
         global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(3,
@@ -911,18 +911,18 @@ public sealed class SameParameter
         Span<double> eval_result = stackalloc double[1];
         ReadOnlySpan<double> polesArray = poles.AsSpan();
         int newcount = 0;
-        for (int ii = 0; ii < data.myNbPnt; ii++)
+        for (int ii = 0; ii < data.NbPnt; ii++)
         {
-            data.myNewPC2d[newcount] = data.myPC2d[ii];
-            data.myNewPC3d[newcount] = data.myPC3d[ii];
+            data.NewPC2d[newcount] = data.PC2d[ii];
+            data.NewPC3d[newcount] = data.PC3d[ii];
             newcount++;
 
-            if (data.myNbPnt - ii + newcount == MaxArraySize)
+            if (data.NbPnt - ii + newcount == MaxArraySize)
             {
                 continue;
             }
 
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(0.5 * (data.myPC3d[ii] + data.myPC3d[ii + 1]),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(0.5 * (data.PC3d[ii] + data.PC3d[ii + 1]),
                           false,
                           derivativeRequest,
                           extrap_mode,
@@ -932,13 +932,13 @@ public sealed class SameParameter
                           polesArray,
                           eval_result);
 
-            if (eval_result[0] < data.myPC2d[ii] || eval_result[0] > data.myPC2d[ii + 1])
+            if (eval_result[0] < data.PC2d[ii] || eval_result[0] > data.PC2d[ii + 1])
             {
-                double ucons = 0.5 * (data.myPC2d[ii] + data.myPC2d[ii + 1]);
-                double uc3d = 0.5 * (data.myPC3d[ii] + data.myPC3d[ii + 1]);
+                double ucons = 0.5 * (data.PC2d[ii] + data.PC2d[ii + 1]);
+                double uc3d = 0.5 * (data.PC3d[ii] + data.PC3d[ii + 1]);
 
                 Point3D pcons;
-                data.myCOnS.D0(ucons, out pcons);
+                data.COnS.D0(ucons, out pcons);
                 projector.Perform(pcons, uc3d);
                 if (projector.IsDone)
                 {
@@ -956,19 +956,19 @@ public sealed class SameParameter
                 }
                 if (projok)
                 {
-                    if (curp > data.myPC3d[ii] + _deltaMin && curp < data.myPC3d[ii + 1] - _deltaMin)
+                    if (curp > data.PC3d[ii] + _deltaMin && curp < data.PC3d[ii + 1] - _deltaMin)
                     {
-                        data.myNewPC3d[newcount] = curp;
-                        data.myNewPC2d[newcount] = ucons;
+                        data.NewPC3d[newcount] = curp;
+                        data.NewPC2d[newcount] = ucons;
                         newcount++;
                     }
                 }
             }
         } //     for (ii = 0; ii < count; ii++)
-        data.myNewPC3d[newcount] = data.myPC3d[data.myNbPnt];
-        data.myNewPC2d[newcount] = data.myPC2d[data.myNbPnt];
+        data.NewPC3d[newcount] = data.PC3d[data.NbPnt];
+        data.NewPC2d[newcount] = data.PC2d[data.NbPnt];
 
-        if ((data.myNbPnt != newcount) && newcount < MaxArraySize - 1)
+        if ((data.NbPnt != newcount) && newcount < MaxArraySize - 1)
         {
             // Distribution is changed.
             data.Swap(newcount);
@@ -977,22 +977,22 @@ public sealed class SameParameter
 
         // Increase number of samples in two times.
         newcount = 0;
-        for (int n = 0; n < data.myNbPnt; n++)
+        for (int n = 0; n < data.NbPnt; n++)
         {
-            data.myNewPC3d[newcount] = data.myPC3d[n];
-            data.myNewPC2d[newcount] = data.myPC2d[n];
+            data.NewPC3d[newcount] = data.PC3d[n];
+            data.NewPC2d[newcount] = data.PC2d[n];
             newcount++;
 
-            if (data.myNbPnt - n + newcount == MaxArraySize)
+            if (data.NbPnt - n + newcount == MaxArraySize)
             {
                 continue;
             }
 
-            double ucons = 0.5 * (data.myPC2d[n] + data.myPC2d[n + 1]);
-            double uc3d = 0.5 * (data.myPC3d[n] + data.myPC3d[n + 1]);
+            double ucons = 0.5 * (data.PC2d[n] + data.PC2d[n + 1]);
+            double uc3d = 0.5 * (data.PC3d[n] + data.PC3d[n + 1]);
 
             Point3D pcons;
-            data.myCOnS.D0(ucons, out pcons);
+            data.COnS.D0(ucons, out pcons);
             projector.Perform(pcons, uc3d);
             if (projector.IsDone)
             {
@@ -1010,18 +1010,18 @@ public sealed class SameParameter
             }
             if (projok)
             {
-                if (curp > data.myPC3d[n] + _deltaMin && curp < data.myPC3d[n + 1] - _deltaMin)
+                if (curp > data.PC3d[n] + _deltaMin && curp < data.PC3d[n + 1] - _deltaMin)
                 {
-                    data.myNewPC3d[newcount] = curp;
-                    data.myNewPC2d[newcount] = ucons;
+                    data.NewPC3d[newcount] = curp;
+                    data.NewPC2d[newcount] = ucons;
                     newcount++;
                 }
             }
         }
-        data.myNewPC3d[newcount] = data.myPC3d[data.myNbPnt];
-        data.myNewPC2d[newcount] = data.myPC2d[data.myNbPnt];
+        data.NewPC3d[newcount] = data.PC3d[data.NbPnt];
+        data.NewPC2d[newcount] = data.PC2d[data.NbPnt];
 
-        if (data.myNbPnt != newcount)
+        if (data.NbPnt != newcount)
         {
             // Distribution is changed.
             data.Swap(newcount);

@@ -297,7 +297,7 @@ public static partial class MathUtils
         math_Vector xNew = new(lower, upper);
 
         // Lambda to evaluate phi(alpha) = f(x + alpha*d)
-        bool aEvalPhi(double alpha, out double phi)
+        bool AEvalPhi(double alpha, out double phi)
         {
             for (int i = lower; i <= upper; ++i)
             {
@@ -315,7 +315,7 @@ public static partial class MathUtils
         double w = aX;
         double v = aX;
 
-        if (!aEvalPhi(aX, out double fx))
+        if (!AEvalPhi(aX, out double fx))
         {
             result.IsValid = false;
             return result;
@@ -391,7 +391,7 @@ public static partial class MathUtils
                 u = aX + SignTransfer(tol1, d);
             }
 
-            if (!aEvalPhi(u, out double fu))
+            if (!AEvalPhi(u, out double fu))
             {
                 result.IsValid = false;
                 result.Alpha = aX;

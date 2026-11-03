@@ -17,20 +17,20 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 public static class SC
 {
     [ThreadStatic]
-    private static ShapeClassifier? TopOpeBRepTool_PSC;
+    private static ShapeClassifier? s_topOpeBRepToolPSC;
 
     /// <summary>The thread's shape classifier, created on first use.</summary>
     public static ShapeClassifier FSC_GetPSC()
     {
-        TopOpeBRepTool_PSC ??= new ShapeClassifier();
-        return TopOpeBRepTool_PSC;
+        s_topOpeBRepToolPSC ??= new ShapeClassifier();
+        return s_topOpeBRepToolPSC;
     }
 
     /// <summary>The thread's shape classifier, with <paramref name="s"/> as its reference shape.</summary>
     public static ShapeClassifier FSC_GetPSC(in Shape s)
     {
-        TopOpeBRepTool_PSC ??= new ShapeClassifier();
-        TopOpeBRepTool_PSC.SetReference(s);
-        return TopOpeBRepTool_PSC;
+        s_topOpeBRepToolPSC ??= new ShapeClassifier();
+        s_topOpeBRepToolPSC.SetReference(s);
+        return s_topOpeBRepToolPSC;
     }
 }

@@ -16,7 +16,7 @@ I = somme(F(GaussPt) * GaussW)   sur i = 1 jusqu'a l'ordre d'integration.
 
 Une integrale multiple est une somme recursive sur toutes les variables.
 
-Tout le calcul est effectue dans la methode recursive_iteration appelee n fois.
+Tout le calcul est effectue dans la methode RecursiveIteration appelee n fois.
  (n = nombre de variables)
 
 Cette methode fait une sommation sur toutes les variables, sur tous les ordres
@@ -160,7 +160,7 @@ public class GaussMultipleIntegration
 
             _val = 0.0;
             int iterdeb = 1;
-            bool recur = recursive_iteration(ref iterdeb, inc);
+            bool recur = RecursiveIteration(ref iterdeb, inc);
             if (recur)
             {
                 // On ramene l'integration a la bonne echelle.
@@ -186,7 +186,7 @@ public class GaussMultipleIntegration
             }
         }
 
-        private bool recursive_iteration(ref int n, math_IntegerVector inc)
+        private bool RecursiveIteration(ref int n, math_IntegerVector inc)
         {
             // Termination criterium :
             // Calcul de la valeur de la fonction aux points de Gauss fixes:
@@ -225,7 +225,7 @@ public class GaussMultipleIntegration
             for (inc[n] = 1; inc[n] <= _ordsav[n]; inc[n]++)
             {
                 local = n + 1;
-                ok = recursive_iteration(ref local, inc);
+                ok = RecursiveIteration(ref local, inc);
             }
 
             return ok;

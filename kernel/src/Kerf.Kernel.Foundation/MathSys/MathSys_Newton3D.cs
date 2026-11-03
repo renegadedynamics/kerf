@@ -263,12 +263,12 @@ public static partial class MathSys
     }
 
     /// <summary>The lambda of SolveCurveSurfaceExtrema3D: the gradient of ||C(t) - S(u, v)||^2 / 2 and its Hessian.</summary>
-    private struct CurveSurfaceExtrema3DFunction<CurveEvaluator, SurfaceEvaluator> : INewton3DFunction
+    private struct CurveSurfaceExtrema3DFunction<CurveEvaluator, TSurfaceEvaluator> : INewton3DFunction
         where CurveEvaluator : ICurveD2Evaluator
-        where SurfaceEvaluator : ISurfaceD2Evaluator
+        where TSurfaceEvaluator : ISurfaceD2Evaluator
     {
         internal CurveEvaluator _curve;
-        internal SurfaceEvaluator _surface;
+        internal TSurfaceEvaluator _surface;
 
         public bool Invoke(double t, double u, double v,
                            ref Array3<double> f, ref Array3<Array3<double>> j)
@@ -313,15 +313,15 @@ public static partial class MathSys
     /// 3D Newton solver for extrema between a curve C(t) and a surface S(u, v): F = ((C-S).dC/dt, (S-C).dS/du,
     /// (S-C).dS/dv). The result holds t, u, v in X[0], X[1], X[2].
     /// </summary>
-    public static NewtonResultN3 SolveCurveSurfaceExtrema3D<CurveEvaluator, SurfaceEvaluator>(CurveEvaluator curve,
-                                                                                              SurfaceEvaluator surface,
+    public static NewtonResultN3 SolveCurveSurfaceExtrema3D<CurveEvaluator, TSurfaceEvaluator>(CurveEvaluator curve,
+                                                                                              TSurfaceEvaluator surface,
                                                                                               in Array3<double> x0,
                                                                                               in NewtonBoundsN3 bounds,
                                                                                               NewtonOptions? options = null)
         where CurveEvaluator : ICurveD2Evaluator
-        where SurfaceEvaluator : ISurfaceD2Evaluator
+        where TSurfaceEvaluator : ISurfaceD2Evaluator
     {
-        CurveSurfaceExtrema3DFunction<CurveEvaluator, SurfaceEvaluator> func = new() { _curve = curve, _surface = surface };
+        CurveSurfaceExtrema3DFunction<CurveEvaluator, TSurfaceEvaluator> func = new() { _curve = curve, _surface = surface };
 
         return Solve3D(func, x0, bounds, options);
     }

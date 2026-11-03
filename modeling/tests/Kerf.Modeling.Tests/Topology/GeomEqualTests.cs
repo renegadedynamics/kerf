@@ -9,7 +9,10 @@ using Kerf.Geometry;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>The direct-API equivalents of the sketch and curve objects the Python tests use.</summary>
 internal static class GeomEqualObjects

@@ -104,7 +104,7 @@ public partial struct Color : IEquatable<Color>
                                                    in NCollection_Vec3<float> thesRGB, in NCollection_Vec3<float> theRGB)
     {
         public readonly string StringName = theStringName;
-        public readonly NCollection_Vec3<float> sRgbValues = thesRGB;
+        public readonly NCollection_Vec3<float> SRgbValues = thesRGB;
         public readonly NCollection_Vec3<float> RgbValues = theRGB;
         public readonly NameOfColor EnumName = theName;
     }
@@ -151,7 +151,7 @@ public partial struct Color : IEquatable<Color>
         NameOfColor resName = NocBlack;
         for (int colIter = (int)NocBlack; colIter <= (int)NocWhite; ++colIter)
         {
-            float newDist2 = (ansRgbVec - THE_COLORS[colIter].sRgbValues).SquareModulus();
+            float newDist2 = (ansRgbVec - THE_COLORS[colIter].SRgbValues).SquareModulus();
             if (newDist2 < dist2)
             {
                 resName = (NameOfColor)colIter;

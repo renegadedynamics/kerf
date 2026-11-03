@@ -12,20 +12,20 @@ namespace Kerf.Engine.Fillets.Blend;
 /// </summary>
 internal static class AppBlendDebug
 {
-    private static volatile bool AppBlend_ContextSplineApprox;
-    private static volatile bool AppBlend_ContextApproxWithNoTgt;
+    private static volatile bool s_appBlendContextSplineApprox;
+    private static volatile bool s_appBlendContextApproxWithNoTgt;
 
     internal static void AppBlend_SetContextSplineApprox(bool b)
     {
-        AppBlend_ContextSplineApprox = b;
+        s_appBlendContextSplineApprox = b;
     }
 
-    internal static bool AppBlend_GetContextSplineApprox() => AppBlend_ContextSplineApprox;
+    internal static bool AppBlend_GetContextSplineApprox() => s_appBlendContextSplineApprox;
 
     internal static void AppBlend_SetContextApproxWithNoTgt(bool b)
     {
-        AppBlend_ContextApproxWithNoTgt = b;
+        s_appBlendContextApproxWithNoTgt = b;
     }
 
-    internal static bool AppBlend_GetContextApproxWithNoTgt() => AppBlend_ContextApproxWithNoTgt;
+    internal static bool AppBlend_GetContextApproxWithNoTgt() => s_appBlendContextApproxWithNoTgt;
 }

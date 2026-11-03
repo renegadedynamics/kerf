@@ -125,11 +125,11 @@ internal class RWEdgeCurve
         }
     }
 
-    private static StepShapeType GetSharing<StepShapeType>(Transient stepEntity, ShareTool shareTool) where StepShapeType : Transient
+    private static TStepShapeType GetSharing<TStepShapeType>(Transient stepEntity, ShareTool shareTool) where TStepShapeType : Transient
     {
         EntityIterator sharedEntitiesIt = shareTool.Sharings(stepEntity);
-        sharedEntitiesIt.SelectType(typeof(StepShapeType), true);
-        return sharedEntitiesIt.NbEntities() == 0 ? null : (sharedEntitiesIt.Value() as StepShapeType);
+        sharedEntitiesIt.SelectType(typeof(TStepShapeType), true);
+        return sharedEntitiesIt.NbEntities() == 0 ? null : (sharedEntitiesIt.Value() as TStepShapeType);
     }
 
     private static bool GetFaceBoundOrientation(StepOrientedEdge orientedEdge, ShareTool shareTool)

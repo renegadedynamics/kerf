@@ -2,7 +2,10 @@
 // and the points at 0, 0.37 and 1 of each curve, the counts of edges and solutions, and areas. Python's values are
 // printed to 12 significant figures.
 
-namespace Kerf.Modeling.Tests.Objects;
+namespace Build123d.Tests.Objects;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 public class CurveDifferentialTests
 {

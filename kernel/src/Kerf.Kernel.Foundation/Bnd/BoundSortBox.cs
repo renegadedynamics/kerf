@@ -55,7 +55,7 @@ public class BoundSortBox
             }
         }
 
-        _resolution = getBnd_VoxelGridResolution(_boxes.Length());
+        _resolution = GetBndVoxelGridResolution(_boxes.Length());
 
         if (_enclosingBox.IsVoid)
         {
@@ -73,7 +73,7 @@ public class BoundSortBox
     {
         _boxes = setOfBoxes;
         _enclosingBox = enclosingBox;
-        _resolution = getBnd_VoxelGridResolution(_boxes.Length());
+        _resolution = GetBndVoxelGridResolution(_boxes.Length());
 
         if (_enclosingBox.IsVoid)
         {
@@ -99,7 +99,7 @@ public class BoundSortBox
         _boxes.Init(emptyBox);
         //***<<< JCD - End
         _enclosingBox = enclosingBox;
-        _resolution = getBnd_VoxelGridResolution(nbBoxes);
+        _resolution = GetBndVoxelGridResolution(nbBoxes);
 
         if (_enclosingBox.IsVoid)
         {
@@ -324,7 +324,7 @@ public class BoundSortBox
     }
 
     // The resolution of the voxel grid, from the number of boxes.
-    private static int getBnd_VoxelGridResolution(int boxesCount)
+    private static int GetBndVoxelGridResolution(int boxesCount)
     {
         if (boxesCount > 40000)
         {

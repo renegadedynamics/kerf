@@ -13,28 +13,28 @@ namespace Kerf.Engine.Fillets.Blend;
 public static class BlendDebug
 {
     // recuperation des surfaces des conges approximes.
-    private static bool Blend_traceDRAWSECT;
+    private static bool s_blendTraceDRAWSECT;
 
     // Contexte sans test de deflexion
-    private static bool Blend_contextNOTESTDEFL;
+    private static bool s_blendContextNOTESTDEFL;
 
     public static void Blend_SettraceDRAWSECT(bool b)
     {
-        Blend_traceDRAWSECT = b;
+        s_blendTraceDRAWSECT = b;
     }
 
     public static bool Blend_GettraceDRAWSECT()
     {
-        return Blend_traceDRAWSECT;
+        return s_blendTraceDRAWSECT;
     }
 
     public static void Blend_SetcontextNOTESTDEFL(bool b)
     {
-        Blend_contextNOTESTDEFL = b;
+        s_blendContextNOTESTDEFL = b;
     }
 
     public static bool Blend_GetcontextNOTESTDEFL()
     {
-        return Blend_contextNOTESTDEFL;
+        return s_blendContextNOTESTDEFL;
     }
 }

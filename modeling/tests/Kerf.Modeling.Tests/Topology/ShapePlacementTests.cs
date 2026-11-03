@@ -8,7 +8,10 @@
 // - relocated_assembly_keeps_its_tree: ported without the .parent and identity (assertIsNot) checks, and without the
 //   copy.copy case.
 // A child's global location is read as the assembly's location times the child's, as there is no parent link.
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 public class ShapePlacementTests
 {

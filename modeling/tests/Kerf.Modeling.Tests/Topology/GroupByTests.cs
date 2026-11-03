@@ -1,6 +1,9 @@
 // Ported from build123d tests/test_direct_api/test_group_by.py. Omitted:
 // - test_str, test_pp: pretty-printing (repr, as ToString, is ported).
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 public class GroupByTests
 {

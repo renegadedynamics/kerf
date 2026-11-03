@@ -102,7 +102,7 @@ public partial class PaveFiller
     /// <summary>Finds the pave blocks of the face (In, On and Sc) that have the vertex as a bound.</summary>
     protected void FindPaveBlocks(int paveIndex, int faceInfoIndex, NCollection_List<PaveBlock> foundBlocks)
     {
-        void processPaveBlocks(NCollection_IndexedMap<PaveBlock> paveBlocksMap)
+        void ProcessPaveBlocks(NCollection_IndexedMap<PaveBlock> paveBlocksMap)
         {
             for (int blockIndex = 1; blockIndex <= paveBlocksMap.Extent(); ++blockIndex)
             {
@@ -116,9 +116,9 @@ public partial class PaveFiller
         }
 
         FaceInfo faceInfo = _ds!.ChangeFaceInfo(faceInfoIndex);
-        processPaveBlocks(faceInfo.PaveBlocksIn());
-        processPaveBlocks(faceInfo.PaveBlocksOn());
-        processPaveBlocks(faceInfo.PaveBlocksSc());
+        ProcessPaveBlocks(faceInfo.PaveBlocksIn());
+        ProcessPaveBlocks(faceInfo.PaveBlocksOn());
+        ProcessPaveBlocks(faceInfo.PaveBlocksSc());
     }
 
     /// <summary>Makes the split edges of the degenerated edge on the face.</summary>

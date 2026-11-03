@@ -16,11 +16,11 @@ namespace Kerf.Engine.Numerics;
 /// <remarks>The matrices and vectors are indexed from 1, as OCCT requires.</remarks>
 public static class Recipes
 {
-    public const int math_Status_UserAborted = -1;
-    public const int math_Status_OK = 0;
-    public const int math_Status_SingularMatrix = 1;
-    public const int math_Status_ArgumentError = 2;
-    public const int math_Status_NoConvergence = 3;
+    public const int MathStatusUserAborted = -1;
+    public const int MathStatusOK = 0;
+    public const int MathStatusSingularMatrix = 1;
+    public const int MathStatusArgumentError = 2;
+    public const int MathStatusNoConvergence = 3;
 
     private static double PYTHAG(double a, double b)
     {
@@ -125,7 +125,7 @@ public static class Recipes
             if (sm == 0.0)
             {
                 EigenSort(d, v);
-                return math_Status_OK;
+                return MathStatusOK;
             }
 
             if (i < 4)
@@ -206,7 +206,7 @@ public static class Recipes
         }
 
         EigenSort(d, v);
-        return math_Status_NoConvergence;
+        return MathStatusNoConvergence;
     }
 
     /// <summary>
@@ -237,7 +237,7 @@ public static class Recipes
 
             if (big <= tiny)
             {
-                return math_Status_SingularMatrix;
+                return MathStatusSingularMatrix;
             }
 
             vv[i] = 1.0 / big;
@@ -293,7 +293,7 @@ public static class Recipes
             indx[j] = imax;
             if (Math.Abs(a[j, j]) <= tiny)
             {
-                return math_Status_SingularMatrix;
+                return MathStatusSingularMatrix;
             }
 
             if (j != n)
@@ -308,10 +308,10 @@ public static class Recipes
 
         if (j <= n)
         {
-            return math_Status_UserAborted;
+            return MathStatusUserAborted;
         }
 
-        return math_Status_OK;
+        return MathStatusOK;
     }
 
     /// <summary>
@@ -707,7 +707,7 @@ public static class Recipes
 
                 if (its == 30)
                 {
-                    return math_Status_NoConvergence;
+                    return MathStatusNoConvergence;
                 }
 
                 x = w[l];
@@ -769,7 +769,7 @@ public static class Recipes
             }
         }
 
-        return math_Status_OK;
+        return MathStatusOK;
     }
 
     /// <summary>
@@ -892,7 +892,7 @@ public static class Recipes
 
                     if (aa <= minPivot)
                     {
-                        return math_Status_SingularMatrix;
+                        return MathStatusSingularMatrix;
                     }
 
                     d = a[i];
@@ -904,7 +904,7 @@ public static class Recipes
             jr = jd;
         }
 
-        return math_Status_OK;
+        return MathStatusOK;
     }
 
     /// <summary>
@@ -953,7 +953,7 @@ public static class Recipes
 
             if (aa <= minPivot)
             {
-                return math_Status_SingularMatrix;
+                return MathStatusSingularMatrix;
             }
 
             b[i] = b[i] / a[id];
@@ -979,6 +979,6 @@ public static class Recipes
             jd = jr;
         }
 
-        return math_Status_OK;
+        return MathStatusOK;
     }
 }

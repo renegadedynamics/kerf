@@ -22,12 +22,12 @@ public class FunctionRoot
     private double _theDerivative;
     private int _nbIter;
 
-    /// <summary>The function as a set of one function of one variable (math_MyFunctionSetWithDerivatives).</summary>
-    private sealed class math_MyFunctionSetWithDerivatives : FunctionSetWithDerivatives
+    /// <summary>The function as a set of one function of one variable (MathMyFunctionSetWithDerivatives).</summary>
+    private sealed class MathMyFunctionSetWithDerivatives : FunctionSetWithDerivatives
     {
         private FunctionWithDerivative _ff;
 
-        public math_MyFunctionSetWithDerivatives(FunctionWithDerivative f)
+        public MathMyFunctionSetWithDerivatives(FunctionWithDerivative f)
         {
             _ff = f;
         }
@@ -65,7 +65,7 @@ public class FunctionRoot
     public FunctionRoot(FunctionWithDerivative f, double guess, double tolerance, int nbIterations = 100)
     {
         math_Vector v = new(1, 1), tol = new(1, 1);
-        math_MyFunctionSetWithDerivatives ff = new(f);
+        MathMyFunctionSetWithDerivatives ff = new(f);
         v[1] = guess;
         tol[1] = tolerance;
         FunctionSetRoot sol = new(ff, tol, nbIterations);
@@ -89,7 +89,7 @@ public class FunctionRoot
                              int nbIterations = 100)
     {
         math_Vector v = new(1, 1), aa = new(1, 1), bb = new(1, 1), tol = new(1, 1);
-        math_MyFunctionSetWithDerivatives ff = new(f);
+        MathMyFunctionSetWithDerivatives ff = new(f);
         v[1] = guess;
         tol[1] = tolerance;
         aa[1] = a;

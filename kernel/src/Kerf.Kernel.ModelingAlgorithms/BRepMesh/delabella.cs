@@ -81,20 +81,20 @@ public abstract class IDelaBella
     {
         DelaBella db = new();
 
-        db.vert_alloc = null;
-        db.face_alloc = null;
-        db.max_verts = 0;
-        db.max_faces = 0;
+        db._vertAlloc = null;
+        db._faceAlloc = null;
+        db._maxVerts = 0;
+        db._maxFaces = 0;
 
-        db.first_dela_face = null;
-        db.first_hull_face = null;
-        db.first_hull_vert = null;
+        db._firstDelaFace = null;
+        db._firstHullFace = null;
+        db._firstHullVert = null;
 
-        db.inp_verts = 0;
-        db.out_verts = 0;
+        db._inpVerts = 0;
+        db._outVerts = 0;
 
-        db.errlog_proc = null;
-        db.errlog_file = null;
+        db._errlogProc = null;
+        db._errlogFile = null;
 
         return db;
     }
@@ -222,7 +222,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             return 0;
         }
 
-        // The C++ copies Vert structs by value (vert_alloc[w++] = vert_alloc[r++]).
+        // The C++ copies Vert structs by value (_vertAlloc[w++] = _vertAlloc[r++]).
         public void Assign(Vert other)
         {
             i = other.i;
@@ -238,7 +238,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
     {
         public Norm n;
 
-        // The position in face_alloc (pointer arithmetic over it in C++); -1 for the temporary face.
+        // The position in _faceAlloc (pointer arithmetic over it in C++); -1 for the temporary face.
         public readonly int index;
 
         public Face(int theIndex) => index = theIndex;
@@ -305,37 +305,37 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
 
     private static readonly Comparer<Vert> VertLess = Comparer<Vert>.Create(Vert.U28cmp);
 
-    internal Vert[]? vert_alloc;
-    internal Face[]? face_alloc;
-    internal int max_verts;
-    internal int max_faces;
+    internal Vert[]? _vertAlloc;
+    internal Face[]? _faceAlloc;
+    internal int _maxVerts;
+    internal int _maxFaces;
 
-    internal Face? first_dela_face;
-    internal Face? first_hull_face;
-    internal Vert? first_hull_vert;
+    internal Face? _firstDelaFace;
+    internal Face? _firstHullFace;
+    internal Vert? _firstHullVert;
 
-    internal int inp_verts;
-    internal int out_verts;
+    internal int _inpVerts;
+    internal int _outVerts;
 
-    internal Func<object?, string, int>? errlog_proc;
-    internal object? errlog_file;
+    internal Func<object?, string, int>? _errlogProc;
+    internal object? _errlogFile;
 
     private void Errlog(string message)
     {
-        errlog_proc!(errlog_file, message);
+        _errlogProc!(_errlogFile, message);
     }
 
     private int Triangulate()
     {
-        int points = inp_verts;
-        // std::sort(vert_alloc, vert_alloc + points): u28cmp ends on the unique input index i, so the order is total
+        int points = _inpVerts;
+        // std::sort(_vertAlloc, _vertAlloc + points): u28cmp ends on the unique input index i, so the order is total
         // and any correct sort gives MSVC's std::sort result (decision 491's tie check). Not with NaN coordinates,
         // where the C++ order isn't a strict weak order either.
-        if (points > 0) // std::sort of an empty range touches nothing, even a null vert_alloc
+        if (points > 0) // std::sort of an empty range touches nothing, even a null _vertAlloc
         {
-            Array.Sort(vert_alloc!, 0, points, VertLess);
+            Array.Sort(_vertAlloc!, 0, points, VertLess);
         }
-        Vert[] verts = vert_alloc!; // OCCT: vert_alloc is null on a first call with 0 points (below)
+        Vert[] verts = _vertAlloc!; // OCCT: _vertAlloc is null on a first call with 0 points (below)
 
         // remove dups
         {
@@ -366,10 +366,10 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             }
 
             // OCCT: with 0 points, w is 1 here: "detected -1 dups", then points = 1 and the single-point branch
-            // writes vert_alloc[0] of an empty (null) allocation. The port throws there (NullReferenceException).
+            // writes _vertAlloc[0] of an empty (null) allocation. The port throws there (NullReferenceException).
             if (points - w != 0)
             {
-                if (errlog_proc is not null)
+                if (_errlogProc is not null)
                 {
                     Errlog(string.Format(CultureInfo.InvariantCulture, "[WRN] detected {0} dups in xy array!\n", points - w));
                 }
@@ -381,21 +381,21 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
         {
             if (points == 2)
             {
-                if (errlog_proc is not null)
+                if (_errlogProc is not null)
                 {
                     Errlog("[WRN] all input points are colinear, returning single segment!\n");
                 }
-                first_hull_vert = verts[0];
+                _firstHullVert = verts[0];
                 verts[0].next = verts[1];
                 verts[1].next = null;
             }
             else
             {
-                if (errlog_proc is not null)
+                if (_errlogProc is not null)
                 {
                     Errlog("[WRN] all input points are identical, returning single point!\n");
                 }
-                first_hull_vert = verts[0];
+                _firstHullVert = verts[0];
                 verts[0].next = null;
             }
 
@@ -404,22 +404,22 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
 
         int hull_faces = 2 * points - 4;
 
-        if (max_faces < hull_faces)
+        if (_maxFaces < hull_faces)
         {
-            if (max_faces != 0)
+            if (_maxFaces != 0)
             {
-                face_alloc = null;
+                _faceAlloc = null;
             }
-            max_faces = 0;
-            face_alloc = new Face[hull_faces];
+            _maxFaces = 0;
+            _faceAlloc = new Face[hull_faces];
             for (int k = 0; k < hull_faces; k++)
             {
-                face_alloc[k] = new Face(k);
+                _faceAlloc[k] = new Face(k);
             }
-            max_faces = hull_faces;
+            _maxFaces = hull_faces;
         }
 
-        Face[] faces = face_alloc!;
+        Face[] faces = _faceAlloc!;
         for (int k = 1; k < hull_faces; k++)
         {
             faces[k - 1].next = faces[k];
@@ -515,11 +515,11 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
         {
             if (colinear)
             {
-                if (errlog_proc is not null)
+                if (_errlogProc is not null)
                 {
                     Errlog("[WRN] all input points are colinear, returning segment list!\n");
                 }
-                first_hull_vert = head;
+                _firstHullVert = head;
                 last.next = null; // break contour, make it a list
                 return -points;
             }
@@ -527,58 +527,58 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             {
                 if (points > 3)
                 {
-                    if (errlog_proc is not null)
+                    if (_errlogProc is not null)
                     {
                         Errlog("[NFO] all input points are cocircular.\n");
                     }
                 }
                 else
                 {
-                    if (errlog_proc is not null)
+                    if (_errlogProc is not null)
                     {
                         Errlog("[NFO] trivial case of 3 points, thank you.\n");
                     }
 
-                    first_dela_face = Face.Alloc(ref cache);
-                    first_dela_face.next = null;
-                    first_hull_face = Face.Alloc(ref cache);
-                    first_hull_face.next = null;
+                    _firstDelaFace = Face.Alloc(ref cache);
+                    _firstDelaFace.next = null;
+                    _firstHullFace = Face.Alloc(ref cache);
+                    _firstHullFace.next = null;
 
-                    first_dela_face.f[0] = first_dela_face.f[1] = first_dela_face.f[2] = first_hull_face;
-                    first_hull_face.f[0] = first_hull_face.f[1] = first_hull_face.f[2] = first_dela_face;
+                    _firstDelaFace.f[0] = _firstDelaFace.f[1] = _firstDelaFace.f[2] = _firstHullFace;
+                    _firstHullFace.f[0] = _firstHullFace.f[1] = _firstHullFace.f[2] = _firstDelaFace;
 
-                    head.sew = tail.sew = last.sew = first_hull_face;
+                    head.sew = tail.sew = last.sew = _firstHullFace;
 
                     if (f.n.z < 0)
                     {
-                        first_dela_face.v[0] = head;
-                        first_dela_face.v[1] = tail;
-                        first_dela_face.v[2] = last;
-                        first_hull_face.v[0] = last;
-                        first_hull_face.v[1] = tail;
-                        first_hull_face.v[2] = head;
+                        _firstDelaFace.v[0] = head;
+                        _firstDelaFace.v[1] = tail;
+                        _firstDelaFace.v[2] = last;
+                        _firstHullFace.v[0] = last;
+                        _firstHullFace.v[1] = tail;
+                        _firstHullFace.v[2] = head;
 
                         // reverse silhouette
                         head.next = last;
                         last.next = tail;
                         tail.next = head;
 
-                        first_hull_vert = last;
+                        _firstHullVert = last;
                     }
                     else
                     {
-                        first_dela_face.v[0] = last;
-                        first_dela_face.v[1] = tail;
-                        first_dela_face.v[2] = head;
-                        first_hull_face.v[0] = head;
-                        first_hull_face.v[1] = tail;
-                        first_hull_face.v[2] = last;
+                        _firstDelaFace.v[0] = last;
+                        _firstDelaFace.v[1] = tail;
+                        _firstDelaFace.v[2] = head;
+                        _firstHullFace.v[0] = head;
+                        _firstHullFace.v[1] = tail;
+                        _firstHullFace.v[2] = last;
 
-                        first_hull_vert = head;
+                        _firstHullVert = head;
                     }
 
-                    first_dela_face.n = first_dela_face.Cross();
-                    first_hull_face.n = first_hull_face.Cross();
+                    _firstDelaFace.n = _firstDelaFace.Cross();
+                    _firstHullFace.n = _firstHullFace.Cross();
 
                     return 3;
                 }
@@ -776,8 +776,8 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
                     _f = faces[2 * i - 4 - 1];
                     while (_f.Dot(_q) <= 0)
                     {
-                        // OCCT: assert(_f != face_alloc), a no-op in release builds, where _f then runs below
-                        // face_alloc; the port throws IndexOutOfRangeException there.
+                        // OCCT: assert(_f != _faceAlloc), a no-op in release builds, where _f then runs below
+                        // _faceAlloc; the port throws IndexOutOfRangeException there.
                         _f = faces[_f.index - 1];
                     }
                 }
@@ -915,7 +915,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             verts[i].sew = null;
         }
 
-        // Face** prev_dela = &first_dela_face (and prev_hull): the last face linked, null for the list's head.
+        // Face** prev_dela = &_firstDelaFace (and prev_hull): the last face linked, null for the list's head.
         i = 0;
         Face? prev_dela = null;
         Face? prev_hull = null;
@@ -926,7 +926,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             {
                 if (prev_dela is null)
                 {
-                    first_dela_face = _f;
+                    _firstDelaFace = _f;
                 }
                 else
                 {
@@ -939,7 +939,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
             {
                 if (prev_hull is null)
                 {
-                    first_hull_face = _f;
+                    _firstHullFace = _f;
                 }
                 else
                 {
@@ -967,7 +967,7 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
         // *prev_dela = nullptr; *prev_hull = nullptr;
         if (prev_dela is null)
         {
-            first_dela_face = null;
+            _firstDelaFace = null;
         }
         else
         {
@@ -975,14 +975,14 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
         }
         if (prev_hull is null)
         {
-            first_hull_face = null;
+            _firstHullFace = null;
         }
         else
         {
             prev_hull.next = null;
         }
 
-        first_hull_vert = (Vert)first_hull_face!.v[0]!;
+        _firstHullVert = (Vert)_firstHullFace!.v[0]!;
 
         // todo link slihouette verts into contour
         // and sew its edges with hull faces
@@ -992,28 +992,28 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
 
     private bool ReallocVerts(int points)
     {
-        inp_verts = points;
-        out_verts = 0;
+        _inpVerts = points;
+        _outVerts = 0;
 
-        first_dela_face = null;
-        first_hull_face = null;
-        first_hull_vert = null;
+        _firstDelaFace = null;
+        _firstHullFace = null;
+        _firstHullVert = null;
 
-        if (max_verts < points)
+        if (_maxVerts < points)
         {
-            if (max_verts != 0)
+            if (_maxVerts != 0)
             {
-                vert_alloc = null;
-                max_verts = 0;
+                _vertAlloc = null;
+                _maxVerts = 0;
             }
 
             // malloc(sizeof(Vert) * points); the "[ERR] Not enough memory" branch can't be reached
-            vert_alloc = new Vert[points];
+            _vertAlloc = new Vert[points];
             for (int k = 0; k < points; k++)
             {
-                vert_alloc[k] = new Vert();
+                _vertAlloc[k] = new Vert();
             }
-            max_verts = points;
+            _maxVerts = points;
         }
 
         return true;
@@ -1050,41 +1050,41 @@ internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBell
         int advance = advance_bytes / sizeof(double);
         for (int i = 0; i < points; i++)
         {
-            Vert v = vert_alloc![i];
+            Vert v = _vertAlloc![i];
             v.i = i;
             v.x = x[i * advance];
             v.y = y[i * advance];
             v.z = S14sqr(v.x) + S14sqr(v.y);
         }
 
-        out_verts = Triangulate();
-        return out_verts;
+        _outVerts = Triangulate();
+        return _outVerts;
     }
 
     public override void Destroy()
     {
-        face_alloc = null;
-        vert_alloc = null;
-        max_faces = 0;
-        max_verts = 0;
-        first_dela_face = null;
-        first_hull_face = null;
-        first_hull_vert = null;
+        _faceAlloc = null;
+        _vertAlloc = null;
+        _maxFaces = 0;
+        _maxVerts = 0;
+        _firstDelaFace = null;
+        _firstHullFace = null;
+        _firstHullVert = null;
     }
 
-    public override int GetNumInputPoints() { return inp_verts; }
+    public override int GetNumInputPoints() { return _inpVerts; }
 
-    public override int GetNumOutputVerts() { return out_verts; }
+    public override int GetNumOutputVerts() { return _outVerts; }
 
-    public override DelaunayTriangle? GetFirstDelaunayTriangle() { return first_dela_face; }
+    public override DelaunayTriangle? GetFirstDelaunayTriangle() { return _firstDelaFace; }
 
-    public override DelaunayTriangle? GetFirstHullTriangle() { return first_hull_face; }
+    public override DelaunayTriangle? GetFirstHullTriangle() { return _firstHullFace; }
 
-    public override DelaunayVertex? GetFirstHullVertex() { return first_hull_vert; }
+    public override DelaunayVertex? GetFirstHullVertex() { return _firstHullVert; }
 
     public override void SetErrLog(Func<object?, string, int>? proc, object? stream)
     {
-        errlog_proc = proc;
-        errlog_file = stream;
+        _errlogProc = proc;
+        _errlogFile = stream;
     }
 }

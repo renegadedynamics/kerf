@@ -26,10 +26,10 @@ namespace Kerf.Engine.Booleans.Legacy;
 /// </remarks>
 public class SurfaceTransition
 {
-    private const int M_Unknown = -100;
-    private const int M_noupdate = 0;
-    private const int M_updateREF = 1;
-    private const int M_Ointernal = 10;
+    private const int MUnknown = -100;
+    private const int MNoupdate = 0;
+    private const int MUpdateREF = 1;
+    private const int MOinternal = 10;
 
     private const int Before = 2;
     private const int After = 1;
@@ -201,7 +201,7 @@ public class SurfaceTransition
         FUN_getSTA(ang, tola, out int i, out int j);
 
         // update nearest :
-        int kmax = M_INTERNAL(o) ? 2 : 1;
+        int kmax = MInternal(o) ? 2 : 1;
         for (int k = 1; k <= kmax; k++)
         {
             if (k == 2)
@@ -236,7 +236,7 @@ public class SurfaceTransition
                                           curv,
                                           tola,
                                           ref _touchFlag); // eap Mar 25 2002
-                if (refn == M_Unknown)
+                if (refn == MUnknown)
                 {
                     _isDefined = false;
                     return;
@@ -245,7 +245,7 @@ public class SurfaceTransition
                 if (refn > 0)
                 {
                     _ang[i, j] = ang;
-                    _ori[i, j] = (refn == M_Ointernal) ? Internal : s;
+                    _ori[i, j] = (refn == MOinternal) ? Internal : s;
                     _curv[i, j] = curv;
                 }
             } // n=1..nmax
@@ -269,7 +269,7 @@ public class SurfaceTransition
         // j = 0,1,2 : sin = 0,>0,<0
         FUN_getSTA(ang, tola, out int i, out int j);
 
-        int kmax = M_INTERNAL(o) ? 2 : 1;
+        int kmax = MInternal(o) ? 2 : 1;
         for (int k = 1; k <= kmax; k++)
         {
             if (k == 2)
@@ -295,7 +295,7 @@ public class SurfaceTransition
 
                 int refn = FUN_refnearest(_ang[i, j], _ori[i, j], ang, /*O*/ s, tola); // eap
 
-                if (refn == M_Unknown)
+                if (refn == MUnknown)
                 {
                     _isDefined = false;
                     return;
@@ -304,7 +304,7 @@ public class SurfaceTransition
                 if (refn > 0)
                 {
                     _ang[i, j] = ang;
-                    _ori[i, j] = (refn == M_Ointernal) ? Internal : s;
+                    _ori[i, j] = (refn == MOinternal) ? Internal : s;
                 }
             } // n=1..nmax
         } // k=1..kmax
@@ -412,9 +412,9 @@ public class SurfaceTransition
 
     // File-static functions of TopTrans_SurfaceTransition.cxx
 
-    private static bool M_REVERSED(Orientation st) => st == Reversed;
+    private static bool MReversed(Orientation st) => st == Reversed;
 
-    private static bool M_INTERNAL(Orientation st) => st == Internal;
+    private static bool MInternal(Orientation st) => st == Internal;
 
     private static bool M_UNKNOWN(Containment st) => st == Unknown;
 
@@ -448,7 +448,7 @@ public class SurfaceTransition
     private static double FUN_Ang(in Direction3D _, in Direction3D beafter, in Direction3D tgC, in Direction3D norm, Orientation o)
     {
         Direction3D dironF = FUN_nCinsideS(tgC, norm);
-        if (M_REVERSED(o))
+        if (MReversed(o))
         {
             dironF.Reverse();
         }
@@ -488,7 +488,7 @@ public class SurfaceTransition
         bool undef = angref == 100.0;
         if (undef)
         {
-            return M_updateREF;
+            return MUpdateREF;
         }
 
         double cosref = Math.Cos(angref), cos = Math.Cos(ang);
@@ -501,15 +501,15 @@ public class SurfaceTransition
             // referring to no logical case)
             if (global::Kerf.Engine.Topology.TopAbs.Complement(ori) == oriref)
             {
-                return M_Ointernal;
+                return MOinternal;
             }
             else
             {
-                return M_Unknown; // nyi FUN_RAISE
+                return MUnknown; // nyi FUN_RAISE
             }
         }
 
-        int updateref = (dcos > 0.0) ? M_noupdate : M_updateREF;
+        int updateref = (dcos > 0.0) ? MNoupdate : MUpdateREF;
         return updateref;
     }
 
@@ -533,12 +533,12 @@ public class SurfaceTransition
             {
                 if (iisj && curvneg)
                 {
-                    return M_noupdate;
+                    return MNoupdate;
                 }
 
                 if (!iisj && curvpos)
                 {
-                    return M_noupdate;
+                    return MNoupdate;
                 }
             }
 
@@ -546,26 +546,26 @@ public class SurfaceTransition
             {
                 if (!nullcsref && (j == 1) && iisj && (curvpos || nullcurv))
                 {
-                    return M_updateREF;
+                    return MUpdateREF;
                 }
 
                 if (!nullcsref && (j == 1) && !iisj && (curvneg || nullcurv))
                 {
-                    return M_updateREF;
+                    return MUpdateREF;
                 }
 
                 if (iisj && curvpos)
                 {
-                    return M_noupdate;
+                    return MNoupdate;
                 }
 
                 if (!iisj && curvneg)
                 {
-                    return M_noupdate;
+                    return MNoupdate;
                 }
             }
 
-            return M_updateREF;
+            return MUpdateREF;
         } // undef
 
         double cosref = Math.Cos(angref), cos = Math.Cos(ang);
@@ -579,11 +579,11 @@ public class SurfaceTransition
             {
                 if (global::Kerf.Engine.Topology.TopAbs.Complement(ori) == oriref)
                 {
-                    return M_Ointernal;
+                    return MOinternal;
                 }
                 else
                 {
-                    return M_Unknown; // nyi FUN_RAISE
+                    return MUnknown; // nyi FUN_RAISE
                 }
             }
 
@@ -598,7 +598,7 @@ public class SurfaceTransition
                 noupdate = true;
             }
 
-            int updateref1 = noupdate ? M_noupdate : M_updateREF;
+            int updateref1 = noupdate ? MNoupdate : MUpdateREF;
             if (!j0)
             {
                 return updateref1;
@@ -610,19 +610,19 @@ public class SurfaceTransition
                 // check for (j==2) the face is BELOW Sref
                 if ((j == 2) && (Math.Abs(curv) < curvSref))
                 {
-                    updateref1 = M_noupdate;
+                    updateref1 = MNoupdate;
                 }
 
                 if ((j == 1) && (Math.Abs(curv) > curvSref))
                 {
-                    updateref1 = M_noupdate;
+                    updateref1 = MNoupdate;
                 }
             }
 
             return updateref1;
         } // samecos
 
-        int updateref = (dcos > 0.0) ? M_noupdate : M_updateREF;
+        int updateref = (dcos > 0.0) ? MNoupdate : MUpdateREF;
         if (oriref != ori)
         {
             touchFlag = true; // eap Mar 25 2002

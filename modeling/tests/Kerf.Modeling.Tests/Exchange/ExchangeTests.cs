@@ -4,7 +4,10 @@ using System.Text.RegularExpressions;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Exchange;
+namespace Build123d.Tests.Exchange;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>Import and export: BREP, STEP, STL, glTF and 3MF.</summary>
 public partial class ExchangeTests

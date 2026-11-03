@@ -39,8 +39,8 @@ public sealed class SimpleOffset : Modification
 {
     private struct NewFaceData
     {
-        public Surface? myOffsetS;
-        public Placement myL;
+        public Surface? OffsetS;
+        public Placement L;
         public double myTol;
         public bool myRevWires;
         public bool myRevFace;
@@ -48,8 +48,8 @@ public sealed class SimpleOffset : Modification
 
     private struct NewEdgeData
     {
-        public Curve3D? myOffsetC; // Resulting curve.
-        public Placement myL;
+        public Curve3D? OffsetC; // Resulting curve.
+        public Placement L;
         public double myTol;
     }
 
@@ -115,8 +115,8 @@ public sealed class SimpleOffset : Modification
 
         NewFaceData nfd = _faceInfo.Find(f);
 
-        s = nfd.myOffsetS;
-        l = nfd.myL;
+        s = nfd.OffsetS;
+        l = nfd.L;
         tol = nfd.myTol;
         revWires = nfd.myRevWires;
         revFace = nfd.myRevFace;
@@ -140,8 +140,8 @@ public sealed class SimpleOffset : Modification
 
         NewEdgeData ned = _edgeInfo.Find(e);
 
-        c = ned.myOffsetC;
-        l = ned.myL;
+        c = ned.OffsetC;
+        l = ned.L;
         tol = ned.myTol;
 
         return true;
@@ -285,8 +285,8 @@ public sealed class SimpleOffset : Modification
         }
 
         // aStatus is set by BRepOffset::Surface(), could be used to check result...
-        nfd.myOffsetS = global::Kerf.Engine.Offsets.BRepOffset.Surface(s, mult * _offsetValue, out OffsetStatus status, true);
-        nfd.myL = new Placement(); // Null transformation.
+        nfd.OffsetS = global::Kerf.Engine.Offsets.BRepOffset.Surface(s, mult * _offsetValue, out OffsetStatus status, true);
+        nfd.L = new Placement(); // Null transformation.
 
         // Save offset surface in map.
         _faceInfo.Bind(face, nfd);
@@ -316,7 +316,7 @@ public sealed class SimpleOffset : Modification
 
         // No need to deal with transformation - it is applied in fill faces data method.
         NewFaceData nfd = _faceInfo.Find(currFace);
-        Surface offsetSurf = nfd.myOffsetS!;
+        Surface offsetSurf = nfd.OffsetS!;
 
         // Compute offset 3d curve.
         Curve2D c2d = Tool.CurveOnSurface(edge, currFace, out double f, out double l)!;
@@ -330,12 +330,12 @@ public sealed class SimpleOffset : Modification
         BrepLibrary.BuildCurves3d(newEdge, tol);
 
         NewEdgeData ned = new();
-        ned.myOffsetC = Tool.Curve(newEdge, out ned.myL, out f, out l);
+        ned.OffsetC = Tool.Curve(newEdge, out ned.L, out f, out l);
 
         // Iterate over adjacent faces for the current edge and compute max deviation.
         double edgeTol = 0.0;
         var iter = new NCollection_List<Shape>.Iterator(facesList);
-        for (; ned.myOffsetC is not null && iter.More(); iter.Next())
+        for (; ned.OffsetC is not null && iter.More(); iter.Next())
         {
             Face curFace = ShapeCasts.Face(iter.Value());
 
@@ -347,11 +347,11 @@ public sealed class SimpleOffset : Modification
             // Create offset curve on surface.
             Curve2D c2dNew = Tool.CurveOnSurface(edge, curFace, out f, out l)!;
             Curve2DAdaptorBase hCurve2d = new CurveAdaptor2D(c2dNew, f, l);
-            SurfaceAdaptorBase hSurface = new SurfaceAdaptor(_faceInfo.Find(curFace).myOffsetS!);
+            SurfaceAdaptorBase hSurface = new SurfaceAdaptor(_faceInfo.Find(curFace).OffsetS!);
             var curveOnSurf = new CurveOnSurface(hCurve2d, hSurface);
 
             // Extract 3d-curve (it is not null).
-            CurveAdaptorBase curve3d = new CurveAdaptor(ned.myOffsetC, f, l);
+            CurveAdaptorBase curve3d = new CurveAdaptor(ned.OffsetC, f, l);
 
             // It is necessary to compute maximal deviation (tolerance).
             var validateEdge = new ValidateEdge(curve3d, curveOnSurf, true);
@@ -431,7 +431,7 @@ public sealed class SimpleOffset : Modification
 
             // Compute point on offset edge.
             NewEdgeData ned = _edgeInfo.Find(currEdge);
-            Curve3D offsetCurve = ned.myOffsetC!;
+            Curve3D offsetCurve = ned.OffsetC!;
             Point3D offsetPoint = offsetCurve.Value(minParam);
             offsetPointVec.Append(offsetPoint);
 

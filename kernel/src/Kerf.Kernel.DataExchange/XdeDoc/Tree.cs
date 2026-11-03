@@ -58,7 +58,7 @@ public sealed class Tree
                 aLayers.Add(layer);
             }
         }
-        void addUsed(Attributes attributes)
+        void AddUsed(Attributes attributes)
         {
             foreach (string name in attributes.Layers)
             {
@@ -70,18 +70,18 @@ public sealed class Tree
         }
         foreach (Instance root in Roots)
         {
-            addUsed(root.Attributes);
+            AddUsed(root.Attributes);
         }
         foreach (DocumentProduct product in Products())
         {
-            addUsed(product.Attributes);
+            AddUsed(product.Attributes);
             foreach (Instance component in product.Components)
             {
-                addUsed(component.Attributes);
+                AddUsed(component.Attributes);
             }
             foreach (SubShape sub in product.SubShapes)
             {
-                addUsed(sub.Attributes);
+                AddUsed(sub.Attributes);
             }
         }
         Layers = aLayers.ToImmutable();
@@ -278,7 +278,7 @@ public sealed class Tree
             }
             else
             {
-                var components = product.Components.Select(c => remapInstance(c)).ToImmutableArray();
+                var components = product.Components.Select(c => RemapInstance(c)).ToImmutableArray();
                 bool isSame = true;
                 for (int i = 0; i < components.Length && isSame; i++)
                 {
@@ -289,11 +289,11 @@ public sealed class Tree
             done[product] = aNew;
             return aNew;
         }
-        Instance remapInstance(Instance instance)
+        Instance RemapInstance(Instance instance)
         {
             DocumentProduct aProduct = remap(instance.Product);
             return ReferenceEquals(aProduct, instance.Product) ? instance : instance.WithProduct(aProduct);
         }
-        return new Tree(Roots.Select(remapInstance), Layers, LengthUnit);
+        return new Tree(Roots.Select(RemapInstance), Layers, LengthUnit);
     }
 }

@@ -1,11 +1,8 @@
 # Kerf: .NET naming for the kernel and the modelling layer (kernel/docs/design-rules.md, section 1).
 #
-# The rules are warnings (IDE1006). They are inert in the build until unit 10E turns them on:
-# - today kernel/Directory.Build.props suppresses IDE1006 (and CS8981, lower-case type names) to keep OCCT's names, and
-#   no project sets EnforceCodeStyleInBuild, so only an editor shows them;
-# - 10E removes the suppression and sets EnforceCodeStyleInBuild once, then lists every folder not yet renamed in the
-#   section at the end, with IDE1006 off; each package leaves the list in the commit that renames it
-#   (design-rules.md, "Turning the rules on").
+# IDE1006 is an error in the build (EnforceCodeStyleInBuild, set in kernel/ and modeling/Directory.Build.props) since
+# unit 10E applied the name map. The sections at the end turn it off where OCCT's names stay or the code doesn't obey the
+# rules yet; each later unit that renames a folder removes it from the list (design-rules.md, "Turning the rules on").
 
 root = true
 
@@ -17,8 +14,9 @@ insert_final_newline = true
 [*.cs]
 indent_size = 4
 
-# Reported by the build where EnforceCodeStyleInBuild is on and IDE1006 isn't in NoWarn
-dotnet_diagnostic.IDE1006.severity = warning
+# Reported by the build (EnforceCodeStyleInBuild), as an error. The rules' own severities below don't matter to the build:
+# this one does
+dotnet_diagnostic.IDE1006.severity = error
 
 # Symbol groups
 
@@ -118,8 +116,67 @@ dotnet_naming_rule.variables.symbols = variables
 dotnet_naming_rule.variables.style = camel
 dotnet_naming_rule.variables.severity = warning
 
-# Not yet renamed (unit 10E): IDE1006 off, folder by folder. Empty until 10E lifts the suppression in
-# kernel/Directory.Build.props; then it starts with every folder below and shrinks to nothing. For example:
-#
-# [{kernel/src/Kerf.Kernel.Foundation/{BSplCLib,BSplSLib,BVH}/**.cs,kernel/src/Kerf.Kernel.ModelingData/**.cs}]
-# dotnet_diagnostic.IDE1006.severity = none
+# OCCT's names, kept on purpose (said narrowly):
+# - the types unit 10J replaces keep their OCCT names in the namespace Occt (decision 1349, 58): NCollection, TCollection
+#   and PackedList;
+# - AdvApp2Var's numeric core is f2c's translation of OCCT's Fortran (decisions 77 and 902): its commons, routines and
+#   locals keep Fortran's names, which its comments and OCCT's sources use.
+[{kernel/src/Kerf.Kernel.Foundation/NCollection/**,kernel/src/Kerf.Kernel.Foundation/TCollection/**,kernel/src/Kerf.Kernel.Foundation/Collections/PackedList*.cs,kernel/src/Kerf.Kernel.ModelingData/AdvApp2Var/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+# Tests, Draw-lite, benchmarks, samples and tools: the rename (10E) renamed the kernel's symbols wherever they are used,
+# not these projects' own (their test names, OCCT's Draw commands and the recordings' helpers keep their style)
+[{kernel/tests/**,kernel/benchmarks/**,kernel/samples/**,kernel/tools/**,modeling/tests/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+# Not yet obeying (unit 10E's measurement, 3,337 violations in these folders): mostly parameters and locals the renamer
+# left as they were because the .NET name was taken in the same body (thePoint beside a local point; decision 15304),
+# then type parameters (TheCurve), fields whose name was taken, local functions and constants. Each later unit that
+# touches a folder renames them and removes it here.
+[kernel/src/Kerf.Kernel.DataExchange/{RW3mf/**,RWGltf/**,RWHeaderSection/**,RWMesh/**,RWStepAP214/**,RWStepBasic/**,RWStepGeom/**,RWStepShape/**,RWStepVisual/**,RWStl/**,Resource/**,STEPCAFControl/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.DataExchange/{STEPConstruct/**,STEPControl/**,STEPSelections/**,StepFile/**,StepToTopoDS/**,TopoDSToStep/**,XdeDoc/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.Foundation/{BSplCLib/**,BSplSLib/**,BVH/**,Bnd/**,CSLib/**,Convert/**,ElSLib/**,MathInteg/**,MathOpt/**,MathPoly/**,MathRoot/**,MathSys/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.Foundation/{MathUtils/**,PLib/**,Poly/**,Quantity/**,Standard/**,gp/**,math/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{AppBlend/**,ApproxInt/**,BOPAlgo/**,BOPTools/**,BRepAlgo/**,BRepApprox/**,BRepBlend/**,BRepBndLib/**,BRepBuilderAPI/**,BRepCheck/**,BRepClass3d/**,BRepExtrema/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{BRepFeat/**,BRepFill/**,BRepFilletAPI/**,BRepGProp/**,BRepLib/**,BRepMesh/**,BRepOffset/**,BRepOffsetAPI/**,BRepPrimAPI/**,BRepSweep/**,BRepTopAdaptor/**,BiTgte/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{Bisector/**,BlendFunc/**,ChFi2d/**,ChFi3d/**,ChFiDS/**,ChFiKPart/**,Contap/**,Draft/**,FairCurve/**,FilletSurf/**,GccAna/**,Geom2dAPI/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{Geom2dGcc/**,Geom2dHatch/**,Geom2dInt/**,GeomAPI/**,GeomFill/**,GeomInt/**,GeomPlate/**,HLRAlgo/**,HLRBRep/**,HLRTopoBRep/**,IntCurve/**,IntCurveSurface/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{IntImp/**,IntImpParGen/**,IntPatch/**,IntPolyh/**,IntRes2d/**,IntStart/**,IntSurf/**,IntTools/**,IntWalk/**,Intf/**,Intrv/**,Law/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{LocOpe/**,MAT2d/**,Plate/**,ShapeAlgo/**,ShapeAnalysis/**,ShapeBuild/**,ShapeConstruct/**,ShapeCustom/**,ShapeExtend/**,ShapeFix/**,ShapeProcess/**,ShapeUpgrade/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingAlgorithms/{TopClass/**,TopOpeBRepBuild/**,TopOpeBRepDS/**,TopOpeBRepTool/**,TopTrans/**,XBRepMesh/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingData/{Adaptor3d/**,AdvApprox/**,AppCont/**,AppDef/**,AppParCurves/**,Approx/**,BRep/**,BRepAdaptor/**,BRepLProp/**,BRepTools/**,BinTools/**,BndLib/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingData/{CPnts/**,Extrema/**,ExtremaPC/**,FEmTool/**,GC/**,GProp/**,Geom/**,Geom2d/**,Geom2dAdaptor/**,Geom2dConvert/**,GeomAdaptor/**,GeomBndLib/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingData/{GeomConvert/**,GeomGridEval/**,GeomLProp/**,GeomLib/**,GeomProjLib/**,GeomTools/**,Hermit/**,IntAna/**,IntAna2d/**,LProp/**,ProjLib/**,TopTools/**}]
+dotnet_diagnostic.IDE1006.severity = none
+
+[kernel/src/Kerf.Kernel.ModelingData/gce/**]
+dotnet_diagnostic.IDE1006.severity = none
+
+[modeling/src/Kerf.Modeling/{Geometry/**,Objects/**,Topology/**}]
+dotnet_diagnostic.IDE1006.severity = none

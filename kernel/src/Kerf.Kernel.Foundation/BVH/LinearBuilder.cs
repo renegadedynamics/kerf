@@ -182,7 +182,7 @@ public static partial class BvhTools
     {
         public readonly global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> mySet = theSet;        //!< Set of geometric objects
         public readonly Tree<T, TVec> myBVH = theBVH;       //!< BVH tree built over the set
-        public readonly int myNode = theNode;                   //!< BVH node to update bounding box
+        public readonly int Node = theNode;                   //!< BVH node to update bounding box
         public readonly int myLevel = theLevel;                 //!< Level of the processed BVH node
         public readonly StrongBox<int> myHeight = theHeight;    //!< Height of the processed BVH node
     }
@@ -197,17 +197,17 @@ public static partial class BvhTools
         /// <summary>Executes the task (OCCT's <c>operator()</c>).</summary>
         public void Invoke(BoundData<T, TVec> data)
         {
-            if (data.myBVH.IsOuter(data.myNode) || data.myLevel > 2)
+            if (data.myBVH.IsOuter(data.Node) || data.myLevel > 2)
             {
-                data.myHeight.Value = UpdateBounds(data.mySet, data.myBVH, data.myNode);
+                data.myHeight.Value = UpdateBounds(data.mySet, data.myBVH, data.Node);
             }
             else
             {
                 StrongBox<int> lftHeight = new(0);
                 StrongBox<int> rghHeight = new(0);
 
-                int lftChild = data.myBVH.NodeInfoBuffer()[data.myNode].Y();
-                int rghChild = data.myBVH.NodeInfoBuffer()[data.myNode].Z();
+                int lftChild = data.myBVH.NodeInfoBuffer()[data.Node].Y();
+                int rghChild = data.myBVH.NodeInfoBuffer()[data.Node].Z();
 
                 NCollection_DynamicArray<BoundData<T, TVec>> list = new(2);
 
@@ -244,8 +244,8 @@ public static partial class BvhTools
                 CwiseMin<T, TVec>(ref lftMinPoint, rghMinPoint);
                 CwiseMax<T, TVec>(ref lftMaxPoint, rghMaxPoint);
 
-                data.myBVH.MinPointBuffer()[data.myNode] = lftMinPoint;
-                data.myBVH.MaxPointBuffer()[data.myNode] = lftMaxPoint;
+                data.myBVH.MinPointBuffer()[data.Node] = lftMinPoint;
+                data.myBVH.MaxPointBuffer()[data.Node] = lftMaxPoint;
 
                 data.myHeight.Value = Math.Max(lftHeight.Value, rghHeight.Value) + 1;
             }

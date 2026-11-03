@@ -1106,7 +1106,7 @@ public partial class FilletBuilderBase
     }
 
     //=======================================================================
-    // function : cherche_face
+    // function : ChercheFace
     // purpose  : find face F belonging to the map, different from faces
     //           F1  F2 F3 and containing edge E
     //=======================================================================
@@ -1788,15 +1788,15 @@ public partial class FilletBuilderBase
                         Face[nb - 1] = f3;
                         if (cv1.Arc().IsSame(edgelibre1))
                         {
-                            cherche_face(_vfMap[vtx], edgelibre2, f1, f2, f3, ref Face[nb - 1]);
+                            ChercheFace(_vfMap[vtx], edgelibre2, f1, f2, f3, ref Face[nb - 1]);
                         }
                         else if (cv1.Arc().IsSame(edgelibre2))
                         {
-                            cherche_face(_vfMap[vtx], edgelibre1, f1, f2, f3, ref Face[nb - 1]);
+                            ChercheFace(_vfMap[vtx], edgelibre1, f1, f2, f3, ref Face[nb - 1]);
                         }
                         else
                         {
-                            cherche_face(_vfMap[vtx], edge[nb - 1], f1, f2, f3, ref Face[nb - 1]);
+                            ChercheFace(_vfMap[vtx], edge[nb - 1], f1, f2, f3, ref Face[nb - 1]);
                         }
                         ChFi3d_cherche_edge(vtx, tabedg, Face[nb - 1], ref edge[nb], ref v);
                         tabedg.SetValue(nb, edge[nb]);
@@ -4098,7 +4098,7 @@ public partial class FilletBuilderBase
             fopbis.Orientation(Forward);
 
             // Fop calls the 4th face non-used for the vertex
-            cherche_face(_vfMap[vtx], arcprol, fad, fv, fv, ref fopbis);
+            ChercheFace(_vfMap[vtx], arcprol, fad, fv, fv, ref fopbis);
             fop.Orientation(Forward);
             for (ex.Init(fopbis, ShapeType.Edge); ex.More(); ex.Next())
             {
@@ -5007,7 +5007,7 @@ internal static class Builder_C1
         return false;
     }
 
-    internal static void cherche_face(NCollection_List<Shape> map, in Edge e, in Face f1, in Face f2, in Face f3, ref Face f)
+    internal static void ChercheFace(NCollection_List<Shape> map, in Edge e, in Face f1, in Face f2, in Face f3, ref Face f)
     {
         Face fcur = new();
         bool trouve = false;

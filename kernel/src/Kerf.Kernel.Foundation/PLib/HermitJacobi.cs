@@ -52,13 +52,13 @@ public sealed class HermitJacobi
 
     // The Hermite matrices are computed once, on first use (C++ function-local statics; thread-safe here too).
     // They are shared: never modified after they are built.
-    private static Matrix? THE_HERMITE_MATRIX_C0;
-    private static Matrix? THE_HERMITE_MATRIX_C1;
-    private static Matrix? THE_HERMITE_MATRIX_C2;
+    private static Matrix? s_theHermiteMatrixC0;
+    private static Matrix? s_theHermiteMatrixC1;
+    private static Matrix? s_theHermiteMatrixC2;
 
     private static Matrix GetHermiteMatrix_C0()
     {
-        return LazyInitializer.EnsureInitialized(ref THE_HERMITE_MATRIX_C0, static () =>
+        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC0, static () =>
         {
             Matrix result = new(1, 2, 1, 2);
             global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 0, 0, result);
@@ -68,7 +68,7 @@ public sealed class HermitJacobi
 
     private static Matrix GetHermiteMatrix_C1()
     {
-        return LazyInitializer.EnsureInitialized(ref THE_HERMITE_MATRIX_C1, static () =>
+        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC1, static () =>
         {
             Matrix result = new(1, 4, 1, 4);
             global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 1, 1, result);
@@ -78,7 +78,7 @@ public sealed class HermitJacobi
 
     private static Matrix GetHermiteMatrix_C2()
     {
-        return LazyInitializer.EnsureInitialized(ref THE_HERMITE_MATRIX_C2, static () =>
+        return LazyInitializer.EnsureInitialized(ref s_theHermiteMatrixC2, static () =>
         {
             Matrix result = new(1, 6, 1, 6);
             global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(-1.0, 1.0, 2, 2, result);

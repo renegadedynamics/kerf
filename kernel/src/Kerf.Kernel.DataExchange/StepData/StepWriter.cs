@@ -1203,7 +1203,7 @@ public class StepWriter
     /// <summary>Same as above, but the string is given by CString + Length (OCCT's overload on <c>const char*</c>).</summary>
     private void AddCString(string astr, int lnstr, int more = 0)
     {
-        void flushLine(int required)
+        void FlushLine(int required)
         {
             _thefile.Append(_thecurr.Moved());
             int indst = _thelevel * 2;
@@ -1218,7 +1218,7 @@ public class StepWriter
         {
             while (!_thecurr.CanGet(lnstr + more))
             {
-                flushLine(lnstr + more);
+                FlushLine(lnstr + more);
             }
             _thecurr.Add(astr, lnstr);
             return;
@@ -1237,7 +1237,7 @@ public class StepWriter
             int room = StepLong - _thecurr.Length();
             if (room <= 0 || (rest + more <= StepLong && room < rest + more))
             {
-                flushLine(rest + more <= StepLong ? rest + more : 0);
+                FlushLine(rest + more <= StepLong ? rest + more : 0);
                 continue;
             }
 
@@ -1247,7 +1247,7 @@ public class StepWriter
             rest -= chunk;
             if (rest > 0)
             {
-                flushLine(rest + more <= StepLong ? rest + more : 0);
+                FlushLine(rest + more <= StepLong ? rest + more : 0);
             }
         }
     }

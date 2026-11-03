@@ -667,12 +667,12 @@ internal static class InterUtils
     /// The approximate parameters on the surface (from the polyhedron's vertex, edge or triangle) and on the curve
     /// (from the polygon's segment) of a section point of the interference.
     /// </summary>
-    public static void SectionPointToParameters<PolyhedronType, PolygonType>(in SectionPoint sp,
+    public static void SectionPointToParameters<PolyhedronType, TPolygonType>(in SectionPoint sp,
                                                                              PolyhedronType polyhedron,
-                                                                             PolygonType polygon, out double U,
+                                                                             TPolygonType polygon, out double U,
                                                                              out double V, out double w)
         where PolyhedronType : IPolyhedron
-        where PolygonType : IPolygon
+        where TPolygonType : IPolygon
     {
         PIType typ;
         int adr1, adr2;
@@ -1133,16 +1133,16 @@ internal static class InterUtils
     }
 
     /// <summary>The intersection of the curve with a quadric surface by the exact quadric/curve algorithm.</summary>
-    public static void PerformCurveQuadric<QuadCurvExactType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
+    public static void PerformCurveQuadric<TQuadCurvExactType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
         in CurveType curve, in SurfaceType surface,
         NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points)
-        where QuadCurvExactType : ITheQuadCurvExactInter<QuadCurvExactType, SurfaceType, CurveType>
+        where TQuadCurvExactType : ITheQuadCurvExactInter<TQuadCurvExactType, SurfaceType, CurveType>
         where CurveTool : IIntersectionCurveTool<CurveType>
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
     {
         points.Clear();
 
-        QuadCurvExactType quadCurv = QuadCurvExactType.Create(surface, curve);
+        TQuadCurvExactType quadCurv = TQuadCurvExactType.Create(surface, curve);
         if (quadCurv.IsDone())
         {
             int nbRoots = quadCurv.NbRoots();
@@ -1218,12 +1218,12 @@ internal static class InterUtils
     }
 
     /// <summary>The parameters of the section points of the interference, and of the points of its tangent zones.</summary>
-    public static void CollectInterferencePoints<InterferenceType, PolyhedronType, PolygonType>(
-        InterferenceType interference, PolyhedronType polyhedron, PolygonType polygon,
+    public static void CollectInterferencePoints<TInterferenceType, PolyhedronType, TPolygonType>(
+        TInterferenceType interference, PolyhedronType polyhedron, TPolygonType polygon,
         SortedStartPoints points)
-        where InterferenceType : PolygonInterference
+        where TInterferenceType : PolygonInterference
         where PolyhedronType : IPolyhedron
-        where PolygonType : IPolygon
+        where TPolygonType : IPolygon
     {
         points.Clear();
 
@@ -1326,12 +1326,12 @@ internal static class InterUtils
     /// Refines each distinct start point by the exact intersection, and keeps the points inside the curve's and the
     /// surface's bounds.
     /// </summary>
-    public static void ProcessSortedPoints<ExactInterType, CSFunctionType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
-        ExactInterType exactInter, FunctionSetRoot rsnld, SortedStartPoints points, double u0,
+    public static void ProcessSortedPoints<TExactInterType, TCSFunctionType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
+        TExactInterType exactInter, FunctionSetRoot rsnld, SortedStartPoints points, double u0,
         double u1, double v0, double v1, double winf, double wsup, in CurveType curve,
         in SurfaceType surface, NCollection_DynamicArray<CurveSurfaceIntersectionPoint> result)
-        where ExactInterType : IntCS<CSFunctionType, SurfaceType, SurfaceTool, CurveType, CurveTool>
-        where CSFunctionType : FunctionSetWithDerivatives, ICSFunction<SurfaceType, CurveType>
+        where TExactInterType : IntCS<TCSFunctionType, SurfaceType, SurfaceTool, CurveType, CurveTool>
+        where TCSFunctionType : FunctionSetWithDerivatives, ICSFunction<SurfaceType, CurveType>
         where CurveTool : IIntersectionCurveTool<CurveType>
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
     {

@@ -68,33 +68,33 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     private NCollection_HArray1<Curve2D?>? _result2dCurve;
 
     // Structure to perform splits computation.
-    // This structure is not thread-safe since operations under mySplits should be performed in a
-    // critical section. myPeriodicDir - 0 for U periodicity and 1 for V periodicity.
+    // This structure is not thread-safe since operations under Splits should be performed in a
+    // critical section. PeriodicDir - 0 for U periodicity and 1 for V periodicity.
     private sealed class SplitDS
     {
         public SplitDS(CurveAdaptorBase curve, SurfaceAdaptorBase surface, NCollection_DynamicArray<double> splits)
         {
             myCurve = curve;
             mySurface = surface;
-            mySplits = splits;
-            myPerMinParam = 0.0;
-            myPerMaxParam = 0.0;
-            myPeriodicDir = 0;
-            myExtCCCurve1 = null;
-            myExtCCLast2DParam = 0.0;
+            Splits = splits;
+            PerMinParam = 0.0;
+            PerMaxParam = 0.0;
+            PeriodicDir = 0;
+            ExtCCCurve1 = null;
+            ExtCCLast2DParam = 0.0;
             myExtPS = null;
         }
 
         public readonly CurveAdaptorBase myCurve;
         public readonly SurfaceAdaptorBase mySurface;
-        public readonly NCollection_DynamicArray<double> mySplits;
+        public readonly NCollection_DynamicArray<double> Splits;
 
-        public double myPerMinParam;
-        public double myPerMaxParam;
-        public int myPeriodicDir;
+        public double PerMinParam;
+        public double PerMaxParam;
+        public int PeriodicDir;
 
-        public CurveOnSurface? myExtCCCurve1;
-        public double myExtCCLast2DParam;
+        public CurveOnSurface? ExtCCCurve1;
+        public double ExtCCLast2DParam;
 
         public ExtPS? myExtPS;
     }
@@ -2164,16 +2164,16 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         if (surface.IsUPeriodic)
         {
-            ds.myPeriodicDir = 0;
+            ds.PeriodicDir = 0;
             SplitOnDirection(ds);
         }
         if (surface.IsVPeriodic)
         {
-            ds.myPeriodicDir = 1;
+            ds.PeriodicDir = 1;
             SplitOnDirection(ds);
         }
 
-        ds.mySplits.AsSpan().Sort(Comparator);
+        ds.Splits.AsSpan().Sort(Comparator);
     }
 
     /// <summary>Perform splitting on a specified direction. Sub-method in BuildCurveSplits.</summary>
@@ -2188,14 +2188,14 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         Point2D startPnt = new(splitDS.mySurface.FirstUParameter(),
                                  splitDS.mySurface.FirstVParameter());
-        Direction2D dir = new(splitDS.myPeriodicDir, splitDS.myPeriodicDir == 0 ? 1 : 0);
+        Direction2D dir = new(splitDS.PeriodicDir, splitDS.PeriodicDir == 0 ? 1 : 0);
 
-        splitDS.myPerMinParam = splitDS.myPeriodicDir == 0 ? splitDS.mySurface.FirstUParameter()
+        splitDS.PerMinParam = splitDS.PeriodicDir == 0 ? splitDS.mySurface.FirstUParameter()
                                                                  : splitDS.mySurface.FirstVParameter();
-        splitDS.myPerMaxParam = splitDS.myPeriodicDir == 0 ? splitDS.mySurface.LastUParameter()
+        splitDS.PerMaxParam = splitDS.PeriodicDir == 0 ? splitDS.mySurface.LastUParameter()
                                                                  : splitDS.mySurface.LastVParameter();
         double last2DParam =
-            splitDS.myPeriodicDir != 0
+            splitDS.PeriodicDir != 0
                 ? splitDS.mySurface.LastUParameter() - splitDS.mySurface.FirstUParameter()
                 : splitDS.mySurface.LastVParameter() - splitDS.mySurface.FirstVParameter();
 
@@ -2203,8 +2203,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         Curve2D c2GC = new LineCurve2D(startPnt, dir);
         CurveAdaptor2D c = new(c2GC, 0, last2DParam);
         CurveOnSurface cOnS = new(c, splitDS.mySurface);
-        splitDS.myExtCCCurve1 = cOnS;
-        splitDS.myExtCCLast2DParam = last2DParam;
+        splitDS.ExtCCCurve1 = cOnS;
+        splitDS.ExtCCLast2DParam = last2DParam;
 
         FindSplitPoint(splitDS,
                        splitDS.myCurve.FirstParameter(), // Initial curve range.
@@ -2216,10 +2216,10 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     {
         // Make extrema copy to avoid dependencies between different levels of the recursion.
         ExtCC extCC = new();
-        extCC.SetCurve(1, splitDS.myExtCCCurve1!);
+        extCC.SetCurve(1, splitDS.ExtCCCurve1!);
         extCC.SetCurve(2, splitDS.myCurve);
         extCC.SetSingleSolutionFlag(true); // Search only one solution since multiple invocations are needed.
-        extCC.SetRange(1, 0, splitDS.myExtCCLast2DParam);
+        extCC.SetRange(1, 0, splitDS.ExtCCLast2DParam);
         extCC.SetRange(2, minParam, maxParam);
         extCC.Perform();
 
@@ -2259,10 +2259,10 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 POnSurf pOnS = splitDS.myExtPS.Point(minIdx);
                 double u, v, projParam;
                 pOnS.Parameter(out u, out v);
-                projParam = splitDS.myPeriodicDir != 0 ? v : u;
+                projParam = splitDS.PeriodicDir != 0 ? v : u;
 
-                if (Math.Abs(projParam - splitDS.myPerMinParam) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                    || Math.Abs(projParam - splitDS.myPerMaxParam) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (Math.Abs(projParam - splitDS.PerMinParam) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    || Math.Abs(projParam - splitDS.PerMaxParam) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     double param = pOnC2.Parameter();
                     double cfParam = splitDS.myCurve.FirstParameter();
@@ -2272,7 +2272,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         && param < clParam - global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // Add only inner points.
-                        splitDS.mySplits.Append(param);
+                        splitDS.Splits.Append(param);
                     }
 
                     const double deltaCoeff = 0.01;

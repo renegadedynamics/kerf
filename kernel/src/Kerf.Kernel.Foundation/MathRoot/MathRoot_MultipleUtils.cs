@@ -90,25 +90,25 @@ public static partial class MathRoot
     //  Functor interfaces (C++'s callable template parameters of FindAllRootsImpl)
     // ============================================================================
 
-    /// <summary>SampleFn: callable (int theIndex, double theX) -> bool.</summary>
+    /// <summary>TSampleFn: callable (int theIndex, double theX) -> bool.</summary>
     public interface IMultipleSampleFn
     {
         bool Invoke(int index, double x);
     }
 
-    /// <summary>GetValueFn: callable (int theIndex) -> double, returns f(x)-offset at sample.</summary>
+    /// <summary>TGetValueFn: callable (int theIndex) -> double, returns f(x)-offset at sample.</summary>
     public interface IMultipleGetValueFn
     {
         double Invoke(int index);
     }
 
-    /// <summary>GetRootValueFn: callable (double theX) -> double, returns original f(x).</summary>
+    /// <summary>TGetRootValueFn: callable (double theX) -> double, returns original f(x).</summary>
     public interface IMultipleGetRootValueFn
     {
         double Invoke(double x);
     }
 
-    /// <summary>IntervalExtraFn: callable (int, x0, x1, f0, f1, result, epsX) -> void.</summary>
+    /// <summary>TIntervalExtraFn: callable (int, x0, x1, f0, f1, result, epsX) -> void.</summary>
     public interface IMultipleIntervalExtraFn
     {
         void Invoke(int index, double x0, double x1, double f0, double f1, ref MultipleResult result, double epsX);
@@ -978,20 +978,20 @@ public static partial class MathRoot
     /// Core implementation for finding all roots in an interval, shared by the Value-only and Values (with
     /// derivative) interfaces.
     /// </summary>
-    public static MultipleResult FindAllRootsImpl<SampleFn, GetValueFn, BrentWrapperT, GetRootValueFn, IntervalExtraFn>(
+    public static MultipleResult FindAllRootsImpl<TSampleFn, TGetValueFn, TBrentWrapperT, TGetRootValueFn, TIntervalExtraFn>(
         double lower,
         double upper,
         MultipleConfig config,
-        SampleFn sampleFn,
-        GetValueFn getValue,
-        BrentWrapperT brentWrapper,
-        GetRootValueFn getRootValue,
-        IntervalExtraFn intervalExtra)
-        where SampleFn : IMultipleSampleFn
-        where GetValueFn : IMultipleGetValueFn
-        where BrentWrapperT : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
-        where GetRootValueFn : IMultipleGetRootValueFn
-        where IntervalExtraFn : IMultipleIntervalExtraFn
+        TSampleFn sampleFn,
+        TGetValueFn getValue,
+        TBrentWrapperT brentWrapper,
+        TGetRootValueFn getRootValue,
+        TIntervalExtraFn intervalExtra)
+        where TSampleFn : IMultipleSampleFn
+        where TGetValueFn : IMultipleGetValueFn
+        where TBrentWrapperT : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
+        where TGetRootValueFn : IMultipleGetRootValueFn
+        where TIntervalExtraFn : IMultipleIntervalExtraFn
     {
         MultipleResult result = new();
         result.Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK;

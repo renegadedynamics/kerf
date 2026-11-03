@@ -689,7 +689,7 @@ public static class PLib
     }
 
     // Evaluation of only value using local variables (register-friendly). Writes to output only at the end.
-    private static void eval_poly0<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly0<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                          int degree, double par)
         where TDim : struct, IEvalDim
     {
@@ -718,7 +718,7 @@ public static class PLib
     }
 
     // Evaluation of value and first derivative using local variables.
-    private static void eval_poly1<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly1<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                          int degree, double par)
         where TDim : struct, IEvalDim
     {
@@ -773,7 +773,7 @@ public static class PLib
     }
 
     // Evaluation of value and first and second derivatives using local variables.
-    private static void eval_poly2<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly2<TDim>(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                          int degree, double par)
         where TDim : struct, IEvalDim
     {
@@ -838,7 +838,7 @@ public static class PLib
     // Runtime evaluations, for dimension > 4
 
     // Evaluation of only value. theCoeffs starts at the highest-degree coefficient (index theTop).
-    private static void eval_poly0_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly0Runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                            int degree, double par, int dimension)
     {
         for (int i = 0; i < dimension; ++i)
@@ -858,7 +858,7 @@ public static class PLib
     }
 
     // Evaluation of value + 1st derivative
-    private static void eval_poly1_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly1Runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                            int degree, double par, int dimension)
     {
         Span<double> res0 = result.Slice(0, dimension);
@@ -885,7 +885,7 @@ public static class PLib
     }
 
     // Evaluation of value + 1st + 2nd derivatives
-    private static void eval_poly2_runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
+    private static void EvalPoly2Runtime(Span<double> result, ReadOnlySpan<double> coeffs, int top,
                                            int degree, double par, int dimension)
     {
         Span<double> res0 = result.Slice(0, dimension);
@@ -953,11 +953,11 @@ public static class PLib
                 {
                     switch (dimension)
                     {
-                        case 1: eval_poly1<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 2: eval_poly1<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 3: eval_poly1<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 4: eval_poly1<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
-                        default: eval_poly1_runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
+                        case 1: EvalPoly1<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 2: EvalPoly1<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 3: EvalPoly1<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 4: EvalPoly1<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
+                        default: EvalPoly1Runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
                     }
                     break;
                 }
@@ -965,11 +965,11 @@ public static class PLib
                 {
                     switch (dimension)
                     {
-                        case 1: eval_poly2<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 2: eval_poly2<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 3: eval_poly2<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
-                        case 4: eval_poly2<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
-                        default: eval_poly2_runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
+                        case 1: EvalPoly2<EvalDim1>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 2: EvalPoly2<EvalDim2>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 3: EvalPoly2<EvalDim3>(res, polynomialCoeff, coeffs, degree, par); break;
+                        case 4: EvalPoly2<EvalDim4>(res, polynomialCoeff, coeffs, degree, par); break;
+                        default: EvalPoly2Runtime(res, polynomialCoeff, coeffs, degree, par, dimension); break;
                     }
                     break;
                 }
@@ -1016,11 +1016,11 @@ public static class PLib
     {
         switch (dimension)
         {
-            case 1: eval_poly0<EvalDim1>(results, polynomialCoeff, degreeDimension, degree, u); break;
-            case 2: eval_poly0<EvalDim2>(results, polynomialCoeff, degreeDimension, degree, u); break;
-            case 3: eval_poly0<EvalDim3>(results, polynomialCoeff, degreeDimension, degree, u); break;
-            case 4: eval_poly0<EvalDim4>(results, polynomialCoeff, degreeDimension, degree, u); break;
-            default: eval_poly0_runtime(results, polynomialCoeff, degreeDimension, degree, u, dimension); break;
+            case 1: EvalPoly0<EvalDim1>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 2: EvalPoly0<EvalDim2>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 3: EvalPoly0<EvalDim3>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            case 4: EvalPoly0<EvalDim4>(results, polynomialCoeff, degreeDimension, degree, u); break;
+            default: EvalPoly0Runtime(results, polynomialCoeff, degreeDimension, degree, u, dimension); break;
         }
     }
 

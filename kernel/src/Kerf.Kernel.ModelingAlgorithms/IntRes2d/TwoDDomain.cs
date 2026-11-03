@@ -33,10 +33,10 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
     private int _status;
     private double first_param;
     private double last_param;
-    private double first_tol;
-    private double last_tol;
-    private Point2D first_point;
-    private Point2D last_point;
+    private double _firstTol;
+    private double _lastTol;
+    private Point2D _firstPoint;
+    private Point2D _lastPoint;
     private double _periodfirst;
     private double _periodlast;
 
@@ -54,10 +54,10 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         _status = 0;
         first_param = 0.0;
         last_param = 0.0;
-        first_tol = 0.0;
-        last_tol = 0.0;
-        first_point = new Point2D(0.0, 0.0);
-        last_point = new Point2D(0.0, 0.0);
+        _firstTol = 0.0;
+        _lastTol = 0.0;
+        _firstPoint = new Point2D(0.0, 0.0);
+        _lastPoint = new Point2D(0.0, 0.0);
         _periodfirst = 0.0;
         _periodlast = 0.0;
     }
@@ -88,12 +88,12 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         _periodfirst = _periodlast = 0.0;
 
         first_param = LimitInfinite(par1);
-        first_point.SetCoord(LimitInfinite(pnt1.X()), LimitInfinite(pnt1.Y()));
-        first_tol = tol1;
+        _firstPoint.SetCoord(LimitInfinite(pnt1.X()), LimitInfinite(pnt1.Y()));
+        _firstTol = tol1;
 
         last_param = LimitInfinite(par2);
-        last_point.SetCoord(LimitInfinite(pnt2.X()), LimitInfinite(pnt2.Y()));
-        last_tol = tol2;
+        _lastPoint.SetCoord(LimitInfinite(pnt2.X()), LimitInfinite(pnt2.Y()));
+        _lastTol = tol2;
     }
 
     /// <summary>Sets the values for an infinite domain (the bounds' values are kept but not used).</summary>
@@ -111,15 +111,15 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         {
             _status = 1;
             first_param = LimitInfinite(par);
-            first_point.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
-            first_tol = tol;
+            _firstPoint.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _firstTol = tol;
         }
         else
         {
             _status = 2;
             last_param = LimitInfinite(par);
-            last_point.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
-            last_tol = tol;
+            _lastPoint.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _lastTol = tol;
         }
     }
 
@@ -163,7 +163,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (first_point);
+        return (_firstPoint);
     }
 
     /// <summary>The tolerance of the first (left) bound.</summary>
@@ -175,7 +175,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (first_tol);
+        return (_firstTol);
     }
 
     /// <summary>True if the domain has a last point, defining the highest admitted parameter on the curve.</summary>
@@ -202,7 +202,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (last_point);
+        return (_lastPoint);
     }
 
     /// <summary>The tolerance of the last (right) bound.</summary>
@@ -214,7 +214,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
             throw new DomainErrorException();
         }
 
-        return (last_tol);
+        return (_lastTol);
     }
 
     /// <summary>True if the domain is closed.</summary>
@@ -243,8 +243,8 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
 
     public readonly bool Equals(TwoDDomain other)
         => _status == other._status && first_param.Equals(other.first_param) && last_param.Equals(other.last_param)
-           && first_tol.Equals(other.first_tol) && last_tol.Equals(other.last_tol)
-           && first_point.Equals(other.first_point) && last_point.Equals(other.last_point)
+           && _firstTol.Equals(other._firstTol) && _lastTol.Equals(other._lastTol)
+           && _firstPoint.Equals(other._firstPoint) && _lastPoint.Equals(other._lastPoint)
            && _periodfirst.Equals(other._periodfirst) && _periodlast.Equals(other._periodlast);
 
     public override readonly bool Equals(object? obj) => obj is TwoDDomain other && Equals(other);
@@ -255,10 +255,10 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         hash.Add(_status);
         hash.Add(first_param);
         hash.Add(last_param);
-        hash.Add(first_tol);
-        hash.Add(last_tol);
-        hash.Add(first_point);
-        hash.Add(last_point);
+        hash.Add(_firstTol);
+        hash.Add(_lastTol);
+        hash.Add(_firstPoint);
+        hash.Add(_lastPoint);
         hash.Add(_periodfirst);
         hash.Add(_periodlast);
         return hash.ToHashCode();
@@ -270,7 +270,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
 
     public override readonly string ToString()
         => $"IntRes2d_Domain(status: {_status}, "
-           + Constants.Format("first", first_param, first_tol, first_point.X(), first_point.Y()) + ", "
-           + Constants.Format("last", last_param, last_tol, last_point.X(), last_point.Y()) + ", "
+           + Constants.Format("first", first_param, _firstTol, _firstPoint.X(), _firstPoint.Y()) + ", "
+           + Constants.Format("last", last_param, _lastTol, _lastPoint.X(), _lastPoint.Y()) + ", "
            + Constants.Format("period", _periodfirst, _periodlast) + ")";
 }

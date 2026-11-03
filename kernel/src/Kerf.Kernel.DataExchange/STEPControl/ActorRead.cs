@@ -43,7 +43,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// <list type="bullet">
 /// <item>the shapes are made unfrozen (StepToTopoDS's <c>InternalValue</c>), bound and reused through the transient
 /// process, and frozen when the reader publishes them (XSControl_Reader, decision 1224);</item>
-/// <item>OCCT's file-level <c>NM_DETECTED</c> (a process-wide flag telling the callers that the representation just
+/// <item>OCCT's file-level <c>_nmDetected</c> (a process-wide flag telling the callers that the representation just
 /// translated was non-manifold) is the actor's own;</item>
 /// <item>a model whose length unit isn't initialised is read in millimetres (OCCT: the process-wide unit, from the
 /// static <c>xstep.cascade.unit</c>); STEPControl_Reader initialises it from its session's statics;</item>
@@ -55,7 +55,7 @@ namespace Kerf.Engine.Exchange.Step;
 public class ActorRead : ActorOfTransientProcess, IActorRead
 {
     // Set to inform outer methods that current representation item is non-manifold (OCCT: a file-level global).
-    private bool NM_DETECTED;
+    private bool _nmDetected;
 
     public ActorRead(InterfaceModel model)
     {
@@ -548,7 +548,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             {
                 result1 = theResult;
                 // [BEGIN] ssv: OCCT#22436: extra compound in NMSSR case
-                if (NM_DETECTED && result1.ShapeType() == ShapeType.Compound)
+                if (_nmDetected && result1.ShapeType() == ShapeType.Compound)
                 {
                     Iterator it = new Iterator(result1);
                     for (; it.More(); it.Next())
@@ -609,7 +609,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 {
                     result1 = theResult;
                     // [BEGIN] ssv: OCCT#22436: extra compound in NMSSR case
-                    if (NM_DETECTED && result1.ShapeType() == ShapeType.Compound)
+                    if (_nmDetected && result1.ShapeType() == ShapeType.Compound)
                     {
                         Iterator it = new Iterator(result1);
                         for (; it.More(); it.Next())
@@ -782,7 +782,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                                                       in Factors localFactors, ref bool isBound, bool useTrsf = false,
                                                       ProgressRange progress = default)
     {
-        NM_DETECTED = false;
+        _nmDetected = false;
         ShapeBinder shbinder = null;
         StepModel stepModel = tp.Model() as StepModel;
         if (!Recognize(sr))
@@ -816,7 +816,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         if (isNMMode && sr.IsKind(typeof(StepNonManifoldSurfaceShapeRepresentation)))
         {
             isManifold = false;
-            NM_DETECTED = true;
+            _nmDetected = true;
         }
         // Special processing for I-DEAS STP case (ssv; 15.11.2010)
         else
@@ -825,7 +825,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             if (isNMMode && _nmTool.IsIDEASCase && isIDeasMode)
             {
                 isManifold = false;
-                NM_DETECTED = true;
+                _nmDetected = true;
             }
         }
         _nmTool.CleanUp();

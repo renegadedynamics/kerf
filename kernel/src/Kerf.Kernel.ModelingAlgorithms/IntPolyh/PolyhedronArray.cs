@@ -43,7 +43,7 @@ public sealed class PolyhedronArray<T> where T : new()
     private const int THE_BLOCK_SIZE = 256;
 
     // Value types are constructed once and copied; IntPolyh_SectionLine (a class) is constructed for each item.
-    private static readonly T? S_prototype = typeof(T).IsValueType ? new T() : default;
+    private static readonly T? Prototype = typeof(T).IsValueType ? new T() : default;
 
     private readonly List<T[]> _blocks = [];
     private int _length; // the items constructed (NCollection_DynamicArray::Length)
@@ -155,7 +155,7 @@ public sealed class PolyhedronArray<T> where T : new()
         stream.Write("\n");
     }
 
-    private static T NewItem() => typeof(T).IsValueType ? S_prototype! : new T();
+    private static T NewItem() => typeof(T).IsValueType ? Prototype! : new T();
 
     private T ItemAt(int aIndex) => _blocks[aIndex / THE_BLOCK_SIZE][aIndex % THE_BLOCK_SIZE];
 

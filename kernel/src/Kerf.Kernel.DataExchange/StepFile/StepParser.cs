@@ -30,7 +30,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// unarg   : IDENT { SetTypeArg(Ident); CreateNewArg } | QUID { CreateNewArg }
 ///         | listarg { CreateNewArg } | listype listarg { CreateNewArg } | error { CreateErrorArg }
 /// listype : TYPE { RecordTypeText }      deblist : '(' { RecordListStart }
-/// finlist : ')' { RecordNewEntity; yyerrstatus_ = 0 }
+/// finlist : ')' { RecordNewEntity; _yyerrstatus = 0 }
 /// listarg : deblist finlist | deblist arglist finlist
 /// arglist : unarg | arglist ',' unarg
 /// model   : bloc | model bloc
@@ -88,7 +88,7 @@ public sealed class StepParser
     private long _reported;
     private int _tokens;
     private int _depth;
-    private int yyerrstatus_;
+    private int _yyerrstatus;
     private int _yyla = Yyempty;
 
     /// <summary>Raised to end the parse (YYABORT, or the return of stepf3's action).</summary>
@@ -587,7 +587,7 @@ public sealed class StepParser
             }
 
             StepData.RecordNewEntity();
-            yyerrstatus_ = 0;
+            _yyerrstatus = 0;
             _depth--;
             if (_depth < aBase)
             {
@@ -624,9 +624,9 @@ public sealed class StepParser
     /// <summary>Shifts the lookahead token (bison counts the tokens shifted since an error).</summary>
     private void Shift()
     {
-        if (yyerrstatus_ != 0)
+        if (_yyerrstatus != 0)
         {
-            --yyerrstatus_;
+            --_yyerrstatus;
         }
 
         _yyla = Yyempty;
@@ -648,14 +648,14 @@ public sealed class StepParser
     /// </summary>
     private bool Error(string? expected)
     {
-        if (yyerrstatus_ == 0)
+        if (_yyerrstatus == 0)
         {
             ErrorCore(expected is null
                 ? "syntax error, unexpected " + TokenName(_yyla)
                 : "syntax error, unexpected " + TokenName(_yyla) + ", expecting " + expected);
         }
 
-        if (yyerrstatus_ == 3)
+        if (_yyerrstatus == 3)
         {
             // If just tried and failed to reuse lookahead token after an error, discard it
             if (_yyla == token.YYEOF)
@@ -666,7 +666,7 @@ public sealed class StepParser
             _yyla = Yyempty;
         }
 
-        yyerrstatus_ = 3;
+        _yyerrstatus = 3;
         return false;
     }
 

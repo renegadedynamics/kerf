@@ -1,7 +1,10 @@
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Errors;
+namespace Build123d.Tests.Errors;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// A shape's memory estimate (the native shim's, which the native backend told the GC about as memory pressure, unit

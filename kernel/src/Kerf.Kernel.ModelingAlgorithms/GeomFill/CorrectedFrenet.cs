@@ -557,7 +557,7 @@ public class CorrectedFrenet : TrihedronLaw
     }
 
     // Conversions of angles (OCC78).
-    private static double corr2PI_PI(double ang)
+    private static double Corr2PIPI(double ang)
     {
         return ang = (ang < M_PI ? ang : ang - 2 * M_PI);
     }
@@ -565,7 +565,7 @@ public class CorrectedFrenet : TrihedronLaw
     private static double DiffAng(double a, double ao)
     {
         double dA = (a - ao) - Math.Floor((a - ao) / 2.0 / M_PI) * 2.0 * M_PI;
-        return dA = dA >= 0 ? corr2PI_PI(dA) : -corr2PI_PI(-dA);
+        return dA = dA >= 0 ? Corr2PIPI(dA) : -Corr2PIPI(-dA);
     }
 
     // The angle law at Param, corrected where the interpolated law strays from the local angle (OCC78).

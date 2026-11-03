@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- .NET naming (IDE1006, the root .editorconfig), enforced since unit 10E -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
   </PropertyGroup>

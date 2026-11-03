@@ -5,7 +5,10 @@
 using Kerf.Engine.Topology;
 using Occt;
 
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 public class FunctionsTests
 {

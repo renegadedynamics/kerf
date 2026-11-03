@@ -2118,9 +2118,9 @@ public static partial class GeomLib
 
     //=================================================================================================
 
-    private sealed class law_evaluator : SurfaceEvaluatorFunction
+    private sealed class LawEvaluator : SurfaceEvaluatorFunction
     {
-        public law_evaluator(DenominatorMultiplier? denominatorPtr)
+        public LawEvaluator(DenominatorMultiplier? denominatorPtr)
         {
             _denominator = denominatorPtr;
         }
@@ -2357,8 +2357,8 @@ public static partial class GeomLib
         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(newuknots.ChangeArray1(), newumults.ChangeArray1(), newuflatknots);
         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(newvknots.ChangeArray1(), newvmults.ChangeArray1(), newvflatknots);
         // POP for WNT
-        law_evaluator ev = new(denominator);
-        // BSplSLib::FunctionMultiply(law_evaluator,               //multiplication
+        LawEvaluator ev = new(denominator);
+        // BSplSLib::FunctionMultiply(LawEvaluator,               //multiplication
         SurfaceBSplSLib.FunctionMultiply(ev, // multiplication
                                   bSurf.UDegree(),
                                   bSurf.VDegree(),

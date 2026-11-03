@@ -248,8 +248,8 @@ public class FastSewing : Transient
                 }
 
                 var fFace = new FS_Face();
-                fFace.mySrcFace = face;
-                fFace.myID = _faceVec.Length(); // because start index is 0
+                fFace.SrcFace = face;
+                fFace.ID = _faceVec.Length(); // because start index is 0
                 _faceVec.Append(fFace);
                 result = true;
             }
@@ -287,11 +287,11 @@ public class FastSewing : Transient
 
         var builder = new BrepBuilder();
 
-        builder.MakeFace(ref face.mySrcFace);
-        builder.MakeFace(ref face.mySrcFace, surface, _tolerance);
-        builder.NaturalRestriction(face.mySrcFace, true);
+        builder.MakeFace(ref face.SrcFace);
+        builder.MakeFace(ref face.SrcFace, surface, _tolerance);
+        builder.NaturalRestriction(face.SrcFace, true);
 
-        face.myID = _faceVec.Length(); // because start index is 0
+        face.ID = _faceVec.Length(); // because start index is 0
         _faceVec.Append(face);
 
         return true;
@@ -349,7 +349,7 @@ public class FastSewing : Transient
                 face.CreateTopologicalWire(_edgeVec, _tolerance);
 
                 face.CreateTopologicalFace();
-                quilt.Add(face.myRetFace);
+                quilt.Add(face.RetFace);
             }
 
             _resShape = quilt.InternalShells();
@@ -377,7 +377,7 @@ public class FastSewing : Transient
         FS_Edge edge = _edgeVec.Value(edgeID);
         edge.myFaces.Append(faceID);
         FS_Face face = _faceVec.Value(faceID);
-        face.SetEdge(idCurvOnFace, edge.myID);
+        face.SetEdge(idCurvOnFace, edge.ID);
     }
 
     //=================================================================================================
@@ -386,13 +386,13 @@ public class FastSewing : Transient
     protected void CreateNewEdge(int idPrevVertex, int idCurrVertex, int faceID, int idCurvOnFace)
     {
         var edge = new FS_Edge(idPrevVertex, idCurrVertex);
-        edge.myID = _edgeVec.Length(); // because start index is 0
+        edge.ID = _edgeVec.Length(); // because start index is 0
 
         edge.myFaces.Append(faceID);
         FS_Face face = _faceVec.Value(faceID);
-        face.SetEdge(idCurvOnFace, edge.myID);
+        face.SetEdge(idCurvOnFace, edge.ID);
 
-        _vertexVec.Value(idPrevVertex).myEdges.Append(edge.myID);
+        _vertexVec.Value(idPrevVertex).myEdges.Append(edge.ID);
 
         if (idPrevVertex == idCurrVertex)
         { // the Edge is degenerated
@@ -400,7 +400,7 @@ public class FastSewing : Transient
         }
         else
         {
-            _vertexVec.Value(idCurrVertex).myEdges.Append(edge.myID);
+            _vertexVec.Value(idCurrVertex).myEdges.Append(edge.ID);
         }
 
         _edgeVec.Append(edge);
@@ -413,7 +413,7 @@ public class FastSewing : Transient
     {
         const int nbPoints = 4;
         FS_Face face = _faceVec.Value(surfID);
-        Surface surf = Tool.Surface(face.mySrcFace)!;
+        Surface surf = Tool.Surface(face.SrcFace)!;
         surf.Bounds(out double uf, out double ul, out double vf, out double vl);
 
         Point3D[] pnts = [surf.Value(uf, vf),
@@ -435,13 +435,13 @@ public class FastSewing : Transient
 
             if (resID < 0)
             {                                     // Add new Vertex
-                vert.myID = _vertexVec.Length(); // because start index is 0
+                vert.ID = _vertexVec.Length(); // because start index is 0
                 vert.myPnt = pnts[i];
                 vert.myFaces.Append(surfID);
                 _vertexVec.Append(vert);
-                face.SetVertex(i, vert.myID);
+                face.SetVertex(i, vert.ID);
 
-                cells.Add(vert.myID, box.CornerMin().XYZ(), box.CornerMax().XYZ());
+                cells.Add(vert.ID, box.CornerMin().XYZ(), box.CornerMax().XYZ());
             }
             else
             { // Change existing vertex
@@ -559,7 +559,7 @@ public class FastSewing : Transient
         for (int i = _faceVec.Lower(); i <= _faceVec.Upper(); i++)
         {
             FS_Face face = _faceVec.Value(i);
-            Surface? surf = Tool.Surface(face.mySrcFace);
+            Surface? surf = Tool.Surface(face.SrcFace);
 
             if (surf is null)
             {
@@ -592,32 +592,32 @@ public class FastSewing : Transient
     {
         /// <summary>Geometry point of this Vertex</summary>
         public Point3D myPnt = new();
-        public Vertex myTopoVert = new();
+        public Vertex TopoVert = new();
         /// <summary>List of faces and edges which share this vertex</summary>
         public readonly NCollection_List<int> myFaces = new();
         public readonly NCollection_List<int> myEdges = new();
         /// <summary>Identifies the place of this Vertex in BRepBuilderAPI_FastSewing::myVertexVec list</summary>
-        public int myID;
+        public int ID;
 
         public FS_Vertex()
         {
-            myID = -1;
+            ID = -1;
         }
 
         /// <summary>Creates topological member (vertex)</summary>
         public void CreateTopologicalVertex(double toler)
         {
             var builder = new BrepBuilder();
-            builder.MakeVertex(ref myTopoVert, myPnt, toler);
+            builder.MakeVertex(ref TopoVert, myPnt, toler);
         }
     }
 
     /// <summary>A face of the result.</summary>
     protected sealed class FS_Face
     {
-        public Face mySrcFace = new();
+        public Face SrcFace = new();
         public Wire myWire = new();
-        public Face myRetFace = new();
+        public Face RetFace = new();
         /// <summary>
         /// myEdges[i] number of the edge in myEdgeVec; (i==0) &lt;-&gt; (V=Vf); (i==1) &lt;-&gt; (U=Ul);
         /// (i==2) &lt;-&gt; (V=Vl); (i==3) &lt;-&gt; (U=Uf)
@@ -626,11 +626,11 @@ public class FastSewing : Transient
         /// <summary>myVertices[i] is Start point of myEdges[i]</summary>
         public readonly int[] myVertices = new int[4];
         /// <summary>Identifies the place of this Face in BRepBuilderAPI_FastSewing::myFaceVec list</summary>
-        public int myID;
+        public int ID;
 
         public FS_Face()
         {
-            myID = -1;
+            ID = -1;
             for (int i = 0; i < 4; i++)
             {
                 myVertices[i] = -1;
@@ -658,7 +658,7 @@ public class FastSewing : Transient
         public void CreateTopologicalWire(NCollection_DynamicArray<FS_Edge> edgeVec, double toler)
         {
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Surface surf = Tool.Surface(mySrcFace, out Placement location)!;
+            Surface surf = Tool.Surface(SrcFace, out Placement location)!;
 
             surf.Bounds(out double uf, out double ul, out double vf, out double vl);
 
@@ -672,7 +672,7 @@ public class FastSewing : Transient
 
                 FS_Edge fsEdge = edgeVec.Value(myEdges[edge]);
                 Orientation ori = edge < 2 ? Forward : Reversed;
-                Edge topE = fsEdge.myTopoEdge;
+                Edge topE = fsEdge.TopoEdge;
 
                 if (fsEdge.IsDegenerated)
                 {
@@ -724,9 +724,9 @@ public class FastSewing : Transient
                 "BRepBuilderAPI_FastSewing::FS_Face::CreateTopologicalFace: Cannot create wire.");
 
             var builder = new BrepBuilder();
-            myRetFace = ShapeCasts.Face(mySrcFace.EmptyCopied());
-            builder.Add(myRetFace, myWire);
-            builder.NaturalRestriction(myRetFace, true);
+            RetFace = ShapeCasts.Face(SrcFace.EmptyCopied());
+            builder.Add(RetFace, myWire);
+            builder.NaturalRestriction(RetFace, true);
         }
     }
 
@@ -736,21 +736,21 @@ public class FastSewing : Transient
         /// <summary>List of faces which are shared with this edge; values are indexes in myFaceVec</summary>
         public readonly NCollection_Sequence<int> myFaces = new();
         /// <summary>Identifies the place of this Edge in BRepBuilderAPI_FastSewing::myEdgeVec list</summary>
-        public int myID;
-        public Edge myTopoEdge = new();
+        public int ID;
+        public Edge TopoEdge = new();
         // Index of the vertex in myVertexVec array
         private readonly int[] _vertices = new int[2];
 
         public FS_Edge()
         {
-            myID = -1;
+            ID = -1;
             _vertices[0] = -1;
             _vertices[1] = -1;
         }
 
         public FS_Edge(int idVert1, int idVert2)
         {
-            myID = -1;
+            ID = -1;
             _vertices[0] = idVert1;
             _vertices[1] = idVert2;
         }
@@ -773,8 +773,8 @@ public class FastSewing : Transient
         {
             var builder = new BrepBuilder();
 
-            Vertex v1 = vertexVec.Value(_vertices[0]).myTopoVert;
-            Vertex v2 = vertexVec.Value(_vertices[1]).myTopoVert;
+            Vertex v1 = vertexVec.Value(_vertices[0]).TopoVert;
+            Vertex v2 = vertexVec.Value(_vertices[1]).TopoVert;
 
             v1.Orientation(Forward);
             v2.Orientation(Reversed);
@@ -784,14 +784,14 @@ public class FastSewing : Transient
             FS_Face face = faceVec.Value(myFaces.Value(NCollection_Sequence<int>.Lower()));
 
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
-            Surface surf = Tool.Surface(face.mySrcFace, out Placement location)!;
+            Surface surf = Tool.Surface(face.SrcFace, out Placement location)!;
 
             surf.Bounds(out double uf, out double ul, out double vf, out double vl);
 
             int edgeID = -1;
             for (int ind = 0; ind < 4; ind++)
             {
-                if (myID == face.myEdges[ind])
+                if (ID == face.myEdges[ind])
                 {
                     edgeID = ind;
                     break;
@@ -807,12 +807,12 @@ public class FastSewing : Transient
                 Curve2D a2dCurv = Get2DCurve(edgeID, uf, ul, vf, vl);
                 double fPar = a2dCurv.FirstParameter(), lPar = a2dCurv.LastParameter();
 
-                builder.MakeEdge(ref myTopoEdge);
-                builder.UpdateEdge(myTopoEdge, a2dCurv, surf, location, tol);
-                builder.Add(myTopoEdge, v1);
-                builder.Add(myTopoEdge, v2);
-                builder.Range(myTopoEdge, fPar, lPar);
-                builder.Degenerated(myTopoEdge, true);
+                builder.MakeEdge(ref TopoEdge);
+                builder.UpdateEdge(TopoEdge, a2dCurv, surf, location, tol);
+                builder.Add(TopoEdge, v1);
+                builder.Add(TopoEdge, v2);
+                builder.Range(TopoEdge, fPar, lPar);
+                builder.Degenerated(TopoEdge, true);
                 return;
             }
 
@@ -834,10 +834,10 @@ public class FastSewing : Transient
                     throw new OutOfRangeException("FS_Edge::CreateTopologicalEdge()");
             }
 
-            builder.MakeEdge(ref myTopoEdge, a3dCurv, tol);
-            builder.Add(myTopoEdge, v1);
-            builder.Add(myTopoEdge, v2);
-            builder.Range(myTopoEdge, a3dCurv.FirstParameter(), a3dCurv.LastParameter());
+            builder.MakeEdge(ref TopoEdge, a3dCurv, tol);
+            builder.Add(TopoEdge, v1);
+            builder.Add(TopoEdge, v2);
+            builder.Range(TopoEdge, a3dCurv.FirstParameter(), a3dCurv.LastParameter());
         }
     }
 

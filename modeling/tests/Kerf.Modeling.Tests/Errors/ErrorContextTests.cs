@@ -4,7 +4,10 @@ using Kerf.Engine.Foundation;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Errors;
+namespace Build123d.Tests.Errors;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// An OCCT failure reaches the caller as OCCT.NET's own exception, OCCT's type and message (unit 10B): the native

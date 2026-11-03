@@ -41,7 +41,7 @@ public class Library<TModule, TProtocol>
     //  expected to run only during one-time controller initialization, before any
     //  parallel work. Writers serialize against each other; readers traverse
     //  without locking and rely on this register-before-parallel-use contract.
-    private static volatile GlobalNode<TModule, TProtocol>? THE_GLOBAL;
+    private static volatile GlobalNode<TModule, TProtocol>? s_theGlobal;
     private static readonly Lock LibCtl_TheWriterLock = new();
 
     private Node<TModule, TProtocol>? _thelist;
@@ -55,7 +55,7 @@ public class Library<TModule, TProtocol>
         {
             return;
         }
-        for (GlobalNode<TModule, TProtocol>? current = THE_GLOBAL; current is not null;)
+        for (GlobalNode<TModule, TProtocol>? current = s_theGlobal; current is not null;)
         {
             TProtocol? nodeProto = current.Protocol();
             if (nodeProto is not null && nodeProto.DynamicType() == aProtocol.DynamicType())
@@ -82,9 +82,9 @@ public class Library<TModule, TProtocol>
     {
         lock (LibCtl_TheWriterLock)
         {
-            var aGlobal = THE_GLOBAL ?? new GlobalNode<TModule, TProtocol>();
+            var aGlobal = s_theGlobal ?? new GlobalNode<TModule, TProtocol>();
             aGlobal.Add(module, protocol);
-            THE_GLOBAL = aGlobal;
+            s_theGlobal = aGlobal;
         }
     }
 
@@ -127,7 +127,7 @@ public class Library<TModule, TProtocol>
     public void SetComplete()
     {
         _thelist = new Node<TModule, TProtocol>();
-        for (GlobalNode<TModule, TProtocol>? current = THE_GLOBAL; current is not null;)
+        for (GlobalNode<TModule, TProtocol>? current = s_theGlobal; current is not null;)
         {
             TProtocol? nodeProto = current.Protocol();
             if (nodeProto is not null)

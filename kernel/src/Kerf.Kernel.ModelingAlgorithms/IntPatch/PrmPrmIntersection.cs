@@ -30,10 +30,10 @@ namespace Kerf.Engine.Intersection.Patches;
 /// </remarks>
 public partial class PrmPrmIntersection
 {
-    private const int _DECAL = 7;
-    private const int _DECAL2 = 14;
+    private const int DECAL = 7;
+    private const int DECAL2 = 14;
     private const int _BASE = 128;
-    private const int _BASEM1 = 127;
+    private const int BASEM1 = 127;
 
     private bool _done;
     private bool _empt;
@@ -1759,8 +1759,8 @@ public partial class PrmPrmIntersection
     /// <summary>The voxel of coordinates (<paramref name="ix"/>, <paramref name="iy"/>, <paramref name="iz"/>), 7 bits each.</summary>
     public int GrilleInteger(int ix, int iy, int iz)
     {
-        int tz = iz << _DECAL2;
-        int ty = iy << _DECAL;
+        int tz = iz << DECAL2;
+        int ty = iy << DECAL;
         int t = ix;
         t |= ty;
         t |= tz;
@@ -1771,10 +1771,10 @@ public partial class PrmPrmIntersection
     public void IntegerGrille(int tt, out int ix, out int iy, out int iz)
     {
         int t = tt;
-        ix = t & _BASEM1;
-        t >>= _DECAL;
-        iy = t & _BASEM1;
-        t >>= _DECAL;
+        ix = t & BASEM1;
+        t >>= DECAL;
+        iy = t & BASEM1;
+        t >>= DECAL;
         iz = t;
     }
 

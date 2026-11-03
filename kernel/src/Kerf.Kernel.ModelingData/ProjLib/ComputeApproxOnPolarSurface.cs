@@ -47,15 +47,15 @@ public class ComputeApproxOnPolarSurface
     private Constraint _bndPnt;
     private double _dist;
 
-    /// <summary>OCCT's file-local struct aFuncStruct.</summary>
-    private sealed class aFuncStruct
+    /// <summary>OCCT's file-local struct AFuncStruct.</summary>
+    private sealed class AFuncStruct
     {
         public SurfaceAdaptorBase mySurf = null!; // Surface where to project.
         public CurveAdaptorBase myCurve = null!; // Curve to project.
-        public Curve2DAdaptorBase myInitCurve2d = null!; // Initial 2dcurve projection.
-        public double mySqProjOrtTol; // Used to filter non-orthogonal projected point.
-        public double myTolU;
-        public double myTolV;
+        public Curve2DAdaptorBase InitCurve2d = null!; // Initial 2dcurve projection.
+        public double SqProjOrtTol; // Used to filter non-orthogonal projected point.
+        public double TolU;
+        public double TolV;
         public readonly double[] myPeriod = new double[2]; // U and V period correspondingly.
     }
 
@@ -139,9 +139,9 @@ public class ComputeApproxOnPolarSurface
         return (firstPart * firstPart + secondPart * secondPart);
     }
 
-    private static Point2D Function_Value(double theU, aFuncStruct data)
+    private static Point2D Function_Value(double theU, AFuncStruct data)
     {
-        Point2D p2d = data.myInitCurve2d.Value(theU);
+        Point2D p2d = data.InitCurve2d.Value(theU);
         Point3D p = data.myCurve.Value(theU);
         Point3D surfPnt = data.mySurf.Value(p2d.X(), p2d.Y());
         double surfPntDist = surfPnt.SquareDistance(p);
@@ -397,13 +397,13 @@ public class ComputeApproxOnPolarSurface
         }
 
         // Try to run simple search with initial point (U0, V0).
-        GenLocateExtPS locext = new(surfLittle, data.myTolU, data.myTolV);
+        GenLocateExtPS locext = new(surfLittle, data.TolU, data.TolV);
         locext.Perform(p, u0, v0);
         if (locext.IsDone)
         {
             locext.Point().Parameter(out u, out v);
             dist2Min = AnOrthogSqValue(p, data.mySurf, u, v);
-            if (dist2Min < data.mySqProjOrtTol && // Point is projection.
+            if (dist2Min < data.SqProjOrtTol && // Point is projection.
                 locext.SquareDistance()
                 < surfPntDist + global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // Point better than initial.
             {
@@ -413,7 +413,7 @@ public class ComputeApproxOnPolarSurface
         }
 
         // Perform whole param space search.
-        ExtPS ext = new(p, surfLittle, data.myTolU, data.myTolV, ExtFlag_MIN);
+        ExtPS ext = new(p, surfLittle, data.TolU, data.TolV, ExtFlag_MIN);
         if (ext.IsDone && ext.ExtCount >= 1)
         {
             dist2Min = ext.SquareDistance(1);
@@ -428,7 +428,7 @@ public class ComputeApproxOnPolarSurface
             }
             ext.Point(goodValue).Parameter(out u, out v);
             dist2Min = AnOrthogSqValue(p, data.mySurf, u, v);
-            if (dist2Min < data.mySqProjOrtTol && // Point is projection.
+            if (dist2Min < data.SqProjOrtTol && // Point is projection.
                 ext.SquareDistance(goodValue)
                 < surfPntDist + global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // Point better than initial.
             {
@@ -444,7 +444,7 @@ public class ComputeApproxOnPolarSurface
     /// <summary>OCCT's file-local class ProjLib_PolarFunction: the 2D point of the projection at a parameter.</summary>
     private sealed class ProjLib_PolarFunction : Function
     {
-        private readonly aFuncStruct _struct = new();
+        private readonly AFuncStruct _struct = new();
 
         public ProjLib_PolarFunction(CurveAdaptorBase c,
                                      SurfaceAdaptorBase surf,
@@ -457,11 +457,11 @@ public class ComputeApproxOnPolarSurface
             ComputePeriodicity(surf, out _struct.myPeriod[0], out _struct.myPeriod[1]);
 
             _struct.myCurve = c;
-            _struct.myInitCurve2d = initialCurve2d;
+            _struct.InitCurve2d = initialCurve2d;
             _struct.mySurf = surf;
-            _struct.mySqProjOrtTol = 10000.0 * tol3d * tol3d;
-            _struct.myTolU = surf.UResolution(tol3d);
-            _struct.myTolV = surf.VResolution(tol3d);
+            _struct.SqProjOrtTol = 10000.0 * tol3d * tol3d;
+            _struct.TolU = surf.UResolution(tol3d);
+            _struct.TolV = surf.VResolution(tol3d);
         }
 
         public override double FirstParameter() => _struct.myCurve.FirstParameter();

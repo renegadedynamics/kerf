@@ -27,7 +27,7 @@ public class FreeGtoCConstraint
     // Locals of OCCT's inner blocks that a later declaration reuses are renamed with a 1 (C# scopes): du1, dv1, c1, s1, d1.
     private readonly Xy _pnt2d;
     private readonly int nb_PPConstraints;
-    private readonly int nb_LSConstraints;
+    private readonly int _nbLSConstraints;
     private readonly PinpointConstraint[] _ppc = new PinpointConstraint[5];
     private readonly LinearScalarConstraint[] _lsc =
     [
@@ -42,7 +42,7 @@ public class FreeGtoCConstraint
     {
         _pnt2d            = point2d;
         nb_PPConstraints = 0;
-        nb_LSConstraints = 0;
+        _nbLSConstraints = 0;
 
         Xyz normale = d1T._du ^ d1T._dv;
         if (normale.Modulus() < Normin)
@@ -97,14 +97,14 @@ public class FreeGtoCConstraint
 
         _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, du, 1, 0), normale);
         _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dv, 0, 1), normale);
-        nb_LSConstraints = 2;
+        _nbLSConstraints = 2;
     }
 
     public FreeGtoCConstraint(in Xy point2d, in D1 d1S, in D1 d1T0, in D2 d2S, in D2 d2T0, double incrementalLoad = 1.0, int orientation = 0)
     {
         _pnt2d            = point2d;
         nb_PPConstraints = 0;
-        nb_LSConstraints = 0;
+        _nbLSConstraints = 0;
         D1 d1T     = d1T0;
         D2 d2T     = d2T0;
 
@@ -128,7 +128,7 @@ public class FreeGtoCConstraint
 
             _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, du1, 1, 0), normale);
             _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dv1, 0, 1), normale);
-            nb_LSConstraints = 2;
+            _nbLSConstraints = 2;
             return;
         }
         normaleS.Normalize();
@@ -181,7 +181,7 @@ public class FreeGtoCConstraint
 
             _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, du1, 1, 0), normale);
             _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dv1, 0, 1), normale);
-            nb_LSConstraints = 2;
+            _nbLSConstraints = 2;
             return;
         }
 
@@ -239,14 +239,14 @@ public class FreeGtoCConstraint
         _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, duu, 2, 0), normale);
         _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, duv, 1, 1), normale);
         _lsc[2] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dvv, 0, 2), normale);
-        nb_LSConstraints = 3;
+        _nbLSConstraints = 3;
     }
 
     public FreeGtoCConstraint(in Xy point2d, in D1 d1S, in D1 d1T0, in D2 d2S, in D2 d2T0, in D3 d3S, in D3 d3T0, double incrementalLoad = 1.0, int orientation = 0)
     {
         _pnt2d            = point2d;
         nb_PPConstraints = 0;
-        nb_LSConstraints = 0;
+        _nbLSConstraints = 0;
         D1 d1T     = d1T0;
         D2 d2T     = d2T0;
         D3 d3T     = d3T0;
@@ -271,7 +271,7 @@ public class FreeGtoCConstraint
 
             _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, du1, 1, 0), normale);
             _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dv1, 0, 1), normale);
-            nb_LSConstraints = 2;
+            _nbLSConstraints = 2;
             return;
         }
         normaleS.Normalize();
@@ -327,7 +327,7 @@ public class FreeGtoCConstraint
 
             _lsc[0] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, du1, 1, 0), normale);
             _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dv1, 0, 1), normale);
-            nb_LSConstraints = 2;
+            _nbLSConstraints = 2;
             return;
         }
 
@@ -441,14 +441,14 @@ public class FreeGtoCConstraint
         _lsc[1] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, duuv, 2, 1), normale);
         _lsc[2] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, duvv, 1, 2), normale);
         _lsc[3] = new LinearScalarConstraint(new PinpointConstraint(_pnt2d, dvvv, 0, 3), normale);
-        nb_LSConstraints = 4;
+        _nbLSConstraints = 4;
     }
 
     public int nb_PPC() => nb_PPConstraints;
 
     public PinpointConstraint GetPPC(int index) => _ppc[index];
 
-    public int nb_LSC() => nb_LSConstraints;
+    public int nb_LSC() => _nbLSConstraints;
 
     public LinearScalarConstraint LSC(int index) => _lsc[index];
 }

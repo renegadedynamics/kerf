@@ -4,7 +4,10 @@ using System.Reflection;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Immutability;
+namespace Build123d.Tests.Immutability;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// No operation changes its inputs, not even the OCCT data they share with other shapes (tolerances, meshes,

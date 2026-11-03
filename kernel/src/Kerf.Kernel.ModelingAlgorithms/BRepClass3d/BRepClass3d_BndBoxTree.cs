@@ -98,10 +98,10 @@ public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
 {
     /// <summary>An edge met by the line: the parameters on the edge and on the line.</summary>
-    public readonly record struct EdgeParam(Edge myE, double myParam, double myLParam);
+    public readonly record struct EdgeParam(Edge E, double myParam, double LParam);
 
     /// <summary>A vertex met by the line: the parameter on the line.</summary>
-    public readonly record struct VertParam(Vertex myV, double myLParam);
+    public readonly record struct VertParam(Vertex myV, double LParam);
 
     private readonly NCollection_IndexedMap<Shape> _mapOfShape; // shapes (vertices + edges)
     private Line3D _l = new();
@@ -212,9 +212,9 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
     public void GetEdgeParam(int i, out Edge outE, out double outParam, out double outLParam)
     {
         EdgeParam ep = _ep.Value(i);
-        outE = ep.myE;
+        outE = ep.E;
         outParam = ep.myParam;
-        outLParam = ep.myLParam;
+        outLParam = ep.LParam;
     }
 
     /// <summary>The <paramref name="i"/>-th vertex met, with the parameter on the line.</summary>
@@ -222,7 +222,7 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
     {
         VertParam vp = _vp.Value(i);
         outV = vp.myV;
-        outLParam = vp.myLParam;
+        outLParam = vp.LParam;
     }
 
     /// <summary>The number of edges met.</summary>

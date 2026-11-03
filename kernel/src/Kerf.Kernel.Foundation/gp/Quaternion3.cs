@@ -134,7 +134,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         EulerSequenceParameters o = TranslateEulerSequence(order);
 
         double a = alpha, b = beta, c = gamma;
-        if (!o.isExtrinsic)
+        if (!o.IsExtrinsic)
         {
             a = gamma;
             c = alpha;
@@ -160,7 +160,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         double ss = si * sh;
 
         Span<double> values = stackalloc double[4]; // w, x, y, z
-        if (o.isTwoAxes)
+        if (o.IsTwoAxes)
         {
             values[o.i] = cj * (cs + sc);
             values[o.j] = sj * (cc + ss);
@@ -367,7 +367,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         Matrix3x3 m = GetMatrix();
 
         EulerSequenceParameters o = TranslateEulerSequence(order);
-        if (o.isTwoAxes)
+        if (o.IsTwoAxes)
         {
             double sy = Math.Sqrt(m[o.i, o.j] * m[o.i, o.j] + m[o.i, o.k] * m[o.i, o.k]);
             if (sy > 16 * RealEpsilon())
@@ -407,7 +407,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
             gamma = -gamma;
         }
 
-        if (!o.isExtrinsic)
+        if (!o.IsExtrinsic)
         {
             double first = alpha;
             alpha = gamma;
@@ -515,8 +515,8 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         public readonly int j; // next axis of rotation
         public readonly int k; // third axis
         public readonly bool isOdd; // true if order of two first rotation axes is odd permutation, e.g. XZ
-        public readonly bool isTwoAxes; // true if third rotation is about the same axis as first
-        public readonly bool isExtrinsic; // true if rotations are made around fixed axes
+        public readonly bool IsTwoAxes; // true if third rotation is about the same axis as first
+        public readonly bool IsExtrinsic; // true if rotations are made around fixed axes
 
         public EulerSequenceParameters(int ax1, bool theisOdd, bool theisTwoAxes, bool theisExtrinsic)
         {
@@ -524,8 +524,8 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
             j = 1 + (ax1 + (theisOdd ? 1 : 0)) % 3;
             k = 1 + (ax1 + (theisOdd ? 0 : 1)) % 3;
             isOdd = theisOdd;
-            isTwoAxes = theisTwoAxes;
-            isExtrinsic = theisExtrinsic;
+            IsTwoAxes = theisTwoAxes;
+            IsExtrinsic = theisExtrinsic;
         }
     }
 

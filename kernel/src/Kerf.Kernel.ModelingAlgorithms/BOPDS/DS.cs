@@ -913,7 +913,7 @@ public class DS
         NCollection_IndexedMap<PaveBlock> pbIn2 = faceInfo2.PaveBlocksIn();
 
         // Helper to process pave blocks from a map
-        void processMap(NCollection_IndexedMap<PaveBlock> map)
+        void ProcessMap(NCollection_IndexedMap<PaveBlock> map)
         {
             for (int idx = 1; idx <= map.Extent(); ++idx)
             {
@@ -926,13 +926,13 @@ public class DS
         }
 
         // Process all four maps
-        processMap(pbOn1);
-        processMap(pbIn1);
-        processMap(pbOn2);
-        processMap(pbIn2);
+        ProcessMap(pbOn1);
+        ProcessMap(pbIn1);
+        ProcessMap(pbOn2);
+        ProcessMap(pbIn2);
 
         // Find common pave blocks (those in Face1 that are also in Face2)
-        void findCommon(NCollection_IndexedMap<PaveBlock> map)
+        void FindCommon(NCollection_IndexedMap<PaveBlock> map)
         {
             for (int idx = 1; idx <= map.Extent(); ++idx)
             {
@@ -947,8 +947,8 @@ public class DS
             }
         }
 
-        findCommon(pbOn1);
-        findCommon(pbIn1);
+        FindCommon(pbOn1);
+        FindCommon(pbIn1);
 
         NCollection_IntMap mvOn1 = faceInfo1.VerticesOn();
         NCollection_IntMap mvIn1 = faceInfo1.VerticesIn();
@@ -1444,7 +1444,7 @@ public class DS
         forwardEdge.Orientation(Forward);
         Curve3D curve = Tool.Curve(forwardEdge, out double curveStart, out double curveEnd)!;
 
-        bool isMatch(double parameter)
+        bool IsMatch(double parameter)
         {
             curve.D0(parameter, out Point3D pointOnCurve);
             return pointOnCurve.SquareDistance(vertexPoint) < edgeToleranceSqr;
@@ -1453,7 +1453,7 @@ public class DS
         // Note: only start and end parameters are checked.
         // It is unsafe to return 0. when point is not matching either end
         // but this is left to preserve previous behavior.
-        return isMatch(curveStart) ? curveStart : isMatch(curveEnd) ? curveEnd : 0.0;
+        return IsMatch(curveStart) ? curveStart : IsMatch(curveEnd) ? curveEnd : 0.0;
     }
 
     private int PrepareVertices(double additionalTolerance)
@@ -1509,7 +1509,7 @@ public class DS
 
                 // Process infinite values of the edge curve parameters.
                 // Creates vertices at the infinite positions and add them to the edge sub-shape list.
-                void processInfinite(double param)
+                void ProcessInfinite(double param)
                 {
                     forwardEdgeCurve!.D0(param, out Point3D point);
                     Vertex vertex = new();
@@ -1527,11 +1527,11 @@ public class DS
 
                 if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(curveStart))
                 {
-                    processInfinite(curveStart);
+                    ProcessInfinite(curveStart);
                 }
                 if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(curveEnd))
                 {
-                    processInfinite(curveEnd);
+                    ProcessInfinite(curveEnd);
                 }
             }
             else

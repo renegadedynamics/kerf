@@ -108,7 +108,7 @@ public static partial class MathInteg
         math_IntegerVector inc = new(0, nVars - 1, 0);
 
         // C++'s recursive std::function lambda is a recursive local function
-        bool aRecurse(int n)
+        bool ARecurse(int n)
         {
             if (n == nVars)
             {
@@ -138,7 +138,7 @@ public static partial class MathInteg
             // Iterate over Gauss points for variable theN
             for (inc[n] = 0; inc[n] < ord[n]; ++inc[n])
             {
-                if (!aRecurse(n + 1))
+                if (!ARecurse(n + 1))
                 {
                     return false;
                 }
@@ -146,7 +146,7 @@ public static partial class MathInteg
             return true;
         }
 
-        if (!aRecurse(0))
+        if (!ARecurse(0))
         {
             result.Status = Status.NotConverged;
             return result;

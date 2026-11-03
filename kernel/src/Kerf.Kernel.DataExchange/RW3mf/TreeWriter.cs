@@ -221,7 +221,7 @@ public sealed class TreeWriter
         using var ps = new ProgressScope(progress, "Objects", Math.Max(1, nbParts));
         bool isCancelled = false;
 
-        ObjectDef? objectOf(DocumentProduct product, Style style)
+        ObjectDef? ObjectOf(DocumentProduct product, Style style)
         {
             ColorWithAlpha? aColor = style.SurfaceColor ?? style.CurveColor;
             if (known.TryGetValue((product, style.SurfaceColor, style.CurveColor), out ObjectDef? def))
@@ -238,7 +238,7 @@ public sealed class TreeWriter
                     {
                         continue;
                     }
-                    ObjectDef? child = objectOf(component.Product, aStyle);
+                    ObjectDef? child = ObjectOf(component.Product, aStyle);
                     if (isCancelled)
                     {
                         return null;
@@ -295,7 +295,7 @@ public sealed class TreeWriter
             {
                 continue;
             }
-            ObjectDef? def = objectOf(root.Product, aStyle);
+            ObjectDef? def = ObjectOf(root.Product, aStyle);
             if (isCancelled)
             {
                 return null;
@@ -447,10 +447,10 @@ public sealed class TreeWriter
     internal static string DisplayColor(in ColorWithAlpha color)
     {
         color.GetRGB().Values(out double r, out double g, out double b, ColorSpace.TOC_sRGB);
-        static int toByte(double v) => (int)Math.Round(Math.Clamp(v, 0.0, 1.0) * 255.0);
-        string hex = string.Create(CultureInfo.InvariantCulture, $"#{toByte(r):X2}{toByte(g):X2}{toByte(b):X2}");
+        static int ToByte(double v) => (int)Math.Round(Math.Clamp(v, 0.0, 1.0) * 255.0);
+        string hex = string.Create(CultureInfo.InvariantCulture, $"#{ToByte(r):X2}{ToByte(g):X2}{ToByte(b):X2}");
         float alpha = color.Alpha();
-        return alpha >= 1.0f ? hex : hex + toByte(alpha).ToString("X2", CultureInfo.InvariantCulture);
+        return alpha >= 1.0f ? hex : hex + ToByte(alpha).ToString("X2", CultureInfo.InvariantCulture);
     }
 
     /// <summary>

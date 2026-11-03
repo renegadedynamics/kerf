@@ -41,10 +41,10 @@ public sealed class CurvlinFunc : Transient
     private double _tolLen;
     private double _prevS;
     private double _prevU;
-    private NCollection_HArray1<double>? myUi_1;
-    private NCollection_HArray1<double>? mySi_1;
-    private NCollection_HArray1<double>? myUi_2;
-    private NCollection_HArray1<double>? mySi_2;
+    private NCollection_HArray1<double>? _ui1;
+    private NCollection_HArray1<double>? _si1;
+    private NCollection_HArray1<double>? _ui2;
+    private NCollection_HArray1<double>? _si2;
 
     private static double Cubic(double x, ReadOnlySpan<double> xi, ReadOnlySpan<double> yi)
     {
@@ -165,7 +165,7 @@ public sealed class CurvlinFunc : Transient
         switch (_case)
         {
             case 1:
-                Init(_c3D!, out mySi_1, out myUi_1);
+                Init(_c3D!, out _si1, out _ui1);
                 _firstU1 = _c3D!.FirstParameter();
                 _lastU1 = _c3D.LastParameter();
                 _firstU2 = _lastU2 = 0;
@@ -173,7 +173,7 @@ public sealed class CurvlinFunc : Transient
             case 2:
                 curOnSur.Load(_c2D1!);
                 curOnSur.Load(_surf1!);
-                Init(curOnSur, out mySi_1, out myUi_1);
+                Init(curOnSur, out _si1, out _ui1);
                 _firstU1 = curOnSur.FirstParameter();
                 _lastU1 = curOnSur.LastParameter();
                 _firstU2 = _lastU2 = 0;
@@ -181,13 +181,13 @@ public sealed class CurvlinFunc : Transient
             case 3:
                 curOnSur.Load(_c2D1!);
                 curOnSur.Load(_surf1!);
-                Init(curOnSur, out mySi_1, out myUi_1);
+                Init(curOnSur, out _si1, out _ui1);
                 _firstU1 = curOnSur.FirstParameter();
                 _lastU1 = curOnSur.LastParameter();
                 // OCCT: the reloaded adaptor keeps the first curve's C3 intervals (see NbIntervals).
                 curOnSur.Load(_c2D2!);
                 curOnSur.Load(_surf2!);
-                Init(curOnSur, out mySi_2, out myUi_2);
+                Init(curOnSur, out _si2, out _ui2);
                 _firstU2 = curOnSur.FirstParameter();
                 _lastU2 = curOnSur.LastParameter();
                 break;
@@ -497,8 +497,8 @@ public sealed class CurvlinFunc : Transient
 
         if (numberOfCurve == 1)
         {
-            initUArray = myUi_1!;
-            initSArray = mySi_1!;
+            initUArray = _ui1!;
+            initSArray = _si1!;
             if (_case == 3)
             {
                 length = _length1;
@@ -510,8 +510,8 @@ public sealed class CurvlinFunc : Transient
         }
         else
         {
-            initUArray = myUi_2!;
-            initSArray = mySi_2!;
+            initUArray = _ui2!;
+            initSArray = _si2!;
             length = _length2;
         }
 

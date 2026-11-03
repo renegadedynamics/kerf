@@ -304,12 +304,12 @@ public static partial class MathSys
     }
 
     /// <summary>The lambda of SolveSurfaceSurfaceExtrema4D: the gradient of ||S1 - S2||^2 / 2 and its Hessian.</summary>
-    private struct SurfaceSurfaceExtrema4DFunction<SurfaceEvaluator1, SurfaceEvaluator2> : INewton4DFunction
-        where SurfaceEvaluator1 : ISurfaceD2Evaluator
-        where SurfaceEvaluator2 : ISurfaceD2Evaluator
+    private struct SurfaceSurfaceExtrema4DFunction<TSurfaceEvaluator1, TSurfaceEvaluator2> : INewton4DFunction
+        where TSurfaceEvaluator1 : ISurfaceD2Evaluator
+        where TSurfaceEvaluator2 : ISurfaceD2Evaluator
     {
-        internal SurfaceEvaluator1 _surf1;
-        internal SurfaceEvaluator2 _surf2;
+        internal TSurfaceEvaluator1 _surf1;
+        internal TSurfaceEvaluator2 _surf2;
 
         public bool Invoke(double u1, double v1, double u2, double v2,
                            ref Array4<double> f, ref Array4<Array4<double>> j)
@@ -358,15 +358,15 @@ public static partial class MathSys
     /// 4D Newton solver for extrema between two surfaces S1(u1, v1) and S2(u2, v2). The result holds u1, v1, u2,
     /// v2 in X[0..3].
     /// </summary>
-    public static NewtonResultN4 SolveSurfaceSurfaceExtrema4D<SurfaceEvaluator1, SurfaceEvaluator2>(SurfaceEvaluator1 surf1,
-                                                                                                    SurfaceEvaluator2 surf2,
+    public static NewtonResultN4 SolveSurfaceSurfaceExtrema4D<TSurfaceEvaluator1, TSurfaceEvaluator2>(TSurfaceEvaluator1 surf1,
+                                                                                                    TSurfaceEvaluator2 surf2,
                                                                                                     in Array4<double> x0,
                                                                                                     in NewtonBoundsN4 bounds,
                                                                                                     NewtonOptions? options = null)
-        where SurfaceEvaluator1 : ISurfaceD2Evaluator
-        where SurfaceEvaluator2 : ISurfaceD2Evaluator
+        where TSurfaceEvaluator1 : ISurfaceD2Evaluator
+        where TSurfaceEvaluator2 : ISurfaceD2Evaluator
     {
-        SurfaceSurfaceExtrema4DFunction<SurfaceEvaluator1, SurfaceEvaluator2> func = new() { _surf1 = surf1, _surf2 = surf2 };
+        SurfaceSurfaceExtrema4DFunction<TSurfaceEvaluator1, TSurfaceEvaluator2> func = new() { _surf1 = surf1, _surf2 = surf2 };
 
         return Solve4D(func, x0, bounds, options);
     }

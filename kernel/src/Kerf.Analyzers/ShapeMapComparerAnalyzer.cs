@@ -36,7 +36,7 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
         description: "OCCT names the hasher of every map of shapes, usually TopTools_ShapeMapHasher (IsSame). The default comparer of the port's maps is IsEqual, so the comparer must be written out.");
 
     // The generic collections whose first type argument is the key, by their metadata names
-    private static readonly ImmutableHashSet<string> theMapTypes = ImmutableHashSet.Create(
+    private static readonly ImmutableHashSet<string> MapTypes = ImmutableHashSet.Create(
         "Occt.NCollection_Map`1",
         "Occt.NCollection_IndexedMap`1",
         "Occt.NCollection_DataMap`2",
@@ -44,7 +44,7 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
         "System.Collections.Generic.HashSet`1",
         "System.Collections.Generic.Dictionary`2");
 
-    private static readonly ImmutableHashSet<string> theShapeTypes = ImmutableHashSet.Create(
+    private static readonly ImmutableHashSet<string> ShapeTypes = ImmutableHashSet.Create(
         "TopoDS_Shape",
         "TopoDS_Vertex",
         "TopoDS_Edge",
@@ -118,7 +118,7 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
     {
         for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
         {
-            if (current.IsGenericType && theMapTypes.Contains(MetadataName(current.OriginalDefinition))
+            if (current.IsGenericType && MapTypes.Contains(MetadataName(current.OriginalDefinition))
                 && IsShapeType(current.TypeArguments[0]))
             {
                 map = current;
@@ -133,7 +133,7 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsShapeType(ITypeSymbol type)
-        => type.IsValueType && theShapeTypes.Contains(type.Name) && type.ContainingNamespace?.ToDisplayString() == "Occt";
+        => type.IsValueType && ShapeTypes.Contains(type.Name) && type.ContainingNamespace?.ToDisplayString() == "Occt";
 
     private static bool IsEqualityComparer(ITypeSymbol type)
         => type is INamedTypeSymbol { IsGenericType: true } named

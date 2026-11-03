@@ -41,7 +41,7 @@ public class Spine : Transient
 {
     protected bool _splitdone;
     protected readonly NCollection_List<ElSpine> _elspines = new();
-    protected readonly NCollection_List<ElSpine> offset_elspines = new();
+    protected readonly NCollection_List<ElSpine> _offsetElspines = new();
     protected ChamfMode _mode;
 
     private readonly EdgeCurveAdaptor _curve = new();
@@ -163,7 +163,7 @@ public class Spine : Transient
 
     internal virtual void AppendOffsetElSpine(ElSpine els)
     {
-        offset_elspines.Append(els);
+        _offsetElspines.Append(els);
     }
 
     /// <summary>The elementary spine of the edge <paramref name="e"/>.</summary>
@@ -216,7 +216,7 @@ public class Spine : Transient
 
     internal NCollection_List<ElSpine> ChangeOffsetElSpines()
     {
-        return offset_elspines;
+        return _offsetElspines;
     }
 
     /// <summary>Forgets the elementary spines; with <paramref name="allData"/>, also the extensions.</summary>

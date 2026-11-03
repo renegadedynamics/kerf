@@ -12,7 +12,10 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Occt;
 
-namespace Kerf.Modeling.Tests.Objects;
+namespace Build123d.Tests.Objects;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 public class ConstrainedArcsTests
 {

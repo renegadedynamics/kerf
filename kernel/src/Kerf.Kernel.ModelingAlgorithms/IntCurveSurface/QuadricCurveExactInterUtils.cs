@@ -27,12 +27,12 @@ internal static class QuadricCurveExactInterUtils
     /// the curve lies on the surface (pairs of bounds in <paramref name="intv"/>) on each C1 interval of the curve.
     /// The counts are -1 if the surface is not a quadric or a root search failed.
     /// </summary>
-    public static void PerformIntersection<SurfaceType, SurfaceTool, CurveType, CurveTool, QuadCurvFuncType>(
+    public static void PerformIntersection<SurfaceType, SurfaceTool, CurveType, CurveTool, TQuadCurvFuncType>(
         in SurfaceType surface, in CurveType curve, NCollection_Sequence<double> pnts,
         NCollection_Sequence<double> intv, out int nbPnts, out int nbIntv)
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
         where CurveTool : IIntersectionCurveTool<CurveType>
-        where QuadCurvFuncType : FunctionWithDerivative, ITheQuadCurvFunc<QuadCurvFuncType, CurveType>
+        where TQuadCurvFuncType : FunctionWithDerivative, ITheQuadCurvFunc<TQuadCurvFuncType, CurveType>
     {
         nbPnts = -1;
         nbIntv = -1;
@@ -82,7 +82,7 @@ internal static class QuadricCurveExactInterUtils
             double u2 = intervals.Value(ii + 1);
 
             FunctionSample sample = new(u1, u2, CurveTool.NbSamples(curve, u1, u2));
-            QuadCurvFuncType function = QuadCurvFuncType.Create(quadric, curve);
+            TQuadCurvFuncType function = TQuadCurvFuncType.Create(quadric, curve);
             FunctionAllRoots roots = new(function, sample, EPSX, EPSDIST, EPSNUL);
 
             if (roots.IsDone)

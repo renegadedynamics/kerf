@@ -38,14 +38,14 @@ public sealed class Modifier
     {
         public Curve3D? myCurve;
         public Placement myLoc;
-        public double myToler;
+        public double Toler;
     }
 
     private struct NewSurfaceInfo
     {
         public Surface? mySurface;
         public Placement myLoc;
-        public double myToler;
+        public double Toler;
         public bool myRevWires;
         public bool myRevFace;
     }
@@ -270,7 +270,7 @@ public sealed class Modifier
                     b.MakeFace(ref resultF,
                                nSinfo.mySurface,
                                nSinfo.myLoc.Predivided(s.Location()),
-                               nSinfo.myToler);
+                               nSinfo.Toler);
                     result = resultF;
                     result.Location(s.Location(), false);
                     if (nSinfo.myRevFace)
@@ -314,7 +314,7 @@ public sealed class Modifier
                     {
                         b.MakeEdge(ref resultE);
                         b.Degenerated(resultE, Tool.Degenerated(ShapeCasts.Edge(s)));
-                        b.UpdateEdge(resultE, nCinfo.myToler); // OCC217
+                        b.UpdateEdge(resultE, nCinfo.Toler); // OCC217
                         no3DCurve = true;
                     }
                     else
@@ -322,7 +322,7 @@ public sealed class Modifier
                         b.MakeEdge(ref resultE,
                                    nCinfo.myCurve,
                                    nCinfo.myLoc.Predivided(s.Location()),
-                                   nCinfo.myToler);
+                                   nCinfo.Toler);
                         no3DCurve = false;
                     }
                     result = resultE;
@@ -701,7 +701,7 @@ public sealed class Modifier
             {
                 nCinfo.myCurve = curve;
                 nCinfo.myLoc = location;
-                nCinfo.myToler = toler;
+                nCinfo.Toler = toler;
                 _ncInfo.Bind(e, nCinfo);
                 _hasNewGeom.Add(e);
             }
@@ -726,7 +726,7 @@ public sealed class Modifier
             {
                 nSinfo.mySurface = surface;
                 nSinfo.myLoc = location;
-                nSinfo.myToler = toler1;
+                nSinfo.Toler = toler1;
                 nSinfo.myRevWires = revWires;
                 nSinfo.myRevFace = revFace;
                 _nsInfo.Bind(f, nSinfo);

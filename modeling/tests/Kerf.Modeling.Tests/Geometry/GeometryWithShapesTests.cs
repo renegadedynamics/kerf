@@ -20,7 +20,10 @@ using Kerf.Engine.Measurement;
 using Occt;
 using Ops = Kerf.Modeling.Operations;
 
-namespace Kerf.Modeling.Tests.Geometry;
+namespace Build123d.Tests.Geometry;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 file static class Objects
 {

@@ -11,7 +11,10 @@ using Kerf.Engine.Topology;
 using Occt;
 using Xunit.Sdk;
 
-namespace Kerf.Modeling.Tests.Topology;
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>build123d's objects, made with the direct API.</summary>
 file static class B

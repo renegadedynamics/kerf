@@ -11,10 +11,10 @@ namespace Kerf.Engine.Foundation.Std;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="Sort{T, TPred}"/> follows MSVC's <c>_Sort_unchecked</c> of <c>&lt;algorithm&gt;</c>: an introsort that
-/// sorts ranges of at most 32 elements (<c>_ISORT_MAX</c>) by insertion (<c>_Insertion_sort_unchecked</c>, which keeps
-/// tied elements in their order), partitions larger ones around a median guess (<c>_Guess_median_unchecked</c>: the
-/// median of three, Tukey's ninther above 40 elements; <c>_Partition_by_median_guess_unchecked</c>), and falls back
+/// <see cref="Sort{T, TPred}"/> follows MSVC's <c>SortUnchecked</c> of <c>&lt;algorithm&gt;</c>: an introsort that
+/// sorts ranges of at most 32 elements (<c>IsortMax</c>) by insertion (<c>_Insertion_sort_unchecked</c>, which keeps
+/// tied elements in their order), partitions larger ones around a median guess (<c>GuessMedianUnchecked</c>: the
+/// median of three, Tukey's ninther above 40 elements; <c>PartitionByMedianGuessUnchecked</c>), and falls back
 /// to <see cref="Heap"/>'s heap sort after 1.5 log2(N) divisions. Ranges of up to 32 elements, the usual case
 /// in the Boolean component, are MSVC's order by construction; the partition of larger ranges is written from MSVC's
 /// source and is unverified against an MSVC-compiled program (decision 621).
@@ -25,19 +25,19 @@ namespace Kerf.Engine.Foundation.Std;
 /// </remarks>
 public static class Sorting
 {
-    private const int _ISORT_MAX = 32;
+    private const int IsortMax = 32;
 
     /// <summary>Sorts the range by the predicate as MSVC's <c>std::sort</c> does.</summary>
     public static void Sort<T, TPred>(Span<T> range, TPred pred) where TPred : Heap.ILess<T>
     {
-        _Sort_unchecked(range, 0, range.Length, range.Length, pred);
+        SortUnchecked(range, 0, range.Length, range.Length, pred);
     }
 
     /// <summary>Sorts the range by the predicate, keeping tied elements in their order (<c>std::stable_sort</c>).</summary>
     public static void stable_sort<T, TPred>(Span<T> range, TPred pred) where TPred : Heap.ILess<T>
     {
         // A binary insertion sort for short ranges, a merge sort otherwise; both stable.
-        if (range.Length <= _ISORT_MAX)
+        if (range.Length <= IsortMax)
         {
             _Insertion_sort_unchecked(range, 0, range.Length, pred);
             return;
@@ -49,7 +49,7 @@ public static class Sorting
     private static void MergeSort<T, TPred>(Span<T> range, Span<T> buffer, TPred pred) where TPred : Heap.ILess<T>
     {
         int nb = range.Length;
-        if (nb <= _ISORT_MAX)
+        if (nb <= IsortMax)
         {
             _Insertion_sort_unchecked(range, 0, nb, pred);
             return;
@@ -81,13 +81,13 @@ public static class Sorting
         }
     }
 
-    private static void _Sort_unchecked<T, TPred>(Span<T> a, int _First, int _Last, int _Ideal, TPred _Pred)
+    private static void SortUnchecked<T, TPred>(Span<T> a, int _First, int _Last, int _Ideal, TPred _Pred)
         where TPred : Heap.ILess<T>
     {
         // order [_First, _Last)
         for (;;)
         {
-            if (_Last - _First <= _ISORT_MAX)
+            if (_Last - _First <= IsortMax)
             {
                 // small
                 _Insertion_sort_unchecked(a, _First, _Last, _Pred);
@@ -103,20 +103,20 @@ public static class Sorting
             }
 
             // divide and conquer by quicksort
-            (int _MidFirst, int _MidSecond) = _Partition_by_median_guess_unchecked(a, _First, _Last, _Pred);
+            (int _MidFirst, int _MidSecond) = PartitionByMedianGuessUnchecked(a, _First, _Last, _Pred);
 
             _Ideal = (_Ideal >> 1) + (_Ideal >> 2); // allow 1.5 log2(N) divisions
 
             if (_MidFirst - _First < _Last - _MidSecond)
             {
                 // loop on second half
-                _Sort_unchecked(a, _First, _MidFirst, _Ideal, _Pred);
+                SortUnchecked(a, _First, _MidFirst, _Ideal, _Pred);
                 _First = _MidSecond;
             }
             else
             {
                 // loop on first half
-                _Sort_unchecked(a, _MidSecond, _Last, _Ideal, _Pred);
+                SortUnchecked(a, _MidSecond, _Last, _Ideal, _Pred);
                 _Last = _MidFirst;
             }
         }
@@ -154,7 +154,7 @@ public static class Sorting
         }
     }
 
-    private static void _Med3_unchecked<T, TPred>(Span<T> a, int _First, int _Mid, int _Last, TPred _Pred)
+    private static void Med3Unchecked<T, TPred>(Span<T> a, int _First, int _Mid, int _Last, TPred _Pred)
         where TPred : Heap.ILess<T>
     {
         // sort median of three elements to middle
@@ -175,7 +175,7 @@ public static class Sorting
         }
     }
 
-    private static void _Guess_median_unchecked<T, TPred>(Span<T> a, int _First, int _Mid, int _Last, TPred _Pred)
+    private static void GuessMedianUnchecked<T, TPred>(Span<T> a, int _First, int _Mid, int _Last, TPred _Pred)
         where TPred : Heap.ILess<T>
     {
         // sort median element to middle
@@ -185,23 +185,23 @@ public static class Sorting
             // Tukey's ninther
             int _Step = (_Count + 1) >> 3; // +1 can't overflow because range was made inclusive in caller
             int _Two_step = _Step << 1; // note: intentionally discards low-order bit
-            _Med3_unchecked(a, _First, _First + _Step, _First + _Two_step, _Pred);
-            _Med3_unchecked(a, _Mid - _Step, _Mid, _Mid + _Step, _Pred);
-            _Med3_unchecked(a, _Last - _Two_step, _Last - _Step, _Last, _Pred);
-            _Med3_unchecked(a, _First + _Step, _Mid, _Last - _Step, _Pred);
+            Med3Unchecked(a, _First, _First + _Step, _First + _Two_step, _Pred);
+            Med3Unchecked(a, _Mid - _Step, _Mid, _Mid + _Step, _Pred);
+            Med3Unchecked(a, _Last - _Two_step, _Last - _Step, _Last, _Pred);
+            Med3Unchecked(a, _First + _Step, _Mid, _Last - _Step, _Pred);
         }
         else
         {
-            _Med3_unchecked(a, _First, _Mid, _Last, _Pred);
+            Med3Unchecked(a, _First, _Mid, _Last, _Pred);
         }
     }
 
-    private static (int, int) _Partition_by_median_guess_unchecked<T, TPred>(Span<T> a, int _First, int _Last, TPred _Pred)
+    private static (int, int) PartitionByMedianGuessUnchecked<T, TPred>(Span<T> a, int _First, int _Last, TPred _Pred)
         where TPred : Heap.ILess<T>
     {
         // partition [_First, _Last)
         int _Mid = _First + ((_Last - _First) >> 1); // shift for codegen
-        _Guess_median_unchecked(a, _First, _Mid, _Last - 1, _Pred);
+        GuessMedianUnchecked(a, _First, _Mid, _Last - 1, _Pred);
         int _Pfirst = _Mid;
         int _Plast = _Pfirst + 1;
 

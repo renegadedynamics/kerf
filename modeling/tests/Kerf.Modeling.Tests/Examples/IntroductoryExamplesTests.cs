@@ -1,7 +1,10 @@
 using static Kerf.Modeling.Operations;
 using Rot = Kerf.Modeling.Rotation;
 
-namespace Kerf.Modeling.Tests.Examples;
+namespace Build123d.Tests.Examples;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// build123d's introductory examples (https://build123d.readthedocs.io/en/latest/introductory_examples.html), their

@@ -46,7 +46,7 @@ public class IncrementalMesh : DiscretRoot
 {
     // Default flag to control parallelization for BRepMesh_IncrementalMesh tool returned for Mesh Factory
     // (process-wide, with an internal setter: decisions 415, 492).
-    private static volatile bool IS_IN_PARALLEL = false;
+    private static volatile bool s_isInParallel = false;
 
     protected ToolParameters _parameters = new();
     protected bool _modified;
@@ -246,18 +246,18 @@ public class IncrementalMesh : DiscretRoot
         IncrementalMesh anAlgo = new();
         anAlgo.ChangeParameters().Deflection = deflection;
         anAlgo.ChangeParameters().Angle = angle;
-        anAlgo.ChangeParameters().InParallel = IS_IN_PARALLEL;
+        anAlgo.ChangeParameters().InParallel = s_isInParallel;
         anAlgo.SetShape(shape);
         algo = anAlgo;
         return 0; // no error
     }
 
     /// <summary>The parallel flag that <see cref="Discret"/> sets (for the mesh factories).</summary>
-    public static bool IsParallelDefault => IS_IN_PARALLEL;
+    public static bool IsParallelDefault => s_isInParallel;
 
     /// <summary>
     /// Sets the parallel flag of <see cref="Discret"/>. Internal: a process-wide setting that only Draw-lite's
     /// <c>mpparallel</c> changes (decision 492).
     /// </summary>
-    internal static void SetParallelDefault(bool inParallel) => IS_IN_PARALLEL = inParallel;
+    internal static void SetParallelDefault(bool inParallel) => s_isInParallel = inParallel;
 }

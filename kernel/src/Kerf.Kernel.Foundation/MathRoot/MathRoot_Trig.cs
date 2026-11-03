@@ -345,7 +345,7 @@ public static partial class MathRoot
         }
 
         // Newton refinement with Halley's method fallback for double roots (a C++ lambda)
-        double aRefineRoot(double x)
+        double ARefineRoot(double x)
         {
             const int THE_MAX_ITER = 20;
             const double THE_TOL = 1.0e-14;
@@ -422,7 +422,7 @@ public static partial class MathRoot
             double aX = teta - myBorneInf;
             if (aX >= -delta_Eps && aX <= delta + delta_Eps)
             {
-                double tetaRefined = aRefineRoot(teta);
+                double tetaRefined = ARefineRoot(teta);
 
                 // Check if Newton didn't diverge too far
                 double deltaNewton = Math.Abs(tetaRefined - teta);

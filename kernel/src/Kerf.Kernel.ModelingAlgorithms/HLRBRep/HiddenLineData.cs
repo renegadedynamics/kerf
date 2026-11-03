@@ -82,12 +82,12 @@ public class HiddenLineData : Transient
         public int N;
 
         public uint[][]? TabBit;
-        public int nTabBit;
+        public int NTabBit;
 
         public TableauRejection()
         {
             N = 0;
-            nTabBit = 0;
+            NTabBit = 0;
             UV = null;
             nbUV = null;
             IndUV = null;
@@ -256,18 +256,18 @@ public class HiddenLineData : Transient
             if (TabBit is not null)
             {
                 TabBit = null;
-                nTabBit = 0;
+                NTabBit = 0;
             }
         }
 
         public void InitTabBit(int nbedgs)
         {
-            if (TabBit is not null && nTabBit != 0)
+            if (TabBit is not null && NTabBit != 0)
             {
-                ResetTabBit(nTabBit);
+                ResetTabBit(NTabBit);
             }
             TabBit = new uint[nbedgs][];
-            nTabBit = nbedgs;
+            NTabBit = nbedgs;
             int n = 1 + (nbedgs >> 5);
 
             for (int i = 0; i < nbedgs; i++)
@@ -395,7 +395,7 @@ public class HiddenLineData : Transient
     private int _iFace;
     private HiddenLineFaceData? _iFaceData;
     private HlrSurface? _iFaceGeom;
-    private WiresBlock? _iFaceWires; // OCCT's iFaceMinMax points into its min-max
+    private WiresBlock? _iFaceWires; // OCCT's IFaceMinMax points into its min-max
     private SurfaceKind _iFaceType;
     private bool _iFaceBack;
     private bool _iFaceSimp;
@@ -413,7 +413,7 @@ public class HiddenLineData : Transient
     private bool _leIsoLine;
     private HiddenLineEdgeData? _leData;
     private HiddenLineCurve? _leGeom;
-    private HiddenLineEdgeData? _leMinMaxOwner; // OCCT's myLEMinMax points into its min-max
+    private HiddenLineEdgeData? _leMinMaxOwner; // OCCT's LEMinMax points into its min-max
     private CurveKind _leType;
     private float _leTol;
     private int _fe;
@@ -436,9 +436,9 @@ public class HiddenLineData : Transient
     private bool _aboveIntf;
     private TableauRejection? _reject;
 
-    private ref EdgesBlock.MinMaxIndices iFaceMinMax => ref _iFaceWires!.MinMax();
+    private ref EdgesBlock.MinMaxIndices IFaceMinMax => ref _iFaceWires!.MinMax();
 
-    private ref EdgesBlock.MinMaxIndices myLEMinMax => ref _leMinMaxOwner!.MinMax();
+    private ref EdgesBlock.MinMaxIndices LEMinMax => ref _leMinMaxOwner!.MinMax();
 
     /// <summary>A data structure for NV vertices, NE edges and NF faces (indexed from 1; index 0 is unused).</summary>
     public HiddenLineData(int nv, int ne, int nf)
@@ -895,7 +895,7 @@ public class HiddenLineData : Transient
             if (!ed.Status().AllHidden())
             {
                 _leMinMaxOwner = ed;
-                if (!ZRejected(minMaxShap, myLEMinMax))
+                if (!ZRejected(minMaxShap, LEMinMax))
                 { //- rejection en z
                     _nbrSortEd++;
                     _edgeIndices[_nbrSortEd] = e;
@@ -1054,7 +1054,7 @@ public class HiddenLineData : Transient
             NextEdge();
             return;
         }
-        if (ZRejected(iFaceMinMax, myLEMinMax))
+        if (ZRejected(IFaceMinMax, LEMinMax))
         { //-- rejection en z
             NextEdge();
             return;
@@ -1108,7 +1108,7 @@ public class HiddenLineData : Transient
             if (_faceItr1.BeginningOfWire())
             {
                 ref EdgesBlock.MinMaxIndices minMaxWire = ref _faceItr1.Wire().MinMax();
-                if (ZRejected(minMaxWire, myLEMinMax))
+                if (ZRejected(minMaxWire, LEMinMax))
                 { //-- Rejection en Z
                     _faceItr1.SkipWire();
                     continue;
@@ -1146,7 +1146,7 @@ public class HiddenLineData : Transient
 
                     if (!_reject!.NoIntersection(_le, _fe))
                     {
-                        if (!ZRejected(minMaxFEdg, myLEMinMax))
+                        if (!ZRejected(minMaxFEdg, LEMinMax))
                         { //-- Rejection en Z
                             bool rej = false;
                             if (_le == _fe)
@@ -1795,7 +1795,7 @@ public class HiddenLineData : Transient
             REJECT1(_deca, totMin, totMax, _surD, ref vertMin, ref vertMax);
 
             HlrAlgo.EncodeMinMax(ref vertMin, ref vertMax, ref minMaxVert);
-            if (ZRejected(iFaceMinMax, minMaxVert))
+            if (ZRejected(IFaceMinMax, minMaxVert))
             { //-- Rejection en Z
                 return state;
             }
@@ -1811,7 +1811,7 @@ public class HiddenLineData : Transient
             REJECT1(_deca, totMin, totMax, _surD, ref vertMin, ref vertMax);
 
             HlrAlgo.EncodeMinMax(ref vertMin, ref vertMax, ref minMaxVert);
-            if (ZRejected(iFaceMinMax, minMaxVert))
+            if (ZRejected(IFaceMinMax, minMaxVert))
             { //-- Rejection en Z
                 return state;
             }
@@ -1824,7 +1824,7 @@ public class HiddenLineData : Transient
             REJECT1(_deca, totMin, totMax, _surD, ref vertMin, ref vertMax);
 
             HlrAlgo.EncodeMinMax(ref vertMin, ref vertMax, ref minMaxVert);
-            if (ZRejected(iFaceMinMax, minMaxVert))
+            if (ZRejected(IFaceMinMax, minMaxVert))
             { //-- Rejection en Z
                 return state;
             }
@@ -1838,7 +1838,7 @@ public class HiddenLineData : Transient
 
             HlrAlgo.EncodeMinMax(ref vertMin, ref vertMax, ref minMaxVert);
             // OCCT's commented-out OCCT_DEBUG dump is left out
-            if (ZRejected(iFaceMinMax, minMaxVert))
+            if (ZRejected(IFaceMinMax, minMaxVert))
             { //-- Rejection en Z
                 return state;
             }
@@ -1957,7 +1957,7 @@ public class HiddenLineData : Transient
             REJECT1(_deca, totMin, totMax, _surD, ref vertMin, ref vertMax);
 
             HlrAlgo.EncodeMinMax(ref vertMin, ref vertMax, ref minMaxVert);
-            if (ZRejected(iFaceMinMax, minMaxVert))
+            if (ZRejected(IFaceMinMax, minMaxVert))
             { //-- Rejection en Z
                 return global::Kerf.Topology.Containment.Out;
             }

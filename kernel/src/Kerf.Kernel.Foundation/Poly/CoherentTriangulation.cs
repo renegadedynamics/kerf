@@ -177,7 +177,7 @@ public class CoherentTriangulation : Transient
     }
 
     /// <summary>A pair of node indices (used by <see cref="RemoveDegenerated"/>: the removed node, then the one kept).</summary>
-    public readonly record struct TwoIntegers(int myValue0, int myValue1);
+    public readonly record struct TwoIntegers(int Value0, int Value1);
 
     protected readonly NCollection_DynamicArray<CoherentTriangle> _triangles = new();
     protected readonly NCollection_DynamicArray<CoherentNode> _nodes = new();

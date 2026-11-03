@@ -63,7 +63,7 @@ public sealed partial class ImpImpIntersection
     private static class ComputationMethods
     {
         // Stores equations coefficients
-        internal sealed class stCoeffsValue
+        internal sealed class StCoeffsValue
         {
             internal readonly math_Vector _mVecA1;
             internal readonly math_Vector _mVecA2;
@@ -108,7 +108,7 @@ public sealed partial class ImpImpIntersection
                 COE13 = 3,
             }
 
-            internal stCoeffsValue(in Cylinder cyl1, in Cylinder cyl2)
+            internal StCoeffsValue(in Cylinder cyl1, in Cylinder cyl2)
             {
                 _mVecA1 = new math_Vector(-cyl1.Radius() * cyl1.XAxis().Direction().XYZ());
                 _mVecA2 = new math_Vector(cyl2.Radius() * cyl2.XAxis().Direction().XYZ());
@@ -268,7 +268,7 @@ public sealed partial class ImpImpIntersection
         //=======================================================================
         internal static bool CylCylMonotonicity(double u1par,
                                                 int wlIndex,
-                                                stCoeffsValue coeffs,
+                                                StCoeffsValue coeffs,
                                                 double period,
                                                 ref bool isIncreasing)
         {
@@ -342,7 +342,7 @@ public sealed partial class ImpImpIntersection
         // the non-null pointer.
         internal static bool CylCylComputeParameters(double u1par,
                                                      int wlIndex,
-                                                     stCoeffsValue coeffs,
+                                                     StCoeffsValue coeffs,
                                                      ref double u2)
         {
             double dummy = 0.0;
@@ -351,7 +351,7 @@ public sealed partial class ImpImpIntersection
 
         internal static bool CylCylComputeParameters(double u1par,
                                                      int wlIndex,
-                                                     stCoeffsValue coeffs,
+                                                     StCoeffsValue coeffs,
                                                      ref double u2,
                                                      ref double delta)
         {
@@ -360,7 +360,7 @@ public sealed partial class ImpImpIntersection
 
         private static bool CylCylComputeParameters(double u1par,
                                                     int wlIndex,
-                                                    stCoeffsValue coeffs,
+                                                    StCoeffsValue coeffs,
                                                     ref double u2,
                                                     ref double delta,
                                                     bool hasDelta)
@@ -444,7 +444,7 @@ public sealed partial class ImpImpIntersection
         //=======================================================================
         internal static bool CylCylComputeParameters(double u1,
                                                      double u2,
-                                                     stCoeffsValue coeffs,
+                                                     StCoeffsValue coeffs,
                                                      ref double v1,
                                                      ref double v2)
         {
@@ -464,7 +464,7 @@ public sealed partial class ImpImpIntersection
         //=======================================================================
         internal static bool CylCylComputeParameters(double u1par,
                                                      int wlIndex,
-                                                     stCoeffsValue coeffs,
+                                                     StCoeffsValue coeffs,
                                                      ref double u2,
                                                      ref double v1,
                                                      ref double v2)
@@ -485,7 +485,7 @@ public sealed partial class ImpImpIntersection
 
     // Cyl-cyl-specific helper: constructed only by IntCyCy
     // and relies on cylinder-cylinder coefficient tables (ComputationMethods::
-    // stCoeffsValue) for both SearchOnVBounds' Newton system and the analytical
+    // StCoeffsValue) for both SearchOnVBounds' Newton system and the analytical
     // CylCylComputeParameters evaluators used downstream.
     // OCCT keeps const references to the quadrics, coefficients and boxes; the port keeps copies of the structs
     // (never changed while the object lives) and the coefficients by reference.
@@ -520,7 +520,7 @@ public sealed partial class ImpImpIntersection
 
         private readonly SurfaceQuadric _quad1;
         private readonly SurfaceQuadric _quad2;
-        private readonly ComputationMethods.stCoeffsValue _coeffs;
+        private readonly ComputationMethods.StCoeffsValue _coeffs;
         private readonly Box2d _uvSurf1;
         private readonly Box2d _uvSurf2;
         private readonly int _nbWLines;
@@ -531,7 +531,7 @@ public sealed partial class ImpImpIntersection
 
         internal WorkWithBoundaries(in SurfaceQuadric quad1,
                                     in SurfaceQuadric quad2,
-                                    ComputationMethods.stCoeffsValue coeffs,
+                                    ComputationMethods.StCoeffsValue coeffs,
                                     in Box2d uvSurf1,
                                     in Box2d uvSurf2,
                                     int nbWLines,
@@ -555,7 +555,7 @@ public sealed partial class ImpImpIntersection
 
         // Returns parameters of system solved while finding
         // intersection line
-        internal ComputationMethods.stCoeffsValue SICoeffs() => _coeffs;
+        internal ComputationMethods.StCoeffsValue SICoeffs() => _coeffs;
 
         // Returns quadric correspond to the index theIdx.
         internal SurfaceQuadric GetQSurface(int idx)
@@ -587,12 +587,12 @@ public sealed partial class ImpImpIntersection
         // VBoundDelta in AddBoundaryPoint).
         private readonly struct VBoundDelta : global::Kerf.Engine.Numerics.Utilities.MathUtils.IScalarFunction
         {
-            private readonly ComputationMethods.stCoeffsValue _coeffs;
+            private readonly ComputationMethods.StCoeffsValue _coeffs;
             private readonly int _wlIndex;
             private readonly bool _isV1;
             private readonly double _vBound;
 
-            internal VBoundDelta(ComputationMethods.stCoeffsValue coeffs, int wlIndex, bool isV1, double vBound)
+            internal VBoundDelta(ComputationMethods.StCoeffsValue coeffs, int wlIndex, bool isV1, double vBound)
             {
                 _coeffs = coeffs;
                 _wlIndex = wlIndex;
@@ -852,7 +852,7 @@ public sealed partial class ImpImpIntersection
         // purpose  : Computes true domain of future intersection curve (allows
         //            avoiding excess iterations)
         //=======================================================================
-        internal static bool BoundariesComputing(ComputationMethods.stCoeffsValue coeffs,
+        internal static bool BoundariesComputing(ComputationMethods.StCoeffsValue coeffs,
                                                  double period,
                                                  BoundRange[] uRange)
         {
@@ -1983,7 +1983,7 @@ public sealed partial class ImpImpIntersection
     //=======================================================================
     private static bool AddPointIntoWL(in SurfaceQuadric quad1,
                                        in SurfaceQuadric quad2,
-                                       ComputationMethods.stCoeffsValue coeffs,
+                                       ComputationMethods.StCoeffsValue coeffs,
                                        bool isTheReverse,
                                        bool isThePrecise,
                                        in Point2D pntOnSurf1,
@@ -2190,7 +2190,7 @@ public sealed partial class ImpImpIntersection
     private static void SeekAdditionalPoints(in SurfaceQuadric quad1,
                                              in SurfaceQuadric quad2,
                                              LineOn2S? line,
-                                             ComputationMethods.stCoeffsValue coeffs,
+                                             ComputationMethods.StCoeffsValue coeffs,
                                              int wlIndex,
                                              int minNbPoints,
                                              int startPointOnLine,
@@ -2314,7 +2314,7 @@ public sealed partial class ImpImpIntersection
     // purpose  : theNbCritPointsMax contains true number of critical points.
     //            It must be initialized correctly before function calling
     //=======================================================================
-    private static void CriticalPointsComputing(ComputationMethods.stCoeffsValue coeffs,
+    private static void CriticalPointsComputing(ComputationMethods.StCoeffsValue coeffs,
                                                 double uSurf1f,
                                                 double uSurf1l,
                                                 double uSurf2f,
@@ -2545,7 +2545,7 @@ public sealed partial class ImpImpIntersection
             break;
         }
         //
-        ComputationMethods.stCoeffsValue equationCoeffs = bw.SICoeffs();
+        ComputationMethods.StCoeffsValue equationCoeffs = bw.SICoeffs();
         SurfaceQuadric quad1 = bw.GetQSurface(1);
         SurfaceQuadric quad2 = bw.GetQSurface(2);
         bool isReversed = bw.IsReversed;
@@ -3795,8 +3795,8 @@ public sealed partial class ImpImpIntersection
         const double period = 2.0 * M_PI;
         const int nbWLines = 2;
 
-        ComputationMethods.stCoeffsValue equationCoeffs1 = new(cyl1, cyl2);
-        ComputationMethods.stCoeffsValue equationCoeffs2 = new(cyl2, cyl1);
+        ComputationMethods.StCoeffsValue equationCoeffs1 = new(cyl1, cyl2);
+        ComputationMethods.StCoeffsValue equationCoeffs2 = new(cyl2, cyl1);
 
         // Boundaries.
         // Intersection result can include two non-connected regions

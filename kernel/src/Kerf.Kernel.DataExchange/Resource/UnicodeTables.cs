@@ -27,7 +27,7 @@ internal static class UnicodeTables
 
     private const int NbCodePages = (int)FormatType.FormatType_CP850 - (int)FormatType.FormatType_CP1250 + 1;
 
-    private static readonly Lazy<Dictionary<int, uint>[]> S_corrections = new(LoadCorrections);
+    private static readonly Lazy<Dictionary<int, uint>[]> Corrections = new(LoadCorrections);
     private static readonly Lazy<char[][]> S_codePages = new(BuildCodePages);
     private static readonly Lazy<uint[]> S_sjis = new(() => BuildTable(Table.Sjis, 65536, 932, SjisBytes));
     private static readonly Lazy<uint[]> S_gb = new(() => BuildTable(Table.Gb, 65536, 936, GbBytes));
@@ -148,7 +148,7 @@ internal static class UnicodeTables
     private static uint[] BuildTable(Table table, int size, int codePage, Func<int, byte[]?> bytes)
     {
         uint[] aTable = BuildNet(size, codePage, bytes);
-        foreach (KeyValuePair<int, uint> fix in S_corrections.Value[(int)table])
+        foreach (KeyValuePair<int, uint> fix in Corrections.Value[(int)table])
         {
             aTable[fix.Key] = fix.Value;
         }
@@ -158,7 +158,7 @@ internal static class UnicodeTables
     private static char[][] BuildCodePages()
     {
         uint[] table = BuildNetCodePages();
-        foreach (KeyValuePair<int, uint> fix in S_corrections.Value[(int)Table.CodePages])
+        foreach (KeyValuePair<int, uint> fix in Corrections.Value[(int)Table.CodePages])
         {
             table[fix.Key] = fix.Value;
         }

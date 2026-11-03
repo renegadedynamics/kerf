@@ -1,4 +1,7 @@
-namespace Kerf.Modeling.Tests.Errors;
+namespace Build123d.Tests.Errors;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>OCCT's calls leave the thread's floating point as it was: no traps.</summary>
 public class FaultTests

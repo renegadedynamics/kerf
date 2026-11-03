@@ -151,25 +151,25 @@ public sealed class MakeCone : Root
         double candidate2 = -radius - vParam * tan;
         // Accept tiny negative values as zero (rounding noise from analytic formulas),
         // then clamp to 0.0 before constructing gp_Cone.
-        static bool isNonNegativeWithTol(double value) => value >= -Constants.Resolution();
-        static double clampToZero(double value) => value < 0.0 ? 0.0 : value;
+        static bool IsNonNegativeWithTol(double value) => value >= -Constants.Resolution();
+        static double ClampToZero(double value) => value < 0.0 ? 0.0 : value;
         double resultRadius = -1.0;
-        if (isNonNegativeWithTol(candidate1) && isNonNegativeWithTol(candidate2))
+        if (IsNonNegativeWithTol(candidate1) && IsNonNegativeWithTol(candidate2))
         {
             // Keep the nearest parallel cone to preserve predictable behavior.
-            double cand1 = clampToZero(candidate1);
-            double cand2 = clampToZero(candidate2);
+            double cand1 = ClampToZero(candidate1);
+            double cand2 = ClampToZero(candidate2);
             double dist1 = Math.Abs((cand1 - cone.RefRadius()) * cos);
             double dist2 = Math.Abs((cand2 - cone.RefRadius()) * cos);
             resultRadius = (dist1 <= dist2) ? cand1 : cand2;
         }
-        else if (isNonNegativeWithTol(candidate1))
+        else if (IsNonNegativeWithTol(candidate1))
         {
-            resultRadius = clampToZero(candidate1);
+            resultRadius = ClampToZero(candidate1);
         }
-        else if (isNonNegativeWithTol(candidate2))
+        else if (IsNonNegativeWithTol(candidate2))
         {
-            resultRadius = clampToZero(candidate2);
+            resultRadius = ClampToZero(candidate2);
         }
         if (resultRadius < 0.0)
         {

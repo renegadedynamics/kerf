@@ -29,8 +29,8 @@ namespace Kerf.Engine.Construction.Plate;
 public class PlateSolver
 {
     private int _order;
-    private int n_el;
-    private int n_dim;
+    private int _nEl;
+    private int _nDim;
     private Xyz[]? _solution;
     private Xy[]? _points;
     private int[]? _deru;
@@ -49,8 +49,8 @@ public class PlateSolver
     public PlateSolver()
     {
         _order = 0;
-        n_el = 0;
-        n_dim = 0;
+        _nEl = 0;
+        _nDim = 0;
         _solution = null;
         _points = null;
         _deru = null;
@@ -64,8 +64,8 @@ public class PlateSolver
     public PlateSolver(PlateSolver Ref)
     {
         _order = Ref._order;
-        n_el = Ref.n_el;
-        n_dim = Ref.n_dim;
+        _nEl = Ref._nEl;
+        _nDim = Ref._nDim;
         _solution = null;
         _points = null;
         _deru = null;
@@ -74,21 +74,21 @@ public class PlateSolver
         int i;
         if (Ref._ok)
         {
-            if (n_dim > 0 && Ref._solution != null)
+            if (_nDim > 0 && Ref._solution != null)
             {
-                _solution = new Xyz[n_dim];
-                for (i = 0; i < n_dim; i++)
+                _solution = new Xyz[_nDim];
+                for (i = 0; i < _nDim; i++)
                 {
                     Solution(i) = Ref.Solution(i);
                 }
             }
 
-            if (n_el > 0)
+            if (_nEl > 0)
             {
                 if (Ref._points != null)
                 {
-                    _points = new Xy[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _points = new Xy[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Points(i) = Ref.Points(i);
                     }
@@ -96,8 +96,8 @@ public class PlateSolver
 
                 if (Ref._deru != null)
                 {
-                    _deru = new int[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _deru = new int[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Deru(i) = Ref.Deru(i);
                     }
@@ -105,8 +105,8 @@ public class PlateSolver
 
                 if (Ref._derv != null)
                 {
-                    _derv = new int[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _derv = new int[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Derv(i) = Ref.Derv(i);
                     }
@@ -131,27 +131,27 @@ public class PlateSolver
     {
         Init();
         _order = Ref._order;
-        n_el = Ref.n_el;
-        n_dim = Ref.n_dim;
+        _nEl = Ref._nEl;
+        _nDim = Ref._nDim;
         _ok = Ref._ok;
         int i;
         if (Ref._ok)
         {
-            if (n_dim > 0 && Ref._solution != null)
+            if (_nDim > 0 && Ref._solution != null)
             {
-                _solution = new Xyz[n_dim];
-                for (i = 0; i < n_dim; i++)
+                _solution = new Xyz[_nDim];
+                for (i = 0; i < _nDim; i++)
                 {
                     Solution(i) = Ref.Solution(i);
                 }
             }
 
-            if (n_el > 0)
+            if (_nEl > 0)
             {
                 if (Ref._points != null)
                 {
-                    _points = new Xy[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _points = new Xy[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Points(i) = Ref.Points(i);
                     }
@@ -159,8 +159,8 @@ public class PlateSolver
 
                 if (Ref._deru != null)
                 {
-                    _deru = new int[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _deru = new int[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Deru(i) = Ref.Deru(i);
                     }
@@ -168,8 +168,8 @@ public class PlateSolver
 
                 if (Ref._derv != null)
                 {
-                    _derv = new int[n_el];
-                    for (i = 0; i < n_el; i++)
+                    _derv = new int[_nEl];
+                    for (i = 0; i < _nEl; i++)
                     {
                         Derv(i) = Ref.Derv(i);
                     }
@@ -194,7 +194,7 @@ public class PlateSolver
     public void Load(in PinpointConstraint pConst)
     {
         _ok = false;
-        n_el++;
+        _nEl++;
         _constraints.Append(pConst);
         int ordreConst = pConst.Idu() + pConst.Idv();
         if (_maxConstraintOrder < ordreConst)
@@ -206,7 +206,7 @@ public class PlateSolver
     public void Load(LinearXyzConstraint lxyzConst)
     {
         _ok = false;
-        n_el += lxyzConst.Coeff().RowLength();
+        _nEl += lxyzConst.Coeff().RowLength();
 
         _lxyzConstraints.Append(lxyzConst);
         for (int j = 1; j <= lxyzConst.GetPPC().Length(); j++)
@@ -222,7 +222,7 @@ public class PlateSolver
     public void Load(LinearScalarConstraint lScalarConst)
     {
         _ok = false;
-        n_el += lScalarConst.Coeff().RowLength();
+        _nEl += lScalarConst.Coeff().RowLength();
         _lScalarConstraints.Append(lScalarConst);
         for (int j = 1; j <= lScalarConst.GetPPC().Length(); j++)
         {
@@ -288,7 +288,7 @@ public class PlateSolver
         {
             return;
         }
-        if (n_el < 1)
+        if (_nEl < 1)
         {
             return;
         }
@@ -356,26 +356,26 @@ public class PlateSolver
     {
         // computation of square matrix members
 
-        n_dim = n_el + _order * (_order + 1) / 2;
-        Matrix mat = new(0, n_dim - 1, 0, n_dim - 1, 0.0);
-        _points = new Xy[n_el];
+        _nDim = _nEl + _order * (_order + 1) / 2;
+        Matrix mat = new(0, _nDim - 1, 0, _nDim - 1, 0.0);
+        _points = new Xy[_nEl];
         int i;
-        for (i = 0; i < n_el; i++)
+        for (i = 0; i < _nEl; i++)
         {
             Points(i) = _constraints[i + 1].Pnt2d();
         }
-        _deru = new int[n_el];
-        for (i = 0; i < n_el; i++)
+        _deru = new int[_nEl];
+        for (i = 0; i < _nEl; i++)
         {
             Deru(i) = _constraints[i + 1].Idu();
         }
-        _derv = new int[n_el];
-        for (i = 0; i < n_el; i++)
+        _derv = new int[_nEl];
+        for (i = 0; i < _nEl; i++)
         {
             Derv(i) = _constraints[i + 1].Idv();
         }
 
-        for (i = 0; i < n_el; i++)
+        for (i = 0; i < _nEl; i++)
         {
             for (int j = 0; j < i; j++)
             {
@@ -390,12 +390,12 @@ public class PlateSolver
             }
         }
 
-        i = n_el;
+        i = _nEl;
         for (int iu = 0; iu < _order; iu++)
         {
             for (int iv = 0; iu + iv < _order; iv++)
             {
-                for (int j = 0; j < n_el; j++)
+                for (int j = 0; j < _nEl; j++)
                 {
                     int idu = Deru(j);
                     int idv = Derv(j);
@@ -405,9 +405,9 @@ public class PlateSolver
             }
         }
 
-        for (i = 0; i < n_dim; i++)
+        for (i = 0; i < _nDim; i++)
         {
-            for (int j = i + 1; j < n_dim; j++)
+            for (int j = i + 1; j < _nDim; j++)
             {
                 mat[i, j] = mat[j, i];
             }
@@ -429,7 +429,7 @@ public class PlateSolver
         if (!algo_gauss.IsDone)
         {
             int nbm = _order * (_order + 1) / 2;
-            for (i = n_el; i < n_el + nbm; i++)
+            for (i = _nEl; i < _nEl + nbm; i++)
             {
                 mat[i, i] = 1.0e-8;
             }
@@ -449,21 +449,21 @@ public class PlateSolver
         if (_ok)
         {
             //   computation of the linear system solution for the X, Y and Z coordinates
-            math_Vector sec_member = new(0, n_dim - 1, 0.0);
-            math_Vector sol = new(0, n_dim - 1);
-            _solution = new Xyz[n_dim];
+            math_Vector sec_member = new(0, _nDim - 1, 0.0);
+            math_Vector sol = new(0, _nDim - 1);
+            _solution = new Xyz[_nDim];
 
             for (int icoor = 1; icoor <= 3; icoor++)
             {
-                for (i = 0; i < n_el; i++)
+                for (i = 0; i < _nEl; i++)
                 {
                     sec_member[i] = _constraints[i + 1].Value().Coord(icoor);
                 }
                 algo_gauss.Solve(sec_member, sol);
                 // alr iteration pour affiner la solution
                 {
-                    math_Vector sol1 = new(0, n_dim - 1);
-                    math_Vector sec_member1 = new(0, n_dim - 1);
+                    math_Vector sol1 = new(0, _nDim - 1);
+                    math_Vector sec_member1 = new(0, _nDim - 1);
                     for (i = 1; i <= iterationNumber; i++)
                     {
                         sec_member1 = sec_member - mat * sol;
@@ -473,7 +473,7 @@ public class PlateSolver
                 }
                 // finalr
 
-                for (i = 0; i < n_dim; i++)
+                for (i = 0; i < _nDim; i++)
                 {
                     Solution(i).SetCoord(icoor, sol[i]);
                 }
@@ -494,9 +494,9 @@ public class PlateSolver
         }
 
         int n_dimat = nCC1 + nCC2 + _order * (_order + 1) / 2;
-        _points = new Xy[n_el];
-        _deru = new int[n_el];
-        _derv = new int[n_el];
+        _points = new Xy[_nEl];
+        _deru = new int[_nEl];
+        _derv = new int[_nEl];
 
         for (i = 0; i < nCC1; i++)
         {
@@ -558,8 +558,8 @@ public class PlateSolver
             //   computation of the linear system solution for the X, Y and Z coordinates
             math_Vector sec_member = new(0, n_dimat - 1, 0.0);
             math_Vector sol = new(0, n_dimat - 1);
-            n_dim = n_el + _order * (_order + 1) / 2;
-            _solution = new Xyz[n_dim];
+            _nDim = _nEl + _order * (_order + 1) / 2;
+            _solution = new Xyz[_nDim];
 
             for (int icoor = 1; icoor <= 3; icoor++)
             {
@@ -621,7 +621,7 @@ public class PlateSolver
 
                 for (i = 0; i < _order * (_order + 1) / 2; i++)
                 {
-                    Solution(n_el + i).SetCoord(icoor, sol[ksol + i]);
+                    Solution(_nEl + i).SetCoord(icoor, sol[ksol + i]);
                 }
             }
         }
@@ -650,9 +650,9 @@ public class PlateSolver
         int nbm = _order * (_order + 1) / 2;
         int n_dimsousmat = nCC1 + nCC2 + nbm;
         int n_dimat = 3 * n_dimsousmat + nCC3;
-        _points = new Xy[n_el];
-        _deru = new int[n_el];
-        _derv = new int[n_el];
+        _points = new Xy[_nEl];
+        _deru = new int[_nEl];
+        _derv = new int[_nEl];
 
         for (i = 0; i < nCC1; i++)
         {
@@ -904,8 +904,8 @@ public class PlateSolver
             //   computation of the linear system solution for the X, Y and Z coordinates
             math_Vector sec_member = new(0, n_dimat - 1, 0.0);
             math_Vector sol = new(0, n_dimat - 1);
-            n_dim = n_el + _order * (_order + 1) / 2;
-            _solution = new Xyz[n_dim];
+            _nDim = _nEl + _order * (_order + 1) / 2;
+            _solution = new Xyz[_nDim];
 
             int icoor;
             for (icoor = 1; icoor <= 3; icoor++)
@@ -986,7 +986,7 @@ public class PlateSolver
                 ksol = nCC1 + nCC2;
                 for (i = 0; i < _order * (_order + 1) / 2; i++)
                 {
-                    Solution(n_el + i).SetCoord(icoor, sol[(icoor - 1) * n_dimsousmat + ksol + i]);
+                    Solution(_nEl + i).SetCoord(icoor, sol[(icoor - 1) * n_dimsousmat + ksol + i]);
                 }
             }
 
@@ -1184,8 +1184,8 @@ public class PlateSolver
         _derv = null;
 
         _order = 0;
-        n_el = 0;
-        n_dim = 0;
+        _nEl = 0;
+        _nDim = 0;
         _ok = true; // OCCT: an empty plate reports IsDone (OCCT's GTest notes it; changing it broke Draw tests)
         _maxConstraintOrder = 0;
     }
@@ -1206,7 +1206,7 @@ public class PlateSolver
         int i;
         if (!_polynomialPartOnly)
         {
-            for (i = 0; i < n_el; i++)
+            for (i = 0; i < _nEl; i++)
             {
                 double signe = 1;
                 if (((Deru(i) + Derv(i)) % 2) == 1)
@@ -1216,7 +1216,7 @@ public class PlateSolver
                 valeur += Solution(i) * (signe * SolEm(point2d - Points(i), Deru(i), Derv(i)));
             }
         }
-        i = n_el;
+        i = _nEl;
         for (int idu = 0; idu < _order; idu++)
         {
             for (int idv = 0; idu + idv < _order; idv++)
@@ -1243,7 +1243,7 @@ public class PlateSolver
         int i;
         if (!_polynomialPartOnly)
         {
-            for (i = 0; i < n_el; i++)
+            for (i = 0; i < _nEl; i++)
             {
                 double signe = 1;
                 if (((Deru(i) + Derv(i)) % 2) == 1)
@@ -1253,7 +1253,7 @@ public class PlateSolver
                 valeur += Solution(i) * (signe * SolEm(point2d - Points(i), Deru(i) + iu, Derv(i) + iv));
             }
         }
-        i = n_el;
+        i = _nEl;
         for (int idu = 0; idu < _order; idu++)
         {
             for (int idv = 0; idu + idv < _order; idv++)
@@ -1270,7 +1270,7 @@ public class PlateSolver
     {
         NCollection_HArray2<Xyz> coefs =
             new NCollection_HArray2<Xyz>(0, _order - 1, 0, _order - 1, new Xyz(0.0, 0.0, 0.0));
-        int i = n_el;
+        int i = _nEl;
         for (int iu = 0; iu < _order; iu++)
         {
             for (int iv = 0; iu + iv < _order; iv++)

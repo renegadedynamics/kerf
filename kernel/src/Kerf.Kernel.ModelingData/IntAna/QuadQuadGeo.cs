@@ -47,12 +47,12 @@ public class QuadQuadGeo
     private double _param4;
     private double _param1bis;
     private double _param2bis;
-    private double myEPSILON_DISTANCE;
-    private double myEPSILON_ANGLE_CONE;
-    private double myEPSILON_MINI_CIRCLE_RADIUS;
-    private double myEPSILON_CYLINDER_DELTA_RADIUS;
-    private double myEPSILON_CYLINDER_DELTA_DISTANCE;
-    private double myEPSILON_AXES_PARA;
+    private double _epsilonDistance;
+    private double _epsilonAngleCone;
+    private double _epsilonMiniCircleRadius;
+    private double _epsilonCylinderDeltaRadius;
+    private double _epsilonCylinderDeltaDistance;
+    private double _epsilonAxesPara;
     private bool _commonGen;
     private Point3D _pChar;
 
@@ -70,8 +70,8 @@ public class QuadQuadGeo
         private readonly bool _thecoplanar;
         private readonly bool _thenormal;
         //
-        private readonly double myEPSILON_DISTANCE;
-        private readonly double myEPSILON_AXES_PARA;
+        private readonly double _epsilonDistance;
+        private readonly double _epsilonAxesPara;
 
         public AxeOperator(in Axis3D a1, in Axis3D a2)
             : this(a1, a2, 1.0e-14, global::Kerf.Engine.Foundation.Precision.Angular())
@@ -82,8 +82,8 @@ public class QuadQuadGeo
         {
             _axe1 = a1;
             _axe2 = a2;
-            myEPSILON_DISTANCE = epsDistance;
-            myEPSILON_AXES_PARA = epsAxesPara;
+            _epsilonDistance = epsDistance;
+            _epsilonAxesPara = epsAxesPara;
             //---------------------------------------------------------------------
             Direction3D v1 = _axe1.Direction();
             Direction3D v2 = _axe2.Direction();
@@ -96,7 +96,7 @@ public class QuadQuadGeo
             _thenormal = false;
 
             //--- check if the two axis are parallel
-            _theparallel = v1.IsParallel(v2, myEPSILON_AXES_PARA);
+            _theparallel = v1.IsParallel(v2, _epsilonAxesPara);
             //--- Distance between the two axis
             Xyz perp = a1.Direction().XYZ().Crossed(a2.Direction().XYZ());
             if (_theparallel)
@@ -110,7 +110,7 @@ public class QuadQuadGeo
             }
             //--- check if Axis are Coplanar
             double d33;
-            if (_thedistance < myEPSILON_DISTANCE)
+            if (_thedistance < _epsilonDistance)
             {
                 d33 = Det33(v1.X(),
                             v1.Y(),
@@ -121,13 +121,13 @@ public class QuadQuadGeo
                             p1.X() - p2.X(),
                             p1.Y() - p2.Y(),
                             p1.Z() - p2.Z());
-                if (Math.Abs(d33) <= myEPSILON_DISTANCE)
+                if (Math.Abs(d33) <= _epsilonDistance)
                 {
                     _thecoplanar = true;
                 }
             }
 
-            _thenormal = Math.Abs(v1.Dot(v2)) < myEPSILON_AXES_PARA;
+            _thenormal = Math.Abs(v1.Dot(v2)) < _epsilonAxesPara;
 
             //--- check if the two axis are concurrent
             if (_thecoplanar && !_theparallel)
@@ -190,7 +190,7 @@ public class QuadQuadGeo
 
         public bool Coplanar() => _thecoplanar;
 
-        public bool Same() => _theparallel && (_thedistance < myEPSILON_DISTANCE);
+        public bool Same() => _theparallel && (_thedistance < _epsilonDistance);
 
         public double Distance() => _thedistance;
 
@@ -327,12 +327,12 @@ public class QuadQuadGeo
     /// <summary>Initializes the values of inner tolerances.</summary>
     protected void InitTolerances()
     {
-        myEPSILON_DISTANCE = 1.0e-14;
-        myEPSILON_ANGLE_CONE = global::Kerf.Engine.Foundation.Precision.Angular();
-        myEPSILON_MINI_CIRCLE_RADIUS = 0.01 * global::Kerf.Engine.Foundation.Precision.Confusion();
-        myEPSILON_CYLINDER_DELTA_RADIUS = 1.0e-13;
-        myEPSILON_CYLINDER_DELTA_DISTANCE = global::Kerf.Engine.Foundation.Precision.Confusion();
-        myEPSILON_AXES_PARA = global::Kerf.Engine.Foundation.Precision.Angular();
+        _epsilonDistance = 1.0e-14;
+        _epsilonAngleCone = global::Kerf.Engine.Foundation.Precision.Angular();
+        _epsilonMiniCircleRadius = 0.01 * global::Kerf.Engine.Foundation.Precision.Confusion();
+        _epsilonCylinderDeltaRadius = 1.0e-13;
+        _epsilonCylinderDeltaDistance = global::Kerf.Engine.Foundation.Precision.Confusion();
+        _epsilonAxesPara = global::Kerf.Engine.Foundation.Precision.Angular();
     }
 
     /// <summary>
@@ -936,8 +936,8 @@ public class QuadQuadGeo
         //---------------------------- Parallel axes -------------------------
         AxeOperator a1A2 = new(cyl1.Axis(),
                                cyl2.Axis(),
-                               myEPSILON_CYLINDER_DELTA_DISTANCE,
-                               myEPSILON_AXES_PARA);
+                               _epsilonCylinderDeltaDistance,
+                               _epsilonAxesPara);
         double r1 = cyl1.Radius();
         double r2 = cyl2.Radius();
         double rmR, RmR_Relative;
@@ -1104,7 +1104,7 @@ public class QuadQuadGeo
         }
         else
         { //-- No Parallel Axis ---------------------------------OK
-            if ((RmR_Relative <= myEPSILON_CYLINDER_DELTA_RADIUS) && a1A2.Intersect())
+            if ((RmR_Relative <= _epsilonCylinderDeltaRadius) && a1A2.Intersect())
             {
                 //-- PI/2 between the two axis   and   Intersection
                 //-- and identical radius
@@ -1286,7 +1286,7 @@ public class QuadQuadGeo
         //
         AxeOperator a1A2 = new(con1.Axis(), con2.Axis());
         //
-        double tolAng = myEPSILON_ANGLE_CONE;
+        double tolAng = _epsilonAngleCone;
         if ((Math.Abs(tg1 - tg2) < tol) && (a1A2.Parallel()))
         {
             double distA1A2 = a1A2.Distance();
@@ -1299,7 +1299,7 @@ public class QuadQuadGeo
                 }
                 else
                 {
-                    tolAng = Max(myEPSILON_ANGLE_CONE, tol / minSolDist);
+                    tolAng = Max(_epsilonAngleCone, tol / minSolDist);
                     tolAng = Min(tolAng, tol);
                 }
             }
@@ -1314,7 +1314,7 @@ public class QuadQuadGeo
             Direction3D D = con1.Position().Direction();
             double d = new Vector3D(D).Dot(new Vector3D(P, con2.Apex()));
 
-            if (Math.Abs(tg1 - tg2) > myEPSILON_ANGLE_CONE)
+            if (Math.Abs(tg1 - tg2) > _epsilonAngleCone)
             {
                 if (Math.Abs(d) < TOL_APEX_CONF)
                 {
@@ -1790,7 +1790,7 @@ public class QuadQuadGeo
                         _param1 = tga * dApexSphCenterpx;
                         _param1 = Math.Abs(_param1);
                         _dir1 = conDir;
-                        if (_param1 <= myEPSILON_MINI_CIRCLE_RADIUS)
+                        if (_param1 <= _epsilonMiniCircleRadius)
                         {
                             _typeres = PointAndCircle;
                             _param1 = 0.0;
@@ -1807,7 +1807,7 @@ public class QuadQuadGeo
                         _param2 = tga * dApexSphCenterpx;
                         _param2 = Math.Abs(_param2);
                         _dir2 = conDir;
-                        if (_param2 <= myEPSILON_MINI_CIRCLE_RADIUS)
+                        if (_param2 <= _epsilonMiniCircleRadius)
                         {
                             _typeres = PointAndCircle;
                             _param2 = 0.0;
@@ -1919,7 +1919,7 @@ public class QuadQuadGeo
                     double beta = r1 * r1 - alpha * alpha;
                     beta = (beta > 0.0) ? Math.Sqrt(beta) : 0.0;
 
-                    if (beta <= myEPSILON_MINI_CIRCLE_RADIUS)
+                    if (beta <= _epsilonMiniCircleRadius)
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Point;
                         alpha = (r1 + (dO1O2 - r2)) * 0.5;
@@ -1965,8 +1965,8 @@ public class QuadQuadGeo
         //
         bool bParallel, bNormal;
         //
-        bParallel = torAx.IsParallel(plnAx, myEPSILON_AXES_PARA);
-        bNormal = !bParallel ? torAx.IsNormal(plnAx, myEPSILON_AXES_PARA) : false;
+        bParallel = torAx.IsParallel(plnAx, _epsilonAxesPara);
+        bNormal = !bParallel ? torAx.IsNormal(plnAx, _epsilonAxesPara) : false;
         if (!bNormal && !bParallel)
         {
             _typeres = NoGeometricSolution;
@@ -1980,7 +1980,7 @@ public class QuadQuadGeo
         {
             double dt, x, y, z, a, b, c, d, dr, tolNum;
             //
-            tolNum = myEPSILON_CYLINDER_DELTA_RADIUS;
+            tolNum = _epsilonCylinderDeltaRadius;
             //
             pln.Coefficients(out a, out b, out c, out d);
             torLoc.Coord(out x, out y, out z);
@@ -2017,7 +2017,7 @@ public class QuadQuadGeo
         else
         {
             dist = pln.Distance(torLoc);
-            if (dist > myEPSILON_DISTANCE)
+            if (dist > _epsilonDistance)
             {
                 _typeres = NoGeometricSolution;
                 return;
@@ -2062,8 +2062,8 @@ public class QuadQuadGeo
         Line3D lin = new(torAx);
         Point3D locCyl = cyl.Location();
         //
-        if (!torAx.IsParallel(cylAx, myEPSILON_AXES_PARA)
-            || (lin.Distance(locCyl) > myEPSILON_DISTANCE))
+        if (!torAx.IsParallel(cylAx, _epsilonAxesPara)
+            || (lin.Distance(locCyl) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2124,8 +2124,8 @@ public class QuadQuadGeo
         Line3D lin = new(torAx);
         Point3D conApex = con.Apex();
         //
-        if (!torAx.IsParallel(conAx, myEPSILON_AXES_PARA)
-            || (lin.Distance(conApex) > myEPSILON_DISTANCE))
+        if (!torAx.IsParallel(conAx, _epsilonAxesPara)
+            || (lin.Distance(conApex) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2250,7 +2250,7 @@ public class QuadQuadGeo
         Line3D lin = new(torAx);
         Point3D sphLoc = sph.Location();
         //
-        if (lin.Distance(sphLoc) > myEPSILON_DISTANCE)
+        if (lin.Distance(sphLoc) > _epsilonDistance)
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2325,7 +2325,7 @@ public class QuadQuadGeo
         Point3D loc2 = ax2.Location();
         //
         Line3D l1 = new(ax1);
-        if (!ax1.IsParallel(ax2, myEPSILON_AXES_PARA) || (l1.Distance(loc2) > myEPSILON_DISTANCE))
+        if (!ax1.IsParallel(ax2, _epsilonAxesPara) || (l1.Distance(loc2) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;

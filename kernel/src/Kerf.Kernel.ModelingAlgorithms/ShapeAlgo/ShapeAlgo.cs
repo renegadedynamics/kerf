@@ -21,21 +21,21 @@ namespace Kerf.Engine.Healing;
 /// </remarks>
 public static class ShapeAlgo
 {
-    private static readonly object S_lock = new();
-    private static AlgoContainer? s_s_container;
-    private static bool s_s_init;
+    private static readonly object Lock = new();
+    private static AlgoContainer? SContainer;
+    private static bool SInit;
 
     /// <summary>Creates and initializes the default AlgoContainer (the first call only).</summary>
     public static void Init()
     {
-        lock (S_lock)
+        lock (Lock)
         {
-            if (s_s_init)
+            if (SInit)
             {
                 return;
             }
-            s_s_init = true;
-            Volatile.Write(ref s_s_container, new AlgoContainer());
+            SInit = true;
+            Volatile.Write(ref SContainer, new AlgoContainer());
         }
 
         // initialization of Standard Shape Healing
@@ -45,9 +45,9 @@ public static class ShapeAlgo
     /// <summary>Sets the default AlgoContainer.</summary>
     public static void SetAlgoContainer(AlgoContainer? aContainer)
     {
-        Volatile.Write(ref s_s_container, aContainer);
+        Volatile.Write(ref SContainer, aContainer);
     }
 
     /// <summary>Returns the default AlgoContainer (null before <see cref="Init"/>).</summary>
-    public static AlgoContainer? AlgoContainer() => Volatile.Read(ref s_s_container);
+    public static AlgoContainer? AlgoContainer() => Volatile.Read(ref SContainer);
 }

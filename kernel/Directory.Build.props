@@ -6,8 +6,10 @@
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
-    <!-- Ported code keeps OCCT's names (gp_Pnt, myLocation, theAxis), so .NET naming rules don't apply -->
-    <NoWarn>$(NoWarn);CS8981;IDE1006</NoWarn>
+    <!-- .NET naming (IDE1006, the root .editorconfig) is enforced since unit 10E; the code OCCT's names must survive in
+         is listed there. CS8981 (a lower-case type name): the f2c commons of AdvApp2Var keep theirs -->
+    <NoWarn>$(NoWarn);CS8981</NoWarn>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- The OCCT source this port follows (occt-version.json); tools/get-occt.ps1 fetches it here -->
     <OcctSourceDir>$(RepoRoot).deps/occt-src/</OcctSourceDir>
     <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->

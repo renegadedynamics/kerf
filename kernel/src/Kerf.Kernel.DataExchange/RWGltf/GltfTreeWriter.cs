@@ -411,7 +411,7 @@ public sealed class GltfTreeWriter
             return index;
         }
 
-        PartAccessors? accessorsOf(DocumentProduct part)
+        PartAccessors? AccessorsOf(DocumentProduct part)
         {
             if (parts.TryGetValue(part, out PartAccessors? known))
             {
@@ -434,14 +434,14 @@ public sealed class GltfTreeWriter
             return result;
         }
 
-        int meshOf(DocumentProduct part, Style style)
+        int MeshOf(DocumentProduct part, Style style)
         {
             ColorWithAlpha? nodeColor = style.SurfaceColor ?? style.CurveColor;
             if (meshes.TryGetValue((part, nodeColor), out int known))
             {
                 return known;
             }
-            PartAccessors? accessors = accessorsOf(part);
+            PartAccessors? accessors = AccessorsOf(part);
             if (accessors is null || accessors.Groups.Count == 0)
             {
                 meshes[(part, nodeColor)] = -1;
@@ -496,7 +496,7 @@ public sealed class GltfTreeWriter
             }
             else
             {
-                node.Mesh = meshOf(product, aStyle);
+                node.Mesh = MeshOf(product, aStyle);
             }
             return index;
         }

@@ -556,7 +556,7 @@ public static class Unicode
 
     // Resource_ConvertUnicode.c
 
-    private static void jis_to_sjis(ref uint ph, ref uint pl)
+    private static void JisToSjis(ref uint ph, ref uint pl)
     {
         if ((ph & 1) != 0)
         {
@@ -583,7 +583,7 @@ public static class Unicode
         }
     }
 
-    private static void euc_to_sjis(ref uint ph, ref uint pl)
+    private static void EucToSjis(ref uint ph, ref uint pl)
     {
         if ((ph & 0xFFFFFF00) != 0 || (pl & 0xFFFFFF00) != 0)
         {
@@ -597,7 +597,7 @@ public static class Unicode
         }
         ph &= 0x7F;
         pl &= 0x7F;
-        jis_to_sjis(ref ph, ref pl);
+        JisToSjis(ref ph, ref pl);
     }
 
     internal static void Resource_sjis_to_unicode(ref uint ph, ref uint pl)
@@ -628,7 +628,7 @@ public static class Unicode
         {
             return;
         }
-        euc_to_sjis(ref ph, ref pl);
+        EucToSjis(ref ph, ref pl);
         Resource_sjis_to_unicode(ref ph, ref pl);
     }
 

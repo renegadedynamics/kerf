@@ -11,14 +11,14 @@ namespace Kerf.Engine.Meshing.Model;
 /// Shows a parameters list (<see cref="CurveModel"/>, <see cref="PCurveModel"/>) as an array from 0 to
 /// <c>ParametersNb() - 1</c>, for tools written over arrays (<see cref="EdgeParameterProvider{ParametersCollection}"/>).
 /// </summary>
-/// <typeparam name="ParametersListPtrType">The list type: OCCT's template parameter is a handle to it.</typeparam>
-public sealed class ParametersListArrayAdaptorModel<ParametersListPtrType> : Transient, INCollection_ArrayRead<double>
-    where ParametersListPtrType : ParametersListModel
+/// <typeparam name="TParametersListPtrType">The list type: OCCT's template parameter is a handle to it.</typeparam>
+public sealed class ParametersListArrayAdaptorModel<TParametersListPtrType> : Transient, INCollection_ArrayRead<double>
+    where TParametersListPtrType : ParametersListModel
 {
-    private readonly ParametersListPtrType _parameters;
+    private readonly TParametersListPtrType _parameters;
 
     /// <summary>An adaptor of the given list.</summary>
-    public ParametersListArrayAdaptorModel(ParametersListPtrType parameters)
+    public ParametersListArrayAdaptorModel(TParametersListPtrType parameters)
     {
         _parameters = parameters;
     }

@@ -2,7 +2,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using O = global::Occt;
 
-namespace Kerf.Modeling.Tests.Exchange;
+namespace Build123d.Tests.Exchange;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
 
 /// <summary>
 /// STEP's names, colours and assemblies on the OCCT.NET backend (OCCT.NET's STEPCAFControl over its XdeDoc tree).

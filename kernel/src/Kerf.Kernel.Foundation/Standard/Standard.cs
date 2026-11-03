@@ -219,7 +219,7 @@ public static class Standard
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void math_SingularMatrix_Raise_if(bool condition, string? message = null)
+    internal static void MathSingularMatrixRaiseIf(bool condition, string? message = null)
     {
         if (condition)
         {

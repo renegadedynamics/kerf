@@ -58,6 +58,10 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
          "the test fails on OCCT.NET at its first assertion, as before (build123d.NET's design.md: the 2D fillet's history "
          + "has two shapes for a vertex native modifies in place), so it logs 9 shapes, all native's, to native's 103 "
          + "(decision 1306)"),
+        ("OffsetOrientationTests.OffsetBoxBothWaysAndKinds",
+         "a theory whose rows, logged under one name, run in the order of xUnit's IDs, which include its argument's type: "
+         + "Build123d.Kind is Kerf.Modeling.Kind since unit 10E, so the rows run in another order than when native's log "
+         + "was recorded (decision 15307)"),
     ];
 
     private const string StepRead =

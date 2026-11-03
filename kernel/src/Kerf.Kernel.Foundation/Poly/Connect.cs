@@ -23,9 +23,9 @@ namespace Kerf.Engine.Meshing;
 public class Connect
 {
     // this structure records one of the edges starting from a node
-    private sealed class polyedge
+    private sealed class Polyedge
     {
-        public polyedge? next;           // the next edge in the list
+        public Polyedge? next;           // the next edge in the list
         public readonly int[] nt = new int[2]; // the two adjacent triangles
         public readonly int[] nn = new int[2]; // the two adjacent nodes
         public int nd;                   // the second node of the edge
@@ -101,7 +101,7 @@ public class Connect
 
         // We first build an array of the list of edges connected to the nodes
         // create an array to store the edges starting from the vertices
-        var edges = new NCollection_Array1<polyedge?>(1, nbNodes);
+        var edges = new NCollection_Array1<Polyedge?>(1, nbNodes);
         edges.Init(null);
 
         // loop on the triangles
@@ -134,7 +134,7 @@ public class Connect
 
                 // edge from node 0 to node 1 with node 0 < node 1
                 // insert in the list of node 0
-                polyedge? ced = edges[edgeNodes[0]];
+                Polyedge? ced = edges[edgeNodes[0]];
                 for (; ced is not null; ced = ced.next)
                 {
                     // the edge already exists
@@ -150,7 +150,7 @@ public class Connect
                 if (ced is null)
                 {
                     // create the edge if not found
-                    ced = new polyedge();
+                    ced = new Polyedge();
                     ced.next = edges[edgeNodes[0]];
                     edges[edgeNodes[0]] = ced;
                     ced.nd = edgeNodes[1];
@@ -186,7 +186,7 @@ public class Connect
 
                 // edge from node 0 to node 1 with node 0 < node 1
                 // find in the list of node 0
-                polyedge ced = edges[edgeNodes[0]]!;
+                Polyedge ced = edges[edgeNodes[0]]!;
                 while (ced.nd != edgeNodes[1])
                 {
                     ced = ced.next!;

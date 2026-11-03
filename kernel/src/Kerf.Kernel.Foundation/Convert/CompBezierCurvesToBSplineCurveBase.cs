@@ -17,19 +17,19 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// base built on an internal type); implemented by <see cref="CompBezierCurvesTraits3d"/> and
 /// <see cref="CompBezierCurvesTraits2d"/>.
 /// </remarks>
-public interface ICompBezierCurvesTraits<PointType, VecType>
+public interface ICompBezierCurvesTraits<PointType, TVecType>
     where PointType : struct
-    where VecType : struct
+    where TVecType : struct
 {
     /// <summary>True for gp_Pnt (OCCT's <c>std::is_same_v&lt;PointType, gp_Pnt&gt;</c>).</summary>
     static abstract bool Is3d { get; }
 
-    /// <summary><c>VecType(theP1, theP2)</c>.</summary>
-    static abstract VecType Vec(in PointType p1, in PointType p2);
+    /// <summary><c>TVecType(theP1, theP2)</c>.</summary>
+    static abstract TVecType Vec(in PointType p1, in PointType p2);
 
-    static abstract double SquareMagnitude(in VecType v);
+    static abstract double SquareMagnitude(in TVecType v);
 
-    static abstract bool IsParallel(in VecType v1, in VecType v2, double angularTolerance);
+    static abstract bool IsParallel(in TVecType v1, in TVecType v2, double angularTolerance);
 
     /// <summary><c>BSplCLib::IncreaseDegree(theNewDegree, thePoles, NoWeights(), theNewPoles, NoWeights())</c>.</summary>
     static abstract void IncreaseDegree(int newDegree, NCollection_Array1<PointType> poles,
@@ -76,13 +76,13 @@ public readonly struct CompBezierCurvesTraits2d : ICompBezierCurvesTraits<Point2
 /// C1 there.
 /// </summary>
 /// <remarks>
-/// OCCT's template on (PointType, VecType), ported generically with a traits type (as BSplCLib_CurveComputation).
+/// OCCT's template on (PointType, TVecType), ported generically with a traits type (as BSplCLib_CurveComputation).
 /// A builder: <see cref="AddCurve"/> and <see cref="Perform"/> change it.
 /// </remarks>
-public class CompBezierCurvesToBSplineCurveBase<PointType, VecType, Traits>
+public class CompBezierCurvesToBSplineCurveBase<PointType, TVecType, Traits>
     where PointType : struct
-    where VecType : struct
-    where Traits : struct, ICompBezierCurvesTraits<PointType, VecType>
+    where TVecType : struct
+    where Traits : struct, ICompBezierCurvesTraits<PointType, TVecType>
 {
     private readonly NCollection_Sequence<NCollection_Array1<PointType>> _sequence = new();
     private readonly NCollection_Sequence<PointType> _curvePoles = new();
@@ -161,7 +161,7 @@ public class CompBezierCurvesToBSplineCurveBase<PointType, VecType, Traits>
             {
                 p2 = points[1];
                 p3 = points[2];
-                VecType v1 = Traits.Vec(p1, p2), v2 = Traits.Vec(p2, p3);
+                TVecType v1 = Traits.Vec(p1, p2), v2 = Traits.Vec(p2, p3);
 
                 // Processing of the tangency between Bezier and the previous.
                 // This allows to guarantee at least a C1 continuity if the tangents are coherent.

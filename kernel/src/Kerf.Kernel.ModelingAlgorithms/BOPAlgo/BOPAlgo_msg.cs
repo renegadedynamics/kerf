@@ -67,18 +67,18 @@ internal static class BOPAlgo_msg
     ];
 
     private static readonly Lock BOPAlgo_InitMutex = new();
-    private static bool BOPAlgo_InitMessages = false;
+    private static bool s_bOPAlgoInitMessages = false;
 
     /// <summary>Loads the texts once, unless the check key is already there (OCCT's <c>BOPAlgo_LoadMessages</c>).</summary>
     internal static void BOPAlgo_LoadMessages()
     {
-        if (Volatile.Read(ref BOPAlgo_InitMessages))
+        if (Volatile.Read(ref s_bOPAlgoInitMessages))
         {
             return;
         }
         lock (BOPAlgo_InitMutex)
         {
-            if (BOPAlgo_InitMessages)
+            if (s_bOPAlgoInitMessages)
             {
                 return;
             }
@@ -89,7 +89,7 @@ internal static class BOPAlgo_msg
                     MsgFile.AddMsg(key, text);
                 }
             }
-            Volatile.Write(ref BOPAlgo_InitMessages, true);
+            Volatile.Write(ref s_bOPAlgoInitMessages, true);
         }
     }
 }

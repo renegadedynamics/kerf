@@ -80,7 +80,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     {
         public Approx_Data()
         {
-            myBezierApprox = true;
+            BezierApprox = true;
             Xo = 0.0;
             Yo = 0.0;
             Zo = 0.0;
@@ -93,14 +93,14 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             ApproxU2V2 = true;
             indicemin = 0;
             indicemax = 0;
-            myNbPntMax = 30;
+            NbPntMax = 30;
             parametrization = ChordLength;
         }
 
-        public bool myBezierApprox;
+        public bool BezierApprox;
         public double Xo, Yo, Zo, U1o, V1o, U2o, V2o;
         public bool ApproxXYZ, ApproxU1V1, ApproxU2V2;
-        public int indicemin, indicemax, myNbPntMax;
+        public int indicemin, indicemax, NbPntMax;
         public ParametrizationType parametrization;
     }
 
@@ -296,11 +296,11 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         int nbpntbez = _data.indicemax - _data.indicemin;
         if (nbpntbez < AMinNbPointsForApprox)
         {
-            _data.myBezierApprox = false;
+            _data.BezierApprox = false;
         }
         else
         {
-            _data.myBezierApprox = true;
+            _data.BezierApprox = true;
         }
 
         // Fill data structure.
@@ -308,7 +308,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
         // Build knots.
         BuildKnots(theline, null);
-        if (_knots.Length() == 2 && indicemax - indicemin > 2 * _data.myNbPntMax)
+        if (_knots.Length() == 2 && indicemax - indicemin > 2 * _data.NbPntMax)
         {
             // At least 3 knots for BrepApprox.
             _knots.ChangeLast() = (indicemax - indicemin) / 2; // OCCT: an index count, not indicemin + half of it
@@ -414,17 +414,17 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
         if (nbpntbez < AMinNbPointsForApprox)
         {
-            _data.myBezierApprox = false;
+            _data.BezierApprox = false;
         }
         else
         {
-            _data.myBezierApprox = true;
+            _data.BezierApprox = true;
         }
 
         // Fill data structure.
         FillData(theline);
 
-        bool cut = _data.myBezierApprox;
+        bool cut = _data.BezierApprox;
         SvSurfaces ptrsvsurf = myPrmPrmSvSurfaces;
 
         // Build knots.
@@ -456,14 +456,14 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         int nbpntbez = indicemax - indicemin;
         if (nbpntbez < AMinNbPointsForApprox)
         {
-            _data.myBezierApprox = false;
+            _data.BezierApprox = false;
         }
         else
         {
-            _data.myBezierApprox = true;
+            _data.BezierApprox = true;
         }
 
-        bool cut = _data.myBezierApprox;
+        bool cut = _data.BezierApprox;
         SvSurfaces ptrsvsurf = myImpPrmSvSurfaces;
 
         // Fill data structure.
@@ -486,7 +486,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                               bool approxWithTangency = true,
                               ParametrizationType parametrization = ChordLength)
     {
-        _data.myNbPntMax = nbPntMax;
+        _data.NbPntMax = nbPntMax;
         _withTangency = approxWithTangency;
         _tol3d = tol3d / RatioTol;
         _tol2d = tol2d / RatioTol;
@@ -503,7 +503,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             _computeLineBezier.SetConstraints(PassPoint, PassPoint);
         }
 
-        _data.myBezierApprox = true;
+        _data.BezierApprox = true;
     }
 
     /// <summary>The number of MultiCurves: 1.</summary>
@@ -513,7 +513,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
     private void UpdateTolReached()
     {
-        if (_data.myBezierApprox)
+        if (_data.BezierApprox)
         {
             int nbCurves = _computeLineBezier.MultiCurveCount;
             for (int iCur = 1; iCur <= nbCurves; iCur++)
@@ -537,7 +537,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
     public bool IsDone()
     {
-        if (_data.myBezierApprox)
+        if (_data.BezierApprox)
         {
             return (_computeLineBezier.MultiCurveCount > 0);
         }
@@ -550,7 +550,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     /// <summary>The approximation (whatever the index): the 3D curve first, then the 2D curves.</summary>
     public MultiBSpCurve Value(int index)
     {
-        if (_data.myBezierApprox)
+        if (_data.BezierApprox)
         {
             return (_bezToBSpl.Value());
         }
@@ -611,7 +611,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     private void BuildKnots(TheWLine theline, SvSurfaces? ptrSVSurf)
     {
         _knots.Clear();
-        if (!_data.myBezierApprox)
+        if (!_data.BezierApprox)
         {
             _knots.Append(_data.indicemin);
             _knots.Append(_data.indicemax);
@@ -668,7 +668,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
         }
 
-        int minNbPnts = _data.myNbPntMax;
+        int minNbPnts = _data.NbPntMax;
 
         // Expected parametrization.
         math_Vector pars = new(_data.indicemin, _data.indicemax);
@@ -682,7 +682,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
     private void BuildCurve(TheWLine theline, SvSurfaces? ptrSVSurf)
     {
-        if (_data.myBezierApprox)
+        if (_data.BezierApprox)
         {
             _bezToBSpl.Reset();
         }
@@ -702,7 +702,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                                                             _data.Yo, _data.Zo, _data.U1o, _data.V1o, _data.U2o,
                                                             _data.V2o, _data.ApproxU1V1, imin, imax);
 
-            if (_data.myBezierApprox)
+            if (_data.BezierApprox)
             {
                 _computeLineBezier.Perform(myMultiLine);
                 if (_computeLineBezier.MultiCurveCount == 0)
@@ -729,7 +729,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
             if (_data.ApproxXYZ)
             {
-                if (_data.myBezierApprox)
+                if (_data.BezierApprox)
                 {
                     for (int nbmc = _computeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
@@ -744,7 +744,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
             if (_data.ApproxU1V1)
             {
-                if (_data.myBezierApprox)
+                if (_data.BezierApprox)
                 {
                     for (int nbmc = _computeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
@@ -759,7 +759,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
             if (_data.ApproxU2V2)
             {
-                if (_data.myBezierApprox)
+                if (_data.BezierApprox)
                 {
                     for (int nbmc = _computeLineBezier.MultiCurveCount; nbmc >= 1; nbmc--)
                     {
@@ -774,7 +774,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
 
             otherInter = false;
-            if (_data.myBezierApprox)
+            if (_data.BezierApprox)
             {
                 for (int nbmc = 1; nbmc <= _computeLineBezier.MultiCurveCount; nbmc++)
                 {
@@ -788,7 +788,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             }
         } while (otherInter);
 
-        if (_data.myBezierApprox)
+        if (_data.BezierApprox)
         {
             _bezToBSpl.Perform();
         }

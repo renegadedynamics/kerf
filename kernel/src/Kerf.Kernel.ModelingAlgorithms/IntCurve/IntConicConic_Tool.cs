@@ -243,18 +243,18 @@ internal static class IntConicConic_Tool
     {
         public double Binf;
         public double Bsup;
-        public bool isnull;
+        public bool Isnull;
 
         public void SetNull()
         {
-            isnull = true;
+            Isnull = true;
         }
 
-        public readonly bool IsNull => (isnull);
+        public readonly bool IsNull => (Isnull);
 
         public void Complement()
         {
-            if (!isnull)
+            if (!Isnull)
             {
                 double t = Binf;
                 Binf = Bsup;
@@ -267,11 +267,11 @@ internal static class IntConicConic_Tool
             }
         }
 
-        public readonly double Length() => ((isnull) ? -100.0 : Math.Abs(Bsup - Binf));
+        public readonly double Length() => ((Isnull) ? -100.0 : Math.Abs(Bsup - Binf));
 
         public PeriodicInterval(in TwoDDomain domain)
         {
-            isnull = false;
+            Isnull = false;
             if (domain.HasFirstPoint)
             {
                 Binf = domain.FirstParameter();
@@ -292,13 +292,13 @@ internal static class IntConicConic_Tool
 
         public PeriodicInterval()
         {
-            isnull = true;
+            Isnull = true;
             Binf = Bsup = 0.0;
         }
 
         public PeriodicInterval(double a, double b)
         {
-            isnull = false;
+            Isnull = false;
             Binf = a;
             Bsup = b;
             if ((b - a) < PIpPI)
@@ -309,7 +309,7 @@ internal static class IntConicConic_Tool
 
         public void SetValues(double a, double b)
         {
-            isnull = false;
+            Isnull = false;
             Binf = a;
             Bsup = b;
             if ((b - a) < PIpPI)
@@ -320,7 +320,7 @@ internal static class IntConicConic_Tool
 
         public void Normalize()
         {
-            if (!isnull)
+            if (!Isnull)
             {
                 while (Binf > PIpPI)
                 {
@@ -348,7 +348,7 @@ internal static class IntConicConic_Tool
         public readonly PeriodicInterval FirstIntersection(ref PeriodicInterval pInter)
         {
             double a, b;
-            if (pInter.isnull || isnull)
+            if (pInter.Isnull || Isnull)
             {
                 PeriodicInterval pourSGI = new();
                 return (pourSGI);
@@ -397,7 +397,7 @@ internal static class IntConicConic_Tool
         {
             double a, b;
 
-            if (pInter.isnull || isnull || this.Length() >= PIpPI || pInter.Length() >= PIpPI)
+            if (pInter.Isnull || Isnull || this.Length() >= PIpPI || pInter.Length() >= PIpPI)
             {
                 PeriodicInterval pourSGI = new();
                 return (pourSGI);

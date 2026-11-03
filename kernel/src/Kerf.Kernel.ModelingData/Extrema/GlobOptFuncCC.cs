@@ -14,7 +14,7 @@ namespace Kerf.Engine.Extrema;
 /// <summary>The file-static functions of Extrema_GlobOptFuncCC.cxx, for 3D and 2D curves.</summary>
 internal static class GlobOptFuncCC
 {
-    internal static int _NbVariables() => 2;
+    internal static int NbVariables() => 2;
 
     // 3d _Value
     internal static bool _Value(CurveAdaptorBase c1, CurveAdaptorBase c2, math_Vector x, out double f)
@@ -90,8 +90,8 @@ internal static class GlobOptFuncCC
         return true;
     }
 
-    // 3d _Hessian
-    internal static bool _Hessian(CurveAdaptorBase c1, CurveAdaptorBase c2, math_Vector x, Matrix h)
+    // 3d Hessian
+    internal static bool Hessian(CurveAdaptorBase c1, CurveAdaptorBase c2, math_Vector x, Matrix h)
     {
         if (x[1] < c1.FirstParameter() || x[1] > c1.LastParameter() || x[2] < c2.FirstParameter()
             || x[2] > c2.LastParameter())
@@ -117,8 +117,8 @@ internal static class GlobOptFuncCC
         return true;
     }
 
-    // 2d _Hessian
-    internal static bool _Hessian(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2, math_Vector x, Matrix h)
+    // 2d Hessian
+    internal static bool Hessian(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2, math_Vector x, Matrix h)
     {
         if (x[1] < c1.FirstParameter() || x[1] > c1.LastParameter() || x[2] < c2.FirstParameter()
             || x[2] > c2.LastParameter())
@@ -150,39 +150,39 @@ internal static class GlobOptFuncCC
 /// <remarks>Keeps references to the curves, as OCCT does.</remarks>
 public class GlobOptFuncCcc0 : MultipleVarFunction
 {
-    private readonly CurveAdaptorBase? myC1_3d, myC2_3d;
-    private readonly Curve2DAdaptorBase? myC1_2d, myC2_2d;
+    private readonly CurveAdaptorBase? _c13d, _c23d;
+    private readonly Curve2DAdaptorBase? _c12d, _c22d;
     private readonly int _type;
 
     public GlobOptFuncCcc0(CurveAdaptorBase c1, CurveAdaptorBase c2)
     {
-        myC1_3d = c1;
-        myC2_3d = c2;
-        myC1_2d = null;
-        myC2_2d = null;
+        _c13d = c1;
+        _c23d = c2;
+        _c12d = null;
+        _c22d = null;
         _type = 1;
     }
 
     public GlobOptFuncCcc0(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2)
     {
-        myC1_3d = null;
-        myC2_3d = null;
-        myC1_2d = c1;
-        myC2_2d = c2;
+        _c13d = null;
+        _c23d = null;
+        _c12d = c1;
+        _c22d = c2;
         _type = 2;
     }
 
-    public override int VariableCount => _NbVariables();
+    public override int VariableCount => NbVariables();
 
     public override bool Value(math_Vector x, out double f)
     {
         if (_type == 1)
         {
-            return _Value(myC1_3d!, myC2_3d!, x, out f);
+            return _Value(_c13d!, _c23d!, x, out f);
         }
         else
         {
-            return _Value(myC1_2d!, myC2_2d!, x, out f);
+            return _Value(_c12d!, _c22d!, x, out f);
         }
     }
 }
@@ -191,39 +191,39 @@ public class GlobOptFuncCcc0 : MultipleVarFunction
 /// is the one of the square distance.</summary>
 public class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
 {
-    private readonly CurveAdaptorBase? myC1_3d, myC2_3d;
-    private readonly Curve2DAdaptorBase? myC1_2d, myC2_2d;
+    private readonly CurveAdaptorBase? _c13d, _c23d;
+    private readonly Curve2DAdaptorBase? _c12d, _c22d;
     private readonly int _type;
 
     public GlobOptFuncCcc1(CurveAdaptorBase c1, CurveAdaptorBase c2)
     {
-        myC1_3d = c1;
-        myC2_3d = c2;
-        myC1_2d = null;
-        myC2_2d = null;
+        _c13d = c1;
+        _c23d = c2;
+        _c12d = null;
+        _c22d = null;
         _type = 1;
     }
 
     public GlobOptFuncCcc1(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2)
     {
-        myC1_3d = null;
-        myC2_3d = null;
-        myC1_2d = c1;
-        myC2_2d = c2;
+        _c13d = null;
+        _c23d = null;
+        _c12d = c1;
+        _c22d = c2;
         _type = 2;
     }
 
-    public override int VariableCount => _NbVariables();
+    public override int VariableCount => NbVariables();
 
     public override bool Value(math_Vector x, out double f)
     {
         if (_type == 1)
         {
-            return _Value(myC1_3d!, myC2_3d!, x, out f);
+            return _Value(_c13d!, _c23d!, x, out f);
         }
         else
         {
-            return _Value(myC1_2d!, myC2_2d!, x, out f);
+            return _Value(_c12d!, _c22d!, x, out f);
         }
     }
 
@@ -231,11 +231,11 @@ public class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
     {
         if (_type == 1)
         {
-            return _Gradient(myC1_3d!, myC2_3d!, x, g);
+            return _Gradient(_c13d!, _c23d!, x, g);
         }
         else
         {
-            return _Gradient(myC1_2d!, myC2_2d!, x, g);
+            return _Gradient(_c12d!, _c22d!, x, g);
         }
     }
 
@@ -246,39 +246,39 @@ public class GlobOptFuncCcc1 : MultipleVarFunctionWithGradient
 /// the gradient and the hessian are those of the square distance.</summary>
 public class GlobOptFuncCcc2 : MultipleVarFunctionWithHessian
 {
-    private readonly CurveAdaptorBase? myC1_3d, myC2_3d;
-    private readonly Curve2DAdaptorBase? myC1_2d, myC2_2d;
+    private readonly CurveAdaptorBase? _c13d, _c23d;
+    private readonly Curve2DAdaptorBase? _c12d, _c22d;
     private readonly int _type;
 
     public GlobOptFuncCcc2(CurveAdaptorBase c1, CurveAdaptorBase c2)
     {
-        myC1_3d = c1;
-        myC2_3d = c2;
-        myC1_2d = null;
-        myC2_2d = null;
+        _c13d = c1;
+        _c23d = c2;
+        _c12d = null;
+        _c22d = null;
         _type = 1;
     }
 
     public GlobOptFuncCcc2(Curve2DAdaptorBase c1, Curve2DAdaptorBase c2)
     {
-        myC1_3d = null;
-        myC2_3d = null;
-        myC1_2d = c1;
-        myC2_2d = c2;
+        _c13d = null;
+        _c23d = null;
+        _c12d = c1;
+        _c22d = c2;
         _type = 2;
     }
 
-    public override int VariableCount => _NbVariables();
+    public override int VariableCount => NbVariables();
 
     public override bool Value(math_Vector x, out double f)
     {
         if (_type == 1)
         {
-            return _Value(myC1_3d!, myC2_3d!, x, out f);
+            return _Value(_c13d!, _c23d!, x, out f);
         }
         else
         {
-            return _Value(myC1_2d!, myC2_2d!, x, out f);
+            return _Value(_c12d!, _c22d!, x, out f);
         }
     }
 
@@ -286,11 +286,11 @@ public class GlobOptFuncCcc2 : MultipleVarFunctionWithHessian
     {
         if (_type == 1)
         {
-            return _Gradient(myC1_3d!, myC2_3d!, x, g);
+            return _Gradient(_c13d!, _c23d!, x, g);
         }
         else
         {
-            return _Gradient(myC1_2d!, myC2_2d!, x, g);
+            return _Gradient(_c12d!, _c22d!, x, g);
         }
     }
 
@@ -301,11 +301,11 @@ public class GlobOptFuncCcc2 : MultipleVarFunctionWithHessian
         bool isHessianComputed = false;
         if (_type == 1)
         {
-            isHessianComputed = _Hessian(myC1_3d!, myC2_3d!, x, h);
+            isHessianComputed = Hessian(_c13d!, _c23d!, x, h);
         }
         else
         {
-            isHessianComputed = _Hessian(myC1_2d!, myC2_2d!, x, h);
+            isHessianComputed = Hessian(_c12d!, _c22d!, x, h);
         }
 
         return (Value(x, out f) && Gradient(x, g) && isHessianComputed);
