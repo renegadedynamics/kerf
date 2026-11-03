@@ -116,3 +116,11 @@ build123d.NET's `Build123d` project (as well as `Build123d.Occt`) and rebuilds t
 
 A new build123d.NET test with Booleans is added to the replay by transcribing its construction as one more scenario,
 then recording (while native OCCT exists).
+
+## The differential run (units 9D2 and 10A)
+
+`tools/b3d-differential.ps1` runs build123d.NET's suite on OCCT.NET with its shape log on, and
+`Build123dDifferentialTests` compares the log with native's, recorded in `Recordings/Build123dDifferential.native.gz`
+(decision 15003: per entry the digests of its BRep text as is and masked, its properties, and its text where OCCT.NET's
+differed when recorded). `-Record -NativeRoot <checkout>` records native's log again from six native runs, while
+native OCCT exists. Without `B3D_DIFF_LOGS` the test only checks the recording.

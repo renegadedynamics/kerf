@@ -27,7 +27,7 @@ string[] aFiles = Directory.GetFiles(aResults, "*.cobertura.xml", SearchOption.A
 var aRuns = new List<string>();
 foreach (string aFile in aFiles)
 {
-    aRuns.Add(Path.GetRelativePath(aResults, aFile));
+    aRuns.Add(Path.GetRelativePath(aResults, aFile).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0]);
     using var aReader = XmlReader.Create(aFile, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore });
     string? aClassFile = null;
     while (aReader.Read())
@@ -73,11 +73,7 @@ aText.Append("""
 
 
     """);
-aText.Append("Runs merged:\n\n");
-foreach (string aRun in aRuns.Order(StringComparer.Ordinal))
-{
-    aText.Append("- `").Append(aRun.Replace('\\', '/')).Append("`\n");
-}
+aText.Append("Test projects merged: ").Append(string.Join(", ", aRuns.Distinct().Order(StringComparer.Ordinal).Select(r => $"`{r}`"))).Append(".\n");
 aText.Append("\n## By assembly\n\n| Assembly | Packages | Lines | Covered | % | Packages under ").Append(aFloor.ToString(CultureInfo.InvariantCulture)).Append("% |\n|---|---:|---:|---:|---:|---:|\n");
 foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 {
@@ -103,7 +99,7 @@ foreach (var aGroup in aPackages.GroupBy(p => p.Key.Area))
 }
 Directory.CreateDirectory(Path.GetDirectoryName(aReport)!);
 File.WriteAllText(aReport, aText.ToString().Replace("\r\n", "\n"));
-Console.WriteLine(CultureInfo.InvariantCulture, $"{aFiles.Length} runs, {aLines.Count} files, {aTotalC:N0} of {aTotalL:N0} lines ({Percent(aTotalC, aTotalL):F1}%) -> {aReport}");
+Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{aFiles.Length} runs, {aLines.Count} files, {aTotalC:N0} of {aTotalL:N0} lines ({Percent(aTotalC, aTotalL):F1}%) -> {aReport}"));
 return 0;
 
 static double Percent(int theCovered, int theLines) => theLines == 0 ? 100 : 100.0 * theCovered / theLines;

@@ -19,7 +19,7 @@
 .PARAMETER Logs
   The folder for the logs (occtnet, and with -Record native1, native2, ...) and the report.
 .PARAMETER NativeRuns
-  With -Record: how many times the suite runs natively (2 by default).
+  With -Record: how many times the suite runs natively (6 by default: fewer leave some of native's variance unseen).
 .PARAMETER Record
   Record native's log again (needs native OCCT).
 .PARAMETER OracleArgs
@@ -29,7 +29,7 @@ param(
   [string] $Modeling = (Join-Path $PSScriptRoot '..\..\modeling'),
   [string] $NativeRoot = '',
   [string] $Logs = (Join-Path ([IO.Path]::GetTempPath()) 'b3d-differential'),
-  [int] $NativeRuns = 2,
+  [int] $NativeRuns = 6,
   [switch] $Record,
   [string[]] $OracleArgs = @()
 )
