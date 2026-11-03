@@ -14951,3 +14951,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        ProjLib_CompProjectedCurve::Perform row). Perform cleared its 2D approximation flag for an isoparametric part and
        never restored it, so every later free part got the iso line again. Each part now starts from the requested
        flags. The pinned test asserts the free part's pcurve is the polyline's projection.
+16703. **Curve-curve extrema replace their solutions on a second Perform** (unit 3B's Extrema_GGenExtCC row). The 3D
+       and 2D ECC appended a run's solutions to the previous run's, so an Extrema_ExtCC reused on other curves reported
+       the old curves' solutions too. Perform clears them. The pinned test asserts a second run gives the first run's
+       solutions only, and a reused ExtCC what a new one gives.
