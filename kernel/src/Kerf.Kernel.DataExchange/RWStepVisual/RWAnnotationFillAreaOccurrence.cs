@@ -78,7 +78,7 @@ internal class RWAnnotationFillAreaOccurrence
         sw.CloseSub();
 
         // Inherited field : item
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
 
         // Own field: fill_area_target
         sw.Send(ent.FillStyleTarget());

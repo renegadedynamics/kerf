@@ -89,7 +89,7 @@ internal class RWOverRidingStyledItem
 
         // --- inherited field item ---
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
 
         // --- own field : overRiddenStyle ---
 

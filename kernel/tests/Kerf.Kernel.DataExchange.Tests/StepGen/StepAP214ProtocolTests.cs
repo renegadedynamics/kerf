@@ -60,10 +60,7 @@ public sealed class StepAP214ProtocolTests
         [800] = "components",
         // NewVoid creates a StepVisual_AnnotationOccurrence for DRAUGHTING_ANNOTATION_OCCURRENCE
         [106] = "NewVoid",
-        // no type name: SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written
-        [825] = "name", [826] = "name",
-        // TESSELLATED_ITEM is named by StepType but not in the type map: it can be written, not read
-        [708] = "name",
+        // (825, 826 and 708, which OCCT couldn't name or read, are named since Kerf decision 16821)
     };
 
     [Fact]
@@ -94,7 +91,7 @@ public sealed class StepAP214ProtocolTests
             }
 
             // a simple type's name gives the case back
-            if (!aReadWrite.IsComplex(aCase) && aCase is not (800 or 802))
+            if (!aReadWrite.IsComplex(aCase))
             {
                 string aName = aReadWrite.StepType(aCase);
                 if (aName.Length == 0 || aName == "?")
@@ -123,27 +120,27 @@ public sealed class StepAP214ProtocolTests
         // the disagreements are OCCT's
         Assert.True(aGeneral.NewVoid(106, out var aDraughting));
         Assert.IsType<AnnotationOccurrence>(aDraughting);
-        Assert.Equal("?", aReadWrite.StepType(825));
-        Assert.Equal(0, aReadWrite.CaseStep("TESSELLATED_ITEM"));
+        // OCCT's 825, 826 and 708, named and read since Kerf decision 16821
+        Assert.Equal("SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE", aReadWrite.StepType(825));
+        Assert.Equal(825, aReadWrite.CaseStep("SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE"));
+        Assert.Equal(826, aReadWrite.CaseStep(aReadWrite.StepType(826)));
+        Assert.Equal(708, aReadWrite.CaseStep("TESSELLATED_ITEM"));
         var aTolerance = new NCollection_Sequence<string>();
         aReadWrite.ComplexType(694, aTolerance);
         Assert.Equal(0, aReadWrite.CaseStep(aTolerance));
     }
 
     [Fact]
-    public void IsComplexMissesTwoComplexCasesAsOcctDoes()
+    public void IsComplexListsEveryComplexCase()
     {
-        // OCCT's IsComplex lists every case of ComplexType but 800 and 802 (occt-issues.md, unit 8C2): the writer
-        // writes them as a simple record of type "?" followed by the components
+        // every case ComplexType gives components for is complex, 800 and 802 too (OCCT's IsComplex missed them, so
+        // the writer wrote them as a record of type "?" followed by the components: occt-issues.md,
+        // RWStepAP214_ReadWriteModule::IsComplex; Kerf decision 16819)
         var aReadWrite = new Ap214ReadWriteModule();
-        foreach (int aCase in new[] { 800, 802 })
+        for (int aCase = 1; aCase <= 900; aCase++)
         {
-            Assert.False(aReadWrite.IsComplex(aCase));
-            Assert.True(aReadWrite.ComplexType(aCase, new NCollection_Sequence<string>()));
-            Assert.Equal("?", aReadWrite.StepType(aCase));
+            Assert.Equal(aReadWrite.ComplexType(aCase, new NCollection_Sequence<string>()), aReadWrite.IsComplex(aCase));
         }
-
-        Assert.True(aReadWrite.IsComplex(319));
     }
 
     [Fact]

@@ -74,7 +74,7 @@ internal class RWAnnotationCurveOccurrence
 
         // Inherited field : item
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
     }
 
     public void Share(AnnotationCurveOccurrence ent, EntityIterator iter)

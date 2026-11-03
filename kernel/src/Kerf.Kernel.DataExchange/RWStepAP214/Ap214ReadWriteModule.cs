@@ -748,6 +748,9 @@ internal class Ap214ReadWriteModule : ReadWriteModule
     private const string Reco_BooleanRepresentationItem = "BOOLEAN_REPRESENTATION_ITEM";
     private const string Reco_RealRepresentationItem = "REAL_REPRESENTATION_ITEM";
     private const string Reco_MechanicalDesignAndDraughtingRelationship = "MECHANICAL_DESIGN_AND_DRAUGHTING_RELATIONSHIP";
+    // OCCT has cases 825 and 826 without their names (Kerf decision 16821)
+    private const string Reco_SurfaceStyleReflectanceAmbientDiffuse = "SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE";
+    private const string Reco_SurfaceStyleReflectanceAmbientDiffuseSpecular = "SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE_SPECULAR";
     private const string Addrss = "ADDRSS";
     private const string Absr = "ABSR";
     private const string Advfc = "ADVFC";
@@ -1676,6 +1679,10 @@ internal class Ap214ReadWriteModule : ReadWriteModule
             case 715:
                 return true;
             case 719:
+                return true;
+            // the two complex cases of ComplexType OCCT's list missed (Kerf decision 16819)
+            case 800:
+            case 802:
                 return true;
             default:
                 return false;
@@ -3121,6 +3128,10 @@ internal class Ap214ReadWriteModule : ReadWriteModule
                 return Reco_RealRepresentationItem;
             case 824:
                 return Reco_MechanicalDesignAndDraughtingRelationship;
+            case 825:
+                return Reco_SurfaceStyleReflectanceAmbientDiffuse;
+            case 826:
+                return Reco_SurfaceStyleReflectanceAmbientDiffuseSpecular;
             default:
                 return PasReco;
         }
@@ -13736,6 +13747,20 @@ internal class Ap214ReadWriteModule : ReadWriteModule
                     aTool.WriteStep(sw, anent);
                 }
                 break;
+            case 825:
+                {
+                    SurfaceStyleReflectanceAmbientDiffuse anent = ent as SurfaceStyleReflectanceAmbientDiffuse;
+                    RWSurfaceStyleReflectanceAmbientDiffuse aTool = new RWSurfaceStyleReflectanceAmbientDiffuse();
+                    aTool.WriteStep(sw, anent);
+                }
+                break;
+            case 826:
+                {
+                    SurfaceStyleReflectanceAmbientDiffuseSpecular anent = ent as SurfaceStyleReflectanceAmbientDiffuseSpecular;
+                    RWSurfaceStyleReflectanceAmbientDiffuseSpecular aTool = new RWSurfaceStyleReflectanceAmbientDiffuseSpecular();
+                    aTool.WriteStep(sw, anent);
+                }
+                break;
             default:
                 return;
         }
@@ -14494,6 +14519,10 @@ internal class Ap214ReadWriteModule : ReadWriteModule
         typenums[Reco_BooleanRepresentationItem] = 822;
         typenums[Reco_RealRepresentationItem] = 823;
         typenums[Reco_MechanicalDesignAndDraughtingRelationship] = 824;
+        // the names OCCT's map lacks: 708 is named by StepType, 825 and 826 weren't at all (Kerf decision 16821)
+        typenums[Reco_TessellatedItem] = 708;
+        typenums[Reco_SurfaceStyleReflectanceAmbientDiffuse] = 825;
+        typenums[Reco_SurfaceStyleReflectanceAmbientDiffuseSpecular] = 826;
     }
 
     private static void InitializeTypeshor(Dictionary<string, int> typeshor)

@@ -1799,8 +1799,8 @@ inputs. The port reproduces each, but for the crash in FinalOfScope.
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| step.lex (flex) | The variable trailing context of `#[0-9]+/[ \t]*=` makes flex keep a state per byte, so its buffer can't grow: a token (a string with what `yymore` collected, a name, a comment's run, the blanks after a label) can't reach its 16,384th byte | "input buffer overflow, can't enlarge buffer because scanner uses REJECT": StepFile_Read fails on a file holding a string of 16,383 bytes or more | fix K8 |
-| step.lex, the end of a string | `[']/[" "\n\r]*[\)\,]`: the class holds the double quote, and not the tab | `'a' "",` ends the string; `'a'` followed by a tab and a comma doesn't, and the string runs on to the next quote followed by `)` or `,` | fix K8 |
+| step.lex (flex) | The variable trailing context of `#[0-9]+/[ \t]*=` makes flex keep a state per byte, so its buffer can't grow: a token (a string with what `yymore` collected, a name, a comment's run, the blanks after a label) can't reach its 16,384th byte | "input buffer overflow, can't enlarge buffer because scanner uses REJECT": StepFile_Read fails on a file holding a string of 16,383 bytes or more | fixed (decision 16827) |
+| step.lex, the end of a string | `[']/[" "\n\r]*[\)\,]`: the class holds the double quote, and not the tab | `'a' "",` ends the string; `'a'` followed by a tab and a comma doesn't, and the string runs on to the next quote followed by `)` or `,` | fixed (decision 16828) |
 | step.lex, numbers | The real rules need two characters before the exponent; ties go to the first rule | `1E3` is a name (TYPE: in a list, `1E3,` is a syntax error), `12E3` a real; `-` and `+` alone are integers, `...` a real, `T.` an enumeration | touch |
 | step.tab.cxx `parser::error` | Adds 1 to the scanner's line counter, which starts at 1 | Errors are reported one line after their own | touch |
 | StepFile_ReadData::FinalOfScope | Reads `mySubArg[0]` while `mySubArg` is null, until a first list is closed | Crash on an empty header followed by a scope as the first entity; the port takes it for a scope without an export list | settled |
@@ -1893,7 +1893,7 @@ reproduces it (decision 1209).
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails | fix K8 |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails | fixed (decision 16820) |
 
 ## Phase 8: unit 8C2, the other entity packages and StepAP214's protocol
 
@@ -1903,13 +1903,13 @@ reproduces them all; the generated code carries no `// OCCT` marker (it is regen
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| RWStepVisual_RWSurfaceStyleRenderingWithProperties::ReadStep | Tests `if (strcmp(text, ".CONSTANT_SHADING."))`, true when the text differs, and so on down the list | Every rendering method but .CONSTANT_SHADING. is read as .CONSTANT_SHADING., and .CONSTANT_SHADING. as .COLOUR_SHADING. (545 records of the corpus) | fix K8 |
+| RWStepVisual_RWSurfaceStyleRenderingWithProperties::ReadStep | Tests `if (strcmp(text, ".CONSTANT_SHADING."))`, true when the text differs, and so on down the list | Every rendering method but .CONSTANT_SHADING. is read as .CONSTANT_SHADING., and .CONSTANT_SHADING. as .COLOUR_SHADING. (545 records of the corpus) | fixed (decision 16817) |
 | RWStepVisual_RWComplexTriangulatedFace::WriteStep, RWStepVisual_RWCubicBezierTriangulatedFace::WriteStep (normals, control triangles) | Loop the rows up to `RowLength()` and the columns up to `ColLength()`, which are the numbers of columns and rows | Out of range unless the array is square: OCCT's release build writes values from the wrong places, a checked build (build123d.NET's, the port's) throws Standard_OutOfRange. 552 faces of the corpus can't be written | touch |
-| StepVisual_StyledItem::Item, RWStepVisual_RWStyledItem::WriteStep | Init keeps the target as a transient and as a representation item (null if it isn't one); the writer sends `Item()`, the representation item | A styled item whose target is a representation (or anything but a representation item) is written with `$` for its item (68 records) | fix K8 |
-| RWStepAP214_ReadWriteModule::IsComplex | Lists every case of ComplexType but 800 (ActuatedKinPairAndOrderKinPair) and 802 (RepositionedTessellatedGeometricSet) | The writer starts them as simple records, of type `?` (StepType's default), followed by the components: `?() GEOMETRIC_REPRESENTATION_ITEM() ...` (30 records) | fix K8 |
+| StepVisual_StyledItem::Item, RWStepVisual_RWStyledItem::WriteStep | Init keeps the target as a transient and as a representation item (null if it isn't one); the writer sends `Item()`, the representation item | A styled item whose target is a representation (or anything but a representation item) is written with `$` for its item (68 records) | fixed (decision 16818) |
+| RWStepAP214_ReadWriteModule::IsComplex | Lists every case of ComplexType but 800 (ActuatedKinPairAndOrderKinPair) and 802 (RepositionedTessellatedGeometricSet) | The writer starts them as simple records, of type `?` (StepType's default), followed by the components: `?() GEOMETRIC_REPRESENTATION_ITEM() ...` (30 records) | fixed (decision 16819) |
 | RWStepAP214_ReadWriteModule::ComplexType and CaseStep (cases 694-697, 705, 706, 800) | ComplexType gives the generic GEOMETRIC_TOLERANCE (or kinematic pair) components, CaseStep wants a specific kind | The components ComplexType gives aren't recognised back (no effect on reading or writing files) | leave |
 | RWStepAP214_GeneralModule::NewVoid case 106 | Creates a StepVisual_AnnotationOccurrence for DRAUGHTING_ANNOTATION_OCCURRENCE | Such a record is read into an annotation occurrence and written back ANNOTATION_OCCURRENCE (none in the corpus as a simple record) | touch |
-| RWStepAP214_ReadWriteModule, cases 825 and 826 (SurfaceStyleReflectanceAmbientDiffuse(Specular)) and 708 (TESSELLATED_ITEM) | 825 and 826 have no type name in StepType or the type map; 708 is named by StepType but missing from the type map | SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written (written `?`); TESSELLATED_ITEM can be written, not read | fix K8 |
+| RWStepAP214_ReadWriteModule, cases 825 and 826 (SurfaceStyleReflectanceAmbientDiffuse(Specular)) and 708 (TESSELLATED_ITEM) | 825 and 826 have no type name in StepType or the type map; 708 is named by StepType but missing from the type map | SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) can be neither read nor written (written `?`); TESSELLATED_ITEM can be written, not read | fixed (decision 16821) |
 | StepElement_VolumeElementPurposeMember and StepElement_SurfaceElementPurposeMember, `CompareNames` | Returns case 1 for both the enumerated purpose and APPLICATION_DEFINED_ELEMENT_PURPOSE (the curve one gives 2) | An application-defined purpose is written back as the enumerated one (2 records) | touch |
 | StepBasic_SizeMember | Always names itself POSITIVE_LENGTH_MEASURE | An untyped curve width is written typed (15 records); POSITIVE_LENGTH_MEASURE(LENGTH_MEASURE(x)) keeps its outer type only (16) | touch |
 | RWStepVisual_RWCharacterizedObjAndRepresentationAndDraughtingModel::WriteStep | Writes CHARACTERIZED_OBJECT's name and description as derived | `CHARACTERIZED_OBJECT(*,*)` for the read values (3 records) | touch |
@@ -1929,7 +1929,7 @@ Found by porting IFSelect (as traced) and XSControl and testing them on the toy 
 | IFSelect_WorkSession::GiveListCombined | Never creates the list it appends to | A null dereference for any two lists | touch |
 | IFSelect_WorkSession::SendAll, SendSelected | Clear `errhand` (a file static, shared by every session) and restore it on an exception only | After one successful call, every session's later calls run without the exception guard. The port keeps the flag per session | settled |
 | IFSelect_WorkSession::RemoveName | Re-adds the item to the indexed map of items to drop its name; adding an existing key changes nothing | The item keeps its name as its attribute (HasName, Name, ItemLabel's lists), though the name is unbound | touch |
-| IFSelect_WorkSession::ReadFile with OCCT 8's StepSelect_WorkLibrary | The library reads into the model it is given; the session gives a null one | XSControl_Reader::ReadFile on STEP fails (a null dereference caught as a signal: RetFail); STEPControl_Reader::ReadFile makes its model itself | fix K8 |
+| IFSelect_WorkSession::ReadFile with OCCT 8's StepSelect_WorkLibrary | The library reads into the model it is given; the session gives a null one | XSControl_Reader::ReadFile on STEP fails (a null dereference caught as a signal: RetFail); STEPControl_Reader::ReadFile makes its model itself | fixed (decision 16822) |
 | IFSelect_SignatureList::PrintList | Tests `if (num == IFSelect_ShortByItem)`, an entity number against the enumeration's value 2 | Entity n0 2 is printed "??" in the lists | touch |
 | IFSelect_Functions::GiveDispatch | Sets '\0' at the positions of '(' and ')' (TCollection_AsciiString::SetValue) before testing that there are any | A name that is neither a dispatch nor has parentheses raises Standard_OutOfRange | touch |
 | XSControl_TransferWriter::CheckList, ResultCheckList | Skip a check `if (NbFails() == 0 \|\| NbWarnings() == 0)` | Only checks with both fails and warnings are listed | touch |
@@ -1957,11 +1957,11 @@ each, but for the first (decision 1240).
 | StepToGeom::MakeCartesianPoint2d, MakeDirection, MakeDirection2d | Don't test their entity for null (MakeCartesianPoint does) | A null dereference for a line or placement without its point or direction | touch |
 | StepToGeom (ExtractParameter) | Dereferences MakeCartesianPoint's result, null for a 2D trimming point | A null dereference trimming by a 2D point | touch |
 | StepToGeom::MakeBSplineCurve, MakeBSplineCurve2d | Test the closed_curve logical as a C++ bool | UNKNOWN counts as closed (periodicity forced on closed curves) | touch |
-| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone | fix K8 |
-| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights | fix K8 |
-| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates | fix K8 |
-| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) | fix K8 |
-| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails | fix K8 |
+| GeomToStep_MakeCurve (Geom2d) | Tests Geom2d_BoundedCurve before Geom2d_TrimmedCurve, a bounded curve: the trimmed-curve branch is never reached | Every 2D trimmed curve goes to MakeBoundedCurve, which doesn't map it: StdFail_NotDone | fixed (decision 16823) |
+| GeomToStep_MakeBoundedCurve (Geom2d) | Converts a 2D Bezier curve to a B-spline and writes it with MakeBSplineCurveWithKnots, without the rational case | A rational 2D Bezier curve loses its weights | fixed (decision 16824) |
+| GeomToStep_MakeAxis2Placement2d(gp_Ax2) | Writes the 3D location and main direction | An axis2_placement_2d with 3D coordinates | leave (decision 16825) |
+| GeomToStep_MakeRectangularTrimmedSurface, MakeConicalSurface | Write angles in degrees (180/π) and in radians, whatever the plane angle factor; StepToGeom reads both with the factor | With the default factors, a rectangular trimmed surface's angular bounds don't read back (degrees read as radians) | fixed (decision 16826) |
+| RWStepRepr_RWBooleanRepresentationItem::WriteStep | `SW.Send(theEnt->Value())` with a `bool`: C++ promotes it to `int`, so `Send(int)` is called | BOOLEAN_REPRESENTATION_ITEM's value is written 1 or 0, not .T. or .F., and reading it back (`ReadBoolean`) fails | fixed (decision 16820) |
 
 ## Phase 8: unit 8E, StepToTopoDS and TopoDSToStep
 
@@ -2054,3 +2054,4 @@ Seen while porting XDEDRAW's commands onto Draw-lite's documents; the commands k
 | Where | What | Effect | Triage |
 |---|---|---|---|
 | `gp_Trsf::Power`, compound branch (gp_Trsf.cxx; and gp_Trsf2d's, beside its row above) | Squares `Tempscale` before scaling the square's translation with it | Powers of 2 or more of a scaled rotation (or any compound transformation with a scale other than 1) put the translation in the wrong place. Found by unit 10K3's tests of the 2D row | fixed (decision 16802) |
+| RWStepVisual_RWSurfaceStyleRendering::ReadStep | The same inverted `strcmp` tests as its subclass's row above | Rendering methods of SURFACE_STYLE_RENDERING read wrong, as SURFACE_STYLE_RENDERING_WITH_PROPERTIES's. Found by unit 10K3 beside that row | fixed (decision 16817) |

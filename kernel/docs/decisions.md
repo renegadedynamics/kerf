@@ -15083,3 +15083,60 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        written it. OCCT itself still reads the port's files swapped, as it reads its own.
        The test that pinned the swap (`Point_representations_round_trip`) checks both parameters in place for the
        table format's versions 2 to 4 and the position format.
+16817. **STEP rendering methods are read as written** (occt-issues.md, RWStepVisual_RWSurfaceStyleRenderingWithProperties).
+       Its reader, and RWSurfaceStyleRendering's, which had the same tests (a new row), take the method whose name the
+       text is; OCCT's `strcmp(...)` tests were true for every other name, so .CONSTANT_SHADING. was read for
+       anything else and .COLOUR_SHADING. for itself (545 records of the corpus).
+16818. **A styled item is written with its target, whatever its type** (occt-issues.md, StepVisual_StyledItem::Item).
+       `StyledItem.Target()` (an addition) returns the item read or set; the writers of StyledItem and its eight
+       subclasses send it, where OCCT's sent `Item()`, null unless a representation item, so a styled representation
+       was written `$` and its colour lost (68 records). `Share` still names the representation items only, as OCCT:
+       a styled representation stays a root of the model's graph, so XSControl's root lists and transfers don't move.
+16819. **IsComplex lists every complex case** (occt-issues.md, RWStepAP214_ReadWriteModule::IsComplex): 800 and 802 added,
+       so ActuatedKinPairAndOrderKinPair and RepositionedTessellatedGeometricSet are written as complex records, not
+       `?()` followed by their components (30 records). The test that pinned the two checks IsComplex against
+       ComplexType for every case.
+16820. **BOOLEAN_REPRESENTATION_ITEM's value is written .T. or .F.** (occt-issues.md, two rows): `SendBoolean`, where
+       OCCT's C++ promoted the bool to an int and wrote 1 or 0, which its reader rejects.
+       The four rows above are checked by the STEP corpus round trip (`StepRoundTripTests.CorpusRoundTrips`: 338 files,
+       1.5 million records read and written back): the causes they had there (NotComplex, BoolAsInt, StyledItemTarget,
+       RenderingMethod) are no longer explained, and none occurs; every record they covered is written back as read.
+16821. **Two reflectance styles and TESSELLATED_ITEM are named and read** (occt-issues.md, RWStepAP214_ReadWriteModule,
+       cases 825, 826 and 708). SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) get their names in StepType, the
+       type map and the writer's cases (OCCT had their readers only); TESSELLATED_ITEM, named by StepType, joins the
+       type map. `StepAP214ProtocolTests` no longer lists them among OCCT's disagreements: every case of the protocol
+       now names its type and reads back its case. The corpus has none of these records.
+16822. **XSControl_Reader reads STEP** (occt-issues.md, IFSelect_WorkSession::ReadFile with StepSelect_WorkLibrary).
+       The session gives the library no model; `StepWorkLibrary` now makes one for its protocol when none is given
+       (and hands it back only on success), where OCCT 8's read into the null model and failed (RetFail).
+       STEPControl_Reader, which makes its model itself, is unchanged. The test that pinned the failure now reads
+       screw.step through a generic reader on a STEP session: RetDone, as many entities as STEPControl_Reader.
+16823. **A 2D trimmed curve can be written to STEP** (occt-issues.md, GeomToStep_MakeCurve, Geom2d): the trimmed-curve
+       branch now comes before the bounded curves', so the curve is written as its basis, as OCCT's unreachable branch
+       meant; OCCT sent it to MakeBoundedCurve, which refused it (StdFail_NotDone).
+16824. **A rational 2D Bezier curve keeps its weights in STEP** (occt-issues.md, GeomToStep_MakeBoundedCurve, Geom2d):
+       written as a rational B-spline, as the 3D case and 2D B-splines are. Tests (`GeomToStepTests`): a 2D trimmed
+       line and arc written and read back; a rational quadratic Bezier read back equal at four parameters.
+16825. **GeomToStep_MakeAxis2Placement2d(gp_Ax2) is left** (occt-issues.md; reclassified from fix K8 to leave). Nothing in
+       OCCT calls it (the conics' writers use the gp_Ax22d form), and a 2D placement from a 3D frame has no one
+       meaning (which plane, which direction) to fix it to; 10L's public API decides whether it stays.
+16826. **Angles are written in the file's plane angle unit** (occt-issues.md, GeomToStep_MakeRectangularTrimmedSurface,
+       MakeConicalSurface). A rectangular trimmed surface's angular bounds and a cone's semi-angle are divided by the
+       plane angle factor, which StepToGeom multiplies them by; OCCT wrote the bounds in degrees and the semi-angle in
+       radians whatever the unit, so with the default radians the bounds read back 57 times too large, and with
+       degrees the semi-angle read back wrong. `GeomToStepTests` writes and reads back both with radians and with
+       inches and degrees. Three native comparisons move to plan 3.2's third level: GeomStepNativeTests' cases (now
+       compared case by case: the 2D trimmed curves, 4; the rational 2D Beziers, 2; the cones and rectangular trimmed
+       surfaces, 7, are intended) and its data/occ shapes holding such geometry (19 sets in each unit, compared by
+       hash); TopoStepNativeTests' conversions in inches and degrees that write a cone, with native's entity count (17).
+16827. **STEP strings and names of any length are read** (occt-issues.md, step.lex, 16,383 bytes). The scanner's buffer
+       grows as a token needs (within ParserReadLimits.MaxFileSize), where OCCT's flex scanner, unable to grow its
+       buffer, failed on a token of 16,384 bytes or more. The test that pinned the failure reads strings and names of
+       16,380 to 600,000 bytes whole. StepFileNativeTests' 101 long inputs where native failed move to plan 3.2's
+       third level: the port parses them (or reports the syntax error of a string run to the end), also through a
+       stream returning 997 bytes at a time, as from memory.
+16828. **A tab ends a STEP string as a space does** (occt-issues.md, step.lex, the end of a string): a quote followed by
+       blanks, the tab now among them, and `)` or `,` ends the string; OCCT's rule left the tab out, so `'a'`, a tab
+       and a comma ran on to a later quote. Its class's double quote stays: it decides only malformed input. The
+       scanner test that pinned the run-on reads `'a'` there; StepFileNativeTests' one such input (string/003) moves to
+       the third level: it parses as with a space in place of the tab.

@@ -46,6 +46,6 @@ internal class RWBooleanRepresentationItem
     public void WriteStep(StepWriter sw, BooleanRepresentationItem ent)
     {
         sw.Send(ent.Name());
-        sw.Send((ent.Value() ? 1 : 0));
+        sw.SendBoolean(ent.Value()); // .T. or .F. (OCCT's bool became an int: 1 or 0; Kerf decision 16820)
     }
 }
