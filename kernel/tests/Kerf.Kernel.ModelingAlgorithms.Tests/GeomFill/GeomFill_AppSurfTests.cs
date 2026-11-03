@@ -104,11 +104,16 @@ public class GeomFill_AppSurfTests
         Assert.NotSame(aCurves[0], aP.Curve(1));
     }
 
+    /// <summary>
+    /// Periodic sections with different knots: UnifyByInsertingAllKnots inserts with Add = false, and
+    /// BSplCLib::PrepareInsertKnots mispredicts the pole count of periodic curves, so BSplCLib::InsertKnots wrote past
+    /// its arrays natively and threw Standard_RangeError in the port (occt-issues.md, unit 5L2's GeomFill_Profiler
+    /// rows; Kerf unit 10K1, decision 16512). The profile is now made of the sections' non-periodic forms: one degree,
+    /// one knot vector, one number of poles, and each curve the section it came from.
+    /// </summary>
     [Fact]
-    public void Profiler_on_periodic_sections_throws_where_native_corrupts_its_heap()
+    public void Profiler_on_periodic_sections_with_different_knots_unifies_them()
     {
-        // OCCT: UnifyByInsertingAllKnots inserts with Add = false, and BSplCLib::PrepareInsertKnots mispredicts the
-        // pole count of periodic curves; BSplCLib::InsertKnots then writes past its arrays natively (occt-issues.md).
         static BSplineCurve3D Loop(double theH, int theNbPoles, int theDeg)
         {
             NCollection_Array1<Point3D> aPoles = new(1, theNbPoles);
@@ -127,12 +132,31 @@ public class GeomFill_AppSurfTests
             return new BSplineCurve3D(aPoles, aKnots, aMults, theDeg, true);
         }
 
+        BSplineCurve3D[] aLoops = [Loop(0.0, 5, 4), Loop(3.0, 6, 1), Loop(7.0, 7, 1)];
         Profiler aP = new();
-        aP.AddCurve(Loop(0.0, 5, 4));
-        aP.AddCurve(Loop(3.0, 6, 1));
-        aP.AddCurve(Loop(7.0, 7, 1));
+        foreach (BSplineCurve3D aLoop in aLoops)
+        {
+            aP.AddCurve(aLoop);
+        }
         Assert.True(aP.IsPeriodic);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion()));
+        aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Assert.False(aP.IsPeriodic);
+        for (int c = 1; c <= aLoops.Length; c++)
+        {
+            BSplineCurve3D aU = (BSplineCurve3D)aP.Curve(c);
+            Assert.Equal(aP.NbPoles(), aU.PoleCount);
+            Assert.Equal(aP.Degree(), aU.Degree());
+            Assert.Equal(aP.NbKnots(), aU.KnotCount);
+            // the same closed curve, reparametrised linearly onto the profile's range
+            BSplineCurve3D anOriginal = aLoops[c - 1];
+            for (int s = 0; s <= 20; s++)
+            {
+                double t = s / 20.0;
+                Point3D aOnU = aU.Value(aU.FirstParameter() + t * (aU.LastParameter() - aU.FirstParameter()));
+                Point3D aOnOriginal = anOriginal.Value(anOriginal.FirstParameter() + t * (anOriginal.LastParameter() - anOriginal.FirstParameter()));
+                Assert.True(aOnU.Distance(aOnOriginal) < 1e-9, $"curve {c} at {t}");
+            }
+        }
     }
 
     [Fact]

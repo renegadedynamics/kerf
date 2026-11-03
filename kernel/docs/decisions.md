@@ -14735,3 +14735,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        of a single closed curve is left (touch): the 2D offset never meets it, as it cuts a one-edge contour first, so
        only BRepMAT2d_BisectingLocus's direct callers see it. The test that pinned the exception asserts IsDone false;
        the four recorded full-circle cases (native crashed) move to the third level.
+16512. **A loft of periodic sections with different knots unifies them** (rows 1181, 1182). GeomFill_Profiler inserted
+       each curve's knots into the others; on periodic curves BSplCLib::PrepareInsertKnots mispredicts the pole count
+       (row 82, touch), so the port threw Standard_RangeError, or the curves kept different numbers of poles. When the
+       periodic unification throws, or leaves different numbers of knots or poles, the profile is now made of the
+       sections' non-periodic forms (closed, not periodic), which unify. The test that pinned the exception checks the
+       common degree, knots and poles and each curve against its section. Two AppSurf recordings (APPSM 12, APPSP 67:
+       native stopped at its unequal profile) move to the third level.

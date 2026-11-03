@@ -213,22 +213,41 @@ public class Profiler
             theCurves.Append((Curve3D)_sequence[i].Copy());
         }
 
-        UnifyByInsertingAllKnots(theCurves, pTol);
-
         bool unified = true;
-        int theNbKnots = ((BSplineCurve3D)theCurves[1]).KnotCount;
-        for (i = 2; i <= theCurves.Length(); i++)
+        try
         {
-            if (((BSplineCurve3D)theCurves[i]).KnotCount != theNbKnots)
+            UnifyByInsertingAllKnots(theCurves, pTol);
+        }
+        catch (RangeErrorException) when (_isPeriodic)
+        {
+            // BSplCLib::PrepareInsertKnots mispredicts the pole count of periodic curves (decision 16512)
+            unified = false;
+        }
+
+        int theNbKnots = ((BSplineCurve3D)theCurves[1]).KnotCount;
+        int theNbPoles = ((BSplineCurve3D)theCurves[1]).PoleCount;
+        for (i = 2; i <= theCurves.Length() && unified; i++)
+        {
+            // the pole counts too, which differ with the knots' multiplicities (decision 16512)
+            if (((BSplineCurve3D)theCurves[i]).KnotCount != theNbKnots
+                || (_isPeriodic && ((BSplineCurve3D)theCurves[i]).PoleCount != theNbPoles))
             {
                 unified = false;
-                break;
             }
         }
 
         if (unified)
         {
             _sequence = theCurves;
+        }
+        else if (_isPeriodic)
+        {
+            // Periodic sections whose knots couldn't be unified (OCCT wrote past its arrays, natively, or kept curves
+            // with different numbers of poles): the profile is made of their non-periodic forms, which unify
+            // (decision 16512).
+            _isPeriodic = false;
+            Perform(pTol);
+            return;
         }
         else
         {
