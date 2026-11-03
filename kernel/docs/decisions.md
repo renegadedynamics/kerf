@@ -14665,3 +14665,104 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        features 7 → 0); frozen-shape checks 187 → 177 (offsets 3 → 1, fillets 7 → 4: the `Locked()` tests and the frozen
        markers that now ask the overlay); the features' direct `_shapes` edit gone (50 → 49). Section 8 records 10H5's
        patterns for 10H6.
+
+## Phase 10: unit 10H6, the end of copy at entry
+
+16401. **The last sites run in working overlays** (overlay-survey.md section 6), all 20:
+       - **MakeOffset's thickening mode and the simple offset's solid** (decision 1421's two): the run opens its overlay
+         as the other modes do (`WithUnfrozenCopied` for a caller's unfrozen shell, `UncopiedWhereUnchanged` at the
+         end). The walls, made by BRepLib_MakeFace on the caller's free edges, now write into the same overlay (10H3's
+         MakeFace joins it), so they share those edges: face1.brep's simple offset solid closes, and thickened open
+         shells hold their vertices once. The simple offset's `Generated` maps the modifier's images with `Final`, and
+         its healing context is brought up to date by `Finish`, as `CopyAtEntry`'s was. `_entry`, `EnterCopy`,
+         `FinishCopy` and `InternalOriginal`'s copy branch go.
+       - **HLR's outliner** (decision 1095's copy): `OutLiner.Fill` outlines the caller's shape in an overlay, and
+         `HLRBRep_ShapeToHLR.Load` opens one around the outlining and its reads of what the outlining wrote (the
+         vertices' representations on the split edges), finishing it into the outlined shape. The data structure holds
+         the caller's own faces and edges, as OCCT's: `InternalWorkingShape`, `InternalWorkingImage` and
+         HLRBRep_HLRToShape's `WorkingImage` go. HLRAppli_ReflectLines' `SameParameter` of the 3D edges, which share the
+         caller's vertices and write into them (they shared the copy's before), runs in an overlay too; found by
+         `ReflectLines_MatchNative`, whose five cases threw `Standard_ImmutableObject`.
+       - **The STEP reader's regularity and ShapeProcess's modifiers** asked `BrepTools.HoldsFrozen` whether to write in
+         place; they ask `WorkingOverlay.IsWritableInPlace` (no TShape of the graph frozen: ported code's own shape),
+         the same walk under the overlay's name.
+16402. **Meshing: an overlay of the mesher's own, which leads to 10L's `ShapeMesh`.** `BRepMesh_IncrementalMesh` on a shape
+       holding a frozen TShape (or its functional twin, `Meshed`) opens `WorkingOverlay.Begin` on it (its unfrozen
+       TShapes copied first), and the triangulations and polygons go to working copies of the faces and edges;
+       `Shape()` is the assembled result, frozen, sharing everything meshing left alone (a shape already meshed finely
+       enough comes back itself), and `History()` is the overlay's. The overlay is the mesher's own even inside another
+       operation's (nested, not joined), as the copy was: meshing gives a result; joining would put the meshes on the
+       calling operation's shapes. A wholly unfrozen shape is meshed in place, as OCCT. Chosen over making the mesh a
+       separate result now: it is a few lines, and it is what `ShapeMesh` (decision 1349, question 59) needs — mesh in
+       an overlay, read the meshes back while it is open, drop it unfinished — with no throwaway work; a separate
+       result now would rewrite the mesher's reads and writes (the incremental check, the post-processor, the
+       consumers) before 10L designs the type. Two tests read the meshes off the model's faces and edges, which are now
+       the caller's: they read them off what stands for those in the result (`InResult`, through the history).
+       BRep_Builder's `UpdateFaceUnfrozen`/`UpdateEdgeUnfrozen`, which the survey counted as frozen workarounds, are the
+       mesher's attach of a mesh left unfrozen until publication (decision 488), not a workaround for frozen shapes: a
+       frozen face takes them in an overlay like any update. They stay, renamed `UpdateFaceMesh`/`UpdateEdgeMesh`.
+       Making every attach leave meshes unfrozen was tried and dropped: design 4.1 freezes geometry when it is attached,
+       and `FreezingTests` pin it (a triangulation shared by two faces keeps its purpose because it is frozen).
+       `ShapeMesh` retires them with the faces' triangles.
+16403. **The machinery is gone**: `CopyAtEntry` (301 lines), `BrepTools.ExactCopyForWrite` (three forms), `HoldsFrozen`,
+       `KeepUnchanged`, `KeepUnchangedIn`, `CopyFrozenForWrite` and their private helpers (`BRepTools.ExactCopy.cs`,
+       `BRepTools.CopyFrozen.cs`; about 1,000 lines with `CopyAtEntry`). `CopyData`, `CopyFlags` and `IsSameData` stay,
+       in `BRepTools.TShapeData.cs`: the overlay makes and compares its working copies with them (decision 1361).
+       `ReShape.ReplaceTShapes(keys, results)` is `ReplaceResults(results)`: the overlay never re-keys. kerf.map and
+       `OcctTypeNames` lose `BRepTools_CopyAtEntry`. Draw-lite's in-place commands (decision 495's `InPlace`, the
+       unify-same-domain command and its rebound history) run in an overlay on the variable's shape instead of a forced
+       copy. The tests that ran ported in-place code on an unfrozen copy (52 sites in 32 files) take it from
+       `TestCopies.ExactCopyForWrite`, a test helper doing what the library's did. `LockedShapeException` and
+       `FrozenShapeException` stay: BRep_Builder throws the first on a write into a locked or read-only shape (31 sites,
+       OCCT's refusals among them), TopoDS_Builder the second on a shape that isn't free, as OCCT.
+16404. **One way in, and the API reviewed.** `BeginUnlessInside` (10H3) and `BeginUnlessWriting` (10H4) had the same rule
+       under two names (`Current is { IsFinished: false }` and `Writing is null`); `BeginUnlessWriting` stays, its nine
+       `BeginUnlessInside` callers rewritten. The API, each member with its doc comment: `Begin` (an overlay of the
+       operation's own: twins, a published result's change, the mesher), `BeginUnlessWriting` (or join the one that takes
+       writes: in-place algorithms), `Detached`, `ForTool` and `Enter` (a tool whose work spans calls), `Finish`, `Final`,
+       `History`, `Composed`, `Images`, `Initial`; `WithUnfrozenCopied`, `UncopiedWhereUnchanged`, `CopiedIn`; `Current`,
+       `Writing`, `Parent`, `WorkingCount`, `IsFinished`, `AttachContext`. `Input()` goes: nothing used it.
+16405. **One rule protects published shapes: `IsReadOnly`** (frozen, and no overlay here takes the write). `IsLocked`,
+       BRep_Builder's 31 refusals (OCCT's `Locked()`), is now the flag or `IsReadOnly`; `TakesWrite` is its complement on
+       a frozen TShape; the TShapes' setters apply the same rule through `TryWritable` and `CheckMutable`. The 152
+       frozen-shape checks were reviewed: none left only guarded a copy (the three removed were the outliner's, the
+       mesher's and the STEP reader's walks); the 149 left are the rule itself, writes skipped outside an overlay where
+       they would change nothing or a cache bit (the vertex tolerance already high enough, `BRep_Tool::Range`'s Modified
+       flag, the sweep's `Closed`, a frozen component's Free flag), copies of a caller's published wire or shell before a
+       flag is set on it by algorithms that run outside overlays (the draft's, the pipe shell's), and geometry's (10G).
+16406. **The flaky gate test** (`ShapeMeshTests.ABigMeshComesOutQuickly`, 100 ms to copy out 100,000 triangles, 1,200 ms
+       twice in merge gates). The copy isn't slow (11 to 12 ms warm, alone); the test timed one cold call, the first
+       `MeshExtraction.Extract` with its JIT, on a loaded machine, and the copy allocated 6.5 MB of large-object arrays
+       for 2.4 MB of buffers: it computed each face's normals on a copy of its triangulation. Fixed both ways:
+       `ToolTriangulatedShape.TryWriteSurfaceNormals` writes the surface normals straight into the buffer (OCCT's loop
+       body shared with `ComputeNormals`; the normals are those the triangulation would store, as floats), so the copy
+       allocates 2.7 MB; and the test takes the best of five runs and asserts the allocation (under twice the buffers),
+       which load doesn't change.
+16407. **The tests stay at level 1.** Every suite keeps its counts; no test moved to level 2. Tests that tested the
+       machinery, not a result, were converted one for one: `BRepTools_CopyAtEntryTests` (7) is
+       `WorkingOverlay_HealingPatternTests` (the same toy healing algorithm and assertions, in an overlay);
+       `BRepTools_ExactCopyTests` (3) is `BRepTools_TShapeDataTests` (`CopyData` through the test copy, `IsSameData`
+       through the overlay); the pilot's comparison with the copy path compares BRep text with the in-place fix on a test
+       copy (`The_pilot_gives_what_the_in_place_fix_gives_on_a_copy`; the sharing it also compared is the inputs-unchanged
+       tests'); `OutLiner_FrozenInputIsCopiedAndUnchanged` is `…IsOutlinedInAWorkingOverlayAndUnchanged`.
+       Counts: Foundation 2,297, ModelingData 3,145, ModelingAlgorithms 4,802 (9 skipped), DataExchange 276 (1 skipped),
+       Oracle 383, the modelling layer 1,884, Draw-lite's classes 687 (with `OCCTNET_CORPUS_FULL=1`: the whole corpus
+       runs 17,872 cases, OK 10,465, BAD 500, IMPROVEMENT 12, SKIPPED 6,825, FAILED 70, against 8W's OK 10,462 and
+       FAILED 73; the data-exchange milestone's bugs/caf/bug31075, which measures memory, failed under that run's load
+       and passed alone, decision 1293).
+16408. **Measured** (Release, serial, one machine shared with other units: the times carry its noise; before is `main` at
+       c5759a4a, built beside, run back to back).
+       - Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, 11 examples, two runs each): the same volumes, faces and
+         triangles; allocation per example the same or lower, but for one run of the working point (7.0 MB; its other
+         run 5.4, as before) (point lists 5.9 and 5.5 MB to 5.1 and 5.2, nesting
+         locations 33.6 and 34.5 to 30.7, the prismatic solid 4.3 and 3.6 to 3.8 and 3.5, the bottle 96.3 and 97.4 to
+         95.5 and 97.2): the mesher's working copies replace an exact copy of the whole shape. Median recalculation
+         1,538 and 1,809 ms before, 1,585 and 1,666 ms after.
+       - The Booleans (`Kerf.Kernel.Benchmarks booleans`, the 407 simple cases; the complex grid's data isn't in this
+         checkout): 8.25 MB per Boolean either way (the general fuse never copied). Serial 2,825 and 3,194 ms before,
+         3,624, 2,847 and 2,833 ms after; parallel 2,470 and 4,720 ms before, 3,376, 2,342 and 2,543 after: noise.
+       - The mesh copy-out (decision 16406): 6.49 MB allocated before, 2.66 MB after, for 2.42 MB of buffers; 12.2 and
+         11.5 ms at best.
+16409. **The survey closed** (overlay-survey.md): copy at entry 20 → 0 sites, the helpers gone; frozen-shape checks
+       152 → 149; direct `_shapes` edits 47 → 34 (the copy helpers' 13). Section 9 describes the finished state, and the
+       plan's 10H rows are done.

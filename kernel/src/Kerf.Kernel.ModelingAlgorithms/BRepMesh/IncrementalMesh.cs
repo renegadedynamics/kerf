@@ -124,7 +124,7 @@ public class IncrementalMesh : DiscretRoot
         }
         try
         {
-            Perform(context, input, target, overlay, copies, range);
+            Perform(context, target, overlay, copies, range);
         }
         finally
         {
@@ -132,10 +132,10 @@ public class IncrementalMesh : DiscretRoot
         }
     }
 
-    private void Perform(ToolContext context, in Shape input, in Shape target, WorkingOverlay? overlay,
+    // Meshes target (the input, or the input with its unfrozen TShapes copied) in the overlay, if any.
+    private void Perform(ToolContext context, in Shape target, WorkingOverlay? overlay,
                          Dictionary<TShape, TShape>? copies, ProgressRange range)
     {
-
         context.SetShape(target);
         context.ChangeParameters() = _parameters;
         context.ChangeParameters().CleanModel = false;

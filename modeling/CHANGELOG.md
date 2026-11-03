@@ -107,3 +107,7 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10H5: fillets, chamfers, offsets, shells, thickenings and drafts no longer copy the part at the kernel's
   entry: the results share the faces the operation left alone, and the part is never written. Results are otherwise as
   before.
+- Kerf's unit 10H6: triangulating a part no longer copies it in the kernel: the mesh is written in a working overlay,
+  and copying it out allocates less than half what it did (the normals go straight into the buffer).
+  `ShapeMeshTests.ABigMeshComesOutQuickly` checks the allocation and the best of five runs instead of one timing, which
+  failed on loaded machines. Results are as before.

@@ -1817,3 +1817,18 @@ Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
 - `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
   untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
   parts).
+
+Phase 10 (part): the end of copy at entry (unit 10H6).
+- No algorithm copies its input at the entry any more. The offset's thickening mode and the simple offset's solid run
+  in working overlays, their walls sharing the caller's edges; the mesher meshes a frozen shape in an overlay of its own
+  and returns a result sharing every face it left alone; HLR's outliner works on the caller's shape, so
+  `HLRBRep_HLRToShape` finds a caller's sub-shapes in its data as themselves; the reflect lines' SameParameter no
+  longer writes into the caller's vertices.
+- `BRepTools_CopyAtEntry`, `ExactCopyForWrite`, `HoldsFrozen`, `KeepUnchanged`, `KeepUnchangedIn` and
+  `CopyFrozenForWrite` are gone (about 1,000 lines). `CopyData`, `CopyFlags` and `IsSameData` stay for the overlay.
+  BRep_Builder's mesher forms `UpdateFaceUnfrozen`/`UpdateEdgeUnfrozen` are `UpdateFaceMesh`/`UpdateEdgeMesh`.
+- `WorkingOverlay` has one way to join an operation's overlay, `BeginUnlessWriting` (`BeginUnlessInside` was the same
+  rule), and one rule protecting published shapes, `IsReadOnly`, which BRep_Builder's refusals ask through `IsLocked`.
+- Copying a mesh out (`MeshExtraction`) writes the normals straight into its buffer instead of computing them on a copy
+  of each triangulation: 2.7 MB allocated for a 100,000-triangle sphere instead of 6.5 MB. Its timing test, which failed
+  on loaded machines, measures allocation and the best of five runs.
