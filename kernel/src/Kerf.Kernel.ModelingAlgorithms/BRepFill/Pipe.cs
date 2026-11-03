@@ -489,7 +489,7 @@ public sealed class Pipe
         // Generate the corresponding Shape
         // *************************************************
         Edge theEdge;
-        theEdge = ShapeCasts.Edge(_edges!.Value(iprof, ispin)); // OCCT: myEdges is null for a vertex profile (an access violation natively)
+        theEdge = ShapeCasts.Edge(_edges!.Value(iprof, ispin));
 
         return theEdge;
     }
@@ -758,6 +758,8 @@ public sealed class Pipe
                 result = mkSw.Shape();
                 UpdateMap(originalS, result, _genMap);
                 _errorOnSurf = mkSw.ErrorOnSurface();
+                // the edges the vertex sweeps along the spine's edges, for Edge (OCCT left myEdges null; decision 16508)
+                _edges ??= mkSw.SubShape();
 
                 NCollection_HArray2<Shape>? sections = mkSw.Sections();
 

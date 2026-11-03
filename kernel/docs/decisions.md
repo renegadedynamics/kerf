@@ -14711,3 +14711,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `MakeSurfacePatch` already mapped its C2 level to G2, which now builds; nothing there to remove. Its test patch
        at C2 is valid and bounded by the same edges, but bulges (area 282 against 153 at C1): an order-2 plate against
        ruled supports, worth a look when the modelling layer's patch is reviewed (10M).
+16508. **A pipe of a vertex gives the edges it swept** (row 1307). BRepFill_Pipe kept no edge table for a vertex
+       profile, so `BRepOffsetAPI_MakePipe.Generated(spine edge, profile vertex)` dereferenced null (an access violation
+       natively). The sweep's own table of the vertex's edges is kept. Test: a vertex at a polyline spine's start sweeps
+       the spine, each generated edge joining its spine edge's ends. The pipe recordings' vertex-profile cases (native
+       threw at GEN2) move to the third level: everything before agrees and the port's GEN2 line names an edge of the
+       result for each pair.

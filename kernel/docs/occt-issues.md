@@ -1304,7 +1304,7 @@ the last column says otherwise.
 | Where | What | Effect | Triage |
 |---|---|---|---|
 | MakePipeShell with an auxiliary spine and `BRepFill_Contact` on polyline spines (the site not isolated) | Dereferences a null handle | An access violation natively; Standard_NullObject in the port (4 oracle cases, decision 930) | touch |
-| `BRepFill_Pipe::Edge` (through `BRepOffsetAPI_MakePipe::Generated(spine edge, profile vertex)`) | Reads `myEdges`, which is null when the profile is a vertex | An access violation natively (OSD_Exception_ACCESS_VIOLATION under OSD::SetSignal, 18 of tools/piperec's cases); NullReferenceException in the port | fix K2 |
+| `BRepFill_Pipe::Edge` (through `BRepOffsetAPI_MakePipe::Generated(spine edge, profile vertex)`) | Reads `myEdges`, which is null when the profile is a vertex | An access violation natively (OSD_Exception_ACCESS_VIOLATION under OSD::SetSignal, 18 of tools/piperec's cases); NullReferenceException in the port | fixed (decision 16508) |
 | `BRepFill_PipeShell::Set(bool IsFrenet)` | Both branches set `myTrihedron = GeomFill_IsFrenet`; the corrected Frenet one is labelled Frenet | No effect seen (`myTrihedron` only chooses the continuity for the discrete trihedron and the contact laws) | leave |
 | `BRepFill_PipeShell::Prepare` | Clears `WSeq` and `myEdgeNewEdges` but not `myIndOfSec` | After a second Prepare (a section added or removed after a build) the history reads the first build's section indices | touch |
 | `BRepFill_PipeShell::BuildHistory` | The loop looking for the section's inde-th edge tests `Degenerated(anEdge)` (the section's edge) instead of `theEdge` | Degenerated edges of the placed wire are counted; no effect on the oracle's sections | leave |
