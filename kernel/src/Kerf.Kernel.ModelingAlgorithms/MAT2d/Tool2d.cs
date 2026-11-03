@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -35,9 +36,9 @@ public sealed class Tool2d
     private int _numberOfPnts;
     private int _numberOfVecs;
     private Circuit? _circuit;
-    private readonly NCollection_DataMap<int, Bisec> _geomBisectors = new();
-    private readonly NCollection_DataMap<int, Point2D> _geomPnts = new();
-    private readonly NCollection_DataMap<int, Vector2D> _geomVecs = new();
+    private readonly Dictionary<int, Bisec> _geomBisectors = new();
+    private readonly Dictionary<int, Point2D> _geomPnts = new();
+    private readonly Dictionary<int, Vector2D> _geomVecs = new();
     private readonly NCollection_Sequence<int> _linesLength = new();
 
     public Tool2d()
@@ -96,7 +97,7 @@ public sealed class Tool2d
         {
             Point2D p1 = _circuit.Connexion(anitem).PointOnFirst();
             Point2D p2 = _circuit.Connexion(anitem).PointOnSecond();
-            _geomPnts.Bind(_numberOfPnts, new Point2D((p1.X() + p2.X()) * 0.5, (p1.Y() + p2.Y()) * 0.5));
+            _geomPnts[_numberOfPnts] = new Point2D((p1.X() + p2.X()) * 0.5, (p1.Y() + p2.Y()) * 0.5);
             dist = p1.Distance(p2) * 0.5;
             return _numberOfPnts;
         }
@@ -107,12 +108,12 @@ public sealed class Tool2d
         if (type != typeof(CartesianPoint2))
         {
             curve = (Curve2D)_circuit.Value(anitem);
-            _geomPnts.Bind(_numberOfPnts, curve.Value(curve.FirstParameter()));
+            _geomPnts[_numberOfPnts] = curve.Value(curve.FirstParameter());
         }
         else
         {
             point = (Point2)_circuit.Value(anitem);
-            _geomPnts.Bind(_numberOfPnts, point.Pnt2d());
+            _geomPnts[_numberOfPnts] = point.Pnt2d();
         }
         return _numberOfPnts;
     }
@@ -136,7 +137,7 @@ public sealed class Tool2d
         {
             _circuit.Connexion(item).PointOnFirst().Coord(out double x1, out double y1);
             _circuit.Connexion(item).PointOnSecond().Coord(out double x2, out double y2);
-            _geomVecs.Bind(_numberOfVecs, new Vector2D((x2 - x1), (y2 - y1)));
+            _geomVecs[_numberOfVecs] = new Vector2D((x2 - x1), (y2 - y1));
             return _numberOfVecs;
         }
 
@@ -144,7 +145,7 @@ public sealed class Tool2d
         if (type != typeof(CartesianPoint2))
         {
             curve = (Curve2D)_circuit.Value(anitem);
-            _geomVecs.Bind(_numberOfVecs, curve.DN(curve.LastParameter(), 1));
+            _geomVecs[_numberOfVecs] = curve.DN(curve.LastParameter(), 1);
         }
         else
         {
@@ -152,7 +153,7 @@ public sealed class Tool2d
             double param = (isOpenResult && anitem == _circuit.NumberOfItems())
                 ? curve.LastParameter()
                 : curve.FirstParameter();
-            _geomVecs.Bind(_numberOfVecs, curve.DN(param, 1));
+            _geomVecs[_numberOfVecs] = curve.DN(param, 1);
         }
 
         return _numberOfVecs;
@@ -170,7 +171,7 @@ public sealed class Tool2d
         {
             _circuit.Connexion(anitem).PointOnFirst().Coord(out double x1, out double y1);
             _circuit.Connexion(anitem).PointOnSecond().Coord(out double x2, out double y2);
-            _geomVecs.Bind(_numberOfVecs, new Vector2D((x1 - x2), (y1 - y2)));
+            _geomVecs[_numberOfVecs] = new Vector2D((x1 - x2), (y1 - y2));
             return _numberOfVecs;
         }
 
@@ -194,7 +195,7 @@ public sealed class Tool2d
             double param = (isOpenResult && anitem == 1) ? curve.FirstParameter() : curve.LastParameter();
             thevector = curve.DN(param, 1);
         }
-        _geomVecs.Bind(_numberOfVecs, thevector.Reversed());
+        _geomVecs[_numberOfVecs] = thevector.Reversed();
         return _numberOfVecs;
     }
 
@@ -202,7 +203,7 @@ public sealed class Tool2d
     public int Tangent(int bisector)
     {
         _numberOfVecs++;
-        _geomVecs.Bind(_numberOfVecs, GeomBis(bisector).Value().DN(GeomBis(bisector).Value().LastParameter(), 1));
+        _geomVecs[_numberOfVecs] = GeomBis(bisector).Value().DN(GeomBis(bisector).Value().LastParameter(), 1);
         return _numberOfVecs;
     }
 
@@ -272,7 +273,7 @@ public sealed class Tool2d
         TrimBisec(bisector, edge2number, initialNeighbour, 2);
 
         _numberOfBisectors++;
-        _geomBisectors.Bind(_numberOfBisectors, bisector);
+        _geomBisectors[_numberOfBisectors] = bisector;
 
         abisector.BisectorNumber(_numberOfBisectors);
         abisector.Sense(1);
@@ -772,7 +773,7 @@ public sealed class Tool2d
             return global::Kerf.Engine.Foundation.Precision.Infinite();
         }
         _numberOfPnts++;
-        _geomPnts.Bind(_numberOfPnts, pointSolution);
+        _geomPnts[_numberOfPnts] = pointSolution;
         intPnt = _numberOfPnts;
 
         // If the intersection point is almost one of the ends of a bisector, the intersection is not valid,
@@ -863,19 +864,19 @@ public sealed class Tool2d
     }
 
     /// <summary>The bisector of index Index.</summary>
-    public Bisec GeomBis(int index) => _geomBisectors.Find(index);
+    public Bisec GeomBis(int index) => _geomBisectors.GetValue(index);
 
     /// <summary>The bisector of index Index (OCCT's modifiable reference: the same object here).</summary>
-    public Bisec ChangeGeomBis(int index) => _geomBisectors.ChangeFind(index);
+    public Bisec ChangeGeomBis(int index) => _geomBisectors.GetValue(index);
 
     /// <summary>The item of index Index of the circuit.</summary>
     public Geometry2D GeomElt(int index) => _circuit!.Value(index);
 
     /// <summary>The point of index Index.</summary>
-    public Point2D GeomPnt(int index) => _geomPnts.Find(index);
+    public Point2D GeomPnt(int index) => _geomPnts.GetValue(index);
 
     /// <summary>The vector of index Index.</summary>
-    public Vector2D GeomVec(int index) => _geomVecs.Find(index);
+    public Vector2D GeomVec(int index) => _geomVecs.GetValue(index);
 
     public Circuit Circuit() => _circuit!;
 
@@ -912,7 +913,7 @@ public sealed class Tool2d
             uf1 = bcc1.FirstParameter();
             ul1 = bcc1.Parameter(p1);
             bisector1.SetTrim(uf1, ul1);
-            _geomBisectors.Bind(i1, bis);
+            _geomBisectors[i1] = bis;
         }
         else
         {

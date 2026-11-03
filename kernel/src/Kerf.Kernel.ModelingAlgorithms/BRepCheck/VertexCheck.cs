@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -33,7 +34,7 @@ public class VertexCheck : ResultCheck
         {
             // checks the existence of a point 3D
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
             lst.Append(StatusCheck.NoError);
             _min = true;
         }
@@ -55,13 +56,13 @@ public class VertexCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {

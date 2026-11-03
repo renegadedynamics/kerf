@@ -24,7 +24,7 @@ public sealed class MakeGeometricCurveSet : ExportRoot
     {
         _done = false;
         NCollection_HSequence<Transient> itemList;
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         StepModel stepModel = fp.Model() as StepModel;
         var tool = new ExportTool(map, false, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         var wirefB = new WireframeBuilder(aShape, tool, localFactors);

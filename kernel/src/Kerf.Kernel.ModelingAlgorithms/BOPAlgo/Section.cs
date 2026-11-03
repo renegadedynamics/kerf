@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -294,9 +295,9 @@ public class Section : BooleanBuilder
             {
                 Shape s = itLS.Value();
                 //
-                if (_images.IsBound(s))
+                if (_images.ContainsKey(s))
                 {
-                    NCollection_List<Shape> lsIm = _images.Find(s);
+                    NCollection_List<Shape> lsIm = _images.GetValue(s);
                     itIm.Initialize(lsIm);
                     for (; itIm.More(); itIm.Next())
                     {

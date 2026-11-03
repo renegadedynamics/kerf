@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
@@ -19,7 +20,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// </remarks>
 public sealed class BlockBuilder
 {
-    private readonly NCollection_DataMap<int, int> _orientedShapeMapIsValid = new();
+    private readonly Dictionary<int, int> _orientedShapeMapIsValid = new();
     private readonly NCollection_IndexedMap<Shape> _orientedShapeMap = new(EqualityComparer<Shape>.Default);
     private readonly NCollection_Sequence<int> _blocks = new();
     private int _blockIndex;
@@ -180,7 +181,7 @@ public sealed class BlockBuilder
     /// <exception cref="FailureException">There is none.</exception>
     public Shape Element(int index)
     {
-        bool isbound = _orientedShapeMapIsValid.IsBound(index);
+        bool isbound = _orientedShapeMapIsValid.ContainsKey(index);
         if (!isbound)
         {
             throw new FailureException("OutOfRange");
@@ -214,7 +215,7 @@ public sealed class BlockBuilder
         }
 
         int sindex = bi.Value();
-        int isb = _orientedShapeMapIsValid.Find(sindex);
+        int isb = _orientedShapeMapIsValid.GetValue(sindex);
         bool isvalid = isb == 1;
 
         return isvalid;
@@ -223,13 +224,13 @@ public sealed class BlockBuilder
     /// <summary>Whether the element of index <paramref name="sindex"/> is valid.</summary>
     public bool ElementIsValid(int sindex)
     {
-        bool isbound = _orientedShapeMapIsValid.IsBound(sindex);
+        bool isbound = _orientedShapeMapIsValid.ContainsKey(sindex);
         if (!isbound)
         {
             return false;
         }
 
-        int isb = _orientedShapeMapIsValid.Find(sindex);
+        int isb = _orientedShapeMapIsValid.GetValue(sindex);
         bool isvalid = isb == 1;
 
         return isvalid;
@@ -239,7 +240,7 @@ public sealed class BlockBuilder
     public int AddElement(in Shape s)
     {
         int sindex = _orientedShapeMap.Add(s);
-        _orientedShapeMapIsValid.Bind(sindex, 1);
+        _orientedShapeMapIsValid[sindex] = 1;
 
         return sindex;
     }
@@ -255,20 +256,20 @@ public sealed class BlockBuilder
 
         int sindex = bi.Value();
         int i = isvalid ? 1 : 0;
-        _orientedShapeMapIsValid.Bind(sindex, i);
+        _orientedShapeMapIsValid[sindex] = i;
     }
 
     /// <summary>Marks the element of index <paramref name="sindex"/> valid or not.</summary>
     public void SetValid(int sindex, bool isvalid)
     {
-        bool isbound = _orientedShapeMapIsValid.IsBound(sindex);
+        bool isbound = _orientedShapeMapIsValid.ContainsKey(sindex);
         if (!isbound)
         {
             return;
         }
 
         int i = isvalid ? 1 : 0;
-        _orientedShapeMapIsValid.Bind(sindex, i);
+        _orientedShapeMapIsValid[sindex] = i;
     }
 
     /// <summary>Whether no element of the current block has more than two neighbours through one sub-shape.</summary>

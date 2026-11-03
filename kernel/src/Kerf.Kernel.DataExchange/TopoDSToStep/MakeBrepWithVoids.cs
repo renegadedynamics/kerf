@@ -29,7 +29,7 @@ public sealed class MakeBrepWithVoids : ExportRoot
     {
         _done = false;
         Iterator it = new Iterator();
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         var s = new NCollection_Sequence<Transient>();
         Shell outShell = new Shell();
 

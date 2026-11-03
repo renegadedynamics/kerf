@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
@@ -46,7 +47,7 @@ public class StepReaderData : FileReaderData
     private readonly NCollection_Array1<int> _theidents;
     private readonly NCollection_Array1<int> _thetypes;
     private readonly NCollection_IndexedMap<string> _thenametypes = new();
-    private readonly NCollection_DataMap<int, int> _themults = new();
+    private readonly Dictionary<int, int> _themults = new();
     private int _thenbents;
     private int _thelastn;
     private readonly int _thenbhead;
@@ -462,7 +463,7 @@ public class StepReaderData : FileReaderData
                 {
                     if (_theidents[prev] >= 0)
                     {
-                        _themults.Bind(prev, num);
+                        _themults[prev] = num;
                         if (string.CompareOrdinal(_thenametypes.FindKey(_thetypes.Value(num)), _thenametypes.FindKey(_thetypes.Value(prev))) < 0)
                         {
                             //  Warning: components in complex entity are not in alphabetical order.
@@ -585,7 +586,7 @@ public class StepReaderData : FileReaderData
     /// <summary>Returns True if num corresponds to a Complex Type Entity (as can be defined by ANDOR Express clause).</summary>
     public bool IsComplex(int num)
     {
-        return _themults.IsBound(num);
+        return _themults.ContainsKey(num);
     }
 
     /// <summary>
@@ -611,9 +612,9 @@ public class StepReaderData : FileReaderData
     public int NextForComplex(int num)
     {
         int next = 0;
-        if (_themults.IsBound(num))
+        if (_themults.ContainsKey(num))
         {
-            next = _themults.Find(num);
+            next = _themults.GetValue(num);
         }
         return next;
     }

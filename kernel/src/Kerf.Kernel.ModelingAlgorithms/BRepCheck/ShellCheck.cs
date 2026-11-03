@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -85,7 +86,7 @@ public class ShellCheck : ResultCheck
 
         try
         {
-            return _map.Find(_shape);
+            return _map.GetValue(_shape);
         }
         finally
         {
@@ -105,7 +106,7 @@ public class ShellCheck : ResultCheck
         if (!_min)
         {
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
 
             // it is checked if the shell is "connected"
             var exp = new Explorer(_shape, ShapeType.Face);
@@ -170,13 +171,13 @@ public class ShellCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {
@@ -455,13 +456,15 @@ public class ShellCheck : ResultCheck
 
         // First the orientation of each face in relation to the shell is found.
         // It is used to check BRepCheck_RedundantFace
-        var mapOfShapeOrientation = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        var mapOfShapeOrientation = new Dictionary<Shape, int>(ShapeHasher.Instance);
         Explorer exp = new(), ede = new();
 
         for (exp.Init(_shape, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (!mapOfShapeOrientation.Bind(exp.Current(), (int)exp.Current().Orientation()))
+            if (!mapOfShapeOrientation.TryAdd(exp.Current(), (int)exp.Current().Orientation()))
             {
+                // OCCT's Bind replaces the value of a bound key
+                mapOfShapeOrientation[exp.Current()] = (int)exp.Current().Orientation();
                 _ostat = StatusCheck.RedundantFace;
                 if (update)
                 {
@@ -497,7 +500,7 @@ public class ShellCheck : ResultCheck
                 lite.Initialize(lface);
                 fref = ShapeCasts.Face(lite.Value());
 
-                if (!mapOfShapeOrientation.IsBound(fref))
+                if (!mapOfShapeOrientation.ContainsKey(fref))
                 {
                     _ostat = StatusCheck.SubshapeNotInShape;
                     if (update)
@@ -513,7 +516,7 @@ public class ShellCheck : ResultCheck
 
                 if (lite.More()) // Edge of connectivity
                 {
-                    int iorf = mapOfShapeOrientation.Find(fref);
+                    int iorf = mapOfShapeOrientation.GetValue(fref);
                     orf = (Orientation)iorf;
                     fref.Orientation(orf);
 
@@ -531,7 +534,7 @@ public class ShellCheck : ResultCheck
                         Orientation orient = ede.Current().Orientation();
                         Face fcur = ShapeCasts.Face(lite.Value());
 
-                        if (!mapOfShapeOrientation.IsBound(fcur))
+                        if (!mapOfShapeOrientation.ContainsKey(fcur))
                         {
                             _ostat = StatusCheck.SubshapeNotInShape;
                             if (update)
@@ -543,7 +546,7 @@ public class ShellCheck : ResultCheck
                             return _ostat;
                         }
 
-                        int oriFCur = mapOfShapeOrientation.Find(fcur);
+                        int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                         orf = (Orientation)oriFCur;
                         fcur.Orientation(orf);
 
@@ -593,7 +596,7 @@ public class ShellCheck : ResultCheck
                 for (lite.Initialize(lface); lite.More(); lite.Next())
                 {
                     Face fcur = ShapeCasts.Face(lite.Value());
-                    if (!mapOfShapeOrientation.IsBound(fcur))
+                    if (!mapOfShapeOrientation.ContainsKey(fcur))
                     {
                         _ostat = StatusCheck.SubshapeNotInShape;
                         if (update)
@@ -605,7 +608,7 @@ public class ShellCheck : ResultCheck
                         return _ostat;
                     }
 
-                    int iorf = mapOfShapeOrientation.Find(fcur);
+                    int iorf = mapOfShapeOrientation.GetValue(fcur);
                     orf = (Orientation)iorf;
                     fcur.Orientation(orf);
 
@@ -674,7 +677,7 @@ public class ShellCheck : ResultCheck
                     {
                         fref = ShapeCasts.Face(voisin.First());
                         voisin.RemoveFirst();
-                        if (!mapOfShapeOrientation.IsBound(fref))
+                        if (!mapOfShapeOrientation.ContainsKey(fref))
                         {
                             _ostat = StatusCheck.SubshapeNotInShape;
                             if (update)
@@ -686,7 +689,7 @@ public class ShellCheck : ResultCheck
                             return _ostat;
                         }
 
-                        int iorf = mapOfShapeOrientation.Find(fref);
+                        int iorf = mapOfShapeOrientation.GetValue(fref);
                         orf = (Orientation)iorf;
                         fref.Orientation(orf);
 
@@ -715,7 +718,7 @@ public class ShellCheck : ResultCheck
                                 }
                             }
 
-                            if (!mapOfShapeOrientation.IsBound(fcur))
+                            if (!mapOfShapeOrientation.ContainsKey(fcur))
                             {
                                 _ostat = StatusCheck.SubshapeNotInShape;
                                 if (update)
@@ -727,7 +730,7 @@ public class ShellCheck : ResultCheck
                                 return _ostat;
                             }
 
-                            int oriFCur = mapOfShapeOrientation.Find(fcur);
+                            int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                             orf = (Orientation)oriFCur;
                             fcur.Orientation(orf);
 
@@ -756,7 +759,7 @@ public class ShellCheck : ResultCheck
                                 }
 
                                 orf = global::Kerf.Engine.Topology.TopAbs.Reverse(orf);
-                                mapOfShapeOrientation[fcur] = (int)orf;
+                                mapOfShapeOrientation.GetValueRef(fcur) = (int)orf;
                             }
 
                             if (alre.Add(fcur))
@@ -788,7 +791,7 @@ public class ShellCheck : ResultCheck
 
         try
         {
-            BRepCheckCheck.Add(_map.Find(_shape), StatusCheck.UnorientableShape);
+            BRepCheckCheck.Add(_map.GetValue(_shape), StatusCheck.UnorientableShape);
         }
         finally
         {

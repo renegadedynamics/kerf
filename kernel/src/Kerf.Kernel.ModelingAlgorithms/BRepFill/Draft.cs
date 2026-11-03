@@ -479,8 +479,8 @@ public sealed class Draft
         sweep.SetTolerance(_tol);
         sweep.SetAngularControl(_angmin, _angmax);
         HashSet<Shape> dummy = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
         sweep.Build(dummy, dummy2, dummy3, _style, _cont);
         if (sweep.IsDone)
         {

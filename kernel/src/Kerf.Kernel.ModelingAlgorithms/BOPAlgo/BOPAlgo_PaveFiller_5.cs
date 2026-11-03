@@ -173,7 +173,7 @@ public partial class PaveFiller
         NCollection_IntMap miefc = new(100);
         NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
         NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> mpbli = new();
-        NCollection_DataMap<PaveBlock, Box> dmpbBox = new();
+        Dictionary<PaveBlock, Box> dmpbBox = new();
         //
         NCollection_DynamicArray<InterfEF> eFs = _ds!.InterfEF();
         //
@@ -314,10 +314,10 @@ public partial class PaveFiller
                     PaveBlock pb0 = edgeFace.PaveBlock();
                     pb0.Range(out t1, out t2);
                     Pair pair = new(nE, nF);
-                    if (!_distances.Find(pair, out NCollection_List<EdgeRangeDistance> pList))
+                    if (!_distances.TryGetValue(pair, out NCollection_List<EdgeRangeDistance>? pList))
                     {
                         pList = new NCollection_List<EdgeRangeDistance>();
-                        _distances.Bind(pair, pList);
+                        _distances[pair] = pList;
                     }
                     pList.Append(new EdgeRangeDistance(t1, t2, edgeFace.MinimalDistance()));
                 }

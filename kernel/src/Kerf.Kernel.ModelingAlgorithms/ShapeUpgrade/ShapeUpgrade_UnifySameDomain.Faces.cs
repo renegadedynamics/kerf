@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -17,7 +18,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using DataMapOfFacePlane = Occt.NCollection_DataMap<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
+using DataMapOfFacePlane = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
@@ -431,7 +432,7 @@ public partial class UnifySameDomain
       int                                                                      indCoord,
       double                                                                   period,
       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap,
-      NCollection_DataMap<Shape, Curve2D>                          edgeNewPCurve,
+      Dictionary<Shape, Curve2D>                          edgeNewPCurve,
       HashSet<Shape>                                            usedEdges)
     {
         var edgesOfFirstFace = new HashSet<Shape>(ShapeHasher.Instance);
@@ -504,7 +505,7 @@ public partial class UnifySameDomain
                 return false;
             }
             curPCurve = new TrimmedCurve2D(curPCurve, edgeStartParam, edgeEndParam);
-            edgeNewPCurve.Bind(currentEdge, curPCurve);
+            edgeNewPCurve[currentEdge] = curPCurve;
             if (currentEdge.Orientation() == Reversed)
             {
                 (edgeStartParam, edgeEndParam) = (edgeEndParam, edgeStartParam);
@@ -580,7 +581,7 @@ public partial class UnifySameDomain
                         newPCurve.Translate(vec);
                         pCurve = newPCurve;
                     }
-                    edgeNewPCurve.Bind(edge, pCurve);
+                    edgeNewPCurve[edge] = pCurve;
                     currentEdge = edge;
                     Orientation curOr = global::Kerf.Engine.Topology.TopAbs.Compose(orientation, currentEdge.Orientation());
                     curParam = (curOr == Forward) ? pCurve.LastParameter() : pCurve.FirstParameter();
@@ -1400,21 +1401,21 @@ public partial class UnifySameDomain
                     && pln1.Distance(pln2) < linTol)
                 {
                     PlaneSurface planeOfFaces;
-                    if (facePlaneMap.IsBound(aFace))
+                    if (facePlaneMap.ContainsKey(aFace))
                     {
-                        planeOfFaces = facePlaneMap[aFace];
+                        planeOfFaces = facePlaneMap.GetValue(aFace);
                     }
-                    else if (facePlaneMap.IsBound(aCheckedFace))
+                    else if (facePlaneMap.ContainsKey(aCheckedFace))
                     {
-                        planeOfFaces = facePlaneMap[aCheckedFace];
+                        planeOfFaces = facePlaneMap.GetValue(aCheckedFace);
                     }
                     else
                     {
                         planeOfFaces = new PlaneSurface(pln1);
                     }
 
-                    facePlaneMap.Bind(aFace, planeOfFaces);
-                    facePlaneMap.Bind(aCheckedFace, planeOfFaces);
+                    facePlaneMap[aFace] = planeOfFaces;
+                    facePlaneMap[aCheckedFace] = planeOfFaces;
 
                     return true;
                 }
@@ -1568,7 +1569,7 @@ public partial class UnifySameDomain
                                   NCollection_IndexedMap<Shape> vmap,
                                   NCollection_Sequence<Shape>   wireSeq)
     {
-        var vEmap = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var vEmap = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
         var emap = new HashSet<Shape>(ShapeHasher.Instance);
         var itw   = new Iterator(wire);
@@ -1585,15 +1586,15 @@ public partial class UnifySameDomain
             }
 
             Vertex vertex = Exploration.FirstVertex(edge, true); // with orientation
-            if (vEmap.IsBound(vertex))
+            if (vEmap.ContainsKey(vertex))
             {
-                vEmap[vertex].Append(edge);
+                vEmap.GetValue(vertex).Append(edge);
             }
             else
             {
                 var elist = new NCollection_List<Shape>();
                 elist.Append(edge);
-                vEmap.Bind(vertex, elist);
+                vEmap[vertex] = elist;
             }
         }
 
@@ -1601,7 +1602,7 @@ public partial class UnifySameDomain
         for (int ii = 1; ii <= vmap.Extent(); ii++)
         {
             Vertex                  origin  = ShapeCasts.Vertex(vmap[ii]);
-            NCollection_List<Shape> branches = vEmap[origin];
+            NCollection_List<Shape> branches = vEmap.GetValue(origin);
             var                            itl     = new NCollection_List<Shape>.Iterator(branches);
             while (itl.More())
             {
@@ -1620,12 +1621,12 @@ public partial class UnifySameDomain
                         break;
                     }
 
-                    if (!vEmap.IsBound(vertex))
+                    if (!vEmap.ContainsKey(vertex))
                     {
                         break;
                     }
 
-                    NCollection_List<Shape> elist = vEmap[vertex];
+                    NCollection_List<Shape> elist = vEmap.GetValue(vertex);
                     if (elist.Extent() == 0)
                     {
                         break;

@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -794,8 +795,8 @@ internal static class BOPTestDebugCommands
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        NCollection_DataMap<Shape, NCollection_List<Shape>> anImages = aSession.Builder().Images();
-        if (!anImages.IsBound(aS))
+        Dictionary<Shape, NCollection_List<Shape>> anImages = aSession.Builder().Images();
+        if (!anImages.ContainsKey(aS))
         {
             di.Append(" no images found\n");
             return 0;
@@ -804,7 +805,7 @@ internal static class BOPTestDebugCommands
         Compound aC = new();
         aBB.MakeCompound(ref aC);
         int i = 0;
-        foreach (Shape aSIm in anImages.Find(aS))
+        foreach (Shape aSIm in anImages.GetValue(aS))
         {
             aBB.Add(aC, aSIm);
             ++i;
@@ -835,14 +836,14 @@ internal static class BOPTestDebugCommands
             di.Append(a[1]).Append(" is a null shape\n");
             return 0;
         }
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aDMI = aSession.Builder().Origins();
-        if (!aDMI.IsBound(aS))
+        Dictionary<Shape, NCollection_List<Shape>> aDMI = aSession.Builder().Origins();
+        if (!aDMI.ContainsKey(aS))
         {
             di.Append(" no origins found\n");
             return 0;
         }
         string buf = a[1] + "_or";
-        NCollection_List<Shape> aLSx = aDMI.Find(aS);
+        NCollection_List<Shape> aLSx = aDMI.GetValue(aS);
         if (aLSx.Extent() == 1)
         {
             theDI.SetShape(buf, aLSx.First());
@@ -880,8 +881,8 @@ internal static class BOPTestDebugCommands
             di.Append(a[1]).Append(" is a null shape\n");
             return 1;
         }
-        NCollection_DataMap<Shape, Shape> aDMSD = aSession.Builder().ShapesSD();
-        if (!aDMSD.IsBound(aS))
+        Dictionary<Shape, Shape> aDMSD = aSession.Builder().ShapesSD();
+        if (!aDMSD.ContainsKey(aS))
         {
             di.Append(" shape has no sd shape\n");
             return 0;

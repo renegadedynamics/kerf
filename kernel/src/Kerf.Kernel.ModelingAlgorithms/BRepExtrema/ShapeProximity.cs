@@ -82,10 +82,10 @@ public sealed class ShapeProximity
     public bool IsDone => _overlapTool.IsDone || _proxValTool.IsDone;
 
     /// <summary>The overlapped faces of the first shape (indices from 0), each with the faces of the second.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapSubShapes1() => _overlapTool.OverlapSubShapes1();
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapSubShapes1() => _overlapTool.OverlapSubShapes1();
 
     /// <summary>The overlapped faces of the second shape (indices from 0), each with the faces of the first.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => _overlapTool.OverlapSubShapes2();
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => _overlapTool.OverlapSubShapes2();
 
     /// <summary>The sub-shape of the first shape with the given index (from 0).</summary>
     public Shape GetSubShape1(int id) => _shapeList1.Value(id);

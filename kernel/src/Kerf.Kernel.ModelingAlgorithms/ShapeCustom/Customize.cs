@@ -95,7 +95,7 @@ public static class Customize
     /// </remarks>
     public static Shape ApplyModifier(in Shape s,
                                              Modification m,
-                                             NCollection_DataMap<Shape, Shape> context,
+                                             Dictionary<Shape, Shape> context,
                                              Modifier md,
                                              ProgressRange progress = default,
                                              ReShapeBuilder? aReShape = null)
@@ -112,7 +112,7 @@ public static class Customize
     /// </summary>
     internal static Shape InternalApplyModifier(in Shape s,
                                                        Modification m,
-                                                       NCollection_DataMap<Shape, Shape> context,
+                                                       Dictionary<Shape, Shape> context,
                                                        Modifier md,
                                                        ProgressRange progress = default,
                                                        ReShapeBuilder? aReShape = null)
@@ -140,7 +140,7 @@ public static class Customize
                 shapeNoLoc.Location(new Placement());
 
                 Shape res;
-                if (context.Find(shapeNoLoc, out res))
+                if (context.TryGetValue(shapeNoLoc, out res))
                 {
                     res.Orientation(shape.Orientation());
                     res.Location(shape.Location(), false);
@@ -169,7 +169,7 @@ public static class Customize
             sf.Orientation(s.Orientation());
             c.Orientation(s.Orientation());
 
-            context.Bind(sf, c);
+            context[sf] = c;
 
             c.Location(s.Location(), false);
 
@@ -194,7 +194,7 @@ public static class Customize
 
         if (!sf.IsSame(result))
         {
-            context.Bind(s.Located(new Placement()), result.Located(new Placement()));
+            context[s.Located(new Placement())] = result.Located(new Placement());
         }
 
         if (aReShape is not null)
@@ -210,7 +210,7 @@ public static class Customize
     {
         // Create a modification description
         DirectModification dm = new DirectModification();
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return ApplyModifier(s, dm, context, md);
     }
@@ -221,7 +221,7 @@ public static class Customize
         // Create a modification description
         Transform3D t = new Transform3D().WithScale(new Point3D(0, 0, 0), scale);
         CustomTrsfModification tm = new CustomTrsfModification(t);
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return Customize.ApplyModifier(s, tm, context, md);
     }
@@ -256,7 +256,7 @@ public static class Customize
         bsr.SetConvRational(rational);
         bsr.SetRestrictionParameters(aParameters);
         // Modify the shape
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return Customize.ApplyModifier(s, bsr, context, md);
     }
@@ -266,7 +266,7 @@ public static class Customize
     {
         // Create a modification description
         ConvertToRevolution cRev = new ConvertToRevolution();
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return Customize.ApplyModifier(s, cRev, context, md);
     }
@@ -279,7 +279,7 @@ public static class Customize
     {
         // Create a modification description
         SweptToElementary se = new SweptToElementary();
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return Customize.ApplyModifier(s, se, context, md);
     }
@@ -300,7 +300,7 @@ public static class Customize
         bsRev.SetRevolutionMode(revolMode);
         bsRev.SetOffsetMode(offsetMode);
         bsRev.SetPlaneMode(planeMode);
-        var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var context = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();
         return Customize.ApplyModifier(s, bsRev, context, md);
     }

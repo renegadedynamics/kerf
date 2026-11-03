@@ -75,7 +75,7 @@ public class TransientProcess : ProcessForTransient
     /// <summary>Sets a Context : according to receiving appli, to be interpreted by the Actor.</summary>
     public void SetContext(string name, Transient? ctx)
     {
-        _thectx.Bind(name, ctx);
+        _thectx[name] = ctx;
     }
 
     /// <summary>
@@ -84,11 +84,11 @@ public class TransientProcess : ProcessForTransient
     /// </summary>
     public bool GetContext(string name, Type? type, ref Transient? ctx)
     {
-        if (_thectx.IsEmpty())
+        if (_thectx.Count == 0)
         {
             return false;
         }
-        if (!_thectx.Find(name, out ctx))
+        if (!_thectx.TryGetValue(name, out ctx))
         {
             ctx = null;
         }
@@ -111,7 +111,7 @@ public class TransientProcess : ProcessForTransient
     /// Returns (modifiable) the whole definition of Context. Rather for internal use (ex.: preparing and setting in
     /// once).
     /// </summary>
-    public NCollection_DataMap<string, Transient?> Context()
+    public Dictionary<string, Transient?> Context()
     {
         return _thectx;
     }
@@ -274,6 +274,6 @@ public class TransientProcess : ProcessForTransient
 
     private InterfaceModel? _themodel;
     private HGraph? _thegraph;
-    private readonly NCollection_DataMap<string, Transient?> _thectx = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Transient?> _thectx = new(StringComparer.Ordinal);
     private readonly NCollection_HSequence<Transient> _thetrroots;
 }

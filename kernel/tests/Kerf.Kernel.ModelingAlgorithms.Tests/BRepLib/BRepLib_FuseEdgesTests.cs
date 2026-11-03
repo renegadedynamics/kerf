@@ -347,16 +347,16 @@ public class BRepLib_FuseEdgesTests
     {
         Face aF = SixEdgeRectangle(out _, out _);
         var aFuse = new FuseEdges(aF);
-        var aResultEdges = new NCollection_DataMap<int, Shape>();
+        var aResultEdges = new Dictionary<int, Shape>();
         aFuse.ResultEdges(aResultEdges);
         Assert.All(aResultEdges, anItem => Assert.False(anItem.Value.TShape()!.IsFrozen));
-        var aFaces = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aFaces = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         aFuse.Faces(aFaces);
-        Assert.Equal(1, aFaces.Extent());
+        Assert.Single(aFaces);
         Assert.False(aFuse.InternalShape().TShape()!.IsFrozen);
-        var anEdges = new NCollection_DataMap<int, NCollection_List<Shape>>();
+        var anEdges = new Dictionary<int, NCollection_List<Shape>>();
         aFuse.Edges(anEdges);
-        Assert.Equal(2, anEdges.Extent());
+        Assert.Equal(2, anEdges.Count);
         Assert.True(aFuse.Shape().TShape()!.IsFrozen);
     }
 

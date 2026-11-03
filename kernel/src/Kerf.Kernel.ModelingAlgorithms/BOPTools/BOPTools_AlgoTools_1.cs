@@ -373,9 +373,9 @@ public static partial class AlgoTools
     }
 
     // Compute edge length and cache it in the map
-    private static double MapEdgeLength(in Edge edge, NCollection_DataMap<Shape, double> mapEdgeLen)
+    private static double MapEdgeLength(in Edge edge, Dictionary<Shape, double> mapEdgeLen)
     {
-        if (!mapEdgeLen.Find(edge, out double len))
+        if (!mapEdgeLen.TryGetValue(edge, out double len))
         {
             len = 0.0;
             if (!Tool.Degenerated(edge))
@@ -383,7 +383,7 @@ public static partial class AlgoTools
                 EdgeCurveAdaptor curve = new(edge);
                 len = AbscissaPoint.Length(curve);
             }
-            mapEdgeLen.Bind(edge, len);
+            mapEdgeLen[edge] = len;
         }
         return len;
     }
@@ -401,7 +401,7 @@ public static partial class AlgoTools
     }
 
     private static double IntersectCurves2d(in Vertex v, Surface s, in EdgeData eData1, in EdgeData eData2,
-                                            NCollection_DataMap<Shape, double> mapEdgeLen)
+                                            Dictionary<Shape, double> mapEdgeLen)
     {
         GInter inter = new();
         // Range of the first edge
@@ -518,7 +518,7 @@ public static partial class AlgoTools
         Exploration.MapShapesAndUniqueAncestors(f, ShapeType.Vertex, ShapeType.Edge, mve, true);
 
         // OCCT's NCollection_DataMap<TopoDS_Shape, double> hashes with std::hash and compares with operator== (orientation included)
-        NCollection_DataMap<Shape, double> mapEdgeLen = new(EqualityComparer<Shape>.Default);
+        Dictionary<Shape, double> mapEdgeLen = new(EqualityComparer<Shape>.Default);
         nbV = mve.Extent();
         for (i = 1; i <= nbV; ++i)
         {

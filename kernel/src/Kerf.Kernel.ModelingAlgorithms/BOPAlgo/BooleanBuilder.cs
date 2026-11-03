@@ -44,10 +44,10 @@ public partial class BooleanBuilder : BuilderShape
     protected DS? _ds;                                                                                           //!< Data Structure - holder of intersection information
     protected IntersectionContext? _context;                                                                              //!< Context - tool for cashing heavy algorithms such as Projectors and Classifiers
     protected int _entryPoint;                                                                                         //!< EntryPoint - controls the deletion of the PaveFiller, which could live longer than the Builder
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _images = new(ShapeHasher.Instance);  //!< Images - map of Images of the sub-shapes of arguments
-    protected NCollection_DataMap<Shape, Shape> _shapesSD = new(ShapeHasher.Instance);                  //!< ShapesSD - map of SD Shapes
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Origins - map of Origins, back map of Images
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _inParts = new(ShapeHasher.Instance); //!< InParts - map of own and acquired IN faces of the arguments solids
+    protected Dictionary<Shape, NCollection_List<Shape>> _images = new(ShapeHasher.Instance);  //!< Images - map of Images of the sub-shapes of arguments
+    protected Dictionary<Shape, Shape> _shapesSD = new(ShapeHasher.Instance);                  //!< ShapesSD - map of SD Shapes
+    protected Dictionary<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Origins - map of Origins, back map of Images
+    protected Dictionary<Shape, NCollection_List<Shape>> _inParts = new(ShapeHasher.Instance); //!< InParts - map of own and acquired IN faces of the arguments solids
     protected bool _nonDestructive;                                                                                    //!< Safe processing option allows avoiding modification of the input shapes
     protected GlueMode _glue;                                                                                  //!< Gluing option allows speeding up the intersection of the input shapes
     protected bool _checkInverted;                                                                                     //!< Check inverted option allows disabling the check of input solids on inverted status
@@ -294,7 +294,7 @@ public partial class BooleanBuilder : BuilderShape
                         {
                             continue;
                         }
-                        if (_images.Find(f, out NCollection_List<Shape> pLFIm))
+                        if (_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
                         {
                             NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
                             for (; itLFIm.More(); itLFIm.Next())
@@ -322,7 +322,7 @@ public partial class BooleanBuilder : BuilderShape
                     }
 
                     // Copy the list of IN faces into a map
-                    if (_inParts.Find(s, out NCollection_List<Shape> pLFIN))
+                    if (_inParts.TryGetValue(s, out NCollection_List<Shape>? pLFIN))
                     {
                         HashSet<Shape> inMap = i == 0 ? inObjects : inTools;
                         NCollection_List<Shape>.Iterator itLFIn = new(pLFIN);
@@ -638,13 +638,13 @@ public partial class BooleanBuilder : BuilderShape
     //! @name Images/Origins
 
     /// <summary>The map of images: the splits of the argument sub-shapes.</summary>
-    public NCollection_DataMap<Shape, NCollection_List<Shape>> Images() => _images;
+    public Dictionary<Shape, NCollection_List<Shape>> Images() => _images;
 
     /// <summary>The map of origins: the argument sub-shapes each split comes from.</summary>
-    public NCollection_DataMap<Shape, NCollection_List<Shape>> Origins() => _origins;
+    public Dictionary<Shape, NCollection_List<Shape>> Origins() => _origins;
 
     /// <summary>The map of same-domain shapes: each shape to its representative.</summary>
-    public NCollection_DataMap<Shape, Shape> ShapesSD() => _shapesSD;
+    public Dictionary<Shape, Shape> ShapesSD() => _shapesSD;
 
     //! @name Analyze progress of the operation
 

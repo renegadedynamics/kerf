@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Api;
@@ -138,7 +139,7 @@ public partial class PaveFiller
         //-----------------------------------------------------scope f
         NCollection_IndexedDataMap<PaveBlock, NCollection_List<PaveBlock>> mpblpb = new();
         NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
-        NCollection_DataMap<PaveBlock, Box> dmpbBox = new();
+        Dictionary<PaveBlock, Box> dmpbBox = new();
         //
         NCollection_DynamicArray<InterfEE> eEs = _ds!.InterfEE();
         //
@@ -861,7 +862,7 @@ public partial class PaveFiller
     /// The range, shrunk range and box of the pave block (its shrunk box, or a box of its range kept in
     /// <paramref name="pbBox"/>). False if the range is too small.
     /// </summary>
-    protected bool GetPBBox(in Edge e, PaveBlock pb, NCollection_DataMap<PaveBlock, Box> pbBox,
+    protected bool GetPBBox(in Edge e, PaveBlock pb, Dictionary<PaveBlock, Box> pbBox,
                             ref double first, ref double last, ref double sFirst, ref double sLast, ref Box box)
     {
         pb.Range(out first, out last);
@@ -882,9 +883,9 @@ public partial class PaveFiller
         sFirst = first;
         sLast = last;
         // check the map
-        if (pbBox.IsBound(pb))
+        if (pbBox.ContainsKey(pb))
         {
-            box = pbBox.Find(pb);
+            box = pbBox.GetValue(pb);
         }
         else
         {
@@ -892,7 +893,7 @@ public partial class PaveFiller
             EdgeCurveAdaptor bac = new(e);
             double tol = Tool.Tolerance(e) + global::Kerf.Engine.Foundation.Precision.Confusion();
             Add3dCurve.Add(bac, sFirst, sLast, tol, ref box);
-            pbBox.Bind(pb, box);
+            pbBox[pb] = box;
         }
         return bValid;
     }

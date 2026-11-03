@@ -7,6 +7,7 @@ using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Fillets.Data;
@@ -3556,7 +3557,7 @@ public static class OffsetTool
     /// edge once per vertex).
     /// </summary>
     public static void MapVertexEdges(in Shape s,
-                                      NCollection_DataMap<Shape, NCollection_List<Shape>> mve)
+                                      Dictionary<Shape, NCollection_List<Shape>> mve)
     {
         Explorer exp = new();
         exp.Init(s.Oriented(Forward), ShapeType.Edge);
@@ -3567,20 +3568,20 @@ public static class OffsetTool
             if (dejaVu.Add(e))
             {
                 Exploration.Vertices(e, out Vertex v1, out Vertex v2);
-                if (!mve.IsBound(v1))
+                if (!mve.ContainsKey(v1))
                 {
                     NCollection_List<Shape> empty = new();
-                    mve.Bind(v1, empty);
+                    mve[v1] = empty;
                 }
-                mve[v1].Append(e);
+                mve.GetValue(v1).Append(e);
                 if (!v1.IsSame(v2))
                 {
-                    if (!mve.IsBound(v2))
+                    if (!mve.ContainsKey(v2))
                     {
                         NCollection_List<Shape> empty = new();
-                        mve.Bind(v2, empty);
+                        mve[v2] = empty;
                     }
-                    mve[v2].Append(e);
+                    mve.GetValue(v2).Append(e);
                 }
             }
         }
@@ -3593,8 +3594,8 @@ public static class OffsetTool
     /// neighbouring edge at its first vertex, and in <paramref name="nOnV2"/> its neighbour at its last vertex.
     /// </summary>
     public static void BuildNeighbour(in Wire w, in Face f,
-                                      NCollection_DataMap<Shape, Shape> nOnV1,
-                                      NCollection_DataMap<Shape, Shape> nOnV2)
+                                      Dictionary<Shape, Shape> nOnV1,
+                                      Dictionary<Shape, Shape> nOnV2)
     {
         Vertex v1, v2, vp1, vp2, fv1, fv2;
         Edge curE, firstE, precE;
@@ -3616,23 +3617,23 @@ public static class OffsetTool
             Exploration.Vertices(curE, out v1, out v2);
             if (v1.IsSame(vp1))
             {
-                nOnV1.Bind(precE, curE);
-                nOnV1.Bind(curE, precE);
+                nOnV1[precE] = curE;
+                nOnV1[curE] = precE;
             }
             if (v1.IsSame(vp2))
             {
-                nOnV2.Bind(precE, curE);
-                nOnV1.Bind(curE, precE);
+                nOnV2[precE] = curE;
+                nOnV1[curE] = precE;
             }
             if (v2.IsSame(vp1))
             {
-                nOnV1.Bind(precE, curE);
-                nOnV2.Bind(curE, precE);
+                nOnV1[precE] = curE;
+                nOnV2[curE] = precE;
             }
             if (v2.IsSame(vp2))
             {
-                nOnV2.Bind(precE, curE);
-                nOnV2.Bind(curE, precE);
+                nOnV2[precE] = curE;
+                nOnV2[curE] = precE;
             }
             precE = curE;
             vp1 = v1;
@@ -3641,23 +3642,23 @@ public static class OffsetTool
         }
         if (v1.IsSame(fv1))
         {
-            nOnV1.Bind(firstE, curE);
-            nOnV1.Bind(curE, firstE);
+            nOnV1[firstE] = curE;
+            nOnV1[curE] = firstE;
         }
         if (v1.IsSame(fv2))
         {
-            nOnV2.Bind(firstE, curE);
-            nOnV1.Bind(curE, firstE);
+            nOnV2[firstE] = curE;
+            nOnV1[curE] = firstE;
         }
         if (v2.IsSame(fv1))
         {
-            nOnV1.Bind(firstE, curE);
-            nOnV2.Bind(curE, firstE);
+            nOnV1[firstE] = curE;
+            nOnV2[curE] = firstE;
         }
         if (v2.IsSame(fv2))
         {
-            nOnV2.Bind(firstE, curE);
-            nOnV2.Bind(curE, firstE);
+            nOnV2[firstE] = curE;
+            nOnV2[curE] = firstE;
         }
     }
 
@@ -3668,13 +3669,13 @@ public static class OffsetTool
     /// <paramref name="toBuild"/> to a face are replaced by their sections with that face, their neighbours extended;
     /// <paramref name="constShapes"/> gives the edges and vertices to keep, and receives the new ones.
     /// </summary>
-    public static void ExtentFace(in Face F, NCollection_DataMap<Shape, Shape> constShapes,
-                                  NCollection_DataMap<Shape, Shape> toBuild, Containment side,
+    public static void ExtentFace(in Face F, Dictionary<Shape, Shape> constShapes,
+                                  Dictionary<Shape, Shape> toBuild, Containment side,
                                   double tolConf, ref Face nf)
     {
         Explorer exp = new(), exp2 = new();
-        NCollection_DataMap<Shape, Shape> build = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> extent = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> build = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> extent = new(ShapeHasher.Instance);
         Edge ne = new();
         BrepBuilder b = new();
         Face ef = new();
@@ -3714,9 +3715,9 @@ public static class OffsetTool
                 Curve2D? c2 = Tool.CurveOnSurface(ce, fforward, out f, out l);
                 if (c2 is not null)
                 {
-                    if (constShapes.IsBound(ce))
+                    if (constShapes.ContainsKey(ce))
                     {
-                        ecs = ShapeCasts.Edge(constShapes[ce]);
+                        ecs = ShapeCasts.Edge(constShapes.GetValue(ce));
                         Tool.Range(ecs, out f, out l);
                     }
                     if (Tool.IsClosed(ce, fforward))
@@ -3752,9 +3753,9 @@ public static class OffsetTool
         for (exp.Init(F.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
         {
             Wire w = ShapeCasts.Wire(exp.Current());
-            NCollection_DataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance); // Vertex -> Edges incidentes.
-            NCollection_DataMap<Shape, Shape> nOnV1 = new(ShapeHasher.Instance);
-            NCollection_DataMap<Shape, Shape> nOnV2 = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance); // Vertex -> Edges incidentes.
+            Dictionary<Shape, Shape> nOnV1 = new(ShapeHasher.Instance);
+            Dictionary<Shape, Shape> nOnV2 = new(ShapeHasher.Instance);
 
             MapVertexEdges(w, mve);
             BuildNeighbour(w, F, nOnV1, nOnV2);
@@ -3767,17 +3768,17 @@ public static class OffsetTool
             for (exp2.Init(w.Oriented(Forward), ShapeType.Edge); exp2.More(); exp2.Next())
             {
                 Edge e = ShapeCasts.Edge(exp2.Current());
-                if (constShapes.IsBound(e))
+                if (constShapes.ContainsKey(e))
                 {
-                    toBuild.UnBind(e);
+                    toBuild.Remove(e);
                 }
-                if (toBuild.IsBound(e))
+                if (toBuild.ContainsKey(e))
                 {
                     NCollection_List<Shape> loe = new();
                     loe.Append(e);
-                    if (TryProject(ShapeCasts.Face(toBuild[e]), ef, loe, lInt2, lInt1, side, tolConf) && !lInt1.IsEmpty())
+                    if (TryProject(ShapeCasts.Face(toBuild.GetValue(e)), ef, loe, lInt2, lInt1, side, tolConf) && !lInt1.IsEmpty())
                     {
-                        toBuild.UnBind(e);
+                        toBuild.Remove(e);
                     }
                 }
             }
@@ -3785,13 +3786,13 @@ public static class OffsetTool
             for (exp2.Init(w.Oriented(Forward), ShapeType.Edge); exp2.More(); exp2.Next())
             {
                 Edge e = ShapeCasts.Edge(exp2.Current());
-                if (constShapes.IsBound(e))
+                if (constShapes.ContainsKey(e))
                 {
-                    toBuild.UnBind(e);
+                    toBuild.Remove(e);
                 }
-                if (toBuild.IsBound(e))
+                if (toBuild.ContainsKey(e))
                 {
-                    EnLargeFace(ShapeCasts.Face(toBuild[e]), ref stopFace, false);
+                    EnLargeFace(ShapeCasts.Face(toBuild.GetValue(e)), ref stopFace, false);
                     Face nullFace = new();
                     Inter3D(ef, stopFace, lInt1, lInt2, side, e, nullFace, nullFace);
                     // No intersection, it may happen for example for a chosen (non-offsetted) planar face and
@@ -3811,23 +3812,23 @@ public static class OffsetTool
                     te.Tolerance(te.Tolerance() * 10.0); //????
                     if (ne.Orientation() == e.Orientation())
                     {
-                        build.Bind(e, ne.Oriented(Forward));
+                        build[e] = ne.Oriented(Forward);
                     }
                     else
                     {
-                        build.Bind(e, ne.Oriented(Reversed));
+                        build[e] = ne.Oriented(Reversed);
                     }
-                    Edge eOnV1 = ShapeCasts.Edge(nOnV1[e]);
-                    if (!toBuild.IsBound(eOnV1) && !constShapes.IsBound(eOnV1) && !build.IsBound(eOnV1))
+                    Edge eOnV1 = ShapeCasts.Edge(nOnV1.GetValue(e));
+                    if (!toBuild.ContainsKey(eOnV1) && !constShapes.ContainsKey(eOnV1) && !build.ContainsKey(eOnV1))
                     {
                         ExtentEdge(F, ef, eOnV1, out ne);
-                        build.Bind(eOnV1, ne.Oriented(Forward));
+                        build[eOnV1] = ne.Oriented(Forward);
                     }
-                    Edge eOnV2 = ShapeCasts.Edge(nOnV2[e]);
-                    if (!toBuild.IsBound(eOnV2) && !constShapes.IsBound(eOnV2) && !build.IsBound(eOnV2))
+                    Edge eOnV2 = ShapeCasts.Edge(nOnV2.GetValue(e));
+                    if (!toBuild.ContainsKey(eOnV2) && !constShapes.ContainsKey(eOnV2) && !build.ContainsKey(eOnV2))
                     {
                         ExtentEdge(F, ef, eOnV2, out ne);
-                        build.Bind(eOnV2, ne.Oriented(Forward));
+                        build[eOnV2] = ne.Oriented(Forward);
                     }
                 }
             }
@@ -3845,28 +3846,28 @@ public static class OffsetTool
                 Exploration.Vertices(e, out v1, out v2);
                 Tool.Range(e, out f, out l);
                 Vertex v = new();
-                if (build.IsBound(e))
+                if (build.ContainsKey(e))
                 {
-                    Edge neOnV1 = ShapeCasts.Edge(nOnV1[e]);
-                    if (build.IsBound(neOnV1) && (toBuild.IsBound(e) || toBuild.IsBound(neOnV1)))
+                    Edge neOnV1 = ShapeCasts.Edge(nOnV1.GetValue(e));
+                    if (build.ContainsKey(neOnV1) && (toBuild.ContainsKey(e) || toBuild.ContainsKey(neOnV1)))
                     {
                         if (e.IsSame(neOnV1))
                         {
-                            v = Exploration.FirstVertex(ShapeCasts.Edge(build[e]));
+                            v = Exploration.FirstVertex(ShapeCasts.Edge(build.GetValue(e)));
                         }
                         else
                         {
                             //---------------
                             // intersection.
                             //---------------
-                            if (!build.IsBound(v1))
+                            if (!build.ContainsKey(v1))
                             {
-                                Inter2d(ef, ShapeCasts.Edge(build[e]), ShapeCasts.Edge(build[neOnV1]), lv,
+                                Inter2d(ef, ShapeCasts.Edge(build.GetValue(e)), ShapeCasts.Edge(build.GetValue(neOnV1)), lv,
                                         /*TolConf*/ global::Kerf.Engine.Foundation.Precision.Confusion());
 
                                 if (!lv.IsEmpty())
                                 {
-                                    if (build[e].Orientation() == Forward)
+                                    if (build.GetValue(e).Orientation() == Forward)
                                     {
                                         v = ShapeCasts.Vertex(lv.First());
                                     }
@@ -3882,16 +3883,16 @@ public static class OffsetTool
                             }
                             else
                             {
-                                v = ShapeCasts.Vertex(build[v1]);
-                                if (mve[v1].Extent() > 2)
+                                v = ShapeCasts.Vertex(build.GetValue(v1));
+                                if (mve.GetValue(v1).Extent() > 2)
                                 {
                                     v.Orientation(Forward);
-                                    if (build[e].Orientation() == Reversed)
+                                    if (build.GetValue(e).Orientation() == Reversed)
                                     {
                                         v.Orientation(Reversed);
                                     }
 
-                                    ProjectVertexOnEdge(v, ShapeCasts.Edge(build[e]), tolConf);
+                                    ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
                                 }
                             }
                         }
@@ -3902,29 +3903,29 @@ public static class OffsetTool
                         // projection
                         //------------
                         v = v1;
-                        if (constShapes.IsBound(v1))
+                        if (constShapes.ContainsKey(v1))
                         {
-                            v = ShapeCasts.Vertex(constShapes[v1]);
+                            v = ShapeCasts.Vertex(constShapes.GetValue(v1));
                         }
                         v.Orientation(Forward);
-                        if (build[e].Orientation() == Reversed)
+                        if (build.GetValue(e).Orientation() == Reversed)
                         {
                             v.Orientation(Reversed);
                         }
-                        if (!TryParameter(e, v, ShapeCasts.Edge(build[e]), tolConf))
+                        if (!TryParameter(e, v, ShapeCasts.Edge(build.GetValue(e)), tolConf))
                         {
-                            ProjectVertexOnEdge(v, ShapeCasts.Edge(build[e]), tolConf);
+                            ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
                         }
                     }
 
-                    constShapes.Bind(v1, v);
-                    build.Bind(v1, v);
-                    Edge neOnV2 = ShapeCasts.Edge(nOnV2[e]);
-                    if (build.IsBound(neOnV2) && (toBuild.IsBound(e) || toBuild.IsBound(neOnV2)))
+                    constShapes[v1] = v;
+                    build[v1] = v;
+                    Edge neOnV2 = ShapeCasts.Edge(nOnV2.GetValue(e));
+                    if (build.ContainsKey(neOnV2) && (toBuild.ContainsKey(e) || toBuild.ContainsKey(neOnV2)))
                     {
                         if (e.IsSame(neOnV2))
                         {
-                            v = Exploration.LastVertex(ShapeCasts.Edge(build[e]));
+                            v = Exploration.LastVertex(ShapeCasts.Edge(build.GetValue(e)));
                         }
                         else
                         {
@@ -3932,14 +3933,14 @@ public static class OffsetTool
                             // intersection.
                             //---------------
 
-                            if (!build.IsBound(v2))
+                            if (!build.ContainsKey(v2))
                             {
-                                Inter2d(ef, ShapeCasts.Edge(build[e]), ShapeCasts.Edge(build[neOnV2]), lv,
+                                Inter2d(ef, ShapeCasts.Edge(build.GetValue(e)), ShapeCasts.Edge(build.GetValue(neOnV2)), lv,
                                         /*TolConf*/ global::Kerf.Engine.Foundation.Precision.Confusion());
 
                                 if (!lv.IsEmpty())
                                 {
-                                    if (build[e].Orientation() == Forward)
+                                    if (build.GetValue(e).Orientation() == Forward)
                                     {
                                         v = ShapeCasts.Vertex(lv.Last());
                                     }
@@ -3955,16 +3956,16 @@ public static class OffsetTool
                             }
                             else
                             {
-                                v = ShapeCasts.Vertex(build[v2]);
-                                if (mve[v2].Extent() > 2)
+                                v = ShapeCasts.Vertex(build.GetValue(v2));
+                                if (mve.GetValue(v2).Extent() > 2)
                                 {
                                     v.Orientation(Reversed);
-                                    if (build[e].Orientation() == Reversed)
+                                    if (build.GetValue(e).Orientation() == Reversed)
                                     {
                                         v.Orientation(Forward);
                                     }
 
-                                    ProjectVertexOnEdge(v, ShapeCasts.Edge(build[e]), tolConf);
+                                    ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
                                 }
                             }
                         }
@@ -3975,22 +3976,22 @@ public static class OffsetTool
                         // projection
                         //------------
                         v = v2;
-                        if (constShapes.IsBound(v2))
+                        if (constShapes.ContainsKey(v2))
                         {
-                            v = ShapeCasts.Vertex(constShapes[v2]);
+                            v = ShapeCasts.Vertex(constShapes.GetValue(v2));
                         }
                         v.Orientation(Reversed);
-                        if (build[e].Orientation() == Reversed)
+                        if (build.GetValue(e).Orientation() == Reversed)
                         {
                             v.Orientation(Forward);
                         }
-                        if (!TryParameter(e, v, ShapeCasts.Edge(build[e]), tolConf))
+                        if (!TryParameter(e, v, ShapeCasts.Edge(build.GetValue(e)), tolConf))
                         {
-                            ProjectVertexOnEdge(v, ShapeCasts.Edge(build[e]), tolConf);
+                            ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
                         }
                     }
-                    constShapes.Bind(v2, v);
-                    build.Bind(v2, v);
+                    constShapes[v2] = v;
+                    build[v2] = v;
                 }
             }
 
@@ -4010,16 +4011,16 @@ public static class OffsetTool
             {
                 Edge e = ShapeCasts.Edge(exp2.Current());
                 Exploration.Vertices(e, out v1, out v2);
-                if (build.IsBound(e))
+                if (build.ContainsKey(e))
                 {
-                    ne = ShapeCasts.Edge(build[e]);
+                    ne = ShapeCasts.Edge(build.GetValue(e));
                     Tool.Range(ne, out f, out l);
                     or = ne.Orientation();
                     //-----------------------------------------------------
                     // Copy pour virer les vertex deja sur la nouvelle edge.
                     //-----------------------------------------------------
-                    nv1 = ShapeCasts.Vertex(constShapes[v1]);
-                    nv2 = ShapeCasts.Vertex(constShapes[v2]);
+                    nv1 = ShapeCasts.Vertex(constShapes.GetValue(v1));
+                    nv2 = ShapeCasts.Vertex(constShapes.GetValue(v2));
 
                     Shape localVertexOrientedNV1 = nv1.Oriented(Internal);
                     Shape localEdge = ne.Oriented(Internal);
@@ -4072,7 +4073,7 @@ public static class OffsetTool
                             //		B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_FORWARD )));
                             //		B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_REVERSED)));
                             b.Range(ne, u1, u2);
-                            constShapes.Bind(e, ne);
+                            constShapes[e] = ne;
                             ne.Orientation(e.Orientation());
                         }
                         else
@@ -4095,7 +4096,7 @@ public static class OffsetTool
                             //		B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_FORWARD )));
                             //		B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_REVERSED)));
                             b.Range(ne, u2, u1);
-                            constShapes.Bind(e, ne.Oriented(Reversed));
+                            constShapes[e] = ne.Oriented(Reversed);
                             ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation()));
                         }
                     }
@@ -4126,7 +4127,7 @@ public static class OffsetTool
                                 //		  B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_REVERSED)));
                                 b.Range(ne, u1, u2);
                             }
-                            constShapes.Bind(e, ne);
+                            constShapes[e] = ne;
                             ne.Orientation(e.Orientation());
                         }
                         else
@@ -4140,7 +4141,7 @@ public static class OffsetTool
                                 //		B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_FORWARD )));
                                 //		B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_REVERSED)));
                                 b.Range(ne, u1, u2);
-                                constShapes.Bind(e, ne);
+                                constShapes[e] = ne;
                                 ne.Orientation(e.Orientation());
                             }
                             else
@@ -4152,16 +4153,16 @@ public static class OffsetTool
                                 //		  B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_FORWARD )));
                                 //		  B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_REVERSED)));
                                 b.Range(ne, u2, u1);
-                                constShapes.Bind(e, ne.Oriented(Reversed));
+                                constShapes[e] = ne.Oriented(Reversed);
                                 ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation()));
                             }
                         }
                     }
-                    build.UnBind(e);
+                    build.Remove(e);
                 } // Build.IsBound(E)
-                else if (constShapes.IsBound(e))
+                else if (constShapes.ContainsKey(e))
                 { // !Build.IsBound(E)
-                    ne = ShapeCasts.Edge(constShapes[e]);
+                    ne = ShapeCasts.Edge(constShapes.GetValue(e));
                     BuildPCurves(ne, nf);
                     or = ne.Orientation();
                     if (or == Reversed)
@@ -4176,7 +4177,7 @@ public static class OffsetTool
                 else
                 {
                     ne = e;
-                    constShapes.Bind(e, ne.Oriented(Forward));
+                    constShapes[e] = ne.Oriented(Forward);
                 }
                 b.Add(nw, ne);
             }

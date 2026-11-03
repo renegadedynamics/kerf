@@ -601,8 +601,8 @@ public class ActorWrite : ActorOfFinderProcess
                                        in Shape aShVrtx, int num, in Factors localFactors)
     {
         bool isDone = false;
-        NCollection_DataMap<Shape, Transient> map =
-            new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        Dictionary<Shape, Transient> map =
+            new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         StepModel stepModel = fp.Model() as StepModel;
         ExportTool tool = new ExportTool(map, true, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         MakeStepVertex mkVrtx = new MakeStepVertex(ShapeCasts.Vertex(aShVrtx), tool, fp, localFactors);
@@ -977,7 +977,7 @@ public class ActorWrite : ActorOfFinderProcess
 
             Shape shape = xShape;
 
-            NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+            Dictionary<string, string> parameters = GetShapeFixParameters();
             ShapeProcessor.SetParameter("FixShape.Tolerance3d", tol, true, parameters);
             ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", stepModel.InternalParameters.ReadMaxPrecisionVal, true,
                                                parameters);

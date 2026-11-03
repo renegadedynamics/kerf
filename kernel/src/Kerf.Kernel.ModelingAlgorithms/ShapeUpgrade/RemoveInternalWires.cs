@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
@@ -36,7 +37,7 @@ public class RemoveInternalWires : UpgradeTool
     private bool _removeFacesMode;
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _edgeFaces =
         new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _removeEdges =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _removeEdges =
         new(ShapeHasher.Instance);
     private readonly NCollection_Sequence<Shape> _removedFaces = new();
     private readonly NCollection_Sequence<Shape> _removeWires = new();
@@ -216,15 +217,15 @@ public class RemoveInternalWires : UpgradeTool
                 for (; ite.More(); ite.Next())
                 {
                     Shape e = ite.Value();
-                    if (_removeEdges.IsBound(e))
+                    if (_removeEdges.ContainsKey(e))
                     {
-                        _removeEdges.ChangeFind(e).Append(f);
+                        _removeEdges.GetValue(e).Append(f);
                     }
                     else
                     {
                         var alfaces = new NCollection_List<Shape>();
                         alfaces.Append(f);
-                        _removeEdges.Bind(e, alfaces);
+                        _removeEdges[e] = alfaces;
                     }
                 }
             }
@@ -250,7 +251,7 @@ public class RemoveInternalWires : UpgradeTool
                     continue;
                 }
                 NCollection_List<Shape> lface1 = _edgeFaces.FindFromKey(edge);
-                NCollection_List<Shape> lface2 = _removeEdges.Find(edge);
+                NCollection_List<Shape> lface2 = _removeEdges.GetValue(edge);
                 // OCCT's second iterator is not reset for each face of the first list
                 var aliter2 = new NCollection_List<Shape>.Iterator(lface2);
                 foreach (Shape face1 in lface1)
@@ -304,7 +305,7 @@ public class RemoveInternalWires : UpgradeTool
                         continue;
                     }
                     Edge e = asewd.Edge(n);
-                    if (!_removeEdges.IsBound(e))
+                    if (!_removeEdges.ContainsKey(e))
                     {
                         NCollection_List<Shape> lface3 = _edgeFaces.FindFromKey(e);
                         foreach (Shape face3 in lface3)

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Extend;
@@ -421,15 +422,15 @@ public class ShapeAnalysis_WireTests
         var aSAW = new WireAnalysis(WireData(Edge(aO, aA), Edge(aA, aB), Edge(aB, aO), Edge(aO, aC), Edge(aC, aD), Edge(aD, aO)),
                                           PlaneFace(), Prec);
         var aLoops = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aVE = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aVE = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var aSmall = new HashSet<Shape>(ShapeHasher.Instance);
         var aSeams = new HashSet<Shape>(ShapeHasher.Instance);
         Assert.True(aSAW.CheckLoop(aLoops, aVE, aSmall, aSeams));
         Assert.True(aSAW.StatusLoop(ExtendStatus.DONE1));
         Assert.Equal(1, aLoops.Extent());
         Assert.True(aLoops.FindKey(1).IsSame(aO));
-        Assert.Equal(5, aVE.Extent());
-        Assert.Equal(4, aVE.Find(aO).Extent());
+        Assert.Equal(5, aVE.Count);
+        Assert.Equal(4, aVE.GetValue(aO).Extent());
         Assert.Equal(Prec, aSAW.Precision());
     }
 

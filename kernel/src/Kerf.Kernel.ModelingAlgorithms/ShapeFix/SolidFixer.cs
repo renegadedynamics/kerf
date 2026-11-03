@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -85,15 +86,15 @@ public class SolidFixer : RootFixer
 
     private static void CollectSolids(NCollection_Sequence<Shape> aSeqShells,
                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anIndexedMapShellHoles,
-                                      NCollection_DataMap<Shape, int> mapStatus)
+                                      Dictionary<Shape, int> mapStatus)
     {
         var mapHoles      = new HashSet<Shape>(ShapeHasher.Instance);
-        var mapShellHoles = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapShellHoles = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int i1 = 1; i1 <= aSeqShells.Length(); i1++)
         {
             Shell shell1 = ShapeCasts.Shell(aSeqShells.Value(i1));
             var          lshells = new NCollection_List<Shape>();
-            mapShellHoles.Bind(shell1, lshells);
+            mapShellHoles[shell1] = lshells;
         }
         // Finds roots shells and hole shells.
         for (int i = 1; i <= aSeqShells.Length(); i++)
@@ -113,7 +114,7 @@ public class SolidFixer : RootFixer
                 Containment infinstatus = Unknown;
                 var          bsc3d       = new SolidClassifier(solid);
                 int          st          = 0;
-                if (!mapStatus.IsBound(shell1))
+                if (!mapStatus.ContainsKey(shell1))
                 {
                     bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
                     infinstatus = bsc3d.State();
@@ -121,14 +122,14 @@ public class SolidFixer : RootFixer
                     {
                         st = (infinstatus == In ? 1 : 2);
                     }
-                    mapStatus.Bind(shell1, st);
+                    mapStatus[shell1] = st;
                 }
                 else
                 {
-                    st = mapStatus.Find(shell1);
+                    st = mapStatus.GetValue(shell1);
                     if (st != 0)
                     {
-                        infinstatus = (mapStatus.Find(shell1) == 1 ? In : Out);
+                        infinstatus = (mapStatus.GetValue(shell1) == 1 ? In : Out);
                     }
                 }
                 if (st == 0)
@@ -150,10 +151,10 @@ public class SolidFixer : RootFixer
                     {
                         continue;
                     }
-                    if (mapShellHoles.IsBound(shell2))
+                    if (mapShellHoles.ContainsKey(shell2))
                     {
                         bool                           isAnalysis = false;
-                        NCollection_List<Shape> ls         = mapShellHoles.Find(shell2);
+                        NCollection_List<Shape> ls         = mapShellHoles.GetValue(shell2);
                         for (var li = new NCollection_List<Shape>.Iterator(ls); li.More() && !isAnalysis; li.Next())
                         {
                             isAnalysis = li.Value().IsSame(shell1);
@@ -190,7 +191,7 @@ public class SolidFixer : RootFixer
                     }
                     if (pointstatus != infinstatus)
                     {
-                        mapShellHoles.ChangeFind(shell1).Append(shell2);
+                        mapShellHoles.GetValue(shell1).Append(shell2);
                         if (mapHoles.Contains(shell2))
                         {
                             mapHoles.Remove(shell2);
@@ -222,7 +223,7 @@ public class SolidFixer : RootFixer
             {
                 if (mapHoles.Contains(lItHoles.Value()))
                 {
-                    NCollection_List<Shape> lUnHoles = mapShellHoles.Find(lItHoles.Value());
+                    NCollection_List<Shape> lUnHoles = mapShellHoles.GetValue(lItHoles.Value());
                     for (var lItUnHoles = new NCollection_List<Shape>.Iterator(lUnHoles); lItUnHoles.More(); lItUnHoles.Next())
                     {
                         mapHoles.Remove(lItUnHoles.Value());
@@ -232,14 +233,14 @@ public class SolidFixer : RootFixer
         }
         foreach (Shape hole in mapHoles)
         {
-            mapShellHoles.UnBind(hole);
+            mapShellHoles.Remove(hole);
         }
         for (int i = 1; i <= aSeqShells.Length(); ++i)
         {
             Shape shell1 = aSeqShells.Value(i);
-            if (mapShellHoles.IsBound(shell1))
+            if (mapShellHoles.ContainsKey(shell1))
             {
-                NCollection_List<Shape> ls = mapShellHoles.Find(shell1);
+                NCollection_List<Shape> ls = mapShellHoles.GetValue(shell1);
                 anIndexedMapShellHoles.Add(shell1, ls);
             }
         }
@@ -256,7 +257,7 @@ public class SolidFixer : RootFixer
             seqShells.Append(expShell.Current());
         }
         var mapShellHoles = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var mapStatus     = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        var mapStatus     = new Dictionary<Shape, int>(ShapeHasher.Instance);
         CollectSolids(seqShells, mapShellHoles, mapStatus);
         var shellSolid = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
         // Defines correct orientation of shells
@@ -275,12 +276,12 @@ public class SolidFixer : RootFixer
             var          aSolid      = new Solid();
             B.MakeSolid(ref aSolid);
             B.Add(aSolid, shell);
-            if (mapStatus.IsBound(shell))
+            if (mapStatus.ContainsKey(shell))
             {
-                int st = mapStatus.Find(shell);
+                int st = mapStatus.GetValue(shell);
                 if (st != 0)
                 {
-                    infinstatus = (mapStatus.Find(shell) == 1 ? In : Out);
+                    infinstatus = (mapStatus.GetValue(shell) == 1 ? In : Out);
                 }
             }
             else
@@ -310,9 +311,9 @@ public class SolidFixer : RootFixer
             for (var lItHoles = new NCollection_List<Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
             {
                 Shell shellHole = ShapeCasts.Shell(lItHoles.Value());
-                if (mapStatus.IsBound(shellHole))
+                if (mapStatus.ContainsKey(shellHole))
                 {
-                    infinstatus = (mapStatus.Find(shellHole) == 1 ? In : Out);
+                    infinstatus = (mapStatus.GetValue(shellHole) == 1 ? In : Out);
                 }
                 else
                 {

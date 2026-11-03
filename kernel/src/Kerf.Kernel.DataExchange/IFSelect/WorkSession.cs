@@ -223,11 +223,11 @@ public class WorkSession : Transient
         _thegtool.SetSignType(signtype);
         if (signtype is null)
         {
-            _thenames.UnBind("xst-sign-type");
+            _thenames.Remove("xst-sign-type");
         }
         else
         {
-            _thenames.Bind("xst-sign-type", signtype);
+            _thenames["xst-sign-type"] = signtype;
         }
     }
 
@@ -966,7 +966,7 @@ public class WorkSession : Transient
             int id = Atoi(name.Substring(1));
             return Item(id);
         }
-        if (!_thenames.Find(name, out res))
+        if (!_thenames.TryGetValue(name, out res))
         {
             res = null;
         }
@@ -1001,7 +1001,7 @@ public class WorkSession : Transient
             int id = Atoi(name.Substring(1));
             return id;
         }
-        if (!_thenames.Find(name, out Transient res))
+        if (!_thenames.TryGetValue(name, out Transient res))
         {
             return 0;
         }
@@ -1103,7 +1103,7 @@ public class WorkSession : Transient
         //   name already taken : we overwrite the old value
         if (CStringChar(name, 0) != '\0')
         {
-            _thenames.Bind(name, item);
+            _thenames[name] = item;
         }
 
         int id = _theitems.FindIndex(item);
@@ -1205,7 +1205,7 @@ public class WorkSession : Transient
             return false;
         }
         _theitems.Add(item, item); // remains but without name
-        return _thenames.UnBind(name);
+        return _thenames.Remove(name);
     }
 
     /// <summary>
@@ -1235,7 +1235,7 @@ public class WorkSession : Transient
         //  Mark "Removed" in the Map (we cannot empty it)
         if (att.IsKind(typeof(TCollection_HAsciiString)))
         {
-            if (!_thenames.UnBind((att as TCollection_HAsciiString).ToCString()))
+            if (!_thenames.Remove((att as TCollection_HAsciiString).ToCString()))
             {
                 return false;
             }
@@ -3964,7 +3964,7 @@ public class WorkSession : Transient
     protected HGraph? _thegraph;
     protected CheckIterator _thecheckrun = new CheckIterator();
     protected NCollection_IndexedDataMap<Transient, Transient> _theitems = new NCollection_IndexedDataMap<Transient, Transient>();
-    protected NCollection_DataMap<string, Transient> _thenames = new NCollection_DataMap<string, Transient>();
+    protected Dictionary<string, Transient> _thenames = new Dictionary<string, Transient>();
     private bool _theerrhand;
     private bool _errHand; // OCCT's file static "errhand", the session's own here
     private StaticSet _thestatics;

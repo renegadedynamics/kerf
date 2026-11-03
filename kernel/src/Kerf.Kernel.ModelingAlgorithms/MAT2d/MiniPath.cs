@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
@@ -19,8 +20,8 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <remarks>A working object of MAT2d_Circuit. The maps are keyed by line index and only looked up.</remarks>
 public sealed class MiniPath
 {
-    private readonly NCollection_DataMap<int, NCollection_Sequence<Connexion>> _connexions = new();
-    private readonly NCollection_DataMap<int, Connexion> _father = new();
+    private readonly Dictionary<int, NCollection_Sequence<Connexion>> _connexions = new();
+    private readonly Dictionary<int, Connexion> _father = new();
     private readonly NCollection_Sequence<Connexion> _path = new();
     private double _direction;
     private int _indStart;
@@ -108,16 +109,16 @@ public sealed class MiniPath
     {
         Connexion cc;
 
-        if (!_connexions.IsBound(c.IndexFirstLine()))
+        if (!_connexions.ContainsKey(c.IndexFirstLine()))
         {
             NCollection_Sequence<Connexion> seq0 = new();
-            _connexions.Bind(c.IndexFirstLine(), seq0);
-            _connexions[c.IndexFirstLine()].Append(c);
-            _father.Bind(c.IndexSecondLine(), c);
+            _connexions[c.IndexFirstLine()] = seq0;
+            _connexions.GetValue(c.IndexFirstLine()).Append(c);
+            _father[c.IndexSecondLine()] = c;
             return;
         }
 
-        NCollection_Sequence<Connexion> seq = _connexions[c.IndexFirstLine()];
+        NCollection_Sequence<Connexion> seq = _connexions.GetValue(c.IndexFirstLine());
         int indexAfter = 0;
         int nbConnexions = seq.Length();
 
@@ -139,30 +140,30 @@ public sealed class MiniPath
         {
             seq.InsertBefore(indexAfter, c);
         }
-        _father.Bind(c.IndexSecondLine(), c);
+        _father[c.IndexSecondLine()] = c;
     }
 
     /// <summary>The sequence of connexions of the path.</summary>
     public NCollection_Sequence<Connexion> Path() => _path;
 
     /// <summary>True if a connexion starts on the line Index.</summary>
-    public bool IsConnexionsFrom(int i) => _connexions.IsBound(i);
+    public bool IsConnexionsFrom(int i) => _connexions.ContainsKey(i);
 
     /// <summary>The connexions starting on the line Index.</summary>
-    public NCollection_Sequence<Connexion> ConnexionsFrom(int i) => _connexions.ChangeFind(i);
+    public NCollection_Sequence<Connexion> ConnexionsFrom(int i) => _connexions.GetValue(i);
 
     /// <summary>True if the line Index is the root.</summary>
     public bool IsRoot(int iLine) => iLine == _indStart;
 
     /// <summary>The connexion ending on the line ILine.</summary>
-    public Connexion Father(int iLine) => _father.ChangeFind(iLine);
+    public Connexion Father(int iLine) => _father.GetValue(iLine);
 
     /// <summary>Builds the path: an exploration of the tree of connexions and their reverses.</summary>
     public void RunOnConnexions()
     {
         int i;
         Connexion c;
-        NCollection_Sequence<Connexion> sc = _connexions.Find(_indStart);
+        NCollection_Sequence<Connexion> sc = _connexions.GetValue(_indStart);
 
         _path.Clear();
 
@@ -180,12 +181,12 @@ public sealed class MiniPath
         int i;
         int index = cRef.IndexSecondLine();
 
-        if (!_connexions.IsBound(index))
+        if (!_connexions.ContainsKey(index))
         {
             return;
         }
 
-        NCollection_Sequence<Connexion> sc = _connexions.Find(index);
+        NCollection_Sequence<Connexion> sc = _connexions.GetValue(index);
         Connexion crr = cRef.Reverse();
         Connexion c;
 

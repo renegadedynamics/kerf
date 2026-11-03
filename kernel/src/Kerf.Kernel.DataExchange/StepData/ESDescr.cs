@@ -15,7 +15,7 @@ public class ESDescr : EDescr
 {
     private readonly string _thenom;
     private NCollection_HArray1<Transient> _thedescr;
-    private readonly NCollection_DataMap<string, int> _thenames = new();
+    private readonly Dictionary<string, int> _thenames = new();
     private ESDescr _thebase;
     private ESDescr _thesuper;
 
@@ -50,7 +50,7 @@ public class ESDescr : EDescr
             PDescr pde = _thedescr.Value(i) as PDescr;
             if (pde is not null)
             {
-                _thenames.Bind(pde.Name(), i); // Rebuild name-to-index mapping
+                _thenames[pde.Name()] = i; // Rebuild name-to-index mapping
             }
             li.SetValue(i, pde);
         }
@@ -69,7 +69,7 @@ public class ESDescr : EDescr
         pde.SetFrom(descr); // Copy descriptor properties
         pde.SetName(name);  // Set field name
         _thedescr.SetValue(num, pde);
-        _thenames.Bind(name, num); // Update name-to-index mapping
+        _thenames[name] = num; // Update name-to-index mapping
     }
 
     /// <summary>Sets an ESDescr as based on another one, hence it gets its fields (but they are not copied).</summary>
@@ -163,7 +163,7 @@ public class ESDescr : EDescr
     /// <summary>Returns the rank of a field from its name. 0 if unknown.</summary>
     public int Rank(string name)
     {
-        if (!_thenames.Find(name, out int rank))
+        if (!_thenames.TryGetValue(name, out int rank))
         {
             return 0;
         }

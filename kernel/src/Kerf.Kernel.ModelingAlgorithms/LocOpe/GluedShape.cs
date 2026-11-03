@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -18,7 +19,7 @@ public sealed class GluedShape : GeneratedShape
     private Shape _shape = new();
     // OCCT iterates this map keyed by the faces' addresses; the port in the order the faces were glued
     private readonly NCollection_IndexedMap<Shape> _map = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Shape> _gShape = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _gShape = new(ShapeHasher.Instance);
 
     public GluedShape()
     {
@@ -57,7 +58,7 @@ public sealed class GluedShape : GeneratedShape
 
     private void MapEdgeAndVertices()
     {
-        if (!_gShape.IsEmpty())
+        if (_gShape.Count != 0)
         {
             return;
         }
@@ -98,7 +99,7 @@ public sealed class GluedShape : GeneratedShape
                 {
                     //	myGEdges.Append(edg);
                     _gEdges.Append(edg.Reversed());
-                    _gShape.Bind(edg, itl.Value()); // voir orientation,
+                    _gShape[edg] = itl.Value(); // voir orientation,
                                                      // mais devrait etre bon
                 }
 
@@ -112,11 +113,11 @@ public sealed class GluedShape : GeneratedShape
             for (exp.Init(edg, ShapeType.Vertex); exp.More(); exp.Next())
             {
                 Vertex vtx = ShapeCasts.Vertex(exp.Current());
-                if (_gShape.IsBound(vtx))
+                if (_gShape.ContainsKey(vtx))
                 {
                     continue;
                 }
-                for (exp2.Init(_gShape[edg], ShapeType.Edge); exp2.More(); exp2.Next())
+                for (exp2.Init(_gShape.GetValue(edg), ShapeType.Edge); exp2.More(); exp2.Next())
                 {
                     if (exp2.Current().IsSame(edg))
                     {
@@ -126,13 +127,13 @@ public sealed class GluedShape : GeneratedShape
                     {
                         if (exp3.Current().IsSame(vtx))
                         {
-                            if (_gShape.IsBound(exp2.Current()))
+                            if (_gShape.ContainsKey(exp2.Current()))
                             {
-                                _gShape.Bind(vtx, new Edge());
+                                _gShape[vtx] = new Edge();
                             }
                             else
                             {
-                                _gShape.Bind(vtx, exp2.Current());
+                                _gShape[vtx] = exp2.Current();
                             }
                             break;
                         }
@@ -158,7 +159,7 @@ public sealed class GluedShape : GeneratedShape
 
     public override NCollection_List<Shape> GeneratingEdges()
     {
-        if (_gShape.IsEmpty())
+        if (_gShape.Count == 0)
         {
             MapEdgeAndVertices();
         }
@@ -167,25 +168,25 @@ public sealed class GluedShape : GeneratedShape
 
     public override Edge Generated(in Vertex v)
     {
-        if (_gShape.IsEmpty())
+        if (_gShape.Count == 0)
         {
             MapEdgeAndVertices();
         }
-        return ShapeCasts.Edge(_gShape[v]);
+        return ShapeCasts.Edge(_gShape.GetValue(v));
     }
 
     public override Face Generated(in Edge e)
     {
-        if (_gShape.IsEmpty())
+        if (_gShape.Count == 0)
         {
             MapEdgeAndVertices();
         }
-        return ShapeCasts.Face(_gShape[e]);
+        return ShapeCasts.Face(_gShape.GetValue(e));
     }
 
     public override NCollection_List<Shape> OrientedFaces()
     {
-        if (_gShape.IsEmpty())
+        if (_gShape.Count == 0)
         {
             MapEdgeAndVertices();
         }

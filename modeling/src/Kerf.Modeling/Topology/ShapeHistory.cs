@@ -1,4 +1,5 @@
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing;
@@ -174,15 +175,15 @@ public sealed class ShapeHistory
         var history = new History();
         var beforeToLocal = before.Location().Inverted();
         var afterToLocal = after.Location().Inverted();
-        var placed = new NCollection_DataMap<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var placed = new Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         foreach (var sub in TrackedSubshapes([after]))
-            placed.Bind(sub.Moved(afterToLocal), sub);
+            placed[sub.Moved(afterToLocal)] = sub;
         foreach (var sub in TrackedSubshapes([before]))
         {
             var key = sub.Moved(beforeToLocal);
-            if (placed.IsBound(key))
+            if (placed.ContainsKey(key))
             {
-                var moved = placed.Find(key);
+                var moved = placed.GetValue(key);
                 if (!moved.IsSame(sub))
                     history.AddModified(sub, moved);
             }
@@ -328,8 +329,8 @@ public sealed class ShapeHistory
 public sealed class ShapeTrace
 {
     private readonly HashSet<global::Kerf.Topology.Shape> _untouched = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _modifiedFrom = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _generatedFrom = new(ShapeHasher.Instance);
+    private readonly Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _modifiedFrom = new(ShapeHasher.Instance);
+    private readonly Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _generatedFrom = new(ShapeHasher.Instance);
 
     internal ShapeTrace(ShapeHistory history, IEnumerable<global::Kerf.Topology.Shape> inputs)
     {
@@ -337,9 +338,9 @@ public sealed class ShapeTrace
         {
             _untouched.Add(sub);
             foreach (var shape in history.Modified(sub))
-                _modifiedFrom.Bind(shape, sub);
+                _modifiedFrom[shape] = sub;
             foreach (var shape in history.Generated(sub))
-                _generatedFrom.Bind(shape, sub);
+                _generatedFrom[shape] = sub;
         }
     }
 
@@ -347,10 +348,10 @@ public sealed class ShapeTrace
     public bool IsUntouched(global::Kerf.Topology.Shape shape) => _untouched.Contains(shape);
 
     /// <summary>Was this result sub-shape rebuilt from an input sub-shape?</summary>
-    public bool IsModified(global::Kerf.Topology.Shape shape) => _modifiedFrom.IsBound(shape);
+    public bool IsModified(global::Kerf.Topology.Shape shape) => _modifiedFrom.ContainsKey(shape);
 
     /// <summary>Was this result sub-shape made from an input sub-shape of another kind?</summary>
-    public bool IsGenerated(global::Kerf.Topology.Shape shape) => _generatedFrom.IsBound(shape);
+    public bool IsGenerated(global::Kerf.Topology.Shape shape) => _generatedFrom.ContainsKey(shape);
 
     /// <summary>Did this result sub-shape come from the inputs in any way?</summary>
     public bool IsDescendant(global::Kerf.Topology.Shape shape) => IsUntouched(shape) || IsModified(shape) || IsGenerated(shape);

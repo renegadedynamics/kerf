@@ -30,7 +30,7 @@ public sealed class MakeFacetedBrep : ExportRoot
         if (aShell.Closed())
         {
             StepTopologicalRepresentationItem item;
-            var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+            var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
 
             StepModel stepModel = fp.Model() as StepModel;
             int writeTessGeom = (int)stepModel.InternalParameters.WriteTessellated;
@@ -91,7 +91,7 @@ public sealed class MakeFacetedBrep : ExportRoot
             if (outerShell.Closed())
             {
                 StepTopologicalRepresentationItem item;
-                var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+                var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
 
                 StepModel stepModel = fp.Model() as StepModel;
                 int writeTessGeom = (int)stepModel.InternalParameters.WriteTessellated;

@@ -588,7 +588,7 @@ public class LibraryMakeWire : LibraryMakeShape
 
             CollectCoincidentVertices(l, grVL);
 
-            var o2NV = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            var o2NV = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
 
             CreateNewVertices(grVL, o2NV);
 
@@ -741,7 +741,7 @@ public class LibraryMakeWire : LibraryMakeShape
         }
 
         // aV2CV : vertex <-> its coincident vertices. OCCT's maps here use std::hash and operator== (IsEqual).
-        var v2CV = new NCollection_DataMap<Vertex, HashSet<Vertex>>(EqualityComparer<Vertex>.Default);
+        var v2CV = new Dictionary<Vertex, HashSet<Vertex>>(EqualityComparer<Vertex>.Default);
         var tree = new SpatialTree<int, Box>();
         var treeFiller = new SpatialTreeFiller<int, Box>(tree);
         var nonGroupedV = new HashSet<Vertex>(EqualityComparer<Vertex>.Default);
@@ -772,20 +772,20 @@ public class LibraryMakeWire : LibraryMakeShape
             if (nbColl > 0)
             {
                 NCollection_List<int> resInds = selector.GetResultInds();
-                HashSet<Vertex> vm = v2CV.Bound(v, new HashSet<Vertex>(EqualityComparer<Vertex>.Default));
+                HashSet<Vertex> vm = v2CV.SetValueRef(v, new HashSet<Vertex>(EqualityComparer<Vertex>.Default));
                 for (itI.Initialize(resInds); itI.More(); itI.Next())
                 {
                     Vertex cv = ShapeCasts.Vertex(allV[itI.Value()]);
                     vm.Add(cv);
                     if (_vertices.Contains(cv))
                     {
-                        if (v2CV.IsBound(cv))
+                        if (v2CV.ContainsKey(cv))
                         {
-                            v2CV[cv].Add(v);
+                            v2CV.GetValue(cv).Add(v);
                         }
                         else
                         {
-                            v2CV.Bound(cv, new HashSet<Vertex>(EqualityComparer<Vertex>.Default)).Add(v);
+                            v2CV.SetValueRef(cv, new HashSet<Vertex>(EqualityComparer<Vertex>.Default)).Add(v);
                             nonGroupedV.Add(cv);
                         }
                     }
@@ -828,7 +828,7 @@ public class LibraryMakeWire : LibraryMakeShape
             {
                 Vertex sv = itLV.Value();
                 oneGrV.Append(sv);
-                foreach (Vertex cv in v2CV[sv])
+                foreach (Vertex cv in v2CV.GetValue(sv))
                 {
                     if (nonGroupedV.Contains(cv))
                     {
@@ -850,7 +850,7 @@ public class LibraryMakeWire : LibraryMakeShape
     }
 
     private void CreateNewVertices(NCollection_List<NCollection_List<Vertex>> grVL,
-                                   NCollection_DataMap<Shape, Shape> o2NV)
+                                   Dictionary<Shape, Shape> o2NV)
     {
         // map [old vertex => new vertex]
         // note that already existing shape (i.e. the original ones)
@@ -896,13 +896,13 @@ public class LibraryMakeWire : LibraryMakeShape
             for (; itLV.More(); itLV.Next())
             {
                 Vertex vv = itLV.Value();
-                o2NV.Bind(vv, newV);
+                o2NV[vv] = newV;
             }
         }
     }
 
     private static void CreateNewListOfEdges(NCollection_List<Shape> l,
-                                             NCollection_DataMap<Shape, Shape> o2NV,
+                                             Dictionary<Shape, Shape> o2NV,
                                              NCollection_List<Shape> newEList)
     {
         // create the new list (theNewEList) from the input list L
@@ -920,11 +920,11 @@ public class LibraryMakeWire : LibraryMakeShape
             for (; exp.More(); exp.Next())
             {
                 Vertex val = ShapeCasts.Vertex(exp.Current());
-                if (o2NV.IsBound(val))
+                if (o2NV.ContainsKey(val))
                 {
                     isNewEdge = true;
                     // append the new vertex
-                    vList.Append(ShapeCasts.Vertex(o2NV[val].Oriented(val.Orientation())));
+                    vList.Append(ShapeCasts.Vertex(o2NV.GetValue(val).Oriented(val.Orientation())));
                 }
                 else
                 {

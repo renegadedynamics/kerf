@@ -8,6 +8,7 @@
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Fillets.Data;
@@ -2115,24 +2116,24 @@ public partial class FilletBuilderBase
                             {
                                 fd.ChangeSurf(dStr.AddSurface(new DsSurface(s1, dStr.ChangeSurface(isurf).Tolerance())));
                                 // update history
-                                if (_eviMap.IsBound(edgeSpine))
+                                if (_eviMap.ContainsKey(edgeSpine))
                                 {
-                                    NCollection_List<int>.Iterator itl = new(_eviMap.ChangeFind(edgeSpine));
+                                    NCollection_List<int>.Iterator itl = new(_eviMap.GetValue(edgeSpine));
                                     for (; itl.More(); itl.Next())
                                     {
                                         if (itl.Value() == isurf)
                                         {
-                                            _eviMap.ChangeFind(edgeSpine).Remove(itl);
+                                            _eviMap.GetValue(edgeSpine).Remove(itl);
                                             break;
                                         }
                                     }
-                                    _eviMap.ChangeFind(edgeSpine).Append(fd.Surf());
+                                    _eviMap.GetValue(edgeSpine).Append(fd.Surf());
                                 }
                                 else
                                 {
                                     NCollection_List<int> indexList = new();
                                     indexList.Append(fd.Surf());
-                                    _eviMap.Bind(edgeSpine, indexList);
+                                    _eviMap[edgeSpine] = indexList;
                                 }
                                 ////////////////
                                 isurf = fd.Surf();

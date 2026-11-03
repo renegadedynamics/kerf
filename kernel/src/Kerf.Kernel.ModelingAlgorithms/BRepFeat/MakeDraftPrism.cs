@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
@@ -36,7 +37,7 @@ namespace Kerf.Engine.Features;
 public sealed class MakeDraftPrism : Form
 {
     private Face _pbase = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
     private double _angle;
     private readonly NCollection_Sequence<Curve3D> _curves = new();
     private Curve3D? _bCurve;
@@ -105,8 +106,8 @@ public sealed class MakeDraftPrism : Form
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
             NCollection_List<Shape> thelist = new();
-            _map.Bind(exp.Current(), thelist);
-            _map[exp.Current()].Append(exp.Current());
+            _map[exp.Current()] = thelist;
+            _map.GetValue(exp.Current()).Append(exp.Current());
         }
         _angle = angle;
         // OCCT_DEBUG trace left out
@@ -141,12 +142,12 @@ public sealed class MakeDraftPrism : Form
             throw new ConstructionErrorException();
         }
 
-        if (!_slface.IsBound(f))
+        if (!_slface.ContainsKey(f))
         {
             NCollection_List<Shape> thelist = new();
-            _slface.Bind(f, thelist);
+            _slface[f] = thelist;
         }
-        NCollection_List<Shape>.Iterator itl = new(_slface[f]);
+        NCollection_List<Shape>.Iterator itl = new(_slface.GetValue(f));
         for (; itl.More(); itl.Next())
         {
             if (itl.Value().IsSame(e))
@@ -156,7 +157,7 @@ public sealed class MakeDraftPrism : Form
         }
         if (!itl.More())
         {
-            _slface[f].Append(e);
+            _slface.GetValue(f).Append(e);
         }
     }
 
@@ -194,7 +195,7 @@ public sealed class MakeDraftPrism : Form
 
         GluedFacesValid();
 
-        if (!_gluedF.IsEmpty())
+        if (_gluedF.Count != 0)
         { // case gluing
             _justGluer = true;
             theDPrism.Curves(_curves);
@@ -1051,7 +1052,7 @@ public sealed class MakeDraftPrism : Form
     }
 
     private static void MajMap(in Shape b, DPrism p,
-                               NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+                               Dictionary<Shape, NCollection_List<Shape>> map,
                                ref Shape fShape, ref Shape lShape)
     {
         Explorer exp = new();
@@ -1062,10 +1063,10 @@ public sealed class MakeDraftPrism : Form
             {
                 fShape = exp.Current();
                 NCollection_List<Shape> thelist = new();
-                map.Bind(fShape, thelist);
+                map[fShape] = thelist;
                 for (exp.Init(p.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
                 {
-                    map[fShape].Append(exp.Current());
+                    map.GetValue(fShape).Append(exp.Current());
                 }
             }
         }
@@ -1077,20 +1078,20 @@ public sealed class MakeDraftPrism : Form
             {
                 lShape = exp.Current();
                 NCollection_List<Shape> thelist1 = new();
-                map.Bind(lShape, thelist1);
+                map[lShape] = thelist1;
                 for (exp.Init(p.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
                 {
-                    map[lShape].Append(exp.Current());
+                    map.GetValue(lShape).Append(exp.Current());
                 }
             }
         }
 
         for (exp.Init(b, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (!map.IsBound(exp.Current()))
+            if (!map.ContainsKey(exp.Current()))
             {
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                map.Bind(edg, new NCollection_List<Shape>(p.InternalShapes(edg)));
+                map[edg] = new NCollection_List<Shape>(p.InternalShapes(edg));
             }
         }
     }

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -39,9 +40,9 @@ public sealed class FuseEdges
         new(ShapeHasher.Instance);
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapEdgLstFac =
         new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<int, NCollection_List<Shape>> _mapLstEdg = new();
-    private readonly NCollection_DataMap<int, Shape> _mapEdg = new();
-    private readonly NCollection_DataMap<Shape, Shape> _mapFaces = new(ShapeHasher.Instance);
+    private readonly Dictionary<int, NCollection_List<Shape>> _mapLstEdg = new();
+    private readonly Dictionary<int, Shape> _mapEdg = new();
+    private readonly Dictionary<Shape, Shape> _mapFaces = new(ShapeHasher.Instance);
     private int _nbConnexEdge;
     private NCollection_IndexedMap<Shape> _avoidEdg = new(ShapeHasher.Instance);
     private bool _concatBSpl;
@@ -230,7 +231,7 @@ public sealed class FuseEdges
     /// </summary>
     public IReadOnlyDictionary<int, ISchematiqList<Shape>> Edges()
     {
-        var map = new NCollection_DataMap<int, NCollection_List<Shape>>();
+        var map = new Dictionary<int, NCollection_List<Shape>>();
         Edges(map);
         var result = new Dictionary<int, ISchematiqList<Shape>>();
         foreach (KeyValuePair<int, NCollection_List<Shape>> item in map)
@@ -241,7 +242,7 @@ public sealed class FuseEdges
     }
 
     /// <summary>OCCT's form: copies the lists of edges to be fused into <paramref name="mapLstEdg"/> (ported code).</summary>
-    internal void Edges(NCollection_DataMap<int, NCollection_List<Shape>> mapLstEdg)
+    internal void Edges(Dictionary<int, NCollection_List<Shape>> mapLstEdg)
     {
         if (!_edgesDone)
         {
@@ -252,14 +253,14 @@ public sealed class FuseEdges
         mapLstEdg.Clear();
         foreach (KeyValuePair<int, NCollection_List<Shape>> item in _mapLstEdg)
         {
-            mapLstEdg.Bind(item.Key, new NCollection_List<Shape>(item.Value));
+            mapLstEdg[item.Key] = new NCollection_List<Shape>(item.Value);
         }
     }
 
     /// <summary>The fused edges (frozen), by the index of the list of edges each replaces (see <see cref="Edges()"/>).</summary>
     public IReadOnlyDictionary<int, Shape> ResultEdges()
     {
-        var map = new NCollection_DataMap<int, Shape>();
+        var map = new Dictionary<int, Shape>();
         ResultEdges(map);
         var result = new Dictionary<int, Shape>();
         foreach (KeyValuePair<int, Shape> item in map)
@@ -271,7 +272,7 @@ public sealed class FuseEdges
     }
 
     /// <summary>OCCT's form: copies the fused edges into <paramref name="mapEdg"/>, unfrozen (ported code).</summary>
-    internal void ResultEdges(NCollection_DataMap<int, Shape> mapEdg)
+    internal void ResultEdges(Dictionary<int, Shape> mapEdg)
     {
         if (!_edgesDone)
         {
@@ -286,14 +287,14 @@ public sealed class FuseEdges
         mapEdg.Clear();
         foreach (KeyValuePair<int, Shape> item in _mapEdg)
         {
-            mapEdg.Bind(item.Key, item.Value);
+            mapEdg[item.Key] = item.Value;
         }
     }
 
     /// <summary>The faces modified by the fusion: each face of the input mapped to its new face (frozen).</summary>
     public IReadOnlyDictionary<Shape, Shape> Faces()
     {
-        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Faces(map);
         var result = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         foreach (KeyValuePair<Shape, Shape> item in map)
@@ -305,7 +306,7 @@ public sealed class FuseEdges
     }
 
     /// <summary>OCCT's form: copies the modified faces into <paramref name="mapFac"/>, unfrozen (ported code).</summary>
-    internal void Faces(NCollection_DataMap<Shape, Shape> mapFac)
+    internal void Faces(Dictionary<Shape, Shape> mapFac)
     {
         if (!_edgesDone)
         {
@@ -325,7 +326,7 @@ public sealed class FuseEdges
         mapFac.Clear();
         foreach (KeyValuePair<Shape, Shape> item in _mapFaces)
         {
-            mapFac.Bind(item.Key, item.Value);
+            mapFac[item.Key] = item.Value;
         }
     }
 
@@ -340,12 +341,12 @@ public sealed class FuseEdges
             BuildListEdges();
         }
 
-        if ((nbedges = _mapLstEdg.Extent()) > 0)
+        if ((nbedges = _mapLstEdg.Count) > 0)
         {
             foreach (KeyValuePair<int, NCollection_List<Shape>> itEdg in _mapLstEdg)
             {
                 int iLst = itEdg.Key;
-                NCollection_List<Shape> lmapEdg = _mapLstEdg.Find(iLst);
+                NCollection_List<Shape> lmapEdg = _mapLstEdg.GetValue(iLst);
                 nbvertices += lmapEdg.Extent() - 1;
             }
         }
@@ -420,7 +421,7 @@ public sealed class FuseEdges
                 if (lstEdg.Extent() > 1)
                 {
                     _nbConnexEdge++;
-                    _mapLstEdg.Bind(_nbConnexEdge, lstEdg);
+                    _mapLstEdg[_nbConnexEdge] = lstEdg;
                 }
             }
         }
@@ -432,7 +433,7 @@ public sealed class FuseEdges
     private void BuildListResultEdges()
     {
         // if we have edges to fuse
-        if (_mapLstEdg.Extent() > 0)
+        if (_mapLstEdg.Count > 0)
         {
             Vertex vf, vl;
             Curve3D C;
@@ -445,7 +446,7 @@ public sealed class FuseEdges
             foreach (KeyValuePair<int, NCollection_List<Shape>> itLstEdg in _mapLstEdg)
             {
                 int iLst = itLstEdg.Key;
-                NCollection_List<Shape> lmapEdg = _mapLstEdg.Find(iLst);
+                NCollection_List<Shape> lmapEdg = _mapLstEdg.GetValue(iLst);
 
                 Edge oldEdge = ShapeCasts.Edge(lmapEdg.First());
 
@@ -561,7 +562,7 @@ public sealed class FuseEdges
 
                 if (UpdatePCurve(oldEdge, newEdge, lmapEdg))
                 {
-                    _mapEdg.Bind(iLst, newEdge);
+                    _mapEdg[iLst] = newEdge;
                 }
             }
 
@@ -578,7 +579,7 @@ public sealed class FuseEdges
         }
 
         // if we have fused edges
-        if (_mapEdg.Extent() > 0)
+        if (_mapEdg.Count > 0)
         {
             NCollection_List<Shape> emptyList = new(), edgeToSubs = new();
             var bsub = new Substitution();
@@ -586,17 +587,17 @@ public sealed class FuseEdges
             foreach (KeyValuePair<int, NCollection_List<Shape>> itLstEdg in _mapLstEdg)
             {
                 int iLst = itLstEdg.Key;
-                if (!_mapEdg.IsBound(iLst))
+                if (!_mapEdg.ContainsKey(iLst))
                 {
                     continue;
                 }
-                NCollection_List<Shape> lmapEdg = _mapLstEdg.Find(iLst);
+                NCollection_List<Shape> lmapEdg = _mapLstEdg.GetValue(iLst);
                 var itEdg = new NCollection_List<Shape>.Iterator();
 
                 edgeToSubs.Clear();
                 Edge oldEdge = ShapeCasts.Edge(lmapEdg.First());
 
-                edgeToSubs.Append(_mapEdg[iLst]);
+                edgeToSubs.Append(_mapEdg.GetValue(iLst));
                 bsub.Substitute(oldEdge, edgeToSubs);
 
                 itEdg.Initialize(lmapEdg);
@@ -623,7 +624,7 @@ public sealed class FuseEdges
                 Shape facecur = exp.Current();
                 if (bsub.IsCopied(facecur))
                 {
-                    _mapFaces.Bind(facecur, bsub.InternalCopy(facecur).First());
+                    _mapFaces[facecur] = bsub.InternalCopy(facecur).First();
                 }
             }
 

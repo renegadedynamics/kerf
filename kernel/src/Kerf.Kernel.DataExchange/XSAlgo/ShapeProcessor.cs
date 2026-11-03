@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
@@ -52,14 +53,14 @@ public class ShapeProcessor
     /// <paramref name="parameters"/> has some shape healing values, they will override the corresponding values from
     /// <paramref name="shapeFixParameters"/>.
     /// </summary>
-    public ShapeProcessor(NCollection_DataMap<string, string> parameters, in ShapeFixParameters shapeFixParameters)
+    public ShapeProcessor(Dictionary<string, string> parameters, in ShapeFixParameters shapeFixParameters)
     {
-        _parameters = new NCollection_DataMap<string, string>(parameters);
+        _parameters = new Dictionary<string, string>(parameters,parameters.Comparer);
         FillParameterMap(shapeFixParameters, false, _parameters);
     }
 
     /// <summary>Constructor, with the default shape healing parameters (OCCT's default argument <c>{}</c>).</summary>
-    public ShapeProcessor(NCollection_DataMap<string, string> parameters)
+    public ShapeProcessor(Dictionary<string, string> parameters)
         : this(parameters, new ShapeFixParameters())
     {
     }
@@ -67,7 +68,7 @@ public class ShapeProcessor
     /// <summary>Constructor. <paramref name="parameters"/>: parameters to be used in the processing.</summary>
     public ShapeProcessor(in ShapeFixParameters parameters)
     {
-        var map = new NCollection_DataMap<string, string>();
+        var map = new Dictionary<string, string>();
         FillParameterMap(parameters, false, map);
         _parameters = map;
     }
@@ -127,13 +128,13 @@ public class ShapeProcessor
             _context.ResourceManager().SetResource(parameterIter.Key, parameterIter.Value);
         }
         // Read and set detalization level.
-        if (_parameters.Find("DetalizationLevel", out string result) && TCollection_AsciiString.IsIntegerValue(result))
+        if (_parameters.TryGetValue("DetalizationLevel", out string result) && TCollection_AsciiString.IsIntegerValue(result))
         {
             ShapeType detalizationLevel = (ShapeType)TCollection_AsciiString.IntegerValue(result);
             _context.SetDetalisation(detalizationLevel);
         }
         // Read and set non-manifold flag.
-        if (_parameters.Find("NonManifold", out result) && TCollection_AsciiString.IsIntegerValue(result))
+        if (_parameters.TryGetValue("NonManifold", out result) && TCollection_AsciiString.IsIntegerValue(result))
         {
             bool nonManifold = TCollection_AsciiString.IntegerValue(result) != 0;
             _context.SetNonManifold(nonManifold);
@@ -147,7 +148,7 @@ public class ShapeProcessor
         {
             return;
         }
-        if (!messages.MapShape().Find(shape, out NCollection_List<Msg> shapeMessages))
+        if (!messages.MapShape().TryGetValue(shape, out NCollection_List<Msg> shapeMessages))
         {
             return;
         }
@@ -163,15 +164,15 @@ public class ShapeProcessor
     /// <paramref name="firstTPItemIndex"/> get the shapes their results became, and the messages attached to them.
     /// </summary>
     public static void MergeShapeTransferInfo(TransientProcess transientProcess,
-                                              NCollection_DataMap<Shape, Shape> modifiedShapesMap,
+                                              Dictionary<Shape, Shape> modifiedShapesMap,
                                               int firstTPItemIndex,
                                               MsgRegistrator? messages)
     {
-        if (modifiedShapesMap.IsEmpty())
+        if (modifiedShapesMap.Count == 0)
         {
             return;
         }
-        bool toPrint = messages is not null && !messages.MapShape().IsEmpty();
+        bool toPrint = messages is not null && messages.MapShape().Count != 0;
         for (int i = Math.Max(firstTPItemIndex, 1); i <= transientProcess.MappedCount; ++i)
         {
             ShapeBinder? shapeBinder = transientProcess.MapItem(i) as ShapeBinder;
@@ -181,17 +182,17 @@ public class ShapeProcessor
             }
 
             Shape originalShape = shapeBinder.Result();
-            if (modifiedShapesMap.IsBound(originalShape))
+            if (modifiedShapesMap.ContainsKey(originalShape))
             {
-                shapeBinder.SetResult(modifiedShapesMap.Find(originalShape));
+                shapeBinder.SetResult(modifiedShapesMap.GetValue(originalShape));
             }
             else if (!originalShape.Location().IsIdentity)
             {
                 var nullLoc = new Placement();
                 Shape temporaryShape = originalShape.Located(nullLoc);
-                if (modifiedShapesMap.IsBound(temporaryShape))
+                if (modifiedShapesMap.ContainsKey(temporaryShape))
                 {
-                    shapeBinder.SetResult(modifiedShapesMap.Find(temporaryShape));
+                    shapeBinder.SetResult(modifiedShapesMap.GetValue(temporaryShape));
                 }
             }
             else
@@ -202,10 +203,10 @@ public class ShapeProcessor
                 // Remember modifications.
                 for (var expSE = new Explorer(originalShape, ShapeType.Edge); expSE.More(); expSE.Next())
                 {
-                    if (modifiedShapesMap.IsBound(expSE.Current()))
+                    if (modifiedShapesMap.ContainsKey(expSE.Current()))
                     {
                         hasModifiedEdges = true;
-                        Shape modifiedShape = modifiedShapesMap.Find(expSE.Current());
+                        Shape modifiedShape = modifiedShapesMap.GetValue(expSE.Current());
                         reShaper.Replace(expSE.Current(), modifiedShape);
                     }
                 }
@@ -248,14 +249,14 @@ public class ShapeProcessor
     /// its entries (decision 1204).
     /// </remarks>
     public static void MergeShapeTransferInfo(FinderProcess finderProcess,
-                                              NCollection_DataMap<Shape, Shape> modifiedShapesMap,
+                                              Dictionary<Shape, Shape> modifiedShapesMap,
                                               MsgRegistrator? messages)
     {
-        if (modifiedShapesMap.IsEmpty())
+        if (modifiedShapesMap.Count == 0)
         {
             return;
         }
-        bool toPrint = messages is not null && !messages.MapShape().IsEmpty();
+        bool toPrint = messages is not null && messages.MapShape().Count != 0;
         foreach (KeyValuePair<Shape, Shape> shapeShapeIterator in modifiedShapesMap)
         {
             Shape originalShape = shapeShapeIterator.Key;
@@ -508,7 +509,7 @@ public class ShapeProcessor
     /// scope named by the static <paramref name="scopeResourceName"/> (for example "read.step.sequence", which may
     /// hold "FromSTEP"). If the resource file isn't found, the statics' values are used instead.
     /// </summary>
-    public static (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) ReadProcessingData(
+    public static (Dictionary<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) ReadProcessingData(
         string fileResourceName, string scopeResourceName, StaticSet statics)
     {
         string fileName = statics.CVal(fileResourceName);
@@ -521,9 +522,9 @@ public class ShapeProcessor
         string scope = statics.CVal(scopeResourceName);
 
         // Copy parameters to the result.
-        var resultParameters = new NCollection_DataMap<string, string>();
+        var resultParameters = new Dictionary<string, string>();
         var resultFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags();
-        NCollection_DataMap<string, string> map = context.ResourceManager().GetMap();
+        Dictionary<string, string> map = context.ResourceManager().GetMap();
         foreach (KeyValuePair<string, string> iter in map)
         {
             string key = iter.Key;
@@ -553,7 +554,7 @@ public class ShapeProcessor
             }
             else
             {
-                resultParameters.Bind(key, iter.Value);
+                resultParameters[key] = iter.Value;
             }
         }
         return (resultParameters, resultFlags);
@@ -574,7 +575,7 @@ public class ShapeProcessor
     /// parameter should be replaced if it already exists in the map.
     /// </summary>
     public static void FillParameterMap(in ShapeFixParameters parameters, bool isReplace,
-                                        NCollection_DataMap<string, string> map)
+                                        Dictionary<string, string> map)
     {
         SetParameter("FixShape.Tolerance3d", parameters.Tolerance3d, isReplace, map);
         SetParameter("FixShape.MaxTolerance3d", parameters.MaxTolerance3d, isReplace, map);
@@ -641,8 +642,8 @@ public class ShapeProcessor
     /// present in <paramref name="parameters"/>.
     /// </summary>
     public static void SetShapeFixParameters(in ShapeFixParameters parameters,
-                                             NCollection_DataMap<string, string> additionalParameters,
-                                             NCollection_DataMap<string, string> targetParameterMap)
+                                             Dictionary<string, string> additionalParameters,
+                                             Dictionary<string, string> targetParameterMap)
     {
         FillParameterMap(parameters, true, targetParameterMap);
         foreach (KeyValuePair<string, string> paramIter in additionalParameters)
@@ -653,13 +654,13 @@ public class ShapeProcessor
 
     /// <summary>Set the parameter in the map (a fix mode, as its integer value).</summary>
     public static void SetParameter(string key, ShapeFixParameters.FixMode value, bool isReplace,
-                                    NCollection_DataMap<string, string> map)
+                                    Dictionary<string, string> map)
     {
         SetParameter(key, ((int)value).ToString(System.Globalization.CultureInfo.InvariantCulture), isReplace, map);
     }
 
     /// <summary>Set the parameter in the map (a real, as TCollection_AsciiString writes it: <c>%g</c>).</summary>
-    public static void SetParameter(string key, double value, bool isReplace, NCollection_DataMap<string, string> map)
+    public static void SetParameter(string key, double value, bool isReplace, Dictionary<string, string> map)
     {
         SetParameter(key, new TCollection_HAsciiString(value).ToCString(), isReplace, map);
     }
@@ -668,21 +669,21 @@ public class ShapeProcessor
     /// Set the parameter in the map. <paramref name="isReplace"/>: whether parameter should be replaced if it
     /// already exists in the map.
     /// </summary>
-    public static void SetParameter(string key, string value, bool isReplace, NCollection_DataMap<string, string> map)
+    public static void SetParameter(string key, string value, bool isReplace, Dictionary<string, string> map)
     {
-        if (map.Find(key, out string existing))
+        if (map.TryGetValue(key, out string existing))
         {
             if (!isReplace || existing == value)
             {
                 return;
             }
         }
-        map.Bind(key, value);
+        map[key] = value;
     }
 
     // PrepareForTransfer() (UnitsMethods::SetCasCadeLengthUnit from the static "xstep.cascade.unit", process-wide
     // state) is left out (decision 1203): a reader reads the unit from its static set.
 
-    private readonly NCollection_DataMap<string, string> _parameters; // Parameters to be used in the processing.
+    private readonly Dictionary<string, string> _parameters; // Parameters to be used in the processing.
     private ShapeContext? _context;                      // Shape context.
 }

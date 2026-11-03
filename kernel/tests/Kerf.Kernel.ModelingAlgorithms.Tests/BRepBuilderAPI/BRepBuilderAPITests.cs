@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
@@ -496,23 +497,23 @@ public class BRepBuilderAPITests
         var aCollect = new Collect();
         aCollect.Add(aBox, aT);
         Shape aF = new Explorer(aBox, ShapeType.Face).Current();
-        Assert.True(aCollect.Modification().IsBound(aF));
-        Shape aImage = aCollect.Modification()[aF].First();
+        Assert.True(aCollect.Modification().ContainsKey(aF));
+        Shape aImage = aCollect.Modification().GetValue(aF).First();
         Assert.True(aImage.IsSame(aT.ModifiedShape(aF)));
 
         // a second modification of the image is recorded against the initial face
         var aNew = new MakeVertex(new Point3D(0, 0, 0)).Vertex();
         aCollect.AddModif(aImage, aNew);
-        Assert.True(aCollect.Modification()[aF].First().IsSame(aNew));
-        Assert.False(aCollect.Modification().IsBound(aImage));
+        Assert.True(aCollect.Modification().GetValue(aF).First().IsSame(aNew));
+        Assert.False(aCollect.Modification().ContainsKey(aImage));
         aCollect.AddGenerated(aF, aNew);
-        Assert.True(aCollect.Generated().IsBound(aF));
+        Assert.True(aCollect.Generated().ContainsKey(aF));
 
         // Filter keeps only images in the shape: the vertex isn't one of the transformed box's
         aCollect.Filter(aT.Shape());
-        Assert.Equal(0, aCollect.Modification()[aF].Extent());
+        Assert.Equal(0, aCollect.Modification().GetValue(aF).Extent());
         Shape anE = new Explorer(aBox, ShapeType.Edge).Current();
-        Assert.Equal(1, aCollect.Modification()[anE].Extent());
+        Assert.Equal(1, aCollect.Modification().GetValue(anE).Extent());
     }
 
     [Fact]

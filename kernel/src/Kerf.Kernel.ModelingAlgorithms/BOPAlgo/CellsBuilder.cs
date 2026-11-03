@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
@@ -41,8 +42,8 @@ public class CellsBuilder : BooleanBuilder
     protected Shape _allParts = new(); //!< All split parts of the arguments
     protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _index = new(ShapeHasher.Instance); //!< Connection map from all splits parts to the argument shapes from which they were created
     protected NCollection_IntDataMap<NCollection_List<Shape>> _materials = new(100); //!< Map of assigned materials (material -> list of shape)
-    protected NCollection_DataMap<Shape, int> _shapeMaterial = new(ShapeHasher.Instance); //!< Map of assigned materials (shape -> material)
-    protected NCollection_DataMap<Shape, Shape> _mapModified = new(ShapeHasher.Instance); //!< Local modification map to track unification of the splits
+    protected Dictionary<Shape, int> _shapeMaterial = new(ShapeHasher.Instance); //!< Map of assigned materials (shape -> material)
+    protected Dictionary<Shape, Shape> _mapModified = new(ShapeHasher.Instance); //!< Local modification map to track unification of the splits
 
     public CellsBuilder()
     {
@@ -120,7 +121,7 @@ public class CellsBuilder : BooleanBuilder
                 for (; exp.More(); exp.Next())
                 {
                     Shape st = exp.Current();
-                    if (!_images.Find(st, out NCollection_List<Shape> pLSIm))
+                    if (!_images.TryGetValue(st, out NCollection_List<Shape>? pLSIm))
                     {
                         if (!_index.FindFromKey(st, out NCollection_List<Shape> pLS))
                         {
@@ -256,7 +257,7 @@ public class CellsBuilder : BooleanBuilder
             {
                 Shape part = itLP.Value();
                 // provide uniqueness of the parts
-                if (resParts.Add(part) && !_shapeMaterial.IsBound(part))
+                if (resParts.Add(part) && !_shapeMaterial.ContainsKey(part))
                 {
                     new BrepBuilder().Add(_shape, part);
                     bChanged = true;
@@ -273,9 +274,9 @@ public class CellsBuilder : BooleanBuilder
             for (; itLP.More(); itLP.Next())
             {
                 Shape part = itLP.Value();
-                if (!_shapeMaterial.IsBound(part))
+                if (!_shapeMaterial.ContainsKey(part))
                 {
-                    _shapeMaterial.Bind(part, material);
+                    _shapeMaterial[part] = material;
                     lsp.Append(part);
                 }
             } // for (; aIt.More(); aIt.Next()) {
@@ -323,7 +324,7 @@ public class CellsBuilder : BooleanBuilder
             for (; it.More(); it.Next())
             {
                 Shape part = it.Value();
-                _shapeMaterial.Bind(part, material);
+                _shapeMaterial[part] = material;
                 pLSM.Append(part);
             }
         }
@@ -360,7 +361,7 @@ public class CellsBuilder : BooleanBuilder
             Shape part = itP.Value();
             partsToRemove.Add(part);
             //
-            if (_shapeMaterial.Find(part, out int pMaterial))
+            if (_shapeMaterial.TryGetValue(part, out int pMaterial))
             {
                 if (_materials.Find(pMaterial, out NCollection_List<Shape> pLSM))
                 {
@@ -374,7 +375,7 @@ public class CellsBuilder : BooleanBuilder
                         }
                     }
                 }
-                _shapeMaterial.UnBind(part);
+                _shapeMaterial.Remove(part);
             }
         }
         //
@@ -533,7 +534,7 @@ public class CellsBuilder : BooleanBuilder
                         for (itLS.Initialize(lsNew); itLS.More(); itLS.Next())
                         {
                             Shape s = itLS.Value();
-                            _shapeMaterial.Bind(s, iMaterial);
+                            _shapeMaterial[s] = iMaterial;
                         }
                         ls.Assign(lsNew);
                     }
@@ -575,7 +576,7 @@ public class CellsBuilder : BooleanBuilder
             {
                 Shape s = it.Value();
                 //
-                if (_shapeMaterial.IsBound(s))
+                if (_shapeMaterial.ContainsKey(s))
                 {
                     continue;
                 }
@@ -596,7 +597,7 @@ public class CellsBuilder : BooleanBuilder
                     for (; itSC.More(); itSC.Next())
                     {
                         Shape ss = itSC.Value();
-                        if (!_shapeMaterial.IsBound(ss))
+                        if (!_shapeMaterial.ContainsKey(ss))
                         {
                             bb.Add(sc, ss);
                             bSCEmpty = false;
@@ -686,13 +687,13 @@ public class CellsBuilder : BooleanBuilder
             Shape st = exp.Current();
             // get split parts of the shape
             NCollection_List<Shape> lstIm = new();
-            if (!_images.IsBound(st))
+            if (!_images.ContainsKey(st))
             {
                 lstIm.Append(st);
             }
             else
             {
-                lstIm.Assign(_images.Find(st));
+                lstIm.Assign(_images.GetValue(st));
             }
             //
             NCollection_List<Shape>.Iterator itIm = new(lstIm);
@@ -872,14 +873,14 @@ public class CellsBuilder : BooleanBuilder
             for (i = 1; i <= nb; ++i)
             {
                 Shape ss = mg[i];
-                bool hasMaterial = _shapeMaterial.Find(ss, out int pMaterial);
+                bool hasMaterial = _shapeMaterial.TryGetValue(ss, out int pMaterial);
                 foreach (Shape su in history.Modified(ss))
                 {
-                    _mapModified.Bind(ss, su);
+                    _mapModified[ss] = su;
                     bRemoved = true;
-                    if (hasMaterial && !_shapeMaterial.IsBound(su))
+                    if (hasMaterial && !_shapeMaterial.ContainsKey(su))
                     {
-                        _shapeMaterial.Bind(su, pMaterial);
+                        _shapeMaterial[su] = pMaterial;
                     }
                 }
             }
@@ -1013,7 +1014,7 @@ public class CellsBuilder : BooleanBuilder
                 itS.Initialize(cb);
                 for (; itS.More(); itS.Next())
                 {
-                    _mapModified.Bind(itS.Value(), sNew);
+                    _mapModified[itS.Value()] = sNew;
                 }
             }
         }
@@ -1025,7 +1026,7 @@ public class CellsBuilder : BooleanBuilder
     {
         // Get shape's modification coming from GF operation
         NCollection_List<Shape>? pLSp = base.LocModified(s);
-        if (_mapModified.IsEmpty())
+        if (_mapModified.Count == 0)
         {
             // No local modifications
             return pLSp;
@@ -1038,7 +1039,7 @@ public class CellsBuilder : BooleanBuilder
         {
             // No splits from GF operation.
             // Check if the shape has been unified with other shapes
-            if (!_mapModified.Find(s, out Shape pSU))
+            if (!_mapModified.TryGetValue(s, out Shape pSU))
             {
                 return null;
             }
@@ -1053,7 +1054,7 @@ public class CellsBuilder : BooleanBuilder
             for (; it.More(); it.Next())
             {
                 Shape pSp = it.Value();
-                if (_mapModified.Find(pSp, out Shape pSU))
+                if (_mapModified.TryGetValue(pSp, out Shape pSU))
                 {
                     pSp = pSU;
                 }

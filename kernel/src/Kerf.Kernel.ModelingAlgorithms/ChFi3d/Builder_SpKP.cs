@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Classification.Hatching;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology;
@@ -208,7 +209,7 @@ public partial class FilletBuilderBase
 
         double pitol = global::Kerf.Engine.Foundation.Precision.PIntersection();
 
-        NCollection_DataMap<int, Curve2DAdaptorBase> m1 = new(), m2 = new();
+        Dictionary<int, Curve2DAdaptorBase> m1 = new(), m2 = new();
         int iH1 = 0, iH2 = 0;
         int nb1 = 1, nb2 = 1;
 
@@ -233,7 +234,7 @@ public partial class FilletBuilderBase
                 {
                     ie = h1.AddElement(Bc, Bc.Edge().Orientation());
                 }
-                m1.Bind(ie, I1.Value());
+                m1[ie] = I1.Value();
             }
             iH1 = h1.Trim(ll1);
             h1.ComputeDomains(iH1);
@@ -265,7 +266,7 @@ public partial class FilletBuilderBase
                 {
                     ie = h2.AddElement(Bc, Bc.Edge().Orientation());
                 }
-                m2.Bind(ie, I2.Value());
+                m2[ie] = I2.Value();
             }
             iH2 = h2.Trim(ll2);
             h2.ComputeDomains(iH2);
@@ -1249,7 +1250,7 @@ internal static class Builder_SpKP
         return true;
     }
 
-    internal static void FillSD(DsDataStructure dStr, SurfData? cd, NCollection_DataMap<int, Curve2DAdaptorBase> m, in HatchingDomain dom, double ponH, bool isFirst, int ons, double pitol, in Vertex bout)
+    internal static void FillSD(DsDataStructure dStr, SurfData? cd, Dictionary<int, Curve2DAdaptorBase> m, in HatchingDomain dom, double ponH, bool isFirst, int ons, double pitol, in Vertex bout)
     {
         int opp = 3 - ons;
         ref CommonPoint pons = ref cd.ChangeVertex(isFirst, ons);
@@ -1291,7 +1292,7 @@ internal static class Builder_SpKP
                 {
                     PointOnElement pEtemp = pPH.Point(leType);
                     ie1 = pEtemp.Index();
-                    EdgeCurve2DAdaptor? he1 = (m[ie1] as EdgeCurve2DAdaptor);
+                    EdgeCurve2DAdaptor? he1 = (m.GetValue(ie1) as EdgeCurve2DAdaptor);
                     if (he1 is not null)
                     {
                         Edge etemp = he1.Edge();
@@ -1321,7 +1322,7 @@ internal static class Builder_SpKP
             }
             PointOnElement pe = pPH.Point(leType);
             int ie = pe.Index();
-            EdgeCurve2DAdaptor? he = (m[ie] as EdgeCurve2DAdaptor);
+            EdgeCurve2DAdaptor? he = (m.GetValue(ie) as EdgeCurve2DAdaptor);
             if (he is null)
             {
                 return;

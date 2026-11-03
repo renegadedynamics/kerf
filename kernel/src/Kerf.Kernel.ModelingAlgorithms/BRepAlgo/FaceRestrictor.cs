@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Build;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -44,8 +45,8 @@ public sealed class FaceRestrictor
     private readonly NCollection_List<Shape> _wires = new();
     private readonly NCollection_List<Shape> _faces = new();
     private bool _correction;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _keyIsIn = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _keyContains = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _keyIsIn = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _keyContains = new(ShapeHasher.Instance);
 
     /// <summary>An empty face restrictor.</summary>
     public FaceRestrictor()
@@ -272,44 +273,44 @@ public sealed class FaceRestrictor
 
     private static void Store(in Wire w2,
                               in Wire w1,
-                              NCollection_DataMap<Shape, NCollection_List<Shape>> keyIsIn,
-                              NCollection_DataMap<Shape, NCollection_List<Shape>> keyContains)
+                              Dictionary<Shape, NCollection_List<Shape>> keyIsIn,
+                              Dictionary<Shape, NCollection_List<Shape>> keyContains)
     {
-        if (!keyIsIn.IsBound(w2))
+        if (!keyIsIn.ContainsKey(w2))
         {
             NCollection_List<Shape> empty = new();
-            keyIsIn.Bind(w2, empty);
+            keyIsIn[w2] = empty;
         }
-        keyIsIn[w2].Append(w1);
+        keyIsIn.GetValue(w2).Append(w1);
 
-        if (!keyContains.IsBound(w1))
+        if (!keyContains.ContainsKey(w1))
         {
             NCollection_List<Shape> empty = new();
-            keyContains.Bind(w1, empty);
+            keyContains[w1] = empty;
         }
-        keyContains[w1].Append(w2);
+        keyContains.GetValue(w1).Append(w2);
     }
 
     private static void BuildFaceIn(in Face f,
                                     in Wire w,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> keyContains,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> keyIsIn,
+                                    Dictionary<Shape, NCollection_List<Shape>> keyContains,
+                                    Dictionary<Shape, NCollection_List<Shape>> keyIsIn,
                                     Orientation orientation,
                                     NCollection_List<Shape> faces)
     {
         BrepBuilder b = new();
 
-        if (!keyContains.IsBound(w) || keyContains[w].IsEmpty())
+        if (!keyContains.ContainsKey(w) || keyContains.GetValue(w).IsEmpty())
         {
             return;
         }
 
         // Removal of W in KeyIsIn.
         NCollection_List<Shape>.Iterator it = new();
-        for (it.Initialize(keyContains[w]); it.More(); it.Next())
+        for (it.Initialize(keyContains.GetValue(w)); it.More(); it.Next())
         {
             Wire wi = ShapeCasts.Wire(it.Value());
-            NCollection_List<Shape> l2 = keyIsIn[wi];
+            NCollection_List<Shape> l2 = keyIsIn.GetValue(wi);
             NCollection_List<Shape>.Iterator it2 = new();
             for (it2.Initialize(l2); it2.More(); it2.Next())
             {
@@ -323,10 +324,10 @@ public sealed class FaceRestrictor
 
         NCollection_List<Shape> wireExt = new();
 
-        for (it.Initialize(keyContains[w]); it.More(); it.Next())
+        for (it.Initialize(keyContains.GetValue(w)); it.More(); it.Next())
         {
             Wire wi = ShapeCasts.Wire(it.Value());
-            NCollection_List<Shape> l2 = keyIsIn[wi];
+            NCollection_List<Shape> l2 = keyIsIn.GetValue(wi);
 
             if (l2.IsEmpty())
             {
@@ -337,7 +338,7 @@ public sealed class FaceRestrictor
         for (it.Initialize(wireExt); it.More(); it.Next())
         {
             Wire wi = ShapeCasts.Wire(it.Value());
-            NCollection_List<Shape> l2 = keyIsIn[wi];
+            NCollection_List<Shape> l2 = keyIsIn.GetValue(wi);
             if (l2.IsEmpty())
             {
                 if (orientation == Forward)
@@ -417,7 +418,7 @@ public sealed class FaceRestrictor
         for (it.Initialize(_wires); it.More(); it.Next())
         {
             Wire w = ShapeCasts.Wire(it.Value());
-            if (!_keyIsIn.IsBound(w) || _keyIsIn[w].IsEmpty())
+            if (!_keyIsIn.ContainsKey(w) || _keyIsIn.GetValue(w).IsEmpty())
             {
                 wireExt.Append(w);
             }
@@ -426,7 +427,7 @@ public sealed class FaceRestrictor
         for (it.Initialize(wireExt); it.More(); it.Next())
         {
             Wire w = ShapeCasts.Wire(it.Value());
-            if (!_keyIsIn.IsBound(w) || _keyIsIn[w].IsEmpty())
+            if (!_keyIsIn.ContainsKey(w) || _keyIsIn.GetValue(w).IsEmpty())
             {
                 Shape localShape = _face.EmptyCopied();
                 Face newFace = ShapeCasts.Face(localShape);

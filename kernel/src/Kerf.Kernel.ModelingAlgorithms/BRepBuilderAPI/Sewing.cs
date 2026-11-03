@@ -59,20 +59,20 @@ public class Sewing : Transient
     protected NCollection_IndexedMap<Shape> _multipleEdges = new(ShapeHasher.Instance);
     protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _contigousEdges =
         new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, Shape> _contigSecBound = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, Shape> _contigSecBound = new(ShapeHasher.Instance);
     protected int _nbShapes;
     protected int _nbVertices;
     protected int _nbEdges;
     protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _boundFaces =
         new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _boundSections =
+    protected Dictionary<Shape, NCollection_List<Shape>> _boundSections =
         new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, Shape> _sectionBound = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, Shape> _sectionBound = new(ShapeHasher.Instance);
     protected NCollection_IndexedDataMap<Shape, Shape> _vertexNode = new(ShapeHasher.Instance);
     protected NCollection_IndexedDataMap<Shape, Shape> _vertexNodeFree = new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _nodeSections =
+    protected Dictionary<Shape, NCollection_List<Shape>> _nodeSections =
         new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _cuttingNode =
+    protected Dictionary<Shape, NCollection_List<Shape>> _cuttingNode =
         new(ShapeHasher.Instance);
     protected NCollection_IndexedMap<Shape> _littleFace = new(ShapeHasher.Instance);
     protected Shape _shape = new();
@@ -264,9 +264,9 @@ public class Sewing : Transient
     internal Face InternalWhichFace(in Edge edg, int index = 1)
     {
         Shape bound = edg;
-        if (_sectionBound.IsBound(bound))
+        if (_sectionBound.ContainsKey(bound))
         {
-            bound = _sectionBound[bound];
+            bound = _sectionBound.GetValue(bound);
         }
         if (_boundFaces.Contains(bound))
         {
@@ -482,9 +482,9 @@ public class Sewing : Transient
         {
             // Fill MergedFaces with faces of Edge1
             Shape bnd1 = edge;
-            if (_sectionBound.IsBound(bnd1))
+            if (_sectionBound.ContainsKey(bnd1))
             {
-                bnd1 = _sectionBound[bnd1];
+                bnd1 = _sectionBound.GetValue(bnd1);
             }
             if (_boundFaces.Contains(bnd1))
             {
@@ -550,9 +550,9 @@ public class Sewing : Transient
 
                 // Retrieve faces information for the second edge
                 Shape bnd2 = oedge2;
-                if (_sectionBound.IsBound(bnd2))
+                if (_sectionBound.ContainsKey(bnd2))
                 {
-                    bnd2 = _sectionBound[bnd2];
+                    bnd2 = _sectionBound.GetValue(bnd2);
                 }
                 if (!_boundFaces.Contains(bnd2))
                 {
@@ -1288,9 +1288,9 @@ public class Sewing : Transient
             edge = ShapeCasts.Edge(sequenceSec[i]);
 
             Shape bnd = edge;
-            if (_sectionBound.IsBound(bnd))
+            if (_sectionBound.ContainsKey(bnd))
             {
-                bnd = _sectionBound[bnd];
+                bnd = _sectionBound.GetValue(bnd);
             }
             if (_boundFaces.Contains(bnd))
             {
@@ -1625,9 +1625,9 @@ public class Sewing : Transient
         Shape workedge = sequenceSec.Value(workIndex);
         Shape bnd = workedge;
         var workfaces = new NCollection_List<Shape>();
-        if (_sectionBound.IsBound(bnd))
+        if (_sectionBound.ContainsKey(bnd))
         {
-            bnd = _sectionBound[bnd];
+            bnd = _sectionBound.GetValue(bnd);
         }
         if (_boundFaces.Contains(bnd))
         {
@@ -1661,9 +1661,9 @@ public class Sewing : Transient
             if (!isRemove)
             {
                 Shape bnd2 = sequenceSec.Value(index);
-                if (_sectionBound.IsBound(bnd2))
+                if (_sectionBound.ContainsKey(bnd2))
                 {
-                    bnd2 = _sectionBound[bnd2];
+                    bnd2 = _sectionBound.GetValue(bnd2);
                 }
 
                 if (_boundFaces.Contains(bnd2))
@@ -1805,9 +1805,9 @@ public class Sewing : Transient
 
         { // szv: Use brackets to destroy local variables
             Shape bnd = edge1;
-            if (_sectionBound.IsBound(bnd))
+            if (_sectionBound.ContainsKey(bnd))
             {
-                bnd = _sectionBound[bnd];
+                bnd = _sectionBound.GetValue(bnd);
             }
             if (_boundFaces.Contains(bnd))
             {
@@ -1979,9 +1979,9 @@ public class Sewing : Transient
             int ind = seqCandidates.Value(1);
             Edge edge2 = ShapeCasts.Edge(seqSections[ind]);
             Shape bnd = edge2;
-            if (_sectionBound.IsBound(bnd))
+            if (_sectionBound.ContainsKey(bnd))
             {
-                bnd = _sectionBound[bnd];
+                bnd = _sectionBound.GetValue(bnd);
             }
             // gka
             if (_boundFaces.Contains(bnd))
@@ -2291,7 +2291,7 @@ public class Sewing : Transient
     //=================================================================================================
 
     /// <summary>True if the section is bound to a boundary (see <see cref="SectionToBoundary"/>).</summary>
-    public bool IsSectionBound(in Edge section) => _contigSecBound.IsBound(ToWork(section));
+    public bool IsSectionBound(in Edge section) => _contigSecBound.ContainsKey(ToWork(section));
 
     //=================================================================================================
 
@@ -2303,7 +2303,7 @@ public class Sewing : Transient
     public Edge SectionToBoundary(in Edge section)
     {
         Standard_NoSuchObject_Raise_if(!IsSectionBound(section), "BRepBuilderAPI_Sewing::SectionToBoundary");
-        return ShapeCasts.Edge(Published(_contigSecBound[ToWork(section)]));
+        return ShapeCasts.Edge(Published(_contigSecBound.GetValue(ToWork(section))));
     }
 
     //=================================================================================================
@@ -2437,9 +2437,9 @@ public class Sewing : Transient
         for (i = 1; i <= nbBounds; i++)
         {
             Shape bound = _boundFaces.FindKey(i);
-            if (_boundSections.IsBound(bound))
+            if (_boundSections.ContainsKey(bound))
             {
-                nbSections += _boundSections[bound].Extent();
+                nbSections += _boundSections.GetValue(bound).Extent();
             }
             else
             {
@@ -2923,11 +2923,11 @@ public class Sewing : Transient
     private static bool CreateNewNodes(NCollection_IndexedDataMap<Shape, Shape> nodeNearestNode,
                                        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> nodeVertices,
                                        NCollection_IndexedDataMap<Shape, Shape> aVertexNode,
-                                       NCollection_DataMap<Shape, NCollection_List<Shape>> aNodeEdges)
+                                       Dictionary<Shape, NCollection_List<Shape>> aNodeEdges)
     {
         // Create new nodes
         var b = new BrepBuilder();
-        var oldNodeNewNode = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var oldNodeNewNode = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         var newNodeOldNodes = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int iter = 1; iter <= nodeNearestNode.Extent(); iter++)
         {
@@ -2940,12 +2940,12 @@ public class Sewing : Transient
                 continue;
             }
             // Get new node for old node #1
-            if (oldNodeNewNode.IsBound(oldnode1))
+            if (oldNodeNewNode.ContainsKey(oldnode1))
             {
-                Shape newnode1 = oldNodeNewNode[oldnode1];
-                if (oldNodeNewNode.IsBound(oldnode2))
+                Shape newnode1 = oldNodeNewNode.GetValue(oldnode1);
+                if (oldNodeNewNode.ContainsKey(oldnode2))
                 {
-                    Shape newnode2 = oldNodeNewNode[oldnode2];
+                    Shape newnode2 = oldNodeNewNode.GetValue(oldnode2);
                     if (!newnode1.IsSame(newnode2))
                     {
                         // Change data for new node #2
@@ -2955,7 +2955,7 @@ public class Sewing : Transient
                         {
                             Shape node2 = itn.Value();
                             lnode1.Append(node2);
-                            oldNodeNewNode[node2] = newnode1;
+                            oldNodeNewNode.GetValueRef(node2) = newnode1;
                         }
                         newNodeOldNodes.RemoveKey(newnode2);
                     }
@@ -2963,17 +2963,17 @@ public class Sewing : Transient
                 else
                 {
                     // Old node #2 is not bound - add to old node #1
-                    oldNodeNewNode.Bind(oldnode2, newnode1);
+                    oldNodeNewNode[oldnode2] = newnode1;
                     newNodeOldNodes.ChangeFromKey(newnode1).Append(oldnode2);
                 }
             }
             else
             {
-                if (oldNodeNewNode.IsBound(oldnode2))
+                if (oldNodeNewNode.ContainsKey(oldnode2))
                 {
                     // Old node #1 is not bound - add to old node #2
-                    Shape newnode2 = oldNodeNewNode[oldnode2];
-                    oldNodeNewNode.Bind(oldnode1, newnode2);
+                    Shape newnode2 = oldNodeNewNode.GetValue(oldnode2);
+                    oldNodeNewNode[oldnode1] = newnode2;
                     newNodeOldNodes.ChangeFromKey(newnode2).Append(oldnode1);
                 }
                 else
@@ -2981,8 +2981,8 @@ public class Sewing : Transient
                     // Nodes are not bound - create new node
                     var newnode = new Vertex();
                     b.MakeVertex(ref newnode);
-                    oldNodeNewNode.Bind(oldnode1, newnode);
-                    oldNodeNewNode.Bind(oldnode2, newnode);
+                    oldNodeNewNode[oldnode1] = newnode;
+                    oldNodeNewNode[oldnode2] = newnode;
                     var lnodes = new NCollection_List<Shape>();
                     lnodes.Append(oldnode1);
                     lnodes.Append(oldnode2);
@@ -3022,7 +3022,7 @@ public class Sewing : Transient
                     lvert.Append(vertex);
                 }
                 // Iterate on node edges
-                NCollection_List<Shape> edges = aNodeEdges[oldnode];
+                NCollection_List<Shape> edges = aNodeEdges.GetValue(oldnode);
                 var ite = new NCollection_List<Shape>.Iterator(edges);
                 for (; ite.More(); ite.Next())
                 {
@@ -3034,10 +3034,10 @@ public class Sewing : Transient
                     }
                 }
                 // Unbind old node edges
-                aNodeEdges.UnBind(oldnode);
+                aNodeEdges.Remove(oldnode);
             }
             // Bind new node edges
-            aNodeEdges.Bind(newnode, ledge);
+            aNodeEdges[newnode] = ledge;
             var center = new Point3D(theCoordinates / lvert.Extent());
             // Calculate new node tolerance
             double toler = 0.0;
@@ -3125,7 +3125,7 @@ public class Sewing : Transient
     }
 
     private static bool GlueVertices(NCollection_IndexedDataMap<Shape, Shape> aVertexNode,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> aNodeEdges,
+                                     Dictionary<Shape, NCollection_List<Shape>> aNodeEdges,
                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aBoundFaces,
                                      double tolerance,
                                      ProgressRange progress)
@@ -3170,7 +3170,7 @@ public class Sewing : Transient
                 continue;
             }
             // Retrieve list of edges for the first node
-            NCollection_List<Shape> ledges1 = aNodeEdges[node1];
+            NCollection_List<Shape> ledges1 = aNodeEdges.GetValue(node1);
             // Explore list of near nodes and fill the sequence of glued nodes
             var seqNodes = new NCollection_Sequence<Shape>();
             var listNodesSameEdge = new NCollection_List<Shape>();
@@ -3183,7 +3183,7 @@ public class Sewing : Transient
                     continue;
                 }
                 // Retrieve list of edges for the second node
-                NCollection_List<Shape> ledges2 = aNodeEdges[node2];
+                NCollection_List<Shape> ledges2 = aNodeEdges.GetValue(node2);
                 // Check merging condition for the pair of nodes
                 int status = 0;
                 bool isSameEdge = false;
@@ -3375,15 +3375,15 @@ public class Sewing : Transient
                 for (var itv = new Iterator(bound, false); itv.More(); itv.Next())
                 {
                     Shape node = itv.Value();
-                    if (_nodeSections.IsBound(node))
+                    if (_nodeSections.ContainsKey(node))
                     {
-                        _nodeSections[node].Append(bound);
+                        _nodeSections.GetValue(node).Append(bound);
                     }
                     else
                     {
                         var lbnd = new NCollection_List<Shape>();
                         lbnd.Append(bound);
-                        _nodeSections.Bind(node, lbnd);
+                        _nodeSections[node] = lbnd;
                     }
                 }
             }
@@ -3631,13 +3631,13 @@ public class Sewing : Transient
             // Check for previous splitting, build replacing wire
             var boundWire = new Wire();
             bool isPrevSplit = false;
-            bool hasCuttingSections = _boundSections.IsBound(bound);
+            bool hasCuttingSections = _boundSections.ContainsKey(bound);
             if (hasCuttingSections)
             {
                 b.MakeWire(ref boundWire);
                 boundWire.Orientation(bound.Orientation());
                 // Iterate on cutting sections
-                var its = new NCollection_List<Shape>.Iterator(_boundSections[bound]);
+                var its = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(bound));
                 for (; its.More(); its.Next())
                 {
                     Shape section = its.Value();
@@ -3669,10 +3669,10 @@ public class Sewing : Transient
                         bool isRejected = (_mergedEdges.Contains(iedge) || mergedWithBound.Contains(iedge));
                         if (!isRejected)
                         {
-                            if (_boundSections.IsBound(iedge))
+                            if (_boundSections.ContainsKey(iedge))
                             {
                                 // Edge is split - check sections
-                                var lit = new NCollection_List<Shape>.Iterator(_boundSections[iedge]);
+                                var lit = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(iedge));
                                 for (; lit.More() && !isRejected; lit.Next())
                                 {
                                     Shape sec = lit.Value();
@@ -3682,10 +3682,10 @@ public class Sewing : Transient
                             }
                             if (!isRejected)
                             {
-                                if (_sectionBound.IsBound(iedge))
+                                if (_sectionBound.ContainsKey(iedge))
                                 {
                                     // Edge is a section - check bound
-                                    Shape bnd = _sectionBound[iedge];
+                                    Shape bnd = _sectionBound.GetValue(iedge);
                                     // Remove edge (section) if its bound already merged
                                     isRejected = (_mergedEdges.Contains(bnd) || mergedWithBound.Contains(bnd));
                                 }
@@ -3772,7 +3772,7 @@ public class Sewing : Transient
             if (hasCuttingSections)
             {
                 // Iterate on cutting sections
-                var its = new NCollection_List<Shape>.Iterator(_boundSections[bound]);
+                var its = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(bound));
                 for (; its.More(); its.Next())
                 {
                     // Retrieve cutting section
@@ -3798,10 +3798,10 @@ public class Sewing : Transient
                             bool isRejected = (_mergedEdges.Contains(iedge) || mergedWithSections.Contains(iedge));
                             if (!isRejected)
                             {
-                                if (_boundSections.IsBound(iedge))
+                                if (_boundSections.ContainsKey(iedge))
                                 {
                                     // Edge is split - check sections
-                                    var lit = new NCollection_List<Shape>.Iterator(_boundSections[iedge]);
+                                    var lit = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(iedge));
                                     for (; lit.More() && !isRejected; lit.Next())
                                     {
                                         Shape sec = lit.Value();
@@ -3811,10 +3811,10 @@ public class Sewing : Transient
                                 }
                                 if (!isRejected)
                                 {
-                                    if (_sectionBound.IsBound(iedge))
+                                    if (_sectionBound.ContainsKey(iedge))
                                     {
                                         // Edge is a section - check bound
-                                        Shape bnd = _sectionBound[iedge];
+                                        Shape bnd = _sectionBound.GetValue(iedge);
                                         // Remove edge (section) if its bound already merged
                                         isRejected = (_mergedEdges.Contains(bnd) || mergedWithSections.Contains(bnd));
                                     }
@@ -3940,10 +3940,10 @@ public class Sewing : Transient
                     {
                         mapSplitEdges.RemoveKey(edge);
                     }
-                    if (_boundSections.IsBound(edge))
+                    if (_boundSections.ContainsKey(edge))
                     {
                         // Edge has cutting sections
-                        var its = new NCollection_List<Shape>.Iterator(_boundSections[edge]);
+                        var its = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(edge));
                         for (; its.More(); its.Next())
                         {
                             Shape sec = its.Value();
@@ -3980,9 +3980,9 @@ public class Sewing : Transient
                     Shape newedge = sectionsReShape.InternalApply(mergedWithSections[itm]);
                     ReplaceEdge(_reShape.InternalApply(oldedge), newedge, _reShape);
                     _mergedEdges.Add(oldedge);
-                    if (_boundSections.IsBound(oldedge))
+                    if (_boundSections.ContainsKey(oldedge))
                     {
-                        _boundSections.UnBind(oldedge);
+                        _boundSections.Remove(oldedge);
                     }
                 }
             }
@@ -3996,14 +3996,14 @@ public class Sewing : Transient
                     Shape newedge = mergedWithBound[itm];
                     ReplaceEdge(_reShape.InternalApply(oldedge), newedge, _reShape);
                     _mergedEdges.Add(oldedge);
-                    if (_boundSections.IsBound(oldedge))
+                    if (_boundSections.ContainsKey(oldedge))
                     {
-                        _boundSections.UnBind(oldedge);
+                        _boundSections.Remove(oldedge);
                     }
                 }
-                if (_boundSections.IsBound(bound))
+                if (_boundSections.ContainsKey(bound))
                 {
-                    _boundSections.UnBind(bound);
+                    _boundSections.Remove(bound);
                 }
                 if (!_mergedEdges.Contains(bound))
                 {
@@ -4043,16 +4043,16 @@ public class Sewing : Transient
         // Fill map of nodes connected to the node #1
         var mapVert1 = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         mapVert1.Add(nno1);
-        if (_cuttingNode.IsBound(nno1))
+        if (_cuttingNode.ContainsKey(nno1))
         {
-            var ilv = new NCollection_List<Shape>.Iterator(_cuttingNode[nno1]);
+            var ilv = new NCollection_List<Shape>.Iterator(_cuttingNode.GetValue(nno1));
             for (; ilv.More(); ilv.Next())
             {
                 Shape v1 = ilv.Value();
                 mapVert1.Add(v1);
-                if (!isNode1 && _cuttingNode.IsBound(v1))
+                if (!isNode1 && _cuttingNode.ContainsKey(v1))
                 {
-                    var ilvn = new NCollection_List<Shape>.Iterator(_cuttingNode[v1]);
+                    var ilvn = new NCollection_List<Shape>.Iterator(_cuttingNode.GetValue(v1));
                     for (; ilvn.More(); ilvn.Next())
                     {
                         Shape vn = ilvn.Value();
@@ -4065,16 +4065,16 @@ public class Sewing : Transient
         // Fill map of nodes connected to the node #2
         var mapVert2 = new HashSet<Shape>(ShapeHasher.Instance);
         mapVert2.Add(nno2);
-        if (_cuttingNode.IsBound(nno2))
+        if (_cuttingNode.ContainsKey(nno2))
         {
-            var ilv = new NCollection_List<Shape>.Iterator(_cuttingNode[nno2]);
+            var ilv = new NCollection_List<Shape>.Iterator(_cuttingNode.GetValue(nno2));
             for (; ilv.More(); ilv.Next())
             {
                 Shape v1 = ilv.Value();
                 mapVert2.Add(v1);
-                if (!isNode2 && _cuttingNode.IsBound(v1))
+                if (!isNode2 && _cuttingNode.ContainsKey(v1))
                 {
-                    var ilvn = new NCollection_List<Shape>.Iterator(_cuttingNode[v1]);
+                    var ilvn = new NCollection_List<Shape>.Iterator(_cuttingNode.GetValue(v1));
                     for (; ilvn.More(); ilvn.Next())
                     {
                         Shape vn = ilvn.Value();
@@ -4092,11 +4092,11 @@ public class Sewing : Transient
         for (int i = 1; i <= mapVert1.Extent(); i++)
         {
             Shape node1 = mapVert1.FindKey(i);
-            if (!_nodeSections.IsBound(node1))
+            if (!_nodeSections.ContainsKey(node1))
             {
                 continue;
             }
-            var ilsec = new NCollection_List<Shape>.Iterator(_nodeSections[node1]);
+            var ilsec = new NCollection_List<Shape>.Iterator(_nodeSections.GetValue(node1));
             for (; ilsec.More(); ilsec.Next())
             {
                 Shape sec = ilsec.Value();
@@ -4122,9 +4122,9 @@ public class Sewing : Transient
                     {
                         // Check for rejected cutting
                         bool isRejected = _mergedEdges.Contains(sec);
-                        if (!isRejected && _boundSections.IsBound(sec))
+                        if (!isRejected && _boundSections.ContainsKey(sec))
                         {
-                            var its = new NCollection_List<Shape>.Iterator(_boundSections[sec]);
+                            var its = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(sec));
                             for (; its.More() && !isRejected; its.Next())
                             {
                                 Shape section = its.Value();
@@ -4135,10 +4135,10 @@ public class Sewing : Transient
                                 }
                             }
                         }
-                        if (!isRejected && _sectionBound.IsBound(sec))
+                        if (!isRejected && _sectionBound.ContainsKey(sec))
                         {
-                            Shape bnd = _sectionBound[sec];
-                            isRejected = (!_boundSections.IsBound(bnd) || _mergedEdges.Contains(bnd));
+                            Shape bnd = _sectionBound.GetValue(sec);
+                            isRejected = (!_boundSections.ContainsKey(bnd) || _mergedEdges.Contains(bnd));
                         }
 
                         if (!isRejected)
@@ -4356,22 +4356,22 @@ public class Sewing : Transient
                             vertex = ShapeCasts.Vertex(_vertexNode.FindFromKey(vertex));
                         }
                         // Update node sections
-                        if (_nodeSections.IsBound(vertex))
+                        if (_nodeSections.ContainsKey(vertex))
                         {
-                            _nodeSections.ChangeFind(vertex).Append(section);
+                            _nodeSections.GetValue(vertex).Append(section);
                         }
                         else
                         {
                             var lsec = new NCollection_List<Shape>();
                             lsec.Append(section);
-                            _nodeSections.Bind(vertex, lsec);
+                            _nodeSections[vertex] = lsec;
                         }
                     }
                     // Store bound for section
-                    _sectionBound.Bind(section, bound);
+                    _sectionBound[section] = bound;
                 }
                 // Store split bound
-                _boundSections.Bind(bound, listSections);
+                _boundSections[bound] = listSections;
             }
         }
     }
@@ -4380,16 +4380,16 @@ public class Sewing : Transient
 
     private static void GetSeqEdges(in Shape edge,
                                     NCollection_Sequence<Shape> seqEdges,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> vertEdge)
+                                    Dictionary<Shape, NCollection_List<Shape>> vertEdge)
     {
         int numV = 0;
         for (var iv = new Iterator(edge, false); iv.More(); iv.Next())
         {
             Vertex v1 = ShapeCasts.Vertex(iv.Value());
             numV++;
-            if (vertEdge.IsBound(v1))
+            if (vertEdge.ContainsKey(v1))
             {
-                NCollection_List<Shape> listEdges = vertEdge.Find(v1);
+                NCollection_List<Shape> listEdges = vertEdge.GetValue(v1);
                 for (var lIt = new NCollection_List<Shape>.Iterator(listEdges); lIt.More(); lIt.Next())
                 {
                     Shape edge1 = lIt.Value();
@@ -4430,7 +4430,7 @@ public class Sewing : Transient
     protected virtual void GetFreeWires(NCollection_IndexedMap<Shape> mapFreeEdges,
                                         NCollection_Sequence<Shape> seqWires)
     {
-        var vertEdge = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var vertEdge = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var seqFreeEdges = new NCollection_Sequence<Shape>();
         for (int k = 1; k <= mapFreeEdges.Extent(); k++)
         {
@@ -4439,15 +4439,15 @@ public class Sewing : Transient
             for (var iv = new Iterator(edge, false); iv.More(); iv.Next())
             {
                 Vertex v1 = ShapeCasts.Vertex(iv.Value());
-                if (vertEdge.IsBound(v1))
+                if (vertEdge.ContainsKey(v1))
                 {
-                    vertEdge.ChangeFind(v1).Append(edge);
+                    vertEdge.GetValue(v1).Append(edge);
                 }
                 else
                 {
                     var ls = new NCollection_List<Shape>();
                     ls.Append(edge);
-                    vertEdge.Bind(v1, ls);
+                    vertEdge[v1] = ls;
                 }
             }
         }
@@ -4666,7 +4666,7 @@ public class Sewing : Transient
     {
         // constructs sectionEdge
         var mapFreeEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var edgeFace = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var edgeFace = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         using var ps = new ProgressScope(progress, "Edge processing", _boundFaces.Extent());
         for (int iterB = 1; iterB <= _boundFaces.Extent() && ps.More(); iterB++, ps.Next())
         {
@@ -4674,9 +4674,9 @@ public class Sewing : Transient
             NCollection_List<Shape> listFaces = _boundFaces[iterB];
             if (listFaces.Extent() == 1)
             {
-                if (_boundSections.IsBound(bound))
+                if (_boundSections.ContainsKey(bound))
                 {
-                    var liter = new NCollection_List<Shape>.Iterator(_boundSections[bound]);
+                    var liter = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(bound));
                     for (; liter.More(); liter.Next())
                     {
                         if (!_mergedEdges.Contains(liter.Value()))
@@ -4685,7 +4685,7 @@ public class Sewing : Transient
                             if (!mapFreeEdges.Contains(edge))
                             {
                                 Shape face = listFaces.First();
-                                edgeFace.Bind(edge, face);
+                                edgeFace[edge] = face;
                                 mapFreeEdges.Add(edge);
                             }
                         }
@@ -4699,7 +4699,7 @@ public class Sewing : Transient
                         if (!mapFreeEdges.Contains(edge))
                         {
                             Shape face = listFaces.First();
-                            edgeFace.Bind(edge, face);
+                            edgeFace[edge] = face;
                             mapFreeEdges.Add(edge);
                         }
                     }
@@ -4723,9 +4723,9 @@ public class Sewing : Transient
                     Shape tmpShape = _reShape.InternalApply(ie.Value()); // for porting
                     Edge edge = ShapeCasts.Edge(tmpShape);
                     var face = new Shape();
-                    if (edgeFace.IsBound(edge))
+                    if (edgeFace.ContainsKey(edge))
                     {
-                        face = edgeFace.Find(edge);
+                        face = edgeFace.GetValue(edge);
                     }
                     Shape degedge = DegeneratedSection(edge, face);
                     if (degedge.IsNull)
@@ -5018,9 +5018,9 @@ public class Sewing : Transient
         {
             Shape bound = _boundFaces.FindKey(i);
             var lsect = new NCollection_List<Shape>();
-            if (_boundSections.IsBound(bound))
+            if (_boundSections.ContainsKey(bound))
             {
-                lsect.Assign(_boundSections[bound]);
+                lsect.Assign(_boundSections.GetValue(bound));
             }
             var exp = new Explorer(_reShape.InternalApply(bound), ShapeType.Edge);
             for (; exp.More(); exp.Next())
@@ -5080,9 +5080,9 @@ public class Sewing : Transient
         for (i = 1; i <= _boundFaces.Extent(); i++)
         {
             Shape bound = _boundFaces.FindKey(i);
-            if (_boundSections.IsBound(bound))
+            if (_boundSections.ContainsKey(bound))
             {
-                var iter = new NCollection_List<Shape>.Iterator(_boundSections[bound]);
+                var iter = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(bound));
                 for (; iter.More(); iter.Next())
                 {
                     Shape section = iter.Value();
@@ -5100,7 +5100,7 @@ public class Sewing : Transient
                     {
                         if (_contigousEdges.Contains(nedge))
                         {
-                            _contigSecBound.Bind(section, bound);
+                            _contigSecBound[section] = bound;
                         }
                     }
                 }
@@ -5378,18 +5378,18 @@ public class Sewing : Transient
                 // Create link: cutting vertex -> node
                 var ls1 = new NCollection_List<Shape>();
                 ls1.Append(node);
-                _cuttingNode.Bind(cnode, ls1);
+                _cuttingNode[cnode] = ls1;
             }
             // Create link: node -> cutting vertex
-            if (_cuttingNode.IsBound(node))
+            if (_cuttingNode.ContainsKey(node))
             {
-                _cuttingNode.ChangeFind(node).Append(cnode);
+                _cuttingNode.GetValue(node).Append(cnode);
             }
             else
             {
                 var ls = new NCollection_List<Shape>();
                 ls.Append(cnode);
-                _cuttingNode.Bind(node, ls);
+                _cuttingNode[node] = ls;
             }
         }
 

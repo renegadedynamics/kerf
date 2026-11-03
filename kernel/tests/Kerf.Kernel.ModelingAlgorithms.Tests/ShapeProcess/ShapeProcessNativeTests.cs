@@ -122,12 +122,12 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
             File.WriteAllText(Path.Combine(s_dump, $"{s_name}.{(theRun.StartsWith("OP:", StringComparison.Ordinal) ? theRun[3..] : theRun)}.brep"), aBRep);
         }
 
-        NCollection_DataMap<Shape, Shape> aMap = theContext.Map();
+        Dictionary<Shape, Shape> aMap = theContext.Map();
         var aSig = new StringBuilder();
         void Sign(in Shape theKey)
         {
             Shape aKey = theKey.Located(new Placement());
-            aSig.Append(aMap.Find(aKey, out Shape aValue) ? TypeChar(aValue) : '-');
+            aSig.Append(aMap.TryGetValue(aKey, out Shape aValue) ? TypeChar(aValue) : '-');
         }
         Sign(theInput);
         foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face })
@@ -161,7 +161,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
 
         return string.Create(CultureInfo.InvariantCulture,
                              $"{theRun} {(theDone ? 1 : 0)} {aHash:x16} {Count(aRes, ShapeType.Face)} {Count(aRes, ShapeType.Edge)} {Count(aRes, ShapeType.Vertex)} "
-                             + $"{aMap.Extent()} {Fnv(aSig.ToString()):x16} {aTexts.Count} {Fnv(aJoined.ToString()):x16} {Fnv(thePrinter.Text.ToString()):x16}");
+                             + $"{aMap.Count} {Fnv(aSig.ToString()):x16} {aTexts.Count} {Fnv(aJoined.ToString()):x16} {Fnv(thePrinter.Text.ToString()):x16}");
     }
 
     // OCCTNET_SHPROC_DUMP: a directory the results' texts are written to, as the recorder's SHPROCREC_DUMP

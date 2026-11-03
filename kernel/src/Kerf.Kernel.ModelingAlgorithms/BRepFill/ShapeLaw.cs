@@ -132,7 +132,7 @@ public class ShapeLaw : SectionLaw
                 if (c is not null)
                 {
                     _edges.SetValue(ii, e);
-                    _indices.Bind(e, ii);
+                    _indices[e] = ii;
                     if (build)
                     {
                         // occ::handle<Geom_Curve> C = BRep_Tool::Curve(E,First,Last);

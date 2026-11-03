@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
@@ -70,7 +71,7 @@ public partial class BooleanBuilder
 
         using var ps = new ProgressScope(range, "Building splits of solids", 10);
         // Draft solids
-        NCollection_DataMap<Shape, Shape> draftSolids = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> draftSolids = new(ShapeHasher.Instance);
         // Find all IN faces for all IN faces
         FillIn3DParts(draftSolids, ps.Next(4));
         if (HasErrors)
@@ -88,14 +89,14 @@ public partial class BooleanBuilder
     }
 
     /// <summary>Builds the draft solids and finds the faces IN each solid (its own internal ones and others').</summary>
-    protected virtual void FillIn3DParts(NCollection_DataMap<Shape, Shape> draftSolids, ProgressRange range)
+    protected virtual void FillIn3DParts(Dictionary<Shape, Shape> draftSolids, ProgressRange range)
     {
         using var ps = new ProgressScope(range, null, 2);
 
         // Find all faces that are IN solids
 
         // Store boxes of the shapes into a map
-        NCollection_DataMap<Shape, Box> shapeBoxMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, Box> shapeBoxMap = new(ShapeHasher.Instance);
 
         // Fence map
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
@@ -119,7 +120,7 @@ public partial class BooleanBuilder
 
             Shape s = si.Shape();
 
-            if (_images.Find(s, out NCollection_List<Shape> pLSIm))
+            if (_images.TryGetValue(s, out NCollection_List<Shape>? pLSIm))
             {
                 NCollection_List<Shape>.Iterator itLSIm = new(pLSIm);
                 for (; itLSIm.More(); itLSIm.Next())
@@ -134,7 +135,7 @@ public partial class BooleanBuilder
             else
             {
                 lFaces.Append(s);
-                shapeBoxMap.Bind(s, si.Box());
+                shapeBoxMap[s] = si.Box();
             }
         }
 
@@ -143,7 +144,7 @@ public partial class BooleanBuilder
         // Get all solids
         NCollection_List<Shape> lSolids = new();
         // Keep INTERNAL faces of the solids
-        NCollection_DataMap<Shape, NCollection_List<Shape>> solidsIF = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> solidsIF = new(ShapeHasher.Instance);
         // Draft solids
         NCollection_IndexedDataMap<Shape, Shape> draftSolid = new(ShapeHasher.Instance);
 
@@ -176,8 +177,8 @@ public partial class BooleanBuilder
             BuildDraftSolid(solid, ref sd, lif);
 
             lSolids.Append(sd);
-            solidsIF.Bind(sd, lif);
-            shapeBoxMap.Bind(sd, boxS);
+            solidsIF[sd] = lif;
+            shapeBoxMap[sd] = boxS;
             draftSolid.Add(s, sd);
         }
 
@@ -204,7 +205,7 @@ public partial class BooleanBuilder
             Solid solid = ShapeCasts.Solid(draftSolid.FindKey(i));
             Solid sDraft = ShapeCasts.Solid(draftSolid[i]);
             NCollection_List<Shape> lInFaces = inParts.FindFromKey(sDraft);
-            NCollection_List<Shape> lInternal = solidsIF.Find(sDraft);
+            NCollection_List<Shape> lInternal = solidsIF.GetValue(sDraft);
 
             int nbIN = lInFaces.Extent();
 
@@ -214,7 +215,7 @@ public partial class BooleanBuilder
                 // Check if the shells of the solid have image
                 for (Iterator it = new(solid); it.More() && !bHasImage; it.Next())
                 {
-                    bHasImage = _images.IsBound(it.Value());
+                    bHasImage = _images.ContainsKey(it.Value());
                 }
 
                 if (!bHasImage)
@@ -224,13 +225,13 @@ public partial class BooleanBuilder
                 }
             }
 
-            draftSolids.Bind(solid, sDraft);
+            draftSolids[solid] = sDraft;
 
             int nbInt = lInternal.Extent();
             if (nbInt != 0 || nbIN != 0)
             {
                 // Combine the lists
-                NCollection_List<Shape> pLIN = _inParts.Bound(solid, new NCollection_List<Shape>());
+                NCollection_List<Shape> pLIN = _inParts.SetValueRef(solid, new NCollection_List<Shape>());
 
                 NCollection_List<Shape>.Iterator itLS = new(lInFaces);
                 for (; itLS.More(); itLS.Next())
@@ -282,15 +283,15 @@ public partial class BooleanBuilder
                 Shape f = it2.Value();
                 orF = f.Orientation();
                 //
-                if (_images.IsBound(f))
+                if (_images.ContainsKey(f))
                 {
-                    NCollection_List<Shape> lSp = _images.Find(f);
+                    NCollection_List<Shape> lSp = _images.GetValue(f);
                     itS.Initialize(lSp);
                     for (; itS.More(); itS.Next())
                     {
                         fx = itS.Value();
                         //
-                        if (_shapesSD.IsBound(fx))
+                        if (_shapesSD.ContainsKey(fx))
                         {
                             //
                             if (orF == Internal)
@@ -349,7 +350,7 @@ public partial class BooleanBuilder
     }
 
     /// <summary>Builds the split solids from the draft solids and their IN faces.</summary>
-    protected void BuildSplitSolids(NCollection_DataMap<Shape, Shape> draftSolids, ProgressRange range)
+    protected void BuildSplitSolids(Dictionary<Shape, Shape> draftSolids, ProgressRange range)
     {
         bool bFlagSD;
         int i, nbS;
@@ -384,7 +385,7 @@ public partial class BooleanBuilder
             {
                 continue;
             }
-            if (draftSolids.IsBound(s))
+            if (draftSolids.ContainsKey(s))
             {
                 continue;
             }
@@ -410,13 +411,13 @@ public partial class BooleanBuilder
 
             Shape s = si.Shape();
             Solid solid = ShapeCasts.Solid(s);
-            if (!draftSolids.IsBound(s))
+            if (!draftSolids.ContainsKey(s))
             {
                 continue;
             }
 
-            Shape sd = draftSolids.Find(s);
-            if (!_inParts.Find(s, out NCollection_List<Shape> pLFIN) || pLFIN.IsEmpty())
+            Shape sd = draftSolids.GetValue(s);
+            if (!_inParts.TryGetValue(s, out NCollection_List<Shape>? pLFIN) || pLFIN.IsEmpty())
             {
                 solidsIm[solidsIm.Add(s, new NCollection_List<Shape>())].Append(sd);
                 continue;
@@ -516,9 +517,9 @@ public partial class BooleanBuilder
             Shape s = solidsIm.FindKey(k);
             NCollection_List<Shape> lsr = solidsIm[k];
             //
-            if (!_images.IsBound(s))
+            if (!_images.ContainsKey(s))
             {
-                NCollection_List<Shape> pLSx = _images.Bound(s, new NCollection_List<Shape>());
+                NCollection_List<Shape> pLSx = _images.SetValueRef(s, new NCollection_List<Shape>());
                 //
                 it.Initialize(lsr);
                 for (; it.More(); it.Next())
@@ -534,15 +535,15 @@ public partial class BooleanBuilder
                     Shape sx = sTx.Shape();
                     pLSx.Append(sx);
                     //
-                    if (!_origins.Find(sx, out NCollection_List<Shape> pLOr))
+                    if (!_origins.TryGetValue(sx, out NCollection_List<Shape>? pLOr))
                     {
-                        pLOr = _origins.Bound(sx, new NCollection_List<Shape>());
+                        pLOr = _origins.SetValueRef(sx, new NCollection_List<Shape>());
                     }
                     pLOr.Append(s);
                     //
                     if (bFlagSD)
                     {
-                        _shapesSD.Bind(sr, sx);
+                        _shapesSD[sr] = sx;
                     }
                 }
             }
@@ -617,9 +618,9 @@ public partial class BooleanBuilder
             {
                 if (mFence.Add(s))
                 {
-                    if (_images.IsBound(s))
+                    if (_images.ContainsKey(s))
                     {
-                        NCollection_List<Shape> lSp = _images.Find(s);
+                        NCollection_List<Shape> lSp = _images.GetValue(s);
                         it1.Initialize(lSp);
                         for (; it1.More(); it1.Next())
                         {
@@ -667,9 +668,9 @@ public partial class BooleanBuilder
             for (j = 1; j <= nbSx; ++j)
             {
                 Shape aSi = mx[j];
-                if (_images.IsBound(aSi))
+                if (_images.ContainsKey(aSi))
                 {
-                    NCollection_List<Shape> lSp = _images.Find(aSi);
+                    NCollection_List<Shape> lSp = _images.GetValue(aSi);
                     it1.Initialize(lSp);
                     for (; it1.More(); it1.Next())
                     {
@@ -684,9 +685,9 @@ public partial class BooleanBuilder
             }
             //
             // build aux map from splits of solids
-            if (_images.IsBound(s))
+            if (_images.ContainsKey(s))
             {
-                NCollection_List<Shape> lSp = _images.Find(s);
+                NCollection_List<Shape> lSp = _images.GetValue(s);
                 it.Initialize(lSp);
                 for (; it.More(); it.Next())
                 {
@@ -783,10 +784,10 @@ public partial class BooleanBuilder
                     bb.Add(sdx, si);
                     //
                     // no need to check for images of aSd as aMSOr contains only original solids
-                    NCollection_List<Shape> pLS = _images.Bound(sd, new NCollection_List<Shape>());
+                    NCollection_List<Shape> pLS = _images.SetValueRef(sd, new NCollection_List<Shape>());
                     pLS.Append(sdx);
                     //
-                    NCollection_List<Shape> pLOr = _origins.Bound(sdx, new NCollection_List<Shape>());
+                    NCollection_List<Shape> pLOr = _origins.SetValueRef(sdx, new NCollection_List<Shape>());
                     pLOr.Append(sd);
                     //
                     msOr.Remove(sd);

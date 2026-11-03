@@ -840,7 +840,7 @@ internal static class BRepFillRecordingCases
             RemoveLocations aRL = new();
             aRL.SetRemoveLevel(aL);
             Line("REMOVE " + Int(aRL.Remove(aShape)) + " " + Int((int)aRL.RemoveLevel()) + " "
-                 + Int(aRL.GetModifiedShapesMap().Extent()));
+                 + Int(aRL.GetModifiedShapesMap().Count));
             Text("RESULT", aRL.GetResult());
         });
     }

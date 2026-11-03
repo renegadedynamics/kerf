@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Offsets.Bisectors;
 using Kerf.Geometry;
 using Occt;
@@ -28,7 +29,7 @@ public sealed class BisectingLocus
     private MedialGraph? _graph;
     private readonly Tool2d _tool = new();
     private bool _isDone;
-    private readonly NCollection_DataMap<BiInt, int> _nbSect = new();
+    private readonly Dictionary<BiInt, int> _nbSect = new();
     private int _nbContours;
 
     public BisectingLocus()
@@ -105,7 +106,7 @@ public sealed class BisectingLocus
         // Merging of the doubled basic elements if there are several lines.
         if (anExplo.NumberOfContours() > 1)
         {
-            NCollection_DataMap<int, MedialBasicElt> newMap = new();
+            Dictionary<int, MedialBasicElt> newMap = new();
             int indexLast = 1;
 
             // NewMap: the elements ordered along the lines of the contour, without duplicates; the doubled arcs
@@ -127,7 +128,7 @@ public sealed class BisectingLocus
     // the element's start and end arcs are one. They keep their previous values here too (false and 0 at first,
     // where OCCT's are uninitialised: occt-issues.md).
     private void RenumerationAndFusion(int iLine, int lengthLine, ref int indexLast,
-        NCollection_DataMap<int, MedialBasicElt> newMap)
+        Dictionary<int, MedialBasicElt> newMap)
     {
         int indFirst;
         int i, j;
@@ -138,7 +139,7 @@ public sealed class BisectingLocus
         {
             NCollection_Sequence<int> s = _tool.Circuit().RefToEqui(iLine, i);
             indFirst = s.Value(1);
-            newMap.Bind(indexLast, _graph!.ChangeBasicElt(indFirst));
+            newMap[indexLast] = _graph!.ChangeBasicElt(indFirst);
             indexLast++;
 
             for (j = 2; j <= s.Length(); j++)
@@ -173,7 +174,7 @@ public sealed class BisectingLocus
     public int NumberOfSections(int indLine, int index)
     {
         BiInt b = new(indLine, index);
-        return _nbSect.Find(b);
+        return _nbSect.GetValue(b);
     }
 
     /// <summary>The basic element at the position Index on the contour IndLine (they are sorted along it).
@@ -225,7 +226,7 @@ public sealed class BisectingLocus
     // Cuts the curves of the figure at their extrema of curvature and inflections; NbSect counts the sections of
     // each initial curve.
     private static void CutSketch(NCollection_Sequence<NCollection_Sequence<Geometry2D>> figure,
-        NCollection_DataMap<BiInt, int> nbSect)
+        Dictionary<BiInt, int> nbSect)
     {
         CutCurve cuter = new();
         int i, j, k, ico;
@@ -255,7 +256,7 @@ public sealed class BisectingLocus
                     j--;
                 }
                 BiInt b = new(i, iCurveInit);
-                nbSect.Bind(b, nbSection);
+                nbSect[b] = nbSection;
             }
         }
     }

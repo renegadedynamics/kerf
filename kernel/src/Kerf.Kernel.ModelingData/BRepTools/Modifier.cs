@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -50,11 +51,11 @@ public sealed class Modifier
         public bool myRevFace;
     }
 
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
     private Shape _shape = new();
     private bool _done;
-    private readonly NCollection_DataMap<Shape, NewCurveInfo> _ncInfo = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NewSurfaceInfo> _nsInfo = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NewCurveInfo> _ncInfo = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NewSurfaceInfo> _nsInfo = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _nonUpdFace = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _hasNewGeom = new(ShapeHasher.Instance);
     private bool _mutableInput;
@@ -138,16 +139,16 @@ public sealed class Modifier
         {
             if (_shape.Orientation() == Reversed)
             {
-                _map[_shape].Reverse();
+                _map.GetValueRef(_shape).Reverse();
             }
             else
             {
-                _map[_shape].Orientation(_shape.Orientation());
+                _map.GetValueRef(_shape).Orientation(_shape.Orientation());
             }
         }
         else
         {
-            _map[_shape].Orientation(_shape.Orientation());
+            _map.GetValueRef(_shape).Orientation(_shape.Orientation());
         }
 
         // Update the continuities
@@ -157,7 +158,7 @@ public sealed class Modifier
         for (int ii = 1; ii <= mef.Extent(); ii++)
         {
             Edge curE = ShapeCasts.Edge(mef.FindKey(ii));
-            Edge newE = ShapeCasts.Edge(_map[curE]);
+            Edge newE = ShapeCasts.Edge(_map.GetValue(curE));
             if (!curE.IsSame(newE))
             {
                 var it = new NCollection_List<Shape>.Iterator();
@@ -177,8 +178,8 @@ public sealed class Modifier
                 }
                 if (!f2.IsNull)
                 {
-                    Face newf1 = ShapeCasts.Face(_map[f1]);
-                    Face newf2 = ShapeCasts.Face(_map[f2]);
+                    Face newf1 = ShapeCasts.Face(_map.GetValue(f1));
+                    Face newf2 = ShapeCasts.Face(_map.GetValue(f2));
                     Continuity newcont = m.Continuity(curE, f1, f2, newE, newf1, newf2);
                     // OCCT.NET: frozen: an edge rebuilt by an earlier Perform (Init keeps the images, occt-issues.md)
                     // may have been published since; OCCT sets its continuity again, which changes nothing when it
@@ -218,18 +219,18 @@ public sealed class Modifier
     /// <exception cref="NoSuchObjectException">S isn't a sub-shape of the modified shape.</exception>
     internal Shape InternalModifiedShape(in Shape s)
     {
-        if (!_map.IsBound(s))
+        if (!_map.ContainsKey(s))
         {
             throw new NoSuchObjectException();
         }
-        return _map[s];
+        return _map.GetValue(s);
     }
 
     private void Put(in Shape s)
     {
-        if (!_map.IsBound(s))
+        if (!_map.ContainsKey(s))
         {
-            _map.Bind(s, new Shape());
+            _map[s] = new Shape();
             for (var theIterator = new Iterator(s, false); theIterator.More(); theIterator.Next())
             {
                 Put(theIterator.Value());
@@ -242,7 +243,7 @@ public sealed class Modifier
         ShapeType ts = s.ShapeType();
         // OCCT.NET: a reference into the map, as OCCT's TopoDS_Shape& result = myMap(S). The map gains no keys while
         // rebuilding (Put bound every sub-shape), so the reference stays valid through the recursion.
-        ref Shape result = ref _map.ChangeFind(s);
+        ref Shape result = ref _map.GetValueRef(s);
         if (!result.IsNull)
         {
             newGeom = _hasNewGeom.Contains(s);
@@ -261,10 +262,10 @@ public sealed class Modifier
         {
             case ShapeType.Face:
             {
-                rebuild = _nsInfo.IsBound(ShapeCasts.Face(s));
+                rebuild = _nsInfo.ContainsKey(ShapeCasts.Face(s));
                 if (rebuild)
                 {
-                    NewSurfaceInfo nSinfo = _nsInfo[ShapeCasts.Face(s)];
+                    NewSurfaceInfo nSinfo = _nsInfo.GetValue(ShapeCasts.Face(s));
                     revWires = nSinfo.myRevWires;
                     Face resultF = ShapeCasts.Face(result);
                     b.MakeFace(ref resultF,
@@ -305,10 +306,10 @@ public sealed class Modifier
 
             case ShapeType.Edge:
             {
-                rebuild = _ncInfo.IsBound(ShapeCasts.Edge(s));
+                rebuild = _ncInfo.ContainsKey(ShapeCasts.Edge(s));
                 if (rebuild)
                 {
-                    NewCurveInfo nCinfo = _ncInfo[ShapeCasts.Edge(s)];
+                    NewCurveInfo nCinfo = _ncInfo.GetValue(ShapeCasts.Edge(s));
                     Edge resultE = ShapeCasts.Edge(result);
                     if (nCinfo.myCurve is null)
                     {
@@ -407,11 +408,11 @@ public sealed class Modifier
             for (it.Initialize(s, false); it.More(); it.Next())
             {
                 orient = it.Value().Orientation();
-                if (revWires || _map[it.Value()].Orientation() == Reversed)
+                if (revWires || _map.GetValue(it.Value()).Orientation() == Reversed)
                 {
                     orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                 }
-                b.Add(result, _map[it.Value()].Oriented(orient));
+                b.Add(result, _map.GetValue(it.Value()).Oriented(orient));
             }
 
             if (ts == ShapeType.Face)
@@ -433,7 +434,7 @@ public sealed class Modifier
                     if (newGeom
                         && m.NewCurve2d(edge,
                                         face,
-                                        ShapeCasts.Edge(_map[ex.Current()]),
+                                        ShapeCasts.Edge(_map.GetValue(ex.Current())),
                                         ShapeCasts.Face(result),
                                         out curve2d,
                                         out tol))
@@ -453,7 +454,7 @@ public sealed class Modifier
                             isClosed = (!newgeom || BrepTools.IsReallyClosed(edge, face));
                             if (!isClosed)
                             {
-                                Shape resface = (_map.IsBound(face) ? _map[face] : face);
+                                Shape resface = (_map.ContainsKey(face) ? _map.GetValue(face) : face);
                                 if (resface.IsNull)
                                 {
                                     resface = face;
@@ -468,7 +469,7 @@ public sealed class Modifier
                                     {
                                         continue;
                                     }
-                                    Shape resface2 = (_map.IsBound(other) ? _map[other] : other);
+                                    Shape resface2 = (_map.ContainsKey(other) ? _map.GetValue(other) : other);
                                     if (resface2.IsNull)
                                     {
                                         resface2 = other;
@@ -488,7 +489,7 @@ public sealed class Modifier
                         }
                         if (isClosed)
                         {
-                            Edge curE = ShapeCasts.Edge(_map[edge]);
+                            Edge curE = ShapeCasts.Edge(_map.GetValue(edge));
                             Shape localResult = result;
                             localResult.Orientation(Forward);
                             Face curF = ShapeCasts.Face(localResult);
@@ -520,11 +521,11 @@ public sealed class Modifier
                         }
                         else
                         {
-                            b.UpdateEdge(ShapeCasts.Edge(_map[ex.Current()]), curve2d, ShapeCasts.Face(result), 0.0);
+                            b.UpdateEdge(ShapeCasts.Edge(_map.GetValue(ex.Current())), curve2d, ShapeCasts.Face(result), 0.0);
                         }
 
                         Curve3D? c3D =
-                            Tool.Curve(ShapeCasts.Edge(_map[ex.Current()]), out _, out _, out _);
+                            Tool.Curve(ShapeCasts.Edge(_map.GetValue(ex.Current())), out _, out _, out _);
                         if (c3D is null)
                         { // Update vertices
                             double param = 0.0;
@@ -548,11 +549,11 @@ public sealed class Modifier
                                 //   vtxrelat= TopAbs::Reverse(vtxrelat);
                                 // }
 
-                                Vertex localVertex = ShapeCasts.Vertex(_map[vertex]);
+                                Vertex localVertex = ShapeCasts.Vertex(_map.GetValue(vertex));
                                 localVertex.Orientation(vtxrelat);
                                 // B.UpdateVertex(TopoDS::Vertex
                                 //(myMap(vertex).Oriented(vtxrelat)),
-                                b.UpdateVertex(localVertex, param, ShapeCasts.Edge(_map[edge]), tol);
+                                b.UpdateVertex(localVertex, param, ShapeCasts.Edge(_map.GetValue(edge)), tol);
                                 ex2.Next();
                             }
                         }
@@ -577,8 +578,8 @@ public sealed class Modifier
                     if (newPonT)
                     {
                         Triangulation? newFaceTria =
-                            Tool.Triangulation(ShapeCasts.Face(_map[face]), out Placement location);
-                        Edge newEdge = ShapeCasts.Edge(_map[edge]);
+                            Tool.Triangulation(ShapeCasts.Face(_map.GetValue(face)), out Placement location);
+                        Edge newEdge = ShapeCasts.Edge(_map.GetValue(edge));
                         if (polyOnTria_2 is null)
                         {
                             b.UpdateEdge(newEdge, polyOnTria_1, newFaceTria, location);
@@ -630,7 +631,7 @@ public sealed class Modifier
                     // if (result.Orientation() == TopAbs_REVERSED) {
                     //   vtxrelat= TopAbs::Reverse(vtxrelat);
                     // }
-                    Vertex localVertex = ShapeCasts.Vertex(_map[vertex]);
+                    Vertex localVertex = ShapeCasts.Vertex(_map.GetValue(vertex));
                     localVertex.Orientation(vtxrelat);
                     // B.UpdateVertex(TopoDS::Vertex(myMap(vertex).Oriented(vtxrelat)),
                     if (_mutableInput || !localVertex.IsSame(vertex))
@@ -679,12 +680,12 @@ public sealed class Modifier
                 Vertex newV = new();
                 bb.MakeVertex(ref newV, pnt, toler);
                 SetShapeFlags(v, newV);
-                _map[v] = newV;
+                _map.GetValueRef(v) = newV;
                 _hasNewGeom.Add(v);
             }
             else if (_mutableInput)
             {
-                _map[v] = v.Oriented(Forward);
+                _map.GetValueRef(v) = v.Oriented(Forward);
             }
         }
     }
@@ -702,7 +703,7 @@ public sealed class Modifier
                 nCinfo.myCurve = curve;
                 nCinfo.myLoc = location;
                 nCinfo.Toler = toler;
-                _ncInfo.Bind(e, nCinfo);
+                _ncInfo[e] = nCinfo;
                 _hasNewGeom.Add(e);
             }
         }
@@ -729,7 +730,7 @@ public sealed class Modifier
                 nSinfo.Toler = toler1;
                 nSinfo.myRevWires = revWires;
                 nSinfo.myRevFace = revFace;
-                _nsInfo.Bind(f, nSinfo);
+                _nsInfo[f] = nSinfo;
                 _hasNewGeom.Add(f);
             }
             else
@@ -740,7 +741,7 @@ public sealed class Modifier
                 while (exE.More() && notRebuilded)
                 {
                     Edge ee = ShapeCasts.Edge(exE.Current());
-                    if (_ncInfo.IsBound(ee))
+                    if (_ncInfo.ContainsKey(ee))
                     {
                         notRebuilded = false;
                         break;
@@ -749,7 +750,7 @@ public sealed class Modifier
                     while (exV.More() && notRebuilded)
                     {
                         Vertex vv = ShapeCasts.Vertex(exV.Current());
-                        if (!_map[vv].IsNull)
+                        if (!_map.GetValue(vv).IsNull)
                         {
                             notRebuilded = false;
                             break;
@@ -781,7 +782,7 @@ public sealed class Modifier
         for (int i = 1; i <= mve.Extent(); i++)
         {
             Vertex v = ShapeCasts.Vertex(mve.FindKey(i));
-            Vertex newV = ShapeCasts.Vertex(_map[v]);
+            Vertex newV = ShapeCasts.Vertex(_map.GetValue(v));
             if (newV.IsNull)
             {
                 NCollection_List<Shape> lEdges = mve[i];
@@ -790,7 +791,7 @@ public sealed class Modifier
                 for (; it.More() && !toReplace; it.Next())
                 {
                     Edge e = ShapeCasts.Edge(it.Value());
-                    if (_ncInfo.IsBound(e) && _ncInfo[e].myCurve is not null)
+                    if (_ncInfo.ContainsKey(e) && _ncInfo.GetValue(e).myCurve is not null)
                     {
                         toReplace = true;
                     }
@@ -825,7 +826,7 @@ public sealed class Modifier
                     newV = v;
                 }
                 newV.Orientation(Forward);
-                _map[v] = newV;
+                _map.GetValueRef(v) = newV;
             }
         }
     }

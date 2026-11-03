@@ -466,11 +466,11 @@ public sealed class NSections : SectionLaw
                     _edges.SetValue(ii, jj, e);
                     if (e.Orientation() == Forward)
                     {
-                        _indices.Bind(e, ii);
+                        _indices[e] = ii;
                     }
                     else
                     {
-                        _indices.Bind(e, -ii);
+                        _indices[e] = -ii;
                     }
                 }
             }

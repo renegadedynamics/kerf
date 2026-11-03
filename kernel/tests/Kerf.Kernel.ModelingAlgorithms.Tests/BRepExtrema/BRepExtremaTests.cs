@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
@@ -414,22 +415,22 @@ public class BRepExtremaTests
         var aNear = new ShapeProximity(a, b, 0.5);
         aNear.Perform();
         Assert.True(aNear.IsDone);
-        Assert.True(aNear.OverlapSubShapes1().IsBound(0));
-        Assert.True(aNear.OverlapSubShapes1().Find(0).Contains(0));
-        Assert.True(aNear.OverlapSubShapes2().Find(0).Contains(0));
+        Assert.True(aNear.OverlapSubShapes1().ContainsKey(0));
+        Assert.True(aNear.OverlapSubShapes1().GetValue(0).Contains(0));
+        Assert.True(aNear.OverlapSubShapes2().GetValue(0).Contains(0));
         Assert.True(aNear.GetSubShape1(0).IsSame(a));
 
         var aFar = new ShapeProximity(a, b, 0.2);
         aFar.Perform();
         Assert.False(aFar.IsDone);
-        Assert.Equal(0, aFar.OverlapSubShapes1().Extent());
+        Assert.Empty(aFar.OverlapSubShapes1());
 
         // tolerance zero: crossing triangles
         Face aVertical = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
             [new Point3D(0.5, -1, -1), new Point3D(0.5, 2, -1), new Point3D(0.5, 0.5, 1)], (1, 2, 3)));
         var aCross = new ShapeProximity(a, aVertical, 0.0);
         aCross.Perform();
-        Assert.True(aCross.OverlapSubShapes1().IsBound(0));
+        Assert.True(aCross.OverlapSubShapes1().ContainsKey(0));
     }
 
     [Fact]
@@ -473,13 +474,13 @@ public class BRepExtremaTests
         var aSelf = new SelfIntersection(Builder.MakeCompound(a, aVertical));
         aSelf.Perform();
         Assert.True(aSelf.IsDone);
-        Assert.True(aSelf.OverlapElements().IsBound(0) || aSelf.OverlapElements().IsBound(1));
+        Assert.True(aSelf.OverlapElements().ContainsKey(0) || aSelf.OverlapElements().ContainsKey(1));
         Assert.True(aSelf.GetSubShape(1).IsSame(aVertical));
 
         // two squares side by side, sharing an edge: regular, no self-intersection
         var aClean = new SelfIntersection(Builder.MakeCompound(MeshSquare(0), MeshSquare(0, 1)));
         aClean.Perform();
-        Assert.Equal(0, aClean.OverlapElements().Extent());
+        Assert.Empty(aClean.OverlapElements());
     }
 
     [Fact]
@@ -597,12 +598,12 @@ public class BRepExtremaTests
         Compound aC = Builder.MakeCompound(MeshSquare(0), MeshSquare(0.1));
         var anExact = new SelfIntersection(aC);
         anExact.Perform();
-        Assert.Equal(0, anExact.OverlapElements().Extent());
+        Assert.Empty(anExact.OverlapElements());
         var aTolerant = new SelfIntersection(aC, 0.2);
         Assert.Equal(0.2, aTolerant.Tolerance());
         aTolerant.Perform();
         Assert.True(aTolerant.IsDone);
-        Assert.True(aTolerant.OverlapElements().IsBound(0) || aTolerant.OverlapElements().IsBound(1));
+        Assert.True(aTolerant.OverlapElements().ContainsKey(0) || aTolerant.OverlapElements().ContainsKey(1));
         Assert.NotNull(aTolerant.ElementSet());
     }
 
@@ -650,7 +651,7 @@ public class BRepExtremaTests
         Assert.True(aProx.LoadShape2(MeshSquare(5)));
         aProx.Perform();
         Assert.False(aProx.IsDone);
-        Assert.True(aProx.OverlapSubShapes1().IsBound(0)); // the first Perform's pair is still there
+        Assert.True(aProx.OverlapSubShapes1().ContainsKey(0)); // the first Perform's pair is still there
     }
 
     [Fact]

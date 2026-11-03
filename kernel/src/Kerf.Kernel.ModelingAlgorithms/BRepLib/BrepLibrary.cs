@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -732,7 +733,7 @@ public static partial class BrepLibrary
     //=======================================================================
     private static void UpdTolMap(in Shape sh,
                                   double newTol,
-                                  NCollection_DataMap<Shape, double> shToTol)
+                                  Dictionary<Shape, double> shToTol)
     {
         ShapeType st = sh.ShapeType();
         double shTol;
@@ -751,13 +752,13 @@ public static partial class BrepLibrary
         //
         if (newTol > shTol)
         {
-            if (!shToTol.Find(sh, out double oldtol))
+            if (!shToTol.TryGetValue(sh, out double oldtol))
             {
-                shToTol.Bind(sh, newTol);
+                shToTol[sh] = newTol;
             }
             else
             {
-                shToTol.ChangeFind(sh) = Max(oldtol, newTol);
+                shToTol.GetValueRef(sh) = Max(oldtol, newTol);
             }
         }
     }
@@ -766,7 +767,7 @@ public static partial class BrepLibrary
     // function : UpdShTol
     // purpose  : Update vertices/edges/faces according to ShToTol map (create copies of necessary)
     //=======================================================================
-    private static void UpdShTol(NCollection_DataMap<Shape, double> shToTol,
+    private static void UpdShTol(Dictionary<Shape, double> shToTol,
                                  bool isMutableInput,
                                  ReShape reshaper,
                                  bool vForceUpdate)
@@ -852,7 +853,7 @@ public static partial class BrepLibrary
         var ex = new Explorer(sh, ShapeType.Edge);
         var done = new HashSet<Shape>(ShapeHasher.Instance);
         var b = new BrepBuilder();
-        var shToTol = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
+        var shToTol = new Dictionary<Shape, double>(ShapeHasher.Instance);
 
         while (ex.More())
         {
@@ -1707,7 +1708,7 @@ public static partial class BrepLibrary
                                                  bool isMutableInput,
                                                  ReShape reshaper)
     {
-        var shToTol = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
+        var shToTol = new Dictionary<Shape, double>(ShapeHasher.Instance);
         // Harmonize tolerances
         // with rule Tolerance(VERTEX)>=Tolerance(EDGE)>=Tolerance(FACE)
         double tol = 0;
@@ -1781,7 +1782,7 @@ public static partial class BrepLibrary
                             tol = 0.99;
                         }
                     }
-                    shToTol.Bind(curf, tol);
+                    shToTol[curf] = tol;
                 }
             }
         }
@@ -1798,9 +1799,9 @@ public static partial class BrepLibrary
             {
                 Face ff = ShapeCasts.Face(lConx.Value());
                 double ftol;
-                if (isVerifyTolerance && shToTol.IsBound(ff))
+                if (isVerifyTolerance && shToTol.ContainsKey(ff))
                 { // first condition for speed-up
-                    ftol = shToTol.Find(ff);
+                    ftol = shToTol.GetValue(ff);
                 }
                 else
                 {
@@ -1813,7 +1814,7 @@ public static partial class BrepLibrary
             Edge ek = ShapeCasts.Edge(parents.FindKey(iCur));
             if (tol > Tool.Tolerance(ek))
             {
-                shToTol.Bind(ek, tol);
+                shToTol[ek] = tol;
             }
         }
 
@@ -1835,7 +1836,7 @@ public static partial class BrepLibrary
             for (lConx.Initialize(parents[iCur]); lConx.More(); lConx.Next())
             {
                 Edge e = ShapeCasts.Edge(lConx.Value());
-                tol = Max(tol, shToTol.Find(e, out double ntol) ? ntol : Tool.Tolerance(e));
+                tol = Max(tol, shToTol.TryGetValue(e, out double ntol) ? ntol : Tool.Tolerance(e));
                 if (tol > bigTol)
                 {
                     continue;
@@ -1916,7 +1917,7 @@ public static partial class BrepLibrary
             //'Initialized' map is not used anywhere outside this block
             if (updTol || toAdd)
             {
-                shToTol.Bind(v, tol);
+                shToTol[v] = tol;
             }
         }
 

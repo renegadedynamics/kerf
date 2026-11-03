@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
@@ -36,7 +37,7 @@ public sealed class Spliter
     private bool _done;
     private Shape _res = new();
     // OCCT iterates this map keyed by the shapes' addresses; each entry is handled alone (the order isn't observable)
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _dLeft = new();
     private readonly NCollection_List<Shape> _left = new();
     private WorkingShapes? _work;
@@ -86,7 +87,7 @@ public sealed class Spliter
         _res = _work.Final(_res);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = _work.Final(_map[key]);
+            _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
         }
         NCollection_List<Shape> dLeft = _work.Final(_dLeft), left = _work.Final(_left);
         _dLeft.Assign(dLeft);
@@ -113,7 +114,7 @@ public sealed class Spliter
         Put(_shape, _map);
 
         HashSet<Shape> mapV = new(ShapeHasher.Instance), mapE = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> edgOnEdg = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> edgOnEdg = new(ShapeHasher.Instance);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapFE = new(ShapeHasher.Instance);
         Explorer exp = new(), exp2 = new();
 
@@ -163,13 +164,13 @@ public sealed class Spliter
                 {
                     NCollection_List<Shape> lsub = theSubs.InternalCopy(key);
                     // OCCT_DEBUG check left out (Standard_ConstructionError if lsub.Extent() != 1)
-                    _map[key].Clear();
-                    _map[key].Append(lsub.First());
+                    _map.GetValue(key).Clear();
+                    _map.GetValue(key).Append(lsub.First());
                 }
             }
         }
 
-        _res = _map[_shape].First();
+        _res = _map.GetValue(_shape).First();
         LocalSplitShape theCFace = new(_res, _work);
 
         // Adds every vertices lying on an edge of the shape, and prepares
@@ -189,28 +190,28 @@ public sealed class Spliter
                     if (pw.InternalOnEdge(vtx, edg, out Edge ed, out prm))
                     {
                         // on devrait verifier que le vtx n`existe pas deja sur l`edge
-                        if (!_map.IsBound(ed))
+                        if (!_map.ContainsKey(ed))
                         {
                             continue;
                         }
-                        ed = ShapeCasts.Edge(_map[ed].First());
+                        ed = ShapeCasts.Edge(_map.GetValue(ed).First());
                         theCFace.InternalAdd(vtx, prm, ed);
                     }
                 }
             }
             if (pw.InternalOnEdge(out Edge ebis))
             {
-                edgOnEdg.Bind(edg, ebis);
+                edgOnEdg[edg] = ebis;
             }
             else
             {
                 Face fac = pw.InternalOnFace();
-                if (!_map.IsBound(fac))
+                if (!_map.ContainsKey(fac))
                 {
                     continue;
                 }
                 bool isFaceWithSec = pw.InternalIsFaceWithSection(fac);
-                fac = ShapeCasts.Face(_map[fac].First());
+                fac = ShapeCasts.Face(_map.GetValue(fac).First());
                 if (isFaceWithSec)
                 {
                     theFacesWithSection.Add(fac);
@@ -251,11 +252,11 @@ public sealed class Spliter
 
         foreach (Shape sori in _map.Keys.ToList())
         {
-            Shape scib = _map[sori].First();
-            _map[sori] = theCFace.InternalDescendantShapes(scib);
+            Shape scib = _map.GetValue(sori).First();
+            _map.GetValueRef(sori) = theCFace.InternalDescendantShapes(scib);
         }
 
-        NCollection_List<Shape> lres = _map[_shape];
+        NCollection_List<Shape> lres = _map.GetValue(_shape);
 
         ShapeType typS = _shape.ShapeType();
         if (typS == ShapeType.Face && lres.Extent() >= 2)
@@ -301,7 +302,7 @@ public sealed class Spliter
 
             Exploration.Vertices(e1, out Vertex vf1, out Vertex vl1);
             lsubs.Clear();
-            for (itl.Initialize(_map[itee.Value]); itl.More(); itl.Next())
+            for (itl.Initialize(_map.GetValue(itee.Value)); itl.More(); itl.Next())
             {
                 Edge e2 = ShapeCasts.Edge(itl.Value());
                 Exploration.Vertices(e2, out Vertex vf2, out Vertex vl2);
@@ -362,7 +363,7 @@ public sealed class Spliter
 
         foreach (Shape key in _map.Keys.ToList())
         {
-            NCollection_List<Shape> ldesc = _map[key];
+            NCollection_List<Shape> ldesc = _map.GetValue(key);
             NCollection_List<Shape> newdesc = new();
             for (itl.Initialize(ldesc); itl.More(); itl.Next())
             {
@@ -377,7 +378,7 @@ public sealed class Spliter
                     newdesc.Append(itl.Value());
                 }
             }
-            _map[key] = newdesc;
+            _map.GetValueRef(key) = newdesc;
         }
 
         if (theSubs.IsCopied(_res))
@@ -617,9 +618,9 @@ public sealed class Spliter
             throw new NotDoneException();
         }
         Shape aF = _work is null ? f : _work.Copied(f);
-        if (_map.IsBound(aF))
+        if (_map.ContainsKey(aF))
         {
-            return _map[aF];
+            return _map.GetValue(aF);
         }
         else
         {
@@ -639,15 +640,15 @@ public sealed class Spliter
         ledge = new NCollection_List<Shape>(theBuild.InternalResult());
     }
 
-    private static void Put(in Shape s, NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+    private static void Put(in Shape s, Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        if (map.IsBound(s))
+        if (map.ContainsKey(s))
         {
             return;
         }
         NCollection_List<Shape> thelist = new();
-        map.Bind(s, thelist);
-        map[s].Append(s);
+        map[s] = thelist;
+        map.GetValue(s).Append(s);
         for (Iterator it = new(s); it.More(); it.Next())
         {
             Put(it.Value(), map);

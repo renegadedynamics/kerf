@@ -643,7 +643,7 @@ public class TopOpeBRepDSTests
         DS.AddCurve(ref C);
         DS.AddCurve(new DsCurve()); // a degenerated curve
         DS.AddCurve(new DsCurve(new LineCurve3D(new Axis3D()), 0.0));
-        DS._curves.UnBind(3);
+        DS._curves.Remove(3);
         HDS.StoreInterference(SCI1, F1);
         DS.ChangeCurveInterferences(1).Append(new DsCurvePointInterference(T, DsKind.Curve, 1, DsKind.Point, iP, 0.75));
         DS.ChangeCurveInterferences(1).Append(new DsCurvePointInterference(T, DsKind.Curve, 1, DsKind.Vertex, iV, -0.0));

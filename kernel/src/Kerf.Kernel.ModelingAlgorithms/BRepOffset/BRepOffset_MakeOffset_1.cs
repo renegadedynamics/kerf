@@ -11,6 +11,7 @@ using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
@@ -81,9 +82,9 @@ internal sealed class BuildOffsetFaces
     }
 
     private static void AddToContainer(in Shape key, in Shape value,
-                                       NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+                                       Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        if (map.Find(key, out NCollection_List<Shape> pList))
+        if (map.TryGetValue(key, out NCollection_List<Shape>? pList))
         {
             pList.Append(value);
         }
@@ -91,7 +92,7 @@ internal sealed class BuildOffsetFaces
         {
             NCollection_List<Shape> list = new();
             list.Append(value);
-            map.Bind(key, list);
+            map[key] = list;
         }
     }
 
@@ -101,10 +102,10 @@ internal sealed class BuildOffsetFaces
     //           Puts in the output map either the images or the shape itself.
     //=======================================================================
     private static bool TakeModified(in Shape s,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                     Dictionary<Shape, NCollection_List<Shape>> images,
                                      object container, object? mFence)
     {
-        if (images.Find(s, out NCollection_List<Shape> pLSIm))
+        if (images.TryGetValue(s, out NCollection_List<Shape>? pLSIm))
         {
             NCollection_List<Shape>.Iterator itLSIm = new(pLSIm);
             for (; itLSIm.More(); itLSIm.Next())
@@ -128,7 +129,7 @@ internal sealed class BuildOffsetFaces
     }
 
     private static bool TakeModified(in Shape s,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                     Dictionary<Shape, NCollection_List<Shape>> images,
                                      object mapOut)
     {
         return TakeModified(s, images, mapOut, null);
@@ -138,8 +139,8 @@ internal sealed class BuildOffsetFaces
     // function : hasData
     // purpose  : Checks if container has any data in it
     //=======================================================================
-    private static bool HasData<TK, TV>(NCollection_DataMap<TK, TV>? data) where TK : notnull =>
-        data is not null && !data.IsEmpty();
+    private static bool HasData<TK, TV>(Dictionary<TK, TV>? data) where TK : notnull =>
+        data is not null && data.Count != 0;
 
     private static bool HasData(NCollection_List<Shape>? data) => data is not null && !data.IsEmpty();
 
@@ -190,7 +191,7 @@ internal sealed class BuildOffsetFaces
     //=================================================================================================
 
     private static void UpdateOrigins(NCollection_List<Shape> la,
-                                      NCollection_DataMap<Shape, NCollection_List<Shape>> origins,
+                                      Dictionary<Shape, NCollection_List<Shape>> origins,
                                       BooleanBuilder gf)
     {
         for (NCollection_List<Shape>.Iterator itA = new(la); itA.More(); itA.Next())
@@ -204,7 +205,7 @@ internal sealed class BuildOffsetFaces
             }
 
             NCollection_List<Shape> lsEmpt = new();
-            if (!origins.Find(s, out NCollection_List<Shape> pLS))
+            if (!origins.TryGetValue(s, out NCollection_List<Shape>? pLS))
             {
                 pLS = lsEmpt;
                 pLS.Append(s);
@@ -213,7 +214,7 @@ internal sealed class BuildOffsetFaces
             for (NCollection_List<Shape>.Iterator it = new(lsIm); it.More(); it.Next())
             {
                 Shape sIm = it.Value();
-                if (origins.Find(sIm, out NCollection_List<Shape> pLSOr))
+                if (origins.TryGetValue(sIm, out NCollection_List<Shape>? pLSOr))
                 {
                     // merge two lists
                     for (NCollection_List<Shape>.Iterator it1 = new(pLS); it1.More(); it1.Next())
@@ -223,7 +224,7 @@ internal sealed class BuildOffsetFaces
                 }
                 else
                 {
-                    origins.Bind(sIm, new NCollection_List<Shape>(pLS));
+                    origins[sIm] = new NCollection_List<Shape>(pLS);
                 }
             }
         }
@@ -232,19 +233,19 @@ internal sealed class BuildOffsetFaces
     //=================================================================================================
 
     private static void UpdateImages(NCollection_List<Shape> la,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                     Dictionary<Shape, NCollection_List<Shape>> images,
                                      BooleanBuilder gf, HashSet<Shape> modified)
     {
         for (NCollection_List<Shape>.Iterator it = new(la); it.More(); it.Next())
         {
             Shape s = it.Value();
 
-            if (!images.Find(s, out NCollection_List<Shape> pLSIm))
+            if (!images.TryGetValue(s, out NCollection_List<Shape>? pLSIm))
             {
                 NCollection_List<Shape> lsIm = ModifiedOf(gf, s);
                 if (lsIm.Extent() != 0)
                 {
-                    images.Bind(s, lsIm);
+                    images[s] = lsIm;
                     modified.Add(s);
                 }
                 continue;
@@ -396,7 +397,7 @@ internal sealed class BuildOffsetFaces
     // purpose  : Building the splits of offset face
     //=======================================================================
     private static void BuildSplitsOfFace(in Face face, in Shape edges,
-                                          NCollection_DataMap<Shape, Shape> facesOrigins,
+                                          Dictionary<Shape, Shape> facesOrigins,
                                           NCollection_List<Shape> lfImages)
     {
         lfImages.Clear();
@@ -438,7 +439,7 @@ internal sealed class BuildOffsetFaces
             fSp.Orientation(or);
             lfImages.Append(fSp);
             //
-            facesOrigins.Bind(fSp, face);
+            facesOrigins[fSp] = face;
         }
     }
 
@@ -482,17 +483,17 @@ internal sealed class BuildOffsetFaces
     private Analyse? _analyzer; //!< Analyzer of the input parameters
 
     //!< Origins of the offset edges (binding between offset edge and original edge)
-    private NCollection_DataMap<Shape, NCollection_List<Shape>>? _edgesOrigins;
+    private Dictionary<Shape, NCollection_List<Shape>>? _edgesOrigins;
     //!< Origins of the offset faces (binding between offset face and original face)
-    private NCollection_DataMap<Shape, Shape>? _facesOrigins;
+    private Dictionary<Shape, Shape>? _facesOrigins;
     //!< Binding between trimmed and infinite edge
-    private NCollection_DataMap<Shape, Shape>? _eTrimEInf;
+    private Dictionary<Shape, Shape>? _eTrimEInf;
 
     // Intermediate data
     //!< Images of the offset edges
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _oeImages = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _oeImages = new(ShapeHasher.Instance);
     //!< Origins of the splits of offset edges
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _oeOrigins = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _oeOrigins = new(ShapeHasher.Instance);
     //!< Images of the offset edges
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _ofImages = new(ShapeHasher.Instance);
 
@@ -515,18 +516,18 @@ internal sealed class BuildOffsetFaces
     private NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _invalidFaces = new(ShapeHasher.Instance);
     //!< Artificially invalid faces - valid faces intentionally marked invalid to be rebuilt on the future steps in the
     //!  situations when invalid edges are present, but invalid faces not
-    private readonly NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> _artInvalidFaces = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_IndexedMap<Shape>> _artInvalidFaces = new(ShapeHasher.Instance);
     //!< Count number of the same face being marked invalid to avoid infinite rebuilding of the same face
-    private readonly NCollection_DataMap<Shape, int> _alreadyInvFaces = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, int> _alreadyInvFaces = new(ShapeHasher.Instance);
     //!< Images of the hole faces of the original face
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _fNewHoles = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _fNewHoles = new(ShapeHasher.Instance);
 
     //!< Intersection information, used to collect intersection pairs during rebuild
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _ssInterfs = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _ssInterfs = new(ShapeHasher.Instance);
     //!< Intersection information, used to collect intersection pairs during rebuild
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _ssInterfsArt = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _ssInterfsArt = new(ShapeHasher.Instance);
     //!< All possible intersection pairs, used to avoid some of the intersections
-    private readonly NCollection_DataMap<Shape, NCollection_DataMap<Shape, HashSet<Shape>>> _intersectionPairs = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Dictionary<Shape, HashSet<Shape>>> _intersectionPairs = new(ShapeHasher.Instance);
 
     //!< Faces that have to be rebuilt (invalid and close to invalid faces)
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _facesToRebuild = new(ShapeHasher.Instance);
@@ -558,15 +559,15 @@ internal sealed class BuildOffsetFaces
     public void SetAnalysis(Analyse analyse) => _analyzer = analyse;
 
     //! Sets origins of the offset edges (from original shape)
-    public void SetEdgesOrigins(NCollection_DataMap<Shape, NCollection_List<Shape>> edgesOrigins) =>
+    public void SetEdgesOrigins(Dictionary<Shape, NCollection_List<Shape>> edgesOrigins) =>
         _edgesOrigins = edgesOrigins;
 
     //! Sets origins of the offset faces (from original shape)
-    public void SetFacesOrigins(NCollection_DataMap<Shape, Shape> facesOrigins) =>
+    public void SetFacesOrigins(Dictionary<Shape, Shape> facesOrigins) =>
         _facesOrigins = facesOrigins;
 
     //! Sets infinite (extended) edges for the trimmed ones
-    public void SetInfEdges(NCollection_DataMap<Shape, Shape> eTrimEInf) => _eTrimEInf = eTrimEInf;
+    public void SetInfEdges(Dictionary<Shape, Shape> eTrimEInf) => _eTrimEInf = eTrimEInf;
 
     //=================================================================================================
 
@@ -578,7 +579,7 @@ internal sealed class BuildOffsetFaces
             return;
         }
 
-        NCollection_DataMap<Shape, NCollection_List<Shape>> edgesOrigins = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> edgesOrigins = new(ShapeHasher.Instance);
         if (_edgesOrigins is null)
         {
             _edgesOrigins = edgesOrigins;
@@ -715,7 +716,7 @@ internal sealed class BuildOffsetFaces
         for (NCollection_List<Shape>.Iterator itA = new(la); itA.More(); itA.Next())
         {
             Shape s = itA.Value();
-            if (!_eTrimEInf!.Find(s, out Shape pEInf))
+            if (!_eTrimEInf!.TryGetValue(s, out Shape pEInf))
             {
                 continue;
             }
@@ -729,9 +730,9 @@ internal sealed class BuildOffsetFaces
             for (NCollection_List<Shape>.Iterator it = new(lsIm); it.More(); it.Next())
             {
                 Shape eIm = it.Value();
-                if (!_eTrimEInf.IsBound(eIm))
+                if (!_eTrimEInf.ContainsKey(eIm))
                 {
-                    _eTrimEInf.Bind(eIm, pEInf);
+                    _eTrimEInf[eIm] = pEInf;
                 }
             }
         }
@@ -806,13 +807,13 @@ internal sealed class BuildOffsetFaces
             //
             la.Append(e);
             // save images
-            _oeImages.Bind(e, new NCollection_List<Shape>(leIm));
+            _oeImages[e] = new NCollection_List<Shape>(leIm);
             // save origins
             NCollection_List<Shape>.Iterator itLE = new(leIm);
             for (; itLE.More(); itLE.Next())
             {
                 Shape eIm = itLE.Value();
-                if (_oeOrigins.Find(eIm, out NCollection_List<Shape> pLEOr))
+                if (_oeOrigins.TryGetValue(eIm, out NCollection_List<Shape>? pLEOr))
                 {
                     AppendToList(pLEOr, e);
                 }
@@ -820,7 +821,7 @@ internal sealed class BuildOffsetFaces
                 {
                     NCollection_List<Shape> l = new();
                     l.Append(e);
-                    _oeOrigins.Bind(eIm, l);
+                    _oeOrigins[eIm] = l;
                 }
             }
         }
@@ -877,13 +878,13 @@ internal sealed class BuildOffsetFaces
         // processed faces
         NCollection_List<Shape> lfDone = new();
         // extended face - map of neutral edges, i.e. in one split - valid and in other - invalid
-        NCollection_DataMap<Shape, HashSet<Shape>> dmfmne = new(ShapeHasher.Instance);
+        Dictionary<Shape, HashSet<Shape>> dmfmne = new(ShapeHasher.Instance);
         // map of valid edges for each face
-        NCollection_DataMap<Shape, HashSet<Shape>> dmfmve = new(ShapeHasher.Instance);
+        Dictionary<Shape, HashSet<Shape>> dmfmve = new(ShapeHasher.Instance);
         // map of invalid edges for each face
-        NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> dmfmie = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_IndexedMap<Shape>> dmfmie = new(ShapeHasher.Instance);
         // map of valid inverted edges for the face
-        NCollection_DataMap<Shape, HashSet<Shape>> dmfmvie = new(ShapeHasher.Instance);
+        Dictionary<Shape, HashSet<Shape>> dmfmvie = new(ShapeHasher.Instance);
         // map of splits to check for internals
         NCollection_IndexedMap<Shape> mfToCheckInt = new(ShapeHasher.Instance);
         // map of edges created from vertex and marked as invalid
@@ -891,7 +892,7 @@ internal sealed class BuildOffsetFaces
         // map of edges created from vertex and marked as valid
         HashSet<Shape> mEdgeValidByVertex = new(ShapeHasher.Instance);
         // connection map from old edges to new ones
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOrLEIm = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmeOrLEIm = new(ShapeHasher.Instance);
         //
         // Outer range
         using ProgressScope psOuter = new(range, null, 10.0);
@@ -1027,8 +1028,8 @@ internal sealed class BuildOffsetFaces
                         }
                     }
                     //
-                    _artInvalidFaces.Bind(f, new NCollection_IndexedMap<Shape>(meInv));
-                    dmfmie.Bind(f, new NCollection_IndexedMap<Shape>(meInv));
+                    _artInvalidFaces[f] = new NCollection_IndexedMap<Shape>(meInv);
+                    dmfmie[f] = new NCollection_IndexedMap<Shape>(meInv);
                     lfDone.Append(f);
                     //
                     continue;
@@ -1053,7 +1054,7 @@ internal sealed class BuildOffsetFaces
             lfDone.Append(f);
         }
         //
-        if (_invalidEdges.IsEmpty() && _artInvalidFaces.IsEmpty() && dmfmie.IsEmpty())
+        if (_invalidEdges.IsEmpty() && _artInvalidFaces.Count == 0 && dmfmie.Count == 0)
         {
             return;
         }
@@ -1105,7 +1106,7 @@ internal sealed class BuildOffsetFaces
             NCollection_List<Shape> lfImages = _ofImages.ChangeFromKey(f);
             //
             NCollection_List<Shape> lfInv = new();
-            bool bArtificialCase = _artInvalidFaces.IsBound(f);
+            bool bArtificialCase = _artInvalidFaces.ContainsKey(f);
             if (bArtificialCase)
             {
                 lfInv.Assign(lfImages);
@@ -1113,13 +1114,13 @@ internal sealed class BuildOffsetFaces
             else
             {
                 // neutral edges
-                if (!dmfmne.Find(f, out HashSet<Shape> pMNE))
+                if (!dmfmne.TryGetValue(f, out HashSet<Shape>? pMNE))
                 {
                     pMNE = emptyMap;
                 }
                 // find faces inside holes wires
                 HashSet<Shape> mfHoles = new(ShapeHasher.Instance);
-                Face fOr = ShapeCasts.Face(_facesOrigins!.Find(f));
+                Face fOr = ShapeCasts.Face(_facesOrigins!.GetValue(f));
                 FindFacesInsideHoleWires(fOr, f, lfImages, dmeOrLEIm, efMap, mfHoles);
                 //
                 foreach (Shape itMH in mfHoles)
@@ -1134,9 +1135,9 @@ internal sealed class BuildOffsetFaces
             //
             if (lfInv.Extent() != 0)
             {
-                if (_alreadyInvFaces.IsBound(f))
+                if (_alreadyInvFaces.ContainsKey(f))
                 {
-                    if (_alreadyInvFaces.Find(f) > 2)
+                    if (_alreadyInvFaces.GetValue(f) > 2)
                     {
                         if (lfInv.Extent() == lfImages.Extent() && !bArtificialCase)
                         {
@@ -1232,13 +1233,13 @@ internal sealed class BuildOffsetFaces
         for (i = 1; i <= nb; ++i)
         {
             Shape f = _invalidFaces.FindKey(i);
-            if (_alreadyInvFaces.IsBound(f))
+            if (_alreadyInvFaces.ContainsKey(f))
             {
-                _alreadyInvFaces.ChangeFind(f)++;
+                _alreadyInvFaces.GetValueRef(f)++;
             }
             else
             {
-                _alreadyInvFaces.Bind(f, 1);
+                _alreadyInvFaces[f] = 1;
             }
         }
     }
@@ -1256,7 +1257,7 @@ internal sealed class BuildOffsetFaces
         for (; exp.More(); exp.Next())
         {
             Shape e = exp.Current();
-            if (_oeImages.Find(e, out NCollection_List<Shape> pLEIm))
+            if (_oeImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 for (NCollection_List<Shape>.Iterator itLE0 = new(pLEIm); itLE0.More(); itLE0.Next())
                 {
@@ -1288,7 +1289,7 @@ internal sealed class BuildOffsetFaces
                 bUpdate = _modifiedEdges.Contains(e);
             }
             //
-            if (_oeImages.Find(e, out NCollection_List<Shape> pLEIm))
+            if (_oeImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 NCollection_List<Shape>.Iterator itLEIm = new(pLEIm);
                 for (; itLEIm.More(); itLEIm.Next())
@@ -1412,7 +1413,7 @@ internal sealed class BuildOffsetFaces
         {
             Edge e = ShapeCasts.Edge(itLE.Value());
             //
-            if (_oeImages.Find(e, out NCollection_List<Shape> pLEIm))
+            if (_oeImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 bool bChecked = false;
                 NCollection_List<Shape>.Iterator itLEIm = new(pLEIm);
@@ -1453,11 +1454,11 @@ internal sealed class BuildOffsetFaces
     //! Looks for the invalid edges (edges with changed orientation)
     //! in the splits of offset faces
     private void FindInvalidEdges(in Face f, NCollection_List<Shape> lfImages,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> dmfmve,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> dmfmne,
-                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> dmfmie,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> dmfmvie,
-                                  NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOrLEIm,
+                                  Dictionary<Shape, HashSet<Shape>> dmfmve,
+                                  Dictionary<Shape, HashSet<Shape>> dmfmne,
+                                  Dictionary<Shape, NCollection_IndexedMap<Shape>> dmfmie,
+                                  Dictionary<Shape, HashSet<Shape>> dmfmvie,
+                                  Dictionary<Shape, NCollection_List<Shape>> dmeOrLEIm,
                                   HashSet<Shape> edgesInvalidByVertex,
                                   HashSet<Shape> edgesValidByVertex, ProgressRange range)
     {
@@ -1470,7 +1471,7 @@ internal sealed class BuildOffsetFaces
         // be defined by the edges on the original face adjacent to the connection vertex
 
         // original face
-        Face fOr = ShapeCasts.Face(_facesOrigins!.Find(f));
+        Face fOr = ShapeCasts.Face(_facesOrigins!.GetValue(f));
         // invalid edges
         NCollection_IndexedMap<Shape> meInv = new(ShapeHasher.Instance);
         // valid edges
@@ -1483,7 +1484,7 @@ internal sealed class BuildOffsetFaces
                                                                                  dmef = new(ShapeHasher.Instance);
         NCollection_IndexedMap<Shape> mEdges = new(ShapeHasher.Instance);
         // back map from the original shapes to their offset images
-        NCollection_DataMap<Shape, NCollection_List<Shape>> images = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> images = new(ShapeHasher.Instance);
         //
         using ProgressScope ps = new(range, "Checking validity of edges", 2 * lfImages.Extent());
         NCollection_List<Shape>.Iterator itLF = new(lfImages);
@@ -1523,7 +1524,7 @@ internal sealed class BuildOffsetFaces
                 }
 
                 // back map from original edges to their offset images
-                if (!_edgesOrigins!.Find(e, out NCollection_List<Shape> pLOr))
+                if (!_edgesOrigins!.TryGetValue(e, out NCollection_List<Shape>? pLOr))
                 {
                     continue;
                 }
@@ -1535,10 +1536,10 @@ internal sealed class BuildOffsetFaces
                     {
                         continue;
                     }
-                    if (!images.Find(sInF, out NCollection_List<Shape> pImages))
+                    if (!images.TryGetValue(sInF, out NCollection_List<Shape>? pImages))
                     {
                         pImages = new NCollection_List<Shape>();
-                        images.Bind(sInF, pImages);
+                        images[sInF] = pImages;
                     }
                     AppendToList(pImages, e);
                 }
@@ -1574,7 +1575,7 @@ internal sealed class BuildOffsetFaces
                     continue;
                 }
                 //
-                if (!_edgesOrigins!.Find(eIm, out NCollection_List<Shape> pLEOr) || pLEOr.IsEmpty())
+                if (!_edgesOrigins!.TryGetValue(eIm, out NCollection_List<Shape>? pLEOr) || pLEOr.IsEmpty())
                 {
                     continue;
                 }
@@ -1599,7 +1600,7 @@ internal sealed class BuildOffsetFaces
                 int nbP = NbPoints(eIm), nbInv = 0;
                 bool bUseVertex = nbVOr == 0 ? false
                                               : (nbVOr == 1 && dmef.FindFromKey(eIm).Extent() == 1
-                                                 && !_oeOrigins.IsBound(eIm));
+                                                 && !_oeOrigins.ContainsKey(eIm));
                 //
                 itLEO.Initialize(pLEOr);
                 for (; itLEO.More(); itLEO.Next())
@@ -1652,10 +1653,10 @@ internal sealed class BuildOffsetFaces
                     {
                         FindShape(sOr, fOr, _analyzer, ref eOrF);
                         //
-                        if (!dmeOrLEIm.Find(sOr, out NCollection_List<Shape> pLEIm))
+                        if (!dmeOrLEIm.TryGetValue(sOr, out NCollection_List<Shape>? pLEIm))
                         {
                             pLEIm = new NCollection_List<Shape>();
-                            dmeOrLEIm.Bind(sOr, pLEIm);
+                            dmeOrLEIm[sOr] = pLEIm;
                         }
                         AppendToList(pLEIm, eIm);
                     }
@@ -1674,7 +1675,7 @@ internal sealed class BuildOffsetFaces
                         for (Iterator it = new(eOrF); it.More(); it.Next())
                         {
                             Shape eOr = it.Value();
-                            if (!images.Find(eOr, out NCollection_List<Shape> lIm))
+                            if (!images.TryGetValue(eOr, out NCollection_List<Shape>? lIm))
                             {
                                 continue;
                             }
@@ -1831,13 +1832,13 @@ internal sealed class BuildOffsetFaces
             // valid edges
             if (mve.Count != 0)
             {
-                dmfmve.Bind(fIm, mve);
+                dmfmve[fIm] = mve;
             }
             //
             // invalid edges
             if (mie.Extent() != 0)
             {
-                dmfmie.Bind(fIm, mie);
+                dmfmie[fIm] = mie;
             }
         }
         //
@@ -1866,7 +1867,7 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
             //
-            if (!_oeOrigins.Find(eIm, out NCollection_List<Shape> pLOEOr))
+            if (!_oeOrigins.TryGetValue(eIm, out NCollection_List<Shape>? pLOEOr))
             {
                 continue;
             }
@@ -1875,7 +1876,7 @@ internal sealed class BuildOffsetFaces
             for (; itLOEOr.More(); itLOEOr.Next())
             {
                 Shape oeOr = itLOEOr.Value();
-                NCollection_List<Shape> leIm1 = _oeImages.Find(oeOr);
+                NCollection_List<Shape> leIm1 = _oeImages.GetValue(oeOr);
                 //
                 NCollection_List<Shape>.Iterator itLEIm1 = new(leIm1);
                 for (; itLEIm1.More(); itLEIm1.Next())
@@ -1893,12 +1894,12 @@ internal sealed class BuildOffsetFaces
         //
         if (mne.Count != 0)
         {
-            dmfmne.Bind(f, mne);
+            dmfmne[f] = mne;
         }
         //
         if (mvie.Count != 0)
         {
-            dmfmvie.Bind(f, mvie);
+            dmfmvie[f] = mvie;
         }
     }
 
@@ -1907,20 +1908,20 @@ internal sealed class BuildOffsetFaces
     // purpose  : Adds as the edge into corresponding maps making it neutral
     //=======================================================================
     private static void AddAsNeutral(in Shape e, in Shape fInv, in Shape fVal,
-                                     NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> locInvEdges,
-                                     NCollection_DataMap<Shape, HashSet<Shape>> locValidEdges)
+                                     Dictionary<Shape, NCollection_IndexedMap<Shape>> locInvEdges,
+                                     Dictionary<Shape, HashSet<Shape>> locValidEdges)
     {
-        if (!locInvEdges.Find(fInv, out NCollection_IndexedMap<Shape> pMEInv))
+        if (!locInvEdges.TryGetValue(fInv, out NCollection_IndexedMap<Shape>? pMEInv))
         {
             pMEInv = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            locInvEdges.Bind(fInv, pMEInv);
+            locInvEdges[fInv] = pMEInv;
         }
         pMEInv.Add(e);
 
-        if (!locValidEdges.Find(fVal, out HashSet<Shape> pMEVal))
+        if (!locValidEdges.TryGetValue(fVal, out HashSet<Shape>? pMEVal))
         {
             pMEVal = new HashSet<Shape>(ShapeHasher.Instance);
-            locValidEdges.Bind(fVal, pMEVal);
+            locValidEdges[fVal] = pMEVal;
         }
         pMEVal.Add(e);
     }
@@ -1930,16 +1931,16 @@ internal sealed class BuildOffsetFaces
     // purpose  : Additional method to look for invalid edges
     //=======================================================================
     private void FindInvalidEdges(NCollection_List<Shape> lfOffset,
-                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> locInvEdges,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> locValidEdges,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> neutralEdges)
+                                  Dictionary<Shape, NCollection_IndexedMap<Shape>> locInvEdges,
+                                  Dictionary<Shape, HashSet<Shape>> locValidEdges,
+                                  Dictionary<Shape, HashSet<Shape>> neutralEdges)
     {
         // 1. Find edges unclassified in faces
         // 2. Find SD faces in which the same edge is classified
         // 3. Check if the edge is neutral in face in which it wasn't classified
 
         NCollection_IndexedDataMap<Shape, HashSet<Shape>> meUnclassified = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> fSplitFOffset = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> fSplitFOffset = new(ShapeHasher.Instance);
 
         // Avoid artificial faces
         HashSet<Shape> newFaces = new(ShapeHasher.Instance);
@@ -1954,7 +1955,7 @@ internal sealed class BuildOffsetFaces
             for (NCollection_List<Shape>.Iterator it = new(lfOffset); it.More(); it.Next())
             {
                 Shape fOffset = it.Value();
-                Shape fOrigin = _facesOrigins!.Find(fOffset);
+                Shape fOrigin = _facesOrigins!.GetValue(fOffset);
                 if (mapNewTmp.Contains(fOrigin))
                 {
                     newFaces.Add(fOffset);
@@ -1978,8 +1979,8 @@ internal sealed class BuildOffsetFaces
 
                 Exploration.MapShapesAndAncestors(fIm, ShapeType.Edge, ShapeType.Face, efMap);
 
-                locInvEdges.Find(fIm, out NCollection_IndexedMap<Shape>? pMEInvalid);
-                locValidEdges.Find(fIm, out HashSet<Shape>? pMEValid);
+                locInvEdges.TryGetValue(fIm, out NCollection_IndexedMap<Shape>? pMEInvalid);
+                locValidEdges.TryGetValue(fIm, out HashSet<Shape>? pMEValid);
 
                 for (Explorer expE = new(fIm, ShapeType.Edge); expE.More(); expE.Next())
                 {
@@ -1997,7 +1998,7 @@ internal sealed class BuildOffsetFaces
                             }
                             pMap.Add(fIm);
 
-                            fSplitFOffset.Bind(fIm, f);
+                            fSplitFOffset[fIm] = f;
                         }
                     }
                 }
@@ -2036,7 +2037,7 @@ internal sealed class BuildOffsetFaces
                 AlgoTools3D.GetNormalToFaceOnEdge(ShapeCasts.Edge(eClassified), ShapeCasts.Face(fClassified),
                                                            out Direction3D dnClass);
 
-                locInvEdges.Find(fClassified, out NCollection_IndexedMap<Shape>? pMEInvalid);
+                locInvEdges.TryGetValue(fClassified, out NCollection_IndexedMap<Shape>? pMEInvalid);
                 bool isInvalid = pMEInvalid is not null && pMEInvalid.Contains(e);
 
                 // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
@@ -2054,7 +2055,7 @@ internal sealed class BuildOffsetFaces
 
                         // Among other splits of the same face find those where the edge is contained with
                         // different orientation
-                        Shape fOffset = fSplitFOffset.Find(fUnclassified);
+                        Shape fOffset = fSplitFOffset.GetValue(fUnclassified);
                         NCollection_List<Shape> lfSplits = _ofImages.FindFromKey(fOffset);
                         NCollection_List<Shape>.Iterator itLFSp = new(lfSplits);
                         for (; itLFSp.More(); itLFSp.Next())
@@ -2075,10 +2076,10 @@ internal sealed class BuildOffsetFaces
                                 if (oriClass != oriUnclass)
                                 {
                                     // make the edge neutral for the face
-                                    if (!neutralEdges.Find(fOffset, out HashSet<Shape> pMENeutral))
+                                    if (!neutralEdges.TryGetValue(fOffset, out HashSet<Shape>? pMENeutral))
                                     {
                                         pMENeutral = new HashSet<Shape>(ShapeHasher.Instance);
-                                        neutralEdges.Bind(fOffset, pMENeutral);
+                                        neutralEdges[fOffset] = pMENeutral;
                                     }
                                     pMENeutral.Add(e);
 
@@ -2129,7 +2130,7 @@ internal sealed class BuildOffsetFaces
         AlgoTools.MakeConnexityBlocks(cbeInv, ShapeType.Vertex, ShapeType.Edge, lcb);
 
         // Analyze each loop on closeness and use only closed ones
-        NCollection_DataMap<Shape, Shape> dmvcb = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmvcb = new(ShapeHasher.Instance);
 
         for (NCollection_List<Shape>.Iterator itLCB = new(lcb); itLCB.More(); itLCB.Next())
         {
@@ -2154,7 +2155,7 @@ internal sealed class BuildOffsetFaces
             // Bind loop to each vertex of the loop
             for (int iV = 1; iV <= dmve.Extent(); ++iV)
             {
-                dmvcb.Bind(dmve.FindKey(iV), cb);
+                dmvcb[dmve.FindKey(iV)] = cb;
             }
         }
 
@@ -2170,8 +2171,8 @@ internal sealed class BuildOffsetFaces
                     Edge e = ShapeCasts.Edge(expE.Current());
                     if (!_invalidEdges.Contains(e) && _invertedEdges.Contains(e))
                     {
-                        bool bCB1 = dmvcb.Find(Exploration.FirstVertex(e), out Shape pCB1);
-                        bool bCB2 = dmvcb.Find(Exploration.LastVertex(e), out Shape pCB2);
+                        bool bCB1 = dmvcb.TryGetValue(Exploration.FirstVertex(e), out Shape pCB1);
+                        bool bCB2 = dmvcb.TryGetValue(Exploration.LastVertex(e), out Shape pCB2);
                         if (bCB1 && bCB2 && pCB1.IsSame(pCB2))
                         {
                             _invalidEdges.Add(e);
@@ -2187,8 +2188,8 @@ internal sealed class BuildOffsetFaces
     // purpose  : Looking for the invalid faces by analyzing their invalid edges
     //=======================================================================
     private void FindInvalidFaces(NCollection_List<Shape> lfImages,
-                                  NCollection_DataMap<Shape, HashSet<Shape>> dmfmve,
-                                  NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> dmfmie,
+                                  Dictionary<Shape, HashSet<Shape>> dmfmve,
+                                  Dictionary<Shape, NCollection_IndexedMap<Shape>> dmfmie,
                                   HashSet<Shape> meNeutral,
                                   HashSet<Shape> edgesInvalidByVertex,
                                   HashSet<Shape> edgesValidByVertex,
@@ -2234,9 +2235,9 @@ internal sealed class BuildOffsetFaces
             Face fIm = ShapeCasts.Face(itLF.Value());
             //
             // valid edges for this split
-            dmfmve.Find(fIm, out HashSet<Shape>? pMVE);
+            dmfmve.TryGetValue(fIm, out HashSet<Shape>? pMVE);
             // invalid edges for this split
-            dmfmie.Find(fIm, out NCollection_IndexedMap<Shape>? pMIE);
+            dmfmie.TryGetValue(fIm, out NCollection_IndexedMap<Shape>? pMIE);
             //
             bHasValid = false;
             bAllValid = true;
@@ -2370,7 +2371,7 @@ internal sealed class BuildOffsetFaces
             Face fIm = ShapeCasts.Face(itLF.Value());
             //
             // valid edges for this split
-            dmfmve.Find(fIm, out HashSet<Shape>? pMVE);
+            dmfmve.TryGetValue(fIm, out HashSet<Shape>? pMVE);
             //
             bHasValid = false;
             bAllValid = true;
@@ -2414,7 +2415,7 @@ internal sealed class BuildOffsetFaces
     //=======================================================================
     private void FindFacesInsideHoleWires(in Face fOrigin, in Face fOffset,
                                           NCollection_List<Shape> lfImages,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOrLEIm,
+                                          Dictionary<Shape, NCollection_List<Shape>> dmeOrLEIm,
                                           NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap,
                                           HashSet<Shape> mfHoles)
     {
@@ -2442,10 +2443,10 @@ internal sealed class BuildOffsetFaces
             return;
         }
         //
-        if (!_fNewHoles.Find(fOrigin, out NCollection_List<Shape> pLFNewHoles))
+        if (!_fNewHoles.TryGetValue(fOrigin, out NCollection_List<Shape>? pLFNewHoles))
         {
             pLFNewHoles = new NCollection_List<Shape>();
-            _fNewHoles.Bind(fOrigin, pLFNewHoles);
+            _fNewHoles[fOrigin] = pLFNewHoles;
         }
         if (pLFNewHoles.IsEmpty())
         {
@@ -2472,7 +2473,7 @@ internal sealed class BuildOffsetFaces
                 for (; itE.More(); itE.Next())
                 {
                     Shape eOr = itE.Value();
-                    if (!dmeOrLEIm.Find(eOr, out NCollection_List<Shape> pLEIm) || pLEIm.IsEmpty())
+                    if (!dmeOrLEIm.TryGetValue(eOr, out NCollection_List<Shape>? pLEIm) || pLEIm.IsEmpty())
                     {
                         continue;
                     }
@@ -2644,18 +2645,18 @@ internal sealed class BuildOffsetFaces
         //
         // find images
         NCollection_List<Shape> leImages = new();
-        if (_oeOrigins.IsBound(eIm))
+        if (_oeOrigins.ContainsKey(eIm))
         {
             Wire images = new();
             new BrepBuilder().MakeWire(ref images);
             //
             HashSet<Shape> mImFence = new(ShapeHasher.Instance);
-            NCollection_List<Shape> lOffsetOr = _oeOrigins.Find(eIm);
+            NCollection_List<Shape> lOffsetOr = _oeOrigins.GetValue(eIm);
             NCollection_List<Shape>.Iterator itOffset = new(lOffsetOr);
             for (; itOffset.More(); itOffset.Next())
             {
                 Shape eOffsetOr = itOffset.Value();
-                NCollection_List<Shape> lImages = _oeImages.Find(eOffsetOr);
+                NCollection_List<Shape> lImages = _oeImages.GetValue(eOffsetOr);
                 //
                 NCollection_List<Shape>.Iterator itImages = new(lImages);
                 for (; itImages.More(); itImages.Next())
@@ -2734,9 +2735,9 @@ internal sealed class BuildOffsetFaces
             for (; itLIE.More(); itLIE.Next())
             {
                 Shape ei = itLIE.Value();
-                if (_edgesOrigins!.IsBound(ei))
+                if (_edgesOrigins!.ContainsKey(ei))
                 {
-                    NCollection_List<Shape> leOrigins = _edgesOrigins.Find(ei);
+                    NCollection_List<Shape> leOrigins = _edgesOrigins.GetValue(ei);
                     //
                     NCollection_List<Shape>.Iterator aItLOE = new(leOrigins);
                     for (; aItLOE.More(); aItLOE.Next())
@@ -2845,8 +2846,8 @@ internal sealed class BuildOffsetFaces
     // purpose  : Checks if it is possible to remove the block containing inverted edges
     //=======================================================================
     private bool CheckInvertedBlock(in Shape cb, NCollection_List<Shape> lcbf,
-                                    NCollection_DataMap<Shape, HashSet<Shape>> dmcbvInverted,
-                                    NCollection_DataMap<Shape, HashSet<Shape>> dmcbvAll)
+                                    Dictionary<Shape, HashSet<Shape>> dmcbvInverted,
+                                    Dictionary<Shape, HashSet<Shape>> dmcbvAll)
     {
         // For possible removal of the block:
         // 1. There should be more than just one face in the block
@@ -2894,7 +2895,7 @@ internal sealed class BuildOffsetFaces
             for (; itE.More(); itE.Next())
             {
                 Shape e = itE.Value();
-                if (!_oeOrigins.Find(e, out NCollection_List<Shape> pLEOr))
+                if (!_oeOrigins.TryGetValue(e, out NCollection_List<Shape>? pLEOr))
                 {
                     meOrigins.Add(e);
                     ++nbUnique;
@@ -2927,14 +2928,14 @@ internal sealed class BuildOffsetFaces
         //
         // collect vertices from inverted edges and compare them with
         // vertices from other blocks
-        dmcbvInverted.Find(cb, out HashSet<Shape>? pMVInverted);
-        dmcbvAll.Find(cb, out HashSet<Shape>? pMVAll);
+        dmcbvInverted.TryGetValue(cb, out HashSet<Shape>? pMVInverted);
+        dmcbvAll.TryGetValue(cb, out HashSet<Shape>? pMVAll);
         if (pMVInverted is null)
         {
             pMVInverted = new HashSet<Shape>(ShapeHasher.Instance);
-            dmcbvInverted.Bind(cb, pMVInverted);
+            dmcbvInverted[cb] = pMVInverted;
             pMVAll = new HashSet<Shape>(ShapeHasher.Instance);
-            dmcbvAll.Bind(cb, pMVAll);
+            dmcbvAll[cb] = pMVAll;
             //
             GetVerticesOnEdges(cb, _invertedEdges, pMVInverted, pMVAll);
         }
@@ -2949,14 +2950,14 @@ internal sealed class BuildOffsetFaces
             }
             //
             // collect vertices from inverted edges
-            dmcbvInverted.Find(cb1, out HashSet<Shape>? pMVInverted1);
-            dmcbvAll.Find(cb1, out HashSet<Shape>? pMVAll1);
+            dmcbvInverted.TryGetValue(cb1, out HashSet<Shape>? pMVInverted1);
+            dmcbvAll.TryGetValue(cb1, out HashSet<Shape>? pMVAll1);
             if (pMVInverted1 is null)
             {
                 pMVInverted1 = new HashSet<Shape>(ShapeHasher.Instance);
-                dmcbvInverted.Bind(cb1, pMVInverted1);
+                dmcbvInverted[cb1] = pMVInverted1;
                 pMVAll1 = new HashSet<Shape>(ShapeHasher.Instance);
-                dmcbvAll.Bind(cb1, pMVAll1);
+                dmcbvAll[cb1] = pMVAll1;
                 //
                 GetVerticesOnEdges(cb1, _invertedEdges, pMVInverted1, pMVAll1);
             }
@@ -2988,7 +2989,7 @@ internal sealed class BuildOffsetFaces
         //
         BrepBuilder bb = new();
         NCollection_IndexedMap<Shape> meAvoid = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmvf = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmvf = new(ShapeHasher.Instance);
         int nb = _ofImages.Extent(), i;
         for (i = 1; i <= nb; ++i)
         {
@@ -2997,7 +2998,7 @@ internal sealed class BuildOffsetFaces
             Compound cfIm = new();
             bb.MakeCompound(ref cfIm);
             //
-            NCollection_DataMap<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
             NCollection_List<Shape>.Iterator it = new(lfIm);
             for (; it.More(); it.Next())
             {
@@ -3010,10 +3011,10 @@ internal sealed class BuildOffsetFaces
                 {
                     Shape e = exp.Current();
                     //
-                    if (!dmef.Find(e, out NCollection_List<Shape> pLF))
+                    if (!dmef.TryGetValue(e, out NCollection_List<Shape>? pLF))
                     {
                         pLF = new NCollection_List<Shape>();
-                        dmef.Bind(e, pLF);
+                        dmef[e] = pLF;
                     }
                     else
                     {
@@ -3029,10 +3030,10 @@ internal sealed class BuildOffsetFaces
                 {
                     Shape v = exp.Current();
                     //
-                    if (!dmvf.Find(v, out NCollection_List<Shape> pLF))
+                    if (!dmvf.TryGetValue(v, out NCollection_List<Shape>? pLF))
                     {
                         pLF = new NCollection_List<Shape>();
-                        dmvf.Bind(v, pLF);
+                        dmvf[v] = pLF;
                     }
                     AppendToList(pLF, f);
                 }
@@ -3047,7 +3048,7 @@ internal sealed class BuildOffsetFaces
             }
             //
             // check if the inverted edges create the irregularity
-            NCollection_DataMap<Shape, HashSet<Shape>> dmcbvInverted = new(ShapeHasher.Instance),
+            Dictionary<Shape, HashSet<Shape>> dmcbvInverted = new(ShapeHasher.Instance),
                                                                              dmcbvAll = new(ShapeHasher.Instance);
             //
             NCollection_List<Shape>.Iterator itLCB = new(lcbf);
@@ -3076,7 +3077,7 @@ internal sealed class BuildOffsetFaces
                 for (; it.More(); it.Next())
                 {
                     Shape v = it.Value();
-                    if (dmvf.Find(v, out NCollection_List<Shape> pLF) && (pLF.Extent() > 3))
+                    if (dmvf.TryGetValue(v, out NCollection_List<Shape>? pLF) && (pLF.Extent() > 3))
                     {
                         meRem.Add(e);
                         break;
@@ -3175,7 +3176,7 @@ internal sealed class BuildOffsetFaces
     // function : RemoveInvalidSplitsFromValid
     // purpose  : Removing invalid splits of faces from valid
     //=======================================================================
-    private void RemoveInvalidSplitsFromValid(NCollection_DataMap<Shape, HashSet<Shape>> dmfmvie)
+    private void RemoveInvalidSplitsFromValid(Dictionary<Shape, HashSet<Shape>> dmfmvie)
     {
         // Decide whether to remove the found invalid faces or not.
         // The procedure is the following:
@@ -3190,13 +3191,13 @@ internal sealed class BuildOffsetFaces
         NCollection_List<Shape>.Iterator itLF = new();
         //
         // make compound of invalid faces
-        NCollection_DataMap<Shape, Shape> dmifof = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmifof = new(ShapeHasher.Instance);
         int i, nb = _invalidFaces.Extent();
         for (i = 1; i <= nb; ++i)
         {
             Shape f = _invalidFaces.FindKey(i);
             // artificially invalid faces should not be removed
-            if (_artInvalidFaces.IsBound(f))
+            if (_artInvalidFaces.ContainsKey(f))
             {
                 continue;
             }
@@ -3208,7 +3209,7 @@ internal sealed class BuildOffsetFaces
                 if (mFence.Add(fIm))
                 {
                     bb.Add(cfInv, fIm);
-                    dmifof.Bind(fIm, f);
+                    dmifof[fIm] = f;
                 }
             }
         }
@@ -3233,7 +3234,7 @@ internal sealed class BuildOffsetFaces
                 for (; exp.More(); exp.Next())
                 {
                     Shape fIm = exp.Current();
-                    Shape f = dmifof.Find(fIm);
+                    Shape f = dmifof.GetValue(fIm);
                     //
                     NCollection_List<Shape> lfIm = _ofImages.FindFromKey(f);
                     NCollection_List<Shape> lfInv = _invalidFaces.FindFromKey(f);
@@ -3260,16 +3261,16 @@ internal sealed class BuildOffsetFaces
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(cb, ShapeType.Edge, ShapeType.Face, dmef);
             //
-            NCollection_DataMap<Shape, NCollection_List<Shape>> dmff = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> dmff = new(ShapeHasher.Instance);
             exp.Init(cb, ShapeType.Face);
             for (; exp.More(); exp.Next())
             {
                 Shape fcb = exp.Current();
-                Shape f = dmifof.Find(fcb);
-                if (!dmff.Find(f, out NCollection_List<Shape> pList))
+                Shape f = dmifof.GetValue(fcb);
+                if (!dmff.TryGetValue(f, out NCollection_List<Shape>? pList))
                 {
                     pList = new NCollection_List<Shape>();
-                    dmff.Bind(f, pList);
+                    dmff[f] = pList;
                 }
                 pList.Append(fcb);
             }
@@ -3278,7 +3279,7 @@ internal sealed class BuildOffsetFaces
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> itM in dmff)
             {
                 Shape f = itM.Key;
-                dmfmvie.Find(f, out HashSet<Shape>? pValidInverted);
+                dmfmvie.TryGetValue(f, out HashSet<Shape>? pValidInverted);
 
                 // either remove all of these faces or none.
                 NCollection_List<Shape> lfcb = itM.Value;
@@ -3346,7 +3347,7 @@ internal sealed class BuildOffsetFaces
     //=================================================================================================
 
     private static void BuildPairs(NCollection_IndexedMap<Shape> sMap,
-                                   NCollection_DataMap<Shape, HashSet<Shape>> intPairs)
+                                   Dictionary<Shape, HashSet<Shape>> intPairs)
     {
         int nbS = sMap.Extent();
         if (nbS < 2)
@@ -3356,21 +3357,21 @@ internal sealed class BuildOffsetFaces
         for (int it1 = 1; it1 <= nbS; ++it1)
         {
             Shape s = sMap[it1];
-            if (!intPairs.IsBound(s))
+            if (!intPairs.ContainsKey(s))
             {
-                intPairs.Bind(s, new HashSet<Shape>(ShapeHasher.Instance));
+                intPairs[s] = new HashSet<Shape>(ShapeHasher.Instance);
             }
         }
 
         for (int it1 = 1; it1 <= nbS; ++it1)
         {
             Shape s1 = sMap[it1];
-            HashSet<Shape> map1 = intPairs[s1];
+            HashSet<Shape> map1 = intPairs.GetValue(s1);
             for (int it2 = it1 + 1; it2 <= nbS; ++it2)
             {
                 Shape s2 = sMap[it2];
                 map1.Add(s2);
-                intPairs[s2].Add(s1);
+                intPairs.GetValue(s2).Add(s1);
             }
         }
     }
@@ -3380,16 +3381,16 @@ internal sealed class BuildOffsetFaces
     private static void BuildIntersectionPairs(
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myOFImages,
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> myInvalidFaces, BooleanBuilder builder,
-        HashSet<Shape> mfRemoved, NCollection_DataMap<Shape, Shape> fOrigins,
-        NCollection_DataMap<Shape, NCollection_DataMap<Shape, HashSet<Shape>>> intPairs)
+        HashSet<Shape> mfRemoved, Dictionary<Shape, Shape> fOrigins,
+        Dictionary<Shape, Dictionary<Shape, HashSet<Shape>>> intPairs)
     {
         ShapeType cType = ShapeType.Vertex;
         // Build connection map from vertices to faces
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvf = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(builder.InternalShape(), cType, ShapeType.Face, dmvf);
 
-        NCollection_DataMap<Shape, NCollection_List<Shape>> images = builder.Images();
-        NCollection_DataMap<Shape, NCollection_List<Shape>> origins = builder.Origins();
+        Dictionary<Shape, NCollection_List<Shape>> images = builder.Images();
+        Dictionary<Shape, NCollection_List<Shape>> origins = builder.Origins();
 
         // Find all faces connected to the not removed faces and build intersection pairs among them.
         // For removed faces intersect only those connected to each other.
@@ -3435,8 +3436,8 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
 
-            NCollection_DataMap<Shape, HashSet<Shape>> pFInterMap = new(ShapeHasher.Instance);
-            intPairs.Bind(fInv, pFInterMap);
+            Dictionary<Shape, HashSet<Shape>> pFInterMap = new(ShapeHasher.Instance);
+            intPairs[fInv] = pFInterMap;
 
             // build pairs for not removed faces
             for (NCollection_List<Shape>.Iterator itCB = new(lcb); itCB.More(); itCB.Next())
@@ -3460,7 +3461,7 @@ internal sealed class BuildOffsetFaces
                         TakeModified(fConnected, origins, lfOr);
                         for (NCollection_List<Shape>.Iterator itOr = new(lfOr); itOr.More(); itOr.Next())
                         {
-                            if (fOrigins.Find(itOr.Value(), out Shape pFOr))
+                            if (fOrigins.TryGetValue(itOr.Value(), out Shape pFOr))
                             {
                                 mfInter.Add(pFOr);
                             }
@@ -3517,7 +3518,7 @@ internal sealed class BuildOffsetFaces
                         TakeModified(fConnected, origins, lfOr);
                         for (NCollection_List<Shape>.Iterator itOr = new(lfOr); itOr.More(); itOr.Next())
                         {
-                            if (fOrigins.Find(itOr.Value(), out Shape pFOr))
+                            if (fOrigins.TryGetValue(itOr.Value(), out Shape pFOr))
                             {
                                 mfInter.Add(pFOr);
                             }
@@ -3544,7 +3545,7 @@ internal sealed class BuildOffsetFaces
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
         NCollection_IndexedMap<Shape> mfInv = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator aItLF = new();
-        NCollection_DataMap<Shape, Shape> dmfImF = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmfImF = new(ShapeHasher.Instance);
         //
         using ProgressScope ps = new(range, "Looking for inside faces", 10);
         int i, nb = _ofImages.Extent();
@@ -3578,7 +3579,7 @@ internal sealed class BuildOffsetFaces
                     if (mFence.Add(fIm))
                     {
                         new BrepBuilder().Add(cfImi, fIm);
-                        dmfImF.Bind(fIm, f);
+                        dmfImF[fIm] = f;
                         if (j == 0)
                         {
                             mfInv.Add(fIm);
@@ -3715,7 +3716,7 @@ internal sealed class BuildOffsetFaces
         }
 
         // Tool for getting the splits of faces
-        NCollection_DataMap<Shape, NCollection_List<Shape>> mvIms = mv.Images();
+        Dictionary<Shape, NCollection_List<Shape>> mvIms = mv.Images();
 
         // update invalid faces with images
         nb = mfInv.Extent();
@@ -3748,7 +3749,7 @@ internal sealed class BuildOffsetFaces
                 lfInvIm.Append(fInv);
             }
             //
-            if (!dmfImF.Find(fInv, out Shape pFOffset))
+            if (!dmfImF.TryGetValue(fInv, out Shape pFOffset))
             {
                 continue;
             }
@@ -3876,7 +3877,7 @@ internal sealed class BuildOffsetFaces
     // purpose  : Looking for the connections between faces not to miss
     //           some necessary intersection
     //=======================================================================
-    private void ShapesConnections(NCollection_DataMap<Shape, Shape> dmfOr, BooleanBuilder builder)
+    private void ShapesConnections(Dictionary<Shape, Shape> dmfOr, BooleanBuilder builder)
     {
         // Make connexity blocks from invalid edges to use the whole block
         // to which the edge is connected instead of the single edge.
@@ -3891,17 +3892,17 @@ internal sealed class BuildOffsetFaces
         AlgoTools.MakeConnexityBlocks(ceInv, ShapeType.Vertex, ShapeType.Edge, lcb);
 
         // Binding from the edge to the block
-        NCollection_DataMap<Shape, Shape> ecbMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> ecbMap = new(ShapeHasher.Instance);
         for (NCollection_List<Shape>.Iterator itCB = new(lcb); itCB.More(); itCB.Next())
         {
             for (Iterator itE = new(itCB.Value()); itE.More(); itE.Next())
             {
-                ecbMap.Bind(itE.Value(), itCB.Value());
+                ecbMap[itE.Value()] = itCB.Value();
             }
         }
 
         // update invalid edges with images and keep connection to original edge
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOr = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmeOr = new(ShapeHasher.Instance);
         int nb = _invalidEdges.Extent();
         for (int i = 1; i <= nb; ++i)
         {
@@ -3911,7 +3912,7 @@ internal sealed class BuildOffsetFaces
             {
                 NCollection_List<Shape> l = new();
                 l.Append(eInv);
-                dmeOr.Bind(eInv, l);
+                dmeOr[eInv] = l;
                 continue;
             }
             //
@@ -3941,7 +3942,7 @@ internal sealed class BuildOffsetFaces
             Shape fIm1 = pDS.Shape(ff.Index1());
             Shape fIm2 = pDS.Shape(ff.Index2());
             //
-            if (!dmfOr.Find(fIm1, out Shape pF1) || !dmfOr.Find(fIm2, out Shape pF2))
+            if (!dmfOr.TryGetValue(fIm1, out Shape pF1) || !dmfOr.TryGetValue(fIm2, out Shape pF2))
             {
                 continue;
             }
@@ -4014,7 +4015,7 @@ internal sealed class BuildOffsetFaces
                         Shape e = aExpE.Current();
                         if (!bInv)
                         {
-                            bInv = dmeOr.IsBound(e);
+                            bInv = dmeOr.ContainsKey(e);
                         }
                         if (!bInt)
                         {
@@ -4038,7 +4039,7 @@ internal sealed class BuildOffsetFaces
                     for (; aExpE.More(); aExpE.Next())
                     {
                         Shape e = aExpE.Current();
-                        if (!dmeOr.Find(e, out NCollection_List<Shape> pLEOr))
+                        if (!dmeOr.TryGetValue(e, out NCollection_List<Shape>? pLEOr))
                         {
                             continue;
                         }
@@ -4047,10 +4048,10 @@ internal sealed class BuildOffsetFaces
                         for (; itLE.More(); itLE.Next())
                         {
                             Shape eOr = itLE.Value();
-                            if (!_ssInterfs.Find(eOr, out NCollection_List<Shape> pLFE))
+                            if (!_ssInterfs.TryGetValue(eOr, out NCollection_List<Shape>? pLFE))
                             {
                                 pLFE = new NCollection_List<Shape>();
-                                _ssInterfs.Bind(eOr, pLFE);
+                                _ssInterfs[eOr] = pLFE;
                             }
                             AppendToList(pLFE, fOp);
                         }
@@ -4059,10 +4060,10 @@ internal sealed class BuildOffsetFaces
                 if (bFound)
                 {
                     // save connection between offset faces
-                    if (!_ssInterfs.Find(f, out NCollection_List<Shape> pLF))
+                    if (!_ssInterfs.TryGetValue(f, out NCollection_List<Shape>? pLF))
                     {
                         pLF = new NCollection_List<Shape>();
-                        _ssInterfs.Bind(f, pLF);
+                        _ssInterfs[f] = pLF;
                     }
                     AppendToList(pLF, fOp);
                 }
@@ -4074,12 +4075,12 @@ internal sealed class BuildOffsetFaces
                 Shape fArt = iF == 0 ? pF1 : pF2;
                 Shape fOpposite = iF == 0 ? pF2 : pF1;
 
-                if (!_artInvalidFaces.IsBound(fArt))
+                if (!_artInvalidFaces.ContainsKey(fArt))
                 {
                     continue;
                 }
 
-                if (_invalidFaces.Contains(fOpposite) && !_artInvalidFaces.IsBound(fOpposite))
+                if (_invalidFaces.Contains(fOpposite) && !_artInvalidFaces.ContainsKey(fOpposite))
                 {
                     continue;
                 }
@@ -4087,11 +4088,11 @@ internal sealed class BuildOffsetFaces
                 // Collect own invalid edges of the face and the invalid edges connected to those
                 // own invalid edges to be avoided in the check for intersection.
                 NCollection_IndexedMap<Shape> meAvoid = new(ShapeHasher.Instance);
-                if (_artInvalidFaces.Find(fOpposite, out NCollection_IndexedMap<Shape> pFEInv))
+                if (_artInvalidFaces.TryGetValue(fOpposite, out NCollection_IndexedMap<Shape>? pFEInv))
                 {
                     for (int iE = 1; iE <= pFEInv.Extent(); ++iE)
                     {
-                        if (ecbMap.Find(pFEInv.FindKey(iE), out Shape pCB))
+                        if (ecbMap.TryGetValue(pFEInv.FindKey(iE), out Shape pCB))
                         {
                             Exploration.MapShapes(pCB, ShapeType.Edge, meAvoid);
                         }
@@ -4103,7 +4104,7 @@ internal sealed class BuildOffsetFaces
                     {
                         for (Explorer expE = new(itLFIm.Value(), ShapeType.Edge); expE.More(); expE.Next())
                         {
-                            if (ecbMap.Find(expE.Current(), out Shape pCB))
+                            if (ecbMap.TryGetValue(expE.Current(), out Shape pCB))
                             {
                                 Exploration.MapShapes(pCB, ShapeType.Edge, meAvoid);
                             }
@@ -4195,7 +4196,7 @@ internal sealed class BuildOffsetFaces
     // function : RemoveHangingParts
     // purpose  : Remove isolated invalid hanging parts
     //=======================================================================
-    private void RemoveHangingParts(MakerVolume mv, NCollection_DataMap<Shape, Shape> dmfImF,
+    private void RemoveHangingParts(MakerVolume mv, Dictionary<Shape, Shape> dmfImF,
                                     NCollection_IndexedMap<Shape> mfInv, HashSet<Shape> mfToRem)
     {
         // Map the faces of the result solids to filter them from avoided faces
@@ -4208,7 +4209,7 @@ internal sealed class BuildOffsetFaces
         bb.MakeCompound(ref cfHangs);
 
         // Tool for getting the splits of faces
-        NCollection_DataMap<Shape, NCollection_List<Shape>> mvIms = mv.Images();
+        Dictionary<Shape, NCollection_List<Shape>> mvIms = mv.Images();
 
         NCollection_List<Shape>.Iterator itLArgs = new(mv.Arguments());
         for (; itLArgs.More(); itLArgs.Next())
@@ -4259,7 +4260,7 @@ internal sealed class BuildOffsetFaces
         }
 
         // Tool for getting the origins of the splits
-        NCollection_DataMap<Shape, NCollection_List<Shape>> mvOrs = mv.Origins();
+        Dictionary<Shape, NCollection_List<Shape>> mvOrs = mv.Origins();
 
         // Find hanging blocks to remove
         NCollection_List<Shape> blocksToRemove = new();
@@ -4340,12 +4341,12 @@ internal sealed class BuildOffsetFaces
                 }
 
                 // Check block to be isolated
-                if (mvOrs.Find(f, out NCollection_List<Shape> pLFOr))
+                if (mvOrs.TryGetValue(f, out NCollection_List<Shape>? pLFOr))
                 {
                     NCollection_List<Shape>.Iterator itLFOr = new(pLFOr);
                     for (; itLFOr.More(); itLFOr.Next())
                     {
-                        if (dmfImF.Find(itLFOr.Value(), out Shape pFOffset))
+                        if (dmfImF.TryGetValue(itLFOr.Value(), out Shape pFOffset))
                         {
                             mOffsetF.Add(pFOffset);
                         }
@@ -4353,7 +4354,7 @@ internal sealed class BuildOffsetFaces
                 }
                 else
                 {
-                    if (dmfImF.Find(f, out Shape pFOffset))
+                    if (dmfImF.TryGetValue(f, out Shape pFOffset))
                     {
                         mOffsetF.Add(pFOffset);
                     }
@@ -4455,7 +4456,7 @@ internal sealed class BuildOffsetFaces
         for (i = 1; i <= nb; ++i)
         {
             Shape s = _invalidFaces.FindKey(i);
-            bool bArt = _artInvalidFaces.IsBound(s);
+            bool bArt = _artInvalidFaces.ContainsKey(s);
             //
             NCollection_List<Shape> lsIm = _invalidFaces[i];
             NCollection_List<Shape>.Iterator it = new(lsIm);
@@ -4561,15 +4562,15 @@ internal sealed class BuildOffsetFaces
                 }
                 //
                 // save origins
-                if (_oeOrigins.IsBound(eIm))
+                if (_oeOrigins.ContainsKey(eIm))
                 {
-                    AppendToList(_oeOrigins.ChangeFind(eIm), e);
+                    AppendToList(_oeOrigins.GetValue(eIm), e);
                 }
                 else
                 {
                     NCollection_List<Shape> lOr = new();
                     lOr.Append(e);
-                    _oeOrigins.Bind(eIm, lOr);
+                    _oeOrigins[eIm] = lOr;
                 }
                 //
                 it.Next();
@@ -4612,11 +4613,11 @@ internal sealed class BuildOffsetFaces
             Shape f = _invalidFaces.FindKey(i);
             NCollection_List<Shape> lfInv = _invalidFaces[i];
             //
-            if (_artInvalidFaces.IsBound(f))
+            if (_artInvalidFaces.ContainsKey(f))
             {
                 if (lfInv.IsEmpty())
                 {
-                    _artInvalidFaces.UnBind(f);
+                    _artInvalidFaces.Remove(f);
                 }
                 else
                 {
@@ -4779,7 +4780,7 @@ internal sealed class BuildOffsetFaces
         for (int i = 1; i <= nbF; ++i)
         {
             Shape f = _invalidFaces.FindKey(i);
-            if (_artInvalidFaces.IsBound(f))
+            if (_artInvalidFaces.ContainsKey(f))
             {
                 continue;
             }
@@ -4797,7 +4798,7 @@ internal sealed class BuildOffsetFaces
                     }
 
                     // check if this edges is not created from vertex and mark it as invalid
-                    if (!_edgesOrigins!.Find(e, out NCollection_List<Shape> pLEOr))
+                    if (!_edgesOrigins!.TryGetValue(e, out NCollection_List<Shape>? pLEOr))
                     {
                         continue;
                     }
@@ -4822,7 +4823,7 @@ internal sealed class BuildOffsetFaces
     // function : FilterInvalidEdges
     // purpose  : Filtering the invalid edges according to currently invalid faces
     //=======================================================================
-    private void FilterInvalidEdges(NCollection_DataMap<Shape, NCollection_IndexedMap<Shape>> dmfmie,
+    private void FilterInvalidEdges(Dictionary<Shape, NCollection_IndexedMap<Shape>> dmfmie,
                                     NCollection_IndexedMap<Shape> meRemoved,
                                     NCollection_IndexedMap<Shape> meInside,
                                     HashSet<Shape> meUseInRebuild)
@@ -4886,9 +4887,9 @@ internal sealed class BuildOffsetFaces
         for (i = 1; i <= nb; ++i)
         {
             Shape f = _invalidFaces.FindKey(i);
-            if (_artInvalidFaces.IsBound(f))
+            if (_artInvalidFaces.ContainsKey(f))
             {
-                if (dmfmie.Find(f, out NCollection_IndexedMap<Shape> mie))
+                if (dmfmie.TryGetValue(f, out NCollection_IndexedMap<Shape>? mie))
                 {
                     int nbIE = mie.Extent();
                     for (int iE = 1; iE <= nbIE; ++iE)
@@ -4937,7 +4938,7 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
 
-            if (!_oeOrigins.Find(e, out NCollection_List<Shape> pEOrigins))
+            if (!_oeOrigins.TryGetValue(e, out NCollection_List<Shape>? pEOrigins))
             {
                 continue;
             }
@@ -4945,7 +4946,7 @@ internal sealed class BuildOffsetFaces
             bool bHasInvOutside = false;
             for (NCollection_List<Shape>.Iterator itEOr = new(pEOrigins); !bHasInvOutside && itEOr.More(); itEOr.Next())
             {
-                if (_oeImages.Find(itEOr.Value(), out NCollection_List<Shape> pEIms))
+                if (_oeImages.TryGetValue(itEOr.Value(), out NCollection_List<Shape>? pEIms))
                 {
                     for (NCollection_List<Shape>.Iterator itEIms = new(pEIms); !bHasInvOutside && itEIms.More(); itEIms.Next())
                     {
@@ -4981,7 +4982,7 @@ internal sealed class BuildOffsetFaces
                                       mfReb = new(ShapeHasher.Instance);
         Explorer exp = new();
         //
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmflv = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmflv = new(ShapeHasher.Instance);
         // get edges from invalid faces
         nb = _invalidFaces.Extent();
         for (i = 1; i <= nb; i++)
@@ -5017,17 +5018,17 @@ internal sealed class BuildOffsetFaces
             //
             if (lvAvoid.Extent() != 0)
             {
-                dmflv.Bind(f, lvAvoid);
+                dmflv[f] = lvAvoid;
             }
             //
             NCollection_List<Shape>? pLF = null;
-            if (!_artInvalidFaces.IsBound(f))
+            if (!_artInvalidFaces.ContainsKey(f))
             {
-                _ssInterfs.Find(f, out pLF);
+                _ssInterfs.TryGetValue(f, out pLF);
             }
             else
             {
-                _ssInterfsArt.Find(f, out pLF);
+                _ssInterfsArt.TryGetValue(f, out pLF);
             }
             if (pLF is not null)
             {
@@ -5047,9 +5048,9 @@ internal sealed class BuildOffsetFaces
             Shape f = _ofImages.FindKey(i);
             NCollection_List<Shape> lfIm = _ofImages[i];
             HashSet<Shape> mvAvoid = new(ShapeHasher.Instance);
-            if (dmflv.IsBound(f))
+            if (dmflv.ContainsKey(f))
             {
-                NCollection_List<Shape> lvAvoid = dmflv.Find(f);
+                NCollection_List<Shape> lvAvoid = dmflv.GetValue(f);
                 NCollection_List<Shape>.Iterator itLV = new(lvAvoid);
                 for (; itLV.More(); itLV.Next())
                 {
@@ -5168,7 +5169,7 @@ internal sealed class BuildOffsetFaces
         //
         bool bLookVertToAvoid = (mvInv.Count > 0);
         //
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmsf = new(ShapeHasher.Instance),
+        Dictionary<Shape, NCollection_List<Shape>> dmsf = new(ShapeHasher.Instance),
                                                                           mDone = new(ShapeHasher.Instance),
                                                                           meInfETrim = new(ShapeHasher.Instance),
                                                                           dmveFull = new(ShapeHasher.Instance);
@@ -5203,7 +5204,7 @@ internal sealed class BuildOffsetFaces
         // edges connected to invalid ones
 
         // find blocks of artificially invalid faces
-        NCollection_DataMap<Shape, Shape> dmfImF = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmfImF = new(ShapeHasher.Instance);
         Compound cfArt = new();
         new BrepBuilder().MakeCompound(ref cfArt);
         // OCCT.NET: OCCT iterates the map by its faces' addresses; the port in insertion order (decision 1032).
@@ -5215,7 +5216,7 @@ internal sealed class BuildOffsetFaces
             for (; itLF.More(); itLF.Next())
             {
                 new BrepBuilder().Add(cfArt, itLF.Value());
-                dmfImF.Bind(itLF.Value(), f);
+                dmfImF[itLF.Value()] = f;
             }
         }
         //
@@ -5241,7 +5242,7 @@ internal sealed class BuildOffsetFaces
             Explorer expF = new(cb, ShapeType.Face);
             for (; expF.More(); expF.Next())
             {
-                mfArt.Add(dmfImF.Find(expF.Current()));
+                mfArt.Add(dmfImF.GetValue(expF.Current()));
             }
             //
             bool bAlone = (mfArt.Count == 1);
@@ -5268,12 +5269,12 @@ internal sealed class BuildOffsetFaces
                     //
                     if (bAlone)
                     {
-                        if (_oeOrigins.Find(e, out NCollection_List<Shape> pLEOr0))
+                        if (_oeOrigins.TryGetValue(e, out NCollection_List<Shape>? pLEOr0))
                         {
                             NCollection_List<Shape>.Iterator itLEOr0 = new(pLEOr0);
                             for (; itLEOr0.More(); itLEOr0.Next())
                             {
-                                NCollection_List<Shape>.Iterator itLEIm = new(_oeImages.Find(itLEOr0.Value()));
+                                NCollection_List<Shape>.Iterator itLEIm = new(_oeImages.GetValue(itLEOr0.Value()));
                                 for (; itLEIm.More(); itLEIm.Next())
                                 {
                                     meAvoid.Add(itLEIm.Value());
@@ -5317,7 +5318,7 @@ internal sealed class BuildOffsetFaces
                 // if this alone edge adds nothing to the intersection list
                 // it means that the origin of this edge has been split and we need to
                 // add the neighboring images of the same origins
-                if (dmsf.Find(e).Extent() > 1)
+                if (dmsf.GetValue(e).Extent() > 1)
                 {
                     continue;
                 }
@@ -5327,7 +5328,7 @@ internal sealed class BuildOffsetFaces
                 for (; aItE.More(); aItE.Next())
                 {
                     Shape ve = aItE.Value();
-                    if (dmsf.Find(ve).Extent() > 2)
+                    if (dmsf.GetValue(ve).Extent() > 2)
                     {
                         break;
                     }
@@ -5339,7 +5340,7 @@ internal sealed class BuildOffsetFaces
                 }
                 //
                 // the edge is useless - look for other images
-                if (!_oeOrigins.Find(e, out NCollection_List<Shape> pLEOr))
+                if (!_oeOrigins.TryGetValue(e, out NCollection_List<Shape>? pLEOr))
                 {
                     continue;
                 }
@@ -5349,7 +5350,7 @@ internal sealed class BuildOffsetFaces
                 {
                     Shape eOr = itLEOr.Value();
                     //
-                    NCollection_List<Shape> leIm = _oeImages.Find(eOr);
+                    NCollection_List<Shape> leIm = _oeImages.GetValue(eOr);
                     NCollection_List<Shape>.Iterator itLEIm = new(leIm);
                     for (; itLEIm.More(); itLEIm.Next())
                     {
@@ -5395,9 +5396,9 @@ internal sealed class BuildOffsetFaces
         //
         HashSet<Shape> meCheckExt = new(ShapeHasher.Instance);
         // Save connections between not trimmed edge and its trimmed parts
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmeeTrim = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmeeTrim = new(ShapeHasher.Instance);
         // Splits of the new edges
-        NCollection_DataMap<Shape, NCollection_List<Shape>> eImages = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> eImages = new(ShapeHasher.Instance);
         BrepBuilder bb = new();
 
         // Keep connection between blocks of invalid edges to the lists of
@@ -5439,7 +5440,7 @@ internal sealed class BuildOffsetFaces
             }
             //
             using ProgressScope pscb = new(psInter.Next(), null, lcb.Extent());
-            bool bArtificial = _artInvalidFaces.IsBound(fInv);
+            bool bArtificial = _artInvalidFaces.ContainsKey(fInv);
             NCollection_List<Shape>.Iterator itLCB = new(lcb);
             for (; itLCB.More(); itLCB.Next())
             {
@@ -5515,7 +5516,7 @@ internal sealed class BuildOffsetFaces
                         continue;
                     }
                     //
-                    _intersectionPairs.Find(fInv, out NCollection_DataMap<Shape, HashSet<Shape>>? pMFInter);
+                    _intersectionPairs.TryGetValue(fInv, out Dictionary<Shape, HashSet<Shape>>? pMFInter);
                     // intersect the faces, but do not intersect the invalid ones
                     // among each other (except for the artificially invalid faces)
                     NCollection_IndexedMap<Shape> meToInt = new(ShapeHasher.Instance);
@@ -5543,12 +5544,12 @@ internal sealed class BuildOffsetFaces
                             continue;
                         }
                         //
-                        NCollection_List<Shape> lfDone = mDone.ChangeFind(fi);
+                        NCollection_List<Shape> lfDone = mDone.GetValue(fi);
                         //
                         HashSet<Shape>? pInterFi = null;
                         if (pMFInter is not null)
                         {
-                            pMFInter.Find(fi, out pInterFi);
+                            pMFInter.TryGetValue(fi, out pInterFi);
                         }
                         if (pMFInter is not null && pInterFi is null)
                         {
@@ -5644,7 +5645,7 @@ internal sealed class BuildOffsetFaces
                             //
                             // check if both these faces are invalid and sharing edges
                             if (_invalidFaces.Contains(fi) && _invalidFaces.Contains(fj)
-                                && !_artInvalidFaces.IsBound(fi) && !_artInvalidFaces.IsBound(fj))
+                                && !_artInvalidFaces.ContainsKey(fi) && !_artInvalidFaces.ContainsKey(fj))
                             {
                                 continue;
                             }
@@ -5674,7 +5675,7 @@ internal sealed class BuildOffsetFaces
                             }
                             //
                             lfDone.Append(fj);
-                            mDone.ChangeFind(fj).Append(fi);
+                            mDone.GetValue(fj).Append(fi);
                             //
                             IntersectFaces(fInv, fi, fj, lfInv, lfImi, lfImj, lfEi, lfEj, mecv, meToInt);
                         }
@@ -5714,10 +5715,10 @@ internal sealed class BuildOffsetFaces
     //=======================================================================
     private void PrepareFacesForIntersection(bool lookVertToAvoid,
                                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fle,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> mDone,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> dmsf,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> meInfETrim,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> dmveFull,
+                                             Dictionary<Shape, NCollection_List<Shape>> mDone,
+                                             Dictionary<Shape, NCollection_List<Shape>> dmsf,
+                                             Dictionary<Shape, NCollection_List<Shape>> meInfETrim,
+                                             Dictionary<Shape, NCollection_List<Shape>> dmveFull,
                                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmefInv)
     {
         int i, nb = _facesToRebuild.Extent();
@@ -5727,7 +5728,7 @@ internal sealed class BuildOffsetFaces
             //
             // OCCT binds copies of the same empty list.
             fle.Add(f, new NCollection_List<Shape>());
-            mDone.Bind(f, new NCollection_List<Shape>());
+            mDone[f] = new NCollection_List<Shape>();
             //
             NCollection_List<Shape> lfIm = _ofImages.FindFromKey(f);
             NCollection_List<Shape>.Iterator itLF = new(lfIm);
@@ -5739,19 +5740,19 @@ internal sealed class BuildOffsetFaces
                 {
                     Shape e = exp.Current();
                     // save connection to untrimmed face
-                    if (!dmsf.Find(e, out NCollection_List<Shape> pLF))
+                    if (!dmsf.TryGetValue(e, out NCollection_List<Shape>? pLF))
                     {
                         pLF = new NCollection_List<Shape>();
-                        dmsf.Bind(e, pLF);
+                        dmsf[e] = pLF;
                     }
                     AppendToList(pLF, f);
                     //
                     // save connection to untrimmed edge
-                    Shape eInf = _eTrimEInf!.Find(e);
-                    if (!meInfETrim.Find(eInf, out NCollection_List<Shape> pLETrim))
+                    Shape eInf = _eTrimEInf!.GetValue(e);
+                    if (!meInfETrim.TryGetValue(eInf, out NCollection_List<Shape>? pLETrim))
                     {
                         pLETrim = new NCollection_List<Shape>();
-                        meInfETrim.Bind(eInf, pLETrim);
+                        meInfETrim[eInf] = pLETrim;
                     }
                     AppendToList(pLETrim, e);
                     //
@@ -5760,20 +5761,20 @@ internal sealed class BuildOffsetFaces
                     {
                         Shape v = expV.Current();
                         // save connection to face
-                        if (!dmsf.Find(v, out NCollection_List<Shape> pLFV))
+                        if (!dmsf.TryGetValue(v, out NCollection_List<Shape>? pLFV))
                         {
                             pLFV = new NCollection_List<Shape>();
-                            dmsf.Bind(v, pLFV);
+                            dmsf[v] = pLFV;
                         }
                         AppendToList(pLFV, f);
                         //
                         if (lookVertToAvoid)
                         {
                             // save connection to edges
-                            if (!dmveFull.Find(v, out NCollection_List<Shape> pLEV))
+                            if (!dmveFull.TryGetValue(v, out NCollection_List<Shape>? pLEV))
                             {
                                 pLEV = new NCollection_List<Shape>();
-                                dmveFull.Bind(v, pLEV);
+                                dmveFull[v] = pLEV;
                             }
                             AppendToList(pLEV, e);
                         }
@@ -5784,7 +5785,7 @@ internal sealed class BuildOffsetFaces
             if (lookVertToAvoid)
             {
                 // get edges of invalid faces (from invalid splits only)
-                if (!_invalidFaces.FindFromKey(f, out NCollection_List<Shape> pLFInv) || _artInvalidFaces.IsBound(f))
+                if (!_invalidFaces.FindFromKey(f, out NCollection_List<Shape> pLFInv) || _artInvalidFaces.ContainsKey(f))
                 {
                     continue;
                 }
@@ -5813,7 +5814,7 @@ internal sealed class BuildOffsetFaces
     // purpose  : Looking for the invalid vertices
     //=======================================================================
     private void FindVerticesToAvoid(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmefInv,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> dmveFull,
+                                     Dictionary<Shape, NCollection_List<Shape>> dmveFull,
                                      HashSet<Shape> mvrInv)
     {
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
@@ -5839,12 +5840,12 @@ internal sealed class BuildOffsetFaces
 
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mveEdges = new(ShapeHasher.Instance);
             // Do not check the splitting vertices, but check only the ending ones
-            if (_oeOrigins.Find(e, out NCollection_List<Shape> pLEOr))
+            if (_oeOrigins.TryGetValue(e, out NCollection_List<Shape>? pLEOr))
             {
                 NCollection_List<Shape>.Iterator itLEOr = new(pLEOr);
                 for (; itLEOr.More(); itLEOr.Next())
                 {
-                    NCollection_List<Shape> leIm = _oeImages.Find(itLEOr.Value());
+                    NCollection_List<Shape> leIm = _oeImages.GetValue(itLEOr.Value());
                     NCollection_List<Shape>.Iterator itLEIm = new(leIm);
                     for (; itLEIm.More(); itLEIm.Next())
                     {
@@ -5871,7 +5872,7 @@ internal sealed class BuildOffsetFaces
                 {
                     continue;
                 }
-                if (!dmveFull.Find(v, out NCollection_List<Shape> pLE))
+                if (!dmveFull.TryGetValue(v, out NCollection_List<Shape>? pLE))
                 {
                     // isolated vertex
                     mvrInv.Add(v);
@@ -5912,7 +5913,7 @@ internal sealed class BuildOffsetFaces
     // purpose  : Looking for the faces around each invalidity for intersection
     //=======================================================================
     private void FindFacesForIntersection(in Shape fInv, NCollection_IndexedMap<Shape> me,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> dmsf,
+                                          Dictionary<Shape, NCollection_List<Shape>> dmsf,
                                           HashSet<Shape> mvInvAll, bool artCase,
                                           NCollection_IndexedMap<Shape> mfAvoid,
                                           NCollection_IndexedMap<Shape> mfInt,
@@ -5926,7 +5927,7 @@ internal sealed class BuildOffsetFaces
         for (i = 1; i <= nbE; ++i)
         {
             Shape s = me[i];
-            if (!dmsf.IsBound(s))
+            if (!dmsf.ContainsKey(s))
             {
                 continue;
             }
@@ -5934,7 +5935,7 @@ internal sealed class BuildOffsetFaces
             // in artificial case we intersect the faces which are close to invalidity
             bool bAvoid = artCase ? ((s.ShapeType() == ShapeType.Vertex) && !mvInvAll.Contains(s)) : false;
             //
-            NCollection_List<Shape> lf0 = dmsf.Find(s);
+            NCollection_List<Shape> lf0 = dmsf.GetValue(s);
             NCollection_List<Shape>.Iterator itLF0 = new(lf0);
             for (; itLF0.More(); itLF0.Next())
             {
@@ -5944,7 +5945,7 @@ internal sealed class BuildOffsetFaces
                     continue;
                 }
                 //
-                if (bAvoid && _artInvalidFaces.IsBound(f))
+                if (bAvoid && _artInvalidFaces.ContainsKey(f))
                 {
                     mfAvoid.Add(f);
                 }
@@ -5967,8 +5968,8 @@ internal sealed class BuildOffsetFaces
             }
         }
         //
-        NCollection_DataMap<Shape, NCollection_List<Shape>> ssInterfsMap = artCase ? _ssInterfsArt : _ssInterfs;
-        if (!ssInterfsMap.Find(fInv, out NCollection_List<Shape> pLFInv))
+        Dictionary<Shape, NCollection_List<Shape>> ssInterfsMap = artCase ? _ssInterfsArt : _ssInterfs;
+        if (!ssInterfsMap.TryGetValue(fInv, out NCollection_List<Shape>? pLFInv))
         {
             return;
         }
@@ -5986,12 +5987,12 @@ internal sealed class BuildOffsetFaces
         new BrepBuilder().MakeCompound(ref cf);
         //
         NCollection_IndexedMap<Shape> mfToAdd = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> dmfOr = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmfOr = new(ShapeHasher.Instance);
         //
         for (i = 1; i <= nbE; ++i)
         {
             Shape s = me[i];
-            if (!ssInterfsMap.Find(s, out NCollection_List<Shape> pLF))
+            if (!ssInterfsMap.TryGetValue(s, out NCollection_List<Shape>? pLF))
             {
                 continue;
             }
@@ -6037,7 +6038,7 @@ internal sealed class BuildOffsetFaces
                 for (; itLFIm.More(); itLFIm.Next())
                 {
                     Shape fIm = itLFIm.Value();
-                    dmfOr.Bind(fIm, f);
+                    dmfOr[fIm] = f;
                     new BrepBuilder().Add(cf, fIm);
                 }
             }
@@ -6065,7 +6066,7 @@ internal sealed class BuildOffsetFaces
             for (; expF.More(); expF.Next())
             {
                 Shape fIm = expF.Current();
-                mfToAdd.Add(dmfOr.Find(fIm));
+                mfToAdd.Add(dmfOr.GetValue(fIm));
             }
             //
             if (mfToAdd.Extent() == 1)
@@ -6091,10 +6092,10 @@ internal sealed class BuildOffsetFaces
     // purpose  : Analyzing the common edges between splits of offset faces
     //=======================================================================
     private void ProcessCommonEdges(NCollection_List<Shape> lec, NCollection_IndexedMap<Shape> me,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> meInfETrim,
+                                    Dictionary<Shape, NCollection_List<Shape>> meInfETrim,
                                     HashSet<Shape> allInvs, bool forceUse,
                                     NCollection_IndexedMap<Shape> mecv, HashSet<Shape> meCheckExt,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> dmeeTrim,
+                                    Dictionary<Shape, NCollection_List<Shape>> dmeeTrim,
                                     NCollection_List<Shape> lfEi, NCollection_List<Shape> lfEj,
                                     NCollection_IndexedMap<Shape> meToInt)
     {
@@ -6145,8 +6146,8 @@ internal sealed class BuildOffsetFaces
                     Shape ec = itLE.Value();
                     // check if all images of the origin of this edge
                     // are not connected to any invalidity
-                    Shape eInt0 = _eTrimEInf!.Find(ec);
-                    NCollection_List<Shape> lve = meInfETrim.Find(eInt0);
+                    Shape eInt0 = _eTrimEInf!.GetValue(ec);
+                    NCollection_List<Shape> lve = meInfETrim.GetValue(eInt0);
                     NCollection_List<Shape>.Iterator itLVE = new(lve);
                     for (; itLVE.More(); itLVE.Next())
                     {
@@ -6179,18 +6180,18 @@ internal sealed class BuildOffsetFaces
         {
             Shape ec = itLE.Value();
             //
-            Shape eInt = _eTrimEInf!.Find(ec);
+            Shape eInt = _eTrimEInf!.GetValue(ec);
             if (!bUseOnlyInf)
             {
                 // find the edges of the same original edge
                 // and take their vertices as well
-                NCollection_List<Shape> lve = meInfETrim.Find(eInt);
+                NCollection_List<Shape> lve = meInfETrim.GetValue(eInt);
                 NCollection_List<Shape>.Iterator itLVE = new(lve);
                 for (; itLVE.More(); itLVE.Next())
                 {
                     Shape eCx = itLVE.Value();
                     //
-                    if (!_oeOrigins.Find(eCx, out NCollection_List<Shape> pLEOr) || (pLEOr.Extent() == 1))
+                    if (!_oeOrigins.TryGetValue(eCx, out NCollection_List<Shape>? pLEOr) || (pLEOr.Extent() == 1))
                     {
                         Exploration.MapShapes(eCx, ShapeType.Vertex, mecv);
                     }
@@ -6198,10 +6199,10 @@ internal sealed class BuildOffsetFaces
                 //
                 // bind unlimited edge to its trimmed part in face to update maps of
                 // images and origins in the future
-                if (!dmeeTrim.Find(eInt, out NCollection_List<Shape> pLTAdded))
+                if (!dmeeTrim.TryGetValue(eInt, out NCollection_List<Shape>? pLTAdded))
                 {
                     pLTAdded = new NCollection_List<Shape>();
-                    dmeeTrim.Bind(eInt, pLTAdded);
+                    dmeeTrim[eInt] = pLTAdded;
                 }
                 AppendToList(pLTAdded, ec);
             }
@@ -6220,7 +6221,7 @@ internal sealed class BuildOffsetFaces
 
     private static void FindOrigins(NCollection_List<Shape> lfIm1, NCollection_List<Shape> lfIm2,
                                     NCollection_IndexedMap<Shape> me,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> origins,
+                                    Dictionary<Shape, NCollection_List<Shape>> origins,
                                     NCollection_List<Shape> leOr)
     {
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
@@ -6237,9 +6238,9 @@ internal sealed class BuildOffsetFaces
                 {
                     Shape e = exp.Current();
                     //
-                    if (me.Contains(e) && origins.IsBound(e))
+                    if (me.Contains(e) && origins.ContainsKey(e))
                     {
-                        NCollection_List<Shape> aLEOr = origins.Find(e);
+                        NCollection_List<Shape> aLEOr = origins.GetValue(e);
                         NCollection_List<Shape>.Iterator itLE = new(aLEOr);
                         for (; itLE.More(); itLE.Next())
                         {
@@ -6305,9 +6306,9 @@ internal sealed class BuildOffsetFaces
                 meToInt.Add(e);
                 if (leOrInit.Extent() != 0)
                 {
-                    if (_edgesOrigins!.IsBound(e))
+                    if (_edgesOrigins!.ContainsKey(e))
                     {
-                        NCollection_List<Shape> leOr = _edgesOrigins.ChangeFind(e);
+                        NCollection_List<Shape> leOr = _edgesOrigins.GetValue(e);
                         NCollection_List<Shape>.Iterator itLEOr = new(leOrInit);
                         for (; itLEOr.More(); itLEOr.Next())
                         {
@@ -6317,7 +6318,7 @@ internal sealed class BuildOffsetFaces
                     }
                     else
                     {
-                        _edgesOrigins.Bind(e, new NCollection_List<Shape>(leOrInit));
+                        _edgesOrigins[e] = new NCollection_List<Shape>(leOrInit);
                     }
                 }
             }
@@ -6391,7 +6392,7 @@ internal sealed class BuildOffsetFaces
             //
             if (leOrInit.Extent() != 0)
             {
-                _edgesOrigins!.Bind(eInt, new NCollection_List<Shape>(leOrInit));
+                _edgesOrigins![eInt] = new NCollection_List<Shape>(leOrInit);
             }
             //
             meToInt.Add(eInt);
@@ -6403,14 +6404,14 @@ internal sealed class BuildOffsetFaces
     // purpose  : Intersection of the new intersection edges among themselves
     //=======================================================================
     private void IntersectAndTrimEdges(NCollection_IndexedMap<Shape> mfInt, NCollection_IndexedMap<Shape> meInt,
-                                       NCollection_DataMap<Shape, NCollection_List<Shape>> dmeeTrim,
+                                       Dictionary<Shape, NCollection_List<Shape>> dmeeTrim,
                                        NCollection_IndexedMap<Shape> msInv, NCollection_IndexedMap<Shape> mve,
                                        HashSet<Shape> vertsToAvoid,
                                        HashSet<Shape> newVertsToAvoid,
                                        HashSet<Shape> meCheckExt,
-                                       NCollection_DataMap<Shape, NCollection_List<Shape>>? ssInterfs,
+                                       Dictionary<Shape, NCollection_List<Shape>>? ssInterfs,
                                        HashSet<Shape> mvBounds,
-                                       NCollection_DataMap<Shape, NCollection_List<Shape>> eImages)
+                                       Dictionary<Shape, NCollection_List<Shape>> eImages)
     {
         int i, nb = meInt.Extent();
         if (nb == 0)
@@ -6458,7 +6459,7 @@ internal sealed class BuildOffsetFaces
             // edge case
             if (ssInterfs is not null)
             {
-                if (ssInterfs.Find(s, out NCollection_List<Shape> pLV))
+                if (ssInterfs.TryGetValue(s, out NCollection_List<Shape>? pLV))
                 {
                     // Add vertices from intersection info to trim section edges of artificial faces
                     for (NCollection_List<Shape>.Iterator itLV = new(pLV); itLV.More(); itLV.Next())
@@ -6512,7 +6513,7 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
             //
-            if (!dmeeTrim.IsBound(e))
+            if (!dmeeTrim.ContainsKey(e))
             {
                 leNew.Append(e);
             }
@@ -6593,10 +6594,10 @@ internal sealed class BuildOffsetFaces
             //
             if (leIm.Extent() != 0)
             {
-                if (!eImages.Find(e, out NCollection_List<Shape> pLEIm))
+                if (!eImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
                 {
                     pLEIm = new NCollection_List<Shape>();
-                    eImages.Bind(e, pLEIm);
+                    eImages[e] = pLEIm;
                 }
                 pLEIm.Append(leIm);
             }
@@ -6660,10 +6661,10 @@ internal sealed class BuildOffsetFaces
             }
             //
             // save the images
-            if (!eImages.Find(e, out NCollection_List<Shape> pLEIm))
+            if (!eImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 pLEIm = new NCollection_List<Shape>();
-                eImages.Bind(e, pLEIm);
+                eImages[e] = pLEIm;
             }
             pLEIm.Append(leIm);
             //
@@ -6755,8 +6756,8 @@ internal sealed class BuildOffsetFaces
                                   NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> oenEdges,
                                   HashSet<Shape> mvBounds, HashSet<Shape> meInvOnArt,
                                   HashSet<Shape> meCheckExt, HashSet<Shape> vertsToAvoid,
-                                  NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
-                                  NCollection_DataMap<Shape, NCollection_List<Shape>> eeTrim,
+                                  Dictionary<Shape, NCollection_List<Shape>> eImages,
+                                  Dictionary<Shape, NCollection_List<Shape>> eeTrim,
                                   ProgressRange range)
     {
         using ProgressScope psOuter = new(range, "Updating edges", 10);
@@ -6765,7 +6766,7 @@ internal sealed class BuildOffsetFaces
         // new edges
         NCollection_List<Shape> le = new();
         // back connection from edges to faces
-        NCollection_DataMap<Shape, NCollection_List<Shape>> melf = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> melf = new(ShapeHasher.Instance);
         //
         HashSet<Shape> meTmp = new(ShapeHasher.Instance);
         int i, nb = fle.Extent();
@@ -6778,16 +6779,16 @@ internal sealed class BuildOffsetFaces
             for (; itLE0.More(); itLE0.Next())
             {
                 Shape e = itLE0.Value();
-                if ((meCheckExt.Contains(e) || meTmp.Contains(e)) && !eImages.IsBound(e))
+                if ((meCheckExt.Contains(e) || meTmp.Contains(e)) && !eImages.ContainsKey(e))
                 {
                     meCheckExt.Remove(e);
                     meTmp.Add(e);
                     continue;
                 }
-                if (!melf.Find(e, out NCollection_List<Shape> pLF))
+                if (!melf.TryGetValue(e, out NCollection_List<Shape>? pLF))
                 {
                     pLF = new NCollection_List<Shape>();
-                    melf.Bind(e, pLF);
+                    melf[e] = pLF;
                     le.Append(e);
                 }
                 pLF.Append(f);
@@ -6807,12 +6808,12 @@ internal sealed class BuildOffsetFaces
         // map of old vertices
         HashSet<Shape> mvOld = new(ShapeHasher.Instance);
         // back connection to untrimmed edges
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOr = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmeOr = new(ShapeHasher.Instance);
         //
         // trim the new intersection edges
         TrimNewIntersectionEdges(le, eeTrim, mvBounds, meCheckExt, eImages, meb, mvOld, meNew, dmeOr, melf);
         //
-        if (eImages.IsEmpty())
+        if (eImages.Count == 0)
         {
             // No new splits is preserved
             // update intersection edges and exit
@@ -6893,7 +6894,7 @@ internal sealed class BuildOffsetFaces
             for (; itLE.More(); itLE.Next())
             {
                 Shape e = itLE.Value();
-                if (!eImages.Find(e, out NCollection_List<Shape> pLEIm) || pLEIm.IsEmpty())
+                if (!eImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm) || pLEIm.IsEmpty())
                 {
                     continue;
                 }
@@ -6954,7 +6955,7 @@ internal sealed class BuildOffsetFaces
             NCollection_List<Shape>.Iterator itLE = new(blockLENew);
             for (; itLE.More(); itLE.Next())
             {
-                if (!melf.Find(itLE.Value(), out NCollection_List<Shape> pLF))
+                if (!melf.TryGetValue(itLE.Value(), out NCollection_List<Shape>? pLF))
                 {
                     continue;
                 }
@@ -7148,7 +7149,7 @@ internal sealed class BuildOffsetFaces
         //
         // update the EdgesToAvoid with the splits
         NCollection_IndexedMap<Shape> newEdges = new(ShapeHasher.Instance);
-        if (gf.Images().Find(splits, out NCollection_List<Shape> pSplitsIm))
+        if (gf.Images().TryGetValue(splits, out NCollection_List<Shape>? pSplitsIm))
         {
             NCollection_List<Shape>.Iterator itSpIm = new(pSplitsIm);
             for (; itSpIm.More(); itSpIm.Next())
@@ -7257,13 +7258,13 @@ internal sealed class BuildOffsetFaces
 
     //! Trims intersection edges
     private void TrimNewIntersectionEdges(NCollection_List<Shape> le,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> eeTrim,
+                                          Dictionary<Shape, NCollection_List<Shape>> eeTrim,
                                           HashSet<Shape> mvBounds, HashSet<Shape> meCheckExt,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
+                                          Dictionary<Shape, NCollection_List<Shape>> eImages,
                                           HashSet<Shape> meb, HashSet<Shape> mvOld,
                                           HashSet<Shape> meNew,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOr,
-                                          NCollection_DataMap<Shape, NCollection_List<Shape>> melf)
+                                          Dictionary<Shape, NCollection_List<Shape>> dmeOr,
+                                          Dictionary<Shape, NCollection_List<Shape>> melf)
     {
         NCollection_List<Shape>.Iterator it = new(), it1 = new();
         it.Initialize(le);
@@ -7273,10 +7274,10 @@ internal sealed class BuildOffsetFaces
             //
             bool bCheckExt = meCheckExt.Remove(e);
             //
-            bool bOld = eeTrim.IsBound(e);
+            bool bOld = eeTrim.ContainsKey(e);
             if (bOld)
             {
-                NCollection_List<Shape> aLET = eeTrim.Find(e);
+                NCollection_List<Shape> aLET = eeTrim.GetValue(e);
                 it1.Initialize(aLET);
                 for (; it1.More(); it1.Next())
                 {
@@ -7291,15 +7292,15 @@ internal sealed class BuildOffsetFaces
                 }
             }
             //
-            if (!eImages.IsBound(e))
+            if (!eImages.ContainsKey(e))
             {
                 continue;
             }
             //
-            NCollection_List<Shape> leIm = eImages.ChangeFind(e);
+            NCollection_List<Shape> leIm = eImages.GetValue(e);
             if (leIm.IsEmpty())
             {
-                eImages.UnBind(e);
+                eImages.Remove(e);
                 continue;
             }
             //
@@ -7377,25 +7378,25 @@ internal sealed class BuildOffsetFaces
                     // OCCT's Bound replaces any list already bound.
                     NCollection_List<Shape> lOr = new();
                     lOr.Append(e);
-                    dmeOr.Bind(eIm, lOr);
+                    dmeOr[eIm] = lOr;
                 }
             }
             //
             if (leIm.IsEmpty())
             {
-                eImages.UnBind(e);
+                eImages.Remove(e);
             }
             else
             {
-                NCollection_List<Shape> lfe = melf.Find(e);
+                NCollection_List<Shape> lfe = melf.GetValue(e);
                 NCollection_List<Shape>.Iterator itLEIm = new(leIm);
                 for (; itLEIm.More(); itLEIm.Next())
                 {
                     Shape eIm = itLEIm.Value();
-                    if (!melf.Find(eIm, out NCollection_List<Shape> pLFEIm))
+                    if (!melf.TryGetValue(eIm, out NCollection_List<Shape>? pLFEIm))
                     {
                         pLFEIm = new NCollection_List<Shape>();
-                        melf.Bind(eIm, pLFEIm);
+                        melf[eIm] = pLFEIm;
                     }
                     NCollection_List<Shape>.Iterator itLF = new(lfe);
                     for (; itLF.More(); itLF.Next())
@@ -7423,9 +7424,9 @@ internal sealed class BuildOffsetFaces
     private void IntersectEdges(NCollection_List<Shape> la, NCollection_List<Shape> le,
                                 HashSet<Shape> mvBounds, HashSet<Shape> vertsToAvoid,
                                 HashSet<Shape> meNew, HashSet<Shape> meCheckExt,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOr,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> melf,
+                                Dictionary<Shape, NCollection_List<Shape>> eImages,
+                                Dictionary<Shape, NCollection_List<Shape>> dmeOr,
+                                Dictionary<Shape, NCollection_List<Shape>> melf,
                                 ref Shape splits)
     {
         BooleanBuilder gfa = new();
@@ -7510,15 +7511,15 @@ internal sealed class BuildOffsetFaces
                 meCheckExt.Remove(e);
             }
             //
-            NCollection_List<Shape> lfe = melf.Find(e);
+            NCollection_List<Shape> lfe = melf.GetValue(e);
             it1.Initialize(leIm);
             for (; it1.More(); it1.Next())
             {
                 Shape eIm = it1.Value();
-                if (!melf.Find(eIm, out NCollection_List<Shape> pLFEIm))
+                if (!melf.TryGetValue(eIm, out NCollection_List<Shape>? pLFEIm))
                 {
                     pLFEIm = new NCollection_List<Shape>();
-                    melf.Bind(eIm, pLFEIm);
+                    melf[eIm] = pLFEIm;
                 }
                 NCollection_List<Shape>.Iterator itLF = new(lfe);
                 for (; itLF.More(); itLF.Next())
@@ -7618,7 +7619,7 @@ internal sealed class BuildOffsetFaces
             for (; itLFDes.More(); itLFDes.Next())
             {
                 Shape ed = itLFDes.Value();
-                if (!_oeImages.Find(ed, out NCollection_List<Shape> pLEDIm))
+                if (!_oeImages.TryGetValue(ed, out NCollection_List<Shape>? pLEDIm))
                 {
                     mde.Add(ed);
                     continue;
@@ -7643,7 +7644,7 @@ internal sealed class BuildOffsetFaces
                     laBounds.Append(eIm);
                 }
                 //
-                if (_oeOrigins.Find(eIm, out NCollection_List<Shape> pLO))
+                if (_oeOrigins.TryGetValue(eIm, out NCollection_List<Shape>? pLO))
                 {
                     NCollection_List<Shape>.Iterator itLO = new(pLO);
                     for (; itLO.More(); itLO.Next())
@@ -7674,9 +7675,9 @@ internal sealed class BuildOffsetFaces
     //=======================================================================
     private void GetInvalidEdgesByBounds(in Shape splits, in Shape bounds,
                                          HashSet<Shape> mvOld, HashSet<Shape> meNew,
-                                         NCollection_DataMap<Shape, NCollection_List<Shape>> dmeOr,
-                                         NCollection_DataMap<Shape, NCollection_List<Shape>> melf,
-                                         NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
+                                         Dictionary<Shape, NCollection_List<Shape>> dmeOr,
+                                         Dictionary<Shape, NCollection_List<Shape>> melf,
+                                         Dictionary<Shape, NCollection_List<Shape>> eImages,
                                          HashSet<Shape> meCheckExt, HashSet<Shape> meInvOnArt,
                                          HashSet<Shape> vertsToAvoid, HashSet<Shape> meInv)
     {
@@ -7733,13 +7734,13 @@ internal sealed class BuildOffsetFaces
             }
             //
             // add vertices of all images of the edge from splits for checking
-            NCollection_List<Shape> leOr = dmeOr.Find(e1);
+            NCollection_List<Shape> leOr = dmeOr.GetValue(e1);
             NCollection_List<Shape>.Iterator itLEOr = new(leOr);
             for (; itLEOr.More(); itLEOr.Next())
             {
                 Shape eOr = itLEOr.Value();
                 //
-                if (!eImages.Find(eOr, out NCollection_List<Shape> pLEIm))
+                if (!eImages.TryGetValue(eOr, out NCollection_List<Shape>? pLEIm))
                 {
                     continue;
                 }
@@ -7774,7 +7775,7 @@ internal sealed class BuildOffsetFaces
         NCollection_IndexedMap<Shape> msSec = new(ShapeHasher.Instance);
         Exploration.MapShapes(secR, msSec);
         //
-        NCollection_DataMap<Shape, NCollection_List<Shape>> im = sec.Images();
+        Dictionary<Shape, NCollection_List<Shape>> im = sec.Images();
         for (Explorer exp = new(splits, ShapeType.Edge); exp.More(); exp.Next())
         {
             Shape e = exp.Current();
@@ -7784,7 +7785,7 @@ internal sealed class BuildOffsetFaces
                 continue;
             }
             //
-            if (!im.Find(e, out NCollection_List<Shape> pLEIm))
+            if (!im.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 // no splits, i.e. completely coincides with some edge from boundary
                 continue;
@@ -7896,7 +7897,7 @@ internal sealed class BuildOffsetFaces
             for (; itLE.More(); itLE.Next())
             {
                 Shape e = itLE.Value();
-                NCollection_List<Shape> lf = melf.Find(e);
+                NCollection_List<Shape> lf = melf.GetValue(e);
                 NCollection_List<Shape>.Iterator itLF0 = new(lf);
                 for (; itLF0.More(); itLF0.Next())
                 {
@@ -7977,7 +7978,7 @@ internal sealed class BuildOffsetFaces
     // purpose  : Filter the images of edges from the invalid edges
     //=======================================================================
     private void FilterSplits(NCollection_List<Shape> le, HashSet<Shape> meFilter, bool isInv,
-                              NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
+                              Dictionary<Shape, NCollection_List<Shape>> eImages,
                               ref Shape splits)
     {
         Compound aSplits = new();
@@ -7988,7 +7989,7 @@ internal sealed class BuildOffsetFaces
         for (; itLE.More(); itLE.Next())
         {
             Shape e = itLE.Value();
-            if (!eImages.Find(e, out NCollection_List<Shape> pLEIm))
+            if (!eImages.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
             {
                 continue;
             }
@@ -8012,7 +8013,7 @@ internal sealed class BuildOffsetFaces
 
             if (pLEIm.IsEmpty())
             {
-                eImages.UnBind(e);
+                eImages.Remove(e);
             }
         }
         splits = aSplits;
@@ -8023,9 +8024,9 @@ internal sealed class BuildOffsetFaces
     // purpose  : Updating the maps of images and origins of the offset edges
     //=======================================================================
     private void UpdateNewIntersectionEdges(NCollection_List<Shape> le,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> melf,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> eImages,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> eeTrim)
+                                            Dictionary<Shape, NCollection_List<Shape>> melf,
+                                            Dictionary<Shape, NCollection_List<Shape>> eImages,
+                                            Dictionary<Shape, NCollection_List<Shape>> eeTrim)
     {
         NCollection_List<Shape> leImEmpty = new();
         NCollection_List<Shape>.Iterator it = new(), it1 = new();
@@ -8035,9 +8036,9 @@ internal sealed class BuildOffsetFaces
         {
             Shape e = it.Value();
             //
-            if (!eImages.IsBound(e))
+            if (!eImages.ContainsKey(e))
             {
-                if (!eeTrim.Find(e, out NCollection_List<Shape> pLET))
+                if (!eeTrim.TryGetValue(e, out NCollection_List<Shape>? pLET))
                 {
                     continue;
                 }
@@ -8062,21 +8063,21 @@ internal sealed class BuildOffsetFaces
                 }
             }
             // new images
-            NCollection_List<Shape> leNew = eImages.IsBound(e) ? eImages.Find(e) : leImEmpty;
+            NCollection_List<Shape> leNew = eImages.ContainsKey(e) ? eImages.GetValue(e) : leImEmpty;
             //
             // save connection to untrimmed edge for the next steps
             it1.Initialize(leNew);
             for (; it1.More(); it1.Next())
             {
                 Shape et = it1.Value();
-                _eTrimEInf!.Bind(et, e);
+                _eTrimEInf![et] = e;
                 _modifiedEdges.Add(et);
             }
             //
             // check if it is existing edge
-            if (!eeTrim.IsBound(e))
+            if (!eeTrim.ContainsKey(e))
             {
-                NCollection_List<Shape> lf = melf.Find(e);
+                NCollection_List<Shape> lf = melf.GetValue(e);
                 // the edge is new
                 // add this edge to AsDes
                 it1.Initialize(lf);
@@ -8087,7 +8088,7 @@ internal sealed class BuildOffsetFaces
                 }
                 //
                 // add aE to the images
-                _oeImages.Bind(e, new NCollection_List<Shape>(leNew));
+                _oeImages[e] = new NCollection_List<Shape>(leNew);
                 _modifiedEdges.Add(e);
                 //
                 // add to origins
@@ -8095,30 +8096,30 @@ internal sealed class BuildOffsetFaces
                 for (; itNew.More(); itNew.Next())
                 {
                     Shape eNew = itNew.Value();
-                    if (_oeOrigins.IsBound(eNew))
+                    if (_oeOrigins.ContainsKey(eNew))
                     {
-                        NCollection_List<Shape> eOrigins = _oeOrigins.ChangeFind(eNew);
+                        NCollection_List<Shape> eOrigins = _oeOrigins.GetValue(eNew);
                         AppendToList(eOrigins, e);
                     }
                     else
                     {
                         NCollection_List<Shape> eOrigins = new();
                         eOrigins.Append(e);
-                        _oeOrigins.Bind(eNew, eOrigins);
+                        _oeOrigins[eNew] = eOrigins;
                     }
                 }
                 //
                 // update connection to initial origins
-                if (_edgesOrigins!.IsBound(e))
+                if (_edgesOrigins!.ContainsKey(e))
                 {
-                    NCollection_List<Shape> leOrInit = _edgesOrigins.Find(e);
+                    NCollection_List<Shape> leOrInit = _edgesOrigins.GetValue(e);
                     it1.Initialize(leNew);
                     for (; it1.More(); it1.Next())
                     {
                         Shape eNew = it1.Value();
-                        if (_edgesOrigins.IsBound(eNew))
+                        if (_edgesOrigins.ContainsKey(eNew))
                         {
-                            NCollection_List<Shape> leNewOr = _edgesOrigins.ChangeFind(eNew);
+                            NCollection_List<Shape> leNewOr = _edgesOrigins.GetValue(eNew);
                             NCollection_List<Shape>.Iterator itOrInit = new(leOrInit);
                             for (; itOrInit.More(); itOrInit.Next())
                             {
@@ -8128,7 +8129,7 @@ internal sealed class BuildOffsetFaces
                         }
                         else
                         {
-                            _edgesOrigins.Bind(eNew, new NCollection_List<Shape>(leOrInit));
+                            _edgesOrigins[eNew] = new NCollection_List<Shape>(leOrInit);
                         }
                     }
                 }
@@ -8137,7 +8138,7 @@ internal sealed class BuildOffsetFaces
             }
             //
             // old images
-            NCollection_List<Shape> leOld = eeTrim.Find(e);
+            NCollection_List<Shape> leOld = eeTrim.GetValue(e);
             //
             // list of initial origins
             NCollection_List<Shape> initOrigins = new();
@@ -8148,10 +8149,10 @@ internal sealed class BuildOffsetFaces
             {
                 Shape eOld = it1.Value();
                 //
-                if (_oeOrigins.IsBound(eOld))
+                if (_oeOrigins.ContainsKey(eOld))
                 {
                     // get its origins
-                    NCollection_List<Shape> eOrigins = _oeOrigins.Find(eOld);
+                    NCollection_List<Shape> eOrigins = _oeOrigins.GetValue(eOld);
                     //
                     NCollection_List<Shape>.Iterator itOr = new(eOrigins);
                     for (; itOr.More(); itOr.Next())
@@ -8160,7 +8161,7 @@ internal sealed class BuildOffsetFaces
                         //
                         _modifiedEdges.Add(eOr);
                         //
-                        NCollection_List<Shape> aEImages = _oeImages.ChangeFind(eOr);
+                        NCollection_List<Shape> aEImages = _oeImages.GetValue(eOr);
                         //
                         // remove old edge from images
                         NCollection_List<Shape>.Iterator itIm = new(aEImages);
@@ -8183,16 +8184,16 @@ internal sealed class BuildOffsetFaces
                         {
                             Shape eNew = itNew.Value();
                             AppendToList(aEImages, eNew);
-                            if (_oeOrigins.IsBound(eNew))
+                            if (_oeOrigins.ContainsKey(eNew))
                             {
-                                NCollection_List<Shape> eNewOrigins = _oeOrigins.ChangeFind(eNew);
+                                NCollection_List<Shape> eNewOrigins = _oeOrigins.GetValue(eNew);
                                 AppendToList(eNewOrigins, eOr);
                             }
                             else
                             {
                                 NCollection_List<Shape> eNewOrigins = new();
                                 eNewOrigins.Append(eOr);
-                                _oeOrigins.Bind(eNew, eNewOrigins);
+                                _oeOrigins[eNew] = eNewOrigins;
                             }
                         }
                     }
@@ -8200,7 +8201,7 @@ internal sealed class BuildOffsetFaces
                 else
                 {
                     // add to images
-                    _oeImages.Bind(eOld, new NCollection_List<Shape>(leNew));
+                    _oeImages[eOld] = new NCollection_List<Shape>(leNew);
                     //
                     _modifiedEdges.Add(eOld);
                     //
@@ -8209,24 +8210,24 @@ internal sealed class BuildOffsetFaces
                     for (; itNew.More(); itNew.Next())
                     {
                         Shape eNew = itNew.Value();
-                        if (_oeOrigins.IsBound(eNew))
+                        if (_oeOrigins.ContainsKey(eNew))
                         {
-                            NCollection_List<Shape> eOrigins = _oeOrigins.ChangeFind(eNew);
+                            NCollection_List<Shape> eOrigins = _oeOrigins.GetValue(eNew);
                             AppendToList(eOrigins, eOld);
                         }
                         else
                         {
                             NCollection_List<Shape> eOrigins = new();
                             eOrigins.Append(eOld);
-                            _oeOrigins.Bind(eNew, eOrigins);
+                            _oeOrigins[eNew] = eOrigins;
                         }
                     }
                 }
                 //
                 // update connection to initial shape
-                if (_edgesOrigins!.IsBound(eOld))
+                if (_edgesOrigins!.ContainsKey(eOld))
                 {
-                    NCollection_List<Shape> leOrInit = _edgesOrigins.Find(eOld);
+                    NCollection_List<Shape> leOrInit = _edgesOrigins.GetValue(eOld);
                     NCollection_List<Shape>.Iterator itEOrInit = new(leOrInit);
                     for (; itEOrInit.More(); itEOrInit.Next())
                     {
@@ -8242,9 +8243,9 @@ internal sealed class BuildOffsetFaces
                 for (; itNew.More(); itNew.Next())
                 {
                     Shape eNew = itNew.Value();
-                    if (_edgesOrigins!.IsBound(eNew))
+                    if (_edgesOrigins!.ContainsKey(eNew))
                     {
-                        NCollection_List<Shape> leNewOr = _edgesOrigins.ChangeFind(eNew);
+                        NCollection_List<Shape> leNewOr = _edgesOrigins.GetValue(eNew);
                         NCollection_List<Shape>.Iterator itOrInit = new(initOrigins);
                         for (; itOrInit.More(); itOrInit.Next())
                         {
@@ -8254,7 +8255,7 @@ internal sealed class BuildOffsetFaces
                     }
                     else
                     {
-                        _edgesOrigins.Bind(eNew, new NCollection_List<Shape>(initOrigins));
+                        _edgesOrigins[eNew] = new NCollection_List<Shape>(initOrigins);
                     }
                 }
             }
@@ -8353,7 +8354,7 @@ internal sealed class BuildOffsetFaces
             // Build new splits using all kept edges and among new splits
             // find those containing free edges
             NCollection_List<Shape> lfNew = new();
-            NCollection_DataMap<Shape, Shape> dummy = new(ShapeHasher.Instance);
+            Dictionary<Shape, Shape> dummy = new(ShapeHasher.Instance);
 
             BuildSplitsOfFace(ShapeCasts.Face(f), edges, dummy, lfNew);
 
@@ -8484,9 +8485,9 @@ public sealed partial class MakeOffset
     /// </summary>
     private void BuildSplitsOfExtendedFaces(NCollection_List<Shape> lf, Analyse analyse,
                                             AsDes asDes,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> edgesOrigins,
-                                            NCollection_DataMap<Shape, Shape> facesOrigins,
-                                            NCollection_DataMap<Shape, Shape> eTrimEInf,
+                                            Dictionary<Shape, NCollection_List<Shape>> edgesOrigins,
+                                            Dictionary<Shape, Shape> facesOrigins,
+                                            Dictionary<Shape, Shape> eTrimEInf,
                                             ShapeImage image, ProgressRange range)
     {
         BuildOffsetFaces bfTool = new(image);

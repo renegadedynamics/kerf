@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -151,7 +152,7 @@ public class SolidCheck : ResultCheck
         var vts = new List<BRepCheck_ToolSolid>();
 
         var newList = new NCollection_List<StatusCheck>();
-        NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+        NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
         lst.Append(StatusCheck.NoError);
         //
         //-------------------------------------------------

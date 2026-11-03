@@ -56,7 +56,7 @@ public class StepController : Controller
         ActorWrite actWrite = new ActorWrite();
         _adaptorWrite = actWrite;
 
-        actWrite.SetShapeFixParameters(Parameters.GetDefaultShapeFixParameters(), new NCollection_DataMap<string, string>());
+        actWrite.SetShapeFixParameters(Parameters.GetDefaultShapeFixParameters(), new Dictionary<string, string>());
         global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags defaultProcFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex,
                                                                                          global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
         actWrite.SetShapeProcessFlags(defaultProcFlags);
@@ -455,7 +455,7 @@ public class StepController : Controller
             actWrite.SetGroupMode((int)aModel.InternalParameters.WriteAssembly);
         }
         Shape aShape = shape;
-        NCollection_DataMap<Shape, Shape> modifedMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> modifedMap = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         if (aModel.InternalParameters.WriteNonmanifold)
         {
             RemoveLocations remLoc = new RemoveLocations();

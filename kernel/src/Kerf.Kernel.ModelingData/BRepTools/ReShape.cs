@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -72,7 +73,7 @@ public class ReShape : Transient
 
     // Maps each shape to its replacement.
     // If a shape is not bound to the map then the shape is replaced by itself.
-    private readonly NCollection_DataMap<Shape, TReplacement> _shapeToReplacement = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, TReplacement> _shapeToReplacement = new(ShapeHasher.Instance);
 
     /// <summary>The shapes recorded as replacements.</summary>
     protected readonly HashSet<Shape> _newShapes = new(ShapeHasher.Instance);
@@ -145,7 +146,7 @@ public class ReShape : Transient
         {
             return false;
         }
-        return _shapeToReplacement.IsBound(shape);
+        return _shapeToReplacement.ContainsKey(shape);
     }
 
     /// <summary>
@@ -170,13 +171,13 @@ public class ReShape : Transient
         }
 
         bool fromMap = false;
-        if (!_shapeToReplacement.IsBound(shape))
+        if (!_shapeToReplacement.ContainsKey(shape))
         {
             res = shape;
         }
         else
         {
-            res = _shapeToReplacement[shape].Result();
+            res = _shapeToReplacement.GetValue(shape).Result();
             if (shape.Orientation() == Reversed)
             {
                 res.Reverse();
@@ -282,14 +283,14 @@ public class ReShape : Transient
             shape.Location(nullLoc);
         }
 
-        if (!_shapeToReplacement.IsBound(shape))
+        if (!_shapeToReplacement.ContainsKey(shape))
         {
             newsh = shape;
             res = 0;
         }
         else
         {
-            newsh = _shapeToReplacement[shape].Result();
+            newsh = _shapeToReplacement.GetValue(shape).Result();
             res = 1;
         }
         if (res > 0)
@@ -609,7 +610,7 @@ public class ReShape : Transient
             for (int i = 1; i <= intermediates.Extent(); ++i)
             {
                 Shape intermediate = intermediates[i];
-                if (!_shapeToReplacement.Find(intermediate, out TReplacement replacement))
+                if (!_shapeToReplacement.TryGetValue(intermediate, out TReplacement replacement))
                 {
                     Add(modified, intermediate);
                 }
@@ -682,7 +683,7 @@ public class ReShape : Transient
         // accepted at insertion time. The DFS in-flight guard inside Apply()/applyImpl()
         // breaks any cycle at traversal time, returning the immediate Value() instead
         // of recursing.
-        _shapeToReplacement.Bind(shape, new TReplacement(newshape, kind));
+        _shapeToReplacement[shape] = new TReplacement(newshape, kind);
         _newShapes.Add(newshape);
     }
 
@@ -703,7 +704,7 @@ public class ReShape : Transient
         {
             Shape key = WithImage(entry.Key, keys);
             Shape result = WithImage(entry.Value.RelationResult(), results);
-            _shapeToReplacement.Bind(key, new TReplacement(result, entry.Value.Kind()));
+            _shapeToReplacement[key] = new TReplacement(result, entry.Value.Kind());
         }
 
         var newShapes = new List<Shape>(_newShapes);

@@ -131,7 +131,7 @@ internal static class XSDRAWSTEPCommands
         }
 
         sr.SetSystemLengthUnit(XSDRAWCommands.GetLengthUnit(theDI));
-        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+        (Dictionary<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aSession.Statics());
         sr.SetShapeFixParameters(aParameters);
         sr.SetShapeProcessFlags(aFlags);
@@ -259,7 +259,7 @@ internal static class XSDRAWSTEPCommands
         for (int theIndex = 0; theIndex < aSize; theIndex++)
         {
             var aReader = new StepReader(new global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession(aStatics));
-            (NCollection_DataMap<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+            (Dictionary<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
                 global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aStatics);
             aReader.SetShapeFixParameters(aFixParameters);
             aReader.SetShapeProcessFlags(aFlags);
@@ -398,7 +398,7 @@ internal static class XSDRAWSTEPCommands
         global::Kerf.Engine.Exchange.Framework.InterfaceModel? stepmodel = sw.Model();
         int nbavant = stepmodel is null ? 0 : stepmodel.EntityCount;
 
-        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+        (Dictionary<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aWS.Statics());
         sw.SetShapeFixParameters(aParameters);
         sw.SetShapeProcessFlags(aFlags);
@@ -506,7 +506,7 @@ internal static class XSDRAWSTEPCommands
         for (int theIndex = 0; theIndex < aSize; theIndex++)
         {
             var aWriter = new Writer(new global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession(aStatics));
-            (NCollection_DataMap<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+            (Dictionary<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
                 global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aStatics);
             aWriter.SetShapeFixParameters(aFixParameters);
             aWriter.SetShapeProcessFlags(aFlags);

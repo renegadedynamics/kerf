@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -41,7 +42,7 @@ public sealed class LocalGenerator
     private GeneratedShape? _gen;
     private bool _done;
     private Shape _res = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _modShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _modShapes = new(ShapeHasher.Instance);
     private WorkingShapes _work = new();
     private bool _ownsWork = true;
     // the generated shape answers for its own shapes (a caller's), not the working copies
@@ -155,7 +156,7 @@ public sealed class LocalGenerator
         _res = _work.Final(_res);
         foreach (Shape key in _modShapes.Keys.ToList())
         {
-            _modShapes[key] = _work.Final(_modShapes[key]);
+            _modShapes.GetValueRef(key) = _work.Final(_modShapes.GetValue(key));
         }
     }
 
@@ -208,9 +209,9 @@ public sealed class LocalGenerator
                     {
                         theLeft.Add(fac);
                         NCollection_List<Shape> emptylist = new();
-                        if (!_modShapes.IsBound(fac))
+                        if (!_modShapes.ContainsKey(fac))
                         {
-                            _modShapes.Bind(fac, emptylist);
+                            _modShapes[fac] = emptylist;
                         }
                         break;
                     }
@@ -226,8 +227,8 @@ public sealed class LocalGenerator
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, theEFMap);
 
         // OCCT iterates these maps keyed by the shapes' addresses; the port in insertion order
-        NCollection_DataMap<Shape, NCollection_List<Shape>> theEEMap = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> theFFMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> theEEMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> theFFMap = new(ShapeHasher.Instance);
         HashSet<Shape> toRemove = new(ShapeHasher.Instance);
 
         // search for face fusions
@@ -272,7 +273,7 @@ public sealed class LocalGenerator
                         }
                         if (facbisfound)
                         {
-                            theFFMap[itf.Key].Append(fac);
+                            theFFMap.GetValue(itf.Key).Append(fac);
                             toRemove.Add(fac);
                             toRemove.Add(edg);
                             break;
@@ -281,12 +282,12 @@ public sealed class LocalGenerator
 
                     if (!facbisfound)
                     {
-                        if (!theFFMap.IsBound(fac))
+                        if (!theFFMap.ContainsKey(fac))
                         {
                             NCollection_List<Shape> thelist = new();
-                            theFFMap.Bind(fac, thelist);
+                            theFFMap[fac] = thelist;
                         }
-                        for (itl.Initialize(theFFMap[fac]); itl.More(); itl.Next())
+                        for (itl.Initialize(theFFMap.GetValue(fac)); itl.More(); itl.Next())
                         {
                             if (itl.Value().IsSame(facbis))
                             {
@@ -295,7 +296,7 @@ public sealed class LocalGenerator
                         }
                         if (!itl.More())
                         {
-                            theFFMap[fac].Append(facbis);
+                            theFFMap.GetValue(fac).Append(facbis);
                         }
                         toRemove.Add(edg);
                         toRemove.Add(facbis);
@@ -346,7 +347,7 @@ public sealed class LocalGenerator
 
         NCollection_List<Shape> rebuildFace = new();
         HashSet<Shape> mapTreated = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> dontFuse = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dontFuse = new(ShapeHasher.Instance);
         Orientation orient, orface;
 
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
@@ -377,11 +378,11 @@ public sealed class LocalGenerator
                         // a voir
                         if (BrepTools.IsReallyClosed(edg, fac))
                         {
-                            if (!theEEMap.IsBound(edg))
+                            if (!theEEMap.ContainsKey(edg))
                             {
                                 NCollection_List<Shape> thelist1 = new();
-                                theEEMap.Bind(edg, thelist1);
-                                theEEMap[edg].Append(edgbis);
+                                theEEMap[edg] = thelist1;
+                                theEEMap.GetValue(edg).Append(edgbis);
                                 toRemove.Add(edgbis); // toujours vrai pour edge double
                                 bool fuseEdge = true;
                                 Exploration.Vertices(edg, out Vertex Vf, out Vertex Vl);
@@ -403,22 +404,22 @@ public sealed class LocalGenerator
                                             {
                                                 if (connectLast)
                                                 {
-                                                    dontFuse.Bind(edg, fac.Oriented(Forward));
+                                                    dontFuse[edg] = fac.Oriented(Forward);
                                                 }
                                                 else
                                                 {
-                                                    dontFuse.Bind(edg, fac.Oriented(Reversed));
+                                                    dontFuse[edg] = fac.Oriented(Reversed);
                                                 }
                                             }
                                             else
                                             {
                                                 if (connectLast)
                                                 {
-                                                    dontFuse.Bind(edg, fac.Oriented(Reversed));
+                                                    dontFuse[edg] = fac.Oriented(Reversed);
                                                 }
                                                 else
                                                 {
-                                                    dontFuse.Bind(edg, fac.Oriented(Forward));
+                                                    dontFuse[edg] = fac.Oriented(Forward);
                                                 }
                                             }
                                             break;
@@ -437,13 +438,13 @@ public sealed class LocalGenerator
                             /*  A VOIR
                                   if (!BRep_Tool::IsClosed(edg,fac)) {
                             */
-                            if (!theEEMap.IsBound(edg))
+                            if (!theEEMap.ContainsKey(edg))
                             {
                                 NCollection_List<Shape> thelist2 = new();
-                                theEEMap.Bind(edg, thelist2);
+                                theEEMap[edg] = thelist2;
                             }
-                            theEEMap[edg].Append(edgbis);
-                            NCollection_List<Shape> L = theEEMap[edg];
+                            theEEMap.GetValue(edg).Append(edgbis);
+                            NCollection_List<Shape> L = theEEMap.GetValue(edg);
                             NCollection_List<Shape>.Iterator lit = new(L);
                             bool ok = true;
                             for (; lit.More(); lit.Next())
@@ -456,14 +457,14 @@ public sealed class LocalGenerator
                             }
                             if (ok)
                             {
-                                theEEMap[edg].Append(edgbis);
+                                theEEMap.GetValue(edg).Append(edgbis);
                             }
 
                             itl.Initialize(theEFMap.FindFromKey(edg));
                             bool fuseEdge = ToFuse(edg, fac, vtx, toRemove);
                             if (!fuseEdge)
                             {
-                                dontFuse.Bind(edg, fac);
+                                dontFuse[edg] = fac;
                             }
                             else
                             {
@@ -471,7 +472,7 @@ public sealed class LocalGenerator
                                 {
                                     if (!itl.Value().IsSame(fac))
                                     {
-                                        if (theFFMap.IsBound(itl.Value()))
+                                        if (theFFMap.ContainsKey(itl.Value()))
                                         {
                                             fuseEdge = ToFuse(edg, ShapeCasts.Face(itl.Value()), vtx, toRemove);
                                             // edge a fusionner
@@ -485,7 +486,7 @@ public sealed class LocalGenerator
                                                 {
                                                     toRemove.Remove(vtx);
                                                 }
-                                                dontFuse.Bind(edg, itl.Value());
+                                                dontFuse[edg] = itl.Value();
                                             }
                                         }
                                         else
@@ -495,7 +496,7 @@ public sealed class LocalGenerator
                                             {
                                                 toRemove.Remove(vtx);
                                             }
-                                            dontFuse.Bind(edg, itl.Value());
+                                            dontFuse[edg] = itl.Value();
                                         }
 
                                         break;
@@ -511,7 +512,7 @@ public sealed class LocalGenerator
         for (itl.Initialize(rebuildFace); itl.More(); itl.Next())
         {
             NCollection_List<Shape> thelist3 = new();
-            theFFMap.Bind(itl.Value(), thelist3);
+            theFFMap[itl.Value()] = thelist3;
         }
 
         BrepBuilder b = new();
@@ -541,7 +542,7 @@ public sealed class LocalGenerator
                 prm = Tool.Parameter(vtx, edg);
 
                 newvtx.Nullify();
-                for (itl.Initialize(theEEMap[edg]); itl.More(); itl.Next())
+                for (itl.Initialize(theEEMap.GetValue(edg)); itl.More(); itl.Next())
                 {
                     Edge edgbis = ShapeCasts.Edge(itl.Value());
                     for (exp2.Init(edgbis, ShapeType.Vertex); exp2.More(); exp2.Next())
@@ -584,11 +585,11 @@ public sealed class LocalGenerator
             if (keepNewEdge)
             {
                 NCollection_List<Shape> emptylist = new();
-                if (!_modShapes.IsBound(edg))
+                if (!_modShapes.ContainsKey(edg))
                 {
-                    _modShapes.Bind(edg, emptylist);
+                    _modShapes[edg] = emptylist;
                 }
-                _modShapes[edg].Append(newedg);
+                _modShapes.GetValue(edg).Append(newedg);
                 toRemove.Add(edg);
             }
         }
@@ -628,7 +629,7 @@ public sealed class LocalGenerator
                 for (exp2.Init(wir, ShapeType.Edge); exp2.More(); exp2.Next())
                 {
                     Edge edg = ShapeCasts.Edge(exp2.Current());
-                    if (toRemove.Contains(edg) || _modShapes.IsBound(edg))
+                    if (toRemove.Contains(edg) || _modShapes.ContainsKey(edg))
                     {
                         break;
                     }
@@ -757,15 +758,15 @@ public sealed class LocalGenerator
                     {
                         Edge edg = ShapeCasts.Edge(exp2.Current());
                         orient = edg.Orientation();
-                        if (!toRemove.Contains(edg) && !theEEMap.IsBound(edg))
+                        if (!toRemove.Contains(edg) && !theEEMap.ContainsKey(edg))
                         {
                             listofedg.Append(edg);
                         }
-                        else if (_modShapes.IsBound(edg) || theEEMap.IsBound(edg))
+                        else if (_modShapes.ContainsKey(edg) || theEEMap.ContainsKey(edg))
                         {
-                            if (_modShapes.IsBound(edg))
+                            if (_modShapes.ContainsKey(edg))
                             {
-                                newedg = ShapeCasts.Edge(_modShapes[edg].First());
+                                newedg = ShapeCasts.Edge(_modShapes.GetValue(edg).First());
                             }
                             else
                             {
@@ -812,13 +813,13 @@ public sealed class LocalGenerator
                                 }
                             }
                             bool addPart = false;
-                            if (dontFuse.IsBound(edg))
+                            if (dontFuse.ContainsKey(edg))
                             {
                                 if (!BrepTools.IsReallyClosed(edg, fac))
                                 {
-                                    if (dontFuse[edg].IsSame(fac))
+                                    if (dontFuse.GetValue(edg).IsSame(fac))
                                     {
-                                        if (_modShapes.IsBound(edg))
+                                        if (_modShapes.ContainsKey(edg))
                                         {
                                             addPart = true;
                                         }
@@ -830,16 +831,16 @@ public sealed class LocalGenerator
                                 }
                                 else
                                 {
-                                    if (_modShapes.IsBound(edg))
+                                    if (_modShapes.ContainsKey(edg))
                                     { // edg raccourci
-                                        if (orient == dontFuse[edg].Orientation())
+                                        if (orient == dontFuse.GetValue(edg).Orientation())
                                         {
                                             addPart = true;
                                         }
                                     }
                                     else
                                     {
-                                        if (orient == global::Kerf.Engine.Topology.TopAbs.Reverse(dontFuse[edg].Orientation()))
+                                        if (orient == global::Kerf.Engine.Topology.TopAbs.Reverse(dontFuse.GetValue(edg).Orientation()))
                                         {
                                             addPart = true;
                                         }
@@ -848,7 +849,7 @@ public sealed class LocalGenerator
                             }
                             if (addPart)
                             {
-                                itl2.Initialize(theEEMap[edg]);
+                                itl2.Initialize(theEEMap.GetValue(edg));
                                 Vector3D dir1, dir2;
                                 for (; itl2.More(); itl2.Next())
                                 {
@@ -913,10 +914,10 @@ public sealed class LocalGenerator
                                         if (s.IsUPeriodic)
                                         {
                                             double uref;
-                                            if (dontFuse.IsBound(edg))
+                                            if (dontFuse.ContainsKey(edg))
                                             {
-                                                Orientation oredge = dontFuse[edg].Orientation();
-                                                if (_modShapes.IsBound(edg))
+                                                Orientation oredge = dontFuse.GetValue(edg).Orientation();
+                                                if (_modShapes.ContainsKey(edg))
                                                 { // edge raccourci...
                                                     Shape localShape = edg.Oriented(oredge);
                                                     Shape localFace = fac.Oriented(Forward);
@@ -1098,10 +1099,10 @@ public sealed class LocalGenerator
                 L.WiresToFaces();
                 NCollection_List<Shape> listoffaces = L.NewFaces();
                 toRemove.Add(fac);
-                _modShapes.Bind(fac, new NCollection_List<Shape>(listoffaces));
+                _modShapes[fac] = new NCollection_List<Shape>(listoffaces);
                 for (itl.Initialize(itf.Value); itl.More(); itl.Next())
                 {
-                    _modShapes.Bind(itl.Value(), new NCollection_List<Shape>(listoffaces));
+                    _modShapes[itl.Value()] = new NCollection_List<Shape>(listoffaces);
                 }
             }
         }
@@ -1123,20 +1124,20 @@ public sealed class LocalGenerator
                 if (!toRemove.Contains(exp.Current()))
                 {
                     lfres.Append(fac);
-                    if (!_modShapes.IsBound(fac))
+                    if (!_modShapes.ContainsKey(fac))
                     {
                         NCollection_List<Shape> emptylist = new();
-                        _modShapes.Bind(fac, emptylist);
+                        _modShapes[fac] = emptylist;
                     }
-                    _modShapes[fac].Append(fac);
+                    _modShapes.GetValue(fac).Append(fac);
                     if (faceRefOri.IsNull)
                     {
                         faceRefOri = fac;
                     }
                 }
-                else if (_modShapes.IsBound(fac))
+                else if (_modShapes.ContainsKey(fac))
                 {
-                    lfres.Append(_modShapes[fac].First().Oriented(fac.Orientation()));
+                    lfres.Append(_modShapes.GetValue(fac).First().Oriented(fac.Orientation()));
                 }
             }
         }
@@ -1158,12 +1159,12 @@ public sealed class LocalGenerator
             {
                 lfres.Append(fac.Reversed());
             }
-            if (!_modShapes.IsBound(fac))
+            if (!_modShapes.ContainsKey(fac))
             {
                 NCollection_List<Shape> emptylist = new();
-                _modShapes.Bind(fac, emptylist);
+                _modShapes[fac] = emptylist;
             }
-            _modShapes[fac].Append(fac);
+            _modShapes.GetValue(fac).Append(fac);
         }
 
         BuildShape bs = new(lfres);
@@ -1211,7 +1212,7 @@ public sealed class LocalGenerator
         {
             throw new NotDoneException();
         }
-        return _modShapes[_work.Copied(f)];
+        return _modShapes.GetValue(_work.Copied(f));
     }
 
     // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy

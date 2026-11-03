@@ -58,9 +58,9 @@ public class ActorOfFinderProcess : ActorOfProcessForFinder
     }
 
     /// <summary>Sets parameters for shape processing (a copy of <paramref name="parameters"/>).</summary>
-    public void SetShapeFixParameters(NCollection_DataMap<string, string> parameters)
+    public void SetShapeFixParameters(Dictionary<string, string> parameters)
     {
-        _shapeProcParams = new NCollection_DataMap<string, string>(parameters);
+        _shapeProcParams = new Dictionary<string, string>(parameters,parameters.Comparer);
     }
 
     /// <summary>
@@ -69,10 +69,10 @@ public class ActorOfFinderProcess : ActorOfProcessForFinder
     /// are not present in <paramref name="parameters"/>.
     /// </summary>
     public void SetShapeFixParameters(in ShapeFixParameters parameters,
-                                      NCollection_DataMap<string, string>? additionalParameters = null)
+                                      Dictionary<string, string>? additionalParameters = null)
     {
         ShapeProcessor.SetShapeFixParameters(parameters,
-                                                    additionalParameters ?? new NCollection_DataMap<string, string>(),
+                                                    additionalParameters ?? new Dictionary<string, string>(),
                                                     _shapeProcParams);
     }
 
@@ -80,9 +80,9 @@ public class ActorOfFinderProcess : ActorOfProcessForFinder
     /// Returns parameters for shape processing that was set by SetParameters() method; an empty map if no parameters
     /// were set. A copy: OCCT returns a const reference, which its callers copy before changing it.
     /// </summary>
-    public NCollection_DataMap<string, string> GetShapeFixParameters()
+    public Dictionary<string, string> GetShapeFixParameters()
     {
-        return new NCollection_DataMap<string, string>(_shapeProcParams);
+        return new Dictionary<string, string>(_shapeProcParams,_shapeProcParams.Comparer);
     }
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
@@ -102,6 +102,6 @@ public class ActorOfFinderProcess : ActorOfProcessForFinder
 
     protected int _themodetrans;
 
-    private NCollection_DataMap<string, string> _shapeProcParams = new(StringComparer.Ordinal); // Parameters for shape processing.
+    private Dictionary<string, string> _shapeProcParams = new(StringComparer.Ordinal); // Parameters for shape processing.
     private (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) _shapeProcFlags; // Flags defining operations to be performed on shapes.
 }

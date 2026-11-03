@@ -30,7 +30,7 @@ public sealed class StepToTopoDS_TranslateFaceTests
     public StepToTopoDS_TranslateFaceTests()
     {
         var aTP = new TransientProcess();
-        myTool.Init(new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>(), aTP);
+        myTool.Init(new Dictionary<StepTopologicalRepresentationItem, Shape>(), aTP);
         myNMTool.SetActive(false);
     }
 

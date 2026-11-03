@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -19,8 +20,8 @@ namespace Kerf.Engine.Booleans.Algo;
 /// </remarks>
 public sealed class AsDes : Transient
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _up = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _up = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
 
     private NCollection_List<Shape>? _empty;
 
@@ -42,19 +43,19 @@ public sealed class AsDes : Transient
     /// <summary>Stores <paramref name="ss"/> as a future sub-shape of <paramref name="s"/>.</summary>
     public void Add(in Shape s, in Shape ss)
     {
-        if (!_down.IsBound(s))
+        if (!_down.ContainsKey(s))
         {
             NCollection_List<Shape> l = new();
-            _down.Bind(s, l);
+            _down[s] = l;
         }
-        _down[s].Append(ss);
+        _down.GetValue(s).Append(ss);
 
-        if (!_up.IsBound(ss))
+        if (!_up.ContainsKey(ss))
         {
             NCollection_List<Shape> l = new();
-            _up.Bind(ss, l);
+            _up[ss] = l;
         }
-        _up[ss].Append(s);
+        _up.GetValue(ss).Append(s);
     }
 
     /// <summary>Stores the shapes of <paramref name="ss"/> as future sub-shapes of <paramref name="s"/>.</summary>
@@ -68,17 +69,17 @@ public sealed class AsDes : Transient
     }
 
     /// <summary>Whether <paramref name="s"/> has ascendants.</summary>
-    public bool HasAscendant(in Shape s) => _up.IsBound(s);
+    public bool HasAscendant(in Shape s) => _up.ContainsKey(s);
 
     /// <summary>Whether <paramref name="s"/> has descendants.</summary>
-    public bool HasDescendant(in Shape s) => _down.IsBound(s);
+    public bool HasDescendant(in Shape s) => _down.ContainsKey(s);
 
     /// <summary>The shapes containing <paramref name="s"/>.</summary>
     public NCollection_List<Shape> Ascendant(in Shape s)
     {
-        if (_up.IsBound(s))
+        if (_up.ContainsKey(s))
         {
-            return _up[s];
+            return _up.GetValue(s);
         }
         return Empty();
     }
@@ -86,9 +87,9 @@ public sealed class AsDes : Transient
     /// <summary>The future sub-shapes of <paramref name="s"/>.</summary>
     public NCollection_List<Shape> Descendant(in Shape s)
     {
-        if (_down.IsBound(s))
+        if (_down.ContainsKey(s))
         {
-            return _down[s];
+            return _down.GetValue(s);
         }
         return Empty();
     }
@@ -96,9 +97,9 @@ public sealed class AsDes : Transient
     /// <summary>The future sub-shapes of <paramref name="s"/>, to change.</summary>
     public NCollection_List<Shape> ChangeDescendant(in Shape s)
     {
-        if (_down.IsBound(s))
+        if (_down.ContainsKey(s))
         {
-            return _down.ChangeFind(s);
+            return _down.GetValue(s);
         }
         return Empty(); // OCCT: the shared empty list, which a caller can fill
     }
@@ -179,16 +180,16 @@ public sealed class AsDes : Transient
             Shape s = it.Value();
             if (inUp)
             {
-                if (_up.IsBound(s))
+                if (_up.ContainsKey(s))
                 {
-                    ReplaceInList(oldS, newS, _up.ChangeFind(s));
+                    ReplaceInList(oldS, newS, _up.GetValue(s));
                 }
             }
             else
             {
-                if (_down.IsBound(s))
+                if (_down.ContainsKey(s))
                 {
-                    ReplaceInList(oldS, newS, _down.ChangeFind(s));
+                    ReplaceInList(oldS, newS, _down.GetValue(s));
                 }
             }
         }
@@ -199,8 +200,8 @@ public sealed class AsDes : Transient
     {
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_DataMap<Shape, NCollection_List<Shape>> map = i == 0 ? _up : _down;
-            if (!map.Find(oldS, out NCollection_List<Shape> pLSOld))
+            Dictionary<Shape, NCollection_List<Shape>> map = i == 0 ? _up : _down;
+            if (!map.TryGetValue(oldS, out NCollection_List<Shape>? pLSOld))
             {
                 continue;
             }
@@ -208,7 +209,7 @@ public sealed class AsDes : Transient
             bool inUp = i != 0;
             BackReplace(oldS, newS, pLSOld, inUp);
             //
-            if (!map.Find(newS, out NCollection_List<Shape> pLSNew))
+            if (!map.TryGetValue(newS, out NCollection_List<Shape>? pLSNew))
             {
                 // filter the list
                 HashSet<Shape> ms = new(EqualityComparer<Shape>.Default);
@@ -224,7 +225,7 @@ public sealed class AsDes : Transient
                         it.Next();
                     }
                 }
-                map.Bind(newS, new NCollection_List<Shape>(pLSOld));
+                map[newS] = new NCollection_List<Shape>(pLSOld);
             }
             else
             {
@@ -247,7 +248,7 @@ public sealed class AsDes : Transient
                 }
             }
             //
-            map.UnBind(oldS);
+            map.Remove(oldS);
         }
     }
 
@@ -255,19 +256,19 @@ public sealed class AsDes : Transient
     /// <exception cref="ConstructionErrorException">It has descendants, or no ascendants.</exception>
     public void Remove(in Shape ss)
     {
-        if (_down.IsBound(ss))
+        if (_down.ContainsKey(ss))
         {
             throw new ConstructionErrorException(" BRepAlgo_AsDes::Remove");
         }
-        if (!_up.IsBound(ss))
+        if (!_up.ContainsKey(ss))
         {
             throw new ConstructionErrorException(" BRepAlgo_AsDes::Remove");
         }
-        NCollection_List<Shape>.Iterator it = new(_up[ss]);
+        NCollection_List<Shape>.Iterator it = new(_up.GetValue(ss));
         for (; it.More(); it.Next())
         {
-            RemoveInList(ss, _down.ChangeFind(it.Value()));
+            RemoveInList(ss, _down.GetValue(it.Value()));
         }
-        _up.UnBind(ss);
+        _up.Remove(ss);
     }
 }

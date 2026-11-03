@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
@@ -143,8 +144,8 @@ public class MakePeriodicAlgorithm : Options
     protected Shape _shape = new();                         //!< Resulting periodic shape (base for repetitions)
     protected Shape _repeatedShape = new();                 //!< Resulting shape after making repetitions of the base
     protected double[] _repeatPeriod = new double[3];              //!< XYZ repeat period
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _repeatedTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _twins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected Dictionary<Shape, NCollection_List<Shape>> _repeatedTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected Dictionary<Shape, NCollection_List<Shape>> _twins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
     protected History? _splitHistory;                    //!< Split history - history of shapes modification
     protected History? _history;                         //!< Final history of shapes modifications
     private History _inPlace = new();                    //!< Kerf: the shapes changed in place, modified into what stands for them
@@ -304,9 +305,9 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>OCCT's GetTwins, the algorithm's own list (empty if none), without freezing.</summary>
     internal NCollection_List<Shape> InternalGetTwins(in Shape s)
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map =
-            _repeatedTwins.IsEmpty() ? _twins : _repeatedTwins;
-        if (map.Find(s, out NCollection_List<Shape> twins))
+        Dictionary<Shape, NCollection_List<Shape>> map =
+            _repeatedTwins.Count == 0 ? _twins : _repeatedTwins;
+        if (map.TryGetValue(s, out NCollection_List<Shape>? twins))
         {
             return twins;
         }
@@ -314,7 +315,7 @@ public class MakePeriodicAlgorithm : Options
         // is the shape itself
         foreach (Shape copy in _inPlace.Modified(s))
         {
-            if (map.Find(copy, out twins))
+            if (map.TryGetValue(copy, out twins))
             {
                 return twins;
             }
@@ -573,11 +574,11 @@ public class MakePeriodicAlgorithm : Options
 
     // Associates the shape <theS> with the shape <theTwin> in the map.
     private static void AddTwin(in Shape s, in Shape twin,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+                                Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        if (!map.Find(s, out NCollection_List<Shape> twins))
+        if (!map.TryGetValue(s, out NCollection_List<Shape>? twins))
         {
-            map.Bound(s, new NCollection_List<Shape>()).Append(twin);
+            map.SetValueRef(s, new NCollection_List<Shape>()).Append(twin);
             return;
         }
 
@@ -913,14 +914,14 @@ public class MakePeriodicAlgorithm : Options
     }
 
     // Kerf: the twins with what stands for each shape after the overlay's end
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> FinalTwins(
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map, WorkingOverlay overlay)
+    private static Dictionary<Shape, NCollection_List<Shape>> FinalTwins(
+        Dictionary<Shape, NCollection_List<Shape>> map, WorkingOverlay overlay)
     {
         if (overlay.WorkingCount == 0)
         {
             return map;
         }
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aFinal = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> aFinal = new(ShapeHasher.Instance);
         foreach ((Shape key, NCollection_List<Shape> list) in map)
         {
             NCollection_List<Shape> aNew = new();
@@ -928,7 +929,7 @@ public class MakePeriodicAlgorithm : Options
             {
                 aNew.Append(overlay.Final(aS));
             }
-            aFinal.Bind(overlay.Final(key), aNew);
+            aFinal[overlay.Final(key)] = aNew;
         }
         return aFinal;
     }
@@ -936,18 +937,18 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>Updates the map of twins after repetition.</summary>
     protected void UpdateTwins(History translationHistory, History gluingHistory)
     {
-        if (_twins.IsEmpty())
+        if (_twins.Count == 0)
         {
             return;
         }
 
-        if (_repeatedTwins.IsEmpty())
+        if (_repeatedTwins.Count == 0)
         {
             _repeatedTwins = CopyTwins(_twins);
         }
 
         // New twins
-        NCollection_DataMap<Shape, NCollection_List<Shape>> newTwinsMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> newTwinsMap = new(ShapeHasher.Instance);
 
         // Fence map to avoid repeated fill for the twins
         HashSet<Shape> mTwinsDone = new(ShapeHasher.Instance);
@@ -1011,7 +1012,7 @@ public class MakePeriodicAlgorithm : Options
             int nbTwins = newGroup.Extent();
             for (int i = 1; i <= nbTwins; ++i)
             {
-                ref NCollection_List<Shape> pTwins = ref newTwinsMap.Bound(newGroup[i], new NCollection_List<Shape>());
+                ref NCollection_List<Shape> pTwins = ref newTwinsMap.SetValueRef(newGroup[i], new NCollection_List<Shape>());
                 for (int j = 1; j <= nbTwins; ++j)
                 {
                     if (i != j)
@@ -1026,13 +1027,13 @@ public class MakePeriodicAlgorithm : Options
     }
 
     // OCCT's map assignment copies the lists
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> CopyTwins(
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+    private static Dictionary<Shape, NCollection_List<Shape>> CopyTwins(
+        Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> copy = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> copy = new(ShapeHasher.Instance);
         foreach ((Shape key, NCollection_List<Shape> list) in map)
         {
-            copy.Bind(key, new NCollection_List<Shape>(list));
+            copy[key] = new NCollection_List<Shape>(list);
         }
         return copy;
     }

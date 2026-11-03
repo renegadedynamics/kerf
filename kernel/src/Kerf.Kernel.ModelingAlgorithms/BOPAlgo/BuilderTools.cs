@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
@@ -656,7 +657,7 @@ public static partial class BuilderTools
         // maps to store the planes found for the wires
         NCollection_IndexedDataMap<Shape, Plane3D> dmWirePln = new(ShapeHasher.Instance);
         // map to store the tolerance for the wire
-        NCollection_DataMap<Shape, double> dmWireTol = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> dmWireTol = new(ShapeHasher.Instance);
         // edges for which the plane is not found
         HashSet<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
         //
@@ -670,7 +671,7 @@ public static partial class BuilderTools
             {
                 dmWirePln.Add(wire, plane);
                 // find tolerance for the wire - max tolerance of its edges
-                dmWireTol.Bind(wire, Tool.MaxTolerance(wire, ShapeType.Edge));
+                dmWireTol[wire] = Tool.MaxTolerance(wire, ShapeType.Edge);
             }
         }
         //
@@ -689,7 +690,7 @@ public static partial class BuilderTools
             lw.Append(wireI);
             mFence.Add(wireI);
             //
-            double tolI = dmWireTol.Find(wireI);
+            double tolI = dmWireTol.GetValue(wireI);
             //
             // Find other wires in the same plane
             for (j = i + 1; j <= nb; ++j)
@@ -709,7 +710,7 @@ public static partial class BuilderTools
                 }
                 // check distance between the planes
                 double dist = plnI.Distance(plnJ.Location());
-                double tolJ = dmWireTol.Find(wireJ);
+                double tolJ = dmWireTol.GetValue(wireJ);
                 if (dist > (tolI + tolJ))
                 {
                     continue;
@@ -1506,12 +1507,12 @@ public static partial class BuilderTools
                                      bool runParallel,
                                      IntersectionContext context,
                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> inParts,
-                                     NCollection_DataMap<Shape, Box>? shapeBoxMap = null,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>>? solidsIF = null,
+                                     Dictionary<Shape, Box>? shapeBoxMap = null,
+                                     Dictionary<Shape, NCollection_List<Shape>>? solidsIF = null,
                                      ProgressRange range = default)
     {
-        shapeBoxMap ??= new NCollection_DataMap<Shape, Box>(ShapeHasher.Instance);
-        solidsIF ??= new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        shapeBoxMap ??= new Dictionary<Shape, Box>(ShapeHasher.Instance);
+        solidsIF ??= new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
         using var psOuter = new ProgressScope(range, null, 10);
 
@@ -1532,7 +1533,7 @@ public static partial class BuilderTools
             sb.SetShape(f);
 
             // Get bounding box for the face
-            if (shapeBoxMap.Find(f, out Box pBox))
+            if (shapeBoxMap.TryGetValue(f, out Box pBox))
             {
                 sb.SetBox(pBox);
             }
@@ -1570,7 +1571,7 @@ public static partial class BuilderTools
             fip.SetSolid(solid);
 
             // Get bounding box for the solid
-            if (shapeBoxMap.Find(solid, out Box pBox))
+            if (shapeBoxMap.TryGetValue(solid, out Box pBox))
             {
                 fip.SetBoxS(pBox);
             }
@@ -1589,7 +1590,7 @@ public static partial class BuilderTools
                 fip.SetBoxS(box);
             }
 
-            if (solidsIF.Find(solid, out NCollection_List<Shape> pLIF))
+            if (solidsIF.TryGetValue(solid, out NCollection_List<Shape>? pLIF))
             {
                 fip.SetOwnIF(pLIF);
             }
@@ -1629,7 +1630,7 @@ public static partial class BuilderTools
     /// </summary>
     public static void FillInternals(NCollection_List<Shape> solids,
                                      NCollection_List<Shape> parts,
-                                     NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                     Dictionary<Shape, NCollection_List<Shape>> images,
                                      IntersectionContext context)
     {
         if (solids.IsEmpty() || parts.IsEmpty())
@@ -1664,7 +1665,7 @@ public static partial class BuilderTools
                 case ShapeType.Edge:
                 case ShapeType.Face:
                 {
-                    if (images.Find(part, out NCollection_List<Shape> pIm))
+                    if (images.TryGetValue(part, out NCollection_List<Shape>? pIm))
                     {
                         NCollection_List<Shape>.Iterator itIm = new(pIm);
                         for (; itIm.More(); itIm.Next())
@@ -1698,7 +1699,7 @@ public static partial class BuilderTools
         // Add edges and vertices classified as IN into solids instantly,
         // and collect faces classified as IN into a list for further shell creation
 
-        NCollection_DataMap<Shape, NCollection_List<Shape>> inFaces = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> inFaces = new(ShapeHasher.Instance);
         itLS.Initialize(solids);
         for (; itLS.More(); itLS.Next())
         {
@@ -1719,9 +1720,9 @@ public static partial class BuilderTools
                 {
                     if (part.ShapeType() == ShapeType.Face)
                     {
-                        if (!inFaces.Find(sd, out NCollection_List<Shape> pFaces))
+                        if (!inFaces.TryGetValue(sd, out NCollection_List<Shape>? pFaces))
                         {
-                            pFaces = inFaces.Bound(sd, new NCollection_List<Shape>());
+                            pFaces = inFaces.SetValueRef(sd, new NCollection_List<Shape>());
                         }
                         pFaces.Append(part);
                     }

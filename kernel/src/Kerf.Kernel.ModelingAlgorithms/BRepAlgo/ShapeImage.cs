@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -25,8 +26,8 @@ namespace Kerf.Engine.Booleans.Algo;
 public sealed class ShapeImage
 {
     private readonly NCollection_List<Shape> _roots = new();
-    private readonly NCollection_DataMap<Shape, Shape> _up = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _up = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
 
     private NCollection_List<Shape>? _noImage;
 
@@ -46,12 +47,12 @@ public sealed class ShapeImage
         _up.Clear();
         foreach (KeyValuePair<Shape, Shape> item in other._up)
         {
-            _up.Bind(item.Key, item.Value);
+            _up[item.Key] = item.Value;
         }
         _down.Clear();
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in other._down)
         {
-            _down.Bind(item.Key, new NCollection_List<Shape>(item.Value));
+            _down[item.Key] = new NCollection_List<Shape>(item.Value);
         }
     }
 
@@ -65,14 +66,14 @@ public sealed class ShapeImage
     /// <exception cref="ConstructionErrorException">OldS already has images.</exception>
     public void Bind(in Shape oldS, in Shape newS)
     {
-        if (_down.IsBound(oldS))
+        if (_down.ContainsKey(oldS))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Bind");
         }
         NCollection_List<Shape> l = new();
-        _down.Bind(oldS, l);
-        _down[oldS].Append(newS);
-        _up.Bind(newS, oldS);
+        _down[oldS] = l;
+        _down.GetValue(oldS).Append(newS);
+        _up[newS] = oldS;
     }
 
     /// <summary>Links the shapes of <paramref name="l"/> as the images of <paramref name="oldS"/>.</summary>
@@ -113,8 +114,8 @@ public sealed class ShapeImage
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Add");
         }
-        _down[oldS].Append(newS);
-        _up.Bind(newS, oldS);
+        _down.GetValue(oldS).Append(newS);
+        _up[newS] = oldS;
     }
 
     /// <summary>Adds the shapes of <paramref name="l"/> to the images of <paramref name="oldS"/>.</summary>
@@ -131,12 +132,12 @@ public sealed class ShapeImage
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public void Remove(in Shape s)
     {
-        if (!_up.IsBound(s))
+        if (!_up.ContainsKey(s))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::Remove");
         }
-        Shape oldS = _up[s];
-        NCollection_List<Shape> l = _down[oldS];
+        Shape oldS = _up.GetValue(s);
+        NCollection_List<Shape> l = _down.GetValue(oldS);
         NCollection_List<Shape>.Iterator it = new(l);
         while (it.More())
         {
@@ -149,59 +150,59 @@ public sealed class ShapeImage
         }
         if (l.IsEmpty())
         {
-            _down.UnBind(oldS);
+            _down.Remove(oldS);
         }
-        _up.UnBind(s);
+        _up.Remove(s);
     }
 
     /// <summary>The roots.</summary>
     public NCollection_List<Shape> Roots() => _roots;
 
     /// <summary>Whether <paramref name="s"/> is an image.</summary>
-    public bool IsImage(in Shape s) => _up.IsBound(s);
+    public bool IsImage(in Shape s) => _up.ContainsKey(s);
 
     /// <summary>The shape <paramref name="s"/> is an image of.</summary>
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public Shape ImageFrom(in Shape s)
     {
-        if (!_up.IsBound(s))
+        if (!_up.ContainsKey(s))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::ImageFrom");
         }
-        return _up[s];
+        return _up.GetValue(s);
     }
 
     /// <summary>The first generator of <paramref name="s"/>.</summary>
     /// <exception cref="ConstructionErrorException">S isn't an image.</exception>
     public Shape Root(in Shape s)
     {
-        if (!_up.IsBound(s))
+        if (!_up.ContainsKey(s))
         {
             throw new ConstructionErrorException(" BRepAlgo_Image::FirstImageFrom");
         }
 
-        Shape s1 = _up[s];
+        Shape s1 = _up.GetValue(s);
         Shape s2 = s;
 
         if (s1.IsSame(s2))
         {
-            return _up[s];
+            return _up.GetValue(s);
         }
 
-        while (_up.IsBound(s1))
+        while (_up.ContainsKey(s1))
         {
             s2 = s1;
-            s1 = _up[s1];
+            s1 = _up.GetValue(s1);
             if (s1.IsSame(s2))
             {
                 break;
             }
         }
-        return _up[s2];
+        return _up.GetValue(s2);
     }
 
     /// <summary>Whether <paramref name="s"/> has images.</summary>
-    public bool HasImage(in Shape s) => _down.IsBound(s);
+    public bool HasImage(in Shape s) => _down.ContainsKey(s);
 
     /// <summary>The images of <paramref name="s"/>; for a shape without images, a list holding it (see the remarks).</summary>
     public NCollection_List<Shape> Image(in Shape s)
@@ -213,7 +214,7 @@ public sealed class ShapeImage
             _noImage.Append(s);
             return _noImage;
         }
-        return _down[s];
+        return _down.GetValue(s);
     }
 
     /// <summary>
@@ -221,13 +222,13 @@ public sealed class ShapeImage
     /// </summary>
     public void LastImage(in Shape s, NCollection_List<Shape> l)
     {
-        if (!_down.IsBound(s))
+        if (!_down.ContainsKey(s))
         {
             l.Append(s);
         }
         else
         {
-            NCollection_List<Shape>.Iterator it = new(_down[s]);
+            NCollection_List<Shape>.Iterator it = new(_down.GetValue(s));
             for (; it.More(); it.Next())
             {
                 if (it.Value().IsSame(s))
@@ -245,7 +246,7 @@ public sealed class ShapeImage
     /// <summary>Keeps only the links between the roots and their last images.</summary>
     public void Compact()
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> m = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> m = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(_roots);
         for (; it.More(); it.Next())
         {
@@ -255,15 +256,15 @@ public sealed class ShapeImage
             {
                 LastImage(s, li);
             }
-            m.Bind(s, li);
+            m[s] = li;
         }
         _up.Clear();
         _down.Clear();
         for (it.Initialize(_roots); it.More(); it.Next())
         {
-            if (m.IsBound(it.Value()))
+            if (m.ContainsKey(it.Value()))
             {
-                Bind(it.Value(), m[it.Value()]);
+                Bind(it.Value(), m.GetValue(it.Value()));
             }
         }
     }
@@ -316,16 +317,16 @@ public sealed class ShapeImage
             return;
         }
 
-        if (_down.Find(root, out NCollection_List<Shape> pNewS))
+        if (_down.TryGetValue(root, out NCollection_List<Shape>? pNewS))
         {
             for (NCollection_List<Shape>.Iterator it = new(pNewS); it.More(); it.Next())
             {
-                if (_up.Find(it.Value(), out Shape pOldS) && pOldS.IsSame(root))
+                if (_up.TryGetValue(it.Value(), out Shape pOldS) && pOldS.IsSame(root))
                 {
-                    _up.UnBind(it.Value());
+                    _up.Remove(it.Value());
                 }
             }
-            _down.UnBind(root);
+            _down.Remove(root);
         }
     }
 

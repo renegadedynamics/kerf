@@ -41,7 +41,7 @@ public class HLRBRepTests
                                      out OutLiner theOutLiner)
     {
         theOutLiner = new OutLiner(theShape);
-        NCollection_DataMap<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
+        Dictionary<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         HiddenLineData DS = ShapeToHlr.Load(theOutLiner, P, MST, nbIso);
         DS.Update(P);
         return DS;
@@ -291,7 +291,7 @@ public class HLRBRepTests
     {
         Shape aCyl = new ApiMakeCylinder(10.0, 30.0).Shape();
         TopologyData DS = new();
-        NCollection_DataMap<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
+        Dictionary<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         Contour FO = new(new Vector3D(1, -1, 1));
         Assert.Throws<LockedShapeException>(() => DSFiller.Insert(aCyl, FO, DS, MST, 0));
     }

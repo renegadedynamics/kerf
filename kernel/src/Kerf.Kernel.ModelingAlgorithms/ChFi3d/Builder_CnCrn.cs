@@ -8,6 +8,7 @@
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Fairing;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Plate;
@@ -2321,12 +2322,12 @@ public partial class FilletBuilderBase
             DsSurface tsurf = new(surf, mapp.ApproxError());
             int isurf = dStr.AddSurface(tsurf);
             // lbo : historique QDF.
-            if (!_eviMap.IsBound(v1))
+            if (!_eviMap.ContainsKey(v1))
             {
                 NCollection_List<int> li = new();
-                _eviMap.Bind(v1, li);
+                _eviMap[v1] = li;
             }
-            _eviMap.ChangeFind(v1).Append(isurf);
+            _eviMap.GetValue(v1).Append(isurf);
 
             int solInd = cd.Value(0).SolidIndex();
             NCollection_List<DsInterference> solidInterfs = 

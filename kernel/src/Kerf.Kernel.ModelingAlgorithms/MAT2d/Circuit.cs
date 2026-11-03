@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
@@ -27,8 +28,8 @@ public sealed class Circuit : Transient
 {
     private double _direction;
     private NCollection_Sequence<Geometry2D> _geomElements = new();
-    private readonly NCollection_DataMap<int, Connexion> _connexionMap = new();
-    private readonly NCollection_DataMap<BiInt, NCollection_Sequence<int>> _linkRefEqui = new();
+    private readonly Dictionary<int, Connexion> _connexionMap = new();
+    private readonly Dictionary<BiInt, NCollection_Sequence<int>> _linkRefEqui = new();
     private readonly NCollection_Sequence<int> _linesLength = new();
     private readonly JoinKind _joinType;
     private readonly bool _isOpenResult;
@@ -296,7 +297,7 @@ public sealed class Circuit : Transient
         prevC = road.Path().Value(1);
         SubSequence(figItem.Value(indRefLine), 1, prevC.IndexItemOnFirst(), _geomElements);
         UpDateLink(1, indRefLine, 1, prevC.IndexItemOnFirst());
-        _connexionMap.Bind(_geomElements.Length() + 1, prevC);
+        _connexionMap[_geomElements.Length() + 1] = prevC;
         iLastItem = _geomElements.Length();
 
         // The portions of lines between two successive connexions.
@@ -320,7 +321,7 @@ public sealed class Circuit : Transient
                     _geomElements.Append(setOfItem);
                     iLastItem = _geomElements.Length();
                 }
-                _connexionMap.Bind(iLastItem + 1, curC);
+                _connexionMap[iLastItem + 1] = curC;
             }
             else
             {
@@ -330,7 +331,7 @@ public sealed class Circuit : Transient
                 UpDateLink(iLastItem + 1, curC.IndexFirstLine(), prevC.IndexItemOnSecond(), curC.IndexItemOnFirst());
                 _geomElements.Append(setOfItem);
                 iLastItem = _geomElements.Length();
-                _connexionMap.Bind(iLastItem + 1, curC);
+                _connexionMap[iLastItem + 1] = curC;
             }
             prevC = curC;
         }
@@ -339,8 +340,8 @@ public sealed class Circuit : Transient
         indLast = figItem.Value(indRefLine).Length();
         if (indLast == 1)
         {
-            _connexionMap.Bind(1, curC!);
-            _connexionMap.UnBind(iLastItem + 1);
+            _connexionMap[1] = curC!;
+            _connexionMap.Remove(iLastItem + 1);
         }
         else
         {
@@ -563,13 +564,13 @@ public sealed class Circuit : Transient
     public NCollection_Sequence<int> RefToEqui(int indLine, int indCurve)
     {
         BiInt key = new(indLine, indCurve);
-        return _linkRefEqui.Find(key);
+        return _linkRefEqui.GetValue(key);
     }
 
     private void SortRefToEqui(in BiInt biRef)
     {
         int i;
-        NCollection_Sequence<int> s = _linkRefEqui.ChangeFind(biRef);
+        NCollection_Sequence<int> s = _linkRefEqui.GetValue(biRef);
         NCollection_Sequence<int> sFin;
 
         for (i = 1; i <= s.Length(); i++)
@@ -588,10 +589,10 @@ public sealed class Circuit : Transient
     }
 
     /// <summary>The connexion on the item I.</summary>
-    public Connexion Connexion(int i) => _connexionMap.Find(i);
+    public Connexion Connexion(int i) => _connexionMap.GetValue(i);
 
     /// <summary>True if there is a connexion on the item I.</summary>
-    public bool ConnexionOn(int i) => _connexionMap.IsBound(i);
+    public bool ConnexionOn(int i) => _connexionMap.ContainsKey(i);
 
     private static double Side(Connexion c1, NCollection_Sequence<Geometry2D> line)
     {
@@ -651,15 +652,15 @@ public sealed class Circuit : Transient
         for (i = iCurveFirst; i <= iCurveLast; i++)
         {
             BiInt key = new(iLine, i);
-            if (_linkRefEqui.IsBound(key))
+            if (_linkRefEqui.ContainsKey(key))
             {
-                _linkRefEqui[key].Append(iEqui);
+                _linkRefEqui.GetValue(key).Append(iEqui);
             }
             else
             {
                 NCollection_Sequence<int> l = new();
-                _linkRefEqui.Bind(key, l);
-                _linkRefEqui[key].Append(iEqui);
+                _linkRefEqui[key] = l;
+                _linkRefEqui.GetValue(key).Append(iEqui);
             }
             iEqui++;
         }

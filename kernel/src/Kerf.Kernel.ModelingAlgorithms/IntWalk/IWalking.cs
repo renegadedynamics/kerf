@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -62,7 +63,7 @@ public class IWalking<TheIWFunction, TheIWLine>
     private Direction2D _previousd2d = new();
     private readonly NCollection_Sequence<int> _seqAjout = new();
     private readonly NCollection_Sequence<int> _seqAlone = new();
-    private readonly NCollection_DataMap<int, NCollection_List<int>> _pointLineLine = new();
+    private readonly Dictionary<int, NCollection_List<int>> _pointLineLine = new();
     private readonly NCollection_Sequence<TheIWLine> _lines = new();
     private readonly bool _toFillHoles;
 
@@ -1236,7 +1237,7 @@ public class IWalking<TheIWFunction, TheIWLine>
                         NCollection_List<int> lineLine = new();
                         lineLine.Append(irang1);
                         lineLine.Append(minRang);
-                        _pointLineLine.Bind(pntsInHoles.Length(), lineLine);
+                        _pointLineLine[pntsInHoles.Length()] = lineLine;
                     }
                     else
                     {
@@ -3029,12 +3030,12 @@ public class IWalking<TheIWFunction, TheIWLine>
 
     protected bool IsValidEndPoint(int indOfPoint, int indOfLine)
     {
-        if (_pointLineLine.IsEmpty())
+        if (_pointLineLine.Count == 0)
         {
             return true;
         }
 
-        NCollection_List<int> list = _pointLineLine.ChangeFind(indOfPoint);
+        NCollection_List<int> list = _pointLineLine.GetValue(indOfPoint);
         NCollection_List<int>.Iterator itl = new(list);
         for (; itl.More(); itl.Next())
         {
@@ -3049,10 +3050,10 @@ public class IWalking<TheIWFunction, TheIWLine>
 
     protected void RemoveTwoEndPoints(int indOfPoint)
     {
-        if (_pointLineLine.IsBound(indOfPoint))
+        if (_pointLineLine.ContainsKey(indOfPoint))
         {
-            int line1 = _pointLineLine.Find(indOfPoint).First();
-            int line2 = _pointLineLine.Find(indOfPoint).Last();
+            int line1 = _pointLineLine.GetValue(indOfPoint).First();
+            int line2 = _pointLineLine.GetValue(indOfPoint).Last();
             for (int iseq = 1; iseq <= _seqAlone.Length(); iseq++)
             {
                 if (_seqAlone.Value(iseq) == line1 || _seqAlone.Value(iseq) == line2)

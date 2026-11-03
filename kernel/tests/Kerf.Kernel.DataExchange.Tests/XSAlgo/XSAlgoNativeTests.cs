@@ -193,7 +193,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         string aMsgs = theContext is null ? "" : Messages(theContext.Messages(), out aNbMsg);
         return string.Create(CultureInfo.InvariantCulture,
                              $"{theRun} {(theResult.IsSame(theInput) ? 1 : 0)} {BRepHash(theResult):x16} {Count(theResult, ShapeType.Face)} "
-                             + $"{Count(theResult, ShapeType.Edge)} {Count(theResult, ShapeType.Vertex)} {(theContext is null ? 0 : theContext.Map().Extent())} "
+                             + $"{Count(theResult, ShapeType.Edge)} {Count(theResult, ShapeType.Vertex)} {(theContext is null ? 0 : theContext.Map().Count)} "
                              + $"{aNbMsg} {Fnv(aMsgs):x16} {theMerge:x16}");
     }
 
@@ -219,7 +219,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return aText.ToString();
     }
 
-    private static ulong ParamsHash(NCollection_DataMap<string, string> theParams)
+    private static ulong ParamsHash(Dictionary<string, string> theParams)
     {
         var aLines = theParams.Select(p => p.Key + "=" + p.Value).ToList();
         aLines.Sort(StringComparer.Ordinal);
@@ -241,8 +241,8 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     private sealed class Setup
     {
         public readonly global::Kerf.Engine.Exchange.Framework.StaticSet Statics = StepStatics();
-        public readonly (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
-        public readonly NCollection_DataMap<string, string> WriteParams = new();
+        public readonly (Dictionary<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
+        public readonly Dictionary<string, string> WriteParams = new();
         public readonly global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags WriteFlags =
             new(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex, global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
 
@@ -263,7 +263,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         ];
     }
 
-    private static string Processor(in Shape theInput, string theRun, NCollection_DataMap<string, string> theParams,
+    private static string Processor(in Shape theInput, string theRun, Dictionary<string, string> theParams,
                                     global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags, bool theToFinder)
     {
         Shape anInput = theInput;

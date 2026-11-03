@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Fillets.Data;
@@ -575,7 +576,7 @@ public partial class FilletBuilderBase
             ff2 = ff1;
             ff1 = FirstFace;
         }
-        _edgeFirstFace.Bind(ec, FirstFace);
+        _edgeFirstFace[ec] = FirstFace;
 
         // Define concavity
         TypeOfConcavity typeOfConcavity = global::Kerf.Engine.Fillets.ChFi3d.DefineConnectType(ec, ff1, ff2, 1.0e-5, true);
@@ -688,7 +689,7 @@ public partial class FilletBuilderBase
                             Face curF1 = new(), curF2 = new();
                             ChFi3d_conexfaces(ec, out curF1, out curF2, _efMap);
                             ReorderFaces(ref curF1, ref curF2, FirstFace, prevEdge, commonVertex, _efMap);
-                            _edgeFirstFace.Bind(ec, curF1);
+                            _edgeFirstFace[ec] = curF1;
                             if (offset > 0)
                             {
                                 FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);
@@ -737,7 +738,7 @@ public partial class FilletBuilderBase
             { // Upstream progression
                 fini = false;
                 ec = spine.Edges(1);
-                FirstFace = ShapeCasts.Face(_edgeFirstFace[ec]);
+                FirstFace = ShapeCasts.Face(_edgeFirstFace.GetValue(ec));
                 curor = ec.Orientation();
                 fvEc = vStart;
                 while (!fini)
@@ -794,7 +795,7 @@ public partial class FilletBuilderBase
                                 Face curF1 = new(), curF2 = new();
                                 ChFi3d_conexfaces(ec, out curF1, out curF2, _efMap);
                                 ReorderFaces(ref curF1, ref curF2, FirstFace, prevEdge, commonVertex, _efMap);
-                                _edgeFirstFace.Bind(ec, curF1);
+                                _edgeFirstFace[ec] = curF1;
                                 if (offset > 0)
                                 {
                                     FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);

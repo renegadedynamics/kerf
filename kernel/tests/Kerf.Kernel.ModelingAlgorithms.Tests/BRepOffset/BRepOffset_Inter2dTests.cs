@@ -41,7 +41,7 @@ public class BRepOffset_Inter2dTests
         NCollection_IndexedMap<Shape> aNewEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         aNewEdges.Add(aE1);
         aNewEdges.Add(aE2);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> anEdgeIntEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> anEdgeIntEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVV = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
 
         Inter2d.Compute(anAsDes, aF, aNewEdges, 1.0e-7, anEdgeIntEdges, aDMVV);

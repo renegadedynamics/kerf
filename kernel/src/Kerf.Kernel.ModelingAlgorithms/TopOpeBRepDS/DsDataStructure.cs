@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -38,11 +39,11 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 public sealed class DsDataStructure
 {
     private int _nbSurfaces;
-    internal readonly NCollection_DataMap<int, DsSurfaceData> _surfaces = new();
+    internal readonly Dictionary<int, DsSurfaceData> _surfaces = new();
     private int _nbCurves;
-    internal readonly NCollection_DataMap<int, DsCurveData> _curves = new();
+    internal readonly Dictionary<int, DsCurveData> _curves = new();
     private int _nbPoints;
-    internal readonly NCollection_DataMap<int, DsPointData> _points = new();
+    internal readonly Dictionary<int, DsPointData> _points = new();
     private readonly NCollection_IndexedDataMap<Shape, DsShapeData> _shapes = new(ShapeHasher.Instance);
     private readonly NCollection_IndexedMap<Shape> _sectionEdges = new(ShapeHasher.Instance);
     private readonly NCollection_List<DsInterference> _emptyListOfInterference = new();
@@ -51,7 +52,7 @@ public sealed class DsDataStructure
     private DsPoint _emptyPoint = new();
     private DsSurface _emptySurface = new();
     private DsCurve _emptyCurve = new();
-    private readonly NCollection_DataMap<Shape, Surface> _newSurface = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Surface> _newSurface = new(ShapeHasher.Instance);
     private bool _isfafa;
     private int _i;
     private readonly NCollection_IndexedDataMap<Shape, DsShapeWithState> _mapOfShapeWithStateObj = new(ShapeHasher.Instance);
@@ -99,7 +100,7 @@ public sealed class DsDataStructure
         _nbSurfaces++;
         // modified by NIZNHY-PKV Tue Oct 30 09:22:04 2001 f
         DsSurfaceData sd = new(s);
-        _surfaces.Bind(_nbSurfaces, sd);
+        _surfaces[_nbSurfaces] = sd;
         // mySurfaces.Bind(myNbSurfaces,S);
         // modified by NIZNHY-PKV Tue Oct 30 09:22:20 2001 t
         return _nbSurfaces;
@@ -108,7 +109,7 @@ public sealed class DsDataStructure
     /// <summary>Removes the surface <paramref name="i"/> (its index is not reused).</summary>
     internal void RemoveSurface(int i)
     {
-        _surfaces.UnBind(i);
+        _surfaces.Remove(i);
     }
 
     /// <summary>Whether the surface <paramref name="i"/> is kept.</summary>
@@ -149,7 +150,7 @@ public sealed class DsDataStructure
         c.ChangeDSIndex(_nbCurves);
 
         DsCurveData cd = new(c);
-        _curves.Bind(_nbCurves, cd);
+        _curves[_nbCurves] = cd;
         return _nbCurves;
     }
 
@@ -209,7 +210,7 @@ public sealed class DsDataStructure
     internal int AddPoint(in DsPoint pds)
     {
         _nbPoints++;
-        _points.Bind(_nbPoints, new DsPointData(pds));
+        _points[_nbPoints] = new DsPointData(pds);
         return _nbPoints;
     }
 
@@ -367,22 +368,22 @@ public sealed class DsDataStructure
     /// <summary>The interferences of the surface <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> SurfaceInterferences(int i)
     {
-        if (!_surfaces.IsBound(i))
+        if (!_surfaces.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsSurfaceData sd = _surfaces.Find(i);
+        DsSurfaceData sd = _surfaces.GetValue(i);
         NCollection_List<DsInterference> li = sd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangeSurfaceInterferences(int i)
     {
-        if (!_surfaces.IsBound(i))
+        if (!_surfaces.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsSurfaceData sd = _surfaces.ChangeFind(i);
+        DsSurfaceData sd = _surfaces.GetValue(i);
         NCollection_List<DsInterference> li = sd.ChangeInterferences();
         return li;
     }
@@ -390,22 +391,22 @@ public sealed class DsDataStructure
     /// <summary>The interferences of the curve <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> CurveInterferences(int i)
     {
-        if (!_curves.IsBound(i))
+        if (!_curves.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsCurveData cd = _curves.Find(i);
+        DsCurveData cd = _curves.GetValue(i);
         NCollection_List<DsInterference> li = cd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangeCurveInterferences(int i)
     {
-        if (!_curves.IsBound(i))
+        if (!_curves.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsCurveData cd = _curves.ChangeFind(i);
+        DsCurveData cd = _curves.GetValue(i);
         NCollection_List<DsInterference> li = cd.ChangeInterferences();
         return li;
     }
@@ -413,22 +414,22 @@ public sealed class DsDataStructure
     /// <summary>The interferences of the point <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> PointInterferences(int i)
     {
-        if (!_points.IsBound(i))
+        if (!_points.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsPointData pd = _points.Find(i);
+        DsPointData pd = _points.GetValue(i);
         NCollection_List<DsInterference> li = pd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangePointInterferences(int i)
     {
-        if (!_points.IsBound(i))
+        if (!_points.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsPointData pd = _points.ChangeFind(i);
+        DsPointData pd = _points.GetValue(i);
         NCollection_List<DsInterference> li = pd.ChangeInterferences();
         return li;
     }
@@ -967,9 +968,9 @@ public sealed class DsDataStructure
     /// <summary>The surface <paramref name="i"/> (the data structure's empty surface if there is none).</summary>
     public DsSurface Surface(int i)
     {
-        if (_surfaces.IsBound(i))
+        if (_surfaces.ContainsKey(i))
         {
-            return _surfaces[i]._surface;
+            return _surfaces.GetValue(i)._surface;
         }
         else
         {
@@ -980,9 +981,9 @@ public sealed class DsDataStructure
     /// <summary>The surface <paramref name="i"/> for writing (the data structure's empty surface if there is none).</summary>
     internal ref DsSurface ChangeSurface(int i)
     {
-        if (_surfaces.IsBound(i))
+        if (_surfaces.ContainsKey(i))
         {
-            return ref _surfaces[i]._surface;
+            return ref _surfaces.GetValue(i)._surface;
         }
         else
         {
@@ -993,9 +994,9 @@ public sealed class DsDataStructure
     /// <summary>The curve <paramref name="i"/> (the data structure's empty curve if there is none).</summary>
     public DsCurve Curve(int i)
     {
-        if (_curves.IsBound(i))
+        if (_curves.ContainsKey(i))
         {
-            DsCurveData cd = _curves[i];
+            DsCurveData cd = _curves.GetValue(i);
             DsCurve c = cd._curve;
             return c;
         }
@@ -1008,9 +1009,9 @@ public sealed class DsDataStructure
     /// <summary>The curve <paramref name="i"/> for writing (the data structure's empty curve if there is none).</summary>
     internal ref DsCurve ChangeCurve(int i)
     {
-        if (_curves.IsBound(i))
+        if (_curves.ContainsKey(i))
         {
-            DsCurveData cd = _curves.ChangeFind(i);
+            DsCurveData cd = _curves.GetValue(i);
             return ref cd._curve;
         }
         return ref _emptyCurve;
@@ -1025,9 +1026,9 @@ public sealed class DsDataStructure
             throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
-        if (_points.IsBound(i))
+        if (_points.ContainsKey(i))
         {
-            return _points[i]._point;
+            return _points.GetValue(i)._point;
         }
         else
         {
@@ -1044,9 +1045,9 @@ public sealed class DsDataStructure
             throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
-        if (_points.IsBound(i))
+        if (_points.ContainsKey(i))
         {
-            return ref _points[i]._point;
+            return ref _points.GetValue(i)._point;
         }
         else
         {
@@ -1131,13 +1132,13 @@ public sealed class DsDataStructure
     /// <summary>Sets the new surface of the face <paramref name="f"/>.</summary>
     internal void SetNewSurface(in Shape f, Surface s)
     {
-        _newSurface.Bind(f, s);
+        _newSurface[f] = s;
     }
 
     /// <summary>Whether the face <paramref name="f"/> has a new surface.</summary>
     public bool HasNewSurface(in Shape f)
     {
-        bool b = _newSurface.IsBound(f);
+        bool b = _newSurface.ContainsKey(f);
         return b;
     }
 
@@ -1146,7 +1147,7 @@ public sealed class DsDataStructure
     {
         if (HasNewSurface(f))
         {
-            return _newSurface.Find(f);
+            return _newSurface.GetValue(f);
         }
         return null;
     }

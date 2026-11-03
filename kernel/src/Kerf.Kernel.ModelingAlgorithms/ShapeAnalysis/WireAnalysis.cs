@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -2348,7 +2349,7 @@ public class WireAnalysis : Transient
     /// edges and seam edges. Status: DONE1 loops found; FAIL2 an edge has no vertex.
     /// </summary>
     public bool CheckLoop(NCollection_IndexedMap<Shape> aMapLoopVertices,
-                          NCollection_DataMap<Shape, NCollection_List<Shape>> aMapVertexEdges,
+                          Dictionary<Shape, NCollection_List<Shape>> aMapVertexEdges,
                           HashSet<Shape> aMapSmallEdges, HashSet<Shape> aMapSeemEdges)
     {
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
@@ -2386,21 +2387,21 @@ public class WireAnalysis : Transient
                 aMapSmallEdges.Add(aedge);
             }
 
-            if (!aMapVertexEdges.IsBound(v1))
+            if (!aMapVertexEdges.ContainsKey(v1))
             {
                 NCollection_List<Shape> alshape = new NCollection_List<Shape>();
-                aMapVertexEdges.Bind(v1, alshape);
+                aMapVertexEdges[v1] = alshape;
             }
 
-            if (!aMapVertexEdges.IsBound(v2))
+            if (!aMapVertexEdges.ContainsKey(v2))
             {
                 NCollection_List<Shape> alshape = new NCollection_List<Shape>();
-                aMapVertexEdges.Bind(v2, alshape);
+                aMapVertexEdges[v2] = alshape;
             }
 
             if (isSame)
             {
-                NCollection_List<Shape> alshape = aMapVertexEdges.ChangeFind(v1);
+                NCollection_List<Shape> alshape = aMapVertexEdges.GetValue(v1);
                 alshape.Append(aedge);
                 alshape.Append(aedge);
                 if (alshape.Extent() > 2 && IsMultiVertex(alshape, aMapSmallEdges, aMapSeemEdges))
@@ -2410,14 +2411,14 @@ public class WireAnalysis : Transient
             }
             else
             {
-                NCollection_List<Shape> alshape = aMapVertexEdges.ChangeFind(v1);
+                NCollection_List<Shape> alshape = aMapVertexEdges.GetValue(v1);
                 alshape.Append(aedge);
                 if (alshape.Extent() > 2 && IsMultiVertex(alshape, aMapSmallEdges, aMapSeemEdges))
                 {
                     aMapLoopVertices.Add(v1);
                 }
 
-                NCollection_List<Shape> alshape2 = aMapVertexEdges.ChangeFind(v2);
+                NCollection_List<Shape> alshape2 = aMapVertexEdges.GetValue(v2);
                 alshape2.Append(aedge);
                 if (alshape2.Extent() > 2 && IsMultiVertex(alshape2, aMapSmallEdges, aMapSeemEdges))
                 {

@@ -32,7 +32,7 @@ namespace Kerf.Engine.Booleans;
 /// </remarks>
 public class BuilderSolid : BuilderArea
 {
-    private readonly NCollection_DataMap<Shape, Box> _boxes = new(ShapeHasher.Instance); // Boxes of the produced solids
+    private readonly Dictionary<Shape, Box> _boxes = new(ShapeHasher.Instance); // Boxes of the produced solids
 
     public BuilderSolid()
     {
@@ -88,7 +88,7 @@ public class BuilderSolid : BuilderArea
     }
 
     /// <summary>The boxes of the created solids.</summary>
-    public NCollection_DataMap<Shape, Box> GetBoxesMap() => _boxes;
+    public Dictionary<Shape, Box> GetBoxesMap() => _boxes;
 
     /// <summary>Collects the faces that can't be in a closed shell (with free edges) into the shapes to avoid.</summary>
     protected override void PerformShapesToAvoid(ProgressRange range)
@@ -413,7 +413,7 @@ public class BuilderSolid : BuilderArea
                 // Build box
                 Box box = new();
                 Bounds.Add(sol, ref box);
-                _boxes.Bind(sol, box);
+                _boxes[sol] = box;
             }
             return;
         }
@@ -432,7 +432,7 @@ public class BuilderSolid : BuilderArea
             Bounds.Add(hShell, ref box);
             bbTree.Add(i, global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(box));
 
-            _boxes.Bind(hShell, box);
+            _boxes[hShell] = box;
         }
 
         // Build BVH
@@ -456,7 +456,7 @@ public class BuilderSolid : BuilderArea
                 Box box = new();
                 Bounds.Add(solid, ref box);
 
-                _boxes.Bind(solid, box);
+                _boxes[solid] = box;
 
                 BoxTreeSelector selector = new();
                 selector.SetBox(global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(box));
@@ -553,10 +553,10 @@ public class BuilderSolid : BuilderArea
                 // Make an infinite box for the hole
                 Box box = new();
                 box.SetWhole();
-                _boxes.Bind(solid, box);
+                _boxes[solid] = box;
             }
 
-            _boxes.UnBind(hole);
+            _boxes.Remove(hole);
         }
     }
 
@@ -637,7 +637,7 @@ public class BuilderSolid : BuilderArea
                                     _context!,
                                     mslf,
                                     _boxes,
-                                    new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
+                                    new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
                                     mainScope.Next());
 
         // Update Solids by internal Faces

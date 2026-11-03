@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.HiddenLines.Algorithm;
@@ -107,7 +108,7 @@ public class OutLiner : Transient
     /// Builds the outlined shape for the projector P (when the original shape is set and the outlined shape is not),
     /// with nbIso isolines per face direction; MST caches the faces' adaptors.
     /// </summary>
-    public void Fill(in AlgorithmProjector p, NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso)
+    public void Fill(in AlgorithmProjector p, Dictionary<Shape, AdaptorTool> mst, int nbIso)
     {
         if (!_originalShape.IsNull)
         {
@@ -142,7 +143,7 @@ public class OutLiner : Transient
 
     /// <summary>Builds the outlined face of F in S.</summary>
     private void ProcessFace(in Face f, ref Shape s,
-                             NCollection_DataMap<Shape, AdaptorTool> mst)
+                             Dictionary<Shape, AdaptorTool> mst)
     {
         BrepBuilder b = new();
         Explorer exE = new(), exW = new();
@@ -320,12 +321,12 @@ public class OutLiner : Transient
         }
         _ds.AddOldS(nf, f);
         // OCCT copies the adaptors' tool into the new face's entry; the port's entries share it (decision 1096)
-        mst.Bind(nf, mst.ChangeFind(f));
+        mst[nf] = mst.GetValue(f);
         b.Add(s, nf); // add the face in the shell.
     }
 
     /// <summary>Builds the outlined shape: the shells and the free faces outlined, the free edges as they are.</summary>
-    private void BuildShape(NCollection_DataMap<Shape, AdaptorTool> mst)
+    private void BuildShape(Dictionary<Shape, AdaptorTool> mst)
     {
         Explorer exshell = new(), exface = new(), exedge = new();
         BrepBuilder b = new();

@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -22,10 +23,10 @@ namespace Kerf.Engine.Healing.Extend;
 /// </remarks>
 public class MsgRegistrator : BasicMsgRegistrator
 {
-    private readonly NCollection_DataMap<Transient, NCollection_List<Msg>> _mapTransient =
+    private readonly Dictionary<Transient, NCollection_List<Msg>> _mapTransient =
         new(ReferenceEqualityComparer.Instance);
 
-    private readonly NCollection_DataMap<Shape, NCollection_List<Msg>> _mapShape =
+    private readonly Dictionary<Shape, NCollection_List<Msg>> _mapShape =
         new(ShapeHasher.Instance);
 
     /// <summary>An empty registrator.</summary>
@@ -43,16 +44,16 @@ public class MsgRegistrator : BasicMsgRegistrator
         {
             return;
         }
-        if (_mapTransient.IsBound(@object))
+        if (_mapTransient.ContainsKey(@object))
         {
-            NCollection_List<Msg> list = _mapTransient[@object];
+            NCollection_List<Msg> list = _mapTransient.GetValue(@object);
             list.Append(message);
         }
         else
         {
             var list = new NCollection_List<Msg>();
             list.Append(message);
-            _mapTransient.Bind(@object, list);
+            _mapTransient[@object] = list;
         }
     }
 
@@ -66,22 +67,22 @@ public class MsgRegistrator : BasicMsgRegistrator
         {
             return;
         }
-        if (_mapShape.IsBound(shape))
+        if (_mapShape.ContainsKey(shape))
         {
-            NCollection_List<Msg> list = _mapShape[shape];
+            NCollection_List<Msg> list = _mapShape.GetValue(shape);
             list.Append(message);
         }
         else
         {
             var list = new NCollection_List<Msg>();
             list.Append(message);
-            _mapShape.Bind(shape, list);
+            _mapShape[shape] = list;
         }
     }
 
     /// <summary>The map of objects to their messages.</summary>
-    public NCollection_DataMap<Transient, NCollection_List<Msg>> MapTransient() => _mapTransient;
+    public Dictionary<Transient, NCollection_List<Msg>> MapTransient() => _mapTransient;
 
     /// <summary>The map of shapes to their messages.</summary>
-    public NCollection_DataMap<Shape, NCollection_List<Msg>> MapShape() => _mapShape;
+    public Dictionary<Shape, NCollection_List<Msg>> MapShape() => _mapShape;
 }

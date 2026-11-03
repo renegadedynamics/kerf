@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Healing.Checks;
@@ -71,8 +72,8 @@ public class BOPAlgo_BuilderSolidTests
         Assert.Equal(1, Count(aSolid, ShapeType.Shell));
         Assert.Equal(6.0, Volume(aSolid), 1e-9);
         Assert.True(new Analyzer(aSolid).IsValid());
-        Assert.Equal(1, aBS.GetBoxesMap().Extent());
-        Assert.True(aBS.GetBoxesMap().IsBound(aSolid));
+        Assert.Single(aBS.GetBoxesMap());
+        Assert.True(aBS.GetBoxesMap().ContainsKey(aSolid));
         Assert.False(aBS.HasWarnings);
     }
 
@@ -110,7 +111,7 @@ public class BOPAlgo_BuilderSolidTests
         BuilderSolid aBS = BuildSolids(Faces(Box(1, 1, 1, 2, 2, 2).Reversed()));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
-        Assert.True(aBS.GetBoxesMap().Find(aSolid).IsWhole);
+        Assert.True(aBS.GetBoxesMap().GetValue(aSolid).IsWhole);
     }
 
     [Fact]
@@ -265,10 +266,10 @@ public class BOPAlgo_BuilderSolidTests
         }
 
         // a face given as the solid's own internal face isn't classified
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
         NCollection_List<Shape> anOwn = new();
         anOwn.Append(aFIn);
-        aSolidsIF.Bind(aSolid, anOwn);
+        aSolidsIF[aSolid] = anOwn;
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
         BuilderTools.ClassifyFaces(aLF, aLS, false, new IntersectionContext(), anInParts2, null, aSolidsIF);
         Assert.True(anInParts2[1].IsEmpty());
@@ -294,7 +295,7 @@ public class BOPAlgo_BuilderSolidTests
         aLParts.Append(aFIn);
         NCollection_List<Shape> aLS = new();
         aLS.Append(aSolid);
-        BuilderTools.FillInternals(aLS, aLParts, new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
+        BuilderTools.FillInternals(aLS, aLParts, new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
                                     new IntersectionContext());
         // the solid holds its shell, the internal vertex, the internal edge and an internal shell of the face
         Assert.Equal(2, Count(aSolid, ShapeType.Shell));

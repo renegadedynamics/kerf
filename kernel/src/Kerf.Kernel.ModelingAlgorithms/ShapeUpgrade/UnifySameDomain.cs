@@ -8,6 +8,7 @@
 // ShapeUpgrade_UnifySameDomain.Edges.cs MergeEdges, MergeSeq, MergeSubSeq, UnionPCurves and theirs.
 
 // OCCT's typedefs of the class
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
@@ -20,8 +21,8 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using DataMapOfFacePlane = Occt.NCollection_DataMap<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
-using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
+using DataMapOfFacePlane = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
+using DataMapOfShapeMapOfShape = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -70,7 +71,7 @@ public partial class UnifySameDomain : Transient
     private readonly DataMapOfFacePlane   _facePlaneMap = new(ShapeHasher.Instance);
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _eFmap =
       new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Shape> _faceNewFace = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _faceNewFace = new(ShapeHasher.Instance);
 
     private History? _history; //!< The history.
 
@@ -300,13 +301,13 @@ public partial class UnifySameDomain : Transient
             for (var itF = new Iterator(shell); itF.More(); itF.Next())
             {
                 Shape f = itF.Value();
-                if (gMapFaceShells.Find(f, out HashSet<Shape> pShells))
+                if (gMapFaceShells.TryGetValue(f, out HashSet<Shape>? pShells))
                 {
                     pShells.Add(shell);
                 }
                 else
                 {
-                    gMapFaceShells.Bound(f, new HashSet<Shape>(ShapeHasher.Instance)).Add(shell);
+                    gMapFaceShells.SetValueRef(f, new HashSet<Shape>(ShapeHasher.Instance)).Add(shell);
                 }
             }
         }
@@ -417,7 +418,7 @@ public partial class UnifySameDomain : Transient
 
             // Get shells connected to the face (in normal cases should not be more than 2)
             HashSet<Shape>? pFShells1 =
-              gMapFaceShells.Find(face, out HashSet<Shape> fShells1) ? fShells1 : null;
+              gMapFaceShells.TryGetValue(face, out HashSet<Shape>? fShells1) ? fShells1 : null;
 
             // find adjacent faces to union
             int i;
@@ -478,7 +479,7 @@ public partial class UnifySameDomain : Transient
 
                     // Get shells connected to the checked face
                     HashSet<Shape>? pFShells2 =
-                      gMapFaceShells.Find(checkedFace, out HashSet<Shape> fShells2) ? fShells2 : null;
+                      gMapFaceShells.TryGetValue(checkedFace, out HashSet<Shape>? fShells2) ? fShells2 : null;
                     // Faces can be unified only if the shells of faces connected to
                     // these faces are the same. Otherwise, topology would be broken.
                     if (!IsSameSets(pFShells1, pFShells2))
@@ -518,9 +519,9 @@ public partial class UnifySameDomain : Transient
 
             if (faces.Length() > 1)
             {
-                if (_facePlaneMap.IsBound(faces[1]))
+                if (_facePlaneMap.ContainsKey(faces[1]))
                 {
-                    PlaneSurface plane = _facePlaneMap[faces[1]];
+                    PlaneSurface plane = _facePlaneMap.GetValue(faces[1]);
                     var        loc   = new Placement();
                     bb.UpdateFace(refFace, plane, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
@@ -882,7 +883,7 @@ public partial class UnifySameDomain : Transient
                             else if (numberOfIntervals == 2)
                             {
                                 var usedEdges0    = new HashSet<Shape>(ShapeHasher.Instance);
-                                var edgeNewPCurve = new NCollection_DataMap<Shape, Curve2D>(EqualityComparer<Shape>.Default);
+                                var edgeNewPCurve = new Dictionary<Shape, Curve2D>(EqualityComparer<Shape>.Default);
 
                                 // Relocate pcurves to new U-origin
                                 if (!RelocatePCurvesToNewUorigin(edges,
@@ -917,10 +918,10 @@ public partial class UnifySameDomain : Transient
                                             break;
                                         }
                                         pCurve = new TrimmedCurve2D(pCurve, fpar, lpar);
-                                        edgeNewPCurve.Bind(anEdge, pCurve);
+                                        edgeNewPCurve[anEdge] = pCurve;
                                     }
                                 }
-                                if (edgeNewPCurve.Extent() != edges.Length())
+                                if (edgeNewPCurve.Count != edges.Length())
                                 {
                                     break;
                                 }
@@ -936,7 +937,7 @@ public partial class UnifySameDomain : Transient
                                 double newCoordMin = RealLast(), newCoordMax = RealFirst();
                                 for (int jj = 1; jj <= edges.Length(); jj++)
                                 {
-                                    Curve2D pCurve = edgeNewPCurve[edges[jj]];
+                                    Curve2D pCurve = edgeNewPCurve.GetValue(edges[jj]);
                                     UpdateBoundaries(pCurve,
                                                      pCurve.FirstParameter(),
                                                      pCurve.LastParameter(),
@@ -984,7 +985,7 @@ public partial class UnifySameDomain : Transient
                                         {
                                             bb.UpdateEdge(anEdge, nullPCurve, oldRefFace, 0.0);
                                         }
-                                        Curve2D pCurve = edgeNewPCurve[anEdge];
+                                        Curve2D pCurve = edgeNewPCurve.GetValue(anEdge);
                                         bb.UpdateEdge(anEdge, pCurve, refFace, 0.0);
                                     }
                                 }
@@ -1456,7 +1457,7 @@ public partial class UnifySameDomain : Transient
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)
                     {
-                        _faceNewFace.Bind(faces[jj], result);
+                        _faceNewFace[faces[jj]] = result;
                     }
                 }
                 else if (newFaces.Length() == 1)
@@ -1474,7 +1475,7 @@ public partial class UnifySameDomain : Transient
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)
                     {
-                        _faceNewFace.Bind(faces[jj], newFaces[1]);
+                        _faceNewFace[faces[jj]] = newFaces[1];
                     }
                 }
                 else
@@ -1519,7 +1520,7 @@ public partial class UnifySameDomain : Transient
                         // Update the map Face-NewFace
                         for (int jj = 1; jj <= facesForThisFace.Length(); jj++)
                         {
-                            _faceNewFace.Bind(facesForThisFace[jj], newFaces[ii]);
+                            _faceNewFace[facesForThisFace[jj]] = newFaces[ii];
                         }
                     }
                 }

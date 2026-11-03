@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -193,7 +194,7 @@ public sealed class BuildShape
         // on n`accepte qu`1 niveau d'imbrication
 
         // OCCT iterates this map keyed by the shells' addresses; the port in insertion order (lresult's)
-        NCollection_DataMap<Shape, NCollection_List<Shape>> imbSh = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> imbSh = new(ShapeHasher.Instance);
         NCollection_List<Shape> lIntern = new();
 
         for (itl.Initialize(lresult); itl.More(); itl.Next())
@@ -204,7 +205,7 @@ public sealed class BuildShape
             b.Add(tempo, sh);
 
             NCollection_List<Shape> thelist = new();
-            imbSh.Bind(sh, thelist);
+            imbSh[sh] = thelist;
             NCollection_List<Shape>.Iterator itl2 = new();
             for (itl2.Initialize(lresult); itl2.More(); itl2.Next())
             {
@@ -214,7 +215,7 @@ public sealed class BuildShape
                     if (IsInside(sh2, tempo))
                     {
                         lIntern.Append(sh2);
-                        imbSh[sh].Append(sh2);
+                        imbSh.GetValue(sh).Append(sh2);
                     }
                 }
             }
@@ -225,9 +226,9 @@ public sealed class BuildShape
         for (itl.Initialize(lIntern); itl.More(); itl.Next())
         {
             Shape sh = itl.Value();
-            if (imbSh.IsBound(sh))
+            if (imbSh.ContainsKey(sh))
             {
-                imbSh.UnBind(sh);
+                imbSh.Remove(sh);
             }
         }
 
@@ -255,7 +256,7 @@ public sealed class BuildShape
                     b.Add(newSo, itl.Value().Reversed());
                 }
                 lsolid.Append(newSo);
-                imbSh.UnBind(key);
+                imbSh.Remove(key);
             }
             else
             {
@@ -268,7 +269,7 @@ public sealed class BuildShape
                 }
                 imbSh.Clear();
             }
-        } while (imbSh.Extent() != 0);
+        } while (imbSh.Count != 0);
 
         int nbsol = lsolid.Extent();
         int nbshl = lshell.Extent();

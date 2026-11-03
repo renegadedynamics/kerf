@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -36,18 +37,18 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </remarks>
 public sealed class FaceConnectFixer
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _connected;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _oriFreeEdges;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _resFreeEdges;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _resSharEdges;
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _connected;
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _oriFreeEdges;
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _resFreeEdges;
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _resSharEdges;
 
     /// <summary>Empty constructor.</summary>
     public FaceConnectFixer()
     {
-        _connected    = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        _oriFreeEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        _resFreeEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        _resSharEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        _connected    = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        _oriFreeEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        _resFreeEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        _resSharEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
     }
 
     /// <summary>Records that the two faces are to be connected; false if one is null.</summary>
@@ -56,10 +57,10 @@ public sealed class FaceConnectFixer
         if (!aFirst.IsNull && !aSecond.IsNull)
         {
             // Process first face
-            if (_connected.IsBound(aFirst))
+            if (_connected.ContainsKey(aFirst))
             {
                 // Find list for the first face
-                NCollection_List<Shape> theFirstList = _connected[aFirst];
+                NCollection_List<Shape> theFirstList = _connected.GetValue(aFirst);
                 // Append second face to the first list
                 var theIter = new NCollection_List<Shape>.Iterator();
                 for (theIter.Initialize(theFirstList); theIter.More(); theIter.Next())
@@ -76,23 +77,23 @@ public sealed class FaceConnectFixer
                 // Append second face to the first list
                 var theNewFirstList = new NCollection_List<Shape>();
                 theNewFirstList.Append(aSecond);
-                _connected.Bind(aFirst, theNewFirstList);
+                _connected[aFirst] = theNewFirstList;
             }
 
             // Process second face if not same
             if (!aFirst.IsSame(aSecond))
             {
-                if (_connected.IsBound(aSecond))
+                if (_connected.ContainsKey(aSecond))
                 {
                     // No need to iterate on faces - append first
-                    _connected[aSecond].Append(aFirst);
+                    _connected.GetValue(aSecond).Append(aFirst);
                 }
                 else
                 {
                     // Append first face to the second list
                     var theNewSecondList = new NCollection_List<Shape>();
                     theNewSecondList.Append(aFirst);
-                    _connected.Bind(aSecond, theNewSecondList);
+                    _connected[aSecond] = theNewSecondList;
                 }
             }
             return true;
@@ -112,10 +113,10 @@ public sealed class FaceConnectFixer
         // (unit 10H4)
         // (the caller's unfrozen shapes are copied, and the recorded faces mapped onto the copies)
         Shape work = WorkingOverlay.WithUnfrozenCopied(shell, out Dictionary<TShape, TShape>? copies);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> connected = _connected;
+        Dictionary<Shape, NCollection_List<Shape>> connected = _connected;
         if (copies is not null)
         {
-            connected = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            connected = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _connected)
             {
                 var list = new NCollection_List<Shape>();
@@ -123,7 +124,7 @@ public sealed class FaceConnectFixer
                 {
                     list.Append(WorkingOverlay.CopiedIn(it.Value(), copies));
                 }
-                connected.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), list);
+                connected[WorkingOverlay.CopiedIn(pair.Key, copies)] = list;
             }
         }
         using var overlay = WorkingOverlay.Begin(work);
@@ -140,7 +141,7 @@ public sealed class FaceConnectFixer
     internal Shell InternalBuild(in Shell shell, double sewtoler, double fixtoler) =>
         BuildCore(_connected, shell, sewtoler, fixtoler);
 
-    private Shell BuildCore(NCollection_DataMap<Shape, NCollection_List<Shape>> connected,
+    private Shell BuildCore(Dictionary<Shape, NCollection_List<Shape>> connected,
                                in Shell shell,
                                double sewtoler,
                                double fixtoler)
@@ -160,7 +161,7 @@ public sealed class FaceConnectFixer
 
         // OCCT iterates this map in hash order (TShape addresses); the port's iterates in a deterministic order, so the
         // order of the free edges (and of the sewing's inputs) may differ from native (occt-issues.md).
-        var theFreeEdges = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var theFreeEdges = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Shape theEdge, theFace;
 
         // Fill map of free edges / faces
@@ -170,13 +171,13 @@ public sealed class FaceConnectFixer
             for (var expe = new Explorer(theFace, ShapeType.Edge); expe.More(); expe.Next())
             {
                 theEdge = expe.Current();
-                if (theFreeEdges.IsBound(theEdge))
+                if (theFreeEdges.ContainsKey(theEdge))
                 {
-                    theFreeEdges.UnBind(theEdge);
+                    theFreeEdges.Remove(theEdge);
                 }
                 else
                 {
-                    theFreeEdges.Bind(theEdge, theFace);
+                    theFreeEdges[theEdge] = theFace;
                 }
             }
         }
@@ -188,29 +189,29 @@ public sealed class FaceConnectFixer
             theEdge = theFEIter.Key;
             theFace = theFEIter.Value;
             // Process faces with bad connectivities only
-            if (connected.IsBound(theFace) && !Tool.Degenerated(ShapeCasts.Edge(theEdge)))
+            if (connected.ContainsKey(theFace) && !Tool.Degenerated(ShapeCasts.Edge(theEdge)))
             {
                 // Add to the map of original free edges
-                if (_oriFreeEdges.IsBound(theFace))
+                if (_oriFreeEdges.ContainsKey(theFace))
                 {
                     // Append free edge to the existing list
-                    _oriFreeEdges[theFace].Append(theEdge);
+                    _oriFreeEdges.GetValue(theFace).Append(theEdge);
                 }
                 else
                 {
                     // Append free edge to the new list
                     var theNewList = new NCollection_List<Shape>();
                     theNewList.Append(theEdge);
-                    _oriFreeEdges.Bind(theFace, theNewList);
+                    _oriFreeEdges[theFace] = theNewList;
                 }
                 // Add to the maps of intermediate free and resulting edges
-                if (!_resFreeEdges.IsBound(theEdge))
+                if (!_resFreeEdges.ContainsKey(theEdge))
                 {
                     var theFree = new NCollection_List<Shape>();
                     var theShared = new NCollection_List<Shape>();
                     theFree.Append(theEdge);
-                    _resFreeEdges.Bind(theEdge, theFree);
-                    _resSharEdges.Bind(theEdge, theShared);
+                    _resFreeEdges[theEdge] = theFree;
+                    _resSharEdges[theEdge] = theShared;
                 }
             }
         }
@@ -223,7 +224,7 @@ public sealed class FaceConnectFixer
         / Change maps of original free edges and resulting shared edges
         ***************************************************************/
 
-        if (!_oriFreeEdges.IsEmpty())
+        if (_oriFreeEdges.Count != 0)
         {
             // Allocate array of faces to be sewed
             Shape theFirstFace, theSecondFace;
@@ -234,13 +235,13 @@ public sealed class FaceConnectFixer
             var theResultsIter = new NCollection_List<Shape>.Iterator();
             Shape theAuxE, theOrigE, theAuxF;
             var theBuilder = new BrepBuilder();
-            var theProcessed = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var theProcessed = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> theConnectedIter in connected)
             {
                 // Process first face only if it is in the map of faces / free edges
                 theFirstFace = theConnectedIter.Key;
-                if (_oriFreeEdges.IsBound(theFirstFace))
+                if (_oriFreeEdges.ContainsKey(theFirstFace))
                 {
                     // Place first face into the array
                     theFacesToSew.SetValue(1, theFirstFace);
@@ -257,7 +258,7 @@ public sealed class FaceConnectFixer
                     {
                         // Process second face only if it is in the map of faces / free edges
                         theSecondFace = theConnectedListIter.Value();
-                        if (_oriFreeEdges.IsBound(theSecondFace))
+                        if (_oriFreeEdges.ContainsKey(theSecondFace))
                         {
                             // Place second face into the array
                             theFacesToSew.SetValue(2, theSecondFace);
@@ -266,9 +267,9 @@ public sealed class FaceConnectFixer
 
                             // Skip the pair if already processed
                             skip_pair = false;
-                            if (theProcessed.IsBound(theSecondFace))
+                            if (theProcessed.ContainsKey(theSecondFace))
                             {
-                                NCollection_List<Shape> theProcCnxList = theProcessed[theSecondFace];
+                                NCollection_List<Shape> theProcCnxList = theProcessed.GetValue(theSecondFace);
                                 var theProcCnxListIter = new NCollection_List<Shape>.Iterator();
                                 for (theProcCnxListIter.Initialize(theProcCnxList);
                                      theProcCnxListIter.More() && !skip_pair;
@@ -293,7 +294,7 @@ public sealed class FaceConnectFixer
                                     theNumOfFacesToSew = 2;
                                 }
 
-                                var theSewerWires = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+                                var theSewerWires = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
                                 var theSewer = new Sewing(sewtoler);
 
                                 // Prepare set of faces containing free edges
@@ -304,11 +305,11 @@ public sealed class FaceConnectFixer
                                     Shape theFaceToSew = theFacesToSew[i];
                                     theAuxF = theFaceToSew.EmptyCopied();
                                     // Fill empty face with free edges
-                                    for (theOriginalIter.Initialize(_oriFreeEdges[theFaceToSew]);
+                                    for (theOriginalIter.Initialize(_oriFreeEdges.GetValue(theFaceToSew));
                                          theOriginalIter.More();
                                          theOriginalIter.Next())
                                     {
-                                        for (theResultsIter.Initialize(_resFreeEdges[theOriginalIter.Value()]);
+                                        for (theResultsIter.Initialize(_resFreeEdges.GetValue(theOriginalIter.Value()));
                                              theResultsIter.More();
                                              theResultsIter.Next())
                                         {
@@ -318,7 +319,7 @@ public sealed class FaceConnectFixer
                                             theBuilder.MakeWire(ref theAuxW);
                                             theBuilder.Add(theAuxW, theAuxE);
                                             theBuilder.Add(theAuxF, theAuxW);
-                                            theSewerWires.Bind(theAuxE, theAuxW);
+                                            theSewerWires[theAuxE] = theAuxW;
                                             theSewer.Add(theAuxW);
                                         }
                                     }
@@ -349,22 +350,22 @@ public sealed class FaceConnectFixer
 
                                 if (sewing_ok)
                                 {
-                                    var theResultEdges = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+                                    var theResultEdges = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
 
                                     // Find modified edges for the faces
                                     for (i = 1; i <= theNumOfFacesToSew; i++)
                                     {
-                                        for (theOriginalIter.Initialize(_oriFreeEdges[theFacesToSew[i]]);
+                                        for (theOriginalIter.Initialize(_oriFreeEdges.GetValue(theFacesToSew[i]));
                                              theOriginalIter.More();
                                              theOriginalIter.Next())
                                         {
                                             // Get original free edge
                                             theOrigE = theOriginalIter.Value();
-                                            NCollection_List<Shape> theOldFreeList = _resFreeEdges[theOrigE];
+                                            NCollection_List<Shape> theOldFreeList = _resFreeEdges.GetValue(theOrigE);
                                             theResultsIter.Initialize(theOldFreeList);
                                             while (theResultsIter.More())
                                             {
-                                                theAuxE = theSewerWires[theResultsIter.Value()];
+                                                theAuxE = theSewerWires.GetValue(theResultsIter.Value());
                                                 // Process modified edges
                                                 if (theSewer.IsModified(theAuxE))
                                                 {
@@ -375,16 +376,16 @@ public sealed class FaceConnectFixer
                                                     {
                                                         theAuxE = expe.Current();
                                                         // Check edge for being shared
-                                                        if (theResultEdges.IsBound(theAuxE))
+                                                        if (theResultEdges.ContainsKey(theAuxE))
                                                         {
                                                             // Edge was shared - move in results list
-                                                            _resSharEdges[theResultEdges[theAuxE]].Append(theAuxE);
-                                                            _resSharEdges[theOrigE].Append(theAuxE);
-                                                            theResultEdges.UnBind(theAuxE);
+                                                            _resSharEdges.GetValue(theResultEdges.GetValue(theAuxE)).Append(theAuxE);
+                                                            _resSharEdges.GetValue(theOrigE).Append(theAuxE);
+                                                            theResultEdges.Remove(theAuxE);
                                                         }
                                                         else
                                                         {
-                                                            theResultEdges.Bind(theAuxE, theOrigE);
+                                                            theResultEdges[theAuxE] = theOrigE;
                                                         }
                                                     }
                                                     // Remove modified free edge from the list
@@ -402,7 +403,7 @@ public sealed class FaceConnectFixer
                                     foreach (KeyValuePair<Shape, Shape> theResIter in theResultEdges)
                                     {
                                         theAuxE = theResIter.Key;
-                                        _resFreeEdges[theResIter.Value].Append(theAuxE);
+                                        _resFreeEdges.GetValue(theResIter.Value).Append(theAuxE);
                                     }
                                 }
                             }
@@ -410,7 +411,7 @@ public sealed class FaceConnectFixer
                     }
 
                     // Bind the list of processed faces to the processed face
-                    theProcessed.Bind(theFirstFace, theProcessedList);
+                    theProcessed[theFirstFace] = theProcessedList;
                 }
             }
 
@@ -421,10 +422,10 @@ public sealed class FaceConnectFixer
             / PERFORM EDGES REPLACEMENT
             ***************************************************************/
 
-            var theRepEdges = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-            var theRepVertices = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-            var theOldVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-            var theNewVertices = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var theRepEdges = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+            var theRepVertices = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var theOldVertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+            var theNewVertices = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
             // Replace old edges by resulting ones
             var theNewW = new Wire();
@@ -448,11 +449,11 @@ public sealed class FaceConnectFixer
                         // Select list of free or shared edges
                         if (i == 1)
                         {
-                            theResultsIter.Initialize(_resFreeEdges[theOldE]);
+                            theResultsIter.Initialize(_resFreeEdges.GetValue(theOldE));
                         }
                         else
                         {
-                            theResultsIter.Initialize(_resSharEdges[theOldE]);
+                            theResultsIter.Initialize(_resSharEdges.GetValue(theOldE));
                         }
 
                         // Iterate on new edges
@@ -499,9 +500,9 @@ public sealed class FaceConnectFixer
                         // Place results in map for replacing
                         if (!theOldV1.IsSame(theNewV1))
                         {
-                            if (theRepVertices.IsBound(theOldV1))
+                            if (theRepVertices.ContainsKey(theOldV1))
                             {
-                                NCollection_List<Shape> theList1 = theRepVertices[theOldV1];
+                                NCollection_List<Shape> theList1 = theRepVertices.GetValue(theOldV1);
                                 var theIter1 = new NCollection_List<Shape>.Iterator();
                                 bool found = false;
                                 for (theIter1.Initialize(theList1); theIter1.More(); theIter1.Next())
@@ -521,14 +522,14 @@ public sealed class FaceConnectFixer
                             {
                                 var theNewList1 = new NCollection_List<Shape>();
                                 theNewList1.Append(theNewV1);
-                                theRepVertices.Bind(theOldV1, theNewList1);
+                                theRepVertices[theOldV1] = theNewList1;
                             }
                         }
                         if (!theOldV2.IsSame(theNewV2))
                         {
-                            if (theRepVertices.IsBound(theOldV2))
+                            if (theRepVertices.ContainsKey(theOldV2))
                             {
-                                NCollection_List<Shape> theList2 = theRepVertices[theOldV2];
+                                NCollection_List<Shape> theList2 = theRepVertices.GetValue(theOldV2);
                                 var theIter2 = new NCollection_List<Shape>.Iterator();
                                 bool found = false;
                                 for (theIter2.Initialize(theList2); theIter2.More(); theIter2.Next())
@@ -548,17 +549,17 @@ public sealed class FaceConnectFixer
                             {
                                 var theNewList2 = new NCollection_List<Shape>();
                                 theNewList2.Append(theNewV2);
-                                theRepVertices.Bind(theOldV2, theNewList2);
+                                theRepVertices[theOldV2] = theNewList2;
                             }
                         }
 
                         // Bind edge to replace
-                        theRepEdges.Bind(theOldE, theNewW);
+                        theRepEdges[theOldE] = theNewW;
                     }
                 }
             }
 
-            if (!theRepEdges.IsEmpty())
+            if (theRepEdges.Count != 0)
             {
                 var theReShape = new ReShapeBuilder();
 
@@ -633,7 +634,7 @@ public sealed class FaceConnectFixer
                         sff.Init(empFace);
                         //	  SFF->Init(TopoDS::Face(EmpFace));
 
-                        var mapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                        var mapWires = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                         mapWires.Clear();
                         if (sff.FixOrientation(mapWires))
                         {
@@ -644,7 +645,7 @@ public sealed class FaceConnectFixer
                     theShell.Closed(Tool.IsClosed(theShell));
                     result = theShell;
 
-                    if (!theRepVertices.IsEmpty())
+                    if (theRepVertices.Count != 0)
                     {
                         // Prepare vertices to replace
                         Shape theOld, theNew, theRep, theAux;
@@ -658,32 +659,32 @@ public sealed class FaceConnectFixer
                             for (theN1Iter.Initialize(theRV1Iter.Value); theN1Iter.More(); theN1Iter.Next())
                             {
                                 theNew = theN1Iter.Value();
-                                if (theOldVertices.IsBound(theNew))
+                                if (theOldVertices.ContainsKey(theNew))
                                 {
                                     // Vertex has a replacing vertex in the map
-                                    theRep = theOldVertices[theNew];
+                                    theRep = theOldVertices.GetValue(theNew);
                                     if (!theRep.IsSame(theOld))
                                     {
                                         // Vertex is not in current list
-                                        theOldVertices.Bind(theRep, theOld);
+                                        theOldVertices[theRep] = theOld;
                                         theNewList.Append(theRep);
                                         var theN3Iter = new NCollection_List<Shape>.Iterator();
-                                        for (theN3Iter.Initialize(theNewVertices[theRep]); theN3Iter.More(); theN3Iter.Next())
+                                        for (theN3Iter.Initialize(theNewVertices.GetValue(theRep)); theN3Iter.More(); theN3Iter.Next())
                                         {
                                             theAux = theN3Iter.Value();
-                                            theOldVertices[theAux] = theOld;
+                                            theOldVertices.GetValueRef(theAux) = theOld;
                                             theNewList.Append(theAux);
                                         }
-                                        theNewVertices.UnBind(theRep);
+                                        theNewVertices.Remove(theRep);
                                     }
                                 }
                                 else
                                 {
-                                    theOldVertices.Bind(theNew, theOld);
+                                    theOldVertices[theNew] = theOld;
                                     theNewList.Append(theNew);
                                 }
                             }
-                            theNewVertices.Bind(theOld, theNewList);
+                            theNewVertices[theOld] = theNewList;
                         }
 
                         // Update vertices positions and tolerances

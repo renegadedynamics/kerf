@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Model;
@@ -38,7 +39,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
     private ToolParameters _parameters = new();
     private DataStructureOfDelaun? _structure;
     private NCollection_DynamicArray<Point3D>? _nodesMap;
-    private NCollection_DataMap<int, int>? _usedNodes;
+    private Dictionary<int, int>? _usedNodes;
 
     /// <summary>An algorithm.</summary>
     protected BaseMeshAlgo()
@@ -56,7 +57,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
             _parameters = parameters;
             _structure = new DataStructureOfDelaun();
             _nodesMap = new NCollection_DynamicArray<Point3D>(256);
-            _usedNodes = new NCollection_DataMap<int, int>();
+            _usedNodes = new Dictionary<int, int>();
 
             if (InitDataStructure())
             {
@@ -113,7 +114,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
             // prevents unreferenced internal nodes from appearing as free nodes.
             if (movability != DegreeOfFreedom.Free)
             {
-                _usedNodes!.Bind(nodeIndex, nodeIndex);
+                _usedNodes![nodeIndex] = nodeIndex;
             }
         }
 
@@ -300,17 +301,17 @@ public abstract class BaseMeshAlgo : MeshAlgo
 
             for (int i = 0; i < 3; ++i)
             {
-                if (!_usedNodes!.IsBound(node[i]))
+                if (!_usedNodes!.ContainsKey(node[i]))
                 {
-                    _usedNodes.Bind(node[i], _usedNodes.Extent() + 1);
+                    _usedNodes[node[i]] = _usedNodes.Count + 1;
                 }
 
-                node[i] = _usedNodes.Find(node[i]);
+                node[i] = _usedNodes.GetValue(node[i]);
             }
 
             res.SetTriangle(triangeId, new Triangle1(node[0], node[1], node[2]));
         }
-        res.ResizeNodes(_usedNodes!.Extent(), false);
+        res.ResizeNodes(_usedNodes!.Count, false);
         res.AddUVNodes();
         return res;
     }
@@ -320,11 +321,11 @@ public abstract class BaseMeshAlgo : MeshAlgo
     {
         for (int i = 1; i <= _nodesMap!.Length(); ++i)
         {
-            if (_usedNodes!.IsBound(i))
+            if (_usedNodes!.ContainsKey(i))
             {
                 MeshVertex vertex = _structure!.GetNode(i);
 
-                int nodeIndex = _usedNodes.Find(i);
+                int nodeIndex = _usedNodes.GetValue(i);
                 triangulation.SetNode(nodeIndex, _nodesMap.Value(vertex.Location3d()));
                 triangulation.SetUVNode(nodeIndex, GetNodePoint2d(vertex));
             }

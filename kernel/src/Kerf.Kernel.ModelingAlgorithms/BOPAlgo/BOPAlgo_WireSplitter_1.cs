@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Intersection.Tools;
@@ -35,7 +36,7 @@ public partial class WireSplitter
         NCollection_List<EdgeInfo>.Iterator itLEI;
         //
         NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, bool> vertMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, bool> vertMap = new(ShapeHasher.Instance);
         //
         NCollection_List<Shape> myEdges = aCB.Shapes();
 
@@ -88,16 +89,16 @@ public partial class WireSplitter
                     bIsClosed = bIsClosed || v1.IsSame(v);
                 }
                 //
-                if (vertMap.IsBound(v))
+                if (vertMap.ContainsKey(v))
                 {
                     if (bIsClosed)
                     {
-                        vertMap.ChangeFind(v) = bIsClosed;
+                        vertMap.GetValueRef(v) = bIsClosed;
                     }
                 }
                 else
                 {
-                    vertMap.Bind(v, bIsClosed);
+                    vertMap[v] = bIsClosed;
                 }
             }
         }
@@ -257,7 +258,7 @@ public partial class WireSplitter
 
     private static void Path(FaceSurfaceAdaptor aGAS,
                              in Face myFace,
-                             NCollection_DataMap<Shape, bool> aVertMap,
+                             Dictionary<Shape, bool> aVertMap,
                              in Vertex aVFirst,
                              in Edge aEFirst,
                              EdgeInfo aEIFirst,
@@ -319,7 +320,7 @@ public partial class WireSplitter
             tol2D = 2.0 * Tolerance2D(vb, aGAS);
             tol2D2 = tol2D * tol2D;
             //
-            bIsClosed = aVertMap.Find(vb);
+            bIsClosed = aVertMap.GetValue(vb);
             {
                 NCollection_List<Shape> buf = new();
                 bool bHasEdge = false;
@@ -794,7 +795,7 @@ public partial class WireSplitter
         bool bIsIn, bIsBoundary, bRefined;
         int iCntBnd, iCntInt;
         double a, a1, a2;
-        NCollection_DataMap<Shape, double> dmsr = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> dmsr = new(ShapeHasher.Instance);
         NCollection_List<EdgeInfo>.Iterator itLEI = new(aLEI);
         //
         a1 = 0.0; // angle of outgoing edge
@@ -855,16 +856,16 @@ public partial class WireSplitter
             bRefined = RefineAngle2D(aV, e, myFace, a1, a2, delta, ref a, context);
             if (bRefined)
             {
-                dmsr.Bind(e, a);
+                dmsr[e] = a;
             }
             else if (iCntInt == 2)
             {
                 a = (a <= a1) ? (a1 + global::Kerf.Engine.Foundation.Precision.Angular()) : (a2 - global::Kerf.Engine.Foundation.Precision.Angular());
-                dmsr.Bind(e, a);
+                dmsr[e] = a;
             }
         }
 
-        if (dmsr.IsEmpty())
+        if (dmsr.Count == 0)
         {
             return;
         }
@@ -877,12 +878,12 @@ public partial class WireSplitter
             Edge e = ei.Edge();
             //
             bIsIn = ei.IsIn;
-            if (!dmsr.IsBound(e))
+            if (!dmsr.ContainsKey(e))
             {
                 continue;
             }
             //
-            a = dmsr.Find(e);
+            a = dmsr.GetValue(e);
             if (bIsIn)
             {
                 a = a + M_PI;

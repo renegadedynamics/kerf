@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
@@ -277,9 +278,9 @@ public class MakerVolume : BooleanBuilder
             _bBox.Add(b);
             //
             Shape f = si.Shape();
-            if (_images.IsBound(f))
+            if (_images.ContainsKey(f))
             {
-                NCollection_List<Shape> lfIm = _images.Find(f);
+                NCollection_List<Shape> lfIm = _images.GetValue(f);
                 it.Initialize(lfIm);
                 for (; it.More(); it.Next())
                 {

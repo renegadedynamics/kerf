@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
@@ -43,8 +44,8 @@ public sealed class Generator
 {
     private readonly NCollection_Sequence<Shape> _wires = new();
     private Shell _shell = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Shape> _oldNewShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _oldNewShapes = new(ShapeHasher.Instance);
     private readonly ReShape _reshaper = new();
     private bool _mutableInput;
     private ThruSectionErrorStatus _status;
@@ -555,7 +556,7 @@ public sealed class Generator
     //=================================================================================================
 
     private static Edge CreateNewEdge(in Edge edge,
-                                             NCollection_DataMap<Shape, Shape> copiedEdges,
+                                             Dictionary<Shape, Shape> copiedEdges,
                                              in Wire wire,
                                              NCollection_IndexedMap<Shape> modifWires)
     {
@@ -567,7 +568,7 @@ public sealed class Generator
         {
             builder.Add(newEdge, iterator.Value());
         }
-        copiedEdges.Bind(edge, newEdge);
+        copiedEdges[edge] = newEdge;
 
         if (!modifWires.Contains(wire))
         {
@@ -670,7 +671,7 @@ public sealed class Generator
             ex1.Init(wire1);
             ex2.Init(wire2);
 
-            NCollection_DataMap<Shape, Shape> map = new(ShapeHasher.Instance);
+            Dictionary<Shape, Shape> map = new(ShapeHasher.Instance);
 
             bool tantque = ex1.More() && ex2.More();
 
@@ -693,7 +694,7 @@ public sealed class Generator
                     v1l.Orientation(Reversed);
                     b.Add(edge1, v1l);
                     b.Range(edge1, 0, 1);
-                    _oldNewShapes.Bind(orEdge1, edge1);
+                    _oldNewShapes[orEdge1] = edge1;
                 }
                 else
                 {
@@ -710,7 +711,7 @@ public sealed class Generator
                     v2l.Orientation(Reversed);
                     b.Add(edge2, v2l);
                     b.Range(edge2, 0, 1);
-                    _oldNewShapes.Bind(orEdge2, edge2);
+                    _oldNewShapes[orEdge2] = edge2;
                 }
                 else
                 {
@@ -884,9 +885,9 @@ public sealed class Generator
                     last = 1.0;
                 }
 
-                if (map.IsBound(Vf_toMap))
+                if (map.ContainsKey(Vf_toMap))
                 {
-                    Shape localShape = map.Find(Vf_toMap).Reversed();
+                    Shape localShape = map.GetValue(Vf_toMap).Reversed();
                     edge3 = ShapeCasts.Edge(localShape);
                 }
                 else
@@ -920,20 +921,20 @@ public sealed class Generator
                     b.Add(edge3, v2f);
                     b.Range(edge3, first, last);
                     edge3.Reverse();
-                    map.Bind(Vf_toMap, edge3);
+                    map[Vf_toMap] = edge3;
                 }
 
                 bool commonEdge = false;
-                if (map.IsBound(Vl_toMap))
+                if (map.ContainsKey(Vl_toMap))
                 {
-                    Shape localShape = map.Find(Vl_toMap).Reversed();
+                    Shape localShape = map.GetValue(Vl_toMap).Reversed();
                     Edge commonE = ShapeCasts.Edge(localShape);
                     Exploration.Vertices(commonE, out Vertex v1, out Vertex v2);
                     commonEdge = v1.IsSame(v1l) && v2.IsSame(v2l);
                 }
                 if (commonEdge)
                 {
-                    Shape localShape = map.Find(Vl_toMap).Reversed();
+                    Shape localShape = map.GetValue(Vl_toMap).Reversed();
                     edge4 = ShapeCasts.Edge(localShape);
                 }
                 else
@@ -966,14 +967,14 @@ public sealed class Generator
                     v2l.Orientation(Reversed);
                     b.Add(edge4, v2l);
                     b.Range(edge4, first, last);
-                    map.Bind(Vl_toMap, edge4);
+                    map[Vl_toMap] = edge4;
                 }
 
                 if (!_mutableInput)
                 {
                     if (!degen1) // if true=>already empty-copied
                     {
-                        if (_oldNewShapes.Find(edge1, out Shape newEd1))
+                        if (_oldNewShapes.TryGetValue(edge1, out Shape newEd1))
                         {
                             edge1 = ShapeCasts.Edge(newEd1);
                         }
@@ -988,7 +989,7 @@ public sealed class Generator
                     }
                     if (!degen2)
                     {
-                        if (_oldNewShapes.Find(edge2, out Shape newEd2))
+                        if (_oldNewShapes.TryGetValue(edge2, out Shape newEd2))
                         {
                             edge2 = ShapeCasts.Edge(newEd2);
                         }
@@ -1109,12 +1110,12 @@ public sealed class Generator
                         rEd = edge1;
                     }
 
-                    if (!_map.IsBound(rEd))
+                    if (!_map.ContainsKey(rEd))
                     {
                         NCollection_List<Shape> empty = new();
-                        _map.Bind(rEd, empty);
+                        _map[rEd] = empty;
                     }
-                    _map.ChangeFind(rEd).Append(face);
+                    _map.GetValue(rEd).Append(face);
                 }
 
                 tantque = ex1.More() && ex2.More();
@@ -1176,7 +1177,7 @@ public sealed class Generator
             newWire.Infinite(curWire.Infinite());
             newWire.Convex(curWire.Convex());
 
-            _oldNewShapes.Bind(curWire, newWire);
+            _oldNewShapes[curWire] = newWire;
         }
     }
 
@@ -1205,9 +1206,9 @@ public sealed class Generator
     /// <summary>The algorithm's own list behind <see cref="GeneratedShapes"/>, for ported callers.</summary>
     internal NCollection_List<Shape> InternalGeneratedShapes(in Shape sSection)
     {
-        if (_map.IsBound(sSection))
+        if (_map.ContainsKey(sSection))
         {
-            return _map.Find(sSection);
+            return _map.GetValue(sSection);
         }
         else
         {
@@ -1218,7 +1219,7 @@ public sealed class Generator
     /// <summary>All the shapes created, keyed by the sections' edges (frozen), in the order they were built.</summary>
     public ISchematiqList<KeyValuePair<Shape, ISchematiqList<Shape>>> Generated()
     {
-        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Extent()];
+        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Count];
         int i = 0;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in _map)
         {
@@ -1230,7 +1231,7 @@ public sealed class Generator
     }
 
     /// <summary>The algorithm's own map behind <see cref="Generated"/>.</summary>
-    internal NCollection_DataMap<Shape, NCollection_List<Shape>> InternalGenerated() => _map;
+    internal Dictionary<Shape, NCollection_List<Shape>> InternalGenerated() => _map;
 
     private static ISchematiqList<Shape> Published(NCollection_List<Shape> list)
     {
@@ -1271,7 +1272,7 @@ public sealed class Generator
 
     private Shape ResultShapeCore(in Shape shape)
     {
-        Shape newShape = _oldNewShapes.Find(shape, out Shape aShape) ? aShape : shape;
+        Shape newShape = _oldNewShapes.TryGetValue(shape, out Shape aShape) ? aShape : shape;
         Shape prevShape;
         do
         {

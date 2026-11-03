@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2003-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -30,7 +31,7 @@ public sealed class RemoveLocations : Transient
 {
     private ShapeType _levelRemoving;
     private Shape _shape = new();
-    private readonly NCollection_DataMap<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
 
     /// <summary>Empty constructor; the level is TopAbs_SHAPE.</summary>
     public RemoveLocations()
@@ -94,9 +95,9 @@ public sealed class RemoveLocations : Transient
     internal Shape InternalModifiedShape(in Shape initShape)
     {
         Shape shape = initShape;
-        if (_mapNewShapes.IsBound(initShape))
+        if (_mapNewShapes.ContainsKey(initShape))
         {
-            shape = _mapNewShapes.Find(initShape);
+            shape = _mapNewShapes.GetValue(initShape);
         }
         return shape;
     }
@@ -105,20 +106,20 @@ public sealed class RemoveLocations : Transient
     /// The map from the initial shapes to the shapes made from them: a new map of frozen shapes (OCCT returns its own
     /// map; ported code reads it through <see cref="InternalModifiedShapesMap"/>).
     /// </summary>
-    public NCollection_DataMap<Shape, Shape> GetModifiedShapesMap()
+    public Dictionary<Shape, Shape> GetModifiedShapesMap()
     {
-        NCollection_DataMap<Shape, Shape> map = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> map = new(ShapeHasher.Instance);
         foreach (KeyValuePair<Shape, Shape> item in _mapNewShapes)
         {
             item.Key.TShape()?.FreezeGraph();
             item.Value.TShape()?.FreezeGraph();
-            map.Bind(item.Key, item.Value);
+            map[item.Key] = item.Value;
         }
         return map;
     }
 
     /// <summary>The algorithm's own map of modified shapes, not frozen, for ported callers.</summary>
-    internal NCollection_DataMap<Shape, Shape> InternalModifiedShapesMap() => _mapNewShapes;
+    internal Dictionary<Shape, Shape> InternalModifiedShapesMap() => _mapNewShapes;
 
     //=================================================================================================
 
@@ -244,10 +245,10 @@ public sealed class RemoveLocations : Transient
             Placement nulLoc = new();
             aShape.Location(nulLoc);
         }
-        bool isBound = _mapNewShapes.IsBound(aShape);
+        bool isBound = _mapNewShapes.ContainsKey(aShape);
         if (isBound)
         {
-            aNewShape = _mapNewShapes.Find(aShape);
+            aNewShape = _mapNewShapes.GetValue(aShape);
             aNewShape.Orientation(shape.Orientation());
             if (!removeLoc && !shape.Location().IsIdentity)
             {
@@ -287,7 +288,7 @@ public sealed class RemoveLocations : Transient
                 if (rebuild)
                 {
                     aNewShape = anewFace;
-                    _mapNewShapes.Bind(oldFace, aNewShape);
+                    _mapNewShapes[oldFace] = aNewShape;
                 }
             }
             else if (shtype == ShapeType.Edge)
@@ -300,9 +301,9 @@ public sealed class RemoveLocations : Transient
                 {
                     f = ShapeCasts.Face(anAncShape);
                     newFace = f;
-                    if (_mapNewShapes.IsBound(f))
+                    if (_mapNewShapes.ContainsKey(f))
                     {
-                        newFace = ShapeCasts.Face(_mapNewShapes.Find(f));
+                        newFace = ShapeCasts.Face(_mapNewShapes.GetValue(f));
                     }
                 }
                 if (isBound)
@@ -360,7 +361,7 @@ public sealed class RemoveLocations : Transient
             {
                 aNewShape = aShape;
             }
-            _mapNewShapes.Bind(aShape, aNewShape);
+            _mapNewShapes[aShape] = aNewShape;
             if (!removeLoc && !oldLoc.IsIdentity)
             {
                 aNewShape.Location(oldLoc);

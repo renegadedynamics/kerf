@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Basic;
@@ -758,8 +759,8 @@ public class Styles : ConstructTool
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
     /// <remarks>OCCT.NET: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
-    public static Colour EncodeColor(in Color c, NCollection_DataMap<string, Transient> dpdCs,
-                                                NCollection_DataMap<Point3D, Transient> colRGBs)
+    public static Colour EncodeColor(in Color c, Dictionary<string, Transient> dpdCs,
+                                                Dictionary<Point3D, Transient> colRGBs)
     {
         // detect if color corresponds to one of pre-defined colors
         string cName = PredefinedName(c);
@@ -768,9 +769,9 @@ public class Styles : ConstructTool
         {
             DraughtingPreDefinedColour colPr;
             string name = cName;
-            if (dpdCs.IsBound(name))
+            if (dpdCs.ContainsKey(name))
             {
-                colPr = dpdCs.Find(name) as DraughtingPreDefinedColour;
+                colPr = dpdCs.GetValue(name) as DraughtingPreDefinedColour;
                 if (colPr is not null)
                 {
                     return colPr;
@@ -780,7 +781,7 @@ public class Styles : ConstructTool
             PreDefinedItem preDef = new PreDefinedItem();
             preDef.Init(new TCollection_HAsciiString(cName));
             colPr.SetPreDefinedItem(preDef);
-            dpdCs.Bind(name, colPr);
+            dpdCs[name] = colPr;
             return colPr;
         }
         else
@@ -788,9 +789,9 @@ public class Styles : ConstructTool
             ColourRgb colRGB;
             c.Values(out double r, out double g, out double b, TOC_sRGB);
             Point3D p = new Point3D(r, g, b);
-            if (colRGBs.IsBound(p))
+            if (colRGBs.ContainsKey(p))
             {
-                colRGB = colRGBs.Find(p) as ColourRgb;
+                colRGB = colRGBs.GetValue(p) as ColourRgb;
                 if (colRGB is not null)
                 {
                     return colRGB;
@@ -799,7 +800,7 @@ public class Styles : ConstructTool
             TCollection_HAsciiString colName = new TCollection_HAsciiString("");
             colRGB = new ColourRgb();
             colRGB.Init(colName, p.Coord(1), p.Coord(2), p.Coord(3));
-            colRGBs.Bind(p, colRGB);
+            colRGBs[p] = colRGB;
             return colRGB;
         }
     }

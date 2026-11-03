@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.HiddenLines.Algorithm;
@@ -899,7 +900,7 @@ public class HiddenLineData : Transient
     }
 
     /// <summary>Starts the iteration on the edges the face FI may hide; MST caches the faces' classifiers.</summary>
-    public void InitEdge(int fi, NCollection_DataMap<Shape, AdaptorTool> mst)
+    public void InitEdge(int fi, Dictionary<Shape, AdaptorTool> mst)
     {
         _hideCount++;
         _hideCount++;
@@ -919,15 +920,15 @@ public class HiddenLineData : Transient
         FaceSurfaceAdaptor bras = p1.Surface();
         Face topodsface = bras.Face();
 
-        if (mst.IsBound(topodsface))
+        if (mst.ContainsKey(topodsface))
         {
-            AdaptorTool brt = mst.ChangeFind(topodsface);
+            AdaptorTool brt = mst.GetValue(topodsface);
             _classifier = brt.GetTopolTool();
         }
         else
         {
             AdaptorTool brt = new(topodsface, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            mst.Bind(topodsface, brt);
+            mst[topodsface] = brt;
             _classifier = brt.GetTopolTool();
         }
 

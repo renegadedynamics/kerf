@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2015-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bvh;
 using Occt;
 using BVH_Vec2d = Occt.NCollection_Vec2<double>;
@@ -25,8 +26,8 @@ public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
     private TriangleSet? _set1;
     private TriangleSet? _set2;
     private ElementFilter? _filter;
-    private readonly NCollection_DataMap<int, NCollection_PackedMapOfInteger> _overlapSubShapes1 = new();
-    private readonly NCollection_DataMap<int, NCollection_PackedMapOfInteger> _overlapSubShapes2 = new();
+    private readonly Dictionary<int, NCollection_PackedMapOfInteger> _overlapSubShapes1 = new();
+    private readonly Dictionary<int, NCollection_PackedMapOfInteger> _overlapSubShapes2 = new();
     private bool _isDone;
     private double _tolerance;
 
@@ -63,10 +64,10 @@ public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
     public void MarkDirty() => _isDone = false;
 
     /// <summary>The overlapped sub-shapes (faces) of the first set, each with the faces of the second it overlaps.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapSubShapes1() => _overlapSubShapes1;
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapSubShapes1() => _overlapSubShapes1;
 
     /// <summary>The overlapped sub-shapes (faces) of the second set, each with the faces of the first it overlaps.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => _overlapSubShapes2;
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => _overlapSubShapes2;
 
     /// <summary>Sets the filter for preliminary checking of pairs of mesh elements.</summary>
     public void SetElementFilter(ElementFilter? filter) => _filter = filter;
@@ -465,15 +466,15 @@ public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
                && boxMax1.Z() >= boxMin2.Z() - tolerance;
     }
 
-    private static NCollection_PackedMapOfInteger GetSetOfFaces(NCollection_DataMap<int, NCollection_PackedMapOfInteger> faces,
+    private static NCollection_PackedMapOfInteger GetSetOfFaces(Dictionary<int, NCollection_PackedMapOfInteger> faces,
                                                                 int faceIdx)
     {
-        if (!faces.IsBound(faceIdx))
+        if (!faces.ContainsKey(faceIdx))
         {
-            faces.Bind(faceIdx, new NCollection_PackedMapOfInteger());
+            faces[faceIdx] = new NCollection_PackedMapOfInteger();
         }
 
-        return faces.ChangeFind(faceIdx);
+        return faces.GetValue(faceIdx);
     }
 
     //=================================================================================================
@@ -485,11 +486,11 @@ public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
 
         _set1.GetVertices(trgIdx1, out BVH_Vec3d trg1Vert1, out BVH_Vec3d trg1Vert2, out BVH_Vec3d trg1Vert3);
 
-        bool isInSet = _overlapSubShapes1.IsBound(faceIdx1);
+        bool isInSet = _overlapSubShapes1.ContainsKey(faceIdx1);
 
         int faceIdx2 = _set2!.GetFaceID(trgIdx2);
 
-        if (isInSet && _overlapSubShapes1.Find(faceIdx1).Contains(faceIdx2))
+        if (isInSet && _overlapSubShapes1.GetValue(faceIdx1).Contains(faceIdx2))
         {
             return;
         }
@@ -524,11 +525,11 @@ public class OverlapTool : PairTraverse<double, BVH_Vec3d, double>
 
         var prism1 = new BRepExtrema_BoundingPrism(); // not initialized
 
-        bool isInSet = _overlapSubShapes1.IsBound(faceIdx1);
+        bool isInSet = _overlapSubShapes1.ContainsKey(faceIdx1);
 
         int faceIdx2 = _set2!.GetFaceID(trgIdx2);
 
-        if (isInSet && _overlapSubShapes1.Find(faceIdx1).Contains(faceIdx2))
+        if (isInSet && _overlapSubShapes1.GetValue(faceIdx1).Contains(faceIdx2))
         {
             return;
         }

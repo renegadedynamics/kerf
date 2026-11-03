@@ -507,7 +507,7 @@ public class TransferTests
         Assert.False(TP.GetContext("x", typeof(TCollection_HAsciiString), ref aCtx));
         Assert.Null(aCtx);
         Assert.True(TP.GetContext("x", null, ref aCtx));
-        Assert.Equal(1, TP.Context().Extent());
+        Assert.Single(TP.Context());
         Assert.Equal(0, TP.RootsForTransfer().Length());
 
         // the statistics
@@ -613,7 +613,7 @@ public class TransferTests
         Assert.Same(m.Attribute("t"), m2.Attribute("t"));
         var m3 = new TransientMapper(C);
         m3.GetAttributes(m, "r", false);
-        Assert.Equal(1, m3.AttrList().Extent());
+        Assert.Single(m3.AttrList());
         Assert.Same(m.Attribute("r"), m3.Attribute("r"));
         // OCCT's SameAttributes copies the list (C++'s map assignment)
         var m4 = new TransientMapper(D);

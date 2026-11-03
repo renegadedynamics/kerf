@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -31,7 +32,7 @@ namespace Kerf.Engine.Features;
 public sealed class MakeRevol : Form
 {
     private Shape _pbase = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
     private Axis3D _axis = new();
     private readonly NCollection_Sequence<Curve3D> _curves = new();
     private Curve3D? _bCurve;
@@ -97,8 +98,8 @@ public sealed class MakeRevol : Form
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
             NCollection_List<Shape> thelist = new();
-            _map.Bind(exp.Current(), thelist);
-            _map[exp.Current()].Append(exp.Current());
+            _map[exp.Current()] = thelist;
+            _map.GetValue(exp.Current()).Append(exp.Current());
         }
         // OCCT_DEBUG trace left out
     }
@@ -132,12 +133,12 @@ public sealed class MakeRevol : Form
             throw new ConstructionErrorException();
         }
 
-        if (!_slface.IsBound(f))
+        if (!_slface.ContainsKey(f))
         {
             NCollection_List<Shape> thelist = new();
-            _slface.Bind(f, thelist);
+            _slface[f] = thelist;
         }
-        NCollection_List<Shape>.Iterator itl = new(_slface[f]);
+        NCollection_List<Shape>.Iterator itl = new(_slface.GetValue(f));
         for (; itl.More(); itl.Next())
         {
             if (itl.Value().IsSame(e))
@@ -147,7 +148,7 @@ public sealed class MakeRevol : Form
         }
         if (!itl.More())
         {
-            _slface[f].Append(e);
+            _slface.GetValue(f).Append(e);
         }
     }
 
@@ -198,7 +199,7 @@ public sealed class MakeRevol : Form
 
         bool found = false;
 
-        if (!_skface.IsNull || !_slface.IsEmpty())
+        if (!_skface.IsNull || _slface.Count != 0)
         {
             if (_lShape.ShapeType() == ShapeType.Wire)
             {
@@ -242,7 +243,7 @@ public sealed class MakeRevol : Form
             VerifGluedFaces(_skface, theBase, ref _bCurve, _curves, theRevol, _gluedF);
         }
 
-        if (_gluedF.IsEmpty())
+        if (_gluedF.Count == 0)
         {
             if (_fuse)
             {
@@ -691,7 +692,7 @@ public sealed class MakeRevol : Form
     // Checks whether the gluing faces are valid: if not, the case without gluing
     private static void VerifGluedFaces(in Face skface, in Shape pbase, ref Curve3D? bCurve,
                                         NCollection_Sequence<Curve3D> curves, LocalRevol revol,
-                                        NCollection_DataMap<Shape, Shape> map)
+                                        Dictionary<Shape, Shape> map)
     {
         bool gluedFaces = true;
         Shape vraiRevol = revol.InternalShape();
@@ -753,7 +754,7 @@ public sealed class MakeRevol : Form
     }
 
     private static void MajMap(in Shape b, LocalRevol p,
-                               NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+                               Dictionary<Shape, NCollection_List<Shape>> map,
                                ref Shape fShape, ref Shape lShape)
     {
         Explorer exp = new(p.InternalFirstShape(), ShapeType.Wire);
@@ -761,10 +762,10 @@ public sealed class MakeRevol : Form
         {
             fShape = exp.Current();
             NCollection_List<Shape> thelist = new();
-            map.Bind(fShape, thelist);
+            map[fShape] = thelist;
             for (exp.Init(p.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                map[fShape].Append(exp.Current());
+                map.GetValue(fShape).Append(exp.Current());
             }
         }
 
@@ -773,18 +774,18 @@ public sealed class MakeRevol : Form
         {
             lShape = exp.Current();
             NCollection_List<Shape> thelist1 = new();
-            map.Bind(lShape, thelist1);
+            map[lShape] = thelist1;
             for (exp.Init(p.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                map[lShape].Append(exp.Current());
+                map.GetValue(lShape).Append(exp.Current());
             }
         }
 
         for (exp.Init(b, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (!map.IsBound(exp.Current()))
+            if (!map.ContainsKey(exp.Current()))
             {
-                map.Bind(exp.Current(), new NCollection_List<Shape>(p.InternalShapes(exp.Current())));
+                map[exp.Current()] = new NCollection_List<Shape>(p.InternalShapes(exp.Current()));
             }
         }
     }

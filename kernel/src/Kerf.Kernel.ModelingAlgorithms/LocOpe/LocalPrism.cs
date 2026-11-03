@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Sweeping;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -35,7 +36,7 @@ public sealed class LocalPrism
     private Shape _res = new();
     private Shape _firstShape = new();
     private Shape _lastShape = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private WorkingShapes _work = new();
 
     public LocalPrism()
@@ -118,14 +119,14 @@ public sealed class LocalPrism
             for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                if (!_map.IsBound(edg))
+                if (!_map.ContainsKey(edg))
                 {
                     NCollection_List<Shape> thelist = new();
-                    _map.Bind(edg, thelist);
+                    _map[edg] = thelist;
                     Shape desc = thePrism.Shape(edg);
                     if (!desc.IsNull)
                     {
-                        _map[edg].Append(desc);
+                        _map.GetValue(edg).Append(desc);
                     }
                 }
             }
@@ -143,7 +144,7 @@ public sealed class LocalPrism
             {
                 Shape edg = theEFMap.FindKey(i);
                 NCollection_List<Shape> thelist1 = new();
-                _map.Bind(edg, thelist1);
+                _map[edg] = thelist1;
                 Shape desc = thePrism.Shape(edg);
                 if (!desc.IsNull)
                 {
@@ -153,7 +154,7 @@ public sealed class LocalPrism
                     }
                     else
                     {
-                        _map[edg].Append(desc);
+                        _map.GetValue(edg).Append(desc);
                         lfaces.Append(desc);
                     }
                 }
@@ -178,14 +179,14 @@ public sealed class LocalPrism
                 for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Edge edg = ShapeCasts.Edge(exp.Current());
-                    if (!_map.IsBound(edg))
+                    if (!_map.ContainsKey(edg))
                     {
                         NCollection_List<Shape> thelist2 = new();
-                        _map.Bind(edg, thelist2);
+                        _map[edg] = thelist2;
                         Shape desc = thePrism.Shape(edg);
                         if (!desc.IsNull)
                         {
-                            _map[edg].Append(desc);
+                            _map.GetValue(edg).Append(desc);
                         }
                     }
                 }
@@ -201,10 +202,10 @@ public sealed class LocalPrism
             {
                 Edge edg = ShapeCasts.Edge(anExp.Current());
                 Edge edgbis = ShapeCasts.Edge(_work.Copied(modif.InternalModifiedShape(edg)));
-                if (!edgbis.IsSame(edg) && _map.IsBound(edgbis))
+                if (!edgbis.IsSame(edg) && _map.ContainsKey(edgbis))
                 {
-                    _map.Bind(edg, _map[edgbis]);
-                    _map.UnBind(edgbis);
+                    _map[edg] = _map.GetValue(edgbis);
+                    _map.Remove(edgbis);
                 }
             }
         }
@@ -223,7 +224,7 @@ public sealed class LocalPrism
             _lastShape = _work.Final(_lastShape);
             foreach (Shape key in _map.Keys.ToList())
             {
-                _map[key] = _work.Final(_map[key]);
+                _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
             }
         }
         _done = true;
@@ -258,7 +259,7 @@ public sealed class LocalPrism
     public NCollection_List<Shape> Shapes(in Shape s) => WorkingShapes.Published(InternalShapes(s));
 
     /// <summary><see cref="Shapes"/> without freezing, for ported code (of the caller's edge or its working copy).</summary>
-    internal NCollection_List<Shape> InternalShapes(in Shape s) => _map[_work.Copied(s)];
+    internal NCollection_List<Shape> InternalShapes(in Shape s) => _map.GetValue(_work.Copied(s));
 
     /// <summary>The lines along the vector through sample points of the first shape's edges, trimmed to ±2 heights.</summary>
     public void Curves(NCollection_Sequence<Curve3D> scurves)

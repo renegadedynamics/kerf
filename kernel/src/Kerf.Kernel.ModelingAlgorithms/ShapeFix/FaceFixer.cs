@@ -18,6 +18,7 @@
 // abv 19.10.2001  FixAddNaturalBound improved and extracted as separate fix
 // skl,pdn 14.05.2002  OCC55 (correction precision for small faces)
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -388,7 +389,7 @@ public partial class FaceFixer : RootFixer
         bool isReplaced   = false;
 
         // gka fix in order to avoid lost messages (following OCC21771)
-        var mapReorderedWires = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var mapReorderedWires = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
 
         double savPreci = Precision();
         if (NeedFix(_fixWireMode))
@@ -472,7 +473,7 @@ public partial class FaceFixer : RootFixer
                     }
                     else if (!wire.IsSame(w))
                     {
-                        mapReorderedWires.Bind(wire, w);
+                        mapReorderedWires[wire] = w;
                     }
 
                     wire = w;
@@ -588,7 +589,7 @@ public partial class FaceFixer : RootFixer
                         }
                         else if (!wire.IsSame(w))
                         {
-                            mapReorderedWires.Bind(wire, w);
+                            mapReorderedWires[wire] = w;
                         }
 
                         wire = w;
@@ -697,7 +698,7 @@ public partial class FaceFixer : RootFixer
             }
 
             // fix orientation
-            var mapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var mapWires = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             mapWires.Clear();
             if (NeedFix(_fixOrientationMode))
             {
@@ -718,7 +719,7 @@ public partial class FaceFixer : RootFixer
             }
 
             // split face
-            if (NeedFix(_fixSplitFaceMode) && needSplit && mapWires.Extent() > 1)
+            if (NeedFix(_fixSplitFaceMode) && needSplit && mapWires.Count > 1)
             {
                 if (FixSplitFaceCore(mapWires))
                 {
@@ -753,15 +754,15 @@ public partial class FaceFixer : RootFixer
             if (Status(ExtendStatus.Done) && !isReplaced && !initFace.IsSame(savShape))
             {
                 // gka fix in order to avoid lost messages (following OCC21771)
-                if (mapReorderedWires.Extent() != 0)
+                if (mapReorderedWires.Count != 0)
                 {
                     var itW = new Iterator(initFace, false);
                     for (; itW.More(); itW.Next())
                     {
                         Shape curW = itW.Value();
-                        while (mapReorderedWires.IsBound(curW))
+                        while (mapReorderedWires.ContainsKey(curW))
                         {
-                            Shape fixW = mapReorderedWires.Find(curW);
+                            Shape fixW = mapReorderedWires.GetValue(curW);
                             Context()!.Replace(curW, fixW);
                             curW = fixW;
                         }
@@ -1140,7 +1141,7 @@ public partial class FaceFixer : RootFixer
     public bool FixOrientation()
     {
         using WorkingOverlay.Scope work = EnterWork();
-        var mapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapWires = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         mapWires.Clear();
         return FixOrientationCore(mapWires);
     }
@@ -1190,13 +1191,13 @@ public partial class FaceFixer : RootFixer
     /// Fixes the orientation of the wires on the face, and fills <paramref name="mapWires"/> with the outer wires and
     /// the wires inside each. Returns true if a wire was reversed.
     /// </summary>
-    public bool FixOrientation(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
+    public bool FixOrientation(Dictionary<Shape, NCollection_List<Shape>> mapWires)
     {
         using WorkingOverlay.Scope work = EnterWork();
         return FixOrientationCore(mapWires);
     }
 
-    private bool FixOrientationCore(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
+    private bool FixOrientationCore(Dictionary<Shape, NCollection_List<Shape>> mapWires)
     {
         bool done = false;
 
@@ -1317,8 +1318,8 @@ public partial class FaceFixer : RootFixer
             double uRange = sul - suf;
             double vRange = svl - svf;
 
-            var mw = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-            var si = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+            var mw = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var si = new Dictionary<Shape, int>(ShapeHasher.Instance);
             var mapIntWires = new HashSet<Shape>(ShapeHasher.Instance);
             mw.Clear();
             si.Clear();
@@ -1464,7 +1465,7 @@ public partial class FaceFixer : RootFixer
                                     if (!(stb == ste))
                                     {
                                         sta = Unknown;
-                                        si.Bind(aw, 0);
+                                        si[aw] = 0;
                                         j = nbAll;
                                         break;
                                     }
@@ -1540,7 +1541,7 @@ public partial class FaceFixer : RootFixer
                 }
                 else
                 {
-                    mw.Bind(aw, intWires);
+                    mw[aw] = intWires;
                     if (sta == Out)
                     {
                         if (staout == In)
@@ -1552,24 +1553,24 @@ public partial class FaceFixer : RootFixer
                             SendWarning(sewd.InternalWire(), new Msg("FixAdvFace.FixOrientation.MSG5")); // Wire on face was reversed
                             seqReversed.Append(i);
                             done = true;
-                            si.Bind(ws.Value(i), 1);
-                            mapWires.Bind(ws.Value(i), intWires);
+                            si[ws.Value(i)] = 1;
+                            mapWires[ws.Value(i)] = intWires;
                         }
                         else
                         {
-                            si.Bind(aw, 1);
-                            mapWires.Bind(aw, intWires);
+                            si[aw] = 1;
+                            mapWires[aw] = intWires;
                         }
                     }
                     else
                     {
                         if (staout == Out)
                         {
-                            si.Bind(aw, 2);
+                            si[aw] = 2;
                         }
                         else
                         {
-                            si.Bind(aw, 3);
+                            si[aw] = 3;
                         }
                     }
                 }
@@ -1578,12 +1579,12 @@ public partial class FaceFixer : RootFixer
             for (i = 1; i <= nb; i++)
             {
                 Wire aw = ShapeCasts.Wire(ws.Value(i));
-                int tmpi = si.Find(aw);
+                int tmpi = si.GetValue(aw);
                 if (tmpi > 1)
                 {
                     if (!mapIntWires.Contains(aw))
                     {
-                        NCollection_List<Shape> iw = mw.Find(aw);
+                        NCollection_List<Shape> iw = mw.GetValue(aw);
                         if (tmpi == 3)
                         {
                             // wire is OUT but InfinitePoint is IN => need to reverse
@@ -1593,11 +1594,11 @@ public partial class FaceFixer : RootFixer
                             SendWarning(sewd.InternalWire(), new Msg("FixAdvFace.FixOrientation.MSG5")); // Wire on face was reversed
                             seqReversed.Append(i);
                             done = true;
-                            mapWires.Bind(ws.Value(i), iw);
+                            mapWires[ws.Value(i)] = iw;
                         }
                         else
                         {
-                            mapWires.Bind(aw, iw);
+                            mapWires[aw] = iw;
                         }
                     }
                     else
@@ -2399,7 +2400,7 @@ public partial class FaceFixer : RootFixer
 
     private static void FindNext(in Shape aVert, in Shape ainitEdge,
                                  NCollection_IndexedMap<Shape> aMapVertices,
-                                 NCollection_DataMap<Shape, NCollection_List<Shape>> aMapVertexEdges,
+                                 Dictionary<Shape, NCollection_List<Shape>> aMapVertexEdges,
                                  HashSet<Shape> aMapSmallEdges,
                                  HashSet<Shape> aMapSeemEdges,
                                  HashSet<Shape> aMapEdges,
@@ -2426,7 +2427,7 @@ public partial class FaceFixer : RootFixer
             return;
         }
 
-        NCollection_List<Shape> aledges = aMapVertexEdges.Find(anextVert);
+        NCollection_List<Shape> aledges = aMapVertexEdges.GetValue(anextVert);
         var liter = new NCollection_List<Shape>.Iterator(aledges);
         isFind = false;
         Shape anextEdge;
@@ -2479,7 +2480,7 @@ public partial class FaceFixer : RootFixer
     private bool FixLoopWireCore(NCollection_Sequence<Shape> aResWires)
     {
         var mapVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var mapVertexEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapVertexEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var mapSmallEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var mapSeemEdges = new HashSet<Shape>(ShapeHasher.Instance);
         if (!FixWireTool().Analyzer().CheckLoop(mapVertices, mapVertexEdges, mapSmallEdges, mapSeemEdges))
@@ -2495,7 +2496,7 @@ public partial class FaceFixer : RootFixer
         for (; i <= mapVertices.Extent(); i++)
         {
             Shape vert = mapVertices.FindKey(i);
-            NCollection_List<Shape> aledges = mapVertexEdges.Find(vert);
+            NCollection_List<Shape> aledges = mapVertexEdges.GetValue(vert);
             var liter = new NCollection_List<Shape>.Iterator(aledges);
             for (; liter.More(); liter.Next())
             {
@@ -2626,7 +2627,7 @@ public partial class FaceFixer : RootFixer
     }
 
     private bool SplitEdge(ExtendWireData sewd, int num, double param, in Vertex vert, double preci,
-                           NCollection_DataMap<Shape, Box2d> boxes)
+                           Dictionary<Shape, Box2d> boxes)
     {
         Edge edge = sewd.Edge(num);
         Edge newE1 = new Edge(), newE2 = new Edge();
@@ -2640,7 +2641,7 @@ public partial class FaceFixer : RootFixer
     }
 
     private bool SplitEdge(ExtendWireData sewd, int num, double param1, double param2, in Vertex vert,
-                           double preci, NCollection_DataMap<Shape, Box2d> boxes)
+                           double preci, Dictionary<Shape, Box2d> boxes)
     {
         Edge edge = sewd.Edge(num);
         Edge newE1 = new Edge(), newE2 = new Edge();
@@ -2655,7 +2656,7 @@ public partial class FaceFixer : RootFixer
 
     // The common tail of OCCT's two SplitEdge methods (identical in OCCT).
     private void SplitEdgeDone(ExtendWireData sewd, int num, in Edge edge, in Edge newE1,
-                               in Edge newE2, NCollection_DataMap<Shape, Box2d> boxes)
+                               in Edge newE2, Dictionary<Shape, Box2d> boxes)
     {
         // change context
         var wd = new ExtendWireData();
@@ -2679,7 +2680,7 @@ public partial class FaceFixer : RootFixer
             sewd.Add(newE2, num + 1);
         }
 
-        boxes.UnBind(edge);
+        boxes.Remove(edge);
         Surface s = Tool.Surface(_face, out Placement l)!;
         var sae = new EdgeAnalysis();
         foreach (Edge newE in (ReadOnlySpan<Edge>)[newE1, newE2])
@@ -2700,7 +2701,7 @@ public partial class FaceFixer : RootFixer
                     gac.Load(c2d, cf, cl);
                 }
                 Add2dCurve.Add(gac, Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-                boxes.Bind(newE, box);
+                boxes[newE] = box;
             }
         }
     }
@@ -2796,16 +2797,16 @@ public partial class FaceFixer : RootFixer
 
     /// <summary>
     /// Splits the face into several faces, one per outer wire of <paramref name="mapWires"/> (filled by
-    /// <see cref="FixOrientation(NCollection_DataMap{Shape, NCollection_List{Shape}})"/>) with the wires
+    /// <see cref="FixOrientation(Dictionary{Shape, NCollection_List{Shape}})"/>) with the wires
     /// inside it. Returns true if done; the result is then a compound (<see cref="Result"/>).
     /// </summary>
-    public bool FixSplitFace(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
+    public bool FixSplitFace(Dictionary<Shape, NCollection_List<Shape>> mapWires)
     {
         using WorkingOverlay.Scope work = EnterWork();
         return FixSplitFaceCore(mapWires);
     }
 
-    private bool FixSplitFaceCore(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
+    private bool FixSplitFaceCore(Dictionary<Shape, NCollection_List<Shape>> mapWires)
     {
         var b = new BrepBuilder();
         var faces = new NCollection_Sequence<Shape>();
@@ -2825,7 +2826,7 @@ public partial class FaceFixer : RootFixer
             }
             Wire wire = ShapeCasts.Wire(shape);
             nbWires++;
-            if (mapWires.IsBound(wire))
+            if (mapWires.ContainsKey(wire))
             {
                 // if wire not closed --> stop split and return false
                 var sewd = new ExtendWireData(wire);
@@ -2850,7 +2851,7 @@ public partial class FaceFixer : RootFixer
                 tmpFace.Orientation(Forward);
                 b.Add(tmpFace, wire);
                 nbWiresNew++;
-                NCollection_List<Shape> intWires = mapWires.Find(wire);
+                NCollection_List<Shape> intWires = mapWires.GetValue(wire);
                 var liter = new NCollection_List<Shape>.Iterator(intWires);
                 for (; liter.More(); liter.Next())
                 {

@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
@@ -52,8 +53,8 @@ public class ThruSections : MakeShape
     private readonly NCollection_List<Shape> _inputWires = new(); //!< List of input wires
     private NCollection_Sequence<Shape> _wires = new();           //!< Working wires
     private readonly NCollection_Sequence<Shape> _sections = new(); // OCCT.NET: the sections as added
-    private readonly NCollection_DataMap<Shape, NCollection_List<int>> _edgeNewIndices = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, int> _vertexIndex = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<int>> _edgeNewIndices = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, int> _vertexIndex = new(ShapeHasher.Instance);
     private int _nbEdgesInSection;
     private bool _isSolid;
     private bool _isRuled;
@@ -63,7 +64,7 @@ public class ThruSections : MakeShape
     private Face _last = new();
     private bool _degen1;
     private bool _degen2;
-    private readonly NCollection_DataMap<Shape, Shape> _edgeFace = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _edgeFace = new(ShapeHasher.Instance);
     private Continuity _continuity;
     private ParametrizationType _paramType;
     private int _degMax;
@@ -468,17 +469,17 @@ public class ThruSections : MakeShape
                                 // For each sub-vertex of each section
                                 // we save its index of new edge
                                 Exploration.Vertices(newEdge, out Vertex newVfirst, out Vertex newVlast);
-                                if (newVfirst.IsSame(vfirst) && !_vertexIndex.IsBound(vfirst))
+                                if (newVfirst.IsSame(vfirst) && !_vertexIndex.ContainsKey(vfirst))
                                 {
-                                    _vertexIndex.Bind(vfirst, sign * inde);
+                                    _vertexIndex[vfirst] = sign * inde;
                                 }
-                                if (newVlast.IsSame(vlast) && !_vertexIndex.IsBound(vlast))
+                                if (newVlast.IsSame(vlast) && !_vertexIndex.ContainsKey(vlast))
                                 {
-                                    _vertexIndex.Bind(vlast, sign * (-inde));
+                                    _vertexIndex[vlast] = sign * (-inde);
                                 }
                             }
                         }
-                        _edgeNewIndices.Bind(edge, iList);
+                        _edgeNewIndices[edge] = iList;
                     }
                 }
             }
@@ -503,15 +504,15 @@ public class ThruSections : MakeShape
                     edge = ShapeCasts.Edge(Explo.Current());
                     NCollection_List<int> iList = new();
                     iList.Append(inde);
-                    _edgeNewIndices.Bind(edge, iList);
+                    _edgeNewIndices[edge] = iList;
                     Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
-                    if (!_vertexIndex.IsBound(v1))
+                    if (!_vertexIndex.ContainsKey(v1))
                     {
-                        _vertexIndex.Bind(v1, inde);
+                        _vertexIndex[v1] = inde;
                     }
-                    if (!_vertexIndex.IsBound(v2))
+                    if (!_vertexIndex.ContainsKey(v2))
                     {
-                        _vertexIndex.Bind(v2, -inde);
+                        _vertexIndex[v2] = -inde;
                     }
                 }
                 inde--;
@@ -683,7 +684,7 @@ public class ThruSections : MakeShape
                         Shape face = it.Value();
                         if (mapFaces.Contains(face))
                         {
-                            _edgeFace.Bind(edge1, face);
+                            _edgeFace[edge1] = face;
                             break;
                         }
                     }
@@ -695,7 +696,7 @@ public class ThruSections : MakeShape
                         Shape face = it.Value();
                         if (mapFaces.Contains(face))
                         {
-                            _edgeFace.Bind(edge1, face);
+                            _edgeFace[edge1] = face;
                             break;
                         }
                     }
@@ -1026,7 +1027,7 @@ public class ThruSections : MakeShape
             bw2.Add(newW2, edge22);
 
             // history
-            _edgeFace.Bind(firstEdge, face);
+            _edgeFace[firstEdge] = face;
         }
 
         if (uClosed && w1Point && w2Point)
@@ -1068,7 +1069,7 @@ public class ThruSections : MakeShape
         }
         Done();
 
-        NCollection_DataMap<Shape, double> vertexToleranceMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> vertexToleranceMap = new(ShapeHasher.Instance);
         Explorer topExplorer = new(_shape, ShapeType.Edge);
         while (topExplorer.More())
         {
@@ -1091,16 +1092,16 @@ public class ThruSections : MakeShape
                     Exploration.Vertices(curEdge, out Vertex vertex1, out Vertex vertex2);
                     if (!vertex1.IsNull)
                     {
-                        if (!vertexToleranceMap.Find(vertex1, out double oldTolerance) || oldTolerance < newTolerance)
+                        if (!vertexToleranceMap.TryGetValue(vertex1, out double oldTolerance) || oldTolerance < newTolerance)
                         {
-                            vertexToleranceMap.Bind(vertex1, newTolerance);
+                            vertexToleranceMap[vertex1] = newTolerance;
                         }
                     }
                     if (!vertex2.IsNull)
                     {
-                        if (!vertexToleranceMap.Find(vertex2, out double oldTolerance) || oldTolerance < newTolerance)
+                        if (!vertexToleranceMap.TryGetValue(vertex2, out double oldTolerance) || oldTolerance < newTolerance)
                         {
-                            vertexToleranceMap.Bind(vertex2, newTolerance);
+                            vertexToleranceMap[vertex2] = newTolerance;
                         }
                     }
                 }
@@ -1399,12 +1400,12 @@ public class ThruSections : MakeShape
 
         if (s.ShapeType() == ShapeType.Edge)
         {
-            if (!_edgeNewIndices.IsBound(sw))
+            if (!_edgeNewIndices.ContainsKey(sw))
             {
                 return _generated;
             }
 
-            NCollection_List<int> indices = _edgeNewIndices.Find(sw);
+            NCollection_List<int> indices = _edgeNewIndices.GetValue(sw);
             // Append the faces corresponding to <Indices>
             // These faces "grow" from the first section
             NCollection_List<int>.Iterator itl = new(indices);
@@ -1438,7 +1439,7 @@ public class ThruSections : MakeShape
         }
         else if (s.ShapeType() == ShapeType.Vertex)
         {
-            if (!_vertexIndex.IsBound(sw))
+            if (!_vertexIndex.ContainsKey(sw))
             {
                 return _generated;
             }
@@ -1551,7 +1552,7 @@ public class ThruSections : MakeShape
                 return _generated;
             } // end of if (IsDegen[0] || IsDegen[1])
 
-            int eindex = _vertexIndex.Find(sw);
+            int eindex = _vertexIndex.GetValue(sw);
             int vindex = (eindex > 0) ? 0 : 1;
             eindex = Math.Abs(eindex);
 
@@ -1682,9 +1683,9 @@ public class ThruSections : MakeShape
     {
         Shape bid = new();
         Shape key = edge;
-        if (_edgeFace.IsBound(key))
+        if (_edgeFace.ContainsKey(key))
         {
-            return _edgeFace.Find(key);
+            return _edgeFace.GetValue(key);
         }
         else
         {

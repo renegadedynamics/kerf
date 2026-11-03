@@ -181,7 +181,7 @@ public class XSControlTests
         Assert.True(TR.ClearResult(WS.StartingEntity(1), -1));
         Assert.False(TR.IsMarked(WS.StartingEntity(1)));
         // the context of the transfers goes to the transient process at the next transfer
-        WS.SetAllContext(new NCollection_DataMap<string, Transient>());
+        WS.SetAllContext(new Dictionary<string, Transient>());
         TR.SetContext("ctx", new TCollection_HAsciiString("v"));
         Assert.True(TR.BeginTransfer());
         Transient? aCtx = null;
@@ -221,7 +221,7 @@ public class XSControlTests
         reader.PrintCheckTransfer(aText, false, PrintCount.ItemsByEntity);
         Assert.Contains("warns H", aText.ToString());
         // the shape fix parameters go to the actor
-        Assert.True(reader.GetShapeFixParameters().IsEmpty() == false); // set from the defaults at the first transfer
+        Assert.True((reader.GetShapeFixParameters().Count == 0) == false); // set from the defaults at the first transfer
         Assert.True(reader.GetShapeProcessFlags().Item2);
 
         // the writer: a transient transferred through the controller's actor into a new model, then written

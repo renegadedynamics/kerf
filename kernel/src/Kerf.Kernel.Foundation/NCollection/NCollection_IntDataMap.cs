@@ -11,7 +11,7 @@ namespace Occt;
 
 /// <summary>
 /// OCCT's <c>NCollection_DataMap&lt;int, TheItemType&gt;</c> with OCCT's buckets, so that it iterates in OCCT's order
-/// (<see cref="NCollection_DataMap{TKey, TValue}"/> iterates in .NET's).
+/// (<see cref="Dictionary{TKey, TValue}"/> iterates in .NET's).
 /// </summary>
 /// <remarks>
 /// The hash of an <c>int</c> is the value itself (OCCT's default hasher), sign-extended to <c>size_t</c>; a key goes in

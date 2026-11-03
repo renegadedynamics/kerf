@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
@@ -141,14 +142,14 @@ public partial class UnifySameDomain
         for (; itl.More(); itl.Next())
         {
             Face face = ShapeCasts.Face(itl.Value());
-            if (_facePlaneMap.IsBound(face))
+            if (_facePlaneMap.ContainsKey(face))
             {
                 continue;
             }
 
-            if (_faceNewFace.IsBound(face))
+            if (_faceNewFace.ContainsKey(face))
             {
-                face = ShapeCasts.Face(_faceNewFace[face]);
+                face = ShapeCasts.Face(_faceNewFace.GetValue(face));
             }
 
             face.Orientation(Forward); // to get proper pcurves of seam edges

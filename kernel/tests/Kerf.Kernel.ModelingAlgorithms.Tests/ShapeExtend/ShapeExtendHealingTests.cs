@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Extend;
@@ -198,13 +199,13 @@ public class ShapeExtendHealingTests
         aReg.Send(aFace, new Msg("first"), Gravity.Warning);
         aReg.Send(aFace, new Msg("second"), Gravity.Info);
         aReg.Send(new Shape(), new Msg("ignored"), Gravity.Info);
-        Assert.Equal(1, aReg.MapShape().Extent());
-        Assert.Equal(2, aReg.MapShape().Find(aFace).Extent());
+        Assert.Single(aReg.MapShape());
+        Assert.Equal(2, aReg.MapShape().GetValue(aFace).Extent());
 
         var aSurf = new PlaneSurface(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         aReg.Send(aSurf, new Msg("geom"), Gravity.Fail);
         aReg.Send(new Msg("no object"), Gravity.Fail); // a null transient: ignored
-        Assert.Equal(1, aReg.MapTransient().Extent());
+        Assert.Single(aReg.MapTransient());
 
         // the base class does nothing
         var aBasic = new BasicMsgRegistrator();

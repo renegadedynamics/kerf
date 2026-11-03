@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Foundation;
 using Occt;
@@ -25,10 +26,10 @@ public class StepProtocol : Protocol
     //  The base Protocol recognizes UnknownEntity
     private const string Thename = "(DEFAULT)";
 
-    private readonly NCollection_DataMap<Transient, int> _thedscnum = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<string, Transient> _thedscnam = new();
-    private readonly NCollection_DataMap<string, Transient> _thepdescr = new();
-    private readonly NCollection_DataMap<string, Transient> _thedscbas = new();
+    private readonly Dictionary<Transient, int> _thedscnum = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<string, Transient> _thedscnam = new();
+    private readonly Dictionary<string, Transient> _thepdescr = new();
+    private readonly Dictionary<string, Transient> _thedscbas = new();
 
     public StepProtocol()
     {
@@ -118,9 +119,9 @@ public class StepProtocol : Protocol
     /// <summary>Returns a unique positive CaseNumber for types described by an EDescr (late binding). Warning: TypeNumber and DescrNumber must give together a unique positive case number for each distinct case, type or descr.</summary>
     public virtual int DescrNumber(EDescr? adescr)
     {
-        if (adescr is not null && _thedscnum.IsBound(adescr))
+        if (adescr is not null && _thedscnum.ContainsKey(adescr))
         {
-            return _thedscnum.Find(adescr);
+            return _thedscnum.GetValue(adescr);
         }
         return 0;
     }
@@ -129,17 +130,17 @@ public class StepProtocol : Protocol
     public void AddDescr(EDescr adescr, int cn)
     {
         ESDescr sd = adescr as ESDescr;
-        _thedscnum.Bind(adescr, cn);
+        _thedscnum[adescr] = cn;
 
         //  Simple descriptor: stored according to its name
         //  Otherwise what to do? Store according to the passed number in alpha-numeric form...
         //  (temporary solution)
         if (sd is not null)
         {
-            _thedscnam.Bind(sd.TypeName(), sd);
+            _thedscnam[sd.TypeName()] = sd;
         }
         string fonom = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", cn);
-        _thedscnam.Bind(fonom, adescr);
+        _thedscnam[fonom] = adescr;
     }
 
     /// <summary>Tells if a Protocol brings at least one ESDescr, i.e. if it defines at least one entity description by ESDescr mechanism.</summary>
@@ -147,7 +148,7 @@ public class StepProtocol : Protocol
     {
         get
         {
-            return !_thedscnam.IsEmpty();
+            return _thedscnam.Count != 0;
         }
     }
 
@@ -155,12 +156,12 @@ public class StepProtocol : Protocol
     public EDescr? Descr(int num)
     {
         EDescr dsc = null;
-        if (_thedscnam.IsEmpty())
+        if (_thedscnam.Count == 0)
         {
             return dsc;
         }
         string fonom = global::Kerf.Engine.Foundation.Standard.Sprintf("%d", num);
-        if (_thedscnam.Find(fonom, out Transient tDsc))
+        if (_thedscnam.TryGetValue(fonom, out Transient tDsc))
         {
             dsc = tDsc as EDescr;
         }
@@ -175,9 +176,9 @@ public class StepProtocol : Protocol
     public EDescr? Descr(string name, bool anylevel = true)
     {
         EDescr sd = null;
-        if (!_thedscnam.IsEmpty())
+        if (_thedscnam.Count != 0)
         {
-            if (_thedscnam.Find(name, out Transient tSd))
+            if (_thedscnam.TryGetValue(name, out Transient tSd))
             {
                 return tSd as EDescr;
             }
@@ -264,16 +265,16 @@ public class StepProtocol : Protocol
     /// <summary>Records an PDescr.</summary>
     public void AddPDescr(PDescr pdescr)
     {
-        _thepdescr.Bind(pdescr.Name(), pdescr);
+        _thepdescr[pdescr.Name()] = pdescr;
     }
 
     /// <summary>Returns a parameter description according to its name. anylevel True (D) means that if it is not defined in this protocol, it is searched in the resources.</summary>
     public PDescr? PDescr(string name, bool anylevel = true)
     {
         PDescr sd = null;
-        if (!_thepdescr.IsEmpty())
+        if (_thepdescr.Count != 0)
         {
-            if (_thepdescr.Find(name, out Transient tSd))
+            if (_thepdescr.TryGetValue(name, out Transient tSd))
             {
                 return tSd as PDescr;
             }
@@ -302,16 +303,16 @@ public class StepProtocol : Protocol
     /// <summary>Records an ESDescr, intended to build complex descriptions.</summary>
     public void AddBasicDescr(ESDescr esdescr)
     {
-        _thedscbas.Bind(esdescr.TypeName(), esdescr);
+        _thedscbas[esdescr.TypeName()] = esdescr;
     }
 
     /// <summary>Returns a basic description according to its name. anylevel True (D) means that if it is not defined in this protocol, it is searched in the resources.</summary>
     public EDescr? BasicDescr(string name, bool anylevel = true)
     {
         EDescr sd = null;
-        if (!_thedscbas.IsEmpty())
+        if (_thedscbas.Count != 0)
         {
-            if (_thedscbas.Find(name, out Transient tSd))
+            if (_thedscbas.TryGetValue(name, out Transient tSd))
             {
                 return tSd as EDescr;
             }

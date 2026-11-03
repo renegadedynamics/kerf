@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -18,8 +19,8 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// </remarks>
 public sealed class NMTool
 {
-    private NCollection_DataMap<RepresentationItem, Shape> _riMap = new();
-    private NCollection_DataMap<string, Shape> _riNamesMap = new();
+    private Dictionary<RepresentationItem, Shape> _riMap = new();
+    private Dictionary<string, Shape> _riNamesMap = new();
     private readonly NCollection_List<Shape> _nmEdges = new();
     private bool _ideasCase;
     private bool _activeFlag;
@@ -31,8 +32,8 @@ public sealed class NMTool
     }
 
     /// <summary>A tool with copies of the maps of representation items and of their names.</summary>
-    public NMTool(NCollection_DataMap<RepresentationItem, Shape> mapOfRI,
-                               NCollection_DataMap<string, Shape> mapOfRINames)
+    public NMTool(Dictionary<RepresentationItem, Shape> mapOfRI,
+                               Dictionary<string, Shape> mapOfRINames)
     {
         _ideasCase = false;
         _activeFlag = false;
@@ -40,11 +41,11 @@ public sealed class NMTool
     }
 
     /// <summary>Initializes the internal maps of the tool with copies of the passed ones.</summary>
-    public void Init(NCollection_DataMap<RepresentationItem, Shape> mapOfRI,
-                     NCollection_DataMap<string, Shape> mapOfRINames)
+    public void Init(Dictionary<RepresentationItem, Shape> mapOfRI,
+                     Dictionary<string, Shape> mapOfRINames)
     {
-        _riMap = new NCollection_DataMap<RepresentationItem, Shape>(mapOfRI);
-        _riNamesMap = new NCollection_DataMap<string, Shape>(mapOfRINames);
+        _riMap = new Dictionary<RepresentationItem, Shape>(mapOfRI,mapOfRI.Comparer);
+        _riNamesMap = new Dictionary<string, Shape>(mapOfRINames,mapOfRINames.Comparer);
     }
 
     /// <summary>Turns the tool on or off (off by default).</summary>
@@ -59,23 +60,23 @@ public sealed class NMTool
         _riNamesMap.Clear();
     }
 
-    public bool IsBound(RepresentationItem? ri) => ri is not null && _riMap.IsBound(ri);
+    public bool IsBound(RepresentationItem? ri) => ri is not null && _riMap.ContainsKey(ri);
 
-    public bool IsBound(string riName) => _riNamesMap.IsBound(riName);
+    public bool IsBound(string riName) => _riNamesMap.ContainsKey(riName);
 
     public void Bind(RepresentationItem? ri, in Shape s)
     {
         if (ri is not null) // OCCT binds a null handle too; no caller passes one (each binds an item it translated)
         {
-            _riMap.Bind(ri, s);
+            _riMap[ri] = s;
         }
     }
 
-    public void Bind(string riName, in Shape s) => _riNamesMap.Bind(riName, s);
+    public void Bind(string riName, in Shape s) => _riNamesMap[riName] = s;
 
-    public Shape Find(RepresentationItem? ri) => _riMap.Find(ri!);
+    public Shape Find(RepresentationItem? ri) => _riMap.GetValue(ri!);
 
-    public Shape Find(string riName) => _riNamesMap.Find(riName);
+    public Shape Find(string riName) => _riNamesMap.GetValue(riName);
 
     /// <summary>Registers a non-manifold edge, unless it was registered before.</summary>
     public void RegisterNMEdge(in Shape edge)

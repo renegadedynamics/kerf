@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Topology;
 
@@ -27,7 +28,7 @@ public sealed class PurgeLocations
     private Shape _shape = new();
     private readonly NCollection_IndexedMap<Shape> _mapShapes = new(ShapeHasher.Instance);
     private readonly LocationSet _locations = new();
-    private readonly NCollection_DataMap<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
     private ReShape? _reShape;
 
     /// <summary>A purge, not yet performed.</summary>
@@ -90,7 +91,7 @@ public sealed class PurgeLocations
                 {
                     bool isDone = PurgeLocation(s, out Shape trS);
                     _done = _done && isDone;
-                    _mapNewShapes.Bind(s, trS);
+                    _mapNewShapes[s] = trS;
                     break;
                 }
             }
@@ -195,9 +196,9 @@ public sealed class PurgeLocations
     public Shape ModifiedShape(in Shape initShape)
     {
         Shape shape = initShape;
-        if (_mapNewShapes.IsBound(initShape))
+        if (_mapNewShapes.ContainsKey(initShape))
         {
-            shape = _mapNewShapes.Find(initShape);
+            shape = _mapNewShapes.GetValue(initShape);
         }
         shape.TShape()?.FreezeGraph();
         return shape;

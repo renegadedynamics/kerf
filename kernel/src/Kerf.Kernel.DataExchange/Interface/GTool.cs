@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 
@@ -144,13 +145,13 @@ public class GTool : Transient
             if (_thelib.Select(ent, out gmod, out cn))
             {
                 num = _thentmod.Add(type, gmod);
-                _thentnum.Bind(type, cn);
+                _thentnum[type] = cn;
                 return true;
             }
             return false;
         }
         gmod = (_thentmod.FindFromKey(type) as GeneralModule);
-        cn = _thentnum.Find(type);
+        cn = _thentnum.GetValue(type);
         return true;
     }
 
@@ -159,6 +160,6 @@ public class GTool : Transient
     private GeneralLib _thelib = new GeneralLib();
 
     // The cache of selections, by type (OCCT keys them by the Standard_Type handle)
-    private readonly NCollection_DataMap<Type, int> _thentnum = new();
+    private readonly Dictionary<Type, int> _thentnum = new();
     private readonly NCollection_IndexedDataMap<Type, Transient> _thentmod = new();
 }

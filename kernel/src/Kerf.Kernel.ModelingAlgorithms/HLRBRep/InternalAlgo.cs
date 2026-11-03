@@ -28,7 +28,7 @@ public class InternalAlgo : Transient
     private HiddenLineData? _ds;
     private AlgorithmProjector _proj = new();
     private readonly NCollection_Sequence<ShapeBounds> _shapes = new();
-    private readonly NCollection_DataMap<Shape, AdaptorTool> _mapOfShapeTool =
+    private readonly Dictionary<Shape, AdaptorTool> _mapOfShapeTool =
         new(ShapeHasher.Instance);
     private bool _debug;
 

@@ -96,14 +96,14 @@ public sealed class DsPointExplorer
     /// <summary>Whether the data structure has a point <paramref name="i"/>.</summary>
     public bool IsPoint(int i)
     {
-        bool b = MYDS._points.IsBound(i);
+        bool b = MYDS._points.ContainsKey(i);
         return b;
     }
 
     /// <summary>Whether the data structure has a kept point <paramref name="i"/>.</summary>
     public bool IsPointKeep(int i)
     {
-        bool b = MYDS._points.IsBound(i);
+        bool b = MYDS._points.ContainsKey(i);
         if (b)
         {
             b = MYDS.Point(i).Keep();

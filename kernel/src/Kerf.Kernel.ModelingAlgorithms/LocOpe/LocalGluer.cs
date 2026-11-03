@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -44,8 +45,8 @@ public sealed class LocalGluer
     private FeatureOperation _ope;
     private readonly NCollection_IndexedDataMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
     // OCCT iterates this map keyed by the edges' addresses; the port in insertion order
-    private readonly NCollection_DataMap<Shape, Shape> _mapEE = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _descF = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapEE = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _descF = new(ShapeHasher.Instance);
     private NCollection_List<Shape> _edges = new();
     private NCollection_List<Shape> _tgtEdges = new();
     private WorkingShapes _work = new();
@@ -151,11 +152,11 @@ public sealed class LocalGluer
     /// <summary>Binds the edge <paramref name="enew"/> of the new shape to the edge <paramref name="ebase"/> of the basis shape.</summary>
     public void Bind(in Edge enew, in Edge ebase)
     {
-        if (_mapEE.IsBound(enew) && !_mapEE[enew].IsSame(ebase))
+        if (_mapEE.ContainsKey(enew) && !_mapEE.GetValue(enew).IsSame(ebase))
         {
             throw new ConstructionErrorException();
         }
-        _mapEE.Bind(enew, ebase);
+        _mapEE[enew] = ebase;
     }
 
     public FeatureOperation OpeType() => _ope;
@@ -221,16 +222,16 @@ public sealed class LocalGluer
         Explorer exp = new(sb, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            _descF.Bind(exp.Current(), new NCollection_List<Shape>(theSplit.InternalDescendantShapes(exp.Current())));
+            _descF[exp.Current()] = new NCollection_List<Shape>(theSplit.InternalDescendantShapes(exp.Current()));
         }
 
         for (exp.Init(sn, ShapeType.Face); exp.More(); exp.Next())
         {
             NCollection_List<Shape> thelist = new();
-            _descF.Bind(exp.Current(), thelist);
+            _descF[exp.Current()] = thelist;
             if (Contains(theGS.OrientedFaces(), exp.Current()))
             {
-                _descF[exp.Current()].Append(exp.Current());
+                _descF.GetValue(exp.Current()).Append(exp.Current());
             }
         }
 
@@ -249,7 +250,7 @@ public sealed class LocalGluer
             {
                 NCollection_List<Shape> newDesc = new();
                 NCollection_List<Shape>.Iterator itl = new();
-                for (itl.Initialize(_descF[key]); itl.More(); itl.Next())
+                for (itl.Initialize(_descF.GetValue(key)); itl.More(); itl.Next())
                 {
                     NCollection_List<Shape>.Iterator itl2 = new(theGen.InternalDescendantFace(ShapeCasts.Face(itl.Value())));
                     for (; itl2.More(); itl2.Next())
@@ -261,7 +262,7 @@ public sealed class LocalGluer
                         }
                     }
                 }
-                _descF[key] = newDesc;
+                _descF.GetValueRef(key) = newDesc;
             }
         }
 
@@ -353,7 +354,7 @@ public sealed class LocalGluer
             _res = _work.Final(_res);
             foreach (Shape key in _descF.Keys.ToList())
             {
-                _descF[key] = _work.Final(_descF[key]);
+                _descF.GetValueRef(key) = _work.Final(_descF.GetValue(key));
             }
             _edges = _work.Final(_edges);
             _tgtEdges = _work.Final(_tgtEdges);
@@ -392,9 +393,9 @@ public sealed class LocalGluer
             throw new NotDoneException();
         }
         Shape aF = _work.Copied(f);
-        if (_descF.IsBound(aF))
+        if (_descF.ContainsKey(aF))
         {
-            return _descF[aF];
+            return _descF.GetValue(aF);
         }
         return new NCollection_List<Shape>();
     }

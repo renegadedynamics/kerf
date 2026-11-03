@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
@@ -66,7 +67,7 @@ internal sealed class Sweep
     private readonly SectionLaw _sec;
     private NCollection_HArray2<Shape>? _uEdges;
     private NCollection_HArray2<Shape>? _vEdges;
-    private readonly NCollection_DataMap<Shape, Shape> _vEdgesModified = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _vEdgesModified = new(ShapeHasher.Instance);
     private NCollection_HArray2<Shape>? _faces;
     private readonly NCollection_List<Shape> _auxShape = new();
     private NCollection_HArray1<Shape>? _tapes;
@@ -484,7 +485,7 @@ internal sealed class Sweep
     // (the last of the wire) when the maker replaced it.
     private static void AddAndBind(MakeWire b,
                                    in Edge e,
-                                   NCollection_DataMap<Shape, Shape> eEmap)
+                                   Dictionary<Shape, Shape> eEmap)
     {
         b.Add(e);
         if (!Tool.Degenerated(e))
@@ -498,7 +499,7 @@ internal sealed class Sweep
             }
             if (!e.IsSame(newEdge))
             {
-                eEmap.Bind(e, newEdge);
+                eEmap[e] = newEdge;
             }
         }
     }
@@ -516,7 +517,7 @@ internal sealed class Sweep
                                   in Edge E2,
                                   in Edge e3,
                                   in Edge e4,
-                                  NCollection_DataMap<Shape, Shape> eEmap,
+                                  Dictionary<Shape, Shape> eEmap,
                                   bool exchUV,
                                   bool uReverse,
                                   ref Face f)
@@ -781,7 +782,7 @@ internal sealed class Sweep
                                 in Shape F1,
                                 in Shape el,
                                 in Shape F2,
-                                NCollection_DataMap<Shape, Shape> eEmap,
+                                Dictionary<Shape, Shape> eEmap,
                                 double tol,
                                 in Frame3D Axe,
                                 in Vector3D tangentOnPart1,
@@ -1867,8 +1868,8 @@ internal sealed class Sweep
                             int iFirst,
                             int iLast,
                             HashSet<Shape> reversedEdges,
-                            NCollection_DataMap<Shape, NCollection_HArray2<Shape>> tapes,
-                            NCollection_DataMap<Shape, NCollection_HArray2<Shape>> rails,
+                            Dictionary<Shape, NCollection_HArray2<Shape>> tapes,
+                            Dictionary<Shape, NCollection_HArray2<Shape>> rails,
                             double extendFirst = 0.0,
                             double extendLast = 0.0)
     {
@@ -2022,13 +2023,13 @@ internal sealed class Sweep
                 UpdateVertex(iFirst - 1, isec + 1, tabErr[isec, 1], vi[1], vertex[isec + 1, 1]);
 
                 startEdges[isec] = e;
-                if (tapes.IsBound(e))
+                if (tapes.ContainsKey(e))
                 {
                     isBuilt[isec] = true;
 
                     // Initialize VEdge, UEdge, Vertex and myFaces
                     int j;
-                    NCollection_HArray2<Shape> tape = tapes.Find(e);
+                    NCollection_HArray2<Shape> tape = tapes.GetValue(e);
                     for (j = 1; j <= nbPath + 1; j++)
                     {
                         vEdge[isec, j] = tape.Value(1, j);
@@ -2082,12 +2083,12 @@ internal sealed class Sweep
                 else
                 {
                     NCollection_HArray2<Shape> emptyArray = new(1, 6, 1, nbPath + 1);
-                    tapes.Bind(e, emptyArray);
+                    tapes[e] = emptyArray;
                     int j;
-                    if (rails.IsBound(vfirst))
+                    if (rails.ContainsKey(vfirst))
                     {
                         int ind = (e.Orientation() == Reversed) ? isec + 1 : isec;
-                        NCollection_HArray2<Shape> rail = rails.Find(vfirst);
+                        NCollection_HArray2<Shape> rail = rails.GetValue(vfirst);
                         for (j = 1; j <= nbPath; j++)
                         {
                             uEdge[ind, j] = rail.Value(1, j);
@@ -2097,10 +2098,10 @@ internal sealed class Sweep
                             vertex[ind, j] = rail.Value(2, j);
                         }
                     }
-                    if (rails.IsBound(vlast))
+                    if (rails.ContainsKey(vlast))
                     {
                         int ind = (e.Orientation() == Forward) ? isec + 1 : isec;
-                        NCollection_HArray2<Shape> rail = rails.Find(vlast);
+                        NCollection_HArray2<Shape> rail = rails.GetValue(vlast);
                         for (j = 1; j <= nbPath; j++)
                         {
                             uEdge[ind, j] = rail.Value(1, j);
@@ -2777,11 +2778,11 @@ internal sealed class Sweep
 
         // (5) Update Tapes and Rails
         int jj;
-        if (iFirst == 1 && !tapes.IsEmpty()) // works only in case of single shell
+        if (iFirst == 1 && tapes.Count != 0) // works only in case of single shell
         {
             for (isec = 1; isec <= nbLaw; isec++)
             {
-                NCollection_HArray2<Shape> tape = tapes.Find(startEdges[isec]);
+                NCollection_HArray2<Shape> tape = tapes.GetValue(startEdges[isec]);
                 for (jj = 1; jj <= nbPath + 1; jj++)
                 {
                     tape.SetValue(1, jj, _vEdges!.Value(isec, jj));
@@ -2807,7 +2808,7 @@ internal sealed class Sweep
                     tape.SetValue(6, jj, _faces!.Value(isec, jj));
                 }
                 Exploration.Vertices(ShapeCasts.Edge(startEdges[isec]), out Vertex vfirst, out Vertex vlast, true); //with orientation
-                if (!rails.IsBound(vfirst))
+                if (!rails.ContainsKey(vfirst))
                 {
                     NCollection_HArray2<Shape> array = new(1, 2, 1, nbPath + 1);
                     for (jj = 1; jj <= nbPath; jj++)
@@ -2818,9 +2819,9 @@ internal sealed class Sweep
                     {
                         array.SetValue(2, jj, vertex[isec, jj]);
                     }
-                    rails.Bind(vfirst, array);
+                    rails[vfirst] = array;
                 }
-                if (!rails.IsBound(vlast))
+                if (!rails.ContainsKey(vlast))
                 {
                     NCollection_HArray2<Shape> array = new(1, 2, 1, nbPath + 1);
                     for (jj = 1; jj <= nbPath; jj++)
@@ -2831,7 +2832,7 @@ internal sealed class Sweep
                     {
                         array.SetValue(2, jj, vertex[isec + 1, jj]);
                     }
-                    rails.Bind(vlast, array);
+                    rails[vlast] = array;
                 }
             }
         }
@@ -2850,8 +2851,8 @@ internal sealed class Sweep
     /// <paramref name="tapes"/> and <paramref name="rails"/> carry what earlier sweeps of the same pipe built.
     /// </summary>
     public void Build(HashSet<Shape> reversedEdges,
-                      NCollection_DataMap<Shape, NCollection_HArray2<Shape>> tapes,
-                      NCollection_DataMap<Shape, NCollection_HArray2<Shape>> rails,
+                      Dictionary<Shape, NCollection_HArray2<Shape>> tapes,
+                      Dictionary<Shape, NCollection_HArray2<Shape>> rails,
                       TransitionStyle transition = TransitionStyle.Modified,
                       Continuity continuity = C2,
                       ApproxStyle approx = ApproxStyle.Location,

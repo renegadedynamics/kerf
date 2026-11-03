@@ -28,7 +28,7 @@ public sealed class ManifoldSolidBrepMaker : ExportRoot
         StepManifoldSolidBrep theManifoldSolidBrep = null;
         TessellatedItem tessItem = null;
 
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         StepModel stepModel = fp.Model() as StepModel;
         var tool = new ExportTool(map, false, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         int writeTessGeom = (int)stepModel.InternalParameters.WriteTessellated;

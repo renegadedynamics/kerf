@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
@@ -2422,7 +2423,7 @@ public class BeanFaceIntersector
     {
         NCollection_IndexedMap<SurfaceRangeSample> mapToAvoid = new();
 
-        NCollection_DataMap<int, NCollection_List<int>> curveIdMap = new();
+        Dictionary<int, NCollection_List<int>> curveIdMap = new();
         NCollection_LinearVector<CurveRangeSample> curveRangeVector = new();
         curveRangeVector.Reserve(listCurveRange.Size());
 
@@ -2438,20 +2439,20 @@ public class BeanFaceIntersector
             if (surfIndex > surfRangeSize)
             {
                 NCollection_List<int> newList = new();
-                curveIdMap.Bind(surfIndex, newList);
+                curveIdMap[surfIndex] = newList;
                 newList.Append(curveRangeId);
                 ++surfRangeSize;
             }
             else
             {
-                curveIdMap.Find(surfIndex).Append(curveRangeId);
+                curveIdMap.GetValue(surfIndex).Append(curveRangeId);
             }
         }
 
         for (int i = 1; i <= mapToAvoid.Extent(); i++)
         {
             SurfaceRangeSample surfRange = mapToAvoid.FindKey(i);
-            NCollection_List<int> curveRangeList = curveIdMap.Find(i);
+            NCollection_List<int> curveRangeList = curveIdMap.GetValue(i);
             for (NCollection_List<int>.Iterator iter = new(curveRangeList); iter.More(); iter.Next())
             {
                 CurveRangeSample curveRange = curveRangeVector[iter.Value()];

@@ -37,7 +37,7 @@ namespace Kerf.Engine.Meshing;
 public sealed class DataStructureOfDelaun : Transient
 {
     private readonly VertexTool _nodes;
-    private readonly NCollection_DataMap<int, LinkedListOfInteger> _nodeLinks;
+    private readonly Dictionary<int, LinkedListOfInteger> _nodeLinks;
     private readonly LinkMap _links;
     // OCCT's NCollection_List<int>, used only as a first-in first-out queue: a .NET queue, whose RemoveFirst
     // doesn't move the rest (unit 9E)
@@ -50,7 +50,7 @@ public sealed class DataStructureOfDelaun : Transient
     public DataStructureOfDelaun(int reservedNodeSize = 100)
     {
         _nodes = new VertexTool();
-        _nodeLinks = new NCollection_DataMap<int, LinkedListOfInteger>();
+        _nodeLinks = new Dictionary<int, LinkedListOfInteger>();
         _links = new LinkMap(reservedNodeSize * 3);
         _delLinks = new Queue<int>();
         _elements = new NCollection_DynamicArray<Triangle>(reservedNodeSize * 2);
@@ -70,9 +70,9 @@ public sealed class DataStructureOfDelaun : Transient
     public int AddNode(in MeshVertex node, bool isForceAdd = false)
     {
         int nodeId = _nodes.Add(node, isForceAdd);
-        if (!_nodeLinks.IsBound(nodeId))
+        if (!_nodeLinks.ContainsKey(nodeId))
         {
-            _nodeLinks.Bind(nodeId, new LinkedListOfInteger());
+            _nodeLinks[nodeId] = new LinkedListOfInteger();
         }
 
         return nodeId;
@@ -363,7 +363,7 @@ public sealed class DataStructureOfDelaun : Transient
         ClearDeletedNodes();
     }
 
-    private LinkedListOfInteger LinksConnectedToCore(int index) => _nodeLinks.Find(index);
+    private LinkedListOfInteger LinksConnectedToCore(int index) => _nodeLinks.GetValue(index);
 
     private void ClearDeletedLinks()
     {
@@ -476,7 +476,7 @@ public sealed class DataStructureOfDelaun : Transient
             --lastLiveItem;
 
             _nodes.Substitute(delItem, node);
-            _nodeLinks.ChangeFind(delItem).Assign(linkList);
+            _nodeLinks.GetValue(delItem).Assign(linkList);
 
             int lastLiveItemId = lastLiveItem + 1;
             LinkedListOfInteger.Iterator linkIt = new(linkList);

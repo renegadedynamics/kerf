@@ -29,7 +29,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
                                                    ProgressRange progress = default)
     {
         _done = false;
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
 
         StepModel stepModel = fp.Model() as StepModel;
         int writeTessGeom = (int)stepModel.InternalParameters.WriteTessellated;
@@ -93,7 +93,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
         NCollection_HArray1<StepShell> sbsmBoundary;
         StepOpenShell openShell;
         StepClosedShell closedShell;
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
 
         StepModel stepModel = fp.Model() as StepModel;
         int writeTessGeom = (int)stepModel.InternalParameters.WriteTessellated;
@@ -166,7 +166,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
         StepClosedShell closedShell;
         Iterator it = new Iterator();
         Shell shell = new Shell();
-        var map = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         var s = new NCollection_Sequence<Transient>();
         var tessShells = new NCollection_Sequence<Transient>();
 

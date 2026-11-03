@@ -180,13 +180,13 @@ public class ShapeProcessTests
         Assert.True(new Analyzer(aResult).IsValid());
 
         // the history is keyed by the caller's sub-shapes
-        NCollection_DataMap<Shape, Shape> aMap = aContext.Map();
-        Assert.True(aMap.IsBound(aCyl));
+        Dictionary<Shape, Shape> aMap = aContext.Map();
+        Assert.True(aMap.ContainsKey(aCyl));
         int aSplit = 0;
         for (var anExp = new Explorer(aCyl, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Shape aFace = anExp.Current().Located(new Placement());
-            if (aMap.Find(aFace, out Shape aNew))
+            if (aMap.TryGetValue(aFace, out Shape aNew))
             {
                 Assert.True(aNew.TShape()!.IsFrozen);
                 aSplit += aNew.ShapeType() == ShapeType.Compound || aNew.ShapeType() == ShapeType.Shell ? 1 : 0;
@@ -273,7 +273,7 @@ public class ShapeProcessTests
         aSnap.AssertUnchanged(aCyl);
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.True(new Analyzer(aResult).IsValid());
-        Assert.True(aSeq.Map().Extent() > 0);
+        Assert.True(aSeq.Map().Count > 0);
         aSeq.PrintPreparationResult();
         string aText = aPrinter.Text.ToString();
         // the message file's texts, their leading blanks removed as OCCT's loader removes them

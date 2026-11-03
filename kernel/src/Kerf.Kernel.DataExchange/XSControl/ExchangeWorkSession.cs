@@ -166,7 +166,7 @@ public class ExchangeWorkSession : WorkSession
     /// Returns the current Context List, Null if not defined The Context is given to the TransientProcess for
     /// TransferRead
     /// </summary>
-    public NCollection_DataMap<string, Transient> Context()
+    public Dictionary<string, Transient> Context()
     {
         return _context;
     }
@@ -174,7 +174,7 @@ public class ExchangeWorkSession : WorkSession
     /// <summary>
     /// Sets the current Context List, as a whole Sets it to the TransferReader
     /// </summary>
-    public void SetAllContext(NCollection_DataMap<string, Transient> context)
+    public void SetAllContext(Dictionary<string, Transient> context)
     {
         global::Kerf.Engine.Exchange.Framework.TransferReader.AssignContext(_context, context); // C++'s map assignments: copies
         global::Kerf.Engine.Exchange.Framework.TransferReader.AssignContext(_transferReader.Context(), context);
@@ -717,6 +717,6 @@ public class ExchangeWorkSession : WorkSession
     private Controller? _controller;
     private TransferReader? _transferReader;
     private TransferWriter? _transferWriter;
-    private NCollection_DataMap<string, Transient> _context = new NCollection_DataMap<string, Transient>();
+    private Dictionary<string, Transient> _context = new Dictionary<string, Transient>();
     private Vars? _vars;
 }

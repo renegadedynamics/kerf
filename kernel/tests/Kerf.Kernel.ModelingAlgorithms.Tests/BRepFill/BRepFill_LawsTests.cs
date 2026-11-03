@@ -449,6 +449,6 @@ public class BRepFill_LawsTests
         aRL.SetRemoveLevel(ShapeType.Edge);
         Assert.Equal(ShapeType.Face, aRL.RemoveLevel());
         Assert.True(aRL.ModifiedShape(aBox).IsSame(R));
-        Assert.True(aRL.GetModifiedShapesMap().Extent() > 0);
+        Assert.True(aRL.GetModifiedShapesMap().Count > 0);
     }
 }

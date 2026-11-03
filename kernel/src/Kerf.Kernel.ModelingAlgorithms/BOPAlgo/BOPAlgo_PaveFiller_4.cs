@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -140,7 +141,7 @@ public partial class PaveFiller
         //
         // Avoid repeated intersection of the same vertex with face in case
         // the group of vertices formed a single SD vertex
-        NCollection_DataMap<Pair, NCollection_IntMap> mvfPairs = new();
+        Dictionary<Pair, NCollection_IntMap> mvfPairs = new();
         for (; _iterator.More(); _iterator.Next())
         {
             if (UserBreak(psOuter))
@@ -172,13 +173,13 @@ public partial class PaveFiller
             }
             //
             Pair vfPair = new(nVx, nF);
-            if (mvfPairs.Find(vfPair, out NCollection_IntMap pMV0))
+            if (mvfPairs.TryGetValue(vfPair, out NCollection_IntMap? pMV0))
             {
                 pMV0.Add(nV);
                 continue;
             }
 
-            NCollection_IntMap pMV = mvfPairs.Bound(vfPair, new NCollection_IntMap());
+            NCollection_IntMap pMV = mvfPairs.SetValueRef(vfPair, new NCollection_IntMap());
             pMV.Add(nV);
 
             Vertex v = ShapeCasts.Vertex(_ds.Shape(nVx));
@@ -234,7 +235,7 @@ public partial class PaveFiller
             double tolVNew = vertexFace.VertexNewTolerance();
 
             Pair vfPair = new(nVx, nF);
-            NCollection_IntMap mv = mvfPairs.Find(vfPair);
+            NCollection_IntMap mv = mvfPairs.GetValue(vfPair);
             // OCCT iterates the vertices in the int map's bucket order (decision 784): it decides the order of the
             // interferences and which nVx is added to VerticesIn below (the last one).
             foreach (int nVi in mv)

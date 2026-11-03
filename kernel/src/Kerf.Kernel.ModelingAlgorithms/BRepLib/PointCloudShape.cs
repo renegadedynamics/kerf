@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Measurement;
@@ -35,8 +36,8 @@ public abstract class PointCloudShape
     protected Shape _shape;
     protected double _dist;
     protected double _tol;
-    protected NCollection_DataMap<Shape, double> _faceArea = new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, int> _facePoints = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, double> _faceArea = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, int> _facePoints = new(ShapeHasher.Instance);
     protected int _nbPoints;
 
     /// <summary>A generator for the shape (null by default) with the tolerance.</summary>
@@ -90,7 +91,7 @@ public abstract class PointCloudShape
             // OCCT divides by theDensity, not aDensity: with the computed density (theDensity 0) the quotient is
             // infinite and the C conversion to int gives INT_MIN, so each face gets 1 point (occt-issues.md).
             int nbPnts = Max(CTruncate(Math.Ceiling(area / density)), 1);
-            _facePoints.Bind(expF.Current(), nbPnts);
+            _facePoints[expF.Current()] = nbPnts;
             nbPoints += nbPnts;
         }
         return nbPoints;
@@ -117,7 +118,7 @@ public abstract class PointCloudShape
     /// <summary>Generates the points with the density (0: computed). Returns true if any face got points.</summary>
     public bool GeneratePointsByDensity(double density = 0.0)
     {
-        if (_facePoints.IsEmpty())
+        if (_facePoints.Count == 0)
         {
             if (NbPointsByDensity(density) == 0)
             {
@@ -155,7 +156,7 @@ public abstract class PointCloudShape
     /// <summary>The area of the face (cached).</summary>
     protected double FaceArea(in Shape shape)
     {
-        if (_faceArea.Find(shape, out double area))
+        if (_faceArea.TryGetValue(shape, out double area))
         {
             return area;
         }
@@ -163,7 +164,7 @@ public abstract class PointCloudShape
         var faceProps = new Properties();
         MassPropertiesBuilder.SurfaceProperties(shape, faceProps);
         area = faceProps.Mass();
-        _faceArea.Bind(shape, area);
+        _faceArea[shape] = area;
         return area;
     }
 
@@ -192,7 +193,7 @@ public abstract class PointCloudShape
     protected bool AddDensityPoints(in Shape face)
     {
         // addition of the points with specified density on the face by random way
-        int nbPnts = (_facePoints.IsBound(face) ? _facePoints.Find(face) : 0);
+        int nbPnts = (_facePoints.ContainsKey(face) ? _facePoints.GetValue(face) : 0);
         if (nbPnts == 0)
         {
             return false;

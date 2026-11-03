@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Intersection.Tools;
@@ -44,7 +45,7 @@ internal sealed class TrimShellCorner
     private readonly NCollection_HArray2<Shape> _faces;
     private bool _done;
     private bool _hasSection;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _histMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _histMap = new(ShapeHasher.Instance);
 
     //=================================================================================================
 
@@ -272,9 +273,9 @@ internal sealed class TrimShellCorner
     {
         modified.Clear();
 
-        if (_histMap.IsBound(shape))
+        if (_histMap.ContainsKey(shape))
         {
-            modified.Assign(_histMap.Find(shape));
+            modified.Assign(_histMap.GetValue(shape));
         }
     }
 
@@ -318,9 +319,9 @@ internal sealed class TrimShellCorner
             Edge ue1 = ShapeCasts.Edge(shape1);
             Edge ue2 = ShapeCasts.Edge(shape2);
 
-            if (_histMap.IsBound(shape1))
+            if (_histMap.ContainsKey(shape1))
             {
-                NCollection_List<Shape> lst = _histMap.Find(shape1);
+                NCollection_List<Shape> lst = _histMap.GetValue(shape1);
 
                 if (!lst.IsEmpty())
                 {
@@ -328,9 +329,9 @@ internal sealed class TrimShellCorner
                 }
             }
 
-            if (_histMap.IsBound(shape2))
+            if (_histMap.ContainsKey(shape2))
             {
-                NCollection_List<Shape> lst = _histMap.Find(shape2);
+                NCollection_List<Shape> lst = _histMap.GetValue(shape2);
 
                 if (!lst.IsEmpty())
                 {
@@ -397,9 +398,9 @@ internal sealed class TrimShellCorner
                 Shape shape = _uEdges!.Value(eindex, _uEdges.LowerCol() + fit - 1);
                 Shape ue = shape;
 
-                if (_histMap.IsBound(shape))
+                if (_histMap.ContainsKey(shape))
                 {
-                    NCollection_List<Shape> lst = _histMap.Find(shape);
+                    NCollection_List<Shape> lst = _histMap.GetValue(shape);
 
                     if (!lst.IsEmpty())
                     {
@@ -592,7 +593,7 @@ internal sealed class TrimShellCorner
             newFace.Orientation(faceOri);
             NCollection_List<Shape> atmpList = new();
             atmpList.Append(newFace);
-            _histMap.Bind(face, atmpList);
+            _histMap[face] = atmpList;
 
             expE.Init(face, ShapeType.Edge);
 
@@ -605,7 +606,7 @@ internal sealed class TrimShellCorner
                     continue;
                 }
 
-                if (_histMap.IsBound(expE.Current()))
+                if (_histMap.ContainsKey(expE.Current()))
                 {
                     continue;
                 }
@@ -616,7 +617,7 @@ internal sealed class TrimShellCorner
                 {
                     listOfNewEdge.Append(expE2.Current());
                 }
-                _histMap.Bind(expE.Current(), listOfNewEdge);
+                _histMap[expE.Current()] = listOfNewEdge;
             }
         }
 
@@ -708,9 +709,9 @@ internal sealed class TrimShellCorner
             Edge ue1old = ue1;
             Edge ue2old = ue2;
 
-            if (_histMap.IsBound(ue1))
+            if (_histMap.ContainsKey(ue1))
             {
-                NCollection_List<Shape> lst = _histMap.Find(ue1);
+                NCollection_List<Shape> lst = _histMap.GetValue(ue1);
 
                 if (!lst.IsEmpty())
                 {
@@ -724,9 +725,9 @@ internal sealed class TrimShellCorner
                 }
             }
 
-            if (_histMap.IsBound(ue2))
+            if (_histMap.ContainsKey(ue2))
             {
-                NCollection_List<Shape> lst = _histMap.Find(ue2);
+                NCollection_List<Shape> lst = _histMap.GetValue(ue2);
 
                 if (!lst.IsEmpty())
                 {
@@ -812,7 +813,7 @@ internal sealed class TrimShellCorner
             newFace.Orientation(faceOri);
             NCollection_List<Shape> atmpList = new();
             atmpList.Append(newFace);
-            _histMap.Bind(face, atmpList);
+            _histMap[face] = atmpList;
 
             Explorer expE = new(face, ShapeType.Edge);
 
@@ -825,7 +826,7 @@ internal sealed class TrimShellCorner
                     continue;
                 }
 
-                if (_histMap.IsBound(expE.Current()))
+                if (_histMap.ContainsKey(expE.Current()))
                 {
                     continue;
                 }
@@ -836,7 +837,7 @@ internal sealed class TrimShellCorner
                 {
                     listOfNewEdge.Append(expE2.Current());
                 }
-                _histMap.Bind(expE.Current(), listOfNewEdge);
+                _histMap[expE.Current()] = listOfNewEdge;
             }
         }
         return true;
@@ -1107,7 +1108,7 @@ internal sealed class TrimShellCorner
     private static bool SplitUEdges(NCollection_HArray2<Shape> uEdges,
                                     DS ds,
                                     in Vector3D crossDirection,
-                                    NCollection_DataMap<Shape, NCollection_List<Shape>> histMap)
+                                    Dictionary<Shape, NCollection_List<Shape>> histMap)
     {
         NCollection_DynamicArray<InterfVV> vVs = ds.InterfVV();
 
@@ -1123,7 +1124,7 @@ internal sealed class TrimShellCorner
             Shape e1 = uEdges.Value(ueit, lowCol);
             Shape e2 = uEdges.Value(ueit, upCol);
 
-            if (histMap.IsBound(e1) || histMap.IsBound(e2))
+            if (histMap.ContainsKey(e1) || histMap.ContainsKey(e2))
             {
                 continue;
             }
@@ -1194,10 +1195,10 @@ internal sealed class TrimShellCorner
 
                 NCollection_List<Shape> lst = new();
                 lst.Append(newE1);
-                histMap.Bind(e1, lst);
+                histMap[e1] = lst;
                 lst = new NCollection_List<Shape>();
                 lst.Append(newE2);
-                histMap.Bind(e2, lst);
+                histMap[e2] = lst;
             }
         }
         return true;
@@ -1208,13 +1209,13 @@ internal sealed class TrimShellCorner
     private static void StoreVedgeInHistMap(NCollection_HArray1<Shape> vEdges,
                                             int index,
                                             in Shape newVshape,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> histMap)
+                                            Dictionary<Shape, NCollection_List<Shape>> histMap)
     {
         // Replace default value in the map (v-iso edge of face)
         // by intersection of two consecutive faces
         Shape vEdge = vEdges.Value(index);
 
-        histMap.Bound(vEdge, new NCollection_List<Shape>()).Append(newVshape);
+        histMap.SetValueRef(vEdge, new NCollection_List<Shape>()).Append(newVshape);
     }
 
     //=================================================================================================
@@ -1627,16 +1628,16 @@ internal sealed class TrimShellCorner
     private static bool FindVertex(in Edge edge,
                                    int rank,
                                    DS ds,
-                                   NCollection_DataMap<Shape, NCollection_List<Shape>> histMap,
+                                   Dictionary<Shape, NCollection_List<Shape>> histMap,
                                    ref Vertex vertex,
                                    ref Pave pave)
     {
-        if (!histMap.IsBound(edge))
+        if (!histMap.ContainsKey(edge))
         {
             return false;
         }
 
-        NCollection_List<Shape> lst = histMap.Find(edge);
+        NCollection_List<Shape> lst = histMap.GetValue(edge);
 
         if (lst.IsEmpty())
         {
@@ -1757,7 +1758,7 @@ internal sealed class TrimShellCorner
                                       in Edge boundEdge,
                                       int boundEdgeIndex,
                                       DS ds,
-                                      NCollection_DataMap<Shape, NCollection_List<Shape>> histMap,
+                                      Dictionary<Shape, NCollection_List<Shape>> histMap,
                                       ref Compound secEdgesNew,
                                       NCollection_List<Shape> listOfWireEdges,
                                       ref Pave foundPave,
@@ -1883,7 +1884,7 @@ internal sealed class TrimShellCorner
                                       in Edge boundEdge,
                                       int boundEdgeIndex,
                                       DS ds,
-                                      NCollection_DataMap<Shape, NCollection_List<Shape>> histMap,
+                                      Dictionary<Shape, NCollection_List<Shape>> histMap,
                                       NCollection_List<Shape> listOfWireEdges,
                                       out bool isSectionFound)
     {

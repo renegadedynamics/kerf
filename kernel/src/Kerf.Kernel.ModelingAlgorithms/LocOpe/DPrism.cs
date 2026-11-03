@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
@@ -42,7 +43,7 @@ public sealed class DPrism
     private readonly double _height;
     private Shape _firstShape = new();
     private Shape _lastShape = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private readonly WorkingShapes _work = new();
 
     public DPrism(in Face spine, double height1, double height2, double angle)
@@ -210,8 +211,8 @@ public sealed class DPrism
                         b.Add(newFace, newWire.Oriented(orref));
                         lcomplete.Append(newFace);
                         NCollection_List<Shape> thelist = new();
-                        _map.Bind(es, thelist);
-                        _map[es].Append(newFace);
+                        _map[es] = thelist;
+                        _map.GetValue(es).Append(newFace);
                     }
                     else
                     {
@@ -430,7 +431,7 @@ public sealed class DPrism
         _lastShape = _work.Final(_lastShape);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = _work.Final(_map[key]);
+            _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
         }
     }
 
@@ -478,9 +479,9 @@ public sealed class DPrism
             throw new NotDoneException();
         }
         Shape aS = _work.Copied(s);
-        if (_map.IsBound(aS))
+        if (_map.ContainsKey(aS))
         {
-            return _map[aS];
+            return _map.GetValue(aS);
         }
         else
         {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
@@ -119,28 +120,28 @@ public class BRepOffset_ToolTests
     public void MapVertexEdges_AndBuildNeighbour_OnAFace()
     {
         Face F = Face(Box(), 1);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> MVE = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> MVE = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         OffsetTool.MapVertexEdges(F, MVE);
-        Assert.Equal(4, MVE.Extent());
+        Assert.Equal(4, MVE.Count);
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> aP in MVE)
         {
             Assert.Equal(2, aP.Value.Extent());
         }
 
         Wire W = global::Kerf.Engine.Topology.ShapeCasts.Wire(new global::Kerf.Engine.Topology.Explorer(F, ShapeType.Wire).Current());
-        NCollection_DataMap<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         OffsetTool.BuildNeighbour(W, F, NOnV1, NOnV2);
         for (global::Kerf.Engine.Topology.Explorer anExp = new(W, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current());
-            Assert.True(NOnV1.IsBound(E));
-            Assert.True(NOnV2.IsBound(E));
+            Assert.True(NOnV1.ContainsKey(E));
+            Assert.True(NOnV2.ContainsKey(E));
             global::Kerf.Engine.Topology.Exploration.Vertices(E, out Vertex V1, out Vertex V2);
-            Assert.True(global::Kerf.Engine.Topology.Exploration.FirstVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV1[E])).IsSame(V1)
-                        || global::Kerf.Engine.Topology.Exploration.LastVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV1[E])).IsSame(V1));
-            Assert.True(global::Kerf.Engine.Topology.Exploration.FirstVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2[E])).IsSame(V2)
-                        || global::Kerf.Engine.Topology.Exploration.LastVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2[E])).IsSame(V2));
+            Assert.True(global::Kerf.Engine.Topology.Exploration.FirstVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV1.GetValue(E))).IsSame(V1)
+                        || global::Kerf.Engine.Topology.Exploration.LastVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV1.GetValue(E))).IsSame(V1));
+            Assert.True(global::Kerf.Engine.Topology.Exploration.FirstVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2.GetValue(E))).IsSame(V2)
+                        || global::Kerf.Engine.Topology.Exploration.LastVertex(global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2.GetValue(E))).IsSame(V2));
         }
     }
 
@@ -301,11 +302,11 @@ public class BRepOffset_ToolTests
         // Inter2d writes into the edges (BRep_Builder.UpdateVertex on them): the offset's own, so unfrozen.
         Face F = Face(WritableBox(), 1);
         Wire W = global::Kerf.Engine.Topology.ShapeCasts.Wire(new global::Kerf.Engine.Topology.Explorer(F, ShapeType.Wire).Current());
-        NCollection_DataMap<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         OffsetTool.BuildNeighbour(W, F, NOnV1, NOnV2);
         Edge E1 = global::Kerf.Engine.Topology.ShapeCasts.Edge(new global::Kerf.Engine.Topology.Explorer(W, ShapeType.Edge).Current());
-        Edge E2 = global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2[E1]);
+        Edge E2 = global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2.GetValue(E1));
         global::Kerf.Engine.Topology.Exploration.Vertices(E1, out _, out Vertex aV2);
 
         NCollection_List<Shape> LV = new();

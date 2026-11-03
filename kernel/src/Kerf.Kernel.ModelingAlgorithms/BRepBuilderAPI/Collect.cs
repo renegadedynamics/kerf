@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
@@ -21,9 +22,9 @@ namespace Kerf.Engine.Construction.Api;
 /// </remarks>
 public sealed class Collect
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _mod =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _mod =
         new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _gen =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _gen =
         new(ShapeHasher.Instance);
 
     // OCCT's never-used myInitialShape and myDeleted are left out.
@@ -32,8 +33,8 @@ public sealed class Collect
     {
     }
 
-    private static void BuildBack(NCollection_DataMap<Shape, NCollection_List<Shape>> m1,
-                                  NCollection_DataMap<Shape, Shape> bm1)
+    private static void BuildBack(Dictionary<Shape, NCollection_List<Shape>> m1,
+                                  Dictionary<Shape, Shape> bm1)
     {
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in m1)
         {
@@ -42,7 +43,7 @@ public sealed class Collect
             for (; itl.More(); itl.Next())
             {
                 Shape vs = itl.Value();
-                bm1.Bind(vs, ks);
+                bm1[vs] = ks;
             }
         }
     }
@@ -71,23 +72,23 @@ public sealed class Collect
         l.Append(copNew);
     }
 
-    private static void StoreImage(NCollection_DataMap<Shape, NCollection_List<Shape>> mg,
+    private static void StoreImage(Dictionary<Shape, NCollection_List<Shape>> mg,
                                    in Shape s,
-                                   NCollection_DataMap<Shape, Shape> mgBack,
+                                   Dictionary<Shape, Shape> mgBack,
                                    NCollection_List<Shape> li)
     {
         if (!li.IsEmpty())
         {
-            if (mgBack.IsBound(s))
+            if (mgBack.ContainsKey(s))
             {
-                Replace(mg.ChangeFind(mgBack[s]), s, li);
+                Replace(mg.GetValue(mgBack.GetValue(s)), s, li);
             }
             else
             {
-                if (!mg.IsBound(s))
+                if (!mg.ContainsKey(s))
                 {
                     var empty = new NCollection_List<Shape>();
-                    mg.Bind(s, empty);
+                    mg[s] = empty;
                 }
                 // Dans tous les cas on copie la liste pour eviter les pb de
                 // const& dans BRepBuilderAPI.
@@ -95,16 +96,16 @@ public sealed class Collect
                 for (; it.More(); it.Next())
                 {
                     Shape ss = it.Value();
-                    mg[s].Append(ss);
+                    mg.GetValue(s).Append(ss);
                 }
             }
         }
     }
 
-    private static void Update(NCollection_DataMap<Shape, NCollection_List<Shape>> mod,
-                               NCollection_DataMap<Shape, NCollection_List<Shape>> gen,
-                               NCollection_DataMap<Shape, Shape> modBack,
-                               NCollection_DataMap<Shape, Shape> genBack,
+    private static void Update(Dictionary<Shape, NCollection_List<Shape>> mod,
+                               Dictionary<Shape, NCollection_List<Shape>> gen,
+                               Dictionary<Shape, Shape> modBack,
+                               Dictionary<Shape, Shape> genBack,
                                in Shape si,
                                MakeShape mks,
                                ShapeType shapeType)
@@ -123,7 +124,7 @@ public sealed class Collect
             NCollection_List<Shape> lim = mks.InternalModified(s);
             if (!lim.IsEmpty())
             {
-                if (genBack.IsBound(s))
+                if (genBack.ContainsKey(s))
                 {
                     // Modif de generation => generation du shape initial
                     StoreImage(gen, s, genBack, lim);
@@ -136,10 +137,10 @@ public sealed class Collect
             NCollection_List<Shape> lig = mks.InternalGenerated(s);
             if (!lig.IsEmpty())
             {
-                if (modBack.IsBound(s))
+                if (modBack.ContainsKey(s))
                 {
                     // Generation de modif  => generation du shape initial
-                    Shape IS = modBack[s];
+                    Shape IS = modBack.GetValue(s);
                     StoreImage(gen, IS, genBack, lig);
                 }
                 else
@@ -153,8 +154,8 @@ public sealed class Collect
     /// <summary>Records the modifications and generations made by <paramref name="mks"/> on <paramref name="si"/>.</summary>
     public void Add(in Shape si, MakeShape mks)
     {
-        var genBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        var modBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var genBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        var modBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         BuildBack(_gen, genBack); // Vraiment pas optimum a Revoir
         BuildBack(_mod, modBack);
 
@@ -171,17 +172,17 @@ public sealed class Collect
     /// <summary>Records <paramref name="gen"/> as generated from <paramref name="s"/>.</summary>
     public void AddGenerated(in Shape s, in Shape gen)
     {
-        var genBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        var modBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var genBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        var modBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         BuildBack(_gen, genBack);
         BuildBack(_mod, modBack);
 
         var lig = new NCollection_List<Shape>();
         lig.Append(gen);
-        if (modBack.IsBound(s))
+        if (modBack.ContainsKey(s))
         {
             // Generation de modif  => generation du shape initial
-            Shape IS = modBack[s];
+            Shape IS = modBack.GetValue(s);
             StoreImage(_gen, IS, genBack, lig);
         }
         else
@@ -193,14 +194,14 @@ public sealed class Collect
     /// <summary>Records <paramref name="mod"/> as modified from <paramref name="s"/>.</summary>
     public void AddModif(in Shape s, in Shape mod)
     {
-        var genBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        var modBack = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var genBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        var modBack = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         BuildBack(_gen, genBack);
         BuildBack(_mod, modBack);
 
         var lig = new NCollection_List<Shape>();
         lig.Append(mod);
-        if (genBack.IsBound(s))
+        if (genBack.ContainsKey(s))
         {
             // Modif de generation => generation du shape initial
             StoreImage(_gen, s, genBack, lig);
@@ -211,7 +212,7 @@ public sealed class Collect
         }
     }
 
-    private static void FilterByShape(NCollection_DataMap<Shape, NCollection_List<Shape>> mg,
+    private static void FilterByShape(Dictionary<Shape, NCollection_List<Shape>> mg,
                                       in Shape sf)
     {
         var msf = new HashSet<Shape>(ShapeHasher.Instance);
@@ -263,13 +264,13 @@ public sealed class Collect
     }
 
     /// <summary>The modifications: each initial sub-shape and its images (the collector's own map).</summary>
-    public NCollection_DataMap<Shape, NCollection_List<Shape>> Modification()
+    public Dictionary<Shape, NCollection_List<Shape>> Modification()
     {
         return _mod;
     }
 
     /// <summary>The generations: each initial sub-shape and what it generated (the collector's own map).</summary>
-    public NCollection_DataMap<Shape, NCollection_List<Shape>> Generated()
+    public Dictionary<Shape, NCollection_List<Shape>> Generated()
     {
         return _gen;
     }

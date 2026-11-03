@@ -14,7 +14,8 @@ namespace Occt;
 // Bucket counts and allocators are dropped. Iteration order of the unordered maps is not OCCT's: ported code
 // whose results depend on it must use an indexed map, and the port notes it.
 
-// OCCT's set, NCollection_Map, is HashSet<T> (unit 10J): its wrapper added nothing but OCCT's names.
+// OCCT's set, NCollection_Map, is HashSet<T> (unit 10J): its wrapper added nothing but OCCT's names. OCCT's map,
+// NCollection_DataMap, is Dictionary<TKey, TValue> (unit 10J2), with DictionaryExtensions for what the wrapper added.
 
 /// <summary>OCCT's indexed set: each key gets an index from 1 in the order added.</summary>
 public class NCollection_IndexedMap<TKey> : IEnumerable<TKey> where TKey : notnull
@@ -143,97 +144,6 @@ public class NCollection_IndexedMap<TKey> : IEnumerable<TKey> where TKey : notnu
     IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => _keys.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => _keys.GetEnumerator();
-}
-
-/// <summary>OCCT's map from keys to values (<c>NCollection_DataMap</c>).</summary>
-public class NCollection_DataMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
-{
-    private readonly Dictionary<TKey, TValue> _items;
-
-    public NCollection_DataMap(IEqualityComparer<TKey>? hasher = null) => _items = new Dictionary<TKey, TValue>(hasher);
-
-    public NCollection_DataMap(NCollection_DataMap<TKey, TValue> other)
-        => _items = new Dictionary<TKey, TValue>(other._items, other._items.Comparer);
-
-    public int Extent() => _items.Count;
-
-    public int Size() => _items.Count;
-
-    public bool IsEmpty() => _items.Count == 0;
-
-    public void Clear() => _items.Clear();
-
-    /// <summary>OCCT's ReSize: room for <paramref name="extent"/> items (the bindings are kept).</summary>
-    public void ReSize(int extent) => _items.EnsureCapacity(extent);
-
-    /// <summary>Binds the key to the value, replacing any existing value; false if the key was already bound.</summary>
-    public bool Bind(TKey key, TValue item)
-    {
-        bool isNew = !_items.ContainsKey(key);
-        _items[key] = item;
-        return isNew;
-    }
-
-    /// <summary>
-    /// Binds the key to the value, replacing any existing value (as <see cref="Bind"/>), and returns the value for
-    /// writing (OCCT returns a pointer to it).
-    /// </summary>
-    public ref TValue Bound(TKey key, TValue item)
-    {
-        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(_items, key, out _);
-        value = item;
-        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref value);
-    }
-
-    /// <summary>Binds the key to the value only if the key isn't bound yet; false if it was (its value is kept).</summary>
-    public bool TryBind(TKey key, TValue item) => _items.TryAdd(key, item);
-
-    /// <summary>
-    /// Binds the key to the value only if the key isn't bound yet, and returns the key's value (the existing one or
-    /// the new one) for writing.
-    /// </summary>
-    public ref TValue TryBound(TKey key, TValue item)
-    {
-        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(_items, key, out bool exists);
-        if (!exists)
-        {
-            value = item;
-        }
-
-        return ref System.Runtime.CompilerServices.Unsafe.As<TValue?, TValue>(ref value);
-    }
-
-    public bool IsBound(TKey key) => _items.ContainsKey(key);
-
-    public bool Contains(TKey key) => _items.ContainsKey(key);
-
-    public bool UnBind(TKey key) => _items.Remove(key);
-
-    public TValue Find(TKey key)
-        => _items.TryGetValue(key, out TValue? value) ? value : throw new NoSuchObjectException("NCollection_DataMap::Find");
-
-    public bool Find(TKey key, out TValue value) => _items.TryGetValue(key, out value!);
-
-    public ref TValue ChangeFind(TKey key)
-    {
-        ref TValue value = ref CollectionsMarshal.GetValueRefOrNullRef(_items, key);
-        if (System.Runtime.CompilerServices.Unsafe.IsNullRef(ref value))
-        {
-            throw new NoSuchObjectException("NCollection_DataMap::ChangeFind");
-        }
-
-        return ref value;
-    }
-
-    public ref TValue this[TKey key] => ref ChangeFind(key);
-
-    public IEnumerable<TKey> Keys => _items.Keys;
-
-    public Dictionary<TKey, TValue>.Enumerator GetEnumerator() => _items.GetEnumerator();
-
-    IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() => _items.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 }
 
 /// <summary>OCCT's indexed map from keys to values: each key gets an index from 1 in the order added.</summary>

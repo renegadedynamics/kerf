@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
@@ -52,7 +53,7 @@ public sealed class WiresOnShape : Transient
     private readonly HashSet<Shape> _facesWithSection = new(ShapeHasher.Instance);
     private bool _checkInterior;
     // OCCT iterates this map keyed by the shapes' addresses (in BindAll); the port in insertion order
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
     private bool _done;
     private int _index;
     private WorkingShapes _work;
@@ -262,7 +263,7 @@ public sealed class WiresOnShape : Transient
 
     public void Bind(in Edge efromW, in Edge eonFace)
     {
-        _map.Bind(_work.Working(efromW), _work.Working(eonFace));
+        _map[_work.Working(efromW)] = _work.Working(eonFace);
     }
 
     public void BindAll()
@@ -274,7 +275,7 @@ public sealed class WiresOnShape : Transient
         HashSet<Shape> theMap = new(ShapeHasher.Instance);
 
         // Detection des vertex a projeter ou a "binder" avec des vertex existants
-        NCollection_DataMap<Shape, Shape> mapV = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapV = new(ShapeHasher.Instance);
         Explorer exp = new(), exp2 = new();
         foreach (KeyValuePair<Shape, Shape> ite in _map)
         {
@@ -297,13 +298,13 @@ public sealed class WiresOnShape : Transient
                         }
                         else if (BrepTools.Compare(vtx, vtx2))
                         {
-                            mapV.Bind(vtx, vtx2);
+                            mapV[vtx] = vtx2;
                             break;
                         }
                     }
                     if (!exp2.More())
                     {
-                        mapV.Bind(vtx, eimg);
+                        mapV[vtx] = eimg;
                     }
                     theMap.Add(vtx);
                 }
@@ -312,7 +313,7 @@ public sealed class WiresOnShape : Transient
 
         foreach (KeyValuePair<Shape, Shape> ite in mapV)
         {
-            _map.Bind(ite.Key, ite.Value);
+            _map[ite.Key] = ite.Value;
         }
 
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
@@ -358,7 +359,7 @@ public sealed class WiresOnShape : Transient
             }
         }
 
-        NCollection_DataMap<Shape, double> vertParam = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> vertParam = new(ShapeHasher.Instance);
 
         for (ind = 1; ind <= _mapEF.Extent(); ind++)
         {
@@ -383,22 +384,22 @@ public sealed class WiresOnShape : Transient
 
                 Edge epro = new();
                 double prm = global::Kerf.Engine.Foundation.Precision.Infinite();
-                bool isProjected = _map.IsBound(vtx);
+                bool isProjected = _map.ContainsKey(vtx);
 
                 // if vertex was already projected on the current edge on the previous face
                 // it is necessary to check tolerance of the vertex in the 2D space on the current
                 // face without projection and update tolerance of vertex if it is necessary
                 if (isProjected)
                 {
-                    Shape sh = _map.Find(vtx);
+                    Shape sh = _map.GetValue(vtx);
                     if (sh.ShapeType() != global::Kerf.Topology.ShapeType.Edge)
                     {
                         continue;
                     }
-                    epro = ShapeCasts.Edge(_map.Find(vtx));
-                    if (vertParam.IsBound(vtx))
+                    epro = ShapeCasts.Edge(_map.GetValue(vtx));
+                    if (vertParam.ContainsKey(vtx))
                     {
-                        prm = vertParam.Find(vtx);
+                        prm = vertParam.GetValue(vtx);
                     }
                 }
                 bool ok = Project(vtx, p2d, fac, ref epro, ref prm);
@@ -409,7 +410,7 @@ public sealed class WiresOnShape : Transient
                         Vertex vtx2 = ShapeCasts.Vertex(exp2.Current());
                         if (vtx2.IsSame(vtx))
                         {
-                            _map.Bind(vtx, vtx2);
+                            _map[vtx] = vtx2;
                             theMap.Add(vtx);
                             break;
                         }
@@ -420,7 +421,7 @@ public sealed class WiresOnShape : Transient
                                 && (Math.Abs(prm - f1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
                                     || Math.Abs(prm - l1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
-                                _map.Bind(vtx, vtx2);
+                                _map[vtx] = vtx2;
                                 theMap.Add(vtx);
                                 break;
                             }
@@ -428,8 +429,8 @@ public sealed class WiresOnShape : Transient
                     }
                     if (!exp2.More())
                     {
-                        _map.Bind(vtx, epro);
-                        vertParam.Bind(vtx, prm);
+                        _map[vtx] = epro;
+                        vertParam[vtx] = prm;
                     }
                 }
             }
@@ -485,9 +486,9 @@ public sealed class WiresOnShape : Transient
     internal bool InternalOnEdge(out Edge e)
     {
         e = new Edge();
-        if (_map.IsBound(_mapEF.FindKey(_index)))
+        if (_map.ContainsKey(_mapEF.FindKey(_index)))
         {
-            e = ShapeCasts.Edge(_map[_mapEF.FindKey(_index)]);
+            e = ShapeCasts.Edge(_map.GetValue(_mapEF.FindKey(_index)));
             return true;
         }
         return false;
@@ -513,11 +514,11 @@ public sealed class WiresOnShape : Transient
     internal bool InternalOnVertex(in Vertex vw, out Vertex vs)
     {
         vs = new Vertex();
-        if (_map.IsBound(vw))
+        if (_map.ContainsKey(vw))
         {
-            if (_map[vw].ShapeType() == ShapeType.Vertex)
+            if (_map.GetValue(vw).ShapeType() == ShapeType.Vertex)
             {
-                vs = ShapeCasts.Vertex(_map[vw]);
+                vs = ShapeCasts.Vertex(_map.GetValue(vw));
                 return true;
             }
             return false;
@@ -542,12 +543,12 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.IsBound(v) || _map[v].ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
         {
             return false;
         }
 
-        ed = ShapeCasts.Edge(_map[v]);
+        ed = ShapeCasts.Edge(_map.GetValue(v));
         prm = Project(v, ed);
         return true;
     }
@@ -568,12 +569,12 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.IsBound(v) || _map[v].ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
         {
             return false;
         }
 
-        ed = ShapeCasts.Edge(_map[v]);
+        ed = ShapeCasts.Edge(_map.GetValue(v));
         if (!_mapEF.Contains(edgeFrom))
         {
             return false;

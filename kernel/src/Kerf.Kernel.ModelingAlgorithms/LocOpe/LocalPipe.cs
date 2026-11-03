@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -37,7 +38,7 @@ namespace Kerf.Engine.Features.Local;
 public sealed class LocalPipe
 {
     private readonly Pipe _pipe;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private Shape _res = new();
     private NCollection_List<Shape> _gShap = new();
     private readonly NCollection_Sequence<Curve3D?> _crvs = new();
@@ -69,7 +70,7 @@ public sealed class LocalPipe
         for (int i = 1; i <= theEFMap.Extent(); i++)
         {
             Edge edgpr = ShapeCasts.Edge(theEFMap.FindKey(i));
-            _map.Bind(edgpr, new NCollection_List<Shape>());
+            _map[edgpr] = new NCollection_List<Shape>();
             if (theEFMap[i].Extent() >= 2)
             {
                 // on ne prend pas les faces generees
@@ -95,7 +96,7 @@ public sealed class LocalPipe
                         }
                         else
                         {
-                            _map[edgpr].Append(resfac);
+                            _map.GetValue(edgpr).Append(resfac);
                             goodfaces.Append(resfac);
                         }
                     }
@@ -108,7 +109,7 @@ public sealed class LocalPipe
                 { // un seul plan. Rien a faire
                     if (mapFac.Extent() == 1)
                     {
-                        _map[edgpr].Append(mapFac[1]);
+                        _map.GetValue(edgpr).Append(mapFac[1]);
                         goodfaces.Append(mapFac[1]);
                     }
                     continue;
@@ -247,14 +248,14 @@ public sealed class LocalPipe
                             exp.Init(faceRef.Oriented(Forward), ShapeType.Wire);
                             newWire.Orientation(exp.Current().Orientation());
                             b.Add(newFace, newWire);
-                            _map[edgpr].Append(newFace);
+                            _map.GetValue(edgpr).Append(newFace);
                             goodfaces.Append(newFace);
                         }
                     }
                     if (facFuse.Extent() == 1)
                     {
                         mapFac.RemoveKey(facFuse.First());
-                        _map[edgpr].Append(facFuse.First());
+                        _map.GetValue(edgpr).Append(facFuse.First());
                         goodfaces.Append(facFuse.First());
                     }
                 }
@@ -285,7 +286,7 @@ public sealed class LocalPipe
             _res = _work.Final(_res);
             foreach (Shape key in _map.Keys.ToList())
             {
-                _map[key] = _work.Final(_map[key]);
+                _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
             }
         }
     }
@@ -359,7 +360,7 @@ public sealed class LocalPipe
         }
         // TopAbs_EDGE
         Edge eProfile = ShapeCasts.Edge(s);
-        return _map[eProfile];
+        return _map.GetValue(eProfile);
     }
 
     // OCCT.NET: OCCT segments and re-knots the converted curve in place; a frozen one is changed on a copy

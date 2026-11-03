@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -353,8 +354,8 @@ public sealed class Quilt
         // In the Map MF the Shell is bound with the relative orientation of F
         // in the shell
 
-        var m = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        var mf = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var m = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        var mf = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         BrepBuilder b = new();
         Compound result = new();
 
@@ -381,9 +382,9 @@ public sealed class Quilt
                 for (; itf1.More(); itf1.Next())
                 {
                     Shape e = itf1.Current();
-                    if (m.IsBound(e))
+                    if (m.ContainsKey(e))
                     {
-                        SH = ShapeCasts.Shell(m[e]);
+                        SH = ShapeCasts.Shell(m.GetValue(e));
                         if (SH.Orientation() == e.Orientation())
                         {
                             newO = global::Kerf.Engine.Topology.TopAbs.Reverse(shape.Orientation());
@@ -393,7 +394,7 @@ public sealed class Quilt
                             newO = shape.Orientation();
                         }
 
-                        mf.Bind(shape, SH.Oriented(newO));
+                        mf[shape] = SH.Oriented(newO);
                         break;
                     }
                 }
@@ -404,13 +405,13 @@ public sealed class Quilt
                     b.MakeShell(ref SH);
                     SH.Closed(true);
                     b.Add(result, SH);
-                    mf.Bind(shape, SH.Oriented(shape.Orientation()));
+                    mf[shape] = SH.Oriented(shape.Orientation());
                 }
 
                 // Add the face to the shell
                 SH.Free(true);
                 Shape arefShape = SH.Oriented(Forward);
-                b.Add(arefShape, shape.Oriented(mf[shape].Orientation()));
+                b.Add(arefShape, shape.Oriented(mf.GetValue(shape).Orientation()));
 
                 var itf = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
 
@@ -418,15 +419,15 @@ public sealed class Quilt
                 {
                     Edge e = ShapeCasts.Edge(itf.Current());
 
-                    if (m.IsBound(e))
+                    if (m.ContainsKey(e))
                     {
-                        Shape oldShell = m[e];
+                        Shape oldShell = m.GetValue(e);
                         if (!oldShell.IsSame(SH))
                         {
                             // Fuse the old shell with the new one
                             // Compare the orientation of E in SH and in oldshell.
                             Orientation orien = e.Orientation();
-                            if (mf[shape].Orientation() == Reversed)
+                            if (mf.GetValue(shape).Orientation() == Reversed)
                             {
                                 orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
                             }
@@ -442,14 +443,14 @@ public sealed class Quilt
                                 // update the orientation of Fo in SH.
                                 if (rev)
                                 {
-                                    newOFo = global::Kerf.Engine.Topology.TopAbs.Reverse(mf[fo].Orientation());
+                                    newOFo = global::Kerf.Engine.Topology.TopAbs.Reverse(mf.GetValue(fo).Orientation());
                                 }
                                 else
                                 {
-                                    newOFo = mf[fo].Orientation();
+                                    newOFo = mf.GetValue(fo).Orientation();
                                 }
 
-                                mf.Bind(fo, SH.Oriented(newOFo));
+                                mf[fo] = SH.Oriented(newOFo);
                                 Shape arefShapeFo = SH.Oriented(Forward);
                                 b.Add(arefShapeFo, fo.Oriented(newOFo));
                             }
@@ -458,12 +459,12 @@ public sealed class Quilt
                             var aexp = new Explorer(SH, ShapeType.Edge);
                             for (; aexp.More(); aexp.Next())
                             {
-                                if (!m.IsBound(aexp.Current()))
+                                if (!m.ContainsKey(aexp.Current()))
                                 {
                                     continue;
                                 }
                                 Shape ae = aexp.Current();
-                                Shape @as = m.Find(ae);
+                                Shape @as = m.GetValue(ae);
                                 if (@as.IsSame(oldShell))
                                 {
                                     // update the orientation of free edges in SH.
@@ -476,7 +477,7 @@ public sealed class Quilt
                                         newO = @as.Orientation();
                                     }
 
-                                    m.Bind(ae, SH.Oriented(newO));
+                                    m[ae] = SH.Oriented(newO);
                                 }
                             }
                             // remove the old shell from the result
@@ -485,30 +486,30 @@ public sealed class Quilt
                         {
                             // Test if SH is always orientable.
                             Orientation orien = e.Orientation();
-                            if (mf[shape].Orientation() == Reversed)
+                            if (mf.GetValue(shape).Orientation() == Reversed)
                             {
                                 orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
                             }
 
-                            if (m[e].Orientation() == orien)
+                            if (m.GetValue(e).Orientation() == orien)
                             {
                                 SH.Orientable(false);
                             }
                         }
 
                         // remove the edge from M (no more a free edge)
-                        m.UnBind(e);
+                        m.Remove(e);
                     }
                     else
                     {
                         newO = e.Orientation();
-                        if (mf[shape].Orientation() == Reversed)
+                        if (mf.GetValue(shape).Orientation() == Reversed)
                         {
                             newO = global::Kerf.Engine.Topology.TopAbs.Reverse(newO);
                         }
                         if (!e.IsNull)
                         {
-                            m.Bind(e, SH.Oriented(newO));
+                            m[e] = SH.Oriented(newO);
                         }
                         else
                         {

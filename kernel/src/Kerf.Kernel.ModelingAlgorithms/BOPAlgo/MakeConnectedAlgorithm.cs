@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -35,8 +36,8 @@ public class MakeConnectedAlgorithm : Options
     protected NCollection_List<Shape> _arguments = new();                          //!< Input shapes for making them connected
     protected NCollection_IndexedMap<Shape> _allInputsMap = new(ShapeHasher.Instance); //!< Map of all BRep sub-elements of the input shapes
     protected MakePeriodicAlgorithm _periodicityMaker = new();                             //!< Tool for making the shape periodic
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _materials = new(EqualityComparer<Shape>.Default); //!< Map of the materials associations
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Map of origins
+    protected Dictionary<Shape, NCollection_List<Shape>> _materials = new(EqualityComparer<Shape>.Default); //!< Map of the materials associations
+    protected Dictionary<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Map of origins
     protected History? _glueHistory;                                            //!< Gluing History
     protected History? _history;                                                //!< Final History of shapes modifications
     protected Shape _glued = new();                                                //!< The resulting connected (glued) shape
@@ -203,7 +204,7 @@ public class MakeConnectedAlgorithm : Options
     {
         foreach (Shape aS in Candidates(s))
         {
-            if (_materials.Find(aS.Oriented(side), out NCollection_List<Shape> lm))
+            if (_materials.TryGetValue(aS.Oriented(side), out NCollection_List<Shape>? lm))
             {
                 return lm;
             }
@@ -247,7 +248,7 @@ public class MakeConnectedAlgorithm : Options
     }
 
     internal NCollection_List<Shape> InternalGetOrigins(in Shape s)
-        => _origins.Find(s, out NCollection_List<Shape> lOr) ? lOr : EmptyList();
+        => _origins.TryGetValue(s, out NCollection_List<Shape>? lOr) ? lOr : EmptyList();
 
     /// <summary>The connected (glued) shape (frozen).</summary>
     public Shape Shape()
@@ -416,9 +417,9 @@ public class MakeConnectedAlgorithm : Options
                 ISchematiqList<Shape> lh = j == 0 ? _history!.Modified(s) : _history!.Generated(s);
                 foreach (Shape hs in lh)
                 {
-                    if (!_origins.Find(hs, out NCollection_List<Shape> pLOr))
+                    if (!_origins.TryGetValue(hs, out NCollection_List<Shape>? pLOr))
                     {
-                        pLOr = _origins.Bound(hs, new NCollection_List<Shape>());
+                        pLOr = _origins.SetValueRef(hs, new NCollection_List<Shape>());
                     }
                     if (!pLOr.Contains(s))
                     {
@@ -475,9 +476,9 @@ public class MakeConnectedAlgorithm : Options
             for (; exp.More(); exp.Next())
             {
                 Shape element = exp.Current();
-                if (!_materials.Find(element, out NCollection_List<Shape> pLM))
+                if (!_materials.TryGetValue(element, out NCollection_List<Shape>? pLM))
                 {
-                    pLM = _materials.Bound(element, new NCollection_List<Shape>());
+                    pLM = _materials.SetValueRef(element, new NCollection_List<Shape>());
                 }
                 pLM.Append(sOr);
             }

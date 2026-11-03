@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
@@ -18,9 +19,9 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// </remarks>
 public sealed class MedialGraph : Transient
 {
-    private NCollection_DataMap<int, MedialArc> _arcs = new();
-    private NCollection_DataMap<int, MedialBasicElt> _basicElts = new();
-    private readonly NCollection_DataMap<int, MedialNode> _nodes = new();
+    private Dictionary<int, MedialArc> _arcs = new();
+    private Dictionary<int, MedialBasicElt> _basicElts = new();
+    private readonly Dictionary<int, MedialNode> _nodes = new();
     private int _numberOfArcs;
     private int _numberOfNodes;
     private int _numberOfBasicElts;
@@ -75,8 +76,8 @@ public sealed class MedialGraph : Transient
         //---------------------------
         for (i = 1; i <= nbBasicElts; i++)
         {
-            _basicElts.Bind(i, new MedialBasicElt(i));
-            _basicElts[i].SetGeomIndex(i);
+            _basicElts[i] = new MedialBasicElt(i);
+            _basicElts.GetValue(i).SetGeomIndex(i);
         }
 
         //--------------------------------------------------------------------
@@ -93,7 +94,7 @@ public sealed class MedialGraph : Transient
                 extremite = new MedialNode(0, currentArc, global::Kerf.Engine.Foundation.Precision.Infinite());
                 extremite.SetIndex(indTabNodes);
                 currentArc.SetSecondNode(extremite);
-                _nodes.Bind(indTabNodes, extremite);
+                _nodes[indTabNodes] = extremite;
                 theRoots.Next();
                 indTabNodes--;
             }
@@ -109,7 +110,7 @@ public sealed class MedialGraph : Transient
             extremite = new MedialNode(indExt, currentArc, distExt);
             extremite.SetIndex(indTabNodes);
             currentArc.SetSecondNode(extremite);
-            _nodes.Bind(indTabNodes, extremite);
+            _nodes[indTabNodes] = extremite;
             indTabNodes--;
 
             // The ARCs from the root, with their neighbourhoods at the root node.
@@ -136,13 +137,13 @@ public sealed class MedialGraph : Transient
     }
 
     /// <summary>The arc of index Index.</summary>
-    public MedialArc Arc(int index) => _arcs.Find(index);
+    public MedialArc Arc(int index) => _arcs.GetValue(index);
 
     /// <summary>The basic element of index Index.</summary>
-    public MedialBasicElt BasicElt(int index) => _basicElts.Find(index);
+    public MedialBasicElt BasicElt(int index) => _basicElts.GetValue(index);
 
     /// <summary>The node of index Index.</summary>
-    public MedialNode Node(int index) => _nodes.Find(index);
+    public MedialNode Node(int index) => _nodes.GetValue(index);
 
     public int NumberOfArcs() => _numberOfArcs;
 
@@ -161,8 +162,8 @@ public sealed class MedialGraph : Transient
     internal void FusionOfBasicElts(int indexElt1, int indexElt2, ref bool mergeArc1, ref int iGeomArc1,
         ref int iGeomArc2, ref bool mergeArc2, ref int iGeomArc3, ref int iGeomArc4)
     {
-        MedialBasicElt elt1 = _basicElts[indexElt1];
-        MedialBasicElt elt2 = _basicElts[indexElt2];
+        MedialBasicElt elt1 = _basicElts.GetValue(indexElt1);
+        MedialBasicElt elt2 = _basicElts.GetValue(indexElt2);
 
         if (elt1 == elt2)
         {
@@ -177,11 +178,11 @@ public sealed class MedialGraph : Transient
         {
             if (zone2.ArcOnFrontier(i).FirstElement() == elt2)
             {
-                _arcs[zone2.ArcOnFrontier(i).Index()].SetFirstElement(elt1);
+                _arcs.GetValue(zone2.ArcOnFrontier(i).Index()).SetFirstElement(elt1);
             }
             else
             {
-                _arcs[zone2.ArcOnFrontier(i).Index()].SetSecondElement(elt1);
+                _arcs.GetValue(zone2.ArcOnFrontier(i).Index()).SetSecondElement(elt1);
             }
         }
 
@@ -197,7 +198,7 @@ public sealed class MedialGraph : Transient
 
         if ((e1 == e3 || e1 == e4) && (e2 == e3 || e2 == e4))
         {
-            FusionOfArcs(_arcs[ea1.Index()], _arcs[sa2.Index()]);
+            FusionOfArcs(_arcs.GetValue(ea1.Index()), _arcs.GetValue(sa2.Index()));
             mergeArc1 = true;
             iGeomArc1 = ea1.GeomIndex();
             iGeomArc2 = sa2.GeomIndex();
@@ -226,7 +227,7 @@ public sealed class MedialGraph : Transient
 
             if ((e1 == e3 || e1 == e4) && (e2 == e3 || e2 == e4) && !onFig)
             {
-                FusionOfArcs(_arcs[ea1.Index()], _arcs[sa1.Index()]);
+                FusionOfArcs(_arcs.GetValue(ea1.Index()), _arcs.GetValue(sa1.Index()));
                 mergeArc2 = true;
                 iGeomArc3 = ea1.GeomIndex();
                 iGeomArc4 = sa1.GeomIndex();
@@ -234,7 +235,7 @@ public sealed class MedialGraph : Transient
         }
 
         // A basic element is removed.
-        _basicElts.UnBind(elt2.Index());
+        _basicElts.Remove(elt2.Index());
         _numberOfBasicElts--;
     }
 
@@ -254,8 +255,8 @@ public sealed class MedialGraph : Transient
 
             arc1.SetFirstArc(MedialSide.Left, lNeighbour);
             arc1.SetFirstArc(MedialSide.Right, rNeighbour);
-            _arcs[lNeighbour.Index()].SetNeighbour(MedialSide.Right, arc2.SecondNode(), arc1);
-            _arcs[rNeighbour.Index()].SetNeighbour(MedialSide.Left, arc2.SecondNode(), arc1);
+            _arcs.GetValue(lNeighbour.Index()).SetNeighbour(MedialSide.Right, arc2.SecondNode(), arc1);
+            _arcs.GetValue(rNeighbour.Index()).SetNeighbour(MedialSide.Left, arc2.SecondNode(), arc1);
         }
         else
         {
@@ -267,19 +268,19 @@ public sealed class MedialGraph : Transient
         arc1.FirstNode().SetLinkedArc(arc1);
 
         // Removal of Arc2 and the old nodes.
-        if (_nodes.IsBound(oldNode1.Index()))
+        if (_nodes.ContainsKey(oldNode1.Index()))
         {
-            _nodes.UnBind(oldNode1.Index());
+            _nodes.Remove(oldNode1.Index());
             _numberOfNodes--;
         }
-        if (_nodes.IsBound(oldNode2.Index()))
+        if (_nodes.ContainsKey(oldNode2.Index()))
         {
-            _nodes.UnBind(oldNode2.Index());
+            _nodes.Remove(oldNode2.Index());
             _numberOfNodes--;
         }
 
         MedialArc anArc2 = arc2;
-        _arcs.UnBind(arc2.Index());
+        _arcs.Remove(arc2.Index());
         _numberOfArcs--;
 
         for (int i = 1; i <= 2; i++)
@@ -287,11 +288,11 @@ public sealed class MedialGraph : Transient
             MedialBasicElt be;
             if (i == 1)
             {
-                be = _basicElts[anArc2.FirstElement().Index()];
+                be = _basicElts.GetValue(anArc2.FirstElement().Index());
             }
             else
             {
-                be = _basicElts[anArc2.SecondElement().Index()];
+                be = _basicElts.GetValue(anArc2.SecondElement().Index());
             }
             if (be.StartArc() == anArc2)
             {
@@ -313,7 +314,7 @@ public sealed class MedialGraph : Transient
 
         while (iFind < _numberOfArcs)
         {
-            if (!_arcs.IsBound(i))
+            if (!_arcs.ContainsKey(i))
             {
                 yaDecalage = true;
             }
@@ -322,9 +323,9 @@ public sealed class MedialGraph : Transient
                 iFind++;
                 if (yaDecalage)
                 {
-                    _arcs[i].SetIndex(iFind);
-                    _arcs.Bind(iFind, _arcs[i]);
-                    _arcs.UnBind(i);
+                    _arcs.GetValue(i).SetIndex(iFind);
+                    _arcs[iFind] = _arcs.GetValue(i);
+                    _arcs.Remove(i);
                 }
             }
             i++;
@@ -340,7 +341,7 @@ public sealed class MedialGraph : Transient
 
         while (iFind < _numberOfNodes)
         {
-            if (!_nodes.IsBound(i))
+            if (!_nodes.ContainsKey(i))
             {
                 yaDecalage = true;
             }
@@ -349,9 +350,9 @@ public sealed class MedialGraph : Transient
                 iFind++;
                 if (yaDecalage)
                 {
-                    _nodes[i].SetIndex(iFind);
-                    _nodes.Bind(iFind, _nodes[i]);
-                    _nodes.UnBind(i);
+                    _nodes.GetValue(i).SetIndex(iFind);
+                    _nodes[iFind] = _nodes.GetValue(i);
+                    _nodes.Remove(i);
                 }
             }
             i++;
@@ -359,9 +360,9 @@ public sealed class MedialGraph : Transient
     }
 
     /// <summary>Replaces the basic elements by a copy of NewMap, each element taking its key as index.</summary>
-    internal void ChangeBasicElts(NCollection_DataMap<int, MedialBasicElt> newMap)
+    internal void ChangeBasicElts(Dictionary<int, MedialBasicElt> newMap)
     {
-        _basicElts = new NCollection_DataMap<int, MedialBasicElt>(newMap);
+        _basicElts = new Dictionary<int, MedialBasicElt>(newMap,newMap.Comparer);
         foreach (KeyValuePair<int, MedialBasicElt> ite in _basicElts)
         {
             ite.Value.SetIndex(ite.Key);
@@ -369,7 +370,7 @@ public sealed class MedialGraph : Transient
     }
 
     /// <summary>The basic element of index Index.</summary>
-    public MedialBasicElt ChangeBasicElt(int index) => _basicElts[index];
+    public MedialBasicElt ChangeBasicElt(int index) => _basicElts.GetValue(index);
 
     // Binds the first node of each arc in the table of nodes and links it to the arc. The root nodes are bound in
     // Perform.
@@ -380,17 +381,17 @@ public sealed class MedialGraph : Transient
 
         for (i = 1; i <= _numberOfArcs; i++)
         {
-            bout = _arcs[i].FirstNode();
-            _nodes.Bind(indTabNodes, bout);
+            bout = _arcs.GetValue(i).FirstNode();
+            _nodes[indTabNodes] = bout;
             bout.SetIndex(indTabNodes);
             indTabNodes--;
-            bout.SetLinkedArc(_arcs[i]);
+            bout.SetLinkedArc(_arcs.GetValue(i));
         }
     }
 
     // Creates the ARCs of the tree from aBisector.
-    private static MedialArc MakeArc(MedialBisector aBisector, NCollection_DataMap<int, MedialBasicElt> theBasicElts,
-        NCollection_DataMap<int, MedialArc> theArcs, ref int indTabArcs)
+    private static MedialArc MakeArc(MedialBisector aBisector, Dictionary<int, MedialBasicElt> theBasicElts,
+        Dictionary<int, MedialArc> theArcs, ref int indTabArcs)
     {
         MedialArc currentArc;
         MedialArc prevArc;
@@ -400,8 +401,8 @@ public sealed class MedialGraph : Transient
         double distExt;
 
         currentArc = new MedialArc(indTabArcs, aBisector.BisectorNumber(),
-            theBasicElts[aBisector.FirstEdge().EdgeNumber()],
-            theBasicElts[aBisector.SecondEdge().EdgeNumber()]);
+            theBasicElts.GetValue(aBisector.FirstEdge().EdgeNumber()),
+            theBasicElts.GetValue(aBisector.SecondEdge().EdgeNumber()));
         distExt = aBisector.DistIssuePoint();
         if (distExt == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
@@ -416,8 +417,8 @@ public sealed class MedialGraph : Transient
         if (!bisectorList.More())
         {
             // An arc on the contour.
-            theBasicElts[aBisector.SecondEdge().EdgeNumber()].SetStartArc(currentArc);
-            theBasicElts[aBisector.FirstEdge().EdgeNumber()].SetEndArc(currentArc);
+            theBasicElts.GetValue(aBisector.SecondEdge().EdgeNumber()).SetStartArc(currentArc);
+            theBasicElts.GetValue(aBisector.FirstEdge().EdgeNumber()).SetEndArc(currentArc);
         }
         else
         {
@@ -437,7 +438,7 @@ public sealed class MedialGraph : Transient
         }
 
         currentArc.SetIndex(indTabArcs);
-        theArcs.Bind(indTabArcs, currentArc);
+        theArcs[indTabArcs] = currentArc;
         indTabArcs = indTabArcs + 1;
 
         return currentArc;

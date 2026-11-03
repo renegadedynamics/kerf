@@ -638,8 +638,8 @@ public sealed class CheckSmallFaceAnalysis
     /// previous items (if not null) and the splitting vertices. Returns the count of splitting vertices.
     /// </summary>
     public int CheckSplittingVertices(in Face f,
-                                      NCollection_DataMap<Shape, NCollection_List<Shape>> mapEdges,
-                                      NCollection_DataMap<Shape, NCollection_List<double>> mapParam,
+                                      Dictionary<Shape, NCollection_List<Shape>> mapEdges,
+                                      Dictionary<Shape, NCollection_List<double>> mapParam,
                                       ref Compound allVert)
     {
         // OCCT.NET: OCCT adds to the caller's compound in place; the public form adds to a new compound holding the
@@ -665,8 +665,8 @@ public sealed class CheckSmallFaceAnalysis
     /// <paramref name="allVert"/> in place (throws on a frozen compound). For ported code that owns the compound.
     /// </summary>
     internal int InternalCheckSplittingVertices(in Face f,
-                                                NCollection_DataMap<Shape, NCollection_List<Shape>> mapEdges,
-                                                NCollection_DataMap<Shape, NCollection_List<double>> mapParam,
+                                                Dictionary<Shape, NCollection_List<Shape>> mapEdges,
+                                                Dictionary<Shape, NCollection_List<double>> mapParam,
                                                 in Compound allVert)
     {
         //  Prepare array of vertices with their locations //TopTools
@@ -756,8 +756,8 @@ public sealed class CheckSmallFaceAnalysis
             {
                 nbp++;
                 theBuilder.Add(allVert, v);
-                mapEdges.Bind(v, listEdge);
-                mapParam.Bind(v, listParam);
+                mapEdges[v] = listEdge;
+                mapParam[v] = listParam;
             }
         }
         if (nbp != 0)
@@ -1012,7 +1012,7 @@ public sealed class CheckSmallFaceAnalysis
     /// Finds pairs of consecutive pin edges of the face (short edges, by their vertices, folded on each other) and
     /// binds them in <paramref name="mapEdges"/> (the caller's working map). OCCT: "not tested on many examples".
     /// </summary>
-    public bool CheckPinFace(in Face f, NCollection_DataMap<Shape, Shape> mapEdges, double toler = -1.0)
+    public bool CheckPinFace(in Face f, Dictionary<Shape, Shape> mapEdges, double toler = -1.0)
     {
         Explorer exp_w = new(f, ShapeType.Wire);
         exp_w.More();
@@ -1128,7 +1128,7 @@ public sealed class CheckSmallFaceAnalysis
 
             if (CheckPinEdges(theFirstEdge, theSecondEdge, coef1, coef2, toler))
             {
-                mapEdges.Bind(theFirstEdge, theSecondEdge);
+                mapEdges[theFirstEdge] = theSecondEdge;
                 _statusPinFace = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.Done);
                 done = true;
             }

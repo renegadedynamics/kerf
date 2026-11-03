@@ -50,7 +50,7 @@ public class SelfIntersection : ElementFilter
     public bool IsDone => _overlapTool.IsDone;
 
     /// <summary>The overlapped faces (indices from 0), each with the faces it overlaps.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapElements() => _overlapTool.OverlapSubShapes1();
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapElements() => _overlapTool.OverlapSubShapes1();
 
     /// <summary>The face of the shape with the given index (from 0).</summary>
     public Face GetSubShape(int id) => ShapeCasts.Face(_faceList.Value(id));

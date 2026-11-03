@@ -918,7 +918,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             // Set tolerances for shape processing.
             // These parameters are calculated inside STEPControl_ActorRead::Transfer() and cannot be set
             // from outside.
-            NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+            Dictionary<string, string> parameters = GetShapeFixParameters();
             ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
             ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
             ShapeProcessor.SetParameter("FixShape.NonManifold", "1", true, parameters);
@@ -1622,7 +1622,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 // Set tolerances for shape processing.
                 // These parameters are calculated inside STEPControl_ActorRead::Transfer() and cannot be set
                 // from outside.
-                NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+                Dictionary<string, string> parameters = GetShapeFixParameters();
                 ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
                 ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
@@ -1771,8 +1771,8 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         try
         {
             ImportTool myTool = new ImportTool();
-            NCollection_DataMap<StepTopologicalRepresentationItem, Shape> map =
-                new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+            Dictionary<StepTopologicalRepresentationItem, Shape> map =
+                new Dictionary<StepTopologicalRepresentationItem, Shape>();
 
             myTool.Init(map, tp);
             TranslateFace myTF = new TranslateFace();
@@ -1806,7 +1806,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             {
                 Shape s = sb.Result();
 
-                NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+                Dictionary<string, string> parameters = GetShapeFixParameters();
                 ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
                 ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);

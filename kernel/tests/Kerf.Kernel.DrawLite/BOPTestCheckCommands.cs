@@ -4,6 +4,7 @@ using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -875,8 +876,8 @@ internal static class BOPTestCheckCommands
         int nE, nF, anECounter, aFCounter;
         double aT, aTolE, aDMax;
         global::Kerf.Engine.Topology.Explorer aExpF = new(), aExpE = new();
-        NCollection_DataMap<Shape, double> aDMETol = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        NCollection_DataMap<Shape, int> aMSI = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, double> aDMETol = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, int> aMSI = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         //
         anECounter = 0;
         aFCounter = 0;
@@ -902,9 +903,9 @@ internal static class BOPTestCheckCommands
                     continue;
                 }
                 //
-                if (aDMETol.IsBound(aE))
+                if (aDMETol.ContainsKey(aE))
                 {
-                    ref double aD = ref aDMETol.ChangeFind(aE);
+                    ref double aD = ref aDMETol.GetValueRef(aE);
                     if (aDMax > aD)
                     {
                         aD = aDMax;
@@ -912,7 +913,7 @@ internal static class BOPTestCheckCommands
                 }
                 else
                 {
-                    aDMETol.Bind(aE, aDMax);
+                    aDMETol[aE] = aDMax;
                 }
                 //
                 if (anECounter == 0)
@@ -920,25 +921,25 @@ internal static class BOPTestCheckCommands
                     di.Append("Invalid curves on surface:\n");
                 }
                 //
-                if (aMSI.IsBound(aE))
+                if (aMSI.ContainsKey(aE))
                 {
-                    nE = aMSI.Find(aE);
+                    nE = aMSI.GetValue(aE);
                 }
                 else
                 {
                     nE = anECounter;
-                    aMSI.Bind(aE, nE);
+                    aMSI[aE] = nE;
                     ++anECounter;
                 }
                 //
-                if (aMSI.IsBound(aF))
+                if (aMSI.ContainsKey(aF))
                 {
-                    nF = aMSI.Find(aF);
+                    nF = aMSI.GetValue(aF);
                 }
                 else
                 {
                     nF = aFCounter;
-                    aMSI.Bind(aF, nF);
+                    aMSI[aF] = nF;
                     ++aFCounter;
                 }
                 //
@@ -967,12 +968,12 @@ internal static class BOPTestCheckCommands
                 }
                 ++anECounter;
                 //
-                if (!aDMETol.IsBound(aE))
+                if (!aDMETol.ContainsKey(aE))
                 {
                     continue;
                 }
                 //
-                aTolE = aDMETol.Find(aE);
+                aTolE = aDMETol.GetValue(aE);
                 aTolE *= 1.001;
                 di.Append($"settolerance {a[1]}_{anECounter.ToString(CultureInfo.InvariantCulture)} {F16(aTolE)};\n");
             }

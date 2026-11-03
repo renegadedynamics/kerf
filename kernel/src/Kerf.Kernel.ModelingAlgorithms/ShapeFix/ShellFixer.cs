@@ -6,6 +6,7 @@
 
 // pdn 17.12.98 ie_exhaust-A.stp
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Healing.Analysis;
@@ -219,7 +220,7 @@ public class ShellFixer : RootFixer
     /// Groups are sorted by size with the largest group first.
     private static NCollection_List<NCollection_Sequence<Shape>> GetConnectedFaceGroups(
         NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> faceEdges,
-        NCollection_DataMap<Shape, NCollection_DynamicArray<Shape>> edgeFaces)
+        Dictionary<Shape, NCollection_DynamicArray<Shape>> edgeFaces)
     {
         var connectedGroups = new NCollection_List<NCollection_Sequence<Shape>>();
 
@@ -259,7 +260,7 @@ public class ShellFixer : RootFixer
                     {
                         Shape edge = faceEdgesArray.Value(edgeIdx);
 
-                        if (edgeFaces.Find(edge, out NCollection_DynamicArray<Shape> connectedFaces))
+                        if (edgeFaces.TryGetValue(edge, out NCollection_DynamicArray<Shape>? connectedFaces))
                         {
                             for (int faceIdx = 0; faceIdx < connectedFaces.Length(); ++faceIdx)
                             {
@@ -306,7 +307,7 @@ public class ShellFixer : RootFixer
     private static bool GetShells(NCollection_Sequence<Shape> lfaces,
                                   HashSet<Shape> mapMultiConnectEdges,
                                   NCollection_Sequence<Shape> seqShells,
-                                  NCollection_DataMap<Shape, Shape> mapFaceShells,
+                                  Dictionary<Shape, Shape> mapFaceShells,
                                   NCollection_Sequence<Shape> errFaces)
     {
         bool done = false;
@@ -341,7 +342,7 @@ public class ShellFixer : RootFixer
             faceEdges.Add(face, faceEdgesArray);
         }
 
-        var edgeFaces = new NCollection_DataMap<Shape, NCollection_DynamicArray<Shape>>(ShapeHasher.Instance);
+        var edgeFaces = new Dictionary<Shape, NCollection_DynamicArray<Shape>>(ShapeHasher.Instance);
 
         for (int faceInd = 1; faceInd <= faceEdges.Extent(); ++faceInd)
         {
@@ -352,11 +353,11 @@ public class ShellFixer : RootFixer
             {
                 Shape anEdge = faceEdgesArray.Value(edgeInd);
 
-                if (!edgeFaces.IsBound(anEdge))
+                if (!edgeFaces.ContainsKey(anEdge))
                 {
-                    edgeFaces.Bind(anEdge, new NCollection_DynamicArray<Shape>());
+                    edgeFaces[anEdge] = new NCollection_DynamicArray<Shape>();
                 }
-                NCollection_DynamicArray<Shape> facesArray = edgeFaces.Find(anEdge);
+                NCollection_DynamicArray<Shape> facesArray = edgeFaces.GetValue(anEdge);
 
                 // Check if face already exists in the array
                 bool faceExists = false;
@@ -389,11 +390,11 @@ public class ShellFixer : RootFixer
         }
 
         // Some assumption that each edge can be in two orientations
-        var processedEdges = new NCollection_DataMap<Shape, (bool first, bool second)>(ShapeHasher.Instance);
+        var processedEdges = new Dictionary<Shape, (bool first, bool second)>(ShapeHasher.Instance);
 
         NCollection_Sequence<Shape> processingFaces = connectedGroups.First();
 
-        var tempProcessedEdges = new NCollection_DataMap<Shape, (bool first, bool second)>(ShapeHasher.Instance);
+        var tempProcessedEdges = new Dictionary<Shape, (bool first, bool second)>(ShapeHasher.Instance);
         for (; faceIdx <= processingFaces.Length(); faceIdx++)
         {
             tempProcessedEdges.Clear();
@@ -414,25 +415,25 @@ public class ShellFixer : RootFixer
                     continue;
                 }
 
-                if (!processedEdges.IsBound(edge))
+                if (!processedEdges.ContainsKey(edge))
                 {
-                    if (!tempProcessedEdges.IsBound(edge))
+                    if (!tempProcessedEdges.ContainsKey(edge))
                     {
                         (bool, bool) edgeOrientationPair = (edge.Orientation() == Forward,
                                                               edge.Orientation() == Reversed);
 
-                        tempProcessedEdges.Bind(edge, edgeOrientationPair);
+                        tempProcessedEdges[edge] = edgeOrientationPair;
                     }
                     else
                     {
-                        ref (bool first, bool second) tempProcessedEdgeIt = ref tempProcessedEdges.ChangeFind(edge);
+                        ref (bool first, bool second) tempProcessedEdgeIt = ref tempProcessedEdges.GetValueRef(edge);
                         tempProcessedEdgeIt.first  = tempProcessedEdgeIt.first || (edge.Orientation() == Forward);
                         tempProcessedEdgeIt.second = tempProcessedEdgeIt.second || (edge.Orientation() == Reversed);
                     }
                     continue;
                 }
 
-                ref (bool first, bool second) pair = ref processedEdges.ChangeFind(edge);
+                ref (bool first, bool second) pair = ref processedEdges.GetValueRef(edge);
 
                 bool isDirect   = pair.first;
                 bool isReversed = pair.second;
@@ -460,11 +461,11 @@ public class ShellFixer : RootFixer
                 if (!pair.first && !pair.second)
                 {
                     // if edge is processed in this face it is removed from map of processed edges
-                    processedEdges.UnBind(edge);
+                    processedEdges.Remove(edge);
                 }
             }
 
-            if (badOrientationCount == 0 && goodOrientationCount == 0 && tempProcessedEdges.IsEmpty())
+            if (badOrientationCount == 0 && goodOrientationCount == 0 && tempProcessedEdges.Count == 0)
             {
                 continue;
             }
@@ -495,13 +496,13 @@ public class ShellFixer : RootFixer
 
                         (bool, bool) revertedPair = (!edgeOrientationPair.first, !edgeOrientationPair.second);
 
-                        if (!processedEdges.IsBound(edge))
+                        if (!processedEdges.ContainsKey(edge))
                         {
-                            processedEdges.Bind(edge, revertedPair);
+                            processedEdges[edge] = revertedPair;
                         }
                         else
                         {
-                            processedEdges.ChangeFind(edge) = revertedPair;
+                            processedEdges.GetValueRef(edge) = revertedPair;
                         }
                     }
                     done = true;
@@ -513,19 +514,19 @@ public class ShellFixer : RootFixer
                         Shape              edge                  = tempEdgeIter.Key;
                         (bool first, bool second) edgeOrientationPair = tempEdgeIter.Value;
 
-                        if (!processedEdges.IsBound(edge))
+                        if (!processedEdges.ContainsKey(edge))
                         {
-                            processedEdges.Bind(edge, edgeOrientationPair);
+                            processedEdges[edge] = edgeOrientationPair;
                         }
                         else
                         {
-                            processedEdges.ChangeFind(edge) = edgeOrientationPair;
+                            processedEdges.GetValueRef(edge) = edgeOrientationPair;
                         }
                     }
                 }
                 facesInShellCount++;
                 b.Add(nshell, f1);
-                mapFaceShells.Bind(f1, nshell);
+                mapFaceShells[f1] = nshell;
                 processingFaces.Remove(faceIdx);
 
                 // check if closed shell is obtained in multi connex mode and add to sequence of
@@ -551,7 +552,7 @@ public class ShellFixer : RootFixer
                 if (itf.More())
                 {
                     seqUnconnectFaces.Append(itf.Value());
-                    mapFaceShells.UnBind(itf.Value());
+                    mapFaceShells.Remove(itf.Value());
                 }
                 var nshellnext = new Shell();
                 b.MakeShell(ref nshellnext);
@@ -585,9 +586,9 @@ public class ShellFixer : RootFixer
             }
             else if (numFace == 1)
             {
-                if (mapFaceShells.IsBound(face))
+                if (mapFaceShells.ContainsKey(face))
                 {
-                    mapFaceShells.UnBind(face);
+                    mapFaceShells.Remove(face);
                 }
                 processingFaces.Append(face);
             }
@@ -628,7 +629,7 @@ public class ShellFixer : RootFixer
     private static bool AddMultiConexityFaces(NCollection_Sequence<Shape> lface,
                                               HashSet<Shape> aMapMultiConnectEdges,
                                               NCollection_Sequence<Shape> seqShells,
-                                              NCollection_DataMap<Shape, Shape> aMapFaceShells,
+                                              Dictionary<Shape, Shape> aMapFaceShells,
                                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMapEdgeFaces,
                                               NCollection_Sequence<Shape> errFaces,
                                               bool nonManifold)
@@ -678,7 +679,7 @@ public class ShellFixer : RootFixer
         {
             var map          = new HashSet<Shape>(ShapeHasher.Instance);
             var tmp          = new NCollection_Sequence<Shape>();
-            var tmpFaceShell = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            var tmpFaceShell = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
             if (GetShells(llPosibleShells, map, tmpShells, tmpFaceShell, tmp))
             {
                 for (int kk = 1; kk <= tmpShells.Length(); kk++)
@@ -707,7 +708,7 @@ public class ShellFixer : RootFixer
         // Add chosen faces to shells.
         for (int k1 = 1; k1 <= addShapes.Length(); k1++)
         {
-            var          mapOtherShells = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+            var          mapOtherShells = new Dictionary<Shape, int>(ShapeHasher.Instance);
             var          dire           = new HashSet<Shape>(ShapeHasher.Instance);
             var          reve           = new HashSet<Shape>(ShapeHasher.Instance);
             Shape sh            = addShapes.Value(k1);
@@ -741,13 +742,13 @@ public class ShellFixer : RootFixer
             }
             foreach (Shape f in lfaces)
             {
-                if (!aMapFaceShells.IsBound(f))
+                if (!aMapFaceShells.ContainsKey(f))
                 {
                     continue;
                 }
 
-                Shape othershell = aMapFaceShells.Find(f);
-                if (mapOtherShells.IsBound(othershell))
+                Shape othershell = aMapFaceShells.GetValue(f);
+                if (mapOtherShells.ContainsKey(othershell))
                 {
                     continue;
                 }
@@ -801,10 +802,10 @@ public class ShellFixer : RootFixer
                 if (nbdir != 0 || nbrev != 0)
                 {
                     int isReverse = (nbrev != 0 ? 1 : 0);
-                    mapOtherShells.Bind(othershell, isReverse);
+                    mapOtherShells[othershell] = isReverse;
                 }
             }
-            if (mapOtherShells.IsEmpty())
+            if (mapOtherShells.Count == 0)
             {
                 //      i1++;
                 continue;
@@ -820,12 +821,12 @@ public class ShellFixer : RootFixer
             int ind      = 0;
             for (int l = 1; l <= seqShells.Length(); l++)
             {
-                if (!mapOtherShells.IsBound(seqShells.Value(l)))
+                if (!mapOtherShells.ContainsKey(seqShells.Value(l)))
                 {
                     continue;
                 }
                 ind++;
-                int          isRev     = mapOtherShells.Find(seqShells.Value(l));
+                int          isRev     = mapOtherShells.GetValue(seqShells.Value(l));
                 Shape anewShape = (isRev != 0 ? sh.Reversed() : sh);
 
                 var          b1    = new BrepBuilder();
@@ -986,7 +987,7 @@ public class ShellFixer : RootFixer
 
             // Filling map MapOtherShells which contains candidate to creation of closed shell
             //  with aShell.
-            var mapOtherShells = new NCollection_DataMap<Shape, bool>(ShapeHasher.Instance);
+            var mapOtherShells = new Dictionary<Shape, bool>(ShapeHasher.Instance);
             for (int j = i + 1; j <= openShells.Length(); j++)
             {
                 bool         isAddShell = true;
@@ -1022,14 +1023,14 @@ public class ShellFixer : RootFixer
                 {
                     continue;
                 }
-                mapOtherShells.Bind(openShells.Value(j), isReversed);
+                mapOtherShells[openShells.Value(j)] = isReversed;
             }
-            if (mapOtherShells.IsEmpty())
+            if (mapOtherShells.Count == 0)
             {
                 continue;
             }
 
-            if (!mapOtherShells.IsEmpty())
+            if (mapOtherShells.Count != 0)
             {
                 // Case of compsolid when more than two shells have the same free boundary.
                 var seqCandidate = new NCollection_Sequence<Shape>();
@@ -1055,10 +1056,10 @@ public class ShellFixer : RootFixer
                         {
                             b.Add(newSh, it1.Value());
                         }
-                        bool isRev = mapOtherShells.Find(seqCandidate.Value(l));
+                        bool isRev = mapOtherShells.GetValue(seqCandidate.Value(l));
                         if (k != 1)
                         {
-                            isRev = (isRev == mapOtherShells.Find(seqCandidate.Value(k)));
+                            isRev = (isRev == mapOtherShells.GetValue(seqCandidate.Value(k)));
                         }
                         for (var exp = new Explorer(seqCandidate.Value(l), ShapeType.Face); exp.More(); exp.Next())
                         {
@@ -1076,7 +1077,7 @@ public class ShellFixer : RootFixer
 
                 for (int j1 = i + 1; j1 <= openShells.Length(); j1++)
                 {
-                    if (!mapOtherShells.IsBound(openShells.Value(j1)))
+                    if (!mapOtherShells.ContainsKey(openShells.Value(j1)))
                     {
                         continue;
                     }
@@ -1091,7 +1092,7 @@ public class ShellFixer : RootFixer
                 bool         isReversed = false;
                 for (int j1 = i + 1; j1 <= openShells.Length(); j1++)
                 {
-                    if (!mapOtherShells.Find(openShells.Value(j1), out isReversed))
+                    if (!mapOtherShells.TryGetValue(openShells.Value(j1), out isReversed))
                     {
                         continue;
                     }
@@ -1386,7 +1387,7 @@ public class ShellFixer : RootFixer
         var  seqShells     = new NCollection_Sequence<Shape>();
         var  errFaces      = new NCollection_Sequence<Shape>(); // Compound of faces like to Mebiuce leaf.
         var  lface          = new NCollection_Sequence<Shape>();
-        var  mapFaceShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var  mapFaceShells = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         _shell = shell;
         _shape = shell;
         int numMultShell = 0;
@@ -1454,9 +1455,9 @@ public class ShellFixer : RootFixer
         {
             for (int jj = 1; jj <= lface.Length(); jj++)
             {
-                if (mapFaceShells.IsBound(lface.Value(jj)))
+                if (mapFaceShells.ContainsKey(lface.Value(jj)))
                 {
-                    mapFaceShells.UnBind(lface.Value(jj));
+                    mapFaceShells.Remove(lface.Value(jj));
                 }
             }
 

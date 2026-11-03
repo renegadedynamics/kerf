@@ -32,7 +32,7 @@ public static class ShapeToHlr
 {
     /// <summary>Outlines S for the projector P (nbIso isolines) and loads the result in a new data structure.</summary>
     public static HiddenLineData Load(OutLiner s, in AlgorithmProjector p,
-                                    NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso = 0)
+                                    Dictionary<Shape, AdaptorTool> mst, int nbIso = 0)
     {
         s.Fill(p, mst, nbIso);
         TopologyData topDS = s.DataStructure();

@@ -148,7 +148,7 @@ public partial class BooleanBuilder
 
     /// <summary>The splits of <paramref name="s"/> (null if it has no images).</summary>
     protected virtual NCollection_List<Shape>? LocModified(in Shape s)
-        => _images.Find(s, out NCollection_List<Shape> list) ? list : null;
+        => _images.TryGetValue(s, out NCollection_List<Shape>? list) ? list : null;
 
     /// <summary>OCCT's history of the result: modified, generated and deleted argument sub-shapes.</summary>
     protected void PrepareHistory(ProgressRange range)

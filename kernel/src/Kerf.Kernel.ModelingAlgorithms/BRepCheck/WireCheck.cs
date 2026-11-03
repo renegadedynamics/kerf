@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
@@ -60,7 +61,7 @@ public class WireCheck : ResultCheck
 
         try
         {
-            return _map.Find(_shape);
+            return _map.GetValue(_shape);
         }
         finally
         {
@@ -79,7 +80,7 @@ public class WireCheck : ResultCheck
         if (!_min)
         {
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
 
             // check that the wire is "connex"
             var exp = new Explorer(_shape, ShapeType.Edge);
@@ -151,13 +152,13 @@ public class WireCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {
@@ -277,7 +278,7 @@ public class WireCheck : ResultCheck
         var exp = new Explorer();
         var expv = new Explorer();
         var mapS = new HashSet<Shape>(ShapeHasher.Instance);
-        var cradoc = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var cradoc = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         _mapVE.Clear();
         // Checks if the oriented edges of the wire give a "closed" wire,
         // i-e if each oriented vertex on oriented edges is found 2 times...
@@ -285,13 +286,13 @@ public class WireCheck : ResultCheck
         {
             if (IsOriented(exp.Current()))
             {
-                if (!cradoc.IsBound(exp.Current()))
+                if (!cradoc.ContainsKey(exp.Current()))
                 {
                     var theListOfShape = new NCollection_List<Shape>();
-                    cradoc.Bind(exp.Current(), theListOfShape);
+                    cradoc[exp.Current()] = theListOfShape;
                 }
 
-                cradoc.Find(exp.Current()).Append(exp.Current());
+                cradoc.GetValue(exp.Current()).Append(exp.Current());
 
                 mapS.Add(exp.Current());
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
@@ -1602,7 +1603,7 @@ public class WireCheck : ResultCheck
     public void SetStatus(StatusCheck status)
     {
         // OCCT takes no lock here (the analyzer never calls it)
-        BRepCheckCheck.Add(_map.Find(_shape), status);
+        BRepCheckCheck.Add(_map.GetValue(_shape), status);
     }
 
     /// <summary>Sets whether <see cref="InContext"/> checks <see cref="SelfIntersect"/>.</summary>

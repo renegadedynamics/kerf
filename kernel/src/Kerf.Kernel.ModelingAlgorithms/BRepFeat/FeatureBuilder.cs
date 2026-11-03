@@ -6,6 +6,7 @@
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
@@ -146,17 +147,17 @@ public class FeatureBuilder : Bop
         for (; exp.More(); exp.Next())
         {
             Shape s = exp.Current();
-            _images.UnBind(s);
+            _images.Remove(s);
         }
         //
-        if (!_images.IsBound(args1))
+        if (!_images.ContainsKey(args1))
         {
             return;
         }
         //
         NCollection_List<Shape>.Iterator itIm = new();
         //
-        NCollection_List<Shape> ls = _images.ChangeFind(args1);
+        NCollection_List<Shape> ls = _images.GetValue(args1);
         itIm.Initialize(ls);
         for (; itIm.More(); itIm.Next())
         {
@@ -282,9 +283,9 @@ public class FeatureBuilder : Bop
             {
                 Shape s = si.Shape();
                 //
-                if (_images.IsBound(s))
+                if (_images.ContainsKey(s))
                 {
-                    NCollection_List<Shape> lIm = _images.ChangeFind(s);
+                    NCollection_List<Shape> lIm = _images.GetValue(s);
                     itIm.Initialize(lIm);
                     for (; itIm.More();)
                     {
@@ -308,7 +309,7 @@ public class FeatureBuilder : Bop
             FaceInfo fi = _ds.FaceInfo(i);
             Face f = ShapeCasts.Face(si.Shape());
             //
-            if (!_images.IsBound(f))
+            if (!_images.ContainsKey(f))
             {
                 continue;
             }
@@ -330,9 +331,9 @@ public class FeatureBuilder : Bop
                 oriE = e.Orientation();
                 bIsDegenerated = Tool.Degenerated(e);
                 bIsClosed = Tool.IsClosed(e, f);
-                if (_images.IsBound(e))
+                if (_images.ContainsKey(e))
                 {
-                    NCollection_List<Shape> leIm = _images.ChangeFind(e);
+                    NCollection_List<Shape> leIm = _images.GetValue(e);
                     //
                     bRem = false;
                     bIm = false;
@@ -494,7 +495,7 @@ public class FeatureBuilder : Bop
 
             bf.Perform();
 
-            NCollection_List<Shape> lfIm = _images.ChangeFind(f);
+            NCollection_List<Shape> lfIm = _images.GetValue(f);
             lfIm.Clear();
 
             NCollection_List<Shape> lfr = bf.Areas();
@@ -512,21 +513,21 @@ public class FeatureBuilder : Bop
                 sx.Orientation(oriF);
                 lfIm.Append(sx);
                 //
-                if (!_origins.Find(sx, out NCollection_List<Shape> pLOr))
+                if (!_origins.TryGetValue(sx, out NCollection_List<Shape>? pLOr))
                 {
-                    pLOr = _origins.Bound(sx, new NCollection_List<Shape>());
+                    pLOr = _origins.SetValueRef(sx, new NCollection_List<Shape>());
                 }
                 pLOr.Append(f);
                 //
                 if (bFlagSD)
                 {
-                    _shapesSD.Bind(fr, sx);
+                    _shapesSD[fr] = sx;
                 }
             }
             //
             if (lfIm.Extent() == 0)
             {
-                _images.UnBind(f);
+                _images.Remove(f);
             }
         }
     }
@@ -700,7 +701,7 @@ public class FeatureBuilder : Bop
         Shape args0 = _arguments.First();
         Shape args1 = _tools.First();
         //
-        NCollection_List<Shape> lsIm = _images.Find(args1);
+        NCollection_List<Shape> lsIm = _images.GetValue(args1);
         it.Initialize(lsIm);
         for (; it.More(); it.Next())
         {
@@ -715,9 +716,9 @@ public class FeatureBuilder : Bop
         for (; exp.More(); exp.Next())
         {
             Shape solid = exp.Current();
-            if (_images.IsBound(solid))
+            if (_images.ContainsKey(solid))
             {
-                NCollection_List<Shape> lsImSol = _images.ChangeFind(solid);
+                NCollection_List<Shape> lsImSol = _images.GetValue(solid);
                 it.Initialize(lsImSol);
                 for (; it.More(); it.Next())
                 {
@@ -733,7 +734,7 @@ public class FeatureBuilder : Bop
                     //
                     if (bFlagSD)
                     {
-                        _shapesSD.Bind(solIm, sx);
+                        _shapesSD[solIm] = sx;
                     }
                 }
                 lsImSol.Assign(lsImNew);
@@ -759,7 +760,7 @@ public class FeatureBuilder : Bop
     }
 
     /// <summary>Redefined to avoid the usage of removed faces.</summary>
-    protected override void FillIn3DParts(NCollection_DataMap<Shape, Shape> draftSolids,
+    protected override void FillIn3DParts(Dictionary<Shape, Shape> draftSolids,
                                           ProgressRange range)
     {
         GetReport().Clear();

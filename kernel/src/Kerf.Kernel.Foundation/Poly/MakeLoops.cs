@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2009-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Occt;
@@ -400,13 +401,13 @@ public abstract class MakeLoops
         contour.Clear();
         int startIndex = 0;
         int aIndexS = indexS;
-        var nodeLink = new NCollection_DataMap<int, int>();
+        var nodeLink = new Dictionary<int, int>();
         int lastNode = GetLastNode(aIndexS);
 
         for (;;)
         {
             contour.Add(aIndexS);
-            nodeLink.Bind(GetFirstNode(aIndexS), aIndexS);
+            nodeLink[GetFirstNode(aIndexS)] = aIndexS;
 
             int index = Math.Abs(aIndexS);
 
@@ -480,11 +481,11 @@ public abstract class MakeLoops
             }
 
             lastNode = GetLastNode(aIndexS);
-            if (nodeLink.IsBound(lastNode))
+            if (nodeLink.ContainsKey(lastNode))
             {
                 // closing the loop, stop search
                 contour.Add(aIndexS);
-                startIndex = contour.FindIndex(nodeLink.Find(lastNode));
+                startIndex = contour.FindIndex(nodeLink.GetValue(lastNode));
                 break;
             }
         }

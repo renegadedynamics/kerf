@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -51,7 +52,7 @@ public sealed class CompatibleWires
     private bool _degen1;
     private bool _degen2;
     private ThruSectionErrorStatus _status;
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
 
     //=======================================================================
     // function : AddNewEdge
@@ -60,12 +61,12 @@ public sealed class CompatibleWires
     //=======================================================================
 
     private static void AddNewEdge(in Shape edge,
-                                   NCollection_DataMap<Shape, NCollection_Sequence<Shape>> edgeNewEdges,
+                                   Dictionary<Shape, NCollection_Sequence<Shape>> edgeNewEdges,
                                    NCollection_List<Shape> listNewEdges)
     {
-        if (edgeNewEdges.IsBound(edge))
+        if (edgeNewEdges.ContainsKey(edge))
         {
-            NCollection_Sequence<Shape> newEdges = edgeNewEdges.Find(edge);
+            NCollection_Sequence<Shape> newEdges = edgeNewEdges.GetValue(edge);
             for (int i = 1; i <= newEdges.Length(); i++)
             {
                 Shape anEdge = newEdges[i];
@@ -376,7 +377,7 @@ public sealed class CompatibleWires
     // (decision 18). The first key whose list holds V wins, so the order matters only when V is in several lists
     // (decision 908).
     private static bool SearchRoot(in Vertex v,
-                                   NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+                                   Dictionary<Shape, NCollection_List<Shape>> map,
                                    out Vertex vRoot)
     {
         bool trouve = false;
@@ -452,11 +453,11 @@ public sealed class CompatibleWires
     private static bool EdgeIntersectOnWire(in Point3D p1,
                                             in Point3D p2,
                                             double percent,
-                                            NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+                                            Dictionary<Shape, NCollection_List<Shape>> map,
                                             in Wire w,
                                             ref Vertex vsol,
                                             ref Wire newW,
-                                            NCollection_DataMap<Shape, NCollection_Sequence<Shape>> edgeNewEdges)
+                                            Dictionary<Shape, NCollection_Sequence<Shape>> edgeNewEdges)
     {
 
         WireExplorer exp = new();
@@ -543,7 +544,7 @@ public sealed class CompatibleWires
                 Edge e = ShapeCasts.Edge(localShape);
                 //      TopoDS_Edge E = TopoDS::Edge(DSS.SupportOnShape2(isol));
                 NCollection_Sequence<Shape> emptySeq = new();
-                edgeNewEdges.Bind(e, emptySeq);
+                edgeNewEdges[e] = emptySeq;
                 DSS.ParOnEdgeS2(isol, out double param);
                 Tool.Range(e, out double first, out double last);
                 LibraryMakeWire mw = new();
@@ -562,7 +563,7 @@ public sealed class CompatibleWires
                         {
                             return false;
                         }
-                        edgeNewEdges[e] = se;
+                        edgeNewEdges.GetValueRef(e) = se;
                         Exploration.Vertices(ShapeCasts.Edge(se.Value(1)), out Vertex vv1, out Vertex vv2);
                         if (Exploration.FirstVertex(e).IsSame(vv1) || Exploration.LastVertex(e).IsSame(vv1))
                         {
@@ -769,9 +770,9 @@ public sealed class CompatibleWires
     internal NCollection_List<Shape> InternalGeneratedShapes(in Edge subSection)
     {
 
-        if (_map.IsBound(subSection))
+        if (_map.ContainsKey(subSection))
         {
-            return _map.Find(subSection);
+            return _map.GetValue(subSection);
         }
         else
         {
@@ -785,7 +786,7 @@ public sealed class CompatibleWires
     /// </summary>
     public ISchematiqList<KeyValuePair<Shape, ISchematiqList<Shape>>> Generated()
     {
-        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Extent()];
+        var pairs = new KeyValuePair<Shape, ISchematiqList<Shape>>[_map.Count];
         int i = 0;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in _map)
         {
@@ -797,7 +798,7 @@ public sealed class CompatibleWires
     }
 
     /// <summary>The algorithm's own map from the sections' edges to the edges made from them, for ported callers.</summary>
-    internal NCollection_DataMap<Shape, NCollection_List<Shape>> InternalGenerated()
+    internal Dictionary<Shape, NCollection_List<Shape>> InternalGenerated()
     {
         return _map;
     }
@@ -904,8 +905,8 @@ public sealed class CompatibleWires
             for (exp.Init(w); exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                _map.Bind(e, new NCollection_List<Shape>());
-                _map[e].Append(e);
+                _map[e] = new NCollection_List<Shape>();
+                _map.GetValue(e).Append(e);
             }
         }
 
@@ -996,7 +997,7 @@ public sealed class CompatibleWires
         // initialisation
         int nbSects = _work.Length();
         WireExplorer exp = new();
-        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> edgeNewEdges = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_Sequence<Shape>> edgeNewEdges = new(ShapeHasher.Instance);
 
         bool allClosed = true;
         int i, ii, ideb = 1, ifin = nbSects;
@@ -1091,7 +1092,7 @@ public sealed class CompatibleWires
         }
 
         // construction of RMap, map of reports of wire i to wire i-1
-        NCollection_DataMap<Shape, NCollection_List<Shape>> rMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> rMap = new(ShapeHasher.Instance);
         rMap.Clear();
 
         // loop on i
@@ -1117,7 +1118,7 @@ public sealed class CompatibleWires
                 // init of RMap for Vi
                 NCollection_List<Shape> init = new();
                 init.Clear();
-                rMap.Bind(vi, init);
+                rMap[vi] = init;
 
                 // it is required to find intersection Vi - wire2
                 Point3D pi = Tool.Pnt(vi);
@@ -1150,14 +1151,14 @@ public sealed class CompatibleWires
                     {
                         _work[i - 1] = newwire;
                     }
-                    rMap[vi].Append(vsol);
+                    rMap.GetValue(vi).Append(vsol);
                 }
 
             } // loop on  ii
         } // loop on  i
 
         // initialisation of MapVLV, map of correspondences vertex - list of vertices
-        NCollection_DataMap<Shape, NCollection_List<Shape>> mapVLV = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> mapVLV = new(ShapeHasher.Instance);
         SeqOfVertices(ShapeCasts.Wire(_work[ideb]), seqV);
         int sizeMap = seqV.Length();
         mapVLV.Clear();
@@ -1167,14 +1168,14 @@ public sealed class CompatibleWires
             NCollection_List<Shape> init = new();
             init.Clear();
             init.Append(vi);
-            mapVLV.Bind(vi, init);
+            mapVLV[vi] = init;
             int nbV = 1;
             Vertex v0;
             v0 = vi;
             bool tantque = SearchRoot(v0, rMap, out Vertex v1);
             while (tantque)
             {
-                mapVLV[vi].Append(v1);
+                mapVLV.GetValue(vi).Append(v1);
                 nbV++;
                 // test on NbV required for looping sections
                 if (v1.IsSame(vi) || nbV >= _work.Length())
@@ -1214,7 +1215,7 @@ public sealed class CompatibleWires
                 bool intersect = true;
                 if (SearchRoot(vi, mapVLV, out Vertex vRoot))
                 {
-                    NCollection_List<Shape> lVi = mapVLV.Find(vRoot);
+                    NCollection_List<Shape> lVi = mapVLV.GetValue(vRoot);
                     intersect = (!SearchVertex(lVi, wire2, out _));
                 }
 
@@ -1249,7 +1250,7 @@ public sealed class CompatibleWires
                                                         edgeNewEdges);
                         // VRoot is null when SearchRoot found nothing: the map then has no such key and both OCCT's
                         // operator() and the port's indexer throw Standard_NoSuchObject.
-                        mapVLV[vRoot].Append(vsol);
+                        mapVLV.GetValue(vRoot).Append(vsol);
                         if (newVertex)
                         {
                             _work[i + 1] = newwire;
@@ -1281,7 +1282,7 @@ public sealed class CompatibleWires
             double u2 = Tool.Parameter(vl, eCur);
             EdgeCurveAdaptor curve = new(eCur);
             Point3D pPs = curve.Value(0.1 * (u1 + 9 * u2));
-            NCollection_List<Shape>.Iterator itF = new(mapVLV.Find(vf)), itL = new(mapVLV.Find(vl));
+            NCollection_List<Shape>.Iterator itF = new(mapVLV.GetValue(vf)), itL = new(mapVLV.GetValue(vl));
             int rang = ideb;
             while (rang < i && itF.More() && itL.More())
             {
@@ -1430,7 +1431,7 @@ public sealed class CompatibleWires
                 {
                     NCollection_Sequence<Shape> seq = new();
                     seq.Append(newEdge);
-                    edgeNewEdges.Bind(edge, seq);
+                    edgeNewEdges[edge] = seq;
                 }
             }
             _work[_work.Length()] = _work[1];
@@ -1473,7 +1474,7 @@ public sealed class CompatibleWires
             // in <EdgeNewEdges> recursively
             AddNewEdge(edge, edgeNewEdges, listOfNewEdges);
 
-            _map[edge] = listOfNewEdges;
+            _map.GetValueRef(edge) = listOfNewEdges;
         }
     }
 
@@ -1708,7 +1709,7 @@ public sealed class CompatibleWires
                                         found = true;
                                         // myMap(Ancestor).InsertBefore(LE, itlist): the list LE before the iterator's
                                         // item, the iterator staying on that item
-                                        NCollection_List<Shape> list = _map[ancestor];
+                                        NCollection_List<Shape> list = _map.GetValue(ancestor);
                                         for (NCollection_List<Shape>.Iterator itLE = new(le); itLE.More(); itLE.Next())
                                         {
                                             list.InsertBefore(itLE.Value(), itlist);

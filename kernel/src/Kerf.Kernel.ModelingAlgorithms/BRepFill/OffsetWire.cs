@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -51,7 +52,7 @@ public sealed class OffsetWire
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _map = new(EqualityComparer<Shape>.Default);
     private readonly BisectingLocus _bilo = new();
     private readonly LinkTopoBilo _link = new();
-    private readonly NCollection_DataMap<Shape, Shape> _mapSpine = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapSpine = new(ShapeHasher.Instance);
     // OCCT leaves myCallGen uninitialised until Perform; PerformWithBiLo alone reads it in GeneratedShapes, where an
     // empty myMapSpine makes its value irrelevant (occt-issues.md, 5O2)
     private bool _callGen;
@@ -290,7 +291,7 @@ public sealed class OffsetWire
     {
         if (!_callGen)
         {
-            if (!_mapSpine.IsEmpty())
+            if (_mapSpine.Count != 0)
             {
                 // myMapSpine can be empty if passed by PerformWithBilo.
                 // OCCT iterates the map in address order; the port in insertion order (occt-issues.md, 5O2)
@@ -411,30 +412,30 @@ public sealed class OffsetWire
                         aL.Append(newE);
                     }
                     // Update myMapSpine
-                    if (_mapSpine.IsBound(e))
+                    if (_mapSpine.ContainsKey(e))
                     {
                         NCollection_List<Shape>.Iterator newit = new(aL);
                         for (; newit.More(); newit.Next())
                         {
                             Edge newEdge = ShapeCasts.Edge(newit.Value());
-                            _mapSpine.Bind(newEdge, _mapSpine[e]);
+                            _mapSpine[newEdge] = _mapSpine.GetValue(e);
                             EdgeVertices(newEdge, out Vertex newV1, out Vertex newV2);
-                            if (!_mapSpine.IsBound(newV1))
+                            if (!_mapSpine.ContainsKey(newV1))
                             {
-                                _mapSpine.Bind(newV1, _mapSpine[e]);
+                                _mapSpine[newV1] = _mapSpine.GetValue(e);
                             }
-                            if (!_mapSpine.IsBound(newV2))
+                            if (!_mapSpine.ContainsKey(newV2))
                             {
-                                _mapSpine.Bind(newV2, _mapSpine[e]);
+                                _mapSpine[newV2] = _mapSpine.GetValue(e);
                             }
                         }
-                        _mapSpine.UnBind(e);
+                        _mapSpine.Remove(e);
                     }
                     ///////////////////
                     subst.Substitute(e, aL);
                 }
 
-                NCollection_DataMap<Shape, NCollection_List<Shape>> wwmap = new(ShapeHasher.Instance);
+                Dictionary<Shape, NCollection_List<Shape>> wwmap = new(ShapeHasher.Instance);
                 Iterator itws = new(_workSpine);
                 for (; itws.More(); itws.Next())
                 {
@@ -446,7 +447,7 @@ public sealed class OffsetWire
                         newWire.Closed(wire.Closed());
                         NCollection_List<Shape> lw = new();
                         lw.Append(newWire);
-                        wwmap.Bind(wire, lw);
+                        wwmap[wire] = lw;
                     }
                 }
                 subst.Clear();
@@ -606,9 +607,9 @@ public sealed class OffsetWire
         //---------------------------------------------------------------------
 
         // OCCT.NET: keyed by the node's identity, as OCCT's handle; only looked up
-        NCollection_DataMap<MedialNode, Shape> mapNodeVertex = new(ReferenceEqualityComparer.Instance);
-        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> mapBis = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_Sequence<double>> mapVerPar = new(ShapeHasher.Instance);
+        Dictionary<MedialNode, Shape> mapNodeVertex = new(ReferenceEqualityComparer.Instance);
+        Dictionary<Shape, NCollection_Sequence<Shape>> mapBis = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_Sequence<double>> mapVerPar = new(ShapeHasher.Instance);
 
         // OCCT.NET: OCCT down-casts (a null plane on another surface, dereferenced below: an access violation natively)
         PlaneSurface refPlane = (Tool.Surface(_workSpine) as PlaneSurface)!;
@@ -684,7 +685,7 @@ public sealed class OffsetWire
         //---------------------------------------------------
         // Construction of offset vertices.
         //---------------------------------------------------
-        NCollection_DataMap<Shape, NCollection_List<Shape>> detromp = new(EqualityComparer<Shape>.Default);
+        Dictionary<Shape, NCollection_List<Shape>> detromp = new(EqualityComparer<Shape>.Default);
         MedialArc currentArc;
         Edge currentEdge;
         Shape[] S = [new(), new()];
@@ -816,13 +817,13 @@ public sealed class OffsetWire
             // the parts of the bissectrices located between the spine and the
             // offset.
             //------------------------------------------------------------
-            if (!detromp.IsBound(S[0]))
+            if (!detromp.ContainsKey(S[0]))
             {
-                detromp.Bind(S[0], new NCollection_List<Shape>());
+                detromp[S[0]] = new NCollection_List<Shape>();
             }
-            if (!detromp.IsBound(S[1]))
+            if (!detromp.ContainsKey(S[1]))
             {
-                detromp.Bind(S[1], new NCollection_List<Shape>());
+                detromp[S[1]] = new NCollection_List<Shape>();
             }
 
             UpdateDetromp(detromp, S[0], S[1], vertices, Params, bisec, startOnEdge, endOnEdge, trim);
@@ -834,21 +835,21 @@ public sealed class OffsetWire
             {
                 for (k = 0; k <= 1; k++)
                 {
-                    if (!mapBis.IsBound(e[k]))
+                    if (!mapBis.ContainsKey(e[k]))
                     {
-                        mapBis.Bind(e[k], new NCollection_Sequence<Shape>());
-                        mapVerPar.Bind(e[k], new NCollection_Sequence<double>());
+                        mapBis[e[k]] = new NCollection_Sequence<Shape>();
+                        mapVerPar[e[k]] = new NCollection_Sequence<double>();
                     }
                     for (int ii = 1; ii <= vertices.Length(); ii++)
                     {
-                        mapBis[e[k]].Append(vertices.Value(ii));
+                        mapBis.GetValue(e[k]).Append(vertices.Value(ii));
                         if (k == 0)
                         {
-                            mapVerPar[e[k]].Append(Params.Value(ii).Y());
+                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Y());
                         }
                         else
                         {
-                            mapVerPar[e[k]].Append(Params.Value(ii).Z());
+                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Z());
                         }
                     }
                 }
@@ -863,12 +864,12 @@ public sealed class OffsetWire
                 //-------------------------------------------------------------
                 for (k = 0; k <= 1; k++)
                 {
-                    if (!mapBis.IsBound(e[k]))
+                    if (!mapBis.ContainsKey(e[k]))
                     {
                         if (node1.Distance() > _offset && node2.Distance() > _offset)
                         {
-                            mapBis.Bind(e[k], new NCollection_Sequence<Shape>());
-                            mapVerPar.Bind(e[k], new NCollection_Sequence<double>());
+                            mapBis[e[k]] = new NCollection_Sequence<Shape>();
+                            mapVerPar[e[k]] = new NCollection_Sequence<double>();
                         }
                     }
                 }
@@ -888,10 +889,10 @@ public sealed class OffsetWire
             currentEdge = ShapeCasts.Edge(_map[j].First());
 
             _map[j].Clear();
-            if (mapBis.IsBound(currentEdge))
+            if (mapBis.ContainsKey(currentEdge))
             {
                 NCollection_Sequence<Shape> seqOfShape = new();
-                if (!mapBis[currentEdge].IsEmpty())
+                if (!mapBis.GetValue(currentEdge).IsEmpty())
                 {
                     int indOfE = 0;
                     if (_isOpenResult)
@@ -908,9 +909,9 @@ public sealed class OffsetWire
                     TrimEdge(currentEdge,
                              currentSpine,
                              _spine,
-                             detromp[currentSpine],
-                             mapBis[currentEdge],
-                             mapVerPar[currentEdge],
+                             detromp.GetValue(currentSpine),
+                             mapBis.GetValue(currentEdge),
+                             mapVerPar.GetValue(currentEdge),
                              seqOfShape,
                              mapVV,
                              indOfE);
@@ -1065,8 +1066,8 @@ public sealed class OffsetWire
             {
                 Edge e = ShapeCasts.Edge(iteW.Value());
                 EdgeVertices(e, out V1, out V2);
-                _mapSpine.Bind(V1, V1);
-                _mapSpine.Bind(V2, V2);
+                _mapSpine[V1] = V1;
+                _mapSpine[V2] = V2;
                 cuts.Clear();
 
                 // Cut
@@ -1082,7 +1083,7 @@ public sealed class OffsetWire
                 if (cuts.IsEmpty())
                 {
                     b.Add(nw, e);
-                    _mapSpine.Bind(e, e);
+                    _mapSpine[e] = e;
                 }
                 else
                 {
@@ -1091,15 +1092,15 @@ public sealed class OffsetWire
                         Edge ne = ShapeCasts.Edge(iteCuts.Value());
                         ne.Orientation(e.Orientation());
                         b.Add(nw, ne);
-                        _mapSpine.Bind(ne, e);
+                        _mapSpine[ne] = e;
                         EdgeVertices(ne, out V1, out V2);
-                        if (!_mapSpine.IsBound(V1))
+                        if (!_mapSpine.ContainsKey(V1))
                         {
-                            _mapSpine.Bind(V1, e);
+                            _mapSpine[V1] = e;
                         }
-                        if (!_mapSpine.IsBound(V2))
+                        if (!_mapSpine.ContainsKey(V2))
                         {
-                            _mapSpine.Bind(V2, e);
+                            _mapSpine[V2] = e;
                         }
                     }
                 }
@@ -1115,7 +1116,7 @@ public sealed class OffsetWire
     // For each interval on bissectrice defined by parameters test if the medium point is at a distance > offset; in
     // this case vertices corresponding to the extremities of the interval are ranked in the proofing.
     // => If the same vertex appears in the proofing, the border of the zone of proximity is tangent to the offset.
-    private void UpdateDetromp(NCollection_DataMap<Shape, NCollection_List<Shape>> detromp,
+    private void UpdateDetromp(Dictionary<Shape, NCollection_List<Shape>> detromp,
                                in Shape shape1,
                                in Shape shape2,
                                NCollection_Sequence<Shape> vertices,
@@ -1132,8 +1133,8 @@ public sealed class OffsetWire
             for (; ii <= vertices.Length(); ii++)
             {
                 Vertex vertex = ShapeCasts.Vertex(vertices.Value(ii));
-                detromp[shape1].Append(vertex);
-                detromp[shape2].Append(vertex);
+                detromp.GetValue(shape1).Append(vertex);
+                detromp.GetValue(shape2).Append(vertex);
             }
         }
         else // myJoinType == GeomAbs_Arc
@@ -1169,11 +1170,11 @@ public sealed class OffsetWire
                 {
                     if (!v1.IsNull)
                     {
-                        detromp[shape1].Append(v1);
-                        detromp[shape2].Append(v1);
+                        detromp.GetValue(shape1).Append(v1);
+                        detromp.GetValue(shape2).Append(v1);
                     }
-                    detromp[shape1].Append(v2);
-                    detromp[shape2].Append(v2);
+                    detromp.GetValue(shape1).Append(v2);
+                    detromp.GetValue(shape2).Append(v2);
                 }
                 u1 = u2;
                 v1 = v2;
@@ -1191,8 +1192,8 @@ public sealed class OffsetWire
                     {
                         if (!v1.IsNull)
                         {
-                            detromp[shape1].Append(v1);
-                            detromp[shape2].Append(v1);
+                            detromp.GetValue(shape1).Append(v1);
+                            detromp.GetValue(shape2).Append(v1);
                         }
                     }
                 }
@@ -1200,8 +1201,8 @@ public sealed class OffsetWire
                 {
                     if (!v1.IsNull)
                     {
-                        detromp[shape1].Append(v1);
-                        detromp[shape2].Append(v1);
+                        detromp.GetValue(shape1).Append(v1);
+                        detromp.GetValue(shape2).Append(v1);
                     }
                 }
             }
@@ -1386,19 +1387,19 @@ public sealed class OffsetWire
         {
             Shape wire = explo.Current();
             // Remove duplicated edges
-            NCollection_DataMap<Shape, NCollection_List<Shape>> eEmap = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> eEmap = new(ShapeHasher.Instance);
             Iterator it = new(wire);
             for (; it.More(); it.Next())
             {
                 Shape edge = it.Value();
-                if (!eEmap.IsBound(edge))
+                if (!eEmap.ContainsKey(edge))
                 {
                     NCollection_List<Shape> le = new();
-                    eEmap.Bind(edge, le);
+                    eEmap[edge] = le;
                 }
                 else
                 {
-                    eEmap[edge].Append(edge);
+                    eEmap.GetValue(edge).Append(edge);
                 }
             }
             wire.Free(true);
@@ -2035,7 +2036,7 @@ public sealed class OffsetWire
     private static bool VertexFromNode(MedialNode aNode,
                                        double offset,
                                        in Point2D pn,
-                                       NCollection_DataMap<MedialNode, Shape> mapNodeVertex,
+                                       Dictionary<MedialNode, Shape> mapNodeVertex,
                                        ref Vertex vn)
     {
         bool status;
@@ -2047,16 +2048,16 @@ public sealed class OffsetWire
             //------------------------------------------------
             // the Node gives a vertex on the offset
             //------------------------------------------------
-            if (mapNodeVertex.IsBound(aNode))
+            if (mapNodeVertex.ContainsKey(aNode))
             {
-                vn = ShapeCasts.Vertex(mapNodeVertex[aNode]);
+                vn = ShapeCasts.Vertex(mapNodeVertex.GetValue(aNode));
             }
             else
             {
                 Point3D p = new(pn.X(), pn.Y(), 0.0);
                 b.MakeVertex(ref vn);
                 b.UpdateVertex(vn, p, global::Kerf.Engine.Foundation.Precision.Confusion());
-                mapNodeVertex.Bind(aNode, vn);
+                mapNodeVertex[aNode] = vn;
             }
             status = true;
         }

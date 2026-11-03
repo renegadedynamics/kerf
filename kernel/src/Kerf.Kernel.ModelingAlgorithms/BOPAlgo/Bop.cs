@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -288,9 +289,9 @@ public class Bop : ToolsProvider
             aType = s.ShapeType();
             if (aType == type)
             {
-                if (_images.IsBound(s))
+                if (_images.ContainsKey(s))
                 {
-                    NCollection_List<Shape> lsIm = _images.Find(s);
+                    NCollection_List<Shape> lsIm = _images.GetValue(s);
                     itIm.Initialize(lsIm);
                     for (; itIm.More(); itIm.Next())
                     {
@@ -626,9 +627,9 @@ public class Bop : ToolsProvider
                     }
                 }
                 //
-                if (_images.IsBound(s))
+                if (_images.ContainsKey(s))
                 {
-                    NCollection_List<Shape> lsIm = _images.Find(s);
+                    NCollection_List<Shape> lsIm = _images.GetValue(s);
                     itLS.Initialize(lsIm);
                     for (; itLS.More(); itLS.Next())
                     {
@@ -901,9 +902,9 @@ public class Bop : ToolsProvider
             for (; it.More(); it.Next())
             {
                 Shape s = it.Value();
-                if (_images.IsBound(s))
+                if (_images.ContainsKey(s))
                 {
-                    NCollection_List<Shape> lsIm = _images.Find(s);
+                    NCollection_List<Shape> lsIm = _images.GetValue(s);
                     //
                     itLSIm.Initialize(lsIm);
                     for (; itLSIm.More(); itLSIm.Next())
@@ -1020,9 +1021,9 @@ public class Bop : ToolsProvider
         for (; itLS.More(); itLS.Next())
         {
             Shape s = itLS.Value();
-            if (_images.IsBound(s))
+            if (_images.ContainsKey(s))
             {
-                NCollection_List<Shape> lsIm = _images.Find(s);
+                NCollection_List<Shape> lsIm = _images.GetValue(s);
                 itLSIm.Initialize(lsIm);
                 for (; itLSIm.More(); itLSIm.Next())
                 {
@@ -1258,7 +1259,7 @@ public class Bop : ToolsProvider
             for (; exp.More(); exp.Next())
             {
                 Shape f = exp.Current();
-                if (!_images.Find(f, out NCollection_List<Shape> pLFIm))
+                if (!_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
                 {
                     mfCs.Add(f);
                 }
@@ -1392,7 +1393,7 @@ public class Bop : ToolsProvider
                     Shape f = itF.Value();
                     if (f.Orientation() == Internal)
                     {
-                        if (_images.Find(f, out NCollection_List<Shape> pLFIm))
+                        if (_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
                         {
                             NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
                             for (; itLFIm.More(); itLFIm.Next())
@@ -1459,7 +1460,7 @@ public class Bop : ToolsProvider
             }
 
             // Check the splits not to acquire new INTERNAL faces
-            if (!_images.Find(solid, out NCollection_List<Shape> pLSIm))
+            if (!_images.TryGetValue(solid, out NCollection_List<Shape>? pLSIm))
             {
                 continue;
             }

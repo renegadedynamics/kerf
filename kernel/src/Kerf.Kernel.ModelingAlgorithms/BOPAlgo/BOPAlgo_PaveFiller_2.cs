@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -192,7 +193,7 @@ public partial class PaveFiller
         // for all vertices having the same SD vertex.
         // It will also be used as a Fence map to avoid repeated
         // intersection of the same SD vertex with edge
-        NCollection_DataMap<Pair, NCollection_List<int>> dmvsd = new();
+        Dictionary<Pair, NCollection_List<int>> dmvsd = new();
         //
         using var psOuter = new ProgressScope(range, null, 10);
         for (i = 1; i <= nbVE; ++i)
@@ -227,14 +228,14 @@ public partial class PaveFiller
                 }
 
                 Pair pair = new(nVSD, nE);
-                if (dmvsd.Find(pair, out NCollection_List<int> pLI0))
+                if (dmvsd.TryGetValue(pair, out NCollection_List<int>? pLI0))
                 {
                     // Already added
                     pLI0.Append(nV);
                     continue;
                 }
                 // New pair
-                NCollection_List<int> pLI = dmvsd.Bound(pair, new NCollection_List<int>());
+                NCollection_List<int> pLI = dmvsd.SetValueRef(pair, new NCollection_List<int>());
                 pLI.Append(nV);
                 //
                 Vertex v = ShapeCasts.Vertex(_ds.Shape(nVSD));
@@ -325,7 +326,7 @@ public partial class PaveFiller
             {
                 // Add interferences into DS
                 Pair pair = new(nV, nE);
-                NCollection_List<int> li = dmvsd.Find(pair);
+                NCollection_List<int> li = dmvsd.GetValue(pair);
                 NCollection_List<int>.Iterator itLI = new(li);
                 for (; itLI.More(); itLI.Next())
                 {

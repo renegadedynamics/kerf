@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
@@ -123,7 +124,7 @@ public sealed class FreeBoundsFixer
         {
             var see = new ExtendExplorer();
             NCollection_HSequence<Shape> open = see.SeqFromCompound(_edges, false);
-            var vertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            var vertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
             NCollection_HSequence<Shape> newwires =
                 FreeBounds.InternalConnectWiresToWires(open, _closeToler, _shared, vertices);
             _edges.Nullify();
@@ -144,9 +145,9 @@ public sealed class FreeBoundsFixer
                     Vertex v = ShapeCasts.Vertex(aV);
                     var b = new BrepBuilder();
                     Vertex newV;
-                    if (vertices.IsBound(v))
+                    if (vertices.ContainsKey(v))
                     {
-                        newV = ShapeCasts.Vertex(vertices.Find(v));
+                        newV = ShapeCasts.Vertex(vertices.GetValue(v));
                         newV.Orientation(v.Orientation());
                         // OCCT removes and adds vertices of an edge that isn't free (it is in a wire): OCCT's release
                         // build skips the check, which raises TopoDS_FrozenShape in its debug build and in the port. The

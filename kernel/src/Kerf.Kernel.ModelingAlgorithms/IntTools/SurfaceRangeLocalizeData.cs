@@ -37,7 +37,7 @@ public sealed class SurfaceRangeLocalizeData
     private double _minRangeU;
     private double _minRangeV;
     private HashSet<SurfaceRangeSample> _mapRangeOut = new();
-    private NCollection_DataMap<SurfaceRangeSample, Box> _mapBox = new();
+    private Dictionary<SurfaceRangeSample, Box> _mapBox = new();
     private NCollection_HArray1<double>? _uParams;
     private NCollection_HArray1<double>? _vParams;
     private NCollection_HArray2<Point3D>? _gridPoints;
@@ -89,7 +89,7 @@ public sealed class SurfaceRangeLocalizeData
         _mapRangeOut.Clear();
         _mapRangeOut = new HashSet<SurfaceRangeSample>(other._mapRangeOut,other._mapRangeOut.Comparer);
         _mapBox.Clear();
-        _mapBox = new NCollection_DataMap<SurfaceRangeSample, Box>(other._mapBox);
+        _mapBox = new Dictionary<SurfaceRangeSample, Box>(other._mapBox,other._mapBox.Comparer);
         _deflection = other._deflection;
         _uIndMin = other._uIndMin;
         _uIndMax = other._uIndMax;
@@ -128,12 +128,12 @@ public sealed class SurfaceRangeLocalizeData
         //   myMapBox.UnBind(theRange);
     }
 
-    public void AddBox(in SurfaceRangeSample range, in Box box) => _mapBox.Bind(range, box);
+    public void AddBox(in SurfaceRangeSample range, in Box box) => _mapBox[range] = box;
 
     /// <summary>The box of the range, and true, if recorded; otherwise false, the box left as it was.</summary>
     public bool FindBox(in SurfaceRangeSample range, ref Box box)
     {
-        if (_mapBox.Find(range, out Box aBox))
+        if (_mapBox.TryGetValue(range, out Box aBox))
         {
             box = aBox;
             return true;

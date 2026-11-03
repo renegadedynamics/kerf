@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -33,13 +34,13 @@ public partial class BooleanBuilder
             Shape v = _ds.Shape(nV);
             Shape vsd = _ds.Shape(nVSD);
             // Add to Images map
-            _images.Bound(v, new NCollection_List<Shape>()).Append(vsd);
+            _images.SetValueRef(v, new NCollection_List<Shape>()).Append(vsd);
             // Add to SD map
-            _shapesSD.Bind(v, vsd);
+            _shapesSD[v] = vsd;
             // Add to Origins map
-            if (!_origins.Find(vsd, out NCollection_List<Shape> pLOr))
+            if (!_origins.TryGetValue(vsd, out NCollection_List<Shape>? pLOr))
             {
-                pLOr = _origins.Bound(vsd, new NCollection_List<Shape>());
+                pLOr = _origins.SetValueRef(vsd, new NCollection_List<Shape>());
             }
             pLOr.Append(v);
         }
@@ -70,7 +71,7 @@ public partial class BooleanBuilder
             // Fill the images of the edge from the list of its pave blocks.
             // The small edges, having no pave blocks, will have the empty list
             // of images and, thus, will be avoided in the result.
-            NCollection_List<Shape> pLS = _images.Bound(e, new NCollection_List<Shape>());
+            NCollection_List<Shape> pLS = _images.SetValueRef(e, new NCollection_List<Shape>());
             //
             NCollection_List<PaveBlock>.Iterator itPB = new(lpb);
             for (; itPB.More(); itPB.Next())
@@ -82,9 +83,9 @@ public partial class BooleanBuilder
                 Shape spR = _ds.Shape(nSpR);
                 pLS.Append(spR);
                 //
-                if (!_origins.Find(spR, out NCollection_List<Shape> pLOr))
+                if (!_origins.TryGetValue(spR, out NCollection_List<Shape>? pLOr))
                 {
-                    pLOr = _origins.Bound(spR, new NCollection_List<Shape>());
+                    pLOr = _origins.SetValueRef(spR, new NCollection_List<Shape>());
                 }
                 pLOr.Append(e);
                 //
@@ -92,7 +93,7 @@ public partial class BooleanBuilder
                 {
                     int nSp = pb.Edge();
                     Shape sp = _ds.Shape(nSp);
-                    _shapesSD.Bind(sp, spR);
+                    _shapesSD[sp] = spR;
                 }
             }
             if (UserBreak(ps))
@@ -118,7 +119,7 @@ public partial class BooleanBuilder
                 continue;
             }
             // Get images
-            if (!_images.Find(s, out NCollection_List<Shape> pLSIm))
+            if (!_images.TryGetValue(s, out NCollection_List<Shape>? pLSIm))
             {
                 // No images -> add the argument shape itself into result
                 if (mFence.Add(s))
@@ -195,7 +196,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape ss = it.Value();
-            if (_images.Find(ss, out NCollection_List<Shape> pLFIm)
+            if (_images.TryGetValue(ss, out NCollection_List<Shape>? pLFIm)
                 && ((pLFIm.Extent() != 1) || !pLFIm.First().IsSame(ss)))
             {
                 break;
@@ -219,7 +220,7 @@ public partial class BooleanBuilder
         {
             Shape ss = it.Value();
 
-            if (!_images.Find(ss, out NCollection_List<Shape> pLSSIm))
+            if (!_images.TryGetValue(ss, out NCollection_List<Shape>? pLSSIm))
             {
                 // No splits, add the sub-shape itself
                 bb.Add(cIm, ss);
@@ -241,7 +242,7 @@ public partial class BooleanBuilder
         }
 
         cIm.Closed(Tool.IsClosed(cIm));
-        _images.Bound(s, new NCollection_List<Shape>()).Append(cIm);
+        _images.SetValueRef(s, new NCollection_List<Shape>()).Append(cIm);
     }
 
     /// <summary>Makes the image of the compound (and of its sub-compounds) from the images of its components.</summary>
@@ -267,7 +268,7 @@ public partial class BooleanBuilder
             {
                 FillImagesCompound(aSx, mfp);
             }
-            if (_images.IsBound(aSx))
+            if (_images.ContainsKey(aSx))
             {
                 bInterferred = true;
             }
@@ -285,9 +286,9 @@ public partial class BooleanBuilder
         {
             Shape sx = it.Value();
             orX = sx.Orientation();
-            if (_images.IsBound(sx))
+            if (_images.ContainsKey(sx))
             {
-                NCollection_List<Shape> lfIm = _images.Find(sx);
+                NCollection_List<Shape> lfIm = _images.GetValue(sx);
                 itIm.Initialize(lfIm);
                 for (; itIm.More(); itIm.Next())
                 {
@@ -304,6 +305,6 @@ public partial class BooleanBuilder
         //
         NCollection_List<Shape> lsIm = new();
         lsIm.Append(cIm);
-        _images.Bind(s, lsIm);
+        _images[s] = lsIm;
     }
 }

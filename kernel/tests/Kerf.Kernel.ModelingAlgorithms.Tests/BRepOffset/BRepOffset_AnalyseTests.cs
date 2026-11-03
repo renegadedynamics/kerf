@@ -127,12 +127,12 @@ public class BRepOffset_AnalyseTests
         Shape aS = Stadium();
         Assert.True(aS.TShape()!.IsFrozen);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aS);
-        var aMap = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
+        var aMap = new Dictionary<Shape, double>(ShapeHasher.Instance);
         foreach (Shape aF in SubShapes(aS, ShapeType.Face))
         {
             if (Tool.Surface(ShapeCasts.Face(aF)) is CylindricalSurface)
             {
-                aMap.Bind(aF, 2.0);
+                aMap[aF] = 2.0;
             }
         }
         var anA = new Analyse();

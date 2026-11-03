@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Messages;
 using Kerf.Engine.Foundation;
 using Occt;
@@ -38,7 +39,7 @@ namespace Kerf.Engine.Exchange.Framework;
 public sealed class StaticSet
 {
     // OCCT's MoniTool_TypedValue::Stats(): the statics by name, in declaration order (decision 1181)
-    private readonly NCollection_DataMap<string, Static> _mystats = new();
+    private readonly Dictionary<string, Static> _mystats = new();
 
     // The layers whose initialisation has filled this set (OCCT's static "deja" flags, one per initialisation)
     private readonly HashSet<string> _myinits = new(StringComparer.Ordinal);
@@ -56,7 +57,7 @@ public sealed class StaticSet
     {
         foreach (KeyValuePair<string, Static> item in other._mystats)
         {
-            _mystats.Bind(item.Key, new Static(item.Value, true));
+            _mystats[item.Key] = new Static(item.Value, true);
         }
         foreach (KeyValuePair<string, Static> item in other._mystats)
         {
@@ -68,11 +69,11 @@ public sealed class StaticSet
                 {
                     if (candidate.Value == wild)
                     {
-                        copy = _mystats.Find(candidate.Key);
+                        copy = _mystats.GetValue(candidate.Key);
                         break;
                     }
                 }
-                _mystats.Find(item.Key).SetWild(copy ?? wild);
+                _mystats.GetValue(item.Key).SetWild(copy ?? wild);
             }
         }
         _myinits.UnionWith(other._myinits);
@@ -98,7 +99,7 @@ public sealed class StaticSet
             return false;
         }
 
-        if (_mystats.IsBound(name))
+        if (_mystats.ContainsKey(name))
         {
             return false;
         }
@@ -117,7 +118,7 @@ public sealed class StaticSet
             item = new Static(family, name, type, init);
         }
 
-        _mystats.Bind(name, item);
+        _mystats[name] = item;
         return true;
     }
 
@@ -235,12 +236,12 @@ public sealed class StaticSet
     /// <summary>Returns a static from its name, null if not present.</summary>
     public Static? Static(string name)
     {
-        _mystats.Find(name, out Static? result);
+        _mystats.TryGetValue(name, out Static? result);
         return result;
     }
 
     /// <summary>Returns true if a static named <paramref name="name"/> is present.</summary>
-    public bool IsPresent(string name) => _mystats.IsBound(name);
+    public bool IsPresent(string name) => _mystats.ContainsKey(name);
 
     /// <summary>
     /// Returns a part of the definition of a static, as a string; empty if <paramref name="name"/> is not present or
@@ -561,7 +562,7 @@ public sealed class StaticSet
     }
 
     /// <summary>Fills the given string-to-string map with all the statics' values (the map is cleared first).</summary>
-    public void FillMap(NCollection_DataMap<string, string> map)
+    public void FillMap(Dictionary<string, string> map)
     {
         map.Clear();
         foreach (KeyValuePair<string, Static> it in _mystats)
@@ -571,7 +572,7 @@ public sealed class StaticSet
             {
                 continue;
             }
-            map.Bind(it.Key, value.HStringValue()!.String());
+            map[it.Key] = value.HStringValue()!.String();
         }
     }
 

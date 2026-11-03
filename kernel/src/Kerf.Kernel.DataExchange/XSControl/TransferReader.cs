@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Framework.Transfer;
@@ -199,7 +200,7 @@ public class TransferReader : Transient
     /// </summary>
     public void SetContext(string name, Transient? ctx)
     {
-        _context.Bind(name, ctx);
+        _context[name] = ctx;
     }
 
     /// <summary>
@@ -208,11 +209,11 @@ public class TransferReader : Transient
     /// </summary>
     public bool GetContext(string name, Type? type, ref Transient? ctx)
     {
-        if (_context.IsEmpty())
+        if (_context.Count == 0)
         {
             return false;
         }
-        if (!_context.Find(name, out ctx))
+        if (!_context.TryGetValue(name, out ctx))
         {
             ctx = null;
         }
@@ -235,7 +236,7 @@ public class TransferReader : Transient
     /// Returns (modifiable) the whole definition of Context Rather for internal use (ex.: preparing and setting
     /// in once)
     /// </summary>
-    public NCollection_DataMap<string, Transient>? Context()
+    public Dictionary<string, Transient>? Context()
     {
         return _context;
     }
@@ -259,8 +260,8 @@ public class TransferReader : Transient
     }
 
     // C++'s assignment of a map: theTarget becomes a copy of theSource (OCCT.NET).
-    internal static void AssignContext(NCollection_DataMap<string, Transient> target,
-                                       NCollection_DataMap<string, Transient> source)
+    internal static void AssignContext(Dictionary<string, Transient> target,
+                                       Dictionary<string, Transient> source)
     {
         if (ReferenceEquals(target, source))
         {
@@ -269,7 +270,7 @@ public class TransferReader : Transient
         target.Clear();
         foreach (KeyValuePair<string, Transient> item in source)
         {
-            target.Bind(item.Key, item.Value);
+            target[item.Key] = item.Value;
         }
     }
 
@@ -357,7 +358,7 @@ public class TransferReader : Transient
         }
 
         res.SetFileName(_fileName);
-        _results.Bind(num, res);
+        _results[num] = res;
         return true;
     }
 
@@ -376,11 +377,11 @@ public class TransferReader : Transient
         {
             return false;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return false;
         }
-        return (_results.Find(num).DynamicType() == typeof(ResultFromModel));
+        return (_results.GetValue(num).DynamicType() == typeof(ResultFromModel));
     }
 
     /// <summary>
@@ -398,11 +399,11 @@ public class TransferReader : Transient
         {
             return false;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return false;
         }
-        ResultFromModel fr = _results.Find(num) as ResultFromModel;
+        ResultFromModel fr = _results.GetValue(num) as ResultFromModel;
         if (fr is null)
         {
             return false;
@@ -424,9 +425,9 @@ public class TransferReader : Transient
         int i, nb = _model.EntityCount;
         for (i = 1; i <= nb; i++)
         {
-            if (_results.IsBound(i))
+            if (_results.ContainsKey(i))
             {
-                if (_results.Find(i) is not null)
+                if (_results.GetValue(i) is not null)
                 {
                     li.Append(_model.Value(i));
                 }
@@ -451,7 +452,7 @@ public class TransferReader : Transient
         {
             return false;
         }
-        _results.Bind(num, ent);
+        _results[num] = ent;
         return true;
     }
 
@@ -469,11 +470,11 @@ public class TransferReader : Transient
         {
             return false;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return false;
         }
-        return (_results.Find(num).DynamicType() != typeof(ResultFromModel));
+        return (_results.GetValue(num).DynamicType() != typeof(ResultFromModel));
     }
 
     /// <summary>
@@ -491,11 +492,11 @@ public class TransferReader : Transient
         {
             return false;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return false;
         }
-        if (_results.Find(num) is null)
+        if (_results.GetValue(num) is null)
         {
             return false;
         }
@@ -517,11 +518,11 @@ public class TransferReader : Transient
         {
             return res;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return res;
         }
-        res = (_results.Find(num) as ResultFromModel);
+        res = (_results.GetValue(num) as ResultFromModel);
         return res;
     }
 
@@ -562,11 +563,11 @@ public class TransferReader : Transient
         {
             return res;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return res;
         }
-        res = (_results.Find(num) as ResultFromModel);
+        res = (_results.GetValue(num) as ResultFromModel);
         return res;
     }
 
@@ -680,17 +681,17 @@ public class TransferReader : Transient
         {
             return false;
         }
-        if (!_results.IsBound(num))
+        if (!_results.ContainsKey(num))
         {
             return false;
         }
         if (mode < 0)
         {
-            _results.ChangeFind(num) = null;
+            _results.GetValueRef(num) = null;
         }
         else
         {
-            ResultFromModel resu = _results.Find(num) as ResultFromModel;
+            ResultFromModel resu = _results.GetValue(num) as ResultFromModel;
             if (resu is null)
             {
                 return false;
@@ -1163,7 +1164,7 @@ public class TransferReader : Transient
         actor = Actor();
         _tp.SetActor(actor); // Set properly
         _tp.SetErrorHandle(true);
-        NCollection_DataMap<string, Transient> tpContext = _tp.Context();
+        Dictionary<string, Transient> tpContext = _tp.Context();
         AssignContext(tpContext, _context); // C++'s map assignment: a copy
         return true;
     }
@@ -1972,10 +1973,10 @@ public class TransferReader : Transient
     private string _fileName = "";
     private InterfaceModel? _model;
     private HGraph? _graph;
-    private NCollection_DataMap<string, Transient> _context = new NCollection_DataMap<string, Transient>();
+    private Dictionary<string, Transient> _context = new Dictionary<string, Transient>();
     private ActorOfTransientProcess? _actor;
     private TransientProcess? _tp;
-    private NCollection_DataMap<int, Transient> _results = new NCollection_DataMap<int, Transient>();
+    private Dictionary<int, Transient> _results = new Dictionary<int, Transient>();
     private StaticSet? _statics;
     private NCollection_HSequence<Shape>? _shapeResult;
 }

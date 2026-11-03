@@ -53,9 +53,9 @@ public class DS
     private int _nbSourceShapes; // OCCT also keeps myNbShapes, set to 0 and never read: left out
     private readonly NCollection_DynamicArray<IndexRange> _ranges = new(0);
     private readonly NCollection_DynamicArray<ShapeInfo> _lines = new(0);
-    private readonly NCollection_DataMap<Shape, int> _mapShapeIndex = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, int> _mapShapeIndex = new(ShapeHasher.Instance);
     private readonly NCollection_DynamicArray<NCollection_List<PaveBlock>> _paveBlocksPool = new(0);
-    private readonly NCollection_DataMap<PaveBlock, CommonBlock> _mapPBCB = new();
+    private readonly Dictionary<PaveBlock, CommonBlock> _mapPBCB = new();
     private readonly NCollection_DynamicArray<FaceInfo> _faceInfoPool = new(0);
     private readonly NCollection_IntDataMap<int> _shapesSD = new();
     private readonly NCollection_IntDataMap<NCollection_List<int>> _mapVE = new();
@@ -128,7 +128,7 @@ public class DS
         for (NCollection_List<Shape>.Iterator it = new(_arguments); it.More(); it.Next())
         {
             Shape shape = it.Value();
-            if (_mapShapeIndex.IsBound(shape))
+            if (_mapShapeIndex.ContainsKey(shape))
             {
                 continue;
             }
@@ -189,7 +189,7 @@ public class DS
     {
         _lines.Append(new ShapeInfo(shapeInfo));
         int shapeIndex = _lines.Length() - 1;
-        _mapShapeIndex.Bind(shapeInfo.Shape(), shapeIndex);
+        _mapShapeIndex[shapeInfo.Shape()] = shapeIndex;
         return shapeIndex;
     }
 
@@ -198,7 +198,7 @@ public class DS
     {
         _lines.Append(new ShapeInfo()).SetShape(shape);
         int shapeIndex = _lines.Length() - 1;
-        _mapShapeIndex.Bind(shape, shapeIndex);
+        _mapShapeIndex[shape] = shapeIndex;
         return shapeIndex;
     }
 
@@ -214,7 +214,7 @@ public class DS
     public int Index(in Shape shape)
     {
         int index = -1;
-        if (_mapShapeIndex.Find(shape, out int found))
+        if (_mapShapeIndex.TryGetValue(shape, out int found))
         {
             index = found;
         }
@@ -236,7 +236,7 @@ public class DS
         for (Iterator shapeIter = new(shape); shapeIter.More(); shapeIter.Next())
         {
             Shape subShape = shapeIter.Value();
-            int subShapeIndex = _mapShapeIndex.Find(subShape, out int existingIndex) ? existingIndex : Append(subShape);
+            int subShapeIndex = _mapShapeIndex.TryGetValue(subShape, out int existingIndex) ? existingIndex : Append(subShape);
 
             InitShape(subShapeIndex, subShape);
             if (existingSubShapeIndices.Add(subShapeIndex))
@@ -452,7 +452,7 @@ public class DS
         // OCCT iterates this map in the order of its hash buckets (keyed by pairs of vertex indices); the port in
         // insertion order. The order decides only the order in which the new common blocks are made, which nothing
         // indexes, so it isn't observable (decision 784).
-        NCollection_DataMap<Pair, NCollection_List<PaveBlock>> mpklpb = new();
+        Dictionary<Pair, NCollection_List<PaveBlock>> mpklpb = new();
 
         foreach (PaveBlock paveBlockOfCommonBlock in paveBlocksOfCommonBlock)
         {
@@ -473,7 +473,7 @@ public class DS
 
                         pbn.Indices(out int n1, out int n2);
                         Pair pk = new(n1, n2);
-                        if (mpklpb.Find(pk, out NCollection_List<PaveBlock> paveBlocks))
+                        if (mpklpb.TryGetValue(pk, out NCollection_List<PaveBlock>? paveBlocks))
                         {
                             paveBlocks.Append(pbn);
                         }
@@ -481,7 +481,7 @@ public class DS
                         {
                             NCollection_List<PaveBlock> newLPBx = new();
                             newLPBx.Append(pbn);
-                            mpklpb.Bind(pk, newLPBx);
+                            mpklpb[pk] = newLPBx;
                         }
                     }
                     lpb.Remove(itPB);
@@ -549,15 +549,15 @@ public class DS
     }
 
     /// <summary>True if the pave block is in a common block.</summary>
-    public bool IsCommonBlock(PaveBlock paveBlock) => _mapPBCB.IsBound(paveBlock);
+    public bool IsCommonBlock(PaveBlock paveBlock) => _mapPBCB.ContainsKey(paveBlock);
 
     /// <summary>The pave block's common block, or null.</summary>
     public CommonBlock? CommonBlock(PaveBlock paveBlock) =>
-        _mapPBCB.Find(paveBlock, out CommonBlock commonBlock) ? commonBlock : null;
+        _mapPBCB.TryGetValue(paveBlock, out CommonBlock? commonBlock) ? commonBlock : null;
 
     /// <summary>Sets the pave block's common block.</summary>
     internal void SetCommonBlock(PaveBlock paveBlock, CommonBlock commonBlock) =>
-        _mapPBCB.Bind(paveBlock, commonBlock);
+        _mapPBCB[paveBlock] = commonBlock;
 
     /// <summary>The states of the faces (the data structure's own pool; read only for callers).</summary>
     public NCollection_DynamicArray<FaceInfo> FaceInfoPool() => _faceInfoPool;

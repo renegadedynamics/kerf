@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Plate;
 using Kerf.Engine.Foundation;
@@ -42,9 +43,9 @@ public class SurfaceFilling
     private readonly NCollection_Sequence<EdgeFaceAndOrder> _constraints = new();
     private readonly NCollection_Sequence<FaceAndOrder> _freeConstraints = new();
     private readonly NCollection_Sequence<PointConstraint> _points = new();
-    private readonly NCollection_DataMap<Shape, Shape> _oldNewMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _oldNewMap = new(ShapeHasher.Instance);
     // OCCT.NET: frozen. The boundary's vertices BuildWires' MakeWire replaced by its copies for write (see BuildWires).
-    private readonly NCollection_DataMap<Shape, Shape> _vertexCopies = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _vertexCopies = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _generated = new();
     private Face _face = new();
     private Face _initFace = new();
@@ -427,7 +428,7 @@ public class SurfaceFilling
                                 {
                                     mw.Add(curEdge);
                                     Edge newEdge = mw.InternalEdge();
-                                    _oldNewMap.Bind(curEdge.Oriented(Forward), newEdge.Oriented(Forward));
+                                    _oldNewMap[curEdge.Oriented(Forward)] = newEdge.Oriented(Forward);
                                     added.Add((curEdge, newEdge));
                                     edgeList.Remove(itl);
                                     found = true;
@@ -487,7 +488,7 @@ public class SurfaceFilling
             Shape final = Final(aHistory, inWire.Oriented(Forward));
             if (!final.IsSame(inWire))
             {
-                _oldNewMap.Bind(original.Oriented(Forward), final);
+                _oldNewMap[original.Oriented(Forward)] = final;
             }
             for (var it = new Iterator(original.Oriented(Forward)); it.More(); it.Next())
             {
@@ -495,7 +496,7 @@ public class SurfaceFilling
                 Shape finalV = Final(aHistory, v);
                 if (!finalV.IsSame(v))
                 {
-                    _vertexCopies.Bind(v, finalV);
+                    _vertexCopies[v] = finalV;
                 }
             }
         }
@@ -716,9 +717,9 @@ public class SurfaceFilling
             Edge initEdge = _boundary.Value(i)._edge;
             Edge edge = initEdge;
             edge.Orientation(Forward);
-            if (_oldNewMap.IsBound(edge))
+            if (_oldNewMap.ContainsKey(edge))
             {
-                edge = ShapeCasts.Edge(_oldNewMap.Find(edge));
+                edge = ShapeCasts.Edge(_oldNewMap.GetValue(edge));
             }
 
             Curve2D? curveOnPlate = curvesOnPlate.Value(i);
@@ -728,28 +729,28 @@ public class SurfaceFilling
             Vertex v1, v2, newV1, newV2;
             Exploration.Vertices(edge, out v1, out v2);
 
-            if (_oldNewMap.IsBound(v1))
+            if (_oldNewMap.ContainsKey(v1))
             {
-                newV1 = ShapeCasts.Vertex(_oldNewMap.Find(v1));
+                newV1 = ShapeCasts.Vertex(_oldNewMap.GetValue(v1));
             }
             else
             {
                 Point3D pnt = Tool.Pnt(v1);
                 newV1 = new LibraryMakeVertex(pnt).InternalVertex();
                 bb.UpdateVertex(newV1, dmax);
-                _oldNewMap.Bind(v1.Oriented(Forward), newV1);
+                _oldNewMap[v1.Oriented(Forward)] = newV1;
             }
 
-            if (_oldNewMap.IsBound(v2))
+            if (_oldNewMap.ContainsKey(v2))
             {
-                newV2 = ShapeCasts.Vertex(_oldNewMap.Find(v2));
+                newV2 = ShapeCasts.Vertex(_oldNewMap.GetValue(v2));
             }
             else
             {
                 Point3D pnt = Tool.Pnt(v2);
                 newV2 = new LibraryMakeVertex(pnt).InternalVertex();
                 bb.UpdateVertex(newV2, dmax);
-                _oldNewMap.Bind(v2.Oriented(Forward), newV2);
+                _oldNewMap[v2.Oriented(Forward)] = newV2;
             }
 
             newV1.Orientation(Forward);
@@ -760,7 +761,7 @@ public class SurfaceFilling
             bb.UpdateEdge(newEdge, curveOnPlate, surface, loc, dmax);
             BrepLibrary.SameParameter(newEdge, dmax, true);
             finalEdges.Append(newEdge);
-            _oldNewMap.Bind(initEdge.Oriented(Forward), newEdge.Oriented(Forward));
+            _oldNewMap[initEdge.Oriented(Forward)] = newEdge.Oriented(Forward);
         }
 
         Wire finalWire = WireFromList(finalEdges);
@@ -808,14 +809,14 @@ public class SurfaceFilling
     {
         _generated.Clear();
 
-        if (_oldNewMap.IsBound(s))
+        if (_oldNewMap.ContainsKey(s))
         {
-            _generated.Append(_oldNewMap.Find(s));
+            _generated.Append(_oldNewMap.GetValue(s));
         }
         // OCCT.NET: frozen. A boundary vertex BuildWires' MakeWire copied (OCCT moves it in place): its copy's
-        else if (_vertexCopies.Find(s, out Shape copy) && _oldNewMap.IsBound(copy))
+        else if (_vertexCopies.TryGetValue(s, out Shape copy) && _oldNewMap.ContainsKey(copy))
         {
-            _generated.Append(_oldNewMap.Find(copy));
+            _generated.Append(_oldNewMap.GetValue(copy));
         }
 
         return _generated;

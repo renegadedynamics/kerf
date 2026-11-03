@@ -7,6 +7,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
@@ -807,12 +808,12 @@ public partial class ChBuilder
             cd[pivot].ChangeSetOfSurfData().Remove(index[pivot], i[pivot, deb] - 1);
             i[pivot, deb] = index[pivot];
         }
-        if (!_eviMap.IsBound(vtx))
+        if (!_eviMap.ContainsKey(vtx))
         {
             NCollection_List<int> li = new();
-            _eviMap.Bind(vtx, li);
+            _eviMap[vtx] = li;
         }
-        _eviMap.ChangeFind(vtx).Append(coin.Surf());
+        _eviMap.GetValue(vtx).Append(coin.Surf());
         corner.SetSolidIndex(cd[pivot].SolidIndex());
         _listStripe.Append(corner);
     }

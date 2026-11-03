@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Selection;
@@ -168,7 +169,7 @@ public class CafWriter
     /// <summary>Writes all the produced models into the stream. Provided for use like single-file writer</summary>
     public ReturnStatus WriteStream(Stream stream)
     {
-        if (!_files.IsEmpty())
+        if (_files.Count != 0)
         {
             // writing external files is unsupported via stream interface
             return ReturnStatus.RetError;
@@ -342,17 +343,17 @@ public class CafWriter
     }
 
     /// <summary>Returns data on external files Returns Null handle if no external files are read</summary>
-    public NCollection_DataMap<string, ExternFile> ExternFiles() => _files;
+    public Dictionary<string, ExternFile> ExternFiles() => _files;
 
     /// <summary>Returns data on external file by its original label Returns False if no external file with given name is read</summary>
     public bool ExternFile(in Label label, out ExternFile extFile)
     {
         extFile = null;
-        if (!_labEF.IsBound(label))
+        if (!_labEF.ContainsKey(label))
         {
             return false;
         }
-        extFile = _labEF.Find(label);
+        extFile = _labEF.GetValue(label);
         return true;
     }
 
@@ -361,11 +362,11 @@ public class CafWriter
     {
         extFile = null;
         // OCCT: "!myFiles.IsEmpty() ||", which makes the method fail whenever there are files
-        if (!_files.IsEmpty() || !_files.IsBound(name))
+        if (_files.Count != 0 || !_files.ContainsKey(name))
         {
             return false;
         }
-        extFile = _files.Find(name);
+        extFile = _files.GetValue(name);
         return true;
     }
 
@@ -426,19 +427,19 @@ public class CafWriter
     public bool GetCleanDuplicates() => _isCleanDuplicates;
 
     /// <summary>Sets parameters for shape processing.</summary>
-    public void SetShapeFixParameters(NCollection_DataMap<string, string> parameters)
+    public void SetShapeFixParameters(Dictionary<string, string> parameters)
     {
         _writer.SetShapeFixParameters(parameters);
     }
 
     /// <summary>Sets parameters for shape processing.</summary>
-    public void SetShapeFixParameters(in ShapeFixParameters parameters, NCollection_DataMap<string, string> additionalParameters)
+    public void SetShapeFixParameters(in ShapeFixParameters parameters, Dictionary<string, string> additionalParameters)
     {
         _writer.SetShapeFixParameters(parameters, additionalParameters);
     }
 
     /// <summary>Returns parameters for shape processing that was set by SetParameters() method.</summary>
-    public NCollection_DataMap<string, string> GetShapeFixParameters() => _writer.GetShapeFixParameters();
+    public Dictionary<string, string> GetShapeFixParameters() => _writer.GetShapeFixParameters();
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
     public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags flags) => _writer.SetShapeProcessFlags(flags);
@@ -472,7 +473,7 @@ public class CafWriter
         {
             ProgressRange range = ps.Next();
             Label curL = labels.Value(labelIndex);
-            if (_labels.IsBound(curL))
+            if (_labels.ContainsKey(curL))
             {
                 continue; // already processed
             }
@@ -507,7 +508,7 @@ public class CafWriter
                     b.MakeCompound(ref comp);
                     b.Add(comp, curShape);
                     curShape = comp;
-                    _pureRefLabels.Bind(curL, comp);
+                    _pureRefLabels[curL] = comp;
                     compLabels.Append(curL);
                     if (doc.GetReferredShape(curL, out Label refL))
                     {
@@ -533,7 +534,7 @@ public class CafWriter
 
                 foreach (Label curSubShL in compLabels)
                 {
-                    if (_labels.IsBound(curSubShL))
+                    if (_labels.ContainsKey(curSubShL))
                     {
                         continue;
                     }
@@ -542,16 +543,16 @@ public class CafWriter
                     {
                         continue;
                     }
-                    _labels.Bind(curSubShL, curSh);
+                    _labels[curSubShL] = curSh;
                     subLabels.Append(curSubShL);
                     if (!doc.GetReferredShape(curSubShL, out Label refL))
                     {
                         continue;
                     }
-                    if (!_labels.IsBound(refL))
+                    if (!_labels.ContainsKey(refL))
                     {
                         Shape refSh = doc.GetShape(refL);
-                        _labels.Bind(refL, refSh);
+                        _labels[refL] = refSh;
                         subLabels.Append(refL);
                         if (doc.IsAssembly(refL))
                         {
@@ -559,7 +560,7 @@ public class CafWriter
                         }
                     }
                 }
-                _labels.Bind(curL, shapeForBind);
+                _labels[curL] = shapeForBind;
                 subLabels.Append(curL);
 
                 if (doc.IsAssembly(curL) || doc.IsReference(curL))
@@ -720,9 +721,9 @@ public class CafWriter
                                                string prefix, ProgressRange progress)
     {
         // if label already translated, just return the shape
-        if (_labels.IsBound(label))
+        if (_labels.ContainsKey(label))
         {
-            return _labels.Find(label);
+            return _labels.GetValue(label);
         }
 
         ExchangeDocument doc = label.Document;
@@ -749,7 +750,7 @@ public class CafWriter
             GetLabelName(label, baseName);
             TCollection_HAsciiString newName = new TCollection_HAsciiString(baseName);
             newName.AssignCat(".stp");
-            if (_files.IsBound(newName.ToCString()))
+            if (_files.ContainsKey(newName.ToCString()))
             { // avoid confusions
                 for (int k = 1; k < 32000; k++)
                 {
@@ -757,7 +758,7 @@ public class CafWriter
                     newName.AssignCat("_");
                     newName.AssignCat(k.ToString(System.Globalization.CultureInfo.InvariantCulture));
                     newName.AssignCat(".stp");
-                    if (!_files.IsBound(newName.ToCString()))
+                    if (!_files.ContainsKey(newName.ToCString()))
                     {
                         break;
                     }
@@ -774,11 +775,11 @@ public class CafWriter
             string isMulti = null;
             extFile.SetTransferStatus(TransferCore(stepWriter, labelSeq, mode, isMulti, true, progress));
             stepWriter.Model().InternalParameters.WriteAssembly = assemblymode;
-            _labEF.Bind(label, extFile);
-            _files.Bind(newName.ToCString(), extFile);
+            _labEF[label] = extFile;
+            _files[newName.ToCString()] = extFile;
 
             // return empty compound as replacement for the shape
-            _labels.Bind(label, comp);
+            _labels[label] = comp;
             return comp;
         }
         NCollection_Sequence<Label> compLabels = new NCollection_Sequence<Label>();
@@ -811,7 +812,7 @@ public class CafWriter
             shComp = shComp.Located(doc.GetLocation(curL));
             builder.Add(comp, shComp);
         }
-        _labels.Bind(aLabel, comp);
+        _labels[aLabel] = comp;
         return comp;
     }
 
@@ -843,11 +844,11 @@ public class CafWriter
             }
 
             // find SDR
-            if (!_labels.IsBound(lab))
+            if (!_labels.ContainsKey(lab))
             {
                 continue; // not recorded as translated, skip
             }
-            Shape shape = _labels.Find(lab);
+            Shape shape = _labels.GetValue(lab);
 
             StepShapeDefinitionRepresentation sdr = null;
             ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(fp, shape);
@@ -936,16 +937,16 @@ public class CafWriter
 
     private static bool GetStyledItem(Shape shape, ExchangeDocument shapeTool, Styles styles,
                                       ref StyledItem resSelItem,
-                                      NCollection_DataMap<Shape, Transient> mapCompMDGPR)
+                                      Dictionary<Shape, Transient> mapCompMDGPR)
     {
         Label topShL = shapeTool.FindShape(shape, false);
         Shape topLevSh = topShL.IsNull ? new Shape() : shapeTool.GetShape(topShL);
         bool isFound = false;
-        if (topLevSh.IsNull || !mapCompMDGPR.IsBound(topLevSh))
+        if (topLevSh.IsNull || !mapCompMDGPR.ContainsKey(topLevSh))
         {
             return false;
         }
-        PresentationRepresentation mdgpr = mapCompMDGPR.Find(topLevSh) as PresentationRepresentation;
+        PresentationRepresentation mdgpr = mapCompMDGPR.GetValue(topLevSh) as PresentationRepresentation;
         NCollection_HArray1<RepresentationItem> selItmHArr = mdgpr.Items();
         if (selItmHArr is null)
         {
@@ -1060,9 +1061,9 @@ public class CafWriter
     private static void MakeSTEPStyles(Styles styles, Shape shape,
                                        NCollection_IndexedDataMap<Shape, Style> settings,
                                        ref StyledItem theOverride, HashSet<Shape> map,
-                                       NCollection_DataMap<Shape, Transient> mapCompMDGPR,
-                                       NCollection_DataMap<string, Transient> dpdCs,
-                                       NCollection_DataMap<Point3D, Transient> colRGBs, ExchangeDocument shTool,
+                                       Dictionary<Shape, Transient> mapCompMDGPR,
+                                       Dictionary<string, Transient> dpdCs,
+                                       Dictionary<Point3D, Transient> colRGBs, ExchangeDocument shTool,
                                        Style inherit, bool isComponent, bool visMaterialMode)
     {
         // skip already processed shapes
@@ -1190,8 +1191,8 @@ public class CafWriter
         }
 
         Styles styles = new Styles(ws);
-        NCollection_DataMap<string, Transient> dpdCs = new NCollection_DataMap<string, Transient>();
-        NCollection_DataMap<Point3D, Transient> colRGBs = new NCollection_DataMap<Point3D, Transient>();
+        Dictionary<string, Transient> dpdCs = new Dictionary<string, Transient>();
+        Dictionary<Point3D, Transient> colRGBs = new Dictionary<Point3D, Transient>();
         // Iterate on requested shapes
         foreach (Label label in labels)
         {
@@ -1220,7 +1221,7 @@ public class CafWriter
             {
                 continue;
             }
-            bool isComponent = sTool.IsComponent(label) || _pureRefLabels.IsBound(label);
+            bool isComponent = sTool.IsComponent(label) || _pureRefLabels.ContainsKey(label);
             Shape topSh = shape;
             RepresentationContext context = styles.FindContext(shape);
             if (isComponent)
@@ -1308,14 +1309,14 @@ public class CafWriter
 
             if (!isComponent)
             {
-                if (_mapCompMDGPR.IsBound(topSh))
+                if (_mapCompMDGPR.ContainsKey(topSh))
                 {
                     global::Kerf.Engine.Foundation.Message.SendTrace("Error: Current Top-Level shape have MDGPR already " + "\n");
                 }
                 styles.CreateMDGPR(context, out mdgpr, stepModel);
                 if (mdgpr is not null)
                 {
-                    _mapCompMDGPR.Bind(topSh, mdgpr);
+                    _mapCompMDGPR[topSh] = mdgpr;
                 }
             }
             else
@@ -1330,9 +1331,9 @@ public class CafWriter
                     styles.CreateNAUOSRD(context, cdsr, nullPDS);
 
                     // search for MDGPR of the component top-level shape
-                    if (_mapCompMDGPR.IsBound(topSh))
+                    if (_mapCompMDGPR.ContainsKey(topSh))
                     {
-                        mdgpr = _mapCompMDGPR.Find(topSh) as MechanicalDesignGeometricPresentationRepresentation;
+                        mdgpr = _mapCompMDGPR.GetValue(topSh) as MechanicalDesignGeometricPresentationRepresentation;
                     }
                     else
                     {
@@ -1340,7 +1341,7 @@ public class CafWriter
                         TCollection_HAsciiString reprName = new TCollection_HAsciiString("");
                         mdgpr.SetName(reprName);
                         mdgpr.SetContextOfItems(context);
-                        _mapCompMDGPR.Bind(topSh, mdgpr);
+                        _mapCompMDGPR[topSh] = mdgpr;
                     }
                     NCollection_HArray1<RepresentationItem> oldItems = mdgpr.Items();
                     int oldLengthlen = 0;
@@ -1408,7 +1409,7 @@ public class CafWriter
         foreach (Label label in labels)
         {
             // find target STEP entity for the current shape
-            if (!_labels.IsBound(label))
+            if (!_labels.ContainsKey(label))
             {
                 continue; // not recorded as translated, skip
             }
@@ -1418,10 +1419,10 @@ public class CafWriter
             {
                 continue;
             }
-            Shape shape = _labels.Find(label);
+            Shape shape = _labels.GetValue(label);
             StepShapeDefinitionRepresentation sdr = null;
             StepContextDependentShapeRepresentation cdsr = null;
-            bool isComponent = label.Document.IsComponent(label) || _pureRefLabels.IsBound(label);
+            bool isComponent = label.Document.IsComponent(label) || _pureRefLabels.ContainsKey(label);
             ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(fp, shape);
             if (isComponent && fp.FindTypedTransient(mapper, typeof(StepContextDependentShapeRepresentation), ref cdsr))
             {
@@ -1431,7 +1432,7 @@ public class CafWriter
                 {
                     nauo.SetName(hName);
                 }
-                if (_pureRefLabels.Find(label, out Shape internalAssembly))
+                if (_pureRefLabels.TryGetValue(label, out Shape internalAssembly))
                 {
                     ShapeMapper mapperOfInternalShape = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(fp, internalAssembly);
                     fp.FindTypedTransient(mapperOfInternalShape, typeof(StepShapeDefinitionRepresentation), ref sdr);
@@ -1473,7 +1474,7 @@ public class CafWriter
         return !labels.IsEmpty();
     }
 
-    private static bool WritePropsForLabel(ExchangeWorkSession ws, NCollection_DataMap<Label, Shape> labels,
+    private static bool WritePropsForLabel(ExchangeWorkSession ws, Dictionary<Label, Shape> labels,
                                            in Label label, string? isMulti)
     {
         _ = labels;
@@ -1705,14 +1706,14 @@ public class CafWriter
     }
 
     private Writer _writer;
-    private readonly NCollection_DataMap<string, ExternFile> _files = new NCollection_DataMap<string, ExternFile>();
-    private readonly NCollection_DataMap<Label, ExternFile> _labEF = new NCollection_DataMap<Label, ExternFile>();
-    private readonly NCollection_DataMap<Label, Shape> _labels = new NCollection_DataMap<Label, Shape>();
-    private readonly NCollection_DataMap<Label, Shape> _pureRefLabels = new NCollection_DataMap<Label, Shape>();
+    private readonly Dictionary<string, ExternFile> _files = new Dictionary<string, ExternFile>();
+    private readonly Dictionary<Label, ExternFile> _labEF = new Dictionary<Label, ExternFile>();
+    private readonly Dictionary<Label, Shape> _labels = new Dictionary<Label, Shape>();
+    private readonly Dictionary<Label, Shape> _pureRefLabels = new Dictionary<Label, Shape>();
     // OCCT: the documents' root labels (a map); here the documents, in the order given
     private readonly List<ExchangeDocument> _rootLabels = new List<ExchangeDocument>();
-    private readonly NCollection_DataMap<Shape, Transient> _mapCompMDGPR =
-        new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Transient> _mapCompMDGPR =
+        new Dictionary<Shape, Transient>(ShapeHasher.Instance);
     private bool _colorMode = true;
     private bool _nameMode = true;
     private bool _layerMode = true;

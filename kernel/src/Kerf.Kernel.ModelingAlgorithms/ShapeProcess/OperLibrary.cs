@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
@@ -50,7 +51,7 @@ public static class OperLibrary
     public static Shape ApplyModifier(in Shape s,
                                              ShapeContext context,
                                              Modification m,
-                                             NCollection_DataMap<Shape, Shape> map,
+                                             Dictionary<Shape, Shape> map,
                                              MsgRegistrator? msg = null,
                                              bool mutableInput = false)
     {
@@ -63,7 +64,7 @@ public static class OperLibrary
     internal static Shape InternalApplyModifier(in Shape s,
                                                        ShapeContext context,
                                                        Modification m,
-                                                       NCollection_DataMap<Shape, Shape> map,
+                                                       Dictionary<Shape, Shape> map,
                                                        MsgRegistrator? msg,
                                                        bool mutableInput)
     {
@@ -83,14 +84,14 @@ public static class OperLibrary
                 Placement l = shape.Location(), nullLoc = new();
                 shape.Location(nullLoc);
                 Shape res;
-                if (map.IsBound(shape))
+                if (map.ContainsKey(shape))
                 {
-                    res = map.Find(shape).Oriented(shape.Orientation());
+                    res = map.GetValue(shape).Oriented(shape.Orientation());
                 }
                 else
                 {
                     res = InternalApplyModifier(shape, context, m, map, null, mutableInput);
-                    map.Bind(shape, res);
+                    map[shape] = res;
                 }
                 if (!res.IsSame(shape))
                 {
@@ -104,7 +105,7 @@ public static class OperLibrary
                 return s;
             }
 
-            map.Bind(sf, c);
+            map[sf] = c;
             return c.Oriented(s.Orientation());
         }
 
@@ -129,7 +130,7 @@ public static class OperLibrary
     private static bool ApplyModification(ShapeContext ctx, Modification modification,
                                           MsgRegistrator? msg)
     {
-        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Shape work = ctx.InternalResult();
         Shape res = InternalApplyModifier(work, ctx, modification, map, msg, IsWritable(work));
         ctx.RecordModification(map, msg);
@@ -713,7 +714,7 @@ public static class OperLibrary
             }
 
             Shape result0 = sfs.InternalShape();
-            if (result0 != ctx.InternalResult() || (msg is not null && !msg.MapShape().IsEmpty()))
+            if (result0 != ctx.InternalResult() || (msg is not null && msg.MapShape().Count != 0))
             {
                 ctx.RecordModification(sfs.Context()!, msg);
                 ctx.SetResult(result0);
@@ -728,7 +729,7 @@ public static class OperLibrary
         }
 
         Shape result = sfs.InternalShape();
-        if ((result != ctx.InternalResult()) || (msg is not null && !msg.MapShape().IsEmpty()))
+        if ((result != ctx.InternalResult()) || (msg is not null && msg.MapShape().Count != 0))
         {
             ctx.RecordModification(sfs.Context()!, msg);
             ctx.SetResult(result);

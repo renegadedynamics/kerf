@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -34,7 +35,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// </remarks>
 public sealed class WireExplorer
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);
 
     private Edge _edge = new();
@@ -226,12 +227,12 @@ public sealed class WireExplorer
 
             if (!v1.IsNull)
             {
-                if (!_map.IsBound(v1))
+                if (!_map.ContainsKey(v1))
                 {
                     // OCCT binds a copy of one empty list; the port's lists are classes, so each vertex gets its own
-                    _map.Bind(v1, new NCollection_List<Shape>());
+                    _map[v1] = new NCollection_List<Shape>();
                 }
-                _map[v1].Append(e);
+                _map.GetValue(v1).Append(e);
 
                 // add or remove in the vertex map
                 v1.Orientation(Forward);
@@ -343,12 +344,12 @@ public sealed class WireExplorer
         {
             return;
         }
-        if (!_map.IsBound(v1))
+        if (!_map.ContainsKey(v1))
         {
             return;
         }
 
-        NCollection_List<Shape> l = _map[v1];
+        NCollection_List<Shape> l = _map.GetValue(v1);
         _edge = ShapeCasts.Edge(l.First());
         l.RemoveFirst();
         _vertex = Exploration.FirstVertex(_edge, true);
@@ -367,13 +368,13 @@ public sealed class WireExplorer
             _edge = new Edge();
             return;
         }
-        if (!_map.IsBound(_vertex))
+        if (!_map.ContainsKey(_vertex))
         {
             _edge = new Edge();
             return;
         }
 
-        NCollection_List<Shape> l = _map[_vertex];
+        NCollection_List<Shape> l = _map.GetValue(_vertex);
 
         if (l.IsEmpty())
         {

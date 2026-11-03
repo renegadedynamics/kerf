@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2005-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Occt;
 
@@ -22,7 +23,7 @@ public sealed class CurveRangeLocalizeData
     private readonly int _nbSampleC;
     private readonly double _minRangeC;
     private readonly HashSet<CurveRangeSample> _mapRangeOut = new();
-    private readonly NCollection_DataMap<CurveRangeSample, Box> _mapBox = new();
+    private readonly Dictionary<CurveRangeSample, Box> _mapBox = new();
 
     public CurveRangeLocalizeData(int nbSample, double minRange)
     {
@@ -38,17 +39,17 @@ public sealed class CurveRangeLocalizeData
     public void AddOutRange(in CurveRangeSample range)
     {
         _mapRangeOut.Add(range);
-        _mapBox.UnBind(range);
+        _mapBox.Remove(range);
     }
 
-    public void AddBox(in CurveRangeSample range, in Box box) => _mapBox.Bind(range, box);
+    public void AddBox(in CurveRangeSample range, in Box box) => _mapBox[range] = box;
 
     /// <summary>The box of the range, and true, if recorded; otherwise false, the box left as it was.</summary>
     public bool FindBox(in CurveRangeSample range, ref Box box)
     {
-        if (_mapBox.IsBound(range))
+        if (_mapBox.ContainsKey(range))
         {
-            box = _mapBox[range];
+            box = _mapBox.GetValue(range);
             return true;
         }
         return false;

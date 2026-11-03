@@ -621,7 +621,7 @@ internal static class TextDump
                 if (t[2] == "unbound")
                 {
                     DS.AddPoint(new DsPoint());
-                    DS._points.UnBind(i);
+                    DS._points.Remove(i);
                     continue;
                 }
                 DsPoint p = new(new Point3D(Real(t[2]), Real(t[3]), Real(t[4])), Real(t[5]));
@@ -638,7 +638,7 @@ internal static class TextDump
                 if (t[2] == "unbound")
                 {
                     DS.AddCurve(new DsCurve());
-                    DS._curves.UnBind(i);
+                    DS._curves.Remove(i);
                     continue;
                 }
                 // curve i tol range r f l keep k mother m index x walk w sci a b
