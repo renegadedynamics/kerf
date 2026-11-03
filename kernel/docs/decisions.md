@@ -14932,3 +14932,20 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (decision 1453),
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
+
+## Phase 10: unit 10K3, OCCT's bugs: curve and surface evaluation, conversion, gp and data exchange
+
+16801. **Raising the degree of a periodic B-spline keeps the curve** (occt-issues.md, BSplCLib::IncreaseDegree on
+       periodic curves). `BSplCLib::IncreaseDegree` makes a periodic curve non-periodic by prefixing the knots l to
+       Upper − 1 less the period and appending Lower + 1 to f plus the period, with null poles before and after the
+       curve's own. It counted the null poles before from the multiplicities of Lower to f, and those after from l to
+       Upper: each from the other end. When the two sums differ (most periodic curves whose multiplicities aren't all
+       1), the poles were shifted against the knots and the raised curve was another curve; now each end counts its
+       own. `Geom_BSplineCurve::IncreaseDegree` and the 2D curve inherit it, and through them lofts' section
+       unification and fillets' spines. Tests (`BSplineCurveDegreeElevationTests`): 200 random periodic curves, 3D
+       rational or not and 2D, raised by 1 to 3, equal to the original at 41 parameters within 1e-9; and a quadratic
+       with a double knot raised to cubic. One oracle replay moves to plan 3.2's third level: the 2D B-spline curve's
+       edit chains (`Geom2dBSplineCurveOracleTests.Edits`), where one raise of 30 has unequal ends; the port's raised
+       curve is checked against the curve before the raise, and native's recorded poles make the curve the chain's
+       later edits work on (`Geom2dOracle.SameStructure`'s `thePolesFromNative`), so they ask native what they asked
+       when recorded. No other recording moved.
