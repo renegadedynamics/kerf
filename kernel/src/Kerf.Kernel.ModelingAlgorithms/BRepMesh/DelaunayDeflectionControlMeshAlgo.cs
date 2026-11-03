@@ -369,14 +369,13 @@ public class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeInse
     private bool RejectByMinSize(in Xy pnt2d, in Point3D pnt3d)
     {
         NCollection_PackedMapOfInteger usedNodes = new();
-        NCollection_List<int> circlesList =
+        List<int> circlesList =
             _circles!.Select(GetRangeSplitter().Scale(new Point2D(pnt2d), true).XY());
 
         Span<int> nodes = stackalloc int[3];
-        NCollection_List<int>.Iterator circleIt = new(circlesList);
-        for (; circleIt.More(); circleIt.Next())
+        foreach (int circle in circlesList)
         {
-            Triangle triangle = GetStructure().GetElement(circleIt.Value());
+            Triangle triangle = GetStructure().GetElement(circle);
 
             GetStructure().ElementNodes(triangle, nodes);
 

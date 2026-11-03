@@ -175,10 +175,10 @@ public sealed class CircleTool
     }
 
     /// <summary>
-    /// The indices of the circles containing the point. The list is the tool's own, valid until the next call; callers
-    /// remove items from it, as OCCT's do.
+    /// The indices of the circles containing the point, in the order found. The list is the tool's own, valid until the
+    /// next call; callers may overwrite its items.
     /// </summary>
-    public NCollection_List<int> Select(in Xy point)
+    public List<int> Select(in Xy point)
     {
         _selector.SetPoint(point);
         _cellFilter.Inspect(point, ref _selector);
