@@ -14997,3 +14997,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        GeomConvert::SplitBSplineSurface). The V branch tests V's periodicity and calls `VReverse`, where OCCT tested U's
        and reversed U. The test that pinned the U reversal checks the split's corners and an inner point against the
        surface with V reversed.
+16808. **The knot splitting of a surface smooth enough in V keeps its U splits** (occt-issues.md,
+       GeomConvert_BSplineSurfaceKnotSplitting). When V needs no inner split, its first and last knot indices go to the
+       V split indices; OCCT wrote them over the U ones and left V's null, so `VSplitCount`, `VSplitValue` and
+       `Splitting` threw. The test that pinned the NullReferenceException checks the U splits (those computed with V's
+       range 0) and V's two ends.

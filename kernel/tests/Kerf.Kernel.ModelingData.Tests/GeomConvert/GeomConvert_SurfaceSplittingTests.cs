@@ -104,20 +104,28 @@ public class GeomConvert_SurfaceSplittingTests
     }
 
     [Fact]
-    public void KnotSplitting_SmoothV_ReproducesOcctError()
+    public void KnotSplitting_SmoothV_KeepsTheUSplits()
     {
-        // V periodic, degree 2, simple knots: already C1 in V, which OCCT writes into the U split indices
+        // V periodic, degree 2, simple knots: already C1 in V, so V splits only at its ends, and U where it is less
+        // than C2 (OCCT wrote the V ends into the U split indices and left the V ones null: occt-issues.md,
+        // GeomConvert_BSplineSurfaceKnotSplitting; Kerf decision 16808)
         var aPoles = Poles(7, 4);
         var aVKnots = Array([0.0, 1.0, 2.0, 3.0, 4.0]);
         var aVMults = Array([1, 1, 1, 1, 1]);
         var aSurf = new BSplineSurface(aPoles, Array(s_UKnots), aVKnots, Array(s_UMults), aVMults, 3, 2, false, true);
 
         var aSplit = new BSplineSurfaceKnotSplitting(aSurf, 2, 1);
-        // The U result (1, 3, 4) has been replaced by V's first and last indices
-        Assert.Equal(2, aSplit.USplitCount);
-        Assert.Equal(aSurf.FirstVKnotIndex(), aSplit.USplitValue(1));
-        Assert.Equal(aSurf.LastVKnotIndex(), aSplit.USplitValue(2));
-        Assert.ThrowsAny<NullReferenceException>(() => aSplit.VSplitCount);
+        // U as with V's range 0, which ends V's computation first
+        var aUOnly = new BSplineSurfaceKnotSplitting(aSurf, 2, 0);
+        Assert.Equal(aUOnly.USplitCount, aSplit.USplitCount);
+        Assert.Equal([1, 3, 4], Enumerable.Range(1, aSplit.USplitCount).Select(aSplit.USplitValue).ToArray());
+        Assert.Equal(2, aSplit.VSplitCount);
+        Assert.Equal(aSurf.FirstVKnotIndex(), aSplit.VSplitValue(1));
+        Assert.Equal(aSurf.LastVKnotIndex(), aSplit.VSplitValue(2));
+        var aU = new NCollection_Array1<int>(1, aSplit.USplitCount);
+        var aV = new NCollection_Array1<int>(1, aSplit.VSplitCount);
+        aSplit.Splitting(aU, aV);
+        Assert.Equal([1, 3, 4], aU.AsSpan().ToArray());
     }
 
     private static void CheckPatches(BSplineSurface theSurf, BSplineSurfaceToBezierSurface theConv,

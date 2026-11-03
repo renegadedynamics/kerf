@@ -23,10 +23,6 @@ public sealed class BSplineSurfaceKnotSplitting
     /// VContinuityRange) times continuously differentiable. A range of 0 keeps only the end knots.
     /// </summary>
     /// <exception cref="RangeErrorException">A negative continuity range.</exception>
-    /// <remarks>
-    /// OCCT: when the surface is already of continuity VContinuityRange in V, the V result is written into the U
-    /// split indices (see occt-issues.md); NbVSplits, VSplitValue and Splitting then throw.
-    /// </remarks>
     public BSplineSurfaceKnotSplitting(BSplineSurface basisSurface,
                                                    int uContinuityRange,
                                                    int vContinuityRange)
@@ -100,10 +96,10 @@ public sealed class BSplineSurfaceKnotSplitting
             int mmax = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(vMults, firstVIndex, lastVIndex);
             if (vDegree - mmax >= vContinuityRange)
             {
-                // OCCT writes the V end indices into the U split indices; the V ones stay null
-                _usplitIndexes = new NCollection_HArray1<int>(1, 2);
-                _usplitIndexes.SetValue(1, firstVIndex);
-                _usplitIndexes.SetValue(2, lastVIndex);
+                // the V split indices (OCCT wrote them into the U ones; Kerf decision 16808)
+                _vsplitIndexes = new NCollection_HArray1<int>(1, 2);
+                _vsplitIndexes.SetValue(1, firstVIndex);
+                _vsplitIndexes.SetValue(2, lastVIndex);
             }
             else
             {
@@ -137,9 +133,8 @@ public sealed class BSplineSurfaceKnotSplitting
     /// <summary>The number of U split knots (at least 2: the first and last knots).</summary>
     public int USplitCount => _usplitIndexes!.Length();
 
-    /// <summary>The number of V split knots.</summary>
-    /// <exception cref="NullReferenceException">After OCCT's error described on the constructor.</exception>
-    public int VSplitCount => _vsplitIndexes!.Length(); // OCCT: null when the V branch wrote into usplitIndexes
+    /// <summary>The number of V split knots (at least 2: the first and last knots).</summary>
+    public int VSplitCount => _vsplitIndexes!.Length();
 
     /// <summary>Copies the U and V split knot indices into USplit and VSplit (from index 1).</summary>
     public void Splitting(NCollection_Array1<int> uSplit, NCollection_Array1<int> vSplit)
