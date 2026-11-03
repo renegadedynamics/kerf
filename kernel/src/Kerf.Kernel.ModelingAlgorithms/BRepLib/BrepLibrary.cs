@@ -3280,10 +3280,10 @@ public static partial class BrepLibrary
         {
             // General case
 
-            // OCCT takes the face's surface without its location here, so the extended face of a located face
-            // loses the location (occt-issues.md). OCCT also extends that surface handle in place below, changing the
-            // input face and every face sharing the surface (occt-issues.md); the port's GeomLib.ExtendSurfByLength
-            // replaces aSB by an extended copy, so the input is unchanged and the extended face is OCCT's.
+            // The face's surface, placed (BRep_Tool::Surface(F) transforms it by the face's location: decision 16723).
+            // OCCT extends that surface handle in place below, changing the input face and every face sharing the
+            // surface (occt-issues.md); the port's GeomLib.ExtendSurfByLength replaces aSB by an extended copy, so the
+            // input is unchanged and the extended face is OCCT's.
             if (Tool.Surface(f) is not BoundedSurface sb)
             {
                 fExtended = f;
@@ -3312,7 +3312,7 @@ public static partial class BrepLibrary
                 isExtUMax = true;
             }
             // VMin
-            if (extVMin && !isVClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(svMax)) // OCCT tests aSVMax where aSVMin is meant (occt-issues.md)
+            if (extVMin && !isVClosed && !Kerf.Engine.Foundation.Precision.IsInfinite(svMin)) // OCCT tested aSVMax (decision 16724)
             {
                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref sb, extVal, 1, false, false);
                 isExtVMin = true;

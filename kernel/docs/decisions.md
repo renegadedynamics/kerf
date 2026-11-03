@@ -15059,3 +15059,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        face that had no surface stays bare. The pinned test asserts the converted face's surface, mesh, area and
        validity. The GTransform oracle on native shapes moves to plan 3.2's third level for those faces: native's have
        no surface, the port's do; their geometry wasn't compared before either.
+16723. **BRepLib::ExtendFace keeps a located face's place: not a bug** (unit 3I's ExtendFace general-branch row,
+       settled). The row read `BRep_Tool::Surface(theF)` as the surface without the face's location; that overload
+       returns the surface transformed by it (a copy when the location isn't the identity), in OCCT and in the port, so
+       the extended face of a moved Bezier face contains it in place. The test written for the row passes before and
+       after; it stays (`ExtendFace_of_a_located_Bezier_face_keeps_its_place`), and the marker's first sentence goes.
+16724. **BRepLib::ExtendFace tests the VMin bound for the VMin extension** (unit 3I's ExtendFace row). It tested aSVMax,
+       so a bounded surface infinite at VMin (a trimmed extrusion) was extended on its infinite side, which threw, and
+       one infinite at VMax only wasn't extended at VMin. A surface bounded at both ends, the usual case, is as before.
+       Test: an extrusion trimmed to v in ]-∞, 1], extended at VMin: unchanged, no exception.
