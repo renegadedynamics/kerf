@@ -95,3 +95,5 @@ The first packages, for Bento's 3D-models extension.
   diagnostics are the kernel's (a failed Boolean's alerts, with their codes and shapes) and whose inner exception is the
   kernel's own (OCCT.NET's exception type before). A STEP file that can't be read keeps its `ArgumentException`, with
   the exchange status's message. The 2D chamfer's history is read without an exception per vertex.
+- Kerf's unit 10J: the kernel's `NCollection_Map` is `HashSet<T>`; the two places the layer used it (`ShapeHistory`,
+  `Wire`) follow. No behaviour changes.

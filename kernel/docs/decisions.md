@@ -14302,3 +14302,76 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          most 15 s of wall time: alone they take 1 to 3 s; twelve at once take 10 to 12 s, on `main` as on this branch
          (measured both ways); with the class's other cases and other units' suites beside, 18 to 21 s. A timing check
          under load, not a regression; it passed in the first full run.
+
+## Phase 10: unit 10J, heap and collections
+
+16001. **10G's Booleans slowdown is not there to fix** (decision 1377 asked 10J to profile it). An EventPipe profile of
+       the Booleans benchmark (`-- booleans simple`, 407 cases) puts everything to do with transforms
+       (`Transform3D`'s returning forms, `Point3D.Transformed`, `Placement.Transformation`, the transformed adaptors) at
+       under 0.5% of the samples: the hot paths already take `in` parameters (3 by-value `Transform3D`/`Matrix3x3`
+       parameters remain, none hot), and the returning forms are called when transforms are built, not per point.
+       Measured back to back, the commits either side of 10G's merge (296531cd, 348b565a), three runs each alternating:
+       serial 2,864, 2,671, 2,879 ms before and 3,380, 2,722, 2,655 ms after, 8.25 MB per Boolean either way. The 13%
+       was the machine's noise. The profile's real hot spots were elsewhere, and 16002 to 16005 take them.
+16002. **A TShape draws its hash once** (performance.md's proposal 7): `TShape._hash`, from `Random.Shared` at
+       construction, is the shapes' hash and the overlay's filter bit, in place of
+       `RuntimeHelpers.GetHashCode`, whose slow path was 4.5% of the Booleans' samples. No result depends on it: the
+       maps are .NET's hash tables, which iterate in insertion order whatever the hashes (the check proposal 7
+       asked for), and nothing sorts or prints by a shape's hash (BRep dumps still print the identity hash). Placement's datums keep their identity hash (not hot).
+16003. **KERF0002 matched nothing since the rename.** It looked for `Occt.TopoDS_Shape` and its subtypes; since 10E the
+       shapes are `Kerf.Topology.Shape`, `Edge`… It now looks for those, its tests use Kerf's names, and a probe confirms
+       it fails the build on `new HashSet<Edge>()`. The kernel, the tests and the modelling layer had no violation.
+16004. **The mesher's circles are a `List<int>`** (proposal 3, without a linked list): `BRepMesh_CircleTool.Select` and
+       its inspector return the tool's own `List<int>`, and `BRepMesh_Delaun::createTrianglesOnNewVertices` overwrites
+       a deleted triangle's entry with a marker rather than removing it, so the rest are visited in OCCT's order without
+       being moved (the `List.RemoveAt` that was 7% of meshing in 9E's profile). The phase-10 plan's linked list "only
+       where an algorithm splices" isn't needed here: a marker does it.
+16005. **Small fixed-size arrays and reused solvers** (plan 2.6's small maths, chosen by the profiles):
+       - `Extrema_ExtElC` and `Extrema_ExtElC2d` hold their squared distances and point pairs in `[InlineArray]`
+         fields, `_point[2 * i + j]` for OCCT's `myPoint[i][j]`, in place of a `double[]` and a rectangular
+         `POnCurv[,]` per object (`Array.CreateInstanceMDArray` was 1.7% of the Booleans' samples).
+       - `math_NewtonMinimum` keeps its `math_Jacobi` and `math_Gauss` across iterations and calls (proposal 4),
+         through new internal `Jacobi(int n)`/`Perform(Matrix)` and `Gauss(int n)`/`Perform(Matrix, double)`, which hold
+         `math_Recipes`' work vectors too (`Jacobi`'s b and z, `LU_Decompose`'s vv). Each run overwrites all of its
+         storage, so the arithmetic is the same to the bit.
+       - Not done, in collections-plan.md: `math_VectorBase` over its own array, span scratch in `math_Recipes` and
+         `math_FunctionSetRoot` (built per `Extrema_GenLocateExtPS.Perform`).
+16006. **`Grid<T>`** (docs/api/README.md section 6; decision 1374): a read-only struct in `Kerf.Geometry` over row-major
+       `ReadOnlyMemory<T>`, with `RowCount`, `ColumnCount`, `this[row, column]` (0-based, checked), `Row`, `Values` and
+       `ToArray`. `BSplineSurface` and `BezierSurface` return their `Poles()`, `Weights()` and `WeightsArray()` as grids
+       (copies, rows in U); OCCT's deprecated copy-into overloads `Poles(array)`/`Weights(array)` are internal. The
+       engine's two readers use `InternalPoles()`; the tests read the grids 0-based. Their public constructors still
+       take `NCollection_Array2` (10L's builders take grids).
+16007. **`NCollection_Map` is `HashSet<T>`** (plan 2.6, the first NCollection class to go). The wrapper added only OCCT's
+       names over a `HashSet`, so iteration order and results are the same by construction. A Roslyn rewrite from the
+       compiler's symbols (scratch) changed 178 files, 1,011 edits, kernel, tests, benchmarks and the modelling layer:
+       the type, `Extent()`/`Size()` to `Count`, `IsEmpty()` to `Count == 0` (or `!= 0` under a `!`), and the copy
+       constructor to `new HashSet<T>(other, other.Comparer)`, keeping the comparer (KERF0002's exemption for
+       NCollection copies doesn't cover `HashSet`). The one `Exchange` (a test) swaps the references. The 9E
+       profile's other types follow in collections-plan.md's order.
+16008. **The constant tables 10I left as NCollection types are frozen:** STEP AP214's type-name and short-name tables
+       (`FrozenDictionary<string, int>`, ordinal), its protocol's type numbers (`FrozenDictionary<Type, int>`, built by
+       a static initialiser in place of the static constructor's binds) and MoniTool's typed-value library (a frozen
+       dictionary and its names in OCCT's order, which `LibList` returns). The shared static "empty" lists and the
+       Bézier classes' shared knot arrays are left (collections-plan.md).
+16009. **Step 2 doesn't fit in one unit** (the brief's fallback): about 25,000 references to the NCollection types
+       (collections-plan.md counts them per type). 10J did the measured hot spots, one whole type (16007), the returned
+       grids and the constant tables; collections-plan.md orders the rest (DataMap, DynamicArray, the indexed maps with
+       one small ordered type each, List, Sequence, the arrays, the math vectors), with the design of the indexed maps'
+       replacement (`IndexedSet<T>`, `IndexedMap<TKey, TValue>`, 0-based, OCCT's swap-with-last removal; .NET 9's
+       `OrderedDictionary` rejected because its removal shifts). Question 55's transient base goes with the arrays.
+16010. **Measured** (Release, back to back with `main` at 4052982b, two alternating runs each, on a machine shared with
+       other units, so timings carry up to 30% noise):
+       - **Bento's benchmark** (11 examples, 7 passes, parallel rounds of 24 copies): "extrude until" allocates
+         **142 MB a recalculation, against 802 MB** (−82%: `math_NewtonMinimum`'s solvers, 16005); the other ten
+         examples allocate as before (within 1 MB). A parallel round allocates **11.8 GB against 27.7 GB**, with 2,600
+         gen-0 collections against 5,900. Median recalculation 1,402 and 2,121 ms after (the second under a load
+         spike), 1,396 and 1,375 ms before; "extrude until" 888 and 1,199 ms after, 926 and 919 ms before; parallel
+         rounds 8.8 and 7.4 s after, 10.0 and 8.5 s before. Every example gives the same volume, faces and triangles.
+       - **The Booleans** (`-- booleans simple`, 407 cases): serial 3,220 and 2,670 ms after, 2,829 and 2,844 ms before;
+         parallel 2,922 and 3,474 ms after, 2,182 and 3,515 ms before; 8.25 MB per Boolean either way. The hash and the
+         inline arrays remove work the profile saw (6% of its samples) but the difference is inside this machine's noise.
+       - **The modelling layer's suite** (`dotnet test`, 1,876 tests): 19 and 23 s before, 23 and 26 s after (noise).
+       - **Tests**, all passing with their counts: Foundation 2,297 (2,292 before, and 10J's 5: Grid's 4 and KERF0002's
+         new case), ModelingData 3,145, ModelingAlgorithms 4,739 (9 skipped), DataExchange 273 (1 skipped), Oracle
+         383, Draw-lite 687, the modelling layer 1,876. No comparison moved to level 2: no result changed.

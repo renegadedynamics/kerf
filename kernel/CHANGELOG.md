@@ -1758,3 +1758,15 @@ Phase 10 (part): state (unit 10I).
 - Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
   the modelling layer's parts on many threads, each giving its serial BRep text.
 
+
+Phase 10 (part): heap and collections (unit 10J).
+- `Grid<T>` (`Kerf.Geometry`): a read-only 2D grid, 0-based. `BSplineSurface` and `BezierSurface` return their poles
+  and weights as grids (`Poles()`, `Weights()`, `WeightsArray()`); the copy-into overloads `Poles(array)` and
+  `Weights(array)` are internal.
+- `NCollection_Map` is gone: the engine uses `HashSet<T>` (with the same comparers, and the same iteration order).
+- Faster without changing results: a shape's hash is drawn once when its TShape is made; the mesher no longer moves
+  its candidate circles when it deletes one; the elementary extrema hold their solutions in fixed-size fields;
+  `math_NewtonMinimum` reuses its eigenvalue and LU solvers between iterations; STEP AP214's type tables and MoniTool's
+  typed-value library are frozen dictionaries.
+- KERF0002 (a map of shapes needs an explicit comparer) works again on Kerf's shape types.
+- docs/collections-plan.md: what is left of plan 2.6's collections, type by type.
