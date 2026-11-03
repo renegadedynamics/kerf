@@ -15021,3 +15021,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        V split indices; OCCT wrote them over the U ones and left V's null, so `VSplitCount`, `VSplitValue` and
        `Splitting` threw. The test that pinned the NullReferenceException checks the U splits (those computed with V's
        range 0) and V's two ends.
+16809. **Canonical recognition finds ellipses at any angle** (occt-issues.md,
+       GeomConvert_CurveToAnaCurve::ComputeEllipse). `ConicDefinition` takes the rotation of the conic's axes with its
+       sign, cos 2t = (a − c)/√((a − c)² + 4b²) and sin 2t = 2b/√(…), and the longer semi-axis for the main axis;
+       OCCT took cos 2t and sin t positive, so its axes were within 45° of the fitting frame's X, and gave up where
+       a = c (45°). The test that pinned the rejection at 60° checks the arc turned in 15° steps all round: recognised
+       at every step with its radii, centre and major axis (OCCT: 0 to 30° and 180 to 210° only). One case of
+       `ComputeCurve_ConversionTypes` had relied on the bug: a rational quadratic arc with an end pole moved, meant
+       not to be an ellipse, is one (any rational quadratic is a conic), now recognised; the failing case is now an
+       inner pole of a two-span arc. ShapeAnalysis's canonical recognition tests pass unchanged.
