@@ -14383,3 +14383,98 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        221 → 187 (healing 83 → 45: the copy's markers gone, the write checks asking `IsReadOnly`); healing's direct
        `_shapes` edits 8 → 4, the four left filling compounds its tools make. Section 7 records 10H4's patterns for
        10H5 and 10H6.
+
+## Phase 10: unit 10H5, no copy at entry in offsets, fillets and features
+
+16201. **The offsets run in working overlays** (overlay-survey.md section 6): BRepOffset_MakeOffset (`MakeOffsetShape`,
+       `MakeThickSolid`, but the thickening mode: 16203), the pipes and spheres of BRepOffset_Offset, and BiTgte_Blend.
+       Each runs OCCT's code on the caller's shape (in place inside an operation's overlay that takes writes,
+       `BeginUnlessWriting`), and the result holds new TShapes only for what changed. The copies' re-keying goes: the
+       closing faces, the faces with their own offsets, BiTgte's faces, edges and stopping faces are the caller's; the
+       history (`Generated`, `Modified`, `IsDeleted`, the images) is direct, through `Final`. A caller's *unfrozen* input
+       (a shell it built of frozen faces, as the offset oracle's) is worked on with its unfrozen TShapes copied
+       (`WithUnfrozenCopied`, `UncopiedWhereUnchanged`, 10H4's twins' step): in place, the overlay's assembly replaced
+       the caller's shell's children, and the oracle's next run on the same shell gave another result. The history maps
+       such sub-shapes onto their copies (`InternalCopied`).
+16202. **OC5805's offset surface is carried by the overlay.** OCCT enlarges the offset surface of the face it is given in
+       place (BRepOffset_Tool's EnLargeFace, `SetBasisSurface`), and the lateral edges are then extended to it (decision
+       1101). The port's `PutSurfaceInPlace` did it on the offset's working faces and skipped a locked (frozen) face; it
+       now asks `WorkingOverlay.IsLocked`, so in the run's overlay the caller's face's working copy takes the enlarged
+       surface and its pcurves move onto it (`ChangeCurves()` gives the working copy's representations), as on the copy
+       before; the caller's face keeps its surface. Tested on OCC5805.brep's thick solid (bugs/modalg_2/bug5805_3: one
+       shell of 7 faces, area 1,185.03, the input unchanged, surface for surface); the corpus cases keep their status.
+       Outside an overlay nothing changes.
+16203. **Left on their copies, with a reason: the simple offset's solid and MakeOffset's thickening mode.** Both build
+       wall faces on the caller's free edges with BRepLib_MakeFace, which copies frozen edges at its own entry until
+       construction runs in an overlay (unit 10H3). Inside an overlay the caller's edges are frozen, so a wall held copies
+       of them beside the caller's own: face1.brep's simple offset solid didn't close (`ErrorInvalidNbShells`, where
+       native gives a solid), and thickened open shells held their vertices twice (the offset oracle's replay diverged).
+       On the copies the walls share the edges, as before. 10H6 converts both once 10H3's MakeFace runs in place in an
+       overlay (`MakeSimpleOffset`'s copy and MakeOffset's `EnterCopy` are the two sites left).
+16204. **A second MakeOffset run after `Initialize` clears the analysis.** OCCT's `Initialize` and `Clear` leave
+       BRepOffset_Analyse's edge types and ancestors, which its next `Perform` appends to: on the same shapes a second run
+       on one object fails (`UnknownError`). With a copy at each run's entry the shapes were new; on the caller's shapes
+       the doubling showed (Draw-lite's `offsetload` and `offsetperform` twice). `Initialize` clears the analysis
+       (occt-issues.md).
+16205. **The fillets run in working overlays.**
+       - ChFi3d_Builder (fillets, chamfers, FilletSurf's builder) works on the caller's shape: its maps, spines, data
+         structure and common points hold the caller's sub-shapes (`ToWork` and `FromWork` go). A detached overlay
+         (`EnterOverlay`) is entered by `Compute` and `Simulate` (FilletSurf's `Perform` and `Simulate`), which write the
+         vertex tolerances and the spines' 3D curves; the first `Compute` with a result finishes it, and a later
+         computation starts a new one, on the caller's shape as given (on the copy, a second `Compute` ran on what the
+         first had changed, and kept the copy's TShapes). The reconstruction's Booleans are destructive in it, as on the
+         copy.
+       - ChFi2d_Builder builds the face's missing 3D curves in an overlay whose result stands for the face (decision
+         854, in place of `BRepLib.Curves3dBuilt`), and `UpdateNewVertex`'s check asks `IsReadOnly`.
+       - BRep_Builder's `MakeFace` and `MakeEdge` refusal (OCCT's: no new TShape into a variable holding a locked shape)
+         asks `WorkingOverlay.IsLocked`: inside an overlay a variable holding a frozen shape takes the new TShape, as one
+         holding its copy did. Found by the fillet corpus (blend/complex/A2, blend/tolblend_simple C5, C9 and D2,
+         bugs/modalg_2/bug487 threw `TopoDS_LockedShape`).
+16206. **The features run in working overlays.**
+       - LocOpe's working shapes (`WorkingShapes`) are a detached overlay, shared by an operation and those it runs (the
+         gluer's wires on the shape, splitter and generator; a BRepFeat feature's LocOpe sweeps and gluing), made at the
+         first `Enter` (borrowed with `ForTool` inside an operation's overlay that takes writes). Each public call that
+         writes, or reads what was written, enters it: LocOpe_SplitShape's `Add`, `CanSplit`, `LeftOf` and
+         `DescendantShapes`; LocOpe_WiresOnShape's `Add`, `Bind`, `BindAll` and its queries; the spliter's, gluer's,
+         generator's and draft splitter's `Perform`; the sweeps' construction; BRepFeat's makers' `Init`, `Add` and
+         `Perform…` (`Form.EnterWork`). `Working`, `Copied` and `Original` go (the shapes are the caller's), `IsCopied`
+         is `IsWritten`, and `Finish` takes the shapes as they are (the holder compound, the features' one direct
+         `_shapes` edit, goes). LocOpe_SplitShape's `LeftOf` after the splitting maps the wire's edges with `Final`.
+       - BRepFeat_MakeLinearForm writes the contour in a detached overlay from `Init` to the end of `Perform`;
+         BRepFeat_RibSlot's same-parameter pass on the glued result, and BRepOffsetAPI_DraftAngle's `CorrectWires`, run in
+         one each. The Booleans inside are destructive, as OCCT's on unlocked shapes (the features' were already, on the
+         copies; MakeLinearForm's basis, not copied, now is too).
+16207. **The tests stay at level 1.** Every suite keeps its counts; no test moved to level 2, and the Draw-lite groups
+       (offset and draft corpus and commands, fillets, 2D fillets, features) have the same statuses case by case. Two
+       tests changed because they tested the copy, not a result: `ChFi3dBuilderTests.TheFrozenInputIsCopiedAndLeftUnchanged`
+       is `…IsWrittenInAWorkingOverlayAndLeftUnchanged` (the data structure holds the caller's shapes), and LocOpe's
+       `WorkingShapes_CopySharedSubShapesOnce…` is `WorkingShapes_WriteInAWorkingOverlay_AndShareTheUnchangedSubShapes`.
+       New: `OffsetInputsUnchangedTests` (7: the offset shell, thick solids with both joins, OC5805's thick solid, a pipe
+       on frozen edges, the rolling ball, the simple offset), `FilletInputsUnchangedTests` (6: fillets on a box and a
+       fused part, a chamfer, two computations on one builder, the fillet surfaces, a 2D fillet) and
+       `FeatureInputsUnchangedTests` (9: four bosses, a rib, a split and a gluing, LocOpe's split over several calls with
+       no overlay left open, two drafts), each checking the inputs untouched (`ShapeSnapshot`), the result frozen and
+       valid, and the faces left alone shared; and the modelling layer's `FeatureInputsUnchangedTests` (4: fillet and
+       chamfer, offset and shell, thicken, draft on parts taken from elsewhere, BRep text for BRep text).
+16208. **Measured** (Release, serial, one machine shared with other units: the times carry its noise; before is `main` at
+       fc22dc9b, built beside, run back to back). The new `Kerf.Kernel.Benchmarks -- features` runs seven operations on
+       16 frozen parts (boxes, cylinders, a boss fused on a box and a hole cut in one, four sizes each), the fastest of
+       three runs each.
+       - Allocation: offset with the arc join 96.6 to 97.1 MB before, 94.1 to 94.3 after (−3%); with the intersection
+         join 104.9 to 106.1, 104.0 to 104.3; the thick solid 118.1 to 118.3, 116.6; filleting every edge 183.4 to 183.7,
+         181.7; chamfering every edge 173.4 to 173.6, 171.7; the BRepFeat boss 49.8, 48.1 to 48.2; the draft 12.0 either
+         way. Each now writes working copies of the TShapes it changes, where it copied the whole input; on parts this
+         small the copy was a few per cent of the work.
+       - Time: in two runs each, 312 and 231 ms before against 279 and 223 after for the arc offset, 67 and 102 against
+         171 and 91 for the intersection, 142 and 124 against 187 and 127 for the thick solid, 114 and 106 against 156
+         and 88 for the fillets, 125 and 83 against 104 and 87 for the chamfers: within the machine's noise.
+       - Bento's benchmark (11 examples, 7 passes, two runs each): the same results; allocation per example the same or
+         lower, most where fillets and shells run (the bottle 116.7 and 115.9 MB to 96.5 and 97.3, nesting locations 43.1
+         and 47.2 to 33.5 and 33.1, chamfer and fillet 18.1 and 15.7 to 14.7 and 14.5); median recalculation 1,885 and
+         2,428 ms before, 1,304 and 2,611 after (the machine was loaded).
+       - Tests: ModelingAlgorithms 4,785 (4,763 and the 22 new; 9 skipped), Oracle 383, the modelling layer 1,880 (4
+         new), Draw-lite's offset, draft, fillet, 2D fillet and feature classes 15 (every case's status as before).
+16209. **The survey recounted** (overlay-survey.md): copy at entry 71 → 59 sites (offsets 5 → 2, fillets 2 → 0,
+       features 7 → 0); frozen-shape checks 187 → 177 (offsets 3 → 1, fillets 7 → 4: the `Locked()` tests and the frozen
+       markers that now ask the overlay); the features' direct `_shapes` edit gone (50 → 49). Section 8 records 10H5's
+       patterns for 10H6.

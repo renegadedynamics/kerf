@@ -1772,3 +1772,19 @@ Phase 10 (part): no copy at entry in healing (unit 10H4).
 - `HealingInputsUnchangedTests` and a STEP import healing test check the inputs untouched; the benchmarks gain
   `healing` (STEP import, ShapeFix_Shape and UnifySameDomain on the dataset's STEP files).
 
+Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
+- The 3D offset and the thick solid, BRepOffset_Offset's pipes and spheres, BiTgte's rolling ball, the fillet and
+  chamfer builder (and FilletSurf's), the 2D fillet, the draft angle, BRepFeat's features and LocOpe's local operations
+  no longer copy a frozen input: they run OCCT's in-place code on the caller's shape in a working overlay, and the
+  result holds new TShapes only for what changed. Their histories answer for the caller's shapes directly.
+- Builders called over several calls (the fillet builder, LocOpe's split and wires on a shape, BRepFeat's makers) keep
+  a detached overlay, entered by each call that writes, so nothing stays open between the calls; a second computation
+  on one fillet builder starts again from the caller's shape.
+- OC5805's thick solid, whose offset surface OCCT enlarges in place, is built as before, the caller's face keeping its
+  surface. A second `BRepOffset_MakeOffset` run after `Initialize` no longer fails on the same shapes (OCCT's analysis
+  kept the last run's data).
+- The simple offset's solid and the offset's thickening mode stay on their copies until construction runs in an overlay:
+  their walls are made by BRepLib_MakeFace, which copies frozen edges itself.
+- `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
+  untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
+  parts).

@@ -98,4 +98,6 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10H4: `Fix`, the 2D chamfer and `FixDegenerateEdges` hand the shape to ShapeFix directly instead of a
   private copy: the kernel's healing no longer writes into its input, so the results share what wasn't fixed. Results
   are otherwise as before.
-
+- Kerf's unit 10H5: fillets, chamfers, offsets, shells, thickenings and drafts no longer copy the part at the kernel's
+  entry: the results share the faces the operation left alone, and the part is never written. Results are otherwise as
+  before.
