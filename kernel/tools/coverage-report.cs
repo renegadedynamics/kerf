@@ -69,7 +69,11 @@ aText.Append("""
     Unit 10A's measurement (phase10-plan.md 3.2; the floor of question 49: every public member tested, at least 80% line
     coverage per engine package, lower where the Draw-lite corpus covers a package and the gap is listed). Written by
     `tools/coverage.ps1` (`tools/coverage-report.cs`): line coverage of the kernel's and the modeling layer's assemblies
-    under the tests that don't need native OCCT, merged (a line is covered if any run covered it).
+    under the tests that don't need native OCCT, merged (a line is covered if any run covered it): the kernel's unit
+    tests, the Draw-lite tests as they run by default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset)
+    and the modeling layer's suite on OCCT.NET; the oracle tests only with `-WithOracle`. A package is the folder under
+    the assembly (OCCT's package for the kernel). Lines are the coverable lines Microsoft's code coverage counts.
+    `Build123d.OcctNet` is the forwarding layer unit 10B removes.
 
 
     """);
