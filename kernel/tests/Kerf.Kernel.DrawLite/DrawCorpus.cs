@@ -279,12 +279,11 @@ public sealed class DrawCorpus(string theTestsDirectory)
         }
         finally
         {
-            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's process-wide defaults (mpparallel,
-            // mpsetdefaultname) don't carry over to the next case
+            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's defaults (mpparallel,
+            // mpsetdefaultname) don't carry over to the next case (settings of the flow since unit 10I, reset in case
+            // the cases share one)
             Kerf.Engine.Meshing.IncrementalMesh.SetParallelDefault(false);
             Kerf.Engine.Meshing.DiscretFactory.Get().SetDefaultName("FastDiscret");
-            // nor ShapeProcess's cached resource file (unit 7C; its operator registry is the same in every DRAWEXE)
-            Kerf.Engine.Healing.Process.ProcessContext.ClearResourceCache();
         }
 
         string aText = aLog.ToString();

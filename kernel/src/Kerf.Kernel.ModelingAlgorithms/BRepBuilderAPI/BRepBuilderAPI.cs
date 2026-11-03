@@ -14,12 +14,12 @@ namespace Kerf.Engine.Construction.Api;
 /// shape modifications (transformation, general transformation, copy, NURBS conversion).
 /// </summary>
 /// <remarks>
-/// The default plane and precision are BRepLib's process-wide statics (decision 415): callers read them; only ported
-/// code sets them, through the internal setters.
+/// The default plane and precision are BRepLib's settings of the operation context (process-wide in OCCT; decision 415
+/// and unit 10I): callers read them; only ported code sets them, through the internal setters.
 /// </remarks>
 public static class BRepBuilderApi
 {
-    /// <summary>Sets the default plane of the 2D edges (internal: BRepLib's process-wide static).</summary>
+    /// <summary>Sets the default plane of the 2D edges (internal: BRepLib's setting, for the rest of the flow).</summary>
     internal static void Plane(PlaneSurface p)
     {
         BrepLibrary.Plane(p);
@@ -31,7 +31,7 @@ public static class BRepBuilderApi
         return BrepLibrary.Plane();
     }
 
-    /// <summary>Sets the default precision (internal: BRepLib's process-wide static).</summary>
+    /// <summary>Sets the default precision (internal: BRepLib's setting, for the rest of the flow).</summary>
     internal static void Precision(double p)
     {
         BrepLibrary.Precision(p);

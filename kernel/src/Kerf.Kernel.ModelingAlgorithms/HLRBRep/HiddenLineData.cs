@@ -47,14 +47,8 @@ namespace Kerf.Engine.HiddenLines;
 /// </remarks>
 public class HiddenLineData : Transient
 {
-    // OCCT's global counters (HLRBRep_Data.cxx), read by the hider's traces (decision 1097).
-    internal static int s_nbOkIntersection;
-    internal static int s_nbPtIntersection;
-    internal static int s_nbSegIntersection;
-    internal static int s_nbClassification;
-    internal static int s_nbCal1Intersection; // pairs of unrejected edges
-    internal static int s_nbCal2Intersection; // true intersections (not vertex)
-    internal static int s_nbCal3Intersection; // Curve-Surface intersections
+    // OCCT's global counters (HLRBRep_Data.cxx) are left out: only OCCT_DEBUG traces read them, and nothing here did
+    // (decision 1097; unit 10I)
 
     private const double CutLar = 2.0e-1;
     private const double CutBig = 1.0e-1;
@@ -1163,7 +1157,6 @@ public class HiddenLineData : Transient
 
                             if (!rej)
                             {
-                                s_nbCal1Intersection++;
                                 bool h1 = false;
                                 bool e1 = false;
                                 bool h2 = false;
@@ -1209,7 +1202,6 @@ public class HiddenLineData : Transient
 
                                 if (_intersected)
                                 { // compute real intersection
-                                    s_nbCal2Intersection++;
 
                                     double da1 = 0;
                                     double db1 = 0;
@@ -1272,11 +1264,7 @@ public class HiddenLineData : Transient
                                         {
                                             _nbPoints = _intersector.NbPoints();
                                             _nbSegments = _intersector.NbSegments();
-                                            if ((_nbSegments + _nbPoints) > 0)
-                                            {
-                                                s_nbOkIntersection++;
-                                            }
-                                            else
+                                            if ((_nbSegments + _nbPoints) == 0)
                                             {
                                                 _reject.SetNoIntersection(_le, _fe);
                                             }
@@ -1288,8 +1276,6 @@ public class HiddenLineData : Transient
                                         }
                                     }
                                 }
-                                s_nbPtIntersection += _nbPoints;
-                                s_nbSegIntersection += _nbSegments;
                             }
                         }
                         else
@@ -1771,7 +1757,6 @@ public class HiddenLineData : Transient
     {
         _ = e; // avoid compiler warning
 
-        s_nbClassification++;
         EdgesBlock.MinMaxIndices vertMin = new(), vertMax = new(), minMaxVert = new();
         Span<double> totMin = stackalloc double[16];
         Span<double> totMax = stackalloc double[16];
@@ -1844,7 +1829,6 @@ public class HiddenLineData : Transient
             }
         }
 
-        s_nbCal3Intersection++;
         Point3D pLim;
         Point2D psta;
         psta = ec.Value(sta);
@@ -1933,7 +1917,6 @@ public class HiddenLineData : Transient
     /// <summary>The state of the edge ED between p1 and p2 by Nbp points: OUT if one of them is rejected by the box.</summary>
     public Containment SimplClassify(int e, HiddenLineEdgeData ed, int nbp, double p1, double p2)
     {
-        s_nbClassification++;
         EdgesBlock.MinMaxIndices vertMin = new(), vertMax = new(), minMaxVert = new();
         Span<double> totMin = stackalloc double[16];
         Span<double> totMax = stackalloc double[16];

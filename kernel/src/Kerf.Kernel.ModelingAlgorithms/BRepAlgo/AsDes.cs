@@ -13,19 +13,19 @@ namespace Kerf.Engine.Booleans.Algo;
 /// <summary>Stores the future sub-shapes (descendants) of shapes and the shapes containing them (ascendants).</summary>
 /// <remarks>
 /// A working object of the offset algorithms. For a shape without ascendants or descendants OCCT returns a shared
-/// static empty list; the port's is per thread (<c>[ThreadStatic]</c>), so <see cref="ChangeDescendant"/> on such a
-/// shape still hands out one list that every later call sees, as in OCCT (marked <c>// OCCT</c>).
+/// static empty list; the port's is the store's own (unit 10I; per thread before), so <see cref="ChangeDescendant"/> on
+/// such a shape still hands out one list that every later call on the store sees, as in OCCT (marked <c>// OCCT</c>),
+/// and no other operation's.
 /// </remarks>
 public sealed class AsDes : Transient
 {
     private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _up = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
 
-    [ThreadStatic]
-    private static NCollection_List<Shape>? s_empty;
+    private NCollection_List<Shape>? _empty;
 
     // OCCT: the function-level static empty list, shared and writable through ChangeDescendant
-    private static NCollection_List<Shape> Empty() => s_empty ??= new NCollection_List<Shape>();
+    private NCollection_List<Shape> Empty() => _empty ??= new NCollection_List<Shape>();
 
     /// <summary>An empty store.</summary>
     public AsDes()

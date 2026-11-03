@@ -2,30 +2,26 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Occt;
 
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>
-/// AppBlend_Debug.cxx's free functions: two process-wide switches of the AppSurf approximations (the spline
-/// approximation, and approximation without tangents). Internal setters, as other process-wide statics (decision 415).
+/// AppBlend_Debug.cxx's free functions: two switches of the AppSurf approximations (the spline approximation, and
+/// approximation without tangents), process-wide in OCCT, settings of the <see cref="OperationContext"/> here (unit
+/// 10I): a setter changes them for the rest of the current flow of execution. Internal (decision 415).
 /// </summary>
 internal static class AppBlendDebug
 {
-    private static volatile bool s_appBlendContextSplineApprox;
-    private static volatile bool s_appBlendContextApproxWithNoTgt;
+    private static readonly ContextKey<bool> SplineApproxSetting = new("AppBlend.ContextSplineApprox", false);
+    private static readonly ContextKey<bool> ApproxWithNoTgtSetting = new("AppBlend.ContextApproxWithNoTgt", false);
 
-    internal static void AppBlend_SetContextSplineApprox(bool b)
-    {
-        s_appBlendContextSplineApprox = b;
-    }
+    internal static void AppBlend_SetContextSplineApprox(bool b) => OperationContext.Set(SplineApproxSetting, b);
 
-    internal static bool AppBlend_GetContextSplineApprox() => s_appBlendContextSplineApprox;
+    internal static bool AppBlend_GetContextSplineApprox() => SplineApproxSetting.Value;
 
-    internal static void AppBlend_SetContextApproxWithNoTgt(bool b)
-    {
-        s_appBlendContextApproxWithNoTgt = b;
-    }
+    internal static void AppBlend_SetContextApproxWithNoTgt(bool b) => OperationContext.Set(ApproxWithNoTgtSetting, b);
 
-    internal static bool AppBlend_GetContextApproxWithNoTgt() => s_appBlendContextApproxWithNoTgt;
+    internal static bool AppBlend_GetContextApproxWithNoTgt() => ApproxWithNoTgtSetting.Value;
 }

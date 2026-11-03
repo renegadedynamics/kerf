@@ -13,42 +13,28 @@ namespace Kerf.Engine.Healing.Extend;
 /// <summary>General tools of Shape Healing: the coding of <see cref="ExtendStatus"/> flags into bit masks.</summary>
 public static class ShapeExtend
 {
-    private static bool s_init = false;
-    private static readonly Lock InitLock = new();
+    // OCCT.NET: the messages go into the message table's defaults once per process (unit 10I)
+    private static readonly Lazy<bool> Loaded = new(() =>
+    {
+        // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_SHMessage", "SHAPE") left out (decision 975)
+        MsgFile.AddDefaults(ShapeMessages.Text);
+        if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
+        {
+            throw new ProgramErrorException("Critical Error - message resources for ShapeExtend are invalid or undefined!");
+        }
+        return true;
+    });
 
     /// <summary>
     /// Inits using of ShapeExtend: loads the messages output by Shape Healing's algorithms (SHMessage's texts) into
-    /// <see cref="MsgFile"/>, once per process, unless they are there already.
+    /// the defaults of <see cref="MsgFile"/>, once per process.
     /// </summary>
     /// <remarks>
     /// OCCT first tries the message file that the environment variable CSF_SHMessage names; the port loads only the
-    /// text compiled in, OCCT's SHAPE.us (decision 975). Process-wide state, as OCCT's, behind a lock.
+    /// text compiled in, OCCT's SHAPE.us (decision 975), once (a one-time initialisation, unit 10I).
     /// </remarks>
     /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
-    public static void Init()
-    {
-        lock (InitLock)
-        {
-            if (s_init)
-            {
-                return;
-            }
-
-            s_init = true;
-
-            // load Message File for Shape Healing
-            if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
-            {
-                // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_SHMessage", "SHAPE") left out (decision 975)
-                MsgFile.LoadFromString(ShapeMessages.Text);
-                if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
-                {
-                    throw new ProgramErrorException(
-                        "Critical Error - message resources for ShapeExtend are invalid or undefined!");
-                }
-            }
-        }
-    }
+    public static void Init() => _ = Loaded.Value;
 
     /// <summary>Encodes a status (enumeration) to a bit flag.</summary>
     public static int EncodeStatus(ExtendStatus status)

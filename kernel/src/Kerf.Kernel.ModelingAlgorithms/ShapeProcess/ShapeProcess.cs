@@ -5,6 +5,8 @@
 
 using Kerf.Engine.Foundation;
 using Occt;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using static Kerf.Engine.Foundation.Gravity;
 
 namespace Kerf.Engine.Healing.Process;
@@ -15,9 +17,12 @@ namespace Kerf.Engine.Healing.Process;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The registry is process-wide state with OCCT's semantics (plan 2.3, decision 1021): an operator registered once is
-/// visible to every thread, and a name can't be registered twice. OCCT's map has no lock; the port's reads and writes
-/// take one, so that registering while another thread performs can't corrupt it.
+/// The registry (plan 2.3, decision 1021; unit 10I) has two layers. The defaults are Shape Healing's own operators,
+/// which <see cref="OperLibrary.Init"/> publishes once per process, immutable from then on. An operator a caller
+/// registers (<see cref="RegisterOperator"/>) is added to the current flow of execution, a setting of the
+/// <see cref="OperationContext"/>: the operations of that flow (and the tasks it starts) see it; others don't. A name
+/// can't be registered twice, as in OCCT. Neither layer takes a lock: OCCT's process-wide map had none either, and the
+/// port's had one.
 /// </para>
 /// <para>
 /// A <see cref="ShapeContext"/> whose shape holds frozen shapes runs the whole sequence on an exact copy
@@ -81,8 +86,16 @@ public static class ShapeProcess
         public int Count() => System.Numerics.BitOperations.PopCount(_bits);
     }
 
-    private static readonly Dictionary<string, Operator> AMapOfOperators = new(StringComparer.Ordinal);
-    private static readonly Lock AMapOfOperatorsLock = new();
+    // The defaults: Shape Healing's operators, published once by OperLibrary.Init (null before)
+    private static volatile FrozenDictionary<string, Operator>? s_defaultOperators;
+
+    /// <summary>The operators registered in the current flow of execution, over the defaults.</summary>
+    internal static readonly ContextKey<ImmutableDictionary<string, Operator>> OperatorsSetting =
+        new("ShapeProcess.Operators", ImmutableDictionary.Create<string, Operator>(StringComparer.Ordinal));
+
+    /// <summary>Publishes the default operators, once (<see cref="OperLibrary.Init"/>'s one-time initialisation).</summary>
+    internal static void SetDefaultOperators(FrozenDictionary<string, Operator> operators) =>
+        Interlocked.CompareExchange(ref s_defaultOperators, operators, null);
 
     // Simple RAII class to lock the scope of the current operation (OCCT's ScopeLock).
     private readonly struct ScopeLock : IDisposable
@@ -98,33 +111,31 @@ public static class ShapeProcess
         public void Dispose() => _context.UnSetScope();
     }
 
-    /// <summary>Registers an operator to make it visible for the performer; false if the name is taken.</summary>
+    /// <summary>
+    /// Registers an operator to make it visible for the performer in the current flow of execution (see the remarks);
+    /// false if the name is taken.
+    /// </summary>
     public static bool RegisterOperator(string name, Operator op)
     {
-        lock (AMapOfOperatorsLock)
+        if (FindOperator(name, out _))
         {
-            if (AMapOfOperators.ContainsKey(name))
-            {
-                // OCCT_DEBUG: a warning that the operator is already registered, left out
-                return false;
-            }
-            AMapOfOperators.Add(name, op);
-            return true;
+            // OCCT_DEBUG: a warning that the operator is already registered, left out
+            return false;
         }
+        OperationContext.Set(OperatorsSetting, OperatorsSetting.Value.Add(name, op));
+        return true;
     }
 
-    /// <summary>Finds an operator by its name.</summary>
+    /// <summary>Finds an operator by its name: the current flow's, else Shape Healing's own.</summary>
     public static bool FindOperator(string name, out Operator? op)
     {
-        lock (AMapOfOperatorsLock)
+        if (OperatorsSetting.Value.TryGetValue(name, out op)
+            || (s_defaultOperators is { } defaults && defaults.TryGetValue(name, out op)))
         {
-            if (!AMapOfOperators.TryGetValue(name, out op))
-            {
-                // OCCT_DEBUG: an error that no operator has the name, left out
-                return false;
-            }
             return op is not null;
         }
+        // OCCT_DEBUG: an error that no operator has the name, left out
+        return false;
     }
 
     /// <summary>

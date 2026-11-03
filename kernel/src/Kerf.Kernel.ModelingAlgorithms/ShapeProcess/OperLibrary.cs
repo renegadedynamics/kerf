@@ -16,6 +16,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
+using System.Collections.Frozen;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
@@ -30,16 +31,15 @@ namespace Kerf.Engine.Healing.Process;
 /// SplitCommonVertex.
 /// </summary>
 /// <remarks>
-/// <see cref="Init"/> registers them once per process (OCCT's static <c>done</c> flag, plan 2.3; the port registers
-/// under a lock, so a second thread waits until they are all registered). The operators work on the context's
+/// <see cref="Init"/> registers them once per process (OCCT's static <c>done</c> flag, plan 2.3), as
+/// <see cref="ShapeProcess"/>'s default operators, immutable once published (a one-time initialisation, unit 10I). The operators work on the context's
 /// <see cref="ShapeContext.InternalResult"/>, which is the context's working copy while they run
 /// (decision 1022), and read the tools' unfrozen results (decisions 973, 999); the context freezes at its own
 /// publication points.
 /// </remarks>
 public static class OperLibrary
 {
-    private static readonly Lock InitLock = new();
-    private static bool s_done;
+    private static readonly Lazy<bool> Registered = new(RegisterAll);
 
     /// <summary>
     /// Applies a BRepTools_Modification to a shape, taking the sharing of the components of compounds into account.
@@ -788,36 +788,34 @@ public static class OperLibrary
     }
 
     /// <summary>Registers all the operators (the first call in the process only); loads Shape Healing's messages.</summary>
-    public static void Init()
+    public static void Init() => _ = Registered.Value;
+
+    private static bool RegisterAll()
     {
-        lock (InitLock)
+        global::Kerf.Engine.Healing.Extend.ShapeExtend.Init();
+
+        var operators = new Dictionary<string, Operator>(StringComparer.Ordinal)
         {
-            if (s_done)
-            {
-                return;
-            }
-            s_done = true;
-
-            global::Kerf.Engine.Healing.Extend.ShapeExtend.Init();
-
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("DirectFaces", new UOperator(Directfaces));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SameParameter", new UOperator(Sameparam));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SetTolerance", new UOperator(Settol));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SplitAngle", new UOperator(Splitangle));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("BSplineRestriction", new UOperator(Bsplinerestriction));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("ElementaryToRevolution", new UOperator(Torevol));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SweptToElementary", new UOperator(Swepttoelem));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SurfaceToBSpline", new UOperator(Converttobspline));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("ToBezier", new UOperator(Shapetobezier));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SplitContinuity", new UOperator(Splitcontinuity));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SplitClosedFaces", new UOperator(Splitclosedfaces));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("FixWireGaps", new UOperator(Fixwgaps));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("FixFaceSize", new UOperator(Fixfacesize));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("DropSmallSolids", new UOperator(Dropsmallsolids));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("DropSmallEdges", new UOperator(Mergesmalledges));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("FixShape", new UOperator(Fixshape));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SplitClosedEdges", new UOperator(Spltclosededges));
-            global::Kerf.Engine.Healing.Process.ShapeProcess.RegisterOperator("SplitCommonVertex", new UOperator(Splitcommonvertex));
-        }
+            ["DirectFaces"] = new UOperator(Directfaces),
+            ["SameParameter"] = new UOperator(Sameparam),
+            ["SetTolerance"] = new UOperator(Settol),
+            ["SplitAngle"] = new UOperator(Splitangle),
+            ["BSplineRestriction"] = new UOperator(Bsplinerestriction),
+            ["ElementaryToRevolution"] = new UOperator(Torevol),
+            ["SweptToElementary"] = new UOperator(Swepttoelem),
+            ["SurfaceToBSpline"] = new UOperator(Converttobspline),
+            ["ToBezier"] = new UOperator(Shapetobezier),
+            ["SplitContinuity"] = new UOperator(Splitcontinuity),
+            ["SplitClosedFaces"] = new UOperator(Splitclosedfaces),
+            ["FixWireGaps"] = new UOperator(Fixwgaps),
+            ["FixFaceSize"] = new UOperator(Fixfacesize),
+            ["DropSmallSolids"] = new UOperator(Dropsmallsolids),
+            ["DropSmallEdges"] = new UOperator(Mergesmalledges),
+            ["FixShape"] = new UOperator(Fixshape),
+            ["SplitClosedEdges"] = new UOperator(Spltclosededges),
+            ["SplitCommonVertex"] = new UOperator(Splitcommonvertex),
+        };
+        global::Kerf.Engine.Healing.Process.ShapeProcess.SetDefaultOperators(operators.ToFrozenDictionary(StringComparer.Ordinal));
+        return true;
     }
 }

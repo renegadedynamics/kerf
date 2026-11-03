@@ -7,6 +7,8 @@ using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Foundation.Resources;
 using Occt;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 
 namespace Kerf.Engine.Healing.Process;
 
@@ -25,9 +27,16 @@ namespace Kerf.Engine.Healing.Process;
 /// variables <c>CSF_nameDefaults</c> and <c>CSF_nameUserDefaults</c> name. The port reads no environment variable:
 /// without directories it loads OCCT's own resource file of that name, compiled in
 /// (<see cref="Manager.EmbeddedDefaults"/>: <c>IGES</c>, <c>STEP</c>) or nothing; files are read only from
-/// the directories the caller gives (the optional arguments, which OCCT doesn't have). The process-wide cache of the
-/// last file loaded (OCCT's, behind a static mutex) is kept: it is reloaded when the name, the directories or the files'
-/// modification times change, and each context gets its own copy.
+/// the directories the caller gives (the optional arguments, which OCCT doesn't have). Each context gets its own copy of
+/// the resources, so its <c>SetResource</c> calls are its own.
+/// </para>
+/// <para>
+/// No process-wide state (unit 10I): OCCT caches the last file loaded in statics behind a mutex, reloaded when the name
+/// or the file's modification time changes. The port parses each compiled-in file once (an immutable default, cached
+/// without a lock) and reads the caller's directories each time. A flow of execution can override resources for the
+/// contexts its operations load, the data exchange's included (<see cref="ResourceOverridesSetting"/>, a setting of the
+/// <see cref="OperationContext"/>): an operation can run with its own shape processing parameters beside others that
+/// use the defaults.
 /// </para>
 /// <para>A working object (decision 21).</para>
 /// </remarks>
@@ -38,12 +47,16 @@ public class ProcessContext : Transient
     private Messenger _messenger;
     private int _traceLev;
 
-    // The process-wide cache of LoadResourceManager (OCCT's statics, behind its static mutex)
-    private static readonly Lock THE_SHAPE_PROCESS_MUTEX = new();
-    private static Manager? s_sRC;
-    private static long s_sMtime, s_sUMtime;
-    private static string s_sName = "";
-    private static string s_sPath = "", s_sUPath = ""; // OCCT.NET: the files, part of the name (decision 1023)
+    // The compiled-in resource files, each parsed once (OCCT's cache of the last file loaded, unit 10I): a context gets
+    // a copy, never the cached manager itself
+    private static readonly ConcurrentDictionary<string, Manager> EmbeddedManagers = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Resources (by full name, such as <c>STEP.FromSTEP.FixShape.Tolerance3d</c>) that override the loaded file's in
+    /// every context <see cref="LoadResourceManager"/> makes in the current flow of execution.
+    /// </summary>
+    public static readonly ContextKey<ImmutableDictionary<string, string>> ResourceOverridesSetting =
+        new("ShapeProcess_Context.ResourceOverrides", ImmutableDictionary.Create<string, string>(StringComparer.Ordinal));
 
     /// <summary>Creates an empty context (no resource manager), trace level 1.</summary>
     public ProcessContext()
@@ -89,107 +102,24 @@ public class ProcessContext : Transient
     }
 
     /// <summary>
-    /// A new resource manager for the resource file <paramref name="name"/> (see <see cref="Init"/>): a copy of the
-    /// process-wide cached one, loaded again only if the name, the directories or the files' modification times
-    /// changed.
+    /// A new resource manager for the resource file <paramref name="name"/> (see <see cref="Init"/>), with the current
+    /// flow's overrides (<see cref="ResourceOverridesSetting"/>).
     /// </summary>
     public Manager LoadResourceManager(string name, string? defaultsDirectory = null,
                                                 string? userDefaultsDirectory = null)
     {
-        // Mutex is needed because we are initializing and changing static variables here, so
-        // without mutex it leads to race condition.
-        lock (THE_SHAPE_PROCESS_MUTEX)
+        string path = string.IsNullOrEmpty(defaultsDirectory) ? "" : Manager.ResourcePath(defaultsDirectory, name);
+        string userPath = string.IsNullOrEmpty(userDefaultsDirectory) ? "" : Manager.ResourcePath(userDefaultsDirectory, name);
+        // Creating copy of the loaded manager for thread safety of Resource_Manager variables (OCCT's comment): calling
+        // Resource_Manager::SetResource() for one object in multiple threads causes race condition
+        Manager manager = path.Length == 0 && userPath.Length == 0
+            ? new Manager(EmbeddedManagers.GetOrAdd(name, static aName => new Manager(aName)))
+            : new Manager(name, path.Length == 0 ? null : defaultsDirectory, userPath.Length == 0 ? null : userDefaultsDirectory);
+        foreach (KeyValuePair<string, string> resource in ResourceOverridesSetting.Value)
         {
-            // Optimisation of loading resource file: file is load only once
-            // and reloaded only if file date has changed
-            long mtime = 0, uMtime = 0;
-            string path = string.IsNullOrEmpty(defaultsDirectory) ? "" : Manager.ResourcePath(defaultsDirectory, name);
-            string userPath = string.IsNullOrEmpty(userDefaultsDirectory) ? "" : Manager.ResourcePath(userDefaultsDirectory, name);
-            if (path.Length != 0)
-            {
-                mtime = ModificationTime(path);
-            }
-            if (userPath.Length != 0)
-            {
-                uMtime = ModificationTime(userPath);
-            }
-
-            bool isFileModified = false;
-            if (s_sRC is not null)
-            {
-                if (s_sName == name && s_sPath == path && s_sUPath == userPath)
-                {
-                    if (s_sMtime != mtime)
-                    {
-                        s_sMtime = mtime;
-                        isFileModified = true;
-                    }
-                    if (s_sUMtime != uMtime)
-                    {
-                        s_sUMtime = uMtime;
-                        isFileModified = true;
-                    }
-                    if (isFileModified)
-                    {
-                        s_sRC = null;
-                    }
-                }
-                else
-                {
-                    s_sRC = null;
-                }
-            }
-            if (s_sRC is null)
-            {
-                // OCCT_DEBUG: an info message on reloading, left out
-                s_sRC = path.Length == 0 && userPath.Length == 0
-                    ? new Manager(name)
-                    : new Manager(name, path.Length == 0 ? null : defaultsDirectory, userPath.Length == 0 ? null : userDefaultsDirectory);
-                if (!isFileModified)
-                {
-                    s_sName = name;
-                    s_sPath = path;
-                    s_sUPath = userPath;
-                    s_sMtime = mtime;
-                    s_sUMtime = uMtime;
-                }
-            }
-            // Creating copy of sRC for thread safety of Resource_Manager variables
-            // We should return copy because calling of Resource_Manager::SetResource() for one object
-            // in multiple threads causes race condition
-            return new Manager(s_sRC);
+            manager.SetResource(resource.Key, resource.Value);
         }
-    }
-
-    // stat's st_mtime: the file's modification time; 0 when the file can't be read (OCCT leaves stat's buffer as is)
-    private static long ModificationTime(string path)
-    {
-        try
-        {
-            return File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks : 0;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException
-                                                or NotSupportedException)
-        {
-            return 0;
-        }
-    }
-
-    /// <summary>
-    /// Forgets the process-wide cached resource manager (an addition of the port, for test harnesses that run cases
-    /// one after another: the next <see cref="LoadResourceManager"/> loads the file again).
-    /// </summary>
-    internal static void ClearResourceCache()
-    {
-        lock (THE_SHAPE_PROCESS_MUTEX)
-        {
-            s_sRC = null;
-            s_sName = "";
-            s_sPath = "";
-            s_sUPath = "";
-            s_sMtime = 0;
-            s_sUMtime = 0;
-        }
+        return manager;
     }
 
     /// <summary>The resource manager (null for a context made empty).</summary>

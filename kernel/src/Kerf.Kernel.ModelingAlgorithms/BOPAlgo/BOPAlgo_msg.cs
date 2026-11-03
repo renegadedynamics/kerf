@@ -66,30 +66,13 @@ internal static class BOPAlgo_msg
         ("BOPAlgo_AlertUnableToMakeClosedEdgeOnFace", "Unable to make closed edge on face."),
     ];
 
-    private static readonly Lock BOPAlgo_InitMutex = new();
-    private static bool s_bOPAlgoInitMessages = false;
-
-    /// <summary>Loads the texts once, unless the check key is already there (OCCT's <c>BOPAlgo_LoadMessages</c>).</summary>
-    internal static void BOPAlgo_LoadMessages()
+    // The texts go into the message table's defaults once per process (unit 10I: a one-time initialisation)
+    private static readonly Lazy<bool> Loaded = new(() =>
     {
-        if (Volatile.Read(ref s_bOPAlgoInitMessages))
-        {
-            return;
-        }
-        lock (BOPAlgo_InitMutex)
-        {
-            if (s_bOPAlgoInitMessages)
-            {
-                return;
-            }
-            if (!MsgFile.HasMsg("BOPAlgo_LOAD_CHECKER"))
-            {
-                foreach ((string key, string text) in Messages)
-                {
-                    MsgFile.AddMsg(key, text);
-                }
-            }
-            Volatile.Write(ref s_bOPAlgoInitMessages, true);
-        }
-    }
+        MsgFile.AddDefaults(Messages.Select(message => new KeyValuePair<string, string>(message.Item1, message.Item2)));
+        return true;
+    });
+
+    /// <summary>Loads the texts into the message table's defaults, once (OCCT's <c>BOPAlgo_LoadMessages</c>).</summary>
+    internal static void BOPAlgo_LoadMessages() => _ = Loaded.Value;
 }

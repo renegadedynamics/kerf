@@ -21,15 +21,16 @@ namespace Kerf.Engine.Booleans;
 /// <c>protected internal</c> for that reason.
 /// </para>
 /// <para>
-/// The global parallel mode (<see cref="GetParallelMode"/>) is process-wide, as in OCCT, with an internal setter
+/// The global parallel mode (<see cref="GetParallelMode"/>) is the current flow's (process-wide in OCCT), with an internal setter
 /// (decisions 415 and 582): callers set the per-algorithm flag (<see cref="SetRunParallel"/>), and Draw-lite's
 /// <c>brunparallel</c> the global one. <c>DumpErrors</c> and <c>DumpWarnings</c> write to a <see cref="TextWriter"/>.
-/// The first construction loads BOPAlgo's message texts into <see cref="MsgFile"/>, as OCCT does.
+/// The first construction loads BOPAlgo's message texts into <see cref="MsgFile"/>'s defaults, as OCCT does.
 /// </para>
 /// </remarks>
 public class Options
 {
-    private static volatile bool s_globalRunParallel = false;
+    // OCCT's process-wide parallel mode: a setting of the operation context (unit 10I)
+    internal static readonly ContextKey<bool> ParallelModeSetting = new("BOPAlgo_Options.ParallelMode", false);
 
     protected internal Report _report;
     protected internal bool _runParallel;
@@ -40,7 +41,7 @@ public class Options
     public Options()
     {
         _report = new Report();
-        _runParallel = s_globalRunParallel;
+        _runParallel = ParallelModeSetting.Value;
         _fuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
         _useOBB = false;
         BOPAlgo_msg.BOPAlgo_LoadMessages();
@@ -83,11 +84,17 @@ public class Options
 
     //!@name Parallel processing mode
 
-    /// <summary>The global parallel mode (false by default), the default of each new algorithm's flag.</summary>
-    public static bool GetParallelMode() => s_globalRunParallel;
+    /// <summary>
+    /// The parallel mode of the current flow of execution (false by default), the default of each new algorithm's flag
+    /// (OCCT's global parallel mode).
+    /// </summary>
+    public static bool GetParallelMode() => ParallelModeSetting.Value;
 
-    /// <summary>Sets the global parallel mode (process-wide: Draw-lite and tests only).</summary>
-    internal static void SetParallelMode(bool newMode) => s_globalRunParallel = newMode;
+    /// <summary>
+    /// Sets the parallel mode for the rest of the current flow of execution (OCCT: for the process; Draw-lite and tests
+    /// only).
+    /// </summary>
+    internal static void SetParallelMode(bool newMode) => OperationContext.Set(ParallelModeSetting, newMode);
 
     /// <summary>Switches the parallel processing of this algorithm on or off.</summary>
     public void SetRunParallel(bool flag) => _runParallel = flag;

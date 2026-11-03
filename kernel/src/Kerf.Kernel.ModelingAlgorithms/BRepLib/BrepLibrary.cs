@@ -38,40 +38,35 @@ namespace Kerf.Engine.Construction.Library;
 /// </summary>
 public static partial class BrepLibrary
 {
-    // OCCT's file statics. Process-wide as in OCCT; their setters are internal, so callers always see the defaults.
-    private static double s_precision = Kerf.Engine.Foundation.Precision.Confusion();
-    private static PlaneSurface? s_plane;
+    // OCCT's file statics, process-wide in OCCT: settings of the operation context (unit 10I), whose setters are
+    // internal (Draw-lite and tests), so callers see the defaults unless they set them in their flow
+    internal static readonly ContextKey<double> PrecisionSetting =
+        new("BRepLib.Precision", Kerf.Engine.Foundation.Precision.Confusion());
 
-    /// <summary>Sets the default precision (internal: process-wide state).</summary>
-    internal static void Precision(double p)
+    internal static readonly ContextKey<PlaneSurface> PlaneSetting = new("BRepLib.Plane", MakeDefaultPlane());
+
+    private static PlaneSurface MakeDefaultPlane()
     {
-        s_precision = p;
+        var plane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
+        plane.Freeze();
+        return plane;
     }
+
+    /// <summary>Sets the default precision for the rest of the current flow of execution (internal).</summary>
+    internal static void Precision(double p) => OperationContext.Set(PrecisionSetting, p);
 
     /// <summary>Returns the default precision of the makers.</summary>
-    public static double Precision()
-    {
-        return s_precision;
-    }
+    public static double Precision() => PrecisionSetting.Value;
 
-    /// <summary>Sets the current plane (internal: process-wide state).</summary>
+    /// <summary>Sets the current plane for the rest of the current flow of execution (internal).</summary>
     internal static void Plane(PlaneSurface p)
     {
         p.Freeze();
-        s_plane = p;
+        OperationContext.Set(PlaneSetting, p);
     }
 
     /// <summary>Returns the current plane of the 2D makers (frozen).</summary>
-    public static PlaneSurface Plane()
-    {
-        if (s_plane is null)
-        {
-            var plane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
-            plane.Freeze();
-            Interlocked.CompareExchange(ref s_plane, plane, null);
-        }
-        return s_plane;
-    }
+    public static PlaneSurface Plane() => PlaneSetting.Value;
 
     //=================================================================================================
 
