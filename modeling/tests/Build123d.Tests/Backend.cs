@@ -1,20 +1,5 @@
 namespace Build123d.Tests;
 
-/// <summary>
-/// A test of the native backend's shim (native faults, native memory), skipped under the OCCT.NET backend
-/// (Build123dBackend=OcctNet), which runs no native code.
-/// </summary>
-public sealed class NativeFactAttribute : FactAttribute
-{
-    public NativeFactAttribute()
-    {
-#if OCCTNET
-        Skip = "tests the native shim; the OCCT.NET backend runs no native code";
-#endif
-    }
-}
-
-#if OCCTNET
 /// <summary>The OCCT.NET backend's own behaviour.</summary>
 public class OcctNetBackendTests
 {
@@ -59,4 +44,3 @@ public class OcctNetBackendTests
         Assert.IsAssignableFrom<global::Occt.Standard_Failure>(e.InnerException);
     }
 }
-#endif

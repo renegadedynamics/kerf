@@ -1,4 +1,3 @@
-#if OCCTNET
 using System.Text;
 using System.Text.RegularExpressions;
 using O = global::Occt;
@@ -238,4 +237,3 @@ public class StepAssemblyTests
         }
     }
 }
-#endif

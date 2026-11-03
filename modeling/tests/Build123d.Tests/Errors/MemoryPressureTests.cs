@@ -11,14 +11,6 @@ public class MemoryPressureTests
 {
     private static long Pressure(Shape shape) => Extras.MemoryPressureOf(shape.TopoShape);
 
-    [NativeFact]
-    public void ABooleanResultCarriesPressure()
-    {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1) - new Cylinder(2, 20);
-        Assert.InRange(Pressure(part), 4096, 10_000_000);
-        Assert.Equal(Extras.EstimateMemory(part.TopoShape), Pressure(part));
-    }
-
     [Fact]
     public void SubShapesAndCopiesDontCountAgain()
     {
@@ -60,16 +52,4 @@ public class MemoryPressureTests
         Assert.True(meshed > 1_000_000, $"a fine mesh is {meshed} bytes");
     }
 
-    [NativeFact]
-    public void DisposingGivesThePressureBack()
-    {
-        var part = new Box(10, 10, 10) - new Sphere(6);
-        var wrapper = part.Wrapped;   // a handle of its own, without pressure
-        Assert.Equal(0, Extras.MemoryPressureOf(wrapper));
-        Extras.AddMemoryPressure(wrapper);
-        Assert.True(Extras.MemoryPressureOf(wrapper) > 0);
-        wrapper.Dispose();
-        Assert.Equal(0, Extras.MemoryPressureOf(wrapper));
-        Assert.True(part.Volume > 0);   // the result is unaffected
-    }
 }

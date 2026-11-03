@@ -6,18 +6,7 @@ using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Exchange;
 
-/// <summary>A test of the mesh formats, which only the OCCT.NET backend has: natively they say so.</summary>
-public sealed class MeshFormatFactAttribute : FactAttribute
-{
-    public MeshFormatFactAttribute()
-    {
-#if !OCCTNET
-        Skip = "the mesh formats need the OCCT.NET backend";
-#endif
-    }
-}
-
-/// <summary>Import and export: BREP and STEP on both backends, STL, glTF and 3MF on OCCT.NET.</summary>
+/// <summary>Import and export: BREP, STEP, STL, glTF and 3MF.</summary>
 public partial class ExchangeTests
 {
     private static Part Block() => (Part)(new Box(10, 10, 10) - new Cylinder(3, 14));
@@ -150,7 +139,6 @@ public partial class ExchangeTests
         Assert.ThrowsAny<Exception>(() => Importers.ImportStep(stream, new ImportLimits(MaxBytes: 1000)));
     }
 
-#if OCCTNET
     [Fact]
     public void StepPastTheRecordLimitIsRefused()
     {
@@ -174,13 +162,6 @@ public partial class ExchangeTests
         // The shapes were in inches and are written as such: read back in millimetres, they are 25.4 times larger
         Check.AlmostEqual(10 * 20 * 30 * Math.Pow(25.4, 3), Importers.ImportStep(inches).Volume, 3);
     }
-#else
-    [Fact]
-    public void NativeStepWritesOnlyOcctsDefaults()
-    {
-        Assert.Throws<NotSupportedException>(() => Exporters3D.ExportStep(Block(), new MemoryStream(), Unit.Inch));
-    }
-#endif
 
     [Fact]
     public void CancelledImportsAndExportsStop()
@@ -196,21 +177,8 @@ public partial class ExchangeTests
 
     // ---- STL, glTF and 3MF ----
 
-#if !OCCTNET
     [Fact]
-    public void NativeMeshFormatsSaySo()
-    {
-        var e = Assert.Throws<NotSupportedException>(() => Exporters3D.ExportStl(Block(), new MemoryStream()));
-        Assert.Contains("OCCT.NET backend", e.Message);
-        Assert.Throws<NotSupportedException>(() => Importers.ImportStl(new MemoryStream()));
-        Assert.Throws<NotSupportedException>(() => Exporters3D.ExportGltf(Block(), new MemoryStream()));
-        Assert.Throws<NotSupportedException>(() => Exporters3D.Export3mf(Block(), new MemoryStream()));
-        Assert.Throws<NotSupportedException>(() => Importers.ImportGltf(new MemoryStream()));
-    }
-#endif
-
-    [Fact]
-    public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
+    public void StepKeepsLabelsColoursAndAssemblies()
     {
         var pair = Compound.Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
                                       new Sphere(1).Moved(new Location((3.0, 0.0, 0.0))).WithLabel("b")], "pair");
@@ -219,21 +187,13 @@ public partial class ExchangeTests
         stream.Position = 0;
         var read = Importers.ImportStep(stream);
         Check.AlmostEqual(pair.Volume, read.Volume, 6);
-#if OCCTNET
         Assert.True(Extras.StepKeepsAssemblies);
         Assert.Equal("pair", read.Label);
         Assert.Equal(["a", "b"], ((Compound)read).AssemblyChildren.Select(c => c.Label));
         Assert.Equal(new Color("red"), ((Compound)read).AssemblyChildren[0].Color);
-#else
-        // Natively, OCCT's XCAF isn't bound: the shapes alone
-        Assert.False(Extras.StepKeepsAssemblies);
-        Assert.Empty(((Compound)read).AssemblyChildren);
-        Assert.Null(read.Color);
-        Assert.Throws<NotSupportedException>(() => Extras.WriteStep(ExchangeNode.Part(read.Wrapped), new MemoryStream(), StepWriteSettings.Default));
-#endif
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void StlRoundTripsBinaryAndAscii()
     {
         var box = new Box(10, 20, 30);
@@ -256,7 +216,7 @@ public partial class ExchangeTests
         }
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void AMeshHasABoundingBox()
     {
         // Faces holding only triangles have no surface to bound: the box is the triangles'
@@ -269,7 +229,7 @@ public partial class ExchangeTests
         Check.AlmostEqual(-15, box.Min.Z, 6);
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void StlScalesItsUnit()
     {
         var stream = new MemoryStream();
@@ -281,7 +241,7 @@ public partial class ExchangeTests
         Assert.Throws<ArgumentException>(() => Importers.ImportStl(new MemoryStream(), Unit.Gram));
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void StlLimitsRefuseHostileData()
     {
         var stream = new MemoryStream();
@@ -291,7 +251,7 @@ public partial class ExchangeTests
         Assert.Throws<InvalidDataException>(() => Importers.ImportStl(new MemoryStream("solid x\nfacet garbage"u8.ToArray())));
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void GltfRoundTripsAnAssemblyWithLabelsAndColours()
     {
         var assembly = Compound.Assembly(
@@ -319,7 +279,7 @@ public partial class ExchangeTests
         }
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void GltfFilesKeepTheirBufferBeside()
     {
         var folder = Path.Combine(Path.GetTempPath(), $"b3d-{Guid.NewGuid():N}");
@@ -337,7 +297,7 @@ public partial class ExchangeTests
         }
     }
 
-    [MeshFormatFact]
+    [Fact]
     public void ThreeMfHoldsAModel()
     {
         var stream = new MemoryStream();
