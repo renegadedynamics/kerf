@@ -751,6 +751,9 @@ public sealed class Delaun
         }
     }
 
+    /// <summary>Marks a circle of <see cref="CreateTrianglesOnNewVertices"/>'s list whose triangle was deleted.</summary>
+    private const int RemovedCircle = int.MinValue;
+
     private void CreateTrianglesOnNewVertices(NCollection_DynamicArray<int> vertexIndexes, ProgressRange range)
     {
         _meshData!.Data().GetTolerance(out double tolU, out double tolV);
@@ -774,17 +777,19 @@ public sealed class Delaun
             int vertexIdx = vertexIndexes[index];
             MeshVertex vertex = GetVertex(vertexIdx);
 
-            // Iterator in the list of indexes of circles containing the node
-            NCollection_List<int> circlesList = _circles.Select(vertex.Coord());
+            // The indexes of the circles containing the node. OCCT removes from its linked list the triangles it
+            // deletes; here they are overwritten with RemovedCircle and skipped, which visits the rest in the same
+            // order without moving them (unit 10J: List.RemoveAt was 7% of meshing, performance.md).
+            List<int> circlesList = _circles.Select(vertex.Coord());
+            int circlesLeft = circlesList.Count;
 
             int onEgdeId = 0, triangleId = 0;
-            NCollection_List<int>.Iterator circleIt = new(circlesList);
-            for (; circleIt.More(); circleIt.Next())
+            for (int circleIt = 0; circleIt < circlesList.Count; circleIt++)
             {
                 // To add a node in the mesh it is necessary to check conditions:
                 // - the node should be within the boundaries of the mesh and so in an existing triangle
                 // - all adjacent triangles should belong to a component connected with this triangle
-                if (Contains(circleIt.Value(), vertex, sqTol, out onEgdeId))
+                if (Contains(circlesList[circleIt], vertex, sqTol, out onEgdeId))
                 {
                     if (onEgdeId != 0 && GetEdge(onEgdeId).Movability() != DegreeOfFreedom.Free)
                     {
@@ -800,8 +805,9 @@ public sealed class Delaun
                     // Remove triangle even if it contains frontier edge in order
                     // to prevent appearance of incorrect configurations like free
                     // edge glued with frontier #26407
-                    triangleId = circleIt.Value();
-                    circlesList.Remove(circleIt);
+                    triangleId = circlesList[circleIt];
+                    circlesList[circleIt] = RemovedCircle;
+                    circlesLeft--;
                     break;
                 }
             }
@@ -811,20 +817,26 @@ public sealed class Delaun
                 DeleteTriangle(triangleId, loopEdges);
 
                 isModify = true;
-                while (isModify && !circlesList.IsEmpty())
+                while (isModify && circlesLeft > 0)
                 {
                     isModify = false;
-                    NCollection_List<int>.Iterator circleIt1 = new(circlesList);
-                    for (; circleIt1.More(); circleIt1.Next())
+                    for (int circleIt1 = 0; circleIt1 < circlesList.Count; circleIt1++)
                     {
-                        Triangle element = GetTriangle(circleIt1.Value());
+                        int circle = circlesList[circleIt1];
+                        if (circle == RemovedCircle)
+                        {
+                            continue;
+                        }
+
+                        Triangle element = GetTriangle(circle);
                         Triangle.Int3 e = element._edges;
 
                         if (loopEdges.IsBound(e[0]) || loopEdges.IsBound(e[1]) || loopEdges.IsBound(e[2]))
                         {
                             isModify = true;
-                            DeleteTriangle(circleIt1.Value(), loopEdges);
-                            circlesList.Remove(circleIt1);
+                            DeleteTriangle(circle, loopEdges);
+                            circlesList[circleIt1] = RemovedCircle;
+                            circlesLeft--;
                             break;
                         }
                     }

@@ -17,20 +17,36 @@ namespace Kerf.Engine.Extrema;
 /// <remarks>An algorithm object computed by its constructor (OCCT gives it no Perform).</remarks>
 public class ExtElC2d
 {
+    [System.Runtime.CompilerServices.InlineArray(MaxExtrema)]
+    private struct SquareDistances
+    {
+        private double _element;
+    }
+
+    [System.Runtime.CompilerServices.InlineArray(2 * MaxExtrema)]
+    private struct PointPairs
+    {
+        private POnCurv2d _element;
+    }
+
     private bool _done;
     private bool _isPar;
     private int _nbExt;
-    private readonly double[] _sqDist = new double[8];
+    private const int MaxExtrema = 8;
 
-    // Extrema_POnCurv2d's default is all zeros, so the array needs no filling
-    private readonly POnCurv2d[,] _point = new POnCurv2d[8, 2];
+    // Unit 10J: fixed-size fields in place of a double[] and a POnCurv2d[,] per object, as in ExtElC.
+    // _point[2 * i + j] is OCCT's myPoint[i][j].
+    private SquareDistances _sqDist;
+
+    // Extrema_POnCurv's default is all zeros, so the points need no filling
+    private PointPairs _point;
 
     public ExtElC2d()
     {
         _done = false;
         _isPar = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -60,7 +76,7 @@ public class ExtElC2d
         _done = false;
         _isPar = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -92,8 +108,8 @@ public class ExtElC2d
             Point2D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(param2, c2);
 
             _sqDist[_nbExt] = 0.0;
-            _point[_nbExt, 0] = new POnCurv2d(param1, p1);
-            _point[_nbExt, 1] = new POnCurv2d(param2, p2);
+            _point[2 * _nbExt] = new POnCurv2d(param1, p1);
+            _point[2 * _nbExt + 1] = new POnCurv2d(param2, p2);
             _nbExt = 1;
         }
 
@@ -119,7 +135,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -155,16 +171,16 @@ public class ExtElC2d
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(teta[0], p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(teta[0], p2);
         _nbExt++;
 
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(teta[1], p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(teta[1], p2);
         _nbExt++;
         _done = true;
     }
@@ -176,7 +192,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -211,16 +227,16 @@ public class ExtElC2d
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(teta[0], p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(teta[0], p2);
         _nbExt++;
 
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(teta[1], p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(teta[1], p2);
         _nbExt++;
         _done = true;
     }
@@ -231,7 +247,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -265,8 +281,8 @@ public class ExtElC2d
         u1 = (new Vector2D(c1.Location(), p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(u2, p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2);
         _nbExt++;
         _done = true;
     }
@@ -277,7 +293,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -302,8 +318,8 @@ public class ExtElC2d
         u1 = (new Vector2D(c1.Location(), p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
         _sqDist[_nbExt] = p1.SquareDistance(p2);
-        _point[_nbExt, 0] = new POnCurv2d(u1, p1);
-        _point[_nbExt, 1] = new POnCurv2d(u2, p2);
+        _point[2 * _nbExt] = new POnCurv2d(u1, p1);
+        _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2);
         _nbExt++;
         _done = true;
     }
@@ -315,7 +331,7 @@ public class ExtElC2d
         _done = false;
         _nbExt = 0;
         _done = true;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -361,8 +377,8 @@ public class ExtElC2d
             {
                 u2 = usol2[kk];
                 _sqDist[_nbExt] = p2[kk].SquareDistance(p1[noSol]);
-                _point[_nbExt, 0] = new POnCurv2d(u1, p1[noSol]);
-                _point[_nbExt, 1] = new POnCurv2d(u2, p2[kk]);
+                _point[2 * _nbExt] = new POnCurv2d(u1, p1[noSol]);
+                _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2[kk]);
                 _nbExt++;
             }
         }
@@ -374,7 +390,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -393,8 +409,8 @@ public class ExtElC2d
                     for (j = 1; j <= extCirc.ExtCount; j++)
                     {
                         _sqDist[_nbExt] = extCirc.SquareDistance(j);
-                        _point[_nbExt, 0] = extCirc.Point(j);
-                        _point[_nbExt, 1] = extElip.Point(i);
+                        _point[2 * _nbExt] = extCirc.Point(j);
+                        _point[2 * _nbExt + 1] = extElip.Point(i);
                         _nbExt++;
                     }
                 }
@@ -409,7 +425,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -428,8 +444,8 @@ public class ExtElC2d
                     for (j = 1; j <= extCirc.ExtCount; j++)
                     {
                         _sqDist[_nbExt] = extCirc.SquareDistance(j);
-                        _point[_nbExt, 0] = extCirc.Point(j);
-                        _point[_nbExt, 1] = extHyp.Point(i);
+                        _point[2 * _nbExt] = extCirc.Point(j);
+                        _point[2 * _nbExt + 1] = extHyp.Point(i);
                         _nbExt++;
                     }
                 }
@@ -444,7 +460,7 @@ public class ExtElC2d
         _isPar = false;
         _done = false;
         _nbExt = 0;
-        for (int idx = 0; idx < _sqDist.Length; idx++)
+        for (int idx = 0; idx < MaxExtrema; idx++)
         {
             _sqDist[idx] = RealLast();
         }
@@ -463,8 +479,8 @@ public class ExtElC2d
                     for (j = 1; j <= extCirc.ExtCount; j++)
                     {
                         _sqDist[_nbExt] = extCirc.SquareDistance(j);
-                        _point[_nbExt, 0] = extCirc.Point(j);
-                        _point[_nbExt, 1] = extParab.Point(i);
+                        _point[2 * _nbExt] = extCirc.Point(j);
+                        _point[2 * _nbExt + 1] = extParab.Point(i);
                         _nbExt++;
                     }
                 }
@@ -521,7 +537,7 @@ public class ExtElC2d
         {
             throw new OutOfRangeException();
         }
-        p1 = _point[n - 1, 0];
-        p2 = _point[n - 1, 1];
+        p1 = _point[2 * (n - 1)];
+        p2 = _point[2 * (n - 1) + 1];
     }
 }

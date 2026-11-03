@@ -2887,7 +2887,7 @@ public class WorkSession : Transient
             //  list of entities given one after another: (ID,ID,ID...)
             System.Text.StringBuilder entid = new System.Text.StringBuilder();
             int i;
-            NCollection_Map<int> numap = new NCollection_Map<int>();
+            HashSet<int> numap = new HashSet<int>();
             list = new NCollection_HSequence<Transient>();
             for (i = 1; i < selname.Length && selname[i] != '\0'; i++)
             {
@@ -2992,7 +2992,7 @@ public class WorkSession : Transient
         }
 
         //  mode < 0 l1-l2  = 0 l1&l2  > 0 l1|l2 (l1+l2)
-        NCollection_Map<Transient> numap = new NCollection_Map<Transient>();
+        HashSet<Transient> numap = new HashSet<Transient>();
         int i, n = l2.Length();
         for (i = n; i > 0; i--)
         {

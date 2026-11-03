@@ -191,7 +191,7 @@ public partial class CheckerSI
 
         int iSize, nV, nZ, k, nbVVS;
         Containment state;
-        NCollection_Map<Pair> mpk = new();
+        HashSet<Pair> mpk = new();
         //
         _iterator!.Initialize(ShapeType.Vertex, ShapeType.Solid);
         iSize = _iterator.ExpectedLength();

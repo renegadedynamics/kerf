@@ -1099,7 +1099,7 @@ public sealed class Evolved
             // corresponding to vertices of the profile.
             //-----------------------------------------------------------------
             Explorer explo = new(_profile, ShapeType.Vertex);
-            NCollection_Map<Shape> vmap = new(ShapeHasher.Instance);
+            HashSet<Shape> vmap = new(ShapeHasher.Instance);
 
             for (; explo.More(); explo.Next())
             {
@@ -1876,7 +1876,7 @@ public sealed class Evolved
             loop.Init(F);
 
             Explorer expSpine = new(_spine, ShapeType.Edge);
-            NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+            HashSet<Shape> view = new(ShapeHasher.Instance);
 
             for (; expSpine.More(); expSpine.Next())
             {

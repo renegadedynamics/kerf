@@ -332,7 +332,7 @@ public class OutLiner : Transient
         Compound compound = new();
         b.MakeCompound(ref compound);
         _outLinedShape = compound;
-        NCollection_Map<Shape> shapeMap = new(ShapeHasher.Instance);
+        HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
 
         for (exshell.Init(_workingShape, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)

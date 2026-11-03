@@ -30,8 +30,8 @@ namespace Kerf.Engine.Features;
 /// </remarks>
 public class FeatureBuilder : Bop
 {
-    protected NCollection_Map<Shape> _shapes = new(ShapeHasher.Instance);
-    protected NCollection_Map<Shape> _removed = new(ShapeHasher.Instance);
+    protected HashSet<Shape> _shapes = new(ShapeHasher.Instance);
+    protected HashSet<Shape> _removed = new(ShapeHasher.Instance);
     protected int _fuse;
 
     public FeatureBuilder()
@@ -169,7 +169,7 @@ public class FeatureBuilder : Bop
     public void PerformResult(ProgressRange range = default)
     {
         _operation = _fuse != 0 ? global::Kerf.Engine.Booleans.Operation.Fuse : global::Kerf.Engine.Booleans.Operation.Cut;
-        if (_shapes.IsEmpty())
+        if (_shapes.Count == 0)
         {
             BuildShape(range);
             return;
@@ -255,7 +255,7 @@ public class FeatureBuilder : Bop
         Edge sp;
         Shape sx;
         Explorer exp = new(), expE = new();
-        NCollection_Map<Shape> me = new(ShapeHasher.Instance), meSplit = new(ShapeHasher.Instance);
+        HashSet<Shape> me = new(ShapeHasher.Instance), meSplit = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itIm = new();
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives the
         // stored key back from its index, and the map is never iterated (as BOPAlgo_Builder_3)
@@ -532,7 +532,7 @@ public class FeatureBuilder : Bop
     }
 
     /// <summary>Rebuilds edges in accordance with the kept parts of the tool.</summary>
-    public void RebuildEdge(in Shape e, in Face f, NCollection_Map<Shape> aME,
+    public void RebuildEdge(in Shape e, in Face f, HashSet<Shape> aME,
                             NCollection_List<Shape> aLIm)
     {
         int nE, nSp, nV1, nV2, nE1, nV, nVx, nVSD = 0;
@@ -544,11 +544,11 @@ public class FeatureBuilder : Bop
         ShapeInfo si = new();
         Vertex v1, v2;
         PaveBlock pbNew;
-        NCollection_Map<int> mi = new(), mAdd = new(), mv = new(), mvOr = new();
+        HashSet<int> mi = new(), mAdd = new(), mv = new(), mvOr = new();
         NCollection_List<PaveBlock>.Iterator itPB = new();
         NCollection_List<int>.Iterator itLI = new();
         // OCCT iterates this address-keyed map to find the one block with the same bounds: the order is not observable
-        NCollection_Map<PaveBlock> mpb = new(ReferenceEqualityComparer.Instance);
+        HashSet<PaveBlock> mpb = new(ReferenceEqualityComparer.Instance);
         //
         si.SetShapeType(ShapeType.Edge);
 
@@ -742,7 +742,7 @@ public class FeatureBuilder : Bop
     }
 
     /// <summary>Adds the shape <paramref name="s"/> and its sub-shapes not kept into the map <paramref name="m"/>.</summary>
-    public void FillRemoved(in Shape s, NCollection_Map<Shape> m)
+    public void FillRemoved(in Shape s, HashSet<Shape> m)
     {
         if (_shapes.Contains(s))
         {

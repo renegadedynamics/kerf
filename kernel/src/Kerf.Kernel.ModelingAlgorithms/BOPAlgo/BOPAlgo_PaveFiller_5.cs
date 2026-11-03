@@ -257,9 +257,9 @@ public partial class PaveFiller
                 edgeFace.SetRange(pbRange);
                 //
                 // Save the pair to avoid their forced intersection
-                if (!_fpbDone.Find(nF, out NCollection_Map<PaveBlock> pMPB))
+                if (!_fpbDone.Find(nF, out HashSet<PaveBlock> pMPB))
                 {
-                    pMPB = new NCollection_Map<PaveBlock>();
+                    pMPB = new HashSet<PaveBlock>();
                     _fpbDone.Bind(nF, pMPB);
                 }
                 pMPB.Add(pb);
@@ -1023,7 +1023,7 @@ public partial class PaveFiller
                 bool bIntersect = tolAdd > 0;
                 if (!bIntersect)
                 {
-                    bIntersect = !_fpbDone.Find(nF, out NCollection_Map<PaveBlock> pMPB) || !pMPB.Contains(pb);
+                    bIntersect = !_fpbDone.Find(nF, out HashSet<PaveBlock> pMPB) || !pMPB.Contains(pb);
                 }
 
                 if (bIntersect)

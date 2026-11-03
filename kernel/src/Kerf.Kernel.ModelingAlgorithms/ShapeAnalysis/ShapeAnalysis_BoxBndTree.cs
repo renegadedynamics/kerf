@@ -35,7 +35,7 @@ public sealed class BoxBndTreeSelectorAnalysis : SpatialTree<int, Box>.Selector
     private Vertex _lVertex;
     private Point3D _fPnt;
     private Point3D _lPnt;
-    private readonly NCollection_Map<int> _list = new();
+    private readonly HashSet<int> _list = new();
     private double _tol;
     private double _min3d;
     private readonly NCollection_Array1<int> _arrIndices;

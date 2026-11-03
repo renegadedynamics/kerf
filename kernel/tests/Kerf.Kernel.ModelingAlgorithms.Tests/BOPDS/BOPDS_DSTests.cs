@@ -644,10 +644,10 @@ public class BOPDS_DSTests
 
         NCollection_IntMap aMVOnIn = new(), aMVCommon = new();
         NCollection_IndexedMap<PaveBlock> aPBOnIn = new();
-        NCollection_Map<PaveBlock> aCommonPB = new();
+        HashSet<PaveBlock> aCommonPB = new();
         aDS.SubShapesOnIn(nF1, nF2, aMVOnIn, aMVCommon, aPBOnIn, aCommonPB);
         Assert.Equal(7, aPBOnIn.Extent());
-        Assert.Equal(1, aCommonPB.Extent());
+        Assert.Single(aCommonPB);
         Assert.Equal(6, aMVOnIn.Extent());
         Assert.Equal(2, aMVCommon.Extent());
     }

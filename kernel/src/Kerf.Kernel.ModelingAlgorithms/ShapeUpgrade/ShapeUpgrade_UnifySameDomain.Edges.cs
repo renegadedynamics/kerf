@@ -852,7 +852,7 @@ public partial class UnifySameDomain
                                           in Edge                                                         edge2,
                                           double                                                                 angTol,
                                           double                                                                 linTol,
-                                          NCollection_Map<Shape>                                          avoidEdgeVrt,
+                                          HashSet<Shape>                                          avoidEdgeVrt,
                                           bool                                                                   lineDirectionOk,
                                           in Point3D                                                              firstPoint,
                                           in Vector3D                                                              directionVec,
@@ -1015,7 +1015,7 @@ public partial class UnifySameDomain
                                        bool                                                                     isClosed,
                                        double                                                                   angTol,
                                        double                                                                   linTol,
-                                       NCollection_Map<Shape>                                            avoidEdgeVrt,
+                                       HashSet<Shape>                                            avoidEdgeVrt,
                                        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap)
     {
         bool        isOk;
@@ -1080,11 +1080,11 @@ public partial class UnifySameDomain
     protected bool MergeEdges(NCollection_Sequence<Shape>                                       seqEdges,
                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
                               NCollection_Sequence<SubSequenceOfEdges>                                 seqOfSubSeqOfEdges,
-                              NCollection_Map<Shape>                                            nonMergVrt)
+                              HashSet<Shape>                                            nonMergVrt)
     {
         var mapVE          = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int j;
-        var verticesToAvoid = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var verticesToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
         int nbE            = seqEdges.Length();
         for (j = 1; j <= nbE; j++)
         {
@@ -1106,7 +1106,7 @@ public partial class UnifySameDomain
         NCollection_MapAlgo.Unite(verticesToAvoid, nonMergVrt);
 
         // do loop while there are unused edges
-        var usedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var usedEdges = new HashSet<Shape>(ShapeHasher.Instance);
 
         for (int iE = 1; iE <= nbE; ++iE)
         {
@@ -1199,7 +1199,7 @@ public partial class UnifySameDomain
     /// <summary>Tries to unify the sequence of edges with the set of another edges which lies on the same geometry.</summary>
     protected bool MergeSeq(NCollection_Sequence<Shape>                                       seqEdges,
                             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
-                            NCollection_Map<Shape>                                            nonMergVert)
+                            HashSet<Shape>                                            nonMergVert)
     {
         var seqOfSubsSeqOfEdges = new NCollection_Sequence<SubSequenceOfEdges>();
         if (MergeEdges(seqEdges, vFmap, seqOfSubsSeqOfEdges, nonMergVert))

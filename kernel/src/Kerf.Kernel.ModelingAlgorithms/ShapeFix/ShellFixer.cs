@@ -188,7 +188,7 @@ public class ShellFixer : RootFixer
 
     //=================================================================================================
 
-    private static bool GetFreeEdges(in Shape aShape, NCollection_Map<Shape> mapEdges)
+    private static bool GetFreeEdges(in Shape aShape, HashSet<Shape> mapEdges)
     {
         for (var expF = new Explorer(aShape, ShapeType.Face); expF.More(); expF.Next())
         {
@@ -205,7 +205,7 @@ public class ShellFixer : RootFixer
                 }
             }
         }
-        return !mapEdges.IsEmpty();
+        return mapEdges.Count != 0;
     }
 
     // OCCT's FaceEdgesMap: NCollection_IndexedDataMap<TopoDS_Face, NCollection_Array1<TopoDS_Edge>> with the default
@@ -228,7 +228,7 @@ public class ShellFixer : RootFixer
             return connectedGroups;
         }
 
-        var visitedFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var visitedFaces = new HashSet<Shape>(ShapeHasher.Instance);
 
         for (int faceIndex = 1; faceIndex <= faceEdges.Extent(); faceIndex++)
         {
@@ -304,7 +304,7 @@ public class ShellFixer : RootFixer
     /// Processes only the largest connected group for shell construction, improving efficiency
     /// by focusing on faces that are actually topologically connected.
     private static bool GetShells(NCollection_Sequence<Shape> lfaces,
-                                  NCollection_Map<Shape> mapMultiConnectEdges,
+                                  HashSet<Shape> mapMultiConnectEdges,
                                   NCollection_Sequence<Shape> seqShells,
                                   NCollection_DataMap<Shape, Shape> mapFaceShells,
                                   NCollection_Sequence<Shape> errFaces)
@@ -317,7 +317,7 @@ public class ShellFixer : RootFixer
         var nshell = new Shell();
         var b      = new BrepBuilder();
         b.MakeShell(ref nshell);
-        bool isMultiConnex    = !mapMultiConnectEdges.IsEmpty();
+        bool isMultiConnex    = mapMultiConnectEdges.Count != 0;
         int  faceIdx           = 1, facesInShellCount = 1;
         var  seqUnconnectFaces = new NCollection_Sequence<Shape>();
 
@@ -626,7 +626,7 @@ public class ShellFixer : RootFixer
     //            multiconnexity edges as faces.
     //=======================================================================
     private static bool AddMultiConexityFaces(NCollection_Sequence<Shape> lface,
-                                              NCollection_Map<Shape> aMapMultiConnectEdges,
+                                              HashSet<Shape> aMapMultiConnectEdges,
                                               NCollection_Sequence<Shape> seqShells,
                                               NCollection_DataMap<Shape, Shape> aMapFaceShells,
                                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMapEdgeFaces,
@@ -676,7 +676,7 @@ public class ShellFixer : RootFixer
         var tmpShells = new NCollection_Sequence<Shape>();
         if (!llPosibleShells.IsEmpty())
         {
-            var map          = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var map          = new HashSet<Shape>(ShapeHasher.Instance);
             var tmp          = new NCollection_Sequence<Shape>();
             var tmpFaceShell = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
             if (GetShells(llPosibleShells, map, tmpShells, tmpFaceShell, tmp))
@@ -684,7 +684,7 @@ public class ShellFixer : RootFixer
                 for (int kk = 1; kk <= tmpShells.Length(); kk++)
                 {
                     Shape sh      = tmpShells.Value(kk);
-                    var          mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    var          mapEdges = new HashSet<Shape>(ShapeHasher.Instance);
                     if (GetFreeEdges(sh, mapEdges))
                     {
                         int nbedge = 0;
@@ -695,7 +695,7 @@ public class ShellFixer : RootFixer
                                 nbedge++;
                             }
                         }
-                        if (nbedge != 0 && nbedge == mapEdges.Extent())
+                        if (nbedge != 0 && nbedge == mapEdges.Count)
                         {
                             addShapes.Append(sh);
                         }
@@ -708,10 +708,10 @@ public class ShellFixer : RootFixer
         for (int k1 = 1; k1 <= addShapes.Length(); k1++)
         {
             var          mapOtherShells = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
-            var          dire           = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            var          reve           = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          dire           = new HashSet<Shape>(ShapeHasher.Instance);
+            var          reve           = new HashSet<Shape>(ShapeHasher.Instance);
             Shape sh            = addShapes.Value(k1);
-            var          mapEdges       = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          mapEdges       = new HashSet<Shape>(ShapeHasher.Instance);
             if (!GetFreeEdges(sh, mapEdges))
             {
                 continue;
@@ -756,7 +756,7 @@ public class ShellFixer : RootFixer
                     continue;
                 }
 
-                var mapShellEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var mapShellEdges = new HashSet<Shape>(ShapeHasher.Instance);
                 GetFreeEdges(othershell, mapShellEdges);
                 bool isAdd = true;
                 foreach (Shape key1 in mapEdges)
@@ -915,7 +915,7 @@ public class ShellFixer : RootFixer
             Bounds.AddClose(shells.Value(i), ref box);
             boxes.SetValue(i, box);
         }
-        var mapNum = new NCollection_Map<int>();
+        var mapNum = new HashSet<int>();
         for (int j = 1; j <= boxes.Length(); j++)
         {
             for (int k = j + 1; k <= boxes.Length(); k++)
@@ -948,16 +948,16 @@ public class ShellFixer : RootFixer
     // purpose  : First, attempt to create closed shells from sequence of open shells.
     //=======================================================================
     private static void GlueClosedCandidate(NCollection_Sequence<Shape> openShells,
-                                            NCollection_Map<Shape> aMapMultiConnectEdges,
+                                            HashSet<Shape> aMapMultiConnectEdges,
                                             NCollection_Sequence<Shape> aSeqNewShells)
     {
         // Creating new shells if some open shells contain the same free boundary.
         for (int i = 1; i < openShells.Length(); i++)
         {
             Shape shell    = openShells.Value(i);
-            var          mapEdges1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            var          dire      = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            var          reve      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var          mapEdges1 = new HashSet<Shape>(ShapeHasher.Instance);
+            var          dire      = new HashSet<Shape>(ShapeHasher.Instance);
+            var          reve      = new HashSet<Shape>(ShapeHasher.Instance);
             if (!GetFreeEdges(shell, mapEdges1))
             {
                 continue;
@@ -979,7 +979,7 @@ public class ShellFixer : RootFixer
                     reve.Add(edge1);
                 }
             }
-            if (mapEdges1.Extent() > (dire.Extent() + reve.Extent()))
+            if (mapEdges1.Count > (dire.Count + reve.Count))
             {
                 continue;
             }
@@ -991,7 +991,7 @@ public class ShellFixer : RootFixer
             {
                 bool         isAddShell = true;
                 bool         isReversed = false;
-                var          mapEdges2  = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var          mapEdges2  = new HashSet<Shape>(ShapeHasher.Instance);
                 Shape shell2    = openShells.Value(j);
                 if (!GetFreeEdges(shell2, mapEdges2))
                 {
@@ -1122,7 +1122,7 @@ public class ShellFixer : RootFixer
     // purpose  : Attempt to create max possible shells from open shells.
     //=======================================================================
     private static void CreateNonManifoldShells(NCollection_Sequence<Shape> seqShells,
-                                                NCollection_Map<Shape> aMapMultiConnectEdges)
+                                                HashSet<Shape> aMapMultiConnectEdges)
     {
         var map = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int i = 1; i <= seqShells.Length(); i++)
@@ -1271,7 +1271,7 @@ public class ShellFixer : RootFixer
     // purpose  : Attempt to create max possible shells from open shells.
     //=======================================================================
     private static void CreateClosedShell(NCollection_Sequence<Shape> openShells,
-                                          NCollection_Map<Shape> aMapMultiConnectEdges)
+                                          HashSet<Shape> aMapMultiConnectEdges)
     {
         var newShells = new NCollection_Sequence<Shape>();
         // First, attempt to create closed shells.
@@ -1285,9 +1285,9 @@ public class ShellFixer : RootFixer
             bool         isReversed = false;
             for (int j = i + 1; j <= openShells.Length(); j++)
             {
-                var mapEdges1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
-                var dire      = new NCollection_Map<Shape>(ShapeHasher.Instance);
-                var reve      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var mapEdges1 = new HashSet<Shape>(ShapeHasher.Instance);
+                var dire      = new HashSet<Shape>(ShapeHasher.Instance);
+                var reve      = new HashSet<Shape>(ShapeHasher.Instance);
                 if (!GetFreeEdges(shell, mapEdges1))
                 {
                     break;
@@ -1308,11 +1308,11 @@ public class ShellFixer : RootFixer
                         reve.Add(edge1);
                     }
                 }
-                if (dire.IsEmpty() && reve.IsEmpty())
+                if (dire.Count == 0 && reve.Count == 0)
                 {
                     break;
                 }
-                var          mapEdges2 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var          mapEdges2 = new HashSet<Shape>(ShapeHasher.Instance);
                 Shape shell2   = openShells.Value(j);
                 if (!GetFreeEdges(shell2, mapEdges2))
                 {
@@ -1391,7 +1391,7 @@ public class ShellFixer : RootFixer
         _shape = shell;
         int numMultShell = 0;
         int nbF           = 0;
-        var mapAdded     = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapAdded     = new HashSet<Shape>(ShapeHasher.Instance);
         for (var iter = new Iterator(shell); iter.More(); iter.Next(), nbF++)
         {
             if (mapAdded.Add(iter.Value()))
@@ -1406,7 +1406,7 @@ public class ShellFixer : RootFixer
 
         var mapEdgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shell, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
-        var  mapMultiConnectEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var  mapMultiConnectEdges = new HashSet<Shape>(ShapeHasher.Instance);
         bool isFreeBoundaries      = false;
         for (int k = 1; k <= mapEdgeFaces.Extent(); k++)
         {

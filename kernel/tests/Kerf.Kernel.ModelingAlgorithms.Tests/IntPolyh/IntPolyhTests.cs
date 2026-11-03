@@ -378,7 +378,7 @@ public class IntPolyhTests
     [Fact]
     public void Couple_HasherIsOcctsUnorderedEquality()
     {
-        NCollection_Map<PolyhedronCouple> aMap = new(PolyhedronCouple.Hasher.Instance);
+        HashSet<PolyhedronCouple> aMap = new(PolyhedronCouple.Hasher.Instance);
         Assert.True(aMap.Add(new PolyhedronCouple(3, 7, 0.5)));
         Assert.False(aMap.Add(new PolyhedronCouple(7, 3)));
         Assert.True(aMap.Add(new PolyhedronCouple(3, 8)));

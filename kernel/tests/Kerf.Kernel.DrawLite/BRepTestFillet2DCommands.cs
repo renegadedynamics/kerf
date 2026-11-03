@@ -263,7 +263,7 @@ internal static class BRepTestFillet2DCommands
     {
         // The common point for two edges inside a wire
         // is a sharing vertex of two edges.
-        NCollection_Map<Shape> vertices = new(ShapeHasher.Instance);
+        HashSet<Shape> vertices = new(ShapeHasher.Instance);
         var aExp = new Explorer(W, ShapeType.Vertex);
         for (; aExp.More(); aExp.Next())
         {

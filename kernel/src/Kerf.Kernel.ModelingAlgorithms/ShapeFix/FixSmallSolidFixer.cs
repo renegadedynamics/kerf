@@ -303,10 +303,10 @@ public class FixSmallSolidFixer : RootFixer
         //     add to the new shell;
         // - faces not shared with any outer or any merged shell:
         //     keep to add to the new shell and to the new map.
-        var removeFaces  = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var removeFaces  = new HashSet<Shape>(ShapeHasher.Instance);
         // OCCT iterates its map of the new free faces in hash order (TShape addresses); the port's iterates in a
         // deterministic order, so the order of these faces in the new shell may differ from native (occt-issues.md).
-        var newFreeFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var newFreeFaces = new HashSet<Shape>(ShapeHasher.Instance);
         var shellIter = new NCollection_List<Shape>.Iterator(shellsToMerge);
         for (; shellIter.More(); shellIter.Next())
         {

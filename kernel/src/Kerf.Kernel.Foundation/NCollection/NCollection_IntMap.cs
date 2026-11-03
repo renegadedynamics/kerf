@@ -11,7 +11,7 @@ namespace Occt;
 
 /// <summary>
 /// OCCT's <c>NCollection_Map&lt;int&gt;</c> with OCCT's buckets, so that it iterates in OCCT's order
-/// (<see cref="NCollection_Map{TKey}"/> iterates in .NET's), as <see cref="NCollection_IntDataMap{TValue}"/> does for
+/// (<see cref="HashSet{TKey}"/> iterates in .NET's), as <see cref="NCollection_IntDataMap{TValue}"/> does for
 /// <c>NCollection_DataMap&lt;int, T&gt;</c>.
 /// </summary>
 /// <remarks>

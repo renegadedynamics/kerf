@@ -329,7 +329,7 @@ public sealed class PolyhedronIntersection
                                      NCollection_List<PolyhedronCouple> anArrayRR)
     {
         // Fence map to remove from the lists the duplicating elements.
-        NCollection_Map<PolyhedronCouple> fenceMap = new(PolyhedronCouple.Hasher.Instance);
+        HashSet<PolyhedronCouple> fenceMap = new(PolyhedronCouple.Hasher.Instance);
         //
         NCollection_List<PolyhedronCouple>[] pLists = [anArrayFF, anArrayFR, anArrayRF, anArrayRR];
         for (int i = 0; i < 4; ++i)

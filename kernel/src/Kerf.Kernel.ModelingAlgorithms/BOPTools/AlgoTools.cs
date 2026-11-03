@@ -60,7 +60,7 @@ public static partial class AlgoTools
         // Map shapes to find connected elements
         Exploration.MapShapesAndAncestors(s, connectionType, elementType, connectionMap);
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
 
         Explorer exp = new(s, elementType);
         for (; exp.More(); exp.Next())
@@ -145,7 +145,7 @@ public static partial class AlgoTools
         Compound cStart = new();
         bb.MakeCompound(ref cStart);
 
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance), mnRegular = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance), mnRegular = new(ShapeHasher.Instance);
 
         NCollection_List<Shape>.Iterator itL = new(ls);
         for (; itL.More(); itL.Next())
@@ -223,7 +223,7 @@ public static partial class AlgoTools
         Wire aWire = new();
         bb.MakeWire(ref aWire);
         // fence map (OCCT's default hasher: orientation included, decision 6433)
-        NCollection_Map<Shape> mFence = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mFence = new(EqualityComparer<Shape>.Default);
         //
         Iterator it = new(wire);
         for (; it.More(); it.Next())
@@ -1755,7 +1755,7 @@ public static partial class AlgoTools
         bool bFound;
         int i, nbCEF;
         Orientation or, orC = Forward;
-        NCollection_Map<Shape> mfp = new(ShapeHasher.Instance);
+        HashSet<Shape> mfp = new(ShapeHasher.Instance);
         Face f1 = new(), f2 = new();
         Edge el = new(), e1 = new();
         NCollection_List<Shape>.Iterator itLF = new();

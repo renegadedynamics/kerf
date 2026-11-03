@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 public sealed class CircleInspector : ICellFilterInspector<int, Xy>
 {
     private readonly double _sqTolerance;
-    private readonly NCollection_List<int> _resIndices;
+    private readonly List<int> _resIndices;
     private readonly NCollection_DynamicArray<MeshCircle> _circles;
     private Xy _point;
 
@@ -34,7 +34,7 @@ public sealed class CircleInspector : ICellFilterInspector<int, Xy>
     public CircleInspector(double tolerance, int reservedSize)
     {
         _sqTolerance = tolerance * tolerance;
-        _resIndices = new NCollection_List<int>();
+        _resIndices = [];
         _circles = new NCollection_DynamicArray<MeshCircle>(reservedSize);
     }
 
@@ -58,7 +58,7 @@ public sealed class CircleInspector : ICellFilterInspector<int, Xy>
     }
 
     /// <summary>The indices of the circles found to contain the point (the inspector's own list).</summary>
-    public NCollection_List<int> GetShotCircles() => _resIndices;
+    public List<int> GetShotCircles() => _resIndices;
 
     /// <summary>Adds the circle to the result if it contains the point; purges deleted circles.</summary>
     public CellFilterAction Inspect(int targetIndex)
@@ -79,7 +79,7 @@ public sealed class CircleInspector : ICellFilterInspector<int, Xy>
         // (aRadius + aToler)^2; changing it hangs the test case "perf mesh bug27119", so it stays.
         if ((dx * dx + dy * dy) - (radius * radius) <= _sqTolerance)
         {
-            _resIndices.Append(targetIndex);
+            _resIndices.Add(targetIndex);
         }
 
         return CellFilter_Keep;

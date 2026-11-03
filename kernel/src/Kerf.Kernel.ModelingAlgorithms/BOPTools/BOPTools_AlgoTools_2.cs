@@ -441,7 +441,7 @@ public static partial class AlgoTools
         }
 
         NCollection_List<Shape> ls = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         TreatCompound(s, ls, mFence);
         if (ls.IsEmpty())
         {
@@ -477,7 +477,7 @@ public static partial class AlgoTools
     /// Appends the non-compound parts of the shape (exploring compounds) to the list, each once if a fence map is
     /// given.
     /// </summary>
-    public static void TreatCompound(in Shape s, NCollection_List<Shape> ls, NCollection_Map<Shape>? mFence = null)
+    public static void TreatCompound(in Shape s, NCollection_List<Shape> ls, HashSet<Shape>? mFence = null)
     {
         ShapeType type = s.ShapeType();
         if (type != ShapeType.Compound)

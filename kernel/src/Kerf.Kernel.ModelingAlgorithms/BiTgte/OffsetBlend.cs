@@ -68,7 +68,7 @@ public sealed class OffsetBlend
         new(ShapeHasher.Instance);
     private NCollection_IndexedMap<Shape> _faces = new(ShapeHasher.Instance);
     private NCollection_IndexedMap<Shape> _edges = new(ShapeHasher.Instance);
-    private NCollection_Map<Shape> _stopFaces = new(ShapeHasher.Instance);
+    private HashSet<Shape> _stopFaces = new(ShapeHasher.Instance);
     private readonly Analyse _analyse = new();
     private NCollection_IndexedMap<Shape> _centers = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, Offset> _mapSF = new(ShapeHasher.Instance);
@@ -449,16 +449,16 @@ public sealed class OffsetBlend
     //=======================================================================
 
     private static void Touched(Analyse analyse,
-                                NCollection_Map<Shape> stopFaces,
+                                HashSet<Shape> stopFaces,
                                 in Shape shape,
-                                NCollection_Map<Shape> touchedByCork)
+                                HashSet<Shape> touchedByCork)
     {
         // currently nothing is done !!
     }
 
     //=================================================================================================
 
-    private static Vertex FindVertex(in Point3D p, NCollection_Map<Shape> map, double tol)
+    private static Vertex FindVertex(in Point3D p, HashSet<Shape> map, double tol)
     {
         BrepBuilder b = new();
         // Find in <Map> a vertex which represent the point <P>.
@@ -568,7 +568,7 @@ public sealed class OffsetBlend
     private static Edge FindCreatedEdge(in Vertex v1,
                                                in Edge e,
                                                NCollection_DataMap<Shape, Offset> mapSF,
-                                               NCollection_Map<Shape> mapOnV,
+                                               HashSet<Shape> mapOnV,
                                                Analyse centerAnalyse,
                                                double radius,
                                                double tol)
@@ -767,7 +767,7 @@ public sealed class OffsetBlend
                 edges.Add(_entry.Copied(_edges[k]));
             }
             _edges = edges;
-            NCollection_Map<Shape> stops = new(ShapeHasher.Instance);
+            HashSet<Shape> stops = new(ShapeHasher.Instance);
             foreach (Shape stop in _stopFaces)
             {
                 stops.Add(_entry.Copied(stop));
@@ -1250,7 +1250,7 @@ public sealed class OffsetBlend
         // ------------------------------------------
         // calculate faces touched by caps
         // ------------------------------------------
-        NCollection_Map<Shape> touchedByCork = new(ShapeHasher.Instance);
+        HashSet<Shape> touchedByCork = new(ShapeHasher.Instance);
         Touched(_analyse, _stopFaces, _shape, touchedByCork);
 
         // -----------------------
@@ -1264,7 +1264,7 @@ public sealed class OffsetBlend
         Inter3d inter = new(_asDes, side, _tol);
 
         NCollection_DataMap<Shape, Box> mapSBox = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> done = new(ShapeHasher.Instance);
+        HashSet<Shape> done = new(ShapeHasher.Instance);
 
         BrepBuilder b = new();
         Compound co = new(); // to only know on which edges the tubes are made
@@ -1851,8 +1851,8 @@ public sealed class OffsetBlend
 
                 Edge e1f, e1l;
                 Vertex vfOnE1, vlOnE1, vfOnE2, vlOnE2;
-                NCollection_Map<Shape> mapOnV1f = new(ShapeHasher.Instance);
-                NCollection_Map<Shape> mapOnV1l = new(ShapeHasher.Instance);
+                HashSet<Shape> mapOnV1f = new(ShapeHasher.Instance);
+                HashSet<Shape> mapOnV1l = new(ShapeHasher.Instance);
 
                 Exploration.Vertices(curCutE, out Vertex v1f, out Vertex v1l);
 
@@ -2432,7 +2432,7 @@ public sealed class OffsetBlend
         Shape initShape1 = of1.InitialShape();
         bool f1surBordLibre = initShape1.ShapeType() == ShapeType.Edge && _stopFaces.Contains(initShape1);
 
-        NCollection_Map<Shape> done = new(ShapeHasher.Instance);
+        HashSet<Shape> done = new(ShapeHasher.Instance);
         // OCCT iterates myMapSF by the shapes' addresses; the port in insertion order.
         foreach (KeyValuePair<Shape, Offset> it in _mapSF)
         {

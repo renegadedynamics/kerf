@@ -103,7 +103,7 @@ public sealed partial class MakeOffset
     private Shape _badShape = new();
     private readonly NCollection_DataMap<Shape, Shape> _facePlanfaceMap = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _generated = new();
-    private readonly NCollection_Map<Shape> _resMap = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _resMap = new(ShapeHasher.Instance);
 
     // OCCT.NET: the copy at the entry (decision 1005); null until a run starts, and after Initialize.
     private CopyAtEntry? _entry;
@@ -1322,7 +1322,7 @@ public sealed partial class MakeOffset
         // Unwinding of extended Faces.
         //-------------------------------
         //
-        NCollection_Map<Shape> mfDone = new(ShapeHasher.Instance);
+        HashSet<Shape> mfDone = new(ShapeHasher.Instance);
         //
         if ((_join == global::Kerf.Geometry.JoinKind.Intersection) && _inter && _isPlanar)
         {
@@ -1377,7 +1377,7 @@ public sealed partial class MakeOffset
                     {
                         Shape ofe = itLF.Value();
                         _imageOffset.SetRoot(ofe);
-                        NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+                        HashSet<Shape> view = new(ShapeHasher.Instance);
                         for (exp2.Init(ofe.Oriented(Forward), ShapeType.Edge); exp2.More(); exp2.Next())
                         {
                             Edge coe = ShapeCasts.Edge(exp2.Current());
@@ -1454,7 +1454,7 @@ public sealed partial class MakeOffset
             {
                 _initOffsetFace.Bind(fi, of);
                 _imageOffset.SetRoot(of);
-                NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+                HashSet<Shape> view = new(ShapeHasher.Instance);
                 for (exp2.Init(of.Oriented(Forward), ShapeType.Edge); exp2.More(); exp2.Next())
                 {
 
@@ -1481,7 +1481,7 @@ public sealed partial class MakeOffset
         }
         //  Modified by skv - Tue Mar 15 16:20:43 2005
         // Add methods for supporting history.
-        NCollection_Map<Shape> mapEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> mapEdges = new(ShapeHasher.Instance);
 
         for (NCollection_List<Shape>.Iterator it = new(lFaces); it.More(); it.Next())
         {
@@ -1624,7 +1624,7 @@ public sealed partial class MakeOffset
     private void ReplaceRoots()
     {
         // Replace the artificial faces and edges in InitOffset maps with the original ones.
-        NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+        HashSet<Shape> view = new(ShapeHasher.Instance);
         for (Explorer expF = new(_faceComp, ShapeType.Edge); expF.More(); expF.Next())
         {
             Shape f = expF.Current();
@@ -1694,7 +1694,7 @@ public sealed partial class MakeOffset
 
         Explorer exp = new();
         NCollection_List<Shape>.Iterator itLF = new();
-        NCollection_Map<Shape> done = new(ShapeHasher.Instance);
+        HashSet<Shape> done = new(ShapeHasher.Instance);
         using ProgressScope psOuter = new(range, null, 10);
         //--------------------------------------------------------
         // Construction of faces parallel to initial faces
@@ -1940,7 +1940,7 @@ public sealed partial class MakeOffset
 
     //=================================================================================================
 
-    private void SelfInter(NCollection_Map<Shape> modif)
+    private void SelfInter(HashSet<Shape> modif)
     {
         // OCCT_DEBUG: the chronometer is left out.
 
@@ -2105,7 +2105,7 @@ public sealed partial class MakeOffset
 
     private void UpdateFaceOffset()
     {
-        NCollection_Map<Shape> m = new(ShapeHasher.Instance);
+        HashSet<Shape> m = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, double> copiedMap = new(_faceOffset);
 
         TypeOfConcavity rt = TypeOfConcavity.Convex;
@@ -2126,7 +2126,7 @@ public sealed partial class MakeOffset
             Compound co = new();
             BrepBuilder build = new();
             build.MakeCompound(ref co);
-            NCollection_Map<Shape> dummy = new(ShapeHasher.Instance);
+            HashSet<Shape> dummy = new(ShapeHasher.Instance);
             build.Add(co, f);
             if (_join == Arc)
             {
@@ -3540,7 +3540,7 @@ public sealed partial class MakeOffset
 
     private void SelectShells()
     {
-        NCollection_Map<Shape> freeEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> freeEdges = new(ShapeHasher.Instance);
         Explorer exp = new(_faceComp, ShapeType.Edge);
         //-------------------------------------------------------------
         // FreeEdges all edges that can have free border in the
@@ -3561,7 +3561,7 @@ public sealed partial class MakeOffset
         }
         // myShape has free borders and there are no caps
         // no unwinding 3d.
-        if (!freeEdges.IsEmpty() && _faces.IsEmpty())
+        if (freeEdges.Count != 0 && _faces.IsEmpty())
         {
             return;
         }
@@ -3627,7 +3627,7 @@ public sealed partial class MakeOffset
     private ShapeImage PublishImage(ShapeImage image)
     {
         ShapeImage published = new();
-        NCollection_Map<Shape> done = new(ShapeHasher.Instance);
+        HashSet<Shape> done = new(ShapeHasher.Instance);
         for (NCollection_List<Shape>.Iterator itR = new(image.Roots()); itR.More(); itR.Next())
         {
             Shape root = itR.Value();
@@ -3640,7 +3640,7 @@ public sealed partial class MakeOffset
     }
 
     private void PublishImages(ShapeImage image, in Shape s, in Shape pubS,
-                               ShapeImage published, NCollection_Map<Shape> done)
+                               ShapeImage published, HashSet<Shape> done)
     {
         if (!image.HasImage(s) || !done.Add(s))
         {
@@ -3679,7 +3679,7 @@ public sealed partial class MakeOffset
         Explorer exp = new(_offsetShape, ShapeType.Edge);
 
         BrepBuilder b = new();
-        NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
+        HashSet<Shape> ms = new(ShapeHasher.Instance);
 
         for (; exp.More(); exp.Next())
         {
@@ -3889,7 +3889,7 @@ public sealed partial class MakeOffset
                                         in Shape initShape)
     {
         BrepBuilder b = new();
-        NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+        HashSet<Shape> view = new(ShapeHasher.Instance);
         Vertex[] v = new Vertex[2];
 
         // The edges of caps are not modified.
@@ -3905,7 +3905,7 @@ public sealed partial class MakeOffset
         }
 
         // The edges of initial shape are  not modified
-        NCollection_Map<Shape> mapInitF = new(ShapeHasher.Instance);
+        HashSet<Shape> mapInitF = new(ShapeHasher.Instance);
         if (!initShape.IsNull)
         {
             Explorer expF0 = new(initShape, ShapeType.Face);
@@ -4432,7 +4432,7 @@ public sealed partial class MakeOffset
             lFaces.Append(exp.Current());
         }
 
-        NCollection_Map<Shape> mfGenerated = new(ShapeHasher.Instance);
+        HashSet<Shape> mfGenerated = new(ShapeHasher.Instance);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
         for (NCollection_List<Shape>.Iterator it = new(analyse.NewFaces()); it.More(); it.Next())
         {
@@ -4451,7 +4451,7 @@ public sealed partial class MakeOffset
                 nf = ShapeCasts.Face(mes[nf]);
             }
             //
-            NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+            HashSet<Shape> view = new(ShapeHasher.Instance);
             NCollection_IndexedMap<Shape> vEmap = new(ShapeHasher.Instance);
             int i, nb;
             //
@@ -4906,7 +4906,7 @@ public sealed partial class MakeOffset
         {
             if (_analyse.HasAncestor(theS))
             {
-                NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+                HashSet<Shape> mFence = new(ShapeHasher.Instance);
                 NCollection_List<Shape> la = _analyse.Ancestors(theS);
                 NCollection_List<Shape>.Iterator itLA = new(la);
                 for (; _generated.IsEmpty() && itLA.More(); itLA.Next())
@@ -4973,7 +4973,7 @@ public sealed partial class MakeOffset
             }
         }
 
-        if (_resMap.IsEmpty())
+        if (_resMap.Count == 0)
         {
             Exploration.MapShapes(_offsetShape, _resMap);
         }
@@ -5049,7 +5049,7 @@ public sealed partial class MakeOffset
     /// <summary>True if the caller's sub-shape <paramref name="s"/> has been deleted.</summary>
     public bool IsDeleted(in Shape s)
     {
-        if (_resMap.IsEmpty())
+        if (_resMap.Count == 0)
         {
             Exploration.MapShapes(_offsetShape, _resMap);
         }

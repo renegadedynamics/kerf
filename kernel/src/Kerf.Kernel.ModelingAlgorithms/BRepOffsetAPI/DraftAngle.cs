@@ -913,9 +913,9 @@ public class DraftAngle : ModifyShape
 
     private void CorrectVertexTol()
     {
-        NCollection_Map<Shape> initVertices = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> initEdges = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> newEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> initVertices = new(ShapeHasher.Instance);
+        HashSet<Shape> initEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> newEdges = new(ShapeHasher.Instance);
         Explorer exp = new(_initialShape, ShapeType.Edge);
         for (; exp.More(); exp.Next())
         {

@@ -36,7 +36,7 @@ public static class DSFiller
     public static void Insert(in Shape s, Contour fo, TopologyData ds,
                               NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso)
     {
-        NCollection_Map<Shape> shapeMap = new(ShapeHasher.Instance);
+        HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
         Explorer ex = new(s, ShapeType.Face);
         ds.Clear();
         bool withPCurve = true; // instead of nbIso != 0;

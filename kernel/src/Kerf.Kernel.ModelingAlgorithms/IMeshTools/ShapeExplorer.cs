@@ -36,7 +36,7 @@ public class ShapeExplorer : ShapeModel
         // make array of faces suitable for processing (excluding faces without surface)
         NCollection_List<Shape> faceList = new();
         BrepLibrary.ReverseSortFaces(GetShape(), faceList);
-        NCollection_Map<Shape> faceMap = new(ShapeHasher.Instance);
+        HashSet<Shape> faceMap = new(ShapeHasher.Instance);
 
         Placement emptyLoc = new();
         var faceIter = new NCollection_List<Shape>.Iterator(faceList);

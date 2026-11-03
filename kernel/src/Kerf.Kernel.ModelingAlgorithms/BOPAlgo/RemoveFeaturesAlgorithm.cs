@@ -181,7 +181,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         if (type == ShapeType.Compound)
         {
             NCollection_List<Shape> shapes = new();
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             // Extract all shapes from the compound
             AlgoTools.TreatCompound(_inputShape, shapes, mFence);
             if (shapes.IsEmpty())
@@ -311,7 +311,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         private ProgressRange _range;                                        //!< Indication of progress
 
         // Results
-        private readonly NCollection_Map<Shape> _featureFacesMap = new(ShapeHasher.Instance); //!< Faces of the feature
+        private readonly HashSet<Shape> _featureFacesMap = new(ShapeHasher.Instance); //!< Faces of the feature
         private bool _hasAdjacentFaces;                                                                         //!< Flag to show whether the adjacent faces have been found or not
         private readonly NCollection_IndexedMap<Shape> _solids = new(ShapeHasher.Instance);  //!< Solids participating in the feature removal
         private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _faces = new(ShapeHasher.Instance); //!< Reconstructed adjacent faces
@@ -379,7 +379,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             }
         }
 
-        public NCollection_Map<Shape> FeatureFacesMap() => _featureFacesMap;
+        public HashSet<Shape> FeatureFacesMap() => _featureFacesMap;
 
         public bool HasAdjacentFaces => _hasAdjacentFaces;
 
@@ -558,7 +558,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         {
             // Map all edges of the extended face, to filter the result of trim
             // from the faces containing these edges
-            NCollection_Map<Shape> mExtEdges = new(ShapeHasher.Instance);
+            HashSet<Shape> mExtEdges = new(ShapeHasher.Instance);
             Explorer expE = new(fExt, ShapeType.Edge);
             for (; expE.More(); expE.Next())
             {
@@ -590,7 +590,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             gfTrim.SetArguments(extSplits);
 
             // Add edges of the original faces
-            NCollection_Map<Shape> mEdgesToCheckOri = new(ShapeHasher.Instance);
+            HashSet<Shape> mEdgesToCheckOri = new(ShapeHasher.Instance);
             expE.Init(fOriginal, ShapeType.Edge);
             for (; expE.More(); expE.Next())
             {
@@ -654,10 +654,10 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 }
 
                 // Check edges orientations
-                NCollection_Map<Shape> facesToAvoid = new(ShapeHasher.Instance), validFaces = new(ShapeHasher.Instance);
+                HashSet<Shape> facesToAvoid = new(ShapeHasher.Instance), validFaces = new(ShapeHasher.Instance);
                 FindExtraShapes(efMap, mEdgesToCheckOri, gfTrim, facesToAvoid, validFaces);
 
-                if (lfTrimmed.Extent() - facesToAvoid.Extent() > 1)
+                if (lfTrimmed.Extent() - facesToAvoid.Count > 1)
                 {
                     // It is possible that the splits are forming the different blocks.
                     // Take only those containing the valid faces.
@@ -855,7 +855,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     /// <param name="range">The progress range.</param>
     protected void RemoveFeature(in Shape feature,
                                  NCollection_IndexedMap<Shape> solids,
-                                 NCollection_Map<Shape> featureFacesMap,
+                                 HashSet<Shape> featureFacesMap,
                                  bool hasAdjacentFaces,
                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
                                  History? adjFacesHistory,
@@ -893,7 +893,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // - all adjacent faces (if any) must have some trace in the result solids.
         NCollection_IndexedMap<Shape> facesToBeKept = new(ShapeHasher.Instance);
         // Build also the map of faces to compare orientation of the original and result faces
-        NCollection_Map<Shape> facesToCheckOri = new(ShapeHasher.Instance);
+        HashSet<Shape> facesToCheckOri = new(ShapeHasher.Instance);
 
         // Collect list of internal entities of the input shape to be avoided in result
         // and to make them removed in the history.
@@ -1001,7 +1001,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // - Update history with the history of MakerVolume algorithm.
 
         // Splits of adjacent faces from previous runs
-        NCollection_Map<Shape> adjFacesSplits = new(ShapeHasher.Instance);
+        HashSet<Shape> adjFacesSplits = new(ShapeHasher.Instance);
         for (int i = 1; i <= nbAF; ++i)
         {
             if (!ps.More())
@@ -1202,7 +1202,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // Do not allow producing internal edges
         sdTool.AllowInternalEdges(false);
         // Avoid removal of the input edges and vertices
-        if (_mapShape.IsEmpty())
+        if (_mapShape.Count == 0)
         {
             Exploration.MapShapes(_shape, _mapShape);
         }
@@ -1381,12 +1381,12 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // Get original faces from my face
     private static void GetOriginalFaces(in Shape shape,
                                          NCollection_IndexedMap<Shape> solids,
-                                         NCollection_Map<Shape> featureFacesMap,
+                                         HashSet<Shape> featureFacesMap,
                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
                                          History history,
                                          NCollection_IndexedMap<Shape> facesToBeKept,
                                          NCollection_List<Shape> internalShapes,
-                                         NCollection_Map<Shape> facesToCheckOri,
+                                         HashSet<Shape> facesToCheckOri,
                                          NCollection_IndexedMap<Shape> solidsToRebuild,
                                          NCollection_List<Shape> sharedFaces,
                                          NCollection_List<Shape> unTouchedSolids)
@@ -1412,7 +1412,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         }
 
         // Splits of the feature faces
-        NCollection_Map<Shape> featureFacesSplits = new(ShapeHasher.Instance);
+        HashSet<Shape> featureFacesSplits = new(ShapeHasher.Instance);
         foreach (Shape f in featureFacesMap)
         {
             IReadOnlyList<Shape> lfIm = history.Modified(f);
@@ -1504,7 +1504,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
     // Checks the validity of the solids and keeps only valid ones
     private static void GetValidSolids(MakerVolume mv,
-                                       NCollection_Map<Shape> facesToCheckOri,
+                                       HashSet<Shape> facesToCheckOri,
                                        NCollection_List<Shape> aSharedFaces,
                                        in Shape origFaces,
                                        int nbSol,
@@ -1520,7 +1520,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         if (lsRes.Extent() > nbSol)
         {
             // Find Solids filling the holes in the initial shape
-            NCollection_Map<Shape> solidsToAvoid = new(ShapeHasher.Instance);
+            HashSet<Shape> solidsToAvoid = new(ShapeHasher.Instance);
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(mv.InternalShape(), ShapeType.Face, ShapeType.Solid, fsMap);
             FindExtraShapes(fsMap, facesToCheckOri, mv, solidsToAvoid);
@@ -1548,7 +1548,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         if (lsRes.Extent() > nbSol)
         {
             // Remove solids containing only the adjacent faces
-            NCollection_Map<Shape> origFacesRes = new(ShapeHasher.Instance);
+            HashSet<Shape> origFacesRes = new(ShapeHasher.Instance);
             Explorer expF = new(origFaces, ShapeType.Face);
             for (; expF.More(); expF.Next())
             {
@@ -1584,13 +1584,13 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // order), but the outcome doesn't depend on it: a shape is avoided only if no check found it of the same
     // orientation.
     private static void FindExtraShapes(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> connectionMap,
-                                        NCollection_Map<Shape> shapesToCheckOri,
+                                        HashSet<Shape> shapesToCheckOri,
                                         BooleanBuilder builder,
-                                        NCollection_Map<Shape> shapesToAvoid,
-                                        NCollection_Map<Shape>? validShapes = null)
+                                        HashSet<Shape> shapesToAvoid,
+                                        HashSet<Shape>? validShapes = null)
     {
         IntersectionContext? ctx = builder.Context();
-        NCollection_Map<Shape> pValidShapes = validShapes ?? new NCollection_Map<Shape>(ShapeHasher.Instance);
+        HashSet<Shape> pValidShapes = validShapes ?? new HashSet<Shape>(ShapeHasher.Instance);
         foreach (Shape sToCheckOri in shapesToCheckOri)
         {
             // Check modification of the shape during intersection
@@ -1648,7 +1648,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                                               NCollection_List<Shape> extraFaces)
     {
         // Get all splits of shared faces to avoid in the check
-        NCollection_Map<Shape> mfSharedSp = new(ShapeHasher.Instance);
+        HashSet<Shape> mfSharedSp = new(ShapeHasher.Instance);
         {
             NCollection_List<Shape>.Iterator itLFS = new(lfSharedToAvoid);
             for (; itLFS.More(); itLFS.Next())
@@ -1770,7 +1770,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     }
 
     // Stores the modified object into the map
-    private static void TakeModified(in Shape s, BooleanBuilder builder, NCollection_Map<Shape> map)
+    private static void TakeModified(in Shape s, BooleanBuilder builder, HashSet<Shape> map)
     {
         IReadOnlyList<Shape> modified = builder.Modified(s);
         if (modified.Count == 0 && !builder.IsDeleted(s))
@@ -1801,7 +1801,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         {
             Shape fs = expF.Current();
             // Images of the face
-            NCollection_Map<Shape> mfsIm = new(ShapeHasher.Instance);
+            HashSet<Shape> mfsIm = new(ShapeHasher.Instance);
             if (adjFaces.FindFromKey(fs, out NCollection_List<Shape> pLFA))
             {
                 NCollection_List<Shape>.Iterator itLFA = new(pLFA);

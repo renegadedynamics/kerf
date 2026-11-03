@@ -45,7 +45,7 @@ public static class BRepFeat
     /// <summary>The barycentre of the edges and vertices of a shape.</summary>
     public static void Barycenter(in Shape s, out Point3D b)
     {
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         Explorer exp = new(s, ShapeType.Edge);
         Curve3D c;
         double prm;
@@ -89,7 +89,7 @@ public static class BRepFeat
     /// <summary>The "parametric" barycentre of a shape on a curve.</summary>
     public static double ParametricBarycenter(in Shape s, Curve3D cc)
     {
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         Explorer exp = new(s, ShapeType.Edge);
         Curve3D c;
         double prm;
@@ -205,7 +205,7 @@ public static class BRepFeat
             flag = false;
         }
 
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         Explorer exp = new(s, ShapeType.Edge);
         Curve3D c;
         double prm;

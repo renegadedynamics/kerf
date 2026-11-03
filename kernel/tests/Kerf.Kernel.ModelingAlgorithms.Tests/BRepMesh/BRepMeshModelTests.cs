@@ -508,7 +508,7 @@ public class BRepMeshModelTests
         Deflection.ComputeDeflection(aDFace, Params(1.0));
         var aChecker = new FaceChecker(aDFace, Params(1.0));
         Assert.False(aChecker.Perform());
-        Assert.Equal(2, aChecker.GetIntersectingEdges()!.Size());
+        Assert.Equal(2, aChecker.GetIntersectingEdges()!.Count);
 
         // The healer refines both edges (deflection / 3 each round) until they don't.
         Assert.True(new ModelHealer().Perform(aModel, Params(1.0), new global::Kerf.Engine.Foundation.ProgressRange()));

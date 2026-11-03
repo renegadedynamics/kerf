@@ -37,7 +37,7 @@ public partial class PaveFiller
             // Map of connections of interfering shapes
             NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> mcsi =
                 new(ShapeHasher.Instance);
-            NCollection_Map<CommonBlock> mcbFence = new();
+            HashSet<CommonBlock> mcbFence = new();
             //
             int j = r.First(), rLast = r.Last();
             for (; j <= rLast; ++j)

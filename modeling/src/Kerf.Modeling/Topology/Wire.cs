@@ -210,7 +210,7 @@ public partial class Wire : Shape1D
         if (IsEmpty)
             return [];
         var edges = new List<Edge>();
-        var explored = new NCollection_Map<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var explored = new HashSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         var explorer = new WireExplorer(TopoWire);
         for (; explorer.More(); explorer.Next())
         {

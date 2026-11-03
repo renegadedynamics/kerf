@@ -269,7 +269,7 @@ public partial class PaveFiller
         double t1, t2;
         NCollection_List<PaveBlock>.Iterator itPB = new();
         PaveBlock pb;
-        NCollection_Map<CommonBlock> mcb = new();
+        HashSet<CommonBlock> mcb = new();
         Vertex v1, v2;
         Edge e;
         NCollection_DynamicArray<SplitEdgeAlgorithm> vbse = new();
@@ -601,7 +601,7 @@ public partial class PaveFiller
         if (bPCurveOnS[0] || bPCurveOnS[1])
         {
             // container to remember already added edge-face pairs
-            NCollection_Map<Pair> efPairs = new();
+            HashSet<Pair> efPairs = new();
             NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
             nbFF = fFs.Length();
             Span<int> nF = stackalloc int[2];

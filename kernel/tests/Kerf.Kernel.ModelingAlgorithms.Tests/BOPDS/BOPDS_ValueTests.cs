@@ -55,7 +55,7 @@ public class BOPDS_ValueTests
         Assert.True(a12 < a21);
         Assert.False(a21 < a12);
 
-        NCollection_Map<Pair> aMap = new();
+        HashSet<Pair> aMap = new();
         Assert.True(aMap.Add(a12));
         Assert.False(aMap.Add(a21));
 

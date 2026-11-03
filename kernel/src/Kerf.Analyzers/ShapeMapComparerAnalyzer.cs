@@ -8,18 +8,19 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kerf.Analyzers;
 
 /// <summary>
-/// Reports a map or set keyed by a shape (TopoDS_Shape or one of its eight subtypes) created without an explicit
-/// comparer: <c>NCollection_Map</c>, <c>NCollection_IndexedMap</c>, <c>NCollection_DataMap</c>,
+/// Reports a map or set keyed by a shape (<c>Kerf.Topology.Shape</c> or one of its eight subtypes) created without an
+/// explicit comparer: <c>NCollection_Map</c>, <c>NCollection_IndexedMap</c>, <c>NCollection_DataMap</c>,
 /// <c>NCollection_IndexedDataMap</c>, <c>HashSet</c> and <c>Dictionary</c>, and classes derived from them.
 /// </summary>
 /// <remarks>
 /// OCCT names its hasher in every map of shapes, usually <c>TopTools_ShapeMapHasher</c>, which compares shapes with
 /// IsSame (the orientation is ignored). The port's maps take the hasher as an optional comparer, and the default one
 /// is the shapes' own equality, IsEqual: a forgotten comparer silently changes which shapes are the same key
-/// (docs/phase3-design.md, section 3). So the comparer must be written out: <c>TopTools_ShapeMapHasher.Instance</c>,
-/// or <c>EqualityComparer&lt;TopoDS_Shape&gt;.Default</c> where OCCT uses <c>std::hash</c>. The NCollection maps' copy
-/// constructors take the comparer of the map they copy, so they are allowed. A collection expression can't take a
-/// comparer, so it is reported too.
+/// (docs/phase3-design.md, section 3). So the comparer must be written out: <c>ShapeHasher.Instance</c> (OCCT's
+/// <c>TopTools_ShapeMapHasher</c>), or <c>EqualityComparer&lt;Shape&gt;.Default</c> where OCCT uses <c>std::hash</c>.
+/// The NCollection maps' copy constructors take the comparer of the map they copy, so they are allowed. A collection
+/// expression can't take a comparer, so it is reported too. Unit 10J: since the rename (unit 10E) the shapes are
+/// Kerf's types in <c>Kerf.Topology</c>; the rule looked for OCCT's names in <c>Occt</c> and so matched nothing.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
@@ -29,11 +30,11 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Map of shapes without an explicit comparer",
-        "'{0}' is keyed by '{1}' but is created without a comparer, so it compares keys with IsEqual; pass TopTools_ShapeMapHasher.Instance (IsSame, OCCT's TopTools maps) or EqualityComparer<{1}>.Default (IsEqual)",
+        "'{0}' is keyed by '{1}' but is created without a comparer, so it compares keys with IsEqual; pass ShapeHasher.Instance (IsSame, OCCT's TopTools maps) or EqualityComparer<{1}>.Default (IsEqual)",
         "Correctness",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "OCCT names the hasher of every map of shapes, usually TopTools_ShapeMapHasher (IsSame). The default comparer of the port's maps is IsEqual, so the comparer must be written out.");
+        description: "OCCT names the hasher of every map of shapes, usually TopTools_ShapeMapHasher (ShapeHasher, IsSame). The default comparer of the port's maps is IsEqual, so the comparer must be written out.");
 
     // The generic collections whose first type argument is the key, by their metadata names
     private static readonly ImmutableHashSet<string> MapTypes = ImmutableHashSet.Create(
@@ -44,16 +45,19 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
         "System.Collections.Generic.HashSet`1",
         "System.Collections.Generic.Dictionary`2");
 
+    // The shape structs, in Kerf.Topology (OCCT's TopoDS_Shape and its subtypes)
+    private const string ShapeNamespace = "Kerf.Topology";
+
     private static readonly ImmutableHashSet<string> ShapeTypes = ImmutableHashSet.Create(
-        "TopoDS_Shape",
-        "TopoDS_Vertex",
-        "TopoDS_Edge",
-        "TopoDS_Wire",
-        "TopoDS_Face",
-        "TopoDS_Shell",
-        "TopoDS_Solid",
-        "TopoDS_CompSolid",
-        "TopoDS_Compound");
+        "Shape",
+        "Vertex",
+        "Edge",
+        "Wire",
+        "Face",
+        "Shell",
+        "Solid",
+        "CompSolid",
+        "Compound");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -133,7 +137,7 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsShapeType(ITypeSymbol type)
-        => type.IsValueType && ShapeTypes.Contains(type.Name) && type.ContainingNamespace?.ToDisplayString() == "Occt";
+        => type.IsValueType && ShapeTypes.Contains(type.Name) && type.ContainingNamespace?.ToDisplayString() == ShapeNamespace;
 
     private static bool IsEqualityComparer(ITypeSymbol type)
         => type is INamedTypeSymbol { IsGenericType: true } named

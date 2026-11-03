@@ -1566,9 +1566,9 @@ internal sealed class Sweep
         }
     }
 
-    private static void ReverseModifiedEdges(in Wire wire, NCollection_Map<Shape> emap)
+    private static void ReverseModifiedEdges(in Wire wire, HashSet<Shape> emap)
     {
-        if (emap.IsEmpty())
+        if (emap.Count == 0)
         {
             return;
         }
@@ -1866,7 +1866,7 @@ internal sealed class Sweep
     private bool BuildShell(TransitionStyle transition,
                             int iFirst,
                             int iLast,
-                            NCollection_Map<Shape> reversedEdges,
+                            HashSet<Shape> reversedEdges,
                             NCollection_DataMap<Shape, NCollection_HArray2<Shape>> tapes,
                             NCollection_DataMap<Shape, NCollection_HArray2<Shape>> rails,
                             double extendFirst = 0.0,
@@ -2849,7 +2849,7 @@ internal sealed class Sweep
     /// <paramref name="degmax"/> and <paramref name="segmax"/> bound the surfaces in v. <paramref name="reversedEdges"/>,
     /// <paramref name="tapes"/> and <paramref name="rails"/> carry what earlier sweeps of the same pipe built.
     /// </summary>
-    public void Build(NCollection_Map<Shape> reversedEdges,
+    public void Build(HashSet<Shape> reversedEdges,
                       NCollection_DataMap<Shape, NCollection_HArray2<Shape>> tapes,
                       NCollection_DataMap<Shape, NCollection_HArray2<Shape>> rails,
                       TransitionStyle transition = TransitionStyle.Modified,
@@ -3588,7 +3588,7 @@ internal sealed class Sweep
     // purpose  : Rebuild v-iso edge of top or bottom section
     //           inserting new 3d and 2d curves taken from swept surfaces
     //======================================================================
-    private void RebuildTopOrBottomEdge(in Edge aNewEdge, ref Edge anEdge, NCollection_Map<Shape> reversedEdges)
+    private void RebuildTopOrBottomEdge(in Edge aNewEdge, ref Edge anEdge, HashSet<Shape> reversedEdges)
     {
         Curve3D? newCurve = Tool.Curve(aNewEdge, out double fpar, out double lpar);
         Placement identity = new();

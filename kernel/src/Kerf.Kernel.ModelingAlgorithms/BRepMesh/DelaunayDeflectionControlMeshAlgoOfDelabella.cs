@@ -25,7 +25,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
     private double _maxSqDeflection;
     private double _sqMinSize;
     private bool _isAllDegenerated;
-    private NCollection_Map<OrientedEdge>? _couplesMap;
+    private HashSet<OrientedEdge>? _couplesMap;
     private NCollection_List<Point2D>? _controlNodes;
     private CircleTool? _circles;
 
@@ -64,7 +64,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
     protected virtual void OptimizeMesh(Delaun mesher, ProgressRange range)
     {
         _sqMinSize = GetParameters().MinSize * GetParameters().MinSize;
-        _couplesMap = new NCollection_Map<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
+        _couplesMap = new HashSet<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
         _controlNodes = new NCollection_List<Point2D>();
         _circles = mesher.Circles();
 
@@ -368,14 +368,13 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
     private bool RejectByMinSize(in Xy pnt2d, in Point3D pnt3d)
     {
         NCollection_PackedMapOfInteger usedNodes = new();
-        NCollection_List<int> circlesList =
+        List<int> circlesList =
             _circles!.Select(GetRangeSplitter().Scale(new Point2D(pnt2d), true).XY());
 
         Span<int> nodes = stackalloc int[3];
-        NCollection_List<int>.Iterator circleIt = new(circlesList);
-        for (; circleIt.More(); circleIt.Next())
+        foreach (int circle in circlesList)
         {
-            Triangle triangle = GetStructure().GetElement(circleIt.Value());
+            Triangle triangle = GetStructure().GetElement(circle);
 
             GetStructure().ElementNodes(triangle, nodes);
 

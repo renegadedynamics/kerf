@@ -436,7 +436,7 @@ internal static class BRepTestModifyCommands
             return 0;
         }
 
-        var aMShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aMShapes = new HashSet<Shape>(ShapeHasher.Instance);
         var anExp = new Explorer(aShape, aSubShape.ShapeType());
         for (; anExp.More(); anExp.Next())
         {
@@ -449,7 +449,7 @@ internal static class BRepTestModifyCommands
 
         if (anExp.More())
         {
-            di.Append(a[1]).Append(" is sub-shape of ").Append(a[2]).Append(". Index in the shape: ").Append(aMShapes.Extent()).Append(".\n");
+            di.Append(a[1]).Append(" is sub-shape of ").Append(a[2]).Append(". Index in the shape: ").Append(aMShapes.Count).Append(".\n");
         }
         else
         {

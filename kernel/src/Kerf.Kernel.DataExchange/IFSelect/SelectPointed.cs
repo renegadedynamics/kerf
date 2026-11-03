@@ -163,7 +163,7 @@ public class SelectPointed : SelectBase
             return res;
         }
         int i, nb = _theitems.Length(), nl = list.Length();
-        NCollection_Map<Transient> deja = new NCollection_Map<Transient>();
+        HashSet<Transient> deja = new HashSet<Transient>();
         for (i = 1; i <= nb; i++)
         {
             deja.Add(_theitems.Value(i));

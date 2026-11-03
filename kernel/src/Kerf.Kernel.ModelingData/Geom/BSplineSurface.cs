@@ -1855,15 +1855,15 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles()"/>).</summary>
     /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
-    public void Poles(NCollection_Array2<Point3D> p)
+    internal void Poles(NCollection_Array2<Point3D> p)
     {
         Standard_DimensionError_Raise_if(p.ColLength() != _poles.ColLength() || p.RowLength() != _poles.RowLength(),
                                          " ");
         p.Assign(_poles);
     }
 
-    /// <summary>A copy of the poles, NbUPoles rows by NbVPoles columns, indexed from 1.</summary>
-    public NCollection_Array2<Point3D> Poles() => new NCollection_Array2<Point3D>(_poles);
+    /// <summary>The poles, NbUPoles rows by NbVPoles columns, indexed from 0 (a copy).</summary>
+    public Grid<Point3D> Poles() => _poles.ToGrid();
 
     /// <summary>The U iso-curve (a B-spline curve in V) at U.</summary>
     public sealed override Curve3D UIso(double u)
@@ -2068,7 +2068,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>Copies the weights into W, all 1 for a non-rational surface (deprecated in OCCT).</summary>
     /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
-    public void Weights(NCollection_Array2<double> w)
+    internal void Weights(NCollection_Array2<double> w)
     {
         if (!(_uRational || _vRational))
         {
@@ -2083,18 +2083,12 @@ public class BSplineSurface : BoundedSurface
         w.Assign(_weights);
     }
 
-    /// <summary>A copy of the weights, or null if the surface is non-rational in both directions.</summary>
-    public NCollection_Array2<double>? Weights()
-    {
-        if (_uRational || _vRational)
-        {
-            return new NCollection_Array2<double>(_weights);
-        }
-        return null;
-    }
+    /// <summary>The weights, indexed from 0 as <see cref="Poles()"/> (a copy), or null if the surface is non-rational
+    /// in both directions.</summary>
+    public Grid<double>? Weights() => (_uRational || _vRational) ? _weights.ToGrid() : null;
 
-    /// <summary>A copy of the weights, all 1 for a non-rational surface.</summary>
-    public NCollection_Array2<double> WeightsArray() => new NCollection_Array2<double>(_weights);
+    /// <summary>The weights, all 1 for a non-rational surface, indexed from 0 as <see cref="Poles()"/> (a copy).</summary>
+    public Grid<double> WeightsArray() => _weights.ToGrid();
 
     /// <summary>Transforms the poles by T.</summary>
     protected internal sealed override void Transform(in Transform3D t)

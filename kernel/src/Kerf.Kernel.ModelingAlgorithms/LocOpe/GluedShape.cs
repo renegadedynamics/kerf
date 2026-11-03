@@ -67,7 +67,7 @@ public sealed class GluedShape : GeneratedShape
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, theMapEF);
 
-        NCollection_Map<Shape> mapdone = new(ShapeHasher.Instance);
+        HashSet<Shape> mapdone = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itl = new();
         Explorer exp = new(), exp2 = new(), exp3 = new();
 

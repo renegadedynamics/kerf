@@ -784,7 +784,7 @@ public sealed class PipeShell : Transient
         {
             theContinuity = C0;
         }
-        NCollection_Map<Shape> dummy = new(ShapeHasher.Instance);
+        HashSet<Shape> dummy = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
         mkSw.Build(dummy, dummy2, dummy3, _transition, theContinuity, ApproxStyle.Location, _maxDegree, _maxSegments);

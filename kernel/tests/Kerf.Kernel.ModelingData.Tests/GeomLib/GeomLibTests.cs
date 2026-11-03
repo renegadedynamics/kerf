@@ -548,13 +548,13 @@ public class GeomLibTests
 
     private static double Denominator(BSplineSurface theS, double theU, double theV)
     {
-        NCollection_Array2<double> aW = theS.WeightsArray();
+        Grid<double> aW = theS.WeightsArray();
         NCollection_Array2<Point3D> aP = new(1, theS.UPoleCount, 1, theS.VPoleCount);
         for (int i = 1; i <= theS.UPoleCount; i++)
         {
             for (int j = 1; j <= theS.VPoleCount; j++)
             {
-                aP[i, j] = new Point3D(aW[i, j], 0, 0);
+                aP[i, j] = new Point3D(aW[i - 1, j - 1], 0, 0);
             }
         }
         NCollection_Array1<double> aUK = new(1, theS.UKnotCount), aVK = new(1, theS.VKnotCount);

@@ -679,7 +679,7 @@ public class FaceCheck : ResultCheck
         var exp2 = new Explorer();
 
         // Find common vertices of two wires - non-manifold case
-        var mapW1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapW1 = new HashSet<Shape>(ShapeHasher.Instance);
         var commonVertices = new NCollection_Sequence<Shape>();
         for (exp1.Init(wir1, ShapeType.Vertex); exp1.More(); exp1.Next())
         {

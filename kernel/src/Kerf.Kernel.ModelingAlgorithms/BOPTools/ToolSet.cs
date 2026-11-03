@@ -144,7 +144,7 @@ public sealed class ToolSet : IEquatable<ToolSet>
             return false;
         }
         //
-        NCollection_Map<Shape> m1 = new(ShapeHasher.Instance);
+        HashSet<Shape> m1 = new(ShapeHasher.Instance);
         //
         for (int i = 0; i < _shapes.Length(); ++i)
         {

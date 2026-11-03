@@ -964,7 +964,7 @@ public sealed class OffsetWire
         MakeWires();
 
         // Update vertices ( Constructed in the plane Z = 0) !!!
-        NCollection_Map<Shape> mapVertex = new(ShapeHasher.Instance);
+        HashSet<Shape> mapVertex = new(ShapeHasher.Instance);
         for (Explorer exp = new(_shape, ShapeType.Vertex); exp.More(); exp.Next())
         {
             Vertex v = ShapeCasts.Vertex(exp.Current());
@@ -2355,7 +2355,7 @@ public sealed class OffsetWire
         double eps = global::Kerf.Engine.Foundation.Precision.Confusion();
         double limCurv = 1.0 / offset;
 
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
 
         for (int ic = 1; ic <= locus.NumberOfContours(); ic++)
         {

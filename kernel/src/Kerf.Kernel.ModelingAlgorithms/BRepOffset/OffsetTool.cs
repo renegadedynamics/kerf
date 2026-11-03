@@ -545,19 +545,19 @@ public static class OffsetTool
     {
         lsc.Clear();
         //
-        NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
+        HashSet<Shape> ms = new(ShapeHasher.Instance);
         Explorer exp = new(s1, type);
         for (; exp.More(); exp.Next())
         {
             ms.Add(exp.Current());
         }
         //
-        if (ms.IsEmpty())
+        if (ms.Count == 0)
         {
             return false;
         }
         //
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         exp.Init(s2, type);
         for (; exp.More(); exp.Next())
         {
@@ -3560,7 +3560,7 @@ public static class OffsetTool
     {
         Explorer exp = new();
         exp.Init(s.Oriented(Forward), ShapeType.Edge);
-        NCollection_Map<Shape> dejaVu = new(ShapeHasher.Instance);
+        HashSet<Shape> dejaVu = new(ShapeHasher.Instance);
         for (; exp.More(); exp.Next())
         {
             Edge e = ShapeCasts.Edge(exp.Current());
@@ -4192,7 +4192,7 @@ public static class OffsetTool
     /// Removes the invalid parts of an offset shape: the shells with free boundaries other than
     /// <paramref name="boundary"/>'s edges (the caps' free boundaries) are removed. Null if nothing is left.
     /// </summary>
-    public static Shape Deboucle3D(in Shape s, NCollection_Map<Shape> boundary)
+    public static Shape Deboucle3D(in Shape s, HashSet<Shape> boundary)
     {
         Shape ss = new();
         switch (s.ShapeType())

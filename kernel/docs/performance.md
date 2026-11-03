@@ -160,6 +160,15 @@ Ranked by expected gain against cost. None changes results unless it says so.
 
 Anything beyond these (iteration order, different algorithms) waits for beyond-compatibility.md's decision point B.
 
+**Unit 10J** (decisions 16001 to 16010) took proposals 3, 4 and 7, and two hot spots of the Booleans' profile:
+- **3:** the mesher's circle list no longer moves on removal (a marker in a `List<int>`, not a linked list).
+- **4:** `math_NewtonMinimum` keeps its `math_Jacobi` and `math_Gauss`: "extrude until" allocates 142 MB a
+  recalculation, not 802 MB, and a parallel round of Bento's examples 11.8 GB, not 27.7 GB.
+- **7:** a TShape's hash is drawn once at creation (4.5% of the Booleans' samples were `RuntimeHelpers.GetHashCode`'s
+  slow path).
+- `Extrema_ExtElC`'s rectangular arrays (1.7%) are inline arrays.
+- Proposals 5 and 6, and the rest of the collections, are in collections-plan.md.
+
 ## Running the measurements again
 
 - Bento's workload: `dotnet run -c Release --project benchmarks/OcctNet.Bento.Benchmarks -p:Build123dNetRoot=<build123d.NET>/`,

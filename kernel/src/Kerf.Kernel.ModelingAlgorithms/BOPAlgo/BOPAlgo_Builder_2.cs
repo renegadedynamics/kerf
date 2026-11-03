@@ -167,7 +167,7 @@ public partial class BooleanBuilder
         Explorer exp = new();
         NCollection_List<Shape>.Iterator it = new();
         NCollection_List<int> liav = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         NCollection_DynamicArray<SplitFace> vbf = new();
         //
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~scope f
@@ -600,7 +600,7 @@ public partial class BooleanBuilder
         NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
         // Map of planar bounded faces. If such faces have the same Edge set
         // they are considered Same domain, without additional check.
-        NCollection_Map<Shape> mfPlanar = new(ShapeHasher.Instance);
+        HashSet<Shape> mfPlanar = new(ShapeHasher.Instance);
 
         int nbF = fiVec.Length();
         for (int i = 0; i < nbF; ++i)
@@ -969,7 +969,7 @@ public partial class BooleanBuilder
 
         // Check that the edges of the initial face have not been unified during intersection.
         // Otherwise, it will be necessary to check validity of the new wires.
-        NCollection_Map<Shape> mEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> mEdges = new(ShapeHasher.Instance);
 
         // Update wires of the original face and add them to draft face
         Iterator itW = new(face.Oriented(Forward));

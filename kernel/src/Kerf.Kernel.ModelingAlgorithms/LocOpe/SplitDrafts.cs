@@ -154,7 +154,7 @@ public sealed class SplitDrafts
         LineCurve3D theLinePipe = new(normalFg); // ou NormalFd
         IntSS i2s = new(newSg, newSd, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         CurveAdaptor hac = new();
         SurfaceAdaptor has = new();
         HInter intcs = new();
@@ -947,7 +947,7 @@ public sealed class SplitDrafts
             }
         }
 
-        NCollection_Map<Shape> mapedgadded = new(ShapeHasher.Instance);
+        HashSet<Shape> mapedgadded = new(ShapeHasher.Instance);
         NCollection_List<Shape> thefaces = new();
 
         for (itl.Initialize(_map[aF]); itl.More(); itl.Next())

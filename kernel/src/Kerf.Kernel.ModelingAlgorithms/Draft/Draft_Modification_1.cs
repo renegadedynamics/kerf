@@ -186,7 +186,7 @@ public sealed partial class DraftModification
         }
 
         Explorer exp = new(F, ShapeType.Edge);
-        NCollection_Map<Shape> mapOfE = new(ShapeHasher.Instance);
+        HashSet<Shape> mapOfE = new(ShapeHasher.Instance);
         while (exp.More() && _badShape.IsNull)
         {
             Edge edg = ShapeCasts.Edge(exp.Current());

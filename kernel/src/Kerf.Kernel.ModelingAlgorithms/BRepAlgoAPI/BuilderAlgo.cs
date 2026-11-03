@@ -236,7 +236,7 @@ public class BuilderAlgo : Algo
         }
 
         // Fence map to avoid duplicated section edges in the result list
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         // Intersection results
         DS pDS = _dsFiller!.PDS()!;
         // Iterate on all Face/Face interferences and take section edges

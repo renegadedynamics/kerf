@@ -713,7 +713,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
         Explorer exp1 = new(_shape1, type);
         Explorer exp2 = new(_shape2, type);
         NCollection_Sequence<Shape> seq1 = new(), seq2 = new();
-        NCollection_Map<Shape> map1 = new(ShapeHasher.Instance), map2 = new(ShapeHasher.Instance);
+        HashSet<Shape> map1 = new(ShapeHasher.Instance), map2 = new(ShapeHasher.Instance);
 
         for (; exp1.More(); exp1.Next())
         {

@@ -98,7 +98,7 @@ public partial class BooleanBuilder
         NCollection_DataMap<Shape, Box> shapeBoxMap = new(ShapeHasher.Instance);
 
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
 
         // Get all faces
         NCollection_List<Shape> lFaces = new();
@@ -357,7 +357,7 @@ public partial class BooleanBuilder
         NCollection_List<Shape>.Iterator it = new();
         //
         NCollection_List<Shape> sfs = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives
         // the stored key back from its index, and the map is never iterated
         NCollection_IndexedMap<ToolSet> mst = new();
@@ -563,8 +563,8 @@ public partial class BooleanBuilder
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mSx = new(ShapeHasher.Instance);
         NCollection_IndexedMap<Shape> mx = new(ShapeHasher.Instance);
         NCollection_IndexedMap<Shape> msi = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> msOr = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> msOr = new(ShapeHasher.Instance);
         NCollection_List<Shape> lSd = new();
         NCollection_List<Shape> lArgs = new();
         NCollection_List<Shape> lsc = new();

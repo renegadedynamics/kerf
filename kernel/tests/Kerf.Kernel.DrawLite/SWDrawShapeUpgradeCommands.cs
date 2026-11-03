@@ -150,7 +150,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         var anEntry = new CopyAtEntry(aShape, null, true);
-        var aMapOfShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aMapOfShapes = new HashSet<Shape>(ShapeHasher.Instance);
         foreach (Shape aKeepShape in aKeepShapes)
         {
             aMapOfShapes.Add(anEntry.Copied(aKeepShape));

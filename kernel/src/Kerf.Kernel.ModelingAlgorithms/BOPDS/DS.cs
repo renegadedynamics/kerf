@@ -902,7 +902,7 @@ public class DS
                               NCollection_IntMap mvOnIn,
                               NCollection_IntMap mvCommon,
                               NCollection_IndexedMap<PaveBlock> pbOnIn,
-                              NCollection_Map<PaveBlock> commonPaveBlocks)
+                              HashSet<PaveBlock> commonPaveBlocks)
     {
         FaceInfo faceInfo1 = FaceInfo(faceIndex1);
         FaceInfo faceInfo2 = FaceInfo(faceIndex2);
@@ -1216,7 +1216,7 @@ public class DS
         Pave[] pPaves = new Pave[paveBlocks.Extent() + 1];
         Array.Fill(pPaves, new Pave());
         int i = 0;
-        NCollection_Map<Pave> visitedPaves = new();
+        HashSet<Pave> visitedPaves = new();
         foreach (PaveBlock paveBlock in paveBlocks)
         {
             foreach (Pave pave in new[] { paveBlock.Pave1(), paveBlock.Pave2() })

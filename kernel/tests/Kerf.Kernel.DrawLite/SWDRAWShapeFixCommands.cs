@@ -657,8 +657,8 @@ internal static class SWDRAWShapeFixCommands
             aSfwr.Load(aWork);
             aSfwr.SetPrecision(tol);
 
-            var theSmallEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            var theMultyEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var theSmallEdges = new HashSet<Shape>(ShapeHasher.Instance);
+            var theMultyEdges = new HashSet<Shape>(ShapeHasher.Instance);
             var theEdgeToFaces = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             var theFaceWithSmall = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             aSfwr.CheckSmallEdges(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges);

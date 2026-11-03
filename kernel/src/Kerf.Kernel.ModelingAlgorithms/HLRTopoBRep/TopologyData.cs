@@ -28,8 +28,8 @@ public sealed class TopologyData
         new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, TopologyFaceData> _data =
         new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _outV = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _intV = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _outV = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _intV = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NCollection_List<VData>> _edgesVertices =
         new(ShapeHasher.Instance);
 

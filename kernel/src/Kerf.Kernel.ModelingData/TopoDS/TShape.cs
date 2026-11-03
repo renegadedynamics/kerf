@@ -52,6 +52,13 @@ public abstract class TShape : Transient
 
     private ushort _state;
 
+    /// <summary>
+    /// The identity hash of shape maps (unit 10J; performance.md's proposal 7): drawn once at creation, in place of
+    /// <see cref="System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(object)"/>, which took 2 to 5% of the
+    /// Booleans' time. The maps iterate in insertion order whatever the hash, so no result depends on its value.
+    /// </summary>
+    internal readonly int _hash = Random.Shared.Next();
+
     /// <summary>A TShape of the given type: Free, Modified and Orientable.</summary>
     protected TShape(ShapeType type)
     {

@@ -32,6 +32,7 @@ using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Exchange.Step.Visual.ReadWrite;
 using Kerf.Engine.Foundation;
 using Occt;
+using System.Collections.Frozen;
 
 namespace Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
 
@@ -1198,15 +1199,16 @@ internal class Ap214ReadWriteModule : ReadWriteModule
     private const string Cgrr = "CGRR";
     // OCCT's maps of the type names and the short names to case numbers: file statics filled by the first
     // constructor, under a mutex, in an allocator of their own, hashed by a StringViewHasher. Here C#'s static
-    // initialisation fills them once, thread-safely (decision 1215); the allocator and hasher are dropped.
-    private static readonly NCollection_DataMap<string, int> THE_TYPENUMS = Filled(InitializeTypenums);
-    private static readonly NCollection_DataMap<string, int> THE_TYPESHOR = Filled(InitializeTypeshor);
+    // initialisation fills them once, thread-safely (decision 1215), and freezes them (unit 10J); the allocator and
+    // hasher are dropped.
+    private static readonly FrozenDictionary<string, int> THE_TYPENUMS = Filled(InitializeTypenums);
+    private static readonly FrozenDictionary<string, int> THE_TYPESHOR = Filled(InitializeTypeshor);
 
-    private static NCollection_DataMap<string, int> Filled(Action<NCollection_DataMap<string, int>> init)
+    private static FrozenDictionary<string, int> Filled(Action<NCollection_DataMap<string, int>> init)
     {
         var map = new NCollection_DataMap<string, int>();
         init(map);
-        return map;
+        return map.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     /// <summary>Creates the module. The type maps OCCT's constructor fills once are static here (decision 1215).</summary>
@@ -1227,11 +1229,11 @@ internal class Ap214ReadWriteModule : ReadWriteModule
         {
             return 59; // car tres courant
         }
-        if (THE_TYPENUMS.Find((string)key, out num))
+        if (THE_TYPENUMS.TryGetValue(key, out num))
         {
             return num;
         }
-        if (THE_TYPESHOR.Find((string)key, out num))
+        if (THE_TYPESHOR.TryGetValue(key, out num))
         {
             return num; // AJOUT DES TYPES COURTS
         }
@@ -1260,7 +1262,7 @@ internal class Ap214ReadWriteModule : ReadWriteModule
             int i = 0, num = 0;
             for (i = 1; i <= nbComp; i++)
             {
-                if (THE_TYPESHOR.IsBound((string)theTypes[i]))
+                if (THE_TYPESHOR.ContainsKey((string)theTypes[i]))
                 {
                     num = 1;
                     break;
@@ -1271,7 +1273,7 @@ internal class Ap214ReadWriteModule : ReadWriteModule
                 NCollection_Sequence<string> longs = new NCollection_Sequence<string>();
                 for (i = 1; i <= nbComp; i++)
                 {
-                    if (THE_TYPESHOR.Find((string)theTypes[i], out num))
+                    if (THE_TYPESHOR.TryGetValue((string)theTypes[i], out num))
                     {
                         longs.Append(StepType(num));
                     }

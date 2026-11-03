@@ -692,7 +692,7 @@ public sealed class AdvancedEvolved
 
         _errorStatus = BRepFill_AdvancedEvolved_NotVolume;
 
-        NCollection_Map<Shape> mapF = new(ShapeHasher.Instance);
+        HashSet<Shape> mapF = new(ShapeHasher.Instance);
         NCollection_List<Shape> lf = new(), lSplits = new();
         Explorer expF = new();
 
@@ -1185,7 +1185,7 @@ public sealed class AdvancedEvolved
         exp.Next();
 
         // Map containing all vertices of degenerated edges
-        NCollection_Map<Shape> mapVofDE = new(ShapeHasher.Instance);
+        HashSet<Shape> mapVofDE = new(ShapeHasher.Instance);
 
         {
             Explorer expDE = new(wir, ShapeType.Edge);
@@ -1365,7 +1365,7 @@ public sealed class AdvancedEvolved
 
         if (sType == Plane)
         {
-            NCollection_Map<Shape> me = new(ShapeHasher.Instance);
+            HashSet<Shape> me = new(ShapeHasher.Instance);
             NCollection_List<Shape> le = new();
             Explorer exp = new(f, ShapeType.Edge);
             for (; exp.More(); exp.Next())

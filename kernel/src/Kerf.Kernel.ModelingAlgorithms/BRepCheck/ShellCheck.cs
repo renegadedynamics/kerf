@@ -274,7 +274,7 @@ public class ShellCheck : ResultCheck
         int index, nbF;
         Explorer exp = new(), ede = new();
         var mapS = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var meToAvoid = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var meToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
         _mapEF.Clear();
 
         // Checks if the oriented faces of the shell give a "closed" shell,
@@ -588,7 +588,7 @@ public class ShellCheck : ResultCheck
             else // more than two faces
             {
                 int numF = 0, numR = 0;
-                var fmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var fmap = new HashSet<Shape>(ShapeHasher.Instance);
 
                 for (lite.Initialize(lface); lite.More(); lite.Next())
                 {
@@ -666,7 +666,7 @@ public class ShellCheck : ResultCheck
             {
                 if (nbedges > 0)
                 {
-                    var alre = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    var alre = new HashSet<Shape>(ShapeHasher.Instance);
                     var voisin = new NCollection_List<Shape>();
                     voisin.Append(fref);
                     alre.Clear();
@@ -838,7 +838,7 @@ public class ShellCheck : ResultCheck
             ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, parents);
         // All faces are taken
-        var theFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var theFaces = new HashSet<Shape>(ShapeHasher.Instance);
         var exsh = new Explorer(_shape, ShapeType.Face);
         for (; exsh.More(); exsh.Next())
         {
@@ -847,8 +847,8 @@ public class ShellCheck : ResultCheck
 
         // The edges that are not oriented or have more than 2 connections are missing
         int iCur;
-        var theMultiEd = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var theUnOriEd = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var theMultiEd = new HashSet<Shape>(ShapeHasher.Instance);
+        var theUnOriEd = new HashSet<Shape>(ShapeHasher.Instance);
         for (iCur = 1; iCur <= parents.Extent(); iCur++)
         {
             Edge ed = ShapeCasts.Edge(parents.FindKey(iCur));
@@ -884,7 +884,7 @@ public class ShellCheck : ResultCheck
                         brb.Add(curShell, adFac);
                         theFaces.Remove(adFac);
                         newCur = false;
-                        if (theFaces.IsEmpty())
+                        if (theFaces.Count == 0)
                         {
                             // OCCT: leaves before the shell is appended, so a last set of one face is lost (occt-issues.md)
                             break;
@@ -908,7 +908,7 @@ public class ShellCheck : ResultCheck
                                             brb.Add(curShell, adFac);
                                             theFaces.Remove(adFac);
                                             newCur = false;
-                                            if (theFaces.IsEmpty())
+                                            if (theFaces.Count == 0)
                                             {
                                                 break;
                                             }
@@ -918,7 +918,7 @@ public class ShellCheck : ResultCheck
                                     }
                                 }
 
-                                if (theFaces.IsEmpty())
+                                if (theFaces.Count == 0)
                                 {
                                     break;
                                 }
@@ -941,14 +941,14 @@ public class ShellCheck : ResultCheck
                         }
                     }
 
-                    if (theFaces.IsEmpty())
+                    if (theFaces.Count == 0)
                     {
                         break;
                     }
                 }
             }
 
-            if (theFaces.IsEmpty())
+            if (theFaces.Count == 0)
             {
                 break;
             }

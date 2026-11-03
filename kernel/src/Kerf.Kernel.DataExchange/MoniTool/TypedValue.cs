@@ -7,6 +7,8 @@
 
 using Kerf.Engine.Foundation;
 using Occt;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using static Kerf.Engine.Exchange.Framework.Monitoring.MonitorValueType;
 
 namespace Kerf.Engine.Exchange.Framework.Monitoring;
@@ -24,11 +26,13 @@ public class TypedValue : Transient
     // The library of typed values (OCCT's static thelibtv): the standard types, built once (decision 1181). OCCT's
     // AddLib, which adds to it, and the static dictionary of "static" values (OCCT's astats, Stats(), StaticValue)
     // are left out: the static values are a parameter set's (Interface_StaticSet), passed explicitly.
-    private static readonly Lazy<NCollection_DataMap<string, Transient>> Thelibtv = new(MakeLib);
+    // The library of typed values, built once and frozen (unit 10J), with its names in the order OCCT binds them
+    private static readonly Lazy<(FrozenDictionary<string, TypedValue> Map, ImmutableArray<string> Names)> Thelibtv =
+        new(MakeLib);
 
-    private static NCollection_DataMap<string, Transient> MakeLib()
+    private static (FrozenDictionary<string, TypedValue> Map, ImmutableArray<string> Names) MakeLib()
     {
-        var lib = new NCollection_DataMap<string, Transient>();
+        var lib = new NCollection_DataMap<string, TypedValue>();
         TypedValue tv;
         tv = new TypedValue("Integer", MonitorValueType.ValueInteger);
         lib.Bind("Integer", tv);
@@ -49,10 +53,8 @@ public class TypedValue : Transient
         tv.AddDef("eval Unknown");
         tv.AddDef("eval True");
         lib.Bind("Logical", tv);
-        return lib;
+        return (lib.ToFrozenDictionary(StringComparer.Ordinal), [.. lib.Keys]);
     }
-
-    private static NCollection_DataMap<string, Transient> Libtv() => Thelibtv.Value;
 
     /// <summary>
     /// Creates a TypedValue, with a name type gives the type of the parameter, default is free text Also
@@ -1325,16 +1327,7 @@ public class TypedValue : Transient
     /// </summary>
     public static TypedValue? Lib(string defin)
     {
-        TypedValue val;
-        if (Libtv().Find(defin, out Transient tVal))
-        {
-            val = (tVal as TypedValue);
-        }
-        else
-        {
-            val = null;
-        }
-        return val;
+        return Thelibtv.Value.Map.GetValueOrDefault(defin);
     }
 
     /// <summary>
@@ -1358,13 +1351,9 @@ public class TypedValue : Transient
     {
         NCollection_HSequence<string> list =
             new NCollection_HSequence<string>();
-        if (Libtv().IsEmpty())
+        foreach (string name in Thelibtv.Value.Names)
         {
-            return list;
-        }
-        foreach (KeyValuePair<string, Transient> it in Libtv())
-        {
-            list.Append(it.Key);
+            list.Append(name);
         }
         return list;
     }

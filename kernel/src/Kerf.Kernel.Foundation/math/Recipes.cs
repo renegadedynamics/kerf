@@ -87,12 +87,17 @@ public static class Recipes
     /// v(1..n, 1..n) the normalized eigenvectors; nrot the number of Jacobi rotations.
     /// </summary>
     public static int Jacobi(Matrix a, math_Vector d, Matrix v, out int nrot)
+        => Jacobi(a, d, v, out nrot, new math_Vector(1, a.RowNumber()), new math_Vector(1, a.RowNumber()));
+
+    /// <summary>
+    /// <see cref="Jacobi(Matrix, math_Vector, Matrix, out int)"/> with its two work vectors b(1..n) and z(1..n) given,
+    /// for callers that repeat it (unit 10J); their values on entry don't matter.
+    /// </summary>
+    internal static int Jacobi(Matrix a, math_Vector d, Matrix v, out int nrot, math_Vector b, math_Vector z)
     {
         int n = a.RowNumber();
         int j, iq, ip, i;
         double tresh, theta, tau, t, sm, s, h = 0.0, g = 0.0, c;
-        math_Vector b = new(1, n);
-        math_Vector z = new(1, n);
 
         for (ip = 1; ip <= n; ip++)
         {

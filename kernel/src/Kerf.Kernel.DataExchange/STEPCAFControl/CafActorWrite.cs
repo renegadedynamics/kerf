@@ -64,5 +64,5 @@ public class CafActorWrite : ActorWrite
     }
 
     private bool _stdMode;
-    private readonly NCollection_Map<Shape> _map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _map = new HashSet<Shape>(ShapeHasher.Instance);
 }

@@ -254,7 +254,7 @@ public partial class UnifySameDomain
 
     private static double ComputeMinEdgeSize(NCollection_Sequence<Shape> edges,
                                              in Face                     refFace,
-                                             NCollection_Map<Shape>      edgesMap)
+                                             HashSet<Shape>      edgesMap)
     {
         double minSize = RealLast();
 
@@ -292,7 +292,7 @@ public partial class UnifySameDomain
     private static bool FindCoordBounds(NCollection_Sequence<Shape>                                       faces,
                                         in Face                                                           refFace,
                                         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF,
-                                        NCollection_Map<Shape>                                            edgesMap,
+                                        HashSet<Shape>                                            edgesMap,
                                         int                                                                      indCoord,
                                         double                                                                   period,
                                         ref double                                                               minCoord,
@@ -432,9 +432,9 @@ public partial class UnifySameDomain
       double                                                                   period,
       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap,
       NCollection_DataMap<Shape, Curve2D>                          edgeNewPCurve,
-      NCollection_Map<Shape>                                            usedEdges)
+      HashSet<Shape>                                            usedEdges)
     {
-        var edgesOfFirstFace = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var edgesOfFirstFace = new HashSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(firstFace, edgesOfFirstFace);
 
         for (;;) // walk by contours
@@ -935,7 +935,7 @@ public partial class UnifySameDomain
     // input's own even in the safe input mode (the port works on its copy, see Build)
     private static void TransformPCurves(in Face                refFace,
                                          in Face                face,
-                                         NCollection_Map<Shape> mapEdgesWithTemporaryPCurves)
+                                         HashSet<Shape> mapEdgesWithTemporaryPCurves)
     {
         Surface refSurf = Tool.Surface(refFace)!;
         if (refSurf is TrimmedSurface refRTS)
@@ -1020,7 +1020,7 @@ public partial class UnifySameDomain
 
         var bb    = new BrepBuilder();
         var explo = new Explorer(face, ShapeType.Edge);
-        var emap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var emap = new HashSet<Shape>(ShapeHasher.Instance);
         for (; explo.More(); explo.Next())
         {
             Edge edge = ShapeCasts.Edge(explo.Current());
@@ -1150,7 +1150,7 @@ public partial class UnifySameDomain
 
     private static void AddPCurves(NCollection_Sequence<Shape> faces,
                                    in Face                     refFace,
-                                   NCollection_Map<Shape>      mapEdgesWithTemporaryPCurves)
+                                   HashSet<Shape>      mapEdgesWithTemporaryPCurves)
     {
         var refBAsurf = new FaceSurfaceAdaptor(refFace, false);
 
@@ -1549,7 +1549,7 @@ public partial class UnifySameDomain
         }
     }
 
-    private static void UpdateMapOfShapes(NCollection_Map<Shape> mapOfShapes, ReShapeBuilder context)
+    private static void UpdateMapOfShapes(HashSet<Shape> mapOfShapes, ReShapeBuilder context)
     {
         // OCCT adds to the map while it iterates over it; the shapes added are the context's results, which the
         // context maps onto themselves, so iterating over the shapes there before is the same
@@ -1570,7 +1570,7 @@ public partial class UnifySameDomain
     {
         var vEmap = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
-        var emap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var emap = new HashSet<Shape>(ShapeHasher.Instance);
         var itw   = new Iterator(wire);
         for (; itw.More(); itw.Next())
         {
@@ -1701,7 +1701,7 @@ public partial class UnifySameDomain
     }
 
     // Compares two sets of shapes. Returns true if they are the same, false otherwise.
-    private static bool IsSameSets(NCollection_Map<Shape>? fShells1, NCollection_Map<Shape>? fShells2)
+    private static bool IsSameSets(HashSet<Shape>? fShells1, HashSet<Shape>? fShells2)
     {
         // If both are null - no problem
         if (fShells1 is null && fShells2 is null)
@@ -1714,7 +1714,7 @@ public partial class UnifySameDomain
             return false;
         }
         // Both not null
-        if (fShells1.Extent() != fShells2.Extent())
+        if (fShells1.Count != fShells2.Count)
         {
             return false;
         }
@@ -1748,12 +1748,12 @@ public partial class UnifySameDomain
     // Checks the sequence of edges on the presence of shared vertex
     private static void CheckSharedVertices(NCollection_Sequence<Shape>                                       seqEdges,
                                             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEdgesVertex,
-                                            NCollection_Map<Shape>                                            mapKeepShape,
-                                            NCollection_Map<Shape>                                            shareVertMap)
+                                            HashSet<Shape>                                            mapKeepShape,
+                                            HashSet<Shape>                                            shareVertMap)
     {
         var sae         = new EdgeAnalysis();
         var seqVertexes = new NCollection_Sequence<Shape>();
-        var mapVertexes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapVertexes = new HashSet<Shape>(ShapeHasher.Instance);
         for (int k = 1; k <= seqEdges.Length(); k++)
         {
             Vertex v1 = sae.FirstVertex(ShapeCasts.Edge(seqEdges[k]));

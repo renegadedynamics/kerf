@@ -756,7 +756,7 @@ internal static class MeshTestCommands
                 continue;
             }
 
-            var anEdgeSet = new NCollection_Map<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var anEdgeSet = new HashSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             var anEdgeMap = new List<Shape>();
             if (aShape.ShapeType() == ShapeType.Edge)
             {
@@ -915,7 +915,7 @@ internal static class MeshTestCommands
             // in place in OCCT: on a copy of the graph here, bound when a face changed
             Shape aCopy = DrawShapeCopy.Copy(aShape);
             bool isChanged = false;
-            var aProcessedFaces = new NCollection_Map<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var aProcessedFaces = new HashSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             for (var aFaceIter = new global::Kerf.Engine.Topology.Explorer(aCopy, ShapeType.Face); aFaceIter.More(); aFaceIter.Next())
             {
                 Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaceIter.Value());

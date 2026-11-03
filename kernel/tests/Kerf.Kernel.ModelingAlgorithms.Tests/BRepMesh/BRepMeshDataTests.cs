@@ -283,7 +283,7 @@ public class BRepMeshDataTests
         // order, whatever the objects' hash codes.
         Edge anEdge = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         var anEdges = Enumerable.Range(0, 200).Select(_ => (EdgeModel)new EdgeData(anEdge)).ToList();
-        var aMap = new NCollection_Map<EdgeModel>(ReferenceEqualityComparer.Instance);
+        var aMap = new HashSet<EdgeModel>(ReferenceEqualityComparer.Instance);
         foreach (EdgeModel aE in anEdges)
         {
             Assert.True(aMap.Add(aE));
@@ -291,7 +291,7 @@ public class BRepMeshDataTests
         Assert.False(aMap.Add(anEdges[7]));
         Assert.Equal(anEdges, aMap.ToList());
 
-        var aUnited = new NCollection_Map<EdgeModel>(ReferenceEqualityComparer.Instance);
+        var aUnited = new HashSet<EdgeModel>(ReferenceEqualityComparer.Instance);
         aUnited.Add(anEdges[150]);
         NCollection_MapAlgo.Unite(aUnited, aMap);
         Assert.Equal([anEdges[150], .. anEdges.Where(e => e != anEdges[150])], aUnited.ToList());

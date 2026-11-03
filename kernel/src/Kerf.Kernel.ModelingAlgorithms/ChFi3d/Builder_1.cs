@@ -400,7 +400,7 @@ public partial class FilletBuilderBase
                 bool sommetpourri = false;
                 // OCCT's default hasher compares with IsEqual (orientation counts): a closed edge enters twice
                 NCollection_IndexedMap<Shape> edgesOfV = new(EqualityComparer<Shape>.Default);
-                NCollection_Map<Shape> edges = new(ShapeHasher.Instance);
+                HashSet<Shape> edges = new(ShapeHasher.Instance);
                 edges.Add(e[0]);
                 edgesOfV.Add(e[0]);
                 int indOfE = 0;

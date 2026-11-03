@@ -48,7 +48,7 @@ public class IntTools_RangeSampleTests
         Assert.NotEqual(a, b.WithDepth(2));
         Assert.NotEqual(a, b.WithRangeIndex(3));
 
-        NCollection_Map<CurveRangeSample> aMap = new();
+        HashSet<CurveRangeSample> aMap = new();
         Assert.True(aMap.Add(a));
         Assert.False(aMap.Add(b));
         Assert.True(aMap.Add(b.WithDepth(2)));

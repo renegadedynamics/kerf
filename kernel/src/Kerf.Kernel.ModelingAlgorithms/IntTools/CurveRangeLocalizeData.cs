@@ -21,7 +21,7 @@ public sealed class CurveRangeLocalizeData
 {
     private readonly int _nbSampleC;
     private readonly double _minRangeC;
-    private readonly NCollection_Map<CurveRangeSample> _mapRangeOut = new();
+    private readonly HashSet<CurveRangeSample> _mapRangeOut = new();
     private readonly NCollection_DataMap<CurveRangeSample, Box> _mapBox = new();
 
     public CurveRangeLocalizeData(int nbSample, double minRange)

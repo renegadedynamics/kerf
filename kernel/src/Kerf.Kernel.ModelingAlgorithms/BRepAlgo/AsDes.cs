@@ -106,7 +106,7 @@ public sealed class AsDes : Transient
     // Replaces OldS by NewS in L (with OldS's orientation), once per distinct shape (IsEqual)
     private static void ReplaceInList(in Shape oldS, in Shape newS, NCollection_List<Shape> l)
     {
-        NCollection_Map<Shape> ms = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> ms = new(EqualityComparer<Shape>.Default);
         NCollection_List<Shape>.Iterator it = new(l);
         for (; it.More(); it.Next())
         {
@@ -211,7 +211,7 @@ public sealed class AsDes : Transient
             if (!map.Find(newS, out NCollection_List<Shape> pLSNew))
             {
                 // filter the list
-                NCollection_Map<Shape> ms = new(EqualityComparer<Shape>.Default);
+                HashSet<Shape> ms = new(EqualityComparer<Shape>.Default);
                 NCollection_List<Shape>.Iterator it = new(pLSOld);
                 for (; it.More();)
                 {
@@ -229,7 +229,7 @@ public sealed class AsDes : Transient
             else
             {
                 // avoid duplicates
-                NCollection_Map<Shape> ms = new(EqualityComparer<Shape>.Default);
+                HashSet<Shape> ms = new(EqualityComparer<Shape>.Default);
                 NCollection_List<Shape>.Iterator it = new(pLSNew);
                 for (; it.More(); it.Next())
                 {

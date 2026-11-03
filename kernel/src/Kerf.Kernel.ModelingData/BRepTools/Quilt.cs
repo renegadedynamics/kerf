@@ -360,8 +360,8 @@ public sealed class Quilt
 
         b.MakeCompound(ref result);
 
-        var mapOtherShape = new NCollection_Map<Shape>(ShapeHasher.Instance); // gka
-        var edgesFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapOtherShape = new HashSet<Shape>(ShapeHasher.Instance); // gka
+        var edgesFaces = new HashSet<Shape>(ShapeHasher.Instance);
 
         // loop on the face in myBounds
         for (int ii = 1; ii <= _bounds.Extent(); ii++)

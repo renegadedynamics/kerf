@@ -99,3 +99,5 @@ The first packages, for Bento's 3D-models extension.
   private copy: the kernel's healing no longer writes into its input, so the results share what wasn't fixed. Results
   are otherwise as before.
 
+- Kerf's unit 10J: the kernel's `NCollection_Map` is `HashSet<T>`; the two places the layer used it (`ShapeHistory`,
+  `Wire`) follow. No behaviour changes.

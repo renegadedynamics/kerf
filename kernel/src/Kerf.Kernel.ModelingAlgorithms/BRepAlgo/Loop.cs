@@ -202,7 +202,7 @@ public sealed class Loop
         {
             yaSupress = false;
             NCollection_List<Shape> vToRemove = new();
-            NCollection_Map<Shape> eToRemove = new(ShapeHasher.Instance);
+            HashSet<Shape> eToRemove = new(ShapeHasher.Instance);
 
             for (int iV = 1; iV <= mve.Extent(); iV++)
             {
@@ -231,7 +231,7 @@ public sealed class Loop
                 {
                     mve.RemoveKey(itl.Value());
                 }
-                if (!eToRemove.IsEmpty())
+                if (eToRemove.Count != 0)
                 {
                     for (int iV = 1; iV <= mve.Extent(); iV++)
                     {
@@ -386,7 +386,7 @@ public sealed class Loop
 
     // Keeps in the lists of new edges only the edges used in the wires
     private static void PurgeNewEdges(NCollection_DataMap<Shape, NCollection_List<Shape>> newEdges,
-                                      NCollection_Map<Shape> usedEdges)
+                                      HashSet<Shape> usedEdges)
     {
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in newEdges)
         {
@@ -539,7 +539,7 @@ public sealed class Loop
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
 
         // add cut edges.
-        NCollection_Map<Shape> emap = new(ShapeHasher.Instance);
+        HashSet<Shape> emap = new(ShapeHasher.Instance);
         for (itl.Initialize(_edges); itl.More(); itl.Next())
         {
             if (_cutEdges.Find(itl.Value(), out NCollection_List<Shape> pLCE))
@@ -559,7 +559,7 @@ public sealed class Loop
         // add const edges
         // Sewn edges can be doubled or not in myConstEdges
         // => call only once StoreInMVE which should double them
-        NCollection_Map<Shape> dejaVu = new(ShapeHasher.Instance);
+        HashSet<Shape> dejaVu = new(ShapeHasher.Instance);
         for (itl.Initialize(_constEdges); itl.More(); itl.Next())
         {
             Edge e = ShapeCasts.Edge(itl.Value());
@@ -580,7 +580,7 @@ public sealed class Loop
 
         UpdateVEmap(mve);
 
-        NCollection_Map<Shape> usedEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> usedEdges = new(ShapeHasher.Instance);
 
         while (mve.Extent() > 0)
         {

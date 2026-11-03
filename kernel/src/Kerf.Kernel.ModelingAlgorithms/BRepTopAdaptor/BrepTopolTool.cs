@@ -446,7 +446,7 @@ public class BrepTopolTool : TopolTool
                 global::Kerf.Geometry.BSplineSurface bspl = _s.BSpline();
                 int nbup = bspl.UPoleCount;
                 int nbvp = bspl.VPoleCount;
-                NCollection_Array2<Point3D> array2 = bspl.Poles();
+                NCollection_Array2<Point3D> array2 = bspl.InternalPoles();
                 Analyse(array2, nbup, nbvp, ref _nbSamplesU, ref _nbSamplesV);
                 nbsu = _nbSamplesU;
                 nbsv = _nbSamplesV;
@@ -457,7 +457,7 @@ public class BrepTopolTool : TopolTool
                 global::Kerf.Geometry.BezierSurface bez = _s.Bezier();
                 int nbup = bez.UPoleCount;
                 int nbvp = bez.VPoleCount;
-                NCollection_Array2<Point3D> array2 = bez.Poles();
+                NCollection_Array2<Point3D> array2 = bez.InternalPoles();
                 Analyse(array2, nbup, nbvp, ref _nbSamplesU, ref _nbSamplesV);
                 nbsu = _nbSamplesU;
                 nbsv = _nbSamplesV;

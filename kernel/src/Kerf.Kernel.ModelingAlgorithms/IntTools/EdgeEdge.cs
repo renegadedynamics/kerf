@@ -759,7 +759,7 @@ public class EdgeEdge
         double ti11, ti12, ti21, ti22;
         double tj11, tj12, tj21, tj22;
         double res1, res2, dTR1, dTR2;
-        NCollection_Map<int> mi = new();
+        HashSet<int> mi = new();
         //
         res1 = Resolution(_curve1.Curve().Curve()!, _curve1.GetType(), _resCoeff1, _tol);
         res2 = Resolution(_curve2.Curve().Curve()!, _curve2.GetType(), _resCoeff2, _tol);

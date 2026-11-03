@@ -596,7 +596,7 @@ public static partial class BrepTools
         Triangulation? nullTriangulation = null;
         PolygonOnTriangulation? nullPoly = null;
 
-        var shapeMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var shapeMap = new HashSet<Shape>(ShapeHasher.Instance);
         Placement emptyLoc = new Placement();
 
         var faceIt = new Explorer(shape, ShapeType.Face);
@@ -727,7 +727,7 @@ public static partial class BrepTools
     /// <summary>Removes the pcurves and continuities on surfaces that none of the shape's faces uses.</summary>
     internal static void RemoveUnusedPCurves(in Shape s)
     {
-        var usedSurfaces = new NCollection_Map<object>(ReferenceEqualityComparer.Instance);
+        var usedSurfaces = new HashSet<object>(ReferenceEqualityComparer.Instance);
 
         var explo = new Explorer(s, ShapeType.Face);
         for (; explo.More(); explo.Next())
@@ -1239,9 +1239,9 @@ public static partial class BrepTools
 
     // Looks for internal sub-shapes which has to be kept to preserve topological connectivity.
     private static void FindInternalsToKeep(in Shape s,
-                                            NCollection_Map<Shape> allNonInternals,
-                                            NCollection_Map<Shape> allInternals,
-                                            NCollection_Map<Shape> shapesToKeep)
+                                            HashSet<Shape> allNonInternals,
+                                            HashSet<Shape> allInternals,
+                                            HashSet<Shape> shapesToKeep)
     {
         for (var it = new Iterator(s, true); it.More(); it.Next())
         {
@@ -1281,7 +1281,7 @@ public static partial class BrepTools
 
     // Removes recursively all internal sub-shapes from the given shape.
     // Returns true if all sub-shapes have been removed from the shape.
-    private static bool RemoveInternalsCore(in Shape s, NCollection_Map<Shape>? shapesToKeep)
+    private static bool RemoveInternalsCore(in Shape s, HashSet<Shape>? shapesToKeep)
     {
         var lRemove = new NCollection_List<Shape>();
         for (var it = new Iterator(s, true); it.More(); it.Next())
@@ -1321,8 +1321,8 @@ public static partial class BrepTools
     /// <remarks>Takes the shape by <c>in</c> (OCCT: a non-const reference): only its TShape changes.</remarks>
     internal static void RemoveInternals(in Shape s, bool force = false)
     {
-        NCollection_Map<Shape>? pMKeep = null;
-        var mKeep = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        HashSet<Shape>? pMKeep = null;
+        var mKeep = new HashSet<Shape>(ShapeHasher.Instance);
         if (!force)
         {
             // Find all internal sub-shapes which has to be kept to preserve topological connectivity.
@@ -1334,10 +1334,10 @@ public static partial class BrepTools
             // the vertex with one of the vertices of that wire. The vertex is not directly
             // contained in the face, thus will be removed as part of internal wire, and topological
             // connectivity between edge and face will be lost.
-            var allNonInternals = new NCollection_Map<Shape>(ShapeHasher.Instance);
-            var allInternals = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var allNonInternals = new HashSet<Shape>(ShapeHasher.Instance);
+            var allInternals = new HashSet<Shape>(ShapeHasher.Instance);
             FindInternalsToKeep(s, allNonInternals, allInternals, mKeep);
-            if (mKeep.Extent() != 0)
+            if (mKeep.Count != 0)
             {
                 pMKeep = mKeep;
             }

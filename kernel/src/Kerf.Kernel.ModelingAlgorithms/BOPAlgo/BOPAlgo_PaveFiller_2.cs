@@ -374,7 +374,7 @@ public partial class PaveFiller
     protected void SplitPaveBlocks(NCollection_IntMap mEdges, bool addInterfs)
     {
         // Fence map to avoid unification of the same vertices twice
-        NCollection_Map<Pair> mPairs = new();
+        HashSet<Pair> mPairs = new();
         // Map to treat the Common Blocks
         NCollection_IndexedDataMap<CommonBlock, NCollection_List<PaveBlock>> mcbNewPB = new();
         //

@@ -171,7 +171,7 @@ public static class LocOpe
     public static void SampleEdges(in Shape shape, NCollection_Sequence<Point3D> seq)
     {
         seq.Clear();
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
 
         Explorer exp = new(shape, ShapeType.Edge);
         double prm;

@@ -136,7 +136,7 @@ public static class MassPropertiesBuilder
         lProps.Assign(new Properties(p));
 
         var bac = new EdgeCurveAdaptor();
-        var eMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var eMap = new HashSet<Shape>(ShapeHasher.Instance);
         var ex = new Explorer();
         for (ex.Init(s, ShapeType.Edge); ex.More(); ex.Next())
         {
@@ -197,7 +197,7 @@ public static class MassPropertiesBuilder
 
         var bf = new FaceIntegrand();
         var bd = new Domain();
-        var fMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var fMap = new HashSet<Shape>(ShapeHasher.Instance);
         Placement locDummy;
 
         for (ex.Init(s, ShapeType.Face), i = 1; ex.More(); ex.Next(), i++)
@@ -335,8 +335,8 @@ public static class MassPropertiesBuilder
 
         var bf = new FaceIntegrand();
         var bd = new Domain();
-        var fwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var rvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
+        var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
         Placement locDummy;
 
         for (ex.Init(s, ShapeType.Face), i = 1; ex.More(); ex.Next(), i++)
@@ -444,7 +444,7 @@ public static class MassPropertiesBuilder
         // once per unique solid and reuse via rigid transform for duplicates.
         bool hasSharedSolids = false;
         {
-            var seenSolids = new NCollection_Map<TShape>(ReferenceEqualityComparer.Instance);
+            var seenSolids = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
             for (var exS = new Explorer(s, ShapeType.Solid); exS.More(); exS.Next())
             {
                 if (!seenSolids.Add(exS.Current().TShape()!))
@@ -593,7 +593,7 @@ public static class MassPropertiesBuilder
         vProps.Assign(new Properties(p));
         if (onlyClosed)
         {
-            var shMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var shMap = new HashSet<Shape>(ShapeHasher.Instance);
             var ex = new Explorer(s, ShapeType.Shell);
             for (; ex.More(); ex.Next())
             {
@@ -645,7 +645,7 @@ public static class MassPropertiesBuilder
         double errorMax = 0.0, error = 0.0;
         if (onlyClosed)
         {
-            var shMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var shMap = new HashSet<Shape>(ShapeHasher.Instance);
             var ex = new Explorer(s, ShapeType.Shell);
             for (i = 1; ex.More(); ex.Next(), i++)
             {
@@ -697,8 +697,8 @@ public static class MassPropertiesBuilder
         var propDomain = new Domain();
         double localError;
         double error = 0.0;
-        var fwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var rvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
+        var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
 
         vProps.SetLocation(loc);
 
@@ -791,7 +791,7 @@ public static class MassPropertiesBuilder
             // To select closed shells.
             var exp = new Explorer();
             var closedShells = new NCollection_List<Shape>();
-            var shMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var shMap = new HashSet<Shape>(ShapeHasher.Instance);
 
             exp.Init(s, ShapeType.Shell);
 
@@ -871,8 +871,8 @@ public static class MassPropertiesBuilder
         var propDomain = new Domain();
         double localError;
         double error = 0.0;
-        var fwdFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var rvsFMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
+        var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
 
         vProps.SetLocation(loc);
 
@@ -958,7 +958,7 @@ public static class MassPropertiesBuilder
             // To select closed shells.
             var exp = new Explorer();
             var closedShells = new NCollection_List<Shape>();
-            var shMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var shMap = new HashSet<Shape>(ShapeHasher.Instance);
 
             exp.Init(s, ShapeType.Shell);
 

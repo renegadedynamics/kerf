@@ -227,7 +227,7 @@ public sealed class OffsetMakeLoops
         Loop loops = new();
         loops.VerticesForSubstitute(_verVerMap);
         Explorer exp = new();
-        NCollection_Map<Shape> mapExtent = new(ShapeHasher.Instance);
+        HashSet<Shape> mapExtent = new(ShapeHasher.Instance);
 
         using ProgressScope ps = new(range, "Building deepening faces", lContext.Extent());
         for (; it.More(); it.Next(), ps.Next())
@@ -237,7 +237,7 @@ public sealed class OffsetMakeLoops
                 return;
             }
             Face f = ShapeCasts.Face(it.Value());
-            NCollection_Map<Shape> mBound = new(ShapeHasher.Instance);
+            HashSet<Shape> mBound = new(ShapeHasher.Instance);
             //-----------------------------------------------
             // Initialisation of Loops.
             // F is reversed it will be added in myOffC.

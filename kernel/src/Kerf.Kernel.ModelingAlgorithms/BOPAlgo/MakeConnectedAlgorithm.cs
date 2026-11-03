@@ -312,7 +312,7 @@ public class MakeConnectedAlgorithm : Options
         // Extract the shapes from the compound arguments
         NCollection_List<Shape> la = new();
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
 
         NCollection_List<Shape>.Iterator itLA = new(_arguments);
         for (; itLA.More(); itLA.Next())
@@ -436,7 +436,7 @@ public class MakeConnectedAlgorithm : Options
 
         // Extract all non-compound shapes from the result
         NCollection_List<Shape> lShapes = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         AlgoTools.TreatCompound(_shape, lShapes, mFence);
 
         if (lShapes.IsEmpty())

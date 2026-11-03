@@ -445,7 +445,7 @@ internal static class DBRepCommands
                 return 1;
         }
 
-        var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var M = new HashSet<Shape>(ShapeHasher.Instance);
         M.Add(S);
         for (var ex = new Explorer(S, typ); ex.More(); ex.Next())
         {
@@ -497,7 +497,7 @@ internal static class DBRepCommands
         }
 
         var IMOStmp = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var MShape = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var MShape = new HashSet<Shape>(ShapeHasher.Instance);
         IMOStmp.Add(S);
         Exploration.MapShapes(S, typ, IMOStmp);
         // OCCT bug: one less than the sub-shapes when the shape is of the type itself (occt-issues.md)
@@ -863,7 +863,7 @@ internal static class DBRepCommands
             }
 
             di.Append("Number of shapes in ").Append(a[i]).Append("\n");
-            var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var M = new HashSet<Shape>(ShapeHasher.Instance);
             foreach ((ShapeType aType, string aLabel) in aTypes)
             {
                 int nbElem = 0;
@@ -878,7 +878,7 @@ internal static class DBRepCommands
                 di.Append(aLabel).Append(nbElem).Append("\n");
             }
 
-            di.Append(" SHAPE      : ").Append(M.Extent()).Append("\n");
+            di.Append(" SHAPE      : ").Append(M.Count).Append("\n");
             di.Append("\n");
         }
 

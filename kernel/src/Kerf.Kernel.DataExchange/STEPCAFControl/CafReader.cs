@@ -537,7 +537,7 @@ public class CafReader
     // function : FillShapesMap
     // purpose  : auxiliary: fill a map by all compounds and their components
     //=======================================================================
-    private static void FillShapesMap(Shape s, NCollection_Map<Shape> map)
+    private static void FillShapesMap(Shape s, HashSet<Shape> map)
     {
         Shape s0 = s.Located(new Placement());
         map.Add(s0);
@@ -626,8 +626,8 @@ public class CafReader
 
         // Fill a map of (top-level) shapes resulting from that transfer
         // Only these shapes will be considered further
-        NCollection_Map<Shape> shapesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        NCollection_Map<Shape> newShapesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        HashSet<Shape> shapesMap = new HashSet<Shape>(ShapeHasher.Instance);
+        HashSet<Shape> newShapesMap = new HashSet<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= num; i++)
         {
             FillShapesMap(reader.Shape(i), shapesMap);
@@ -881,7 +881,7 @@ public class CafReader
     /// Add a shape to a document Depending on a case, this shape can be added as one, or as assembly, or (in case if
     /// it is associated with external reference) taken as that referred shape
     /// </summary>
-    protected Label AddShape(Shape s, ExchangeDocument sTool, NCollection_Map<Shape> newShapesMap,
+    protected Label AddShape(Shape s, ExchangeDocument sTool, HashSet<Shape> newShapesMap,
                                     NCollection_DataMap<Shape, ProductDefinition> shapePDMap,
                                     NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap)
     {

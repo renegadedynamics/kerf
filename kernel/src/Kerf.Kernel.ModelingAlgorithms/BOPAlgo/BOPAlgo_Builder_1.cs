@@ -106,7 +106,7 @@ public partial class BooleanBuilder
     protected virtual void BuildResult(ShapeType type)
     {
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         // Iterate on all arguments of given type
         // and add their images into result
         NCollection_List<Shape>.Iterator itA = new(_arguments);
@@ -168,7 +168,7 @@ public partial class BooleanBuilder
     protected void FillImagesCompounds(ProgressRange range)
     {
         int i, nbS;
-        NCollection_Map<Shape> mfp = new(ShapeHasher.Instance);
+        HashSet<Shape> mfp = new(ShapeHasher.Instance);
         //
         nbS = _ds!.SourceShapeCount;
         using var ps = new ProgressScope(range, "Building splits of compounds", nbS);
@@ -245,7 +245,7 @@ public partial class BooleanBuilder
     }
 
     /// <summary>Makes the image of the compound (and of its sub-compounds) from the images of its components.</summary>
-    protected void FillImagesCompound(in Shape s, NCollection_Map<Shape> mfp)
+    protected void FillImagesCompound(in Shape s, HashSet<Shape> mfp)
     {
         bool bInterferred;
         Orientation orX;

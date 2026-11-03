@@ -275,7 +275,7 @@ public sealed class ShapeImage
     public void Filter(in Shape s, ShapeType t)
     {
         Explorer exp = new(s, t);
-        NCollection_Map<Shape> m = new(ShapeHasher.Instance);
+        HashSet<Shape> m = new(ShapeHasher.Instance);
         for (; exp.More(); exp.Next())
         {
             m.Add(exp.Current());

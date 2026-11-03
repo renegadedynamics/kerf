@@ -69,7 +69,7 @@ public class History : Transient
         new(ShapeHasher.Instance);
 
     // The removed shapes.
-    private readonly NCollection_Map<Shape> _removed = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _removed = new(ShapeHasher.Instance);
 
     /// <summary>An empty history.</summary>
     public History()
@@ -285,7 +285,7 @@ public class History : Transient
     public bool HasModified => !_shapeToModified.IsEmpty();
 
     /// <summary>True if some shape is removed.</summary>
-    public bool HasRemoved => !_removed.IsEmpty();
+    public bool HasRemoved => _removed.Count != 0;
 
     /// <summary>
     /// Merges the next history (from this history's results to a later algorithm's) into this one, so that it answers
@@ -308,11 +308,11 @@ public class History : Transient
         // Remember the propagated shapes.
         NCollection_DataMap<Shape, NCollection_List<Shape>>[] s1ToGAndM =
             [_shapeToGenerated, _shapeToModified];
-        var rPropagated = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var rPropagated = new HashSet<Shape>(ShapeHasher.Instance);
         {
             // Propagate R23, M23 and G23 to M12 and G12 directly.
             // Remember the propagated shapes.
-            var mAndGPropagated = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var mAndGPropagated = new HashSet<Shape>(ShapeHasher.Instance);
             for (int i = 0; i < 2; ++i)
             {
                 // OCCT.NET: the generated map gains keys while the modified map is walked (aI = 1), never the map
@@ -320,7 +320,7 @@ public class History : Transient
                 foreach (KeyValuePair<Shape, NCollection_List<Shape>> mIt1 in s1ToGAndM[i])
                 {
                     NCollection_List<Shape> l12 = mIt1.Value;
-                    NCollection_Map<Shape>[] additions =
+                    HashSet<Shape>[] additions =
                     [
                         new(ShapeHasher.Instance),
                         new(ShapeHasher.Instance)
@@ -356,7 +356,7 @@ public class History : Transient
                     }
 
                     Add(l12, additions[i]);
-                    if (i != 0 && !additions[0].IsEmpty())
+                    if (i != 0 && additions[0].Count != 0)
                     {
                         Shape s1 = mIt1.Key;
                         if (!s1ToGAndM[0].Find(s1, out NCollection_List<Shape>? gAndM))
@@ -435,7 +435,7 @@ public class History : Transient
     public void Dump(TextWriter s)
     {
         s.Write("History contains:\n");
-        s.Write(" - " + _removed.Extent() + " Deleted shapes;\n");
+        s.Write(" - " + _removed.Count + " Deleted shapes;\n");
         s.Write(" - " + _shapeToModified.Extent() + " Modified shapes;\n");
         s.Write(" - " + _shapeToGenerated.Extent() + " Generated shapes.\n");
     }
@@ -482,7 +482,7 @@ public class History : Transient
     }
 
     // Adds the elements of the list to the map.
-    private static void Add(NCollection_Map<Shape> map, NCollection_List<Shape> list)
+    private static void Add(HashSet<Shape> map, NCollection_List<Shape> list)
     {
         for (var sIt = new NCollection_List<Shape>.Iterator(list); sIt.More(); sIt.Next())
         {
@@ -491,7 +491,7 @@ public class History : Transient
     }
 
     // Adds the elements of the collection to the list.
-    private static void Add(NCollection_List<Shape> list, NCollection_Map<Shape> collection)
+    private static void Add(NCollection_List<Shape> list, HashSet<Shape> collection)
     {
         foreach (Shape s in collection)
         {

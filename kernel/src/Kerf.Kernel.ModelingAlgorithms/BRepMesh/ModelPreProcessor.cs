@@ -63,7 +63,7 @@ public class ModelPreProcessor : ModelAlgo
                          isOneThread);
 
         // Clean edges and faces from outdated polygons.
-        NCollection_Map<FaceModel> usedFaces = new(ReferenceEqualityComparer.Instance);
+        HashSet<FaceModel> usedFaces = new(ReferenceEqualityComparer.Instance);
         for (int edgeIt = 0; edgeIt < model.EdgesNb(); ++edgeIt)
         {
             EdgeModel dEdge = model.GetEdge(edgeIt);

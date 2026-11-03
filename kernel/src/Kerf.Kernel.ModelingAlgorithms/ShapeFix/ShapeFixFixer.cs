@@ -354,7 +354,7 @@ public static partial class ShapeFixFixer
         {
             return false;
         }
-        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapEdges = new HashSet<Shape>(ShapeHasher.Instance);
 
         var atempList = new NCollection_List<Shape>(lEdges);
         var alIter    = new NCollection_List<Shape>.Iterator(atempList);

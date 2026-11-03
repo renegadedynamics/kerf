@@ -625,12 +625,12 @@ public partial class PaveFiller
         NCollection_IntMap mvBounds = new(100);
         NCollection_IntMap mi = new(100);
         NCollection_IndexedMap<PaveBlock> mpbOnIn = new();
-        NCollection_Map<PaveBlock> mpbCommon = new();
+        HashSet<PaveBlock> mpbCommon = new();
         NCollection_IntDataMap<NCollection_List<int>> dmbv = new(100);
         NCollection_IntDataMap<double> mvTol = new(100);
         //
         // Cross-iteration collections (persist through entire loop)
-        NCollection_Map<PaveBlock> mpbAdd = new();
+        HashSet<PaveBlock> mpbAdd = new();
         NCollection_List<PaveBlock> lpb = new();
         NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mscpb = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, int> mvi = new(ShapeHasher.Instance);
@@ -1206,7 +1206,7 @@ public partial class PaveFiller
         // Avoid intersection of existing edges among themselves
         Compound existingEdges = new();
         new BrepBuilder().MakeCompound(ref existingEdges);
-        NCollection_Map<Shape> addedSD = new(ShapeHasher.Instance);
+        HashSet<Shape> addedSD = new(ShapeHasher.Instance);
         for (k = nbS; k > 0; --k)
         {
             Shape s = mscpb.FindKey(k);
@@ -1825,7 +1825,7 @@ public partial class PaveFiller
             // 2.2. Update information about pave blocks
             if (bEdges)
             {
-                NCollection_Map<PaveBlock> mpbFence = new();
+                HashSet<PaveBlock> mpbFence = new();
                 NCollection_IndexedMap<PaveBlock>[] pMPB = [fi.ChangePaveBlocksOn(),
                                                                   fi.ChangePaveBlocksIn(),
                                                                   fi.ChangePaveBlocksSc()];
@@ -1970,7 +1970,7 @@ public partial class PaveFiller
                                        double tolR3D,
                                        NCollection_IndexedMap<PaveBlock> mpbOnIn,
                                        BoxTree pbTree,
-                                       NCollection_Map<PaveBlock> mpbCommon,
+                                       HashSet<PaveBlock> mpbCommon,
                                        ref PaveBlock? aPBOut,
                                        ref double tolNew)
     {
@@ -2964,7 +2964,7 @@ public partial class PaveFiller
                                              NCollection_DataMap<Shape, int> mvi,
                                              NCollection_List<PaveBlock> lpbc,
                                              NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap,
-                                             NCollection_Map<PaveBlock> mpb)
+                                             HashSet<PaveBlock> mpb)
     {
         Box boxES = new();
         Bounds.Add(es, ref boxES, false);
@@ -3055,7 +3055,7 @@ public partial class PaveFiller
                                              NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> aMSCPB,
                                              NCollection_DataMap<Shape, int> aMVI,
                                              NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap,
-                                             NCollection_Map<PaveBlock> aMPB)
+                                             HashSet<PaveBlock> aMPB)
     {
         if (aDMBV.IsEmpty())
         {
@@ -3556,7 +3556,7 @@ public partial class PaveFiller
         Span<double> t = stackalloc double[2];
         bool bCB, bRebuild;
         NCollection_List<PaveBlock>.Iterator itPB = new();
-        NCollection_Map<PaveBlock> mpb = new();
+        HashSet<PaveBlock> mpb = new();
         NCollection_IntMap microEdges = new();
         //
         NCollection_List<PaveBlock> allPBs = new();
@@ -3935,7 +3935,7 @@ public partial class PaveFiller
         NCollection_IndexedDataMap<int, NCollection_List<PaveBlock>> mvipBs = new();
         NCollection_IntMap mviToReduce = new();
         // Fence map to avoid repeated checking of the same edge
-        NCollection_Map<PaveBlock> mpb = new();
+        HashSet<PaveBlock> mpb = new();
         //
         // 1. iterate on all sections F-F
         int nb = fFs.Length(), i;
@@ -4084,7 +4084,7 @@ public partial class PaveFiller
             Point3D p = Tool.Pnt(v);
             //
             // Avoid repeated checks
-            NCollection_Map<PaveBlock> mpbFence = new();
+            HashSet<PaveBlock> mpbFence = new();
             //
             NCollection_List<PaveBlock> lpb = mvipBs.FindFromIndex(i);
             NCollection_List<PaveBlock>.Iterator itLPB = new(lpb);
@@ -4244,7 +4244,7 @@ public partial class PaveFiller
     protected void RemoveMicroEdges()
     {
         // Fence map
-        NCollection_Map<PaveBlock> mpbFence = new();
+        HashSet<PaveBlock> mpbFence = new();
         // Resulting map of micro edges
         NCollection_IntMap microEdges = new();
         // Check all pave blocks from the pool to find the micro edges

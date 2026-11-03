@@ -225,7 +225,7 @@ public static class ShapeToHlr
     private static void ExploreShape(OutLiner s, HiddenLineData ds, NCollection_IndexedMap<Shape> fm,
                                      NCollection_IndexedMap<Shape> em)
     {
-        NCollection_Map<Shape> shapeMap = new(ShapeHasher.Instance);
+        HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
         Explorer exshell = new(), exface = new(), exedge = new();
         int i = 0;
         Shape original = s.InternalWorkingShape(); // decision 1095

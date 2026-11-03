@@ -66,7 +66,7 @@ public class ShellSplitter : BooleanAlgorithm
         Explorer exp = new();
         NCollection_List<Shape>.Iterator itF = new();
         CoupleOfShape csOff = new();
-        NCollection_Map<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance),
                                                                                   mefp = new(ShapeHasher.Instance);
         IntersectionContext context;
@@ -79,7 +79,7 @@ public class ShellSplitter : BooleanAlgorithm
         myLoops.Clear();
         //
         // Copy faces into the map, for recursive search of free bounds
-        NCollection_Map<Shape> mFaces = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mFaces = new(EqualityComparer<Shape>.Default);
         itF.Initialize(myShapes);
         for (; itF.More(); itF.Next())
         {
@@ -101,7 +101,7 @@ public class ShellSplitter : BooleanAlgorithm
                 }
             }
             //
-            int nbBegin = mFaces.Extent();
+            int nbBegin = mFaces.Count;
             // check the free edges
             int nbE = efMap.Extent();
             for (i = 1; i <= nbE; ++i)
@@ -119,14 +119,14 @@ public class ShellSplitter : BooleanAlgorithm
             }
             //
             // check if any faces have been removed
-            int nbEnd = mFaces.Extent();
+            int nbEnd = mFaces.Count;
             if ((nbEnd == nbBegin) || (nbEnd == 0))
             {
                 break;
             }
         }
         //
-        if (mFaces.IsEmpty())
+        if (mFaces.Count == 0)
         {
             return;
         }
@@ -134,7 +134,7 @@ public class ShellSplitter : BooleanAlgorithm
         // use only connected faces
         NCollection_List<Shape> lfConnected = new();
         // Boundary faces
-        NCollection_Map<Shape> boundaryFaces = new(ShapeHasher.Instance);
+        HashSet<Shape> boundaryFaces = new(ShapeHasher.Instance);
         itF.Initialize(myShapes);
         for (; itF.More(); itF.Next())
         {
@@ -296,7 +296,7 @@ public class ShellSplitter : BooleanAlgorithm
                 }
             }
             //
-            bAllFacesTaken = (addedFacesMap.Extent() == nbShapes);
+            bAllFacesTaken = (addedFacesMap.Count == nbShapes);
             if (bAllFacesTaken)
             {
                 break;
@@ -355,7 +355,7 @@ public class ShellSplitter : BooleanAlgorithm
         //
         // Find edges with more than 2 adjacent faces - branch edges -
         // edges on which the input shell should be split
-        NCollection_Map<Shape> meStop = new(ShapeHasher.Instance);
+        HashSet<Shape> meStop = new(ShapeHasher.Instance);
         //
         int i, nbMEF = mef.Extent();
         for (i = 1; i <= nbMEF; ++i)
@@ -412,7 +412,7 @@ public class ShellSplitter : BooleanAlgorithm
             }
         }
         //
-        if (meStop.IsEmpty())
+        if (meStop.Count == 0)
         {
             lShSp.Append(shell);
             return;
@@ -421,7 +421,7 @@ public class ShellSplitter : BooleanAlgorithm
         Builder bb = new();
         Explorer exp = new();
         NCollection_IndexedMap<Shape> mfb = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> mfProcessed = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mfProcessed = new(EqualityComparer<Shape>.Default);
         NCollection_List<Shape> lfp = new(), lfp1 = new();
         NCollection_List<Shape>.Iterator itLF = new(), itLFP = new();
         //

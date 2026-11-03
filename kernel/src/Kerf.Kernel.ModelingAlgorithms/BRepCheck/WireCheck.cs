@@ -112,7 +112,7 @@ public class WireCheck : ResultCheck
             // check if all edges are connected through vertices
             else if (nbedge >= 2)
             {
-                var mapE = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var mapE = new HashSet<Shape>(ShapeHasher.Instance);
                 exp.ReInit();
                 Propagate(_mapVE, exp.Current(), mapE);
                 for (exp.ReInit(); exp.More(); exp.Next())
@@ -276,7 +276,7 @@ public class WireCheck : ResultCheck
 
         var exp = new Explorer();
         var expv = new Explorer();
-        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
         var cradoc = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         _mapVE.Clear();
         // Checks if the oriented edges of the wire give a "closed" wire,
@@ -311,7 +311,7 @@ public class WireCheck : ResultCheck
             }
         }
 
-        int theNbori = mapS.Extent();
+        int theNbori = mapS.Count;
         if (theNbori >= 2)
         {
             mapS.Clear();
@@ -326,7 +326,7 @@ public class WireCheck : ResultCheck
             Propagate(_mapVE, exp.Current(), mapS);
         }
 
-        if (theNbori != mapS.Extent())
+        if (theNbori != mapS.Count)
         {
             _cstat = StatusCheck.NotConnected;
             if (update)
@@ -638,7 +638,7 @@ public class WireCheck : ResultCheck
         var listOfPassedEdge = new NCollection_List<Shape>();
         var exp = new Explorer();
         var vte = new Explorer();
-        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
         Edge theEdge = new(), theRef = new();
 
         // Checks the orientation of the edges
@@ -1201,7 +1201,7 @@ public class WireCheck : ResultCheck
                     Transition tr1, tr2;
                     var commonVertices = new NCollection_List<Shape>();
                     var itl = new NCollection_List<Shape>.Iterator();
-                    var vmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    var vmap = new HashSet<Shape>(ShapeHasher.Instance);
                     //
                     var it = new Iterator(e1);
                     for (; it.More(); it.Next())
@@ -1625,7 +1625,7 @@ public class WireCheck : ResultCheck
     // fill <mapE> with edges connected to <edg> through vertices contained in <mapVE>
     private static void Propagate(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
                                   in Shape edg,
-                                  NCollection_Map<Shape> mapE)
+                                  HashSet<Shape> mapE)
     {
         var currentEdges = new NCollection_List<Shape>();
         currentEdges.Append(edg);
@@ -1671,7 +1671,7 @@ public class WireCheck : ResultCheck
 
     // The orientation of the key of <mapE> that is the same edge as <edg>. The map compares with IsSame, so it
     // holds one such key and OCCT's map order doesn't matter.
-    private static Orientation GetOrientation(NCollection_Map<Shape> mapE, in Edge edg)
+    private static Orientation GetOrientation(HashSet<Shape> mapE, in Edge edg)
     {
         Shape key = new();
         foreach (Shape itm in mapE)
@@ -1913,8 +1913,8 @@ public class WireCheck : ResultCheck
         // Check 2d distance for periodic faces with seam edge.
         // Searching for seam edges
         var seamEdges = new NCollection_List<Shape>();
-        var notSeams = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var closedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var notSeams = new HashSet<Shape>(ShapeHasher.Instance);
+        var closedEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var exp = new Explorer(face, ShapeType.Edge);
 
         for (; exp.More(); exp.Next())
