@@ -92,16 +92,15 @@ public class CurveOnSurface : CurveAdaptorBase
                                         in Vector3D d3UUV,
                                         in Vector3D d3UVV)
     {
-        // OCCT: this is not the third derivative of S(u(t), v(t)). D1U is weighted by DW.X() where the chain rule
-        // has D3W.X() (first line), and D3UVV ends up with 5 u' v'^2 instead of 3 u' v'^2 (the second V32 line
-        // repeats it). Ported as is; Adaptor3d_CurveOnSurfaceTests.EvalD3_OcctFormula_DiffersFromDerivative.
+        // The third derivative of S(u(t), v(t)) by the chain rule (OCCT weighted D1U by u' for u''' and gave D3UVV
+        // 5 u' v'^2 for 3 u' v'^2; Kerf decision 16805)
         Vector3D v31 = new Vector3D(), v32 = new Vector3D(), v33 = new Vector3D(), v34 = new Vector3D(), v3 = new Vector3D();
 
-        v31 = Vector3D.LinearForm(dw.X(), d1U, d2W.X() * dw.X(), d2U, d2W.X() * dw.Y(), d2UV);
+        v31 = Vector3D.LinearForm(d3W.X(), d1U, d2W.X() * dw.X(), d2U, d2W.X() * dw.Y(), d2UV);
         v31 = Vector3D.LinearForm(d3W.Y(), d1V, d2W.Y() * dw.X(), d2UV, d2W.Y() * dw.Y(), d2V, v31);
 
         v32 = Vector3D.LinearForm(dw.X() * dw.X() * dw.Y(), d3UUV, dw.X() * dw.Y() * dw.Y(), d3UVV);
-        v32 = Vector3D.LinearForm(d2W.X() * dw.Y() + dw.X() * d2W.Y(), d2UV, dw.X() * dw.Y() * dw.Y(), d3UVV, v32);
+        v32 = Vector3D.LinearForm(d2W.X() * dw.Y() + dw.X() * d2W.Y(), d2UV, v32);
         v33 = Vector3D.LinearForm(2 * d2W.X() * dw.X(), d2U, dw.X() * dw.X() * dw.X(), d3U, dw.X() * dw.X() * dw.Y(), d3UUV);
 
         v34 = Vector3D.LinearForm(2 * d2W.Y() * dw.Y(), d2V, dw.Y() * dw.Y() * dw.X(), d3UVV, dw.Y() * dw.Y() * dw.Y(), d3V);

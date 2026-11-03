@@ -17,21 +17,19 @@ public class Adaptor3d_CurveOnSurfaceTests
 
     private readonly struct Ref
     {
-        public readonly Vector3D P, D1, D2, D3, D3Occt;
+        public readonly Vector3D P, D1, D2, D3;
 
-        public Ref(Vector3D p, Vector3D d1, Vector3D d2, Vector3D d3, Vector3D d3Occt)
+        public Ref(Vector3D p, Vector3D d1, Vector3D d2, Vector3D d3)
         {
             P = p;
             D1 = d1;
             D2 = d2;
             D3 = d3;
-            D3Occt = d3Occt;
         }
     }
 
     /// <summary>
-    /// S(C(t)) and its derivatives by the chain rule; D3Occt is what OCCT's formula computes (occt-issues.md:
-    /// Su is weighted by u' instead of u''', Suvv by 5u'v'^2 instead of 3u'v'^2).
+    /// S(C(t)) and its derivatives by the chain rule.
     /// </summary>
     private static Ref Reference(Surface theS, Curve2D theC, double t)
     {
@@ -45,8 +43,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         Vector3D common = r.D3U * (u1 * u1 * u1) + r.D3UUV * (3 * u1 * u1 * v1) + r.D3V * (v1 * v1 * v1)
                         + r.D2U * (3 * u1 * u2) + r.D2UV * (3 * (u1 * v2 + u2 * v1)) + r.D2V * (3 * v1 * v2) + r.D1V * v3;
         Vector3D D3 = common + r.D3UVV * (3 * u1 * v1 * v1) + r.D1U * u3;
-        Vector3D D3Occt = common + r.D3UVV * (5 * u1 * v1 * v1) + r.D1U * u1;
-        return new Ref(P, D1, D2, D3, D3Occt);
+        return new Ref(P, D1, D2, D3);
     }
 
     private static void Near(Vector3D theExpected, Vector3D theActual, string theWhat, double theTol = Tol)
@@ -58,7 +55,7 @@ public class Adaptor3d_CurveOnSurfaceTests
 
     /// <summary>Compares D0 to D2 (and D3, unless theSkipD3) with the reference at the ends, the knots and inside.</summary>
     private static void CheckEval(CurveOnSurface theCOS, Surface theS, Curve2D theC,
-                                  IEnumerable<double> theParams, bool theOcctD3 = false, double theTol = Tol)
+                                  IEnumerable<double> theParams, double theTol = Tol)
     {
         foreach (double t in theParams)
         {
@@ -75,7 +72,7 @@ public class Adaptor3d_CurveOnSurfaceTests
             Near(r.P, new Vector3D(P3.XYZ()), $"D3 P({t})", theTol);
             Near(r.D1, X1, $"D3 V1({t})", theTol);
             Near(r.D2, X2, $"D3 V2({t})", theTol);
-            Near(theOcctD3 ? r.D3Occt : r.D3, X3, $"D3({t})", theTol);
+            Near(r.D3, X3, $"D3({t})", theTol);
             Near(r.D1, theCOS.DN(t, 1), $"DN1({t})", theTol);
             Near(r.D2, theCOS.DN(t, 2), $"DN2({t})", theTol);
         }
@@ -170,7 +167,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         Assert.True(aCOSE.IsPeriodic);
         // An ellipse goes through the general path; on a plane the second derivatives vanish, so D3 is exact
         // except for OCCT's u' in place of u''' (see Reference).
-        CheckEval(aCOSE, aPlane, anEllipse, Params(0.0, 2 * Math.PI), theOcctD3: true);
+        CheckEval(aCOSE, aPlane, anEllipse, Params(0.0, 2 * Math.PI));
         for (int i = 0; i < 8; i++)
         {
             double t = i * 0.7;
@@ -245,7 +242,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
         Assert.Equal(OtherCurve, aCOS.GetType());
         // A 2D line has u''' = 0 but u' != 0, and Suvv = 0 on a cylinder: OCCT's D3 adds Su * u'.
-        CheckEval(aCOS, aCyl, aLine, Params(-1, 2), theOcctD3: true);
+        CheckEval(aCOS, aCyl, aLine, Params(-1, 2));
     }
 
     [Fact]
@@ -256,7 +253,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         var aCOS = new CurveOnSurface(new CurveAdaptor2D(aC), new TestSurfaceAdaptor(aSurf));
         Assert.Equal(OtherCurve, aCOS.GetType());
         // The ends go through myFirstSurf / myLastSurf (patches located by LocatePart)
-        CheckEval(aCOS, aSurf, aC, Params(0.0, 1.0, 0.5, 1e-11, 1.0 - 1e-11), theOcctD3: true, theTol: 1e-8);
+        CheckEval(aCOS, aSurf, aC, Params(0.0, 1.0, 0.5, 1e-11, 1.0 - 1e-11), theTol: 1e-8);
         Assert.True(aCOS.IsRational == false);
         Assert.Equal(3, aCOS.Degree());
         Assert.Equal(5, aCOS.PoleCount);
@@ -286,7 +283,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         double aLen = 0.4;
         var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0.0, aLen), new TestSurfaceAdaptor(aSurf));
         // A 2D line on a non-planar surface: OCCT's D3 formula (see Reference)
-        CheckEval(aCOS, aSurf, aLine, Params(0.0, aLen), theOcctD3: true, theTol: 1e-8);
+        CheckEval(aCOS, aSurf, aLine, Params(0.0, aLen), theTol: 1e-8);
     }
 
     [Fact]
@@ -319,7 +316,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         {
             var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0, aRange), aSA);
             Assert.Equal(OtherCurve, aCOS.GetType());
-            CheckEval(aCOS, aSurf, aLine, Params(0, aRange), theOcctD3: true, theTol: 1e-8);
+            CheckEval(aCOS, aSurf, aLine, Params(0, aRange), theTol: 1e-8);
         }
     }
 
@@ -465,7 +462,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         {
             Assert.True(a3d.Value(t).IsEqual(aPlane.Value(aBS.Value(t).X(), aBS.Value(t).Y()), Tol));
         }
-        CheckEval(aCOS, aPlane, aBS, Params(0, 1, 0.5), theOcctD3: true);
+        CheckEval(aCOS, aPlane, aBS, Params(0, 1, 0.5));
 
         NCollection_Array1<Point2D> aPoles = new(1, 4);
         aPoles[1] = new Point2D(0, 0);
@@ -499,10 +496,11 @@ public class Adaptor3d_CurveOnSurfaceTests
     }
 
     [Fact]
-    public void EvalD3_OcctFormula_DiffersFromDerivative()
+    public void EvalD3_FollowsTheChainRule()
     {
-        // OCCT bug (occt-issues.md): the general D3 weights Su by u' instead of u''' and Suvv by 5u'v'^2 instead of
-        // 3u'v'^2. A finite difference of D2 agrees with the chain rule, not with OCCT's D3.
+        // occt-issues.md, Adaptor3d_CurveOnSurface::EvalD3 (Kerf decision 16805): OCCT's general D3 weighted Su by u'
+        // instead of u''' and Suvv by 5u'v'^2 instead of 3u'v'^2, off by about 0.9 here. D3 is now the chain rule's,
+        // which a finite difference of D2 agrees with.
         CylindricalSurface aCyl = new CylindricalSurface(SomeAxes(), 2.0);
         LineCurve2D aLine = Line2d(0.3, -1.0, 1, 2);
         var aCOS = new CurveOnSurface(new CurveAdaptor2D(aLine, -1, 2), new TestSurfaceAdaptor(aCyl));
@@ -510,7 +508,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         Vector3D aFD = (aCOS.DN(t + h, 2) - aCOS.DN(t - h, 2)) / (2 * h);
         Ref r = Reference(aCyl, aLine, t);
         Near(r.D3, aFD, "chain rule vs finite difference", 1e-6);
-        Assert.True((aCOS.DN(t, 3) - aFD).Magnitude() > 0.1);
-        Near(r.D3Occt, aCOS.DN(t, 3), "OCCT's formula");
+        Near(aFD, aCOS.DN(t, 3), "D3 vs finite difference", 1e-6);
+        Near(r.D3, aCOS.DN(t, 3), "D3 vs the chain rule");
     }
 }

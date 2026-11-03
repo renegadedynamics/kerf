@@ -14982,3 +14982,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `DN(u, 3)`, Adaptor2d_OffsetCurve's D3 and the adaptors' DN(3) agree with each other and with a finite
        difference of D2. The two port tests that pinned OCCT's values check exactly that (offset 0.5 of the ellipse
        (3, 1) at 0.7); the grid consistency tests no longer allow the adaptor's DN(3) to throw.
+16805. **A curve on a surface has the chain rule's third derivative** (occt-issues.md,
+       Adaptor3d_CurveOnSurface::EvalD3). The general path's linear form weights D1U by u‴ (OCCT: u′) and gives
+       D3UVV 3u′v′² (OCCT: 5u′v′², its second V32 line repeating the term). `Adaptor3d_CurveOnSurfaceTests` drops the
+       OCCT formula from its reference: the six evaluations that compared D3 with it compare with the chain rule, and
+       the test that pinned the difference (a line of slope (1, 2) on a cylinder of radius 2, off by about 0.9) checks
+       D3 against the chain rule and a finite difference of D2.
