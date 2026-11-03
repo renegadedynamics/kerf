@@ -15103,10 +15103,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1483. **The tests.** ModelingData 3,149 → 3,146 (GProp_ElementaryTests' twelve replaced by six; three new),
        ModelingAlgorithms 4,814 → 4,824 (9 skipped; ten new), the oracle 383, DataExchange 276 (1 skipped), the modelling
        layer 1,884: all pass. The tests rewritten to the corrected behaviour are the ones the decisions above name. The
-       recordings moved to plan 3.2's third level, each with its reason: IntAna2d's circle pairs (16706), SLProps' first
-       calls (16711), BRepGProp's face tool (16710), the GTransform oracle on native shapes (16719), the MakeFillet2d
-       oracle's rectangles with a hole (16717), the filling recordings' rational Coons cases (16720) and the sweep
-       recordings' secgen cases (16722). Draw-lite's cases for these rows (the fillet2d, chamfer, feat, nproject and
+       recordings moved to plan 3.2's third level, each with its reason: IntAna2d's circle pairs (1464), SLProps' first
+       calls (1467), BRepGProp's face tool (1469), the GTransform oracle on native shapes (1476), the MakeFillet2d
+       oracle's rectangles with a hole (1474), the filling recordings' rational Coons cases (1479) and the sweep
+       recordings' secgen cases (1481). Draw-lite's cases for these rows (the fillet2d, chamfer, feat, nproject and
        mkface groups, geometry/project, lowalgos' extcc, extcs, 2dinter and 2dapprox grids, bugs/filling, and the bugs
        cases using the fillet, chamfer, feature, filling, projection, extrema, properties and continuity commands:
        2,833 cases, 1,552 OK) were run before and after: no case's status changed, and no override was needed. Working

@@ -1877,6 +1877,6 @@ the triage).
   axis direction; NurbsConvert and GTransform keep a meshed face's surface; rational Coons fillings keep their
   boundaries; a revolved feature up to a face at an angle chooses as Perform(Until) does; the sweep section generator
   moves its sections along the path; ExtendFace no longer extends an infinite side.
-- Left, with reasons: AdvApp2Var's error estimate (decision 16712), and the row about ExtendFace losing a location,
-  which wasn't a bug (16723).
+- Left, with reasons: AdvApp2Var's error estimate (decision 1482), and the row about ExtendFace losing a location,
+  which wasn't a bug (1477).
 - Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
