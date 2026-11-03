@@ -39,8 +39,7 @@ namespace Kerf.Engine.Fillets;
 /// <remarks>
 /// A working object of the fillet algorithms (decision 21), ported over OCCT's files: this file (the header and
 /// <c>ChFi3d_ChBuilder.cxx</c>), <c>_C2</c> and <c>_C3</c> (corners). Ported in unit 7N2 so that the builder can be
-/// compared with native OCCT end to end; the API wrappers are unit 7N3's. Edges and faces given by the caller are mapped
-/// onto the builder's working copy (<see cref="FilletBuilderBase.ToWork"/>). OCCT_DEBUG blocks (traces) are left out.
+/// compared with native OCCT end to end; the API wrappers are unit 7N3's. OCCT_DEBUG blocks (traces) are left out.
 /// </remarks>
 public partial class ChBuilder : FilletBuilderBase
 {
@@ -184,7 +183,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void Add(in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         Face dummy = new();
 
         if (Contains(E) == 0 && _efMap.Contains(E))
@@ -216,7 +215,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void Add(double dis, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (Contains(E) == 0 && _efMap.Contains(E))
         {
 
@@ -253,7 +252,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void SetDist(double dis, int ic, in Face f)
     {
-        Face F = ShapeCasts.Face(ToWork(f)); // the working copy's (OCCT.NET)
+        Face F = ShapeCasts.Face(f);
 
         if (ic <= NbElements())
         {
@@ -312,8 +311,8 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void Add(double dis1, double dis2, in Edge e, in Face f)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
-        Face F = ShapeCasts.Face(ToWork(f)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
+        Face F = ShapeCasts.Face(f);
         if (Contains(E) == 0 && _efMap.Contains(E))
         {
 
@@ -353,7 +352,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void SetDists(double dis1, double dis2, int ic, in Face f)
     {
-        Face F = ShapeCasts.Face(ToWork(f)); // the working copy's (OCCT.NET)
+        Face F = ShapeCasts.Face(f);
 
         if (ic <= NbElements())
         {
@@ -428,8 +427,8 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void AddDA(double dis1, double angle, in Edge e, in Face f)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
-        Face F = ShapeCasts.Face(ToWork(f)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
+        Face F = ShapeCasts.Face(f);
         if (Contains(E) == 0 && _efMap.Contains(E))
         {
 
@@ -462,7 +461,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void SetDistAngle(double dis, double angle, int ic, in Face f)
     {
-        Face F = ShapeCasts.Face(ToWork(f)); // the working copy's (OCCT.NET)
+        Face F = ShapeCasts.Face(f);
 
         if (ic <= NbElements())
         {
@@ -556,6 +555,7 @@ public partial class ChBuilder : FilletBuilderBase
 
     public void Simulate(int ic)
     {
+        using WorkingOverlay.Scope scope = EnterOverlay(); // Kerf: the elementary spines' 3D curves (unit 10H5)
         NCollection_List<Stripe>.Iterator itel = new();
         int i = 1;
         for (itel.Initialize(_listStripe); itel.More(); itel.Next(), i++)

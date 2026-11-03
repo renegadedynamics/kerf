@@ -16,6 +16,7 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -696,12 +697,13 @@ public sealed partial class PlanarBuilder
 
     // OCCT.NET: frozen (decision 855). OCCT's B.UpdateVertex(NewExtr, param, AdjEdge, tol) gives the new vertex its
     // points on the adjacent edge's curves (the vertex isn't on the edge, so nothing else of the edge is read), raises
-    // its tolerance, and sets the edge's Modified flag. When the adjacent edge is frozen (the caller's, or one the
-    // builder published), the same call goes through an EmptyCopied stand-in, which has the edge's representations and
-    // location: the vertex gets OCCT's points, and the edge's flag is left as it is.
+    // its tolerance, and sets the edge's Modified flag. When the adjacent edge is read-only (frozen, the caller's or one
+    // the builder published, and no working overlay here takes the write), the same call goes through an EmptyCopied
+    // stand-in, which has the edge's representations and location: the vertex gets OCCT's points, and the edge's flag
+    // is left as it is.
     private static void UpdateNewVertex(BrepBuilder b, in Vertex v, double par, in Edge e, double tol)
     {
-        if (e.TShape()!.IsFrozen && !Tool.Degenerated(e))
+        if (WorkingOverlay.IsReadOnly(e.TShape()!) && !Tool.Degenerated(e))
         {
             b.UpdateVertex(v, par, ShapeCasts.Edge(e.EmptyCopied()), tol);
             return;

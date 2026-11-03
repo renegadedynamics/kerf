@@ -48,7 +48,8 @@ namespace Kerf.Engine.Fillets;
 /// into shells by connexity, and a solid. The queries (5) answer from the maps those steps fill.
 /// </para>
 /// <para>
-/// <b>Shapes.</b> The input is the fillet builder's working copy (decision 1087): the reconstruction writes only into
+/// <b>Shapes.</b> The input is the shape the fillet builder works on, in its working overlay (decision 1087, unit
+/// 10H5): the reconstruction writes only into
 /// the shapes it makes (vertices of points, edges, parts and pieces, faces, shells, solids), and reuses the input's
 /// faces and edges left whole and its vertices. Nothing is frozen here: ChFi3d's <c>Compute</c> raises the tolerances
 /// of vertices, makes the new faces same-parameter and codes the regularities on the result afterwards; the builder

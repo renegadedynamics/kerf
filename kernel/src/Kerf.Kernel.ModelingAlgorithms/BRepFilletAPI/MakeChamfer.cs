@@ -222,7 +222,7 @@ public class MakeChamfer : LocalOperation
     {
         Spine spine = _builder.Value(i)!;
         Edge s = spine.Edges(j);
-        return ShapeCasts.Edge(_builder.FromWork(s)); // the caller's (OCCT.NET)
+        return ShapeCasts.Edge(s);
     }
 
     //=================================================================================================
@@ -371,7 +371,7 @@ public class MakeChamfer : LocalOperation
     // builds IN only, decision 1110).
     internal override NCollection_List<Shape> InternalModified(in Shape f)
     {
-        Shape F = _builder.ToWork(f); // the working copy's (OCCT.NET)
+        Shape F = f;
         _generated.Clear();
 
         if (_builder.Builder().IsSplit(F, Out))
@@ -406,7 +406,7 @@ public class MakeChamfer : LocalOperation
     /// <summary>True if the face <paramref name="f"/> is neither in the result nor split.</summary>
     public override bool IsDeleted(in Shape f)
     {
-        Shape work = _builder.ToWork(f); // the working copy's (OCCT.NET)
+        Shape work = f;
         return !(_map.Contains(f) || _map.Contains(work) || _builder.Builder().IsSplit(work, Out)
                  || _builder.Builder().IsSplit(work, In)
                  || _builder.Builder().IsSplit(work, On));

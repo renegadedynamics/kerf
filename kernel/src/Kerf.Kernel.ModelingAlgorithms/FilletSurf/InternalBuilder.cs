@@ -14,6 +14,7 @@ using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -32,8 +33,9 @@ namespace Kerf.Engine.Fillets.Surfaces;
 /// </summary>
 /// <remarks>
 /// It never runs <see cref="FilletBuilderBase.Compute"/>, so the reconstruction (decision 992) is created and never used,
-/// as OCCT's HBuilder (plan 1.3). The caller's edges are mapped onto the builder's working copy, and the support faces
-/// handed back are the caller's (decision 1119).
+/// as OCCT's HBuilder (plan 1.3). It works on the caller's shape: <see cref="Perform"/> and <see cref="Simulate"/> write
+/// the spine's 3D curves in the builder's working overlay (unit 10H5), and the support faces handed back are the
+/// caller's.
 /// </remarks>
 internal sealed class InternalBuilder : FilBuilder
 {
@@ -152,11 +154,10 @@ internal sealed class InternalBuilder : FilBuilder
         {
             return 1;
         }
-        // OCCT.NET: the caller's edges on the working copy (decision 1119)
         NCollection_List<Shape> E = new();
         foreach (Shape anE in e)
         {
-            E.Append(ToWork(anE));
+            E.Append(anE);
         }
         NCollection_List<Shape>.Iterator it = new();
         // OCCT: the inner loop re-initializes It, the outer loop's iterator, on the edge's faces; the outer loop then
@@ -295,6 +296,7 @@ internal sealed class InternalBuilder : FilBuilder
 
     internal void Perform()
     {
+        using WorkingOverlay.Scope scope = EnterOverlay(); // Kerf: the elementary spines' 3D curves (unit 10H5)
         // PerformSetOfSurfOnElSpine is enough.
 
         Stripe stripe = _listStripe.First();
@@ -515,7 +517,7 @@ internal sealed class InternalBuilder : FilBuilder
     {
         int isurf = _listStripe.First().SetOfSurfData().Value(index).IndexOfS1();
 
-        return ShapeCasts.Face(FromWork(_ds.Shape(isurf))); // the caller's (OCCT.NET)
+        return ShapeCasts.Face(_ds.Shape(isurf));
     }
 
     //=======================================================================
@@ -527,7 +529,7 @@ internal sealed class InternalBuilder : FilBuilder
     {
         int isurf = _listStripe.First().SetOfSurfData().Value(index).IndexOfS2();
 
-        return ShapeCasts.Face(FromWork(_ds.Shape(isurf))); // the caller's (OCCT.NET)
+        return ShapeCasts.Face(_ds.Shape(isurf));
     }
 
     //===============================================================================
@@ -700,6 +702,7 @@ internal sealed class InternalBuilder : FilBuilder
 
     internal void Simulate()
     {
+        using WorkingOverlay.Scope scope = EnterOverlay(); // Kerf: the elementary spines' 3D curves (unit 10H5)
         // ChFi3d_FilBuilder::Simulate(1);
         Stripe stripe = _listStripe.First();
         ref NCollection_HSequence<SurfData> hData = ref stripe.ChangeSetOfSurfData();
