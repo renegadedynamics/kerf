@@ -11,6 +11,15 @@ three-cad-viewer reads (its "version 3" format, as ocp-tessellate writes it). **
 and its formats.** This library should not know about Bento, three-cad-viewer or its JSON. It needs to provide plain
 geometry, mostly a good tessellation API (section 3).
 
+> **Since this was written (November 2026):** native OCCT and the forwarding layer are gone (unit 10B, decisions 1341 to
+> 1348). The modelling layer is managed code over the kernel's assemblies, so everything below about native DLLs, their
+> loading, native faults, `OcctException`, `OcctContext` and memory pressure is history: there is no native folder to
+> load, faults are .NET exceptions, failures reach callers as the kernel's exceptions (`FailureException` and its
+> subclasses; `OcctType` gives OCCT's name) until unit 10F's results replace them, and the GC sees all memory. The
+> project is now **Kerf** (unit 10E): the modelling layer is `Kerf.Modeling` (namespace `Kerf.Modeling`) over
+> `Kerf.Kernel.*`, and Bento moves to those packages in unit 10N. The requests and replies below are kept as they were
+> made, under the names of the time.
+
 ## 1. How Bento will use the library
 
 - Formulas use **algebra mode only**. A cell holds one immutable shape, and the next cell transforms it:

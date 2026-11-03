@@ -6,8 +6,8 @@ projection and intersection members are extension members declared in ModelingAl
 ## Main types
 
 **Values** (gp, `readonly struct`; README section 4): `Point3D`, `Vector3D`, `Direction3D`, `Axis3D`, `Frame3D`,
-`CoordinateSystem3D`, `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, `Line3D`, `Circle3D`, `Ellipse3D`,
-`Hyperbola3D`, `Parabola3D`, `Plane3D`, `Cylinder3D`, `Cone3D`, `Sphere3D`, `Torus3D`, and the 2D twins; enums
+`CoordinateSystem`, `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, `Line3D`, `Circle3D`, `Ellipse3D`,
+`Hyperbola3D`, `Parabola3D`, `Plane3D`, `Cylinder`, `Cone`, `Sphere`, `Torus`, and the 2D twins; enums
 `EulerSequence`, `TransformForm`, `Continuity`, `CurveKind`, `SurfaceKind`, `JoinKind`. New: `BoundingBox`,
 `OrientedBox`, `Interval`, `Tolerances`, `Grid<T>`, `CurvePoint`, `SurfacePoint`.
 
@@ -34,7 +34,7 @@ public readonly struct Transform3D
     public static Transform3D Rotation(EulerSequence sequence, double alpha, double beta, double gamma);
     public static Transform3D Scale(Point3D centre, double factor);
     public static Transform3D Mirror(in Frame3D plane);
-    public static Transform3D Between(in CoordinateSystem3D from, in CoordinateSystem3D to);
+    public static Transform3D Between(in CoordinateSystem from, in CoordinateSystem to);
     public TransformForm Form { get; }
     public double ScaleFactor { get; }
     public Vector3D TranslationPart { get; }

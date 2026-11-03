@@ -1,0 +1,1002 @@
+# The renames unit 10E's kerf-rename runs dropped, with the reason (decisions 15301 to 15304): each is a keep entry in
+# kerf-rename's format, by the id the symbol had when its assembly was renamed (Foundation, ModelingData,
+# ModelingAlgorithms, DataExchange, in that order). Apply kerf.map with these to other code (Bento, 10N).
+# Locals dropped the same way aren't listed: they have no id.
+
+# Foundation
+keep M:Occt.BSplCLib.AntiBoorScheme(System.Double,System.Int32,System.ReadOnlySpan{System.Double},System.Int32,System.Span{System.Double},System.Int32,System.Int32,System.Double)~System.Boolean#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.BoorScheme(System.Double,System.Int32,System.ReadOnlySpan{System.Double},System.Int32,System.Span{System.Double},System.Int32,System.Int32)#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.BuildBoor(System.Int32,System.Int32,System.Int32,Occt.NCollection_Array1{System.Double},System.Span{System.Double})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib.D0(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.D0(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib.D1(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.D1(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib.D2(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Double@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.D2(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib.D3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Double@,System.Double@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.D3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib.DN(System.Double,System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.DN(System.Double,System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib.Eval(System.Double,System.Int32,System.ReadOnlySpan{System.Double},System.Int32,System.Span{System.Double})#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.Eval(System.Double,System.Int32,System.ReadOnlySpan{System.Double},System.Int32,System.Span{System.Double})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib.FlatIndex(System.Int32,System.Int32,Occt.NCollection_Array1{System.Int32},System.Boolean)~System.Int32#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.GetPole(System.Int32,System.Int32,System.Int32,System.Int32,System.Span{System.Double},System.Int32@,Occt.NCollection_Array1{System.Double})#Pole  # 'pole' would also name local pole
+keep M:Occt.BSplCLib.InsertKnots(System.Int32,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double,System.Boolean)#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.InsertKnots(System.Int32,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double,System.Boolean)#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib.Knots(Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Boolean)#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.LocateParameter(Occt.NCollection_Array1{System.Double},System.Double,System.Boolean,System.Int32,System.Int32,System.Int32@,System.Double@,System.Double,System.Double)#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.MergeBSplineKnots(System.Double,System.Double,System.Double,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Int32@,Occt.NCollection_HArray1{System.Double}@,Occt.NCollection_HArray1{System.Int32}@)#Knots1  # 'knots1' would also name local knots1
+keep M:Occt.BSplCLib.MergeBSplineKnots(System.Double,System.Double,System.Double,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Int32@,Occt.NCollection_HArray1{System.Double}@,Occt.NCollection_HArray1{System.Int32}@)#Knots2  # 'knots2' would also name local knots2
+keep M:Occt.BSplCLib.RemoveKnot(System.Int32,System.Int32,System.Int32,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double)~System.Boolean#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib.RemoveKnot(System.Int32,System.Int32,System.Int32,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double)~System.Boolean#Knots  # 'knots' would also name local knots
+keep M:Occt.BSplCLib.RemoveKnot(System.Int32,System.Int32,System.Int32,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double)~System.Boolean#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_BuildCache``3(System.Double,System.Double,System.Boolean,System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double})#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D0``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D0``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D1``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D1``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D2``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@,``1@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D2``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@,``1@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D3``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@,``1@,``1@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_D3``3(System.Double,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``0@,``1@,``1@,``1@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_DN``3(System.Double,System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``1@)#Index  # 'index' would also name local index
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_DN``3(System.Double,System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},``1@)#U  # 'u' would also name local u
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_IncreaseDegree``3(System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_InsertKnots``3(System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double,System.Boolean)#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_RemoveKnot``3(System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double)~System.Boolean#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_Trimming``3(System.Int32,System.Boolean,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},System.Double,System.Double,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplCLib_CurveComputation.BSplCLib_Unperiodize``3(System.Int32,Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{``0},Occt.NCollection_Array1{System.Double})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplSLib.IncreaseDegree(System.Boolean,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32})#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplSLib.InsertKnots(System.Boolean,System.Int32,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double,System.Boolean)#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplSLib.PrepareEval(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Int32@,System.Int32@,System.Boolean@,Occt.BSplSLib.BSplSLib_DataContainer)~System.Boolean#Poles  # 'poles' would also name local poles, local poles
+keep M:Occt.BSplSLib.PrepareEval(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Int32@,System.Int32@,System.Boolean@,Occt.BSplSLib.BSplSLib_DataContainer)~System.Boolean#Uindex  # 'uindex' would also name local uindex
+keep M:Occt.BSplSLib.PrepareEval(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Int32},System.Double@,System.Double@,System.Int32@,System.Int32@,System.Boolean@,Occt.BSplSLib.BSplSLib_DataContainer)~System.Boolean#Vindex  # 'vindex' would also name local vindex
+keep M:Occt.BSplSLib.RemoveKnot(System.Boolean,System.Int32,System.Int32,System.Int32,System.Boolean,Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Int32},System.Double)~System.Boolean#Poles  # 'poles' would also name local poles
+keep M:Occt.BSplSLib.Unperiodize(System.Boolean,System.Int32,Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double},Occt.NCollection_Array1{System.Int32},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array2{Occt.gp_Pnt},Occt.NCollection_Array2{System.Double})#Poles  # 'poles' would also name local poles
+keep M:Occt.BVH_DistanceFieldTools`2.SquareDistanceToObject(Occt.BVH_Object{`0,`1},`1@,System.Boolean@)~`0#theObject  # 'object' is reserved
+keep M:Occt.BVH_Distance`4.SetObject(`2@)#theObject  # 'object' is reserved
+keep M:Occt.BVH_EncodedLink.#ctor(System.UInt32,System.Int32)#theFirst  # 'first' would also name field first
+keep M:Occt.BVH_EncodedLink.#ctor(System.UInt32,System.Int32)#theSecond  # 'second' would also name field second
+keep M:Occt.Bnd_Box.Update(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#X  # 'x' would also name parameter x
+keep M:Occt.Bnd_Box.Update(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#Y  # 'y' would also name parameter y
+keep M:Occt.Bnd_Box.Update(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#Z  # 'z' would also name parameter z
+keep M:Occt.Bnd_Box.Updated(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.Bnd_Box#X  # 'x' would also name parameter x
+keep M:Occt.Bnd_Box.Updated(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.Bnd_Box#Y  # 'y' would also name parameter y
+keep M:Occt.Bnd_Box.Updated(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.Bnd_Box#Z  # 'z' would also name parameter z
+keep M:Occt.Bnd_Box2d.Update(System.Double,System.Double,System.Double,System.Double)#X  # 'x' would also name parameter x
+keep M:Occt.Bnd_Box2d.Update(System.Double,System.Double,System.Double,System.Double)#Y  # 'y' would also name parameter y
+keep M:Occt.Bnd_Box2d.Updated(System.Double,System.Double,System.Double,System.Double)~Occt.Bnd_Box2d#X  # 'x' would also name parameter x
+keep M:Occt.Bnd_Box2d.Updated(System.Double,System.Double,System.Double,System.Double)~Occt.Bnd_Box2d#Y  # 'y' would also name parameter y
+keep M:Occt.Convert_PolynomialCosAndSin.Locate(System.Double,Occt.NCollection_Array1{Occt.gp_Pnt2d},System.Double,System.Double)~System.Double#Umax  # 'umax' would also name local umax
+keep M:Occt.Convert_PolynomialCosAndSin.Locate(System.Double,Occt.NCollection_Array1{Occt.gp_Pnt2d},System.Double,System.Double)~System.Double#Umin  # 'umin' would also name local umin
+keep M:Occt.Convert_TorusToBSplineSurface.ComputePoles(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,Occt.NCollection_Array2{Occt.gp_Pnt})#R  # 'r' would also name parameter r
+keep M:Occt.ElSLib.SphereVIso(Occt.gp_Ax3@,System.Double,System.Double)~Occt.gp_Circ#Radius  # 'radius' would also name local radius
+keep M:Occt.INCollection_CellFilter_Inspector`2.Inspect(`0)~Occt.NCollection_CellFilter_Action#theObject  # 'object' is reserved
+keep M:Occt.MathPoly.Cubic(System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theA  # 'a' would also name local a
+keep M:Occt.MathPoly.Cubic(System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theB  # 'b' would also name local b
+keep M:Occt.MathPoly.Quartic(System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theA  # 'a' would also name local a
+keep M:Occt.MathPoly.Quartic(System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theB  # 'b' would also name local b
+keep M:Occt.MathPoly.Quartic(System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theC  # 'c' would also name local c
+keep M:Occt.MathPoly.Quartic(System.Double,System.Double,System.Double,System.Double,System.Double)~Occt.MathUtils.PolyResult#theD  # 'd' would also name local d
+keep M:Occt.MathSys.detail.Solve4x4(Occt.std_array4{Occt.std_array4{System.Double}}@,Occt.std_array4{System.Double}@,Occt.std_array4{System.Double}@)~System.Boolean#theJ  # 'j' would also name local j, local j, local j, local j
+keep M:Occt.MathUtils.Beale.Gradient(Occt.math_VectorBase{System.Double},Occt.math_VectorBase{System.Double})~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Beale.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Beale.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theY  # 'y' would also name local y
+keep M:Occt.MathUtils.Booth.Gradient(Occt.math_VectorBase{System.Double},Occt.math_VectorBase{System.Double})~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Booth.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Booth.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theY  # 'y' would also name local y
+keep M:Occt.MathUtils.Himmelblau.Gradient(Occt.math_VectorBase{System.Double},Occt.math_VectorBase{System.Double})~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Himmelblau.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Himmelblau.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theY  # 'y' would also name local y
+keep M:Occt.MathUtils.IsVectorConverged(Occt.math_VectorBase{System.Double},Occt.math_VectorBase{System.Double},System.Double)~System.Boolean#theNew  # 'new' is reserved
+keep M:Occt.MathUtils.Rosenbrock.Gradient(Occt.math_VectorBase{System.Double},Occt.math_VectorBase{System.Double})~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Rosenbrock.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theX  # 'x' would also name local x
+keep M:Occt.MathUtils.Rosenbrock.Value(Occt.math_VectorBase{System.Double},System.Double@)~System.Boolean#theY  # 'y' would also name local y
+keep M:Occt.MathUtils.SafeDiv(System.Double,System.Double,System.Double)~System.Double#theDefault  # 'default' is reserved
+keep M:Occt.Message.MetricFromString(System.String)~Occt.Message_MetricType#theString  # 'string' is reserved
+keep M:Occt.Message.MetricFromString(System.String,Occt.Message_MetricType@)~System.Boolean#theString  # 'string' is reserved
+keep M:Occt.Message_Algorithm.SetStatus(Occt.Message_Status,System.Int32)#theInt  # 'int' is reserved
+keep M:Occt.Message_AttributeObject.#ctor(Occt.Standard_Transient,System.String)#theObject  # 'object' is reserved
+keep M:Occt.Message_AttributeObject.SetObject(Occt.Standard_Transient)#theObject  # 'object' is reserved
+keep M:Occt.Message_Messenger.Send(Occt.Standard_Transient,Occt.Message_Gravity)#theObject  # 'object' is reserved
+keep M:Occt.Message_Messenger.Send(System.String,Occt.Message_Gravity)#theString  # 'string' is reserved
+keep M:Occt.Message_Msg.Arg(System.String)~Occt.Message_Msg#theString  # 'string' is reserved
+keep M:Occt.Message_Msg.ArgExtended(System.String)~Occt.Message_Msg#theString  # 'string' is reserved
+keep M:Occt.Message_MsgFile.getString(System.Char[],System.Int32@,System.String@,System.Int32@)~System.Boolean#theString  # 'string' is reserved
+keep M:Occt.Message_Printer.Send(System.String,Occt.Message_Gravity)#theString  # 'string' is reserved
+keep M:Occt.Message_Printer.SendObject(Occt.Standard_Transient,Occt.Message_Gravity)#theObject  # 'object' is reserved
+keep M:Occt.Message_Printer.send(System.String,Occt.Message_Gravity)#theString  # 'string' is reserved
+keep M:Occt.Message_PrinterOStream.send(System.String,Occt.Message_Gravity)#theString  # 'string' is reserved
+keep M:Occt.Message_PrinterToReport.SendObject(Occt.Standard_Transient,Occt.Message_Gravity)#theObject  # 'object' is reserved
+keep M:Occt.Message_PrinterToReport.send(System.String,Occt.Message_Gravity)#theString  # 'string' is reserved
+keep M:Occt.NCollection_Array1`1.AsSpan(System.Int32)~System.Span{`0}#theFrom  # 'from' is reserved
+keep M:Occt.NCollection_CellFilter`3.Cell.#ctor(System.Int32[])#theIndex  # 'index' would also name field index
+keep M:Occt.NCollection_CellFilter`3.ListNode.#ctor(`1,Occt.NCollection_CellFilter`3.ListNode)#theObject  # 'object' is reserved
+keep M:Occt.NCollection_LinearVector`1.Erase(System.Int32,System.Int32)#theFrom  # 'from' is reserved
+keep M:Occt.NCollection_List`1.Contains(`0)~System.Boolean#theObject  # 'object' is reserved
+keep M:Occt.NCollection_List`1.ItemAt(System.Int32,System.String)~`0#theWhere  # 'where' is reserved
+keep M:Occt.NCollection_List`1.Remove(`0)~System.Boolean#theObject  # 'object' is reserved
+keep M:Occt.NCollection_Mat3`1.ConvertFrom``1(Occt.NCollection_Mat3{``0}@)#theFrom  # 'from' is reserved
+keep M:Occt.NCollection_Mat4`1.ConvertFrom``1(Occt.NCollection_Mat4{``0}@)#theFrom  # 'from' is reserved
+keep M:Occt.NCollection_Mat4`1.Convert``1(Occt.NCollection_Mat4{``0}@)#theFrom  # 'from' is reserved
+keep M:Occt.NCollection_Vec3`1.GetLERP(Occt.NCollection_Vec3{`0}@,Occt.NCollection_Vec3{`0}@,`0)~Occt.NCollection_Vec3{`0}#theFrom  # 'from' is reserved
+keep M:Occt.Poly.ReadPolygon2D(System.IO.TextReader)~Occt.Poly_Polygon2D#IS  # 'is' is reserved
+keep M:Occt.Poly.ReadPolygon3D(System.IO.TextReader)~Occt.Poly_Polygon3D#IS  # 'is' is reserved
+keep M:Occt.Poly.ReadTriangulation(System.IO.TextReader)~Occt.Poly_Triangulation#IS  # 'is' is reserved
+keep M:Occt.Poly_MakeLoops.Link.#ctor(System.Int32,System.Int32)#theNode1  # 'node1' would also name field node1
+keep M:Occt.Poly_MakeLoops.Link.#ctor(System.Int32,System.Int32)#theNode2  # 'node2' would also name field node2
+keep M:Occt.Poly_Triangulation.Parameters(Occt.Poly_TriangulationParameters)#theParams  # 'params' is reserved
+keep M:Occt.Quantity_ColorRGBA.isHexString(System.ReadOnlySpan{System.Char})~System.Boolean#theString  # 'string' is reserved
+keep M:Occt.Standard.CStringChar(System.String,System.Int32)~System.Char#theString  # 'string' is reserved
+keep M:Occt.Standard.Sprintf(System.String,System.Object[])~System.String#theArgs  # 'args' is reserved
+keep M:Occt.Standard_Stream.CheckCount(System.IO.TextReader,System.Int64,System.Int32,System.String)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.CheckNotFailed(System.IO.TextReader,System.String)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.CheckNotFailed(System.IO.TextReader,System.String)#theWhere  # 'where' is reserved
+keep M:Occt.Standard_Stream.Clear(System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.Eof(System.IO.TextReader)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.Fail(System.IO.TextReader)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.GetLine(System.IO.TextReader,System.Char[],System.Int32,System.Char)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.Good(System.IO.TextReader)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.InputLength(System.IO.TextReader)~System.Int64#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.IsSpace(System.Int32)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.Standard_Stream.Read(System.IO.TextReader,System.Boolean@)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.Read(System.IO.TextReader,System.Int32@)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.ReadLong(System.IO.TextReader,Occt.Standard_Stream.InputState,System.Int64@)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.ReadWord(System.IO.TextReader,System.Char[])~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.ReadWord(System.IO.TextReader,System.Int32)~System.String#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.Sentry(System.IO.TextReader,Occt.Standard_Stream.InputState)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.SetInputLength(System.IO.TextReader,System.Int64)#IS  # 'is' is reserved
+keep M:Occt.Standard_Stream.State(System.IO.TextReader)~Occt.Standard_Stream.InputState#IS  # 'is' is reserved
+keep M:Occt.TCollection_AsciiString.IntegerValue(System.String)~System.Int32#theString  # 'string' is reserved
+keep M:Occt.TCollection_AsciiString.IsIntegerValue(System.String)~System.Boolean#theString  # 'string' is reserved
+keep M:Occt.TCollection_AsciiString.IsRealValue(System.String,System.Boolean)~System.Boolean#theString  # 'string' is reserved
+keep M:Occt.TCollection_AsciiString.IsSpace(System.Char)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.TCollection_AsciiString.RealValue(System.String)~System.Double#theString  # 'string' is reserved
+keep M:Occt.TCollection_AsciiString.Token(System.String,System.String,System.Int32)~System.String#theString  # 'string' is reserved
+keep M:Occt.TCollection_HAsciiString.IsSpace(System.Char)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.gp_GTrsf2d.SetAffinity(Occt.gp_Ax2d@,System.Double)#A  # 'a' would also name local a
+keep M:Occt.gp_Mat.SetCross(Occt.gp_XYZ@)#theRef  # 'ref' is reserved
+keep M:Occt.gp_Mat.SetDot(Occt.gp_XYZ@)#theRef  # 'ref' is reserved
+keep M:Occt.gp_Mat.WithCross(Occt.gp_XYZ@)~Occt.gp_Mat#theRef  # 'ref' is reserved
+keep M:Occt.gp_Mat.WithDot(Occt.gp_XYZ@)~Occt.gp_Mat#theRef  # 'ref' is reserved
+keep M:Occt.gp_Torus.Scale(Occt.gp_Pnt@,System.Double)#theS  # 's' would also name local s
+keep M:Occt.math_FunctionSet.NbEquations~System.Int32  # implements Occt.MathSys.IFunctionSet.NbEquations() in OcctNet.Foundation.Tests.MathSys_ComparisonTest.SimpleCircleLineSystem
+keep M:Occt.math_FunctionSet.NbVariables~System.Int32  # implements Occt.MathSys.IFunctionSet.NbVariables() in OcctNet.Foundation.Tests.MathSys_ComparisonTest.SimpleCircleLineSystem
+keep M:Occt.math_GlobOptMin.NCollection_CellFilter_Inspector.Inspect(Occt.math_VectorBase{System.Double})~Occt.NCollection_CellFilter_Action#theObject  # 'object' is reserved
+
+# ModelingData
+keep M:Occt.AdvApp2Var_Framework.findIsoByConstant(Occt.NCollection_Sequence{Occt.AdvApp2Var_Iso},System.Int32,System.Double)~System.Int32#theConst  # 'const' is reserved
+keep M:Occt.AppParCurves_Gradient`2.#ctor(`0,System.Int32,System.Int32,Occt.NCollection_HArray1{Occt.AppParCurves_ConstraintCouple},Kerf.Engine.Numerics.VectorBase{System.Double},System.Int32,System.Double,System.Double,System.Int32)#Deg  # 'deg' would also name local deg
+keep M:Occt.Approx_SweepApproximation.Perform(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Continuity,System.Int32,System.Int32)#Continuity  # 'continuity' would also name local continuity
+keep M:Occt.BRepAdaptor_CompCurve.EvalD0(System.Double)~Kerf.Geometry.Point3D#theU  # 'u' would also name local u
+keep M:Occt.BRepAdaptor_CompCurve.EvalD1(System.Double)~Occt.Geom_Curve.ResD1#theU  # 'u' would also name local u
+keep M:Occt.BRepAdaptor_CompCurve.EvalD2(System.Double)~Occt.Geom_Curve.ResD2#theU  # 'u' would also name local u
+keep M:Occt.BRepAdaptor_CompCurve.EvalD3(System.Double)~Occt.Geom_Curve.ResD3#theU  # 'u' would also name local u
+keep M:Occt.BRepAdaptor_CompCurve.EvalDN(System.Double,System.Int32)~Kerf.Geometry.Vector3D#theU  # 'u' would also name local u
+keep M:Occt.BRepLProp_SurfaceTool.Continuity(Occt.BRepAdaptor_Surface)~System.Int32#S  # 's' would also name local s
+keep M:Occt.BRepTools.copyFlags(Occt.TopoDS_TShape,Occt.TopoDS_TShape)#theFrom  # 'from' is reserved
+keep M:Occt.BRepTools_GTrsfModification.NewCurve(Occt.TopoDS_Edge@,Occt.Geom_Curve@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRepTools_GTrsfModification.NewCurve2d(Occt.TopoDS_Edge@,Occt.TopoDS_Face@,Occt.TopoDS_Edge@,Occt.TopoDS_Face@,Occt.Geom2d_Curve@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRepTools_NurbsConvertModification.NewCurve(Occt.TopoDS_Edge@,Occt.Geom_Curve@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRepTools_ShapeSet.NotNull``1(``0)~``0#theObject  # 'object' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadGeometry(Occt.TopAbs_ShapeEnum,System.IO.TextReader,Occt.TopoDS_Shape@)#IS  # 'is' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadGeometry(Occt.TopAbs_ShapeEnum,System.IO.TextReader,Occt.TopoDS_Shape@)#S  # 's' would also name local s
+keep M:Occt.BRepTools_ShapeSet.ReadGeometry(Occt.TopAbs_ShapeEnum,System.IO.TextReader,Occt.TopoDS_Shape@)#T  # 't' would also name local t
+keep M:Occt.BRepTools_ShapeSet.ReadGeometry(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadPolygon3D(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadPolygonOnTriangulation(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadRegularity(System.IO.TextReader)~Kerf.Geometry.Continuity#IS  # 'is' is reserved
+keep M:Occt.BRepTools_ShapeSet.ReadTriangulation(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BRepTools_TrsfModification.NewCurve2d(Occt.TopoDS_Edge@,Occt.TopoDS_Face@,Occt.TopoDS_Edge@,Occt.TopoDS_Face@,Occt.Geom2d_Curve@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRep_Builder.Continuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@,Kerf.Geometry.Continuity)#L1  # 'l1' would also name local l1
+keep M:Occt.BRep_Builder.Continuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@,Kerf.Geometry.Continuity)#L2  # 'l2' would also name local l2
+keep M:Occt.BRep_Builder.Range(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double,System.Double)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateCurves(Occt.NCollection_List{Occt.BRep_CurveRepresentation},Occt.Geom2d_Curve,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateCurves(Occt.NCollection_List{Occt.BRep_CurveRepresentation},Occt.Geom2d_Curve,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateCurves(Occt.NCollection_List{Occt.BRep_CurveRepresentation},Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateCurves(Occt.NCollection_List{Occt.BRep_CurveRepresentation},Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateCurves(Occt.NCollection_List{Occt.BRep_CurveRepresentation},Occt.Geom_Curve,Kerf.Topology.Placement@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Polygon2D,Kerf.Engine.Meshing.Polygon2D,Occt.Geom_Surface,Kerf.Topology.Placement@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Polygon2D,Occt.Geom_Surface,Kerf.Topology.Placement@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Occt.Geom2d_Curve,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Occt.Geom2d_Curve,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Occt.Geom2d_Curve,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateEdge(Occt.TopoDS_Edge@,Occt.Geom_Curve,Kerf.Topology.Placement@,System.Double)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.UpdateVertex(Occt.TopoDS_Vertex@,System.Double,Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Polygon3D,Kerf.Topology.Placement@,System.Boolean)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@,System.Boolean)#L  # 'l' would also name local l
+keep M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@,System.Boolean)#L  # 'l' would also name local l
+keep M:Occt.BRep_CurveRepresentation.IsCurveOnSurface~System.Boolean  # BRep_Curve3D would have two members called IsCurveOnSurface: Occt.BRep_CurveRepresentation.IsCurveOnSurface(), Occt.BRep_CurveRepresentation.IsCurveOnSurface(Occt.Geom_Surface?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_CurveRepresentation.IsPolygonOnSurface~System.Boolean  # BRep_Curve3D would have two members called IsPolygonOnSurface: Occt.BRep_CurveRepresentation.IsPolygonOnSurface(), Occt.BRep_CurveRepresentation.IsPolygonOnSurface(Occt.Geom_Surface?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_CurveRepresentation.IsPolygonOnTriangulation~System.Boolean  # BRep_Curve3D would have two members called IsPolygonOnTriangulation: Occt.BRep_CurveRepresentation.IsPolygonOnTriangulation(), Occt.BRep_CurveRepresentation.IsPolygonOnTriangulation(Kerf.Engine.Meshing.Triangulation?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_CurveRepresentation.IsRegularity~System.Boolean  # BRep_Curve3D would have two members called IsRegularity: Occt.BRep_CurveRepresentation.IsRegularity(), Occt.BRep_CurveRepresentation.IsRegularity(Occt.Geom_Surface?, Occt.Geom_Surface?, in Kerf.Topology.Placement, in Kerf.Topology.Placement)
+keep M:Occt.BRep_PointRepresentation.IsPointOnCurveOnSurface~System.Boolean  # BRep_PointOnCurve would have two members called IsPointOnCurveOnSurface: Occt.BRep_PointRepresentation.IsPointOnCurveOnSurface(), Occt.BRep_PointRepresentation.IsPointOnCurveOnSurface(Occt.Geom2d_Curve?, Occt.Geom_Surface?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_PointRepresentation.IsPointOnCurve~System.Boolean  # BRep_PointOnCurve would have two members called IsPointOnCurve: Occt.BRep_PointOnCurve.IsPointOnCurve(), Occt.BRep_PointOnCurve.IsPointOnCurve(Occt.Geom_Curve?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_PointRepresentation.IsPointOnSurface~System.Boolean  # BRep_PointOnCurve would have two members called IsPointOnSurface: Occt.BRep_PointRepresentation.IsPointOnSurface(), Occt.BRep_PointRepresentation.IsPointOnSurface(Occt.Geom_Surface?, in Kerf.Topology.Placement)
+keep M:Occt.BRep_Tool.Continuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@)~Kerf.Geometry.Continuity#L1  # 'l1' would also name local l1
+keep M:Occt.BRep_Tool.Continuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@)~Kerf.Geometry.Continuity#L2  # 'l2' would also name local l2
+keep M:Occt.BRep_Tool.CurveOnPlane(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double@,System.Double@)~Occt.Geom2d_Curve#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.HasContinuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@)~System.Boolean#L1  # 'l1' would also name local l1
+keep M:Occt.BRep_Tool.HasContinuity(Occt.TopoDS_Edge@,Occt.Geom_Surface,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Topology.Placement@)~System.Boolean#L2  # 'l2' would also name local l2
+keep M:Occt.BRep_Tool.IsClosed(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.IsClosed(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.Parameter(Occt.TopoDS_Vertex@,Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@)~System.Double#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.PolygonOnSurface(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@)~Kerf.Engine.Meshing.Polygon2D#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.PolygonOnTriangulation(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@)~Kerf.Engine.Meshing.PolygonOnTriangulation#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.Range(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,System.Double@,System.Double@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.SetUVPoints(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BRep_Tool.UVPoints(Occt.TopoDS_Edge@,Occt.Geom_Surface,Kerf.Topology.Placement@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@)#L  # 'l' would also name local l
+keep M:Occt.BinTools.CheckCount(System.IO.Stream,System.Int64,System.Int64,System.String)#IS  # 'is' is reserved
+keep M:Occt.BinTools.Get(System.IO.Stream)~System.Int32#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetBool(System.IO.Stream,System.Boolean@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetExtChar(System.IO.Stream,System.Char@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetInteger(System.IO.Stream,System.Int32@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetLine(System.IO.Stream,System.String@,System.Boolean@)~System.Boolean#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetReal(System.IO.Stream,System.Double@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools.GetShortReal(System.IO.Stream,System.Single@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools.IsSpace(System.Int32)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.BinTools.PushBack(System.IO.Stream,System.Int32)#IS  # 'is' is reserved
+keep M:Occt.BinTools.PushBack(System.IO.Stream,System.Int32)#theChar  # 'char' is reserved
+keep M:Occt.BinTools.ReadExactly(System.IO.Stream,System.Span{System.Byte})#IS  # 'is' is reserved
+keep M:Occt.BinTools.ReadFormattedChar(System.IO.Stream)~System.Int32#IS  # 'is' is reserved
+keep M:Occt.BinTools.ReadFormattedInteger(System.IO.Stream)~System.Int32#IS  # 'is' is reserved
+keep M:Occt.BinTools.ReadWord(System.IO.Stream)~System.String#IS  # 'is' is reserved
+keep M:Occt.BinTools.Rethrow(System.String,System.Exception)~Kerf.Engine.Foundation.FailureException#theWhere  # 'where' is reserved
+keep M:Occt.BinTools.TakePushedBack(System.IO.Stream)~System.Int32#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.Read(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.Read(System.IO.Stream,Kerf.Geometry.Direction2D@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.Read(System.IO.Stream,Kerf.Geometry.Point2D@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadBSpline(System.IO.Stream)~Occt.Geom2d_BSplineCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadBezier(System.IO.Stream)~Occt.Geom2d_BezierCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadCircle(System.IO.Stream)~Occt.Geom2d_Circle#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadCurve2d(System.IO.Stream,Occt.Geom2d_Curve@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadCurve2d(System.IO.Stream,Occt.Geom2d_Curve@,System.Int32)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadEllipse(System.IO.Stream)~Occt.Geom2d_Ellipse#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadHyperbola(System.IO.Stream)~Occt.Geom2d_Hyperbola#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadLine(System.IO.Stream)~Occt.Geom2d_Line#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadOffset(System.IO.Stream,System.Int32)~Occt.Geom2d_OffsetCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadParabola(System.IO.Stream)~Occt.Geom2d_Parabola#IS  # 'is' is reserved
+keep M:Occt.BinTools_Curve2dSet.ReadTrimmed(System.IO.Stream,System.Int32)~Occt.Geom2d_TrimmedCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.Read(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.Read(System.IO.Stream,Kerf.Geometry.Direction3D@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.Read(System.IO.Stream,Kerf.Geometry.Point3D@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadBSpline(System.IO.Stream)~Occt.Geom_BSplineCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadBezier(System.IO.Stream)~Occt.Geom_BezierCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadCircle(System.IO.Stream)~Occt.Geom_Circle#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadCurve(System.IO.Stream,Occt.Geom_Curve@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadCurve(System.IO.Stream,Occt.Geom_Curve@,System.Int32)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadEllipse(System.IO.Stream)~Occt.Geom_Ellipse#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadHyperbola(System.IO.Stream)~Occt.Geom_Hyperbola#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadLine(System.IO.Stream)~Occt.Geom_Line#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadOffset(System.IO.Stream,System.Int32)~Occt.Geom_OffsetCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadParabola(System.IO.Stream)~Occt.Geom_Parabola#IS  # 'is' is reserved
+keep M:Occt.BinTools_CurveSet.ReadTrimmed(System.IO.Stream,System.Int32)~Occt.Geom_TrimmedCurve#IS  # 'is' is reserved
+keep M:Occt.BinTools_LocationSet.Read(System.IO.Stream)#IS  # 'is' is reserved
+keep M:Occt.BinTools_LocationSet.Read(System.IO.Stream,Kerf.Geometry.Transform3D@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.Read(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadFlagsAndSubs(Occt.TopoDS_Shape@,Occt.TopAbs_ShapeEnum,System.IO.Stream,System.Int32)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadGeometry(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadPolygon3D(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadPolygonOnTriangulation(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadSet(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadShape(Occt.TopAbs_ShapeEnum,System.IO.Stream,Occt.TopoDS_Shape@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadShape(Occt.TopAbs_ShapeEnum,System.IO.Stream,Occt.TopoDS_Shape@)#S  # 's' would also name local s
+keep M:Occt.BinTools_ShapeSet.ReadShape(Occt.TopAbs_ShapeEnum,System.IO.Stream,Occt.TopoDS_Shape@)#T  # 't' would also name local t
+keep M:Occt.BinTools_ShapeSet.ReadSubs(Occt.TopoDS_Shape@,System.IO.Stream,System.Int32)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSet.ReadTriangulation(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_ShapeSetBase.Read(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.Read(System.IO.Stream,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.Read(System.IO.Stream,Kerf.Geometry.CoordinateSystem@)#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadBSpline(System.IO.Stream)~Occt.Geom_BSplineSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadBezier(System.IO.Stream)~Occt.Geom_BezierSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadCone(System.IO.Stream)~Occt.Geom_ConicalSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadCylinder(System.IO.Stream)~Occt.Geom_CylindricalSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadLinearExtrusion(System.IO.Stream,System.Int32)~Occt.Geom_SurfaceOfLinearExtrusion#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadOffset(System.IO.Stream,System.Int32)~Occt.Geom_OffsetSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadPlane(System.IO.Stream)~Occt.Geom_Plane#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadRectangular(System.IO.Stream,System.Int32)~Occt.Geom_RectangularTrimmedSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadRevolution(System.IO.Stream,System.Int32)~Occt.Geom_SurfaceOfRevolution#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadSphere(System.IO.Stream)~Occt.Geom_SphericalSurface#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadSurface(System.IO.Stream,Occt.Geom_Surface@)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadSurface(System.IO.Stream,Occt.Geom_Surface@,System.Int32)~System.IO.Stream#IS  # 'is' is reserved
+keep M:Occt.BinTools_SurfaceSet.ReadTorus(System.IO.Stream)~Occt.Geom_ToroidalSurface#IS  # 'is' is reserved
+keep M:Occt.BndLib.Add(Kerf.Geometry.Circle3D@,System.Double,System.Double,System.Double,Kerf.Engine.Geometry.Bounds.Box@)#Tol  # 'tol' would also name local tol
+keep M:Occt.BndLib.Add(Kerf.Geometry.Ellipse3D@,System.Double,System.Double,System.Double,Kerf.Engine.Geometry.Bounds.Box@)#Tol  # 'tol' would also name local tol
+keep M:Occt.ExtremaPC_GridEvaluator.BuildGrid``1(``0,Kerf.Engine.Numerics.VectorBase{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.Extrema_ExtElC.ExtremaExtElC_TrigonometricRoots.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#C  # 'c' would also name local c
+keep M:Occt.Extrema_ExtElC.ExtremaExtElC_TrigonometricRoots.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#CC  # 'cc' would also name local cc
+keep M:Occt.Extrema_ExtElC.ExtremaExtElC_TrigonometricRoots.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#Cte  # 'cte' would also name local cte
+keep M:Occt.Extrema_ExtElC.ExtremaExtElC_TrigonometricRoots.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#S  # 's' would also name local s
+keep M:Occt.Extrema_ExtElC.ExtremaExtElC_TrigonometricRoots.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)#SC  # 'sc' would also name local sc
+keep M:Occt.Extrema_GGenExtCC.Extrema_GGenExtCC_PointsInspector.Inspect(Kerf.Engine.Geometry.Xy)~Kerf.Engine.Collections.CellFilterAction#theObject  # 'object' is reserved
+keep M:Occt.Extrema_GenExtPS.FindSolution(Kerf.Geometry.Point3D@,Occt.Extrema_POnSurfParams@)#theParams  # 'params' is reserved
+keep M:Occt.Extrema_GenExtPS.fillParams(Occt.NCollection_Array1{System.Double},System.Int32,System.Double,System.Double,Occt.NCollection_HArray1{System.Double}@,System.Int32)#theParams  # 'params' is reserved
+keep M:Occt.Extrema_GenLocateExtPS.CorrectTol(System.Double,System.Double,Kerf.Engine.Numerics.VectorBase{System.Double})#theTol  # 'tol' would also name local tol, local tol
+keep M:Occt.Extrema_PCFOfEPCOfExtPC.Value(System.Double,System.Double@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.Extrema_PCFOfEPCOfExtPC2d.Value(System.Double,System.Double@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.FEmTool_ProfileMatrix.Multiplied(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})#X  # 'x' would also name local x
+keep M:Occt.FEmTool_ProfileMatrix.Solve(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})#B  # 'b' would also name local b
+keep M:Occt.FEmTool_ProfileMatrix.Solve(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})#X  # 'x' would also name local x
+keep M:Occt.GProp.HOperator(Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,Kerf.Geometry.Matrix3x3@)#Operator  # 'operator' is reserved
+keep M:Occt.Geom2dEval_AHTBezierCurve.powInt(System.Double,System.Int32)~System.Double#theBase  # 'base' is reserved
+keep M:Occt.Geom2dEval_SineWaveCurve.powInt(System.Double,System.Int32)~System.Double#theBase  # 'base' is reserved
+keep M:Occt.Geom2dGridEval.ICurveEvaluator.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval.ICurveEvaluator.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval.ICurveEvaluator.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval.ICurveEvaluator.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval.ICurveEvaluator.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.countSpanSize(Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},System.Int32,System.Boolean,System.Int32,System.Int32)~System.Int32#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BSplineCurve.evaluateGridCached``2(Occt.Geom2dGridEval_BSplineCurve.CurveData@,Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{``0}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BezierCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BezierCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BezierCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BezierCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_BezierCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Circle.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Circle.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Circle.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Circle.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Circle.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Curve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Curve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Curve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Curve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Curve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Ellipse.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Ellipse.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Ellipse.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Ellipse.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Ellipse.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Hyperbola.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Hyperbola.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Hyperbola.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Hyperbola.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Hyperbola.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Line.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Line.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Line.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Line.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Line.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OffsetCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OffsetCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OffsetCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OffsetCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OffsetCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OtherCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OtherCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OtherCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OtherCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_OtherCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Parabola.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Parabola.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Parabola.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Parabola.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom2d_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.Geom2dGridEval_Parabola.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector2D}#theParams  # 'params' is reserved
+keep M:Occt.Geom2d_BSplineCurve.IncreaseMultiplicity(System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom2d_BSplineCurve.IncreaseMultiplicity(System.Int32,System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom2d_BSplineCurve.InsertKnot(System.Double,System.Int32,System.Double)#M  # 'm' would also name local m
+keep M:Occt.Geom2d_BSplineCurve.LocalD0(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point2D@)#U  # 'u' would also name local u
+keep M:Occt.Geom2d_BSplineCurve.LocalD1(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point2D@,Kerf.Geometry.Vector2D@)#U  # 'u' would also name local u
+keep M:Occt.Geom2d_BSplineCurve.LocalD2(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@)#U  # 'u' would also name local u
+keep M:Occt.Geom2d_BSplineCurve.LocalD3(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@)#U  # 'u' would also name local u
+keep M:Occt.Geom2d_BSplineCurve.LocalDN(System.Double,System.Int32,System.Int32,System.Int32)~Kerf.Geometry.Vector2D#U  # 'u' would also name local u
+keep M:Occt.Geom2d_BSplineCurve.SetOrigin(System.Int32)#Index  # 'index' would also name local index
+keep M:Occt.Geom2d_OffsetCurveUtils.AdjustDerivative(Occt.Adaptor2d_Curve2d,System.Int32,System.Double,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,System.Boolean@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.Geom2d_OffsetCurveUtils.AdjustDerivative(Occt.Geom2d_Curve,System.Int32,System.Double,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,Kerf.Geometry.Vector2D@,System.Boolean@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.GeomAdaptor_Surface.EvalD1(System.Double,System.Double)~Occt.Geom_Surface.ResD1#theU  # 'u' would also name local u
+keep M:Occt.GeomAdaptor_Surface.EvalD1(System.Double,System.Double)~Occt.Geom_Surface.ResD1#theV  # 'v' would also name local v
+keep M:Occt.GeomAdaptor_Surface.EvalD2(System.Double,System.Double)~Occt.Geom_Surface.ResD2#theU  # 'u' would also name local u
+keep M:Occt.GeomAdaptor_Surface.EvalD2(System.Double,System.Double)~Occt.Geom_Surface.ResD2#theV  # 'v' would also name local v
+keep M:Occt.GeomAdaptor_Surface.EvalD3(System.Double,System.Double)~Occt.Geom_Surface.ResD3#theU  # 'u' would also name local u
+keep M:Occt.GeomAdaptor_Surface.EvalD3(System.Double,System.Double)~Occt.Geom_Surface.ResD3#theV  # 'v' would also name local v
+keep M:Occt.GeomAdaptor_Surface.EvalDN(System.Double,System.Double,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#theU  # 'u' would also name local u
+keep M:Occt.GeomAdaptor_Surface.EvalDN(System.Double,System.Double,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#theV  # 'v' would also name local v
+keep M:Occt.GeomAdaptor_Surface.boundSides(System.Double,System.Double,System.Double@,System.Double@,System.Int32@,System.Int32@)#U  # 'u' would also name parameter u
+keep M:Occt.GeomAdaptor_Surface.boundSides(System.Double,System.Double,System.Double@,System.Double@,System.Int32@,System.Int32@)#V  # 'v' would also name parameter v
+keep M:Occt.GeomBndLib_OtherCurve.Box(System.Double,System.Double,System.Double)~Kerf.Engine.Geometry.Bounds.Box#theTol  # 'tol' would also name local tol
+keep M:Occt.GeomBndLib_OtherCurve2d.Box(System.Double,System.Double,System.Double)~Kerf.Engine.Geometry.Bounds.Box2d#theTol  # 'tol' would also name local tol
+keep M:Occt.GeomConvert_CurveToAnaCurve.ComputeCurve(Occt.Geom_Curve,System.Double,System.Double,System.Double,System.Double@,System.Double@,System.Double@,Occt.GeomConvert_ConvType,Kerf.Geometry.CurveKind)~Occt.Geom_Curve#theC3d  # 'c3d' would also name local c3d
+keep M:Occt.GeomConvert_FuncCylinderLSDist.Gradient(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})~System.Boolean#X  # 'x' would also name local x
+keep M:Occt.GeomConvert_FuncCylinderLSDist.Values(Kerf.Engine.Numerics.VectorBase{System.Double},System.Double@,Kerf.Engine.Numerics.VectorBase{System.Double})~System.Boolean#X  # 'x' would also name local x
+keep M:Occt.GeomEval_AHTBezierCurve.powInt(System.Double,System.Int32)~System.Double#theBase  # 'base' is reserved
+keep M:Occt.GeomGridEval.ICurveEvaluator.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval.ICurveEvaluator.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval.ICurveEvaluator.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval.ICurveEvaluator.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval.ICurveEvaluator.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval.evaluateGridHelper``2(Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},``1)~Occt.NCollection_Array2{``0}  # GeomGridEval would have two members called EvaluateGridHelper: Occt.GeomGridEval.EvaluateGridHelper<TEvaluator>(Occt.NCollection_Array1<double>, Occt.NCollection_Array1<double>, TEvaluator), Occt.GeomGridEval.evaluateGridHelper<TResult, TEvaluator>(Occt.NCollection_Array1<double>, Occt.NCollection_Array1<double>, TEvaluator)
+keep M:Occt.GeomGridEval_BSplineCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.countSpanSize(Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},System.Int32,System.Boolean,System.Int32,System.Int32)~System.Int32#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineCurve.evaluateGridCached``2(Occt.GeomGridEval_BSplineCurve.CurveData@,Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{``0}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BSplineSurface.countSpanSize(Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{System.Double},System.Int32,System.Boolean,System.Int32,System.Int32)~System.Int32#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BezierCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BezierCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BezierCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BezierCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_BezierCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Circle.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Circle.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Circle.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Circle.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Circle.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Curve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Curve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Curve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Curve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Curve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Ellipse.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Ellipse.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Ellipse.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Ellipse.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Ellipse.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Hyperbola.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Hyperbola.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Hyperbola.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Hyperbola.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Hyperbola.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Line.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Line.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Line.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Line.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Line.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OffsetCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OffsetCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OffsetCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OffsetCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OffsetCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OtherCurve.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OtherCurve.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OtherCurve.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OtherCurve.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_OtherCurve.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Parabola.EvaluateGrid(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Kerf.Geometry.Point3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Parabola.EvaluateGridD1(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD1}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Parabola.EvaluateGridD2(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD2}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Parabola.EvaluateGridD3(Occt.NCollection_Array1{System.Double})~Occt.NCollection_Array1{Occt.Geom_Curve.ResD3}#theParams  # 'params' is reserved
+keep M:Occt.GeomGridEval_Parabola.EvaluateGridDN(Occt.NCollection_Array1{System.Double},System.Int32)~Occt.NCollection_Array1{Kerf.Geometry.Vector3D}#theParams  # 'params' is reserved
+keep M:Occt.GeomLib.AxeOfInertia(Occt.NCollection_Array1{Kerf.Geometry.Point3D},Kerf.Geometry.Frame3D@,System.Boolean@,System.Double)#Axe  # 'axe' would also name local axe
+keep M:Occt.GeomTools.GetReal(System.IO.TextReader,System.Double@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools.Read(Occt.Geom2d_Curve@,System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.GeomTools.Read(Occt.Geom_Curve@,System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.GeomTools.Read(Occt.Geom_Surface@,System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.Read(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadBSpline(System.IO.TextReader)~Occt.Geom2d_BSplineCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadBezier(System.IO.TextReader)~Occt.Geom2d_BezierCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadCircle(System.IO.TextReader)~Occt.Geom2d_Circle#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadCurve2d(System.IO.TextReader)~Occt.Geom2d_Curve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadDir(System.IO.TextReader,Kerf.Geometry.Direction2D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadEllipse(System.IO.TextReader)~Occt.Geom2d_Ellipse#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadHyperbola(System.IO.TextReader)~Occt.Geom2d_Hyperbola#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadLine(System.IO.TextReader)~Occt.Geom2d_Line#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadOffset(System.IO.TextReader)~Occt.Geom2d_OffsetCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadParabola(System.IO.TextReader)~Occt.Geom2d_Parabola#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadPnt(System.IO.TextReader,Kerf.Geometry.Point2D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_Curve2dSet.ReadTrimmed(System.IO.TextReader)~Occt.Geom2d_TrimmedCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.Read(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadBSpline(System.IO.TextReader)~Occt.Geom_BSplineCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadBezier(System.IO.TextReader)~Occt.Geom_BezierCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadCircle(System.IO.TextReader)~Occt.Geom_Circle#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadCurve(System.IO.TextReader)~Occt.Geom_Curve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadDir(System.IO.TextReader,Kerf.Geometry.Direction3D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadEllipse(System.IO.TextReader)~Occt.Geom_Ellipse#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadHyperbola(System.IO.TextReader)~Occt.Geom_Hyperbola#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadLine(System.IO.TextReader)~Occt.Geom_Line#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadOffset(System.IO.TextReader)~Occt.Geom_OffsetCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadParabola(System.IO.TextReader)~Occt.Geom_Parabola#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadPnt(System.IO.TextReader,Kerf.Geometry.Point3D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_CurveSet.ReadTrimmed(System.IO.TextReader)~Occt.Geom_TrimmedCurve#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.Read(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadAx3(System.IO.TextReader,Kerf.Geometry.CoordinateSystem@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadBSpline(System.IO.TextReader)~Occt.Geom_BSplineSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadBezier(System.IO.TextReader)~Occt.Geom_BezierSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadCone(System.IO.TextReader)~Occt.Geom_ConicalSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadCylinder(System.IO.TextReader)~Occt.Geom_CylindricalSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadDir(System.IO.TextReader,Kerf.Geometry.Direction3D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadLinearExtrusion(System.IO.TextReader)~Occt.Geom_SurfaceOfLinearExtrusion#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadOffset(System.IO.TextReader)~Occt.Geom_OffsetSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadPlane(System.IO.TextReader)~Occt.Geom_Plane#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadPnt(System.IO.TextReader,Kerf.Geometry.Point3D@)#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadRectangular(System.IO.TextReader)~Occt.Geom_RectangularTrimmedSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadRevolution(System.IO.TextReader)~Occt.Geom_SurfaceOfRevolution#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadSphere(System.IO.TextReader)~Occt.Geom_SphericalSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadSurface(System.IO.TextReader)~Occt.Geom_Surface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_SurfaceSet.ReadTorus(System.IO.TextReader)~Occt.Geom_ToroidalSurface#IS  # 'is' is reserved
+keep M:Occt.GeomTools_UndefinedTypeHandler.ReadCurve(System.Int32,System.IO.TextReader,Occt.Geom_Curve@)~System.IO.TextReader#IS  # 'is' is reserved
+keep M:Occt.GeomTools_UndefinedTypeHandler.ReadCurve2d(System.Int32,System.IO.TextReader,Occt.Geom2d_Curve@)~System.IO.TextReader#IS  # 'is' is reserved
+keep M:Occt.GeomTools_UndefinedTypeHandler.ReadSurface(System.Int32,System.IO.TextReader,Occt.Geom_Surface@)~System.IO.TextReader#IS  # 'is' is reserved
+keep M:Occt.Geom_BSplineCurve.IncreaseMultiplicity(System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineCurve.IncreaseMultiplicity(System.Int32,System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineCurve.InsertKnot(System.Double,System.Int32,System.Double,System.Boolean)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineCurve.LocalD0(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.LocalD1(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.LocalD2(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.LocalD3(System.Double,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.LocalDN(System.Double,System.Int32,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.SetOrigin(System.Double,System.Double)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineCurve.SetOrigin(System.Int32)#Index  # 'index' would also name local index
+keep M:Occt.Geom_BSplineSurface.IncreaseUMultiplicity(System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.IncreaseUMultiplicity(System.Int32,System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.IncreaseVMultiplicity(System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.IncreaseVMultiplicity(System.Int32,System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.InsertUKnot(System.Double,System.Int32,System.Double,System.Boolean)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.InsertVKnot(System.Double,System.Int32,System.Double,System.Boolean)#M  # 'm' would also name local m
+keep M:Occt.Geom_BSplineSurface.LocalD0(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineSurface.LocalD0(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@)#V  # 'v' would also name local v
+keep M:Occt.Geom_BSplineSurface.LocalD1(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineSurface.LocalD1(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#V  # 'v' would also name local v
+keep M:Occt.Geom_BSplineSurface.LocalD2(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineSurface.LocalD2(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#V  # 'v' would also name local v
+keep M:Occt.Geom_BSplineSurface.LocalD3(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineSurface.LocalD3(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#V  # 'v' would also name local v
+keep M:Occt.Geom_BSplineSurface.LocalDN(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#U  # 'u' would also name local u
+keep M:Occt.Geom_BSplineSurface.LocalDN(System.Double,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#V  # 'v' would also name local v
+keep M:Occt.Geom_BSplineSurface.SetUOrigin(System.Int32)#Index  # 'index' would also name local index
+keep M:Occt.Geom_BSplineSurface.SetVOrigin(System.Int32)#Index  # 'index' would also name local index
+keep M:Occt.Geom_OffsetCurveUtils.AdjustDerivative(Occt.Adaptor3d_Curve,System.Int32,System.Double,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,System.Boolean@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.Geom_OffsetCurveUtils.AdjustDerivative(Occt.Geom_Curve,System.Int32,System.Double,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,System.Boolean@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.IntAna_Curve.FindParameter(Kerf.Geometry.Point3D@,Occt.NCollection_List{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.IntAna_IntLinTorus.Perform(Kerf.Geometry.Line3D@,Kerf.Geometry.Torus@)#T  # 't' would also name local t
+keep M:Occt.IntAna_QuadQuadGeo.Perform(Kerf.Geometry.Plane3D@,Kerf.Geometry.Cylinder@,System.Double,System.Double,System.Double)#H  # 'h' would also name local h
+keep M:Occt.IntAna_QuadQuadGeo.Perform(Kerf.Geometry.Plane3D@,Kerf.Geometry.Cylinder@,System.Double,System.Double,System.Double)#Tolang  # 'tolang' would also name local tolang
+keep M:Occt.ProjLib.IsAnaSurf(Occt.Adaptor3d_Surface)~System.Boolean#theAS  # 'as' is reserved
+keep M:Occt.ProjLib_CompProjectedCurve.D1(System.Double,Kerf.Geometry.Point2D@,Kerf.Geometry.Vector2D@)#V  # 'v' would also name local v
+keep M:Occt.ProjLib_CompProjectedCurve.d1(System.Double,System.Double,System.Double,Kerf.Geometry.Vector2D@,Occt.Adaptor3d_Curve,Occt.Adaptor3d_Surface)#V  # 'v' would also name parameter v
+keep M:Occt.ProjLib_ComputeApproxOnPolarSurface.Function_Value(System.Double,Occt.ProjLib_ComputeApproxOnPolarSurface.aFuncStruct)~Kerf.Geometry.Point2D#theU  # 'u' would also name local u
+keep M:Occt.TopTools_LocationSet.Read(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.TopTools_LocationSet.ReadTrsf(Kerf.Geometry.Transform3D@,System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.Read(Occt.TopoDS_Shape@,System.IO.TextReader)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.Read(Occt.TopoDS_Shape@,System.IO.TextReader,System.Int32)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.Read(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.ReadGeometry(Occt.TopAbs_ShapeEnum,System.IO.TextReader,Occt.TopoDS_Shape@)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.ReadGeometry(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.ReadSet(System.IO.TextReader,Kerf.Engine.Foundation.ProgressRange)#IS  # 'is' is reserved
+keep M:Occt.TopTools_ShapeSet.ReadShapeEnum(System.IO.TextReader)~Occt.TopAbs_ShapeEnum#IS  # 'is' is reserved
+
+# ModelingAlgorithms
+keep M:Occt.ApproxInt_ImpPrmSvSurfaces`2.Tangency(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector3D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.ApproxInt_ImpPrmSvSurfaces`2.TangencyOnSurf1(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector2D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.ApproxInt_ImpPrmSvSurfaces`2.TangencyOnSurf2(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector2D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.ApproxInt_KnotTools.BuildCurvature(Occt.NCollection_LocalArray{System.Double},System.Int32,Kerf.Engine.Numerics.VectorBase{System.Double},Occt.NCollection_Array1{System.Double},System.Double@)#theDim  # 'dim' would also name local dim
+keep M:Occt.ApproxInt_KnotTools.ComputeKnotInds(Occt.NCollection_LocalArray{System.Double},System.Int32,Kerf.Engine.Numerics.VectorBase{System.Double},Occt.NCollection_Sequence{System.Int32})#theDim  # 'dim' would also name local dim
+keep M:Occt.ApproxInt_KnotTools.InsKnotBefI(System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_LocalArray{System.Double},System.Int32,Occt.NCollection_Sequence{System.Int32},System.Boolean)~System.Boolean#theCurv  # 'curv' would also name local curv
+keep M:Occt.ApproxInt_KnotTools.InsKnotBefI(System.Int32,Occt.NCollection_Array1{System.Double},Occt.NCollection_LocalArray{System.Double},System.Int32,Occt.NCollection_Sequence{System.Int32},System.Boolean)~System.Boolean#theI  # 'i' would also name local i
+keep M:Occt.ApproxInt_MultiLineTool`1.Dump(Occt.ApproxInt_MultiLine{`0},System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.ApproxInt_MultiLine`1.Dump(System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.ApproxInt_PrmPrmSvSurfaces`2.Tangency(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector3D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.ApproxInt_PrmPrmSvSurfaces`2.TangencyOnSurf1(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector2D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.ApproxInt_PrmPrmSvSurfaces`2.TangencyOnSurf2(System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Vector2D@)~System.Boolean#T  # 't' would also name local t
+keep M:Occt.BOPAlgo_MakeConnected.MakePeriodic(Occt.BOPAlgo_MakePeriodic.PeriodicityParams@)#theParams  # 'params' is reserved
+keep M:Occt.BOPAlgo_MakeConnected.SetArguments(Occt.NCollection_List{Kerf.Topology.Shape})#theArgs  # 'args' is reserved
+keep M:Occt.BOPAlgo_MakePeriodic.AddToShape(Kerf.Topology.Shape@,Kerf.Topology.Shape@)#theWhere  # 'where' is reserved
+keep M:Occt.BOPAlgo_MakePeriodic.AddToShape(Occt.NCollection_List{Kerf.Topology.Shape},Kerf.Topology.Shape@)#theWhere  # 'where' is reserved
+keep M:Occt.BOPAlgo_MakePeriodic.SetPeriodicityParameters(Occt.BOPAlgo_MakePeriodic.PeriodicityParams@)#theParams  # 'params' is reserved
+keep M:Occt.BOPAlgo_PaveFiller.ProcessExistingPaveBlocks(System.Int32,System.Int32,System.Int32,Occt.NCollection_IndexedMap{Occt.BOPDS_PaveBlock},Occt.BOPTools_BoxTree,Occt.NCollection_IntDataMap{Occt.NCollection_List{System.Int32}},Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.BOPDS_CoupleOfPaveBlocks},Occt.NCollection_DataMap{Kerf.Topology.Shape,System.Int32},Occt.NCollection_DataMap{Occt.BOPDS_PaveBlock,Occt.NCollection_List{System.Int32}},Occt.NCollection_Map{Occt.BOPDS_PaveBlock})#theInt  # 'int' is reserved
+keep M:Occt.BOPAlgo_PaveFiller.ProcessExistingPaveBlocks(System.Int32,System.Int32,System.Int32,System.Int32,Kerf.Topology.Edge@,Occt.NCollection_IndexedMap{Occt.BOPDS_PaveBlock},Occt.BOPTools_BoxTree,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.BOPDS_CoupleOfPaveBlocks},Occt.NCollection_DataMap{Kerf.Topology.Shape,System.Int32},Occt.NCollection_List{Occt.BOPDS_PaveBlock},Occt.NCollection_DataMap{Occt.BOPDS_PaveBlock,Occt.NCollection_List{System.Int32}},Occt.NCollection_Map{Occt.BOPDS_PaveBlock})#theInt  # 'int' is reserved
+keep M:Occt.BOPDS_Interf.HasIndexNew~System.Boolean  # BOPDS_Interf would have two members called HasIndexNew: Occt.BOPDS_Interf.HasIndexNew(out int), Occt.BOPDS_Interf.HasIndexNew()
+keep M:Occt.BOPDS_PaveBlock.HasEdge~System.Boolean  # BOPDS_PaveBlock would have two members called HasEdge: Occt.BOPDS_PaveBlock.HasEdge(), Occt.BOPDS_PaveBlock.HasEdge(out int)
+keep M:Occt.BOPDS_ShapeInfo.HasFlag~System.Boolean  # BOPDS_ShapeInfo would have two members called HasFlag: Occt.BOPDS_ShapeInfo.HasFlag(), Occt.BOPDS_ShapeInfo.HasFlag(out int)
+keep M:Occt.BOPTools_AlgoTools.ComputeState(Kerf.Geometry.Point3D@,Kerf.Topology.Solid@,System.Double,Occt.IntTools_Context)~Kerf.Topology.Containment#theRef  # 'ref' is reserved
+keep M:Occt.BOPTools_AlgoTools.ComputeState(Kerf.Topology.Edge@,Kerf.Topology.Solid@,System.Double,Occt.IntTools_Context)~Kerf.Topology.Containment#theRef  # 'ref' is reserved
+keep M:Occt.BOPTools_AlgoTools.ComputeState(Kerf.Topology.Face@,Kerf.Topology.Solid@,System.Double,Occt.NCollection_IndexedMap{Kerf.Topology.Shape},Occt.IntTools_Context)~Kerf.Topology.Containment#theRef  # 'ref' is reserved
+keep M:Occt.BOPTools_AlgoTools.ComputeState(Kerf.Topology.Vertex@,Kerf.Topology.Solid@,System.Double,Occt.IntTools_Context)~Kerf.Topology.Containment#theRef  # 'ref' is reserved
+keep M:Occt.BOPTools_AlgoTools.ComputeStateByOnePoint(Kerf.Topology.Shape@,Kerf.Topology.Solid@,System.Double,Occt.IntTools_Context)~Kerf.Topology.Containment#theRef  # 'ref' is reserved
+keep M:Occt.BRepAlgo.IsValid(Occt.NCollection_List{Kerf.Topology.Shape},Kerf.Topology.Shape@,System.Boolean,System.Boolean)~System.Boolean#theArgs  # 'args' is reserved
+keep M:Occt.BRepAlgoAPI_BuilderAlgo.IntersectShapes(Occt.NCollection_List{Kerf.Topology.Shape},Kerf.Engine.Foundation.ProgressRange)#theArgs  # 'args' is reserved
+keep M:Occt.BRepAlgo_FaceRestrictor.ChangePCurve(Kerf.Topology.Edge@,Kerf.Geometry.Surface,Kerf.Topology.Placement@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRepAlgo_FaceRestrictor.IsInside(Kerf.Topology.Wire@,Kerf.Topology.Face@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRepAlgo_FaceRestrictor.ProjCurve3d(Kerf.Topology.Edge@,Kerf.Geometry.Surface,Kerf.Topology.Placement@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.BRepAlgo_Loop.SelectEdge(Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Vertex@,Kerf.Topology.Edge@,Occt.NCollection_List{Kerf.Topology.Shape})~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRepApprox_TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox.#ctor(Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor,Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.BRepApprox_TheZerImpFuncOfTheImpPrmSvSurfacesOfApprox.#ctor(Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.BRepBlend_AppSurface.#ctor(Kerf.Engine.Approximation.SweepFunction,System.Double,System.Double,System.Double,System.Double,System.Double,Kerf.Geometry.Continuity,System.Int32,System.Int32)#Continuity  # 'continuity' would also name local continuity
+keep M:Occt.BRepBlend_RstRstConstRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#A  # 'a' would also name parameter a
+keep M:Occt.BRepBlend_RstRstConstRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#B  # 'b' would also name parameter b
+keep M:Occt.BRepBlend_RstRstEvolRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#A  # 'a' would also name parameter a
+keep M:Occt.BRepBlend_RstRstEvolRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#B  # 'b' would also name parameter b
+keep M:Occt.BRepBlend_RstRstLineBuilder.MakeExtremity(Occt.BRepBlend_Extremity@,System.Boolean,Kerf.Engine.Geometry.Adaptors.Curve2DAdaptorBase,System.Double,System.Boolean,Kerf.Engine.Geometry.Adaptors.HVertex)#Arc  # 'arc' would also name local arc
+keep M:Occt.BRepBlend_SurfRstConstRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#A  # 'a' would also name parameter a
+keep M:Occt.BRepBlend_SurfRstConstRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#B  # 'b' would also name parameter b
+keep M:Occt.BRepBlend_SurfRstEvolRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#A  # 'a' would also name parameter a
+keep M:Occt.BRepBlend_SurfRstEvolRad.t3dto2d(System.Double@,System.Double@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#B  # 'b' would also name parameter b
+keep M:Occt.BRepBlend_SurfRstLineBuilder.MakeExtremity(Occt.BRepBlend_Extremity@,System.Boolean,Kerf.Engine.Geometry.Adaptors.Curve2DAdaptorBase,System.Double,System.Boolean,Kerf.Engine.Geometry.Adaptors.HVertex)#Arc  # 'arc' would also name local arc
+keep M:Occt.BRepBuilderAPI_Collect.Replace(Occt.NCollection_List{Kerf.Topology.Shape},Kerf.Topology.Shape@,Occt.NCollection_List{Kerf.Topology.Shape})#New  # 'new' is reserved
+keep M:Occt.BRepBuilderAPI_MakeEdge.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeEdge.#ctor(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge.#ctor(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeEdge.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeEdge.Init(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge.Init(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeEdge2d.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge2d.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeEdge2d.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepBuilderAPI_MakeEdge2d.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepBuilderAPI_MakeFace.Init(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Double)#Um  # 'um' would also name parameter UM
+keep M:Occt.BRepBuilderAPI_MakeFace.Init(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Double)#Vm  # 'vm' would also name parameter VM
+keep M:Occt.BRepBuilderAPI_Sewing.ReplaceEdge(Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Engine.Topology.ReShape)#theNewShape  # 'newShape' would also name local newShape
+keep M:Occt.BRepCheck_Analyzer.IsValid~System.Boolean  # BRepCheck_Analyzer would have two members called IsValid: Occt.BRepCheck_Analyzer.IsValid(in Kerf.Topology.Shape), Occt.BRepCheck_Analyzer.IsValid()
+keep M:Occt.BRepClass3d_SClassifier.GetNormalOnFaceBound(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double,Kerf.Geometry.Direction3D@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRepExtrema_DistanceSS.MIN_SOLUTION(Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},System.Double,System.Double,Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem})#SeqSol1  # 'seqSol1' would also name parameter seqSol1
+keep M:Occt.BRepExtrema_DistanceSS.MIN_SOLUTION(Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},System.Double,System.Double,Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem},Occt.NCollection_Sequence{Occt.BRepExtrema_SolutionElem})#SeqSol2  # 'seqSol2' would also name parameter seqSol2
+keep M:Occt.BRepFeat.IsInside(Kerf.Topology.Face@,Kerf.Topology.Face@)~System.Boolean#F1  # 'f1' would also name local f1
+keep M:Occt.BRepFeat_MakeDPrism.Perform(Kerf.Topology.Shape@,Kerf.Topology.Shape@)#From  # 'from' is reserved
+keep M:Occt.BRepFeat_MakeDPrism.TestCurve(Kerf.Topology.Face@)~Kerf.Geometry.Curve3D#Base  # 'base' is reserved
+keep M:Occt.BRepFeat_MakeLinearForm.Init(Kerf.Topology.Shape@,Kerf.Topology.Wire@,Kerf.Geometry.PlaneSurface,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,System.Int32,System.Boolean)#W  # 'w' would also name local w
+keep M:Occt.BRepFeat_MakePipe.Perform(Kerf.Topology.Shape@,Kerf.Topology.Shape@)#From  # 'from' is reserved
+keep M:Occt.BRepFeat_MakePrism.Perform(Kerf.Topology.Shape@,Kerf.Topology.Shape@)#From  # 'from' is reserved
+keep M:Occt.BRepFeat_MakePrism.TestCurve(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@)~Kerf.Geometry.Curve3D#Base  # 'base' is reserved
+keep M:Occt.BRepFeat_MakeRevol.Perform(Kerf.Topology.Shape@,Kerf.Topology.Shape@)#From  # 'from' is reserved
+keep M:Occt.BRepFeat_MakeRevolutionForm.Init(Kerf.Topology.Shape@,Kerf.Topology.Wire@,Kerf.Geometry.PlaneSurface,Kerf.Geometry.Axis3D@,System.Double,System.Double,System.Int32,System.Boolean)#W  # 'w' would also name local w
+keep M:Occt.BRepFill_AdvancedEvolved.ContainsInList(Occt.NCollection_List{Kerf.Topology.Shape},Kerf.Topology.Shape@)~System.Boolean#theObject  # 'object' is reserved
+keep M:Occt.BRepFill_AdvancedEvolved.IsDone~System.Boolean  # BRepFill_AdvancedEvolved would have two members called IsDone: Occt.BRepFill_AdvancedEvolved.IsDone(), Occt.BRepFill_AdvancedEvolved.IsDone(out uint)
+keep M:Occt.BRepFill_Draft.SetDraft(System.Boolean)#Internal  # 'internal' is reserved
+keep M:Occt.BRepFill_Evolved.#ctor(Kerf.Topology.Face@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.#ctor(Kerf.Topology.Wire@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.AddDegeneratedEdge(Kerf.Topology.Face@,Kerf.Topology.Wire@)#F  # 'f' would also name local f, local f
+keep M:Occt.BRepFill_Evolved.ConcaveSide(Kerf.Topology.Shape@,Kerf.Topology.Face@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BRepFill_Evolved.CutEdge(Kerf.Topology.Edge@,Kerf.Topology.Face@,Occt.NCollection_List{Kerf.Topology.Shape})#F  # 'f' would also name local f
+keep M:Occt.BRepFill_Evolved.ElementaryPerform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Occt.BRepMAT2d_BisectingLocus,Occt.BRepMAT2d_LinkTopoBilo,Kerf.Geometry.JoinKind)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.Perform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.Perform(Kerf.Topology.Wire@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.PlanarPerform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Occt.BRepMAT2d_BisectingLocus,Occt.BRepMAT2d_LinkTopoBilo,Kerf.Geometry.JoinKind)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.PrivatePerform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.PrivatePerformInPlace(Kerf.Topology.Face@,Kerf.Topology.Wire@,Kerf.Geometry.CoordinateSystem@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_Evolved.VerticalPerform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Occt.BRepMAT2d_BisectingLocus,Occt.BRepMAT2d_LinkTopoBilo,Kerf.Geometry.JoinKind)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_OffsetWire.#ctor(Kerf.Topology.Face@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_OffsetWire.CutEdge(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Int32,Occt.NCollection_List{Kerf.Topology.Shape})~System.Int32#F  # 'f' would also name local f
+keep M:Occt.BRepFill_OffsetWire.Init(Kerf.Topology.Face@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_OffsetWire.MakeCircle(Kerf.Topology.Edge@,Kerf.Topology.Vertex@,Kerf.Topology.Face@,System.Double,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}},Kerf.Geometry.PlaneSurface)#F  # 'f' would also name local f
+keep M:Occt.BRepFill_OffsetWire.MakeOffset(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}},Kerf.Geometry.PlaneSurface,System.Boolean,Kerf.Geometry.JoinKind,Kerf.Topology.Vertex[])#F  # 'f' would also name local f
+keep M:Occt.BRepFill_OffsetWire.PerformWithBiLo(Kerf.Topology.Face@,System.Double,Occt.BRepMAT2d_BisectingLocus,Occt.BRepMAT2d_LinkTopoBilo,Kerf.Geometry.JoinKind,System.Double)#Join  # 'join' is reserved
+keep M:Occt.BRepFill_OffsetWire.UpdateDetromp(Occt.NCollection_DataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}},Kerf.Topology.Shape@,Kerf.Topology.Shape@,Occt.NCollection_Sequence{Kerf.Topology.Shape},Occt.NCollection_Sequence{Kerf.Geometry.Point3D},Occt.Bisector_Bisec,System.Boolean,System.Boolean,Occt.BRepFill_TrimEdgeTool)#Params  # 'params' is reserved
+keep M:Occt.BRepFill_Sweep.BuildEdge(Kerf.Geometry.Surface,System.Boolean,System.Double,Kerf.Topology.Shape@,Kerf.Topology.Shape@,System.Double)~Kerf.Topology.Edge#Tol  # 'tol' would also name local tol
+keep M:Occt.BRepFill_Sweep.BuildFace(Kerf.Geometry.Surface,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},System.Boolean,System.Boolean,Kerf.Topology.Face@)#E1  # 'e1' would also name local e1
+keep M:Occt.BRepFill_Sweep.BuildFace(Kerf.Geometry.Surface,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},System.Boolean,System.Boolean,Kerf.Topology.Face@)#E2  # 'e2' would also name local e2
+keep M:Occt.BRepFill_Sweep.Couture(Kerf.Topology.Edge@,Kerf.Geometry.Surface,Kerf.Topology.Placement@)~Kerf.Geometry.Curve2D#L  # 'l' would also name local l
+keep M:Occt.BRepFill_Sweep.Filling(Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},System.Double,Kerf.Geometry.Frame3D@,Kerf.Geometry.Vector3D@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Face@)~System.Boolean#Axe  # 'axe' would also name local axe
+keep M:Occt.BRepFill_Sweep.Filling(Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},System.Double,Kerf.Geometry.Frame3D@,Kerf.Geometry.Vector3D@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Face@)~System.Boolean#F1  # 'f1' would also name local f1
+keep M:Occt.BRepFill_Sweep.Filling(Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},System.Double,Kerf.Geometry.Frame3D@,Kerf.Geometry.Vector3D@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Face@)~System.Boolean#F2  # 'f2' would also name local f2
+keep M:Occt.BRepFill_Sweep.MergeVertex(Kerf.Topology.Shape@,Kerf.Topology.Shape@)~System.Boolean#V1  # 'v1' would also name local v1
+keep M:Occt.BRepFill_Sweep.MergeVertex(Kerf.Topology.Shape@,Kerf.Topology.Shape@)~System.Boolean#V2  # 'v2' would also name local v2
+keep M:Occt.BRepFill_Sweep.Substitute(Kerf.Engine.Topology.Tools.Substitution,Kerf.Topology.Edge@,Kerf.Topology.Edge@)#New  # 'new' is reserved
+keep M:Occt.BRepFill_Sweep.Translate(Occt.NCollection_HArray2{Kerf.Topology.Shape},System.Int32,Occt.NCollection_HArray2{Kerf.Topology.Shape},System.Int32)#In  # 'in' is reserved
+keep M:Occt.BRepFill_Sweep.Translate(Occt.NCollection_HArray2{Kerf.Topology.Shape},System.Int32,Occt.NCollection_HArray2{Kerf.Topology.Shape},System.Int32)#Out  # 'out' is reserved
+keep M:Occt.BRepFill_Sweep.UpdateEdge(Kerf.Topology.Edge@,Kerf.Geometry.Surface,System.Boolean,System.Double)#E  # 'e' would also name local e
+keep M:Occt.BRepFill_TrimEdgeTool.AddOrConfuse(System.Boolean,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Occt.NCollection_Sequence{Kerf.Geometry.Point3D})#Params  # 'params' is reserved
+keep M:Occt.BRepFill_TrimEdgeTool.EvalParameters(Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D,Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D,Occt.NCollection_Sequence{Kerf.Geometry.Point3D})#Params  # 'params' is reserved
+keep M:Occt.BRepFill_TrimEdgeTool.EvalParametersBis(Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D,Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D,Occt.NCollection_Sequence{Kerf.Geometry.Point3D},System.Double)#Params  # 'params' is reserved
+keep M:Occt.BRepFill_TrimEdgeTool.IntersectWith(Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Shape@,Kerf.Topology.Shape@,Kerf.Topology.Vertex@,Kerf.Topology.Vertex@,Kerf.Geometry.JoinKind,System.Boolean,Occt.NCollection_Sequence{Kerf.Geometry.Point3D})#Params  # 'params' is reserved
+keep M:Occt.BRepFilletAPI_LocalOperation.Sect(System.Int32,System.Int32)~Occt.NCollection_HArray1{Occt.ChFiDS_CircSection}#IS  # 'is' is reserved
+keep M:Occt.BRepFilletAPI_MakeChamfer.Sect(System.Int32,System.Int32)~Occt.NCollection_HArray1{Occt.ChFiDS_CircSection}#IS  # 'is' is reserved
+keep M:Occt.BRepFilletAPI_MakeFillet.ComputedSurface(System.Int32,System.Int32)~Kerf.Geometry.Surface#IS  # 'is' is reserved
+keep M:Occt.BRepFilletAPI_MakeFillet.Sect(System.Int32,System.Int32)~Occt.NCollection_HArray1{Occt.ChFiDS_CircSection}#IS  # 'is' is reserved
+keep M:Occt.BRepFilletAPI_MakeFillet.SetRadius(System.Double,System.Double,System.Int32,System.Int32)#R1  # 'r1' would also name local r1
+keep M:Occt.BRepFilletAPI_MakeFillet.SetRadius(System.Double,System.Double,System.Int32,System.Int32)#R2  # 'r2' would also name local r2
+keep M:Occt.BRepLib.BuildCurve3d(Kerf.Topology.Edge@,System.Double,Kerf.Geometry.Continuity,System.Int32,System.Int32)~System.Boolean#Tolerance  # 'tolerance' would also name local tolerance
+keep M:Occt.BRepLib.Curves3dBuilt(Kerf.Topology.Shape@,System.Boolean@)~Kerf.Topology.Shape#theIsDone  # 'isDone' would also name local isDone
+keep M:Occt.BRepLib.Curves3dBuilt(Kerf.Topology.Shape@,System.Double,System.Boolean@,Kerf.Engine.Topology.History@,Kerf.Geometry.Continuity,System.Int32,System.Int32)~Kerf.Topology.Shape#theIsDone  # 'isDone' would also name local isDone
+keep M:Occt.BRepLib.NormalConsistencyEnsured(Kerf.Topology.Shape@,System.Boolean@,Kerf.Engine.Topology.History@,System.Double,System.Boolean)~Kerf.Topology.Shape#theIsCorrected  # 'isCorrected' would also name local isCorrected
+keep M:Occt.BRepLib_FindSurface.fillParams(Occt.NCollection_Array1{System.Double},System.Int32,System.Double,System.Double,Occt.NCollection_DynamicArray{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.BRepLib_FindSurface.fillPoints(Kerf.Engine.Topology.Adaptors.EdgeCurveAdaptor,Occt.NCollection_DynamicArray{System.Double},Occt.NCollection_Sequence{Kerf.Geometry.Point3D},Occt.NCollection_Sequence{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.BRepLib_MakeEdge.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeEdge.#ctor(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge.#ctor(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeEdge.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Surface,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeEdge.Init(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge.Init(Kerf.Geometry.Curve3D,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeEdge2d.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge2d.#ctor(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeEdge2d.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P1  # 'p1' would also name parameter p1
+keep M:Occt.BRepLib_MakeEdge2d.Init(Kerf.Geometry.Curve2D,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#P2  # 'p2' would also name parameter p2
+keep M:Occt.BRepLib_MakeFace.Init(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Double)#Um  # 'um' would also name parameter UM
+keep M:Occt.BRepLib_MakeFace.Init(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Double)#Vm  # 'vm' would also name parameter VM
+keep M:Occt.BRepMesh_ModelPostProcessor.DeflectionEstimator.#ctor(Occt.IMeshData_Model,Occt.IMeshTools_Parameters@)#theParams  # 'params' is reserved
+keep M:Occt.BRepMesh_NURBSRangeSplitter.AnalyticalFilter.#ctor(Occt.IMeshData_Face,Kerf.Engine.Geometry.IsoType,Occt.NCollection_Sequence{System.Double},Occt.NCollection_Sequence{System.Double},Occt.NCollection_Map{System.Double},Occt.NCollection_Map{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.BRepMesh_NURBSRangeSplitter.addParam(System.Double,System.ValueTuple{System.Double,System.Double},Occt.NCollection_IndexedMap{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.BRepMesh_NURBSRangeSplitter.filterParameters(Occt.NCollection_IndexedMap{System.Double},System.Double,System.Double)~Occt.NCollection_Sequence{System.Double}#theParams  # 'params' is reserved
+keep M:Occt.BRepMesh_NURBSRangeSplitter.initParamsFromIntervals(Occt.NCollection_Array1{System.Double},System.ValueTuple{System.Double,System.Double},System.Boolean,Occt.NCollection_IndexedMap{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.BRepMesh_TorusRangeSplitter.FUN_CalcAverageDUV(Occt.NCollection_Array1{System.Double},System.Int32)~System.Double#P  # 'p' would also name local p
+keep M:Occt.BRepMesh_TorusRangeSplitter.fillParams(Occt.NCollection_IndexedMap{System.Double},System.ValueTuple{System.Double,System.Double},System.Int32,System.Double)~Occt.NCollection_Sequence{System.Double}#theParams  # 'params' is reserved
+keep M:Occt.BRepOffsetAPI_MakeDraft.SetOptions(Occt.BRepBuilderAPI_TransitionMode,System.Double,System.Double)#Style  # 'style' would also name local style
+keep M:Occt.BRepOffsetAPI_MakeOffset.#ctor(Kerf.Topology.Face@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepOffsetAPI_MakeOffset.#ctor(Kerf.Topology.Wire@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepOffsetAPI_MakeOffset.Init(Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepOffsetAPI_MakeOffset.Init(Kerf.Topology.Face@,Kerf.Geometry.JoinKind,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepOffsetAPI_MakeOffsetShape.PerformByJoin(Kerf.Topology.Shape@,System.Double,System.Double,Occt.BRepOffset_Mode,System.Boolean,System.Boolean,Kerf.Geometry.JoinKind,System.Boolean,Kerf.Engine.Foundation.ProgressRange)#Join  # 'join' is reserved
+keep M:Occt.BRepOffsetAPI_MakeThickSolid.MakeThickSolidByJoin(Kerf.Topology.Shape@,Occt.NCollection_List{Kerf.Topology.Shape},System.Double,System.Double,Occt.BRepOffset_Mode,System.Boolean,System.Boolean,Kerf.Geometry.JoinKind,System.Boolean,Kerf.Engine.Foundation.ProgressRange)#Join  # 'join' is reserved
+keep M:Occt.BRepOffset_Inter2d.EdgeInter(Kerf.Topology.Face@,Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Occt.BRepAlgo_AsDes,System.Double,System.Boolean,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}})#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_Inter2d.RefEdgeInter(Kerf.Topology.Face@,Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Orientation,Kerf.Topology.Orientation,Occt.BRepAlgo_AsDes,System.Double,System.Boolean,Kerf.Topology.Vertex@,Occt.BRepAlgo_Image,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}},System.Boolean@)#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_Inter3d.ExtentEdge(Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Edge@)#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_MakeOffset.#ctor(Kerf.Topology.Shape@,System.Double,System.Double,Occt.BRepOffset_Mode,System.Boolean,System.Boolean,Kerf.Geometry.JoinKind,System.Boolean,System.Boolean,Kerf.Engine.Foundation.ProgressRange)#Join  # 'join' is reserved
+keep M:Occt.BRepOffset_MakeOffset.Initialize(Kerf.Topology.Shape@,System.Double,System.Double,Occt.BRepOffset_Mode,System.Boolean,System.Boolean,Kerf.Geometry.JoinKind,System.Boolean,System.Boolean)#Join  # 'join' is reserved
+keep M:Occt.BRepOffset_Tool.BuildPCurves(Kerf.Topology.Edge@,Kerf.Topology.Face@)#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_Tool.EnlargeGeometry(Kerf.Geometry.Surface@,System.Double@,System.Double@,System.Double@,System.Double@,System.Boolean@,System.Boolean@,System.Double,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Double,System.Double,System.Double,System.Double)~System.Boolean#U1  # 'u1' would also name local u1, local u1
+keep M:Occt.BRepOffset_Tool.EnlargeGeometry(Kerf.Geometry.Surface@,System.Double@,System.Double@,System.Double@,System.Double@,System.Boolean@,System.Boolean@,System.Double,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Double,System.Double,System.Double,System.Double)~System.Boolean#U2  # 'u2' would also name local u2, local u2
+keep M:Occt.BRepOffset_Tool.EnlargeGeometry(Kerf.Geometry.Surface@,System.Double@,System.Double@,System.Double@,System.Double@,System.Boolean@,System.Boolean@,System.Double,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Double,System.Double,System.Double,System.Double)~System.Boolean#V1  # 'v1' would also name local v1, local v1
+keep M:Occt.BRepOffset_Tool.EnlargeGeometry(Kerf.Geometry.Surface@,System.Double@,System.Double@,System.Double@,System.Double@,System.Boolean@,System.Boolean@,System.Double,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Double,System.Double,System.Double,System.Double)~System.Boolean#V2  # 'v2' would also name local v2, local v2
+keep M:Occt.BRepOffset_Tool.ExtentEdge(Kerf.Topology.Face@,Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Edge@)#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_Tool.ExtentFace(Kerf.Topology.Face@,Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Topology.Shape},Kerf.Topology.Containment,System.Double,Kerf.Topology.Face@)#F  # 'f' would also name local f, local f
+keep M:Occt.BRepOffset_Tool.MakeFace(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Boolean,Kerf.Topology.Face@)#Um  # 'um' would also name parameter UM
+keep M:Occt.BRepOffset_Tool.MakeFace(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Boolean,System.Boolean,System.Boolean,System.Boolean,Kerf.Topology.Face@)#Vm  # 'vm' would also name parameter VM
+keep M:Occt.BRepOffset_Tool.PutInBounds(Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Geometry.Curve2D@)#F  # 'f' would also name local f
+keep M:Occt.BRepOffset_Tool.PutSurfaceInPlace(Kerf.Topology.Face@,Kerf.Geometry.Surface,Kerf.Geometry.Surface,Kerf.Topology.Placement@)#theNew  # 'new' is reserved
+keep M:Occt.BRepOffset_Tool.UpdatePCurves(Kerf.Topology.Face@,Kerf.Topology.Face@)#F  # 'f' would also name local f
+keep M:Occt.BRepSweep_Revol.Angle(System.Double)~System.Double#D  # 'd' would also name local d
+keep M:Occt.BRepSweep_Translation.SetThePCurve(Kerf.Engine.Topology.Brep.BrepBuilder,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Orientation,Kerf.Geometry.Curve2D)#F  # 'f' would also name local f
+keep M:Occt.BRepTopAdaptor_FClass2d.NextAfter(System.Double,System.Double)~System.Double#theFrom  # 'from' is reserved
+keep M:Occt.BiTgte_Blend.IndicesOfBranche(System.Int32,System.Int32@,System.Int32@)#From  # 'from' is reserved
+keep M:Occt.BiTgte_Blend.IsOnRestriction(Kerf.Topology.Vertex@,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Edge@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.Bisector_BisecCC.IsEmpty~System.Boolean  # Bisector_BisecCC would have two members called IsEmpty: Occt.Bisector_BisecCC.IsEmpty(), Occt.Bisector_BisecCC.IsEmpty(bool)
+keep M:Occt.Bisector_PointOnBis.IsInfinite~System.Boolean  # Bisector_PointOnBis would have two members called IsInfinite: Occt.Bisector_PointOnBis.IsInfinite(bool), Occt.Bisector_PointOnBis.IsInfinite()
+keep M:Occt.BlendFunc_Chamfer.Derivatives(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.Matrix)~System.Boolean#D  # 'd' would also name local d
+keep M:Occt.BlendFunc_Chamfer.Derivatives(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.Matrix)~System.Boolean#X  # 'x' would also name local x
+keep M:Occt.BlendFunc_Chamfer.Value(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.BlendFunc_Chamfer.Value(Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double})~System.Boolean#X  # 'x' would also name local x
+keep M:Occt.CDelaBella.Face.#ctor(System.Int32)#theIndex  # 'index' would also name field index
+keep M:Occt.ChFi3d_BOPReconstruction.SplitDegenerated(Kerf.Topology.Face,Kerf.Topology.Edge,Occt.NCollection_List{Kerf.Topology.Shape})~System.Collections.Generic.List{Kerf.Topology.Edge}#theNew  # 'new' is reserved
+keep M:Occt.ChFi3d_Builder.ComputedSurface(System.Int32,System.Int32)~Kerf.Geometry.Surface#IS  # 'is' is reserved
+keep M:Occt.ChFi3d_Builder.SplitKPart(Occt.ChFiDS_SurfData,Occt.NCollection_Sequence{Occt.ChFiDS_SurfData},Occt.ChFiDS_Spine,System.Int32,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,System.Boolean@,System.Boolean@)~System.Boolean#I1  # 'i1' would also name local i1
+keep M:Occt.ChFi3d_Builder.SplitKPart(Occt.ChFiDS_SurfData,Occt.NCollection_Sequence{Occt.ChFiDS_SurfData},Occt.ChFiDS_Spine,System.Int32,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,System.Boolean@,System.Boolean@)~System.Boolean#I2  # 'i2' would also name local i2
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_Boite(Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double@,System.Double@,System.Double@,System.Double@,System.Double@,System.Double@)#Mu  # 'mu' would also name parameter mu
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_Boite(Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double@,System.Double@,System.Double@,System.Double@,System.Double@,System.Double@)#Mv  # 'mv' would also name parameter mv
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_Boite(Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double@,System.Double@,System.Double@,System.Double@)#Mu  # 'mu' would also name parameter mu
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_Boite(Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double@,System.Double@,System.Double@,System.Double@)#Mv  # 'mv' would also name parameter mv
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_BoundSrfImpl(Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double,System.Boolean,Kerf.Geometry.Surface@,System.Double@,System.Double@,System.Double@,System.Double@)#theBase  # 'base' is reserved
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_ExtrSpineCarac(Occt.TopOpeBRepDS_DataStructure,Occt.ChFiDS_Stripe,System.Int32,System.Double,System.Int32,System.Int32,Kerf.Geometry.Point3D@,Kerf.Geometry.Vector3D@,System.Double@)#P  # 'p' would also name parameter p
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_InPeriod(System.Double,System.Double,System.Double,System.Double)~System.Double#U  # 'u' would also name local u
+keep M:Occt.ChFi3d_Builder_0.ChFi3d_IsInFront(Occt.TopOpeBRepDS_DataStructure,Occt.ChFiDS_Stripe,Occt.ChFiDS_Stripe,System.Int32,System.Int32,System.Int32,System.Int32,System.Double@,System.Double@,Kerf.Topology.Face@,System.Boolean@,System.Int32@,System.Int32@,System.Boolean@,Kerf.Topology.Vertex@,System.Boolean,System.Boolean)~System.Boolean#Vtx  # 'vtx' would also name local vtx
+keep M:Occt.ChFi3d_Builder_0.CurveCleaner(Kerf.Geometry.BSplineCurve3D,System.Double,System.Int32)#Tol  # 'tol' would also name local tol
+keep M:Occt.ChFi3d_Builder_1.TangentExtremity(Kerf.Topology.Vertex@,Kerf.Topology.Edge@,Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor,Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor,System.Double)~System.Boolean#V  # 'v' would also name local v
+keep M:Occt.ChFi3d_Builder_2.InsertAfter(Occt.ChFiDS_Stripe,Occt.ChFiDS_SurfData,Occt.ChFiDS_SurfData)#Ref  # 'ref' is reserved
+keep M:Occt.ChFi3d_Builder_2.InsertBefore(Occt.ChFiDS_Stripe,Occt.ChFiDS_SurfData,Occt.ChFiDS_SurfData)#Ref  # 'ref' is reserved
+keep M:Occt.ChFi3d_ChBuilder.ConexFaces(Occt.ChFiDS_Spine,System.Int32,Kerf.Topology.Face@,Kerf.Topology.Face@)#F1  # 'f1' would also name local f1
+keep M:Occt.ChFi3d_ChBuilder.ConexFaces(Occt.ChFiDS_Spine,System.Int32,Kerf.Topology.Face@,Kerf.Topology.Face@)#F2  # 'f2' would also name local f2
+keep M:Occt.ChFi3d_ChBuilder.Sect(System.Int32,System.Int32)~Occt.NCollection_HArray1{Occt.ChFiDS_CircSection}#IS  # 'is' is reserved
+keep M:Occt.ChFi3d_FilBuilder.Sect(System.Int32,System.Int32)~Occt.NCollection_HArray1{Occt.ChFiDS_CircSection}#IS  # 'is' is reserved
+keep M:Occt.ChFiKPart_ComputeData_ChAsymPlnCon.ChFiKPart_MakeChAsym(Occt.TopOpeBRepDS_DataStructure,Occt.ChFiDS_SurfData,Kerf.Geometry.Plane3D@,Kerf.Geometry.Cone@,System.Double,System.Double,Kerf.Topology.Orientation,Kerf.Topology.Orientation,System.Double,System.Double,Kerf.Geometry.Circle3D@,System.Double,Kerf.Topology.Orientation,System.Boolean,System.Boolean)~System.Boolean#Dis  # 'dis' would also name local dis
+keep M:Occt.ChFiKPart_ComputeData_Fcts.ChFiKPart_InPeriod(System.Double,System.Double,System.Double,System.Double)~System.Double#U  # 'u' would also name local u
+keep M:Occt.Draft_Modification.Choose(Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.Draft_FaceInfo},Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.Draft_EdgeInfo},Kerf.Topology.Vertex@,Occt.Draft_VertexInfo,Kerf.Engine.Geometry.Adaptors.CurveAdaptor,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor)~System.Boolean#AS  # 'as' is reserved
+keep M:Occt.Draft_Modification.InternalAdd(Kerf.Topology.Face@,Kerf.Geometry.Direction3D@,System.Double,Kerf.Geometry.Plane3D@,System.Boolean)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.FairCurve_Batten.DumpPair(System.IO.TextWriter,System.Double,System.Double)#theNew  # 'new' is reserved
+keep M:Occt.FairCurve_Batten.DumpPair(System.IO.TextWriter,System.Int32,System.Int32)#theNew  # 'new' is reserved
+keep M:Occt.FilletSurf_Builder.Published``1(``0)~``0#theObject  # 'object' is reserved
+keep M:Occt.Geom2dAPI_PointsToBSpline.#ctor(Occt.NCollection_Array1{Kerf.Geometry.Point2D},Occt.NCollection_Array1{System.Double},System.Int32,System.Int32,Kerf.Geometry.Continuity,System.Double)#Params  # 'params' is reserved
+keep M:Occt.Geom2dAPI_PointsToBSpline.Init(Occt.NCollection_Array1{Kerf.Geometry.Point2D},Occt.NCollection_Array1{System.Double},System.Int32,System.Int32,Kerf.Geometry.Continuity,System.Double)#Params  # 'params' is reserved
+keep M:Occt.Geom2dGcc_Circ2d3TanIter.#ctor(Occt.Geom2dGcc_QCurve@,Kerf.Geometry.Point2D@,Kerf.Geometry.Point2D@,System.Double,System.Double)#Point3  # 'point3' would also name local point3
+keep M:Occt.Geom2dGcc_Circ2dTanOnRad.#ctor(Kerf.Engine.Geometry.Objects.Point2,Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D,System.Double,System.Double)#Point1  # 'point1' would also name local point1
+keep M:Occt.Geom2dHatch_Hatching.IsDone~System.Boolean  # Geom2dHatch_Hatching would have two members called IsDone: Occt.Geom2dHatch_Hatching.IsDone(bool), Occt.Geom2dHatch_Hatching.IsDone()
+keep M:Occt.GeomAPI_PointsToBSpline.#ctor(Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double},System.Int32,System.Int32,Kerf.Geometry.Continuity,System.Double)#Params  # 'params' is reserved
+keep M:Occt.GeomAPI_PointsToBSpline.Init(Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double},System.Int32,System.Int32,Kerf.Geometry.Continuity,System.Double)#Params  # 'params' is reserved
+keep M:Occt.GeomFill_ConstrainedFilling.CheckApprox(System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.GeomFill_ConstrainedFilling.CheckResult(System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.GeomFill_ConstrainedFilling.CheckTgteField(System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.GeomFill_CorrectedFrenet.FindPlane(Kerf.Engine.Geometry.Adaptors.CurveAdaptorBase,Kerf.Geometry.PlaneSurface@)~System.Boolean#theC  # 'c' would also name local c
+keep M:Occt.GeomFill_CorrectedFrenet.smoothlaw(Occt.Law_BSpline@,Occt.NCollection_HArray1{System.Double},Occt.NCollection_HArray1{System.Double},System.Double)#Tol  # 'tol' would also name local tol
+keep M:Occt.GeomFill_NSections.D0(System.Double,Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double})~System.Boolean#Poles  # 'poles' would also name local poles
+keep M:Occt.GeomFill_NSections.D0(System.Double,Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double})~System.Boolean#Weights  # 'weights' would also name local weights
+keep M:Occt.GeomFill_SectionGenerator.SetParam(Occt.NCollection_HArray1{System.Double})#Params  # 'params' is reserved
+keep M:Occt.GeomFill_SweepFunction.Intervals(Occt.NCollection_Array1{System.Double},Kerf.Geometry.Continuity)#T  # 't' would also name local t
+keep M:Occt.GeomInt_TheZerImpFuncOfTheImpPrmSvSurfacesOfWLApprox.#ctor(Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.GeomInt_TheZerImpFuncOfTheImpPrmSvSurfacesOfWLApprox.#ctor(Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.GordonUtilities.columnMeans(Kerf.Engine.Numerics.Matrix)~Kerf.Engine.Numerics.VectorBase{System.Double}#theParams  # 'params' is reserved
+keep M:Occt.GordonUtilities.rowMeans(Kerf.Engine.Numerics.Matrix)~Kerf.Engine.Numerics.VectorBase{System.Double}#theParams  # 'params' is reserved
+keep M:Occt.GordonUtilities.toMatrix(Occt.NCollection_Array2{System.Double})~Kerf.Engine.Numerics.Matrix#theParams  # 'params' is reserved
+keep M:Occt.HLRAlgo_Projector.Scaled(System.Boolean)#On  # 'on' is reserved
+keep M:Occt.HLRAlgo_Projector.WithScaled(System.Boolean)~Occt.HLRAlgo_Projector#On  # 'on' is reserved
+keep M:Occt.HLRBRep_Data.Update(Occt.HLRAlgo_Projector@)#P  # 'p' would also name local p
+keep M:Occt.HLRBRep_InternalAlgo.HideSelected(System.Int32,System.Boolean)#I  # 'i' would also name local i
+keep M:Occt.HLRBRep_Intersector.Perform(Kerf.Geometry.Line3D@,System.Double)#P  # 'p' would also name local p
+keep M:Occt.HLRBRep_PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter.Value(System.Double,System.Double@)~System.Boolean#theU  # 'u' would also name local u
+keep M:Occt.HLRBRep_PolyAlgo.CheckFrBackTriangles(Occt.NCollection_List{Occt.HLRAlgo_BiPoint},Occt.NCollection_Array1{Occt.HLRAlgo_PolyInternalData})#thePID  # 'pid' would also name local pid
+keep M:Occt.HLRBRep_Surface.IsAbove(System.Boolean,Occt.HLRBRep_Curve,System.Double)~System.Boolean#A  # 'a' would also name local a
+keep M:Occt.IntCurveSurface_InterUtils.SectionPointToParameters``2(Occt.Intf_SectionPoint@,``0,``1,System.Double@,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.IntCurveSurface_InterUtils.SectionPointToParameters``2(Occt.Intf_SectionPoint@,``0,``1,System.Double@,System.Double@,System.Double@)#V  # 'v' would also name local v
+keep M:Occt.IntCurveSurface_Inter`10.Perform(`0@,`2@,System.Double,System.Double,System.Double,System.Double)#U1  # 'u1' would also name local u1, local u1
+keep M:Occt.IntCurveSurface_Inter`10.Perform(`0@,`2@,System.Double,System.Double,System.Double,System.Double)#U2  # 'u2' would also name local u2, local u2
+keep M:Occt.IntCurveSurface_PolygonUtils.ApproxParamOnCurve(System.Int32,System.Double,System.Double,System.Double,System.Int32,Occt.NCollection_HArray1{System.Double})~System.Double#theParams  # 'params' is reserved
+keep M:Occt.IntCurveSurface_PolygonUtils.InitWithParams``2(``0@,Occt.NCollection_Array1{System.Double},System.Int32,Occt.NCollection_Array1{Kerf.Geometry.Point3D},Kerf.Engine.Geometry.Bounds.Box@,System.Double@,Occt.NCollection_HArray1{System.Double}@)#theParams  # 'params' is reserved
+keep M:Occt.IntImp_ZerImpFunc`2.#ctor(Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.IntImp_ZerImpFunc`2.#ctor(`0,Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.IntImp_ZerImpFunc`2.SetImplicitSurface(Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.IntPatch_ALine.FindParameter(Kerf.Geometry.Point3D@,Occt.NCollection_List{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.IntPatch_ImpPrmIntersection.AdjustU(System.Double)~System.Double#U  # 'u' would also name local u
+keep M:Occt.IntPatch_Intersection.Dump(System.Int32,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_Point.Address(System.Object)~System.String#theObject  # 'object' is reserved
+keep M:Occt.IntPatch_Point.Dump(System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_Point.DumpTransition(System.IO.TextWriter,Occt.IntSurf_Transition@)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_PointLine.NbPnts~System.Int32  # implements Occt.IApproxInt_WLine<Occt.IntPatch_WLine>.NbPnts() in Occt.IntPatch_WLine
+keep M:Occt.IntPatch_Polygo.Dump(System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_RLine.Dump(System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_RstInt.PutVertexOnLine(Occt.IntPatch_Line,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Kerf.Engine.Geometry.Adaptors.TopolTool,Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,System.Boolean,System.Double)#Tol  # 'tol' would also name local tol
+keep M:Occt.IntPatch_SpecialPoints.Adjust(Occt.IntSurf_PntOn2S@,System.ReadOnlySpan{System.Double},Occt.IntSurf_PntOn2S@,System.ValueTuple{System.Double,System.Double,System.Double,System.Double}@)#theParams  # 'params' is reserved
+keep M:Occt.IntPatch_TheSurfFunction.#ctor(Kerf.Engine.Geometry.Adaptors.SurfaceAdaptorBase,Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.IntPatch_TheSurfFunction.#ctor(Occt.IntSurf_Quadric@)#IS  # 'is' is reserved
+keep M:Occt.IntPatch_WLine.Dump(System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPatch_WLine.DumpPointLine(Occt.IntPatch_PointLine,System.String,System.Int32,System.IO.TextWriter)#theOut  # 'out' is reserved
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#P1  # 'p1' would also name local p1
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#P2  # 'p2' would also name local p2
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#P3  # 'p3' would also name local p3
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#Q1  # 'q1' would also name local q1
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#Q2  # 'q2' would also name local q2
+keep M:Occt.IntPolyh_MaillageAffinage.TriContact(Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,System.Double@)~System.Int32#Q3  # 'q3' would also name local q3
+keep M:Occt.IntPolyh_MaillageAffinage.TriangleEdgeContact(System.Int32,System.Int32,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_StartPoint@,Occt.IntPolyh_StartPoint@)~System.Int32#PE1  # 'pe1' would also name local pe1
+keep M:Occt.IntPolyh_MaillageAffinage.TriangleEdgeContact(System.Int32,System.Int32,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_StartPoint@,Occt.IntPolyh_StartPoint@)~System.Int32#PE2  # 'pe2' would also name local pe2
+keep M:Occt.IntPolyh_MaillageAffinage.TriangleEdgeContact(System.Int32,System.Int32,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Triangle@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_Point@,Occt.IntPolyh_StartPoint@,Occt.IntPolyh_StartPoint@)~System.Int32#PT1  # 'pt1' would also name local pt1
+keep M:Occt.IntPolyh_Triangle.SetIntersection(System.Boolean)#theInt  # 'int' is reserved
+keep M:Occt.IntPolyh_Triangle.WithIntersection(System.Boolean)~Occt.IntPolyh_Triangle#theInt  # 'int' is reserved
+keep M:Occt.IntSurf_Quadric.DN(System.Double,System.Double,System.Int32,System.Int32)~Kerf.Geometry.Vector3D#V  # 'v' would also name local v
+keep M:Occt.IntSurf_Quadric.Normale(System.Double,System.Double)~Kerf.Geometry.Vector3D#V  # 'v' would also name local v
+keep M:Occt.IntSurf_Quadric.ValAndGrad(Kerf.Geometry.Point3D@,System.Double@,Kerf.Geometry.Vector3D@)#Dist  # 'dist' would also name local dist
+keep M:Occt.IntWalk_IWalking`2.MakeWalkingPoint(System.Int32,System.Double,System.Double,`0,Occt.IntSurf_PntOn2S@)#Case  # 'case' is reserved
+keep M:Occt.Intf_SectionPoint.#ctor(Kerf.Geometry.Point2D@,Occt.Intf_PIType,System.Int32,System.Double,Occt.Intf_PIType,System.Int32,System.Double,System.Double)#Where  # 'where' is reserved
+keep M:Occt.Intf_SectionPoint.#ctor(Kerf.Geometry.Point3D@,Occt.Intf_PIType,System.Int32,System.Int32,System.Double,Occt.Intf_PIType,System.Int32,System.Int32,System.Double,System.Double)#Where  # 'where' is reserved
+keep M:Occt.Intrv_Intervals.#ctor(Occt.Intrv_Interval@)#Int  # 'int' is reserved
+keep M:Occt.Law_BSpline.IncreaseMultiplicity(System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Law_BSpline.IncreaseMultiplicity(System.Int32,System.Int32,System.Int32)#M  # 'm' would also name local m
+keep M:Occt.Law_BSpline.InsertKnot(System.Double,System.Int32,System.Double,System.Boolean)#M  # 'm' would also name local m
+keep M:Occt.Law_BSpline.LocalD0(System.Double,System.Int32,System.Int32,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.Law_BSpline.LocalD1(System.Double,System.Int32,System.Int32,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.Law_BSpline.LocalD2(System.Double,System.Int32,System.Int32,System.Double@,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.Law_BSpline.LocalD3(System.Double,System.Int32,System.Int32,System.Double@,System.Double@,System.Double@,System.Double@)#U  # 'u' would also name local u
+keep M:Occt.Law_BSpline.LocalDN(System.Double,System.Int32,System.Int32,System.Int32)~System.Double#U  # 'u' would also name local u
+keep M:Occt.Law_BSpline.SetOrigin(System.Int32)#Index  # 'index' would also name local index
+keep M:Occt.LocOpe.Closed(Kerf.Topology.Wire@,Kerf.Topology.Face@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.LocOpe.TgtFaces(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Face@)~System.Boolean#E  # 'e' would also name local e
+keep M:Occt.LocOpe_CSIntersector.AddPoints(Occt.IntCurvesFace_Intersector,Occt.NCollection_Sequence{Occt.LocOpe_PntFace},Kerf.Topology.Face@)#theInt  # 'int' is reserved
+keep M:Occt.LocOpe_CSIntersector.LocAfter(Occt.NCollection_Sequence{Occt.LocOpe_PntFace},System.Double,System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CSIntersector.LocBefore(Occt.NCollection_Sequence{Occt.LocOpe_PntFace},System.Double,System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CSIntersector.LocalizeAfter(System.Int32,System.Double,System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CSIntersector.LocalizeBefore(System.Int32,System.Double,System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CurveShapeIntersector.LocalizeAfter(System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CurveShapeIntersector.LocalizeBefore(System.Double,Kerf.Topology.Orientation@,System.Int32@,System.Int32@)~System.Boolean#From  # 'from' is reserved
+keep M:Occt.LocOpe_CurveShapeIntersector.Perform(Occt.BRepIntCurveSurface_Inter,Occt.NCollection_Sequence{Occt.LocOpe_PntFace})#theInt  # 'int' is reserved
+keep M:Occt.LocOpe_FindEdgesInFace.Set(Kerf.Topology.Shape@,Kerf.Topology.Face@)#F  # 'f' would also name local f
+keep M:Occt.LocOpe_LinearForm.#ctor(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_LinearForm.#ctor(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_LinearForm.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_LinearForm.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Point3D@,Kerf.Geometry.Point3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Prism.#ctor(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Prism.#ctor(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Prism.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Prism.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Vector3D@,Kerf.Geometry.Vector3D@)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Revol.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Axis3D@,System.Double)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_Revol.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Axis3D@,System.Double,System.Double)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_RevolutionForm.Perform(Kerf.Topology.Shape@,Kerf.Geometry.Axis3D@,System.Double)#Base  # 'base' is reserved
+keep M:Occt.LocOpe_SplitDrafts.MakeFace(Kerf.Topology.Face@,Occt.NCollection_List{Kerf.Topology.Shape})#F  # 'f' would also name local f
+keep M:Occt.LocOpe_SplitDrafts.NewEdge(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Geometry.Surface,Kerf.Topology.Vertex@,Kerf.Topology.Vertex@)~Kerf.Topology.Edge#F  # 'f' would also name local f
+keep M:Occt.LocOpe_SplitDrafts.Perform(Kerf.Topology.Face@,Kerf.Topology.Wire@,Kerf.Geometry.Direction3D@,Kerf.Geometry.Plane3D@,System.Double,Kerf.Geometry.Direction3D@,Kerf.Geometry.Plane3D@,System.Double,System.Boolean,System.Boolean)#F  # 'f' would also name local f
+keep M:Occt.LocOpe_SplitShape.AddOpenWire(Kerf.Topology.Wire@,Kerf.Topology.Face@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.LocOpe_SplitShape.IsInside(Kerf.Topology.Face@,Kerf.Topology.Wire@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.LocOpe_WiresOnShape.Project(Kerf.Topology.Vertex@,Kerf.Geometry.Point2D@,Kerf.Topology.Face@,Kerf.Topology.Edge@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.MAT2d_Circuit.SubSequence(Occt.NCollection_Sequence{Kerf.Geometry.Geometry2D},System.Int32,System.Int32,Occt.NCollection_Sequence{Kerf.Geometry.Geometry2D})#IF  # 'if' is reserved
+keep M:Occt.Plate_Plate.#ctor(Occt.Plate_Plate)#Ref  # 'ref' is reserved
+keep M:Occt.Plate_Plate.Copy(Occt.Plate_Plate)~Occt.Plate_Plate#Ref  # 'ref' is reserved
+keep M:Occt.ShapeAnalysis.GetFaceUVBounds(Kerf.Topology.Face@,System.Double@,System.Double@,System.Double@,System.Double@)#F  # 'f' would also name local f
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.CompareConicParams(Kerf.Geometry.CurveKind,System.Double,Kerf.Geometry.Frame3D@,Occt.NCollection_Array1{System.Double},Kerf.Geometry.Frame3D@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.CompareSurfParams(Kerf.Geometry.SurfaceKind,System.Double,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.DeviationSurfParams(Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})~System.Double#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.FillSolverData(Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Engine.Numerics.VectorBase{System.Double},System.Double)#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.GetLSGap(Occt.NCollection_HArray1{Kerf.Engine.Geometry.Xyz},Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})~System.Double#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.GetSurface(Kerf.Topology.Edge@,System.Double,Kerf.Engine.Geometry.Conversion.ConvType,Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},System.Double@,System.Int32@)~Kerf.Geometry.Surface#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.GetSurface(Kerf.Topology.Wire@,System.Double,Kerf.Engine.Geometry.Conversion.ConvType,Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},System.Double@,System.Int32@)~Kerf.Geometry.Surface#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.GetSurfaceByLS(Kerf.Topology.Wire@,System.Double,Kerf.Geometry.SurfaceKind,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double},System.Double@,System.Int32@)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.IsConic(Kerf.Geometry.CurveKind,System.Double,Kerf.Geometry.Frame3D@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.IsElementarySurf(Kerf.Geometry.SurfaceKind,System.Double,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.SetCanonicParameters(Kerf.Geometry.SurfaceKind,Kerf.Engine.Numerics.VectorBase{System.Double},Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.SetConicParameters(Kerf.Geometry.CurveKind,Kerf.Geometry.Curve3D,Kerf.Geometry.Frame3D@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_CanonicalRecognition.SetSurfParams(Kerf.Geometry.SurfaceKind,Kerf.Geometry.Surface,Kerf.Geometry.CoordinateSystem@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeAnalysis_TransferParameters.Init(Kerf.Topology.Edge@,Kerf.Topology.Face@)#F  # 'f' would also name local f
+keep M:Occt.ShapeAnalysis_TransferParameters.Perform(Occt.NCollection_HSequence{System.Double},System.Boolean)~Occt.NCollection_HSequence{System.Double}#Params  # 'params' is reserved
+keep M:Occt.ShapeBuild_Edge.Curve3dBuilt(Kerf.Topology.Edge@,System.Boolean@)~Kerf.Topology.Edge#theIsDone  # 'isDone' would also name local isDone
+keep M:Occt.ShapeBuild_Edge.PCurveReassigned(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Face@,System.Boolean@)~Kerf.Topology.Edge#theIsDone  # 'isDone' would also name local isDone
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.approxPCurve(System.Int32,Kerf.Geometry.Curve3D,System.Double,System.Double,Occt.NCollection_Array1{Kerf.Geometry.Point3D}@,Occt.NCollection_Array1{System.Double}@,Occt.NCollection_Array1{Kerf.Geometry.Point2D}@,Kerf.Geometry.Curve2D@)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.approximatePCurve(Occt.NCollection_Array1{Kerf.Geometry.Point2D},Occt.NCollection_Array1{System.Double})~Kerf.Geometry.Curve2D#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.checkPoints(Occt.NCollection_Array1{Kerf.Geometry.Point3D}@,Occt.NCollection_Array1{System.Double}@,System.Double@)#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.checkPoints2d(Occt.NCollection_Array1{Kerf.Geometry.Point2D}@,Occt.NCollection_Array1{System.Double}@,System.Double@)#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.correctExtremity(Kerf.Geometry.Curve3D,Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{Kerf.Geometry.Point2D},System.Boolean,Kerf.Geometry.Point2D@,System.Boolean)#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.generateCurvePoints(Kerf.Geometry.Curve3D,System.Double,System.Double,System.Int32,Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double})~System.Int32#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.getLine(Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double},Occt.NCollection_Array1{Kerf.Geometry.Point2D},System.Double,System.Boolean@,System.Boolean@)~Kerf.Geometry.Curve2D#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.insertAdditionalPointOrAdjust(System.Boolean@,System.Int32,System.Double,System.Double,System.Double@,System.Double,Kerf.Geometry.Curve3D,System.Int32@,Occt.NCollection_Array1{Kerf.Geometry.Point3D}@,Occt.NCollection_Array1{System.Double}@,Occt.NCollection_Array1{Kerf.Geometry.Point2D}@)#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.interpolatePCurve(System.Int32,Occt.NCollection_Array1{Kerf.Geometry.Point2D},Occt.NCollection_Array1{System.Double})~Kerf.Geometry.Curve2D#theParams  # 'params' is reserved
+keep M:Occt.ShapeConstruct_ProjectCurveOnSurface.isAnIsoparametric(System.Int32,Occt.NCollection_Array1{Kerf.Geometry.Point3D},Occt.NCollection_Array1{System.Double},System.Boolean@,System.Boolean@,Kerf.Geometry.Point2D@,System.Boolean@,Kerf.Geometry.Point2D@,System.Boolean@,Kerf.Geometry.Curve3D@,System.Double@,System.Double@,Occt.NCollection_Array1{System.Double})~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.ShapeCustom_ConvertToBSpline.NewCurve(Kerf.Topology.Edge@,Kerf.Geometry.Curve3D@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.ShapeCustom_ConvertToBSpline.NewCurve2d(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Geometry.Curve2D@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.ShapeCustom_ConvertToRevolution.NewCurve(Kerf.Topology.Edge@,Kerf.Geometry.Curve3D@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.ShapeCustom_ConvertToRevolution.NewCurve2d(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Geometry.Curve2D@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.ShapeCustom_DirectModification.NewCurve(Kerf.Topology.Edge@,Kerf.Geometry.Curve3D@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.ShapeCustom_DirectModification.NewCurve2d(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Geometry.Curve2D@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.ShapeCustom_SweptToElementary.NewCurve(Kerf.Topology.Edge@,Kerf.Geometry.Curve3D@,Kerf.Topology.Placement@,System.Double@)~System.Boolean#L  # 'l' would also name local l
+keep M:Occt.ShapeCustom_SweptToElementary.NewCurve2d(Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Face@,Kerf.Geometry.Curve2D@,System.Double@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.ShapeFix_ComposeShell.GetPatchIndex(System.Double,Occt.NCollection_HArray1{System.Double},System.Boolean)~System.Int32#Params  # 'params' is reserved
+keep M:Occt.ShapeFix_Edge.InternalReplacePCurveObject(Kerf.Topology.Edge@,Kerf.Geometry.Curve2D,Kerf.Geometry.Curve2D)#theNew  # 'new' is reserved
+keep M:Occt.ShapeFix_FixSmallFace.ComputeSharedEdgeForStripFace(Kerf.Topology.Face@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double)~Kerf.Topology.Edge#F  # 'f' would also name local f
+keep M:Occt.ShapeFix_FixSmallFace.SplitOneFace(Kerf.Topology.Face@,Kerf.Topology.Compound@)~System.Boolean#F  # 'f' would also name local f
+keep M:Occt.ShapeProcess_Context.Value1(System.String)~System.Char#theString  # 'string' is reserved
+keep M:Occt.ShapeUpgrade_ConvertSurfaceToBezierBasis.GetSegment(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double)~Kerf.Geometry.Surface#U1  # 'u1' would also name local u1
+keep M:Occt.ShapeUpgrade_ConvertSurfaceToBezierBasis.GetSegment(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double)~Kerf.Geometry.Surface#U2  # 'u2' would also name local u2
+keep M:Occt.ShapeUpgrade_ConvertSurfaceToBezierBasis.GetSegment(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double)~Kerf.Geometry.Surface#V1  # 'v1' would also name local v1
+keep M:Occt.ShapeUpgrade_ConvertSurfaceToBezierBasis.GetSegment(Kerf.Geometry.Surface,System.Double,System.Double,System.Double,System.Double)~Kerf.Geometry.Surface#V2  # 'v2' would also name local v2
+keep M:Occt.ShapeUpgrade_UnifySameDomain.ReplaceSurface(Kerf.Geometry.Surface,Kerf.Geometry.Surface,System.Collections.Generic.IEnumerable{Kerf.Topology.Shape})#theNew  # 'new' is reserved
+keep M:Occt.TopOpeBRepDS.SPrint(Kerf.Topology.Containment)~System.String#S  # 's' would also name local s
+keep M:Occt.TopOpeBRepDS_BuildTool.Parameter(Kerf.Topology.Shape@,Kerf.Topology.Shape@,System.Double)#E  # 'e' would also name local e
+keep M:Occt.TopOpeBRepDS_BuildTool.Parameter(Kerf.Topology.Shape@,Kerf.Topology.Shape@,System.Double)#P  # 'p' would also name local p
+keep M:Occt.TopOpeBRepDS_BuildTool.Parameter(Kerf.Topology.Shape@,Kerf.Topology.Shape@,System.Double)#V  # 'v' would also name local v
+keep M:Occt.TopOpeBRepDS_DataStructure.SameDomainRef(Kerf.Topology.Shape@,System.Int32)#Ref  # 'ref' is reserved
+keep M:Occt.TopOpeBRepDS_DataStructure.SameDomainRef(System.Int32,System.Int32)#Ref  # 'ref' is reserved
+keep M:Occt.TopOpeBRepDS_HDataStructure.ClearStoreInterferences(Occt.NCollection_List{Occt.TopOpeBRepDS_Interference},System.Int32,System.String)#IS  # 'is' is reserved
+keep M:Occt.TopOpeBRepDS_HDataStructure.StoreInterference(Occt.TopOpeBRepDS_Interference,System.Int32,System.String)#IS  # 'is' is reserved
+keep M:Occt.TopOpeBRepDS_HDataStructure.StoreInterferences(Occt.NCollection_List{Occt.TopOpeBRepDS_Interference},System.Int32,System.String)#IS  # 'is' is reserved
+keep M:Occt.TopOpeBRepDS_TextDump.Reader.#ctor(System.IO.TextReader,Kerf.Topology.Shape@)#theIS  # 'is' is reserved
+keep M:Occt.TopOpeBRepDS_TextDump.Writer.ShapeRef(Kerf.Topology.Shape@)~System.String#S  # 's' would also name local s
+keep M:Occt.TopOpeBRepTool_2d.FC2D_CurveOnSurface(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double@,System.Double@,System.Double@,System.Boolean)~Kerf.Geometry.Curve2D#F  # 'f' would also name parameter f
+keep M:Occt.TopOpeBRepTool_2d.FC2D_MakeCurveOnSurface(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double@,System.Double@,System.Double@,System.Boolean)~Kerf.Geometry.Curve2D#F  # 'f' would also name parameter f
+keep M:Occt.TopOpeBRepTool_2d.FC2D_make2d(Kerf.Topology.Edge@,Kerf.Topology.Face@,System.Double@,System.Double@,System.Double@,System.Boolean)~Kerf.Geometry.Curve2D#F  # 'f' would also name local f
+keep M:Occt.TopOpeBRepTool_ShapeTool.CurvesSameOriented(Kerf.Engine.Topology.Adaptors.EdgeCurveAdaptor,Kerf.Engine.Topology.Adaptors.EdgeCurveAdaptor)~System.Boolean#C1  # 'c1' would also name local c1
+
+# DataExchange
+keep M:Occt.IFSelect_Functions.CString(System.Char[],System.Int32)~System.String#theFrom  # 'from' is reserved
+keep M:Occt.IFSelect_WorkSession.CString(System.Char[],System.Int32)~System.String#theFrom  # 'from' is reserved
+keep M:Occt.RW3mf_TreeWriter.writeMesh(System.Xml.XmlWriter,Occt.RWMesh_ProductMesh,Occt.RW3mf_TreeWriter.ObjectDef,System.Double)#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.array(System.Text.Json.JsonElement,System.String)~System.Text.Json.JsonElement[]#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.index(System.Text.Json.JsonElement,System.String,System.Boolean)~System.Int32#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.integer(System.Text.Json.JsonElement,System.String,System.Int64,System.Boolean)~System.Int64#theDefault  # 'default' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.integer(System.Text.Json.JsonElement,System.String,System.Int64,System.Boolean)~System.Int64#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.numbers(System.Text.Json.JsonElement,System.String,System.Int32)~System.Double[]#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeReader.Context.text(System.Text.Json.JsonElement,System.String)~System.String#theObject  # 'object' is reserved
+keep M:Occt.RWGltf_TreeWriter.writeGroup(Occt.RWGltf_TreeWriter.Model,Occt.RWMesh_ProductMesh.Group,Occt.RWMesh_CoordinateConverter)~System.ValueTuple{System.Int32,System.Int32,System.Int32}#theGroup  # 'group' is reserved
+keep M:Occt.RWMesh_ProductMesh.addFace(Occt.RWMesh_ProductMesh.Group,Kerf.Topology.Face@,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@,System.Boolean)#theGroup  # 'group' is reserved
+keep M:Occt.RWStepAP214_ReadWriteModule.CaseStep(Occt.NCollection_Sequence{System.String})~System.Int32#theTypes  # 'types' would also name local types
+keep M:Occt.RWStl_Reader.IsAlpha(System.Byte)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.RWStl_Reader.IsSpace(System.Byte)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.Resource_Unicode.AppendBytes(System.Byte[],System.Int32,System.Int32,System.Text.StringBuilder)#theFrom  # 'from' is reserved
+keep M:Occt.Resource_Unicode.AppendUtf16(System.UInt32,System.Text.StringBuilder)#theChar  # 'char' is reserved
+keep M:Occt.Resource_Unicode.AssignCat(System.Text.StringBuilder,System.Char)#theChar  # 'char' is reserved
+keep M:Occt.Resource_Unicode.CLength(System.Byte[],System.Int32)~System.Int32#theFrom  # 'from' is reserved
+keep M:Occt.Resource_Unicode.ToExtCharacter(System.Byte)~System.Char#theChar  # 'char' is reserved
+keep M:Occt.STEPCAFControl_Reader.Perform(System.String,Occt.XdeDoc_Document,Occt.DESTEP_Parameters@,Kerf.Engine.Foundation.ProgressRange)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.STEPCAFControl_Reader.ReadFile(System.String,Occt.DESTEP_Parameters@)~Occt.IFSelect_ReturnStatus#theParams  # 'params' is reserved
+keep M:Occt.STEPCAFControl_Writer.MakeSTEPStyles(Occt.STEPConstruct_Styles,Kerf.Topology.Shape,Occt.NCollection_IndexedDataMap{Kerf.Topology.Shape,Occt.STEPCAFControl_Writer.Style},Occt.StepVisual_StyledItem@,Occt.NCollection_Map{Kerf.Topology.Shape},Occt.NCollection_DataMap{Kerf.Topology.Shape,Kerf.Engine.Foundation.Transient},Occt.NCollection_DataMap{System.String,Kerf.Engine.Foundation.Transient},Occt.NCollection_DataMap{Kerf.Geometry.Point3D,Kerf.Engine.Foundation.Transient},Occt.XdeDoc_Document,Occt.STEPCAFControl_Writer.Style,System.Boolean,System.Boolean)#theOverride  # 'override' is reserved
+keep M:Occt.STEPCAFControl_Writer.Perform(Occt.XdeDoc_Document,System.String,Occt.DESTEP_Parameters@,Kerf.Engine.Foundation.ProgressRange)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.STEPCAFControl_Writer.Transfer(Occt.NCollection_Sequence{Occt.XdeDoc_Label},Occt.DESTEP_Parameters@,Occt.STEPControl_StepModelType,System.String,Kerf.Engine.Foundation.ProgressRange)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.STEPCAFControl_Writer.Transfer(Occt.XdeDoc_Document,Occt.DESTEP_Parameters@,Occt.STEPControl_StepModelType,System.String,Kerf.Engine.Foundation.ProgressRange)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.STEPCAFControl_Writer.Transfer(Occt.XdeDoc_Label@,Occt.DESTEP_Parameters@,Occt.STEPControl_StepModelType,System.String,Kerf.Engine.Foundation.ProgressRange)~System.Boolean#theParams  # 'params' is reserved
+keep M:Occt.STEPConstruct_Styles.AddStyle(Kerf.Topology.Shape,Occt.StepVisual_PresentationStyleAssignment,Occt.StepVisual_StyledItem)~Occt.StepVisual_StyledItem#Override  # 'override' is reserved
+keep M:Occt.STEPConstruct_Styles.AddStyle(Occt.StepRepr_RepresentationItem,Occt.StepVisual_PresentationStyleAssignment,Occt.StepVisual_StyledItem)~Occt.StepVisual_StyledItem#Override  # 'override' is reserved
+keep M:Occt.STEPControl_ActorRead.TransferEntity(Occt.StepBasic_ProductDefinition,Occt.Transfer_TransientProcess,Occt.StepData_Factors@,System.Boolean,Kerf.Engine.Foundation.ProgressRange)~Occt.TransferBRep_ShapeBinder#theUseTrsf  # 'useTrsf' would also name local useTrsf
+keep M:Occt.STEPControl_Reader.ReadFile(System.String,Occt.DESTEP_Parameters@,Kerf.Engine.Foundation.ProgressRange,Occt.StepFile_ReadLimits)~Occt.IFSelect_ReturnStatus#theParams  # 'params' is reserved
+keep M:Occt.STEPControl_Reader.ReadInto(System.String,System.IO.Stream,Occt.DESTEP_Parameters@,Kerf.Engine.Foundation.ProgressRange,Occt.StepFile_ReadLimits)~Occt.IFSelect_ReturnStatus#theParams  # 'params' is reserved
+keep M:Occt.STEPControl_Reader.ReadStream(System.String,Occt.DESTEP_Parameters@,System.IO.Stream,Kerf.Engine.Foundation.ProgressRange,Occt.StepFile_ReadLimits)~Occt.IFSelect_ReturnStatus#theParams  # 'params' is reserved
+keep M:Occt.STEPControl_Writer.Transfer(Kerf.Topology.Shape,Occt.STEPControl_StepModelType,Occt.DESTEP_Parameters@,System.Boolean,Kerf.Engine.Foundation.ProgressRange)~Occt.IFSelect_ReturnStatus#theParams  # 'params' is reserved
+keep M:Occt.StepData_StepReaderData.ExtAssignCat(System.Text.StringBuilder,System.Char)#theChar  # 'char' is reserved
+keep M:Occt.StepData_StepReaderData.ExtSetValue(System.Text.StringBuilder,System.Int32,System.Char)#theWhere  # 'where' is reserved
+keep M:Occt.StepData_StepReaderData.ExtSetValue(System.Text.StringBuilder,System.Int32,System.String)#theWhere  # 'where' is reserved
+keep M:Occt.StepData_StepReaderData.ExtTail(System.Text.StringBuilder,System.Int32)~System.String#theFrom  # 'from' is reserved
+keep M:Occt.StepData_StepReaderData.ExtValue(System.Text.StringBuilder,System.Int32)~System.Char#theWhere  # 'where' is reserved
+keep M:Occt.StepData_StepWriter.IsAlpha(System.Char)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.StepData_StepWriter.IsXDigit(System.Char)~System.Boolean#theChar  # 'char' is reserved
+keep M:Occt.StepDimTol_GeneralDatumReference.Init(Occt.TCollection_HAsciiString,Occt.TCollection_HAsciiString,Occt.StepRepr_ProductDefinitionShape,Occt.StepData_Logical,Occt.StepDimTol_DatumOrCommonDatum,System.Boolean,Occt.NCollection_HArray1{Occt.StepDimTol_DatumReferenceModifier})#theBase  # 'base' is reserved
+keep M:Occt.StepDimTol_GeneralDatumReference.SetBase(Occt.StepDimTol_DatumOrCommonDatum)#theBase  # 'base' is reserved
+keep M:Occt.StepFile_Parser.TokenName(System.Int32)~System.String#theToken  # 'token' would also name namedtype token
+keep M:Occt.StepFile_ReadData.PrintRecord(Occt.StepFile_ReadData.Record)#theRecord  # 'record' is reserved
+keep M:Occt.StepFile_Scanner.CreateNewText(System.Int32,System.Int32)#theFrom  # 'from' is reserved
+keep M:Occt.StepKinematics_KinematicPropertyMechanismRepresentation.Init(Occt.StepRepr_RepresentedDefinition,Occt.StepRepr_Representation,Occt.StepKinematics_KinematicLinkRepresentation)#theBase  # 'base' is reserved
+keep M:Occt.StepKinematics_KinematicPropertyMechanismRepresentation.SetBase(Occt.StepKinematics_KinematicLinkRepresentation)#theBase  # 'base' is reserved
+keep M:Occt.StepToTopoDS_MakeTransformed.Compute(Occt.StepGeom_CartesianTransformationOperator3d)~System.Boolean#Operator  # 'operator' is reserved
+keep M:Occt.StepToTopoDS_MakeTransformed.Compute(Occt.StepGeom_CartesianTransformationOperator3d,Occt.StepData_Factors@)~System.Boolean#Operator  # 'operator' is reserved
+keep M:Occt.StepToTopoDS_TranslateCompositeCurve.Init(Occt.StepGeom_CompositeCurve,Occt.Transfer_TransientProcess,Occt.StepGeom_Surface,Kerf.Geometry.Surface,Occt.StepData_Factors@)~System.Boolean#CC  # 'cc' would also name local cc
+keep M:Occt.Transfer_TransferIterator.IsKind(Kerf.Engine.Foundation.Transient,System.Type)~System.Boolean#theObject  # 'object' is reserved
+keep M:Occt.XSAlgo_ShapeProcessor.SubString(System.String,System.Int32,System.Int32)~System.String#theString  # 'string' is reserved
+keep M:Occt.XdeDoc_Document.reaches(System.Int32,System.Int32)~System.Boolean#theFrom  # 'from' is reserved

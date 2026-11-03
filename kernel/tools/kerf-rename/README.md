@@ -1,7 +1,8 @@
 # kerf-rename
 
 Renames Kerf's code to .NET conventions from a reviewed name map (phase10-plan.md 2.3, docs/design-rules.md section 1).
-Unit 10E runs it assembly by assembly over Kerf.slnx; Bento is updated afterwards with the same map.
+Unit 10E ran it assembly by assembly over Kerf.slnx and the benchmarks (docs/api/kerf.map, with the renames it dropped in
+docs/api/kerf-keeps.map); Bento is updated afterwards with the same maps (10N).
 
 It is a Roslyn tool: it loads a solution with MSBuildWorkspace, binds every name that could refer to something renamed,
 and rewrites the text. It never guesses: a rename that would collide is dropped and reported.
@@ -86,8 +87,10 @@ A rename is dropped, and listed in the report and the applied map, when:
 
 - a parameter or local would take a name another symbol in the same body already has (`aP` and `theP` both becoming
   `p`), or a reserved word (`theRef`, `anObject`); locals give way before parameters;
-- a member would share its name with another member of its type, a base or a derived type (other than overloads), or
-  with its type; or a method would become a property beside an overload of the same name;
+- a member would share its name with another member of its type, a base or a derived type, or with its type; or a
+  method would become a property beside an overload of the same name. Two methods of different names never become
+  overloads of one name (unit 10E: `length(…, double?)` beside `Length(…, double)` changed which one a call bound to);
+  10E gave such methods a `Core` suffix in the map;
 - a method would become a property but is used as a delegate, has attributes, implements an interface, or overrides a
   method the map doesn't convert;
 - two types would get one full name.

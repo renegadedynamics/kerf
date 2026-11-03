@@ -13,18 +13,16 @@ The modelling layer references the kernel's assemblies; no source file is shared
 
 ## Status
 
-The two folders hold the projects as they were published until now:
-- `kernel/` is **OCCT.NET**, a class-for-class port of OCCT. It is on nuget.org as `OcctNet.*`.
-- `modeling/` is **build123d.NET**, on nuget.org as `Build123d`.
-
-Phase 10 ([kernel/docs/phase10-plan.md](kernel/docs/phase10-plan.md)) turns them into Kerf:
-- .NET names and conventions;
+Phase 10 ([kernel/docs/phase10-plan.md](kernel/docs/phase10-plan.md)) turns the two ports, OCCT.NET and build123d.NET,
+into Kerf:
+- .NET names and conventions (done in unit 10E: `Kerf.Kernel.*` with namespaces `Kerf.Geometry`, `Kerf.Topology` and
+  `Kerf.Engine.*`, and `Kerf.Modeling`);
 - full immutability;
 - results in place of expected exceptions;
 - the kernel's own tests in place of the comparison with native OCCT.
 
-The packages move to `Kerf.Kernel` and `Kerf.Modeling` at 0.2.0. Kerf diverges from OCCT and build123d from here on, and
-isn't endorsed by either project.
+The packages move to `Kerf.Kernel.*` and `Kerf.Modeling` at 0.2.0 (the `OcctNet.*` and `Build123d` packages end at
+0.1.0). Kerf diverges from OCCT and build123d from here on, and isn't endorsed by either project.
 
 ## Building
 

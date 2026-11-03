@@ -20,18 +20,24 @@ file is corrected.
 | `Kerf.Booleans` | Fuse, cut, common, section, split |
 | `Kerf.Meshing` | Triangulation and meshes |
 | `Kerf.Exchange` | STEP, STL, glTF, 3MF, BREP |
+| `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing`, `Kerf.Measurement` | The areas decision 1349 (65) added |
 | `Kerf.Engine.<Area>` | Everything else, internal: the algorithms (`Kerf.Engine.Booleans.PaveFiller`) |
 | `Kerf.Modeling` | The modelling layer |
 
-More public areas (fillets, offsets, healing, properties) are added by unit 10D's reviews, one namespace per area:
-[api/README.md](api/README.md) proposes `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing` and
-`Kerf.Measurement`, pending the owner's review (questions 53 to 65).
+Removed types (NCollection, TCollection, `PackedList`) keep their OCCT names in the namespace `Occt` until unit 10J
+replaces them (decision 1349, 58). Unit 10E applied these names: [api/kerf.map](api/kerf.map) is the map, and
+`OcctTypeNames` (Foundation) gives each renamed type's and enum member's OCCT name at run time.
 
 - **No namespace segment that is also a common type name.** Inside `Kerf.Engine.*`, a namespace `Kerf.Engine.Math`
   would make every `Math.Sqrt` mean the namespace: OCCT's `math` package goes to `Kerf.Engine.Numerics`. Likewise no
   type is called `Geometry`, `Topology`, `Kerf` or after its own namespace.
 - **No public type whose name is a common .NET type's** (`Math`, `Vector<T>`, `Matrix4x4`, `Point`, `Timer`), even in
-  another namespace: two `using`s make it ambiguous.
+  another namespace: two `using`s make it ambiguous. Engine types follow the same rule for the namespaces the code
+  imports (`Stream`, `ConsoleColor`, `Parallel`, `Vector3`), since a type in the code's own namespace hides .NET's.
+- **No two types with one name**, even in different namespaces: a file that imports both can't name either. 10E gave
+  every engine type of ModelingAlgorithms and DataExchange a name of its own (Foundation's and ModelingData's few
+  remaining twins are qualified where they meet). A type isn't named after its base type, a member, or a type of an
+  enclosing namespace either: each would bind a reference to the wrong one.
 
 ### Types
 
@@ -42,8 +48,10 @@ More public areas (fillets, offsets, healing, properties) are added by unit 10D'
   `TName`.
 - One public type per file, named after the type. Derived files keep their `// Port of:` header, which names the OCCT
   files they came from (the licence requires it, and it lets a fix in OCCT be found).
-- The names themselves are unit 10D's to decide, area by area. The pilot's (`Point3D`, `Frame3D`, `Transform3D`; kernel/docs/phase10/pilot-gp-math.map
-  on the unmerged branch `phase10/u10c-pilot`) are drafts.
+- **`2D`/`3D` where both versions exist** (`Point3D`, `Vector2D`, `CircleCurve3D`), none where only one does
+  (`Cylinder`, `Sphere`, `CoordinateSystem`, `BSplineSurface`); `Plane3D` keeps its suffix because `Plane` is
+  System.Numerics's (decision 1349, 57).
+- Interfaces start with `I` (`ICurveTool`); exceptions end in `Exception` (`DomainErrorException`).
 
 ### Members
 
@@ -52,7 +60,10 @@ More public areas (fillets, offsets, healing, properties) are added by unit 10D'
   without work is a property. Work, or a result that can fail, stays a method (`ComputeArea()`, `TryGetPlane(out …)`).
   Never a `Get` prefix on a property.
 - No OCCT protocol names in the public API: no `Perform`, `IsDone`, `Build`, `Init`/`More`/`Next`/`Value` (section 4).
-- Enum members without the enum's prefix: `TransformForm.Rotation`, not `gp_Rotation`.
+- Enum members without the enum's prefix: `TransformForm.Rotation`, not `gp_Rotation`. Code names them with their enum
+  (`ShapeType.Edge`), not bare through `using static`: several enums and types share names such as `Edge`, `Cylinder`
+  and `In`.
+- A private method isn't named so that it overloads a public one: `LengthCore`, not `Length` beside `Length(…)`.
 
 ### Fields, parameters and locals
 
@@ -98,7 +109,7 @@ mechanically to ported code (`theX` → `x`, `myX` → `_x`, `aX` → `x`): tool
 ## 4. Operations
 
 - **An operation is a static method, or an immutable operation object, that takes inputs and an options record and
-  returns a result.** `Booleans.Fuse(a, b, options)`, `Fillet.Apply(shape, edges, radius)`. No
+  returns a result.** `BooleanOperations.Fuse(a, b, options)`, also callable as `a.Fuse(b)` (decision 1349, 53). No
   `Perform()`/`IsDone()`, no `Build()` on a mutable algorithm object, no `Init`/`More`/`Next` iteration.
 - **Options are records** with defaults that are the common case: `new FuseOptions { Tolerance = 1e-6 }`. No long lists
   of optional parameters (more than three is a sign).
@@ -132,7 +143,7 @@ mechanically to ported code (`theX` → `x`, `myX` → `_x`, `aX` → `x`): tool
 - **Inside:** `List<T>` with a capacity when the size is known; `HashSet<T>`, `Dictionary<TKey,TValue>`;
   `FrozenDictionary`/`FrozenSet` for tables built once; `Queue<T>`, `Stack<T>`, `PriorityQueue<T,TPriority>`; a linked
   list only where an algorithm splices. NCollection's classes aren't used in new code and go in 10J.
-- **Maps and sets of shapes name their comparer**, `IsSame` or `IsEqual` (OCCTNET0002, section 14).
+- **Maps and sets of shapes name their comparer**, `IsSame` or `IsEqual` (KERF0002, section 14).
 - **Order:** don't depend on a hash set's or dictionary's iteration order for a result; sort, or keep an ordered list
   beside it.
 
@@ -210,31 +221,30 @@ Use them where they make the code simpler or faster; don't convert working code 
 
 ### Naming: .editorconfig and IDE1006
 
-[.editorconfig](../../.editorconfig) at the repository's root states the rules of section 1 as IDE1006 warnings. Until
-unit 10E they show only in an editor: kernel/Directory.Build.props suppresses IDE1006 and CS8981 (lower-case type
-names) to keep OCCT's names, and no project sets `EnforceCodeStyleInBuild`.
+[.editorconfig](../../.editorconfig) at the repository's root states the rules of section 1, and IDE1006 is an error
+in the build: kernel/ and modeling/Directory.Build.props set `EnforceCodeStyleInBuild` (unit 10E). The file's last
+sections turn it off, by folder, where the code doesn't obey yet:
 
-**Turning the rules on, package by package (10E):**
+- **OCCT's names, on purpose:** NCollection, TCollection and `PackedList` (removed types, kept in `Occt` until 10J) and
+  AdvApp2Var's f2c translation of OCCT's Fortran.
+- **Tests, Draw-lite, benchmarks, samples and tools:** 10E renamed the kernel's symbols wherever they are used, not
+  these projects' own.
+- **158 folders of the kernel and the modelling layer** (3,337 violations when 10E measured): mostly parameters and
+  locals kerf-rename left because their .NET name was taken in the same body (`thePoint` beside a local `point`),
+  then type parameters (`TheCurve`), fields, local functions and constants.
 
-1. Before the first rename: in Directory.Build.props, remove IDE1006 from `NoWarn` and set
-   `EnforceCodeStyleInBuild` to true; in .editorconfig's last section, list every folder of ported code with
-   `dotnet_diagnostic.IDE1006.severity = none`. The build is unchanged: nothing is enforced yet.
-2. Each rename commit (one package, or one assembly) applies the map with kerf-rename, fixes what the report lists,
-   and removes that package's folder from the list. Its naming is then enforced, as a warning and so an error.
-3. CS8981 goes from `NoWarn` when the last lower-case type (`gp`, `math`) is renamed.
-4. When the list is empty, the section goes.
-
-A pilot measurement: after kerf-rename's pilot on gp and math, 30 of the 1,576 naming warnings in those two folders
-remain, each needing a map entry (names with underscores, a type parameter, collisions the tool reported).
+**Shrinking the list:** a unit that renames a folder's remaining names (kerf-rename with a map of them, or by hand) removes
+the folder from the list in the same commit; its naming is then enforced. When the list holds only OCCT's names, its
+last section goes. CS8981 (lower-case type names) stays in `NoWarn` while AdvApp2Var's commons keep theirs.
 
 ### Analyzers
 
-The kernel's analyzers (src/OcctNet.Analyzers, to become Kerf.Analyzers with ids `KERF…`):
+The kernel's analyzers (src/Kerf.Analyzers; 10E renamed their ids from `OCCTNET…` to `KERF…`):
 
 | Rule | What | After the redesign |
 |---|---|---|
-| OCCTNET0001 | A mutating call on a read-only struct value, which would change a hidden copy | **Kept.** The gp types become `readonly struct`s, so it stops firing for them, but `[InlineArray]` buffers and `ref struct` views (section 7) are mutable structs. Retire it only if no mutable struct is left. |
-| OCCTNET0002 | A map or set of shapes created without an explicit comparer | **Kept, but rewritten before TopoDS and NCollection are renamed.** It finds maps and shapes by name (`Occt.NCollection_Map`1`, `TopoDS_Shape`, the namespace `Occt`), so a rename makes it silently stop firing. It should key on a marker attribute on the shape types rather than their names, and its map list shrinks to .NET's collections when NCollection goes (10J). |
+| KERF0001 | A mutating call on a read-only struct value, which would change a hidden copy | **Kept.** The gp types become `readonly struct`s, so it stops firing for them, but `[InlineArray]` buffers and `ref struct` views (section 7) are mutable structs. Retire it only if no mutable struct is left. |
+| KERF0002 | A map or set of shapes created without an explicit comparer | **Kept.** 10E pointed it at the shapes' new names (`Kerf.Topology.Shape` and its eight subtypes; NCollection's maps keep theirs). It still finds them by name, so a later rename must update it; a marker attribute on the shape types would end that. Its map list shrinks to .NET's collections when NCollection goes (10J). |
 
 Proposed, for 10G and 10L (not written yet):
 

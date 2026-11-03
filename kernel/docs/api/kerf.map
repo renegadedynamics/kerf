@@ -7,8 +7,10 @@
 # 'draft' the drafter's systematic names. Removed types (NCollection, TCollection, PackedList…) have no entries: they
 # keep their OCCT names in the namespace Occt until 10J (decision 1349, 58).
 #
-# The maps as applied, with a keep line for every rename the tool dropped, are in docs/api/applied: those, not this
-# file, say what each OCCT name became. Ids are Roslyn's documentation comment ids. Format: kerf-rename/README.md.
+# The renames the tool dropped, with the reasons, are in docs/api/kerf-keeps.map: with those, not alone, this
+# file says what each OCCT name became. Ids are Roslyn's documentation comment ids. Format: kerf-rename/README.md.
+# The map was applied one assembly at a time, so an entry 10E added for a later assembly names the earlier ones' types
+# by their new names (M:Occt.BRepFill.face(Kerf.Topology.Edge,...)). tools/occt-type-names.py makes OcctTypeNames from it.
 
 rule parameters on
 rule fields on
