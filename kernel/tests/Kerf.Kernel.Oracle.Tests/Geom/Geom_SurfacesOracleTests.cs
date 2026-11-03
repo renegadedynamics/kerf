@@ -292,6 +292,11 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                     using N.gp_Pnt anApex = aNCone.Apex();
                     theOracle.Same(anApex, aCone.Apex(), theWhat + " Apex");
                 }
+                // Plan 3.2's third level (occt-issues.md, Geom_ConicalSurface::Coefficients; Kerf decision 16811): OCCT's
+                // linear and constant terms were wrong away from the origin or with a radius; the port's are gp_Cone's
+                aCone.Cone().Coefficients(out _, out _, out _, out _, out _, out _, out double aGC1, out double aGC2, out double aGC3,
+                                          out double aGD);
+                (C1, C2, C3, D) = (aGC1, aGC2, aGC3, aGD);
                 break;
             }
             case SphericalSurface aSph:

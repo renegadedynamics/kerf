@@ -72,14 +72,16 @@ public class Geom_ElementarySurfacesTests
             Assert.Equal(0.0, Quadric(aSph.Coefficients, aSph.Value(U, V)), 1e-11);
         }
 
-        // OCCT: Geom_ConicalSurface::Coefficients has wrong linear and constant terms (occt-issues.md); they are
-        // right only when the local origin is the global one and the reference radius is 0, where gp_Cone agrees.
-        ConicalSurface aBadCone = new(Frame, 0.4, 1.5);
-        Assert.True(Math.Abs(Quadric(aBadCone.Coefficients, aBadCone.Value(0.3, 0.2))) > 1e-3);
+        // A cone's points satisfy its equation wherever its origin and whatever its reference radius (OCCT's linear and
+        // constant terms were right only at the global origin with radius 0: occt-issues.md,
+        // Geom_ConicalSurface::Coefficients; Kerf decision 16811), as gp_Cone's
         ConicalSurface aApexCone = new(new CoordinateSystem(new Point3D(), new Direction3D(1, 2, 2), new Direction3D(2, -1, 0)), 0.4, 0.0);
         Assert.Equal(0.0, Quadric(aApexCone.Coefficients, aApexCone.Value(0.3, 0.2)), 1e-12);
-        Cone aGpCone = aBadCone.Cone();
-        Assert.Equal(0.0, Quadric(aGpCone.Coefficients, aBadCone.Value(0.3, 0.2)), 1e-11);
+        foreach ((double U, double V) in new[] { (0.3, 0.2), (2.0, -1.1), (5.5, 0.9) })
+        {
+            Assert.Equal(0.0, Quadric(aCone.Coefficients, aCone.Value(U, V)), 1e-11);
+            Assert.Equal(0.0, Quadric(aCone.Cone().Coefficients, aCone.Value(U, V)), 1e-11);
+        }
 
         ToroidalSurface aTor = new(Frame, 5.0, 1.25);
         NCollection_Array1<double> aCoef = new(1, 35);

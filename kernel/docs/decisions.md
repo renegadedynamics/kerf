@@ -15035,3 +15035,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        point, the same at any parameter (inside the range or not, its poles being one point). An iso that is neither
        makes the surface no cone, and the cone built through it fails the conversion's gap test, as it would through
        the middle point. No case shows a user the difference, so no test can fail first; the marker stays.
+16811. **A cone's implicit equation holds away from the origin** (occt-issues.md, Geom_ConicalSurface::Coefficients).
+       C1 to C3 and D are gp_Cone's, −T3j(radius + T34) and −2·radius·T34, where OCCT added radius·T3j and
+       2·radius·T34. The test that pinned the wrong terms checks that a cone's points, off the origin with a reference
+       radius, satisfy its equation and gp_Cone's. `Geom_SurfacesOracleTests.Elementary_surfaces` moves to plan 3.2's
+       third level for the cone's linear and constant terms, compared with gp_Cone's.
