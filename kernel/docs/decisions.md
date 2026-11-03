@@ -13952,7 +13952,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        reworks with the overlay, and 10H1 runs beside this unit: rewriting them here would collide with it. They have no
        public mutator, so KERF0003 passes.
 15504. **Geometry has no public mutator; its internal ones build fresh objects** (phase10-plan.md 2.4). Geom's and
-       Geom2d's classes already had none public (their 482 `With…` copies date from phase 5); 384 internal mutators
+       Geom2d's classes already had none public (they have 482 public `With…` copies); 384 internal mutators
        remain, each starting with `CheckMutable()`, which throws on a published (frozen) object. Audited with a Roslyn
        pass over their 1,116 calls in the kernel: 188 are a class's own (a mutator through another), 397 on an object
        created by `new` or `Copy()` in the same method, 344 on a local from a converter, builder or copy
