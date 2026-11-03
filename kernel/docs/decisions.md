@@ -14717,3 +14717,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the spine, each generated edge joining its spine edge's ends. The pipe recordings' vertex-profile cases (native
        threw at GEN2) move to the third level: everything before agrees and the port's GEN2 line names an edge of the
        result for each pair.
+16509. **GeomFill_Pipe between two sections no longer fails on 3D paths** (row 1156). `Init(Path, FirstSect, LastSect)`
+       read CorrectedFrenet's `SetCurve` result as a failure, but it says whether the plain Frenet frame needs no
+       correction; the pipe gave up with ImpossibleContact on most 3D paths. The result is ignored, as the other `Init`s
+       do. Test: on a 3D B-spline path the surface's iso at the end is the iso at the start scaled by 2 about the path's
+       end (the sections' radii are 1 and 2). The sweep recordings' pipe-2sect (27 of 30; native ImpossibleContact)
+       move to the third level.
