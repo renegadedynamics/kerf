@@ -26,8 +26,8 @@ namespace Kerf.Engine.HiddenLines;
 /// Building a compound marks the data structure's edges as used, and scales its projector while it runs, as OCCT does.
 /// </para>
 /// <para>
-/// A sub-shape S of a loaded shape is found in the data structure through the outliner's working shape: when the
-/// shape was copied at the entry (decision 1095), S's image in the copy (unit 7Q2).
+/// A sub-shape S of a loaded shape is found in the data structure as itself, as in OCCT: the outliner works on the
+/// caller's shape in a working overlay (unit 10H6).
 /// </para>
 /// </remarks>
 public class HlrToShape
@@ -166,7 +166,7 @@ public class HlrToShape
 
                 for (exp.Init(s, ShapeType.Face); exp.More(); exp.Next())
                 {
-                    int iface = faces.FindIndex(WorkingImage(exp.Current()));
+                    int iface = faces.FindIndex(exp.Current());
                     if (iface != 0)
                     {
                         DrawFace(visible, typ, iface, ds, ref result, ref added, in3d);
@@ -176,7 +176,7 @@ public class HlrToShape
                 {
                     for (exp.Init(s, ShapeType.Edge, ShapeType.Face); exp.More(); exp.Next())
                     {
-                        int ie = edges.FindIndex(WorkingImage(exp.Current()));
+                        int ie = edges.FindIndex(exp.Current());
                         if (ie != 0)
                         {
                             HiddenLineEdgeData eDataIE = ds.EDataArray()[ie];
@@ -216,27 +216,6 @@ public class HlrToShape
             result = new Shape();
         }
         return result;
-    }
-
-    // A sub-shape of a loaded shape as the data structure knows it: its image in the outliner's working shape (the
-    // copy at the entry of a frozen shape, decision 1095). OCCT finds the shape itself; the port looks in each
-    // outliner, the first one that copied the sub-shape.
-    private Shape WorkingImage(in Shape subShape)
-    {
-        for (int i = 1; i <= _algo.ShapeCount; i++)
-        {
-            OutLiner? outLiner = _algo.ShapeBounds(i).Shape();
-            if (outLiner is null)
-            {
-                continue;
-            }
-            Shape image = outLiner.InternalWorkingImage(subShape);
-            if (!ReferenceEquals(image.TShape(), subShape.TShape()))
-            {
-                return image;
-            }
-        }
-        return subShape;
     }
 
     private void DrawFace(bool visible, int typ, int iface, HiddenLineData ds, ref Shape result, ref bool added,

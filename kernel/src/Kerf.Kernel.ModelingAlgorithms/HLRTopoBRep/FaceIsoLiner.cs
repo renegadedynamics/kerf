@@ -23,8 +23,8 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// </summary>
 /// <remarks>
 /// OCCT's static class. It writes into the face's edges' vertices (<see cref="MakeIsoLine"/> adds the point
-/// representations of an isoline's ends, which may be the face's own vertices), so the face must be unfrozen:
-/// HLRTopoBRep_OutLiner gives it its working copy (decision 1095). <c>OCCT_DEBUG</c> traces are left out.
+/// representations of an isoline's ends, which may be the face's own vertices): HLRTopoBRep_OutLiner runs it in a
+/// working overlay (unit 10H6). <c>OCCT_DEBUG</c> traces are left out.
 /// </remarks>
 public static class FaceIsoLiner
 {

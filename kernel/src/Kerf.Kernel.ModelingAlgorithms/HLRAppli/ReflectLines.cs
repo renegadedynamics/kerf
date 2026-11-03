@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -17,8 +18,10 @@ namespace Kerf.Engine.HiddenLines;
 /// edges on the shape or as 2D edges in the view, by the exact hidden-line removal.
 /// </summary>
 /// <remarks>
-/// A working object, as OCCT's. The shape is not written into (HLRBRep_Algo copies a frozen shape at the entry); the
-/// compounds are published frozen, after <c>BRepLib::SameParameter</c> as OCCT does.
+/// A working object, as OCCT's. The shape is not written into (HLRBRep_Algo outlines it in a working overlay); the
+/// compounds are published frozen, after <c>BRepLib::SameParameter</c> as OCCT does. The 3D edges share the shape's
+/// vertices, which OCCT's SameParameter then writes into: it runs in a working overlay (unit 10H6), and the compound
+/// holds new vertices where it changed them.
 /// </remarks>
 public class ReflectLines
 {
@@ -76,7 +79,15 @@ public class ReflectLines
 
         Shape theCompound = hlrToShape.InternalCompoundOfEdges(new Shape(), type, visible, in3d);
 
-        BrepLibrary.SameParameter(theCompound, global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+        // Kerf: the 3D edges share the caller's vertices, which SameParameter writes into (unit 10H6)
+        using (WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(theCompound))
+        {
+            BrepLibrary.SameParameter(theCompound, global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
+            if (overlay is not null)
+            {
+                theCompound = overlay.Finish(theCompound);
+            }
+        }
 
         theCompound.TShape()?.FreezeGraph();
         return theCompound;

@@ -24,15 +24,29 @@ namespace Kerf.Engine.HiddenLines;
 /// wires of edge indices and flags.
 /// </summary>
 /// <remarks>
-/// OCCT's static class. OCCT's <c>ExploreShape</c> walks the outliner's original shape; the port walks its working
-/// shape, which is the original or its copy at the entry (decision 1095), so the faces it finds are the ones the
-/// outlining recorded.
+/// OCCT's static class. The outlining writes into the caller's shape (its vertices' representations on the split
+/// edges), so <see cref="Load"/> outlines it and reads the outlined shape in one working overlay (unit 10H6): the
+/// data structure holds the caller's own sub-shapes, as OCCT's, and the reads see the outlining's writes.
 /// </remarks>
 public static class ShapeToHlr
 {
     /// <summary>Outlines S for the projector P (nbIso isolines) and loads the result in a new data structure.</summary>
     public static HiddenLineData Load(OutLiner s, in AlgorithmProjector p,
                                     NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso = 0)
+    {
+        // Kerf: the outlining and the reads of what it wrote, in one working overlay (unit 10H6); the outlined shape
+        // then holds what stands for the caller's sub-shapes the outlining wrote into
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(s.OriginalShape());
+        HiddenLineData ds = LoadCore(s, p, mst, nbIso);
+        if (overlay is not null)
+        {
+            s.OutLinedShape(overlay.Finish(s.InternalOutLinedShape()));
+        }
+        return ds;
+    }
+
+    private static HiddenLineData LoadCore(OutLiner s, in AlgorithmProjector p,
+                                           NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso)
     {
         s.Fill(p, mst, nbIso);
         TopologyData topDS = s.DataStructure();
@@ -228,7 +242,7 @@ public static class ShapeToHlr
         HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
         Explorer exshell = new(), exface = new(), exedge = new();
         int i = 0;
-        Shape original = s.InternalWorkingShape(); // decision 1095
+        Shape original = s.OriginalShape();
 
         for (exshell.Init(original, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
