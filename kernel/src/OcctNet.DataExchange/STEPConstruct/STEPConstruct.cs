@@ -5,26 +5,31 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Exchange.Framework.Transfer;
+using Kerf.Engine.Exchange.Step.Basic;
+using Kerf.Engine.Exchange.Step.Representation;
+using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Construct;
 
 /// <summary>
 /// Defines tools for creation and investigation STEP constructs used for representing various kinds of data, such as
 /// product and assembly structure, unit contexts, associated information. The creation of these structures is made
 /// according to currently active schema (AP203 or AP214 CD2 or DIS). This is taken from parameter write.step.schema
 /// </summary>
-public static class STEPConstruct
+public static class StepConstruct
 {
     /// <summary>
     /// Returns STEP entity of the (sub)type of RepresentationItem which is a result of the transfer of a Shape, or
     /// Null if not found
     /// </summary>
-    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, Shape Shape)
+    public static RepresentationItem FindEntity(FinderProcess finderProcess, Shape shape)
     {
-        StepRepr_RepresentationItem item = null;
-        TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FinderProcess, Shape);
-        FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item);
+        RepresentationItem item = null;
+        ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(finderProcess, shape);
+        finderProcess.FindTypedTransient(mapper, typeof(RepresentationItem), ref item);
         // OCCT_DEBUG output left out
         return item;
     }
@@ -33,18 +38,18 @@ public static class STEPConstruct
     /// The same as above, but in the case if item not found, repeats search on the same shape without location. The
     /// Loc corresponds to the location with which result is found (either location of the Shape, or Null)
     /// </summary>
-    public static StepRepr_RepresentationItem FindEntity(Transfer_FinderProcess FinderProcess, Shape Shape,
-                                                         ref Placement Loc)
+    public static RepresentationItem FindEntity(FinderProcess finderProcess, Shape shape,
+                                                         ref Placement loc)
     {
-        StepRepr_RepresentationItem item = null;
-        Loc = Shape.Location();
-        TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FinderProcess, Shape);
-        if (!FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item) && !Loc.IsIdentity)
+        RepresentationItem item = null;
+        loc = shape.Location();
+        ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(finderProcess, shape);
+        if (!finderProcess.FindTypedTransient(mapper, typeof(RepresentationItem), ref item) && !loc.IsIdentity)
         {
-            Loc = new Placement();
-            Shape S = Shape.Located(Loc);
-            mapper = TransferBRep.ShapeMapper(FinderProcess, S);
-            FinderProcess.FindTypedTransient(mapper, typeof(StepRepr_RepresentationItem), ref item);
+            loc = new Placement();
+            Shape s = shape.Located(loc);
+            mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(finderProcess, s);
+            finderProcess.FindTypedTransient(mapper, typeof(RepresentationItem), ref item);
         }
         // OCCT_DEBUG output left out
         return item;
@@ -53,49 +58,49 @@ public static class STEPConstruct
     /// <summary>
     /// Returns Shape resulting from given STEP entity (Null if not mapped)
     /// </summary>
-    public static Shape FindShape(Transfer_TransientProcess TransientProcess, StepRepr_RepresentationItem item)
+    public static Shape FindShape(TransientProcess transientProcess, RepresentationItem item)
     {
-        Shape S = new Shape();
-        Transfer_Binder binder = TransientProcess.Find(item);
-        if (binder is not null && binder.HasResult())
+        Shape s = new Shape();
+        Binder binder = transientProcess.Find(item);
+        if (binder is not null && binder.HasResult)
         {
-            S = TransferBRep.ShapeResult(TransientProcess, binder);
+            s = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeResult(transientProcess, binder);
         }
-        return S;
+        return s;
     }
 
     /// <summary>
     /// Find CDSR correcponding to the component in the specified assembly
     /// </summary>
-    public static bool FindCDSR(Transfer_Binder ComponentBinder, StepShape_ShapeDefinitionRepresentation AssemblySDR,
-                                out StepShape_ContextDependentShapeRepresentation ComponentCDSR)
+    public static bool FindCDSR(Binder componentBinder, StepShapeDefinitionRepresentation assemblySDR,
+                                out StepContextDependentShapeRepresentation componentCDSR)
     {
         bool result = false;
-        ComponentCDSR = null;
+        componentCDSR = null;
 
-        StepRepr_PropertyDefinition PropD = AssemblySDR.Definition().PropertyDefinition();
-        if (PropD is not null)
+        PropertyDefinition propD = assemblySDR.Definition().PropertyDefinition();
+        if (propD is not null)
         {
-            StepBasic_ProductDefinition AssemblyPD = PropD.Definition().ProductDefinition();
-            if (AssemblyPD is not null)
+            ProductDefinition assemblyPD = propD.Definition().ProductDefinition();
+            if (assemblyPD is not null)
             {
-                Transfer_Binder binder = ComponentBinder;
+                Binder binder = componentBinder;
                 while (binder is not null && !result)
                 {
-                    Transfer_SimpleBinderOfTransient trb = binder as Transfer_SimpleBinderOfTransient;
+                    SimpleBinderOfTransient trb = binder as SimpleBinderOfTransient;
                     if (trb is not null)
                     {
-                        ComponentCDSR = trb.Result() as StepShape_ContextDependentShapeRepresentation;
-                        if (ComponentCDSR is not null)
+                        componentCDSR = trb.Result() as StepContextDependentShapeRepresentation;
+                        if (componentCDSR is not null)
                         {
-                            StepRepr_ProductDefinitionShape PDS = ComponentCDSR.RepresentedProductRelation();
-                            if (PDS is not null)
+                            ProductDefinitionShape pds = componentCDSR.RepresentedProductRelation();
+                            if (pds is not null)
                             {
-                                StepBasic_ProductDefinitionRelationship NAUO = PDS.Definition().ProductDefinitionRelationship();
-                                if (NAUO is not null)
+                                ProductDefinitionRelationship nauo = pds.Definition().ProductDefinitionRelationship();
+                                if (nauo is not null)
                                 {
-                                    StepBasic_ProductDefinition ComponentPD = NAUO.RelatingProductDefinition();
-                                    result = ComponentPD == AssemblyPD;
+                                    ProductDefinition componentPD = nauo.RelatingProductDefinition();
+                                    result = componentPD == assemblyPD;
                                 }
                             }
                         }

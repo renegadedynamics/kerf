@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -63,9 +64,9 @@ internal static class XDEDRAWColorsLayersCommands
         return 1;
     }
 
-    private static XdeDoc_Document? failDoc(DrawInterpreter theDI, string theName)
+    private static ExchangeDocument? failDoc(DrawInterpreter theDI, string theName)
     {
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, theName);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, theName);
         if (aDoc is null)
         {
             fail(theDI, "Syntax error: " + theName + " is not a document");
@@ -73,21 +74,21 @@ internal static class XDEDRAWColorsLayersCommands
         return aDoc;
     }
 
-    private static bool parseXDocColorType(string theArg, out XdeDoc_ColorType theType)
+    private static bool parseXDocColorType(string theArg, out ColorType theType)
     {
         switch (theArg.ToLowerInvariant())
         {
             case "surf" or "surface" or "s":
-                theType = XdeDoc_ColorType.XdeDoc_ColorSurf;
+                theType = ColorType.ColorSurf;
                 return true;
             case "curve" or "c":
-                theType = XdeDoc_ColorType.XdeDoc_ColorCurv;
+                theType = ColorType.ColorCurv;
                 return true;
             case "gen" or "generic":
-                theType = XdeDoc_ColorType.XdeDoc_ColorGen;
+                theType = ColorType.ColorGen;
                 return true;
         }
-        theType = XdeDoc_ColorType.XdeDoc_ColorGen;
+        theType = ColorType.ColorGen;
         return false;
     }
 
@@ -110,14 +111,14 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         Shape aShape = new();
-        if (aLabel.IsNull())
+        if (aLabel.IsNull)
         {
             aShape = theDI.GetShape(argv[2]);
             if (aShape.IsNull)
@@ -127,10 +128,10 @@ internal static class XDEDRAWColorsLayersCommands
         }
         global::Kerf.Engine.Foundation.ColorWithAlpha aColor = new();
         bool isColorDefined = false;
-        XdeDoc_ColorType aColType = XdeDoc_ColorType.XdeDoc_ColorGen;
+        ColorType aColType = ColorType.ColorGen;
         for (int anArgIter = 3; anArgIter < argc; ++anArgIter)
         {
-            if (parseXDocColorType(argv[anArgIter], out XdeDoc_ColorType aType))
+            if (parseXDocColorType(argv[anArgIter], out ColorType aType))
             {
                 aColType = aType;
             }
@@ -153,7 +154,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        if (!aLabel.IsNull())
+        if (!aLabel.IsNull)
         {
             aDoc.SetColor(aLabel, aColor, aColType);
         }
@@ -170,12 +171,12 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         if (aDoc.GetColor(aLabel, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor))
         {
             appendColor(di, aColor);
@@ -189,17 +190,17 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return fail(theDI, "Syntax error: '" + argv[2] + "' label is not found in the document");
         }
-        XdeDoc_ColorType aColType = XdeDoc_ColorType.XdeDoc_ColorGen;
+        ColorType aColType = ColorType.ColorGen;
         if (argv.Count > 3 && !parseXDocColorType(argv[3], out aColType))
         {
             return fail(theDI, "Syntax error: unknown color type '" + argv[3] + "'");
@@ -217,14 +218,14 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabels = new NCollection_Sequence<Label>();
         aDoc.GetColors(aLabels);
-        foreach (XdeDoc_Label aLabel in aLabels)
+        foreach (Label aLabel in aLabels)
         {
             if (!aDoc.GetColor(aLabel, out global::Kerf.Engine.Foundation.ColorWithAlpha aColor))
             {
@@ -242,7 +243,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -262,13 +263,13 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return fail(theDI, "Syntax error: " + argv[2] + " label is not found in the document");
         }
@@ -282,7 +283,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -302,17 +303,17 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        if (!parseXDocColorType(argv[3], out XdeDoc_ColorType aColType))
+        if (!parseXDocColorType(argv[3], out ColorType aColType))
         {
             return fail(theDI, "Syntax error: unknown color type '" + argv[3] + "'");
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             aDoc.UnSetColor(aLabel, aColType);
             return 0;
@@ -323,7 +324,7 @@ internal static class XDEDRAWColorsLayersCommands
             return fail(theDI, "Syntax error: " + argv[2] + " is not a label nor shape");
         }
         // XCAFDoc_ColorTool::UnSetColor (shape): the label found by Search
-        if (aDoc.Search(aShape, out XdeDoc_Label aFound))
+        if (aDoc.Search(aShape, out Label aFound))
         {
             aDoc.UnSetColor(aFound, aColType);
         }
@@ -331,10 +332,10 @@ internal static class XDEDRAWColorsLayersCommands
     }
 
     // the label of the argument, or of the shape it names (XCAFDoc_ShapeTool::FindShape with the instance)
-    private static XdeDoc_Label labelOrInstance(DrawInterpreter theDI, XdeDoc_Document theDoc, string theArg)
+    private static Label labelOrInstance(DrawInterpreter theDI, ExchangeDocument theDoc, string theArg)
     {
-        XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(theDoc, theArg);
+        if (aLabel.IsNull)
         {
             Shape aShape = theDI.GetShape(theArg);
             if (!aShape.IsNull)
@@ -351,13 +352,13 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = labelOrInstance(theDI, aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = labelOrInstance(theDI, aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return fail(theDI, "Syntax error: " + argv[2] + " is not a label not shape");
         }
@@ -387,13 +388,13 @@ internal static class XDEDRAWColorsLayersCommands
         {
             return fail(theDI, "Syntax error: wrong number of arguments");
         }
-        XdeDoc_Document? aDoc = failDoc(theDI, argv[1]);
+        ExchangeDocument? aDoc = failDoc(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = labelOrInstance(theDI, aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = labelOrInstance(theDI, aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return fail(theDI, "Syntax error: " + argv[2] + " is not a label not shape");
         }
@@ -404,16 +405,16 @@ internal static class XDEDRAWColorsLayersCommands
     // ============================================================================================== layers
 
     // the shape's label as XCAFDoc_LayerTool's shape methods find it (XCAFDoc_ShapeTool::Search)
-    private static XdeDoc_Label shapeLabel(DrawInterpreter theDI, XdeDoc_Document theDoc, string theArg, out bool theIsLabel)
+    private static Label shapeLabel(DrawInterpreter theDI, ExchangeDocument theDoc, string theArg, out bool theIsLabel)
     {
-        XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
-        theIsLabel = !aLabel.IsNull();
+        Label aLabel = DDocStdCommands.Label(theDoc, theArg);
+        theIsLabel = !aLabel.IsNull;
         if (theIsLabel)
         {
             return aLabel;
         }
         Shape aShape = theDI.GetShape(theArg);
-        return !aShape.IsNull && theDoc.Search(aShape, out XdeDoc_Label aFound) ? aFound : default;
+        return !aShape.IsNull && theDoc.Search(aShape, out Label aFound) ? aFound : default;
     }
 
     private static int addLayer(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
@@ -423,7 +424,7 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName StringLayer \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -439,7 +440,7 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName StringLayer \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -455,17 +456,17 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Label|string}\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             aLabel = aDoc.FindLayer(argv[2]);
         }
-        if (aLabel.IsNull())
+        if (aLabel.IsNull)
         {
             return 1;
         }
@@ -481,13 +482,13 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         bool shapeInOneLayer = argv.Count == 5 && theDI.Atoi(argv[4]) == 1;
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = shapeLabel(theDI, aDoc, argv[2], out bool isLabel);
-        if (!aLabel.IsNull())
+        Label aLabel = shapeLabel(theDI, aDoc, argv[2], out bool isLabel);
+        if (!aLabel.IsNull)
         {
             aDoc.SetLayer(aLabel, argv[3], shapeInOneLayer);
         }
@@ -506,14 +507,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label} \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
+        Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
         var aLayerS = new NCollection_Sequence<string>();
-        if (!aLabel.IsNull() && aDoc.GetLayers(aLabel, aLayerS))
+        if (!aLabel.IsNull && aDoc.GetLayers(aLabel, aLayerS))
         {
             foreach (string aLayer in aLayerS)
             {
@@ -530,14 +531,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabs = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabs = new NCollection_Sequence<Label>();
         aDoc.GetLayerLabels(aLabs);
-        foreach (XdeDoc_Label aLabel in aLabs)
+        foreach (Label aLabel in aLabs)
         {
             di.Append(aLabel.Entry()).Append(" ");
         }
@@ -551,13 +552,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName LayerLabel\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             aDoc.GetLayer(aLabel, out string? aLayerName);
             di.Append("\"").Append(aLayerName ?? "").Append("\"");
@@ -573,16 +574,16 @@ internal static class XDEDRAWColorsLayersCommands
             return 1;
         }
         bool shapeInOneLayer = argv.Count == 5 && theDI.Atoi(argv[4]) == 1;
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLayerLabel = DDocStdCommands.Label(aDoc, argv[3]);
-        if (!aLayerLabel.IsNull())
+        Label aLayerLabel = DDocStdCommands.Label(aDoc, argv[3]);
+        if (!aLayerLabel.IsNull)
         {
-            XdeDoc_Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
-            if (!aLabel.IsNull())
+            Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
+            if (!aLabel.IsNull)
             {
                 aDoc.SetLayer(aLabel, aLayerLabel, shapeInOneLayer);
             }
@@ -597,14 +598,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabs = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabs = new NCollection_Sequence<Label>();
         aDoc.GetLayerLabels(aLabs);
-        foreach (XdeDoc_Label aLabel in aLabs)
+        foreach (Label aLabel in aLabs)
         {
             aDoc.GetLayer(aLabel, out string? aLayerName);
             di.Append("\"").Append(aLayerName ?? "").Append("\"").Append(" ");
@@ -619,13 +620,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label} stringL\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
-        if (!aLabel.IsNull())
+        Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
+        if (!aLabel.IsNull)
         {
             aDoc.UnSetOneLayer(aLabel, argv[3]);
         }
@@ -639,13 +640,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label}\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
-        if (!aLabel.IsNull())
+        Label aLabel = shapeLabel(theDI, aDoc, argv[2], out _);
+        if (!aLabel.IsNull)
         {
             aDoc.UnSetLayers(aLabel);
         }
@@ -659,24 +660,24 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabs = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabs = new NCollection_Sequence<Label>();
         aDoc.GetLayerLabels(aLabs);
-        foreach (XdeDoc_Label aLabel in aLabs)
+        foreach (Label aLabel in aLabs)
         {
             aDoc.RemoveLayer(aLabel);
         }
         return 0;
     }
 
-    private static XdeDoc_Label layerOf(XdeDoc_Document theDoc, string theArg)
+    private static Label layerOf(ExchangeDocument theDoc, string theArg)
     {
-        XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
-        return aLabel.IsNull() ? theDoc.FindLayer(theArg) : aLabel;
+        Label aLabel = DDocStdCommands.Label(theDoc, theArg);
+        return aLabel.IsNull ? theDoc.FindLayer(theArg) : aLabel;
     }
 
     private static int setLayerVisibility(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
@@ -686,14 +687,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append("DocName {layerLable|StringLayer} [isvisible(1/0)]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         bool isvisible = argv.Count == 4 && theDI.Atoi(argv[3]) == 1;
-        XdeDoc_Label aLabel = layerOf(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = layerOf(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return 1;
         }
@@ -708,13 +709,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {layerLable|StringLayer}\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = layerOf(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = layerOf(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             return 1;
         }
@@ -725,10 +726,10 @@ internal static class XDEDRAWColorsLayersCommands
     // ============================================================================================== validation properties
 
     // the label of the argument, or the top-level label of the shape it names (XCAFDoc_ShapeTool::FindShape)
-    private static XdeDoc_Label labelOrShape(DrawInterpreter theDI, XdeDoc_Document theDoc, string theArg)
+    private static Label labelOrShape(DrawInterpreter theDI, ExchangeDocument theDoc, string theArg)
     {
-        XdeDoc_Label aLabel = DDocStdCommands.Label(theDoc, theArg);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(theDoc, theArg);
+        if (aLabel.IsNull)
         {
             Shape aShape = theDI.GetShape(theArg);
             if (!aShape.IsNull)
@@ -746,14 +747,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label} [epsilon = 0.001]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         Shape aShape;
-        if (aLabel.IsNull())
+        if (aLabel.IsNull)
         {
             aShape = theDI.GetShape(argv[2]);
             if (!aShape.IsNull)
@@ -765,7 +766,7 @@ internal static class XDEDRAWColorsLayersCommands
         {
             aShape = aDoc.GetShape(aLabel);
         }
-        if (!aLabel.IsNull())
+        if (!aLabel.IsNull)
         {
             double anEps = argv.Count > 3 ? theDI.Atof(argv[3]) : 0.001;
             var G = new Properties();
@@ -790,14 +791,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Label|Shape} volume\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         double res = 0.0;
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             res = theDI.Atof(argv[3]);
             aDoc.SetVolume(aLabel, res);
@@ -813,14 +814,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Label|Shape} area\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         double res = 0.0;
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             res = theDI.Atof(argv[3]);
             aDoc.SetArea(aLabel, res);
@@ -836,14 +837,14 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Label|Shape} x y z\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         var aPnt = new Point3D();
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             aPnt.SetX(theDI.Atof(argv[3]));
             aPnt.SetY(theDI.Atof(argv[4]));
@@ -861,13 +862,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label}\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull() && aDoc.GetValidationProps(aLabel)?.Volume is double aVolume)
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull && aDoc.GetValidationProps(aLabel)?.Volume is double aVolume)
         {
             di.Append(aVolume);
         }
@@ -881,13 +882,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label}\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull() && aDoc.GetValidationProps(aLabel)?.Area is double anArea)
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull && aDoc.GetValidationProps(aLabel)?.Area is double anArea)
         {
             di.Append(anArea);
         }
@@ -901,13 +902,13 @@ internal static class XDEDRAWColorsLayersCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName {Shape|Label} \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
-        if (!aLabel.IsNull() && aDoc.GetValidationProps(aLabel)?.Centroid is Point3D aPoint)
+        Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
+        if (!aLabel.IsNull && aDoc.GetValidationProps(aLabel)?.Centroid is Point3D aPoint)
         {
             di.Append(aPoint.X()).Append(" ").Append(aPoint.Y()).Append(" ").Append(aPoint.Z());
         }

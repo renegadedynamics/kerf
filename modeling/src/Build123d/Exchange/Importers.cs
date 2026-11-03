@@ -1,3 +1,4 @@
+using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Foundation;
 using Occt;
 
@@ -54,7 +55,7 @@ public static class Importers
         ArgumentNullException.ThrowIfNull(stream);
         var exchangeLimits = (limits ?? ImportLimits.Default).ToExchange();
         var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
-        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
+        if (status != ReturnStatus.RetDone)
             throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
         return root is null ? new Compound() : Shape.Result(FromNode(root));
     }

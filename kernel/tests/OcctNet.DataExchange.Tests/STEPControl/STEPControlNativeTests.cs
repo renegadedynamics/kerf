@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -42,27 +45,27 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         return aBlocks;
     }
 
-    private static void CountChecks(Interface_CheckIterator theList, string theTag, List<string> theOut, SortedDictionary<string, int>? theMessages)
+    private static void CountChecks(CheckIterator theList, string theTag, List<string> theOut, SortedDictionary<string, int>? theMessages)
     {
         int aNbItems = 0, aNbF = 0, aNbW = 0;
         for (theList.Start(); theList.More(); theList.Next())
         {
-            Interface_Check aCheck = theList.Value()!;
-            if (aCheck.NbFails() + aCheck.NbWarnings() == 0)
+            FrameworkCheck aCheck = theList.Value()!;
+            if (aCheck.FailCount + aCheck.WarningCount == 0)
             {
                 continue;
             }
             aNbItems++;
-            aNbF += aCheck.NbFails();
-            aNbW += aCheck.NbWarnings();
+            aNbF += aCheck.FailCount;
+            aNbW += aCheck.WarningCount;
             if (theMessages is not null)
             {
-                for (int i = 1; i <= aCheck.NbFails(); i++)
+                for (int i = 1; i <= aCheck.FailCount; i++)
                 {
                     string aKey = "F " + aCheck.CFail(i);
                     theMessages[aKey] = theMessages.GetValueOrDefault(aKey) + 1;
                 }
-                for (int i = 1; i <= aCheck.NbWarnings(); i++)
+                for (int i = 1; i <= aCheck.WarningCount; i++)
                 {
                     string aKey = "W " + aCheck.CWarning(i);
                     theMessages[aKey] = theMessages.GetValueOrDefault(aKey) + 1;
@@ -78,16 +81,16 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         var aLines = new List<string>();
         try
         {
-            var aReader = new STEPControl_Reader();
-            IFSelect_ReturnStatus aStatus = aReader.ReadFile(thePath);
-            if (aStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
+            var aReader = new StepReader();
+            ReturnStatus aStatus = aReader.ReadFile(thePath);
+            if (aStatus != ReturnStatus.RetDone)
             {
                 aLines.Add($"R {(int)aStatus} 0 0 0");
                 return aLines;
             }
             int aNbRoots = aReader.NbRootsForTransfer();
             int aNbTr = aReader.TransferRoots();
-            aLines.Add($"R {(int)aStatus} {aNbRoots} {aNbTr} {aReader.NbShapes()}");
+            aLines.Add($"R {(int)aStatus} {aNbRoots} {aNbTr} {aReader.ShapeCount}");
             CountChecks(aReader.WS()!.ModelCheckList(), "L", aLines, null);
             var aMessages = new SortedDictionary<string, int>(StringComparer.Ordinal);
             CountChecks(aReader.WS()!.TransferReader()!.TransientProcess()!.CheckList(false), "T", aLines, aMessages);
@@ -216,14 +219,14 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         return aTop;
     }
 
-    private static readonly (STEPControl_StepModelType Mode, string Name)[] Modes =
+    private static readonly (ModelType Mode, string Name)[] Modes =
     [
-        (STEPControl_StepModelType.STEPControl_AsIs, "AsIs"),
-        (STEPControl_StepModelType.STEPControl_ManifoldSolidBrep, "ManifoldSolidBrep"),
-        (STEPControl_StepModelType.STEPControl_BrepWithVoids, "BrepWithVoids"),
-        (STEPControl_StepModelType.STEPControl_FacetedBrep, "FacetedBrep"),
-        (STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel, "ShellBasedSurfaceModel"),
-        (STEPControl_StepModelType.STEPControl_GeometricCurveSet, "GeometricCurveSet"),
+        (ModelType.AsIs, "AsIs"),
+        (ModelType.ManifoldSolidBrep, "ManifoldSolidBrep"),
+        (ModelType.BrepWithVoids, "BrepWithVoids"),
+        (ModelType.FacetedBrep, "FacetedBrep"),
+        (ModelType.ShellBasedSurfaceModel, "ShellBasedSurfaceModel"),
+        (ModelType.GeometricCurveSet, "GeometricCurveSet"),
     ];
 
     [Fact]
@@ -255,16 +258,16 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
             string aBefore = BRepTextOf(aShape);
             foreach (string aSchema in new[] { "AP203", "AP214IS", "AP242DIS" })
             {
-                foreach ((STEPControl_StepModelType aMode, string aModeName) in Modes)
+                foreach ((ModelType aMode, string aModeName) in Modes)
                 {
                     var aLines = new List<string>();
                     string aHead = $"W {aName} {aSchema} {aModeName} ";
                     try
                     {
-                        var aWriter = new STEPControl_Writer();
+                        var aWriter = new Writer();
                         aWriter.WS()!.Statics().SetCVal("write.step.schema", aSchema);
-                        IFSelect_ReturnStatus aStatus = aWriter.Transfer(aShape, aMode);
-                        if (aStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
+                        ReturnStatus aStatus = aWriter.Transfer(aShape, aMode);
+                        if (aStatus != ReturnStatus.RetDone)
                         {
                             aLines.Add(aHead + (int)aStatus);
                         }
@@ -274,7 +277,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                             aWriter.WriteStream(aStream);
                             string aText = Mask(Encoding.Latin1.GetString(aStream.ToArray()));
                             byte[] aBytes = Encoding.Latin1.GetBytes(aText);
-                            aLines.Add(aHead + $"{(int)aStatus} {aWriter.Model().NbEntities()} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length}");
+                            aLines.Add(aHead + $"{(int)aStatus} {aWriter.Model().EntityCount} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length}");
                             CountChecks(aWriter.WS()!.TransferWriteCheckList(), "C", aLines, null);
                             if (aDump is not null)
                             {

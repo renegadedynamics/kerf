@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Geometry;
+using Kerf.Engine.Exchange.Step.Shapes;
 using System.Reflection;
 
 namespace OcctNet.DataExchange.Tests.StepGen;
@@ -16,9 +19,9 @@ public sealed class StepEntitySmokeTests
          "StepKinematics", "StepFEA", "StepElement"];
 
     private static IEnumerable<Type> EntityTypes(string thePackage) =>
-        typeof(StepData_SelectType).Assembly.GetTypes()
-            .Where(t => t.Namespace == "Occt" && t.Name.StartsWith(thePackage + "_", StringComparison.Ordinal) && t.IsClass)
-            .OrderBy(t => t.Name, StringComparer.Ordinal);
+        typeof(SelectType).Assembly.GetTypes()
+            .Where(t => Kerf.Engine.Foundation.OcctTypeNames.Of(t).StartsWith(thePackage + "_", StringComparison.Ordinal) && t.IsClass)
+            .OrderBy(t => Kerf.Engine.Foundation.OcctTypeNames.Of(t), StringComparer.Ordinal);
 
     /// <summary>A value for a parameter: distinct strings, numbers and entities, so the accessors can be checked.</summary>
     private static object? Sample(Type t, int theSeed)
@@ -85,7 +88,7 @@ public sealed class StepEntitySmokeTests
             return anArray;
         }
 
-        if (typeof(StepData_SelectType).IsAssignableFrom(t))
+        if (typeof(SelectType).IsAssignableFrom(t))
         {
             // an empty select: setting a value needs a member of one of its types
             return Activator.CreateInstance(t);
@@ -97,10 +100,10 @@ public sealed class StepEntitySmokeTests
         }
 
         // an abstract entity: a concrete descendant
-        var aConcrete = typeof(StepData_SelectType).Assembly.GetTypes()
-                         .Where(x => x.Name.StartsWith("Step", StringComparison.Ordinal) && !x.IsAbstract && !x.ContainsGenericParameters
+        var aConcrete = typeof(SelectType).Assembly.GetTypes()
+                         .Where(x => Kerf.Engine.Foundation.OcctTypeNames.Of(x).StartsWith("Step", StringComparison.Ordinal) && !x.IsAbstract && !x.ContainsGenericParameters
                                      && t.IsAssignableFrom(x) && x.GetConstructor(Type.EmptyTypes) != null)
-                         .OrderBy(x => x.Name, StringComparer.Ordinal).FirstOrDefault();
+                         .OrderBy(x => Kerf.Engine.Foundation.OcctTypeNames.Of(x), StringComparer.Ordinal).FirstOrDefault();
         return aConcrete is null ? null : Activator.CreateInstance(aConcrete);
     }
 
@@ -114,7 +117,8 @@ public sealed class StepEntitySmokeTests
             }
         }
 
-        return theParam;
+        // the kernel's parameters are camelCase since unit 10E ("name" -> Name())
+        return theParam.Length > 0 ? char.ToUpperInvariant(theParam[0]) + theParam[1..] : theParam;
     }
 
     /// <summary>
@@ -159,13 +163,13 @@ public sealed class StepEntitySmokeTests
                     anInit.Invoke(anEnt, anArgs);
                     anInits++;
                 }
-                catch (TargetInvocationException ex) when (ex.InnerException is NullReferenceException && NullInit.Contains(aType.Name))
+                catch (TargetInvocationException ex) when (ex.InnerException is NullReferenceException && NullInit.Contains(Kerf.Engine.Foundation.OcctTypeNames.Of(aType)))
                 {
                     continue; // OCCT's Init calls Init on a null handle (occt-issues.md, 8C2)
                 }
                 catch (TargetInvocationException ex)
                 {
-                    aFailures.Add($"{aType.Name}.Init: {ex.InnerException?.GetType().Name}: {ex.InnerException?.Message}");
+                    aFailures.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(aType)}.Init: {ex.InnerException?.GetType().Name}: {ex.InnerException?.Message}");
                     continue;
                 }
 
@@ -182,7 +186,7 @@ public sealed class StepEntitySmokeTests
 
                     object? aGot = aGetter.Invoke(anEnt, null);
                     bool isSame = ReferenceEquals(aGot, anArgs[k]) || Equals(aGot, anArgs[k])
-                                  || (aGot is StepData_SelectType s1 && anArgs[k] is StepData_SelectType s2 && ReferenceEquals(s1.Value(), s2.Value()));
+                                  || (aGot is SelectType s1 && anArgs[k] is SelectType s2 && ReferenceEquals(s1.Value(), s2.Value()));
                     if (isSame)
                     {
                         aChecked++;
@@ -193,7 +197,7 @@ public sealed class StepEntitySmokeTests
                     }
                     else
                     {
-                        aFailures.Add($"{aType.Name}.{aName}() after Init: {aGot} for {anArgs[k]}");
+                        aFailures.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(aType)}.{aName}() after Init: {aGot} for {anArgs[k]}");
                     }
                 }
             }
@@ -210,13 +214,13 @@ public sealed class StepEntitySmokeTests
     [Fact]
     public void CartesianPointAndBSplineCurve()
     {
-        var aPoint = new StepGeom_CartesianPoint();
+        var aPoint = new StepCartesianPoint();
         aPoint.Init3D(new TCollection_HAsciiString("p"), 1, 2, 3);
-        Assert.Equal(3, aPoint.NbCoordinates());
+        Assert.Equal(3, aPoint.CoordinateCount);
         Assert.Equal(2.0, aPoint.CoordinatesValue(2));
         Assert.Equal([1.0, 2.0, 3.0], aPoint.Coordinates().ToArray());
         aPoint.Init2D(new TCollection_HAsciiString("q"), 4, 5);
-        Assert.Equal(2, aPoint.NbCoordinates());
+        Assert.Equal(2, aPoint.CoordinateCount);
         Assert.Equal("q", aPoint.Name().ToCString());
 
         // std::array is a value: SetCoordinates copies, Coordinates is read-only
@@ -225,56 +229,56 @@ public sealed class StepEntitySmokeTests
         aCoords[0] = 0;
         Assert.Equal(7.0, aPoint.CoordinatesValue(1));
 
-        var aPoles = new NCollection_HArray1<StepGeom_CartesianPoint>(1, 2);
+        var aPoles = new NCollection_HArray1<StepCartesianPoint>(1, 2);
         aPoles.SetValue(1, aPoint);
         aPoles.SetValue(2, aPoint);
         var aMults = new NCollection_HArray1<int>(1, 2, 2);
         var aKnots = new NCollection_HArray1<double>(1, 2);
         aKnots.SetValue(2, 1.0);
-        var aCurve = new StepGeom_BSplineCurveWithKnots();
-        aCurve.Init(new TCollection_HAsciiString("c"), 1, aPoles, StepGeom_BSplineCurveForm.StepGeom_bscfPolylineForm,
-                    StepData_Logical.StepData_LFalse, StepData_Logical.StepData_LFalse, aMults, aKnots,
-                    StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots);
+        var aCurve = new StepBSplineCurveWithKnots();
+        aCurve.Init(new TCollection_HAsciiString("c"), 1, aPoles, StepBSplineCurveForm.BscfPolylineForm,
+                    Logical.LFalse, Logical.LFalse, aMults, aKnots,
+                    StepKnotType.KtPiecewiseBezierKnots);
         Assert.Equal(2, aCurve.NbControlPointsList());
         Assert.Same(aPoint, aCurve.ControlPointsListValue(2));
-        Assert.Equal(2, aCurve.NbKnots());
-        Assert.Equal(StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots, aCurve.KnotSpec());
+        Assert.Equal(2, aCurve.KnotCount);
+        Assert.Equal(StepKnotType.KtPiecewiseBezierKnots, aCurve.KnotSpec());
         Assert.Equal(1, aCurve.Degree());
     }
 
     [Fact]
     public void SelectTypesRecogniseAndCopy()
     {
-        var aPlacement = new StepGeom_Axis2Placement3d();
-        var aSelect = new StepGeom_Axis2Placement();
+        var aPlacement = new StepAxis2Placement3d();
+        var aSelect = new StepAxis2Placement();
         Assert.Equal(2, aSelect.CaseNum(aPlacement));
-        Assert.Equal(0, aSelect.CaseNum(new StepGeom_CartesianPoint()));
+        Assert.Equal(0, aSelect.CaseNum(new StepCartesianPoint()));
         aSelect.SetValue(aPlacement);
         Assert.Same(aPlacement, aSelect.Axis2Placement3d());
         Assert.Null(aSelect.Axis2Placement2d());
 
         // C++ copies a SELECT by value (decision 1210)
-        var aCopy = new StepGeom_Axis2Placement(aSelect);
-        aSelect.SetValue(new StepGeom_Axis2Placement2d());
+        var aCopy = new StepAxis2Placement(aSelect);
+        aSelect.SetValue(new StepAxis2Placement2d());
         Assert.Same(aPlacement, aCopy.Value());
 
         // a SELECT in an entity's array
-        var anItem = new StepShape_GeometricSetSelect();
-        anItem.SetValue(new StepGeom_CartesianPoint());
-        var aSet = new StepShape_GeometricSet();
-        var anItems = new NCollection_HArray1<StepShape_GeometricSetSelect>(1, 1);
+        var anItem = new StepGeometricSetSelect();
+        anItem.SetValue(new StepCartesianPoint());
+        var aSet = new StepGeometricSet();
+        var anItems = new NCollection_HArray1<StepGeometricSetSelect>(1, 1);
         anItems.SetValue(1, anItem);
         aSet.Init(new TCollection_HAsciiString("g"), anItems);
-        Assert.IsType<StepGeom_CartesianPoint>(aSet.ElementsValue(1).Value());
+        Assert.IsType<StepCartesianPoint>(aSet.ElementsValue(1).Value());
     }
 
     [Fact]
     public void EnumToolsConvertEveryValue()
     {
         int aTools = 0, aValues = 0;
-        foreach (var aTool in typeof(StepData_SelectType).Assembly.GetTypes()
-                     .Where(t => t.IsAbstract && t.IsSealed && Packages.Any(p => t.Name.StartsWith("RW" + p + "_RW", StringComparison.Ordinal)))
-                     .OrderBy(t => t.Name, StringComparer.Ordinal))
+        foreach (var aTool in typeof(SelectType).Assembly.GetTypes()
+                     .Where(t => t.IsAbstract && t.IsSealed && Packages.Any(p => Kerf.Engine.Foundation.OcctTypeNames.Of(t).StartsWith("RW" + p + "_RW", StringComparison.Ordinal)))
+                     .OrderBy(t => Kerf.Engine.Foundation.OcctTypeNames.Of(t), StringComparer.Ordinal))
         {
             var aToString = aTool.GetMethod("ConvertToString", BindingFlags.Public | BindingFlags.Static);
             var aToEnum = aTool.GetMethod("ConvertToEnum", BindingFlags.Public | BindingFlags.Static);
@@ -290,7 +294,7 @@ public sealed class StepEntitySmokeTests
                 string s = (string)aToString.Invoke(null, [v])!;
                 Assert.Matches(@"^\.[A-Z0-9_]+\.$", s);
                 object?[] anArgs = [s, Enum.ToObject(anEnum, 0)];
-                Assert.True((bool)aToEnum.Invoke(null, anArgs)!, $"{aTool.Name}: {s}");
+                Assert.True((bool)aToEnum.Invoke(null, anArgs)!, $"{Kerf.Engine.Foundation.OcctTypeNames.Of(aTool)}: {s}");
                 Assert.Equal(v, anArgs[1]);
                 aValues++;
             }

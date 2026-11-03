@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Gltf;
+using Kerf.Engine.Exchange.Obj;
+using Kerf.Engine.Exchange.ThreeMf;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -28,17 +32,17 @@ public class MeshFormatsTests
 {
     // ---------------------------------------------------------------------------------------------- glTF
 
-    private static byte[] WriteGlb(XdeDoc_Tree theTree, RWGltf_WriteOptions? theOptions = null)
+    private static byte[] WriteGlb(Tree theTree, GltfWriteOptions? theOptions = null)
     {
         var aStream = new MemoryStream();
-        Assert.True(new RWGltf_TreeWriter(theOptions).WriteGlb(theTree, aStream));
+        Assert.True(new GltfTreeWriter(theOptions).WriteGlb(theTree, aStream));
         return aStream.ToArray();
     }
 
-    private static XdeDoc_Tree ReadGltf(byte[] theData, Func<string, Stream?>? theResolver = null)
+    private static Tree ReadGltf(byte[] theData, Func<string, Stream?>? theResolver = null)
     {
-        var aReader = new RWGltf_TreeReader();
-        XdeDoc_Tree? aTree = aReader.Read(new MemoryStream(theData), theResolver);
+        var aReader = new TreeReader();
+        Tree? aTree = aReader.Read(new MemoryStream(theData), theResolver);
         Assert.True(aTree is not null, aReader.Error);
         return aTree;
     }
@@ -209,7 +213,7 @@ public class MeshFormatsTests
     [Fact]
     public void GltfRoundTripKeepsTrianglesHierarchyColoursAndNames()
     {
-        XdeDoc_Tree aTree = SampleTree();
+        Tree aTree = SampleTree();
         byte[] aGlb = WriteGlb(aTree);
         Assert.Equal(aGlb, WriteGlb(aTree)); // deterministic
         (JsonDocument aJson, byte[] aBin) = SplitGlb(aGlb);
@@ -223,9 +227,9 @@ public class MeshFormatsTests
         JsonElement aBlue = aRoot.GetProperty("materials")[2];
         Assert.Equal("BLEND", aBlue.GetProperty("alphaMode").GetString());
 
-        XdeDoc_Tree aBack = ReadGltf(aGlb);
+        Tree aBack = ReadGltf(aGlb);
         Assert.Equal(WorldTriangles(aTree), WorldTriangles(aBack));
-        IReadOnlyList<XdeDoc_FlatItem> aBefore = aTree.Flatten(), anAfter = aBack.Flatten();
+        IReadOnlyList<FlatItem> aBefore = aTree.Flatten(), anAfter = aBack.Flatten();
         Assert.Equal(aBefore.Count, anAfter.Count);
         for (int i = 0; i < aBefore.Count; i++)
         {
@@ -233,7 +237,7 @@ public class MeshFormatsTests
             Assert.Equal(aBefore[i].Style.SurfaceColor, anAfter[i].Style.SurfaceColor);
         }
         // the plate's blue face: a sub-shape colour again
-        XdeDoc_SubShape aSub = Assert.Single(anAfter[2].Product.SubShapes);
+        SubShape aSub = Assert.Single(anAfter[2].Product.SubShapes);
         Assert.Equal(Blue, aSub.Attributes.SurfaceColor);
         // the read tree is in millimetres, Z up
         Assert.Equal(0.001, aBack.LengthUnit!.UnitValue);
@@ -241,12 +245,12 @@ public class MeshFormatsTests
         // .gltf with its .bin: the same tree
         var aJsonStream = new MemoryStream();
         var aBinStream = new MemoryStream();
-        Assert.True(new RWGltf_TreeWriter().WriteGltf(aTree, aJsonStream, aBinStream, "model.bin"));
+        Assert.True(new GltfTreeWriter().WriteGltf(aTree, aJsonStream, aBinStream, "model.bin"));
         Assert.Equal(aBin.Length, pad4((int)aBinStream.Length));
         ValidateGltf(JsonDocument.Parse(aJsonStream.ToArray()), aBinStream.ToArray());
-        XdeDoc_Tree aBack2 = ReadGltf(aJsonStream.ToArray(), u => u == "model.bin" ? new MemoryStream(aBinStream.ToArray()) : null);
+        Tree aBack2 = ReadGltf(aJsonStream.ToArray(), u => u == "model.bin" ? new MemoryStream(aBinStream.ToArray()) : null);
         Assert.Equal(WorldTriangles(aTree), WorldTriangles(aBack2));
-        Assert.Null(new RWGltf_TreeReader().Read(new MemoryStream(aJsonStream.ToArray())));
+        Assert.Null(new TreeReader().Read(new MemoryStream(aJsonStream.ToArray())));
     }
 
     private static int pad4(int theLength) => (theLength + 3) & ~3;
@@ -254,8 +258,8 @@ public class MeshFormatsTests
     [Fact]
     public void GltfWriterConvertsUnitsAndAxes()
     {
-        XdeDoc_Product aPart = XdeDoc_Product.Part(MeshedBox(1000, 2000, 3000), "B");
-        var aTree = new XdeDoc_Tree(aPart.Placed(Translation(0, 0, 500)));
+        DocumentProduct aPart = DocumentProduct.Part(MeshedBox(1000, 2000, 3000), "B");
+        var aTree = new Tree(aPart.Placed(Translation(0, 0, 500)));
         (JsonDocument aJson, _) = SplitGlb(WriteGlb(aTree));
         JsonElement aRoot = aJson.RootElement;
         JsonElement aPos = aRoot.GetProperty("accessors")[aRoot.GetProperty("meshes")[0].GetProperty("primitives")[0].GetProperty("attributes").GetProperty("POSITION").GetInt32()];
@@ -267,7 +271,7 @@ public class MeshFormatsTests
         Assert.Equal(1.0, aMatrix[0], 12);
 
         // without the conversions
-        (aJson, _) = SplitGlb(WriteGlb(aTree, new RWGltf_WriteOptions { ZUpToYUp = false, InputLengthUnit = 1.0 }));
+        (aJson, _) = SplitGlb(WriteGlb(aTree, new GltfWriteOptions { ZUpToYUp = false, InputLengthUnit = 1.0 }));
         aRoot = aJson.RootElement;
         aPos = aRoot.GetProperty("accessors")[0];
         Assert.Equal(new[] { 1000.0f, 2000.0f, 3000.0f }, aPos.GetProperty("max").EnumerateArray().Select(e => e.GetSingle()));
@@ -276,18 +280,18 @@ public class MeshFormatsTests
     [Fact]
     public void GltfWriterMeshesOnRequestAndLeavesHiddenParts()
     {
-        XdeDoc_Tree aTree = SampleTree(false); // not meshed
+        Tree aTree = SampleTree(false); // not meshed
         (JsonDocument aJson, _) = SplitGlb(WriteGlb(aTree));
         Assert.False(aJson.RootElement.TryGetProperty("meshes", out _));
         Assert.False(aJson.RootElement.TryGetProperty("buffers", out _));
 
-        byte[] aGlb = WriteGlb(aTree, new RWGltf_WriteOptions { MeshParameters = MeshParameters });
+        byte[] aGlb = WriteGlb(aTree, new GltfWriteOptions { MeshParameters = MeshParameters });
         Assert.Equal(WorldTriangles(aTree.Meshed(MeshParameters)!), WorldTriangles(ReadGltf(aGlb)));
         Assert.Null(Tool.Triangulation(ShapeCasts.Face(new Explorer(aTree.Roots[0].Product.Components[0].Product.Shape, ShapeType.Face).Current()), out _));
 
-        XdeDoc_Tree aHidden = SampleTree().WithLayers([new XdeDoc_Layer("L1", false)]);
+        Tree aHidden = SampleTree().WithLayers([new Layer("L1", false)]);
         Assert.Equal(2, ReadGltf(WriteGlb(aHidden)).Flatten().Count);
-        Assert.Equal(3, ReadGltf(WriteGlb(aHidden, new RWGltf_WriteOptions { IncludeHidden = true })).Flatten().Count);
+        Assert.Equal(3, ReadGltf(WriteGlb(aHidden, new GltfWriteOptions { IncludeHidden = true })).Flatten().Count);
     }
 
     [Fact]
@@ -295,12 +299,12 @@ public class MeshFormatsTests
     {
         using var aCancel = new CancellationTokenSource();
         aCancel.Cancel();
-        XdeDoc_Tree aTree = SampleTree();
+        Tree aTree = SampleTree();
         ProgressRange aRange() => new ProgressIndicator(aCancel.Token).Start();
-        Assert.False(new RWGltf_TreeWriter().WriteGlb(aTree, new MemoryStream(), aRange()));
-        Assert.False(new RWObj_TreeWriter().Write(aTree, new MemoryStream(), new MemoryStream(), "m.mtl", aRange()));
-        Assert.False(new RW3mf_TreeWriter().Write(aTree, new MemoryStream(), aRange()));
-        Assert.Null(new RWGltf_TreeReader().Read(new MemoryStream(WriteGlb(aTree)), null, aRange()));
+        Assert.False(new GltfTreeWriter().WriteGlb(aTree, new MemoryStream(), aRange()));
+        Assert.False(new ObjTreeWriter().Write(aTree, new MemoryStream(), new MemoryStream(), "m.mtl", aRange()));
+        Assert.False(new TreeWriter().Write(aTree, new MemoryStream(), aRange()));
+        Assert.Null(new TreeReader().Read(new MemoryStream(WriteGlb(aTree)), null, aRange()));
     }
 
     [Fact]
@@ -310,20 +314,20 @@ public class MeshFormatsTests
         Directory.CreateDirectory(aFolder);
         try
         {
-            XdeDoc_Tree aTree = SampleTree();
+            Tree aTree = SampleTree();
             string aGltf = Path.Combine(aFolder, "a model.gltf");
-            Assert.True(new RWGltf_TreeWriter().Perform(aTree, aGltf));
+            Assert.True(new GltfTreeWriter().Perform(aTree, aGltf));
             Assert.True(File.Exists(Path.Combine(aFolder, "a model.bin")));
             Assert.Contains("a%20model.bin", File.ReadAllText(aGltf), StringComparison.Ordinal);
-            XdeDoc_Tree? aBack = new RWGltf_TreeReader().ReadFile(aGltf);
+            Tree? aBack = new TreeReader().ReadFile(aGltf);
             Assert.NotNull(aBack);
             Assert.Equal(WorldTriangles(aTree), WorldTriangles(aBack));
 
-            Assert.True(new RWGltf_TreeWriter().Perform(aTree, Path.Combine(aFolder, "m.glb")));
-            Assert.NotNull(new RWGltf_TreeReader().ReadFile(Path.Combine(aFolder, "m.glb")));
-            Assert.True(new RWObj_TreeWriter().Perform(aTree, Path.Combine(aFolder, "m.obj")));
+            Assert.True(new GltfTreeWriter().Perform(aTree, Path.Combine(aFolder, "m.glb")));
+            Assert.NotNull(new TreeReader().ReadFile(Path.Combine(aFolder, "m.glb")));
+            Assert.True(new ObjTreeWriter().Perform(aTree, Path.Combine(aFolder, "m.obj")));
             Assert.True(File.Exists(Path.Combine(aFolder, "m.mtl")));
-            Assert.True(new RW3mf_TreeWriter().Perform(aTree, Path.Combine(aFolder, "m.3mf")));
+            Assert.True(new TreeWriter().Perform(aTree, Path.Combine(aFolder, "m.3mf")));
         }
         finally
         {
@@ -369,10 +373,10 @@ public class MeshFormatsTests
     [Fact]
     public void ObjHasTheTreesTrianglesInTheWorld()
     {
-        XdeDoc_Tree aTree = SampleTree();
+        Tree aTree = SampleTree();
         var anObj = new MemoryStream();
         var aMtl = new MemoryStream();
-        Assert.True(new RWObj_TreeWriter().Write(aTree, anObj, aMtl, "sample.mtl"));
+        Assert.True(new ObjTreeWriter().Write(aTree, anObj, aMtl, "sample.mtl"));
         string aText = Encoding.UTF8.GetString(anObj.ToArray());
         Assert.DoesNotContain('\r', aText);
         Assert.Contains("mtllib sample.mtl\n", aText, StringComparison.Ordinal);
@@ -386,14 +390,14 @@ public class MeshFormatsTests
 
         // Y up and metres on request
         var anObj2 = new MemoryStream();
-        Assert.True(new RWObj_TreeWriter(new RWObj_WriteOptions { ZUpToYUp = true, Scale = 0.001 }).Write(aTree, anObj2, null));
+        Assert.True(new ObjTreeWriter(new ObjWriteOptions { ZUpToYUp = true, Scale = 0.001 }).Write(aTree, anObj2, null));
         Assert.DoesNotContain("mtllib", Encoding.UTF8.GetString(anObj2.ToArray()), StringComparison.Ordinal);
         Assert.Equal(aTriangles.Count, ParseObj(Encoding.UTF8.GetString(anObj2.ToArray())).Triangles.Count);
     }
 
     // ---------------------------------------------------------------------------------------------- 3MF
 
-    private static readonly XNamespace theCore = RW3mf_TreeWriter.CoreNamespace;
+    private static readonly XNamespace theCore = TreeWriter.CoreNamespace;
 
     /// <summary>
     /// A 3MF package's rules (3MF Core Specification 1.3, OPC): the three parts, their content types, the root
@@ -532,12 +536,12 @@ public class MeshFormatsTests
     [Fact]
     public void ThreeMfFollowsTheCoreSpecification()
     {
-        XdeDoc_Tree aTree = SampleTree();
+        Tree aTree = SampleTree();
         var aStream = new MemoryStream();
-        Assert.True(new RW3mf_TreeWriter().Write(aTree, aStream));
+        Assert.True(new TreeWriter().Write(aTree, aStream));
         byte[] aPackage = aStream.ToArray();
         var aStream2 = new MemoryStream();
-        Assert.True(new RW3mf_TreeWriter().Write(aTree, aStream2));
+        Assert.True(new TreeWriter().Write(aTree, aStream2));
         Assert.Equal(aPackage, aStream2.ToArray()); // deterministic
 
         List<string> aTriangles = Validate3mf(aPackage, out XDocument aModel);
@@ -561,11 +565,11 @@ public class MeshFormatsTests
 
         // another unit: centimetres stay centimetres; a unit 3MF lacks becomes millimetres
         var aCm = new MemoryStream();
-        Assert.True(new RW3mf_TreeWriter().Write(aTree.WithLengthUnit(new XdeDoc_LengthUnit("CM", 0.01)), aCm));
+        Assert.True(new TreeWriter().Write(aTree.WithLengthUnit(new DocumentLengthUnit("CM", 0.01)), aCm));
         Validate3mf(aCm.ToArray(), out XDocument aCmModel);
         Assert.Equal("centimeter", (string?)aCmModel.Root!.Attribute("unit"));
         var aOdd = new MemoryStream();
-        Assert.True(new RW3mf_TreeWriter(new RW3mf_WriteOptions { InputLengthUnit = 0.002 }).Write(aTree, aOdd));
+        Assert.True(new TreeWriter(new WriteOptions { InputLengthUnit = 0.002 }).Write(aTree, aOdd));
         Validate3mf(aOdd.ToArray(), out XDocument anOddModel);
         Assert.Equal("millimeter", (string?)anOddModel.Root!.Attribute("unit"));
         Assert.Equal("1 0 0 0 1 0 0 0 1 2 4 6", (string?)anOddModel.Root!.Element(theCore + "build")!.Element(theCore + "item")!.Attribute("transform"));
@@ -574,9 +578,9 @@ public class MeshFormatsTests
     // ---------------------------------------------------------------------------------------------- OCCT's de_mesh cases
 
     // de_mesh/gltf_read/lantern: checknbshapes -face 3 -compound 1; checktrinfo -tri 5394 -nod 4145; the XDE dump
-    private static void CheckLantern(XdeDoc_Tree theTree)
+    private static void CheckLantern(Tree theTree)
     {
-        XdeDoc_Instance aRoot = Assert.Single(theTree.Roots);
+        Instance aRoot = Assert.Single(theTree.Roots);
         Shape aShape = aRoot.Shape;
         Assert.Equal(3, CountShapes(aShape, ShapeType.Face));
         Assert.Equal(1, CountShapes(aShape, ShapeType.Compound));
@@ -597,8 +601,8 @@ public class MeshFormatsTests
         {
             return; // the dataset isn't there
         }
-        var aReader = new RWGltf_TreeReader();
-        XdeDoc_Tree? aTree = aReader.ReadFile(aPath);
+        var aReader = new TreeReader();
+        Tree? aTree = aReader.ReadFile(aPath);
         Assert.True(aTree is not null, aReader.Error);
         CheckLantern(aTree);
 
@@ -606,13 +610,13 @@ public class MeshFormatsTests
         byte[] aGlb = WriteGlb(aTree);
         (JsonDocument aJson, byte[] aBin) = SplitGlb(aGlb);
         ValidateGltf(aJson, aBin);
-        XdeDoc_Tree aBack = ReadGltf(aGlb);
+        Tree aBack = ReadGltf(aGlb);
         CheckLantern(aBack);
         Assert.Equal(WorldTriangles(aTree), WorldTriangles(aBack));
 
         // de_mesh/obj_write/lantern: written to OBJ, 5394 triangles on 4145 nodes
         var anObj = new MemoryStream();
-        Assert.True(new RWObj_TreeWriter().Write(aTree, anObj, new MemoryStream()));
+        Assert.True(new ObjTreeWriter().Write(aTree, anObj, new MemoryStream()));
         (List<string> anObjTriangles, _, int aNbVertices) = ParseObj(Encoding.UTF8.GetString(anObj.ToArray()));
         Assert.Equal(5394, anObjTriangles.Count);
         Assert.Equal(4145, aNbVertices);
@@ -620,7 +624,7 @@ public class MeshFormatsTests
 
         // and to 3MF (degenerate triangles, which 3MF forbids, left out)
         var a3mf = new MemoryStream();
-        Assert.True(new RW3mf_TreeWriter().Write(aTree, a3mf));
+        Assert.True(new TreeWriter().Write(aTree, a3mf));
         List<string> a3mfTriangles = Validate3mf(a3mf.ToArray(), out _);
         List<string> aNonDegenerate = [.. WorldTriangles(aTree).Where(t => t.Split('|').Distinct().Count() == 3)];
         Assert.True(a3mfTriangles.Count <= 5394 && a3mfTriangles.Count >= aNonDegenerate.Count);
@@ -639,8 +643,8 @@ public class MeshFormatsTests
         {
             return;
         }
-        var aReader = new RWGltf_TreeReader();
-        XdeDoc_Tree? aTree = aReader.ReadFile(aPath);
+        var aReader = new TreeReader();
+        Tree? aTree = aReader.ReadFile(aPath);
         Assert.True(aTree is not null, aReader.Error);
         int aNbTriangles = aTree.Flatten().Sum(i => TriInfo(i.Shape).Triangles);
         Assert.True(aNbTriangles > 0);
@@ -648,7 +652,7 @@ public class MeshFormatsTests
         {
             Assert.Contains(aReader.Warnings, w => w.Contains("KHR_materials_pbrSpecularGlossiness", StringComparison.Ordinal));
         }
-        XdeDoc_Tree aBack = ReadGltf(WriteGlb(aTree));
+        Tree aBack = ReadGltf(WriteGlb(aTree));
         Assert.Equal(aNbTriangles, aBack.Flatten().Sum(i => TriInfo(i.Shape).Triangles));
     }
 }

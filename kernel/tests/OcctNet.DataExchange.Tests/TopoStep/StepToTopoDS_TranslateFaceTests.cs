@@ -3,6 +3,11 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Exchange.Framework.Transfer;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Import;
+using Kerf.Engine.Exchange.Step.Shapes;
+using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
@@ -19,17 +24,17 @@ namespace OcctNet.DataExchange.Tests.TopoStep;
 /// <summary>OCCT's GTests of StepToTopoDS_TranslateFace on triangulated faces and surface sets.</summary>
 public sealed class StepToTopoDS_TranslateFaceTests
 {
-    private readonly StepToTopoDS_Tool myTool = new();
-    private readonly StepToTopoDS_NMTool myNMTool = new();
+    private readonly ImportTool myTool = new();
+    private readonly NMTool myNMTool = new();
 
     public StepToTopoDS_TranslateFaceTests()
     {
-        var aTP = new Transfer_TransientProcess();
-        myTool.Init(new NCollection_DataMap<StepShape_TopologicalRepresentationItem, Shape>(), aTP);
+        var aTP = new TransientProcess();
+        myTool.Init(new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>(), aTP);
         myNMTool.SetActive(false);
     }
 
-    private static StepVisual_CoordinatesList createCoords(params Xyz[] thePoints)
+    private static CoordinatesList createCoords(params Xyz[] thePoints)
     {
         var aPoints = new NCollection_HArray1<Xyz>(1, thePoints.Length);
         for (int i = 0; i < thePoints.Length; ++i)
@@ -37,7 +42,7 @@ public sealed class StepToTopoDS_TranslateFaceTests
             aPoints.SetValue(i + 1, thePoints[i]);
         }
 
-        var aCoords = new StepVisual_CoordinatesList();
+        var aCoords = new CoordinatesList();
         aCoords.Init(new TCollection_HAsciiString("coords"), aPoints);
         return aCoords;
     }
@@ -79,9 +84,9 @@ public sealed class StepToTopoDS_TranslateFaceTests
         return anArray;
     }
 
-    private static Triangulation getMesh(StepToTopoDS_TranslateFace theTranslator)
+    private static Triangulation getMesh(TranslateFace theTranslator)
     {
-        Assert.True(theTranslator.IsDone());
+        Assert.True(theTranslator.IsDone);
         Face aFace = ShapeCasts.Face(theTranslator.Value());
         Triangulation? aMesh = Tool.Triangulation(aFace, out _);
         Assert.NotNull(aMesh);
@@ -91,13 +96,13 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedFace_DirectNodes()
     {
-        var aTF = new StepVisual_TriangulatedFace();
+        var aTF = new TriangulatedFace();
         aTF.Init(new TCollection_HAsciiString("face"),
                  createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(1, 1, 0), new Xyz(0, 1, 0)), 4, null, false,
-                 new StepVisual_FaceOrSurface(), null, createTriangles([1, 2, 3], [1, 3, 4]));
+                 new FaceOrSurface(), null, createTriangles([1, 2, 3], [1, 3, 4]));
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(4, aMesh.NodeCount);
@@ -116,13 +121,13 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedFace_WithPnindex()
     {
-        var aTF = new StepVisual_TriangulatedFace();
+        var aTF = new TriangulatedFace();
         aTF.Init(new TCollection_HAsciiString("face"),
                  createCoords(new Xyz(0, 0, 0), new Xyz(10, 0, 0), new Xyz(10, 10, 0), new Xyz(0, 10, 0)), 4, null, false,
-                 new StepVisual_FaceOrSurface(), intArray(2, 3, 4), createTriangles([1, 2, 3]));
+                 new FaceOrSurface(), intArray(2, 3, 4), createTriangles([1, 2, 3]));
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
@@ -138,11 +143,11 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedSurfaceSet_DirectNodes()
     {
-        var aTSS = new StepVisual_TriangulatedSurfaceSet();
+        var aTSS = new TriangulatedSurfaceSet();
         aTSS.Init(new TCollection_HAsciiString("surfset"), createCoords(new Xyz(0, 0, 0), new Xyz(2, 0, 0), new Xyz(1, 2, 0)), 3,
                   null, null, createTriangles([1, 2, 3]));
 
-        var aTranslator = new StepToTopoDS_TranslateFace(aTSS, myTool, myNMTool);
+        var aTranslator = new TranslateFace(aTSS, myTool, myNMTool);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
@@ -155,12 +160,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedSurfaceSet_WithPnindex()
     {
-        var aTSS = new StepVisual_TriangulatedSurfaceSet();
+        var aTSS = new TriangulatedSurfaceSet();
         aTSS.Init(new TCollection_HAsciiString("surfset"),
                   createCoords(new Xyz(0, 0, 0), new Xyz(5, 0, 0), new Xyz(5, 5, 0), new Xyz(0, 5, 0)), 4, null,
                   intArray(1, 3, 4), createTriangles([1, 2, 3]));
 
-        var aTranslator = new StepToTopoDS_TranslateFace(aTSS, myTool, myNMTool);
+        var aTranslator = new TranslateFace(aTSS, myTool, myNMTool);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
@@ -174,13 +179,13 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedFace_WithNormals()
     {
-        var aTF = new StepVisual_TriangulatedFace();
+        var aTF = new TriangulatedFace();
         aTF.Init(new TCollection_HAsciiString("face"), createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0)), 3,
-                 createNormals(new Xyz(0, 0, 1), new Xyz(0, 0, 1), new Xyz(0, 0, 1)), false, new StepVisual_FaceOrSurface(), null,
+                 createNormals(new Xyz(0, 0, 1), new Xyz(0, 0, 1), new Xyz(0, 0, 1)), false, new FaceOrSurface(), null,
                  createTriangles([1, 2, 3]));
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.True(aMesh.HasNormals);
@@ -191,12 +196,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedFace_SingleNormal()
     {
-        var aTF = new StepVisual_TriangulatedFace();
+        var aTF = new TriangulatedFace();
         aTF.Init(new TCollection_HAsciiString("face"), createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0)), 3,
-                 createNormals(new Xyz(0, 1, 0)), false, new StepVisual_FaceOrSurface(), null, createTriangles([1, 2, 3]));
+                 createNormals(new Xyz(0, 1, 0)), false, new FaceOrSurface(), null, createTriangles([1, 2, 3]));
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.True(aMesh.HasNormals);
@@ -213,12 +218,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void TriangulatedSurfaceSet_LengthFactor()
     {
-        var aTSS = new StepVisual_TriangulatedSurfaceSet();
+        var aTSS = new TriangulatedSurfaceSet();
         aTSS.Init(new TCollection_HAsciiString("surfset"), createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0)), 3,
                   null, null, createTriangles([1, 2, 3]));
 
-        StepData_Factors aFactors = new StepData_Factors().InitializedFactors(25.4, 1.0, 1.0);
-        var aTranslator = new StepToTopoDS_TranslateFace(aTSS, myTool, myNMTool, aFactors);
+        Factors aFactors = new Factors().InitializedFactors(25.4, 1.0, 1.0);
+        var aTranslator = new TranslateFace(aTSS, myTool, myNMTool, aFactors);
 
         Triangulation aMesh = getMesh(aTranslator);
         // Coordinates should be scaled by length factor 25.4.
@@ -226,12 +231,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Assert.Equal(25.4, aMesh.Node(3).Y(), 1e-10);
     }
 
-    private static StepVisual_ComplexTriangulatedFace complexFace(StepVisual_CoordinatesList theCoords, int thePnmax,
+    private static ComplexTriangulatedFace complexFace(CoordinatesList theCoords, int thePnmax,
                                                                    NCollection_HArray1<Transient>? theStrips,
                                                                    NCollection_HArray1<Transient>? theFans)
     {
-        var aCTF = new StepVisual_ComplexTriangulatedFace();
-        aCTF.Init(new TCollection_HAsciiString("complex_face"), theCoords, thePnmax, null, false, new StepVisual_FaceOrSurface(), null,
+        var aCTF = new ComplexTriangulatedFace();
+        aCTF.Init(new TCollection_HAsciiString("complex_face"), theCoords, thePnmax, null, false, new FaceOrSurface(), null,
                   theStrips, theFans);
         return aCTF;
     }
@@ -247,12 +252,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
     public void ComplexTriangulatedFace_TriangleStrips()
     {
         // Triangle strip: [1, 2, 3, 4] produces 2 triangles.
-        StepVisual_ComplexTriangulatedFace aCTF =
+        ComplexTriangulatedFace aCTF =
             complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(1, 1, 0)), 4,
                         oneList(intArray(1, 2, 3, 4)), null);
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(4, aMesh.NodeCount);
@@ -263,12 +268,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
     public void ComplexTriangulatedFace_TriangleFans()
     {
         // Triangle fan: [1, 2, 3, 4, 5] with center at vertex 1 produces 3 triangles.
-        StepVisual_ComplexTriangulatedFace aCTF =
+        ComplexTriangulatedFace aCTF =
             complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(1, 1, 0), new Xyz(0, 1, 0), new Xyz(-1, 0, 0)),
                         5, null, oneList(intArray(1, 2, 3, 4, 5)));
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(5, aMesh.NodeCount);
@@ -278,32 +283,32 @@ public sealed class StepToTopoDS_TranslateFaceTests
     [Fact]
     public void NullInput_TessellatedFace()
     {
-        StepVisual_TessellatedFace? aNullTF = null;
+        TessellatedFace? aNullTF = null;
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace();
+        var aTranslator = new TranslateFace();
         aTranslator.Init(aNullTF!, myTool, myNMTool, false, ref aHasGeom);
-        Assert.False(aTranslator.IsDone());
+        Assert.False(aTranslator.IsDone);
     }
 
     [Fact]
     public void NullInput_TessellatedSurfaceSet()
     {
-        StepVisual_TessellatedSurfaceSet? aNullTSS = null;
-        var aTranslator = new StepToTopoDS_TranslateFace();
+        TessellatedSurfaceSet? aNullTSS = null;
+        var aTranslator = new TranslateFace();
         aTranslator.Init(aNullTSS!, myTool, myNMTool);
-        Assert.False(aTranslator.IsDone());
+        Assert.False(aTranslator.IsDone);
     }
 
     [Fact]
     public void ComplexTriangulatedFace_DegenerateStrip()
     {
         // Strip with degenerate: [1, 2, 3, 3] - the second triangle (2,3,3) is degenerate.
-        StepVisual_ComplexTriangulatedFace aCTF =
+        ComplexTriangulatedFace aCTF =
             complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(1, 1, 0)), 4,
                         oneList(intArray(1, 2, 3, 3)), null);
 
         bool aHasGeom = false;
-        var aTranslator = new StepToTopoDS_TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
+        var aTranslator = new TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
 
         Triangulation aMesh = getMesh(aTranslator);
         // Only 1 non-degenerate triangle from strip [1,2,3,3].

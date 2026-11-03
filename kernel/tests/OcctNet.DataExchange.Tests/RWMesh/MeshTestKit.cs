@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Tools;
@@ -41,29 +42,29 @@ internal static class MeshTestKit
     /// A sample assembly placed at (1, 2, 3): a red box "Box" twice (the second turned, green, named "Box2" on the
     /// instance) and a plate whose first face is blue (translucent), the plate in layer "L1".
     /// </summary>
-    public static XdeDoc_Tree SampleTree(bool isMeshed = true)
+    public static Tree SampleTree(bool isMeshed = true)
     {
         Shape aBox = isMeshed ? MeshedBox(10, 20, 30) : Box(10, 20, 30);
         Shape aPlate = isMeshed ? MeshedBox(5, 5, 1) : Box(5, 5, 1);
-        XdeDoc_Product aBoxPart = XdeDoc_Product.Part(aBox, new XdeDoc_Attributes { Name = "Box", SurfaceColor = Red });
+        DocumentProduct aBoxPart = DocumentProduct.Part(aBox, new Attributes { Name = "Box", SurfaceColor = Red });
         Shape aFirstFace = new Explorer(aPlate, ShapeType.Face).Current();
-        XdeDoc_Product aPlatePart = XdeDoc_Product.Part(aPlate, new XdeDoc_Attributes { Name = "Plate", Layers = ["L1"] })
-                                                  .WithSubShape(aFirstFace, new XdeDoc_Attributes { SurfaceColor = Blue });
-        XdeDoc_Product anAssembly = XdeDoc_Product.Assembly("Asm",
+        DocumentProduct aPlatePart = DocumentProduct.Part(aPlate, new Attributes { Name = "Plate", Layers = ["L1"] })
+                                                  .WithSubShape(aFirstFace, new Attributes { SurfaceColor = Blue });
+        DocumentProduct anAssembly = DocumentProduct.Assembly("Asm",
             aBoxPart.Placed(Translation(0, 0, 0)),
-            aBoxPart.Placed(QuarterTurn(50, 0, 0), new XdeDoc_Attributes { Name = "Box2", SurfaceColor = Green }),
+            aBoxPart.Placed(QuarterTurn(50, 0, 0), new Attributes { Name = "Box2", SurfaceColor = Green }),
             aPlatePart.Placed(Translation(0, 40, 0)));
-        return new XdeDoc_Tree([anAssembly.Placed(Translation(1, 2, 3))], null, XdeDoc_LengthUnit.Millimetre);
+        return new Tree([anAssembly.Placed(Translation(1, 2, 3))], null, DocumentLengthUnit.Millimetre);
     }
 
     /// <summary>
     /// The tree's triangles in the world, as sorted canonical strings (each triangle's points rounded to 0.01, started at
     /// its smallest point, the winding kept).
     /// </summary>
-    public static List<string> WorldTriangles(XdeDoc_Tree theTree)
+    public static List<string> WorldTriangles(Tree theTree)
     {
         var aResult = new List<string>();
-        foreach (XdeDoc_FlatItem anItem in theTree.Flatten())
+        foreach (FlatItem anItem in theTree.Flatten())
         {
             for (var anExp = new Explorer(anItem.Shape, ShapeType.Face); anExp.More(); anExp.Next())
             {

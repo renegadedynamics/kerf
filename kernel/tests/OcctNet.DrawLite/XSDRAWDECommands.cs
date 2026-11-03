@@ -8,7 +8,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Caf;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Stl.Api;
+using Kerf.Engine.Foundation.Resources;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -16,7 +24,7 @@ using Kerf.Topology;
 using System.Globalization;
 using System.Text;
 using Occt;
-using static Occt.IFSelect_ReturnStatus;
+using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 
 namespace OcctNet.DrawLite;
 
@@ -73,7 +81,7 @@ internal static class XSDRAWDECommands
             return 1;
         }
         string aDocShapeName = "", aFilePath = "", aConfString = "";
-        XdeDoc_Document? aDoc = null;
+        ExchangeDocument? aDoc = null;
         bool isNoDoc = theArgVec[0] == "readfile";
         for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
         {
@@ -144,7 +152,7 @@ internal static class XSDRAWDECommands
             return 1;
         }
         string aDocShapeName = "", aFilePath = "", aConfString = "";
-        XdeDoc_Document? aDoc = null;
+        ExchangeDocument? aDoc = null;
         bool isNoDoc = theArgVec[0] == "writefile";
         for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
         {
@@ -288,8 +296,8 @@ internal static class XSDRAWDECommands
         private double mySystemUnit = 1.0; // the system unit, scaled to millimetres
 
         // DESTEP_ConfigurationNode
-        private DESTEP_Parameters myStep = new();
-        private readonly DE_ShapeFixParameters myStepShapeFix = DESTEP_Parameters.GetDefaultShapeFixParameters();
+        private Parameters myStep = new();
+        private readonly ShapeFixParameters myStepShapeFix = Parameters.GetDefaultShapeFixParameters();
 
         // DESTL_ConfigurationNode
         private double myStlMergeAngle = 90.0;
@@ -336,29 +344,29 @@ internal static class XSDRAWDECommands
         private void loadStep(Configuration theResource)
         {
             const string aScope = "provider.STEP.OCC";
-            ref DESTEP_Parameters p = ref myStep;
+            ref Parameters p = ref myStep;
             int i(string theKey, int theValue) => theResource.IntegerVal(theKey, theValue, aScope);
             bool b(string theKey, bool theValue) => theResource.BooleanVal(theKey, theValue, aScope);
             double r(string theKey, double theValue) => theResource.RealVal(theKey, theValue, aScope);
-            p.ReadBSplineContinuity = (DESTEP_Parameters.ReadMode_BSplineContinuity)i("read.iges.bspline.continuity", (int)p.ReadBSplineContinuity);
-            p.ReadPrecisionMode = (DESTEP_Parameters.ReadMode_Precision)i("read.precision.mode", (int)p.ReadPrecisionMode);
+            p.ReadBSplineContinuity = (Parameters.ReadMode_BSplineContinuity)i("read.iges.bspline.continuity", (int)p.ReadBSplineContinuity);
+            p.ReadPrecisionMode = (Parameters.ReadMode_Precision)i("read.precision.mode", (int)p.ReadPrecisionMode);
             p.ReadPrecisionVal = r("read.precision.val", p.ReadPrecisionVal);
-            p.ReadMaxPrecisionMode = (DESTEP_Parameters.ReadMode_MaxPrecision)i("read.maxprecision.mode", (int)p.ReadMaxPrecisionMode);
+            p.ReadMaxPrecisionMode = (Parameters.ReadMode_MaxPrecision)i("read.maxprecision.mode", (int)p.ReadMaxPrecisionMode);
             p.ReadMaxPrecisionVal = r("read.maxprecision.val", p.ReadMaxPrecisionVal);
             p.ReadSameParamMode = b("read.stdsameparameter.mode", p.ReadSameParamMode);
-            p.ReadSurfaceCurveMode = (DESTEP_Parameters.ReadMode_SurfaceCurve)i("read.surfacecurve.mode", (int)p.ReadSurfaceCurveMode);
+            p.ReadSurfaceCurveMode = (Parameters.ReadMode_SurfaceCurve)i("read.surfacecurve.mode", (int)p.ReadSurfaceCurveMode);
             p.EncodeRegAngle = r("read.encoderegularity.angle", p.EncodeRegAngle);
-            p.AngleUnit = (DESTEP_Parameters.AngleUnitMode)i("angleunit.mode", (int)p.AngleUnit);
+            p.AngleUnit = (Parameters.AngleUnitMode)i("angleunit.mode", (int)p.AngleUnit);
             p.ReadProductMode = b("read.product.mode", p.ReadProductMode);
-            p.ReadProductContext = (DESTEP_Parameters.ReadMode_ProductContext)i("read.product.context", (int)p.ReadProductContext);
-            p.ReadShapeRepr = (DESTEP_Parameters.ReadMode_ShapeRepr)i("read.shape.repr", (int)p.ReadShapeRepr);
-            p.ReadTessellated = (DESTEP_Parameters.RWMode_Tessellated)i("read.tessellated", (int)p.ReadTessellated);
-            p.ReadAssemblyLevel = (DESTEP_Parameters.ReadMode_AssemblyLevel)i("read.assembly.level", (int)p.ReadAssemblyLevel);
+            p.ReadProductContext = (Parameters.ReadMode_ProductContext)i("read.product.context", (int)p.ReadProductContext);
+            p.ReadShapeRepr = (Parameters.ReadMode_ShapeRepr)i("read.shape.repr", (int)p.ReadShapeRepr);
+            p.ReadTessellated = (Parameters.RWMode_Tessellated)i("read.tessellated", (int)p.ReadTessellated);
+            p.ReadAssemblyLevel = (Parameters.ReadMode_AssemblyLevel)i("read.assembly.level", (int)p.ReadAssemblyLevel);
             p.ReadRelationship = b("read.shape.relationship", p.ReadRelationship);
             p.ReadShapeAspect = b("read.shape.aspect", p.ReadShapeAspect);
             p.ReadConstrRelation = b("read.constructivegeom.relationship", p.ReadConstrRelation);
             p.ReadSubshapeNames = b("read.stepcaf.subshapes.name", p.ReadSubshapeNames);
-            p.ReadCodePage = (Resource_FormatType)i("read.codepage", (int)p.ReadCodePage);
+            p.ReadCodePage = (FormatType)i("read.codepage", (int)p.ReadCodePage);
             p.ReadNonmanifold = b("read.nonmanifold", p.ReadNonmanifold);
             p.ReadIdeas = b("read.ideas", p.ReadIdeas);
             p.ReadAllShapes = b("read.all.shapes", p.ReadAllShapes);
@@ -369,15 +377,15 @@ internal static class XSDRAWDECommands
             p.ReadProps = b("read.props", p.ReadProps);
             p.ReadMetadata = b("read.metadata", p.ReadMetadata);
             p.ReadProductMetadata = b("read.productmetadata", p.ReadProductMetadata);
-            p.WritePrecisionMode = (DESTEP_Parameters.WriteMode_PrecisionMode)i("write.precision.mode", (int)p.WritePrecisionMode);
+            p.WritePrecisionMode = (Parameters.WriteMode_PrecisionMode)i("write.precision.mode", (int)p.WritePrecisionMode);
             p.WritePrecisionVal = r("write.precision.val", p.WritePrecisionVal);
-            p.WriteAssembly = (DESTEP_Parameters.WriteMode_Assembly)i("write.assembly", (int)p.WriteAssembly);
-            p.WriteSchema = (DESTEP_Parameters.WriteMode_StepSchema)i("write.schema", (int)p.WriteSchema);
-            p.WriteTessellated = (DESTEP_Parameters.RWMode_Tessellated)i("write.tessellated", (int)p.WriteTessellated);
+            p.WriteAssembly = (Parameters.WriteMode_Assembly)i("write.assembly", (int)p.WriteAssembly);
+            p.WriteSchema = (Parameters.WriteMode_StepSchema)i("write.schema", (int)p.WriteSchema);
+            p.WriteTessellated = (Parameters.RWMode_Tessellated)i("write.tessellated", (int)p.WriteTessellated);
             p.WriteProductName = theResource.StringVal("write.product.name", p.WriteProductName, aScope);
             p.WriteSurfaceCurMode = b("write.surfacecurve.mode", p.WriteSurfaceCurMode);
-            p.WriteUnit = (UnitsMethods_LengthUnit)i("write.unit", (int)p.WriteUnit);
-            p.WriteVertexMode = (DESTEP_Parameters.WriteMode_VertexMode)i("write.vertex.mode", (int)p.WriteVertexMode);
+            p.WriteUnit = (global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit)i("write.unit", (int)p.WriteUnit);
+            p.WriteVertexMode = (Parameters.WriteMode_VertexMode)i("write.vertex.mode", (int)p.WriteVertexMode);
             p.WriteSubshapeNames = b("write.stepcaf.subshapes.name", p.WriteSubshapeNames);
             p.WriteColor = b("write.color", p.WriteColor);
             p.WriteNonmanifold = b("write.nonmanifold", p.WriteNonmanifold);
@@ -387,7 +395,7 @@ internal static class XSDRAWDECommands
             p.WriteMetadata = b("write.metadata", p.WriteMetadata);
             p.WriteMaterial = b("write.material", p.WriteMaterial);
             p.WriteVisMaterial = b("write.vismaterial", p.WriteVisMaterial);
-            p.WriteModelType = (STEPControl_StepModelType)i("write.model.type", (int)p.WriteModelType);
+            p.WriteModelType = (ModelType)i("write.model.type", (int)p.WriteModelType);
             p.CleanDuplicates = b("write.cleanduplicates", p.CleanDuplicates);
             p.WriteScalingTrsf = b("write.scaling.trsf", p.WriteScalingTrsf);
         }
@@ -446,7 +454,7 @@ internal static class XSDRAWDECommands
                                : "Error: Draw-lite has no provider for the format of the file " + thePath);
 
         // DE_Wrapper::Read(path, document, session)
-        public bool Read(DrawInterpreter theDI, string thePath, string theName, XdeDoc_Document theDocument)
+        public bool Read(DrawInterpreter theDI, string thePath, string theName, ExchangeDocument theDocument)
             => find(theDI, thePath, true) switch
             {
                 Format.Step => readStep(theDI, thePath, theDocument),
@@ -476,7 +484,7 @@ internal static class XSDRAWDECommands
         }
 
         // DE_Wrapper::Write(path, document, session)
-        public bool Write(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument)
+        public bool Write(DrawInterpreter theDI, string thePath, ExchangeDocument theDocument)
             => find(theDI, thePath, false) switch
             {
                 Format.Step => writeStep(theDI, thePath, theDocument),
@@ -498,7 +506,7 @@ internal static class XSDRAWDECommands
                 case Format.Gltf:
                 {
                     // DEGLTF_Provider::Write(shape): a document holding the shape
-                    var aDoc = new XdeDoc_Document();
+                    var aDoc = new ExchangeDocument();
                     aDoc.AddShape(theShape);
                     return writeGltf(theDI, thePath, aDoc);
                 }
@@ -509,17 +517,17 @@ internal static class XSDRAWDECommands
             }
         }
 
-        private static bool addShape(XdeDoc_Document theDocument, Shape theShape)
+        private static bool addShape(ExchangeDocument theDocument, Shape theShape)
         {
             theDocument.AddShape(theShape);
             return true;
         }
 
         // DESTL_Provider and DEBREP_Provider::Write(document): the free shape, or a compound of the free shapes
-        private static bool freeShape(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument, string theProvider, out Shape theShape)
+        private static bool freeShape(DrawInterpreter theDI, string thePath, ExchangeDocument theDocument, string theProvider, out Shape theShape)
         {
             theShape = new Shape();
-            var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+            var aLabels = new NCollection_Sequence<Label>();
             theDocument.GetFreeShapes(aLabels);
             if (aLabels.Length() <= 0)
             {
@@ -547,10 +555,10 @@ internal static class XSDRAWDECommands
         // DESTEP_Provider, on the interpreter's session (personizeWS: the readers and writers give it STEPCAFControl's
         // controller, decision 1277)
 
-        private bool readStep(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument)
+        private bool readStep(DrawInterpreter theDI, string thePath, ExchangeDocument theDocument)
         {
-            XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
-            var aReader = new STEPCAFControl_Reader(aWS, true);
+            global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession aWS = XSDRAWCommands.Session(theDI);
+            var aReader = new CafReader(aWS, true);
             // configureSTEPCAFReader
             aReader.SetColorMode(myStep.ReadColor);
             aReader.SetNameMode(myStep.ReadName);
@@ -559,12 +567,12 @@ internal static class XSDRAWDECommands
             aReader.SetMetaMode(myStep.ReadMetadata);
             aReader.SetProductMetaMode(myStep.ReadProductMetadata);
             aReader.SetShapeFixParameters(myStepShapeFix, new NCollection_DataMap<string, string>());
-            theDocument.SetLengthUnit(myLengthUnit / 1000.0, UnitsMethods.DumpLengthUnit(myLengthUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter));
+            theDocument.SetLengthUnit(myLengthUnit / 1000.0, global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(myLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Millimeter));
 
-            IFSelect_ReturnStatus aReadStat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
+            ReturnStatus aReadStat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
                                                   ? aReader.ChangeReader().ReadStream(thePath, myStep, new MemoryStream(aBytes))
-                                                  : IFSelect_ReturnStatus.IFSelect_RetError;
-            if (aReadStat != IFSelect_ReturnStatus.IFSelect_RetDone)
+                                                  : ReturnStatus.RetError;
+            if (aReadStat != ReturnStatus.RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon");
             }
@@ -578,15 +586,15 @@ internal static class XSDRAWDECommands
         private bool readStep(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
             theShape = new Shape();
-            XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
-            STEPControl_Controller.SelectFor(aWS);
-            var aReader = new STEPControl_Reader();
+            global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession aWS = XSDRAWCommands.Session(theDI);
+            StepController.SelectFor(aWS);
+            var aReader = new StepReader();
             aReader.SetWS(aWS);
             aReader.SetShapeFixParameters(myStepShapeFix);
-            IFSelect_ReturnStatus aReadstat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
+            ReturnStatus aReadstat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
                                                   ? aReader.ReadStream(thePath, myStep, new MemoryStream(aBytes))
-                                                  : IFSelect_ReturnStatus.IFSelect_RetError;
-            if (aReadstat != IFSelect_ReturnStatus.IFSelect_RetDone)
+                                                  : ReturnStatus.RetError;
+            if (aReadstat != ReturnStatus.RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon, no model loaded");
             }
@@ -599,10 +607,10 @@ internal static class XSDRAWDECommands
             return true;
         }
 
-        private bool writeStep(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument)
+        private bool writeStep(DrawInterpreter theDI, string thePath, ExchangeDocument theDocument)
         {
-            XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
-            var aWriter = new STEPCAFControl_Writer(aWS, true);
+            global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession aWS = XSDRAWCommands.Session(theDI);
+            var aWriter = new CafWriter(aWS, true);
             // configureSTEPCAFWriter
             aWriter.SetColorMode(myStep.WriteColor);
             aWriter.SetNameMode(myStep.WriteName);
@@ -612,7 +620,7 @@ internal static class XSDRAWDECommands
             aWriter.SetVisualMaterialMode(myStep.WriteVisMaterial);
             aWriter.SetCleanDuplicates(myStep.CleanDuplicates);
             aWriter.SetShapeFixParameters(myStepShapeFix, new NCollection_DataMap<string, string>());
-            var aModel = (StepData_StepModel)aWriter.Writer().WS()!.Model()!;
+            var aModel = (StepModel)aWriter.Writer().WS()!.Model()!;
             if (theDocument.GetLengthUnit(out double aUnitM))
             {
                 aModel.SetLocalLengthUnit(aUnitM * 1000.0);
@@ -623,35 +631,35 @@ internal static class XSDRAWDECommands
                 warn(theDI, "Warning in the DESTEP_Provider during writing\t: The document has no information on Units. Using global parameter as initial Unit.");
             }
 
-            STEPControl_StepModelType aMode = myStep.WriteModelType;
-            DESTEP_Parameters aParams = myStep;
-            aParams.WriteUnit = UnitsMethods.GetLengthUnitByFactorValue(myLengthUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter);
+            ModelType aMode = myStep.WriteModelType;
+            Parameters aParams = myStep;
+            aParams.WriteUnit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetLengthUnitByFactorValue(myLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Millimeter);
             aModel.SetWriteLengthUnit(myLengthUnit);
             if (!aWriter.Transfer(theDocument, aParams, aMode))
             {
                 return fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: The document cannot be translated or gives no result");
             }
-            IFSelect_ReturnStatus aStatus = XSDRAWSTEPDocCommands.Write(theDI, aWriter, thePath);
+            ReturnStatus aStatus = XSDRAWSTEPDocCommands.Write(theDI, aWriter, thePath);
             return aStatus switch
             {
-                IFSelect_ReturnStatus.IFSelect_RetVoid => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: No file written"),
-                IFSelect_ReturnStatus.IFSelect_RetDone => true,
+                ReturnStatus.RetVoid => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: No file written"),
+                ReturnStatus.RetDone => true,
                 _ => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: Error on writing file"),
             };
         }
 
         private bool writeStep(DrawInterpreter theDI, string thePath, Shape theShape)
         {
-            XSControl_WorkSession aWS = XSDRAWCommands.Session(theDI);
-            STEPControl_Controller.SelectFor(aWS);
-            var aWriter = new STEPControl_Writer();
+            global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession aWS = XSDRAWCommands.Session(theDI);
+            StepController.SelectFor(aWS);
+            var aWriter = new Writer();
             aWriter.SetWS(aWS);
-            StepData_StepModel aModel = aWriter.Model()!;
-            DESTEP_Parameters aParams = myStep;
+            StepModel aModel = aWriter.Model()!;
+            Parameters aParams = myStep;
             aModel.SetLocalLengthUnit(mySystemUnit);
-            UnitsMethods_LengthUnit aTargetUnit = UnitsMethods.GetLengthUnitByFactorValue(myLengthUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter);
+            global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit aTargetUnit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetLengthUnitByFactorValue(myLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Millimeter);
             aParams.WriteUnit = aTargetUnit;
-            if (aTargetUnit == UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined)
+            if (aTargetUnit == global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Undefined)
             {
                 aModel.SetWriteLengthUnit(1.0);
                 warn(theDI, "Custom units are not supported by STEP format, but LengthUnit global parameter doesn't fit any predefined unit. Units will be scaled to Millimeters");
@@ -661,12 +669,12 @@ internal static class XSDRAWDECommands
                 aModel.SetWriteLengthUnit(myLengthUnit);
             }
             aWriter.SetShapeFixParameters(myStepShapeFix);
-            if (aWriter.Transfer(theShape, myStep.WriteModelType, aParams, true) != IFSelect_ReturnStatus.IFSelect_RetDone)
+            if (aWriter.Transfer(theShape, myStep.WriteModelType, aParams, true) != ReturnStatus.RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon, no model loaded");
             }
             // CleanDuplicateEntities: StepTidy isn't ported (decision 1271)
-            if (XSDRAWSTEPCommands.Write(theDI, aWriter, thePath) != IFSelect_ReturnStatus.IFSelect_RetDone)
+            if (XSDRAWSTEPCommands.Write(theDI, aWriter, thePath) != ReturnStatus.RetDone)
             {
                 return fail(theDI, "DESTEP_Provider: Error on writing file");
             }
@@ -696,14 +704,14 @@ internal static class XSDRAWDECommands
             }
             if (!myStlReadBRep)
             {
-                Triangulation? aTriangulation = aBytes.Length > 0 ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
+                Triangulation? aTriangulation = aBytes.Length > 0 ? global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
                 Face aFace = new();
                 var aB = new BrepBuilder();
                 aB.MakeFace(ref aFace);
                 aB.UpdateFace(aFace, aTriangulation);
                 theShape = aFace;
             }
-            else if (!new StlAPI_Reader().Read(ref theShape, new MemoryStream(aBytes))) // StlAPI::Read
+            else if (!new StlApiReader().Read(ref theShape, new MemoryStream(aBytes))) // StlAPI::Read
             {
                 return fail(theDI, "Error in the DESTL_Provider during reading the file " + thePath);
             }
@@ -718,7 +726,7 @@ internal static class XSDRAWDECommands
                 // DE_ValidationUtils::WarnLengthUnitNotSupported
                 warn(theDI, "Warning during writing the file " + thePath + ": Format doesn't support custom units. Model won't be scaled");
             }
-            var aWriter = new StlAPI_Writer();
+            var aWriter = new ApiWriter();
             aWriter.SetASCIIMode(myStlWriteAscii);
             var aStream = new MemoryStream();
             bool isOK = aWriter.Write(theShape, aStream);
@@ -730,22 +738,22 @@ internal static class XSDRAWDECommands
         // DEGLTF_Provider, over unit 8T's reader and writer (the system unit in metres: the global length unit / 1000;
         // Z-up system, Y-up file, as the node's defaults)
 
-        private bool readGltf(DrawInterpreter theDI, string thePath, string theName, XdeDoc_Document theDocument)
+        private bool readGltf(DrawInterpreter theDI, string thePath, string theName, ExchangeDocument theDocument)
         {
             if (theDocument.Children(theDocument.ShapesLabel()).Count > 0)
             {
                 return fail(theDI, "Error: Draw-lite reads a glTF file into a new or empty document only");
             }
             double aScaleFactorM = myLengthUnit / 1000.0;
-            XdeDoc_Tree? aTree = XSDRAWMeshCommands.ReadGltfTree(theDI, thePath, aScaleFactorM);
+            Tree? aTree = XSDRAWMeshCommands.ReadGltfTree(theDI, thePath, aScaleFactorM);
             if (aTree is null)
             {
                 return fail(theDI, "Error in the DEGLTF_Provider during reading the file " + thePath);
             }
-            XdeDoc_Document aDoc = XdeDoc_Document.FromTree(aTree);
+            ExchangeDocument aDoc = ExchangeDocument.FromTree(aTree);
             XSDRAWMeshCommands.NameInstances(aDoc);
             // XCAFDoc_DocumentTool::SetLengthUnit before RWMesh_CafReader::Perform
-            aDoc.SetLengthUnit(aScaleFactorM, UnitsMethods.DumpLengthUnit(myLengthUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter));
+            aDoc.SetLengthUnit(aScaleFactorM, global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(myLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Millimeter));
             DDocStdCommands.NewDocument(theDI, theName, aDoc);
             return true;
         }
@@ -753,16 +761,16 @@ internal static class XSDRAWDECommands
         private bool readGltf(DrawInterpreter theDI, string thePath, out Shape theShape)
         {
             theShape = new Shape();
-            XdeDoc_Tree? aTree = XSDRAWMeshCommands.ReadGltfTree(theDI, thePath, myLengthUnit / 1000.0);
+            Tree? aTree = XSDRAWMeshCommands.ReadGltfTree(theDI, thePath, myLengthUnit / 1000.0);
             if (aTree is null)
             {
                 return fail(theDI, "Error in the DEGLTF_Provider during reading the file " + thePath);
             }
-            theShape = XDEDRAWCommands.GetOneShape(XdeDoc_Document.FromTree(aTree)); // RWMesh_CafReader::SingleShape
+            theShape = XDEDRAWCommands.GetOneShape(ExchangeDocument.FromTree(aTree)); // RWMesh_CafReader::SingleShape
             return true;
         }
 
-        private bool writeGltf(DrawInterpreter theDI, string thePath, XdeDoc_Document theDocument)
+        private bool writeGltf(DrawInterpreter theDI, string thePath, ExchangeDocument theDocument)
         {
             // RWGltf_CafWriter takes the document's unit; DEGLTF_Provider gives the system unit to a document without one
             double aScaleFactorM;

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Graph;
+using Kerf.Engine.Exchange.Framework.Monitoring;
 using Kerf.Engine.Foundation;
 using static OcctNet.DataExchange.Tests.Interface.ToyNorm;
 
@@ -30,7 +33,7 @@ public class GraphTests
     [Fact]
     public void The_model_numbers_its_entities_in_order()
     {
-        Assert.Equal(7, myModel.NbEntities());
+        Assert.Equal(7, myModel.EntityCount);
         Assert.Equal(3, myModel.Number(C));
         Assert.Same(D, myModel.Value(4));
         Assert.Equal(0, myModel.Number(X));
@@ -40,7 +43,7 @@ public class GraphTests
         Assert.Equal(0, myModel.NextNumberForLabel("#Z"));
         Assert.Equal(6, myModel.NextNumberForLabel("F", 0, false));
         Assert.Equal("ToyEntity", myModel.TypeName(A)); // the GTool's sign: the class name past its first "_"
-        Assert.Equal("Entity", Interface_InterfaceModel.ClassName("Toy_Entity"));
+        Assert.Equal("Entity", InterfaceModel.ClassName("Toy_Entity"));
         var aText = new StringWriter();
         myModel.Print(B, aText);
         Assert.Equal("2:#B", aText.ToString());
@@ -55,9 +58,9 @@ public class GraphTests
     public void AddWithRefs_adds_an_entity_and_what_it_shares()
     {
         var aModel = new ToyModel();
-        aModel.AddWithRefs(A, Protocol);
+        aModel.AddWithRefs(A, ToyNorm.ProtocolInstance);
         Assert.Equal("A B C", Names(aModel.Entities()));
-        Assert.Same(Protocol, aModel.Protocol());
+        Assert.Same(ToyNorm.ProtocolInstance, aModel.Protocol());
         aModel.AddWithRefs(D);
         Assert.Equal("A B C D E", Names(aModel.Entities()));
     }
@@ -65,7 +68,7 @@ public class GraphTests
     [Fact]
     public void The_graph_finds_shared_and_sharing_entities()
     {
-        var aGraph = new Interface_Graph(myModel);
+        var aGraph = new EntityGraph(myModel);
         Assert.Equal(7, aGraph.Size());
         Assert.Equal("B C", Names(aGraph.Shareds(A)));
         Assert.Equal("A B", Names(aGraph.Sharings(C)));
@@ -87,7 +90,7 @@ public class GraphTests
         aGraph.ResetStatus();
         Assert.False(aGraph.IsPresent(1));
 
-        var aCopy = new Interface_Graph(aGraph);
+        var aCopy = new EntityGraph(aGraph);
         Assert.Equal("B C", Names(aCopy.Shareds(A)));
         aCopy.GetFromModel();
         Assert.True(aCopy.IsPresent(7));
@@ -97,7 +100,7 @@ public class GraphTests
     [Fact]
     public void The_share_tools_find_roots_and_everything_shared()
     {
-        var aShare = new Interface_ShareTool(myModel, Protocol);
+        var aShare = new ShareTool(myModel, ToyNorm.ProtocolInstance);
         Assert.Equal("A F G", Names(aShare.RootEntities()));
         // OCCT: IsShared tells whether the entity shares others
         Assert.True(aShare.IsShared(A));
@@ -107,9 +110,9 @@ public class GraphTests
         Assert.Equal("A B C", Names(aShare.All(A)));
         Assert.Equal("C B A", Names(aShare.All(A, false)));
 
-        var aFlags = new Interface_ShareFlags(myModel, Protocol);
+        var aFlags = new ShareFlags(myModel, ToyNorm.ProtocolInstance);
         Assert.Equal("A F G", Names(aFlags.RootEntities()));
-        Assert.Equal(3, aFlags.NbRoots());
+        Assert.Equal(3, aFlags.RootCount);
         Assert.Same(F, aFlags.Root(2));
         Assert.True(aFlags.IsShared(E));
     }
@@ -117,12 +120,12 @@ public class GraphTests
     [Fact]
     public void IFGraph_finds_closures_parts_and_cycles()
     {
-        var aGraph = new Interface_Graph(myModel);
-        Assert.Equal("A B C", Sorted(Evaluated(new IFGraph_AllShared(aGraph, A))));
+        var aGraph = new EntityGraph(myModel);
+        Assert.Equal("A B C", Sorted(Evaluated(new AllShared(aGraph, A))));
         // OCCT: AllConnected::GetFromEntity returns at once for an entity not yet present (its test is inverted), so
         // it finds nothing, and the connected components are all empty
-        Assert.Equal("", Sorted(Evaluated(new IFGraph_AllConnected(aGraph, C))));
-        var aParts = new IFGraph_ConnectedComponants(aGraph, true);
+        Assert.Equal("", Sorted(Evaluated(new AllConnected(aGraph, C))));
+        var aParts = new ConnectedComponants(aGraph, true);
         var aFound = new List<string>();
         for (aParts.Start(); aParts.More(); aParts.Next())
         {
@@ -130,7 +133,7 @@ public class GraphTests
         }
         Assert.All(aFound, p => Assert.Equal("", p));
 
-        var aCycles = new IFGraph_Cycles(aGraph, true);
+        var aCycles = new Cycles(aGraph, true);
         aFound.Clear();
         for (aCycles.Start(); aCycles.More(); aCycles.Next())
         {
@@ -139,43 +142,43 @@ public class GraphTests
         // OCCT 8's StrongComponants puts each entity in a part of its own (no cycle detection), so Cycles finds none
         Assert.Empty(aFound);
 
-        var aStrong = new IFGraph_StrongComponants(aGraph, true);
+        var aStrong = new StrongComponants(aGraph, true);
         int aSingles = 0;
         for (aStrong.Start(); aStrong.More(); aStrong.Next())
         {
-            if (aStrong.IsSingle())
+            if (aStrong.IsSingle)
             {
                 aSingles++;
             }
         }
         Assert.Equal(7, aSingles);
-        Assert.Equal(7, aStrong.NbParts());
+        Assert.Equal(7, aStrong.PartCount);
 
         // OCCT: GetFromEntity iterates an AllShared it doesn't evaluate, so it adds nothing; from evaluated contents:
-        var aCumul = new IFGraph_Cumulate(aGraph);
+        var aCumul = new Cumulate(aGraph);
         aCumul.GetFromEntity(A);
         Assert.Equal(-1, aCumul.NbTimes(A));
-        aCumul.GetFromIter(Evaluated(new IFGraph_AllShared(aGraph, A)));
-        aCumul.GetFromIter(Evaluated(new IFGraph_AllShared(aGraph, B)));
+        aCumul.GetFromIter(Evaluated(new AllShared(aGraph, A)));
+        aCumul.GetFromIter(Evaluated(new AllShared(aGraph, B)));
         Assert.Equal(2, aCumul.NbTimes(C));
         Assert.Equal(1, aCumul.NbTimes(A));
         Assert.Equal("B C", Sorted(aCumul.Overlapped()));
         Assert.Equal("D E F G", Sorted(aCumul.Forgotten()));
         Assert.Equal(2, aCumul.HighestNbTimes());
 
-        var aCompare = new IFGraph_Compare(aGraph);
-        aCompare.GetFromIter(Evaluated(new IFGraph_AllShared(aGraph, A)), true); // GetFromEntity: as Cumulate's
-        aCompare.GetFromIter(Evaluated(new IFGraph_AllShared(aGraph, B)), false);
+        var aCompare = new Compare(aGraph);
+        aCompare.GetFromIter(Evaluated(new AllShared(aGraph, A)), true); // GetFromEntity: as Cumulate's
+        aCompare.GetFromIter(Evaluated(new AllShared(aGraph, B)), false);
         Assert.Equal("B C", Sorted(aCompare.Common()));
         Assert.Equal("A", Sorted(aCompare.FirstOnly()));
         Assert.Equal("", Sorted(aCompare.SecondOnly()));
 
-        var aSources = new IFGraph_ExternalSources(aGraph);
+        var aSources = new ExternalSources(aGraph);
         aSources.GetFromEntity(B);
         Assert.Equal("A", Sorted(Evaluated(aSources)));
         Assert.False(aSources.IsEmpty());
 
-        var aRoots = new IFGraph_SCRoots(aGraph, true);
+        var aRoots = new SCRoots(aGraph, true);
         aFound.Clear();
         for (aRoots.Start(); aRoots.More(); aRoots.Next())
         {
@@ -190,8 +193,8 @@ public class GraphTests
     {
         B.Fails = true;
         C.Warns = true;
-        var aTool = new Interface_CheckTool(myModel, Protocol);
-        Interface_CheckIterator aComplete = aTool.CompleteCheckList();
+        var aTool = new CheckTool(myModel, ToyNorm.ProtocolInstance);
+        CheckIterator aComplete = aTool.CompleteCheckList();
         var aNums = new List<int>();
         for (aComplete.Start(); aComplete.More(); aComplete.Next())
         {
@@ -200,18 +203,18 @@ public class GraphTests
         Assert.Equal([2, 3], aNums); // OCCT: the lists check without try/catch, which skips the shared items unknown from the model (G)
         Assert.Equal("fails: B", aComplete.Check(2)!.CFail(1));
         Assert.Equal("** Shared Items unknown from the containing Model", aTool.Check(7)!.CFail(1)); // with try/catch
-        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aComplete.Status());
-        Assert.True(aComplete.Complies(Interface_CheckStatus.Interface_CheckMessage));
+        Assert.Equal(FrameworkCheckStatus.CheckFail, aComplete.Status());
+        Assert.True(aComplete.Complies(FrameworkCheckStatus.CheckMessage));
 
-        Interface_CheckIterator aFails = aTool.CheckList();
+        CheckIterator aFails = aTool.CheckList();
         Assert.Equal(1, CountChecks(aFails));
-        Interface_CheckIterator aWarnings = aTool.WarningCheckList();
+        CheckIterator aWarnings = aTool.WarningCheckList();
         Assert.Equal(1, CountChecks(aWarnings));
         // OCCT: WarningCheckList adds its working check and then clears it for the next entities, so the check recorded
         // for C ends with the last entity set (F, the one before G) and no message
         Assert.Same(F, aWarnings.Check(3)!.Entity());
-        Assert.Equal(0, aWarnings.Check(3)!.NbWarnings());
-        Assert.Throws<Interface_CheckFailure>(() => aTool.CheckSuccess());
+        Assert.Equal(0, aWarnings.Check(3)!.WarningCount);
+        Assert.Throws<CheckFailureException>(() => aTool.CheckSuccess());
         Assert.Empty(Names(aTool.UnknownEntities()));
 
         var aText = new StringWriter();
@@ -219,29 +222,29 @@ public class GraphTests
         Assert.Contains("fails: B", aText.ToString());
         Assert.Contains("warns: C", aText.ToString());
 
-        Interface_CheckIterator anExtract = aComplete.Extract("warns", -1, Interface_CheckStatus.Interface_CheckWarning);
+        CheckIterator anExtract = aComplete.Extract("warns", -1, FrameworkCheckStatus.CheckWarning);
         Assert.Equal(1, CountChecks(anExtract));
         // OCCT: Interface_Check::Remove looks for fails among the warnings, so a fail is never removed
-        Assert.False(aComplete.Remove("fails: B", 0, Interface_CheckStatus.Interface_CheckFail));
-        Assert.True(aComplete.Remove("warns: C", 0, Interface_CheckStatus.Interface_CheckWarning));
-        Assert.Equal(0, aComplete.Check(3)!.NbWarnings()); // the check stays, empty
+        Assert.False(aComplete.Remove("fails: B", 0, FrameworkCheckStatus.CheckFail));
+        Assert.True(aComplete.Remove("warns: C", 0, FrameworkCheckStatus.CheckWarning));
+        Assert.Equal(0, aComplete.Check(3)!.WarningCount); // the check stays, empty
         Assert.Equal(2, CountChecks(aComplete));
 
         myModel.FillSemanticChecks(aTool.CompleteCheckList());
-        Assert.True(myModel.HasSemanticChecks());
-        Assert.Equal(Interface_DataState.Interface_DataFail, myModel.EntityState(2));
-        Assert.Equal(Interface_DataState.Interface_DataWarning, myModel.EntityState(3));
-        Assert.Equal(Interface_DataState.Interface_StateOK, myModel.EntityState(1));
+        Assert.True(myModel.HasSemanticChecks);
+        Assert.Equal(DataState.DataFail, myModel.EntityState(2));
+        Assert.Equal(DataState.DataWarning, myModel.EntityState(3));
+        Assert.Equal(DataState.StateOK, myModel.EntityState(1));
     }
 
     // A graph content is evaluated by Begin (or Evaluate), not by Start: as in OCCT
-    private static Interface_GraphContent Evaluated(Interface_GraphContent theContent)
+    private static GraphContent Evaluated(GraphContent theContent)
     {
         theContent.Evaluate();
         return theContent;
     }
 
-    private static int CountChecks(Interface_CheckIterator theList)
+    private static int CountChecks(CheckIterator theList)
     {
         int aCount = 0;
         for (theList.Start(); theList.More(); theList.Next())
@@ -254,7 +257,7 @@ public class GraphTests
     [Fact]
     public void The_copy_tool_copies_entities_and_their_references()
     {
-        var aTool = new Interface_CopyTool(myModel, Protocol);
+        var aTool = new CopyTool(myModel, ToyNorm.ProtocolInstance);
         var aCopyA = (ToyEntity)aTool.Transferred(A)!;
         Assert.Equal("A'", aCopyA.Name);
         Assert.Equal("B' C'", string.Join(" ", aCopyA.Refs.Select(r => r.Name)));
@@ -269,31 +272,31 @@ public class GraphTests
         Assert.Equal("C' B' C' A'", Names(aTool.RootResult()));
 
         // the copy tool from a model alone takes the model's protocol (OCCT: the process-wide active protocol)
-        var aTool2 = new Interface_CopyTool(myModel);
+        var aTool2 = new CopyTool(myModel);
         Assert.Equal("D'", ((ToyEntity)aTool2.Transferred(D)!).Name);
         var anOrphan = new ToyModel();
-        Assert.Throws<Interface_InterfaceError>(() => new Interface_CopyTool(anOrphan));
+        Assert.Throws<InterfaceErrorException>(() => new CopyTool(anOrphan));
     }
 
     [Fact]
     public void Categories_and_the_GTool_go_through_the_general_module()
     {
-        var aCat = new Interface_Category(Protocol);
-        var aShare = new Interface_ShareTool(myModel, Protocol);
+        var aCat = new Category(ToyNorm.ProtocolInstance);
+        var aShare = new ShareTool(myModel, ToyNorm.ProtocolInstance);
         Assert.Equal(2, aCat.CatNum(A, aShare));
         aCat.Compute(myModel, aShare);
         Assert.Equal(2, aCat.Num(7));
         Assert.Equal(0, aCat.Num(8));
-        Assert.Equal("Structure", Interface_Category.Name(2));
-        Assert.Equal("unspecified", Interface_Category.Name(9));
+        Assert.Equal("Structure", Category.Name(2));
+        Assert.Equal("unspecified", Category.Name(9));
 
-        var aGTool = new Interface_GTool(Protocol);
-        Assert.True(aGTool.Select(A, out Interface_GeneralModule? aModule, out int aCN));
+        var aGTool = new GTool(ToyNorm.ProtocolInstance);
+        Assert.True(aGTool.Select(A, out GeneralModule? aModule, out int aCN));
         Assert.IsType<ToyGeneralModule>(aModule);
         Assert.Equal(1, aCN);
-        Assert.True(aGTool.Select(B, out Interface_GeneralModule? aModule2, out aCN)); // from the cache
+        Assert.True(aGTool.Select(B, out GeneralModule? aModule2, out aCN)); // from the cache
         Assert.Same(aModule, aModule2);
-        Assert.False(aGTool.Select(new MoniTool_IntVal(), out _, out aCN));
+        Assert.False(aGTool.Select(new MonitorIntVal(), out _, out aCN));
         Assert.Equal("Class Name", aGTool.SignName());
         Assert.Equal("ToyEntity", aGTool.SignValue(A, myModel));
     }
@@ -301,25 +304,25 @@ public class GraphTests
     [Fact]
     public void Reports_are_kept_by_entity_number()
     {
-        var aCheck = new Interface_Check(B);
+        var aCheck = new FrameworkCheck(B);
         aCheck.AddWarning("read with a warning");
-        var aRep = new Interface_ReportEntity(aCheck, B);
+        var aRep = new ReportEntity(aCheck, B);
         Assert.True(myModel.SetReportEntity(2, aRep));
         Assert.True(myModel.IsReportEntity(2));
-        Assert.Equal(Interface_DataState.Interface_LoadWarning, myModel.EntityState(2));
+        Assert.Equal(DataState.LoadWarning, myModel.EntityState(2));
         Assert.Same(aRep, myModel.ReportEntity(2));
         Assert.Equal(2, myModel.Number(aRep)); // a report numbers as its concerned entity
-        Assert.Equal("B", Names(new Interface_EntityIterator(myModel.Reports().Content()) is var it ? Concerned(it) : it));
+        Assert.Equal("B", Names(new EntityIterator(myModel.Reports().Content()) is var it ? Concerned(it) : it));
         Assert.True(myModel.ClearReportEntity(2));
         Assert.False(myModel.IsReportEntity(2));
     }
 
-    private static Interface_EntityIterator Concerned(Interface_EntityIterator theReports)
+    private static EntityIterator Concerned(EntityIterator theReports)
     {
-        var aRes = new Interface_EntityIterator();
+        var aRes = new EntityIterator();
         for (theReports.Start(); theReports.More(); theReports.Next())
         {
-            aRes.AddItem(((Interface_ReportEntity)theReports.Value()!).Concerned());
+            aRes.AddItem(((ReportEntity)theReports.Value()!).Concerned());
         }
         return aRes;
     }

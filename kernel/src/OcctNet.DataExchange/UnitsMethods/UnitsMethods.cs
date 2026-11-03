@@ -4,55 +4,56 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.UnitsMethods_LengthUnit;
+using Occt;
+using static Kerf.Engine.Exchange.Framework.FrameworkLengthUnit;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>The Enumeration describes possible values for length units.</summary>
-public enum UnitsMethods_LengthUnit
+public enum FrameworkLengthUnit
 {
-    UnitsMethods_LengthUnit_Undefined = 0,  // 1.
-    UnitsMethods_LengthUnit_Inch = 1,       // 25.4
-    UnitsMethods_LengthUnit_Millimeter = 2, // 1.
-    UnitsMethods_LengthUnit_Foot = 4,       // 304.8
-    UnitsMethods_LengthUnit_Mile = 5,       // 1609344.
-    UnitsMethods_LengthUnit_Meter = 6,      // 1000.
-    UnitsMethods_LengthUnit_Kilometer = 7,  // 1000000.
-    UnitsMethods_LengthUnit_Mil = 8,        // (0.001 inch) // 0.0254
-    UnitsMethods_LengthUnit_Micron = 9,     // 0.001
-    UnitsMethods_LengthUnit_Centimeter = 10, // 10.
-    UnitsMethods_LengthUnit_Microinch = 11, // 0.0000254
+    LengthUnit_Undefined = 0,  // 1.
+    LengthUnit_Inch = 1,       // 25.4
+    LengthUnit_Millimeter = 2, // 1.
+    LengthUnit_Foot = 4,       // 304.8
+    LengthUnit_Mile = 5,       // 1609344.
+    LengthUnit_Meter = 6,      // 1000.
+    LengthUnit_Kilometer = 7,  // 1000000.
+    LengthUnit_Mil = 8,        // (0.001 inch) // 0.0254
+    LengthUnit_Micron = 9,     // 0.001
+    LengthUnit_Centimeter = 10, // 10.
+    LengthUnit_Microinch = 11, // 0.0000254
 }
 
 /// <summary>Class for using global units variables.</summary>
 /// <remarks>
 /// OCCT's "CasCade length unit" is a process-wide value (<c>UnitsMethods_CascadeLengthUnit</c>), which
 /// XSAlgo_ShapeProcessor and Draw set from the parameter <c>xstep.cascade.unit</c> and the STEP translators read. The
-/// port has no such value (plan 2.7, decision 1195): <see cref="GetCasCadeLengthUnit(Interface_StaticSet, UnitsMethods_LengthUnit)"/>
+/// port has no such value (plan 2.7, decision 1195): <see cref="GetCasCadeLengthUnit(StaticSet, FrameworkLengthUnit)"/>
 /// reads <c>xstep.cascade.unit</c> from the parameter set of the read or write, and OCCT's setters are left out.
 /// </remarks>
 public static class UnitsMethods
 {
     /// <summary>
     /// Returns value of current internal unit for CASCADE in millimeters by default: the unit the parameter
-    /// <c>xstep.cascade.unit</c> of <paramref name="theStatics"/> designates (an IGES unit code), millimeters if the
+    /// <c>xstep.cascade.unit</c> of <paramref name="statics"/> designates (an IGES unit code), millimeters if the
     /// set is null or has no such parameter.
     /// </summary>
-    public static double GetCasCadeLengthUnit(Interface_StaticSet? theStatics, UnitsMethods_LengthUnit theBaseUnit = UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter)
+    public static double GetCasCadeLengthUnit(StaticSet? statics, FrameworkLengthUnit baseUnit = FrameworkLengthUnit.LengthUnit_Millimeter)
     {
-        double aCascadeLengthUnit = theStatics is not null && theStatics.IsPresent("xstep.cascade.unit")
-            ? GetLengthFactorValue(theStatics.IVal("xstep.cascade.unit"))
+        double cascadeLengthUnit = statics is not null && statics.IsPresent("xstep.cascade.unit")
+            ? GetLengthFactorValue(statics.IVal("xstep.cascade.unit"))
             : 1.0;
-        return aCascadeLengthUnit * GetLengthUnitScale(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter, theBaseUnit);
+        return cascadeLengthUnit * GetLengthUnitScale(FrameworkLengthUnit.LengthUnit_Millimeter, baseUnit);
     }
 
     /// <summary>
     /// Returns value of unit encoded by parameter theUnit (integer value denoting unit, as described in IGES
     /// standard) in millimeters by default.
     /// </summary>
-    public static double GetLengthFactorValue(int theUnit)
+    public static double GetLengthFactorValue(int unit)
     {
-        switch (theUnit)
+        switch (unit)
         {
             case 1:
                 return 25.4; // inch
@@ -80,85 +81,85 @@ public static class UnitsMethods
     }
 
     /// <summary>Returns the scale factor for switch from first given unit to second given unit.</summary>
-    public static double GetLengthUnitScale(UnitsMethods_LengthUnit theFromUnit, UnitsMethods_LengthUnit theToUnit)
+    public static double GetLengthUnitScale(FrameworkLengthUnit fromUnit, FrameworkLengthUnit toUnit)
     {
-        double aVal1 = GetLengthFactorValue((int)theFromUnit);
-        double aVal2 = GetLengthFactorValue((int)theToUnit);
-        return aVal1 / aVal2;
+        double val1 = GetLengthFactorValue((int)fromUnit);
+        double val2 = GetLengthFactorValue((int)toUnit);
+        return val1 / val2;
     }
 
     /// <summary>Returns the enumeration corresponding to the given scale factor.</summary>
-    public static UnitsMethods_LengthUnit GetLengthUnitByFactorValue(double theFactorValue, UnitsMethods_LengthUnit theBaseUnit = UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter)
+    public static FrameworkLengthUnit GetLengthUnitByFactorValue(double factorValue, FrameworkLengthUnit baseUnit = FrameworkLengthUnit.LengthUnit_Millimeter)
     {
-        const double aPreci = 1.0e-6;
-        double aValue = theFactorValue * GetLengthUnitScale(theBaseUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter);
-        if (Math.Abs(1.0 - aValue) < aPreci)
+        const double preci = 1.0e-6;
+        double value = factorValue * GetLengthUnitScale(baseUnit, FrameworkLengthUnit.LengthUnit_Millimeter);
+        if (Math.Abs(1.0 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter;
+            return FrameworkLengthUnit.LengthUnit_Millimeter;
         }
-        else if (Math.Abs(25.4 - aValue) < aPreci)
+        else if (Math.Abs(25.4 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Inch;
+            return FrameworkLengthUnit.LengthUnit_Inch;
         }
-        else if (Math.Abs(304.8 - aValue) < aPreci)
+        else if (Math.Abs(304.8 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Foot;
+            return FrameworkLengthUnit.LengthUnit_Foot;
         }
-        else if (Math.Abs(1609344.0 - aValue) < aPreci)
+        else if (Math.Abs(1609344.0 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mile;
+            return FrameworkLengthUnit.LengthUnit_Mile;
         }
-        else if (Math.Abs(1000.0 - aValue) < aPreci)
+        else if (Math.Abs(1000.0 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter;
+            return FrameworkLengthUnit.LengthUnit_Meter;
         }
-        else if (Math.Abs(1000000.0 - aValue) < aPreci)
+        else if (Math.Abs(1000000.0 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Kilometer;
+            return FrameworkLengthUnit.LengthUnit_Kilometer;
         }
-        else if (Math.Abs(0.0254 - aValue) < aPreci)
+        else if (Math.Abs(0.0254 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mil;
+            return FrameworkLengthUnit.LengthUnit_Mil;
         }
-        else if (Math.Abs(0.001 - aValue) < aPreci)
+        else if (Math.Abs(0.001 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Micron;
+            return FrameworkLengthUnit.LengthUnit_Micron;
         }
-        else if (Math.Abs(10.0 - aValue) < aPreci)
+        else if (Math.Abs(10.0 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Centimeter;
+            return FrameworkLengthUnit.LengthUnit_Centimeter;
         }
-        else if (Math.Abs(0.0000254 - aValue) < aPreci)
+        else if (Math.Abs(0.0000254 - value) < preci)
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Microinch;
+            return FrameworkLengthUnit.LengthUnit_Microinch;
         }
-        return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined;
+        return FrameworkLengthUnit.LengthUnit_Undefined;
     }
 
     /// <summary>Returns string for the given value of LengthUnit.</summary>
-    public static string DumpLengthUnit(UnitsMethods_LengthUnit theUnit)
+    public static string DumpLengthUnit(FrameworkLengthUnit unit)
     {
-        switch (theUnit)
+        switch (unit)
         {
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter:
+            case FrameworkLengthUnit.LengthUnit_Millimeter:
                 return "mm";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter:
+            case FrameworkLengthUnit.LengthUnit_Meter:
                 return "m";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Centimeter:
+            case FrameworkLengthUnit.LengthUnit_Centimeter:
                 return "cm";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Kilometer:
+            case FrameworkLengthUnit.LengthUnit_Kilometer:
                 return "km";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Micron:
+            case FrameworkLengthUnit.LengthUnit_Micron:
                 return "micron";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Inch:
+            case FrameworkLengthUnit.LengthUnit_Inch:
                 return "in";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mil:
+            case FrameworkLengthUnit.LengthUnit_Mil:
                 return "min";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Microinch:
+            case FrameworkLengthUnit.LengthUnit_Microinch:
                 return "nin";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Foot:
+            case FrameworkLengthUnit.LengthUnit_Foot:
                 return "ft";
-            case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mile:
+            case FrameworkLengthUnit.LengthUnit_Mile:
                 return "stat.mile";
             default:
                 return "UNDEFINED";
@@ -166,77 +167,77 @@ public static class UnitsMethods
     }
 
     /// <summary>Returns string name for the given scale factor.</summary>
-    public static string DumpLengthUnit(double theScaleFactor, UnitsMethods_LengthUnit theBaseUnit = UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter)
+    public static string DumpLengthUnit(double scaleFactor, FrameworkLengthUnit baseUnit = FrameworkLengthUnit.LengthUnit_Millimeter)
     {
-        UnitsMethods_LengthUnit aUnit = GetLengthUnitByFactorValue(theScaleFactor, theBaseUnit);
-        return DumpLengthUnit(aUnit);
+        FrameworkLengthUnit unit = GetLengthUnitByFactorValue(scaleFactor, baseUnit);
+        return DumpLengthUnit(unit);
     }
 
     /// <summary>Make conversion of given string to value of LengthUnit.</summary>
-    public static UnitsMethods_LengthUnit LengthUnitFromString(string theStr, bool theCaseSensitive)
+    public static FrameworkLengthUnit LengthUnitFromString(string str, bool caseSensitive)
     {
-        string aStr = theStr;
-        if (!theCaseSensitive)
+        string aStr = str;
+        if (!caseSensitive)
         {
             aStr = AsciiLowerCase(aStr);
         }
         if (aStr == "mm")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter;
+            return FrameworkLengthUnit.LengthUnit_Millimeter;
         }
         else if (aStr == "m")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter;
+            return FrameworkLengthUnit.LengthUnit_Meter;
         }
         else if (aStr == "cm")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Centimeter;
+            return FrameworkLengthUnit.LengthUnit_Centimeter;
         }
         else if (aStr == "km")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Kilometer;
+            return FrameworkLengthUnit.LengthUnit_Kilometer;
         }
         else if (aStr == "micron")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Micron;
+            return FrameworkLengthUnit.LengthUnit_Micron;
         }
         else if (aStr == "in")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Inch;
+            return FrameworkLengthUnit.LengthUnit_Inch;
         }
         else if (aStr == "min")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mil;
+            return FrameworkLengthUnit.LengthUnit_Mil;
         }
         else if (aStr == "nin")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Microinch;
+            return FrameworkLengthUnit.LengthUnit_Microinch;
         }
         else if (aStr == "ft")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Foot;
+            return FrameworkLengthUnit.LengthUnit_Foot;
         }
         else if (aStr == "stat.mile")
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mile;
+            return FrameworkLengthUnit.LengthUnit_Mile;
         }
         else
         {
-            return UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined;
+            return FrameworkLengthUnit.LengthUnit_Undefined;
         }
     }
 
     // TCollection_AsciiString::LowerCase: C's tolower in the "C" locale
-    private static string AsciiLowerCase(string theStr)
+    private static string AsciiLowerCase(string str)
     {
-        char[] aChars = theStr.ToCharArray();
-        for (int i = 0; i < aChars.Length; i++)
+        char[] chars = str.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
         {
-            if (aChars[i] >= 'A' && aChars[i] <= 'Z')
+            if (chars[i] >= 'A' && chars[i] <= 'Z')
             {
-                aChars[i] = (char)(aChars[i] + ('a' - 'A'));
+                chars[i] = (char)(chars[i] + ('a' - 'A'));
             }
         }
-        return new string(aChars);
+        return new string(chars);
     }
 }

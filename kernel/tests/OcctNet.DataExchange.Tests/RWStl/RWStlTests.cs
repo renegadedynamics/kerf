@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Stl.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -57,7 +58,7 @@ public class RWStlTests
 
     private static byte[] Write(in Shape theShape, bool theAscii)
     {
-        var aWriter = new StlAPI_Writer();
+        var aWriter = new ApiWriter();
         aWriter.SetASCIIMode(theAscii);
         var aStream = new MemoryStream();
         Assert.True(aWriter.Write(theShape, aStream));
@@ -67,7 +68,7 @@ public class RWStlTests
     // DESTL_Provider::Read(stream, shape) with ReadBRep off: RWStl::ReadStream, a face holding the triangulation
     private static Shape ReadFace(byte[] theData)
     {
-        Triangulation? aTriangulation = RWStl.ReadStream(new MemoryStream(theData));
+        Triangulation? aTriangulation = global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(theData));
         if (aTriangulation is null)
         {
             return new Shape();
@@ -110,7 +111,7 @@ public class RWStlTests
         Assert.False(ReadFace(aStlContent).IsNull);
         // with ReadBRep on: StlAPI_Reader, a face per triangle
         Shape aShape = new();
-        Assert.True(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aStlContent)));
+        Assert.True(new StlApiReader().Read(ref aShape, new MemoryStream(aStlContent)));
         Assert.Equal(2, CountShapeElements(aShape, ShapeType.Face));
     }
 
@@ -118,7 +119,7 @@ public class RWStlTests
     public void ErrorHandling()
     {
         // a null shape: nothing written
-        Assert.False(new StlAPI_Writer().Write(new Shape(), new MemoryStream()));
+        Assert.False(new ApiWriter().Write(new Shape(), new MemoryStream()));
         // invalid content
         Assert.True(ReadFace(Encoding.ASCII.GetBytes("This is not valid STL content")).IsNull);
     }
@@ -171,15 +172,15 @@ public class RWStlTests
         Assert.True(aTriangulation.IsFrozen);
 
         byte[] aData = Write(aFace, false);
-        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aData));
+        Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aData));
         Assert.NotNull(aRead);
         Assert.True(aRead.IsFrozen);
         Assert.Throws<ImmutableObjectException>(() => aRead.SetNode(1, new Point3D()));
         var aList = new NCollection_Sequence<Triangulation>();
-        RWStl.ReadFile(new MemoryStream(aData), Math.PI / 2, aList);
+        global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aData), Math.PI / 2, aList);
         Assert.True(aList.Value(1).IsFrozen);
         Shape aShape = new();
-        Assert.True(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aData)));
+        Assert.True(new StlApiReader().Read(ref aShape, new MemoryStream(aData)));
         Assert.True(aShape.TShape()!.IsFrozen);
     }
 
@@ -203,15 +204,15 @@ public class RWStlTests
     public void Streams_that_cant_seek_and_streams_read_from_their_position()
     {
         byte[] aData = Write(CreateTriangulatedFace(), false);
-        Triangulation? aRead = RWStl.ReadFile(new NonSeekableStream(aData));
+        Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new NonSeekableStream(aData));
         Assert.NotNull(aRead);
         Assert.Equal(4, aRead.NodeCount);
         Assert.Equal(2, aRead.TriangleCount);
-        Assert.NotNull(RWStl.ReadStream(new NonSeekableStream(Write(CreateTriangulatedFace(), true))));
+        Assert.NotNull(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new NonSeekableStream(Write(CreateTriangulatedFace(), true))));
 
         // data after a prefix, read from the stream's position: binary recognised by its content
         var aPrefixed = new MemoryStream([.. "prefix"u8, .. aData]) { Position = 6 };
-        Triangulation? aFromPosition = RWStl.ReadFile(aPrefixed);
+        Triangulation? aFromPosition = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(aPrefixed);
         Assert.NotNull(aFromPosition);
         Assert.Equal(2, aFromPosition.TriangleCount);
     }
@@ -221,17 +222,17 @@ public class RWStlTests
     {
         byte[] aBinary = Write(CreateTriangulatedFace(), false);
         byte[] anAscii = Write(CreateTriangulatedFace(), true);
-        var aSmall = new RWStl_ReadLimits { MaxBytes = 100 };
-        var aOneTriangle = new RWStl_ReadLimits { MaxTriangles = 1 };
-        Assert.Null(RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, aSmall));
-        Assert.Null(RWStl.ReadFile(new NonSeekableStream(aBinary), Math.PI / 2, default, aSmall));
-        Assert.Null(RWStl.ReadStream(new MemoryStream(anAscii), Math.PI / 2, default, aSmall));
-        Assert.Null(RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, aOneTriangle));
-        Assert.Null(RWStl.ReadFile(new MemoryStream(anAscii), Math.PI / 2, default, aOneTriangle));
-        Assert.Null(RWStl.ReadBinaryStream(new MemoryStream(aBinary), Math.PI / 2, default, aOneTriangle));
-        Assert.NotNull(RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, new RWStl_ReadLimits { MaxBytes = aBinary.Length, MaxTriangles = 2 }));
+        var aSmall = new global::Kerf.Engine.Exchange.Stl.StlReadLimits { MaxBytes = 100 };
+        var aOneTriangle = new global::Kerf.Engine.Exchange.Stl.StlReadLimits { MaxTriangles = 1 };
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, aSmall));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new NonSeekableStream(aBinary), Math.PI / 2, default, aSmall));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(anAscii), Math.PI / 2, default, aSmall));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, aOneTriangle));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(anAscii), Math.PI / 2, default, aOneTriangle));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinaryStream(new MemoryStream(aBinary), Math.PI / 2, default, aOneTriangle));
+        Assert.NotNull(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary), Math.PI / 2, default, new global::Kerf.Engine.Exchange.Stl.StlReadLimits { MaxBytes = aBinary.Length, MaxTriangles = 2 }));
         Shape aShape = new();
-        Assert.False(new StlAPI_Reader().Read(ref aShape, new MemoryStream(aBinary), default, aOneTriangle));
+        Assert.False(new StlApiReader().Read(ref aShape, new MemoryStream(aBinary), default, aOneTriangle));
 
         var aReader = new CountingReader();
         aReader.SetLimits(aOneTriangle);
@@ -250,16 +251,16 @@ public class RWStlTests
         var aReader = new CountingReader();
         Assert.False(aReader.Read(new MemoryStream(aData)));
         Assert.Equal(0, aReader.myNbTris);
-        Assert.Null(RWStl.ReadFile(new MemoryStream(aData)));
-        Assert.Null(RWStl.ReadBinaryStream(new MemoryStream(aData)));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aData)));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinaryStream(new MemoryStream(aData)));
         // a count of 3 for 2 facets: the block of 3 can't be read either
         BinaryPrimitives.WriteInt32LittleEndian(aData.AsSpan(80), 3);
-        Assert.Null(RWStl.ReadBinaryStream(new MemoryStream(aData)));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinaryStream(new MemoryStream(aData)));
         BinaryPrimitives.WriteInt32LittleEndian(aData.AsSpan(80), int.MinValue);
-        Assert.Null(RWStl.ReadBinaryStream(new MemoryStream(aData)));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinaryStream(new MemoryStream(aData)));
     }
 
-    private sealed class CountingReader : RWStl_Reader
+    private sealed class CountingReader : global::Kerf.Engine.Exchange.Stl.Reader
     {
         public int myNbNodes, myNbTris, myNbSolids;
 
@@ -298,23 +299,23 @@ public class RWStlTests
     {
         Triangulation aMesh = Grid(30); // 1,800 triangles: the writers check every 1,000
         var aBinary = new MemoryStream();
-        Assert.True(RWStl.WriteBinary(aMesh, aBinary));
+        Assert.True(global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(aMesh, aBinary));
         var anAscii = new MemoryStream();
-        Assert.True(RWStl.WriteAscii(aMesh, anAscii));
+        Assert.True(global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, anAscii));
         // merged nodes: the grid's
-        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(aBinary.ToArray()));
+        Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary.ToArray()));
         Assert.Equal(31 * 31, aRead!.NodeCount);
 
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
         ProgressRange Cancelled() => new ProgressIndicator(aSource.Token).Start();
-        Assert.False(RWStl.WriteBinary(aMesh, new MemoryStream(), Cancelled()));
-        Assert.False(RWStl.WriteAscii(aMesh, new MemoryStream(), Cancelled()));
-        Assert.Null(RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, Cancelled()));
-        Assert.Null(RWStl.ReadFile(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
-        Assert.Null(RWStl.ReadStream(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
+        Assert.False(global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(aMesh, new MemoryStream(), Cancelled()));
+        Assert.False(global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, new MemoryStream(), Cancelled()));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, Cancelled()));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
+        Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(anAscii.ToArray()), Math.PI / 2, Cancelled()));
         var aList = new NCollection_Sequence<Triangulation>();
-        RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, aList, Cancelled());
+        global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBinary.ToArray()), Math.PI / 2, aList, Cancelled());
         Assert.Equal(0, aList.Length());
     }
 
@@ -326,26 +327,26 @@ public class RWStlTests
         {
             Triangulation aMesh = Grid(3);
             string anAscii = Path.Combine(aDir, "a.stl"), aBinary = Path.Combine(aDir, "b.stl");
-            Assert.True(RWStl.WriteAscii(aMesh, anAscii));
-            Assert.True(RWStl.WriteBinary(aMesh, aBinary));
+            Assert.True(global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, anAscii));
+            Assert.True(global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(aMesh, aBinary));
             // the file form writes the stream form's bytes (LF line ends)
             var aStream = new MemoryStream();
-            RWStl.WriteAscii(aMesh, aStream);
+            global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, aStream);
             Assert.Equal(aStream.ToArray(), File.ReadAllBytes(anAscii));
-            Assert.Equal(18, RWStl.ReadFile(anAscii)!.TriangleCount);
-            Assert.Equal(18, RWStl.ReadAscii(anAscii)!.TriangleCount);
-            Assert.Equal(18, RWStl.ReadBinary(aBinary)!.TriangleCount);
-            Assert.Null(RWStl.ReadAscii(aBinary));
-            Assert.Null(RWStl.ReadFile(Path.Combine(aDir, "none.stl")));
-            Assert.False(RWStl.WriteAscii(aMesh, Path.Combine(aDir, "no", "such", "dir.stl")));
-            Assert.False(RWStl.WriteAscii(null, Path.Combine(aDir, "c.stl")));
-            Assert.False(RWStl.WriteBinary(new Triangulation(), new MemoryStream()));
+            Assert.Equal(18, global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(anAscii)!.TriangleCount);
+            Assert.Equal(18, global::Kerf.Engine.Exchange.Stl.RWStl.ReadAscii(anAscii)!.TriangleCount);
+            Assert.Equal(18, global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinary(aBinary)!.TriangleCount);
+            Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadAscii(aBinary));
+            Assert.Null(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(Path.Combine(aDir, "none.stl")));
+            Assert.False(global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, Path.Combine(aDir, "no", "such", "dir.stl")));
+            Assert.False(global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(null, Path.Combine(aDir, "c.stl")));
+            Assert.False(global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(new Triangulation(), new MemoryStream()));
 
             Shape aFace = FaceWith(aMesh, 3.0);
-            Assert.True(StlAPI.Write(aFace, Path.Combine(aDir, "s.stl"), false));
+            Assert.True(StlApi.Write(aFace, Path.Combine(aDir, "s.stl"), false));
             Shape aShape = new();
 #pragma warning disable CS0618 // the deprecated legacy reader
-            Assert.True(StlAPI.Read(ref aShape, Path.Combine(aDir, "s.stl")));
+            Assert.True(StlApi.Read(ref aShape, Path.Combine(aDir, "s.stl")));
 #pragma warning restore CS0618
             Assert.Equal(18, CountShapeElements(aShape, ShapeType.Face));
         }
@@ -362,11 +363,11 @@ public class RWStlTests
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(0, 0, 5));
         Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
-        Triangulation? aRead = RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
+        Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
         Assert.NotNull(aRead);
         Assert.Equal(5.0, aRead.Node(1).Z());
         // reversed: the triangles turn over (nodes 2 and 3 swapped)
-        Triangulation? aStraight = RWStl.ReadFile(new MemoryStream(Write(aFace, false)));
+        Triangulation? aStraight = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(Write(aFace, false)));
         aStraight!.Triangle(1).Get(out _, out int s2, out int s3);
         aRead.Triangle(1).Get(out _, out int r2, out int r3);
         Assert.Equal(aStraight.Node(s2).X(), aRead.Node(r3).X());

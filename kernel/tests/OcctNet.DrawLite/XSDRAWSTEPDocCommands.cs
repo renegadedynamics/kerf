@@ -2,9 +2,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Caf;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Documents;
+using Kerf.Engine.Exchange.Step.Header;
 using Occt;
-using static Occt.IFSelect_ReturnStatus;
-using static Occt.STEPControl_StepModelType;
+using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
+using static Kerf.Engine.Exchange.Step.ModelType;
 
 namespace OcctNet.DrawLite;
 
@@ -31,7 +39,7 @@ internal static class XSDRAWSTEPDocCommands
     private static int ReadStep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         int theNbArgs = argv.Count;
-        XSControl_WorkSession aSession = XSDRAWCommands.Session(theDI);
+        ExchangeWorkSession aSession = XSDRAWCommands.Session(theDI);
 
         string? aDocumentName = null;
         string aFilePath = "", aModeStr = "";
@@ -75,9 +83,9 @@ internal static class XSDRAWSTEPDocCommands
             di.Append(" Model taken from the session : ").Append(aFileName).Append("\n");
         }
 
-        var aReader = new STEPCAFControl_Reader(aSession, isFileMode);
+        var aReader = new CafReader(aSession, isFileMode);
         // the external files from the disk beside the file, as DRAWEXE (the stream form reads none by default: unit 8Z)
-        aReader.SetExternFileResolver(STEPCAFControl_Reader.FileSystemResolver);
+        aReader.SetExternFileResolver(CafReader.FileSystemResolver);
         if (aModeStr.Length > 0)
         {
             bool aMode = true;
@@ -113,7 +121,7 @@ internal static class XSDRAWSTEPDocCommands
             }
         }
 
-        IFSelect_ReturnStatus aReadStat = IFSelect_ReturnStatus.IFSelect_RetVoid;
+        ReturnStatus aReadStat = ReturnStatus.RetVoid;
         if (isFileMode)
         {
             if (theDI.Files.TryReadBytes(aFileName, out byte[] aBytes))
@@ -123,15 +131,15 @@ internal static class XSDRAWSTEPDocCommands
             }
             else
             {
-                aReadStat = IFSelect_ReturnStatus.IFSelect_RetError;
+                aReadStat = ReturnStatus.RetError;
             }
         }
-        else if (aSession.NbStartingEntities() > 0)
+        else if (aSession.StartingEntityCount > 0)
         {
-            aReadStat = IFSelect_ReturnStatus.IFSelect_RetDone;
+            aReadStat = ReturnStatus.RetDone;
         }
 
-        if (aReadStat != IFSelect_ReturnStatus.IFSelect_RetDone)
+        if (aReadStat != ReturnStatus.RetDone)
         {
             if (isFileMode)
             {
@@ -144,14 +152,14 @@ internal static class XSDRAWSTEPDocCommands
             return 1;
         }
 
-        XdeDoc_Document? aDocument = DDocStdCommands.GetDocument(theDI, aDocumentName!, false);
+        ExchangeDocument? aDocument = DDocStdCommands.GetDocument(theDI, aDocumentName!, false);
         if (aDocument is null)
         {
             aDocument = DDocStdCommands.NewDocument(theDI, aDocumentName!);
         }
 
         (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
-            XSAlgo_ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aSession.Statics());
+            ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aSession.Statics());
         aReader.SetShapeFixParameters(aParameters);
         aReader.SetShapeProcessFlags(aFlags);
 
@@ -166,16 +174,16 @@ internal static class XSDRAWSTEPDocCommands
     }
 
     // A session's model written to Draw-lite's overlay, as STEPControl_Writer::Write writes it (the header applied)
-    private static IFSelect_ReturnStatus Send(DrawInterpreter theDI, XSControl_WorkSession theWS, string theFileName)
+    private static ReturnStatus Send(DrawInterpreter theDI, ExchangeWorkSession theWS, string theFileName)
     {
-        if (theWS.Model() is not StepData_StepModel aModel)
+        if (theWS.Model() is not StepModel aModel)
         {
-            return IFSelect_ReturnStatus.IFSelect_RetFail;
+            return ReturnStatus.RetFail;
         }
-        new APIHeaderSection_MakeHeader().Apply(aModel);
+        new MakeHeader().Apply(aModel);
         var aStream = new MemoryStream();
-        IFSelect_ReturnStatus aStatus = theWS.SendAll(theFileName, false, aStream);
-        if (aStatus == IFSelect_ReturnStatus.IFSelect_RetDone || aStream.Length > 0)
+        ReturnStatus aStatus = theWS.SendAll(theFileName, false, aStream);
+        if (aStatus == ReturnStatus.RetDone || aStream.Length > 0)
         {
             theDI.Files.WriteBytes(theFileName, aStream.ToArray());
         }
@@ -183,26 +191,26 @@ internal static class XSDRAWSTEPDocCommands
     }
 
     // STEPCAFControl_Writer::Write to the overlay: the main file, then the external files beside it
-    internal static IFSelect_ReturnStatus Write(DrawInterpreter theDI, STEPCAFControl_Writer theWriter, string theFileName)
+    internal static ReturnStatus Write(DrawInterpreter theDI, CafWriter theWriter, string theFileName)
     {
-        IFSelect_ReturnStatus aStatus = Send(theDI, theWriter.Writer().WS()!, theFileName);
-        if (aStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
+        ReturnStatus aStatus = Send(theDI, theWriter.Writer().WS()!, theFileName);
+        if (aStatus != ReturnStatus.RetDone)
         {
             return aStatus;
         }
         string aDir = Path.GetDirectoryName(theFileName) ?? "";
-        foreach (KeyValuePair<string, STEPCAFControl_ExternFile> anExtFileIter in theWriter.ExternFiles())
+        foreach (KeyValuePair<string, ExternFile> anExtFileIter in theWriter.ExternFiles())
         {
-            STEPCAFControl_ExternFile anExtFile = anExtFileIter.Value;
-            if (anExtFile.GetWriteStatus() != IFSelect_ReturnStatus.IFSelect_RetVoid)
+            ExternFile anExtFile = anExtFileIter.Value;
+            if (anExtFile.GetWriteStatus() != ReturnStatus.RetVoid)
             {
                 continue;
             }
             string aName = anExtFile.GetName().ToCString();
             string aFileName = aDir.Length == 0 || Path.IsPathRooted(aName) ? aName : aDir + "/" + aName;
-            IFSelect_ReturnStatus anExtStatus = Send(theDI, anExtFile.GetWS(), aFileName);
+            ReturnStatus anExtStatus = Send(theDI, anExtFile.GetWS(), aFileName);
             anExtFile.SetWriteStatus(anExtStatus);
-            if (anExtStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
+            if (anExtStatus != ReturnStatus.RetDone)
             {
                 aStatus = anExtStatus;
             }
@@ -213,15 +221,15 @@ internal static class XSDRAWSTEPDocCommands
     private static int WriteStep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         int theNbArgs = argv.Count;
-        XSControl_WorkSession aSession = XSDRAWCommands.Session(theDI);
-        var aWriter = new STEPCAFControl_Writer(aSession, true);
+        ExchangeWorkSession aSession = XSDRAWCommands.Session(theDI);
+        var aWriter = new CafWriter(aSession, true);
 
-        XdeDoc_Document? aDocument = null;
+        ExchangeDocument? aDocument = null;
         string aDocumentName = "", aFilePath = "";
-        STEPControl_StepModelType aMode = STEPControl_StepModelType.STEPControl_AsIs;
+        ModelType aMode = ModelType.AsIs;
         bool hasModeArg = false, toTestStream = false;
         string aMultiFilePrefix = "", aLabelName = "";
-        XdeDoc_Label aLabel = default;
+        Label aLabel = default;
 
         for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
         {
@@ -251,23 +259,23 @@ internal static class XSDRAWSTEPDocCommands
                 {
                     case 'a':
                     case '0':
-                        aMode = STEPControl_StepModelType.STEPControl_AsIs;
+                        aMode = ModelType.AsIs;
                         break;
                     case 'f':
                     case '1':
-                        aMode = STEPControl_StepModelType.STEPControl_FacetedBrep;
+                        aMode = ModelType.FacetedBrep;
                         break;
                     case 's':
                     case '2':
-                        aMode = STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel;
+                        aMode = ModelType.ShellBasedSurfaceModel;
                         break;
                     case 'm':
                     case '3':
-                        aMode = STEPControl_StepModelType.STEPControl_ManifoldSolidBrep;
+                        aMode = ModelType.ManifoldSolidBrep;
                         break;
                     case 'w':
                     case '4':
-                        aMode = STEPControl_StepModelType.STEPControl_GeometricCurveSet;
+                        aMode = ModelType.GeometricCurveSet;
                         break;
                     default:
                         di.Append("Syntax error: mode '").Append(argv[anArgIter]).Append("' is incorrect [give fsmw]");
@@ -304,10 +312,10 @@ internal static class XSDRAWSTEPDocCommands
             {
                 aMultiFilePrefix = argv[anArgIter];
             }
-            else if (aLabel.IsNull())
+            else if (aLabel.IsNull)
             {
                 aLabel = DDocStdCommands.Label(aDocument!, argv[anArgIter]);
-                if (aLabel.IsNull())
+                if (aLabel.IsNull)
                 {
                     di.Append("Syntax error: No label for entry '").Append(argv[anArgIter]).Append("'");
                     return 1;
@@ -330,12 +338,12 @@ internal static class XSDRAWSTEPDocCommands
         bool isFileMode = XSDRAWCommands.FileAndVar(aSession, aFilePath, aDocumentName, "STEP", out _, out _);
 
         (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
-            XSAlgo_ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aSession.Statics());
+            ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aSession.Statics());
         aWriter.SetShapeFixParameters(aParameters);
         aWriter.SetShapeProcessFlags(aFlags);
 
         string? aMulti = aMultiFilePrefix.Length > 0 ? aMultiFilePrefix : null;
-        if (!aLabel.IsNull())
+        if (!aLabel.IsNull)
         {
             di.Append("Translating label ").Append(aLabelName).Append(" of document ").Append(aDocumentName).Append(" to STEP\n");
             if (!aWriter.Transfer(aLabel, aMode, aMulti))
@@ -361,12 +369,12 @@ internal static class XSDRAWSTEPDocCommands
 
         di.Append("Writing STEP file ").Append(aFilePath).Append("\n");
 
-        IFSelect_ReturnStatus aStat;
+        ReturnStatus aStat;
         if (toTestStream)
         {
             var aStream = new MemoryStream();
             aStat = aWriter.WriteStream(aStream);
-            if (aStat == IFSelect_ReturnStatus.IFSelect_RetDone)
+            if (aStat == ReturnStatus.RetDone)
             {
                 theDI.Files.WriteBytes(aFilePath, aStream.ToArray());
             }
@@ -378,10 +386,10 @@ internal static class XSDRAWSTEPDocCommands
 
         switch (aStat)
         {
-            case IFSelect_ReturnStatus.IFSelect_RetVoid:
+            case ReturnStatus.RetVoid:
                 di.Append("Error: no file written");
                 break;
-            case IFSelect_ReturnStatus.IFSelect_RetDone:
+            case ReturnStatus.RetDone:
                 di.Append("File ").Append(aFilePath).Append(" written\n");
                 break;
             default:

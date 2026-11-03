@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Caf;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -49,10 +53,10 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         var aLines = new List<string>();
         try
         {
-            var aDoc = new XdeDoc_Document { AutoNaming = true };
-            var aReader = new STEPCAFControl_Reader();
-            IFSelect_ReturnStatus aStatus = aReader.ReadFile(thePath);
-            bool isOk = aStatus == IFSelect_ReturnStatus.IFSelect_RetDone && aReader.Transfer(aDoc);
+            var aDoc = new ExchangeDocument { AutoNaming = true };
+            var aReader = new CafReader();
+            ReturnStatus aStatus = aReader.ReadFile(thePath);
+            bool isOk = aStatus == ReturnStatus.RetDone && aReader.Transfer(aDoc);
             aLines.Add($"R {(int)aStatus} {(isOk ? 1 : 0)}");
             if (isOk)
             {
@@ -125,14 +129,14 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         "bug31670_russian.stp",
     };
 
-    private static string WriteLine(XdeDoc_Document theDoc, string theName, string theSchema, string? theDump)
+    private static string WriteLine(ExchangeDocument theDoc, string theName, string theSchema, string? theDump)
     {
         string aHead = $"W {SafeName(theName)} {theSchema} ";
         try
         {
-            var aWriter = new STEPCAFControl_Writer();
+            var aWriter = new CafWriter();
             aWriter.Writer().WS()!.Statics().SetCVal("write.step.schema", theSchema);
-            if (!aWriter.Transfer(theDoc, STEPControl_StepModelType.STEPControl_AsIs))
+            if (!aWriter.Transfer(theDoc, ModelType.AsIs))
             {
                 return aHead + "0";
             }
@@ -144,7 +148,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             {
                 File.WriteAllText(Path.Combine(theDump, $"{SafeName(theName)}.{theSchema}.stp"), aText, Encoding.Latin1);
             }
-            return aHead + $"1 {aWriter.Writer().Model().NbEntities()} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length} "
+            return aHead + $"1 {aWriter.Writer().Model().EntityCount} {Convert.ToHexStringLower(SHA256.HashData(aBytes))} {aBytes.Length} "
                    + Convert.ToHexStringLower(SHA256.HashData(Encoding.Latin1.GetBytes(Canonical(aText))));
         }
         catch (FailureException anExc)
@@ -229,12 +233,12 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
             string aName = "step " + (aFile.StartsWith(Path.Combine(StepRoundTripTests.Metadata("OcctTestDataDir"), "step"), StringComparison.Ordinal) ? "testdata/step/" : "src/data/step/") + Path.GetFileName(aFile);
             aJobs.Add(() =>
             {
-                var aDoc = new XdeDoc_Document { AutoNaming = true };
+                var aDoc = new ExchangeDocument { AutoNaming = true };
                 bool isOk;
                 try
                 {
-                    var aReader = new STEPCAFControl_Reader();
-                    isOk = aReader.ReadFile(aFile) == IFSelect_ReturnStatus.IFSelect_RetDone && aReader.Transfer(aDoc);
+                    var aReader = new CafReader();
+                    isOk = aReader.ReadFile(aFile) == ReturnStatus.RetDone && aReader.Transfer(aDoc);
                 }
                 catch (FailureException)
                 {

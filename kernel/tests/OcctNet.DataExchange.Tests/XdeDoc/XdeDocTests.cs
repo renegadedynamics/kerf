@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -21,12 +22,12 @@ public class XdeDocTests
     public void PartsAreFrozenAndShared()
     {
         Shape aBox = Box(1, 2, 3);
-        XdeDoc_Product aPart = XdeDoc_Product.Part(aBox, "B");
+        DocumentProduct aPart = DocumentProduct.Part(aBox, "B");
         Assert.True(aPart.Shape.TShape()!.IsFrozen);
-        Assert.Throws<ArgumentException>(() => XdeDoc_Product.Part(new Shape()));
+        Assert.Throws<ArgumentException>(() => DocumentProduct.Part(new Shape()));
 
-        XdeDoc_Product anAssembly = XdeDoc_Product.Assembly("A", aPart.Placed(Translation(1, 0, 0)), aPart.Placed(Translation(2, 0, 0)));
-        var aTree = new XdeDoc_Tree(anAssembly.Placed(new Placement()));
+        DocumentProduct anAssembly = DocumentProduct.Assembly("A", aPart.Placed(Translation(1, 0, 0)), aPart.Placed(Translation(2, 0, 0)));
+        var aTree = new Tree(anAssembly.Placed(new Placement()));
         Assert.Equal(2, aTree.Products().Count());
         Assert.Same(anAssembly.Components[0].Product, anAssembly.Components[1].Product);
 
@@ -38,11 +39,11 @@ public class XdeDocTests
         Assert.Equal(2, new Iterator(aCompound).More() ? CountChildren(aCompound) : 0);
 
         // With... makes new objects; the old ones keep their values
-        XdeDoc_Product aRenamed = aPart.WithName("C");
+        DocumentProduct aRenamed = aPart.WithName("C");
         Assert.Equal("B", aPart.Name);
         Assert.Equal("C", aRenamed.Name);
         Assert.True(aRenamed.Shape.IsEqual(aPart.Shape));
-        XdeDoc_Tree aTree2 = aTree.WithRoot(aRenamed.Placed(new Placement()));
+        Tree aTree2 = aTree.WithRoot(aRenamed.Placed(new Placement()));
         Assert.Single(aTree.Roots);
         Assert.Equal(2, aTree2.Roots.Length);
         Assert.Same(aTree.Roots[0], aTree2.Roots[0]);
@@ -61,8 +62,8 @@ public class XdeDocTests
     [Fact]
     public void FlattenComposesLocationsAndStyles()
     {
-        XdeDoc_Tree aTree = SampleTree(false);
-        IReadOnlyList<XdeDoc_FlatItem> anItems = aTree.Flatten();
+        Tree aTree = SampleTree(false);
+        IReadOnlyList<FlatItem> anItems = aTree.Flatten();
         Assert.Equal(3, anItems.Count);
         Assert.Equal(new string?[] { "Asm", "Box" }, anItems[0].NamePath);
         Assert.Equal(new string?[] { "Asm", "Box2" }, anItems[1].NamePath);
@@ -82,7 +83,7 @@ public class XdeDocTests
         Assert.Null(anItems[2].Style.SurfaceColor);
 
         // a hidden layer hides the plate
-        XdeDoc_Tree aHidden = aTree.WithLayers([new XdeDoc_Layer("L1", false)]);
+        Tree aHidden = aTree.WithLayers([new Layer("L1", false)]);
         Assert.Equal(2, aHidden.Flatten().Count);
         Assert.Equal(3, aHidden.Flatten(true).Count);
         Assert.False(aHidden.Flatten(true)[2].Style.IsVisible);
@@ -93,29 +94,29 @@ public class XdeDocTests
     public void StylesFollowXcafsMerge()
     {
         // a generic colour sets both; an assembly's colour is inherited by parts without their own
-        XdeDoc_Style aStyle = XdeDoc_Style.Default.Merged(new XdeDoc_Attributes { GenericColor = Red });
+        Style aStyle = Style.Default.Merged(new Attributes { GenericColor = Red });
         Assert.Equal(Red, aStyle.SurfaceColor);
         Assert.Equal(Red, aStyle.CurveColor);
-        aStyle = aStyle.Merged(new XdeDoc_Attributes { SurfaceColor = Green, IsVisible = false });
+        aStyle = aStyle.Merged(new Attributes { SurfaceColor = Green, IsVisible = false });
         Assert.Equal(Green, aStyle.SurfaceColor);
         Assert.Equal(Red, aStyle.CurveColor);
         Assert.False(aStyle.IsVisible);
 
-        XdeDoc_Product aPart = XdeDoc_Product.Part(Box(1, 1, 1), "P");
-        XdeDoc_Product anAssembly = XdeDoc_Product.Assembly([aPart.Placed(new Placement())], new XdeDoc_Attributes { SurfaceColor = Blue });
-        XdeDoc_FlatItem anItem = Assert.Single(new XdeDoc_Tree(anAssembly.Placed(new Placement())).Flatten());
+        DocumentProduct aPart = DocumentProduct.Part(Box(1, 1, 1), "P");
+        DocumentProduct anAssembly = DocumentProduct.Assembly([aPart.Placed(new Placement())], new Attributes { SurfaceColor = Blue });
+        FlatItem anItem = Assert.Single(new Tree(anAssembly.Placed(new Placement())).Flatten());
         Assert.Equal(Blue, anItem.Style.SurfaceColor);
     }
 
     [Fact]
     public void AttributesCompareByValue()
     {
-        var a = new XdeDoc_Attributes { Name = "x", Layers = ["a", "b"] };
-        var b = new XdeDoc_Attributes { Name = "x", Layers = ["a", "b"] };
+        var a = new Attributes { Name = "x", Layers = ["a", "b"] };
+        var b = new Attributes { Name = "x", Layers = ["a", "b"] };
         Assert.Equal(a, b);
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
         Assert.NotEqual(a, b.WithLayer("c"));
-        Assert.True(XdeDoc_Attributes.Empty.IsEmpty);
+        Assert.True(Attributes.Empty.IsEmpty);
         Assert.False(a.IsEmpty);
         Assert.Same(a, a.WithLayer("a"));
     }
@@ -123,20 +124,20 @@ public class XdeDocTests
     [Fact]
     public void MeshedSharesWhatMeshingLeaves()
     {
-        XdeDoc_Product aMeshed = XdeDoc_Product.Part(MeshedBox(1, 1, 1), "M");
+        DocumentProduct aMeshed = DocumentProduct.Part(MeshedBox(1, 1, 1), "M");
         Shape aBox = Box(2, 2, 2);
         Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
-        XdeDoc_Product aRaw = XdeDoc_Product.Part(aBox, "R").WithSubShape(aFace, new XdeDoc_Attributes { SurfaceColor = Red });
-        var aTree = new XdeDoc_Tree([aMeshed.Placed(new Placement()), aRaw.Placed(Translation(5, 0, 0)), aRaw.Placed(Translation(9, 0, 0))]);
+        DocumentProduct aRaw = DocumentProduct.Part(aBox, "R").WithSubShape(aFace, new Attributes { SurfaceColor = Red });
+        var aTree = new Tree([aMeshed.Placed(new Placement()), aRaw.Placed(Translation(5, 0, 0)), aRaw.Placed(Translation(9, 0, 0))]);
 
-        XdeDoc_Tree? aResult = aTree.Meshed(MeshParameters);
+        Tree? aResult = aTree.Meshed(MeshParameters);
         Assert.NotNull(aResult);
         Assert.Same(aMeshed, aResult.Roots[0].Product);
         Assert.NotSame(aRaw, aResult.Roots[1].Product);
         Assert.Same(aResult.Roots[1].Product, aResult.Roots[2].Product); // still shared
-        XdeDoc_Product aNew = aResult.Roots[1].Product;
+        DocumentProduct aNew = aResult.Roots[1].Product;
         Assert.Equal("R", aNew.Name);
-        XdeDoc_SubShape aSub = Assert.Single(aNew.SubShapes);
+        SubShape aSub = Assert.Single(aNew.SubShapes);
         Assert.Equal(Red, aSub.Attributes.SurfaceColor);
         Assert.NotNull(Tool.Triangulation(ShapeCasts.Face(aSub.Shape), out _));
         Assert.True(CountShapes(aNew.Shape, ShapeType.Face) == 6);
@@ -155,27 +156,27 @@ public class XdeDocTests
     public void DocumentBuildsAssembliesAsTheStepReaderDoes()
     {
         Shape aBox = MeshedBox(10, 20, 30);
-        var aDoc = new XdeDoc_Document();
-        XdeDoc_Label anAssembly = aDoc.NewShape();
+        var aDoc = new ExchangeDocument();
+        Label anAssembly = aDoc.NewShape();
         Assert.Equal("0:1:1:1", anAssembly.Entry());
         Assert.True(aDoc.IsSimpleShape(anAssembly)); // an empty compound until it gets components
-        XdeDoc_Label aPart = aDoc.AddShape(aBox, false);
+        Label aPart = aDoc.AddShape(aBox, false);
         Assert.Equal("0:1:1:2", aPart.Entry());
-        XdeDoc_Label aComp1 = aDoc.AddComponent(anAssembly, aPart, Translation(100, 0, 0));
-        XdeDoc_Label aComp2 = aDoc.AddComponent(anAssembly, aPart, QuarterTurn(0, 100, 0));
+        Label aComp1 = aDoc.AddComponent(anAssembly, aPart, Translation(100, 0, 0));
+        Label aComp2 = aDoc.AddComponent(anAssembly, aPart, QuarterTurn(0, 100, 0));
         Assert.Equal("0:1:1:1:1", aComp1.Entry());
         Assert.Equal("0:1:1:1:2", aComp2.Entry());
         Assert.True(aDoc.IsAssembly(anAssembly));
         Assert.True(aDoc.IsComponent(aComp1));
         Assert.True(aDoc.IsReference(aComp1));
-        Assert.True(aDoc.GetReferredShape(aComp2, out XdeDoc_Label aReferred));
+        Assert.True(aDoc.GetReferredShape(aComp2, out Label aReferred));
         Assert.Equal(aPart, aReferred);
         Assert.False(aDoc.IsFree(aPart));
         Assert.True(aDoc.IsFree(anAssembly));
-        var aUsers = new NCollection_Sequence<XdeDoc_Label>();
+        var aUsers = new NCollection_Sequence<Label>();
         Assert.Equal(2, aDoc.GetUsers(aPart, aUsers));
         Assert.Equal(2, aDoc.NbComponents(anAssembly));
-        var aFree = new NCollection_Sequence<XdeDoc_Label>();
+        var aFree = new NCollection_Sequence<Label>();
         aDoc.GetFreeShapes(aFree);
         Assert.Equal(anAssembly, Assert.Single(aFree));
 
@@ -186,13 +187,13 @@ public class XdeDocTests
         Assert.True(aDoc.GetShape(aComp1).IsPartner(aBox));
 
         // Search: a located shape finds its component; the unlocated one its part; a face a new sub-shape label
-        Assert.True(aDoc.Search(aDoc.GetShape(aComp2), out XdeDoc_Label aFound));
+        Assert.True(aDoc.Search(aDoc.GetShape(aComp2), out Label aFound));
         Assert.Equal(aComp2, aFound);
         Assert.True(aDoc.Search(aBox, out aFound));
         Assert.Equal(aPart, aFound);
         Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         Assert.False(aDoc.Search(aFace, out aFound, true, true, false));
-        Assert.True(aDoc.Search(aFace, out XdeDoc_Label aSub));
+        Assert.True(aDoc.Search(aFace, out Label aSub));
         Assert.Equal("0:1:1:2:1", aSub.Entry());
         Assert.True(aDoc.IsSubShape(aSub));
         Assert.True(aDoc.FindSubShape(aPart, aFace, out aFound));
@@ -207,14 +208,14 @@ public class XdeDocTests
         aDoc.SetName(anAssembly, "Asm");
         aDoc.SetName(aPart, "Box");
         aDoc.SetName(aComp2, "Box2");
-        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), XdeDoc_ColorType.XdeDoc_ColorSurf);
-        aDoc.SetColor(aComp2, Green, XdeDoc_ColorType.XdeDoc_ColorGen);
-        aDoc.SetColor(aSub, Blue, XdeDoc_ColorType.XdeDoc_ColorSurf);
-        Assert.True(aDoc.GetColor(aSub, XdeDoc_ColorType.XdeDoc_ColorSurf, out ColorWithAlpha aBlue));
+        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), ColorType.ColorSurf);
+        aDoc.SetColor(aComp2, Green, ColorType.ColorGen);
+        aDoc.SetColor(aSub, Blue, ColorType.ColorSurf);
+        Assert.True(aDoc.GetColor(aSub, ColorType.ColorSurf, out ColorWithAlpha aBlue));
         Assert.Equal(Blue, aBlue);
-        Assert.False(aDoc.IsSet(aSub, XdeDoc_ColorType.XdeDoc_ColorCurv));
-        Assert.True(aDoc.GetColor(aFace, XdeDoc_ColorType.XdeDoc_ColorSurf, out aBlue));
-        XdeDoc_Label aLayer = aDoc.AddLayer("L1");
+        Assert.False(aDoc.IsSet(aSub, ColorType.ColorCurv));
+        Assert.True(aDoc.GetColor(aFace, ColorType.ColorSurf, out aBlue));
+        Label aLayer = aDoc.AddLayer("L1");
         Assert.Equal("0:1:3:1", aLayer.Entry());
         Assert.Equal(aLayer, aDoc.AddLayer("L1"));
         aDoc.SetLayer(aComp1, aLayer);
@@ -222,7 +223,7 @@ public class XdeDocTests
         var aNames = new NCollection_Sequence<string>();
         Assert.True(aDoc.GetLayers(aComp1, aNames));
         Assert.Equal(new[] { "L1", "L2" }, aNames);
-        var aOfLayer = new NCollection_Sequence<XdeDoc_Label>();
+        var aOfLayer = new NCollection_Sequence<Label>();
         aDoc.GetShapesOfLayer(aLayer, aOfLayer);
         Assert.Equal(aComp1, Assert.Single(aOfLayer));
         aDoc.SetVisibility(aDoc.FindLayer("L2"), false);
@@ -230,17 +231,17 @@ public class XdeDocTests
         aDoc.SetCentroid(aPart, new Point3D(5, 10, 15));
         aDoc.SetLengthUnit(0.001, "MM");
         Assert.Equal(aComp2, aDoc.FindLabel("0:1:1:1:2"));
-        Assert.True(aDoc.FindLabel("0:1:9").IsNull());
+        Assert.True(aDoc.FindLabel("0:1:9").IsNull);
 
         // frozen into a tree: one root, the part shared by both components
-        XdeDoc_Tree aTree = aDoc.ToTree();
-        XdeDoc_Instance aRoot = Assert.Single(aTree.Roots);
-        XdeDoc_Product anAsmProduct = aRoot.Product;
+        Tree aTree = aDoc.ToTree();
+        Instance aRoot = Assert.Single(aTree.Roots);
+        DocumentProduct anAsmProduct = aRoot.Product;
         Assert.True(anAsmProduct.IsAssembly);
         Assert.Equal("Asm", anAsmProduct.Name);
         Assert.Equal(2, anAsmProduct.Components.Length);
         Assert.Same(anAsmProduct.Components[0].Product, anAsmProduct.Components[1].Product);
-        XdeDoc_Product aBoxProduct = anAsmProduct.Components[0].Product;
+        DocumentProduct aBoxProduct = anAsmProduct.Components[0].Product;
         Assert.Equal("Box", aBoxProduct.Name);
         Assert.Equal(6000.0, aBoxProduct.Attributes.ValidationProps!.Volume);
         Assert.Equal(Blue, Assert.Single(aBoxProduct.SubShapes).Attributes.SurfaceColor);
@@ -249,33 +250,33 @@ public class XdeDocTests
         Assert.Equal(0.001, aTree.LengthUnit!.UnitValue);
         Assert.False(aTree.FindLayer("L2")!.IsVisible);
         Assert.Single(aTree.Flatten()); // the first component is in a hidden layer
-        IReadOnlyList<XdeDoc_FlatItem> anAll = aTree.Flatten(true);
+        IReadOnlyList<FlatItem> anAll = aTree.Flatten(true);
         Assert.Equal(2, anAll.Count);
         Assert.Equal(Green, anAll[1].Style.SurfaceColor);
 
         // and opened again: the same labels
-        XdeDoc_Document aDoc2 = XdeDoc_Document.FromTree(aTree);
-        var aFree2 = new NCollection_Sequence<XdeDoc_Label>();
+        ExchangeDocument aDoc2 = ExchangeDocument.FromTree(aTree);
+        var aFree2 = new NCollection_Sequence<Label>();
         aDoc2.GetFreeShapes(aFree2);
-        XdeDoc_Label aRoot2 = Assert.Single(aFree2);
+        Label aRoot2 = Assert.Single(aFree2);
         Assert.Equal("0:1:1:1", aRoot2.Entry());
         Assert.True(aDoc2.IsAssembly(aRoot2));
-        var aComps = new NCollection_Sequence<XdeDoc_Label>();
+        var aComps = new NCollection_Sequence<Label>();
         aDoc2.GetComponents(aRoot2, aComps);
         Assert.Equal(2, aComps.Length());
-        Assert.True(aDoc2.GetReferredShape(aComps.Value(1), out XdeDoc_Label aPart2));
+        Assert.True(aDoc2.GetReferredShape(aComps.Value(1), out Label aPart2));
         Assert.Equal("0:1:1:2", aPart2.Entry());
         Assert.True(aDoc2.GetName(aPart2, out string? aName2));
         Assert.Equal("Box", aName2);
-        Assert.True(aDoc2.GetColor(aPart2, XdeDoc_ColorType.XdeDoc_ColorSurf, out Color aRed));
+        Assert.True(aDoc2.GetColor(aPart2, ColorType.ColorSurf, out Color aRed));
         Assert.True(aRed.IsEqual(new Color(NameOfColor.NocRed)));
-        var aSubs = new NCollection_Sequence<XdeDoc_Label>();
+        var aSubs = new NCollection_Sequence<Label>();
         Assert.True(aDoc2.GetSubShapes(aPart2, aSubs));
         Assert.Equal("0:1:1:2:1", aSubs.Value(1).Entry());
-        Assert.True(aDoc2.FindShape(aBox, out XdeDoc_Label aFoundBox));
+        Assert.True(aDoc2.FindShape(aBox, out Label aFoundBox));
         Assert.Equal(aPart2, aFoundBox);
         Assert.True(aDoc2.GetShape(aRoot2).IsSame(anAsmProduct.Shape));
-        var aLayers2 = new NCollection_Sequence<XdeDoc_Label>();
+        var aLayers2 = new NCollection_Sequence<Label>();
         aDoc2.GetLayerLabels(aLayers2);
         Assert.Equal(2, aLayers2.Length());
         Assert.False(aDoc2.IsVisible(aLayers2.Value(2)));
@@ -292,36 +293,36 @@ public class XdeDocTests
         aBuilder.Add(aCompound, aBox.Moved(Translation(5, 0, 0)));
         aBuilder.Add(aCompound, aBox.Moved(Translation(10, 0, 0)));
 
-        var aDoc = new XdeDoc_Document();
-        XdeDoc_Label aL = aDoc.AddShape(aCompound);
+        var aDoc = new ExchangeDocument();
+        Label aL = aDoc.AddShape(aCompound);
         Assert.Equal("0:1:1:1", aL.Entry());
         Assert.True(aDoc.IsAssembly(aL));
-        var aComps = new NCollection_Sequence<XdeDoc_Label>();
+        var aComps = new NCollection_Sequence<Label>();
         aDoc.GetComponents(aL, aComps);
         Assert.Equal(new[] { "0:1:1:1:1", "0:1:1:1:2" }, aComps.Select(l => l.Entry()));
-        Assert.True(aDoc.GetReferredShape(aComps.Value(1), out XdeDoc_Label aPart));
+        Assert.True(aDoc.GetReferredShape(aComps.Value(1), out Label aPart));
         Assert.Equal("0:1:1:2", aPart.Entry());
-        Assert.True(aDoc.GetReferredShape(aComps.Value(2), out XdeDoc_Label aPart2));
+        Assert.True(aDoc.GetReferredShape(aComps.Value(2), out Label aPart2));
         Assert.Equal(aPart, aPart2);
         Assert.Equal(aL, aDoc.AddShape(aCompound)); // found again
 
         // without makeAssembly: a simple shape
-        XdeDoc_Label aFlat = new XdeDoc_Document().AddShape(aCompound, false);
+        Label aFlat = new ExchangeDocument().AddShape(aCompound, false);
         Assert.True(aFlat.Document!.IsSimpleShape(aFlat));
 
         // a located shape: a top-level reference to its unlocated shape, found with its location
-        var aDoc3 = new XdeDoc_Document();
+        var aDoc3 = new ExchangeDocument();
         Shape aMoved = aBox.Moved(Translation(0, 0, 7));
-        XdeDoc_Label aRef = aDoc3.AddShape(aMoved);
+        Label aRef = aDoc3.AddShape(aMoved);
         Assert.Equal("0:1:1:1", aRef.Entry());
         Assert.True(aDoc3.IsReference(aRef));
         Assert.False(aDoc3.IsComponent(aRef));
-        Assert.True(aDoc3.FindShape(aMoved, out XdeDoc_Label aFound, true));
+        Assert.True(aDoc3.FindShape(aMoved, out Label aFound, true));
         Assert.Equal(aRef, aFound);
         Assert.True(aDoc3.FindShape(aMoved, out aFound));
         Assert.Equal("0:1:1:2", aFound.Entry());
-        XdeDoc_Tree aTree = aDoc3.ToTree();
-        XdeDoc_Instance aRoot = Assert.Single(aTree.Roots);
+        Tree aTree = aDoc3.ToTree();
+        Instance aRoot = Assert.Single(aTree.Roots);
         Assert.Equal(7.0, aRoot.Location.Transformation().TranslationPart().Z(), 12);
         Assert.False(aRoot.Product.IsAssembly);
     }
@@ -329,15 +330,15 @@ public class XdeDocTests
     [Fact]
     public void DocumentRefusesCycles()
     {
-        var aDoc = new XdeDoc_Document();
-        XdeDoc_Label anA = aDoc.NewShape();
-        XdeDoc_Label aB = aDoc.NewShape();
-        Assert.False(aDoc.AddComponent(anA, aB, new Placement()).IsNull());
-        Assert.True(aDoc.AddComponent(aB, anA, new Placement()).IsNull());
-        Assert.True(aDoc.AddComponent(anA, anA, new Placement()).IsNull());
-        XdeDoc_Instance aRoot = Assert.Single(aDoc.ToTree().Roots);
+        var aDoc = new ExchangeDocument();
+        Label anA = aDoc.NewShape();
+        Label aB = aDoc.NewShape();
+        Assert.False(aDoc.AddComponent(anA, aB, new Placement()).IsNull);
+        Assert.True(aDoc.AddComponent(aB, anA, new Placement()).IsNull);
+        Assert.True(aDoc.AddComponent(anA, anA, new Placement()).IsNull);
+        Instance aRoot = Assert.Single(aDoc.ToTree().Roots);
         Assert.Single(aRoot.Product.Components);
-        XdeDoc_Label aForeign = new XdeDoc_Document().NewShape();
+        Label aForeign = new ExchangeDocument().NewShape();
         Assert.Throws<ArgumentException>(() => aDoc.SetName(aForeign, "x"));
         Assert.Throws<ArgumentException>(() => aDoc.SetName(default, "x"));
     }

@@ -3,6 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Gltf;
+using Kerf.Engine.Exchange.Obj;
 using Kerf.Topology;
 using Occt;
 
@@ -42,16 +45,16 @@ internal static class XSDRAWMeshCommands
     }
 
     // XSDRAW::GetLengthUnit: the document's unit in millimetres, else the session's (xstep.cascade.unit)
-    private static double lengthUnitMM(DrawInterpreter theDI, XdeDoc_Document? theDoc)
+    private static double lengthUnitMM(DrawInterpreter theDI, ExchangeDocument? theDoc)
         => theDoc is not null && theDoc.GetLengthUnit(out double aUnit) ? aUnit * 1000.0 : XSDRAWCommands.GetLengthUnit(theDI);
 
     /// <summary>
     /// A glTF file of Draw-lite's files read by unit 8T's reader into the system unit (metres per unit), its external
     /// buffers resolved beside it; null, with the message, if it isn't found or can't be read.
     /// </summary>
-    internal static XdeDoc_Tree? ReadGltfTree(DrawInterpreter theDI, string theFilePath, double theScaleFactorM)
+    internal static Tree? ReadGltfTree(DrawInterpreter theDI, string theFilePath, double theScaleFactorM)
     {
-        var aReader = new RWGltf_TreeReader(new RWGltf_ReadOptions { OutputLengthUnit = theScaleFactorM });
+        var aReader = new TreeReader(new ReadOptions { OutputLengthUnit = theScaleFactorM });
         if (!theDI.Files.TryReadBytes(theFilePath, out byte[] aBytes))
         {
             fail(theDI, "File '" + theFilePath + "' is not found");
@@ -67,7 +70,7 @@ internal static class XSDRAWMeshCommands
             }
             return theDI.Files.TryReadBytes(aFolder + theUri, out byte[] aBuffer) ? new MemoryStream(aBuffer) : null;
         }
-        XdeDoc_Tree? aTree = aReader.Read(new MemoryStream(aBytes), resolve);
+        Tree? aTree = aReader.Read(new MemoryStream(aBytes), resolve);
         if (aTree is null)
         {
             fail(theDI, "Error: file '" + theFilePath + "' can not be read: " + aReader.Error);
@@ -76,9 +79,9 @@ internal static class XSDRAWMeshCommands
     }
 
     /// <summary>A tree written by unit 8T's glTF writer to Draw-lite's files (a .glb, or a .gltf with its .bin beside it).</summary>
-    internal static void WriteGltfTree(DrawInterpreter theDI, string theFilePath, XdeDoc_Tree theTree, double theScaleFactorM, bool theIsZUp, bool theToMergeFaces)
+    internal static void WriteGltfTree(DrawInterpreter theDI, string theFilePath, Tree theTree, double theScaleFactorM, bool theIsZUp, bool theToMergeFaces)
     {
-        var aWriter = new RWGltf_TreeWriter(new RWGltf_WriteOptions { InputLengthUnit = theScaleFactorM, ZUpToYUp = theIsZUp, MergeFaces = theToMergeFaces });
+        var aWriter = new GltfTreeWriter(new GltfWriteOptions { InputLengthUnit = theScaleFactorM, ZUpToYUp = theIsZUp, MergeFaces = theToMergeFaces });
         if (theFilePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
         {
             var aGlb = new MemoryStream();
@@ -149,7 +152,7 @@ internal static class XSDRAWMeshCommands
             return fail(theDI, "Error: " + theArgVec[0] + " of Draw-lite reads into a new document or shape only");
         }
 
-        XdeDoc_Document? anOld = isNoDoc ? null : DDocStdCommands.GetDocument(theDI, aDestName, false);
+        ExchangeDocument? anOld = isNoDoc ? null : DDocStdCommands.GetDocument(theDI, aDestName, false);
         if (anOld is not null)
         {
             return fail(theDI, "Error: document with name " + aDestName + " already exists");
@@ -157,22 +160,22 @@ internal static class XSDRAWMeshCommands
 
         // a new document has no unit: the session's
         double aScaleFactorM = lengthUnitMM(theDI, null) / 1000.0;
-        XdeDoc_Tree aTree = ReadGltfTree(theDI, aFilePath, aScaleFactorM) ?? XdeDoc_Tree.Empty;
+        Tree aTree = ReadGltfTree(theDI, aFilePath, aScaleFactorM) ?? Tree.Empty;
 
         if (isNoDoc)
         {
             // RWMesh_CafReader::SingleShape
-            XdeDoc_Document aTmp = XdeDoc_Document.FromTree(aTree);
+            ExchangeDocument aTmp = ExchangeDocument.FromTree(aTree);
             theDI.SetShape(aDestName, XDEDRAWCommands.GetOneShape(aTmp));
             return 0;
         }
 
-        XdeDoc_Document aDoc = XdeDoc_Document.FromTree(aTree);
+        ExchangeDocument aDoc = ExchangeDocument.FromTree(aTree);
         NameInstances(aDoc);
         // RWMesh_CafReader::fillDocument: the system unit when the document has none
         if (!aDoc.GetLengthUnit(out _))
         {
-            aDoc.SetLengthUnit(aScaleFactorM, UnitsMethods.DumpLengthUnit(aScaleFactorM, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter));
+            aDoc.SetLengthUnit(aScaleFactorM, global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(aScaleFactorM, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Meter));
         }
         DDocStdCommands.NewDocument(theDI, aDestName, aDoc);
         return 0;
@@ -183,20 +186,20 @@ internal static class XSDRAWMeshCommands
     /// product's, as the readers of OCCT's mesh formats name every instance (unit 8T's trees name an instance only by
     /// a name differing from its product's: decision 1236).
     /// </summary>
-    internal static void NameInstances(XdeDoc_Document theDoc)
+    internal static void NameInstances(ExchangeDocument theDoc)
     {
-        var aStack = new Stack<XdeDoc_Label>(theDoc.Children(theDoc.ShapesLabel()).Reverse());
+        var aStack = new Stack<Label>(theDoc.Children(theDoc.ShapesLabel()).Reverse());
         while (aStack.Count > 0)
         {
-            XdeDoc_Label aLabel = aStack.Pop();
-            if (theDoc.GetReferredShape(aLabel, out XdeDoc_Label aReferred)
+            Label aLabel = aStack.Pop();
+            if (theDoc.GetReferredShape(aLabel, out Label aReferred)
                 && !theDoc.GetName(aLabel, out _) && theDoc.GetName(aReferred, out string? aName) && !string.IsNullOrEmpty(aName))
             {
                 theDoc.SetName(aLabel, aName);
             }
             if (theDoc.IsAssembly(aLabel))
             {
-                foreach (XdeDoc_Label aChild in theDoc.Children(aLabel).Reverse())
+                foreach (Label aChild in theDoc.Children(aLabel).Reverse())
                 {
                     aStack.Push(aChild);
                 }
@@ -205,10 +208,10 @@ internal static class XSDRAWMeshCommands
     }
 
     // the document of the argument, or a new one holding the shape it names; null with the message otherwise
-    private static XdeDoc_Document? docOrShape(DrawInterpreter theDI, string theName, out bool theIsShape)
+    private static ExchangeDocument? docOrShape(DrawInterpreter theDI, string theName, out bool theIsShape)
     {
         theIsShape = false;
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, theName, false);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, theName, false);
         if (aDoc is not null)
         {
             return aDoc;
@@ -220,33 +223,33 @@ internal static class XSDRAWMeshCommands
             return null;
         }
         theIsShape = true;
-        aDoc = new XdeDoc_Document { AutoNaming = DDocStdCommands.AutoNaming(theDI) };
+        aDoc = new ExchangeDocument { AutoNaming = DDocStdCommands.AutoNaming(theDI) };
         aDoc.AddShape(aShape);
         return aDoc;
     }
 
     // RWMesh_NameFormat_Product: the nodes named by their products only
-    private static XdeDoc_Tree productNames(XdeDoc_Tree theTree)
+    private static Tree productNames(Tree theTree)
     {
-        var aDone = new Dictionary<XdeDoc_Product, XdeDoc_Product>(ReferenceEqualityComparer.Instance);
-        XdeDoc_Product product(XdeDoc_Product theProduct)
+        var aDone = new Dictionary<DocumentProduct, DocumentProduct>(ReferenceEqualityComparer.Instance);
+        DocumentProduct product(DocumentProduct theProduct)
         {
-            if (aDone.TryGetValue(theProduct, out XdeDoc_Product? aKnown))
+            if (aDone.TryGetValue(theProduct, out DocumentProduct? aKnown))
             {
                 return aKnown;
             }
-            XdeDoc_Product aNew = theProduct.IsAssembly ? theProduct.WithComponents(theProduct.Components.Select(instance)) : theProduct;
+            DocumentProduct aNew = theProduct.IsAssembly ? theProduct.WithComponents(theProduct.Components.Select(instance)) : theProduct;
             aDone[theProduct] = aNew;
             return aNew;
         }
-        XdeDoc_Instance instance(XdeDoc_Instance theInstance) => new(product(theInstance.Product), theInstance.Location, theInstance.Attributes.WithName(null));
+        Instance instance(Instance theInstance) => new(product(theInstance.Product), theInstance.Location, theInstance.Attributes.WithName(null));
         return theTree.WithRoots(theTree.Roots.Select(instance));
     }
 
     private static int WriteGltf(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgVec)
     {
         string aGltfFilePath = "";
-        XdeDoc_Document? aDoc = null;
+        ExchangeDocument? aDoc = null;
         bool isProductNames = false;
         bool isZUp = true;
         bool toMergeFaces = false;
@@ -343,7 +346,7 @@ internal static class XSDRAWMeshCommands
         }
 
         double aScaleFactorM = lengthUnitMM(theDI, aDoc) / 1000.0;
-        XdeDoc_Tree aTree = aDoc.ToTree();
+        Tree aTree = aDoc.ToTree();
         if (isProductNames)
         {
             aTree = productNames(aTree);
@@ -368,7 +371,7 @@ internal static class XSDRAWMeshCommands
     private static int WriteObj(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgVec)
     {
         string anObjFilePath = "";
-        XdeDoc_Document? aDoc = null;
+        ExchangeDocument? aDoc = null;
         double aFileUnitFactor = -1.0;
         bool isSystemZUp = true, isFileZUp = false;
         int theNbArgs = theArgVec.Count;
@@ -379,10 +382,10 @@ internal static class XSDRAWMeshCommands
             {
                 // UnitsAPI::AnyToSI (1.0, unit): the length units UnitsMethods knows (decision 1260)
                 string aUnitStr = theArgVec[++anArgIter];
-                UnitsMethods_LengthUnit aUnit = UnitsMethods.LengthUnitFromString(aUnitStr, false);
-                aFileUnitFactor = aUnit == UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined
+                global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit aUnit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.LengthUnitFromString(aUnitStr, false);
+                aFileUnitFactor = aUnit == global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Undefined
                                     ? -1.0
-                                    : UnitsMethods.GetLengthFactorValue((int)aUnit) * 0.001;
+                                    : global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetLengthFactorValue((int)aUnit) * 0.001;
                 if (aFileUnitFactor <= 0.0)
                 {
                     return fail(theDI, "Syntax error: wrong length unit '" + aUnitStr + "'");
@@ -436,7 +439,7 @@ internal static class XSDRAWMeshCommands
         double aSystemUnitFactor = XSDRAWCommands.GetLengthUnit(theDI) * 0.001;
         double aScale = aFileUnitFactor > 0.0 ? aSystemUnitFactor / aFileUnitFactor : 1.0;
         // (a Y-up system written to a Z-up file is written unchanged: decision 1260)
-        var aWriter = new RWObj_TreeWriter(new RWObj_WriteOptions { Scale = aScale, ZUpToYUp = isSystemZUp && !isFileZUp });
+        var aWriter = new ObjTreeWriter(new ObjWriteOptions { Scale = aScale, ZUpToYUp = isSystemZUp && !isFileZUp });
         string aMtlPath = Path.ChangeExtension(anObjFilePath, ".mtl");
         var anObj = new MemoryStream();
         var aMtl = new MemoryStream();

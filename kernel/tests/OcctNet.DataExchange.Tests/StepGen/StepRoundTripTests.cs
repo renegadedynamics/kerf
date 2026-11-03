@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
 using System.Reflection;
 using Xunit.Abstractions;
 
@@ -17,10 +18,10 @@ public sealed class StepRoundTripTests(ITestOutputHelper theOutput)
         typeof(StepRoundTripTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == theKey).Value!;
 
     /// <summary>StepAP214's protocol, with its modules in the global libraries (once per process, decision 1182).</summary>
-    internal static StepAP214_Protocol Protocol()
+    internal static global::Kerf.Engine.Exchange.Step.Ap214.Ap214Protocol Protocol()
     {
-        RWStepAP214.Init();
-        return StepAP214.Protocol();
+        Ap214ReadWrite.Init();
+        return global::Kerf.Engine.Exchange.Step.Ap214.StepAP214.Protocol();
     }
 
     internal static List<string> CorpusFiles()

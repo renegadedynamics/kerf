@@ -1,6 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Caf;
+using Kerf.Engine.Exchange.Step.Documents;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using System.Text;
@@ -35,14 +42,14 @@ public sealed class STEPCAFControlExternTests : IDisposable
 
     private static Shape Box(double theSize) => new MakeBox(theSize, theSize, theSize).Shape();
 
-    private static XdeDoc_Document Assembly()
+    private static ExchangeDocument Assembly()
     {
-        var aDoc = new XdeDoc_Document();
-        XdeDoc_Label anAsm = aDoc.NewShape();
+        var aDoc = new ExchangeDocument();
+        Label anAsm = aDoc.NewShape();
         aDoc.SetName(anAsm, "asm");
-        XdeDoc_Label aPartA = aDoc.AddShape(Box(10.0), false);
+        Label aPartA = aDoc.AddShape(Box(10.0), false);
         aDoc.SetName(aPartA, "partA");
-        XdeDoc_Label aPartB = aDoc.AddShape(Box(20.0), false);
+        Label aPartB = aDoc.AddShape(Box(20.0), false);
         aDoc.SetName(aPartB, "partB");
         aDoc.AddComponent(anAsm, aPartA, new Placement());
         aDoc.AddComponent(anAsm, aPartB, new Placement());
@@ -53,22 +60,22 @@ public sealed class STEPCAFControlExternTests : IDisposable
     private static string WriteAssembly(string theDir)
     {
         Directory.CreateDirectory(theDir);
-        var aWriter = new STEPCAFControl_Writer();
-        Assert.True(aWriter.Transfer(Assembly(), STEPControl_StepModelType.STEPControl_AsIs, ""));
+        var aWriter = new CafWriter();
+        Assert.True(aWriter.Transfer(Assembly(), ModelType.AsIs, ""));
         string aMain = Path.Combine(theDir, "main.stp");
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aWriter.Write(aMain));
+        Assert.Equal(ReturnStatus.RetDone, aWriter.Write(aMain));
         Assert.True(File.Exists(Path.Combine(theDir, "partA.stp")));
         Assert.True(File.Exists(Path.Combine(theDir, "partB.stp")));
         return aMain;
     }
 
-    private static int NbResolved(STEPCAFControl_Reader theReader) =>
-        theReader.ExternFiles().Count(f => f.Value.GetLoadStatus() == IFSelect_ReturnStatus.IFSelect_RetDone && !f.Value.GetLabel().IsNull());
+    private static int NbResolved(CafReader theReader) =>
+        theReader.ExternFiles().Count(f => f.Value.GetLoadStatus() == ReturnStatus.RetDone && !f.Value.GetLabel().IsNull);
 
-    private static int NbExternLabels(XdeDoc_Document theDoc)
+    private static int NbExternLabels(ExchangeDocument theDoc)
     {
         int aNb = 0;
-        foreach (XdeDoc_Label aLabel in theDoc.Descendants(theDoc.ShapesLabel()))
+        foreach (Label aLabel in theDoc.Descendants(theDoc.ShapesLabel()))
         {
             if (theDoc.IsExternRef(aLabel))
             {
@@ -79,22 +86,22 @@ public sealed class STEPCAFControlExternTests : IDisposable
     }
 
     // The warnings and fails of the main file's transfer and of the external files'
-    private static List<string> Messages(STEPCAFControl_Reader theReader)
+    private static List<string> Messages(CafReader theReader)
     {
         var aList = new List<string>();
-        var aSessions = new List<XSControl_WorkSession> { theReader.Reader().WS()! };
-        aSessions.AddRange(theReader.ExternFiles().Select(f => f.Value.GetWS()).OfType<XSControl_WorkSession>());
-        foreach (XSControl_WorkSession aWS in aSessions)
+        var aSessions = new List<ExchangeWorkSession> { theReader.Reader().WS()! };
+        aSessions.AddRange(theReader.ExternFiles().Select(f => f.Value.GetWS()).OfType<ExchangeWorkSession>());
+        foreach (ExchangeWorkSession aWS in aSessions)
         {
-            Interface_CheckIterator anIter = aWS.TransferReader()!.TransientProcess()!.CheckList(false);
+            CheckIterator anIter = aWS.TransferReader()!.TransientProcess()!.CheckList(false);
             for (anIter.Start(); anIter.More(); anIter.Next())
             {
-                Interface_Check aCheck = anIter.Value()!;
-                for (int i = 1; i <= aCheck.NbWarnings(); i++)
+                FrameworkCheck aCheck = anIter.Value()!;
+                for (int i = 1; i <= aCheck.WarningCount; i++)
                 {
                     aList.Add(aCheck.CWarning(i));
                 }
-                for (int i = 1; i <= aCheck.NbFails(); i++)
+                for (int i = 1; i <= aCheck.FailCount; i++)
                 {
                     aList.Add(aCheck.CFail(i));
                 }
@@ -103,14 +110,14 @@ public sealed class STEPCAFControlExternTests : IDisposable
         return aList;
     }
 
-    private static (STEPCAFControl_Reader Reader, XdeDoc_Document Doc) ReadStream(string theName, byte[] theBytes,
-        Action<STEPCAFControl_Reader>? theSetup = null, ProgressRange theProgress = default, StepFile_ReadLimits? theLimits = null)
+    private static (CafReader Reader, ExchangeDocument Doc) ReadStream(string theName, byte[] theBytes,
+        Action<CafReader>? theSetup = null, ProgressRange theProgress = default, ParserReadLimits? theLimits = null)
     {
-        var aReader = new STEPCAFControl_Reader();
+        var aReader = new CafReader();
         theSetup?.Invoke(aReader);
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone,
+        Assert.Equal(ReturnStatus.RetDone,
                      aReader.ReadStream(theName, new MemoryStream(theBytes), default, theLimits!));
-        var aDoc = new XdeDoc_Document();
+        var aDoc = new ExchangeDocument();
         aReader.Transfer(aDoc, theProgress);
         return (aReader, aDoc);
     }
@@ -121,13 +128,13 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void FileApiReadsTheExternalFilesFromTheDiskAsOcct()
     {
         string aMain = WriteAssembly(myDir);
-        var aReader = new STEPCAFControl_Reader();
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aReader.ReadFile(aMain));
-        var aDoc = new XdeDoc_Document();
+        var aReader = new CafReader();
+        Assert.Equal(ReturnStatus.RetDone, aReader.ReadFile(aMain));
+        var aDoc = new ExchangeDocument();
         Assert.True(aReader.Transfer(aDoc));
         Assert.Equal(2, NbResolved(aReader));
         Assert.Equal(2, NbExternLabels(aDoc));
-        Assert.True(aReader.ExternFile("partA.stp", out STEPCAFControl_ExternFile? anEF));
+        Assert.True(aReader.ExternFile("partA.stp", out ExternFile? anEF));
         Assert.True(anEF!.GetTransferStatus());
     }
 
@@ -136,10 +143,10 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void StreamApiReadsNoExternalFileWithoutAResolver()
     {
         string aMain = WriteAssembly(myDir);
-        (STEPCAFControl_Reader aReader, XdeDoc_Document aDoc) = ReadStream(aMain, File.ReadAllBytes(aMain));
+        (CafReader aReader, ExchangeDocument aDoc) = ReadStream(aMain, File.ReadAllBytes(aMain));
         Assert.Equal(0, NbResolved(aReader));
         Assert.Equal(2, aReader.ExternFiles().Count());
-        Assert.All(aReader.ExternFiles(), f => Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetError, f.Value.GetLoadStatus()));
+        Assert.All(aReader.ExternFiles(), f => Assert.Equal(ReturnStatus.RetError, f.Value.GetLoadStatus()));
         // unresolved as OCCT leaves a missing file: the names recorded, OCCT's fail
         Assert.Equal(2, NbExternLabels(aDoc));
         Assert.Contains(Messages(aReader), m => m.StartsWith("Can not read external file", StringComparison.Ordinal));
@@ -149,11 +156,11 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void DisabledReadsLeaveTheReferencesUnresolvedAsAMissingFile()
     {
         string aMain = WriteAssembly(myDir);
-        var aReader = new STEPCAFControl_Reader();
+        var aReader = new CafReader();
         aReader.SetExternFilesMode(false);
         Assert.False(aReader.GetExternFilesMode());
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aReader.ReadFile(aMain));
-        var aDoc = new XdeDoc_Document();
+        Assert.Equal(ReturnStatus.RetDone, aReader.ReadFile(aMain));
+        var aDoc = new ExchangeDocument();
         Assert.True(aReader.Transfer(aDoc));
         Assert.Equal(0, NbResolved(aReader));
 
@@ -161,9 +168,9 @@ public sealed class STEPCAFControlExternTests : IDisposable
         string anOther = Path.Combine(myDir, "alone");
         Directory.CreateDirectory(anOther);
         File.Copy(aMain, Path.Combine(anOther, "main.stp"));
-        var aMissing = new STEPCAFControl_Reader();
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aMissing.ReadFile(Path.Combine(anOther, "main.stp")));
-        var aMissingDoc = new XdeDoc_Document();
+        var aMissing = new CafReader();
+        Assert.Equal(ReturnStatus.RetDone, aMissing.ReadFile(Path.Combine(anOther, "main.stp")));
+        var aMissingDoc = new ExchangeDocument();
         Assert.True(aMissing.Transfer(aMissingDoc));
         Assert.Equal(XdeDocDump.Dump(aMissingDoc), XdeDocDump.Dump(aDoc));
         Assert.Equal(Messages(aMissing), Messages(aReader));
@@ -176,8 +183,8 @@ public sealed class STEPCAFControlExternTests : IDisposable
     {
         string aMain = WriteAssembly(myDir);
         var aCalls = new List<(string, string)>();
-        STEPCAFControl_ExternFileResolver aFolder = STEPCAFControl_Reader.FolderResolver(myDir);
-        (STEPCAFControl_Reader aReader, XdeDoc_Document aDoc) = ReadStream("main.stp", File.ReadAllBytes(aMain), r =>
+        ExternFileResolver aFolder = CafReader.FolderResolver(myDir);
+        (CafReader aReader, ExchangeDocument aDoc) = ReadStream("main.stp", File.ReadAllBytes(aMain), r =>
             r.SetExternFileResolver((n, f) =>
             {
                 aCalls.Add((n, f));
@@ -188,9 +195,9 @@ public sealed class STEPCAFControlExternTests : IDisposable
         Assert.Contains(("partB.stp", "main.stp"), aCalls);
 
         // the same document as the file API's
-        var aFileReader = new STEPCAFControl_Reader();
+        var aFileReader = new CafReader();
         aFileReader.ReadFile(aMain);
-        var aFileDoc = new XdeDoc_Document();
+        var aFileDoc = new ExchangeDocument();
         Assert.True(aFileReader.Transfer(aFileDoc));
         Assert.Equal(XdeDocDump.Dump(aFileDoc), XdeDocDump.Dump(aDoc));
     }
@@ -204,7 +211,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
             ["partA.stp"] = File.ReadAllBytes(Path.Combine(myDir, "partA.stp")),
             ["partB.stp"] = File.ReadAllBytes(Path.Combine(myDir, "partB.stp")),
         };
-        (STEPCAFControl_Reader aReader, _) = ReadStream("in-memory/main.stp", File.ReadAllBytes(aMain), r =>
+        (CafReader aReader, _) = ReadStream("in-memory/main.stp", File.ReadAllBytes(aMain), r =>
             r.SetExternFileResolver((n, f) => aFiles.TryGetValue(n, out byte[]? b) ? new MemoryStream(b) : null));
         Assert.Equal(2, NbResolved(aReader));
     }
@@ -217,7 +224,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
         File.WriteAllText(Path.Combine(aRoot, "a.stp"), "a");
         File.WriteAllText(Path.Combine(aRoot, "sub", "b.stp"), "b");
         File.WriteAllText(Path.Combine(myDir, "outside.stp"), "o");
-        STEPCAFControl_ExternFileResolver aResolver = STEPCAFControl_Reader.FolderResolver(aRoot);
+        ExternFileResolver aResolver = CafReader.FolderResolver(aRoot);
 
         string? Read(string theName, string theReferencing)
         {
@@ -267,21 +274,21 @@ public sealed class STEPCAFControlExternTests : IDisposable
         File.WriteAllText(aHostile, aText);
 
         // OCCT's way (the file API) reads them both
-        var anOcct = new STEPCAFControl_Reader();
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, anOcct.ReadFile(aHostile));
-        Assert.True(anOcct.Transfer(new XdeDoc_Document()));
+        var anOcct = new CafReader();
+        Assert.Equal(ReturnStatus.RetDone, anOcct.ReadFile(aHostile));
+        Assert.True(anOcct.Transfer(new ExchangeDocument()));
         Assert.Equal(2, NbResolved(anOcct));
 
         // confined to the box, neither
-        var aConfined = new STEPCAFControl_Reader();
-        aConfined.SetExternFileResolver(STEPCAFControl_Reader.FolderResolver(aBox));
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aConfined.ReadFile(aHostile));
-        Assert.True(aConfined.Transfer(new XdeDoc_Document()));
+        var aConfined = new CafReader();
+        aConfined.SetExternFileResolver(CafReader.FolderResolver(aBox));
+        Assert.Equal(ReturnStatus.RetDone, aConfined.ReadFile(aHostile));
+        Assert.True(aConfined.Transfer(new ExchangeDocument()));
         Assert.Equal(0, NbResolved(aConfined));
 
         // nor through the stream API
-        (STEPCAFControl_Reader aStream, _) = ReadStream(aHostile, Encoding.UTF8.GetBytes(aText),
-                                                        r => r.SetExternFileResolver(STEPCAFControl_Reader.FolderResolver(aBox)));
+        (CafReader aStream, _) = ReadStream(aHostile, Encoding.UTF8.GetBytes(aText),
+                                                        r => r.SetExternFileResolver(CafReader.FolderResolver(aBox)));
         Assert.Equal(0, NbResolved(aStream));
     }
 
@@ -293,28 +300,28 @@ public sealed class STEPCAFControlExternTests : IDisposable
         string aMain = WriteAssembly(myDir);
         long aSizeA = new FileInfo(Path.Combine(myDir, "partA.stp")).Length;
 
-        var aOne = new STEPCAFControl_Reader();
-        aOne.SetExternFileLimits(new STEPCAFControl_ExternFileLimits { MaxFiles = 1 });
+        var aOne = new CafReader();
+        aOne.SetExternFileLimits(new ExternFileLimits { MaxFiles = 1 });
         aOne.ReadFile(aMain);
-        Assert.True(aOne.Transfer(new XdeDoc_Document()));
+        Assert.True(aOne.Transfer(new ExchangeDocument()));
         Assert.Equal(1, NbResolved(aOne));
         Assert.Contains(Messages(aOne), m => m.Contains("more than 1 files", StringComparison.Ordinal));
 
         // the bytes: the first file fits, nothing is left for the second
-        var aBytes = new STEPCAFControl_Reader();
-        aBytes.SetExternFileLimits(new STEPCAFControl_ExternFileLimits { MaxTotalSize = aSizeA });
+        var aBytes = new CafReader();
+        aBytes.SetExternFileLimits(new ExternFileLimits { MaxTotalSize = aSizeA });
         aBytes.ReadFile(aMain);
-        Assert.True(aBytes.Transfer(new XdeDoc_Document()));
+        Assert.True(aBytes.Transfer(new ExchangeDocument()));
         Assert.Equal(1, NbResolved(aBytes));
         Assert.Contains(Messages(aBytes), m => m.Contains("bytes are read", StringComparison.Ordinal));
 
         // a budget smaller than one file: the parse stops at it
-        var aSmall = new STEPCAFControl_Reader();
-        aSmall.SetExternFileLimits(new STEPCAFControl_ExternFileLimits { MaxTotalSize = aSizeA / 2 });
+        var aSmall = new CafReader();
+        aSmall.SetExternFileLimits(new ExternFileLimits { MaxTotalSize = aSizeA / 2 });
         aSmall.ReadFile(aMain);
-        aSmall.Transfer(new XdeDoc_Document());
+        aSmall.Transfer(new ExchangeDocument());
         Assert.Equal(0, NbResolved(aSmall));
-        Assert.Contains(aSmall.ExternFiles(), f => f.Value.GetLoadStatus() == IFSelect_ReturnStatus.IFSelect_RetFail);
+        Assert.Contains(aSmall.ExternFiles(), f => f.Value.GetLoadStatus() == ReturnStatus.RetFail);
     }
 
     // The caller's StepFile_ReadLimits apply to each external file: an endless one is read no further than them
@@ -324,15 +331,15 @@ public sealed class STEPCAFControlExternTests : IDisposable
         string aMain = WriteAssembly(myDir);
         byte[] aMainBytes = File.ReadAllBytes(aMain);
         var aStreams = new List<EndlessStream>();
-        var aLimits = new StepFile_ReadLimits { MaxFileSize = aMainBytes.Length + 1000 };
-        (STEPCAFControl_Reader aReader, _) = ReadStream("main.stp", aMainBytes, r => r.SetExternFileResolver((n, f) =>
+        var aLimits = new ParserReadLimits { MaxFileSize = aMainBytes.Length + 1000 };
+        (CafReader aReader, _) = ReadStream("main.stp", aMainBytes, r => r.SetExternFileResolver((n, f) =>
         {
             var aStream = new EndlessStream();
             aStreams.Add(aStream);
             return aStream;
         }), default, aLimits);
         Assert.Equal(0, NbResolved(aReader));
-        Assert.Contains(aReader.ExternFiles(), f => f.Value.GetLoadStatus() == IFSelect_ReturnStatus.IFSelect_RetFail);
+        Assert.Contains(aReader.ExternFiles(), f => f.Value.GetLoadStatus() == ReturnStatus.RetFail);
         Assert.All(aStreams, s => Assert.True(s.BytesRead <= aLimits.MaxFileSize + 1, s.BytesRead.ToString()));
         Assert.All(aStreams, s => Assert.True(s.IsDisposed));
     }
@@ -353,9 +360,9 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void ACycleOnTheDiskStops()
     {
         string aMain = WriteCycle();
-        var aReader = new STEPCAFControl_Reader();
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aReader.ReadFile(aMain));
-        Assert.True(aReader.Transfer(new XdeDoc_Document()));
+        var aReader = new CafReader();
+        Assert.Equal(ReturnStatus.RetDone, aReader.ReadFile(aMain));
+        Assert.True(aReader.Transfer(new ExchangeDocument()));
         Assert.Equal(2, NbResolved(aReader)); // partA (its own references unresolved), partB
         List<string> aMessages = Messages(aReader);
         Assert.Contains(aMessages, m => m.StartsWith("External reference file is being read already", StringComparison.Ordinal));
@@ -366,8 +373,8 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void ACycleThroughAResolverStops()
     {
         string aMain = WriteCycle();
-        (STEPCAFControl_Reader aReader, _) = ReadStream("main.stp", File.ReadAllBytes(aMain),
-                                                        r => r.SetExternFileResolver(STEPCAFControl_Reader.FolderResolver(myDir)));
+        (CafReader aReader, _) = ReadStream("main.stp", File.ReadAllBytes(aMain),
+                                                        r => r.SetExternFileResolver(CafReader.FolderResolver(myDir)));
         Assert.Equal(2, NbResolved(aReader));
         Assert.Contains(Messages(aReader), m => m.StartsWith("External reference file is being read already", StringComparison.Ordinal));
     }
@@ -379,9 +386,9 @@ public sealed class STEPCAFControlExternTests : IDisposable
         string aMain = WriteAssembly(myDir);
         string aText = File.ReadAllText(aMain).Replace("'partA.stp'", "'d1/main.stp'", StringComparison.Ordinal);
         var aStreams = new List<TrackedStream>();
-        (STEPCAFControl_Reader aReader, _) = ReadStream("main.stp", Encoding.UTF8.GetBytes(aText), r =>
+        (CafReader aReader, _) = ReadStream("main.stp", Encoding.UTF8.GetBytes(aText), r =>
         {
-            r.SetExternFileLimits(new STEPCAFControl_ExternFileLimits { MaxDepth = 3 });
+            r.SetExternFileLimits(new ExternFileLimits { MaxDepth = 3 });
             r.SetExternFileResolver((n, f) =>
             {
                 if (n != "d1/main.stp")
@@ -424,8 +431,8 @@ public sealed class STEPCAFControlExternTests : IDisposable
         string aMain = WriteAssembly(myDir);
         using var aCancel = new CancellationTokenSource();
         var aNames = new HashSet<string>();
-        STEPCAFControl_ExternFileResolver aFolder = STEPCAFControl_Reader.FolderResolver(myDir);
-        (STEPCAFControl_Reader aReader, _) = ReadStream("main.stp", File.ReadAllBytes(aMain), r => r.SetExternFileResolver((n, f) =>
+        ExternFileResolver aFolder = CafReader.FolderResolver(myDir);
+        (CafReader aReader, _) = ReadStream("main.stp", File.ReadAllBytes(aMain), r => r.SetExternFileResolver((n, f) =>
         {
             aNames.Add(n);
             aCancel.Cancel(); // the user cancels as the first external file is looked for
@@ -440,20 +447,20 @@ public sealed class STEPCAFControlExternTests : IDisposable
     [Fact]
     public void WriterStreamFormRefusesTheMultifileModeWithoutStreams()
     {
-        var aWriter = new STEPCAFControl_Writer();
-        Assert.True(aWriter.Transfer(Assembly(), STEPControl_StepModelType.STEPControl_AsIs, ""));
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetError, aWriter.WriteStream(new MemoryStream()));
+        var aWriter = new CafWriter();
+        Assert.True(aWriter.Transfer(Assembly(), ModelType.AsIs, ""));
+        Assert.Equal(ReturnStatus.RetError, aWriter.WriteStream(new MemoryStream()));
     }
 
     [Fact]
     public void WriterStreamFormHandsTheExternalFilesToTheCaller()
     {
         string aMain = WriteAssembly(Path.Combine(myDir, "disk"));
-        var aWriter = new STEPCAFControl_Writer();
-        Assert.True(aWriter.Transfer(Assembly(), STEPControl_StepModelType.STEPControl_AsIs, ""));
+        var aWriter = new CafWriter();
+        Assert.True(aWriter.Transfer(Assembly(), ModelType.AsIs, ""));
         var aFiles = new Dictionary<string, MemoryStream>();
         var aMainStream = new MemoryStream();
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aWriter.WriteStream(aMainStream, n => aFiles[n] = new MemoryStream()));
+        Assert.Equal(ReturnStatus.RetDone, aWriter.WriteStream(aMainStream, n => aFiles[n] = new MemoryStream()));
         Assert.Equal(["partA.stp", "partB.stp"], aFiles.Keys.Order());
         Assert.True(aFiles.Values.All(s => s.ToArray().Length > 0));
 
@@ -464,7 +471,7 @@ public sealed class STEPCAFControlExternTests : IDisposable
                      Masked(Encoding.UTF8.GetString(aFiles["partA.stp"].ToArray())).Length);
 
         // all read back from memory
-        (STEPCAFControl_Reader aReader, _) = ReadStream("main.stp", aMainStream.ToArray(), r =>
+        (CafReader aReader, _) = ReadStream("main.stp", aMainStream.ToArray(), r =>
             r.SetExternFileResolver((n, f) => aFiles.TryGetValue(n, out MemoryStream? s) ? new MemoryStream(s.ToArray()) : null));
         Assert.Equal(2, NbResolved(aReader));
     }
@@ -473,21 +480,21 @@ public sealed class STEPCAFControlExternTests : IDisposable
     public void WriterStreamFormLetsTheCallerRefuseAName()
     {
         var aDoc = Assembly();
-        var aFree = new NCollection_Sequence<XdeDoc_Label>();
+        var aFree = new NCollection_Sequence<Label>();
         aDoc.GetFreeShapes(aFree);
-        var aComps = new NCollection_Sequence<XdeDoc_Label>();
+        var aComps = new NCollection_Sequence<Label>();
         aDoc.GetComponents(aFree.Value(1), aComps);
-        Assert.True(aDoc.GetReferredShape(aComps.Value(1), out XdeDoc_Label aPart));
+        Assert.True(aDoc.GetReferredShape(aComps.Value(1), out Label aPart));
         aDoc.SetName(aPart, "../../escape"); // a hostile name read from another file
-        var aWriter = new STEPCAFControl_Writer();
-        Assert.True(aWriter.Transfer(aDoc, STEPControl_StepModelType.STEPControl_AsIs, ""));
+        var aWriter = new CafWriter();
+        Assert.True(aWriter.Transfer(aDoc, ModelType.AsIs, ""));
         var aNames = new List<string>();
-        IFSelect_ReturnStatus aStatus = aWriter.WriteStream(new MemoryStream(), n =>
+        ReturnStatus aStatus = aWriter.WriteStream(new MemoryStream(), n =>
         {
             aNames.Add(n);
             return n.Contains("..", StringComparison.Ordinal) ? null : new MemoryStream();
         });
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetError, aStatus);
+        Assert.Equal(ReturnStatus.RetError, aStatus);
         Assert.Contains("../../escape.stp", aNames);
         Assert.Contains("partB.stp", aNames);
     }

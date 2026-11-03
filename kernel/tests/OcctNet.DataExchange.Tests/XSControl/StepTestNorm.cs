@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Header;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using System.Text;
 using OcctNet.DataExchange.Tests.StepGen;
@@ -11,35 +16,35 @@ namespace OcctNet.DataExchange.Tests.XSControl;
 /// (StepFile_Read into the model given), writing the model with StepData_StepWriter (to the context's stream, or its
 /// file), dumping an entity with StepData_StepDumper's level-free form (its label and type).
 /// </summary>
-internal sealed class TestStepLibrary : IFSelect_WorkLibrary
+internal sealed class TestStepLibrary : WorkLibrary
 {
-    public override int ReadFile(string name, ref Interface_InterfaceModel? model, Interface_Protocol? protocol,
+    public override int ReadFile(string name, ref InterfaceModel? model, Protocol? protocol,
                                  ProgressRange theProgress = default)
     {
-        if (protocol is not StepData_Protocol stepro)
+        if (protocol is not StepProtocol stepro)
         {
             return 1;
         }
-        return StepFile_Read.Read(name, null, (StepData_StepModel)model!, stepro, theProgress);
+        return StepFileReader.Read(name, null, (StepModel)model!, stepro, theProgress);
     }
 
-    public override int ReadStream(string theName, Stream theIStream, ref Interface_InterfaceModel? model,
-                                   Interface_Protocol? protocol, ProgressRange theProgress = default)
+    public override int ReadStream(string theName, Stream theIStream, ref InterfaceModel? model,
+                                   Protocol? protocol, ProgressRange theProgress = default)
     {
-        if (protocol is not StepData_Protocol stepro)
+        if (protocol is not StepProtocol stepro)
         {
             return 1;
         }
-        return StepFile_Read.Read(theName, theIStream, (StepData_StepModel)model!, stepro, theProgress);
+        return StepFileReader.Read(theName, theIStream, (StepModel)model!, stepro, theProgress);
     }
 
-    public override bool WriteFile(IFSelect_ContextWrite ctx)
+    public override bool WriteFile(ContextWrite ctx)
     {
-        if (ctx.Model() is not StepData_StepModel stepmodel || ctx.Protocol() is not StepData_Protocol stepro)
+        if (ctx.Model() is not StepModel stepmodel || ctx.Protocol() is not StepProtocol stepro)
         {
             return false;
         }
-        var SW = new StepData_StepWriter(stepmodel);
+        var SW = new StepWriter(stepmodel);
         SW.SendModel(stepro);
         if (ctx.OStream() is { } aStream)
         {
@@ -49,7 +54,7 @@ internal sealed class TestStepLibrary : IFSelect_WorkLibrary
         return SW.Print(aFile);
     }
 
-    public override void DumpEntity(Interface_InterfaceModel? model, Interface_Protocol? protocol, Transient? entity,
+    public override void DumpEntity(InterfaceModel? model, Protocol? protocol, Transient? entity,
                                     TextWriter S, int level)
     {
         S.Write(model!.StringLabel(entity)!.ToCString() + " " + entity!.DynamicTypeName());
@@ -57,7 +62,7 @@ internal sealed class TestStepLibrary : IFSelect_WorkLibrary
 }
 
 /// <summary>A STEP controller for the tests (unit 8F ports STEPControl_Controller), recorded once as "TestSTEP".</summary>
-internal sealed class TestStepController : XSControl_Controller
+internal sealed class TestStepController : Controller
 {
     public static readonly TestStepController Instance = Create();
 
@@ -70,26 +75,26 @@ internal sealed class TestStepController : XSControl_Controller
 
     private TestStepController() : base("TestSTEP", "tstep")
     {
-        myAdaptorLibrary = new TestStepLibrary();
-        myAdaptorProtocol = StepRoundTripTests.Protocol();
+        _adaptorLibrary = new TestStepLibrary();
+        _adaptorProtocol = StepRoundTripTests.Protocol();
     }
 
-    public override Interface_InterfaceModel? NewModel()
+    public override InterfaceModel? NewModel()
     {
-        var aModel = new StepData_StepModel();
-        aModel.SetProtocol(myAdaptorProtocol);
+        var aModel = new StepModel();
+        aModel.SetProtocol(_adaptorProtocol);
         return aModel;
     }
 
     /// <summary>Reads a file as STEPControl_Reader::ReadFile does: a new STEP model with its header, then the library.</summary>
-    public static IFSelect_ReturnStatus ReadFile(XSControl_WorkSession WS, string thePath)
+    public static ReturnStatus ReadFile(ExchangeWorkSession WS, string thePath)
     {
-        var aModel = new StepData_StepModel();
+        var aModel = new StepModel();
         // STEPControl_Reader: the model's parameters from the statics (DESTEP's, declared by STEPControl_Controller in
         // unit 8F): here their defaults, with the UTF-8 code page
         aModel.SetSourceCodePage(aModel.InternalParameters.ReadCodePage);
-        new APIHeaderSection_MakeHeader().Apply(aModel);
-        Interface_InterfaceModel? aRead = aModel;
+        new MakeHeader().Apply(aModel);
+        InterfaceModel? aRead = aModel;
         int stat;
         try
         {
@@ -97,11 +102,11 @@ internal sealed class TestStepController : XSControl_Controller
         }
         catch (FailureException)
         {
-            return IFSelect_ReturnStatus.IFSelect_RetFail;
+            return ReturnStatus.RetFail;
         }
-        IFSelect_ReturnStatus status = stat == 0 ? IFSelect_ReturnStatus.IFSelect_RetDone
-                                     : stat < 0 ? IFSelect_ReturnStatus.IFSelect_RetError : IFSelect_ReturnStatus.IFSelect_RetFail;
-        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
+        ReturnStatus status = stat == 0 ? ReturnStatus.RetDone
+                                     : stat < 0 ? ReturnStatus.RetError : ReturnStatus.RetFail;
+        if (status != ReturnStatus.RetDone)
         {
             return status;
         }
@@ -115,7 +120,7 @@ internal sealed class TestStepController : XSControl_Controller
 /// <summary>What tools/xscontrolrec writes for a STEP file (its format, line for line).</summary>
 internal static class XSControlDump
 {
-    private static void DumpList(List<string> O, string theTag, Interface_InterfaceModel M, NCollection_HSequence<Transient>? L)
+    private static void DumpList(List<string> O, string theTag, InterfaceModel M, NCollection_HSequence<Transient>? L)
     {
         if (L is null)
         {
@@ -136,10 +141,10 @@ internal static class XSControlDump
         O.Add($"{theTag} {L.Length()} {aSum}{aFirst}");
     }
 
-    private static void DumpCounter(List<string> O, string theTag, IFSelect_SignatureList C)
+    private static void DumpCounter(List<string> O, string theTag, SignatureList C)
     {
         NCollection_HSequence<TCollection_HAsciiString> aList = C.List()!;
-        O.Add($"{theTag} {aList.Length()} {C.NbNulls()}");
+        O.Add($"{theTag} {aList.Length()} {C.NullCount}");
         for (int i = 1; i <= aList.Length(); i++)
         {
             O.Add($"  {C.NbTimes(aList.Value(i)!.ToCString())} {aList.Value(i)!.ToCString()}");
@@ -149,51 +154,51 @@ internal static class XSControlDump
     private static void Record(List<string> O, string thePath, bool theFull)
     {
         _ = TestStepController.Instance;
-        var WS = new XSControl_WorkSession();
+        var WS = new ExchangeWorkSession();
         Assert.True(WS.SelectNorm("TestSTEP"));
         WS.SetModeStat(theFull);
-        IFSelect_ReturnStatus aStat = TestStepController.ReadFile(WS, thePath);
-        Interface_InterfaceModel? M = WS.Model();
-        int nb = M is null ? 0 : M.NbEntities();
+        ReturnStatus aStat = TestStepController.ReadFile(WS, thePath);
+        InterfaceModel? M = WS.Model();
+        int nb = M is null ? 0 : M.EntityCount;
         O.Add($"{(theFull ? "full" : "lite")} st {(int)aStat} n {nb}");
-        if (aStat != IFSelect_ReturnStatus.IFSelect_RetDone || nb == 0)
+        if (aStat != ReturnStatus.RetDone || nb == 0)
         {
             return;
         }
-        WS.AddNamedItem("rec-roots", new IFSelect_SelectModelRoots());
-        WS.AddNamedItem("rec-shared", new IFSelect_SelectShared());
-        WS.AddNamedItem("rec-sharing", new IFSelect_SelectSharing());
-        WS.AddNamedItem("rec-type", new IFSelect_SignType(true));
+        WS.AddNamedItem("rec-roots", new SelectModelRoots());
+        WS.AddNamedItem("rec-shared", new SelectShared());
+        WS.AddNamedItem("rec-sharing", new SelectSharing());
+        WS.AddNamedItem("rec-type", new SelectionSignType(true));
         if (theFull)
         {
             DumpList(O, "roots", M!, WS.GiveList("rec-roots"));
             DumpList(O, "shared", M!, WS.GiveList("rec-shared rec-roots"));
             DumpList(O, "sharing1", M!, WS.GiveList("rec-sharing", "1"));
-            var aCat = new IFSelect_SignCounter(new IFSelect_SignCategory(), false, false);
+            var aCat = new SignCounter(new SignCategory(), false, false);
             aCat.AddModel(M);
             DumpCounter(O, "categories", aCat);
             return;
         }
         DumpList(O, "roots", M!, WS.GiveList("rec-roots"));
-        var aTypes = new IFSelect_SignCounter(new IFSelect_SignType(false), false, false);
+        var aTypes = new SignCounter(new SelectionSignType(false), false, false);
         aTypes.AddModel(M);
         DumpCounter(O, "types", aTypes);
-        var aValid = new IFSelect_SignCounter(new IFSelect_SignValidity(), false, false);
+        var aValid = new SignCounter(new SignValidity(), false, false);
         aValid.AddModel(M);
         DumpCounter(O, "validity", aValid);
-        Interface_CheckIterator aChl = WS.ModelCheckList();
+        CheckIterator aChl = WS.ModelCheckList();
         int aNbItems = 0, aNbFails = 0, aNbWarns = 0;
         for (aChl.Start(); aChl.More(); aChl.Next())
         {
             aNbItems++;
-            aNbFails += aChl.Value()!.NbFails();
-            aNbWarns += aChl.Value()!.NbWarnings();
+            aNbFails += aChl.Value()!.FailCount;
+            aNbWarns += aChl.Value()!.WarningCount;
         }
         O.Add($"checks {aNbItems} {aNbFails} {aNbWarns}");
         for (aChl.Start(); aChl.More(); aChl.Next())
         {
-            Interface_Check aCh = aChl.Value()!;
-            O.Add($"  {aChl.Number()} {aCh.NbFails()} {aCh.NbWarnings()} {(aCh.NbFails() > 0 ? aCh.CFail(1) : aCh.CWarning(1))}");
+            FrameworkCheck aCh = aChl.Value()!;
+            O.Add($"  {aChl.Number()} {aCh.FailCount} {aCh.WarningCount} {(aCh.FailCount > 0 ? aCh.CFail(1) : aCh.CWarning(1))}");
         }
         int aMid = (nb + 1) / 2;
         TCollection_HAsciiString? aLab = M!.StringLabel(M.Value(aMid));

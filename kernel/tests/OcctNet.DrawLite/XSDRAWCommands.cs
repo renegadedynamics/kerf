@@ -6,12 +6,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Documents;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
-using static Occt.IFSelect_ReturnStatus;
+using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 
 namespace OcctNet.DrawLite;
 
@@ -36,7 +39,7 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class XSDRAWCommands
 {
-    private static readonly ConditionalWeakTable<DrawInterpreter, XSControl_WorkSession> theSessions = new();
+    private static readonly ConditionalWeakTable<DrawInterpreter, global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession> theSessions = new();
 
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -94,26 +97,26 @@ internal static class XSDRAWCommands
     }
 
     /// <summary>XSDRAW::Session: the interpreter's session, made the first time with the statics of STEP declared.</summary>
-    public static XSControl_WorkSession Session(DrawInterpreter theDI) => theSessions.GetValue(theDI, _ => NewSession());
+    public static global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession Session(DrawInterpreter theDI) => theSessions.GetValue(theDI, _ => NewSession());
 
-    private static XSControl_WorkSession NewSession()
+    private static global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession NewSession()
     {
-        var aSession = new XSControl_WorkSession();
-        aSession.SetVars(new XSControl_Vars());
-        Interface_StaticSet aStatics = aSession.Statics();
+        var aSession = new global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession();
+        aSession.SetVars(new global::Kerf.Engine.Exchange.Framework.Vars());
+        global::Kerf.Engine.Exchange.Framework.StaticSet aStatics = aSession.Statics();
         // XSDRAW::LoadSession calls XSAlgo::Init; XSDRAWSTEP::Factory STEPCAFControl_Controller::Init, which records
         // the STEP controller and declares its statics (decision 1274)
-        XSAlgo.Init(aStatics);
-        STEPCAFControl_Controller.Init();
-        new STEPCAFControl_Controller().InitStatics(aStatics);
+        global::Kerf.Engine.Exchange.Framework.XSAlgo.Init(aStatics);
+        CafController.Init();
+        new CafController().InitStatics(aStatics);
         return aSession;
     }
 
     /// <summary>XSDRAW::GetLengthUnit without a document: the session's <c>xstep.cascade.unit</c>, in millimetres.</summary>
-    public static double GetLengthUnit(DrawInterpreter theDI) => UnitsMethods.GetCasCadeLengthUnit(Session(theDI).Statics());
+    public static double GetLengthUnit(DrawInterpreter theDI) => global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetCasCadeLengthUnit(Session(theDI).Statics());
 
     /// <summary>XSControl_FuncShape::FileAndVar: the file (else the session's loaded one) and the variable's name.</summary>
-    public static bool FileAndVar(XSControl_WorkSession session, string? file, string? var, string def, out string resfile, out string resvar)
+    public static bool FileAndVar(global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession session, string? file, string? var, string def, out string resfile, out string resvar)
     {
         bool iafic = true;
         if (file is not null && (file.Length == 0 || file == "."))
@@ -170,14 +173,14 @@ internal static class XSDRAWCommands
         }
     }
 
-    private static int Status(IFSelect_ReturnStatus theStatus) => theStatus is IFSelect_ReturnStatus.IFSelect_RetError or IFSelect_ReturnStatus.IFSelect_RetFail ? 1 : 0;
+    private static int Status(ReturnStatus theStatus) => theStatus is ReturnStatus.RetError or ReturnStatus.RetFail ? 1 : 0;
 
     // IFSelect_SessionPilot::CommandPart: the words from the given one on
     private static string CommandPart(IReadOnlyList<string> argv, int numword) =>
         numword < argv.Count ? string.Join(" ", argv.Skip(numword)) : "";
 
     // IFSelect_SessionPilot::Number: an entity's number from its label (OCCT prints a refused label to cout)
-    private static int Number(DrawInterpreter theDI, XSControl_WorkSession WS, string val)
+    private static int Number(DrawInterpreter theDI, global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS, string val)
     {
         int num = WS.NumberFromLabel(val);
         if (num < 0)
@@ -192,7 +195,7 @@ internal static class XSDRAWCommands
     // fun3: Read File -> Load Model (the file read from Draw-lite's files)
     private static int xload(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
         string arg1 = Arg(argv, 1);
         var sout = new StringBuilder();
@@ -215,26 +218,26 @@ internal static class XSDRAWCommands
             return 1;
         }
 
-        IFSelect_ReturnStatus status = theDI.Files.TryReadBytes(arg1, out byte[] aBytes)
+        ReturnStatus status = theDI.Files.TryReadBytes(arg1, out byte[] aBytes)
             ? WS.ReadStream(arg1, new MemoryStream(aBytes))
             : WS.ReadFile(arg1);
         // status: 0 OK, 1 read error, 2 Fail(try/catch),
         //          -1 file not found, -2 reading done but empty result
         switch (status)
         {
-            case IFSelect_ReturnStatus.IFSelect_RetVoid:
+            case ReturnStatus.RetVoid:
                 sout.Append("file:").Append(arg1).Append(" gives empty result").Append('\n');
                 break;
-            case IFSelect_ReturnStatus.IFSelect_RetError:
+            case ReturnStatus.RetError:
                 sout.Append("file:").Append(arg1).Append(" could not be opened").Append('\n');
                 break;
-            case IFSelect_ReturnStatus.IFSelect_RetDone:
+            case ReturnStatus.RetDone:
                 sout.Append("file:").Append(arg1).Append(" read").Append('\n');
                 break;
-            case IFSelect_ReturnStatus.IFSelect_RetFail:
+            case ReturnStatus.RetFail:
                 sout.Append("file:").Append(arg1).Append(" : error while reading").Append('\n');
                 break;
-            case IFSelect_ReturnStatus.IFSelect_RetStop:
+            case ReturnStatus.RetStop:
                 sout.Append("file:").Append(arg1).Append(" : EXCEPTION while reading").Append('\n');
                 break;
             default:
@@ -242,7 +245,7 @@ internal static class XSDRAWCommands
                 break;
         }
         Send(di, sout);
-        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
+        if (status != ReturnStatus.RetDone)
         {
             return Status(status);
         }
@@ -254,7 +257,7 @@ internal static class XSDRAWCommands
     // fun4: Write All (to Draw-lite's file overlay)
     private static int writeall(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         var sout = new StringBuilder();
         if (argv.Count < 2)
         {
@@ -263,8 +266,8 @@ internal static class XSDRAWCommands
             return 1;
         }
         var aStream = new MemoryStream();
-        IFSelect_ReturnStatus aStatus = WS.SendAll(argv[1], false, aStream);
-        if (aStream.Length > 0 || aStatus == IFSelect_ReturnStatus.IFSelect_RetDone)
+        ReturnStatus aStatus = WS.SendAll(argv[1], false, aStream);
+        if (aStream.Length > 0 || aStatus == ReturnStatus.RetDone)
         {
             theDI.Files.WriteBytes(argv[1], aStream.ToArray());
         }
@@ -274,7 +277,7 @@ internal static class XSDRAWCommands
     // fun6: Write Entite(s)
     private static int writeent(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
         var sout = new StringBuilder();
         if (argc < 3)
@@ -284,7 +287,7 @@ internal static class XSDRAWCommands
             return 1;
         }
         int ko = 0;
-        var sp = new IFSelect_SelectPointed();
+        var sp = new SelectPointed();
         for (int ia = 2; ia < argc; ia++)
         {
             int id = Number(theDI, WS, argv[ia]);
@@ -314,8 +317,8 @@ internal static class XSDRAWCommands
             return 1;
         }
         var aStream = new MemoryStream();
-        IFSelect_ReturnStatus aStatus = WS.SendSelected(argv[1], sp, false, aStream);
-        if (aStream.Length > 0 || aStatus == IFSelect_ReturnStatus.IFSelect_RetDone)
+        ReturnStatus aStatus = WS.SendSelected(argv[1], sp, false, aStream);
+        if (aStream.Length > 0 || aStatus == ReturnStatus.RetDone)
         {
             theDI.Files.WriteBytes(argv[1], aStream.ToArray());
         }
@@ -326,9 +329,9 @@ internal static class XSDRAWCommands
     // fun9: List Types, through IFSelect_SessionPilot::ExecuteCounter
     private static int listtypes(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
-        IFSelect_Signature? signtype = WS.SignType() ?? new IFSelect_SignType();
-        var counter = new IFSelect_SignCounter(signtype, false);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
+        Signature? signtype = WS.SignType() ?? new SelectionSignType();
+        var counter = new SignCounter(signtype, false);
         counter.Clear();
         if (argv.Count <= 1)
         {
@@ -346,7 +349,7 @@ internal static class XSDRAWCommands
             counter.AddWithGraph(list, WS.Graph());
         }
         var aText = new StringWriter();
-        counter.PrintList(aText, WS.Model(), IFSelect_PrintCount.IFSelect_ListByItem);
+        counter.PrintList(aText, WS.Model(), PrintCount.ListByItem);
         di.Append(aText.ToString()).Append("\n");
         return 0;
     }
@@ -354,7 +357,7 @@ internal static class XSDRAWCommands
     // fun11: DumpModel (Data)
     private static int data(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         string arg1 = Arg(argv, 1);
         int niv = 0;
         var sout = new StringBuilder();
@@ -415,9 +418,9 @@ internal static class XSDRAWCommands
     // fundumpent: entity n0 or id [+ level]
     private static int entity(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
-        IFSelect_WorkLibrary WL = WS.WorkLibrary()!;
+        WorkLibrary WL = WS.WorkLibrary()!;
         int levdef = 0, levmax = 10, level;
         WL.DumpLevels(out levdef, out levmax);
         var sout = new StringBuilder();
@@ -467,7 +470,7 @@ internal static class XSDRAWCommands
             var aText = new StringWriter();
             WL.DumpEntity(WS.Model(), WS.Protocol(), ent, aText, level);
 
-            Interface_CheckIterator chl = WS.CheckOne(ent);
+            global::Kerf.Engine.Exchange.Framework.CheckIterator chl = WS.CheckOne(ent);
             if (!chl.IsEmpty(false))
             {
                 chl.Print(aText, WS.Model(), false);
@@ -481,8 +484,8 @@ internal static class XSDRAWCommands
     // fun27: Param(Value) on the interpreter's parameter set
     private static int param(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
-        Interface_StaticSet aStatics = WS.Statics();
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.StaticSet aStatics = WS.Statics();
         int argc = argv.Count;
         string arg1 = Arg(argv, 1);
         string arg2 = Arg(argv, 2);
@@ -595,8 +598,8 @@ internal static class XSDRAWCommands
     // 1264, rather than the one recorded process-wide); the others aren't ported
     private static int xnorm(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
-        XSControl_Controller? control = WS.NormAdaptor();
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.Controller? control = WS.NormAdaptor();
         var sout = new StringBuilder();
         sout.Append(argv.Count == 1 ? "Current Norm. xnorm newnorm to change" : "Current Norm :").Append('\n');
         if (control is null)
@@ -614,13 +617,13 @@ internal static class XSDRAWCommands
             return 0; // IFSelect_RetVoid
         }
 
-        if (XSControl_Controller.Recorded(argv[1]) is not STEPControl_Controller)
+        if (global::Kerf.Engine.Exchange.Framework.Controller.Recorded(argv[1]) is not StepController)
         {
             sout.Append(" No norm named : ").Append(argv[1]).Append('\n');
             Send(di, sout);
             return 1;
         }
-        STEPControl_Controller.SelectFor(WS);
+        StepController.SelectFor(WS);
         sout.Append("new norm : ").Append(WS.NormAdaptor()!.Name()).Append('\n');
         Send(di, sout);
         return 0;
@@ -628,11 +631,11 @@ internal static class XSDRAWCommands
 
     private static int newmodel(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         // OCCT's Draw session has the STEP norm once a STEP command ran; Draw-lite's selects it here if none is
         if (WS.NormAdaptor() is null)
         {
-            STEPControl_Controller.SelectFor(WS);
+            StepController.SelectFor(WS);
         }
         if (WS.NewModel() is not null)
         {
@@ -645,10 +648,10 @@ internal static class XSDRAWCommands
     // XSControl_tpstat
     private static int tpstat(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
         string arg1 = Arg(argv, 1);
-        Transfer_TransientProcess? TP = WS.TransferReader()?.TransientProcess();
+        global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess? TP = WS.TransferReader()?.TransientProcess();
         var sout = new StringBuilder();
         if (TP is null)
         {
@@ -775,10 +778,10 @@ internal static class XSDRAWCommands
         {
             sout.Append("Model differs from the session");
         }
-        NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? list = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
+        NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? list = Functions.GiveList(WS, CommandPart(argv, 2));
         // PrintStatsOnList sends its own message (the process's messenger) before the command's
         var aStats = new StringWriter();
-        XSControl_TransferReader.PrintStatsOnList(TP, list, mod1, mod2, aStats);
+        global::Kerf.Engine.Exchange.Framework.TransferReader.PrintStatsOnList(TP, list, mod1, mod2, aStats);
         if (aStats.GetStringBuilder().Length > 0)
         {
             di.Append(aStats.ToString()).Append("\n");
@@ -790,10 +793,10 @@ internal static class XSDRAWCommands
     // XSControl_tpdraw
     private static int tpdraw(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
         string arg1 = Arg(argv, 1), arg2 = Arg(argv, 2), arg3 = Arg(argv, 3);
-        Transfer_TransientProcess? TP = WS.TransferReader()?.TransientProcess();
+        global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess? TP = WS.TransferReader()?.TransientProcess();
         var sout = new StringBuilder();
         if (TP is null)
         {
@@ -828,7 +831,7 @@ internal static class XSDRAWCommands
             }
             else
             {
-                num = IFSelect_Functions.GiveEntityNumber(WS, arg1);
+                num = Functions.GiveEntityNumber(WS, arg1);
             }
         }
         else
@@ -839,18 +842,18 @@ internal static class XSDRAWCommands
             }
             else
             {
-                num = IFSelect_Functions.GiveEntityNumber(WS, arg2);
+                num = Functions.GiveEntityNumber(WS, arg2);
             }
         }
 
         int nbvar = 0;
-        Transfer_Binder? binder = null;
+        global::Kerf.Engine.Exchange.Framework.Transfer.Binder? binder = null;
         global::Kerf.Engine.Foundation.Transient? ent;
         Shape sh = new();
         string nomvar;
 
         int n1, n2, i, max = 0, index = 0;
-        Interface_InterfaceModel? model = TP.Model();
+        global::Kerf.Engine.Exchange.Framework.InterfaceModel? model = TP.Model();
         if (model is null)
         {
             if (mode == 0)
@@ -863,17 +866,17 @@ internal static class XSDRAWCommands
         if (mode == 0)
         {
             sout.Append("Model entity");
-            max = model!.NbEntities();
+            max = model!.EntityCount;
         }
         if (mode == 1)
         {
             sout.Append("Transfer item");
-            max = TP.NbMapped();
+            max = TP.MappedCount;
         }
         if (mode == 2)
         {
             sout.Append("Transfer root");
-            max = TP.NbRoots();
+            max = TP.RootCount;
         }
         if (tout)
         {
@@ -931,7 +934,7 @@ internal static class XSDRAWCommands
                 }
                 continue;
             }
-            if (!binder!.HasResult())
+            if (!binder!.HasResult)
             {
                 if (!tout)
                 {
@@ -939,7 +942,7 @@ internal static class XSDRAWCommands
                 }
                 continue;
             }
-            sh = TransferBRep.ShapeResult(binder);
+            sh = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeResult(binder);
             if (!sh.IsNull)
             {
                 nbvar++;
@@ -968,9 +971,9 @@ internal static class XSDRAWCommands
                 theDI.SetShape(nomvar, sh);
                 continue;
             }
-            if (binder is TransferBRep_ShapeListBinder slb)
+            if (binder is global::Kerf.Engine.Exchange.Framework.Transfer.ShapeListBinder slb)
             {
-                int nbs = slb.NbShapes();
+                int nbs = slb.ShapeCount;
                 if (tout)
                 {
                     sout.Append("[ ").Append(i).Append(" ]:");
@@ -1005,7 +1008,7 @@ internal static class XSDRAWCommands
                 sout.Append('\n');
                 continue;
             }
-            if (binder is Transfer_SimpleBinderOfTransient trb)
+            if (binder is global::Kerf.Engine.Exchange.Framework.Transfer.SimpleBinderOfTransient trb)
             {
                 global::Kerf.Engine.Foundation.Transient? resu = trb.Result();
                 if (resu is null)
@@ -1039,9 +1042,9 @@ internal static class XSDRAWCommands
     // XSControl_tpcompound
     private static int tpcompound(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        XSControl_WorkSession WS = Session(theDI);
+        global::Kerf.Engine.Exchange.Framework.ExchangeWorkSession WS = Session(theDI);
         int argc = argv.Count;
-        Transfer_TransientProcess? TP = WS.TransferReader()?.TransientProcess();
+        global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess? TP = WS.TransferReader()?.TransientProcess();
         var sout = new StringBuilder();
         if (TP is null)
         {
@@ -1059,18 +1062,18 @@ internal static class XSDRAWCommands
         NCollection_HSequence<Shape>? list;
         if (argc == 2)
         {
-            list = TransferBRep.Shapes(TP);
+            list = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.Shapes(TP);
         }
         else
         {
-            NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? lise = IFSelect_Functions.GiveList(WS, CommandPart(argv, 2));
+            NCollection_HSequence<global::Kerf.Engine.Foundation.Transient>? lise = Functions.GiveList(WS, CommandPart(argv, 2));
             if (lise is null)
             {
                 sout.Append("Not a valid entity list : ").Append(CommandPart(argv, 2)).Append('\n');
                 Send(di, sout);
                 return 1;
             }
-            list = TransferBRep.Shapes(TP, lise);
+            list = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.Shapes(TP, lise);
             sout.Append(lise.Length()).Append(" Entities, ");
         }
         if (list is null)

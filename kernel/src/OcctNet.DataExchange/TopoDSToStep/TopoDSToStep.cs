@@ -3,15 +3,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
-using static Occt.TopoDSToStep_BuilderError;
-using static Occt.TopoDSToStep_MakeEdgeError;
-using static Occt.TopoDSToStep_MakeFaceError;
-using static Occt.TopoDSToStep_MakeVertexError;
-using static Occt.TopoDSToStep_MakeWireError;
+using Occt;
+using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
+using static Kerf.Engine.Exchange.Step.Export.MakeEdgeError;
+using static Kerf.Engine.Exchange.Step.Export.MakeFaceError;
+using static Kerf.Engine.Exchange.Step.Export.MakeVertexError;
+using static Kerf.Engine.Exchange.Step.Export.MakeWireError;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>
 /// The mapping from OCCT shapes to AP214 shape representations. The entry points are context dependent:
@@ -21,18 +23,18 @@ namespace Occt;
 /// <remarks>The writers never change the shapes they are given (frozen input is fine).</remarks>
 public static class TopoDSToStep
 {
-    public static TCollection_HAsciiString? DecodeBuilderError(TopoDSToStep_BuilderError E)
+    public static TCollection_HAsciiString? DecodeBuilderError(ExportBuilderError e)
     {
         TCollection_HAsciiString? mess = null;
-        switch (E)
+        switch (e)
         {
-            case TopoDSToStep_BuilderError.TopoDSToStep_BuilderDone:
+            case ExportBuilderError.BuilderDone:
                 mess = new TCollection_HAsciiString("Builder Done");
                 break;
-            case TopoDSToStep_BuilderError.TopoDSToStep_NoFaceMapped:
+            case ExportBuilderError.NoFaceMapped:
                 mess = new TCollection_HAsciiString("None of the Shell Faces has been mapped");
                 break;
-            case TopoDSToStep_BuilderError.TopoDSToStep_BuilderOther:
+            case ExportBuilderError.BuilderOther:
                 mess = new TCollection_HAsciiString("Other Error in Builder");
                 break;
         }
@@ -40,24 +42,24 @@ public static class TopoDSToStep
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeFaceError(TopoDSToStep_MakeFaceError E)
+    public static TCollection_HAsciiString? DecodeFaceError(MakeFaceError e)
     {
         TCollection_HAsciiString? mess = null;
-        switch (E)
+        switch (e)
         {
-            case TopoDSToStep_MakeFaceError.TopoDSToStep_FaceDone:
+            case MakeFaceError.FaceDone:
                 mess = new TCollection_HAsciiString("Face Done");
                 break;
-            case TopoDSToStep_MakeFaceError.TopoDSToStep_FaceOther:
+            case MakeFaceError.FaceOther:
                 mess = new TCollection_HAsciiString("Other Error in Make STEP face");
                 break;
-            case TopoDSToStep_MakeFaceError.TopoDSToStep_InfiniteFace:
+            case MakeFaceError.InfiniteFace:
                 mess = new TCollection_HAsciiString("The Face has no Outer Wire");
                 break;
-            case TopoDSToStep_MakeFaceError.TopoDSToStep_NonManifoldFace:
+            case MakeFaceError.NonManifoldFace:
                 mess = new TCollection_HAsciiString("The Face is Internal or External");
                 break;
-            case TopoDSToStep_MakeFaceError.TopoDSToStep_NoWireMapped:
+            case MakeFaceError.NoWireMapped:
                 mess = new TCollection_HAsciiString("None of the Face Wires has been mapped");
                 break;
         }
@@ -65,18 +67,18 @@ public static class TopoDSToStep
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeWireError(TopoDSToStep_MakeWireError E)
+    public static TCollection_HAsciiString? DecodeWireError(MakeWireError e)
     {
         TCollection_HAsciiString? mess = null;
-        switch (E)
+        switch (e)
         {
-            case TopoDSToStep_MakeWireError.TopoDSToStep_WireDone:
+            case MakeWireError.WireDone:
                 mess = new TCollection_HAsciiString("Wire Done");
                 break;
-            case TopoDSToStep_MakeWireError.TopoDSToStep_WireOther:
+            case MakeWireError.WireOther:
                 mess = new TCollection_HAsciiString("Other Error in Make STEP wire");
                 break;
-            case TopoDSToStep_MakeWireError.TopoDSToStep_NonManifoldWire:
+            case MakeWireError.NonManifoldWire:
                 mess = new TCollection_HAsciiString("The Wire is Internal or External");
                 break;
         }
@@ -84,18 +86,18 @@ public static class TopoDSToStep
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeEdgeError(TopoDSToStep_MakeEdgeError E)
+    public static TCollection_HAsciiString? DecodeEdgeError(MakeEdgeError e)
     {
         TCollection_HAsciiString? mess = null;
-        switch (E)
+        switch (e)
         {
-            case TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeDone:
+            case MakeEdgeError.EdgeDone:
                 mess = new TCollection_HAsciiString("Edge Done");
                 break;
-            case TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeOther:
+            case MakeEdgeError.EdgeOther:
                 mess = new TCollection_HAsciiString("Other Error in Make STEP Edge");
                 break;
-            case TopoDSToStep_MakeEdgeError.TopoDSToStep_NonManifoldEdge:
+            case MakeEdgeError.NonManifoldEdge:
                 mess = new TCollection_HAsciiString("The Edge is Internal or External");
                 break;
         }
@@ -103,15 +105,15 @@ public static class TopoDSToStep
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeVertexError(TopoDSToStep_MakeVertexError E)
+    public static TCollection_HAsciiString? DecodeVertexError(MakeVertexError e)
     {
         TCollection_HAsciiString? mess = null;
-        switch (E)
+        switch (e)
         {
-            case TopoDSToStep_MakeVertexError.TopoDSToStep_VertexDone:
+            case MakeVertexError.VertexDone:
                 mess = new TCollection_HAsciiString("Vertex Done");
                 break;
-            case TopoDSToStep_MakeVertexError.TopoDSToStep_VertexOther:
+            case MakeVertexError.VertexOther:
                 mess = new TCollection_HAsciiString("Other Error in Make STEP Vertex");
                 break;
         }
@@ -120,17 +122,17 @@ public static class TopoDSToStep
     }
 
     /// <summary>Adds an entity to the results (binders) of a shape in the finder process.</summary>
-    public static void AddResult(Transfer_FinderProcess FP, in Shape Shape, Transient? ent)
+    public static void AddResult(FinderProcess fp, in Shape shape, Transient? ent)
     {
-        var result = new Transfer_SimpleBinderOfTransient();
+        var result = new SimpleBinderOfTransient();
         result.SetResult(ent);
 
-        TransferBRep_ShapeMapper mapper = TransferBRep.ShapeMapper(FP, Shape);
-        Transfer_Binder? binder = FP.Find(mapper);
+        ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(fp, shape);
+        Binder? binder = fp.Find(mapper);
 
         if (binder is null)
         {
-            FP.Bind(mapper, result);
+            fp.Bind(mapper, result);
         }
         else
         {
@@ -142,11 +144,11 @@ public static class TopoDSToStep
     /// Adds every entity the tool recorded to the results (binders) in the finder process, in the order the tool
     /// recorded them (OCCT: its map's hash order, decision 1251).
     /// </summary>
-    public static void AddResult(Transfer_FinderProcess FP, TopoDSToStep_Tool Tool)
+    public static void AddResult(FinderProcess fp, ExportTool tool)
     {
-        foreach (KeyValuePair<Shape, Transient> it in Tool.Map())
+        foreach (KeyValuePair<Shape, Transient> it in tool.Map())
         {
-            AddResult(FP, it.Key, it.Value);
+            AddResult(fp, it.Key, it.Value);
         }
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -90,15 +92,15 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
 
     private ReadResult PortRead(string thePath)
     {
-        var aReader = new STEPControl_Reader();
+        var aReader = new StepReader();
         int aStatus = (int)aReader.ReadFile(thePath);
-        if (aStatus != (int)IFSelect_ReturnStatus.IFSelect_RetDone)
+        if (aStatus != (int)ReturnStatus.RetDone)
         {
             return new ReadResult(aStatus, 0, 0, 0, "");
         }
         int aNbRoots = aReader.NbRootsForTransfer();
         int aNbTransferred = aReader.TransferRoots();
-        int aNbShapes = aReader.NbShapes();
+        int aNbShapes = aReader.ShapeCount;
         string aBRep = aNbShapes == 0 ? "" : PortBRep(aReader.OneShape());
         return new ReadResult(aStatus, aNbRoots, aNbTransferred, aNbShapes, aBRep);
     }
@@ -191,14 +193,14 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
     // -----------------------------------------------------------------------------------------------------------------
     // Writing
 
-    private static readonly (STEPControl_StepModelType Port, N.STEPControl_StepModelType Native)[] ModelTypes =
+    private static readonly (ModelType Port, N.STEPControl_StepModelType Native)[] ModelTypes =
     [
-        (STEPControl_StepModelType.STEPControl_AsIs, N.STEPControl_StepModelType.STEPControl_AsIs),
-        (STEPControl_StepModelType.STEPControl_ManifoldSolidBrep, N.STEPControl_StepModelType.STEPControl_ManifoldSolidBrep),
-        (STEPControl_StepModelType.STEPControl_BrepWithVoids, N.STEPControl_StepModelType.STEPControl_BrepWithVoids),
-        (STEPControl_StepModelType.STEPControl_FacetedBrep, N.STEPControl_StepModelType.STEPControl_FacetedBrep),
-        (STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel, N.STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel),
-        (STEPControl_StepModelType.STEPControl_GeometricCurveSet, N.STEPControl_StepModelType.STEPControl_GeometricCurveSet),
+        (ModelType.AsIs, N.STEPControl_StepModelType.STEPControl_AsIs),
+        (ModelType.ManifoldSolidBrep, N.STEPControl_StepModelType.STEPControl_ManifoldSolidBrep),
+        (ModelType.BrepWithVoids, N.STEPControl_StepModelType.STEPControl_BrepWithVoids),
+        (ModelType.FacetedBrep, N.STEPControl_StepModelType.STEPControl_FacetedBrep),
+        (ModelType.ShellBasedSurfaceModel, N.STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel),
+        (ModelType.GeometricCurveSet, N.STEPControl_StepModelType.STEPControl_GeometricCurveSet),
     ];
 
     private static readonly Regex FileNameRecord = new(@"FILE_NAME\(.*?\);\r?\n", RegexOptions.Singleline | RegexOptions.Compiled);
@@ -224,19 +226,19 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         return (aStatus, File.ReadAllText(aFile), aFile);
     }
 
-    private (int Status, string Text, string File) PortWrite(string theBRepFile, STEPControl_StepModelType theMode)
+    private (int Status, string Text, string File) PortWrite(string theBRepFile, ModelType theMode)
     {
         Assert.True(BrepTools.Read(out Shape aShape, theBRepFile));
         string aBefore = BRepTextComparison.Write(aShape);
-        var aWriter = new STEPControl_Writer();
+        var aWriter = new Writer();
         int aStatus = (int)aWriter.Transfer(aShape, theMode);
         Assert.Equal(aBefore, BRepTextComparison.Write(aShape)); // the writer never changes its input
         string aFile = TempFile(".stp");
-        if (aStatus != (int)IFSelect_ReturnStatus.IFSelect_RetDone)
+        if (aStatus != (int)ReturnStatus.RetDone)
         {
             return (aStatus, "", aFile);
         }
-        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, aWriter.Write(aFile));
+        Assert.Equal(ReturnStatus.RetDone, aWriter.Write(aFile));
         return (aStatus, File.ReadAllText(aFile), aFile);
     }
 
@@ -307,7 +309,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
 
         foreach ((string aName, string aFile) in Tape.Budget(anInputs, isSpread: true))
         {
-            foreach ((STEPControl_StepModelType aPortMode, N.STEPControl_StepModelType aNativeMode) in ModelTypes)
+            foreach ((ModelType aPortMode, N.STEPControl_StepModelType aNativeMode) in ModelTypes)
             {
                 string aCase = $"{aName} {aPortMode}";
                 (int Status, string Text, string File) aNative = NativeWrite(aFile, aNativeMode);
@@ -317,7 +319,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
                     Count("write", aCase, $"status: native {aNative.Status}, port {aPort.Status}");
                     continue;
                 }
-                if (aNative.Status != (int)IFSelect_ReturnStatus.IFSelect_RetDone)
+                if (aNative.Status != (int)ReturnStatus.RetDone)
                 {
                     Count("write", aCase, "identical"); // both refuse
                     continue;

@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Step.Ap214;
+using Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Parser;
+using Kerf.Engine.Exchange.Step.Visual;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Text;
@@ -8,7 +13,7 @@ namespace OcctNet.DataExchange.Tests.StepGen;
 
 /// <summary>
 /// Round trips of STEP files through the generated readers and writers (units 8C1 and 8C2): read with
-/// <see cref="StepAP214_Protocol"/> and its modules, written back with the files' own labels, and each record the
+/// <see cref="Ap214Protocol"/> and its modules, written back with the files' own labels, and each record the
 /// protocol recognises compared with the input's, token by token. Differences OCCT's own reading and writing make are
 /// counted under their causes; anything else is unexplained.
 /// </summary>
@@ -17,7 +22,7 @@ internal sealed class StepRoundTrip
     public long Files, Unread, Records, Compared, Same, WrappedStrings;
     /// <summary>The records the protocol doesn't recognise, by type (read as unknown entities, not compared).</summary>
     public readonly SortedDictionary<string, long> Unknown = new(StringComparer.Ordinal);
-    private readonly RWStepAP214_ReadWriteModule myModule = new();
+    private readonly Ap214ReadWriteModule myModule = new();
     public readonly SortedDictionary<string, (long Count, string Example)> Explained = new(StringComparer.Ordinal);
     public readonly SortedDictionary<string, (long Count, string Example)> Unexplained = new(StringComparer.Ordinal);
     public readonly HashSet<string> Types = new(StringComparer.Ordinal);
@@ -40,34 +45,34 @@ internal sealed class StepRoundTrip
     public const string NormalsOutOfRange = "not written: OCCT's writer reads the normals (or control triangles) with rows and columns exchanged, out of range (occt-issues.md, 8C2)";
 
     /// <summary>The entities whose OCCT writer can throw (rows and columns exchanged): tried on a writer of their own first.</summary>
-    private static readonly HashSet<Type> MayThrow = [typeof(StepVisual_ComplexTriangulatedFace), typeof(StepVisual_CubicBezierTriangulatedFace)];
+    private static readonly HashSet<Type> MayThrow = [typeof(ComplexTriangulatedFace), typeof(CubicBezierTriangulatedFace)];
 
     /// <summary>Reads a file with the protocol and writes it back (the DATA records, with the file's labels).</summary>
-    public static string? ReadWrite(string thePath, StepData_Protocol theProtocol) => ReadWrite(thePath, theProtocol, []);
+    public static string? ReadWrite(string thePath, StepProtocol theProtocol) => ReadWrite(thePath, theProtocol, []);
 
-    public static string? ReadWrite(string thePath, StepData_Protocol theProtocol, HashSet<int> theNotWritten)
+    public static string? ReadWrite(string thePath, StepProtocol theProtocol, HashSet<int> theNotWritten)
     {
-        var aModel = new StepData_StepModel();
+        var aModel = new StepModel();
         aModel.SetProtocol(theProtocol);
         using (var aStream = File.OpenRead(thePath))
         {
-            if (StepFile_Read.Read(thePath, aStream, aModel, theProtocol) != 0)
+            if (StepFileReader.Read(thePath, aStream, aModel, theProtocol) != 0)
             {
                 return null;
             }
         }
 
-        var aWriter = new StepData_StepWriter(aModel);
+        var aWriter = new StepWriter(aModel);
         aWriter.LabelMode() = 1;
-        var aLib = new StepData_WriterLib(theProtocol);
-        for (int i = 1; i <= aModel.NbEntities(); i++)
+        var aLib = new WriterLib(theProtocol);
+        for (int i = 1; i <= aModel.EntityCount; i++)
         {
             if (aModel.Value(i) is { } anEnt && MayThrow.Contains(anEnt.GetType()))
             {
                 // a throwing WriteStep leaves the writer inside the record: tried on a writer of its own first
                 try
                 {
-                    new StepData_StepWriter(aModel).SendEntity(i, aLib);
+                    new StepWriter(aModel).SendEntity(i, aLib);
                 }
                 catch (OutOfRangeException)
                 {
@@ -101,7 +106,7 @@ internal sealed class StepRoundTrip
         return aTypes.Length() > 0 && myModule.CaseStep(aTypes) > 0;
     }
 
-    public void Run(string thePath, StepData_Protocol theProtocol)
+    public void Run(string thePath, StepProtocol theProtocol)
     {
         Files++;
         var aNotWritten = new HashSet<int>();

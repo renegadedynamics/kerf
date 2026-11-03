@@ -1,4 +1,13 @@
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Gltf;
+using Kerf.Engine.Exchange.Step;
+using Kerf.Engine.Exchange.Step.Caf;
+using Kerf.Engine.Exchange.Step.Construct;
+using Kerf.Engine.Exchange.Step.Parser;
+using Kerf.Engine.Exchange.Stl.Api;
+using Kerf.Engine.Exchange.ThreeMf;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -21,7 +30,7 @@ internal static partial class Extras
     {
         ArgumentNullException.ThrowIfNull(stream);
         var progress = new ProgressIndicator(cancellationToken);
-        var writer = new StlAPI_Writer();
+        var writer = new ApiWriter();
         writer.SetASCIIMode(ascii);
         var done = writer.Write(meshed, stream, progress.Start());
         cancellationToken.ThrowIfCancellationRequested();
@@ -37,12 +46,12 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
         var progress = new ProgressIndicator(cancellationToken);
-        var stlLimits = new RWStl_ReadLimits
+        var stlLimits = new global::Kerf.Engine.Exchange.Stl.StlReadLimits
         {
             MaxBytes = limits.MaxBytes,
             MaxTriangles = (int)Math.Min(limits.MaxTriangles, int.MaxValue),
         };
-        var mesh = RWStl.ReadFile(stream, Math.PI / 2.0, progress.Start(), stlLimits);
+        var mesh = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(stream, Math.PI / 2.0, progress.Start(), stlLimits);
         cancellationToken.ThrowIfCancellationRequested();
         if (mesh is null || mesh.TriangleCount == 0)
             throw new InvalidDataException("The STL data holds no triangles, or is larger than the limits");
@@ -76,7 +85,7 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(stream);
         var progress = new ProgressIndicator(cancellationToken);
-        var writer = new RWGltf_TreeWriter(new RWGltf_WriteOptions { InputLengthUnit = unitInMetres, Generator = "build123d.NET" });
+        var writer = new GltfTreeWriter(new GltfWriteOptions { InputLengthUnit = unitInMetres, Generator = "build123d.NET" });
         var tree = ToTree(root);
         bool done;
         if (binary)
@@ -107,7 +116,7 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(stream);
         var progress = new ProgressIndicator(cancellationToken);
-        var writer = new RW3mf_TreeWriter(new RW3mf_WriteOptions { InputLengthUnit = unitInMetres });
+        var writer = new TreeWriter(new WriteOptions { InputLengthUnit = unitInMetres });
         var done = writer.Write(ToTree(root), stream, progress.Start());
         cancellationToken.ThrowIfCancellationRequested();
         return done;
@@ -123,10 +132,10 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
         var progress = new ProgressIndicator(cancellationToken);
-        var options = new RWGltf_ReadOptions
+        var options = new ReadOptions
         {
             OutputLengthUnit = unitInMetres,
-            Limits = RWGltf_ReadLimits.Default with
+            Limits = ReadLimits.Default with
             {
                 MaxBytes = limits.MaxBytes,
                 MaxNodes = limits.MaxNodes,
@@ -134,7 +143,7 @@ internal static partial class Extras
                 MaxTriangles = limits.MaxTriangles,
             },
         };
-        var reader = new RWGltf_TreeReader(options);
+        var reader = new TreeReader(options);
         var tree = reader.Read(stream, null, progress.Start());
         cancellationToken.ThrowIfCancellationRequested();
         if (tree is null)
@@ -151,15 +160,15 @@ internal static partial class Extras
     /// (external references) is refused unless <paramref name="externalFiles"/>, when they are read from the folder of
     /// <paramref name="name"/>, and only from inside it.
     /// </summary>
-    public static IFSelect_ReturnStatus ReadStep(string name, Stream stream, ExchangeReadLimits limits, bool externalFiles,
+    public static ReturnStatus ReadStep(string name, Stream stream, ExchangeReadLimits limits, bool externalFiles,
                                                  out ExchangeNode? root, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(limits);
         root = null;
-        var stepLimits = new StepFile_ReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth };
-        var reader = new STEPCAFControl_Reader();
+        var stepLimits = new ParserReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth };
+        var reader = new CafReader();
         // build123d's modes: colours, names and layers
         reader.SetColorMode(true);
         reader.SetNameMode(true);
@@ -167,19 +176,19 @@ internal static partial class Extras
         // OCCT.NET reads no external file from a stream unless given a resolver (its decision 1285): these are read
         // from the file's folder and refused outside it
         if (externalFiles)
-            reader.SetExternFileResolver(STEPCAFControl_Reader.FolderResolver(Path.GetDirectoryName(Path.GetFullPath(name))!));
+            reader.SetExternFileResolver(CafReader.FolderResolver(Path.GetDirectoryName(Path.GetFullPath(name))!));
         var status = reader.ReadStream(name, stream, new ProgressIndicator(cancellationToken).Start(), stepLimits);
         cancellationToken.ThrowIfCancellationRequested();
-        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
-            return (IFSelect_ReturnStatus)status;
+        if (status != ReturnStatus.RetDone)
+            return (ReturnStatus)status;
         if (!externalFiles)
         {
             // OCCT reads a file's external references from the disk while transferring: never for data from a stream
-            var references = new STEPConstruct_ExternRefs(reader.Reader().WS()!);
-            if (references.LoadExternRefs() && references.NbExternRefs() > 0)
-                throw new InvalidDataException($"{name} refers to {references.NbExternRefs()} other STEP file(s), which aren't read from a stream");
+            var references = new ExternRefs(reader.Reader().WS()!);
+            if (references.LoadExternRefs() && references.ExternRefCount > 0)
+                throw new InvalidDataException($"{name} refers to {references.ExternRefCount} other STEP file(s), which aren't read from a stream");
         }
-        var document = new XdeDoc_Document();
+        var document = new ExchangeDocument();
         reader.Transfer(document, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         var roots = document.ToTree().Roots.Select(r => FromInstance(r, productNames: true)).ToList();
@@ -189,7 +198,7 @@ internal static partial class Extras
             1 => roots[0],
             _ => ExchangeNode.Assembly(roots),
         };
-        return IFSelect_ReturnStatus.IFSelect_RetDone;
+        return ReturnStatus.RetDone;
     }
 
     /// <summary>
@@ -204,10 +213,10 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(settings);
         // The shapes' unit is the file's (XCAF's length unit, in metres)
-        var unit = UnitsMethods.GetLengthUnitByFactorValue(settings.UnitInMillimetres);
-        var tree = ToTree(root).WithLengthUnit(new XdeDoc_LengthUnit(UnitsMethods.DumpLengthUnit(unit), settings.UnitInMillimetres / 1000.0));
-        var document = XdeDoc_Document.FromTree(tree);
-        var writer = new STEPCAFControl_Writer();
+        var unit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetLengthUnitByFactorValue(settings.UnitInMillimetres);
+        var tree = ToTree(root).WithLengthUnit(new DocumentLengthUnit(global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(unit), settings.UnitInMillimetres / 1000.0));
+        var document = ExchangeDocument.FromTree(tree);
+        var writer = new CafWriter();
         writer.SetColorMode(true);
         writer.SetNameMode(true);
         writer.SetLayerMode(true);
@@ -216,36 +225,36 @@ internal static partial class Extras
         parameters.InitFromStatic(writer.Writer().WS().Statics());
         parameters.WriteUnit = unit;
         parameters.WriteSurfaceCurMode = settings.WritePcurves;
-        parameters.WritePrecisionMode = (DESTEP_Parameters.WriteMode_PrecisionMode)settings.PrecisionMode;
-        var done = writer.Transfer(document, in parameters, STEPControl_StepModelType.STEPControl_AsIs, null,
+        parameters.WritePrecisionMode = (Parameters.WriteMode_PrecisionMode)settings.PrecisionMode;
+        var done = writer.Transfer(document, in parameters, ModelType.AsIs, null,
                                    new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
-        return done && writer.WriteStream(stream) == IFSelect_ReturnStatus.IFSelect_RetDone;
+        return done && writer.WriteStream(stream) == ReturnStatus.RetDone;
     }
 
     // The writers' tree: a product per part or assembly, those of the same shape, name and colour shared (as XCAF's
     // AddShape shares a compound's equal shapes), so a part placed many times is written once. Parts of one shape with
     // other names or colours get copies of it: STEP's writer maps shapes to products, so two products of one shape
     // would be written as one, with the last name.
-    private static XdeDoc_Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Products()));
+    private static Tree ToTree(ExchangeNode root) => new(ToInstance(root, new Products()));
 
     private readonly record struct ProductKey(object TShape, Orientation Orientation, string? Name, (double, double, double, double)? Color);
 
     private sealed class Products
     {
-        public readonly Dictionary<ProductKey, XdeDoc_Product> ByKey = [];
+        public readonly Dictionary<ProductKey, DocumentProduct> ByKey = [];
         public readonly HashSet<object> Shapes = new(ReferenceEqualityComparer.Instance);
     }
 
-    private static XdeDoc_Instance ToInstance(ExchangeNode node, Products products)
+    private static Instance ToInstance(ExchangeNode node, Products products)
     {
         if (node.Shape is not { } shape)
         {
             var location = node.Location ?? new Placement();
-            var assembly = XdeDoc_Product.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products)));
+            var assembly = DocumentProduct.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products)));
             if (node.Color is { } c)
-                assembly = assembly.WithColor(XdeDoc_ColorType.XdeDoc_ColorSurf, Rgba(c));
-            return new XdeDoc_Instance(assembly, location);
+                assembly = assembly.WithColor(ColorType.ColorSurf, Rgba(c));
+            return new Instance(assembly, location);
         }
         // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
         var origin = shape.Located(new Placement());
@@ -254,16 +263,16 @@ internal static partial class Extras
         {
             if (!products.Shapes.Add(key.TShape))
                 origin = new Copy(origin).Shape();
-            product = XdeDoc_Product.Part(origin, node.Name);
+            product = DocumentProduct.Part(origin, node.Name);
             if (node.Color is { } c)
             {
                 // A colour of faces, or of curves for a shape without faces
                 bool faces = new Explorer(origin, global::Kerf.Topology.ShapeType.Face).More();
-                product = product.WithColor(faces ? XdeDoc_ColorType.XdeDoc_ColorSurf : XdeDoc_ColorType.XdeDoc_ColorCurv, Rgba(c));
+                product = product.WithColor(faces ? ColorType.ColorSurf : ColorType.ColorCurv, Rgba(c));
             }
             products.ByKey[key] = product;
         }
-        return new XdeDoc_Instance(product, shape.Location());
+        return new Instance(product, shape.Location());
     }
 
     private static ColorWithAlpha Rgba((double R, double G, double B, double A) c)
@@ -272,7 +281,7 @@ internal static partial class Extras
     // A node of the tree read: named by its instance, else its product (glTF's nodes name instances), or by its
     // product, else its instance, as build123d names STEP's components (STEP's instance names are the occurrences'
     // identifiers)
-    private static ExchangeNode FromInstance(XdeDoc_Instance instance, bool productNames)
+    private static ExchangeNode FromInstance(Instance instance, bool productNames)
     {
         var name = productNames ? instance.Product.Name ?? instance.Name : instance.DisplayName;
         var product = instance.Product;

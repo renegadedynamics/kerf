@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -13,7 +14,7 @@ namespace OcctNet.DrawLite;
 
 /// <summary>
 /// XDEDRAW's general and shape commands (unit 8G1) over Draw-lite's documents (<see cref="DrawDocument"/>, an
-/// <see cref="XdeDoc_Document"/> under a name): XCAF's tools are the document's methods of the same names
+/// <see cref="ExchangeDocument"/> under a name): XCAF's tools are the document's methods of the same names
 /// (decision 1231). Left out (decision 1259): <c>XSave</c>, <c>XOpen</c> (OCAF storage), <c>XShow</c>,
 /// <c>XWdump</c>, <c>XSetPrs</c>, <c>XShowFaceBoundary</c>, <c>XSetTransparency</c>, <c>XAttributeValue</c>,
 /// <c>XTestDoc</c>, <c>XRescaleGeometry</c> (XCAFDoc_Editor), the SHUO commands, <c>XSetLocation</c>,
@@ -58,9 +59,9 @@ internal static class XDEDRAWCommands
     }
 
     // DDocStd::GetDocument (complaining) and the command's own message
-    internal static XdeDoc_Document? Doc(DrawInterpreter theDI, DrawResult di, string theName)
+    internal static ExchangeDocument? Doc(DrawInterpreter theDI, DrawResult di, string theName)
     {
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, theName);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, theName);
         if (aDoc is null)
         {
             di.Append(theName).Append(" is not a document\n");
@@ -96,7 +97,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc [int deep (0/1)]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -107,22 +108,22 @@ internal static class XDEDRAWCommands
     }
 
     /// <summary>XCAFDoc_ShapeTool::Dump (deep: with the shapes' TShape and location, by identity here).</summary>
-    internal static string Dump(XdeDoc_Document theDoc, bool deep)
+    internal static string Dump(ExchangeDocument theDoc, bool deep)
     {
         var aLog = new StringBuilder();
-        var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabels = new NCollection_Sequence<Label>();
         theDoc.GetShapes(aLabels);
         if (aLabels.Length() > 0)
         {
             aLog.Append('\n');
         }
-        foreach (XdeDoc_Label aLabel in aLabels)
+        foreach (Label aLabel in aLabels)
         {
             dumpAssembly(theDoc, aLog, aLabel, 0, deep);
         }
         theDoc.GetFreeShapes(aLabels);
         aLog.Append('\n').Append("Free Shapes: ").Append(aLabels.Length().ToString(CultureInfo.InvariantCulture)).Append('\n');
-        foreach (XdeDoc_Label aLabel in aLabels)
+        foreach (Label aLabel in aLabels)
         {
             dumpShape(theDoc, aLog, aLabel, 0, deep);
             aLog.Append('\n');
@@ -131,9 +132,9 @@ internal static class XDEDRAWCommands
     }
 
     // L.Father().Father().Father().IsRoot(): a top-level label 0:1:1:n
-    private static bool isTopLevelEntry(in XdeDoc_Label theLabel) => theLabel.Entry().Count(c => c == ':') == 3;
+    private static bool isTopLevelEntry(in Label theLabel) => theLabel.Entry().Count(c => c == ':') == 3;
 
-    private static void dumpKind(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in Shape theShape)
+    private static void dumpKind(ExchangeDocument theDoc, StringBuilder theLog, in Label theLabel, in Shape theShape)
     {
         if (theDoc.IsAssembly(theLabel))
         {
@@ -153,9 +154,9 @@ internal static class XDEDRAWCommands
         theLog.Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theShape.ShapeType()));
     }
 
-    private static void dumpRefNameDeep(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, in Shape theShape, bool deep)
+    private static void dumpRefNameDeep(ExchangeDocument theDoc, StringBuilder theLog, in Label theLabel, in Shape theShape, bool deep)
     {
-        if (theDoc.GetReferredShape(theLabel, out XdeDoc_Label aReferred))
+        if (theDoc.GetReferredShape(theLabel, out Label aReferred))
         {
             theLog.Append(" (refers to ").Append(aReferred.Entry()).Append(')');
         }
@@ -175,7 +176,7 @@ internal static class XDEDRAWCommands
         }
     }
 
-    private static void dumpAssembly(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, int level, bool deep)
+    private static void dumpAssembly(ExchangeDocument theDoc, StringBuilder theLog, in Label theLabel, int level, bool deep)
     {
         Shape aShape = theDoc.GetShape(theLabel);
         if (aShape.IsNull)
@@ -187,7 +188,7 @@ internal static class XDEDRAWCommands
         theLog.Append(' ').Append(theLabel.Entry());
         dumpRefNameDeep(theDoc, theLog, theLabel, aShape, deep);
         theLog.Append('\n');
-        foreach (XdeDoc_Label aChild in theDoc.Children(theLabel))
+        foreach (Label aChild in theDoc.Children(theLabel))
         {
             dumpAssembly(theDoc, theLog, aChild, level + 1, deep);
         }
@@ -197,7 +198,7 @@ internal static class XDEDRAWCommands
         }
     }
 
-    private static void dumpShape(XdeDoc_Document theDoc, StringBuilder theLog, in XdeDoc_Label theLabel, int level, bool deep)
+    private static void dumpShape(ExchangeDocument theDoc, StringBuilder theLog, in Label theLabel, int level, bool deep)
     {
         if (!theDoc.GetShape(theLabel, out Shape aShape))
         {
@@ -215,7 +216,7 @@ internal static class XDEDRAWCommands
         public int NbCentroidProp, NbVolumeProp, NbAreaProp, NbShapesWithName, NbShapesWithColor, NbShapesWithLayer;
     }
 
-    private static void statAssembly(XdeDoc_Document theDoc, in XdeDoc_Label L, int level, Stat theStat, bool PrintStructMode, DrawResult di)
+    private static void statAssembly(ExchangeDocument theDoc, in Label L, int level, Stat theStat, bool PrintStructMode, DrawResult di)
     {
         if (PrintStructMode)
         {
@@ -238,7 +239,7 @@ internal static class XDEDRAWCommands
             di.Append(" NoName  has attributes: ");
         }
 
-        XdeDoc_ValidationProps? aProps = theDoc.GetValidationProps(L);
+        DocumentValidationProps? aProps = theDoc.GetValidationProps(L);
         if (aProps?.Centroid is not null)
         {
             if (PrintStructMode)
@@ -264,9 +265,9 @@ internal static class XDEDRAWCommands
             theStat.NbAreaProp++;
         }
         // colour by layer (XCAFDoc_ColorTool::IsColorByLayer) isn't kept by Draw-lite's documents
-        if (theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorGen, out ColorWithAlpha col)
-            || theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorSurf, out col)
-            || theDoc.GetColor(L, XdeDoc_ColorType.XdeDoc_ColorCurv, out col))
+        if (theDoc.GetColor(L, ColorType.ColorGen, out ColorWithAlpha col)
+            || theDoc.GetColor(L, ColorType.ColorSurf, out col)
+            || theDoc.GetColor(L, ColorType.ColorCurv, out col))
         {
             if (PrintStructMode)
             {
@@ -295,7 +296,7 @@ internal static class XDEDRAWCommands
         }
 
         theStat.HAI[level]++;
-        foreach (XdeDoc_Label aChild in theDoc.Children(L))
+        foreach (Label aChild in theDoc.Children(L))
         {
             statAssembly(theDoc, aChild, level + 1, theStat, PrintStructMode, di);
         }
@@ -340,14 +341,14 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
 
         bool PrintStructMode = argv.Count == 3;
-        var SeqLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var SeqLabels = new NCollection_Sequence<Label>();
         aDoc.GetShapes(SeqLabels);
         if (SeqLabels.Length() <= 0)
         {
@@ -358,7 +359,7 @@ internal static class XDEDRAWCommands
             di.Append("\nStructure of shapes in the document:\n");
         }
         var aStat = new Stat();
-        foreach (XdeDoc_Label aLabel in SeqLabels)
+        foreach (Label aLabel in SeqLabels)
         {
             statAssembly(aDoc, aLabel, 0, aStat, PrintStructMode, di);
         }
@@ -384,12 +385,12 @@ internal static class XDEDRAWCommands
         di.Append("Number of Volume Props = ").Append(aStat.NbVolumeProp).Append("\n");
         di.Append("Number of Area Props = ").Append(aStat.NbAreaProp).Append("\n");
 
-        var CLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var CLabels = new NCollection_Sequence<Label>();
         aDoc.GetColors(CLabels);
         di.Append("\nNumber of colors = ").Append(CLabels.Length()).Append("\n");
         if (CLabels.Length() > 0)
         {
-            foreach (XdeDoc_Label aLabel in CLabels)
+            foreach (Label aLabel in CLabels)
             {
                 aDoc.GetColor(aLabel, out ColorWithAlpha aColor);
                 di.Append(Color.StringName(aColor.GetRGB().Name())).Append(" ");
@@ -397,12 +398,12 @@ internal static class XDEDRAWCommands
             di.Append("\n");
         }
 
-        var LLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var LLabels = new NCollection_Sequence<Label>();
         aDoc.GetLayerLabels(LLabels);
         di.Append("\nNumber of layers = ").Append(LLabels.Length()).Append("\n");
         if (LLabels.Length() > 0)
         {
-            foreach (XdeDoc_Label aLabel in LLabels)
+            foreach (Label aLabel in LLabels)
             {
                 aDoc.GetLayer(aLabel, out string? layerName);
                 di.Append("\"").Append(layerName ?? "").Append("\" ");
@@ -422,7 +423,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc {unitName|scaleFactor} \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
         if (aDoc is null)
         {
             di.Append("Error: ").Append(argv[1]).Append(" is not a document\n");
@@ -433,19 +434,19 @@ internal static class XDEDRAWCommands
         string anUnitName;
         if (!double.TryParse(anUnit, NumberStyles.Float, CultureInfo.InvariantCulture, out double aValue))
         {
-            UnitsMethods_LengthUnit aTypeUnit = UnitsMethods.LengthUnitFromString(anUnit, false);
-            if (aTypeUnit == UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined)
+            global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit aTypeUnit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.LengthUnitFromString(anUnit, false);
+            if (aTypeUnit == global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Undefined)
             {
                 di.Append("Error: ").Append(anUnit).Append(" is incorrect unit, use m, mm, km, cm, micron, mille, in, min, nin, ft, stat.mile\n");
                 return 1;
             }
             anUnitName = anUnit;
-            anUnitValue = UnitsMethods.GetLengthFactorValue((int)aTypeUnit) * 0.001;
+            anUnitValue = global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetLengthFactorValue((int)aTypeUnit) * 0.001;
         }
         else
         {
             anUnitValue = aValue;
-            anUnitName = UnitsMethods.DumpLengthUnit(anUnitValue, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter);
+            anUnitName = global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(anUnitValue, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Meter);
         }
         aDoc.SetLengthUnit(anUnitValue, anUnitName);
         return 0;
@@ -458,13 +459,13 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc [-scale]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
         if (aDoc is null)
         {
             di.Append("Error: ").Append(argv[1]).Append(" is not a document\n");
             return 1;
         }
-        if (aDoc.LengthUnit is not XdeDoc_LengthUnit aUnits)
+        if (aDoc.LengthUnit is not DocumentLengthUnit aUnits)
         {
             di.Append("Error: Document doesn't contain a Length Unit\n");
             return 1;
@@ -489,13 +490,13 @@ internal static class XDEDRAWCommands
     /// The document's length unit, set as XAddShape sets it when there is none: the session's unit
     /// (<c>xstep.cascade.unit</c>, millimetres until unit 8F gives Draw-lite its parameters) in metres.
     /// </summary>
-    internal static void EnsureLengthUnit(XdeDoc_Document theDoc)
+    internal static void EnsureLengthUnit(ExchangeDocument theDoc)
     {
         if (!theDoc.GetLengthUnit(out _))
         {
-            double aLengthUnit = UnitsMethods.GetCasCadeLengthUnit(null, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter);
+            double aLengthUnit = global::Kerf.Engine.Exchange.Framework.UnitsMethods.GetCasCadeLengthUnit(null, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Meter);
             // XCAFDoc_DocumentTool::SetLengthUnit (doc, value): named by DumpLengthUnit
-            theDoc.SetLengthUnit(aLengthUnit, UnitsMethods.DumpLengthUnit(aLengthUnit, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter));
+            theDoc.SetLengthUnit(aLengthUnit, global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(aLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Meter));
         }
     }
 
@@ -506,7 +507,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Shape [int makeAssembly (1/0)]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -519,8 +520,8 @@ internal static class XDEDRAWCommands
         }
         EnsureLengthUnit(aDoc);
         bool makeAssembly = !(argv.Count == 4 && theDI.Atoi(argv[3]) == 0);
-        XdeDoc_Label aLabel = aDoc.AddShape(aShape, makeAssembly);
-        if (aLabel.IsNull())
+        Label aLabel = aDoc.AddShape(aShape, makeAssembly);
+        if (aLabel.IsNull)
         {
             di.Append("Null Label\n");
         }
@@ -535,7 +536,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -551,14 +552,14 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label Shape \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         Shape aShape = theDI.GetShape(argv[3]);
-        if (aLabel.IsNull())
+        if (aLabel.IsNull)
         {
             // TNaming_Builder on a null label: OCAF raises
             throw new NullObjectException("TDF_Label::Data");
@@ -574,13 +575,13 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Result DocName Label\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[2]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[2]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[3]);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[3]);
+        if (aLabel.IsNull)
         {
             di.Append("No such Label\n");
             return 1;
@@ -596,13 +597,13 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label [int removeCompletely (1/0)]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (aLabel.IsNull)
         {
             di.Append("No such Label\n");
             return 1;
@@ -619,7 +620,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Shape [0/1]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -637,15 +638,15 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Shape ParentLabel\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         Shape aShape = theDI.GetShape(argv[2]);
-        XdeDoc_Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
-        XdeDoc_Label aLabel = default;
-        if (!aParent.IsNull())
+        Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
+        Label aLabel = default;
+        if (!aParent.IsNull)
         {
             aDoc.FindSubShape(aParent, aShape, out aLabel);
         }
@@ -660,7 +661,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName SubShape\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -676,14 +677,14 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Shape ParentLabel\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         Shape aShape = theDI.GetShape(argv[2]);
-        XdeDoc_Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
-        XdeDoc_Label aLabel = aParent.IsNull() ? default : aDoc.AddSubShape(aParent, aShape);
+        Label aParent = DDocStdCommands.Label(aDoc, argv[3]);
+        Label aLabel = aParent.IsNull ? default : aDoc.AddSubShape(aParent, aShape);
         di.Append(aLabel.Entry());
         return 0;
     }
@@ -695,12 +696,12 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         if (aDoc.IsShape(aLabel))
         {
             di.Append("There are a TopLevelShape");
@@ -728,13 +729,13 @@ internal static class XDEDRAWCommands
             return 1;
         }
         bool getsubchilds = argv.Count == 4 && theDI.Atoi(argv[3]) == 1;
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        int aNb = aLabel.IsNull() ? 0 : aDoc.GetUsers(aLabel, new NCollection_Sequence<XdeDoc_Label>(), getsubchilds);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        int aNb = aLabel.IsNull ? 0 : aDoc.GetUsers(aLabel, new NCollection_Sequence<Label>(), getsubchilds);
         di.Append(aNb);
         return 0;
     }
@@ -747,13 +748,13 @@ internal static class XDEDRAWCommands
             return 1;
         }
         bool getsubchilds = argv.Count == 4 && theDI.Atoi(argv[3]) == 1;
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        di.Append(aLabel.IsNull() ? 0 : aDoc.NbComponents(aLabel, getsubchilds));
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        di.Append(aLabel.IsNull ? 0 : aDoc.NbComponents(aLabel, getsubchilds));
         return 0;
     }
 
@@ -764,14 +765,14 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label Shape \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         Shape aShape = theDI.GetShape(argv[3]);
-        if (!aLabel.IsNull())
+        if (!aLabel.IsNull)
         {
             aDoc.AddComponent(aLabel, aShape);
         }
@@ -786,13 +787,13 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        if (!aLabel.IsNull())
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        if (!aLabel.IsNull)
         {
             aDoc.RemoveComponent(aLabel);
         }
@@ -806,13 +807,13 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName Label \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
-        aDoc.GetReferredShape(aLabel, out XdeDoc_Label aRoot);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        aDoc.GetReferredShape(aLabel, out Label aRoot);
         di.Append(aRoot.Entry());
         return 0;
     }
@@ -824,14 +825,14 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabels = new NCollection_Sequence<Label>();
         aDoc.GetShapes(aLabels);
-        foreach (XdeDoc_Label aLabel in aLabels)
+        foreach (Label aLabel in aLabels)
         {
             di.Append(aLabel.Entry()).Append(" ");
         }
@@ -845,12 +846,12 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" DocName [shape_prefix]\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        var aLabels = new NCollection_Sequence<XdeDoc_Label>();
+        var aLabels = new NCollection_Sequence<Label>();
         aDoc.GetFreeShapes(aLabels);
         if (aLabels.Length() <= 0)
         {
@@ -859,7 +860,7 @@ internal static class XDEDRAWCommands
         }
         if (argv.Count == 2)
         {
-            foreach (XdeDoc_Label aLabel in aLabels)
+            foreach (Label aLabel in aLabels)
             {
                 di.Append(aLabel.Entry()).Append(" ");
             }
@@ -888,7 +889,7 @@ internal static class XDEDRAWCommands
             theDI2.Append("Use: ").Append(theArgVec[0]).Append(" shape DocName \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, theArgVec[2]);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, theArgVec[2]);
         if (aDoc is null)
         {
             theDI2.Append("Error: ").Append(theArgVec[2]).Append(" is not a document\n");
@@ -909,9 +910,9 @@ internal static class XDEDRAWCommands
     /// XCAFDoc_ShapeTool::GetOneShape: the only free shape, or the compound of the free shapes, or a null shape when
     /// there is none.
     /// </summary>
-    internal static Shape GetOneShape(XdeDoc_Document theDoc)
+    internal static Shape GetOneShape(ExchangeDocument theDoc)
     {
-        var aFree = new NCollection_Sequence<XdeDoc_Label>();
+        var aFree = new NCollection_Sequence<Label>();
         theDoc.GetFreeShapes(aFree);
         return aFree.Length() == 0 ? new Shape() : theDoc.GetOneShape();
     }
@@ -923,12 +924,12 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc Label \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
+        Label aLabel = DDocStdCommands.Label(aDoc, argv[2]);
         // XCAFDoc_Location: a reference's location
         if (!aDoc.IsReference(aLabel))
         {
@@ -960,7 +961,7 @@ internal static class XDEDRAWCommands
             di.Append("Use: ").Append(argv[0]).Append(" Doc\n");
             return 1;
         }
-        XdeDoc_Document? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
+        ExchangeDocument? aDoc = DDocStdCommands.GetDocument(theDI, argv[1]);
         if (aDoc is null)
         {
             return 1;

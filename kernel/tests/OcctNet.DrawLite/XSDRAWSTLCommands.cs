@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Stl.Api;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -48,7 +49,7 @@ internal static class XSDRAWSTLCommands
             {
                 isASCIIMode = theDI.Atoi(argv[3]) == 0;
             }
-            var aWriter = new StlAPI_Writer();
+            var aWriter = new ApiWriter();
             aWriter.SetASCIIMode(isASCIIMode);
             var aStream = new MemoryStream();
             bool isOK = aWriter.Write(aShape, aStream);
@@ -148,7 +149,7 @@ internal static class XSDRAWSTLCommands
                 // Read STL file to the triangulation list.
                 if (isFile)
                 {
-                    RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle, aTriangList);
+                    global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle, aTriangList);
                 }
                 var aB = new BrepBuilder();
                 Face aFace = new();
@@ -176,7 +177,7 @@ internal static class XSDRAWSTLCommands
             else
             {
                 // Read STL file to the triangulation.
-                Triangulation? aTriangulation = isFile ? RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
+                Triangulation? aTriangulation = isFile ? global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBytes), aMergeAngle) : null;
 
                 Face aFace = new();
                 var aB = new BrepBuilder();
@@ -188,7 +189,7 @@ internal static class XSDRAWSTLCommands
         else if (isFile)
         {
             // StlAPI::Read
-            Triangulation? aMesh = RWStl.ReadFile(new MemoryStream(aBytes));
+            Triangulation? aMesh = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(aBytes));
             if (aMesh is not null)
             {
                 var aConverter = new MakeShapeOnMesh(aMesh);

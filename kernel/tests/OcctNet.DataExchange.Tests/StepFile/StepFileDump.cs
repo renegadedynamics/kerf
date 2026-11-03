@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
@@ -10,23 +12,23 @@ using System.Text;
 namespace OcctNet.DataExchange.Tests;
 
 /// <summary>
-/// What the STEP parser leaves in <see cref="StepFile_ReadData"/>, written as tools/steprec writes native OCCT's
+/// What the STEP parser leaves in <see cref="ReadData"/>, written as tools/steprec writes native OCCT's
 /// (see its main.cpp): the parse's result, the counts, every record and argument as StepFile_Read walks them, the
 /// errors.
 /// </summary>
 internal static class StepFileDump
 {
-    internal static List<string> Dump(Stream theStream, StepFile_ReadLimits? theLimits = null, ProgressRange theRange = default)
+    internal static List<string> Dump(Stream theStream, ParserReadLimits? theLimits = null, ProgressRange theRange = default)
     {
         var aLines = new List<string>();
-        StepFile_ReadData aData = new();
+        ReadData aData = new();
         string aResult;
         string? aFatal = null;
         try
         {
-            StepFile_Scanner aScanner = new(aData, theStream, theLimits);
-            StepFile_Parser aParser = new(aScanner, theRange);
-            aResult = aParser.parse().ToString(CultureInfo.InvariantCulture);
+            Scanner aScanner = new(aData, theStream, theLimits);
+            StepParser aParser = new(aScanner, theRange);
+            aResult = aParser.Parse().ToString(CultureInfo.InvariantCulture);
         }
         catch (FailureException anEx)
         {
@@ -53,7 +55,7 @@ internal static class StepFileDump
             aLines.Add(string.Create(CultureInfo.InvariantCulture, $"R {Esc(ident)} {Esc(typrec)} {nbarg}"));
             if (nbarg > 0)
             {
-                while (aData.GetArgDescription(out Interface_ParamType typa, out string? val))
+                while (aData.GetArgDescription(out ParamType typa, out string? val))
                 {
                     aLines.Add(string.Create(CultureInfo.InvariantCulture, $"A {(int)typa} {Esc(val)}"));
                 }

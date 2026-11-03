@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -49,7 +50,7 @@ internal static class XdeDocDump
         return aMap.Extent();
     }
 
-    private static void dumpLabel(XdeDoc_Document theDoc, XdeDoc_Label theLabel, List<string> theOut)
+    private static void dumpLabel(ExchangeDocument theDoc, Label theLabel, List<string> theOut)
     {
         string aKind = theDoc.IsAssembly(theLabel) ? "A"
                        : theDoc.IsReference(theLabel) ? "R"
@@ -63,7 +64,7 @@ internal static class XdeDocDump
                        + $"{Count(aShape, ShapeType.Shell)} {Count(aShape, ShapeType.Face)} "
                        + $"{Count(aShape, ShapeType.Edge)} {Count(aShape, ShapeType.Vertex)}");
         }
-        if (theDoc.GetReferredShape(theLabel, out XdeDoc_Label aReferred))
+        if (theDoc.GetReferredShape(theLabel, out Label aReferred))
         {
             theOut.Add("P " + aReferred.Entry());
             Transform3D aTrsf = theDoc.GetLocation(theLabel).Transformation();
@@ -81,10 +82,10 @@ internal static class XdeDocDump
         {
             theOut.Add("N " + Escape(aName ?? ""));
         }
-        foreach ((XdeDoc_ColorType aType, string aTag) in new[]
+        foreach ((ColorType aType, string aTag) in new[]
                  {
-                     (XdeDoc_ColorType.XdeDoc_ColorGen, "g"), (XdeDoc_ColorType.XdeDoc_ColorSurf, "s"),
-                     (XdeDoc_ColorType.XdeDoc_ColorCurv, "c"),
+                     (ColorType.ColorGen, "g"), (ColorType.ColorSurf, "s"),
+                     (ColorType.ColorCurv, "c"),
                  })
         {
             if (theDoc.GetColor(theLabel, aType, out ColorWithAlpha aColor))
@@ -105,7 +106,7 @@ internal static class XdeDocDump
                 theOut.Add("Y " + Escape(aLayer));
             }
         }
-        XdeDoc_ValidationProps? aProps = theDoc.GetValidationProps(theLabel);
+        DocumentValidationProps? aProps = theDoc.GetValidationProps(theLabel);
         if (aProps?.Volume is double aVolume)
         {
             theOut.Add("V " + R17(aVolume));
@@ -118,7 +119,7 @@ internal static class XdeDocDump
         {
             theOut.Add($"G {R17(aPnt.X())} {R17(aPnt.Y())} {R17(aPnt.Z())}");
         }
-        foreach (XdeDoc_Label aChild in theDoc.Children(theLabel))
+        foreach (Label aChild in theDoc.Children(theLabel))
         {
             dumpLabel(theDoc, aChild, theOut);
         }
@@ -131,17 +132,17 @@ internal static class XdeDocDump
     }
 
     /// <summary>The document's dump, line by line.</summary>
-    public static List<string> Dump(XdeDoc_Document theDoc)
+    public static List<string> Dump(ExchangeDocument theDoc)
     {
         var aLines = new List<string>();
         aLines.Add(theDoc.GetLengthUnit(out double aUnit) ? "U " + R17(aUnit) : "U -");
-        foreach (XdeDoc_Label aChild in theDoc.Children(theDoc.ShapesLabel()))
+        foreach (Label aChild in theDoc.Children(theDoc.ShapesLabel()))
         {
             dumpLabel(theDoc, aChild, aLines);
         }
-        var aLayers = new NCollection_Sequence<XdeDoc_Label>();
+        var aLayers = new NCollection_Sequence<Label>();
         theDoc.GetLayerLabels(aLayers);
-        foreach (XdeDoc_Label aLayer in aLayers)
+        foreach (Label aLayer in aLayers)
         {
             theDoc.GetLayer(aLayer, out string? aName);
             aLines.Add($"Z {aLayer.Entry()} {(theDoc.IsVisible(aLayer) ? 1 : 0)} {Escape(aName ?? "")}");
@@ -159,20 +160,20 @@ internal static class XdeDocDump
     };
 
     /// <summary>stepcafrec's MakePartDoc, with XCAF's auto-naming.</summary>
-    public static XdeDoc_Document MakePartDoc(in Shape theShape, string theName, int theIndex)
+    public static ExchangeDocument MakePartDoc(in Shape theShape, string theName, int theIndex)
     {
-        var aDoc = new XdeDoc_Document { AutoNaming = true };
-        XdeDoc_Label aLabel = aDoc.AddShape(theShape, false);
+        var aDoc = new ExchangeDocument { AutoNaming = true };
+        Label aLabel = aDoc.AddShape(theShape, false);
         aDoc.SetName(aLabel, theName);
-        aDoc.SetColor(aLabel, PaletteColor(theIndex), theIndex % 3 == 1 ? XdeDoc_ColorType.XdeDoc_ColorGen : XdeDoc_ColorType.XdeDoc_ColorSurf);
+        aDoc.SetColor(aLabel, PaletteColor(theIndex), theIndex % 3 == 1 ? ColorType.ColorGen : ColorType.ColorSurf);
         var anExp = new global::Kerf.Engine.Topology.Explorer(theShape, ShapeType.Face);
         if (anExp.More())
         {
-            XdeDoc_Label aSub = aDoc.AddSubShape(aLabel, anExp.Current());
-            if (!aSub.IsNull())
+            Label aSub = aDoc.AddSubShape(aLabel, anExp.Current());
+            if (!aSub.IsNull)
             {
                 aDoc.SetName(aSub, "first face");
-                aDoc.SetColor(aSub, PaletteColor(theIndex + 1).GetRGB(), XdeDoc_ColorType.XdeDoc_ColorCurv);
+                aDoc.SetColor(aSub, PaletteColor(theIndex + 1).GetRGB(), ColorType.ColorCurv);
                 aDoc.SetLayer(aSub, "faces");
             }
         }
@@ -192,29 +193,29 @@ internal static class XdeDocDump
     }
 
     /// <summary>stepcafrec's MakeAssemblyDoc, with XCAF's auto-naming.</summary>
-    public static XdeDoc_Document MakeAssemblyDoc(in Shape theShape)
+    public static ExchangeDocument MakeAssemblyDoc(in Shape theShape)
     {
-        var aDoc = new XdeDoc_Document { AutoNaming = true };
-        XdeDoc_Label aPart = aDoc.AddShape(theShape, false);
+        var aDoc = new ExchangeDocument { AutoNaming = true };
+        Label aPart = aDoc.AddShape(theShape, false);
         aDoc.SetName(aPart, "part");
-        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), XdeDoc_ColorType.XdeDoc_ColorSurf);
+        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), ColorType.ColorSurf);
         aDoc.SetLayer(aPart, "parts");
         aDoc.SetVolume(aPart, 12.5);
-        XdeDoc_Label aSub = aDoc.NewShape();
+        Label aSub = aDoc.NewShape();
         aDoc.SetName(aSub, "sub");
         var aTrsf = new Transform3D();
         aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
         aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
         aDoc.AddComponent(aSub, aPart, new Placement());
-        XdeDoc_Label aSecond = aDoc.AddComponent(aSub, aPart, new Placement(aTrsf));
+        Label aSecond = aDoc.AddComponent(aSub, aPart, new Placement(aTrsf));
         aDoc.SetName(aSecond, "second");
-        aDoc.SetColor(aSecond, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), XdeDoc_ColorType.XdeDoc_ColorSurf);
-        XdeDoc_Label aTop = aDoc.NewShape();
+        aDoc.SetColor(aSecond, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), ColorType.ColorSurf);
+        Label aTop = aDoc.NewShape();
         aDoc.SetName(aTop, "top");
         var aTrsf2 = new Transform3D();
         aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
         aDoc.AddComponent(aTop, aSub, new Placement());
-        XdeDoc_Label anUpper = aDoc.AddComponent(aTop, aSub, new Placement(aTrsf2));
+        Label anUpper = aDoc.AddComponent(aTop, aSub, new Placement(aTrsf2));
         aDoc.SetName(anUpper, "upper");
         aDoc.UpdateAssemblies();
         return aDoc;

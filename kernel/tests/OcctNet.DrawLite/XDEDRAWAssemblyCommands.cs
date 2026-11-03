@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using System.Text;
 using Occt;
@@ -18,24 +19,24 @@ internal static class XDEDRAWAssemblyCommands
 {
     // ---------------------------------------------------------------------------------------------- the iterator
 
-    private readonly record struct AuxItem(List<string> Path, XdeDoc_Label Label);
+    private readonly record struct AuxItem(List<string> Path, Label Label);
 
-    private static AuxItem createItem(XdeDoc_Document theDoc, in XdeDoc_Label theLabel, IEnumerable<string> theParentPath)
+    private static AuxItem createItem(ExchangeDocument theDoc, in Label theLabel, IEnumerable<string> theParentPath)
     {
         var aPath = new List<string>(theParentPath) { theLabel.Entry() };
-        return new AuxItem(aPath, theDoc.GetReferredShape(theLabel, out XdeDoc_Label anOriginal) ? anOriginal : theLabel);
+        return new AuxItem(aPath, theDoc.GetReferredShape(theLabel, out Label anOriginal) ? anOriginal : theLabel);
     }
 
     // XCAFDoc_AssemblyIterator with XCAFDoc_AssemblyTool::Traverse: the items' paths, depth first
-    private static IEnumerable<List<string>> traverse(XdeDoc_Document theDoc, List<string>? theRoot, int theMaxLevel)
+    private static IEnumerable<List<string>> traverse(ExchangeDocument theDoc, List<string>? theRoot, int theMaxLevel)
     {
         var aFringe = new List<AuxItem>();
         int aSeedLevel = 1;
         if (theRoot is null)
         {
-            var aRoots = new NCollection_Sequence<XdeDoc_Label>();
+            var aRoots = new NCollection_Sequence<Label>();
             theDoc.GetFreeShapes(aRoots);
-            foreach (XdeDoc_Label aRoot in aRoots)
+            foreach (Label aRoot in aRoots)
             {
                 aFringe.Add(createItem(theDoc, aRoot, []));
             }
@@ -43,13 +44,13 @@ internal static class XDEDRAWAssemblyCommands
         else
         {
             aSeedLevel = theRoot.Count;
-            XdeDoc_Label aSeedLabel = DDocStdCommands.Label(theDoc, theRoot[^1]);
-            if (aSeedLabel.IsNull())
+            Label aSeedLabel = DDocStdCommands.Label(theDoc, theRoot[^1]);
+            if (aSeedLabel.IsNull)
             {
                 yield break;
             }
             List<string> aSeedPath = theRoot;
-            if (theDoc.GetReferredShape(aSeedLabel, out XdeDoc_Label anOriginal))
+            if (theDoc.GetReferredShape(aSeedLabel, out Label anOriginal))
             {
                 if (!theDoc.IsAssembly(aSeedLabel))
                 {
@@ -78,7 +79,7 @@ internal static class XDEDRAWAssemblyCommands
             int aCurrentDepth = aCurrent.Path.Count - aSeedLevel;
             if (aCurrentDepth < theMaxLevel)
             {
-                var aComponents = new NCollection_Sequence<XdeDoc_Label>();
+                var aComponents = new NCollection_Sequence<Label>();
                 if (theDoc.IsAssembly(aCurrent.Label))
                 {
                     theDoc.GetComponents(aCurrent.Label, aComponents);
@@ -107,7 +108,7 @@ internal static class XDEDRAWAssemblyCommands
               .Append("   -names      - prints names instead of entries. \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
@@ -165,8 +166,8 @@ internal static class XDEDRAWAssemblyCommands
                         aSS.Append('/');
                     }
                     aFirst = false;
-                    XdeDoc_Label aL = DDocStdCommands.Label(aDoc, anEntry);
-                    if (!aL.IsNull() && aDoc.GetName(aL, out string? aName))
+                    Label aL = DDocStdCommands.Label(aDoc, anEntry);
+                    if (!aL.IsNull && aDoc.GetName(aL, out string? aName))
                     {
                         aSS.Append(aName);
                         continue;
@@ -198,18 +199,18 @@ internal static class XDEDRAWAssemblyCommands
 
     private sealed class Graph
     {
-        private readonly XdeDoc_Document myDoc;
-        public readonly List<XdeDoc_Label> Nodes = [];                  // ids from 1
-        private readonly Dictionary<XdeDoc_Label, int> myIds = [];
+        private readonly ExchangeDocument myDoc;
+        public readonly List<Label> Nodes = [];                  // ids from 1
+        private readonly Dictionary<Label, int> myIds = [];
         public readonly Dictionary<int, NodeType> Types = [];
         public readonly Dictionary<int, SortedSet<int>> Links = [];
         public readonly Dictionary<int, int> Usages = [];
 
-        public Graph(XdeDoc_Document theDoc, XdeDoc_Label theLabel)
+        public Graph(ExchangeDocument theDoc, Label theLabel)
         {
             myDoc = theDoc;
-            var aRoots = new NCollection_Sequence<XdeDoc_Label>();
-            if (theLabel.IsNull() || theLabel == theDoc.ShapesLabel())
+            var aRoots = new NCollection_Sequence<Label>();
+            if (theLabel.IsNull || theLabel == theDoc.ShapesLabel())
             {
                 theDoc.GetFreeShapes(aRoots);
             }
@@ -217,10 +218,10 @@ internal static class XDEDRAWAssemblyCommands
             {
                 aRoots.Append(theLabel);
             }
-            foreach (XdeDoc_Label aLabel in aRoots)
+            foreach (Label aLabel in aRoots)
             {
                 int aRootId, anIdToProceed;
-                if (!theDoc.GetReferredShape(aLabel, out XdeDoc_Label anOriginal))
+                if (!theDoc.GetReferredShape(aLabel, out Label anOriginal))
                 {
                     anOriginal = aLabel;
                     aRootId = addNode(anOriginal, 0);
@@ -246,20 +247,20 @@ internal static class XDEDRAWAssemblyCommands
             }
         }
 
-        private void addComponents(in XdeDoc_Label theParent, int theParentId)
+        private void addComponents(in Label theParent, int theParentId)
         {
             if (!myDoc.IsShape(theParent))
             {
                 return;
             }
-            foreach (XdeDoc_Label aComponent in myDoc.Children(theParent))
+            foreach (Label aComponent in myDoc.Children(theParent))
             {
                 int aComponentId = addNode(aComponent, theParentId);
                 if (aComponentId == 0)
                 {
                     continue;
                 }
-                if (!myDoc.GetReferredShape(aComponent, out XdeDoc_Label aChildOriginal))
+                if (!myDoc.GetReferredShape(aComponent, out Label aChildOriginal))
                 {
                     continue;
                 }
@@ -272,7 +273,7 @@ internal static class XDEDRAWAssemblyCommands
             }
         }
 
-        private int addNode(in XdeDoc_Label theLabel, int theParentId)
+        private int addNode(in Label theLabel, int theParentId)
         {
             NodeType aNodeType = NodeType.UNDEFINED;
             if (myDoc.IsAssembly(theLabel))
@@ -328,7 +329,7 @@ internal static class XDEDRAWAssemblyCommands
         _ => "?",
     };
 
-    private static string nodeEntry(XdeDoc_Document theDoc, in XdeDoc_Label theLabel, bool thePrintNames)
+    private static string nodeEntry(ExchangeDocument theDoc, in Label theLabel, bool thePrintNames)
     {
         if (thePrintNames && theDoc.GetName(theLabel, out string? aName))
         {
@@ -348,13 +349,13 @@ internal static class XDEDRAWAssemblyCommands
               .Append("   -names      - prints names instead of entries. \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;
         }
         bool aPrintNames = false;
-        XdeDoc_Label aLabel = aDoc.ShapesLabel();
+        Label aLabel = aDoc.ShapesLabel();
         for (int iarg = 2; iarg < argc; ++iarg)
         {
             if (argv[iarg] == "-root")
@@ -370,7 +371,7 @@ internal static class XDEDRAWAssemblyCommands
                 aPrintNames = true;
             }
         }
-        if (aLabel.IsNull())
+        if (aLabel.IsNull)
         {
             throw new NullObjectException("Null label!");
         }
@@ -403,7 +404,7 @@ internal static class XDEDRAWAssemblyCommands
               .Append("   -names - prints names instead of entries. \n");
             return 1;
         }
-        XdeDoc_Document? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
+        ExchangeDocument? aDoc = XDEDRAWCommands.Doc(theDI, di, argv[1]);
         if (aDoc is null)
         {
             return 1;

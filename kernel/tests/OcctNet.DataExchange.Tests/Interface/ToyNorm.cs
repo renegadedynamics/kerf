@@ -1,12 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Foundation;
 
 namespace OcctNet.DataExchange.Tests.Interface;
 
 /// <summary>
 /// A toy norm for the tests of the exchange framework: entities that share others (and imply others), a protocol, a
-/// model, and a general module registered once in <see cref="Interface_GeneralLib"/>'s global list. Before StepData
+/// model, and a general module registered once in <see cref="GeneralLib"/>'s global list. Before StepData
 /// exists (unit 8B), this is the only way to drive the graph, share, check and copy tools.
 /// </summary>
 internal sealed class ToyEntity(string theName) : Transient
@@ -30,27 +31,27 @@ internal sealed class ToyUnknown : Transient
 {
 }
 
-internal sealed class ToyProtocol : Interface_Protocol
+internal sealed class ToyProtocol : Protocol
 {
-    public override int NbResources() => 0;
+    public override int ResourceCount => 0;
 
-    public override Interface_Protocol? Resource(int num) => null;
+    public override Protocol? Resource(int num) => null;
 
     public override int TypeNumber(Type? atype) =>
         atype == typeof(ToyEntity) ? 1 : atype == typeof(ToyUnknown) ? 2 : atype == typeof(TCollection_HAsciiString) ? 3 : 0;
 
-    public override Interface_InterfaceModel? NewModel() => new ToyModel();
+    public override InterfaceModel? NewModel() => new ToyModel();
 
-    public override bool IsSuitableModel(Interface_InterfaceModel? model) => model is ToyModel;
+    public override bool IsSuitableModel(InterfaceModel? model) => model is ToyModel;
 
     public override Transient? UnknownEntity() => new ToyUnknown();
 
     public override bool IsUnknownEntity(Transient? ent) => ent is ToyUnknown;
 }
 
-internal sealed class ToyGeneralModule : Interface_GeneralModule
+internal sealed class ToyGeneralModule : GeneralModule
 {
-    public override void FillSharedCase(int CN, Transient? ent, Interface_EntityIterator iter)
+    public override void FillSharedCase(int CN, Transient? ent, EntityIterator iter)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -61,7 +62,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override void ListImpliedCase(int CN, Transient? ent, Interface_EntityIterator iter)
+    public override void ListImpliedCase(int CN, Transient? ent, EntityIterator iter)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -72,7 +73,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override void CheckCase(int CN, Transient? ent, Interface_ShareTool shares, ref Interface_Check? ach)
+    public override void CheckCase(int CN, Transient? ent, ShareTool shares, ref FrameworkCheck? ach)
     {
         if (ent is ToyEntity anEnt)
         {
@@ -98,7 +99,7 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         return entto is not null;
     }
 
-    public override void CopyCase(int CN, Transient? entfrom, Transient? entto, Interface_CopyTool TC)
+    public override void CopyCase(int CN, Transient? entfrom, Transient? entto, CopyTool TC)
     {
         if (entfrom is ToyEntity aFrom && entto is ToyEntity aTo)
         {
@@ -110,14 +111,14 @@ internal sealed class ToyGeneralModule : Interface_GeneralModule
         }
     }
 
-    public override int CategoryNumber(int CN, Transient? ent, Interface_ShareTool shares) =>
-        CN == 1 ? Interface_Category.Number("Structure") : 0;
+    public override int CategoryNumber(int CN, Transient? ent, ShareTool shares) =>
+        CN == 1 ? Category.Number("Structure") : 0;
 
-    public override TCollection_HAsciiString? Name(int CN, Transient? ent, Interface_ShareTool shares) =>
+    public override TCollection_HAsciiString? Name(int CN, Transient? ent, ShareTool shares) =>
         ent is ToyEntity anEnt ? new TCollection_HAsciiString(anEnt.Name) : null;
 }
 
-internal sealed class ToyModel : Interface_InterfaceModel
+internal sealed class ToyModel : InterfaceModel
 {
     public override void ClearLabels()
     {
@@ -127,11 +128,11 @@ internal sealed class ToyModel : Interface_InterfaceModel
     {
     }
 
-    public override void GetFromAnother(Interface_InterfaceModel? other)
+    public override void GetFromAnother(InterfaceModel? other)
     {
     }
 
-    public override Interface_InterfaceModel? NewEmptyModel() => new ToyModel();
+    public override InterfaceModel? NewEmptyModel() => new ToyModel();
 
     public override void DumpHeader(TextWriter S, int level = 0) => S.Write("toy header");
 
@@ -144,12 +145,12 @@ internal sealed class ToyModel : Interface_InterfaceModel
 internal static class ToyNorm
 {
     // The protocol and its module, registered once (a protocol's one-time initialisation)
-    public static readonly ToyProtocol Protocol = Register();
+    public static readonly ToyProtocol ProtocolInstance = Register();
 
     private static ToyProtocol Register()
     {
         var aProtocol = new ToyProtocol();
-        Interface_GeneralLib.SetGlobal(new ToyGeneralModule(), aProtocol);
+        GeneralLib.SetGlobal(new ToyGeneralModule(), aProtocol);
         return aProtocol;
     }
 
@@ -157,7 +158,7 @@ internal static class ToyNorm
     public static ToyModel Model(params ToyEntity[] theEntities)
     {
         var aModel = new ToyModel();
-        aModel.SetProtocol(Protocol);
+        aModel.SetProtocol(ProtocolInstance);
         foreach (ToyEntity anEnt in theEntities)
         {
             aModel.AddEntity(anEnt);
@@ -166,7 +167,7 @@ internal static class ToyNorm
     }
 
     /// <summary>The names of an iteration's entities, in order.</summary>
-    public static string Names(Interface_EntityIterator theIter)
+    public static string Names(EntityIterator theIter)
     {
         var aNames = new List<string>();
         for (theIter.Start(); theIter.More(); theIter.Next())
@@ -177,7 +178,7 @@ internal static class ToyNorm
     }
 
     /// <summary>The names, sorted (for results whose order isn't meaningful).</summary>
-    public static string Sorted(Interface_EntityIterator theIter)
+    public static string Sorted(EntityIterator theIter)
     {
         var aNames = Names(theIter).Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
         aNames.Sort(StringComparer.Ordinal);

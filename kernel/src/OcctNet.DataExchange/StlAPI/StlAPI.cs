@@ -4,18 +4,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Stl.Api;
 
-/// <summary>Short-cuts to <see cref="StlAPI_Writer"/> and <see cref="StlAPI_Reader"/>.</summary>
-public static class StlAPI
+/// <summary>Short-cuts to <see cref="ApiWriter"/> and <see cref="StlApiReader"/>.</summary>
+public static class StlApi
 {
     /// <summary>Writes the shape's triangulations to an STL file, ASCII (the default) or binary.</summary>
-    public static bool Write(in Shape theShape, string theFile, bool theAsciiMode = true)
+    public static bool Write(in Shape shape, string file, bool asciiMode = true)
     {
-        var aWriter = new StlAPI_Writer();
-        aWriter.SetASCIIMode(theAsciiMode);
-        return aWriter.Write(theShape, theFile);
+        var writer = new ApiWriter();
+        writer.SetASCIIMode(asciiMode);
+        return writer.Write(shape, file);
     }
 
     /// <summary>
@@ -23,9 +24,9 @@ public static class StlAPI
     /// <see cref="RWStl"/>).
     /// </summary>
     [Obsolete("This method is very inefficient; see RWStl class for better alternative")]
-    public static bool Read(ref Shape theShape, string aFile)
+    public static bool Read(ref Shape shape, string aFile)
     {
-        var aReader = new StlAPI_Reader();
-        return aReader.Read(ref theShape, aFile);
+        var reader = new StlApiReader();
+        return reader.Read(ref shape, aFile);
     }
 }

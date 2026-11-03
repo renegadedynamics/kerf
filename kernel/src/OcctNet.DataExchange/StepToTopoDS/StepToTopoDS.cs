@@ -3,29 +3,30 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using static Occt.StepToTopoDS_BuilderError;
-using static Occt.StepToTopoDS_GeometricToolError;
-using static Occt.StepToTopoDS_TranslateEdgeError;
-using static Occt.StepToTopoDS_TranslateFaceError;
-using static Occt.StepToTopoDS_TranslatePolyLoopError;
-using static Occt.StepToTopoDS_TranslateShellError;
-using static Occt.StepToTopoDS_TranslateVertexError;
-using static Occt.StepToTopoDS_TranslateVertexLoopError;
+using Occt;
+using static Kerf.Engine.Exchange.Step.Import.BuilderError;
+using static Kerf.Engine.Exchange.Step.Import.GeometricToolError;
+using static Kerf.Engine.Exchange.Step.Import.TranslateEdgeError;
+using static Kerf.Engine.Exchange.Step.Import.TranslateFaceError;
+using static Kerf.Engine.Exchange.Step.Import.TranslatePolyLoopError;
+using static Kerf.Engine.Exchange.Step.Import.TranslateShellError;
+using static Kerf.Engine.Exchange.Step.Import.TranslateVertexError;
+using static Kerf.Engine.Exchange.Step.Import.TranslateVertexLoopError;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The texts of the STEP to topology translators' error codes.</summary>
 public static class StepToTopoDS
 {
-    public static TCollection_HAsciiString? DecodeBuilderError(StepToTopoDS_BuilderError Error)
+    public static TCollection_HAsciiString? DecodeBuilderError(BuilderError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone:
+            case BuilderError.BuilderDone:
                 mess = new TCollection_HAsciiString("Builder Done");
                 break;
-            case StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther:
+            case BuilderError.BuilderOther:
                 mess = new TCollection_HAsciiString("Builder Other");
                 break;
         }
@@ -33,15 +34,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeShellError(StepToTopoDS_TranslateShellError Error)
+    public static TCollection_HAsciiString? DecodeShellError(TranslateShellError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslateShellError.StepToTopoDS_TranslateShellDone:
+            case TranslateShellError.TranslateShellDone:
                 mess = new TCollection_HAsciiString("Translate Shell Done");
                 break;
-            case StepToTopoDS_TranslateShellError.StepToTopoDS_TranslateShellOther:
+            case TranslateShellError.TranslateShellOther:
                 mess = new TCollection_HAsciiString("Translate Shell Other");
                 break;
         }
@@ -49,15 +50,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeFaceError(StepToTopoDS_TranslateFaceError Error)
+    public static TCollection_HAsciiString? DecodeFaceError(TranslateFaceError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone:
+            case TranslateFaceError.TranslateFaceDone:
                 mess = new TCollection_HAsciiString("Translate Face Done");
                 break;
-            case StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceOther:
+            case TranslateFaceError.TranslateFaceOther:
                 mess = new TCollection_HAsciiString("Translate Face Other");
                 break;
         }
@@ -65,15 +66,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeEdgeError(StepToTopoDS_TranslateEdgeError Error)
+    public static TCollection_HAsciiString? DecodeEdgeError(TranslateEdgeError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone:
+            case TranslateEdgeError.TranslateEdgeDone:
                 mess = new TCollection_HAsciiString("Translate Edge Done");
                 break;
-            case StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeOther:
+            case TranslateEdgeError.TranslateEdgeOther:
                 mess = new TCollection_HAsciiString("Translate Edge Other");
                 break;
         }
@@ -81,15 +82,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeVertexError(StepToTopoDS_TranslateVertexError Error)
+    public static TCollection_HAsciiString? DecodeVertexError(TranslateVertexError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexDone:
+            case TranslateVertexError.TranslateVertexDone:
                 mess = new TCollection_HAsciiString("Translate Vertex Done");
                 break;
-            case StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexOther:
+            case TranslateVertexError.TranslateVertexOther:
                 mess = new TCollection_HAsciiString("Translate Vertex Other");
                 break;
         }
@@ -97,15 +98,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodeVertexLoopError(StepToTopoDS_TranslateVertexLoopError Error)
+    public static TCollection_HAsciiString? DecodeVertexLoopError(TranslateVertexLoopError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopDone:
+            case TranslateVertexLoopError.TranslateVertexLoopDone:
                 mess = new TCollection_HAsciiString("Translate VertexLoop Done");
                 break;
-            case StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopOther:
+            case TranslateVertexLoopError.TranslateVertexLoopOther:
                 mess = new TCollection_HAsciiString("Translate VertexLoop Other");
                 break;
         }
@@ -113,15 +114,15 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static TCollection_HAsciiString? DecodePolyLoopError(StepToTopoDS_TranslatePolyLoopError Error)
+    public static TCollection_HAsciiString? DecodePolyLoopError(TranslatePolyLoopError error)
     {
         TCollection_HAsciiString? mess = null;
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_TranslatePolyLoopError.StepToTopoDS_TranslatePolyLoopDone:
+            case TranslatePolyLoopError.TranslatePolyLoopDone:
                 mess = new TCollection_HAsciiString("Translate PolyLoop Done");
                 break;
-            case StepToTopoDS_TranslatePolyLoopError.StepToTopoDS_TranslatePolyLoopOther:
+            case TranslatePolyLoopError.TranslatePolyLoopOther:
                 mess = new TCollection_HAsciiString("Translate PolyLoop Other");
                 break;
         }
@@ -129,27 +130,27 @@ public static class StepToTopoDS
         return mess;
     }
 
-    public static string DecodeGeometricToolError(StepToTopoDS_GeometricToolError Error)
+    public static string DecodeGeometricToolError(GeometricToolError error)
     {
         string mess = "";
-        switch (Error)
+        switch (error)
         {
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolDone:
+            case GeometricToolError.GeometricToolDone:
                 mess = " Geometric Tool is done";
                 break;
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolIsDegenerated:
+            case GeometricToolError.GeometricToolIsDegenerated:
                 mess = " an Edge is degenerated";
                 break;
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolHasNoPCurve:
+            case GeometricToolError.GeometricToolHasNoPCurve:
                 mess = " SurfaceCurve does not contain a PCurve lying on the BasisSurface";
                 break;
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolWrong3dParameters:
+            case GeometricToolError.GeometricToolWrong3dParameters:
                 mess = " the update of 3D-Parameters failed";
                 break;
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolNoProjectiOnCurve:
+            case GeometricToolError.GeometricToolNoProjectiOnCurve:
                 mess = " the projection of a VertexPoint on the curve3d failed";
                 break;
-            case StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolOther:
+            case GeometricToolError.GeometricToolOther:
                 mess = " GeometricTool failed";
                 break;
         }

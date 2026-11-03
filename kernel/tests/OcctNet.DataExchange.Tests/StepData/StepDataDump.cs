@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
@@ -13,20 +16,20 @@ namespace OcctNet.DataExchange.Tests;
 /// </summary>
 internal static class StepDataDump
 {
-    private static readonly Lazy<StepData_Protocol> s_headerOnly = new(() =>
+    private static readonly Lazy<StepProtocol> s_headerOnly = new(() =>
     {
-        RWHeaderSection.Init();
-        var aProtocol = new StepData_FileProtocol();
-        aProtocol.Add(HeaderSection.Protocol());
+        global::Kerf.Engine.Exchange.Step.Header.RWHeaderSection.Init();
+        var aProtocol = new FileProtocol();
+        aProtocol.Add(global::Kerf.Engine.Exchange.Step.Header.HeaderSection.Protocol());
         return aProtocol;
     });
 
     /// <summary>The protocol of the dumps: a FileProtocol of HeaderSection's protocol.</summary>
-    internal static StepData_Protocol HeaderOnlyProtocol() => s_headerOnly.Value;
+    internal static StepProtocol HeaderOnlyProtocol() => s_headerOnly.Value;
 
     /// <summary>A decoded text (OCCT's UTF-8) as the recorder writes it: its bytes, escaped, quoted.</summary>
     internal static string Str(TCollection_HAsciiString? theStr) =>
-        theStr is null ? "(null)" : "'" + StepFileDump.Esc(StepData_StepWriter.ToFileText(theStr.ToCString())) + "'";
+        theStr is null ? "(null)" : "'" + StepFileDump.Esc(StepWriter.ToFileText(theStr.ToCString())) + "'";
 
     private static string Strs(NCollection_HArray1<TCollection_HAsciiString>? theStrs)
     {
@@ -45,22 +48,22 @@ internal static class StepDataDump
     }
 
     // An undefined entity: TYPE(params) [& NEXT(...)], references as the model's numbers; raw texts as the file's bytes
-    private static string Und(StepData_UndefinedEntity theUnd, StepData_StepModel theModel)
+    private static string Und(UndefinedEntity theUnd, StepModel theModel)
     {
         var aRes = new StringBuilder(StepFileDump.Esc(theUnd.StepType())).Append('(');
-        Interface_UndefinedContent aCont = theUnd.UndefinedContent();
-        for (int i = 1; i <= aCont.NbParams(); i++)
+        UndefinedContent aCont = theUnd.UndefinedContent();
+        for (int i = 1; i <= aCont.ParamCount; i++)
         {
             if (i > 1)
             {
                 aRes.Append(',');
             }
 
-            Interface_ParamType aType = aCont.ParamType(i);
+            ParamType aType = aCont.ParamType(i);
             aRes.Append(((int)aType).ToString(CultureInfo.InvariantCulture)).Append(':');
-            if (aType == Interface_ParamType.Interface_ParamSub)
+            if (aType == ParamType.ParamSub)
             {
-                aRes.Append(Und((StepData_UndefinedEntity)aCont.ParamEntity(i)!, theModel));
+                aRes.Append(Und((UndefinedEntity)aCont.ParamEntity(i)!, theModel));
             }
             else if (aCont.IsParamEntity(i))
             {
@@ -81,31 +84,31 @@ internal static class StepDataDump
         return aRes.ToString();
     }
 
-    private static string Entity(Transient? theEnt, StepData_StepModel theModel) => theEnt switch
+    private static string Entity(Transient? theEnt, StepModel theModel) => theEnt switch
     {
         null => "(null)",
-        StepData_UndefinedEntity anUnd => "U " + Und(anUnd, theModel),
-        HeaderSection_FileName aFn => "FILE_NAME " + Str(aFn.Name()) + " " + Str(aFn.TimeStamp()) + " " + Strs(aFn.Author()) + " "
+        UndefinedEntity anUnd => "U " + Und(anUnd, theModel),
+        global::Kerf.Engine.Exchange.Step.Header.FileName aFn => "FILE_NAME " + Str(aFn.Name()) + " " + Str(aFn.TimeStamp()) + " " + Strs(aFn.Author()) + " "
                                       + Strs(aFn.Organization()) + " " + Str(aFn.PreprocessorVersion()) + " "
                                       + Str(aFn.OriginatingSystem()) + " " + Str(aFn.Authorisation()),
-        HeaderSection_FileDescription aFd => "FILE_DESCRIPTION " + Strs(aFd.Description()) + " " + Str(aFd.ImplementationLevel()),
-        HeaderSection_FileSchema aFs => "FILE_SCHEMA " + Strs(aFs.SchemaIdentifiers()),
+        global::Kerf.Engine.Exchange.Step.Header.FileDescription aFd => "FILE_DESCRIPTION " + Strs(aFd.Description()) + " " + Str(aFd.ImplementationLevel()),
+        global::Kerf.Engine.Exchange.Step.Header.FileSchema aFs => "FILE_SCHEMA " + Strs(aFs.SchemaIdentifiers()),
         _ => "? " + theEnt.DynamicTypeName(),
     };
 
-    private static void Checks(List<string> theLines, string thePrefix, Interface_Check? theCheck)
+    private static void Checks(List<string> theLines, string thePrefix, FrameworkCheck? theCheck)
     {
         if (theCheck is null)
         {
             return;
         }
 
-        for (int i = 1; i <= theCheck.NbFails(); i++)
+        for (int i = 1; i <= theCheck.FailCount; i++)
         {
             theLines.Add(thePrefix + " F " + StepFileDump.Esc(theCheck.CFail(i, true)));
         }
 
-        for (int i = 1; i <= theCheck.NbWarnings(); i++)
+        for (int i = 1; i <= theCheck.WarningCount; i++)
         {
             theLines.Add(thePrefix + " W " + StepFileDump.Esc(theCheck.CWarning(i, true)));
         }
@@ -116,12 +119,12 @@ internal static class StepDataDump
     {
         var aRead = new List<string>();
         var aWrite = new List<string>();
-        StepData_Protocol aProtocol = HeaderOnlyProtocol();
-        var aModel = new StepData_StepModel();
-        var aFileDataModel = new StepFile_ReadData();
+        StepProtocol aProtocol = HeaderOnlyProtocol();
+        var aModel = new StepModel();
+        var aFileDataModel = new ReadData();
         try
         {
-            if (new StepFile_Parser(new StepFile_Scanner(aFileDataModel, theStream)).parse() != 0)
+            if (new StepParser(new Scanner(aFileDataModel, theStream)).Parse() != 0)
             {
                 aRead.Add("RESULT 1");
                 return (aRead, aWrite);
@@ -135,14 +138,14 @@ internal static class StepDataDump
 
         aRead.Add("RESULT 0");
         aFileDataModel.GetFileNbR(out int nbhead, out int nbrec, out int nbpar);
-        var undirec = new StepData_StepReaderData(nbhead, nbrec, nbpar, aModel.SourceCodePage());
+        var undirec = new StepReaderData(nbhead, nbrec, nbpar, aModel.SourceCodePage());
         for (int nr = 1; nr <= nbrec; nr++)
         {
             aFileDataModel.GetRecordDescription(out string? ident, out string? typrec, out int nbarg);
             undirec.SetRecord(nr, ident!, typrec!, nbarg);
             if (nbarg > 0)
             {
-                while (aFileDataModel.GetArgDescription(out Interface_ParamType typa, out string? val))
+                while (aFileDataModel.GetArgDescription(out ParamType typa, out string? val))
                 {
                     undirec.AddStepParam(nr, val!, typa);
                 }
@@ -154,7 +157,7 @@ internal static class StepDataDump
 
         aFileDataModel.ErrorHandle(undirec.GlobalCheck());
         aFileDataModel.ClearRecorder(1);
-        var readtool = new StepData_StepReaderTool(undirec, aProtocol);
+        var readtool = new StepReaderTool(undirec, aProtocol);
         readtool.SetErrorHandle(true);
         readtool.PrepareHeader(null);
         readtool.Prepare(null);
@@ -164,14 +167,14 @@ internal static class StepDataDump
             aModel.SetProtocol(aProtocol);
         }
 
-        Interface_EntityIterator aHeader = aModel.Header();
+        EntityIterator aHeader = aModel.Header();
         aRead.Add("HEADER " + aHeader.NbEntities().ToString(CultureInfo.InvariantCulture));
         for (aHeader.Start(); aHeader.More(); aHeader.Next())
         {
             aRead.Add("H " + Entity(aHeader.Value(), aModel));
         }
 
-        int nb = aModel.NbEntities();
+        int nb = aModel.EntityCount;
         aRead.Add("NB " + nb.ToString(CultureInfo.InvariantCulture));
         for (int i = 1; i <= nb; i++)
         {
@@ -185,16 +188,16 @@ internal static class StepDataDump
         Checks(aRead, "G", aModel.GlobalCheck());
 
         // Every text parameter, decoded (cleanText through ReadString)
-        for (int num = 1; num <= undirec.NbRecords(); num++)
+        for (int num = 1; num <= undirec.RecordCount; num++)
         {
             for (int nump = 1; nump <= undirec.NbParams(num); nump++)
             {
-                if (undirec.ParamType(num, nump) != Interface_ParamType.Interface_ParamText)
+                if (undirec.ParamType(num, nump) != ParamType.ParamText)
                 {
                     continue;
                 }
 
-                var ach = new Interface_Check();
+                var ach = new FrameworkCheck();
                 TCollection_HAsciiString? aVal = null;
                 string aPrefix = string.Create(CultureInfo.InvariantCulture, $"T {num} {nump} ");
                 try
@@ -214,14 +217,14 @@ internal static class StepDataDump
         readtool.Clear();
 
         // The model written back
-        var aWriter = new StepData_StepWriter(aModel);
+        var aWriter = new StepWriter(aModel);
         aWriter.SendModel(aProtocol);
-        for (int i = 1; i <= aWriter.NbLines(); i++)
+        for (int i = 1; i <= aWriter.LineCount; i++)
         {
             aWrite.Add(aWriter.Line(i).ToCString());
         }
 
-        Interface_CheckIterator aChecks = aWriter.CheckList();
+        CheckIterator aChecks = aWriter.CheckList();
         for (aChecks.Start(); aChecks.More(); aChecks.Next())
         {
             Checks(aWrite, "WC " + aChecks.Number().ToString(CultureInfo.InvariantCulture), aChecks.Value());

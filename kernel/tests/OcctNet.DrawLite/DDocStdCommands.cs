@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -11,13 +12,13 @@ using Occt;
 namespace OcctNet.DrawLite;
 
 /// <summary>
-/// A Draw-lite document (DDocStd_DrawDocument): an <see cref="XdeDoc_Document"/> under a Draw variable, in place of an
+/// A Draw-lite document (DDocStd_DrawDocument): an <see cref="ExchangeDocument"/> under a Draw variable, in place of an
 /// OCAF document with XCAF's tools (decision 1166, plan 2.6). Its labels are XCAF's; it has no undo and no storage.
 /// </summary>
-public sealed class DrawDocument(XdeDoc_Document theDocument) : DrawDrawable
+public sealed class DrawDocument(ExchangeDocument theDocument) : DrawDrawable
 {
     /// <summary>The document.</summary>
-    public XdeDoc_Document Document { get; } = theDocument;
+    public ExchangeDocument Document { get; } = theDocument;
 
     public override string TypeName => "DDocStd_DrawDocument";
 
@@ -71,10 +72,10 @@ internal static class DDocStdCommands
     }
 
     /// <summary>A new document (TDocStd_Application::NewDocument "BinXCAF") bound to the variable (Draw::Set).</summary>
-    internal static XdeDoc_Document NewDocument(DrawInterpreter theDI, string theName, XdeDoc_Document? theDocument = null)
+    internal static ExchangeDocument NewDocument(DrawInterpreter theDI, string theName, ExchangeDocument? theDocument = null)
     {
         Session aSession = session(theDI);
-        XdeDoc_Document aDoc = theDocument ?? new XdeDoc_Document();
+        ExchangeDocument aDoc = theDocument ?? new ExchangeDocument();
         aDoc.AutoNaming = aSession.AutoNaming;
         var aDrawDoc = new DrawDocument(aDoc);
         aSession.Documents.RemoveAll(d => theDI.GetDrawable(d.Name) != d);
@@ -84,7 +85,7 @@ internal static class DDocStdCommands
     }
 
     /// <summary>DDocStd::GetDocument: the document of the variable, or null (with a line on the output if asked).</summary>
-    internal static XdeDoc_Document? GetDocument(DrawInterpreter theDI, string theName, bool theToComplain = true)
+    internal static ExchangeDocument? GetDocument(DrawInterpreter theDI, string theName, bool theToComplain = true)
     {
         if (theDI.GetDrawable(theName) is DrawDocument aDoc)
         {
@@ -102,7 +103,7 @@ internal static class DDocStdCommands
     /// one (any character but digits and ':') or names no label. The tags after the first are followed from the root;
     /// the root itself (an entry of one tag), which Draw-lite's documents don't have, gives the null label.
     /// </summary>
-    internal static XdeDoc_Label Label(XdeDoc_Document theDoc, string theEntry)
+    internal static Label Label(ExchangeDocument theDoc, string theEntry)
     {
         var aTags = new List<int>();
         int n = 0;
@@ -158,7 +159,7 @@ internal static class DDocStdCommands
         {
             if (GetDocument(theDI, a[1], false) is null)
             {
-                XdeDoc_Document aDoc = NewDocument(theDI, a[1]);
+                ExchangeDocument aDoc = NewDocument(theDI, a[1]);
                 di.Append(nb == 2 ? "document (not handled by application)  " : "document ").Append(a[1]).Append(" created\n");
                 // DDocStd::ReturnLabel (D->Main())
                 di.Append(aDoc.Main().Entry());
@@ -255,13 +256,13 @@ internal static class DDocStdCommands
         {
             return 1;
         }
-        XdeDoc_Document? aDoc = getDF(theDI, a[1]);
+        ExchangeDocument? aDoc = getDF(theDI, a[1]);
         if (aDoc is null)
         {
             return 1;
         }
-        XdeDoc_Label aLabel = Label(aDoc, a[2]);
-        if (aLabel.IsNull())
+        Label aLabel = Label(aDoc, a[2]);
+        if (aLabel.IsNull)
         {
             return 1;
         }
@@ -270,9 +271,9 @@ internal static class DDocStdCommands
     }
 
     // DDF::GetDF: the document's data framework, with DDF's complaint
-    private static XdeDoc_Document? getDF(DrawInterpreter theDI, string theName)
+    private static ExchangeDocument? getDF(DrawInterpreter theDI, string theName)
     {
-        XdeDoc_Document? aDoc = GetDocument(theDI, theName, false);
+        ExchangeDocument? aDoc = GetDocument(theDI, theName, false);
         if (aDoc is null)
         {
             theDI.Output.Write("framework " + theName + " not found \n");
@@ -285,15 +286,15 @@ internal static class DDocStdCommands
     {
         if (a.Count == 4 || a.Count == 5)
         {
-            XdeDoc_Document? aDoc = getDF(theDI, a[1]);
+            ExchangeDocument? aDoc = getDF(theDI, a[1]);
             if (aDoc is null)
             {
                 return 1;
             }
             // DDF::AddLabel creates a missing label (TDF_Tool::Label with create), which Draw-lite's documents can't:
             // the command then fails (decision 1259)
-            XdeDoc_Label aLabel = Label(aDoc, a[2]);
-            if (aLabel.IsNull())
+            Label aLabel = Label(aDoc, a[2]);
+            if (aLabel.IsNull)
             {
                 di.Append("Label is not found\n");
                 return 1;
@@ -311,17 +312,17 @@ internal static class DDocStdCommands
     {
         if (a.Count == 3 || a.Count == 4)
         {
-            XdeDoc_Document? aDoc = getDF(theDI, a[1]);
+            ExchangeDocument? aDoc = getDF(theDI, a[1]);
             if (aDoc is null)
             {
                 return 1;
             }
-            XdeDoc_Label aLabel = Label(aDoc, a[2]);
-            if (aLabel.IsNull())
+            Label aLabel = Label(aDoc, a[2]);
+            if (aLabel.IsNull)
             {
                 di.Append("Label is not found\n");
             }
-            if (aLabel.IsNull() || !aDoc.GetName(aLabel, out string? aName))
+            if (aLabel.IsNull || !aDoc.GetName(aLabel, out string? aName))
             {
                 di.Append("Name attribute is not found or not set");
                 return 1;

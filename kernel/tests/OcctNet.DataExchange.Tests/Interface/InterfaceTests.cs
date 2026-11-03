@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Monitoring;
 using Kerf.Engine.Foundation;
-using static Occt.Interface_CheckStatus;
-using static Occt.Interface_ParamType;
+using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
+using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace OcctNet.DataExchange.Tests.Interface;
 
@@ -13,7 +15,7 @@ public class InterfaceTests
     [Fact]
     public void EntityIterator_iterates_selects_and_types()
     {
-        var anIter = new Interface_EntityIterator();
+        var anIter = new EntityIterator();
         Assert.Equal(0, anIter.NbEntities());
         Assert.False(anIter.More());
         ToyEntity a = new("a"), b = new("b");
@@ -38,7 +40,7 @@ public class InterfaceTests
 
         var aList = new NCollection_HSequence<Transient>();
         aList.Append(a);
-        var aShared = new Interface_EntityIterator(aList); // over the list, not a copy
+        var aShared = new EntityIterator(aList); // over the list, not a copy
         aList.Append(b);
         Assert.Equal(2, aShared.NbEntities());
     }
@@ -46,8 +48,8 @@ public class InterfaceTests
     [Fact]
     public void EntityList_keeps_one_entity_alone_then_clusters()
     {
-        var aList = new Interface_EntityList();
-        Assert.True(aList.IsEmpty());
+        var aList = new EntityList();
+        Assert.True(aList.IsEmpty);
         var anEnts = Enumerable.Range(1, 9).Select(i => new ToyEntity(i.ToString())).ToArray();
         aList.Append(anEnts[0]);
         Assert.Same(anEnts[0], aList.Value(1));
@@ -58,13 +60,13 @@ public class InterfaceTests
         Assert.Equal(9, aList.NbEntities());
         Assert.Same(anEnts[6], aList.Value(7));
         Assert.Equal(9, aList.NbTypedEntities(typeof(ToyEntity)));
-        Assert.Throws<Interface_InterfaceError>(() => aList.TypedEntity(typeof(ToyEntity)));
+        Assert.Throws<InterfaceErrorException>(() => aList.TypedEntity(typeof(ToyEntity)));
         Assert.Same(anEnts[0], aList.TypedEntity(typeof(ToyEntity), 4)); // OCCT counts each cluster backwards
         aList.SetValue(2, anEnts[8]);
         Assert.Same(anEnts[8], aList.Value(2));
         aList.Remove(9);
         Assert.Equal(8, aList.NbEntities());
-        var anIter = new Interface_EntityIterator();
+        var anIter = new EntityIterator();
         aList.FillIterator(anIter);
         Assert.Equal(8, anIter.NbEntities());
         // OCCT's EntityCluster::Remove(num) runs out of its array for an inner rank: fixed (occt-issues.md, 8A1)
@@ -77,7 +79,7 @@ public class InterfaceTests
     [Fact]
     public void IntList_records_references_per_entity()
     {
-        var aList = new Interface_IntList(5);
+        var aList = new IntList(5);
         aList.SetNumber(2);
         aList.Add(4);
         Assert.Equal(1, aList.Length());
@@ -90,7 +92,7 @@ public class InterfaceTests
         aList.Add(2);
         aList.SetNumber(2);
         Assert.Equal(3, aList.Length());
-        Interface_IntList aCopy = aList.List(3, true);
+        IntList aCopy = aList.List(3, true);
         Assert.Equal(1, aCopy.Length());
         Assert.Equal(2, aCopy.Value(1));
         aList.SetNumber(1);
@@ -106,70 +108,70 @@ public class InterfaceTests
     [Fact]
     public void Check_collects_and_edits_messages()
     {
-        var aCheck = new Interface_Check();
-        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, aCheck.Status());
+        var aCheck = new FrameworkCheck();
+        Assert.Equal(FrameworkCheckStatus.CheckOK, aCheck.Status());
         aCheck.AddWarning("a warning", "original warning");
-        Assert.Equal(Interface_CheckStatus.Interface_CheckWarning, aCheck.Status());
+        Assert.Equal(FrameworkCheckStatus.CheckWarning, aCheck.Status());
         aCheck.AddFail("a fail");
         aCheck.AddFail(""); // ignored
-        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aCheck.Status());
-        Assert.Equal(1, aCheck.NbFails());
+        Assert.Equal(FrameworkCheckStatus.CheckFail, aCheck.Status());
+        Assert.Equal(1, aCheck.FailCount);
         Assert.Equal("original warning", aCheck.CWarning(1, false));
-        Assert.True(aCheck.Complies(Interface_CheckStatus.Interface_CheckMessage));
-        Assert.False(aCheck.Complies(Interface_CheckStatus.Interface_CheckNoFail));
-        Assert.True(aCheck.Complies(new TCollection_HAsciiString("a warning"), 0, Interface_CheckStatus.Interface_CheckWarning));
-        Assert.True(aCheck.Complies(new TCollection_HAsciiString("warn"), -1, Interface_CheckStatus.Interface_CheckWarning));
+        Assert.True(aCheck.Complies(FrameworkCheckStatus.CheckMessage));
+        Assert.False(aCheck.Complies(FrameworkCheckStatus.CheckNoFail));
+        Assert.True(aCheck.Complies(new TCollection_HAsciiString("a warning"), 0, FrameworkCheckStatus.CheckWarning));
+        Assert.True(aCheck.Complies(new TCollection_HAsciiString("warn"), -1, FrameworkCheckStatus.CheckWarning));
         Assert.True(aCheck.Mend("FM", 1)); // the fail is marked "Mended"
-        Assert.Equal(1, aCheck.NbFails());
+        Assert.Equal(1, aCheck.FailCount);
         Assert.Equal("Mended : a fail", aCheck.CFail(1));
         Assert.True(aCheck.Mend("CF", 1));
-        Assert.Equal(0, aCheck.NbFails());
+        Assert.Equal(0, aCheck.FailCount);
         aCheck.AddFail("a fail");
         var aText = new StringWriter();
         aCheck.Print(aText, 2);
         Assert.Contains("a fail", aText.ToString());
-        var anOther = new Interface_Check();
+        var anOther = new FrameworkCheck();
         anOther.GetMessages(aCheck);
-        Assert.Equal(1, anOther.NbWarnings());
-        Assert.Equal(1, anOther.NbFails());
+        Assert.Equal(1, anOther.WarningCount);
+        Assert.Equal(1, anOther.FailCount);
         aCheck.ClearWarnings();
         aCheck.ClearFails();
-        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, aCheck.Status());
+        Assert.Equal(FrameworkCheckStatus.CheckOK, aCheck.Status());
 
         // a message from the loaded resources
-        Interface_StaticSet.LoadMessages();
+        StaticSet.LoadMessages();
         var aMsg = new Msg("XSTEP_21");
         aMsg.Arg(3);
         aCheck.SendFail(aMsg);
-        Assert.Equal(1, aCheck.NbFails());
+        Assert.Equal(1, aCheck.FailCount);
     }
 
     [Fact]
     public void CheckIterator_merges_and_finds_checks()
     {
-        var aList = new Interface_CheckIterator("checks");
+        var aList = new CheckIterator("checks");
         Assert.Equal("checks", aList.Name());
-        var c1 = new Interface_Check();
+        var c1 = new FrameworkCheck();
         c1.AddFail("f1");
-        var c2 = new Interface_Check();
+        var c2 = new FrameworkCheck();
         c2.AddWarning("w2");
         aList.Add(c1, 1);
         aList.Add(c2, 2);
-        aList.Add(new Interface_Check(), 3); // empty: not added
-        var c1b = new Interface_Check();
+        aList.Add(new FrameworkCheck(), 3); // empty: not added
+        var c1b = new FrameworkCheck();
         c1b.AddWarning("w1");
         aList.Add(c1b, 1); // cumulated with the check of 1
-        Assert.Equal(1, aList.Check(1)!.NbWarnings());
+        Assert.Equal(1, aList.Check(1)!.WarningCount);
         Assert.False(aList.IsEmpty(true));
-        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aList.Status());
-        Interface_CheckIterator aWarnings = aList.Extract(Interface_CheckStatus.Interface_CheckWarning);
+        Assert.Equal(FrameworkCheckStatus.CheckFail, aList.Status());
+        CheckIterator aWarnings = aList.Extract(FrameworkCheckStatus.CheckWarning);
         Assert.Same(c2, aWarnings.Check(2));
-        Assert.Equal(0, aList.Check(9)!.NbFails()); // an empty check for a number without one
+        Assert.Equal(0, aList.Check(9)!.FailCount); // an empty check for a number without one
         aList.CCheck(9)!.AddFail("on the spot");
-        Assert.Equal(1, aList.Check(9)!.NbFails());
-        var aMerged = new Interface_CheckIterator();
+        Assert.Equal(1, aList.Check(9)!.FailCount);
+        var aMerged = new CheckIterator();
         aMerged.Merge(aList);
-        Assert.Equal(1, aMerged.Check(2)!.NbWarnings());
+        Assert.Equal(1, aMerged.Check(2)!.WarningCount);
         var aText = new StringWriter();
         aList.Print(aText, false);
         Assert.Contains("f1", aText.ToString());
@@ -179,44 +181,44 @@ public class InterfaceTests
     [Fact]
     public void UndefinedContent_keeps_literals_and_entities()
     {
-        var aContent = new Interface_UndefinedContent();
+        var aContent = new UndefinedContent();
         var anEnt = new ToyEntity("e");
-        aContent.AddLiteral(Interface_ParamType.Interface_ParamInteger, new TCollection_HAsciiString("12"));
-        aContent.AddEntity(Interface_ParamType.Interface_ParamIdent, anEnt);
-        aContent.AddLiteral(Interface_ParamType.Interface_ParamText, new TCollection_HAsciiString("'txt'"));
-        Assert.Equal(3, aContent.NbParams());
-        Assert.Equal(2, aContent.NbLiterals());
+        aContent.AddLiteral(ParamType.ParamInteger, new TCollection_HAsciiString("12"));
+        aContent.AddEntity(ParamType.ParamIdent, anEnt);
+        aContent.AddLiteral(ParamType.ParamText, new TCollection_HAsciiString("'txt'"));
+        Assert.Equal(3, aContent.ParamCount);
+        Assert.Equal(2, aContent.LiteralCount);
         Assert.True(aContent.IsParamEntity(2));
         Assert.Same(anEnt, aContent.ParamEntity(2));
         Assert.Equal("'txt'", aContent.ParamValue(3)!.ToCString());
-        Assert.Equal(Interface_ParamType.Interface_ParamText, aContent.ParamType(3));
-        Assert.True(aContent.ParamData(2, out Interface_ParamType aType, out Transient? aRef, out _));
-        Assert.Equal(Interface_ParamType.Interface_ParamIdent, aType);
+        Assert.Equal(ParamType.ParamText, aContent.ParamType(3));
+        Assert.True(aContent.ParamData(2, out ParamType aType, out Transient? aRef, out _));
+        Assert.Equal(ParamType.ParamIdent, aType);
         Assert.Same(anEnt, aRef);
-        aContent.SetLiteral(2, Interface_ParamType.Interface_ParamReal, new TCollection_HAsciiString("1.5"));
+        aContent.SetLiteral(2, ParamType.ParamReal, new TCollection_HAsciiString("1.5"));
         Assert.False(aContent.IsParamEntity(2));
         Assert.Equal("1.5", aContent.ParamValue(2)!.ToCString());
         aContent.RemoveParam(1);
-        Assert.Equal(2, aContent.NbParams());
+        Assert.Equal(2, aContent.ParamCount);
         Assert.Equal("1.5", aContent.ParamValue(1)!.ToCString());
     }
 
     [Fact]
     public void ParamSet_lists_parameters_and_their_texts()
     {
-        var aSet = new Interface_ParamSet(4);
-        Assert.Equal(1, aSet.Append("abcdef", 3, Interface_ParamType.Interface_ParamText, 0));
-        Assert.Equal(2, aSet.Append("#12", -1, Interface_ParamType.Interface_ParamIdent, 12));
+        var aSet = new ParamSet(4);
+        Assert.Equal(1, aSet.Append("abcdef", 3, ParamType.ParamText, 0));
+        Assert.Equal(2, aSet.Append("#12", -1, ParamType.ParamIdent, 12));
         Assert.Equal("abc", aSet.Param(1).CValue());
         Assert.Equal(12, aSet.Param(2).EntityNumber());
-        var aFP = new Interface_FileParameter();
-        aFP.Init("3.5", Interface_ParamType.Interface_ParamReal);
+        var aFP = new FileParameter();
+        aFP.Init("3.5", ParamType.ParamReal);
         aSet.Append(aFP);
-        aFP.Init("changed", Interface_ParamType.Interface_ParamText); // the set keeps a copy
+        aFP.Init("changed", ParamType.ParamText); // the set keeps a copy
         Assert.Equal("3.5", aSet.Param(3).CValue());
         aSet.ChangeParam(3).SetEntityNumber(7); // changed in place
         Assert.Equal(7, aSet.Param(3).EntityNumber());
-        Interface_ParamList aSub = aSet.Params(2, 2);
+        ParamList aSub = aSet.Params(2, 2);
         Assert.Equal(2, aSub.Length());
         Assert.Equal("#12", aSub.Value(1).CValue());
         Assert.Equal(3, aSet.Params(0, 0).Length());
@@ -247,41 +249,41 @@ public class InterfaceTests
     [Fact]
     public void LibCtl_selects_modules_through_protocols_and_their_resources()
     {
-        var aLib = new Interface_GeneralLib(ToyNorm.Protocol);
-        Assert.True(aLib.Select(new ToyEntity("a"), out Interface_GeneralModule? aModule, out int aCN));
+        var aLib = new GeneralLib(ToyNorm.ProtocolInstance);
+        Assert.True(aLib.Select(new ToyEntity("a"), out GeneralModule? aModule, out int aCN));
         Assert.IsType<ToyGeneralModule>(aModule);
         Assert.Equal(1, aCN);
-        Assert.False(aLib.Select(new MoniTool_IntVal(), out aModule, out aCN));
+        Assert.False(aLib.Select(new MonitorIntVal(), out aModule, out aCN));
         Assert.Null(aModule);
         Assert.Equal(0, aCN);
         int aCount = 0;
         for (aLib.Start(); aLib.More(); aLib.Next())
         {
-            Assert.Same(ToyNorm.Protocol, aLib.Protocol());
+            Assert.Same(ToyNorm.ProtocolInstance, aLib.Protocol());
             aCount++;
         }
         Assert.Equal(1, aCount);
 
         // a protocol using the toy one as a resource finds the toy module through it
-        var aLib2 = new Interface_GeneralLib(new ToyUserProtocol());
+        var aLib2 = new GeneralLib(new ToyUserProtocol());
         Assert.True(aLib2.Select(new ToyEntity("b"), out aModule, out _));
         Assert.IsType<ToyGeneralModule>(aModule);
-        Assert.False(new Interface_GeneralLib((Interface_Protocol?)null).Select(new ToyEntity("c"), out _, out _));
-        var aCopy = new Interface_GeneralLib(aLib2);
+        Assert.False(new GeneralLib((Protocol?)null).Select(new ToyEntity("c"), out _, out _));
+        var aCopy = new GeneralLib(aLib2);
         Assert.True(aCopy.Select(new ToyEntity("d"), out _, out _));
     }
 
-    private sealed class ToyUserProtocol : Interface_Protocol
+    private sealed class ToyUserProtocol : Protocol
     {
-        public override int NbResources() => 1;
+        public override int ResourceCount => 1;
 
-        public override Interface_Protocol? Resource(int num) => ToyNorm.Protocol;
+        public override Protocol? Resource(int num) => ToyNorm.ProtocolInstance;
 
         public override int TypeNumber(Type? atype) => 0;
 
-        public override Interface_InterfaceModel? NewModel() => new ToyModel();
+        public override InterfaceModel? NewModel() => new ToyModel();
 
-        public override bool IsSuitableModel(Interface_InterfaceModel? model) => false;
+        public override bool IsSuitableModel(InterfaceModel? model) => false;
 
         public override Transient? UnknownEntity() => null;
 
@@ -291,7 +293,7 @@ public class InterfaceTests
     [Fact]
     public void FloatWriter_and_LineBuffer_write_as_STEP_does()
     {
-        var aWriter = new Interface_FloatWriter(12); // StepData_StepWriter's
+        var aWriter = new FloatWriter(12); // StepData_StepWriter's
         Assert.Equal(2, aWriter.Write(0.0, out string aText));
         Assert.Equal("0.", aText);
         aWriter.Write(999.5, out aText);
@@ -305,7 +307,7 @@ public class InterfaceTests
         aWriter.Write(-123456.5, out aText);
         Assert.Equal("-1.234565E+05", aText);
 
-        var aBuf = new Interface_LineBuffer(20);
+        var aBuf = new LineBuffer(20);
         aBuf.SetInitial(2);
         aBuf.Add("abc");
         Assert.Equal(5, aBuf.Length());
@@ -317,10 +319,10 @@ public class InterfaceTests
     public void SignLabel_and_SignType_name_entities()
     {
         ToyModel aModel = ToyNorm.Model(new ToyEntity("lab"));
-        var aSign = new Interface_SignLabel();
+        var aSign = new SignLabel();
         Assert.Equal("Entity Label", aSign.Name());
         Assert.Equal("#lab", aSign.Text(aModel.Value(1), aModel));
-        Assert.Equal("Entity", Interface_SignType.ClassName("Toy_Entity"));
-        Assert.Equal("ToyEntity", Interface_SignType.ClassName("ToyEntity"));
+        Assert.Equal("Entity", SignType.ClassName("Toy_Entity"));
+        Assert.Equal("ToyEntity", SignType.ClassName("ToyEntity"));
     }
 }

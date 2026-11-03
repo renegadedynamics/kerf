@@ -7,10 +7,11 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
+using Occt;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Stl;
 
 /// <summary>Reads and writes triangulations from and to STL, binary or ASCII.</summary>
 /// <remarks>
@@ -23,7 +24,7 @@ namespace Occt;
 /// </para>
 /// <para>
 /// The triangulations read are published frozen (copy one to change it). <c>ReadFile</c> returns what was read
-/// before an error, as OCCT does, but nothing after a user break or past a limit (<see cref="RWStl_ReadLimits"/>),
+/// before an error, as OCCT does, but nothing after a user break or past a limit (<see cref="StlReadLimits"/>),
 /// where OCCT returns the part read (decision 1169). The writers only read the mesh. A write error of the stream
 /// (an <see cref="IOException"/>) returns false, as a C++ stream's fail state does.
 /// </para>
@@ -38,56 +39,56 @@ public static class RWStl
     private const string THE_HEADER = "STL Exported by Open CASCADE Technology [dev.opencascade.org]";
 
     //! Writing a Little Endian 32 bits integer
-    private static void convertInteger(int theValue, Span<byte> theResult) => BinaryPrimitives.WriteInt32LittleEndian(theResult, theValue);
+    private static void ConvertInteger(int value, Span<byte> result) => BinaryPrimitives.WriteInt32LittleEndian(result, value);
 
     //! Writing a Little Endian 32 bits float
-    private static void convertDouble(double theValue, Span<byte> theResult) => BinaryPrimitives.WriteSingleLittleEndian(theResult, (float)theValue);
+    private static void ConvertDouble(double value, Span<byte> result) => BinaryPrimitives.WriteSingleLittleEndian(result, (float)value);
 
     // RWStl.cxx's Reader: collects the nodes and triangles into a triangulation
-    private class Reader : RWStl_Reader
+    private class Reader : global::Kerf.Engine.Exchange.Stl.Reader
     {
-        private readonly NCollection_DynamicArray<Xyz> myNodes = new();
-        private readonly NCollection_DynamicArray<Triangle1> myTriangles = new();
+        private readonly NCollection_DynamicArray<Xyz> _nodes = new();
+        private readonly NCollection_DynamicArray<Triangle1> _triangles = new();
 
         //! Add new node
-        public override int AddNode(in Xyz thePnt)
+        public override int AddNode(in Xyz pnt)
         {
-            myNodes.Append(thePnt);
-            return myNodes.Length();
+            _nodes.Append(pnt);
+            return _nodes.Length();
         }
 
         //! Add new triangle
-        public override void AddTriangle(int theNode1, int theNode2, int theNode3)
+        public override void AddTriangle(int node1, int node2, int node3)
         {
-            myTriangles.Append(new Triangle1(theNode1, theNode2, theNode3));
+            _triangles.Append(new Triangle1(node1, node2, node3));
         }
 
         //! Creates Poly_Triangulation from collected data
         public Triangulation? GetTriangulation()
         {
-            if (myTriangles.IsEmpty())
+            if (_triangles.IsEmpty())
             {
                 return null;
             }
 
-            var aPoly = new Triangulation(myNodes.Length(), myTriangles.Length(), false);
-            for (int aNodeIter = 0; aNodeIter < myNodes.Length(); ++aNodeIter)
+            var poly = new Triangulation(_nodes.Length(), _triangles.Length(), false);
+            for (int nodeIter = 0; nodeIter < _nodes.Length(); ++nodeIter)
             {
-                aPoly.SetNode(aNodeIter + 1, new Point3D(myNodes[aNodeIter]));
+                poly.SetNode(nodeIter + 1, new Point3D(_nodes[nodeIter]));
             }
 
-            for (int aTriIter = 0; aTriIter < myTriangles.Length(); ++aTriIter)
+            for (int triIter = 0; triIter < _triangles.Length(); ++triIter)
             {
-                aPoly.SetTriangle(aTriIter + 1, myTriangles[aTriIter]);
+                poly.SetTriangle(triIter + 1, _triangles[triIter]);
             }
 
-            return aPoly;
+            return poly;
         }
 
         protected void Clear()
         {
-            myNodes.Clear();
-            myTriangles.Clear();
+            _nodes.Clear();
+            _triangles.Clear();
         }
     }
 
@@ -97,154 +98,154 @@ public static class RWStl
         //! Add triangulation to triangulation list for multi-domain case
         public override void AddSolid()
         {
-            if (GetTriangulation() is Triangulation aCurrentTri)
+            if (GetTriangulation() is Triangulation currentTri)
             {
-                myTriangulationList.Append(aCurrentTri);
+                _triangulationList.Append(currentTri);
             }
             Clear();
         }
 
         //! Returns triangulation list for multi-domain case
-        public NCollection_Sequence<Triangulation> ChangeTriangulationList() => myTriangulationList;
+        public NCollection_Sequence<Triangulation> ChangeTriangulationList() => _triangulationList;
 
-        private readonly NCollection_Sequence<Triangulation> myTriangulationList = new();
+        private readonly NCollection_Sequence<Triangulation> _triangulationList = new();
     }
 
     // The port publishes the triangulations it reads frozen
-    private static Triangulation? Published(Triangulation? theTriangulation)
+    private static Triangulation? Published(Triangulation? triangulation)
     {
-        theTriangulation?.Freeze();
-        return theTriangulation;
+        triangulation?.Freeze();
+        return triangulation;
     }
 
     // The port's: no result after a user break or past a limit (decision 1169)
-    private static bool Stopped(RWStl_Reader theReader, in ProgressRange theProgress)
-        => theReader.LimitExceeded() || theProgress.UserBreak();
+    private static bool Stopped(global::Kerf.Engine.Exchange.Stl.Reader reader, in ProgressRange progress)
+        => reader.LimitExceeded() || progress.UserBreak();
 
     /// <summary>
     /// Reads an STL file (format recognised from its content; the domains of a multi-domain file make one
     /// triangulation), merging nodes regardless of the angle. Null on an error with nothing read.
     /// </summary>
-    public static Triangulation? ReadFile(string theFile, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
-        => ReadFile(theFile, Math.PI / 2.0, theProgress, theLimits);
+    public static Triangulation? ReadFile(string file, ProgressRange progress = default, StlReadLimits? limits = null)
+        => ReadFile(file, Math.PI / 2.0, progress, limits);
 
     /// <summary>
     /// Reads an STL file, merging nodes at the same point whose triangles make an angle below
-    /// <paramref name="theMergeAngle"/> (radians; 90 degrees merges regardless of the angle). Null on an error with
+    /// <paramref name="mergeAngle"/> (radians; 90 degrees merges regardless of the angle). Null on an error with
     /// nothing read.
     /// </summary>
-    public static Triangulation? ReadFile(string theFile, double theMergeAngle, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadFile(string file, double mergeAngle, ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new Reader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        aReader.Read(theFile, theProgress);
+        var reader = new Reader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        reader.Read(file, progress);
         // note that returned bool value is ignored intentionally -- even if something went wrong,
         // but some data have been read, we at least will return these data
-        return Stopped(aReader, theProgress) ? null : Published(aReader.GetTriangulation());
+        return Stopped(reader, progress) ? null : Published(reader.GetTriangulation());
     }
 
     /// <summary>
-    /// <see cref="ReadFile(string, double, ProgressRange, RWStl_ReadLimits)"/> on the data of a stream from
+    /// <see cref="ReadFile(string, double, ProgressRange, StlReadLimits)"/> on the data of a stream from
     /// its position (an addition).
     /// </summary>
-    public static Triangulation? ReadFile(Stream theStream, double theMergeAngle = Math.PI / 2.0, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadFile(Stream stream, double mergeAngle = Math.PI / 2.0, ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new Reader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        aReader.Read(theStream, theProgress);
-        return Stopped(aReader, theProgress) ? null : Published(aReader.GetTriangulation());
+        var reader = new Reader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        reader.Read(stream, progress);
+        return Stopped(reader, progress) ? null : Published(reader.GetTriangulation());
     }
 
     /// <summary>
     /// Reads an STL file into one triangulation per domain (solid) of a multi-domain file, into
-    /// <paramref name="theTriangList"/> (cleared first). Empty after a user break or past a limit.
+    /// <paramref name="triangList"/> (cleared first). Empty after a user break or past a limit.
     /// </summary>
-    public static void ReadFile(string theFile, double theMergeAngle, NCollection_Sequence<Triangulation> theTriangList,
-                                ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static void ReadFile(string file, double mergeAngle, NCollection_Sequence<Triangulation> triangList,
+                                ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new MultiDomainReader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        aReader.Read(theFile, theProgress);
-        TakeDomains(aReader, theTriangList, theProgress);
+        var reader = new MultiDomainReader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        reader.Read(file, progress);
+        TakeDomains(reader, triangList, progress);
     }
 
     /// <summary>
-    /// <see cref="ReadFile(string, double, NCollection_Sequence{Triangulation}, ProgressRange, RWStl_ReadLimits)"/>
+    /// <see cref="ReadFile(string, double, NCollection_Sequence{Triangulation}, ProgressRange, StlReadLimits)"/>
     /// on the data of a stream from its position (an addition).
     /// </summary>
-    public static void ReadFile(Stream theStream, double theMergeAngle, NCollection_Sequence<Triangulation> theTriangList,
-                                ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static void ReadFile(Stream stream, double mergeAngle, NCollection_Sequence<Triangulation> triangList,
+                                ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new MultiDomainReader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        aReader.Read(theStream, theProgress);
-        TakeDomains(aReader, theTriangList, theProgress);
+        var reader = new MultiDomainReader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        reader.Read(stream, progress);
+        TakeDomains(reader, triangList, progress);
     }
 
-    private static void TakeDomains(MultiDomainReader theReader, NCollection_Sequence<Triangulation> theTriangList, in ProgressRange theProgress)
+    private static void TakeDomains(MultiDomainReader reader, NCollection_Sequence<Triangulation> triangList, in ProgressRange progress)
     {
-        theTriangList.Clear();
-        if (Stopped(theReader, theProgress))
+        triangList.Clear();
+        if (Stopped(reader, progress))
         {
             return;
         }
-        NCollection_Sequence<Triangulation> aList = theReader.ChangeTriangulationList();
-        for (int i = 1; i <= aList.Length(); ++i)
+        NCollection_Sequence<Triangulation> list = reader.ChangeTriangulationList();
+        for (int i = 1; i <= list.Length(); ++i)
         {
-            theTriangList.Append(Published(aList.Value(i))!);
+            triangList.Append(Published(list.Value(i))!);
         }
     }
 
     /// <summary>Reads a binary STL file (one domain). Null on an error or a user break.</summary>
-    public static Triangulation? ReadBinary(string thePath, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadBinary(string path, ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        using FileStream? aStream = RWStl_Reader.OpenFile(thePath);
-        if (aStream is null)
+        using FileStream? stream = global::Kerf.Engine.Exchange.Stl.Reader.OpenFile(path);
+        if (stream is null)
         {
             return null;
         }
         // OCCT's ReadBinary(OSD_Path) leaves the merge angle at its default
-        return ReadBinaryStream(aStream, Math.PI / 2.0, theProgress, theLimits);
+        return ReadBinaryStream(stream, Math.PI / 2.0, progress, limits);
     }
 
     /// <summary>Reads an ASCII STL file (one domain). Null on an error or a user break.</summary>
-    public static Triangulation? ReadAscii(string thePath, ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadAscii(string path, ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        using FileStream? aStream = RWStl_Reader.OpenFile(thePath);
-        if (aStream is null)
+        using FileStream? stream = global::Kerf.Engine.Exchange.Stl.Reader.OpenFile(path);
+        if (stream is null)
         {
             return null;
         }
-        return ReadAsciiStream(aStream, Math.PI / 2.0, theProgress, theLimits);
+        return ReadAsciiStream(stream, Math.PI / 2.0, progress, limits);
     }
 
     /// <summary>Reads binary STL from a stream (one domain). Null on an error or a user break.</summary>
-    public static Triangulation? ReadBinaryStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                       ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadBinaryStream(Stream stream, double mergeAngle = Math.PI / 2.0,
+                                                       ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new Reader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        InputStream? aStream = aReader.OpenStream(theStream);
-        if (aStream is null || !aReader.ReadBinary(aStream, theProgress))
+        var reader = new Reader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        InputStream? aStream = reader.OpenStream(stream);
+        if (aStream is null || !reader.ReadBinary(aStream, progress))
         {
             return null;
         }
-        return Published(aReader.GetTriangulation());
+        return Published(reader.GetTriangulation());
     }
 
     /// <summary>Reads ASCII STL from a stream (one domain). Null on an error or a user break.</summary>
-    public static Triangulation? ReadAsciiStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                      ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadAsciiStream(Stream stream, double mergeAngle = Math.PI / 2.0,
+                                                      ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        var aReader = new Reader();
-        aReader.SetMergeAngle(theMergeAngle);
-        aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-        InputStream? aStream = aReader.OpenStream(theStream);
+        var reader = new Reader();
+        reader.SetMergeAngle(mergeAngle);
+        reader.SetLimits(limits ?? StlReadLimits.None);
+        InputStream? aStream = reader.OpenStream(stream);
         if (aStream is null)
         {
             return null;
@@ -255,108 +256,108 @@ public static class RWStl
         long theEnd = aStream.TellG();
         aStream.SeekG(0);
 
-        var aBuffer = new ReadLineBuffer(THE_BUFFER_SIZE);
-        if (!aReader.ReadAscii(aStream, aBuffer, theEnd, theProgress))
+        var buffer = new ReadLineBuffer(THE_BUFFER_SIZE);
+        if (!reader.ReadAscii(aStream, buffer, theEnd, progress))
         {
             return null;
         }
-        return Published(aReader.GetTriangulation());
+        return Published(reader.GetTriangulation());
     }
 
     /// <summary>
     /// Reads STL from a stream, ASCII if it starts with "solid", binary otherwise (a binary file whose header starts
-    /// with "solid" fails: <see cref="ReadFile(Stream, double, ProgressRange, RWStl_ReadLimits)"/> recognises
+    /// with "solid" fails: <see cref="ReadFile(Stream, double, ProgressRange, StlReadLimits)"/> recognises
     /// it). One domain. Null on an error or a user break.
     /// </summary>
-    public static Triangulation? ReadStream(Stream theStream, double theMergeAngle = Math.PI / 2.0,
-                                                 ProgressRange theProgress = default, RWStl_ReadLimits? theLimits = null)
+    public static Triangulation? ReadStream(Stream stream, double mergeAngle = Math.PI / 2.0,
+                                                 ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        ArgumentNullException.ThrowIfNull(theStream);
-        if (!theStream.CanSeek)
+        ArgumentNullException.ThrowIfNull(stream);
+        if (!stream.CanSeek)
         {
             // the port: the peek below needs to seek back (ReadAsciiStream and ReadBinaryStream copy such a stream
             // into memory anyway)
-            var aReader = new Reader();
-            aReader.SetLimits(theLimits ?? RWStl_ReadLimits.None);
-            InputStream? aCopy = aReader.OpenStream(theStream);
-            if (aCopy is null)
+            var reader = new Reader();
+            reader.SetLimits(limits ?? StlReadLimits.None);
+            InputStream? copy = reader.OpenStream(stream);
+            if (copy is null)
             {
                 return null;
             }
-            theStream = aCopy.BaseStream;
+            stream = copy.BaseStream;
         }
 
         // Try to detect ASCII vs Binary format by peeking at the first few bytes
-        long anOriginalPos = theStream.Position;
-        Span<byte> aHeader = stackalloc byte[5];
-        int aNbRead = theStream.ReadAtLeast(aHeader, 5, throwOnEndOfStream: false);
-        theStream.Position = anOriginalPos;
+        long originalPos = stream.Position;
+        Span<byte> header = stackalloc byte[5];
+        int nbRead = stream.ReadAtLeast(header, 5, throwOnEndOfStream: false);
+        stream.Position = originalPos;
 
-        bool isAscii = aNbRead == 5 && aHeader.SequenceEqual("solid"u8);
+        bool isAscii = nbRead == 5 && header.SequenceEqual("solid"u8);
 
         if (isAscii)
         {
-            return ReadAsciiStream(theStream, theMergeAngle, theProgress, theLimits);
+            return ReadAsciiStream(stream, mergeAngle, progress, limits);
         }
         else
         {
-            return ReadBinaryStream(theStream, theMergeAngle, theProgress, theLimits);
+            return ReadBinaryStream(stream, mergeAngle, progress, limits);
         }
     }
 
     /// <summary>Writes the triangulation to a binary STL file. False if it is null or empty, or on an error.</summary>
-    public static bool WriteBinary(Triangulation? theMesh, string thePath, ProgressRange theProgress = default)
+    public static bool WriteBinary(Triangulation? mesh, string path, ProgressRange progress = default)
     {
-        if (theMesh is null || theMesh.TriangleCount <= 0)
+        if (mesh is null || mesh.TriangleCount <= 0)
         {
             return false;
         }
 
-        FileStream? aStream = CreateFile(thePath);
-        if (aStream is null)
+        FileStream? stream = CreateFile(path);
+        if (stream is null)
         {
             return false;
         }
 
-        using (aStream)
+        using (stream)
         {
-            return WriteBinary(theMesh, aStream, theProgress);
+            return WriteBinary(mesh, stream, progress);
         }
     }
 
     /// <summary>Writes the triangulation to an ASCII STL file. False if it is null or empty, or on an error.</summary>
-    public static bool WriteAscii(Triangulation? theMesh, string thePath, ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? mesh, string path, ProgressRange progress = default)
     {
-        if (theMesh is null || theMesh.TriangleCount <= 0)
+        if (mesh is null || mesh.TriangleCount <= 0)
         {
             return false;
         }
 
-        FileStream? aStream = CreateFile(thePath);
-        if (aStream is null)
+        FileStream? stream = CreateFile(path);
+        if (stream is null)
         {
             return false;
         }
 
-        using (aStream)
+        using (stream)
         {
-            return WriteAscii(theMesh, aStream, theProgress);
+            return WriteAscii(mesh, stream, progress);
         }
     }
 
     /// <summary>Writes the triangulation as ASCII STL to a stream (bytes, LF line ends).</summary>
-    public static bool WriteAscii(Triangulation? theMesh, Stream theStream, ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? mesh, Stream stream, ProgressRange progress = default)
     {
-        if (theMesh is null || theMesh.TriangleCount <= 0)
+        if (mesh is null || mesh.TriangleCount <= 0)
         {
             return false;
         }
 
         try
         {
-            using var aWriter = new StreamWriter(theStream, new UTF8Encoding(false), 1 << 16, leaveOpen: true);
-            bool isDone = WriteAscii(theMesh, aWriter, theProgress);
-            aWriter.Flush();
+            using var writer = new StreamWriter(stream, new UTF8Encoding(false), 1 << 16, leaveOpen: true);
+            bool isDone = WriteAscii(mesh, writer, progress);
+            writer.Flush();
             return isDone;
         }
         catch (IOException)
@@ -366,9 +367,9 @@ public static class RWStl
     }
 
     /// <summary>Writes the triangulation as ASCII STL to a text writer.</summary>
-    public static bool WriteAscii(Triangulation? theMesh, TextWriter theStream, ProgressRange theProgress = default)
+    public static bool WriteAscii(Triangulation? mesh, TextWriter stream, ProgressRange progress = default)
     {
-        if (theMesh is null || theMesh.TriangleCount <= 0)
+        if (mesh is null || mesh.TriangleCount <= 0)
         {
             return false;
         }
@@ -376,55 +377,55 @@ public static class RWStl
         try
         {
             // note that space after 'solid' is necessary for many systems
-            theStream.Write("solid \n");
+            stream.Write("solid \n");
 
-            int NBTriangles = theMesh.TriangleCount;
-            using var aPS = new ProgressScope(theProgress, "Triangles", NBTriangles);
+            int nbTriangles = mesh.TriangleCount;
+            using var ps = new ProgressScope(progress, "Triangles", nbTriangles);
 
-            for (int aTriIter = 1; aTriIter <= NBTriangles; ++aTriIter)
+            for (int triIter = 1; triIter <= nbTriangles; ++triIter)
             {
-                Triangle1 aTriangle = theMesh.Triangle(aTriIter);
-                aTriangle.Get(out int anElem0, out int anElem1, out int anElem2);
-                Point3D aP1 = theMesh.Node(anElem0);
-                Point3D aP2 = theMesh.Node(anElem1);
-                Point3D aP3 = theMesh.Node(anElem2);
-                var aVec1 = new Vector3D(aP1, aP2);
-                var aVec2 = new Vector3D(aP1, aP3);
-                Vector3D aVNorm = aVec1.Crossed(aVec2);
-                if (aVNorm.SquareMagnitude() > Constants.Resolution())
+                Triangle1 triangle = mesh.Triangle(triIter);
+                triangle.Get(out int elem0, out int elem1, out int elem2);
+                Point3D p1 = mesh.Node(elem0);
+                Point3D p2 = mesh.Node(elem1);
+                Point3D p3 = mesh.Node(elem2);
+                var vec1 = new Vector3D(p1, p2);
+                var vec2 = new Vector3D(p1, p3);
+                Vector3D vNorm = vec1.Crossed(vec2);
+                if (vNorm.SquareMagnitude() > Constants.Resolution())
                 {
-                    aVNorm.Normalize();
+                    vNorm.Normalize();
                 }
                 else
                 {
-                    aVNorm.SetCoord(0.0, 0.0, 0.0);
+                    vNorm.SetCoord(0.0, 0.0, 0.0);
                 }
 
                 // std::scientific << std::setprecision(12)
-                theStream.Write(" facet normal ");
-                theStream.Write(E12(aVNorm.X()));
-                theStream.Write(' ');
-                theStream.Write(E12(aVNorm.Y()));
-                theStream.Write(' ');
-                theStream.Write(E12(aVNorm.Z()));
-                theStream.Write("\n   outer loop\n");
-                WriteVertex(theStream, aP1);
-                WriteVertex(theStream, aP2);
-                WriteVertex(theStream, aP3);
-                theStream.Write("   endloop\n endfacet\n");
+                stream.Write(" facet normal ");
+                stream.Write(E12(vNorm.X()));
+                stream.Write(' ');
+                stream.Write(E12(vNorm.Y()));
+                stream.Write(' ');
+                stream.Write(E12(vNorm.Z()));
+                stream.Write("\n   outer loop\n");
+                WriteVertex(stream, p1);
+                WriteVertex(stream, p2);
+                WriteVertex(stream, p3);
+                stream.Write("   endloop\n endfacet\n");
 
                 // update progress only per 1k triangles
-                if ((aTriIter % IND_THRESHOLD) == 0)
+                if ((triIter % IND_THRESHOLD) == 0)
                 {
-                    if (!aPS.More())
+                    if (!ps.More())
                     {
                         return false;
                     }
-                    aPS.Next(IND_THRESHOLD);
+                    ps.Next(IND_THRESHOLD);
                 }
             }
 
-            theStream.Write("endsolid\n");
+            stream.Write("endsolid\n");
             return true;
         }
         catch (IOException)
@@ -433,113 +434,113 @@ public static class RWStl
         }
     }
 
-    private static string E12(double theValue) => StreamUtilities.FormatScientific(theValue, 12);
+    private static string E12(double value) => StreamUtilities.FormatScientific(value, 12);
 
-    private static void WriteVertex(TextWriter theStream, in Point3D theP)
+    private static void WriteVertex(TextWriter stream, in Point3D p)
     {
-        theStream.Write("     vertex ");
-        theStream.Write(E12(theP.X()));
-        theStream.Write(' ');
-        theStream.Write(E12(theP.Y()));
-        theStream.Write(' ');
-        theStream.Write(E12(theP.Z()));
-        theStream.Write('\n');
+        stream.Write("     vertex ");
+        stream.Write(E12(p.X()));
+        stream.Write(' ');
+        stream.Write(E12(p.Y()));
+        stream.Write(' ');
+        stream.Write(E12(p.Z()));
+        stream.Write('\n');
     }
 
     /// <summary>Writes the triangulation as binary STL to a stream (OCCT's 80-byte header, then the facets).</summary>
-    public static bool WriteBinary(Triangulation? theMesh, Stream theStream, ProgressRange theProgress = default)
+    public static bool WriteBinary(Triangulation? mesh, Stream stream, ProgressRange progress = default)
     {
-        if (theMesh is null || theMesh.TriangleCount <= 0)
+        if (mesh is null || mesh.TriangleCount <= 0)
         {
             return false;
         }
 
         try
         {
-            Span<byte> aHeader = stackalloc byte[80];
-            aHeader.Clear();
-            Encoding.ASCII.GetBytes(THE_HEADER, aHeader);
-            theStream.Write(aHeader);
+            Span<byte> header = stackalloc byte[80];
+            header.Clear();
+            Encoding.ASCII.GetBytes(THE_HEADER, header);
+            stream.Write(header);
 
-            int aNBTriangles = theMesh.TriangleCount;
-            using var aPS = new ProgressScope(theProgress, "Triangles", aNBTriangles);
-            const int aNbChunkTriangles = 4096;
-            const int aChunkSize = aNbChunkTriangles * THE_STL_SIZEOF_FACET;
-            byte[] aData = new byte[aChunkSize];
-            Span<byte> aDataChunk = aData;
-            Span<byte> aConv = stackalloc byte[4];
-            convertInteger(aNBTriangles, aConv);
-            theStream.Write(aConv);
+            int nbTriangles = mesh.TriangleCount;
+            using var ps = new ProgressScope(progress, "Triangles", nbTriangles);
+            const int nbChunkTriangles = 4096;
+            const int chunkSize = nbChunkTriangles * THE_STL_SIZEOF_FACET;
+            byte[] data = new byte[chunkSize];
+            Span<byte> dataChunk = data;
+            Span<byte> conv = stackalloc byte[4];
+            ConvertInteger(nbTriangles, conv);
+            stream.Write(conv);
 
-            int aByteCount = 0;
-            for (int aTriIter = 1; aTriIter <= aNBTriangles; ++aTriIter)
+            int byteCount = 0;
+            for (int triIter = 1; triIter <= nbTriangles; ++triIter)
             {
-                Triangle1 aTriangle = theMesh.Triangle(aTriIter);
-                aTriangle.Get(out int id0, out int id1, out int id2);
-                Point3D aP1 = theMesh.Node(id0);
-                Point3D aP2 = theMesh.Node(id1);
-                Point3D aP3 = theMesh.Node(id2);
-                var aVec1 = new Vector3D(aP1, aP2);
-                var aVec2 = new Vector3D(aP1, aP3);
-                Vector3D aVNorm = aVec1.Crossed(aVec2);
-                if (aVNorm.SquareMagnitude() > Constants.Resolution())
+                Triangle1 triangle = mesh.Triangle(triIter);
+                triangle.Get(out int id0, out int id1, out int id2);
+                Point3D p1 = mesh.Node(id0);
+                Point3D p2 = mesh.Node(id1);
+                Point3D p3 = mesh.Node(id2);
+                var vec1 = new Vector3D(p1, p2);
+                var vec2 = new Vector3D(p1, p3);
+                Vector3D vNorm = vec1.Crossed(vec2);
+                if (vNorm.SquareMagnitude() > Constants.Resolution())
                 {
-                    aVNorm.Normalize();
+                    vNorm.Normalize();
                 }
                 else
                 {
-                    aVNorm.SetCoord(0.0, 0.0, 0.0);
+                    vNorm.SetCoord(0.0, 0.0, 0.0);
                 }
-                convertDouble(aVNorm.X(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aVNorm.Y(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aVNorm.Z(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP1.X(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP1.Y(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP1.Z(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP2.X(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP2.Y(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP2.Z(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP3.X(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP3.Y(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                convertDouble(aP3.Z(), aDataChunk[aByteCount..]);
-                aByteCount += 4;
-                aDataChunk[aByteCount] = 0;
-                aDataChunk[aByteCount + 1] = 0;
-                aByteCount += 2;
+                ConvertDouble(vNorm.X(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(vNorm.Y(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(vNorm.Z(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p1.X(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p1.Y(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p1.Z(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p2.X(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p2.Y(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p2.Z(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p3.X(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p3.Y(), dataChunk[byteCount..]);
+                byteCount += 4;
+                ConvertDouble(p3.Z(), dataChunk[byteCount..]);
+                byteCount += 4;
+                dataChunk[byteCount] = 0;
+                dataChunk[byteCount + 1] = 0;
+                byteCount += 2;
 
                 // Chunk is full, write it out.
-                if (aByteCount == aChunkSize)
+                if (byteCount == chunkSize)
                 {
-                    theStream.Write(aData, 0, aChunkSize);
-                    aByteCount = 0;
+                    stream.Write(data, 0, chunkSize);
+                    byteCount = 0;
                 }
 
                 // update progress only per 1k triangles
-                if ((aTriIter % IND_THRESHOLD) == 0)
+                if ((triIter % IND_THRESHOLD) == 0)
                 {
-                    if (!aPS.More())
+                    if (!ps.More())
                     {
                         return false;
                     }
-                    aPS.Next(IND_THRESHOLD);
+                    ps.Next(IND_THRESHOLD);
                 }
             }
 
             // Write last part if necessary.
-            if (aByteCount != aChunkSize)
+            if (byteCount != chunkSize)
             {
-                theStream.Write(aData, 0, aByteCount);
+                stream.Write(data, 0, byteCount);
             }
 
             return true;
@@ -551,11 +552,11 @@ public static class RWStl
     }
 
     // OCCT's std::ofstream: false (null) if the file can't be created
-    internal static FileStream? CreateFile(string thePath)
+    internal static FileStream? CreateFile(string path)
     {
         try
         {
-            return new FileStream(thePath, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16);
+            return new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

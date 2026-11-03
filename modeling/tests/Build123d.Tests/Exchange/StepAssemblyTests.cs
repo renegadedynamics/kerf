@@ -59,16 +59,16 @@ public class StepAssemblyTests
     /// </summary>
     private static byte[] AsXcafWrites(Shape shape)
     {
-        var doc = new O.XdeDoc_Document();   // AutoNaming off, as build123d sets it
-        doc.SetLengthUnit(new O.XdeDoc_LengthUnit("MM", 0.001));
-        void Attributes(Shape node, O.XdeDoc_Label label)
+        var doc = new global::Kerf.Engine.Exchange.Documents.ExchangeDocument();   // AutoNaming off, as build123d sets it
+        doc.SetLengthUnit(new global::Kerf.Engine.Exchange.Documents.DocumentLengthUnit("MM", 0.001));
+        void Attributes(Shape node, global::Kerf.Engine.Exchange.Documents.Label label)
         {
             if (node.Label.Length > 0)
                 doc.SetName(label, node.Label);
             if (node.Color is { } c)
-                doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? O.XdeDoc_ColorType.XdeDoc_ColorSurf : O.XdeDoc_ColorType.XdeDoc_ColorCurv);
+                doc.SetColor(label, Linear(c), node.Faces().Count > 0 ? global::Kerf.Engine.Exchange.Documents.ColorType.ColorSurf : global::Kerf.Engine.Exchange.Documents.ColorType.ColorCurv);
         }
-        O.XdeDoc_Label Assembly(Compound assembly, global::Kerf.Topology.Shape s)
+        global::Kerf.Engine.Exchange.Documents.Label Assembly(Compound assembly, global::Kerf.Topology.Shape s)
         {
             var label = doc.NewShape();
             Attributes(assembly, label);
@@ -96,10 +96,10 @@ public class StepAssemblyTests
             Attributes(shape, doc.FindShape(occt, false));
         }
         doc.UpdateAssemblies();
-        var writer = new O.STEPCAFControl_Writer();
+        var writer = new global::Kerf.Engine.Exchange.Step.Caf.CafWriter();
         Assert.True(writer.Transfer(doc));
         var text = new MemoryStream();
-        Assert.Equal(O.IFSelect_ReturnStatus.IFSelect_RetDone, writer.WriteStream(text));
+        Assert.Equal(global::Kerf.Engine.Exchange.Framework.Selection.ReturnStatus.RetDone, writer.WriteStream(text));
         return StepHeader.WithFileName(text.ToArray(), shape.Label.Length > 0 ? shape.Label : null, Timestamp, "build123d");
     }
 
@@ -215,14 +215,14 @@ public class StepAssemblyTests
         try
         {
             // A two-part assembly written as three files: the assembly, referring to a file per part
-            var doc = O.XdeDoc_Document.FromTree(new O.XdeDoc_Tree(O.XdeDoc_Product.Assembly("pair",
-                O.XdeDoc_Product.Part(Occt(new Box(1, 1, 1)), "a").Placed(new global::Kerf.Topology.Placement()),
-                O.XdeDoc_Product.Part(Occt(new Sphere(1)), "b").Placed(new global::Kerf.Topology.Placement()))
+            var doc = global::Kerf.Engine.Exchange.Documents.ExchangeDocument.FromTree(new global::Kerf.Engine.Exchange.Documents.Tree(global::Kerf.Engine.Exchange.Documents.DocumentProduct.Assembly("pair",
+                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Box(1, 1, 1)), "a").Placed(new global::Kerf.Topology.Placement()),
+                global::Kerf.Engine.Exchange.Documents.DocumentProduct.Part(Occt(new Sphere(1)), "b").Placed(new global::Kerf.Topology.Placement()))
                 .Placed(new global::Kerf.Topology.Placement())));
-            var writer = new O.STEPCAFControl_Writer();
-            Assert.True(writer.Transfer(doc, O.STEPControl_StepModelType.STEPControl_AsIs, ""));
+            var writer = new global::Kerf.Engine.Exchange.Step.Caf.CafWriter();
+            Assert.True(writer.Transfer(doc, global::Kerf.Engine.Exchange.Step.ModelType.AsIs, ""));
             var main = Path.Combine(folder, "pair.step");
-            Assert.Equal(O.IFSelect_ReturnStatus.IFSelect_RetDone, writer.Write(main));
+            Assert.Equal(global::Kerf.Engine.Exchange.Framework.Selection.ReturnStatus.RetDone, writer.Write(main));
             Assert.True(Directory.GetFiles(folder).Length > 1);
 
             var read = Assert.IsType<Compound>(Importers.ImportStep(main));

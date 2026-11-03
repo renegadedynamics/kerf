@@ -6,6 +6,12 @@
 #nullable disable warnings
 
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Step.Basic;
+using Kerf.Engine.Exchange.Step.Construct;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Geometry;
+using Kerf.Engine.Exchange.Step.Kinematics;
+using Kerf.Engine.Exchange.Step.Representation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Conversion;
@@ -16,22 +22,23 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using System.Runtime.CompilerServices;
 using static Kerf.Geometry.Continuity;
-using static Occt.StepData_Logical;
-using static Occt.StepGeom_KnotType;
-using static Occt.StepGeom_TrimmingPreference;
+using static Kerf.Engine.Exchange.Step.Data.Logical;
+using static Kerf.Engine.Exchange.Step.Geometry.StepKnotType;
+using static Kerf.Engine.Exchange.Step.Geometry.StepTrimmingPreference;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Import.Geometry;
 
 /// <summary>
 /// The conversion of STEP's geometric entities (StepGeom) into Geom and Geom2d: points, directions, vectors,
 /// placements, curves, surfaces and transformations. Each method returns null when the entity can't be converted.
 /// </summary>
 /// <remarks>
-/// The units of the file are applied through <see cref="StepData_Factors"/> (lengths multiplied by
-/// <see cref="StepData_Factors.LengthFactor"/>, angles by <see cref="StepData_Factors.PlaneAngleFactor"/>); the
+/// The units of the file are applied through <see cref="Factors"/> (lengths multiplied by
+/// <see cref="Factors.LengthFactor"/>, angles by <see cref="Factors.PlaneAngleFactor"/>); the
 /// overloads without factors use the defaults (millimetres and radians). The results are new, unfrozen geometry.
 /// <c>MakeYprRotation</c> was added by unit 8F (decision 1238).
 /// </remarks>
@@ -42,72 +49,72 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an axis1_placement.</summary>
-    public static Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA, in StepData_Factors theLocalFactors)
+    public static Axis1Placement? MakeAxis1Placement(StepAxis1Placement sa, in Factors localFactors)
     {
-        CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
-        if (P is not null)
+        CartesianPoint? p = MakeCartesianPoint(sa.Location(), localFactors);
+        if (p is not null)
         {
             // sln 22.10.2001. CTS23496: If problems with creation of axis direction occur default direction
             // is used
-            Direction3D D = new Direction3D(Direction3D.D.Z);
-            if (SA.HasAxis())
+            Direction3D d = new Direction3D(Direction3D.D.Z);
+            if (sa.HasAxis)
             {
-                Direction? D1 = MakeDirection(SA.Axis());
-                if (D1 is not null)
+                Direction? d1 = MakeDirection(sa.Axis());
+                if (d1 is not null)
                 {
-                    D = D1.Dir();
+                    d = d1.Dir();
                 }
             }
-            return new Axis1Placement(P.Pnt(), D);
+            return new Axis1Placement(p.Pnt(), d);
         }
         return null;
     }
 
     /// <summary>Converts an axis1_placement (default factors).</summary>
-    public static Axis1Placement? MakeAxis1Placement(StepGeom_Axis1Placement SA) => MakeAxis1Placement(SA, new StepData_Factors());
+    public static Axis1Placement? MakeAxis1Placement(StepAxis1Placement sa) => MakeAxis1Placement(sa, new Factors());
 
     //=============================================================================
     // Creation d' un Axis2Placement de Geom a partir d' un axis2_placement_3d de Step
     //=============================================================================
 
     /// <summary>Converts an axis2_placement_3d.</summary>
-    public static Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA, in StepData_Factors theLocalFactors)
+    public static Axis2Placement? MakeAxis2Placement(StepAxis2Placement3d sa, in Factors localFactors)
     {
-        CartesianPoint? P = MakeCartesianPoint(SA.Location(), theLocalFactors);
-        if (P is not null)
+        CartesianPoint? p = MakeCartesianPoint(sa.Location(), localFactors);
+        if (p is not null)
         {
-            Point3D Pgp = P.Pnt();
+            Point3D pgp = p.Pnt();
 
             // sln 22.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used (MakeLine(...) function)
-            Direction3D Ngp = new Direction3D(Direction3D.D.Z);
-            if (SA.HasAxis())
+            Direction3D ngp = new Direction3D(Direction3D.D.Z);
+            if (sa.HasAxis)
             {
-                Direction? D = MakeDirection(SA.Axis());
-                if (D is not null)
+                Direction? d = MakeDirection(sa.Axis());
+                if (d is not null)
                 {
-                    Ngp = D.Dir();
+                    ngp = d.Dir();
                 }
             }
 
             Frame3D gpAx2 = new Frame3D();
             bool isDefaultDirectionUsed = true;
-            if (SA.HasRefDirection())
+            if (sa.HasRefDirection)
             {
-                Direction? D = MakeDirection(SA.RefDirection());
-                if (D is not null)
+                Direction? d = MakeDirection(sa.RefDirection());
+                if (d is not null)
                 {
-                    Direction3D Vxgp = D.Dir();
-                    if (!Ngp.IsParallel(Vxgp, global::Kerf.Engine.Foundation.Precision.Angular()))
+                    Direction3D vxgp = d.Dir();
+                    if (!ngp.IsParallel(vxgp, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        gpAx2 = new Frame3D(Pgp, Ngp, Vxgp);
+                        gpAx2 = new Frame3D(pgp, ngp, vxgp);
                         isDefaultDirectionUsed = false;
                     }
                 }
             }
             if (isDefaultDirectionUsed)
             {
-                gpAx2 = new Frame3D(Pgp, Ngp);
+                gpAx2 = new Frame3D(pgp, ngp);
             }
 
             return new Axis2Placement(gpAx2);
@@ -116,30 +123,30 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an axis2_placement_3d (default factors).</summary>
-    public static Axis2Placement? MakeAxis2Placement(StepGeom_Axis2Placement3d SA) => MakeAxis2Placement(SA, new StepData_Factors());
+    public static Axis2Placement? MakeAxis2Placement(StepAxis2Placement3d sa) => MakeAxis2Placement(sa, new Factors());
 
     //=============================================================================
     // Creation of an AxisPlacement from a Kinematic SuParameters for Step
     //=============================================================================
 
     /// <summary>Converts the kinematic su_parameters into a placement.</summary>
-    public static Axis2Placement MakeAxis2Placement(StepGeom_SuParameters theSP)
+    public static Axis2Placement MakeAxis2Placement(StepSuParameters sp)
     {
-        double aLocX = theSP.A() * Math.Cos(theSP.Gamma()) + theSP.B() * Math.Sin(theSP.Gamma()) * Math.Sin(theSP.Alpha());
-        double aLocY = theSP.A() * Math.Sin(theSP.Gamma()) - theSP.B() * Math.Cos(theSP.Gamma()) * Math.Sin(theSP.Alpha());
-        double aLocZ = theSP.C() + theSP.B() * Math.Cos(theSP.Alpha());
-        double anAsisX = Math.Sin(theSP.Gamma()) * Math.Sin(theSP.Alpha());
-        double anAxisY = -Math.Cos(theSP.Gamma()) * Math.Sin(theSP.Alpha());
-        double anAxisZ = Math.Cos(theSP.Alpha());
-        double aDirX = Math.Cos(theSP.Gamma()) * Math.Cos(theSP.Beta())
-                       - Math.Sin(theSP.Gamma()) * Math.Cos(theSP.Alpha()) * Math.Sin(theSP.Beta());
-        double aDirY = Math.Sin(theSP.Gamma()) * Math.Cos(theSP.Beta())
-                       + Math.Cos(theSP.Gamma()) * Math.Cos(theSP.Alpha()) * Math.Sin(theSP.Beta());
-        double aDirZ = Math.Sin(theSP.Alpha()) * Math.Sin(theSP.Beta());
-        Point3D Pgp = new Point3D(aLocX, aLocY, aLocZ);
-        Direction3D Ngp = new Direction3D(anAsisX, anAxisY, anAxisZ);
-        Direction3D Vxgp = new Direction3D(aDirX, aDirY, aDirZ);
-        Frame3D gpAx2 = new Frame3D(Pgp, Ngp, Vxgp);
+        double locX = sp.A() * Math.Cos(sp.Gamma()) + sp.B() * Math.Sin(sp.Gamma()) * Math.Sin(sp.Alpha());
+        double locY = sp.A() * Math.Sin(sp.Gamma()) - sp.B() * Math.Cos(sp.Gamma()) * Math.Sin(sp.Alpha());
+        double locZ = sp.C() + sp.B() * Math.Cos(sp.Alpha());
+        double asisX = Math.Sin(sp.Gamma()) * Math.Sin(sp.Alpha());
+        double axisY = -Math.Cos(sp.Gamma()) * Math.Sin(sp.Alpha());
+        double axisZ = Math.Cos(sp.Alpha());
+        double dirX = Math.Cos(sp.Gamma()) * Math.Cos(sp.Beta())
+                       - Math.Sin(sp.Gamma()) * Math.Cos(sp.Alpha()) * Math.Sin(sp.Beta());
+        double dirY = Math.Sin(sp.Gamma()) * Math.Cos(sp.Beta())
+                       + Math.Cos(sp.Gamma()) * Math.Cos(sp.Alpha()) * Math.Sin(sp.Beta());
+        double dirZ = Math.Sin(sp.Alpha()) * Math.Sin(sp.Beta());
+        Point3D pgp = new Point3D(locX, locY, locZ);
+        Direction3D ngp = new Direction3D(asisX, axisY, axisZ);
+        Direction3D vxgp = new Direction3D(dirX, dirY, dirZ);
+        Frame3D gpAx2 = new Frame3D(pgp, ngp, vxgp);
         return new Axis2Placement(gpAx2);
     }
 
@@ -148,486 +155,486 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an axis2_placement_2d.</summary>
-    public static AxisPlacement2? MakeAxisPlacement(StepGeom_Axis2Placement2d SA, in StepData_Factors theLocalFactors)
+    public static AxisPlacement2? MakeAxisPlacement(StepAxis2Placement2d sa, in Factors localFactors)
     {
-        CartesianPoint2? P = MakeCartesianPoint2d(SA.Location(), theLocalFactors);
-        if (P is not null)
+        CartesianPoint2? p = MakeCartesianPoint2d(sa.Location(), localFactors);
+        if (p is not null)
         {
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
-            Direction2D Vxgp = new Direction2D(Direction2D.D.X);
-            if (SA.HasRefDirection())
+            Direction2D vxgp = new Direction2D(Direction2D.D.X);
+            if (sa.HasRefDirection)
             {
-                Direction2? Vx = MakeDirection2d(SA.RefDirection());
-                if (Vx is not null)
+                Direction2? vx = MakeDirection2d(sa.RefDirection());
+                if (vx is not null)
                 {
-                    Vxgp = Vx.Dir2d();
+                    vxgp = vx.Dir2d();
                 }
             }
 
-            return new AxisPlacement2(P.Pnt2d(), Vxgp);
+            return new AxisPlacement2(p.Pnt2d(), vxgp);
         }
         return null;
     }
 
     /// <summary>Converts an axis2_placement_2d (default factors).</summary>
-    public static AxisPlacement2? MakeAxisPlacement(StepGeom_Axis2Placement2d SA) => MakeAxisPlacement(SA, new StepData_Factors());
+    public static AxisPlacement2? MakeAxisPlacement(StepAxis2Placement2d sa) => MakeAxisPlacement(sa, new Factors());
 
     //=============================================================================
     // Creation d' une BoundedCurve de Geom a partir d' une BoundedCurve de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_curve (B-splines, Bezier, uniform and quasi-uniform curves, trimmed curves, polylines).</summary>
-    public static BoundedCurve3D? MakeBoundedCurve(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
+    public static BoundedCurve3D? MakeBoundedCurve(StepBoundedCurve sc, in Factors localFactors)
     {
-        if (SC is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
+        if (sc is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
-            return MakeBSplineCurve(SC as StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve, theLocalFactors);
+            return MakeBSplineCurve(sc as StepBSplineCurveWithKnotsAndRationalBSplineCurve, localFactors);
         }
-        if (SC is StepGeom_BSplineCurveWithKnots)
+        if (sc is StepBSplineCurveWithKnots)
         {
-            return MakeBSplineCurve(SC as StepGeom_BSplineCurveWithKnots, theLocalFactors);
+            return MakeBSplineCurve(sc as StepBSplineCurveWithKnots, localFactors);
         }
-        if (SC is StepGeom_TrimmedCurve)
+        if (sc is StepTrimmedCurve)
         {
-            return MakeTrimmedCurve(SC as StepGeom_TrimmedCurve, theLocalFactors);
+            return MakeTrimmedCurve(sc as StepTrimmedCurve, localFactors);
         }
 
         // STEP BezierCurve, UniformCurve and QuasiUniformCurve are transformed into
         // STEP BSplineCurve before being mapped onto CAS.CADE/SF
-        if (SC is StepGeom_BezierCurve)
+        if (sc is StepBezierCurve)
         {
-            StepGeom_BezierCurve BzC = SC as StepGeom_BezierCurve;
-            int aDegree = BzC.Degree();
-            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
+            StepBezierCurve bzC = sc as StepBezierCurve;
+            int degree = bzC.Degree();
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
-            StepGeom_BSplineCurveWithKnots BSPL = new StepGeom_BSplineCurveWithKnots();
-            BSPL.SetDegree(aDegree);
-            BSPL.SetControlPointsList(BzC.ControlPointsList());
-            BSPL.SetCurveForm(BzC.CurveForm());
-            BSPL.SetClosedCurve(BzC.ClosedCurve());
-            BSPL.SetSelfIntersect(BzC.SelfIntersect());
+            StepBSplineCurveWithKnots bspl = new StepBSplineCurveWithKnots();
+            bspl.SetDegree(degree);
+            bspl.SetControlPointsList(bzC.ControlPointsList());
+            bspl.SetCurveForm(bzC.CurveForm());
+            bspl.SetClosedCurve(bzC.ClosedCurve());
+            bspl.SetSelfIntersect(bzC.SelfIntersect());
             // Compute Knots and KnotsMultiplicity
-            NCollection_HArray1<int> Kmult = new NCollection_HArray1<int>(1, 2);
-            NCollection_HArray1<double> Knots = new NCollection_HArray1<double>(1, 2);
-            Kmult.SetValue(1, BzC.Degree() + 1);
-            Kmult.SetValue(2, BzC.Degree() + 1);
-            Knots.SetValue(1, 0.0);
-            Knots.SetValue(2, 1.0);
-            BSPL.SetKnotMultiplicities(Kmult);
-            BSPL.SetKnots(Knots);
+            NCollection_HArray1<int> kmult = new NCollection_HArray1<int>(1, 2);
+            NCollection_HArray1<double> knots = new NCollection_HArray1<double>(1, 2);
+            kmult.SetValue(1, bzC.Degree() + 1);
+            kmult.SetValue(2, bzC.Degree() + 1);
+            knots.SetValue(1, 0.0);
+            knots.SetValue(2, 1.0);
+            bspl.SetKnotMultiplicities(kmult);
+            bspl.SetKnots(knots);
 
-            return MakeBSplineCurve(BSPL, theLocalFactors);
+            return MakeBSplineCurve(bspl, localFactors);
         }
 
-        if (SC is StepGeom_UniformCurve)
+        if (sc is StepUniformCurve)
         {
-            StepGeom_UniformCurve UC = SC as StepGeom_UniformCurve;
-            int aDegree = UC.Degree();
-            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
+            StepUniformCurve uc = sc as StepUniformCurve;
+            int degree = uc.Degree();
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
-            StepGeom_BSplineCurveWithKnots BSPL = new StepGeom_BSplineCurveWithKnots();
-            BSPL.SetDegree(aDegree);
-            BSPL.SetControlPointsList(UC.ControlPointsList());
-            BSPL.SetCurveForm(UC.CurveForm());
-            BSPL.SetClosedCurve(UC.ClosedCurve());
-            BSPL.SetSelfIntersect(UC.SelfIntersect());
+            StepBSplineCurveWithKnots bspl = new StepBSplineCurveWithKnots();
+            bspl.SetDegree(degree);
+            bspl.SetControlPointsList(uc.ControlPointsList());
+            bspl.SetCurveForm(uc.CurveForm());
+            bspl.SetClosedCurve(uc.ClosedCurve());
+            bspl.SetSelfIntersect(uc.SelfIntersect());
 
             // Compute Knots and KnotsMultiplicity
-            int nbK = BSPL.NbControlPointsList() + BSPL.Degree() + 1;
-            NCollection_HArray1<int> Kmult = new NCollection_HArray1<int>(1, nbK);
-            NCollection_HArray1<double> Knots = new NCollection_HArray1<double>(1, nbK);
+            int nbK = bspl.NbControlPointsList() + bspl.Degree() + 1;
+            NCollection_HArray1<int> kmult = new NCollection_HArray1<int>(1, nbK);
+            NCollection_HArray1<double> knots = new NCollection_HArray1<double>(1, nbK);
             for (int iUC = 1; iUC <= nbK; iUC++)
             {
-                Kmult.SetValue(iUC, 1);
-                Knots.SetValue(iUC, iUC - 1.0);
+                kmult.SetValue(iUC, 1);
+                knots.SetValue(iUC, iUC - 1.0);
             }
-            BSPL.SetKnotMultiplicities(Kmult);
-            BSPL.SetKnots(Knots);
+            bspl.SetKnotMultiplicities(kmult);
+            bspl.SetKnots(knots);
 
-            return MakeBSplineCurve(BSPL, theLocalFactors);
+            return MakeBSplineCurve(bspl, localFactors);
         }
 
-        if (SC is StepGeom_QuasiUniformCurve)
+        if (sc is StepQuasiUniformCurve)
         {
-            StepGeom_QuasiUniformCurve QUC = SC as StepGeom_QuasiUniformCurve;
-            int aDegree = QUC.Degree();
-            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
+            StepQuasiUniformCurve quc = sc as StepQuasiUniformCurve;
+            int degree = quc.Degree();
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
-            StepGeom_BSplineCurveWithKnots BSPL = new StepGeom_BSplineCurveWithKnots();
-            BSPL.SetDegree(aDegree);
-            BSPL.SetControlPointsList(QUC.ControlPointsList());
-            BSPL.SetCurveForm(QUC.CurveForm());
-            BSPL.SetClosedCurve(QUC.ClosedCurve());
-            BSPL.SetSelfIntersect(QUC.SelfIntersect());
+            StepBSplineCurveWithKnots bspl = new StepBSplineCurveWithKnots();
+            bspl.SetDegree(degree);
+            bspl.SetControlPointsList(quc.ControlPointsList());
+            bspl.SetCurveForm(quc.CurveForm());
+            bspl.SetClosedCurve(quc.ClosedCurve());
+            bspl.SetSelfIntersect(quc.SelfIntersect());
 
             // Compute Knots and KnotsMultiplicity
-            int nbK = BSPL.NbControlPointsList() - BSPL.Degree() + 1;
-            NCollection_HArray1<int> Kmult = new NCollection_HArray1<int>(1, nbK);
-            NCollection_HArray1<double> Knots = new NCollection_HArray1<double>(1, nbK);
+            int nbK = bspl.NbControlPointsList() - bspl.Degree() + 1;
+            NCollection_HArray1<int> kmult = new NCollection_HArray1<int>(1, nbK);
+            NCollection_HArray1<double> knots = new NCollection_HArray1<double>(1, nbK);
             for (int iQUC = 1; iQUC <= nbK; iQUC++)
             {
-                Kmult.SetValue(iQUC, 1);
-                Knots.SetValue(iQUC, iQUC - 1.0);
+                kmult.SetValue(iQUC, 1);
+                knots.SetValue(iQUC, iQUC - 1.0);
             }
-            Kmult.SetValue(1, BSPL.Degree() + 1);
-            Kmult.SetValue(nbK, BSPL.Degree() + 1);
-            BSPL.SetKnotMultiplicities(Kmult);
-            BSPL.SetKnots(Knots);
+            kmult.SetValue(1, bspl.Degree() + 1);
+            kmult.SetValue(nbK, bspl.Degree() + 1);
+            bspl.SetKnotMultiplicities(kmult);
+            bspl.SetKnots(knots);
 
-            return MakeBSplineCurve(BSPL, theLocalFactors);
+            return MakeBSplineCurve(bspl, localFactors);
         }
 
-        if (SC is StepGeom_UniformCurveAndRationalBSplineCurve)
+        if (sc is StepUniformCurveAndRationalBSplineCurve)
         {
-            StepGeom_UniformCurveAndRationalBSplineCurve RUC = SC as StepGeom_UniformCurveAndRationalBSplineCurve;
-            int aDegree = RUC.Degree();
-            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
+            StepUniformCurveAndRationalBSplineCurve ruc = sc as StepUniformCurveAndRationalBSplineCurve;
+            int degree = ruc.Degree();
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
-            StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve RBSPL = new StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve();
+            StepBSplineCurveWithKnotsAndRationalBSplineCurve rbspl = new StepBSplineCurveWithKnotsAndRationalBSplineCurve();
 
             // Compute Knots and KnotsMultiplicity
-            int nbK = RUC.NbControlPointsList() + aDegree + 1;
-            NCollection_HArray1<int> Kmult = new NCollection_HArray1<int>(1, nbK);
-            NCollection_HArray1<double> Knots = new NCollection_HArray1<double>(1, nbK);
+            int nbK = ruc.NbControlPointsList() + degree + 1;
+            NCollection_HArray1<int> kmult = new NCollection_HArray1<int>(1, nbK);
+            NCollection_HArray1<double> knots = new NCollection_HArray1<double>(1, nbK);
             for (int iUC = 1; iUC <= nbK; iUC++)
             {
-                Kmult.SetValue(iUC, 1);
-                Knots.SetValue(iUC, iUC - 1.0);
+                kmult.SetValue(iUC, 1);
+                knots.SetValue(iUC, iUC - 1.0);
             }
 
             // Initialize the BSplineCurveWithKnotsAndRationalBSplineCurve
-            RBSPL.Init(RUC.Name(),
-                       aDegree,
-                       RUC.ControlPointsList(),
-                       RUC.CurveForm(),
-                       RUC.ClosedCurve(),
-                       RUC.SelfIntersect(),
-                       Kmult,
-                       Knots,
-                       StepGeom_KnotType.StepGeom_ktUnspecified,
-                       RUC.WeightsData());
+            rbspl.Init(ruc.Name(),
+                       degree,
+                       ruc.ControlPointsList(),
+                       ruc.CurveForm(),
+                       ruc.ClosedCurve(),
+                       ruc.SelfIntersect(),
+                       kmult,
+                       knots,
+                       StepKnotType.KtUnspecified,
+                       ruc.WeightsData());
 
-            return MakeBSplineCurve(RBSPL, theLocalFactors);
+            return MakeBSplineCurve(rbspl, localFactors);
         }
 
-        if (SC is StepGeom_QuasiUniformCurveAndRationalBSplineCurve)
+        if (sc is StepQuasiUniformCurveAndRationalBSplineCurve)
         {
-            StepGeom_QuasiUniformCurveAndRationalBSplineCurve RQUC = SC as StepGeom_QuasiUniformCurveAndRationalBSplineCurve;
-            int aDegree = RQUC.Degree();
-            if (aDegree < 1 || aDegree > BSplineCurve3D.MaxDegree())
+            StepQuasiUniformCurveAndRationalBSplineCurve rquc = sc as StepQuasiUniformCurveAndRationalBSplineCurve;
+            int degree = rquc.Degree();
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
             {
                 return null;
             }
-            StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve RBSPL = new StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve();
+            StepBSplineCurveWithKnotsAndRationalBSplineCurve rbspl = new StepBSplineCurveWithKnotsAndRationalBSplineCurve();
 
             // Compute Knots and KnotsMultiplicity
-            int nbK = RQUC.NbControlPointsList() - aDegree + 1;
-            NCollection_HArray1<int> Kmult = new NCollection_HArray1<int>(1, nbK);
-            NCollection_HArray1<double> Knots = new NCollection_HArray1<double>(1, nbK);
+            int nbK = rquc.NbControlPointsList() - degree + 1;
+            NCollection_HArray1<int> kmult = new NCollection_HArray1<int>(1, nbK);
+            NCollection_HArray1<double> knots = new NCollection_HArray1<double>(1, nbK);
             for (int iRQUC = 1; iRQUC <= nbK; iRQUC++)
             {
-                Kmult.SetValue(iRQUC, 1);
-                Knots.SetValue(iRQUC, iRQUC - 1.0);
+                kmult.SetValue(iRQUC, 1);
+                knots.SetValue(iRQUC, iRQUC - 1.0);
             }
-            Kmult.SetValue(1, aDegree + 1);
-            Kmult.SetValue(nbK, aDegree + 1);
+            kmult.SetValue(1, degree + 1);
+            kmult.SetValue(nbK, degree + 1);
             // Initialize the BSplineCurveWithKnotsAndRationalBSplineCurve
-            RBSPL.Init(RQUC.Name(),
-                       aDegree,
-                       RQUC.ControlPointsList(),
-                       RQUC.CurveForm(),
-                       RQUC.ClosedCurve(),
-                       RQUC.SelfIntersect(),
-                       Kmult,
-                       Knots,
-                       StepGeom_KnotType.StepGeom_ktUnspecified,
-                       RQUC.WeightsData());
+            rbspl.Init(rquc.Name(),
+                       degree,
+                       rquc.ControlPointsList(),
+                       rquc.CurveForm(),
+                       rquc.ClosedCurve(),
+                       rquc.SelfIntersect(),
+                       kmult,
+                       knots,
+                       StepKnotType.KtUnspecified,
+                       rquc.WeightsData());
 
-            return MakeBSplineCurve(RBSPL, theLocalFactors);
+            return MakeBSplineCurve(rbspl, localFactors);
         }
 
-        if (SC is StepGeom_Polyline)
+        if (sc is StepPolyline)
         { //: n6 abv 15 Feb 99
-            return MakePolyline(SC as StepGeom_Polyline, theLocalFactors);
+            return MakePolyline(sc as StepPolyline, localFactors);
         }
 
         return null;
     }
 
     /// <summary>Converts a bounded_curve (default factors).</summary>
-    public static BoundedCurve3D? MakeBoundedCurve(StepGeom_BoundedCurve SC) => MakeBoundedCurve(SC, new StepData_Factors());
+    public static BoundedCurve3D? MakeBoundedCurve(StepBoundedCurve sc) => MakeBoundedCurve(sc, new Factors());
 
     //=============================================================================
     // Creation d' une BoundedCurve de Geom a partir d' une BoundedCurve de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_curve into a 2D curve.</summary>
-    public static BoundedCurve2D? MakeBoundedCurve2d(StepGeom_BoundedCurve SC, in StepData_Factors theLocalFactors)
+    public static BoundedCurve2D? MakeBoundedCurve2d(StepBoundedCurve sc, in Factors localFactors)
     {
-        if (SC is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
+        if (sc is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
-            return MakeBSplineCurve2d(SC as StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve, theLocalFactors);
+            return MakeBSplineCurve2d(sc as StepBSplineCurveWithKnotsAndRationalBSplineCurve, localFactors);
         }
-        if (SC is StepGeom_BSplineCurveWithKnots)
+        if (sc is StepBSplineCurveWithKnots)
         {
-            return MakeBSplineCurve2d(SC as StepGeom_BSplineCurveWithKnots, theLocalFactors);
+            return MakeBSplineCurve2d(sc as StepBSplineCurveWithKnots, localFactors);
         }
-        if (SC is StepGeom_TrimmedCurve)
+        if (sc is StepTrimmedCurve)
         {
-            return MakeTrimmedCurve2d(SC as StepGeom_TrimmedCurve, theLocalFactors);
+            return MakeTrimmedCurve2d(sc as StepTrimmedCurve, localFactors);
         }
-        if (SC is StepGeom_Polyline)
+        if (sc is StepPolyline)
         { //: n6 abv 15 Feb 99
-            return MakePolyline2d(SC as StepGeom_Polyline, theLocalFactors);
+            return MakePolyline2d(sc as StepPolyline, localFactors);
         }
         return null;
     }
 
     /// <summary>Converts a bounded_curve into a 2D curve (default factors).</summary>
-    public static BoundedCurve2D? MakeBoundedCurve2d(StepGeom_BoundedCurve SC) => MakeBoundedCurve2d(SC, new StepData_Factors());
+    public static BoundedCurve2D? MakeBoundedCurve2d(StepBoundedCurve sc) => MakeBoundedCurve2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' une BoundedSurface de Geom a partir d' une BoundedSurface de Step
     //=============================================================================
 
     /// <summary>Converts a bounded_surface (B-splines, Bezier, uniform and quasi-uniform surfaces, rectangular trimmed surfaces).</summary>
-    public static BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS, in StepData_Factors theLocalFactors)
+    public static BoundedSurface? MakeBoundedSurface(StepBoundedSurface ss, in Factors localFactors)
     {
-        if (SS is StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface)
+        if (ss is StepBSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
-            return MakeBSplineSurface(SS as StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface, theLocalFactors);
+            return MakeBSplineSurface(ss as StepBSplineSurfaceWithKnotsAndRationalBSplineSurface, localFactors);
         }
-        if (SS is StepGeom_BSplineSurfaceWithKnots)
+        if (ss is StepBSplineSurfaceWithKnots)
         {
-            return MakeBSplineSurface(SS as StepGeom_BSplineSurfaceWithKnots, theLocalFactors);
+            return MakeBSplineSurface(ss as StepBSplineSurfaceWithKnots, localFactors);
         }
-        if (SS is StepGeom_RectangularTrimmedSurface)
+        if (ss is StepRectangularTrimmedSurface)
         {
-            return MakeRectangularTrimmedSurface(SS as StepGeom_RectangularTrimmedSurface, theLocalFactors);
+            return MakeRectangularTrimmedSurface(ss as StepRectangularTrimmedSurface, localFactors);
         }
 
         // STEP BezierSurface, UniformSurface and QuasiUniformSurface are transformed
         // into STEP BSplineSurface before being mapped onto CAS.CADE/SF
-        if (SS is StepGeom_BezierSurface)
+        if (ss is StepBezierSurface)
         {
-            StepGeom_BezierSurface BzS = SS as StepGeom_BezierSurface;
-            StepGeom_BSplineSurfaceWithKnots BSPL = new StepGeom_BSplineSurfaceWithKnots();
-            BSPL.SetUDegree(BzS.UDegree());
-            BSPL.SetVDegree(BzS.VDegree());
-            BSPL.SetControlPointsList(BzS.ControlPointsList());
-            BSPL.SetSurfaceForm(BzS.SurfaceForm());
-            BSPL.SetUClosed(BzS.UClosed());
-            BSPL.SetVClosed(BzS.VClosed());
-            BSPL.SetSelfIntersect(BzS.SelfIntersect());
+            StepBezierSurface bzS = ss as StepBezierSurface;
+            StepBSplineSurfaceWithKnots bspl = new StepBSplineSurfaceWithKnots();
+            bspl.SetUDegree(bzS.UDegree());
+            bspl.SetVDegree(bzS.VDegree());
+            bspl.SetControlPointsList(bzS.ControlPointsList());
+            bspl.SetSurfaceForm(bzS.SurfaceForm());
+            bspl.SetUClosed(bzS.UClosed());
+            bspl.SetVClosed(bzS.VClosed());
+            bspl.SetSelfIntersect(bzS.SelfIntersect());
 
             // Compute Knots and KnotsMultiplicity
-            NCollection_HArray1<int> UKmult = new NCollection_HArray1<int>(1, 2);
-            NCollection_HArray1<int> VKmult = new NCollection_HArray1<int>(1, 2);
-            NCollection_HArray1<double> UKnots = new NCollection_HArray1<double>(1, 2);
-            NCollection_HArray1<double> VKnots = new NCollection_HArray1<double>(1, 2);
-            UKmult.SetValue(1, BzS.UDegree() + 1);
-            UKmult.SetValue(2, BzS.UDegree() + 1);
-            VKmult.SetValue(1, BzS.VDegree() + 1);
-            VKmult.SetValue(2, BzS.VDegree() + 1);
-            UKnots.SetValue(1, 0.0);
-            UKnots.SetValue(2, 1.0);
-            VKnots.SetValue(1, 0.0);
-            VKnots.SetValue(2, 1.0);
-            BSPL.SetUMultiplicities(UKmult);
-            BSPL.SetVMultiplicities(VKmult);
-            BSPL.SetUKnots(UKnots);
-            BSPL.SetVKnots(VKnots);
+            NCollection_HArray1<int> uKmult = new NCollection_HArray1<int>(1, 2);
+            NCollection_HArray1<int> vKmult = new NCollection_HArray1<int>(1, 2);
+            NCollection_HArray1<double> uKnots = new NCollection_HArray1<double>(1, 2);
+            NCollection_HArray1<double> vKnots = new NCollection_HArray1<double>(1, 2);
+            uKmult.SetValue(1, bzS.UDegree() + 1);
+            uKmult.SetValue(2, bzS.UDegree() + 1);
+            vKmult.SetValue(1, bzS.VDegree() + 1);
+            vKmult.SetValue(2, bzS.VDegree() + 1);
+            uKnots.SetValue(1, 0.0);
+            uKnots.SetValue(2, 1.0);
+            vKnots.SetValue(1, 0.0);
+            vKnots.SetValue(2, 1.0);
+            bspl.SetUMultiplicities(uKmult);
+            bspl.SetVMultiplicities(vKmult);
+            bspl.SetUKnots(uKnots);
+            bspl.SetVKnots(vKnots);
 
-            return MakeBSplineSurface(BSPL, theLocalFactors);
+            return MakeBSplineSurface(bspl, localFactors);
         }
 
-        if (SS is StepGeom_UniformSurface)
+        if (ss is StepUniformSurface)
         {
-            StepGeom_UniformSurface US = SS as StepGeom_UniformSurface;
-            StepGeom_BSplineSurfaceWithKnots BSPL = new StepGeom_BSplineSurfaceWithKnots();
-            BSPL.SetUDegree(US.UDegree());
-            BSPL.SetVDegree(US.VDegree());
-            BSPL.SetControlPointsList(US.ControlPointsList());
-            BSPL.SetSurfaceForm(US.SurfaceForm());
-            BSPL.SetUClosed(US.UClosed());
-            BSPL.SetVClosed(US.VClosed());
-            BSPL.SetSelfIntersect(US.SelfIntersect());
+            StepUniformSurface us = ss as StepUniformSurface;
+            StepBSplineSurfaceWithKnots bspl = new StepBSplineSurfaceWithKnots();
+            bspl.SetUDegree(us.UDegree());
+            bspl.SetVDegree(us.VDegree());
+            bspl.SetControlPointsList(us.ControlPointsList());
+            bspl.SetSurfaceForm(us.SurfaceForm());
+            bspl.SetUClosed(us.UClosed());
+            bspl.SetVClosed(us.VClosed());
+            bspl.SetSelfIntersect(us.SelfIntersect());
 
             // Compute Knots and KnotsMultiplicity for U Direction
-            int nbKU = BSPL.NbControlPointsListI() + BSPL.UDegree() + 1;
-            NCollection_HArray1<int> UKmult = new NCollection_HArray1<int>(1, nbKU);
-            NCollection_HArray1<double> UKnots = new NCollection_HArray1<double>(1, nbKU);
+            int nbKU = bspl.NbControlPointsListI() + bspl.UDegree() + 1;
+            NCollection_HArray1<int> uKmult = new NCollection_HArray1<int>(1, nbKU);
+            NCollection_HArray1<double> uKnots = new NCollection_HArray1<double>(1, nbKU);
             for (int iU = 1; iU <= nbKU; iU++)
             {
-                UKmult.SetValue(iU, 1);
-                UKnots.SetValue(iU, iU - 1.0);
+                uKmult.SetValue(iU, 1);
+                uKnots.SetValue(iU, iU - 1.0);
             }
-            BSPL.SetUMultiplicities(UKmult);
-            BSPL.SetUKnots(UKnots);
+            bspl.SetUMultiplicities(uKmult);
+            bspl.SetUKnots(uKnots);
 
             // Compute Knots and KnotsMultiplicity for V Direction
-            int nbKV = BSPL.NbControlPointsListJ() + BSPL.VDegree() + 1;
-            NCollection_HArray1<int> VKmult = new NCollection_HArray1<int>(1, nbKV);
-            NCollection_HArray1<double> VKnots = new NCollection_HArray1<double>(1, nbKV);
+            int nbKV = bspl.NbControlPointsListJ() + bspl.VDegree() + 1;
+            NCollection_HArray1<int> vKmult = new NCollection_HArray1<int>(1, nbKV);
+            NCollection_HArray1<double> vKnots = new NCollection_HArray1<double>(1, nbKV);
             for (int iV = 1; iV <= nbKV; iV++)
             {
-                VKmult.SetValue(iV, 1);
-                VKnots.SetValue(iV, iV - 1.0);
+                vKmult.SetValue(iV, 1);
+                vKnots.SetValue(iV, iV - 1.0);
             }
-            BSPL.SetVMultiplicities(VKmult);
-            BSPL.SetVKnots(VKnots);
+            bspl.SetVMultiplicities(vKmult);
+            bspl.SetVKnots(vKnots);
 
-            return MakeBSplineSurface(BSPL, theLocalFactors);
+            return MakeBSplineSurface(bspl, localFactors);
         }
 
-        if (SS is StepGeom_QuasiUniformSurface)
+        if (ss is StepQuasiUniformSurface)
         {
-            StepGeom_QuasiUniformSurface QUS = SS as StepGeom_QuasiUniformSurface;
-            StepGeom_BSplineSurfaceWithKnots BSPL = new StepGeom_BSplineSurfaceWithKnots();
-            BSPL.SetUDegree(QUS.UDegree());
-            BSPL.SetVDegree(QUS.VDegree());
-            BSPL.SetControlPointsList(QUS.ControlPointsList());
-            BSPL.SetSurfaceForm(QUS.SurfaceForm());
-            BSPL.SetUClosed(QUS.UClosed());
-            BSPL.SetVClosed(QUS.VClosed());
-            BSPL.SetSelfIntersect(QUS.SelfIntersect());
+            StepQuasiUniformSurface qus = ss as StepQuasiUniformSurface;
+            StepBSplineSurfaceWithKnots bspl = new StepBSplineSurfaceWithKnots();
+            bspl.SetUDegree(qus.UDegree());
+            bspl.SetVDegree(qus.VDegree());
+            bspl.SetControlPointsList(qus.ControlPointsList());
+            bspl.SetSurfaceForm(qus.SurfaceForm());
+            bspl.SetUClosed(qus.UClosed());
+            bspl.SetVClosed(qus.VClosed());
+            bspl.SetSelfIntersect(qus.SelfIntersect());
 
             // Compute Knots and KnotsMultiplicity for U Direction
-            int nbKU = BSPL.NbControlPointsListI() - BSPL.UDegree() + 1;
-            NCollection_HArray1<int> UKmult = new NCollection_HArray1<int>(1, nbKU);
-            NCollection_HArray1<double> UKnots = new NCollection_HArray1<double>(1, nbKU);
+            int nbKU = bspl.NbControlPointsListI() - bspl.UDegree() + 1;
+            NCollection_HArray1<int> uKmult = new NCollection_HArray1<int>(1, nbKU);
+            NCollection_HArray1<double> uKnots = new NCollection_HArray1<double>(1, nbKU);
             for (int iU = 1; iU <= nbKU; iU++)
             {
-                UKmult.SetValue(iU, 1);
-                UKnots.SetValue(iU, iU - 1.0);
+                uKmult.SetValue(iU, 1);
+                uKnots.SetValue(iU, iU - 1.0);
             }
-            UKmult.SetValue(1, BSPL.UDegree() + 1);
-            UKmult.SetValue(nbKU, BSPL.UDegree() + 1);
-            BSPL.SetUMultiplicities(UKmult);
-            BSPL.SetUKnots(UKnots);
+            uKmult.SetValue(1, bspl.UDegree() + 1);
+            uKmult.SetValue(nbKU, bspl.UDegree() + 1);
+            bspl.SetUMultiplicities(uKmult);
+            bspl.SetUKnots(uKnots);
 
             // Compute Knots and KnotsMultiplicity for V Direction
-            int nbKV = BSPL.NbControlPointsListJ() - BSPL.VDegree() + 1;
-            NCollection_HArray1<int> VKmult = new NCollection_HArray1<int>(1, nbKV);
-            NCollection_HArray1<double> VKnots = new NCollection_HArray1<double>(1, nbKV);
+            int nbKV = bspl.NbControlPointsListJ() - bspl.VDegree() + 1;
+            NCollection_HArray1<int> vKmult = new NCollection_HArray1<int>(1, nbKV);
+            NCollection_HArray1<double> vKnots = new NCollection_HArray1<double>(1, nbKV);
             for (int iV = 1; iV <= nbKV; iV++)
             {
-                VKmult.SetValue(iV, 1);
-                VKnots.SetValue(iV, iV - 1.0);
+                vKmult.SetValue(iV, 1);
+                vKnots.SetValue(iV, iV - 1.0);
             }
-            VKmult.SetValue(1, BSPL.VDegree() + 1);
-            VKmult.SetValue(nbKV, BSPL.VDegree() + 1);
-            BSPL.SetVMultiplicities(VKmult);
-            BSPL.SetVKnots(VKnots);
+            vKmult.SetValue(1, bspl.VDegree() + 1);
+            vKmult.SetValue(nbKV, bspl.VDegree() + 1);
+            bspl.SetVMultiplicities(vKmult);
+            bspl.SetVKnots(vKnots);
 
-            return MakeBSplineSurface(BSPL, theLocalFactors);
+            return MakeBSplineSurface(bspl, localFactors);
         }
 
-        if (SS is StepGeom_UniformSurfaceAndRationalBSplineSurface)
+        if (ss is StepUniformSurfaceAndRationalBSplineSurface)
         {
-            StepGeom_UniformSurfaceAndRationalBSplineSurface RUS = SS as StepGeom_UniformSurfaceAndRationalBSplineSurface;
-            StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface RBSPL = new StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface();
+            StepUniformSurfaceAndRationalBSplineSurface rus = ss as StepUniformSurfaceAndRationalBSplineSurface;
+            StepBSplineSurfaceWithKnotsAndRationalBSplineSurface rbspl = new StepBSplineSurfaceWithKnotsAndRationalBSplineSurface();
 
             // Compute Knots and KnotsMultiplicity for U Direction
-            int nbKU = RUS.NbControlPointsListI() + RUS.UDegree() + 1;
-            NCollection_HArray1<int> UKmult = new NCollection_HArray1<int>(1, nbKU);
-            NCollection_HArray1<double> UKnots = new NCollection_HArray1<double>(1, nbKU);
+            int nbKU = rus.NbControlPointsListI() + rus.UDegree() + 1;
+            NCollection_HArray1<int> uKmult = new NCollection_HArray1<int>(1, nbKU);
+            NCollection_HArray1<double> uKnots = new NCollection_HArray1<double>(1, nbKU);
             for (int iU = 1; iU <= nbKU; iU++)
             {
-                UKmult.SetValue(iU, 1);
-                UKnots.SetValue(iU, iU - 1.0);
+                uKmult.SetValue(iU, 1);
+                uKnots.SetValue(iU, iU - 1.0);
             }
 
             // Compute Knots and KnotsMultiplicity for V Direction
-            int nbKV = RUS.NbControlPointsListJ() + RUS.VDegree() + 1;
-            NCollection_HArray1<int> VKmult = new NCollection_HArray1<int>(1, nbKV);
-            NCollection_HArray1<double> VKnots = new NCollection_HArray1<double>(1, nbKV);
+            int nbKV = rus.NbControlPointsListJ() + rus.VDegree() + 1;
+            NCollection_HArray1<int> vKmult = new NCollection_HArray1<int>(1, nbKV);
+            NCollection_HArray1<double> vKnots = new NCollection_HArray1<double>(1, nbKV);
             for (int iV = 1; iV <= nbKV; iV++)
             {
-                VKmult.SetValue(iV, 1);
-                VKnots.SetValue(iV, iV - 1.0);
+                vKmult.SetValue(iV, 1);
+                vKnots.SetValue(iV, iV - 1.0);
             }
 
             // Initialize the BSplineSurfaceWithKnotsAndRationalBSplineSurface
-            RBSPL.Init(RUS.Name(),
-                       RUS.UDegree(),
-                       RUS.VDegree(),
-                       RUS.ControlPointsList(),
-                       RUS.SurfaceForm(),
-                       RUS.UClosed(),
-                       RUS.VClosed(),
-                       RUS.SelfIntersect(),
-                       UKmult,
-                       VKmult,
-                       UKnots,
-                       VKnots,
-                       StepGeom_KnotType.StepGeom_ktUnspecified,
-                       RUS.WeightsData());
+            rbspl.Init(rus.Name(),
+                       rus.UDegree(),
+                       rus.VDegree(),
+                       rus.ControlPointsList(),
+                       rus.SurfaceForm(),
+                       rus.UClosed(),
+                       rus.VClosed(),
+                       rus.SelfIntersect(),
+                       uKmult,
+                       vKmult,
+                       uKnots,
+                       vKnots,
+                       StepKnotType.KtUnspecified,
+                       rus.WeightsData());
 
-            return MakeBSplineSurface(RBSPL, theLocalFactors);
+            return MakeBSplineSurface(rbspl, localFactors);
         }
 
-        if (SS is StepGeom_QuasiUniformSurfaceAndRationalBSplineSurface)
+        if (ss is StepQuasiUniformSurfaceAndRationalBSplineSurface)
         {
-            StepGeom_QuasiUniformSurfaceAndRationalBSplineSurface RQUS = SS as StepGeom_QuasiUniformSurfaceAndRationalBSplineSurface;
-            StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface RBSPL = new StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface();
+            StepQuasiUniformSurfaceAndRationalBSplineSurface rqus = ss as StepQuasiUniformSurfaceAndRationalBSplineSurface;
+            StepBSplineSurfaceWithKnotsAndRationalBSplineSurface rbspl = new StepBSplineSurfaceWithKnotsAndRationalBSplineSurface();
 
             // Compute Knots and KnotsMultiplicity for U Direction
-            int nbKU = RQUS.NbControlPointsListI() - RQUS.UDegree() + 1;
-            NCollection_HArray1<int> UKmult = new NCollection_HArray1<int>(1, nbKU);
-            NCollection_HArray1<double> UKnots = new NCollection_HArray1<double>(1, nbKU);
+            int nbKU = rqus.NbControlPointsListI() - rqus.UDegree() + 1;
+            NCollection_HArray1<int> uKmult = new NCollection_HArray1<int>(1, nbKU);
+            NCollection_HArray1<double> uKnots = new NCollection_HArray1<double>(1, nbKU);
             for (int iU = 1; iU <= nbKU; iU++)
             {
-                UKmult.SetValue(iU, 1);
-                UKnots.SetValue(iU, iU - 1.0);
+                uKmult.SetValue(iU, 1);
+                uKnots.SetValue(iU, iU - 1.0);
             }
-            UKmult.SetValue(1, RQUS.UDegree() + 1);
-            UKmult.SetValue(nbKU, RQUS.UDegree() + 1);
+            uKmult.SetValue(1, rqus.UDegree() + 1);
+            uKmult.SetValue(nbKU, rqus.UDegree() + 1);
 
             // Compute Knots and KnotsMultiplicity for V Direction
-            int nbKV = RQUS.NbControlPointsListJ() - RQUS.VDegree() + 1;
-            NCollection_HArray1<int> VKmult = new NCollection_HArray1<int>(1, nbKV);
-            NCollection_HArray1<double> VKnots = new NCollection_HArray1<double>(1, nbKV);
+            int nbKV = rqus.NbControlPointsListJ() - rqus.VDegree() + 1;
+            NCollection_HArray1<int> vKmult = new NCollection_HArray1<int>(1, nbKV);
+            NCollection_HArray1<double> vKnots = new NCollection_HArray1<double>(1, nbKV);
             for (int iV = 1; iV <= nbKV; iV++)
             {
-                VKmult.SetValue(iV, 1);
-                VKnots.SetValue(iV, iV - 1.0);
+                vKmult.SetValue(iV, 1);
+                vKnots.SetValue(iV, iV - 1.0);
             }
-            VKmult.SetValue(1, RQUS.VDegree() + 1);
-            VKmult.SetValue(nbKV, RQUS.VDegree() + 1);
+            vKmult.SetValue(1, rqus.VDegree() + 1);
+            vKmult.SetValue(nbKV, rqus.VDegree() + 1);
 
             // Initialize the BSplineSurfaceWithKnotsAndRationalBSplineSurface
-            RBSPL.Init(RQUS.Name(),
-                       RQUS.UDegree(),
-                       RQUS.VDegree(),
-                       RQUS.ControlPointsList(),
-                       RQUS.SurfaceForm(),
-                       RQUS.UClosed(),
-                       RQUS.VClosed(),
-                       RQUS.SelfIntersect(),
-                       UKmult,
-                       VKmult,
-                       UKnots,
-                       VKnots,
-                       StepGeom_KnotType.StepGeom_ktUnspecified,
-                       RQUS.WeightsData());
-            return MakeBSplineSurface(RBSPL, theLocalFactors);
+            rbspl.Init(rqus.Name(),
+                       rqus.UDegree(),
+                       rqus.VDegree(),
+                       rqus.ControlPointsList(),
+                       rqus.SurfaceForm(),
+                       rqus.UClosed(),
+                       rqus.VClosed(),
+                       rqus.SelfIntersect(),
+                       uKmult,
+                       vKmult,
+                       uKnots,
+                       vKnots,
+                       StepKnotType.KtUnspecified,
+                       rqus.WeightsData());
+            return MakeBSplineSurface(rbspl, localFactors);
         }
 
         return null;
     }
 
     /// <summary>Converts a bounded_surface (default factors).</summary>
-    public static BoundedSurface? MakeBoundedSurface(StepGeom_BoundedSurface SS) => MakeBoundedSurface(SS, new StepData_Factors());
+    public static BoundedSurface? MakeBoundedSurface(StepBoundedSurface ss) => MakeBoundedSurface(ss, new Factors());
 
     //=============================================================================
     // Template function for use in MakeBSplineCurve / MakeBSplineCurve2d
@@ -636,9 +643,9 @@ public static class StepToGeom
 
     // The knots and multiplicities of a B-spline curve with its repeated knots merged and its end multiplicities
     // capped at Degree + 1 (the template's common part); null when the curve can't be made.
-    private static bool MakeBSplineCurveKnots(StepGeom_BSplineCurve theStepGeom_BSplineCurve,
-                                              out StepGeom_BSplineCurveWithKnots aBSplineCurveWithKnots,
-                                              out StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
+    private static bool MakeBSplineCurveKnots(StepBSplineCurve stepGeom_BSplineCurve,
+                                              out StepBSplineCurveWithKnots aBSplineCurveWithKnots,
+                                              out StepBSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
                                               out NCollection_Array1<double> aUniqueKnots,
                                               out NCollection_Array1<int> aUniqueKnotMultiplicities,
                                               out int aFirstMuultypisityDifference,
@@ -650,98 +657,98 @@ public static class StepToGeom
         aFirstMuultypisityDifference = 0;
         aLastMuultypisityDifference = 0;
 
-        if (theStepGeom_BSplineCurve is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
+        if (stepGeom_BSplineCurve is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
-            aBSplineCurveWithKnotsAndRationalBSplineCurve = theStepGeom_BSplineCurve as StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve;
+            aBSplineCurveWithKnotsAndRationalBSplineCurve = stepGeom_BSplineCurve as StepBSplineCurveWithKnotsAndRationalBSplineCurve;
             aBSplineCurveWithKnots = aBSplineCurveWithKnotsAndRationalBSplineCurve.BSplineCurveWithKnots();
         }
         else
         {
-            aBSplineCurveWithKnots = theStepGeom_BSplineCurve as StepGeom_BSplineCurveWithKnots;
+            aBSplineCurveWithKnots = stepGeom_BSplineCurve as StepBSplineCurveWithKnots;
         }
 
-        int aDegree = aBSplineCurveWithKnots.Degree();
-        int NbKnots = aBSplineCurveWithKnots.NbKnotMultiplicities();
+        int degree = aBSplineCurveWithKnots.Degree();
+        int nbKnots = aBSplineCurveWithKnots.KnotMultiplicityCount;
 
-        NCollection_HArray1<int> aKnotMultiplicities = aBSplineCurveWithKnots.KnotMultiplicities();
-        NCollection_HArray1<double> aKnots = aBSplineCurveWithKnots.Knots();
+        NCollection_HArray1<int> knotMultiplicities = aBSplineCurveWithKnots.KnotMultiplicities();
+        NCollection_HArray1<double> knots = aBSplineCurveWithKnots.Knots();
 
         // Count number of unique knots
-        int NbUniqueKnots = 0;
+        int nbUniqueKnots = 0;
         double lastKnot = RealFirst();
-        for (int i = 1; i <= NbKnots; ++i)
+        for (int i = 1; i <= nbKnots; ++i)
         {
-            if (aKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (knots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
-                NbUniqueKnots++;
-                lastKnot = aKnots.Value(i);
+                nbUniqueKnots++;
+                lastKnot = knots.Value(i);
             }
         }
-        if (NbUniqueKnots <= 1)
+        if (nbUniqueKnots <= 1)
         {
             return false;
         }
-        aUniqueKnots = new NCollection_Array1<double>(1, NbUniqueKnots);
-        aUniqueKnotMultiplicities = new NCollection_Array1<int>(1, NbUniqueKnots);
-        lastKnot = aKnots.Value(1);
-        aUniqueKnots.SetValue(1, aKnots.Value(1));
-        aUniqueKnotMultiplicities.SetValue(1, aKnotMultiplicities.Value(1));
-        int aKnotPosition = 1;
-        for (int i = 2; i <= NbKnots; i++)
+        aUniqueKnots = new NCollection_Array1<double>(1, nbUniqueKnots);
+        aUniqueKnotMultiplicities = new NCollection_Array1<int>(1, nbUniqueKnots);
+        lastKnot = knots.Value(1);
+        aUniqueKnots.SetValue(1, knots.Value(1));
+        aUniqueKnotMultiplicities.SetValue(1, knotMultiplicities.Value(1));
+        int knotPosition = 1;
+        for (int i = 2; i <= nbKnots; i++)
         {
-            if (aKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (knots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
-                aKnotPosition++;
-                aUniqueKnots.SetValue(aKnotPosition, aKnots.Value(i));
-                aUniqueKnotMultiplicities.SetValue(aKnotPosition, aKnotMultiplicities.Value(i));
-                lastKnot = aKnots.Value(i);
+                knotPosition++;
+                aUniqueKnots.SetValue(knotPosition, knots.Value(i));
+                aUniqueKnotMultiplicities.SetValue(knotPosition, knotMultiplicities.Value(i));
+                lastKnot = knots.Value(i);
             }
             else
             {
                 // Knot not unique, increase multiplicity
-                int aCurrentMultiplicity = aUniqueKnotMultiplicities.Value(aKnotPosition);
-                aUniqueKnotMultiplicities.SetValue(aKnotPosition, aCurrentMultiplicity + aKnotMultiplicities.Value(i));
+                int currentMultiplicity = aUniqueKnotMultiplicities.Value(knotPosition);
+                aUniqueKnotMultiplicities.SetValue(knotPosition, currentMultiplicity + knotMultiplicities.Value(i));
             }
         }
 
-        for (int i = 1; i <= NbUniqueKnots; ++i)
+        for (int i = 1; i <= nbUniqueKnots; ++i)
         {
-            int aCurrentVal = aUniqueKnotMultiplicities.Value(i);
-            if (aCurrentVal > aDegree + 1)
+            int currentVal = aUniqueKnotMultiplicities.Value(i);
+            if (currentVal > degree + 1)
             {
                 if (i == 1)
                 {
-                    aFirstMuultypisityDifference = aCurrentVal - aDegree - 1;
+                    aFirstMuultypisityDifference = currentVal - degree - 1;
                 }
-                if (i == NbUniqueKnots)
+                if (i == nbUniqueKnots)
                 {
-                    aLastMuultypisityDifference = aCurrentVal - aDegree - 1;
+                    aLastMuultypisityDifference = currentVal - degree - 1;
                 }
                 // OCCT_DEBUG output left out
-                aCurrentVal = aDegree + 1;
+                currentVal = degree + 1;
             }
-            aUniqueKnotMultiplicities.SetValue(i, aCurrentVal);
+            aUniqueKnotMultiplicities.SetValue(i, currentVal);
         }
         return true;
     }
 
     // Does the curve descriptor LOOK like a periodic descriptor? (the template's common part)
-    private static bool ShouldBePeriodic(NCollection_Array1<int> aUniqueKnotMultiplicities, int NbPoles, int aDegree)
+    private static bool ShouldBePeriodic(NCollection_Array1<int> aUniqueKnotMultiplicities, int nbPoles, int aDegree)
     {
-        int NbUniqueKnots = aUniqueKnotMultiplicities.Length();
-        int aSummaryMuultypisity = 0;
-        for (int i = 1; i <= NbUniqueKnots; i++)
+        int nbUniqueKnots = aUniqueKnotMultiplicities.Length();
+        int summaryMuultypisity = 0;
+        for (int i = 1; i <= nbUniqueKnots; i++)
         {
-            aSummaryMuultypisity += aUniqueKnotMultiplicities.Value(i);
+            summaryMuultypisity += aUniqueKnotMultiplicities.Value(i);
         }
 
         bool shouldBePeriodic;
-        if (aSummaryMuultypisity == (NbPoles + aDegree + 1))
+        if (summaryMuultypisity == (nbPoles + aDegree + 1))
         {
             shouldBePeriodic = false;
         }
-        else if ((aUniqueKnotMultiplicities.Value(1) == aUniqueKnotMultiplicities.Value(NbUniqueKnots))
-                 && ((aSummaryMuultypisity - aUniqueKnotMultiplicities.Value(1)) == NbPoles))
+        else if ((aUniqueKnotMultiplicities.Value(1) == aUniqueKnotMultiplicities.Value(nbUniqueKnots))
+                 && ((summaryMuultypisity - aUniqueKnotMultiplicities.Value(1)) == nbPoles))
         {
             shouldBePeriodic = true;
         }
@@ -754,17 +761,17 @@ public static class StepToGeom
     }
 
     // The weights of the poles kept (the template's common part)
-    private static NCollection_Array1<double> UniqueWeights(StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve theCurve, int NbPoles,
+    private static NCollection_Array1<double> UniqueWeights(StepBSplineCurveWithKnotsAndRationalBSplineCurve curve, int nbPoles,
                                                             int aFirstMuultypisityDifference, int aLastMuultypisityDifference)
     {
-        NCollection_HArray1<double> aWeights = theCurve.WeightsData();
-        NCollection_Array1<double> aUniqueWeights =
-            new NCollection_Array1<double>(1, NbPoles - aFirstMuultypisityDifference - aLastMuultypisityDifference);
-        for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
+        NCollection_HArray1<double> weights = curve.WeightsData();
+        NCollection_Array1<double> uniqueWeights =
+            new NCollection_Array1<double>(1, nbPoles - aFirstMuultypisityDifference - aLastMuultypisityDifference);
+        for (int i = 1 + aFirstMuultypisityDifference; i <= nbPoles - aLastMuultypisityDifference; ++i)
         {
-            aUniqueWeights.SetValue(i - aFirstMuultypisityDifference, aWeights.Value(i));
+            uniqueWeights.SetValue(i - aFirstMuultypisityDifference, weights.Value(i));
         }
-        return aUniqueWeights;
+        return uniqueWeights;
     }
 
     //=============================================================================
@@ -772,34 +779,34 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline curve with knots (rational or not).</summary>
-    public static BSplineCurve3D? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
+    public static BSplineCurve3D? MakeBSplineCurve(StepBSplineCurve stepGeom_BSplineCurve, in Factors localFactors)
     {
-        if (!MakeBSplineCurveKnots(theStepGeom_BSplineCurve, out StepGeom_BSplineCurveWithKnots aBSplineCurveWithKnots,
-                                   out StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
-                                   out NCollection_Array1<double> aUniqueKnots, out NCollection_Array1<int> aUniqueKnotMultiplicities,
-                                   out int aFirstMuultypisityDifference, out int aLastMuultypisityDifference))
+        if (!MakeBSplineCurveKnots(stepGeom_BSplineCurve, out StepBSplineCurveWithKnots bSplineCurveWithKnots,
+                                   out StepBSplineCurveWithKnotsAndRationalBSplineCurve bSplineCurveWithKnotsAndRationalBSplineCurve,
+                                   out NCollection_Array1<double> uniqueKnots, out NCollection_Array1<int> uniqueKnotMultiplicities,
+                                   out int firstMuultypisityDifference, out int lastMuultypisityDifference))
         {
             return null;
         }
 
-        int aDegree = aBSplineCurveWithKnots.Degree();
-        int NbPoles = aBSplineCurveWithKnots.NbControlPointsList();
-        NCollection_HArray1<StepGeom_CartesianPoint> aControlPointsList = aBSplineCurveWithKnots.ControlPointsList();
-        int aSummaryMuultypisityDifference = aFirstMuultypisityDifference + aLastMuultypisityDifference;
-        int NbUniquePoles = NbPoles - aSummaryMuultypisityDifference;
-        if (NbUniquePoles <= 0)
+        int degree = bSplineCurveWithKnots.Degree();
+        int nbPoles = bSplineCurveWithKnots.NbControlPointsList();
+        NCollection_HArray1<StepCartesianPoint> controlPointsList = bSplineCurveWithKnots.ControlPointsList();
+        int summaryMuultypisityDifference = firstMuultypisityDifference + lastMuultypisityDifference;
+        int nbUniquePoles = nbPoles - summaryMuultypisityDifference;
+        if (nbUniquePoles <= 0)
         {
             return null;
         }
-        NCollection_Array1<Point3D> Poles = new NCollection_Array1<Point3D>(1, NbPoles - aSummaryMuultypisityDifference);
+        NCollection_Array1<Point3D> poles = new NCollection_Array1<Point3D>(1, nbPoles - summaryMuultypisityDifference);
 
-        for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
+        for (int i = 1 + firstMuultypisityDifference; i <= nbPoles - lastMuultypisityDifference; ++i)
         {
-            CartesianPoint? aPoint = MakeCartesianPoint(aControlPointsList.Value(i), theLocalFactors);
-            if (aPoint is not null)
+            CartesianPoint? point = MakeCartesianPoint(controlPointsList.Value(i), localFactors);
+            if (point is not null)
             {
-                Point3D aGpPnt = aPoint.Pnt();
-                Poles.SetValue(i - aFirstMuultypisityDifference, aGpPnt);
+                Point3D gpPnt = point.Pnt();
+                poles.SetValue(i - firstMuultypisityDifference, gpPnt);
             }
             else
             {
@@ -807,33 +814,33 @@ public static class StepToGeom
             }
         }
 
-        bool shouldBePeriodic = ShouldBePeriodic(aUniqueKnotMultiplicities, NbPoles, aDegree);
+        bool shouldBePeriodic = ShouldBePeriodic(uniqueKnotMultiplicities, nbPoles, degree);
 
-        BSplineCurve3D aBSplineCurve;
-        if (theStepGeom_BSplineCurve is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
+        BSplineCurve3D bSplineCurve;
+        if (stepGeom_BSplineCurve is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
-            NCollection_Array1<double> aUniqueWeights =
-                UniqueWeights(aBSplineCurveWithKnotsAndRationalBSplineCurve, NbPoles, aFirstMuultypisityDifference, aLastMuultypisityDifference);
-            aBSplineCurve = new BSplineCurve3D(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            NCollection_Array1<double> uniqueWeights =
+                UniqueWeights(bSplineCurveWithKnotsAndRationalBSplineCurve, nbPoles, firstMuultypisityDifference, lastMuultypisityDifference);
+            bSplineCurve = new BSplineCurve3D(poles, uniqueWeights, uniqueKnots, uniqueKnotMultiplicities, degree, shouldBePeriodic);
         }
         else
         {
-            aBSplineCurve = new BSplineCurve3D(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            bSplineCurve = new BSplineCurve3D(poles, uniqueKnots, uniqueKnotMultiplicities, degree, shouldBePeriodic);
         }
 
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_Logical.StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
+        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree() > 1 && bSplineCurve.IsClosed)
         {
-            aBSplineCurve.SetPeriodic();
+            bSplineCurve.SetPeriodic();
         }
-        return aBSplineCurve;
+        return bSplineCurve;
     }
 
     /// <summary>Converts a B-spline curve with knots (default factors).</summary>
-    public static BSplineCurve3D? MakeBSplineCurve(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
-        MakeBSplineCurve(theStepGeom_BSplineCurve, new StepData_Factors());
+    public static BSplineCurve3D? MakeBSplineCurve(StepBSplineCurve stepGeom_BSplineCurve) =>
+        MakeBSplineCurve(stepGeom_BSplineCurve, new Factors());
 
     //=============================================================================
     // Creation d' une BSplineCurve de Geom2d a partir d' une
@@ -841,34 +848,34 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline curve with knots (rational or not) into a 2D curve.</summary>
-    public static BSplineCurve2D? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakeBSplineCurve2d(StepBSplineCurve stepGeom_BSplineCurve, in Factors localFactors)
     {
-        if (!MakeBSplineCurveKnots(theStepGeom_BSplineCurve, out StepGeom_BSplineCurveWithKnots aBSplineCurveWithKnots,
-                                   out StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve aBSplineCurveWithKnotsAndRationalBSplineCurve,
-                                   out NCollection_Array1<double> aUniqueKnots, out NCollection_Array1<int> aUniqueKnotMultiplicities,
-                                   out int aFirstMuultypisityDifference, out int aLastMuultypisityDifference))
+        if (!MakeBSplineCurveKnots(stepGeom_BSplineCurve, out StepBSplineCurveWithKnots bSplineCurveWithKnots,
+                                   out StepBSplineCurveWithKnotsAndRationalBSplineCurve bSplineCurveWithKnotsAndRationalBSplineCurve,
+                                   out NCollection_Array1<double> uniqueKnots, out NCollection_Array1<int> uniqueKnotMultiplicities,
+                                   out int firstMuultypisityDifference, out int lastMuultypisityDifference))
         {
             return null;
         }
 
-        int aDegree = aBSplineCurveWithKnots.Degree();
-        int NbPoles = aBSplineCurveWithKnots.NbControlPointsList();
-        NCollection_HArray1<StepGeom_CartesianPoint> aControlPointsList = aBSplineCurveWithKnots.ControlPointsList();
-        int aSummaryMuultypisityDifference = aFirstMuultypisityDifference + aLastMuultypisityDifference;
-        int NbUniquePoles = NbPoles - aSummaryMuultypisityDifference;
-        if (NbUniquePoles <= 0)
+        int degree = bSplineCurveWithKnots.Degree();
+        int nbPoles = bSplineCurveWithKnots.NbControlPointsList();
+        NCollection_HArray1<StepCartesianPoint> controlPointsList = bSplineCurveWithKnots.ControlPointsList();
+        int summaryMuultypisityDifference = firstMuultypisityDifference + lastMuultypisityDifference;
+        int nbUniquePoles = nbPoles - summaryMuultypisityDifference;
+        if (nbUniquePoles <= 0)
         {
             return null;
         }
-        NCollection_Array1<Point2D> Poles = new NCollection_Array1<Point2D>(1, NbPoles - aSummaryMuultypisityDifference);
+        NCollection_Array1<Point2D> poles = new NCollection_Array1<Point2D>(1, nbPoles - summaryMuultypisityDifference);
 
-        for (int i = 1 + aFirstMuultypisityDifference; i <= NbPoles - aLastMuultypisityDifference; ++i)
+        for (int i = 1 + firstMuultypisityDifference; i <= nbPoles - lastMuultypisityDifference; ++i)
         {
-            CartesianPoint2? aPoint = MakeCartesianPoint2d(aControlPointsList.Value(i), theLocalFactors);
-            if (aPoint is not null)
+            CartesianPoint2? point = MakeCartesianPoint2d(controlPointsList.Value(i), localFactors);
+            if (point is not null)
             {
-                Point2D aGpPnt = aPoint.Pnt2d();
-                Poles.SetValue(i - aFirstMuultypisityDifference, aGpPnt);
+                Point2D gpPnt = point.Pnt2d();
+                poles.SetValue(i - firstMuultypisityDifference, gpPnt);
             }
             else
             {
@@ -876,33 +883,33 @@ public static class StepToGeom
             }
         }
 
-        bool shouldBePeriodic = ShouldBePeriodic(aUniqueKnotMultiplicities, NbPoles, aDegree);
+        bool shouldBePeriodic = ShouldBePeriodic(uniqueKnotMultiplicities, nbPoles, degree);
 
-        BSplineCurve2D aBSplineCurve;
-        if (theStepGeom_BSplineCurve is StepGeom_BSplineCurveWithKnotsAndRationalBSplineCurve)
+        BSplineCurve2D bSplineCurve;
+        if (stepGeom_BSplineCurve is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
-            NCollection_Array1<double> aUniqueWeights =
-                UniqueWeights(aBSplineCurveWithKnotsAndRationalBSplineCurve, NbPoles, aFirstMuultypisityDifference, aLastMuultypisityDifference);
-            aBSplineCurve = new BSplineCurve2D(Poles, aUniqueWeights, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            NCollection_Array1<double> uniqueWeights =
+                UniqueWeights(bSplineCurveWithKnotsAndRationalBSplineCurve, nbPoles, firstMuultypisityDifference, lastMuultypisityDifference);
+            bSplineCurve = new BSplineCurve2D(poles, uniqueWeights, uniqueKnots, uniqueKnotMultiplicities, degree, shouldBePeriodic);
         }
         else
         {
-            aBSplineCurve = new BSplineCurve2D(Poles, aUniqueKnots, aUniqueKnotMultiplicities, aDegree, shouldBePeriodic);
+            bSplineCurve = new BSplineCurve2D(poles, uniqueKnots, uniqueKnotMultiplicities, degree, shouldBePeriodic);
         }
 
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_Logical.StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
+        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree() > 1 && bSplineCurve.IsClosed)
         {
-            aBSplineCurve.SetPeriodic();
+            bSplineCurve.SetPeriodic();
         }
-        return aBSplineCurve;
+        return bSplineCurve;
     }
 
     /// <summary>Converts a B-spline curve with knots into a 2D curve (default factors).</summary>
-    public static BSplineCurve2D? MakeBSplineCurve2d(StepGeom_BSplineCurve theStepGeom_BSplineCurve) =>
-        MakeBSplineCurve2d(theStepGeom_BSplineCurve, new StepData_Factors());
+    public static BSplineCurve2D? MakeBSplineCurve2d(StepBSplineCurve stepGeom_BSplineCurve) =>
+        MakeBSplineCurve2d(stepGeom_BSplineCurve, new Factors());
 
     //=============================================================================
     // Creation d' une BSplineSurface de Geom a partir d' une
@@ -910,36 +917,36 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a B-spline surface with knots (rational or not).</summary>
-    public static BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS, in StepData_Factors theLocalFactors)
+    public static BSplineSurface? MakeBSplineSurface(StepBSplineSurface ss, in Factors localFactors)
     {
         int i, j;
-        StepGeom_BSplineSurfaceWithKnots BS;
-        StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface BSR = null;
+        StepBSplineSurfaceWithKnots bs;
+        StepBSplineSurfaceWithKnotsAndRationalBSplineSurface bsr = null;
 
-        if (SS is StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface)
+        if (ss is StepBSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
-            BSR = SS as StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface;
-            BS = BSR.BSplineSurfaceWithKnots();
+            bsr = ss as StepBSplineSurfaceWithKnotsAndRationalBSplineSurface;
+            bs = bsr.BSplineSurfaceWithKnots();
         }
         else
         {
-            BS = SS as StepGeom_BSplineSurfaceWithKnots;
+            bs = ss as StepBSplineSurfaceWithKnots;
         }
 
-        int UDeg = BS.UDegree();
-        int VDeg = BS.VDegree();
-        int NUPoles = BS.NbControlPointsListI();
-        int NVPoles = BS.NbControlPointsListJ();
-        NCollection_HArray2<StepGeom_CartesianPoint> aControlPointsList = BS.ControlPointsList();
-        NCollection_Array2<Point3D> Poles = new NCollection_Array2<Point3D>(1, NUPoles, 1, NVPoles);
-        for (i = 1; i <= NUPoles; i++)
+        int uDeg = bs.UDegree();
+        int vDeg = bs.VDegree();
+        int nuPoles = bs.NbControlPointsListI();
+        int nvPoles = bs.NbControlPointsListJ();
+        NCollection_HArray2<StepCartesianPoint> controlPointsList = bs.ControlPointsList();
+        NCollection_Array2<Point3D> poles = new NCollection_Array2<Point3D>(1, nuPoles, 1, nvPoles);
+        for (i = 1; i <= nuPoles; i++)
         {
-            for (j = 1; j <= NVPoles; j++)
+            for (j = 1; j <= nvPoles; j++)
             {
-                CartesianPoint? P = MakeCartesianPoint(aControlPointsList.Value(i, j), theLocalFactors);
-                if (P is not null)
+                CartesianPoint? p = MakeCartesianPoint(controlPointsList.Value(i, j), localFactors);
+                if (p is not null)
                 {
-                    Poles.SetValue(i, j, P.Pnt());
+                    poles.SetValue(i, j, p.Pnt());
                 }
                 else
                 {
@@ -947,82 +954,82 @@ public static class StepToGeom
                 }
             }
         }
-        int NUKnots = BS.NbUMultiplicities();
-        NCollection_HArray1<int> aUMultiplicities = BS.UMultiplicities();
-        NCollection_HArray1<double> aUKnots = BS.UKnots();
+        int nuKnots = bs.UMultiplicityCount;
+        NCollection_HArray1<int> uMultiplicities = bs.UMultiplicities();
+        NCollection_HArray1<double> uKnots = bs.UKnots();
 
         // count number of unique uknots
         double lastKnot = RealFirst();
-        int NUKnotsUnique = 0;
-        for (i = 1; i <= NUKnots; i++)
+        int nuKnotsUnique = 0;
+        for (i = 1; i <= nuKnots; i++)
         {
-            if (aUKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (uKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
-                NUKnotsUnique++;
-                lastKnot = aUKnots.Value(i);
+                nuKnotsUnique++;
+                lastKnot = uKnots.Value(i);
             }
         }
 
         // set umultiplicities and uknots
-        NCollection_Array1<int> UMult = new NCollection_Array1<int>(1, NUKnotsUnique);
-        NCollection_Array1<double> KUn = new NCollection_Array1<double>(1, NUKnotsUnique);
+        NCollection_Array1<int> uMult = new NCollection_Array1<int>(1, nuKnotsUnique);
+        NCollection_Array1<double> kUn = new NCollection_Array1<double>(1, nuKnotsUnique);
         int pos = 1;
-        lastKnot = aUKnots.Value(1);
-        KUn.SetValue(1, aUKnots.Value(1));
-        UMult.SetValue(1, aUMultiplicities.Value(1));
-        for (i = 2; i <= NUKnots; i++)
+        lastKnot = uKnots.Value(1);
+        kUn.SetValue(1, uKnots.Value(1));
+        uMult.SetValue(1, uMultiplicities.Value(1));
+        for (i = 2; i <= nuKnots; i++)
         {
-            if (aUKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (uKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
                 pos++;
-                KUn.SetValue(pos, aUKnots.Value(i));
-                UMult.SetValue(pos, aUMultiplicities.Value(i));
-                lastKnot = aUKnots.Value(i);
+                kUn.SetValue(pos, uKnots.Value(i));
+                uMult.SetValue(pos, uMultiplicities.Value(i));
+                lastKnot = uKnots.Value(i);
             }
             else
             {
                 // Knot not unique, increase multiplicity
-                int curMult = UMult.Value(pos);
-                UMult.SetValue(pos, curMult + aUMultiplicities.Value(i));
+                int curMult = uMult.Value(pos);
+                uMult.SetValue(pos, curMult + uMultiplicities.Value(i));
             }
         }
-        int NVKnots = BS.NbVMultiplicities();
-        NCollection_HArray1<int> aVMultiplicities = BS.VMultiplicities();
-        NCollection_HArray1<double> aVKnots = BS.VKnots();
+        int nvKnots = bs.VMultiplicityCount;
+        NCollection_HArray1<int> vMultiplicities = bs.VMultiplicities();
+        NCollection_HArray1<double> vKnots = bs.VKnots();
 
         // count number of unique vknots
         lastKnot = RealFirst();
-        int NVKnotsUnique = 0;
-        for (i = 1; i <= NVKnots; i++)
+        int nvKnotsUnique = 0;
+        for (i = 1; i <= nvKnots; i++)
         {
-            if (aVKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (vKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
-                NVKnotsUnique++;
-                lastKnot = aVKnots.Value(i);
+                nvKnotsUnique++;
+                lastKnot = vKnots.Value(i);
             }
         }
 
         // set vmultiplicities and vknots
-        NCollection_Array1<int> VMult = new NCollection_Array1<int>(1, NVKnotsUnique);
-        NCollection_Array1<double> KVn = new NCollection_Array1<double>(1, NVKnotsUnique);
+        NCollection_Array1<int> vMult = new NCollection_Array1<int>(1, nvKnotsUnique);
+        NCollection_Array1<double> kVn = new NCollection_Array1<double>(1, nvKnotsUnique);
         pos = 1;
-        lastKnot = aVKnots.Value(1);
-        KVn.SetValue(1, aVKnots.Value(1));
-        VMult.SetValue(1, aVMultiplicities.Value(1));
-        for (i = 2; i <= NVKnots; i++)
+        lastKnot = vKnots.Value(1);
+        kVn.SetValue(1, vKnots.Value(1));
+        vMult.SetValue(1, vMultiplicities.Value(1));
+        for (i = 2; i <= nvKnots; i++)
         {
-            if (aVKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
+            if (vKnots.Value(i) - lastKnot > Epsilon(Math.Abs(lastKnot)))
             {
                 pos++;
-                KVn.SetValue(pos, aVKnots.Value(i));
-                VMult.SetValue(pos, aVMultiplicities.Value(i));
-                lastKnot = aVKnots.Value(i);
+                kVn.SetValue(pos, vKnots.Value(i));
+                vMult.SetValue(pos, vMultiplicities.Value(i));
+                lastKnot = vKnots.Value(i);
             }
             else
             {
                 // Knot not unique, increase multiplicity
-                int curMult = VMult.Value(pos);
-                VMult.SetValue(pos, curMult + aVMultiplicities.Value(i));
+                int curMult = vMult.Value(pos);
+                vMult.SetValue(pos, curMult + vMultiplicities.Value(i));
             }
         }
 
@@ -1031,84 +1038,84 @@ public static class StepToGeom
 
         // --- U Periodic ? ---
 
-        int SumMult = 0;
-        for (i = 1; i <= NUKnotsUnique; i++)
+        int sumMult = 0;
+        for (i = 1; i <= nuKnotsUnique; i++)
         {
-            SumMult += UMult.Value(i);
+            sumMult += uMult.Value(i);
         }
 
         bool shouldBeUPeriodic = false;
-        if (SumMult == (NUPoles + UDeg + 1))
+        if (sumMult == (nuPoles + uDeg + 1))
         {
             // shouldBeUPeriodic = false;
         }
-        else if ((UMult.Value(1) == UMult.Value(NUKnotsUnique)) && ((SumMult - UMult.Value(1)) == NUPoles))
+        else if ((uMult.Value(1) == uMult.Value(nuKnotsUnique)) && ((sumMult - uMult.Value(1)) == nuPoles))
         {
             shouldBeUPeriodic = true;
         }
 
         // --- V Periodic ? ---
 
-        SumMult = 0;
-        for (i = 1; i <= NVKnotsUnique; i++)
+        sumMult = 0;
+        for (i = 1; i <= nvKnotsUnique; i++)
         {
-            SumMult += VMult.Value(i);
+            sumMult += vMult.Value(i);
         }
 
         bool shouldBeVPeriodic = false;
-        if (SumMult == (NVPoles + VDeg + 1))
+        if (sumMult == (nvPoles + vDeg + 1))
         {
             // shouldBeVPeriodic = false;
         }
-        else if ((VMult.Value(1) == VMult.Value(NVKnotsUnique)) && ((SumMult - VMult.Value(1)) == NVPoles))
+        else if ((vMult.Value(1) == vMult.Value(nvKnotsUnique)) && ((sumMult - vMult.Value(1)) == nvPoles))
         {
             shouldBeVPeriodic = true;
         }
 
-        BSplineSurface CS;
-        if (SS is StepGeom_BSplineSurfaceWithKnotsAndRationalBSplineSurface)
+        BSplineSurface cs;
+        if (ss is StepBSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
-            NCollection_HArray2<double> aWeight = BSR.WeightsData();
-            NCollection_Array2<double> W = new NCollection_Array2<double>(1, NUPoles, 1, NVPoles);
-            for (i = 1; i <= NUPoles; i++)
+            NCollection_HArray2<double> weight = bsr.WeightsData();
+            NCollection_Array2<double> w = new NCollection_Array2<double>(1, nuPoles, 1, nvPoles);
+            for (i = 1; i <= nuPoles; i++)
             {
-                for (j = 1; j <= NVPoles; j++)
+                for (j = 1; j <= nvPoles; j++)
                 {
-                    W.SetValue(i, j, aWeight.Value(i, j));
+                    w.SetValue(i, j, weight.Value(i, j));
                 }
             }
-            CS = new BSplineSurface(Poles, W, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
+            cs = new BSplineSurface(poles, w, kUn, kVn, uMult, vMult, uDeg, vDeg, shouldBeUPeriodic, shouldBeVPeriodic);
         }
         else
         {
-            CS = new BSplineSurface(Poles, KUn, KVn, UMult, VMult, UDeg, VDeg, shouldBeUPeriodic, shouldBeVPeriodic);
+            cs = new BSplineSurface(poles, kUn, kVn, uMult, vMult, uDeg, vDeg, shouldBeUPeriodic, shouldBeVPeriodic);
         }
-        return CS;
+        return cs;
     }
 
     /// <summary>Converts a B-spline surface with knots (default factors).</summary>
-    public static BSplineSurface? MakeBSplineSurface(StepGeom_BSplineSurface SS) => MakeBSplineSurface(SS, new StepData_Factors());
+    public static BSplineSurface? MakeBSplineSurface(StepBSplineSurface ss) => MakeBSplineSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' un CartesianPoint de Geom a partir d' un CartesianPoint de Step
     //=============================================================================
 
     /// <summary>Converts a 3D cartesian_point (null if it hasn't three coordinates).</summary>
-    public static CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
+    public static CartesianPoint? MakeCartesianPoint(StepCartesianPoint sp, in Factors localFactors)
     {
-        if (SP is not null && SP.NbCoordinates() == 3)
+        if (sp is not null && sp.CoordinateCount == 3)
         {
-            double LF = theLocalFactors.LengthFactor();
-            double X = SP.CoordinatesValue(1) * LF;
-            double Y = SP.CoordinatesValue(2) * LF;
-            double Z = SP.CoordinatesValue(3) * LF;
-            return new CartesianPoint(X, Y, Z);
+            double lf = localFactors.LengthFactor();
+            double x = sp.CoordinatesValue(1) * lf;
+            double y = sp.CoordinatesValue(2) * lf;
+            double z = sp.CoordinatesValue(3) * lf;
+            return new CartesianPoint(x, y, z);
         }
         return null;
     }
 
     /// <summary>Converts a 3D cartesian_point (default factors).</summary>
-    public static CartesianPoint? MakeCartesianPoint(StepGeom_CartesianPoint SP) => MakeCartesianPoint(SP, new StepData_Factors());
+    public static CartesianPoint? MakeCartesianPoint(StepCartesianPoint sp) => MakeCartesianPoint(sp, new Factors());
 
     //=============================================================================
     // Creation d' un CartesianPoint de Geom2d a partir d' un CartesianPoint de
@@ -1116,124 +1123,124 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a 2D cartesian_point (null if it hasn't two coordinates). The factors aren't used.</summary>
-    public static CartesianPoint2? MakeCartesianPoint2d(StepGeom_CartesianPoint SP, in StepData_Factors theLocalFactors)
+    public static CartesianPoint2? MakeCartesianPoint2d(StepCartesianPoint sp, in Factors localFactors)
     {
         // OCCT: SP isn't checked for null (a null point is a null dereference; occt-issues.md, 8D)
-        if (SP.NbCoordinates() == 2)
+        if (sp.CoordinateCount == 2)
         {
-            double X = SP.CoordinatesValue(1);
-            double Y = SP.CoordinatesValue(2);
-            return new CartesianPoint2(X, Y);
+            double x = sp.CoordinatesValue(1);
+            double y = sp.CoordinatesValue(2);
+            return new CartesianPoint2(x, y);
         }
         return null;
     }
 
     /// <summary>Converts a 2D cartesian_point.</summary>
-    public static CartesianPoint2? MakeCartesianPoint2d(StepGeom_CartesianPoint SP) => MakeCartesianPoint2d(SP, new StepData_Factors());
+    public static CartesianPoint2? MakeCartesianPoint2d(StepCartesianPoint sp) => MakeCartesianPoint2d(sp, new Factors());
 
     //=============================================================================
     // Creation d' un Circle de Geom a partir d' un Circle de Step
     //=============================================================================
 
     /// <summary>Converts a circle placed by an axis2_placement_3d.</summary>
-    public static CircleCurve3D? MakeCircle(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
+    public static CircleCurve3D? MakeCircle(StepCircle sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 2)
         {
-            Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
-            if (A is not null)
+            Axis2Placement? a = MakeAxis2Placement(axisSelect.Value() as StepAxis2Placement3d, localFactors);
+            if (a is not null)
             {
-                return new CircleCurve3D(A.Ax2(), SC.Radius() * theLocalFactors.LengthFactor());
+                return new CircleCurve3D(a.Ax2(), sc.Radius() * localFactors.LengthFactor());
             }
         }
         return null;
     }
 
     /// <summary>Converts a circle (default factors).</summary>
-    public static CircleCurve3D? MakeCircle(StepGeom_Circle SC) => MakeCircle(SC, new StepData_Factors());
+    public static CircleCurve3D? MakeCircle(StepCircle sc) => MakeCircle(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Circle de Geom2d a partir d' un Circle de Step
     //=============================================================================
 
     /// <summary>Converts a circle placed by an axis2_placement_2d.</summary>
-    public static CircleCurve2D? MakeCircle2d(StepGeom_Circle SC, in StepData_Factors theLocalFactors)
+    public static CircleCurve2D? MakeCircle2d(StepCircle sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 1)
         {
-            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
-            if (A1 is not null)
+            AxisPlacement2? a1 = MakeAxisPlacement(axisSelect.Value() as StepAxis2Placement2d, localFactors);
+            if (a1 is not null)
             {
-                return new CircleCurve2D(A1.Ax2d(), SC.Radius());
+                return new CircleCurve2D(a1.Ax2d(), sc.Radius());
             }
         }
         return null;
     }
 
     /// <summary>Converts a 2D circle (default factors).</summary>
-    public static CircleCurve2D? MakeCircle2d(StepGeom_Circle SC) => MakeCircle2d(SC, new StepData_Factors());
+    public static CircleCurve2D? MakeCircle2d(StepCircle sc) => MakeCircle2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' une Conic de Geom a partir d' une Conic de Step
     //=============================================================================
 
     /// <summary>Converts a conic (circle, ellipse, hyperbola, parabola).</summary>
-    public static ConicCurve3D? MakeConic(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
+    public static ConicCurve3D? MakeConic(StepConic sc, in Factors localFactors)
     {
-        if (SC is StepGeom_Circle)
+        if (sc is StepCircle)
         {
-            return MakeCircle(SC as StepGeom_Circle, theLocalFactors);
+            return MakeCircle(sc as StepCircle, localFactors);
         }
-        if (SC is StepGeom_Ellipse)
+        if (sc is StepEllipse)
         {
-            return MakeEllipse(SC as StepGeom_Ellipse, theLocalFactors);
+            return MakeEllipse(sc as StepEllipse, localFactors);
         }
-        if (SC is StepGeom_Hyperbola)
+        if (sc is StepHyperbola)
         {
-            return MakeHyperbola(SC as StepGeom_Hyperbola, theLocalFactors);
+            return MakeHyperbola(sc as StepHyperbola, localFactors);
         }
-        if (SC is StepGeom_Parabola)
+        if (sc is StepParabola)
         {
-            return MakeParabola(SC as StepGeom_Parabola, theLocalFactors);
+            return MakeParabola(sc as StepParabola, localFactors);
         }
         // Attention : Other conic shall be implemented !
         return null;
     }
 
     /// <summary>Converts a conic (default factors).</summary>
-    public static ConicCurve3D? MakeConic(StepGeom_Conic SC) => MakeConic(SC, new StepData_Factors());
+    public static ConicCurve3D? MakeConic(StepConic sc) => MakeConic(sc, new Factors());
 
     //=============================================================================
     // Creation d' une Conic de Geom2d a partir d' une Conic de Step
     //=============================================================================
 
     /// <summary>Converts a conic into a 2D conic.</summary>
-    public static ConicCurve2D? MakeConic2d(StepGeom_Conic SC, in StepData_Factors theLocalFactors)
+    public static ConicCurve2D? MakeConic2d(StepConic sc, in Factors localFactors)
     {
-        if (SC is StepGeom_Circle)
+        if (sc is StepCircle)
         {
-            return MakeCircle2d(SC as StepGeom_Circle, theLocalFactors);
+            return MakeCircle2d(sc as StepCircle, localFactors);
         }
-        if (SC is StepGeom_Ellipse)
+        if (sc is StepEllipse)
         {
-            return MakeEllipse2d(SC as StepGeom_Ellipse, theLocalFactors);
+            return MakeEllipse2d(sc as StepEllipse, localFactors);
         }
-        if (SC is StepGeom_Hyperbola)
+        if (sc is StepHyperbola)
         {
-            return MakeHyperbola2d(SC as StepGeom_Hyperbola, theLocalFactors);
+            return MakeHyperbola2d(sc as StepHyperbola, localFactors);
         }
-        if (SC is StepGeom_Parabola)
+        if (sc is StepParabola)
         {
-            return MakeParabola2d(SC as StepGeom_Parabola, theLocalFactors);
+            return MakeParabola2d(sc as StepParabola, localFactors);
         }
         // Attention : Other conic shall be implemented !
         return null;
     }
 
     /// <summary>Converts a conic into a 2D conic (default factors).</summary>
-    public static ConicCurve2D? MakeConic2d(StepGeom_Conic SC) => MakeConic2d(SC, new StepData_Factors());
+    public static ConicCurve2D? MakeConic2d(StepConic sc) => MakeConic2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' une ConicalSurface de Geom a partir d' une ConicalSurface de
@@ -1241,138 +1248,138 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a conical_surface (its semi-angle at least Precision::Angular()).</summary>
-    public static ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS, in StepData_Factors theLocalFactors)
+    public static ConicalSurface? MakeConicalSurface(StepConicalSurface ss, in Factors localFactors)
     {
-        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
-        if (A is not null)
+        Axis2Placement? a = MakeAxis2Placement(ss.Position(), localFactors);
+        if (a is not null)
         {
-            double R = SS.Radius() * theLocalFactors.LengthFactor();
-            double Ang = SS.SemiAngle() * theLocalFactors.PlaneAngleFactor();
+            double r = ss.Radius() * localFactors.LengthFactor();
+            double ang = ss.SemiAngle() * localFactors.PlaneAngleFactor();
             // #2(K3-3) rln 12/02/98 ProSTEP ct_turbine-A.stp entity #518, #3571 (gp::Resolution() is too
             // little)
-            return new ConicalSurface(new CoordinateSystem(A.Ax2()), Max(Ang, global::Kerf.Engine.Foundation.Precision.Angular()), R);
+            return new ConicalSurface(new CoordinateSystem(a.Ax2()), Max(ang, global::Kerf.Engine.Foundation.Precision.Angular()), r);
         }
         return null;
     }
 
     /// <summary>Converts a conical_surface (default factors).</summary>
-    public static ConicalSurface? MakeConicalSurface(StepGeom_ConicalSurface SS) => MakeConicalSurface(SS, new StepData_Factors());
+    public static ConicalSurface? MakeConicalSurface(StepConicalSurface ss) => MakeConicalSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' une Curve de Geom a partir d' une Curve de Step
     //=============================================================================
 
     /// <summary>Converts a curve: lines, conics, bounded curves, curve replicas, 3D offset curves and surface curves.</summary>
-    public static Curve3D? MakeCurve(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
+    public static Curve3D? MakeCurve(StepCurve sc, in Factors localFactors)
     {
-        if (SC is null)
+        if (sc is null)
         {
             return null;
         }
         // OCCT recurses without limit along a file's references (replicas, offsets, trimmed and surface curves): a
         // stack overflow in C++, which ends a .NET process, so the port throws when the stack runs low (decision 1240)
         RuntimeHelpers.EnsureSufficientExecutionStack();
-        if (SC is StepGeom_Line)
+        if (sc is StepLine)
         {
-            return MakeLine(SC as StepGeom_Line, theLocalFactors);
+            return MakeLine(sc as StepLine, localFactors);
         }
-        if (SC is StepGeom_TrimmedCurve)
+        if (sc is StepTrimmedCurve)
         {
-            return MakeTrimmedCurve(SC as StepGeom_TrimmedCurve, theLocalFactors);
+            return MakeTrimmedCurve(sc as StepTrimmedCurve, localFactors);
         }
-        if (SC is StepGeom_Conic)
+        if (sc is StepConic)
         {
-            return MakeConic(SC as StepGeom_Conic, theLocalFactors);
+            return MakeConic(sc as StepConic, localFactors);
         }
-        if (SC is StepGeom_BoundedCurve)
+        if (sc is StepBoundedCurve)
         {
-            return MakeBoundedCurve(SC as StepGeom_BoundedCurve, theLocalFactors);
+            return MakeBoundedCurve(sc as StepBoundedCurve, localFactors);
         }
-        if (SC is StepGeom_CurveReplica)
+        if (sc is StepCurveReplica)
         { //: n7 abv 16 Feb 99
-            StepGeom_CurveReplica CR = SC as StepGeom_CurveReplica;
-            StepGeom_Curve PC = CR.ParentCurve();
-            StepGeom_CartesianTransformationOperator3d T = CR.Transformation() as StepGeom_CartesianTransformationOperator3d;
+            StepCurveReplica cr = sc as StepCurveReplica;
+            StepCurve pc = cr.ParentCurve();
+            StepCartesianTransformationOperator3d t = cr.Transformation() as StepCartesianTransformationOperator3d;
             // protect against cyclic references and wrong type of cartop
-            if (T is not null && PC != SC)
+            if (t is not null && pc != sc)
             {
-                Curve3D? C1 = MakeCurve(PC, theLocalFactors);
-                if (C1 is not null)
+                Curve3D? c1 = MakeCurve(pc, localFactors);
+                if (c1 is not null)
                 {
-                    Transform3D T1 = new Transform3D();
-                    if (MakeTransformation3d(T, ref T1, theLocalFactors))
+                    Transform3D t1 = new Transform3D();
+                    if (MakeTransformation3d(t, ref t1, localFactors))
                     {
-                        C1.Transform(T1);
-                        return C1;
+                        c1.Transform(t1);
+                        return c1;
                     }
                 }
             }
         }
-        else if (SC is StepGeom_OffsetCurve3d)
+        else if (sc is StepOffsetCurve3d)
         { //: o2 abv 17 Feb 99
-            StepGeom_OffsetCurve3d OC = SC as StepGeom_OffsetCurve3d;
-            StepGeom_Curve BC = OC.BasisCurve();
-            if (BC != SC)
+            StepOffsetCurve3d oc = sc as StepOffsetCurve3d;
+            StepCurve bc = oc.BasisCurve();
+            if (bc != sc)
             { // protect against loop
-                Curve3D? C1 = MakeCurve(BC, theLocalFactors);
-                if (C1 is not null)
+                Curve3D? c1 = MakeCurve(bc, localFactors);
+                if (c1 is not null)
                 {
-                    Direction? RD = MakeDirection(OC.RefDirection());
-                    if (RD is not null)
+                    Direction? rd = MakeDirection(oc.RefDirection());
+                    if (rd is not null)
                     {
-                        return new OffsetCurve3D(C1, -OC.Distance(), RD.Dir());
+                        return new OffsetCurve3D(c1, -oc.Distance(), rd.Dir());
                     }
                 }
             }
         }
-        else if (SC is StepGeom_SurfaceCurve)
+        else if (sc is StepSurfaceCurve)
         { //: o5 abv 17 Feb 99
-            StepGeom_SurfaceCurve SurfC = SC as StepGeom_SurfaceCurve;
-            return MakeCurve(SurfC.Curve3d(), theLocalFactors);
+            StepSurfaceCurve surfC = sc as StepSurfaceCurve;
+            return MakeCurve(surfC.Curve3d(), localFactors);
         }
         return null;
     }
 
     /// <summary>Converts a curve (default factors).</summary>
-    public static Curve3D? MakeCurve(StepGeom_Curve SC) => MakeCurve(SC, new StepData_Factors());
+    public static Curve3D? MakeCurve(StepCurve sc) => MakeCurve(sc, new Factors());
 
     //=============================================================================
     // Creation d' une Curve de Geom2d a partir d' une Curve de Step
     //=============================================================================
 
     /// <summary>Converts a curve into a 2D curve: lines, conics, bounded curves and curve replicas.</summary>
-    public static Curve2D? MakeCurve2d(StepGeom_Curve SC, in StepData_Factors theLocalFactors)
+    public static Curve2D? MakeCurve2d(StepCurve sc, in Factors localFactors)
     {
         // as in MakeCurve (decision 1240)
         RuntimeHelpers.EnsureSufficientExecutionStack();
-        if (SC is StepGeom_Line)
+        if (sc is StepLine)
         {
-            return MakeLine2d(SC as StepGeom_Line, theLocalFactors);
+            return MakeLine2d(sc as StepLine, localFactors);
         }
-        if (SC is StepGeom_Conic)
+        if (sc is StepConic)
         {
-            return MakeConic2d(SC as StepGeom_Conic, theLocalFactors);
+            return MakeConic2d(sc as StepConic, localFactors);
         }
-        if (SC is StepGeom_BoundedCurve)
+        if (sc is StepBoundedCurve)
         {
-            return MakeBoundedCurve2d(SC as StepGeom_BoundedCurve, theLocalFactors);
+            return MakeBoundedCurve2d(sc as StepBoundedCurve, localFactors);
         }
-        if (SC is StepGeom_CurveReplica)
+        if (sc is StepCurveReplica)
         { //: n7 abv 16 Feb 99
-            StepGeom_CurveReplica CR = SC as StepGeom_CurveReplica;
-            StepGeom_Curve PC = CR.ParentCurve();
-            StepGeom_CartesianTransformationOperator2d T = CR.Transformation() as StepGeom_CartesianTransformationOperator2d;
+            StepCurveReplica cr = sc as StepCurveReplica;
+            StepCurve pc = cr.ParentCurve();
+            StepCartesianTransformationOperator2d t = cr.Transformation() as StepCartesianTransformationOperator2d;
             // protect against cyclic references and wrong type of cartop
-            if (T is not null && PC != SC)
+            if (t is not null && pc != sc)
             {
-                Curve2D? C1 = MakeCurve2d(PC, theLocalFactors);
-                if (C1 is not null)
+                Curve2D? c1 = MakeCurve2d(pc, localFactors);
+                if (c1 is not null)
                 {
-                    Transform2D T1 = new Transform2D();
-                    if (MakeTransformation2d(T, ref T1, theLocalFactors))
+                    Transform2D t1 = new Transform2D();
+                    if (MakeTransformation2d(t, ref t1, localFactors))
                     {
-                        C1.Transform(T1);
-                        return C1;
+                        c1.Transform(t1);
+                        return c1;
                     }
                 }
             }
@@ -1381,7 +1388,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a curve into a 2D curve (default factors).</summary>
-    public static Curve2D? MakeCurve2d(StepGeom_Curve SC) => MakeCurve2d(SC, new StepData_Factors());
+    public static Curve2D? MakeCurve2d(StepCurve sc) => MakeCurve2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' une CylindricalSurface de Geom a partir d' une
@@ -1389,42 +1396,42 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a cylindrical_surface.</summary>
-    public static CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS, in StepData_Factors theLocalFactors)
+    public static CylindricalSurface? MakeCylindricalSurface(StepCylindricalSurface ss, in Factors localFactors)
     {
-        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
-        if (A is not null)
+        Axis2Placement? a = MakeAxis2Placement(ss.Position(), localFactors);
+        if (a is not null)
         {
-            return new CylindricalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new CylindricalSurface(new CoordinateSystem(a.Ax2()), ss.Radius() * localFactors.LengthFactor());
         }
         return null;
     }
 
     /// <summary>Converts a cylindrical_surface (default factors).</summary>
-    public static CylindricalSurface? MakeCylindricalSurface(StepGeom_CylindricalSurface SS) =>
-        MakeCylindricalSurface(SS, new StepData_Factors());
+    public static CylindricalSurface? MakeCylindricalSurface(StepCylindricalSurface ss) =>
+        MakeCylindricalSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' un Direction de Geom a partir d' un Direction de Step
     //=============================================================================
 
     /// <summary>Converts a 3D direction (null if it has fewer than three ratios, an infinite one, or a null magnitude).</summary>
-    public static Direction? MakeDirection(StepGeom_Direction SD)
+    public static Direction? MakeDirection(StepDirection sd)
     {
         // OCCT: SD isn't checked for null (occt-issues.md, 8D)
-        if (SD.NbDirectionRatios() >= 3)
+        if (sd.DirectionRatioCount >= 3)
         {
-            double X = SD.DirectionRatiosValue(1);
-            double Y = SD.DirectionRatiosValue(2);
-            double Z = SD.DirectionRatiosValue(3);
+            double x = sd.DirectionRatiosValue(1);
+            double y = sd.DirectionRatiosValue(2);
+            double z = sd.DirectionRatiosValue(3);
             // 5.08.2021. Unstable test bugs xde bug24759: Y is very large value - FPE in SquareModulus
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Z))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(x) || global::Kerf.Engine.Foundation.Precision.IsInfinite(y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(z))
             {
                 return null;
             }
             // sln 22.10.2001. CTS23496: Direction is not created if it has null magnitude
-            if (new Xyz(X, Y, Z).SquareModulus() > Constants.Resolution() * Constants.Resolution())
+            if (new Xyz(x, y, z).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
-                return new Direction(X, Y, Z);
+                return new Direction(x, y, z);
             }
         }
         return null;
@@ -1435,17 +1442,17 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a 2D direction (null if it has fewer than two ratios or a null magnitude).</summary>
-    public static Direction2? MakeDirection2d(StepGeom_Direction SD)
+    public static Direction2? MakeDirection2d(StepDirection sd)
     {
         // OCCT: SD isn't checked for null (occt-issues.md, 8D)
-        if (SD.NbDirectionRatios() >= 2)
+        if (sd.DirectionRatioCount >= 2)
         {
-            double X = SD.DirectionRatiosValue(1);
-            double Y = SD.DirectionRatiosValue(2);
+            double x = sd.DirectionRatiosValue(1);
+            double y = sd.DirectionRatiosValue(2);
             // sln 23.10.2001. CTS23496: Direction is not created if it has null magnitude
-            if (new Xy(X, Y).SquareModulus() > Constants.Resolution() * Constants.Resolution())
+            if (new Xy(x, y).SquareModulus() > Constants.Resolution() * Constants.Resolution())
             {
-                return new Direction2(X, Y);
+                return new Direction2(x, y);
             }
         }
         return null;
@@ -1457,61 +1464,61 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts an elementary surface (plane, cylinder, cone, sphere, torus).</summary>
-    public static ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS, in StepData_Factors theLocalFactors)
+    public static ElementarySurface? MakeElementarySurface(StepElementarySurface ss, in Factors localFactors)
     {
-        if (SS is StepGeom_Plane)
+        if (ss is StepPlane)
         {
-            return MakePlane(SS as StepGeom_Plane, theLocalFactors);
+            return MakePlane(ss as StepPlane, localFactors);
         }
-        if (SS is StepGeom_CylindricalSurface)
+        if (ss is StepCylindricalSurface)
         {
-            return MakeCylindricalSurface(SS as StepGeom_CylindricalSurface, theLocalFactors);
+            return MakeCylindricalSurface(ss as StepCylindricalSurface, localFactors);
         }
-        if (SS is StepGeom_ConicalSurface)
+        if (ss is StepConicalSurface)
         {
-            return MakeConicalSurface(SS as StepGeom_ConicalSurface, theLocalFactors);
+            return MakeConicalSurface(ss as StepConicalSurface, localFactors);
         }
-        if (SS is StepGeom_SphericalSurface)
+        if (ss is StepSphericalSurface)
         {
-            return MakeSphericalSurface(SS as StepGeom_SphericalSurface, theLocalFactors);
+            return MakeSphericalSurface(ss as StepSphericalSurface, localFactors);
         }
-        if (SS is StepGeom_ToroidalSurface)
+        if (ss is StepToroidalSurface)
         {
-            return MakeToroidalSurface(SS as StepGeom_ToroidalSurface, theLocalFactors);
+            return MakeToroidalSurface(ss as StepToroidalSurface, localFactors);
         }
         return null;
     }
 
     /// <summary>Converts an elementary surface (default factors).</summary>
-    public static ElementarySurface? MakeElementarySurface(StepGeom_ElementarySurface SS) =>
-        MakeElementarySurface(SS, new StepData_Factors());
+    public static ElementarySurface? MakeElementarySurface(StepElementarySurface ss) =>
+        MakeElementarySurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' un Ellipse de Geom a partir d' un Ellipse de Step
     //=============================================================================
 
     /// <summary>Converts an ellipse (its axes swapped when the first semi-axis is the smaller).</summary>
-    public static EllipseCurve3D? MakeEllipse(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
+    public static EllipseCurve3D? MakeEllipse(StepEllipse sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 2)
         {
-            Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
-            if (A1 is not null)
+            Axis2Placement? a1 = MakeAxis2Placement(axisSelect.Value() as StepAxis2Placement3d, localFactors);
+            if (a1 is not null)
             {
-                Frame3D A = A1.Ax2();
-                double LF = theLocalFactors.LengthFactor();
-                double majorR = SC.SemiAxis1() * LF;
-                double minorR = SC.SemiAxis2() * LF;
+                Frame3D a = a1.Ax2();
+                double lf = localFactors.LengthFactor();
+                double majorR = sc.SemiAxis1() * lf;
+                double minorR = sc.SemiAxis2() * lf;
                 if (majorR - minorR >= 0.0)
                 { //: o9 abv 19 Feb 99
-                    return new EllipseCurve3D(A, majorR, minorR);
+                    return new EllipseCurve3D(a, majorR, minorR);
                 }
                 //: o9 abv 19 Feb 99
                 else
                 {
-                    A.SetXDirection(A.XDirection() ^ A.Direction());
-                    return new EllipseCurve3D(A, minorR, majorR);
+                    a.SetXDirection(a.XDirection() ^ a.Direction());
+                    return new EllipseCurve3D(a, minorR, majorR);
                 }
             }
         }
@@ -1519,33 +1526,33 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an ellipse (default factors).</summary>
-    public static EllipseCurve3D? MakeEllipse(StepGeom_Ellipse SC) => MakeEllipse(SC, new StepData_Factors());
+    public static EllipseCurve3D? MakeEllipse(StepEllipse sc) => MakeEllipse(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Ellipse de Geom2d a partir d' un Ellipse de Step
     //=============================================================================
 
     /// <summary>Converts an ellipse into a 2D ellipse.</summary>
-    public static EllipseCurve2D? MakeEllipse2d(StepGeom_Ellipse SC, in StepData_Factors theLocalFactors)
+    public static EllipseCurve2D? MakeEllipse2d(StepEllipse sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 1)
         {
-            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
-            if (A1 is not null)
+            AxisPlacement2? a1 = MakeAxisPlacement(axisSelect.Value() as StepAxis2Placement2d, localFactors);
+            if (a1 is not null)
             {
-                Frame2D A = new Frame2D(A1.Ax2d());
-                double majorR = SC.SemiAxis1();
-                double minorR = SC.SemiAxis2();
+                Frame2D a = new Frame2D(a1.Ax2d());
+                double majorR = sc.SemiAxis1();
+                double minorR = sc.SemiAxis2();
                 if (majorR - minorR >= 0.0)
                 { //: o9 abv 19 Feb 99: bm4_id_punch_b.stp #678: protection
-                    return new EllipseCurve2D(A, majorR, minorR);
+                    return new EllipseCurve2D(a, majorR, minorR);
                 }
                 else
                 {
-                    Direction2D X = A.XDirection();
-                    A.SetXDirection(new Direction2D(X.X(), -X.Y()));
-                    return new EllipseCurve2D(A, minorR, majorR);
+                    Direction2D x = a.XDirection();
+                    a.SetXDirection(new Direction2D(x.X(), -x.Y()));
+                    return new EllipseCurve2D(a, minorR, majorR);
                 }
             }
         }
@@ -1553,253 +1560,253 @@ public static class StepToGeom
     }
 
     /// <summary>Converts an ellipse into a 2D ellipse (default factors).</summary>
-    public static EllipseCurve2D? MakeEllipse2d(StepGeom_Ellipse SC) => MakeEllipse2d(SC, new StepData_Factors());
+    public static EllipseCurve2D? MakeEllipse2d(StepEllipse sc) => MakeEllipse2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Hyperbola de Geom a partir d' un Hyperbola de Step
     //=============================================================================
 
     /// <summary>Converts a hyperbola.</summary>
-    public static HyperbolaCurve3D? MakeHyperbola(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
+    public static HyperbolaCurve3D? MakeHyperbola(StepHyperbola sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 2)
         {
-            Axis2Placement? A1 = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
-            if (A1 is not null)
+            Axis2Placement? a1 = MakeAxis2Placement(axisSelect.Value() as StepAxis2Placement3d, localFactors);
+            if (a1 is not null)
             {
-                Frame3D A = A1.Ax2();
-                double LF = theLocalFactors.LengthFactor();
-                return new HyperbolaCurve3D(A, SC.SemiAxis() * LF, SC.SemiImagAxis() * LF);
+                Frame3D a = a1.Ax2();
+                double lf = localFactors.LengthFactor();
+                return new HyperbolaCurve3D(a, sc.SemiAxis() * lf, sc.SemiImagAxis() * lf);
             }
         }
         return null;
     }
 
     /// <summary>Converts a hyperbola (default factors).</summary>
-    public static HyperbolaCurve3D? MakeHyperbola(StepGeom_Hyperbola SC) => MakeHyperbola(SC, new StepData_Factors());
+    public static HyperbolaCurve3D? MakeHyperbola(StepHyperbola sc) => MakeHyperbola(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Hyperbola de Geom2d a partir d' un Hyperbola de Step
     //=============================================================================
 
     /// <summary>Converts a hyperbola into a 2D hyperbola.</summary>
-    public static HyperbolaCurve2D? MakeHyperbola2d(StepGeom_Hyperbola SC, in StepData_Factors theLocalFactors)
+    public static HyperbolaCurve2D? MakeHyperbola2d(StepHyperbola sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 1)
         {
-            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
-            if (A1 is not null)
+            AxisPlacement2? a1 = MakeAxisPlacement(axisSelect.Value() as StepAxis2Placement2d, localFactors);
+            if (a1 is not null)
             {
-                Frame2D A = new Frame2D(A1.Ax2d());
-                return new HyperbolaCurve2D(A, SC.SemiAxis(), SC.SemiImagAxis());
+                Frame2D a = new Frame2D(a1.Ax2d());
+                return new HyperbolaCurve2D(a, sc.SemiAxis(), sc.SemiImagAxis());
             }
         }
         return null;
     }
 
     /// <summary>Converts a hyperbola into a 2D hyperbola (default factors).</summary>
-    public static HyperbolaCurve2D? MakeHyperbola2d(StepGeom_Hyperbola SC) => MakeHyperbola2d(SC, new StepData_Factors());
+    public static HyperbolaCurve2D? MakeHyperbola2d(StepHyperbola sc) => MakeHyperbola2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' une Line de Geom a partir d' une Line de Step
     //=============================================================================
 
     /// <summary>Converts a line (null if its vector is shorter than Precision::Confusion()).</summary>
-    public static LineCurve3D? MakeLine(StepGeom_Line SC, in StepData_Factors theLocalFactors)
+    public static LineCurve3D? MakeLine(StepLine sc, in Factors localFactors)
     {
-        CartesianPoint? P = MakeCartesianPoint(SC.Pnt(), theLocalFactors);
-        if (P is not null)
+        CartesianPoint? p = MakeCartesianPoint(sc.Pnt(), localFactors);
+        if (p is not null)
         {
             // sln 22.10.2001. CTS23496: Line is not created if direction have not been successfully created
-            VectorWithMagnitude? D = MakeVectorWithMagnitude(SC.Dir(), theLocalFactors);
-            if (D is not null)
+            VectorWithMagnitude? d = MakeVectorWithMagnitude(sc.Dir(), localFactors);
+            if (d is not null)
             {
-                if (D.Vec().SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (d.Vec().SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return null;
                 }
-                Direction3D V = new Direction3D(D.Vec());
-                return new LineCurve3D(P.Pnt(), V);
+                Direction3D v = new Direction3D(d.Vec());
+                return new LineCurve3D(p.Pnt(), v);
             }
         }
         return null;
     }
 
     /// <summary>Converts a line (default factors).</summary>
-    public static LineCurve3D? MakeLine(StepGeom_Line SC) => MakeLine(SC, new StepData_Factors());
+    public static LineCurve3D? MakeLine(StepLine sc) => MakeLine(sc, new Factors());
 
     //=============================================================================
     // Creation d' une Line de Geom2d a partir d' une Line de Step
     //=============================================================================
 
     /// <summary>Converts a line into a 2D line.</summary>
-    public static LineCurve2D? MakeLine2d(StepGeom_Line SC, in StepData_Factors theLocalFactors)
+    public static LineCurve2D? MakeLine2d(StepLine sc, in Factors localFactors)
     {
-        CartesianPoint2? P = MakeCartesianPoint2d(SC.Pnt(), theLocalFactors);
-        if (P is not null)
+        CartesianPoint2? p = MakeCartesianPoint2d(sc.Pnt(), localFactors);
+        if (p is not null)
         {
             // sln 23.10.2001. CTS23496: Line is not created if direction have not been successfully created
-            VectorWithMagnitude2? D = MakeVectorWithMagnitude2d(SC.Dir());
-            if (D is not null)
+            VectorWithMagnitude2? d = MakeVectorWithMagnitude2d(sc.Dir());
+            if (d is not null)
             {
-                Direction2D D1 = new Direction2D(D.Vec2d());
-                return new LineCurve2D(P.Pnt2d(), D1);
+                Direction2D d1 = new Direction2D(d.Vec2d());
+                return new LineCurve2D(p.Pnt2d(), d1);
             }
         }
         return null;
     }
 
     /// <summary>Converts a line into a 2D line (default factors).</summary>
-    public static LineCurve2D? MakeLine2d(StepGeom_Line SC) => MakeLine2d(SC, new StepData_Factors());
+    public static LineCurve2D? MakeLine2d(StepLine sc) => MakeLine2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Parabola de Geom a partir d' un Parabola de Step
     //=============================================================================
 
     /// <summary>Converts a parabola.</summary>
-    public static ParabolaCurve3D? MakeParabola(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
+    public static ParabolaCurve3D? MakeParabola(StepParabola sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 2)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 2)
         {
-            Axis2Placement? A = MakeAxis2Placement(AxisSelect.Value() as StepGeom_Axis2Placement3d, theLocalFactors);
-            if (A is not null)
+            Axis2Placement? a = MakeAxis2Placement(axisSelect.Value() as StepAxis2Placement3d, localFactors);
+            if (a is not null)
             {
-                return new ParabolaCurve3D(A.Ax2(), SC.FocalDist() * theLocalFactors.LengthFactor());
+                return new ParabolaCurve3D(a.Ax2(), sc.FocalDist() * localFactors.LengthFactor());
             }
         }
         return null;
     }
 
     /// <summary>Converts a parabola (default factors).</summary>
-    public static ParabolaCurve3D? MakeParabola(StepGeom_Parabola SC) => MakeParabola(SC, new StepData_Factors());
+    public static ParabolaCurve3D? MakeParabola(StepParabola sc) => MakeParabola(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Parabola de Geom2d a partir d' un Parabola de Step
     //=============================================================================
 
     /// <summary>Converts a parabola into a 2D parabola.</summary>
-    public static ParabolaCurve2D? MakeParabola2d(StepGeom_Parabola SC, in StepData_Factors theLocalFactors)
+    public static ParabolaCurve2D? MakeParabola2d(StepParabola sc, in Factors localFactors)
     {
-        StepGeom_Axis2Placement AxisSelect = SC.Position();
-        if (AxisSelect.CaseNum(AxisSelect.Value()) == 1)
+        StepAxis2Placement axisSelect = sc.Position();
+        if (axisSelect.CaseNum(axisSelect.Value()) == 1)
         {
-            AxisPlacement2? A1 = MakeAxisPlacement(AxisSelect.Value() as StepGeom_Axis2Placement2d, theLocalFactors);
-            if (A1 is not null)
+            AxisPlacement2? a1 = MakeAxisPlacement(axisSelect.Value() as StepAxis2Placement2d, localFactors);
+            if (a1 is not null)
             {
-                Frame2D A = new Frame2D(A1.Ax2d());
-                return new ParabolaCurve2D(A, SC.FocalDist());
+                Frame2D a = new Frame2D(a1.Ax2d());
+                return new ParabolaCurve2D(a, sc.FocalDist());
             }
         }
         return null;
     }
 
     /// <summary>Converts a parabola into a 2D parabola (default factors).</summary>
-    public static ParabolaCurve2D? MakeParabola2d(StepGeom_Parabola SC) => MakeParabola2d(SC, new StepData_Factors());
+    public static ParabolaCurve2D? MakeParabola2d(StepParabola sc) => MakeParabola2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' un Plane de Geom a partir d' un plane de Step
     //=============================================================================
 
     /// <summary>Converts a plane.</summary>
-    public static PlaneSurface? MakePlane(StepGeom_Plane SP, in StepData_Factors theLocalFactors)
+    public static PlaneSurface? MakePlane(StepPlane sp, in Factors localFactors)
     {
-        Axis2Placement? A = MakeAxis2Placement(SP.Position(), theLocalFactors);
-        if (A is not null)
+        Axis2Placement? a = MakeAxis2Placement(sp.Position(), localFactors);
+        if (a is not null)
         {
-            return new PlaneSurface(new CoordinateSystem(A.Ax2()));
+            return new PlaneSurface(new CoordinateSystem(a.Ax2()));
         }
         return null;
     }
 
     /// <summary>Converts a plane (default factors).</summary>
-    public static PlaneSurface? MakePlane(StepGeom_Plane SP) => MakePlane(SP, new StepData_Factors());
+    public static PlaneSurface? MakePlane(StepPlane sp) => MakePlane(sp, new Factors());
 
     //=================================================================================================
 
     /// <summary>Converts a polyline into a B-spline curve of degree 1.</summary>
-    public static BSplineCurve3D? MakePolyline(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
+    public static BSplineCurve3D? MakePolyline(StepPolyline spl, in Factors localFactors)
     {
-        if (SPL is null)
+        if (spl is null)
         {
             return null;
         }
 
-        int nbp = SPL.NbPoints();
+        int nbp = spl.NbPoints();
         if (nbp > 1)
         {
-            NCollection_Array1<Point3D> Poles = new NCollection_Array1<Point3D>(1, nbp);
-            NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, nbp);
-            NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, nbp);
+            NCollection_Array1<Point3D> poles = new NCollection_Array1<Point3D>(1, nbp);
+            NCollection_Array1<double> knots = new NCollection_Array1<double>(1, nbp);
+            NCollection_Array1<int> mults = new NCollection_Array1<int>(1, nbp);
 
             for (int i = 1; i <= nbp; i++)
             {
-                CartesianPoint? P = MakeCartesianPoint(SPL.PointsValue(i), theLocalFactors);
-                if (P is not null)
+                CartesianPoint? p = MakeCartesianPoint(spl.PointsValue(i), localFactors);
+                if (p is not null)
                 {
-                    Poles.SetValue(i, P.Pnt());
+                    poles.SetValue(i, p.Pnt());
                 }
                 else
                 {
                     return null;
                 }
-                Knots.SetValue(i, (double)(i - 1));
-                Mults.SetValue(i, 1);
+                knots.SetValue(i, (double)(i - 1));
+                mults.SetValue(i, 1);
             }
-            Mults.SetValue(1, 2);
-            Mults.SetValue(nbp, 2);
+            mults.SetValue(1, 2);
+            mults.SetValue(nbp, 2);
 
-            return new BSplineCurve3D(Poles, Knots, Mults, 1);
+            return new BSplineCurve3D(poles, knots, mults, 1);
         }
         return null;
     }
 
     /// <summary>Converts a polyline (default factors).</summary>
-    public static BSplineCurve3D? MakePolyline(StepGeom_Polyline SPL) => MakePolyline(SPL, new StepData_Factors());
+    public static BSplineCurve3D? MakePolyline(StepPolyline spl) => MakePolyline(spl, new Factors());
 
     //=================================================================================================
 
     /// <summary>Converts a polyline into a 2D B-spline curve of degree 1.</summary>
-    public static BSplineCurve2D? MakePolyline2d(StepGeom_Polyline SPL, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakePolyline2d(StepPolyline spl, in Factors localFactors)
     {
-        if (SPL is null)
+        if (spl is null)
         {
             return null;
         }
 
-        int nbp = SPL.NbPoints();
+        int nbp = spl.NbPoints();
         if (nbp > 1)
         {
-            NCollection_Array1<Point2D> Poles = new NCollection_Array1<Point2D>(1, nbp);
-            NCollection_Array1<double> Knots = new NCollection_Array1<double>(1, nbp);
-            NCollection_Array1<int> Mults = new NCollection_Array1<int>(1, nbp);
+            NCollection_Array1<Point2D> poles = new NCollection_Array1<Point2D>(1, nbp);
+            NCollection_Array1<double> knots = new NCollection_Array1<double>(1, nbp);
+            NCollection_Array1<int> mults = new NCollection_Array1<int>(1, nbp);
 
             for (int i = 1; i <= nbp; i++)
             {
-                CartesianPoint2? P = MakeCartesianPoint2d(SPL.PointsValue(i), theLocalFactors);
-                if (P is not null)
+                CartesianPoint2? p = MakeCartesianPoint2d(spl.PointsValue(i), localFactors);
+                if (p is not null)
                 {
-                    Poles.SetValue(i, P.Pnt2d());
+                    poles.SetValue(i, p.Pnt2d());
                 }
                 else
                 {
                     return null;
                 }
-                Knots.SetValue(i, (double)(i - 1));
-                Mults.SetValue(i, 1);
+                knots.SetValue(i, (double)(i - 1));
+                mults.SetValue(i, 1);
             }
-            Mults.SetValue(1, 2);
-            Mults.SetValue(nbp, 2);
+            mults.SetValue(1, 2);
+            mults.SetValue(nbp, 2);
 
-            return new BSplineCurve2D(Poles, Knots, Mults, 1);
+            return new BSplineCurve2D(poles, knots, mults, 1);
         }
         return null;
     }
 
     /// <summary>Converts a polyline into a 2D curve (default factors).</summary>
-    public static BSplineCurve2D? MakePolyline2d(StepGeom_Polyline SPL) => MakePolyline2d(SPL, new StepData_Factors());
+    public static BSplineCurve2D? MakePolyline2d(StepPolyline spl) => MakePolyline2d(spl, new Factors());
 
     //=============================================================================
     // Creation d' une RectangularTrimmedSurface de Geom a partir d' une
@@ -1807,9 +1814,9 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a rectangular_trimmed_surface (its parameters scaled by the basis surface's units).</summary>
-    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS, in StepData_Factors theLocalFactors)
+    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepRectangularTrimmedSurface ss, in Factors localFactors)
     {
-        Surface? theBasis = MakeSurface(SS.BasisSurface(), theLocalFactors);
+        Surface? theBasis = MakeSurface(ss.BasisSurface(), localFactors);
         if (theBasis is not null)
         {
             // -----------------------------------------
@@ -1818,46 +1825,46 @@ public static class StepToGeom
 
             double uFact = 1.0;
             double vFact = 1.0;
-            double LengthFact = theLocalFactors.LengthFactor();
-            double AngleFact = theLocalFactors.PlaneAngleFactor(); // abv 30.06.00 trj4_k1_geo-tc-214.stp #1477: PI/180.;
+            double lengthFact = localFactors.LengthFactor();
+            double angleFact = localFactors.PlaneAngleFactor(); // abv 30.06.00 trj4_k1_geo-tc-214.stp #1477: PI/180.;
 
             if (theBasis is SphericalSurface || theBasis is ToroidalSurface)
             {
-                uFact = vFact = AngleFact;
+                uFact = vFact = angleFact;
             }
             else if (theBasis is CylindricalSurface)
             {
-                uFact = AngleFact;
-                vFact = LengthFact;
+                uFact = angleFact;
+                vFact = lengthFact;
             }
             else if (theBasis is RevolutionSurface)
             {
-                uFact = AngleFact;
+                uFact = angleFact;
             }
             else if (theBasis is ConicalSurface)
             {
                 ConicalSurface conicS = theBasis as ConicalSurface;
-                uFact = AngleFact;
-                vFact = LengthFact / Math.Cos(conicS.SemiAngle());
+                uFact = angleFact;
+                vFact = lengthFact / Math.Cos(conicS.SemiAngle());
             }
             else if (theBasis is PlaneSurface)
             {
-                uFact = vFact = LengthFact;
+                uFact = vFact = lengthFact;
             }
 
-            double U1 = SS.U1() * uFact;
-            double U2 = SS.U2() * uFact;
-            double V1 = SS.V1() * vFact;
-            double V2 = SS.V2() * vFact;
+            double u1 = ss.U1() * uFact;
+            double u2 = ss.U2() * uFact;
+            double v1 = ss.V1() * vFact;
+            double v2 = ss.V2() * vFact;
 
-            return new TrimmedSurface(theBasis, U1, U2, V1, V2, SS.Usense(), SS.Vsense());
+            return new TrimmedSurface(theBasis, u1, u2, v1, v2, ss.Usense(), ss.Vsense());
         }
         return null;
     }
 
     /// <summary>Converts a rectangular_trimmed_surface (default factors).</summary>
-    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepGeom_RectangularTrimmedSurface SS) =>
-        MakeRectangularTrimmedSurface(SS, new StepData_Factors());
+    public static TrimmedSurface? MakeRectangularTrimmedSurface(StepRectangularTrimmedSurface ss) =>
+        MakeRectangularTrimmedSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' une SphericalSurface de Geom a partir d' une
@@ -1865,18 +1872,18 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a spherical_surface.</summary>
-    public static SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS, in StepData_Factors theLocalFactors)
+    public static SphericalSurface? MakeSphericalSurface(StepSphericalSurface ss, in Factors localFactors)
     {
-        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
-        if (A is not null)
+        Axis2Placement? a = MakeAxis2Placement(ss.Position(), localFactors);
+        if (a is not null)
         {
-            return new SphericalSurface(new CoordinateSystem(A.Ax2()), SS.Radius() * theLocalFactors.LengthFactor());
+            return new SphericalSurface(new CoordinateSystem(a.Ax2()), ss.Radius() * localFactors.LengthFactor());
         }
         return null;
     }
 
     /// <summary>Converts a spherical_surface (default factors).</summary>
-    public static SphericalSurface? MakeSphericalSurface(StepGeom_SphericalSurface SS) => MakeSphericalSurface(SS, new StepData_Factors());
+    public static SphericalSurface? MakeSphericalSurface(StepSphericalSurface ss) => MakeSphericalSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' une Surface de Geom a partir d' une Surface de Step
@@ -1886,10 +1893,10 @@ public static class StepToGeom
     /// Converts a surface: bounded, elementary and swept surfaces, offset surfaces (a C0 basis made C1 through Shape
     /// Healing's <see cref="ShapeAlgo.AlgoContainer"/>) and surface replicas. Null on any failure.
     /// </summary>
-    public static Surface? MakeSurface(StepGeom_Surface SS, in StepData_Factors theLocalFactors)
+    public static Surface? MakeSurface(StepSurface ss, in Factors localFactors)
     {
         // sln 01.10.2001 BUC61003. If entry shell is NULL do nothing
-        if (SS is null)
+        if (ss is null)
         {
             return null;
         }
@@ -1899,68 +1906,68 @@ public static class StepToGeom
             // OCC_CATCH_SIGNALS
             // as in MakeCurve (decision 1240): the exception is caught below, as OCCT catches its stack overflow
             RuntimeHelpers.EnsureSufficientExecutionStack();
-            if (SS is StepGeom_BoundedSurface)
+            if (ss is StepBoundedSurface)
             {
-                return MakeBoundedSurface(SS as StepGeom_BoundedSurface, theLocalFactors);
+                return MakeBoundedSurface(ss as StepBoundedSurface, localFactors);
             }
-            if (SS is StepGeom_ElementarySurface)
+            if (ss is StepElementarySurface)
             {
-                StepGeom_ElementarySurface S1 = SS as StepGeom_ElementarySurface;
-                if (S1.Position() is null)
+                StepElementarySurface s1 = ss as StepElementarySurface;
+                if (s1.Position() is null)
                 {
                     return null;
                 }
 
-                return MakeElementarySurface(S1, theLocalFactors);
+                return MakeElementarySurface(s1, localFactors);
             }
-            if (SS is StepGeom_SweptSurface)
+            if (ss is StepSweptSurface)
             {
-                return MakeSweptSurface(SS as StepGeom_SweptSurface, theLocalFactors);
+                return MakeSweptSurface(ss as StepSweptSurface, localFactors);
             }
-            if (SS is StepGeom_OffsetSurface)
+            if (ss is StepOffsetSurface)
             { //: d4 abv 12 Mar 98
-                StepGeom_OffsetSurface OS = SS as StepGeom_OffsetSurface;
+                StepOffsetSurface os = ss as StepOffsetSurface;
 
-                Surface? aBasisSurface = MakeSurface(OS.BasisSurface(), theLocalFactors);
-                if (aBasisSurface is not null)
+                Surface? basisSurface = MakeSurface(os.BasisSurface(), localFactors);
+                if (basisSurface is not null)
                 {
                     // sln 03.10.01. BUC61003. creation of  offset surface is corrected
-                    double anOffset = OS.Distance() * theLocalFactors.LengthFactor();
-                    if (aBasisSurface.Continuity() == C0)
+                    double offset = os.Distance() * localFactors.LengthFactor();
+                    if (basisSurface.Continuity() == C0)
                     {
-                        MakeFace aBFace = new MakeFace(aBasisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
-                        if (aBFace.IsDone)
+                        MakeFace bFace = new MakeFace(basisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
+                        if (bFace.IsDone)
                         {
                             // OCCT: the process-wide container (null before ShapeAlgo.Init, as in OCCT)
-                            Shape aResult = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(aBFace.Face(), Math.Abs(anOffset));
-                            if (aResult.ShapeType() == ShapeType.Face)
+                            Shape result = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(bFace.Face(), Math.Abs(offset));
+                            if (result.ShapeType() == ShapeType.Face)
                             {
-                                aBasisSurface = Tool.Surface(ShapeCasts.Face(aResult));
+                                basisSurface = Tool.Surface(ShapeCasts.Face(result));
                             }
                         }
                     }
-                    if (aBasisSurface.Continuity() != C0)
+                    if (basisSurface.Continuity() != C0)
                     {
-                        return new OffsetSurface(aBasisSurface, anOffset);
+                        return new OffsetSurface(basisSurface, offset);
                     }
                 }
             }
-            else if (SS is StepGeom_SurfaceReplica)
+            else if (ss is StepSurfaceReplica)
             { //: n7 abv 16 Feb 99
-                StepGeom_SurfaceReplica SR = SS as StepGeom_SurfaceReplica;
-                StepGeom_Surface PS = SR.ParentSurface();
-                StepGeom_CartesianTransformationOperator3d T = SR.Transformation();
+                StepSurfaceReplica sr = ss as StepSurfaceReplica;
+                StepSurface ps = sr.ParentSurface();
+                StepCartesianTransformationOperator3d t = sr.Transformation();
                 // protect against cyclic references and wrong type of cartop
-                if (T is not null && PS != SS)
+                if (t is not null && ps != ss)
                 {
-                    Surface? S1 = MakeSurface(PS, theLocalFactors);
-                    if (S1 is not null)
+                    Surface? s1 = MakeSurface(ps, localFactors);
+                    if (s1 is not null)
                     {
-                        Transform3D T1 = new Transform3D();
-                        if (MakeTransformation3d(T, ref T1, theLocalFactors))
+                        Transform3D t1 = new Transform3D();
+                        if (MakeTransformation3d(t, ref t1, localFactors))
                         {
-                            S1.Transform(T1);
-                            return S1;
+                            s1.Transform(t1);
+                            return s1;
                         }
                     }
                 }
@@ -1968,7 +1975,7 @@ public static class StepToGeom
         }
         // OCCT catches Standard_Failure under OCC_CATCH_SIGNALS, so system signals too: their .NET counterparts are
         // the other exceptions (decision 1183)
-        catch (Exception anException) when (anException is not OutOfMemoryException and not OperationCanceledException)
+        catch (Exception exception) when (exception is not OutOfMemoryException and not OperationCanceledException)
         {
             // OCCT_DEBUG output left out
         }
@@ -1976,7 +1983,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a surface (default factors).</summary>
-    public static Surface? MakeSurface(StepGeom_Surface SS) => MakeSurface(SS, new StepData_Factors());
+    public static Surface? MakeSurface(StepSurface ss) => MakeSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' une SurfaceOfLinearExtrusion de Geom a partir d' une
@@ -1984,31 +1991,31 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a surface_of_linear_extrusion (null for a line extruded along itself).</summary>
-    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS, in StepData_Factors theLocalFactors)
+    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepSurfaceOfLinearExtrusion ss, in Factors localFactors)
     {
-        Curve3D? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
-        if (C is not null)
+        Curve3D? c = MakeCurve(ss.SweptCurve(), localFactors);
+        if (c is not null)
         {
             // sln 23.10.2001. CTS23496: Surface is not created if extrusion axis have not been successfully
             // created
-            VectorWithMagnitude? V = MakeVectorWithMagnitude(SS.ExtrusionAxis(), theLocalFactors);
-            if (V is not null)
+            VectorWithMagnitude? v = MakeVectorWithMagnitude(ss.ExtrusionAxis(), localFactors);
+            if (v is not null)
             {
-                Direction3D D = new Direction3D(V.Vec());
-                LineCurve3D aLine = C as LineCurve3D;
-                if (aLine is not null && aLine.Lin().Direction().IsParallel(D, global::Kerf.Engine.Foundation.Precision.Angular()))
+                Direction3D d = new Direction3D(v.Vec());
+                LineCurve3D line = c as LineCurve3D;
+                if (line is not null && line.Lin().Direction().IsParallel(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return null;
                 }
-                return new ExtrusionSurface(C, D);
+                return new ExtrusionSurface(c, d);
             }
         }
         return null;
     }
 
     /// <summary>Converts a surface_of_linear_extrusion (default factors).</summary>
-    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepGeom_SurfaceOfLinearExtrusion SS) =>
-        MakeSurfaceOfLinearExtrusion(SS, new StepData_Factors());
+    public static ExtrusionSurface? MakeSurfaceOfLinearExtrusion(StepSurfaceOfLinearExtrusion ss) =>
+        MakeSurfaceOfLinearExtrusion(ss, new Factors());
 
     //=============================================================================
     // Creation d' une SurfaceOfRevolution de Geom a partir d' une
@@ -2016,46 +2023,46 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a surface_of_revolution (a circle or ellipse through the axis trimmed to a half).</summary>
-    public static RevolutionSurface? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS, in StepData_Factors theLocalFactors)
+    public static RevolutionSurface? MakeSurfaceOfRevolution(StepSurfaceOfRevolution ss, in Factors localFactors)
     {
-        Curve3D? C = MakeCurve(SS.SweptCurve(), theLocalFactors);
-        if (C is not null)
+        Curve3D? c = MakeCurve(ss.SweptCurve(), localFactors);
+        if (c is not null)
         {
-            Axis1Placement? A1 = MakeAxis1Placement(SS.AxisPosition(), theLocalFactors);
-            if (A1 is not null)
+            Axis1Placement? a1 = MakeAxis1Placement(ss.AxisPosition(), localFactors);
+            if (a1 is not null)
             {
-                Axis3D A = A1.Ax1();
+                Axis3D a = a1.Ax1();
                 // skl for OCC952 (one bad case revolution of circle)
-                if (C is CircleCurve3D || C is EllipseCurve3D)
+                if (c is CircleCurve3D || c is EllipseCurve3D)
                 {
-                    ConicCurve3D conic = C as ConicCurve3D;
+                    ConicCurve3D conic = c as ConicCurve3D;
                     Point3D pc = conic.Location();
-                    Line3D rl = new Line3D(A);
+                    Line3D rl = new Line3D(a);
                     if (rl.Distance(pc) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     { // pc lies on A2
-                        Direction3D dirline = A.Direction();
+                        Direction3D dirline = a.Direction();
                         Direction3D norm = conic.Axis().Direction();
                         Direction3D xAxis = conic.XAxis().Direction();
                         // checking A2 lies on plane of circle
                         if (dirline.IsNormal(norm, global::Kerf.Engine.Foundation.Precision.Angular())
-                            && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || C is CircleCurve3D))
+                            && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || c is CircleCurve3D))
                         {
                             // change parametrization for trimming
                             Frame3D axnew = new Frame3D(pc, norm, dirline.Reversed());
                             conic.SetPosition(axnew);
-                            C = new TrimmedCurve3D(conic, 0.0, M_PI);
+                            c = new TrimmedCurve3D(conic, 0.0, M_PI);
                         }
                     }
                 }
-                return new RevolutionSurface(C, A);
+                return new RevolutionSurface(c, a);
             }
         }
         return null;
     }
 
     /// <summary>Converts a surface_of_revolution (default factors).</summary>
-    public static RevolutionSurface? MakeSurfaceOfRevolution(StepGeom_SurfaceOfRevolution SS) =>
-        MakeSurfaceOfRevolution(SS, new StepData_Factors());
+    public static RevolutionSurface? MakeSurfaceOfRevolution(StepSurfaceOfRevolution ss) =>
+        MakeSurfaceOfRevolution(ss, new Factors());
 
     //=============================================================================
     // Creation d' une SweptSurface de prostep a partir d' une
@@ -2063,21 +2070,21 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a swept surface (linear extrusion or revolution).</summary>
-    public static SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS, in StepData_Factors theLocalFactors)
+    public static SweptSurface? MakeSweptSurface(StepSweptSurface ss, in Factors localFactors)
     {
-        if (SS is StepGeom_SurfaceOfLinearExtrusion)
+        if (ss is StepSurfaceOfLinearExtrusion)
         {
-            return MakeSurfaceOfLinearExtrusion(SS as StepGeom_SurfaceOfLinearExtrusion, theLocalFactors);
+            return MakeSurfaceOfLinearExtrusion(ss as StepSurfaceOfLinearExtrusion, localFactors);
         }
-        if (SS is StepGeom_SurfaceOfRevolution)
+        if (ss is StepSurfaceOfRevolution)
         {
-            return MakeSurfaceOfRevolution(SS as StepGeom_SurfaceOfRevolution, theLocalFactors);
+            return MakeSurfaceOfRevolution(ss as StepSurfaceOfRevolution, localFactors);
         }
         return null;
     }
 
     /// <summary>Converts a swept surface (default factors).</summary>
-    public static SweptSurface? MakeSweptSurface(StepGeom_SweptSurface SS) => MakeSweptSurface(SS, new StepData_Factors());
+    public static SweptSurface? MakeSweptSurface(StepSweptSurface ss) => MakeSweptSurface(ss, new Factors());
 
     //=============================================================================
     // Creation d' une ToroidalSurface de Geom a partir d' une
@@ -2085,125 +2092,125 @@ public static class StepToGeom
     //=============================================================================
 
     /// <summary>Converts a toroidal_surface (its radii taken positive).</summary>
-    public static ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS, in StepData_Factors theLocalFactors)
+    public static ToroidalSurface? MakeToroidalSurface(StepToroidalSurface ss, in Factors localFactors)
     {
-        Axis2Placement? A = MakeAxis2Placement(SS.Position(), theLocalFactors);
-        if (A is not null)
+        Axis2Placement? a = MakeAxis2Placement(ss.Position(), localFactors);
+        if (a is not null)
         {
-            double LF = theLocalFactors.LengthFactor();
-            return new ToroidalSurface(new CoordinateSystem(A.Ax2()), Math.Abs(SS.MajorRadius() * LF), Math.Abs(SS.MinorRadius() * LF));
+            double lf = localFactors.LengthFactor();
+            return new ToroidalSurface(new CoordinateSystem(a.Ax2()), Math.Abs(ss.MajorRadius() * lf), Math.Abs(ss.MinorRadius() * lf));
         }
         return null;
     }
 
     /// <summary>Converts a toroidal_surface (default factors).</summary>
-    public static ToroidalSurface? MakeToroidalSurface(StepGeom_ToroidalSurface SS) => MakeToroidalSurface(SS, new StepData_Factors());
+    public static ToroidalSurface? MakeToroidalSurface(StepToroidalSurface ss) => MakeToroidalSurface(ss, new Factors());
 
     //=================================================================================================
 
     /// <summary>
     /// Converts a 2D cartesian transformation operator into the rigid motion it describes (its inverse, as OCCT
-    /// takes it); false if its origin can't be converted (<paramref name="CT"/> unchanged).
+    /// takes it); false if its origin can't be converted (<paramref name="ct"/> unchanged).
     /// </summary>
-    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref Transform2D CT, in StepData_Factors theLocalFactors)
+    public static bool MakeTransformation2d(StepCartesianTransformationOperator2d scto, ref Transform2D ct, in Factors localFactors)
     {
         //  NB : on ne s interesse ici qu au deplacement rigide
-        CartesianPoint2? CP = MakeCartesianPoint2d(SCTO.LocalOrigin(), theLocalFactors);
-        if (CP is not null)
+        CartesianPoint2? cp = MakeCartesianPoint2d(scto.LocalOrigin(), localFactors);
+        if (cp is not null)
         {
-            Direction2D D1 = new Direction2D(Direction2D.D.X);
+            Direction2D d1 = new Direction2D(Direction2D.D.X);
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
-            StepGeom_Direction A = SCTO.Axis1();
-            if (A is not null)
+            StepDirection a = scto.Axis1();
+            if (a is not null)
             {
-                Direction2? D = MakeDirection2d(A);
-                if (D is not null)
+                Direction2? d = MakeDirection2d(a);
+                if (d is not null)
                 {
-                    D1 = D.Dir2d();
+                    d1 = d.Dir2d();
                 }
             }
-            Axis2D result = new Axis2D(CP.Pnt2d(), D1);
-            CT.SetTransformation(result);
-            CT = CT.Inverted();
+            Axis2D result = new Axis2D(cp.Pnt2d(), d1);
+            ct.SetTransformation(result);
+            ct = ct.Inverted();
             return true;
         }
         return false;
     }
 
     /// <summary>Converts a 2D cartesian transformation operator (default factors).</summary>
-    public static bool MakeTransformation2d(StepGeom_CartesianTransformationOperator2d SCTO, ref Transform2D CT) =>
-        MakeTransformation2d(SCTO, ref CT, new StepData_Factors());
+    public static bool MakeTransformation2d(StepCartesianTransformationOperator2d scto, ref Transform2D ct) =>
+        MakeTransformation2d(scto, ref ct, new Factors());
 
     //=================================================================================================
 
     /// <summary>
     /// Converts a 3D cartesian transformation operator into the transformation it describes (its inverse, as OCCT
-    /// takes it, with its scale); false if its origin can't be converted (<paramref name="CT"/> unchanged).
+    /// takes it, with its scale); false if its origin can't be converted (<paramref name="ct"/> unchanged).
     /// </summary>
-    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref Transform3D CT, in StepData_Factors theLocalFactors)
+    public static bool MakeTransformation3d(StepCartesianTransformationOperator3d scto, ref Transform3D ct, in Factors localFactors)
     {
-        CartesianPoint? CP = MakeCartesianPoint(SCTO.LocalOrigin(), theLocalFactors);
-        if (CP is not null)
+        CartesianPoint? cp = MakeCartesianPoint(scto.LocalOrigin(), localFactors);
+        if (cp is not null)
         {
-            Point3D Pgp = CP.Pnt();
+            Point3D pgp = cp.Pnt();
 
             // sln 23.10.2001. CTS23496: If problems with creation of direction occur default direction is
             // used
-            Direction3D D1 = new Direction3D(Direction3D.D.X);
-            StepGeom_Direction A1 = SCTO.Axis1();
-            if (A1 is not null)
+            Direction3D d1 = new Direction3D(Direction3D.D.X);
+            StepDirection a1 = scto.Axis1();
+            if (a1 is not null)
             {
-                Direction? D = MakeDirection(A1);
-                if (D is not null)
+                Direction? d = MakeDirection(a1);
+                if (d is not null)
                 {
-                    D1 = D.Dir();
+                    d1 = d.Dir();
                 }
             }
 
-            Direction3D D2 = new Direction3D(Direction3D.D.Y);
-            StepGeom_Direction A2 = SCTO.Axis2();
-            if (A2 is not null)
+            Direction3D d2 = new Direction3D(Direction3D.D.Y);
+            StepDirection a2 = scto.Axis2();
+            if (a2 is not null)
             {
-                Direction? D = MakeDirection(A2);
-                if (D is not null)
+                Direction? d = MakeDirection(a2);
+                if (d is not null)
                 {
-                    D2 = D.Dir();
+                    d2 = d.Dir();
                 }
             }
 
             bool isDefaultDirectionUsed = true;
-            Direction3D D3 = new Direction3D();
-            StepGeom_Direction A3 = SCTO.Axis3();
-            if (A3 is not null)
+            Direction3D d3 = new Direction3D();
+            StepDirection a3 = scto.Axis3();
+            if (a3 is not null)
             {
-                Direction? D = MakeDirection(A3);
-                if (D is not null)
+                Direction? d = MakeDirection(a3);
+                if (d is not null)
                 {
-                    D3 = D.Dir();
+                    d3 = d.Dir();
                     isDefaultDirectionUsed = false;
                 }
             }
             if (isDefaultDirectionUsed)
             {
-                D3 = D1.Crossed(D2);
+                d3 = d1.Crossed(d2);
             }
 
-            CoordinateSystem result = new CoordinateSystem(Pgp, D3, D1);
-            CT.SetTransformation(result);
-            if (SCTO.HasScale())
+            CoordinateSystem result = new CoordinateSystem(pgp, d3, d1);
+            ct.SetTransformation(result);
+            if (scto.HasScale)
             {
-                CT.SetScaleFactor(SCTO.Scale());
+                ct.SetScaleFactor(scto.Scale());
             }
-            CT = CT.Inverted(); //: n8 abv 16 Feb 99: tr8_as2_db.stp: reverse for accordance with LV tool
+            ct = ct.Inverted(); //: n8 abv 16 Feb 99: tr8_as2_db.stp: reverse for accordance with LV tool
             return true;
         }
         return false;
     }
 
     /// <summary>Converts a 3D cartesian transformation operator (default factors).</summary>
-    public static bool MakeTransformation3d(StepGeom_CartesianTransformationOperator3d SCTO, ref Transform3D CT) =>
-        MakeTransformation3d(SCTO, ref CT, new StepData_Factors());
+    public static bool MakeTransformation3d(StepCartesianTransformationOperator3d scto, ref Transform3D ct) =>
+        MakeTransformation3d(scto, ref ct, new Factors());
 
     // ----------------------------------------------------------------
     // ExtractParameter
@@ -2211,29 +2218,29 @@ public static class StepToGeom
     //: o6 abv 18 Feb 99: parameter Factor added
     //: p3 abv 23 Feb 99: parameter Shift added
     private static bool ExtractParameter(Curve3D aGeomCurve,
-                                         NCollection_HArray1<StepGeom_TrimmingSelect> TS,
+                                         NCollection_HArray1<StepTrimmingSelect> ts,
                                          int nbSel,
-                                         int MasterRep,
-                                         double Factor,
-                                         double Shift,
+                                         int masterRep,
+                                         double factor,
+                                         double shift,
                                          ref double aParam,
-                                         in StepData_Factors theLocalFactors)
+                                         in Factors localFactors)
     {
-        StepGeom_CartesianPoint aPoint;
+        StepCartesianPoint point;
         int i;
         //: S4136  double precBrep = BRepAPI::Precision();
         for (i = 1; i <= nbSel; i++)
         {
-            StepGeom_TrimmingSelect theSel = TS.Value(i);
-            if (MasterRep == 2 && theSel.CaseMember() > 0)
+            StepTrimmingSelect theSel = ts.Value(i);
+            if (masterRep == 2 && theSel.CaseMember() > 0)
             {
-                aParam = Shift + Factor * theSel.ParameterValue();
+                aParam = shift + factor * theSel.ParameterValue();
                 return true;
             }
-            else if (MasterRep == 1 && theSel.CaseNumber() > 0)
+            else if (masterRep == 1 && theSel.CaseNumber() > 0)
             {
-                aPoint = theSel.CartesianPoint();
-                CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
+                point = theSel.CartesianPoint();
+                CartesianPoint? theGeomPnt = MakeCartesianPoint(point, localFactors);
                 // OCCT: a point that isn't 3D gives a null point here, dereferenced (occt-issues.md, 8D)
                 Point3D thegpPnt = theGeomPnt.Pnt();
 
@@ -2248,10 +2255,10 @@ public static class StepToGeom
 
         for (i = 1; i <= nbSel; i++)
         {
-            StepGeom_TrimmingSelect theSel = TS.Value(i);
+            StepTrimmingSelect theSel = ts.Value(i);
             if (theSel.CaseMember() > 0)
             {
-                aParam = Shift + Factor * theSel.ParameterValue();
+                aParam = shift + factor * theSel.ParameterValue();
 
                 return true;
             }
@@ -2260,11 +2267,11 @@ public static class StepToGeom
 
         for (i = 1; i <= nbSel; i++)
         {
-            StepGeom_TrimmingSelect theSel = TS.Value(i);
+            StepTrimmingSelect theSel = ts.Value(i);
             if (theSel.CaseNumber() > 0)
             {
-                aPoint = theSel.CartesianPoint();
-                CartesianPoint? theGeomPnt = MakeCartesianPoint(aPoint, theLocalFactors);
+                point = theSel.CartesianPoint();
+                CartesianPoint? theGeomPnt = MakeCartesianPoint(point, localFactors);
                 // OCCT: as above, a point that isn't 3D is dereferenced null
                 Point3D thegpPnt = theGeomPnt.Pnt();
                 // Project Point On Curve
@@ -2284,38 +2291,38 @@ public static class StepToGeom
     /// Converts a trimmed_curve: its trims taken as parameters (scaled by the basis curve's units) or as points
     /// projected on the curve, as its master representation says.
     /// </summary>
-    public static TrimmedCurve3D? MakeTrimmedCurve(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
+    public static TrimmedCurve3D? MakeTrimmedCurve(StepTrimmedCurve sc, in Factors localFactors)
     {
-        StepGeom_Curve theSTEPCurve = SC.BasisCurve();
-        Curve3D? theCurve = MakeCurve(theSTEPCurve, theLocalFactors);
+        StepCurve theSTEPCurve = sc.BasisCurve();
+        Curve3D? theCurve = MakeCurve(theSTEPCurve, localFactors);
         if (theCurve is null)
         {
             return null;
         }
 
-        NCollection_HArray1<StepGeom_TrimmingSelect> theTrimSel1 = SC.Trim1();
-        NCollection_HArray1<StepGeom_TrimmingSelect> theTrimSel2 = SC.Trim2();
-        int nbSel1 = SC.NbTrim1();
-        int nbSel2 = SC.NbTrim2();
+        NCollection_HArray1<StepTrimmingSelect> theTrimSel1 = sc.Trim1();
+        NCollection_HArray1<StepTrimmingSelect> theTrimSel2 = sc.Trim2();
+        int nbSel1 = sc.Trim1Count;
+        int nbSel2 = sc.Trim2Count;
 
-        int MasterRep;
-        switch (SC.MasterRepresentation())
+        int masterRep;
+        switch (sc.MasterRepresentation())
         {
-            case StepGeom_TrimmingPreference.StepGeom_tpCartesian:
-                MasterRep = 1;
+            case StepTrimmingPreference.TpCartesian:
+                masterRep = 1;
                 break;
-            case StepGeom_TrimmingPreference.StepGeom_tpParameter:
-                MasterRep = 2;
+            case StepTrimmingPreference.TpParameter:
+                masterRep = 2;
                 break;
             default:
-                MasterRep = 0;
+                masterRep = 0;
                 break;
         }
 
         // gka 18.02.04 analysis for case when MasterRep = .Unspecified
         // and parameters are specified as CARTESIAN_POINT
         bool isPoint = false;
-        if (MasterRep == 0 || (MasterRep == 2 && nbSel1 > 1 && nbSel2 > 1))
+        if (masterRep == 0 || (masterRep == 2 && nbSel1 > 1 && nbSel2 > 1))
         {
             int ii;
             for (ii = 1; ii <= nbSel1; ii++)
@@ -2337,17 +2344,17 @@ public static class StepToGeom
 
         //: o6 abv 18 Feb 99: computation of factor moved
         double fact = 1.0, shift = 0.0;
-        if (theSTEPCurve is StepGeom_Line)
+        if (theSTEPCurve is StepLine)
         {
-            StepGeom_Line theLine = theSTEPCurve as StepGeom_Line;
-            fact = theLine.Dir().Magnitude() * theLocalFactors.LengthFactor();
+            StepLine theLine = theSTEPCurve as StepLine;
+            fact = theLine.Dir().Magnitude() * localFactors.LengthFactor();
         }
-        else if (theSTEPCurve is StepGeom_Circle || theSTEPCurve is StepGeom_Ellipse)
+        else if (theSTEPCurve is StepCircle || theSTEPCurve is StepEllipse)
         {
             //    if (trim1 > 2.1*M_PI || trim2 > 2.1*M_PI) fact = M_PI / 180.;
-            fact = theLocalFactors.PlaneAngleFactor();
+            fact = localFactors.PlaneAngleFactor();
             //: p3 abv 23 Feb 99: shift on pi/2 on ellipse with R1 < R2
-            StepGeom_Ellipse ellipse = theSTEPCurve as StepGeom_Ellipse;
+            StepEllipse ellipse = theSTEPCurve as StepEllipse;
             if (ellipse is not null && ellipse.SemiAxis1() - ellipse.SemiAxis2() < 0.0)
             {
                 shift = 0.5 * M_PI;
@@ -2355,25 +2362,25 @@ public static class StepToGeom
 
             // skl 04.02.2002 for OCC133: we can not make TrimmedCurve if
             // there is no X-direction in StepGeom_Axis2Placement3d
-            StepGeom_Conic conic = theSTEPCurve as StepGeom_Conic;
+            StepConic conic = theSTEPCurve as StepConic;
             // CKY 6-FEB-2004 for Airbus-MedialAxis :
             // this restriction does not apply for trimming by POINTS
-            if (conic is not null && MasterRep != 1)
+            if (conic is not null && masterRep != 1)
             {
-                StepGeom_Axis2Placement a2p = conic.Position();
+                StepAxis2Placement a2p = conic.Position();
                 if (a2p.CaseNum(a2p.Value()) == 2)
                 {
-                    if (!a2p.Axis2Placement3d().HasRefDirection())
+                    if (!a2p.Axis2Placement3d().HasRefDirection)
                     {
                         ////gka 18.02.04 analysis for case when MasterRep = .Unspecified
                         // and parameters are specified as CARTESIAN_POINT
                         if (isPoint /*&& !MasterRep*/)
                         {
-                            MasterRep = 1;
+                            masterRep = 1;
                         }
                         else
                         {
-                            if (SC.SenseAgreement())
+                            if (sc.SenseAgreement())
                             {
                                 return new TrimmedCurve3D(theCurve, 0.0, 2.0 * M_PI, true);
                             }
@@ -2389,10 +2396,10 @@ public static class StepToGeom
 
         double trim1 = 0.0;
         double trim2 = 0.0;
-        bool FoundParam1 = ExtractParameter(theCurve, theTrimSel1, nbSel1, MasterRep, fact, shift, ref trim1, theLocalFactors);
-        bool FoundParam2 = ExtractParameter(theCurve, theTrimSel2, nbSel2, MasterRep, fact, shift, ref trim2, theLocalFactors);
+        bool foundParam1 = ExtractParameter(theCurve, theTrimSel1, nbSel1, masterRep, fact, shift, ref trim1, localFactors);
+        bool foundParam2 = ExtractParameter(theCurve, theTrimSel2, nbSel2, masterRep, fact, shift, ref trim2, localFactors);
 
-        if (FoundParam1 && FoundParam2)
+        if (foundParam1 && foundParam2)
         {
             double cf = theCurve.FirstParameter();
             double cl = theCurve.LastParameter();
@@ -2442,7 +2449,7 @@ public static class StepToGeom
             //    mais des systemes ecrivent en radians. Exploiter UnitsMethods
             //: o6    trim1 = trim1 * fact;
             //: o6    trim2 = trim2 * fact;
-            if (SC.SenseAgreement())
+            if (sc.SenseAgreement())
             {
                 return new TrimmedCurve3D(theCurve, trim1, trim2, true);
             }
@@ -2455,7 +2462,7 @@ public static class StepToGeom
     }
 
     /// <summary>Converts a trimmed_curve (default factors).</summary>
-    public static TrimmedCurve3D? MakeTrimmedCurve(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve(SC, new StepData_Factors());
+    public static TrimmedCurve3D? MakeTrimmedCurve(StepTrimmedCurve sc) => MakeTrimmedCurve(sc, new Factors());
 
     //=============================================================================
     // Creation d'une Trimmed Curve de Geom2d a partir d' une Trimmed Curve de Step
@@ -2466,10 +2473,10 @@ public static class StepToGeom
     /// Converts a trimmed_curve into a 2D B-spline curve (trims by parameter only; a B-spline basis curve is
     /// returned untrimmed).
     /// </summary>
-    public static BSplineCurve2D? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC, in StepData_Factors theLocalFactors)
+    public static BSplineCurve2D? MakeTrimmedCurve2d(StepTrimmedCurve sc, in Factors localFactors)
     {
-        StepGeom_Curve BasisCurve = SC.BasisCurve();
-        Curve2D? theGeomBasis = MakeCurve2d(BasisCurve, theLocalFactors);
+        StepCurve basisCurve = sc.BasisCurve();
+        Curve2D? theGeomBasis = MakeCurve2d(basisCurve, localFactors);
         if (theGeomBasis is null)
         {
             return null;
@@ -2480,33 +2487,33 @@ public static class StepToGeom
             return theGeomBasis as BSplineCurve2D;
         }
 
-        NCollection_HArray1<StepGeom_TrimmingSelect> theTrimSel1 = SC.Trim1();
-        NCollection_HArray1<StepGeom_TrimmingSelect> theTrimSel2 = SC.Trim2();
-        int nbSel1 = SC.NbTrim1();
-        int nbSel2 = SC.NbTrim2();
+        NCollection_HArray1<StepTrimmingSelect> theTrimSel1 = sc.Trim1();
+        NCollection_HArray1<StepTrimmingSelect> theTrimSel2 = sc.Trim2();
+        int nbSel1 = sc.Trim1Count;
+        int nbSel2 = sc.Trim2Count;
         if ((nbSel1 == 1) && (nbSel2 == 1) && (theTrimSel1.Value(1).CaseMember() > 0) && (theTrimSel2.Value(1).CaseMember() > 0))
         {
             double u1 = theTrimSel1.Value(1).ParameterValue();
             double u2 = theTrimSel2.Value(1).ParameterValue();
             double fact = 1.0, shift = 0.0;
 
-            if (BasisCurve is StepGeom_Line)
+            if (basisCurve is StepLine)
             {
-                StepGeom_Line theLine = BasisCurve as StepGeom_Line;
+                StepLine theLine = basisCurve as StepLine;
                 fact = theLine.Dir().Magnitude();
             }
-            else if (BasisCurve is StepGeom_Circle || BasisCurve is StepGeom_Ellipse)
+            else if (basisCurve is StepCircle || basisCurve is StepEllipse)
             {
                 //      if (u1 > 2.1*M_PI || u2 > 2.1*M_PI) fact = M_PI / 180.;
-                fact = theLocalFactors.PlaneAngleFactor();
+                fact = localFactors.PlaneAngleFactor();
                 //: p3 abv 23 Feb 99: shift on pi/2 on ellipse with R1 < R2
-                StepGeom_Ellipse ellipse = BasisCurve as StepGeom_Ellipse;
+                StepEllipse ellipse = basisCurve as StepEllipse;
                 if (ellipse is not null && ellipse.SemiAxis1() - ellipse.SemiAxis2() < 0.0)
                 {
                     shift = 0.5 * M_PI;
                 }
             }
-            else if (BasisCurve is StepGeom_Parabola || BasisCurve is StepGeom_Hyperbola)
+            else if (basisCurve is StepParabola || basisCurve is StepHyperbola)
             {
                 // LATER !!!
             }
@@ -2516,49 +2523,49 @@ public static class StepToGeom
             double newU1 = shift + u1 * fact;
             double newU2 = shift + u2 * fact;
 
-            TrimmedCurve2D theTrimmed = new TrimmedCurve2D(theGeomBasis, newU1, newU2, SC.SenseAgreement());
+            TrimmedCurve2D theTrimmed = new TrimmedCurve2D(theGeomBasis, newU1, newU2, sc.SenseAgreement());
             return Geom2dConvert2D.CurveToBSplineCurve(theTrimmed);
         }
         return null;
     }
 
     /// <summary>Converts a trimmed_curve into a 2D B-spline curve (default factors).</summary>
-    public static BSplineCurve2D? MakeTrimmedCurve2d(StepGeom_TrimmedCurve SC) => MakeTrimmedCurve2d(SC, new StepData_Factors());
+    public static BSplineCurve2D? MakeTrimmedCurve2d(StepTrimmedCurve sc) => MakeTrimmedCurve2d(sc, new Factors());
 
     //=============================================================================
     // Creation d' un VectorWithMagnitude de Geom a partir d' un Vector de Step
     //=============================================================================
 
     /// <summary>Converts a vector (its magnitude a length).</summary>
-    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV, in StepData_Factors theLocalFactors)
+    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepVector sv, in Factors localFactors)
     {
         // sln 22.10.2001. CTS23496: Vector is not created if direction have not been successfully created
-        Direction? D = MakeDirection(SV.Orientation());
-        if (D is not null)
+        Direction? d = MakeDirection(sv.Orientation());
+        if (d is not null)
         {
-            Vector3D V = new Vector3D(D.Dir().XYZ() * SV.Magnitude() * theLocalFactors.LengthFactor());
-            return new VectorWithMagnitude(V);
+            Vector3D v = new Vector3D(d.Dir().XYZ() * sv.Magnitude() * localFactors.LengthFactor());
+            return new VectorWithMagnitude(v);
         }
         return null;
     }
 
     /// <summary>Converts a vector (default factors).</summary>
-    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepGeom_Vector SV) => MakeVectorWithMagnitude(SV, new StepData_Factors());
+    public static VectorWithMagnitude? MakeVectorWithMagnitude(StepVector sv) => MakeVectorWithMagnitude(sv, new Factors());
 
     //=============================================================================
     // Creation d' un VectorWithMagnitude de Geom2d a partir d' un Vector de Step
     //=============================================================================
 
     /// <summary>Converts a vector into a 2D vector.</summary>
-    public static VectorWithMagnitude2? MakeVectorWithMagnitude2d(StepGeom_Vector SV)
+    public static VectorWithMagnitude2? MakeVectorWithMagnitude2d(StepVector sv)
     {
         // sln 23.10.2001. CTS23496: Vector is not created if direction have not been successfully created
         // (MakeVectorWithMagnitude2d(...) function)
-        Direction2? D = MakeDirection2d(SV.Orientation());
-        if (D is not null)
+        Direction2? d = MakeDirection2d(sv.Orientation());
+        if (d is not null)
         {
-            Vector2D V = new Vector2D(D.Dir2d().XY() * SV.Magnitude());
-            return new VectorWithMagnitude2(V);
+            Vector2D v = new Vector2D(d.Dir2d().XY() * sv.Magnitude());
+            return new VectorWithMagnitude2(v);
         }
         return null;
     }
@@ -2568,250 +2575,250 @@ public static class StepToGeom
     /// context) into yaw, pitch and roll angles; null when it can't.
     /// </summary>
     /// <remarks>OCCT.NET: ported by unit 8F, with STEPConstruct_UnitContext (decision 1238).</remarks>
-    public static NCollection_HArray1<double>? MakeYprRotation(StepKinematics_SpatialRotation SR, StepRepr_GlobalUnitAssignedContext? theCntxt)
+    public static NCollection_HArray1<double>? MakeYprRotation(SpatialRotation sr, GlobalUnitAssignedContext? cntxt)
     {
         // If rotation is already a ypr_rotation, return it immediately
-        NCollection_HArray1<double>? anYPRRotation = null;
-        if (SR.YprRotation() is not null && SR.YprRotation().Length() == 3)
+        NCollection_HArray1<double>? yprRotation = null;
+        if (sr.YprRotation() is not null && sr.YprRotation().Length() == 3)
         {
-            return SR.YprRotation();
+            return sr.YprRotation();
         }
 
-        if (SR.RotationAboutDirection() is null
-            || SR.RotationAboutDirection().DirectionOfAxis().NbDirectionRatios() != 3
-            || theCntxt is null)
+        if (sr.RotationAboutDirection() is null
+            || sr.RotationAboutDirection().DirectionOfAxis().DirectionRatioCount != 3
+            || cntxt is null)
         {
             return null;
         }
         // rotation is a rotation_about_direction
-        Direction anAxis = new Direction(SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(1),
-                                                   SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(2),
-                                                   SR.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(3));
-        double anAngle = SR.RotationAboutDirection().RotationAngle();
-        if (Math.Abs(anAngle) < global::Kerf.Engine.Foundation.Precision.Angular())
+        Direction axis = new Direction(sr.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(1),
+                                                   sr.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(2),
+                                                   sr.RotationAboutDirection().DirectionOfAxis().DirectionRatiosValue(3));
+        double angle = sr.RotationAboutDirection().RotationAngle();
+        if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             // a zero rotation is converted trivially
-            anYPRRotation = new NCollection_HArray1<double>(1, 3);
-            anYPRRotation.SetValue(1, 0.0);
-            anYPRRotation.SetValue(2, 0.0);
-            anYPRRotation.SetValue(3, 0.0);
-            return anYPRRotation;
+            yprRotation = new NCollection_HArray1<double>(1, 3);
+            yprRotation.SetValue(1, 0.0);
+            yprRotation.SetValue(2, 0.0);
+            yprRotation.SetValue(3, 0.0);
+            return yprRotation;
         }
-        double dx = anAxis.X();
-        double dy = anAxis.Y();
-        double dz = anAxis.Z();
-        NCollection_Sequence<StepBasic_NamedUnit> aPaUnits = new NCollection_Sequence<StepBasic_NamedUnit>();
-        for (int anInd = 1; anInd <= theCntxt.Units().Length(); ++anInd)
+        double dx = axis.X();
+        double dy = axis.Y();
+        double dz = axis.Z();
+        NCollection_Sequence<NamedUnit> paUnits = new NCollection_Sequence<NamedUnit>();
+        for (int ind = 1; ind <= cntxt.Units().Length(); ++ind)
         {
-            if (theCntxt.UnitsValue(anInd).IsKind(typeof(StepBasic_ConversionBasedUnitAndPlaneAngleUnit))
-                || theCntxt.UnitsValue(anInd).IsKind(typeof(StepBasic_SiUnitAndPlaneAngleUnit)))
+            if (cntxt.UnitsValue(ind).IsKind(typeof(ConversionBasedUnitAndPlaneAngleUnit))
+                || cntxt.UnitsValue(ind).IsKind(typeof(SiUnitAndPlaneAngleUnit)))
             {
-                aPaUnits.Append(theCntxt.UnitsValue(anInd));
+                paUnits.Append(cntxt.UnitsValue(ind));
             }
         }
-        if (aPaUnits.Length() != 1)
+        if (paUnits.Length() != 1)
         {
-            return anYPRRotation;
+            return yprRotation;
         }
-        StepBasic_NamedUnit? aPau = aPaUnits.Value(1);
-        while (aPau is not null && aPau.IsKind(typeof(StepBasic_ConversionBasedUnitAndPlaneAngleUnit)))
+        NamedUnit? pau = paUnits.Value(1);
+        while (pau is not null && pau.IsKind(typeof(ConversionBasedUnitAndPlaneAngleUnit)))
         {
-            StepBasic_ConversionBasedUnitAndPlaneAngleUnit aConverUnit = (StepBasic_ConversionBasedUnitAndPlaneAngleUnit)aPau;
-            StepBasic_MeasureWithUnit? aConversionFactor = null;
-            Transient aTransientFactor = aConverUnit.ConversionFactor();
-            if (aTransientFactor.IsKind(typeof(StepBasic_MeasureWithUnit)))
+            ConversionBasedUnitAndPlaneAngleUnit converUnit = (ConversionBasedUnitAndPlaneAngleUnit)pau;
+            MeasureWithUnit? conversionFactor = null;
+            Transient transientFactor = converUnit.ConversionFactor();
+            if (transientFactor.IsKind(typeof(MeasureWithUnit)))
             {
-                aConversionFactor = aTransientFactor as StepBasic_MeasureWithUnit;
+                conversionFactor = transientFactor as MeasureWithUnit;
             }
-            else if (aTransientFactor.IsKind(typeof(StepRepr_ReprItemAndMeasureWithUnit)))
+            else if (transientFactor.IsKind(typeof(ReprItemAndMeasureWithUnit)))
             {
-                StepRepr_ReprItemAndMeasureWithUnit aReprMeasureItem = (StepRepr_ReprItemAndMeasureWithUnit)aTransientFactor;
-                aConversionFactor = aReprMeasureItem.GetMeasureWithUnit();
+                ReprItemAndMeasureWithUnit reprMeasureItem = (ReprItemAndMeasureWithUnit)transientFactor;
+                conversionFactor = reprMeasureItem.GetMeasureWithUnit();
             }
-            anAngle = anAngle * aConversionFactor!.ValueComponent();
-            aPau = aConversionFactor.UnitComponent().NamedUnit();
+            angle = angle * conversionFactor!.ValueComponent();
+            pau = conversionFactor.UnitComponent().NamedUnit();
         }
-        if (aPau is null)
+        if (pau is null)
         {
-            return anYPRRotation;
+            return yprRotation;
         }
-        StepBasic_SiUnitAndPlaneAngleUnit? aSiUnit = aPau as StepBasic_SiUnitAndPlaneAngleUnit;
-        if (aSiUnit is null || aSiUnit.Name() != StepBasic_SiUnitName.StepBasic_sunRadian)
+        SiUnitAndPlaneAngleUnit? siUnit = pau as SiUnitAndPlaneAngleUnit;
+        if (siUnit is null || siUnit.Name() != SiUnitName.SunRadian)
         {
-            return anYPRRotation;
+            return yprRotation;
         }
-        anAngle = (!aSiUnit.HasPrefix() ? 1.0 : STEPConstruct_UnitContext.ConvertSiPrefix(aSiUnit.Prefix())) * anAngle;
-        double anUcf = SR.RotationAboutDirection().RotationAngle() / anAngle;
-        double aSA = Math.Sin(anAngle);
-        double aCA = Math.Cos(anAngle);
-        double aYaw = 0, aPitch = 0, aRoll = 0;
+        angle = (!siUnit.HasPrefix ? 1.0 : UnitContext.ConvertSiPrefix(siUnit.Prefix())) * angle;
+        double ucf = sr.RotationAboutDirection().RotationAngle() / angle;
+        double sa = Math.Sin(angle);
+        double ca = Math.Cos(angle);
+        double yaw = 0, pitch = 0, roll = 0;
 
         // axis parallel either to x-axis or to z-axis?
         if (Math.Abs(dy) < global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dx * dz) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            while (anAngle <= -Math.PI)
+            while (angle <= -Math.PI)
             {
-                anAngle = anAngle + 2 * Math.PI;
+                angle = angle + 2 * Math.PI;
             }
-            while (anAngle > Math.PI)
+            while (angle > Math.PI)
             {
-                anAngle = anAngle - 2 * Math.PI;
+                angle = angle - 2 * Math.PI;
             }
 
-            aYaw = anUcf * anAngle;
-            if (Math.Abs(anAngle - Math.PI) >= global::Kerf.Engine.Foundation.Precision.Angular())
+            yaw = ucf * angle;
+            if (Math.Abs(angle - Math.PI) >= global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                aRoll = -aYaw;
+                roll = -yaw;
             }
             else
             {
-                aRoll = aYaw;
+                roll = yaw;
             }
-            anYPRRotation = new NCollection_HArray1<double>(1, 3);
-            anYPRRotation.SetValue(1, 0.0);
-            anYPRRotation.SetValue(2, 0.0);
-            anYPRRotation.SetValue(3, 0.0);
+            yprRotation = new NCollection_HArray1<double>(1, 3);
+            yprRotation.SetValue(1, 0.0);
+            yprRotation.SetValue(2, 0.0);
+            yprRotation.SetValue(3, 0.0);
             if (Math.Abs(dx) >= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (dx > 0.0)
                 {
-                    anYPRRotation.SetValue(3, aYaw);
+                    yprRotation.SetValue(3, yaw);
                 }
                 else
                 {
-                    anYPRRotation.SetValue(3, aRoll);
+                    yprRotation.SetValue(3, roll);
                 }
             }
             else
             {
                 if (dz > 0.0)
                 {
-                    anYPRRotation.SetValue(1, aYaw);
+                    yprRotation.SetValue(1, yaw);
                 }
                 else
                 {
-                    anYPRRotation.SetValue(1, aRoll);
+                    yprRotation.SetValue(1, roll);
                 }
             }
-            return anYPRRotation;
+            return yprRotation;
         }
 
         // axis parallel to y-axis - use y-axis as pitch axis
         if (Math.Abs(dy) >= global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dx) < global::Kerf.Engine.Foundation.Precision.Confusion() && Math.Abs(dz) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            if (aCA >= 0.0)
+            if (ca >= 0.0)
             {
-                aYaw = 0.0;
-                aRoll = 0.0;
+                yaw = 0.0;
+                roll = 0.0;
             }
             else
             {
-                aYaw = anUcf * Math.PI;
-                aRoll = aYaw;
+                yaw = ucf * Math.PI;
+                roll = yaw;
             }
-            aPitch = anUcf * Math.Atan2(aSA, Math.Abs(aCA));
+            pitch = ucf * Math.Atan2(sa, Math.Abs(ca));
             if (dy < 0.0)
             {
-                aPitch = -aPitch;
+                pitch = -pitch;
             }
-            anYPRRotation = new NCollection_HArray1<double>(1, 3);
-            anYPRRotation.SetValue(1, aYaw);
-            anYPRRotation.SetValue(2, aPitch);
-            anYPRRotation.SetValue(3, aRoll);
-            return anYPRRotation;
+            yprRotation = new NCollection_HArray1<double>(1, 3);
+            yprRotation.SetValue(1, yaw);
+            yprRotation.SetValue(2, pitch);
+            yprRotation.SetValue(3, roll);
+            return yprRotation;
         }
         // axis not parallel to any axis of coordinate system
         // compute rotation matrix
-        double aCm1 = 1 - aCA;
+        double cm1 = 1 - ca;
 
-        double[,] aRotMat = {
-            { dx * dx * aCm1 + aCA, dx * dy * aCm1 - dz * aSA, dx * dz * aCm1 + dy * aSA },
-            { dx * dy * aCm1 + dz * aSA, dy * dy * aCm1 + aCA, dy * dz * aCm1 - dx * aSA },
-            { dx * dz * aCm1 - dy * aSA, dy * dz * aCm1 + dx * aSA, dz * dz * aCm1 + aCA } };
+        double[,] rotMat = {
+            { dx * dx * cm1 + ca, dx * dy * cm1 - dz * sa, dx * dz * cm1 + dy * sa },
+            { dx * dy * cm1 + dz * sa, dy * dy * cm1 + ca, dy * dz * cm1 - dx * sa },
+            { dx * dz * cm1 - dy * sa, dy * dz * cm1 + dx * sa, dz * dz * cm1 + ca } };
 
         // aRotMat[1][3] equals SIN(pitch_angle)
-        if (Math.Abs(Math.Abs(aRotMat[0, 2] - 1.0)) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(Math.Abs(rotMat[0, 2] - 1.0)) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // |aPitch| = PI/2
-            if (Math.Abs(aRotMat[0, 2] - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (Math.Abs(rotMat[0, 2] - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                aPitch = Math.PI / 2;
+                pitch = Math.PI / 2;
             }
             else
             {
-                aPitch = -Math.PI / 2;
+                pitch = -Math.PI / 2;
             }
             // In this case, only the sum or difference of roll and yaw angles
             // is relevant and can be evaluated from the matrix.
             // According to IP "rectangular pitch angle" for ypr_rotation,
             // the roll angle is set to zero.
-            aRoll = 0.0;
-            aYaw = Math.Atan2(aRotMat[1, 0], aRotMat[1, 1]);
+            roll = 0.0;
+            yaw = Math.Atan2(rotMat[1, 0], rotMat[1, 1]);
             // result of ATAN is in the range[-PI / 2, PI / 2].
             // Here all four quadrants are needed.
 
-            if (aRotMat[1, 1] < 0.0)
+            if (rotMat[1, 1] < 0.0)
             {
-                if (aYaw <= 0.0)
+                if (yaw <= 0.0)
                 {
-                    aYaw = aYaw + Math.PI;
+                    yaw = yaw + Math.PI;
                 }
                 else
                 {
-                    aYaw = aYaw - Math.PI;
+                    yaw = yaw - Math.PI;
                 }
             }
         }
         else
         {
             // COS (pitch_angle) not equal to zero
-            aYaw = Math.Atan2(-aRotMat[0, 1], aRotMat[0, 0]);
+            yaw = Math.Atan2(-rotMat[0, 1], rotMat[0, 0]);
 
-            if (aRotMat[0, 0] < 0.0)
+            if (rotMat[0, 0] < 0.0)
             {
-                if (aYaw < 0.0 || Math.Abs(aYaw) < global::Kerf.Engine.Foundation.Precision.Angular())
+                if (yaw < 0.0 || Math.Abs(yaw) < global::Kerf.Engine.Foundation.Precision.Angular())
                 {
-                    aYaw = aYaw + Math.PI;
+                    yaw = yaw + Math.PI;
                 }
                 else
                 {
-                    aYaw = aYaw - Math.PI;
+                    yaw = yaw - Math.PI;
                 }
             }
-            double aSY = Math.Sin(aYaw);
-            double aCY = Math.Cos(aYaw);
-            double aSR = Math.Sin(aRoll);
-            double aCR = Math.Cos(aRoll);
+            double sy = Math.Sin(yaw);
+            double cy = Math.Cos(yaw);
+            double aSR = Math.Sin(roll);
+            double cr = Math.Cos(roll);
 
-            if (Math.Abs(aSY) > Math.Abs(aCY) && Math.Abs(aSY) > Math.Abs(aSR) && Math.Abs(aSY) > Math.Abs(aCR))
+            if (Math.Abs(sy) > Math.Abs(cy) && Math.Abs(sy) > Math.Abs(aSR) && Math.Abs(sy) > Math.Abs(cr))
             {
-                aCm1 = -aRotMat[0, 1] / aSY;
+                cm1 = -rotMat[0, 1] / sy;
             }
             else
             {
-                if (Math.Abs(aCY) > Math.Abs(aSR) && Math.Abs(aCY) > Math.Abs(aCR))
+                if (Math.Abs(cy) > Math.Abs(aSR) && Math.Abs(cy) > Math.Abs(cr))
                 {
-                    aCm1 = aRotMat[0, 0] / aCY;
+                    cm1 = rotMat[0, 0] / cy;
                 }
-                else if (Math.Abs(aSR) > Math.Abs(aCR))
+                else if (Math.Abs(aSR) > Math.Abs(cr))
                 {
-                    aCm1 = -aRotMat[1, 2] / aSR;
+                    cm1 = -rotMat[1, 2] / aSR;
                 }
                 else
                 {
-                    aCm1 = aRotMat[2, 2] / aCR;
+                    cm1 = rotMat[2, 2] / cr;
                 }
             }
-            aPitch = Math.Atan2(aRotMat[0, 2], aCm1);
+            pitch = Math.Atan2(rotMat[0, 2], cm1);
         }
-        aYaw = aYaw * anUcf;
-        aPitch = aPitch * anUcf;
-        aRoll = aRoll * anUcf;
-        anYPRRotation = new NCollection_HArray1<double>(1, 3);
-        anYPRRotation.SetValue(1, aYaw);
-        anYPRRotation.SetValue(2, aPitch);
-        anYPRRotation.SetValue(3, aRoll);
+        yaw = yaw * ucf;
+        pitch = pitch * ucf;
+        roll = roll * ucf;
+        yprRotation = new NCollection_HArray1<double>(1, 3);
+        yprRotation.SetValue(1, yaw);
+        yprRotation.SetValue(2, pitch);
+        yprRotation.SetValue(3, roll);
 
-        return anYPRRotation;
+        return yprRotation;
     }
 }

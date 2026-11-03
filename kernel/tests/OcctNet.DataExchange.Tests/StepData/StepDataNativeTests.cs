@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Foundation.Resources;
 using System.Globalization;
 using System.IO.Compression;
 using Xunit.Abstractions;
@@ -66,16 +69,16 @@ public class StepDataNativeTests(ITestOutputHelper output)
         var aDiffs = new List<string>();
         for (int aCase = 1; aCase <= aCases.Count; aCase++)
         {
-            for (int aPage = 0; aPage <= (int)Resource_FormatType.Resource_FormatType_Big5; aPage++)
+            for (int aPage = 0; aPage <= (int)FormatType.FormatType_Big5; aPage++)
             {
                 string aNative = aRecording.ReadLine()!;
-                string aPort = string.Create(CultureInfo.InvariantCulture, $"{aCase} {aPage} ") + Decode(aCases[aCase - 1], (Resource_FormatType)aPage);
+                string aPort = string.Create(CultureInfo.InvariantCulture, $"{aCase} {aPage} ") + Decode(aCases[aCase - 1], (FormatType)aPage);
                 aCompared++;
                 if (aNative == aPort)
                 {
                     aSame++;
                 }
-                else if (IsPastTheEnd(aCases[aCase - 1], (Resource_FormatType)aPage))
+                else if (IsPastTheEnd(aCases[aCase - 1], (FormatType)aPage))
                 {
                     anAttributed++;
                 }
@@ -101,14 +104,14 @@ public class StepDataNativeTests(ITestOutputHelper output)
     /// the closing quote makes OCCT's decoder read the quote and the terminating zero as continuation bytes, then go on
     /// into whatever memory follows (the port reads zeros there).
     /// </summary>
-    private static bool IsPastTheEnd(string theText, Resource_FormatType thePage)
+    private static bool IsPastTheEnd(string theText, FormatType thePage)
     {
-        if (thePage == Resource_FormatType.Resource_FormatType_SystemLocale)
+        if (thePage == FormatType.FormatType_SystemLocale)
         {
             return true; // native converts from the process's C locale, the port reads UTF-8 (decision 1191)
         }
 
-        if (thePage != Resource_FormatType.Resource_FormatType_UTF8)
+        if (thePage != FormatType.FormatType_UTF8)
         {
             return false;
         }
@@ -145,18 +148,18 @@ public class StepDataNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>StepData_StepReaderData::ReadString on one quoted text, as the recorder's "text" mode writes it.</summary>
-    internal static string Decode(string theText, Resource_FormatType thePage)
+    internal static string Decode(string theText, FormatType thePage)
     {
         try
         {
-            var aData = new StepData_StepReaderData(0, 1, 1, thePage);
+            var aData = new StepReaderData(0, 1, 1, thePage);
             aData.SetRecord(1, "#1", "X", 1);
-            aData.AddStepParam(1, theText, Interface_ParamType.Interface_ParamText);
+            aData.AddStepParam(1, theText, ParamType.ParamText);
             aData.InitParams(1);
             TCollection_HAsciiString? aVal = null;
-            aData.ReadString(1, 1, "t", new Interface_Check(), ref aVal);
+            aData.ReadString(1, 1, "t", new FrameworkCheck(), ref aVal);
             string aRes = StepDataDump.Str(aVal);
-            for (int i = 1; i <= aData.GlobalCheck().NbWarnings(); i++)
+            for (int i = 1; i <= aData.GlobalCheck().WarningCount; i++)
             {
                 aRes += " W " + StepFileDump.Esc(aData.GlobalCheck().CWarning(i, true));
             }
@@ -191,14 +194,14 @@ public class StepDataNativeTests(ITestOutputHelper output)
         return aTables;
     }
 
-    private static uint PortValue(Resource_UnicodeTables.Table theTable, int theIndex) => theTable switch
+    private static uint PortValue(UnicodeTables.Table theTable, int theIndex) => theTable switch
     {
-        Resource_UnicodeTables.Table.CodePages =>
-            Resource_UnicodeTables.CodePage(Resource_FormatType.Resource_FormatType_CP1250 + theIndex / 128)[theIndex % 128],
-        Resource_UnicodeTables.Table.Sjis => Resource_UnicodeTables.SjisUni(theIndex),
-        Resource_UnicodeTables.Table.Gb => Resource_UnicodeTables.GbUni(theIndex),
-        Resource_UnicodeTables.Table.Gbk => Resource_UnicodeTables.GbkUni(theIndex),
-        _ => Resource_UnicodeTables.Big5Uni(theIndex),
+        UnicodeTables.Table.CodePages =>
+            UnicodeTables.CodePage(FormatType.FormatType_CP1250 + theIndex / 128)[theIndex % 128],
+        UnicodeTables.Table.Sjis => UnicodeTables.SjisUni(theIndex),
+        UnicodeTables.Table.Gb => UnicodeTables.GbUni(theIndex),
+        UnicodeTables.Table.Gbk => UnicodeTables.GbkUni(theIndex),
+        _ => UnicodeTables.Big5Uni(theIndex),
     };
 
     [Fact]
@@ -208,8 +211,8 @@ public class StepDataNativeTests(ITestOutputHelper output)
         var aDiff = new List<List<(int, uint)>>();
         for (int aTable = 0; aTable < 5; aTable++)
         {
-            var aKind = (Resource_UnicodeTables.Table)aTable;
-            uint[] aNet = Resource_UnicodeTables.NetTable(aKind);
+            var aKind = (UnicodeTables.Table)aTable;
+            uint[] aNet = UnicodeTables.NetTable(aKind);
             var aFixes = new List<(int, uint)>();
             int aWrong = 0;
             foreach ((int anIndex, uint aValue) in aNative[aTable])
@@ -249,7 +252,7 @@ public class StepDataNativeTests(ITestOutputHelper output)
 
         for (int aTable = 0; aTable < 5; aTable++)
         {
-            var aKind = (Resource_UnicodeTables.Table)aTable;
+            var aKind = (UnicodeTables.Table)aTable;
             foreach ((int anIndex, uint aValue) in aNative[aTable])
             {
                 Assert.True(PortValue(aKind, anIndex) == aValue, $"{aKind}[{anIndex}]: native {aValue:X}, port {PortValue(aKind, anIndex):X}");

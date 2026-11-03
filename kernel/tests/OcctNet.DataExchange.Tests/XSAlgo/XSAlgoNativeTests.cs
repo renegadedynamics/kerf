@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Extend;
@@ -136,43 +137,43 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return string.Concat(aTexts.Select(t => t + "\n"));
     }
 
-    private static ulong MergeTP(List<Shape> theKeys, Action<Transfer_TransientProcess> theMerge)
+    private static ulong MergeTP(List<Shape> theKeys, Action<global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess> theMerge)
     {
-        var aTP = new Transfer_TransientProcess();
+        var aTP = new global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess();
         for (int i = 0; i < theKeys.Count; i++)
         {
-            Occt.TransferBRep.SetShapeResult(aTP, new TCollection_HAsciiString(i), theKeys[i]);
+            Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.SetShapeResult(aTP, new TCollection_HAsciiString(i), theKeys[i]);
         }
         theMerge(aTP);
         var aLines = new StringBuilder();
-        for (int i = 1; i <= aTP.NbMapped(); i++)
+        for (int i = 1; i <= aTP.MappedCount; i++)
         {
-            var aB = (TransferBRep_ShapeBinder)aTP.MapItem(i)!;
+            var aB = (global::Kerf.Engine.Exchange.Framework.Transfer.ShapeBinder)aTP.MapItem(i)!;
             aLines.Append(CultureInfo.InvariantCulture,
-                          $"{TypeChar(aB.Result())} {(aB.Result().IsSame(theKeys[i - 1]) ? 1 : 0)} {aB.Check().NbWarnings()}\n");
+                          $"{TypeChar(aB.Result())} {(aB.Result().IsSame(theKeys[i - 1]) ? 1 : 0)} {aB.Check().WarningCount}\n");
         }
         return Fnv(aLines.ToString());
     }
 
-    private static ulong MergeFP(in Shape theInput, Action<Transfer_FinderProcess> theMerge)
+    private static ulong MergeFP(in Shape theInput, Action<global::Kerf.Engine.Exchange.Framework.Transfer.FinderProcess> theMerge)
     {
-        var aFP = new Transfer_FinderProcess();
+        var aFP = new global::Kerf.Engine.Exchange.Framework.Transfer.FinderProcess();
         var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theInput, ShapeType.Face, aFaces);
         for (int i = 1; i <= aFaces.Extent(); i++)
         {
-            Occt.TransferBRep.SetTransientFromShape(aFP, aFaces[i], new TCollection_HAsciiString(i));
+            Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.SetTransientFromShape(aFP, aFaces[i], new TCollection_HAsciiString(i));
         }
         theMerge(aFP);
         var aLines = new List<string>();
-        for (int i = 1; i <= aFP.NbMapped(); i++)
+        for (int i = 1; i <= aFP.MappedCount; i++)
         {
             var aLine = new StringBuilder(aFP.Mapped(i)!.ValueTypeName());
             int aNbW = 0;
-            for (Transfer_Binder? aN = aFP.MapItem(i); aN is not null; aN = aN.NextResult())
+            for (global::Kerf.Engine.Exchange.Framework.Transfer.Binder? aN = aFP.MapItem(i); aN is not null; aN = aN.NextResult())
             {
                 aLine.Append(' ').Append(aN.ResultTypeName());
-                aNbW += aN.Check().NbWarnings();
+                aNbW += aN.Check().WarningCount;
             }
             aLine.Append(' ').Append(aNbW.ToString(CultureInfo.InvariantCulture));
             aLines.Add(aLine.ToString());
@@ -226,10 +227,10 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     }
 
     /// <summary>The statics of a STEP reader: XSAlgo's, and STEPControl_Controller's naming STEP's resource file and sequences.</summary>
-    internal static Interface_StaticSet StepStatics()
+    internal static global::Kerf.Engine.Exchange.Framework.StaticSet StepStatics()
     {
-        var aStatics = new Interface_StaticSet();
-        Occt.XSAlgo.Init(aStatics);
+        var aStatics = new global::Kerf.Engine.Exchange.Framework.StaticSet();
+        Kerf.Engine.Exchange.Framework.XSAlgo.Init(aStatics);
         aStatics.Init("step", "read.step.resource.name", 't', "STEP");
         aStatics.Init("step", "read.step.sequence", 't', "FromSTEP");
         aStatics.Init("step", "write.step.resource.name", 't', "STEP");
@@ -239,7 +240,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
 
     private sealed class Setup
     {
-        public readonly Interface_StaticSet Statics = StepStatics();
+        public readonly global::Kerf.Engine.Exchange.Framework.StaticSet Statics = StepStatics();
         public readonly (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
         public readonly NCollection_DataMap<string, string> WriteParams = new();
         public readonly global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags WriteFlags =
@@ -247,11 +248,11 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
 
         public Setup()
         {
-            Read = XSAlgo_ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", Statics);
-            XSAlgo_ShapeProcessor.SetParameter("FixShape.Tolerance3d", 1.0e-3, true, Read.Item1);
-            XSAlgo_ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", 1.0, true, Read.Item1);
-            ToStep = XSAlgo_ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", Statics);
-            XSAlgo_ShapeProcessor.FillParameterMap(new DE_ShapeFixParameters(), true, WriteParams);
+            Read = global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", Statics);
+            global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetParameter("FixShape.Tolerance3d", 1.0e-3, true, Read.Item1);
+            global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", 1.0, true, Read.Item1);
+            ToStep = global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", Statics);
+            global::Kerf.Engine.Exchange.Framework.ShapeProcessor.FillParameterMap(new ShapeFixParameters(), true, WriteParams);
         }
 
         public List<string> Params() =>
@@ -268,7 +269,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         Shape anInput = theInput;
         return Run(theRun, () =>
         {
-            var aProcessor = new XSAlgo_ShapeProcessor(theParams);
+            var aProcessor = new global::Kerf.Engine.Exchange.Framework.ShapeProcessor(theParams);
             Shape aResult = aProcessor.ProcessShape(anInput, theFlags);
             ulong aMerge = theToFinder
                 ? MergeFP(anInput, aProcessor.MergeTransferInfo)
@@ -277,20 +278,20 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         });
     }
 
-    private static string Container(in Shape theInput, string theRun, string theSeq, Interface_StaticSet theStatics)
+    private static string Container(in Shape theInput, string theRun, string theSeq, global::Kerf.Engine.Exchange.Framework.StaticSet theStatics)
     {
         Shape anInput = theInput;
         return Run(theRun, () =>
         {
             Transient? anInfo = null;
-            Shape aResult = Occt.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
+            Shape aResult = Kerf.Engine.Exchange.Framework.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
                                                                            theSeq, ref anInfo, theStatics);
-            ulong aMerge = MergeTP(Keys(anInput), theTP => Occt.XSAlgo.AlgoContainer().MergeTransferInfo(theTP, anInfo, 1));
+            ulong aMerge = MergeTP(Keys(anInput), theTP => Kerf.Engine.Exchange.Framework.XSAlgo.AlgoContainer().MergeTransferInfo(theTP, anInfo, 1));
             return Record(theRun, anInput, aResult, anInfo as global::Kerf.Engine.Healing.Process.ShapeContext, aMerge);
         });
     }
 
-    private static string PCurves(string thePath, Interface_StaticSet theStatics)
+    private static string PCurves(string thePath, global::Kerf.Engine.Exchange.Framework.StaticSet theStatics)
     {
         return Run("PCURVE", () =>
         {
@@ -307,7 +308,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
                 {
                     Edge anEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current());
                     bool isSeam = Tool.IsClosed(anEdge, aFace);
-                    bool isOk = XSAlgo_ShapeProcessor.CheckPCurve(anEdge, aFace, 1.0e-3, isSeam, theStatics);
+                    bool isOk = global::Kerf.Engine.Exchange.Framework.ShapeProcessor.CheckPCurve(anEdge, aFace, 1.0e-3, isSeam, theStatics);
                     aLines.Append(isOk ? '1' : '0').Append(' ')
                           .Append(G17(Tool.Tolerance(anEdge)))
                           .Append('\n');
@@ -347,7 +348,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         Assert.True(BrepTools.Read(out Shape aRead, aPath), aPath);
         Shape aShape = BrepTools.ExactCopyForWrite(aRead, out _);
         var aSetup = new Setup();
-        var aProcessor = new XSAlgo_ShapeProcessor(aSetup.WriteParams);
+        var aProcessor = new global::Kerf.Engine.Exchange.Framework.ShapeProcessor(aSetup.WriteParams);
         aProcessor.ProcessShape(aShape, aSetup.WriteFlags);
         ulong aMerge = MergeFP(aShape, aProcessor.MergeTransferInfo);
         string aNative = Lines().SkipWhile(l => l != "FILE CrankArm.brep").First(l => l.StartsWith("WRITE ", StringComparison.Ordinal));
@@ -389,7 +390,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
             aShape.TShape()!.FreezeGraph(); // a caller's shape
             ulong aBefore = BRepHash(aShape);
             // each worker its own statics (a static set is a working object)
-            Interface_StaticSet aStatics = StepStatics();
+            global::Kerf.Engine.Exchange.Framework.StaticSet aStatics = StepStatics();
             var aRecords = new List<string>
             {
                 Processor(aShape, "READ", aSetup.Read.Item1, aSetup.Read.Item2, false),

@@ -7,11 +7,12 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Engine.Foundation.Gravity;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Framework.Transfer;
 
 /// <summary>
 /// This package gathers services to simply read files and convert them to Shapes from CasCade. IE. it can be used in
@@ -23,39 +24,39 @@ namespace Occt;
 /// </remarks>
 public static class TransferBRep
 {
-    private static void ShapeAppend(Transfer_Binder? binder, NCollection_HSequence<Shape> shapes)
+    private static void ShapeAppend(Binder? binder, NCollection_HSequence<Shape> shapes)
     {
         if (binder is null)
         {
             return;
         }
-        if (binder.IsKind(typeof(TransferBRep_BinderOfShape)))
+        if (binder.IsKind(typeof(BinderOfShape)))
         {
-            TransferBRep_BinderOfShape shbind = binder as TransferBRep_BinderOfShape;
-            if (shbind.HasResult())
+            BinderOfShape shbind = binder as BinderOfShape;
+            if (shbind.HasResult)
             {
                 shapes.Append(shbind.Result());
             }
         }
-        else if (binder.IsKind(typeof(TransferBRep_ShapeListBinder)))
+        else if (binder.IsKind(typeof(ShapeListBinder)))
         {
-            TransferBRep_ShapeListBinder slbind = binder as TransferBRep_ShapeListBinder;
-            int i, nb = slbind.NbShapes();
+            ShapeListBinder slbind = binder as ShapeListBinder;
+            int i, nb = slbind.ShapeCount;
             for (i = 1; i <= nb; i++)
             {
                 shapes.Append(slbind.Shape(i));
             }
         }
-        else if (binder.IsKind(typeof(Transfer_SimpleBinderOfTransient)))
+        else if (binder.IsKind(typeof(SimpleBinderOfTransient)))
         {
-            Transfer_SimpleBinderOfTransient trbind = binder as Transfer_SimpleBinderOfTransient;
+            SimpleBinderOfTransient trbind = binder as SimpleBinderOfTransient;
             TopoDS_HShape? hs = trbind.Result() as TopoDS_HShape;
             if (hs is not null)
             {
                 shapes.Append(hs.Shape());
             }
         }
-        Transfer_Binder? nextr = binder.NextResult();
+        Binder? nextr = binder.NextResult();
         if (nextr is not null)
         {
             ShapeAppend(nextr, shapes);
@@ -63,18 +64,18 @@ public static class TransferBRep
     }
 
     /// <summary>Get the Shape recorded in a Binder. If the Binder brings a multiple result, search for the Shape.</summary>
-    public static Shape ShapeResult(Transfer_Binder? binder)
+    public static Shape ShapeResult(Binder? binder)
     {
         Shape shape = new Shape();
-        Transfer_Binder? bnd = binder;
+        Binder? bnd = binder;
         while (bnd is not null)
         {
-            TransferBRep_BinderOfShape? shb = bnd as TransferBRep_BinderOfShape;
+            BinderOfShape? shb = bnd as BinderOfShape;
             if (shb is not null)
             {
                 return shb.Result();
             }
-            Transfer_SimpleBinderOfTransient? hsb = bnd as Transfer_SimpleBinderOfTransient;
+            SimpleBinderOfTransient? hsb = bnd as SimpleBinderOfTransient;
             if (hsb is not null)
             {
                 TopoDS_HShape? hsp = hsb.Result() as TopoDS_HShape;
@@ -92,17 +93,17 @@ public static class TransferBRep
     /// Get the Shape recorded in a TransientProcess as result of the Transfer of an entity. I.E. in the binder bound to
     /// that Entity. If no result or result not a single Shape, returns a Null Shape.
     /// </summary>
-    public static Shape ShapeResult(Transfer_TransientProcess TP, Transient? ent)
+    public static Shape ShapeResult(TransientProcess tp, Transient? ent)
     {
         Shape shape = new Shape();
-        Transfer_Binder? binder = TP.Find(ent);
+        Binder? binder = tp.Find(ent);
         if (binder is null)
         {
-            binder = ent as Transfer_Binder;
+            binder = ent as Binder;
         }
         if (binder is not null)
         {
-            return TransferBRep.ShapeResult(binder);
+            return global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeResult(binder);
         }
         TopoDS_HShape? hsp = ent as TopoDS_HShape;
         if (hsp is not null)
@@ -116,33 +117,33 @@ public static class TransferBRep
     /// Sets a Shape as a result for a starting entity <paramref name="ent"/> (reverse of ShapeResult). It simply
     /// creates a ShapeBinder then binds it to the entity.
     /// </summary>
-    public static void SetShapeResult(Transfer_TransientProcess? TP, Transient? ent, in Shape result)
+    public static void SetShapeResult(TransientProcess? tp, Transient? ent, in Shape result)
     {
-        if (result.IsNull || ent is null || TP is null)
+        if (result.IsNull || ent is null || tp is null)
         {
             return;
         }
-        TP.Bind(ent, new TransferBRep_ShapeBinder(result));
+        tp.Bind(ent, new ShapeBinder(result));
     }
 
     /// <summary>
     /// Gets the Shapes recorded in a TransientProcess as result of a Transfer, considers roots only or all results
     /// according <paramref name="roots"/>, returns them as a HSequence.
     /// </summary>
-    public static NCollection_HSequence<Shape>? Shapes(Transfer_TransientProcess? TP, bool roots = true)
+    public static NCollection_HSequence<Shape>? Shapes(TransientProcess? tp, bool roots = true)
     {
         NCollection_HSequence<Shape>? shapes = null;
-        if (TP is null)
+        if (tp is null)
         {
             return shapes;
         }
         shapes = new NCollection_HSequence<Shape>();
 
-        Transfer_IteratorOfProcessForTransient list = roots ? TP.RootResult() : TP.CompleteResult();
+        IteratorOfProcessForTransient list = roots ? tp.RootResult() : tp.CompleteResult();
 
         for (list.Start(); list.More(); list.Next())
         {
-            Transfer_Binder binder = list.Value();
+            Binder binder = list.Value();
             ShapeAppend(binder, shapes);
         }
         return shapes;
@@ -152,11 +153,11 @@ public static class TransferBRep
     /// Gets the Shapes recorded in a TransientProcess as result of a Transfer, for a given list of starting entities,
     /// returns the shapes as a HSequence.
     /// </summary>
-    public static NCollection_HSequence<Shape>? Shapes(Transfer_TransientProcess? TP,
+    public static NCollection_HSequence<Shape>? Shapes(TransientProcess? tp,
                                                               NCollection_HSequence<Transient>? list)
     {
         NCollection_HSequence<Shape>? shapes = null;
-        if (TP is null && list is null) // OCCT: && where || is meant (either null is dereferenced below)
+        if (tp is null && list is null) // OCCT: && where || is meant (either null is dereferenced below)
         {
             return shapes;
         }
@@ -165,7 +166,7 @@ public static class TransferBRep
         int ie, ne = list.Length();
         for (ie = 1; ie <= ne; ie++)
         {
-            Transfer_Binder? binder = TP.Find(list.Value(ie));
+            Binder? binder = tp.Find(list.Value(ie));
             ShapeAppend(binder, shapes);
         }
 
@@ -176,19 +177,19 @@ public static class TransferBRep
     /// Returns a Status regarding a Shape in a FinderProcess: FORWARD means bound with SAME Orientation; REVERSED
     /// means bound with REVERSE Orientation; EXTERNAL means NOT BOUND; INTERNAL is not used.
     /// </summary>
-    public static Orientation ShapeState(Transfer_FinderProcess? FP, in Shape shape)
+    public static Orientation ShapeState(FinderProcess? fp, in Shape shape)
     {
-        if (FP is null || shape.IsNull)
+        if (fp is null || shape.IsNull)
         {
             return External;
         }
-        TransferBRep_ShapeMapper? sm = new TransferBRep_ShapeMapper(shape);
-        int index = FP.MapIndex(sm);
+        ShapeMapper? sm = new ShapeMapper(shape);
+        int index = fp.MapIndex(sm);
         if (index == 0)
         {
             return External;
         }
-        sm = FP.Mapped(index) as TransferBRep_ShapeMapper;
+        sm = fp.Mapped(index) as ShapeMapper;
         if (sm is null)
         {
             return External;
@@ -203,38 +204,38 @@ public static class TransferBRep
     }
 
     /// <summary>Returns the result (as a Binder) attached to a given Shape. Null if none.</summary>
-    public static Transfer_Binder? ResultFromShape(Transfer_FinderProcess? FP, in Shape shape)
+    public static Binder? ResultFromShape(FinderProcess? fp, in Shape shape)
     {
-        Transfer_Binder? res = null;
-        if (FP is null || shape.IsNull)
+        Binder? res = null;
+        if (fp is null || shape.IsNull)
         {
             return res;
         }
-        var sm = new TransferBRep_ShapeMapper(shape);
-        return FP.Find(sm);
+        var sm = new ShapeMapper(shape);
+        return fp.Find(sm);
     }
 
     /// <summary>Returns the result as pure Transient attached to a Shape; first one if multiple result.</summary>
-    public static Transient? TransientFromShape(Transfer_FinderProcess? FP, in Shape shape)
+    public static Transient? TransientFromShape(FinderProcess? fp, in Shape shape)
     {
         Transient? res = null;
-        if (FP is null || shape.IsNull)
+        if (fp is null || shape.IsNull)
         {
             return res;
         }
-        var sm = new TransferBRep_ShapeMapper(shape);
-        return FP.FindTransient(sm);
+        var sm = new ShapeMapper(shape);
+        return fp.FindTransient(sm);
     }
 
     /// <summary>Binds a Transient Result to a Shape in a FinderProcess (as first result if multiple : does not add it to existing one).</summary>
-    public static void SetTransientFromShape(Transfer_FinderProcess? FP, in Shape shape, Transient? result)
+    public static void SetTransientFromShape(FinderProcess? fp, in Shape shape, Transient? result)
     {
-        if (FP is null || shape.IsNull)
+        if (fp is null || shape.IsNull)
         {
             return;
         }
-        var sm = new TransferBRep_ShapeMapper(shape);
-        FP.BindTransient(sm, result);
+        var sm = new ShapeMapper(shape);
+        fp.BindTransient(sm, result);
     }
 
     /// <summary>
@@ -242,108 +243,108 @@ public static class TransferBRep
     /// then its Mapper is returned. Or it is not, then a new one is created then returned, BUT it is not mapped here
     /// (use Bind or FindElseBind to do this).
     /// </summary>
-    public static TransferBRep_ShapeMapper ShapeMapper(Transfer_FinderProcess FP, in Shape shape)
+    public static ShapeMapper ShapeMapper(FinderProcess fp, in Shape shape)
     {
-        var mapper = new TransferBRep_ShapeMapper(shape);
-        int index = FP.MapIndex(mapper);
+        var mapper = new ShapeMapper(shape);
+        int index = fp.MapIndex(mapper);
         if (index == 0)
         {
             return mapper;
         }
-        return FP.Mapped(index) as TransferBRep_ShapeMapper;
+        return fp.Mapped(index) as ShapeMapper;
     }
 
     // Functions to collect transfer result information
 
-    private static void FillInfo(Transfer_Binder Binder, Interface_Check Check, TransferBRep_TransferResultInfo Info)
+    private static void FillInfo(Binder binder, FrameworkCheck check, TransferResultInfo info)
     {
-        int R = 0, RW = 0, RF = 0, RWF = 0, NR = 0, NRW = 0, NRF = 0, NRWF = 0;
-        if (Binder.HasResult())
+        int r = 0, rw = 0, rf = 0, rwf = 0, nr = 0, nrw = 0, nrf = 0, nrwf = 0;
+        if (binder.HasResult)
         {
-            if (Check.HasWarnings() && Check.HasFailed())
+            if (check.HasWarnings && check.HasFailed)
             {
-                RWF++;
+                rwf++;
             }
-            else if (Check.HasWarnings())
+            else if (check.HasWarnings)
             {
-                RW++;
+                rw++;
             }
-            else if (Check.HasFailed())
+            else if (check.HasFailed)
             {
-                RF++;
+                rf++;
             }
             else
             {
-                R++;
+                r++;
             }
         }
-        else if (Check.HasWarnings() && Check.HasFailed())
+        else if (check.HasWarnings && check.HasFailed)
         {
-            NRWF++;
+            nrwf++;
         }
-        else if (Check.HasWarnings())
+        else if (check.HasWarnings)
         {
-            NRW++;
+            nrw++;
         }
-        else if (Check.HasFailed())
+        else if (check.HasFailed)
         {
-            NRF++;
+            nrf++;
         }
         else
         {
-            NR++;
+            nr++;
         }
-        Info.Result() += R;
-        Info.ResultWarning() += RW;
-        Info.ResultFail() += RF;
-        Info.ResultWarningFail() += RWF;
-        Info.NoResult() += NR;
-        Info.NoResultWarning() += NRW;
-        Info.NoResultFail() += NRF;
-        Info.NoResultWarningFail() += NRWF;
+        info.Result() += r;
+        info.ResultWarning() += rw;
+        info.ResultFail() += rf;
+        info.ResultWarningFail() += rwf;
+        info.NoResult() += nr;
+        info.NoResultWarning() += nrw;
+        info.NoResultFail() += nrf;
+        info.NoResultWarningFail() += nrwf;
     }
 
     /// <summary>
     /// Fills sequence of TransferResultInfo for each type of entity given in the EntityTypes (entity are given as
     /// objects). Method IsKind applied to the entities in TP is used to compare with entities in EntityTypes.
     /// </summary>
-    public static void TransferResultInfo(Transfer_TransientProcess? TP, NCollection_HSequence<Transient>? EntityTypes,
-                                          out NCollection_HSequence<TransferBRep_TransferResultInfo> InfoSeq)
+    public static void TransferResultInfo(TransientProcess? tp, NCollection_HSequence<Transient>? entityTypes,
+                                          out NCollection_HSequence<TransferResultInfo> infoSeq)
     {
         // create output Sequence in accordance with required ShapeTypes
-        InfoSeq = new NCollection_HSequence<TransferBRep_TransferResultInfo>();
-        if (TP is null || EntityTypes is null)
+        infoSeq = new NCollection_HSequence<TransferResultInfo>();
+        if (tp is null || entityTypes is null)
         {
             return;
         }
-        int SeqLen = EntityTypes.Length();
+        int seqLen = entityTypes.Length();
         int i; // svv Jan11 2000 : porting on DEC
-        for (i = 1; i <= SeqLen; i++)
+        for (i = 1; i <= seqLen; i++)
         {
-            InfoSeq.Append(new TransferBRep_TransferResultInfo());
+            infoSeq.Append(new TransferResultInfo());
         }
 
         // fill Sequence
-        int NbMapped = TP.NbMapped();
-        for (i = 1; i <= NbMapped; i++)
+        int nbMapped = tp.MappedCount;
+        for (i = 1; i <= nbMapped; i++)
         {
-            Transient? Entity = TP.Mapped(i);
+            Transient? entity = tp.Mapped(i);
 
-            Transfer_Binder? Binder = TP.Find(Entity);
-            if (Binder is null)
+            Binder? binder = tp.Find(entity);
+            if (binder is null)
             {
                 continue;
             }
-            Interface_Check Check = Binder.Check();
+            FrameworkCheck check = binder.Check();
 
             // find appropriate element in the Sequence
-            for (int index = 1; index <= SeqLen; index++)
+            for (int index = 1; index <= seqLen; index++)
             {
-                if (Entity.IsKind(EntityTypes.Value(index).DynamicType()))
+                if (entity.IsKind(entityTypes.Value(index).DynamicType()))
                 {
-                    TransferBRep_TransferResultInfo Info = InfoSeq.Value(index);
+                    TransferResultInfo info = infoSeq.Value(index);
                     // fill element
-                    FillInfo(Binder, Check, Info);
+                    FillInfo(binder, check, info);
                 }
             }
         }
@@ -353,48 +354,48 @@ public static class TransferBRep
     /// Fills sequence of TransferResultInfo for each type of shape given in the ShapeTypes (which are in fact
     /// considered as TopAbs_ShapeEnum). The Finders in the FP are considered as ShapeMappers.
     /// </summary>
-    public static void TransferResultInfo(Transfer_FinderProcess? FP, NCollection_HSequence<int>? ShapeTypes,
-                                          out NCollection_HSequence<TransferBRep_TransferResultInfo> InfoSeq)
+    public static void TransferResultInfo(FinderProcess? fp, NCollection_HSequence<int>? shapeTypes,
+                                          out NCollection_HSequence<TransferResultInfo> infoSeq)
     {
         // create output Sequence in accordance with required ShapeTypes
-        InfoSeq = new NCollection_HSequence<TransferBRep_TransferResultInfo>();
-        if (FP is null || ShapeTypes is null)
+        infoSeq = new NCollection_HSequence<TransferResultInfo>();
+        if (fp is null || shapeTypes is null)
         {
             return;
         }
-        int SeqLen = ShapeTypes.Length();
+        int seqLen = shapeTypes.Length();
         int i; // svv Jan11 2000 : porting on DEC
-        for (i = 1; i <= SeqLen; i++)
+        for (i = 1; i <= seqLen; i++)
         {
-            InfoSeq.Append(new TransferBRep_TransferResultInfo());
+            infoSeq.Append(new TransferResultInfo());
         }
 
         // fill Sequence
-        int NbMapped = FP.NbMapped();
-        for (i = 1; i <= NbMapped; i++)
+        int nbMapped = fp.MappedCount;
+        for (i = 1; i <= nbMapped; i++)
         {
-            TransferBRep_ShapeMapper? Mapper = FP.Mapped(i) as TransferBRep_ShapeMapper;
-            Transfer_Binder? Binder = FP.Find(Mapper);
-            if (Binder is null)
+            ShapeMapper? mapper = fp.Mapped(i) as ShapeMapper;
+            Binder? binder = fp.Find(mapper);
+            if (binder is null)
             {
                 continue;
             }
-            Interface_Check Check = Binder.Check();
+            FrameworkCheck check = binder.Check();
 
-            Shape S = Mapper.Value();
-            ShapeType ShapeType = S.ShapeType();
+            Shape s = mapper.Value();
+            ShapeType shapeType = s.ShapeType();
 
             // find appropriate element in the Sequence
-            for (int index = 1; index <= SeqLen; index++)
+            for (int index = 1; index <= seqLen; index++)
             {
                 // JR/Hp :
-                ShapeType CurrentType = (ShapeType)ShapeTypes.Value(index);
+                ShapeType currentType = (ShapeType)shapeTypes.Value(index);
                 //      TopAbs_ShapeEnum CurrentType = (TopAbs_ShapeEnum)ShapeTypes->Value (index);
-                if (CurrentType == ShapeType || CurrentType == ShapeType.Shape)
+                if (currentType == shapeType || currentType == ShapeType.Shape)
                 {
-                    TransferBRep_TransferResultInfo Info = InfoSeq.Value(index);
+                    TransferResultInfo info = infoSeq.Value(index);
                     // fill element
-                    FillInfo(Binder, Check, Info);
+                    FillInfo(binder, check, info);
                 }
             }
         }
@@ -411,11 +412,11 @@ public static class TransferBRep
     /// InterfaceModel. Mapping is recorded in the FinderProcess. Starting objects for which no individual result is
     /// recorded remain in their state.
     /// </summary>
-    public static Interface_CheckIterator ResultCheckList(Interface_CheckIterator chl, Transfer_FinderProcess? FP,
-                                                          Interface_InterfaceModel? model)
+    public static CheckIterator ResultCheckList(CheckIterator chl, FinderProcess? fp,
+                                                          InterfaceModel? model)
     {
-        var nchl = new Interface_CheckIterator();
-        if (FP is null || model is null)
+        var nchl = new CheckIterator();
+        if (fp is null || model is null)
         {
             return nchl;
         }
@@ -423,16 +424,16 @@ public static class TransferBRep
         for (chl.Start(); chl.More(); chl.Next())
         {
             int num = 0;
-            Interface_Check ach = chl.Value();
-            if (ach.NbFails() + ach.NbWarnings() == 0)
+            FrameworkCheck ach = chl.Value();
+            if (ach.FailCount + ach.WarningCount == 0)
             {
                 continue;
             }
-            Transfer_Finder? starting = ach.Entity() as Transfer_Finder;
+            Finder? starting = ach.Entity() as Finder;
             Transient? ent = null;
             if (starting is not null)
             {
-                ent = FP.FindTransient(starting);
+                ent = fp.FindTransient(starting);
             }
             if (ent is not null)
             {
@@ -449,13 +450,13 @@ public static class TransferBRep
     /// can then be either Imagine objects entities for an Interface Norm. <paramref name="alsoshapes"/> commands Shapes
     /// to be returned too (as ShapeMapper), see also CheckedShapes.
     /// </summary>
-    public static NCollection_HSequence<Transient> Checked(Interface_CheckIterator chl, bool alsoshapes = false)
+    public static NCollection_HSequence<Transient> Checked(CheckIterator chl, bool alsoshapes = false)
     {
         var ls = new NCollection_HSequence<Transient>();
         for (chl.Start(); chl.More(); chl.Next())
         {
-            Interface_Check ach = chl.Value();
-            if (ach.NbFails() + ach.NbWarnings() == 0)
+            FrameworkCheck ach = chl.Value();
+            if (ach.FailCount + ach.WarningCount == 0)
             {
                 continue;
             }
@@ -466,8 +467,8 @@ public static class TransferBRep
             }
             if (!alsoshapes)
             {
-                if (ent.IsKind(typeof(TransferBRep_BinderOfShape)) || ent.IsKind(typeof(TopoDS_HShape))
-                    || ent.IsKind(typeof(TransferBRep_ShapeMapper)))
+                if (ent.IsKind(typeof(BinderOfShape)) || ent.IsKind(typeof(TopoDS_HShape))
+                    || ent.IsKind(typeof(ShapeMapper)))
                 {
                     continue;
                 }
@@ -478,13 +479,13 @@ public static class TransferBRep
     }
 
     /// <summary>Returns the list of shapes to which a non-empty Check is bound in a check-list.</summary>
-    public static NCollection_HSequence<Shape> CheckedShapes(Interface_CheckIterator chl)
+    public static NCollection_HSequence<Shape> CheckedShapes(CheckIterator chl)
     {
         var ls = new NCollection_HSequence<Shape>();
         for (chl.Start(); chl.More(); chl.Next())
         {
-            Interface_Check ach = chl.Value();
-            if (ach.NbFails() + ach.NbWarnings() == 0)
+            FrameworkCheck ach = chl.Value();
+            if (ach.FailCount + ach.WarningCount == 0)
             {
                 continue;
             }
@@ -494,8 +495,8 @@ public static class TransferBRep
                 continue;
             }
             TopoDS_HShape? hs = ent as TopoDS_HShape;
-            TransferBRep_BinderOfShape? sb = ent as TransferBRep_BinderOfShape;
-            TransferBRep_ShapeMapper? sm = ent as TransferBRep_ShapeMapper;
+            BinderOfShape? sb = ent as BinderOfShape;
+            ShapeMapper? sm = ent as ShapeMapper;
             if (hs is not null)
             {
                 ls.Append(hs.Shape());
@@ -516,30 +517,30 @@ public static class TransferBRep
     /// Returns the check-list bound to a given object, generally none (if OK) or one check. <paramref name="obj"/> can
     /// be, either a true Transient object or entity, or a ShapeMapper, in that case the Shape is considered.
     /// </summary>
-    public static Interface_CheckIterator CheckObject(Interface_CheckIterator chl, Transient? obj)
+    public static CheckIterator CheckObject(CheckIterator chl, Transient? obj)
     {
-        Shape S = new Shape();
+        Shape s = new Shape();
         TopoDS_HShape? hs = obj as TopoDS_HShape;
-        TransferBRep_BinderOfShape? sb = obj as TransferBRep_BinderOfShape;
-        TransferBRep_ShapeMapper? sm = obj as TransferBRep_ShapeMapper;
+        BinderOfShape? sb = obj as BinderOfShape;
+        ShapeMapper? sm = obj as ShapeMapper;
         if (hs is not null)
         {
-            S = hs.Shape();
+            s = hs.Shape();
         }
         if (sb is not null)
         {
-            S = sb.Result();
+            s = sb.Result();
         }
         if (sm is not null)
         {
-            S = sm.Value();
+            s = sm.Value();
         }
-        var nchl = new Interface_CheckIterator();
+        var nchl = new CheckIterator();
 
         for (chl.Start(); chl.More(); chl.Next())
         {
-            Interface_Check ach = chl.Value();
-            if (ach.NbFails() + ach.NbWarnings() == 0)
+            FrameworkCheck ach = chl.Value();
+            if (ach.FailCount + ach.WarningCount == 0)
             {
                 continue;
             }
@@ -548,11 +549,11 @@ public static class TransferBRep
             {
                 continue;
             }
-            if (S.IsNull)
+            if (s.IsNull)
             {
                 if (ent == obj)
                 {
-                    Interface_Check bch = ach;
+                    FrameworkCheck bch = ach;
                     bch.SetEntity(ent);
                     nchl.Add(bch, 0);
                 }
@@ -561,8 +562,8 @@ public static class TransferBRep
             {
                 Shape sh = new Shape();
                 TopoDS_HShape? hsh = ent as TopoDS_HShape;
-                TransferBRep_BinderOfShape? sbs = ent as TransferBRep_BinderOfShape;
-                TransferBRep_ShapeMapper? smp = ent as TransferBRep_ShapeMapper;
+                BinderOfShape? sbs = ent as BinderOfShape;
+                ShapeMapper? smp = ent as ShapeMapper;
                 if (hsh is not null)
                 {
                     sh = hsh.Shape();
@@ -575,9 +576,9 @@ public static class TransferBRep
                 {
                     sh = smp.Value();
                 }
-                if (sh == S)
+                if (sh == s)
                 {
-                    Interface_Check bch = ach;
+                    FrameworkCheck bch = ach;
                     bch.SetEntity(ent);
                     nchl.Add(bch, 0);
                 }
@@ -587,72 +588,72 @@ public static class TransferBRep
     }
 
     /// <summary>Prints the results of transfer to given printer with given header.</summary>
-    public static void PrintResultInfo(Printer Printer, Msg Header, TransferBRep_TransferResultInfo ResultInfo,
+    public static void PrintResultInfo(Printer printer, Msg header, TransferResultInfo resultInfo,
                                        bool printEmpty = true)
     {
-        int R, RW, RF, RWF, NR, NRW, NRF, NRWF;
-        R = ResultInfo.Result();
-        RW = ResultInfo.ResultWarning();
-        RF = ResultInfo.ResultFail();
-        RWF = ResultInfo.ResultWarningFail();
-        NR = ResultInfo.NoResult();
-        NRW = ResultInfo.NoResultWarning();
-        NRF = ResultInfo.NoResultFail();
-        NRWF = ResultInfo.NoResultWarningFail();
+        int r, rw, rf, rwf, nr, nrw, nrf, nrwf;
+        r = resultInfo.Result();
+        rw = resultInfo.ResultWarning();
+        rf = resultInfo.ResultFail();
+        rwf = resultInfo.ResultWarningFail();
+        nr = resultInfo.NoResult();
+        nrw = resultInfo.NoResultWarning();
+        nrf = resultInfo.NoResultFail();
+        nrwf = resultInfo.NoResultWarningFail();
 
-        var aLocalHeader = new Msg(Header);
-        Printer.Send(aLocalHeader.Get(), Info);
+        var localHeader = new Msg(header);
+        printer.Send(localHeader.Get(), Info);
 
-        var EPMSG30 = new Msg("Result.Print.MSG30"); //    Result: %d
-        EPMSG30.Arg(R);
-        Printer.Send(EPMSG30.Get(), Info);
-        if (printEmpty || (RW > 0))
+        var epmsg30 = new Msg("Result.Print.MSG30"); //    Result: %d
+        epmsg30.Arg(r);
+        printer.Send(epmsg30.Get(), Info);
+        if (printEmpty || (rw > 0))
         {
-            var EPMSG32 = new Msg("Result.Print.MSG32"); //    Result + Warning(s): %d
-            EPMSG32.Arg(RW);
-            Printer.Send(EPMSG32.Get(), Info);
+            var epmsg32 = new Msg("Result.Print.MSG32"); //    Result + Warning(s): %d
+            epmsg32.Arg(rw);
+            printer.Send(epmsg32.Get(), Info);
         }
-        if (printEmpty || (RF > 0))
+        if (printEmpty || (rf > 0))
         {
-            var EPMSG34 = new Msg("Result.Print.MSG34"); //    Result + Fail(s): %d
-            EPMSG34.Arg(RF);
-            Printer.Send(EPMSG34.Get(), Info);
+            var epmsg34 = new Msg("Result.Print.MSG34"); //    Result + Fail(s): %d
+            epmsg34.Arg(rf);
+            printer.Send(epmsg34.Get(), Info);
         }
-        if (printEmpty || (RWF > 0))
+        if (printEmpty || (rwf > 0))
         {
-            var EPMSG36 = new Msg("Result.Print.MSG36"); //    Result + Warning(s) + Fail(s): %d
-            EPMSG36.Arg(RWF);
-            Printer.Send(EPMSG36.Get(), Info);
+            var epmsg36 = new Msg("Result.Print.MSG36"); //    Result + Warning(s) + Fail(s): %d
+            epmsg36.Arg(rwf);
+            printer.Send(epmsg36.Get(), Info);
         }
-        var EPMSG38 = new Msg("Result.Print.MSG38"); //    TOTAL Result: %d
-        EPMSG38.Arg(R + RW + RF + RWF);
-        Printer.Send(EPMSG38.Get(), Info);
-        if (printEmpty || (NR > 0))
+        var epmsg38 = new Msg("Result.Print.MSG38"); //    TOTAL Result: %d
+        epmsg38.Arg(r + rw + rf + rwf);
+        printer.Send(epmsg38.Get(), Info);
+        if (printEmpty || (nr > 0))
         {
-            var EPMSG40 = new Msg("Result.Print.MSG40"); //    No Result: %d
-            EPMSG40.Arg(NR);
-            Printer.Send(EPMSG40.Get(), Info);
+            var epmsg40 = new Msg("Result.Print.MSG40"); //    No Result: %d
+            epmsg40.Arg(nr);
+            printer.Send(epmsg40.Get(), Info);
         }
-        if (printEmpty || (NRW > 0))
+        if (printEmpty || (nrw > 0))
         {
-            var EPMSG42 = new Msg("Result.Print.MSG42"); //    No Result + Warning(s): %d
-            EPMSG42.Arg(NRW);
-            Printer.Send(EPMSG42.Get(), Info);
+            var epmsg42 = new Msg("Result.Print.MSG42"); //    No Result + Warning(s): %d
+            epmsg42.Arg(nrw);
+            printer.Send(epmsg42.Get(), Info);
         }
-        if (printEmpty || (NRF > 0))
+        if (printEmpty || (nrf > 0))
         {
-            var EPMSG44 = new Msg("Result.Print.MSG44"); //    No Result + Fail(s): %d
-            EPMSG44.Arg(NRF);
-            Printer.Send(EPMSG44.Get(), Info);
+            var epmsg44 = new Msg("Result.Print.MSG44"); //    No Result + Fail(s): %d
+            epmsg44.Arg(nrf);
+            printer.Send(epmsg44.Get(), Info);
         }
-        if (printEmpty || (NRWF > 0))
+        if (printEmpty || (nrwf > 0))
         {
-            var EPMSG46 = new Msg("Result.Print.MSG46"); //    No Result + Warning(s) + Fail(s): %d
-            EPMSG46.Arg(NRWF);
-            Printer.Send(EPMSG46.Get(), Info);
+            var epmsg46 = new Msg("Result.Print.MSG46"); //    No Result + Warning(s) + Fail(s): %d
+            epmsg46.Arg(nrwf);
+            printer.Send(epmsg46.Get(), Info);
         }
-        var EPMSG48 = new Msg("Result.Print.MSG48"); //    TOTAL No Result: %d
-        EPMSG48.Arg(NR + NRW + NRF + NRWF);
-        Printer.Send(EPMSG48.Get(), Info);
+        var epmsg48 = new Msg("Result.Print.MSG48"); //    TOTAL No Result: %d
+        epmsg48.Arg(nr + nrw + nrf + nrwf);
+        printer.Send(epmsg48.Get(), Info);
     }
 }

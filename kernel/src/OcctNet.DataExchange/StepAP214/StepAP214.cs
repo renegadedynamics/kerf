@@ -4,17 +4,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Written by hand (tools/stepgen/overrides/StepAP214.cs, decision 1216): the generator copies this file.
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Exchange.Step.Ap214;
 
 /// <summary>The StepAP214 package: its protocol.</summary>
 public static class StepAP214
 {
     // OCCT's StaticHandle and InitHandleVoid: one protocol per process, created on first use
-    private static readonly Lazy<StepAP214_Protocol> proto = new(() => new StepAP214_Protocol());
+    private static readonly Lazy<Ap214Protocol> Proto = new(() => new Ap214Protocol());
 
     /// <summary>Returns the Protocol (created once per process).</summary>
-    public static StepAP214_Protocol Protocol()
+    public static Ap214Protocol Protocol()
     {
-        return proto.Value;
+        return Proto.Value;
     }
 }

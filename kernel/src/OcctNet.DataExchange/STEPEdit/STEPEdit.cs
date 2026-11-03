@@ -9,11 +9,19 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
+using Kerf.Engine.Exchange.Step.Construct;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Selections;
+using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
-using static Occt.IFSelect_EditValue;
-using static Occt.Interface_ParamType;
+using Occt;
+using static Kerf.Engine.Exchange.Framework.Selection.EditValue;
+using static Kerf.Engine.Exchange.Framework.ParamType;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Edit;
 
 /// <summary>
 /// Provides tools to exploit and edit a set of STEP data : editors, selections ..
@@ -22,47 +30,47 @@ namespace Occt;
 /// OCCT.NET: <see cref="SignType"/>'s signature, created once in OCCT under a mutex and shared by every caller, is
 /// created once too (a static readonly field); it doesn't change after creation (decision 1215).
 /// </remarks>
-public static class STEPEdit
+public static class StepEdit
 {
-    private static readonly StepSelect_StepType theSignType = CreateSignType();
+    private static readonly StepType SignTypeInstance = CreateSignType();
 
-    private static StepSelect_StepType CreateSignType()
+    private static StepType CreateSignType()
     {
         // OCCT: the controller, which calls SignType, has registered the modules before
-        RWHeaderSection.Init();
-        RWStepAP214.Init();
-        StepSelect_StepType sty = new StepSelect_StepType();
+        global::Kerf.Engine.Exchange.Step.Header.RWHeaderSection.Init();
+        Ap214ReadWrite.Init();
+        StepType sty = new StepType();
         sty.SetProtocol(Protocol());
         return sty;
     }
 
     /// <summary>Returns a Protocol fit for STEP (creates the first time)</summary>
-    public static Interface_Protocol Protocol()
+    public static Protocol Protocol()
     {
-        return StepAP214.Protocol();
+        return global::Kerf.Engine.Exchange.Step.Ap214.StepAP214.Protocol();
     }
 
     /// <summary>Returns a new empty StepModel fit for STEP i.e. with its header determined from Protocol</summary>
-    public static StepData_StepModel NewModel()
+    public static StepModel NewModel()
     {
-        StepData_StepModel stepmodel = new StepData_StepModel();
+        StepModel stepmodel = new StepModel();
         stepmodel.SetProtocol(Protocol());
         return stepmodel;
     }
 
     /// <summary>Returns a SignType fit for STEP (creates the first time)</summary>
-    public static IFSelect_Signature SignType()
+    public static Signature SignType()
     {
-        return theSignType;
+        return SignTypeInstance;
     }
 
     /// <summary>
     /// Creates a Selection for ShapeDefinitionRepresentation By default searches among root entities
     /// </summary>
-    public static IFSelect_SelectSignature NewSelectSDR()
+    public static SelectSignature NewSelectSDR()
     {
-        IFSelect_SelectSignature sel = new IFSelect_SelectSignature(SignType(), "SHAPE_DEFINITION_REPRESENTATION");
-        sel.SetInput(new IFSelect_SelectModelRoots());
+        SelectSignature sel = new SelectSignature(SignType(), "SHAPE_DEFINITION_REPRESENTATION");
+        sel.SetInput(new SelectModelRoots());
         return sel;
     }
 
@@ -71,12 +79,12 @@ public static class STEPEdit
     /// refers to a RepresentationRelationship with possible subtypes (ShapeRepresentationRelationship and/or
     /// RepresentationRelationshipWithTransformation) By default searches among root entities
     /// </summary>
-    public static IFSelect_SelectSignature NewSelectPlacedItem()
+    public static SelectSignature NewSelectPlacedItem()
     {
-        IFSelect_SelectSignature sel = new IFSelect_SelectSignature(SignType(),
+        SelectSignature sel = new SelectSignature(SignType(),
                                                                     "MAPPED_ITEM|CONTEXT_DEPENDENT_SHAPE_REPRESENTATION",
                                                                     false);
-        sel.SetInput(new IFSelect_SelectModelEntities());
+        sel.SetInput(new SelectModelEntities());
         return sel;
     }
 
@@ -84,11 +92,11 @@ public static class STEPEdit
     /// Creates a Selection for ShapeRepresentation and its sub-types, plus ContextDependentShapeRepresentation (which is
     /// not a sub-type of ShapeRepresentation) By default searches among root entities
     /// </summary>
-    public static IFSelect_SelectSignature NewSelectShapeRepr()
+    public static SelectSignature NewSelectShapeRepr()
     {
-        IFSelect_SelectSignature sel = new IFSelect_SelectSignature(SignType(), "SHAPE_REPRESENTATION", false);
+        SelectSignature sel = new SelectSignature(SignType(), "SHAPE_REPRESENTATION", false);
         // REPRESENTATION_RELATIONSHIP passe par CONTEXT_DEPENDENT_SHAPE_REPRESENTATION
-        sel.SetInput(new IFSelect_SelectModelEntities());
+        sel.SetInput(new SelectModelEntities());
         return sel;
     }
 }
@@ -97,21 +105,21 @@ public static class STEPEdit
 /// EditContext is an Editor fit for Product Definition Context (one per Model) , i.e. : - ProductDefinition -
 /// ApplicationProtocolDefinition - ProductRelatedProductCategory
 /// </summary>
-public class STEPEdit_EditContext : IFSelect_Editor
+public class EditContext : Editor
 {
     /// <summary>Creates an EditContext</summary>
-    public STEPEdit_EditContext() : base(5)
+    public EditContext() : base(5)
     {
-        Interface_TypedValue ac_val = new Interface_TypedValue("Application Context", Interface_ParamType.Interface_ParamIdent);
-        SetValue(1, ac_val, "AC", IFSelect_EditValue.IFSelect_EditRead);
+        InterfaceTypedValue ac_val = new InterfaceTypedValue("Application Context", ParamType.ParamIdent);
+        SetValue(1, ac_val, "AC", EditValue.EditRead);
 
-        Interface_TypedValue ac_status = new Interface_TypedValue("AppliContext_Status");
+        InterfaceTypedValue ac_status = new InterfaceTypedValue("AppliContext_Status");
         SetValue(2, ac_status, "AC_Status");
-        Interface_TypedValue ac_sche = new Interface_TypedValue("AppliContext_Schema");
+        InterfaceTypedValue ac_sche = new InterfaceTypedValue("AppliContext_Schema");
         SetValue(3, ac_sche, "AC_Schema");
-        Interface_TypedValue ac_year = new Interface_TypedValue("AppliContext_Year", Interface_ParamType.Interface_ParamInteger);
+        InterfaceTypedValue ac_year = new InterfaceTypedValue("AppliContext_Year", ParamType.ParamInteger);
         SetValue(4, ac_year, "AC_Year");
-        Interface_TypedValue ac_name = new Interface_TypedValue("AppliContext_Name");
+        InterfaceTypedValue ac_name = new InterfaceTypedValue("AppliContext_Name");
         SetValue(5, ac_name, "AC_Name");
     }
 
@@ -120,13 +128,13 @@ public class STEPEdit_EditContext : IFSelect_Editor
         return "STEP : Product Definition Context";
     }
 
-    public override bool Recognize(IFSelect_EditForm form)
+    public override bool Recognize(EditForm form)
     {
         // il faut 17 parametres
         return true;
     }
 
-    public override TCollection_HAsciiString StringValue(IFSelect_EditForm form, int num)
+    public override TCollection_HAsciiString StringValue(EditForm form, int num)
     {
         TCollection_HAsciiString str = null;
         switch (num)
@@ -149,17 +157,17 @@ public class STEPEdit_EditContext : IFSelect_Editor
         return str;
     }
 
-    public override bool Load(IFSelect_EditForm form, Transient ent, Interface_InterfaceModel model)
+    public override bool Load(EditForm form, Transient ent, InterfaceModel model)
     {
-        StepData_StepModel modl = model as StepData_StepModel;
+        StepModel modl = model as StepModel;
         if (modl is null)
         {
             return false;
         }
 
-        STEPConstruct_ContextTool ctx = new STEPConstruct_ContextTool(modl);
-        StepData_Factors aLocalFactors = new StepData_Factors();
-        ctx.SetGlobalFactor(aLocalFactors);
+        ContextTool ctx = new ContextTool(modl);
+        Factors localFactors = new Factors();
+        ctx.SetGlobalFactor(localFactors);
 
         form.LoadValue(1, modl.StringLabel(ctx.GetAPD()));
 
@@ -171,17 +179,17 @@ public class STEPEdit_EditContext : IFSelect_Editor
         return true;
     }
 
-    public override bool Apply(IFSelect_EditForm form, Transient ent, Interface_InterfaceModel model)
+    public override bool Apply(EditForm form, Transient ent, InterfaceModel model)
     {
-        StepData_StepModel modl = model as StepData_StepModel;
+        StepModel modl = model as StepModel;
         if (modl is null)
         {
             return false;
         }
 
-        STEPConstruct_ContextTool ctx = new STEPConstruct_ContextTool(modl);
-        StepData_Factors aLocalFactors = new StepData_Factors();
-        ctx.SetGlobalFactor(aLocalFactors);
+        ContextTool ctx = new ContextTool(modl);
+        Factors localFactors = new Factors();
+        ctx.SetGlobalFactor(localFactors);
 
         ctx.AddAPD(); // on ne sait jamais
 
@@ -209,36 +217,36 @@ public class STEPEdit_EditContext : IFSelect_Editor
 /// <summary>
 /// EditSDR is an Editor fit for a Shape Definition Representation which designates a Product Definition
 /// </summary>
-public class STEPEdit_EditSDR : IFSelect_Editor
+public class EditSdr : Editor
 {
     /// <summary>Creates an EditSDR</summary>
-    public STEPEdit_EditSDR() : base(11)
+    public EditSdr() : base(11)
     {
-        Interface_TypedValue pdc_name = new Interface_TypedValue("PDC_Name");
+        InterfaceTypedValue pdc_name = new InterfaceTypedValue("PDC_Name");
         SetValue(1, pdc_name, "PDC_Name");
-        Interface_TypedValue pdc_lfs = new Interface_TypedValue("PDC_LifeCycleStage");
+        InterfaceTypedValue pdc_lfs = new InterfaceTypedValue("PDC_LifeCycleStage");
         SetValue(2, pdc_lfs, "PDC_Stage");
-        Interface_TypedValue pdc_descr = new Interface_TypedValue("PDC_Description");
+        InterfaceTypedValue pdc_descr = new InterfaceTypedValue("PDC_Description");
         SetValue(3, pdc_descr, "PDC_Descr");
 
-        Interface_TypedValue pv_vid = new Interface_TypedValue("P_Version_Id");
+        InterfaceTypedValue pv_vid = new InterfaceTypedValue("P_Version_Id");
         SetValue(4, pv_vid, "PV_Id");
-        Interface_TypedValue pv_descr = new Interface_TypedValue("P_Version_Description");
+        InterfaceTypedValue pv_descr = new InterfaceTypedValue("P_Version_Description");
         SetValue(5, pv_descr, "PV_Descr");
 
-        Interface_TypedValue pid = new Interface_TypedValue("Product_Id");
+        InterfaceTypedValue pid = new InterfaceTypedValue("Product_Id");
         SetValue(6, pid, "P_Id");
-        Interface_TypedValue pname = new Interface_TypedValue("Product_Name");
+        InterfaceTypedValue pname = new InterfaceTypedValue("Product_Name");
         SetValue(7, pname, "P_Name");
-        Interface_TypedValue pdescr = new Interface_TypedValue("Product_Description");
+        InterfaceTypedValue pdescr = new InterfaceTypedValue("Product_Description");
         SetValue(8, pdescr, "P_Descr");
 
-        Interface_TypedValue pc_name = new Interface_TypedValue("P_Context_Name");
+        InterfaceTypedValue pc_name = new InterfaceTypedValue("P_Context_Name");
         SetValue(9, pc_name, "PC_Name");
-        Interface_TypedValue pc_disc = new Interface_TypedValue("P_Context_Discipline");
+        InterfaceTypedValue pc_disc = new InterfaceTypedValue("P_Context_Discipline");
         SetValue(10, pc_disc, "PC_Disc");
 
-        Interface_TypedValue ac_ap = new Interface_TypedValue("Application");
+        InterfaceTypedValue ac_ap = new InterfaceTypedValue("Application");
         SetValue(11, ac_ap, "Appli");
     }
 
@@ -247,13 +255,13 @@ public class STEPEdit_EditSDR : IFSelect_Editor
         return "STEP : Product Data (SDR)";
     }
 
-    public override bool Recognize(IFSelect_EditForm form)
+    public override bool Recognize(EditForm form)
     {
         // il faut 10 parametres
         return true;
     }
 
-    public override TCollection_HAsciiString StringValue(IFSelect_EditForm form, int num)
+    public override TCollection_HAsciiString StringValue(EditForm form, int num)
     {
         TCollection_HAsciiString str = null;
         switch (num)
@@ -282,16 +290,16 @@ public class STEPEdit_EditSDR : IFSelect_Editor
         return str;
     }
 
-    public override bool Load(IFSelect_EditForm form, Transient ent, Interface_InterfaceModel model)
+    public override bool Load(EditForm form, Transient ent, InterfaceModel model)
     {
-        StepShape_ShapeDefinitionRepresentation sdr = ent as StepShape_ShapeDefinitionRepresentation;
-        StepData_StepModel modl = model as StepData_StepModel;
+        StepShapeDefinitionRepresentation sdr = ent as StepShapeDefinitionRepresentation;
+        StepModel modl = model as StepModel;
         if (sdr is null || modl is null)
         {
             return false;
         }
 
-        STEPConstruct_Part ctx = new STEPConstruct_Part();
+        Part ctx = new Part();
         ctx.ReadSDR(sdr);
 
         form.LoadValue(1, ctx.PDCname());
@@ -313,16 +321,16 @@ public class STEPEdit_EditSDR : IFSelect_Editor
         return true;
     }
 
-    public override bool Apply(IFSelect_EditForm form, Transient ent, Interface_InterfaceModel model)
+    public override bool Apply(EditForm form, Transient ent, InterfaceModel model)
     {
-        StepShape_ShapeDefinitionRepresentation sdr = ent as StepShape_ShapeDefinitionRepresentation;
-        StepData_StepModel modl = model as StepData_StepModel;
+        StepShapeDefinitionRepresentation sdr = ent as StepShapeDefinitionRepresentation;
+        StepModel modl = model as StepModel;
         if (sdr is null || modl is null)
         {
             return false;
         }
 
-        STEPConstruct_Part ctx = new STEPConstruct_Part();
+        Part ctx = new Part();
         ctx.ReadSDR(sdr);
 
         if (form.IsModified(1))

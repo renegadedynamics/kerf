@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -71,7 +73,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     [Fact]
     public void StepToTopoDS_translates_the_corpus_as_native()
     {
-        StepData_Protocol aProtocol = TopoStepRecorder.Protocol();
+        StepProtocol aProtocol = TopoStepRecorder.Protocol();
         global::Kerf.Engine.Healing.ShapeAlgo.Init(); // as STEPControl_Controller does natively
         List<Block> aBlocks = Recording("TopoStep.toporec-s2t.txt.gz");
         Assert.Equal(338, aBlocks.Count);
@@ -85,12 +87,12 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
                 continue;
             }
 
-            var aModel = new StepData_StepModel();
+            var aModel = new StepModel();
             aModel.SetProtocol(aProtocol);
             int aStatus;
             using (FileStream aStream = File.OpenRead(aPath))
             {
-                aStatus = StepFile_Read.Read(aPath, aStream, aModel, aProtocol);
+                aStatus = StepFileReader.Read(aPath, aStream, aModel, aProtocol);
             }
 
             Assert.Equal(aBlock.ReadFail, aStatus != 0);

@@ -15,25 +15,34 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step.Ap214.ReadWrite;
+using Kerf.Engine.Exchange.Step.Construct;
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Geometry;
+using Kerf.Engine.Exchange.Step.Representation;
+using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Exchange.Step.Selections;
 
 /// <summary>The roots the transfer reader's transient process recorded for transfer (a STEP reader's roots).</summary>
-public class STEPSelections_SelectForTransfer : XSControl_SelectForTransfer
+public class StepSelectForTransfer : SelectForTransfer
 {
-    public STEPSelections_SelectForTransfer()
+    public StepSelectForTransfer()
     {
     }
 
-    public STEPSelections_SelectForTransfer(XSControl_TransferReader TR)
+    public StepSelectForTransfer(TransferReader tr)
     {
-        SetReader(TR);
+        SetReader(tr);
     }
 
-    public override Interface_EntityIterator RootResult(Interface_Graph G)
+    public override EntityIterator RootResult(EntityGraph g)
     {
-        Interface_EntityIterator iter = new Interface_EntityIterator();
+        EntityIterator iter = new EntityIterator();
         NCollection_HSequence<Transient> roots = Reader().TransientProcess().RootsForTransfer();
         int nb = roots.Length();
         for (int i = 1; i <= nb; i++)
@@ -45,13 +54,13 @@ public class STEPSelections_SelectForTransfer : XSControl_SelectForTransfer
 }
 
 /// <summary>A selection of entities of a STEP type or of a type derived from it.</summary>
-public class STEPSelections_SelectDerived : StepSelect_StepType
+public class SelectDerived : StepType
 {
-    public STEPSelections_SelectDerived()
+    public SelectDerived()
     {
     }
 
-    private static Type GetStepType(StepData_ReadWriteModule module, string type)
+    private static Type GetStepType(ReadWriteModule module, string type)
     {
         Type atype = null;
         if (module is null)
@@ -63,15 +72,15 @@ public class STEPSelections_SelectDerived : StepSelect_StepType
         {
             return atype;
         }
-        RWStepAP214_GeneralModule genModul = new RWStepAP214_GeneralModule();
+        Ap214GeneralModule genModul = new Ap214GeneralModule();
         genModul.NewVoid(num, out Transient ent);
         atype = ent.DynamicType();
         return atype;
     }
 
-    public override bool Matches(Transient ent, Interface_InterfaceModel model, string text, bool exact)
+    public override bool Matches(Transient ent, InterfaceModel model, string text, bool exact)
     {
-        bool ok = thelib.Select(ent, out StepData_ReadWriteModule module, out int CN);
+        bool ok = _thelib.Select(ent, out ReadWriteModule module, out int cn);
         if (!ok)
         {
             return false;
@@ -81,7 +90,7 @@ public class STEPSelections_SelectDerived : StepSelect_StepType
         {
             return false;
         }
-        bool plex = module.IsComplex(CN);
+        bool plex = module.IsComplex(cn);
         if (!plex)
         {
             // OCCT first takes the entity as a Standard_Type itself: a System.Type is never an entity here
@@ -91,7 +100,7 @@ public class STEPSelections_SelectDerived : StepSelect_StepType
         else
         {
             NCollection_Sequence<string> list = new NCollection_Sequence<string>();
-            module.ComplexType(CN, list);
+            module.ComplexType(cn, list);
             int nb = list.Length();
             for (int i = 1; i <= nb; i++)
             {
@@ -108,39 +117,39 @@ public class STEPSelections_SelectDerived : StepSelect_StepType
 }
 
 /// <summary>The faces of the input (face surfaces, and surfaces of geometric sets or alone).</summary>
-public class STEPSelections_SelectFaces : IFSelect_SelectExplore
+public class SelectFaces : SelectExplore
 {
-    public STEPSelections_SelectFaces() : base(-1)
+    public SelectFaces() : base(-1)
     {
     }
 
-    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, EntityGraph g, EntityIterator explored)
     {
         if (start is null)
         {
             return false;
         }
 
-        if (start.IsKind(typeof(StepShape_FaceSurface)))
+        if (start.IsKind(typeof(StepFaceSurface)))
         {
             return true;
         }
 
         bool isInFaceOfInSurface = false;
-        if (start.IsKind(typeof(StepGeom_Surface)))
+        if (start.IsKind(typeof(StepSurface)))
         {
-            Interface_EntityIterator subs1 = G.Sharings(start);
+            EntityIterator subs1 = g.Sharings(start);
             for (subs1.Start(); subs1.More(); subs1.Next())
             {
-                if (subs1.Value().IsKind(typeof(StepShape_GeometricSet)))
+                if (subs1.Value().IsKind(typeof(StepGeometricSet)))
                 {
                     return true;
                 }
-                if (subs1.Value().IsKind(typeof(StepGeom_Surface)))
+                if (subs1.Value().IsKind(typeof(StepSurface)))
                 {
                     isInFaceOfInSurface = true;
                 }
-                if (subs1.Value().IsKind(typeof(StepShape_FaceSurface)))
+                if (subs1.Value().IsKind(typeof(StepFaceSurface)))
                 {
                     isInFaceOfInSurface = true;
                 }
@@ -148,7 +157,7 @@ public class STEPSelections_SelectFaces : IFSelect_SelectExplore
             return !isInFaceOfInSurface;
         }
 
-        Interface_EntityIterator subs = G.Shareds(start);
+        EntityIterator subs = g.Shareds(start);
         subs.Start();
         bool isSome = subs.More();
         for (; subs.More(); subs.Next())
@@ -170,48 +179,48 @@ public class STEPSelections_SelectFaces : IFSelect_SelectExplore
 /// OCCT keeps the flag that lets the first composite curve's geometric set through in a thread-local variable, reset
 /// by every construction; the port keeps it in the selection (decision 1270).
 /// </remarks>
-public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
+public class SelectGSCurves : SelectExplore
 {
-    private int flag;
+    private int _flag;
 
-    public STEPSelections_SelectGSCurves() : base(-1)
+    public SelectGSCurves() : base(-1)
     {
-        flag = 1;
+        _flag = 1;
     }
 
-    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, EntityGraph g, EntityIterator explored)
     {
         if (start is null)
         {
             return false;
         }
 
-        if (start.IsKind(typeof(StepGeom_Curve)))
+        if (start.IsKind(typeof(StepCurve)))
         {
-            if (start.IsKind(typeof(StepGeom_CompositeCurve)))
+            if (start.IsKind(typeof(StepCompositeCurve)))
             {
-                Interface_EntityIterator subs1 = G.Sharings(start);
+                EntityIterator subs1 = g.Sharings(start);
                 bool isInGeomSet = false;
                 for (subs1.Start(); subs1.More() && !isInGeomSet; subs1.Next())
                 {
-                    if (subs1.Value().IsKind(typeof(StepShape_GeometricSet)))
+                    if (subs1.Value().IsKind(typeof(StepGeometricSet)))
                     {
-                        if (flag != 0)
+                        if (_flag != 0)
                         {
                             explored.AddItem(subs1.Value());
-                            flag = 0;
+                            _flag = 0;
                         }
                         isInGeomSet = true;
                     }
                 }
                 if (isInGeomSet)
                 {
-                    Interface_EntityIterator aSubsShareds = G.Shareds(start);
-                    aSubsShareds.Start();
-                    bool isSome = aSubsShareds.More();
-                    for (; aSubsShareds.More(); aSubsShareds.Next())
+                    EntityIterator subsShareds = g.Shareds(start);
+                    subsShareds.Start();
+                    bool isSome = subsShareds.More();
+                    for (; subsShareds.More(); subsShareds.Next())
                     {
-                        explored.AddItem(aSubsShareds.Value());
+                        explored.AddItem(subsShareds.Value());
                     }
                     return isSome;
                 }
@@ -222,11 +231,11 @@ public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
             }
             else
             {
-                Interface_EntityIterator subs1 = G.Sharings(start);
+                EntityIterator subs1 = g.Sharings(start);
                 for (subs1.Start(); subs1.More(); subs1.Next())
                 {
-                    if (subs1.Value().IsKind(typeof(StepShape_GeometricSet))
-                        || subs1.Value().IsKind(typeof(StepGeom_CompositeCurveSegment)))
+                    if (subs1.Value().IsKind(typeof(StepGeometricSet))
+                        || subs1.Value().IsKind(typeof(StepCompositeCurveSegment)))
                     {
                         return true;
                     }
@@ -234,7 +243,7 @@ public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
             }
         }
 
-        Interface_EntityIterator subs = G.Shareds(start);
+        EntityIterator subs = g.Shareds(start);
         subs.Start();
         bool isSome1 = subs.More();
         for (; subs.More(); subs.Next())
@@ -252,23 +261,23 @@ public class STEPSelections_SelectGSCurves : IFSelect_SelectExplore
 }
 
 /// <summary>The assembly components of the input (placed items and context dependent representations).</summary>
-public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
+public class SelectAssembly : SelectExplore
 {
-    public STEPSelections_SelectAssembly() : base(-1)
+    public SelectAssembly() : base(-1)
     {
     }
 
-    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, EntityGraph g, EntityIterator explored)
     {
         if (start is null)
         {
             return false;
         }
 
-        if (start.IsKind(typeof(StepShape_ContextDependentShapeRepresentation)))
+        if (start.IsKind(typeof(StepContextDependentShapeRepresentation)))
         {
-            StepShape_ContextDependentShapeRepresentation sdsr = start as StepShape_ContextDependentShapeRepresentation;
-            StepRepr_ProductDefinitionShape pds = sdsr.RepresentedProductRelation();
+            StepContextDependentShapeRepresentation sdsr = start as StepContextDependentShapeRepresentation;
+            ProductDefinitionShape pds = sdsr.RepresentedProductRelation();
             if (pds is null)
             {
                 return false;
@@ -278,19 +287,19 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
             {
                 return false;
             }
-            return (ent.IsKind(typeof(StepRepr_NextAssemblyUsageOccurrence)));
+            return (ent.IsKind(typeof(NextAssemblyUsageOccurrence)));
         }
 
-        if (start.IsKind(typeof(StepRepr_MappedItem)))
+        if (start.IsKind(typeof(MappedItem)))
         {
-            StepRepr_MappedItem mapped = start as StepRepr_MappedItem;
-            Interface_EntityIterator subs1 = G.Sharings(mapped);
-            StepShape_ShapeRepresentation shrep = null;
+            MappedItem mapped = start as MappedItem;
+            EntityIterator subs1 = g.Sharings(mapped);
+            StepShapeRepresentation shrep = null;
             for (subs1.Start(); subs1.More() && shrep is null; subs1.Next())
             {
-                if (subs1.Value().IsKind(typeof(StepShape_ShapeRepresentation)))
+                if (subs1.Value().IsKind(typeof(StepShapeRepresentation)))
                 {
-                    shrep = subs1.Value() as StepShape_ShapeRepresentation;
+                    shrep = subs1.Value() as StepShapeRepresentation;
                 }
             }
             if (shrep is null)
@@ -298,13 +307,13 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
                 return false;
             }
 
-            subs1 = G.Sharings(shrep);
-            StepShape_ShapeDefinitionRepresentation shdefrep = null;
+            subs1 = g.Sharings(shrep);
+            StepShapeDefinitionRepresentation shdefrep = null;
             for (subs1.Start(); subs1.More() && shdefrep is null; subs1.Next())
             {
-                if (subs1.Value().IsKind(typeof(StepShape_ShapeDefinitionRepresentation)))
+                if (subs1.Value().IsKind(typeof(StepShapeDefinitionRepresentation)))
                 {
-                    shdefrep = subs1.Value() as StepShape_ShapeDefinitionRepresentation;
+                    shdefrep = subs1.Value() as StepShapeDefinitionRepresentation;
                 }
             }
             if (shdefrep is null)
@@ -312,7 +321,7 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
                 return false;
             }
 
-            StepRepr_ProductDefinitionShape pds = shdefrep.Definition().PropertyDefinition() as StepRepr_ProductDefinitionShape;
+            ProductDefinitionShape pds = shdefrep.Definition().PropertyDefinition() as ProductDefinitionShape;
             if (pds is null)
             {
                 return false;
@@ -322,10 +331,10 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
             {
                 return false;
             }
-            return (ent.IsKind(typeof(StepRepr_NextAssemblyUsageOccurrence)));
+            return (ent.IsKind(typeof(NextAssemblyUsageOccurrence)));
         }
 
-        Interface_EntityIterator subs = G.Shareds(start);
+        EntityIterator subs = g.Shareds(start);
         subs.Start();
         bool isSome = subs.More();
         for (; subs.More(); subs.Next())
@@ -347,22 +356,22 @@ public class STEPSelections_SelectAssembly : IFSelect_SelectExplore
 /// OCCT caches the graph and the instances of its last model in thread-local variables shared by every instance of
 /// the class; the port caches them in the selection (decision 1270).
 /// </remarks>
-public class STEPSelections_SelectInstances : IFSelect_SelectExplore
+public class SelectInstances : SelectExplore
 {
-    private Interface_HGraph myGraph;
-    private Interface_EntityIterator myEntities = new Interface_EntityIterator();
+    private HGraph _graph;
+    private EntityIterator _entities = new EntityIterator();
 
-    public STEPSelections_SelectInstances() : base(-1)
+    public SelectInstances() : base(-1)
     {
     }
 
-    private static void AddAllSharings(Transient start, Interface_Graph graph, Interface_EntityIterator explored)
+    private static void AddAllSharings(Transient start, EntityGraph graph, EntityIterator explored)
     {
         if (start is null)
         {
             return;
         }
-        Interface_EntityIterator subs = graph.Shareds(start);
+        EntityIterator subs = graph.Shareds(start);
         for (subs.Start(); subs.More(); subs.Next())
         {
             explored.AddItem(subs.Value());
@@ -370,7 +379,7 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         }
     }
 
-    private static void AddInstances(Transient start, Interface_Graph graph, Interface_EntityIterator explored)
+    private static void AddInstances(Transient start, EntityGraph graph, EntityIterator explored)
     {
         if (start is null)
         {
@@ -378,14 +387,14 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         }
 
         explored.AddItem(start);
-        if (start.IsKind(typeof(StepShape_ShapeDefinitionRepresentation)))
+        if (start.IsKind(typeof(StepShapeDefinitionRepresentation)))
         {
-            StepShape_ShapeDefinitionRepresentation sdr = start as StepShape_ShapeDefinitionRepresentation;
+            StepShapeDefinitionRepresentation sdr = start as StepShapeDefinitionRepresentation;
             AddInstances(sdr.UsedRepresentation(), graph, explored);
-            Interface_EntityIterator subs = graph.Shareds(start);
+            EntityIterator subs = graph.Shareds(start);
             for (subs.Start(); subs.More(); subs.Next())
             {
-                StepShape_ContextDependentShapeRepresentation anitem = subs.Value() as StepShape_ContextDependentShapeRepresentation;
+                StepContextDependentShapeRepresentation anitem = subs.Value() as StepContextDependentShapeRepresentation;
                 if (anitem is null)
                 {
                     continue;
@@ -395,57 +404,57 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
             return;
         }
 
-        if (start.IsKind(typeof(StepShape_ShapeRepresentation)))
+        if (start.IsKind(typeof(StepShapeRepresentation)))
         {
-            StepShape_ShapeRepresentation sr = start as StepShape_ShapeRepresentation;
+            StepShapeRepresentation sr = start as StepShapeRepresentation;
             int nb = sr.NbItems();
             for (int i = 1; i <= nb; i++)
             {
-                StepRepr_RepresentationItem anitem = sr.ItemsValue(i);
+                RepresentationItem anitem = sr.ItemsValue(i);
                 AddInstances(anitem, graph, explored);
             }
             return;
         }
 
-        if (start.IsKind(typeof(StepShape_FacetedBrep))
-            || start.IsKind(typeof(StepShape_BrepWithVoids))
-            || start.IsKind(typeof(StepShape_ManifoldSolidBrep))
-            || start.IsKind(typeof(StepShape_ShellBasedSurfaceModel))
-            || start.IsKind(typeof(StepShape_FacetedBrepAndBrepWithVoids))
-            || start.IsKind(typeof(StepShape_GeometricSet))
-            || start.IsKind(typeof(StepShape_FaceSurface))
-            || start.IsKind(typeof(StepRepr_MappedItem)))
+        if (start.IsKind(typeof(StepFacetedBrep))
+            || start.IsKind(typeof(StepBrepWithVoids))
+            || start.IsKind(typeof(StepManifoldSolidBrep))
+            || start.IsKind(typeof(StepShellBasedSurfaceModel))
+            || start.IsKind(typeof(StepFacetedBrepAndBrepWithVoids))
+            || start.IsKind(typeof(StepGeometricSet))
+            || start.IsKind(typeof(StepFaceSurface))
+            || start.IsKind(typeof(MappedItem)))
         {
             AddAllSharings(start, graph, explored);
             return;
         }
 
-        if (start.IsKind(typeof(StepShape_ContextDependentShapeRepresentation)))
+        if (start.IsKind(typeof(StepContextDependentShapeRepresentation)))
         {
-            StepShape_ContextDependentShapeRepresentation CDSR = start as StepShape_ContextDependentShapeRepresentation;
-            StepRepr_RepresentationRelationship SRR = CDSR.RepresentationRelation();
-            if (SRR is null)
+            StepContextDependentShapeRepresentation cdsr = start as StepContextDependentShapeRepresentation;
+            RepresentationRelationship srr = cdsr.RepresentationRelation();
+            if (srr is null)
             {
                 return;
             }
 
-            StepRepr_Representation rep;
-            bool SRRReversed = STEPConstruct_Assembly.CheckSRRReversesNAUO(graph, CDSR);
-            if (SRRReversed)
+            StepRepresentation rep;
+            bool srrReversed = ConstructAssembly.CheckSRRReversesNAUO(graph, cdsr);
+            if (srrReversed)
             {
-                rep = SRR.Rep2();
+                rep = srr.Rep2();
             }
             else
             {
-                rep = SRR.Rep1();
+                rep = srr.Rep1();
             }
 
-            Interface_EntityIterator subs = graph.Sharings(rep);
+            EntityIterator subs = graph.Sharings(rep);
             for (subs.Start(); subs.More(); subs.Next())
             {
-                if (subs.Value().IsKind(typeof(StepShape_ShapeDefinitionRepresentation)))
+                if (subs.Value().IsKind(typeof(StepShapeDefinitionRepresentation)))
                 {
-                    StepShape_ShapeDefinitionRepresentation SDR = subs.Value() as StepShape_ShapeDefinitionRepresentation;
+                    StepShapeDefinitionRepresentation SDR = subs.Value() as StepShapeDefinitionRepresentation;
                     AddInstances(SDR, graph, explored);
                 }
             }
@@ -453,9 +462,9 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
             return;
         }
 
-        if (start.IsKind(typeof(StepRepr_ShapeRepresentationRelationship)))
+        if (start.IsKind(typeof(ShapeRepresentationRelationship)))
         {
-            StepRepr_ShapeRepresentationRelationship und = start as StepRepr_ShapeRepresentationRelationship;
+            ShapeRepresentationRelationship und = start as ShapeRepresentationRelationship;
             for (int i = 1; i <= 2; i++)
             {
                 Transient anitem = null;
@@ -473,52 +482,55 @@ public class STEPSelections_SelectInstances : IFSelect_SelectExplore
         }
     }
 
-    public override Interface_EntityIterator RootResult(Interface_Graph G)
+    public override EntityIterator RootResult(EntityGraph g)
     {
-        if (myGraph is null || (G.Model() != myGraph.Graph().Model()))
+        if (_graph is null || (g.Model() != _graph.Graph().Model()))
         {
-            Interface_EntityIterator roots = G.RootEntities();
-            myGraph = new Interface_HGraph(G);
-            myEntities.Destroy();
+            EntityIterator roots = g.RootEntities();
+            _graph = new HGraph(g);
+            _entities.Destroy();
             for (roots.Start(); roots.More(); roots.Next())
             {
-                AddInstances(roots.Value(), G, myEntities);
+                AddInstances(roots.Value(), g, _entities);
             }
         }
 
-        if (HasInput() || HasAlternate())
+        if (HasInput || HasAlternate())
         {
-            Interface_EntityIterator select = InputResult(G);
+            EntityIterator select = InputResult(g);
             int nbSelected = select.NbEntities();
             HashSet<Transient> filter = new HashSet<Transient>(nbSelected, ReferenceEqualityComparer.Instance);
             for (select.Start(); select.More(); select.Next())
             {
                 filter.Add(select.Value());
             }
-            Interface_EntityIterator result = new Interface_EntityIterator();
-            for (myEntities.Start(); myEntities.More(); myEntities.Next())
+            EntityIterator result = new EntityIterator();
+            for (_entities.Start(); _entities.More(); _entities.Next())
             {
-                if (filter.Contains(myEntities.Value()))
+                if (filter.Contains(_entities.Value()))
                 {
-                    result.AddItem(myEntities.Value());
+                    result.AddItem(_entities.Value());
                 }
             }
             return result;
         }
         else
         {
-            return myEntities;
+            return _entities;
         }
     }
 
-    public override bool Explore(int level, Transient start, Interface_Graph G, Interface_EntityIterator explored)
+    public override bool Explore(int level, Transient start, EntityGraph g, EntityIterator explored)
     {
         return false;
     }
 
-    protected override bool HasUniqueResult()
+    protected override bool HasUniqueResult
     {
-        return true;
+        get
+        {
+            return true;
+        }
     }
 
     public override string ExploreLabel()

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Stl.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Tools;
@@ -121,7 +122,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         }
     }
 
-    private sealed class CountingReader : RWStl_Reader
+    private sealed class CountingReader : global::Kerf.Engine.Exchange.Stl.Reader
     {
         public int myNbNodes, myNbTris, myNbSolids;
 
@@ -200,12 +201,12 @@ public class RWStlNativeTests(ITestOutputHelper output)
         string[] aTags = ["90", "45", "0"];
         for (int i = 0; i < 3; ++i)
         {
-            aLines.Add(Line("FILE " + aTags[i], () => Tri(RWStl.ReadFile(thePath, anAngles[i]))));
+            aLines.Add(Line("FILE " + aTags[i], () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(thePath, anAngles[i]))));
         }
         aLines.AddRange(Line("MULTI", () =>
         {
             var aList = new NCollection_Sequence<Triangulation>();
-            RWStl.ReadFile(thePath, Math.PI / 2.0, aList);
+            global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(thePath, Math.PI / 2.0, aList);
             var aText = new StringBuilder(aList.Length().ToString(CultureInfo.InvariantCulture));
             for (int i = 1; i <= aList.Length(); ++i)
             {
@@ -219,20 +220,20 @@ public class RWStlNativeTests(ITestOutputHelper output)
             bool isOk = aReader.Read(thePath);
             return $"{(isOk ? 1 : 0)} {aReader.myNbNodes} {aReader.myNbTris} {aReader.myNbSolids}";
         }));
-        aLines.Add(Line("STREAM", () => Tri(RWStl.ReadStream(new MemoryStream(theData)))));
-        aLines.Add(Line("ASCIIS", () => Tri(RWStl.ReadAsciiStream(new MemoryStream(theData)))));
-        aLines.Add(Line("BINS", () => Tri(RWStl.ReadBinaryStream(new MemoryStream(theData)))));
+        aLines.Add(Line("STREAM", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(theData)))));
+        aLines.Add(Line("ASCIIS", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadAsciiStream(new MemoryStream(theData)))));
+        aLines.Add(Line("BINS", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadBinaryStream(new MemoryStream(theData)))));
         if (theData.Length <= 300000)
         {
             aLines.Add(Line("SHAPE", () =>
             {
                 Shape aShape = new();
-                return new StlAPI_Reader().Read(ref aShape, thePath) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
+                return new StlApiReader().Read(ref aShape, thePath) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
             }));
             aLines.Add(Line("SHAPES", () =>
             {
                 Shape aShape = new();
-                return new StlAPI_Reader().Read(ref aShape, new MemoryStream(theData)) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
+                return new StlApiReader().Read(ref aShape, new MemoryStream(theData)) ? Bytes(Encoding.ASCII.GetBytes(ShapeText(aShape))) : "FAIL";
             }));
         }
         return aLines;
@@ -272,21 +273,21 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 aLines.Add(Line("ASCII", () =>
                 {
                     var aStream = new MemoryStream();
-                    new StlAPI_Writer().Write(aMeshed, aStream);
+                    new ApiWriter().Write(aMeshed, aStream);
                     anAscii = aStream.ToArray();
                     return Bytes(anAscii);
                 }));
                 aLines.Add(Line("BINARY", () =>
                 {
                     var aStream = new MemoryStream();
-                    var aWriter = new StlAPI_Writer();
+                    var aWriter = new ApiWriter();
                     aWriter.SetASCIIMode(false);
                     aWriter.Write(aMeshed, aStream);
                     aBinary = aStream.ToArray();
                     return Bytes(aBinary);
                 }));
-                aLines.Add(Line("BACKA", () => Tri(RWStl.ReadStream(new MemoryStream(anAscii)))));
-                aLines.Add(Line("BACKB", () => Tri(RWStl.ReadStream(new MemoryStream(aBinary)))));
+                aLines.Add(Line("BACKA", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(anAscii)))));
+                aLines.Add(Line("BACKB", () => Tri(global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(aBinary)))));
                 return aLines;
             }
             case "M":
@@ -295,13 +296,13 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 aLines.Add(Line("ASCII", () =>
                 {
                     var aStream = new MemoryStream();
-                    RWStl.WriteAscii(aMesh, aStream);
+                    global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(aMesh, aStream);
                     return Bytes(aStream.ToArray());
                 }));
                 aLines.Add(Line("BINARY", () =>
                 {
                     var aStream = new MemoryStream();
-                    RWStl.WriteBinary(aMesh, aStream);
+                    global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(aMesh, aStream);
                     return Bytes(aStream.ToArray());
                 }));
                 return aLines;

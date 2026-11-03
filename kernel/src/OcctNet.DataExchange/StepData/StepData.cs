@@ -3,7 +3,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
+
+namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>
 /// Gives basic data definition for Step Interface. Any class of a data model described in EXPRESS Language is
@@ -15,34 +17,34 @@ namespace Occt;
 /// </remarks>
 public static class StepData
 {
-    private static readonly Lazy<StepData_Protocol> proto = new(() => new StepData_Protocol());
-    private static volatile StepData_Protocol? theheader;
-    private static readonly Lock theheaderLock = new();
+    private static readonly Lazy<StepProtocol> Proto = new(() => new StepProtocol());
+    private static volatile StepProtocol? s_theheader;
+    private static readonly Lock TheheaderLock = new();
 
     /// <summary>Returns the recorded HeaderProtocol, which can be: a null handle if no Header Protocol was yet defined; a simple Protocol if only one was defined; a FileProtocol if more than one Protocol was defined.</summary>
-    public static StepData_Protocol? HeaderProtocol()
+    public static StepProtocol? HeaderProtocol()
     {
-        return theheader;
+        return s_theheader;
     }
 
     /// <summary>Records a new Header Protocol (if it is not yet recorded).</summary>
-    public static void AddHeaderProtocol(StepData_Protocol header)
+    public static void AddHeaderProtocol(StepProtocol header)
     {
-        lock (theheaderLock)
+        lock (TheheaderLock)
         {
-            if (theheader is null)
+            if (s_theheader is null)
             {
-                theheader = header;
+                s_theheader = header;
             }
             else
             {
-                if (theheader is not StepData_FileProtocol headmult)
+                if (s_theheader is not FileProtocol headmult)
                 {
-                    headmult = new StepData_FileProtocol();
-                    headmult.Add(theheader);
+                    headmult = new FileProtocol();
+                    headmult.Add(s_theheader);
                 }
                 headmult.Add(header);
-                theheader = headmult;
+                s_theheader = headmult;
             }
         }
     }
@@ -53,8 +55,8 @@ public static class StepData
     }
 
     /// <summary>Returns a Protocol from StepData (avoids to create it).</summary>
-    public static StepData_Protocol Protocol()
+    public static StepProtocol Protocol()
     {
-        return proto.Value; // svv #2
+        return Proto.Value; // svv #2
     }
 }

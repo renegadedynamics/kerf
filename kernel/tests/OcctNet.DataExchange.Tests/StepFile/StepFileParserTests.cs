@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using System.Text;
-using static Occt.Interface_ParamType;
+using static Kerf.Engine.Exchange.Framework.ParamType;
 
 namespace OcctNet.DataExchange.Tests;
 
@@ -15,12 +17,12 @@ public class StepFileParserTests
     private const string Head = "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('d'),'2;1');\nENDSEC;\nDATA;\n";
     private const string Tail = "ENDSEC;\nEND-ISO-10303-21;\n";
 
-    private static (int Result, StepFile_ReadData Data, StepFile_Parser Parser) Parse(string theText,
-        StepFile_ReadLimits? theLimits = null, ProgressRange theRange = default)
+    private static (int Result, ReadData Data, StepParser Parser) Parse(string theText,
+        ParserReadLimits? theLimits = null, ProgressRange theRange = default)
     {
-        StepFile_ReadData aData = new();
-        StepFile_Parser aParser = new(new StepFile_Scanner(aData, new MemoryStream(Encoding.Latin1.GetBytes(theText)), theLimits), theRange);
-        return (aParser.parse(), aData, aParser);
+        ReadData aData = new();
+        StepParser aParser = new(new Scanner(aData, new MemoryStream(Encoding.Latin1.GetBytes(theText)), theLimits), theRange);
+        return (aParser.Parse(), aData, aParser);
     }
 
     private static List<string> Lines(string theText) => StepFileDump.Dump(new MemoryStream(Encoding.Latin1.GetBytes(theText)));
@@ -39,8 +41,8 @@ public class StepFileParserTests
         // The header's sub-list comes before its entity, as in OCCT
         Assert.True(aData.GetRecordDescription(out string? anIdent, out string? aType, out int aNbArg));
         Assert.Equal(("$1", "/* (SUB) */", 1), (anIdent, aType, aNbArg));
-        Assert.True(aData.GetArgDescription(out Interface_ParamType anArgType, out string? aValue));
-        Assert.Equal((Interface_ParamType.Interface_ParamText, "'d'"), (anArgType, aValue));
+        Assert.True(aData.GetArgDescription(out ParamType anArgType, out string? aValue));
+        Assert.Equal((ParamType.ParamText, "'d'"), (anArgType, aValue));
         Assert.False(aData.GetArgDescription(out _, out _));
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
@@ -48,25 +50,25 @@ public class StepFileParserTests
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
         Assert.Equal(("$1", "/* (SUB) */"), (anIdent, aType));
-        var anArgs = new List<(Interface_ParamType, string?)>();
+        var anArgs = new List<(ParamType, string?)>();
         while (aData.GetArgDescription(out anArgType, out aValue))
         {
             anArgs.Add((anArgType, aValue));
         }
 
-        Assert.Equal([(Interface_ParamType.Interface_ParamReal, "0."), (Interface_ParamType.Interface_ParamReal, "1.E+00"), (Interface_ParamType.Interface_ParamReal, "-2.5")], anArgs);
+        Assert.Equal([(ParamType.ParamReal, "0."), (ParamType.ParamReal, "1.E+00"), (ParamType.ParamReal, "-2.5")], anArgs);
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
         Assert.Equal(("#1", "CARTESIAN_POINT"), (anIdent, aType));
         Assert.True(aData.GetArgDescription(out _, out _));
         Assert.True(aData.GetArgDescription(out anArgType, out aValue));
-        Assert.Equal((Interface_ParamType.Interface_ParamSub, "$1"), (anArgType, aValue));
+        Assert.Equal((ParamType.ParamSub, "$1"), (anArgType, aValue));
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
         Assert.Equal(("#2", "VERTEX_POINT"), (anIdent, aType));
         aData.GetArgDescription(out _, out _);
         aData.GetArgDescription(out anArgType, out aValue);
-        Assert.Equal((Interface_ParamType.Interface_ParamIdent, "#1"), (anArgType, aValue));
+        Assert.Equal((ParamType.ParamIdent, "#1"), (anArgType, aValue));
         aData.NextRecord();
         Assert.False(aData.GetRecordDescription(out _, out _, out _));
     }
@@ -109,9 +111,9 @@ public class StepFileParserTests
     public void A_token_of_16384_bytes_throws_as_OCCTs_scanner_does()
     {
         // The string with its quotes, and the ')' the scanner looks at to end it: 16,383 bytes at most
-        string aShort = Head + "#1=A('" + new string('x', StepFile_Scanner.MaxToken - 3) + "');\n" + Tail;
+        string aShort = Head + "#1=A('" + new string('x', Scanner.MaxToken - 3) + "');\n" + Tail;
         Assert.Equal(0, Parse(aShort).Result);
-        string aLong = Head + "#1=A('" + new string('x', StepFile_Scanner.MaxToken - 2) + "');\n" + Tail;
+        string aLong = Head + "#1=A('" + new string('x', Scanner.MaxToken - 2) + "');\n" + Tail;
         FailureException anEx = Assert.Throws<FailureException>(() => Parse(aLong));
         Assert.Equal("input buffer overflow, can't enlarge buffer because scanner uses REJECT", anEx.Message);
     }
@@ -120,19 +122,19 @@ public class StepFileParserTests
     public void The_record_limit_stops_the_parse()
     {
         string aText = Head + string.Concat(Enumerable.Range(1, 100).Select(i => $"#{i}=A({i});\n")) + Tail;
-        var (aResult, aData, aParser) = Parse(aText, new StepFile_ReadLimits { MaxRecords = 50 });
+        var (aResult, aData, aParser) = Parse(aText, new ParserReadLimits { MaxRecords = 50 });
         Assert.Equal(1, aResult);
         Assert.Equal("record count", aParser.ExceededLimit);
         Assert.Contains("Limit reached: record count above 50", aData.GetLastError());
-        Assert.Equal(0, Parse(aText, new StepFile_ReadLimits { MaxRecords = 102 }).Result);
+        Assert.Equal(0, Parse(aText, new ParserReadLimits { MaxRecords = 102 }).Result);
     }
 
     [Fact]
     public void The_depth_limit_stops_the_parse()
     {
         string aText = Head + "#1=A(" + new string('(', 30) + "1" + new string(')', 30) + ");\n" + Tail;
-        Assert.Equal(0, Parse(aText, new StepFile_ReadLimits { MaxDepth = 31 }).Result);
-        var (aResult, _, aParser) = Parse(aText, new StepFile_ReadLimits { MaxDepth = 30 });
+        Assert.Equal(0, Parse(aText, new ParserReadLimits { MaxDepth = 31 }).Result);
+        var (aResult, _, aParser) = Parse(aText, new ParserReadLimits { MaxDepth = 30 });
         Assert.Equal(1, aResult);
         Assert.Equal("nesting depth", aParser.ExceededLimit);
 
@@ -145,10 +147,10 @@ public class StepFileParserTests
     public void The_file_size_limit_stops_the_parse()
     {
         string aText = Head + string.Concat(Enumerable.Range(1, 30000).Select(i => $"#{i}=A({i});\n")) + Tail;
-        var (aResult, _, aParser) = Parse(aText, new StepFile_ReadLimits { MaxFileSize = 100_000 });
+        var (aResult, _, aParser) = Parse(aText, new ParserReadLimits { MaxFileSize = 100_000 });
         Assert.Equal(1, aResult);
         Assert.Equal("file size", aParser.ExceededLimit);
-        Assert.Equal(0, Parse(aText, new StepFile_ReadLimits { MaxFileSize = aText.Length }).Result);
+        Assert.Equal(0, Parse(aText, new ParserReadLimits { MaxFileSize = aText.Length }).Result);
     }
 
     [Fact]
@@ -180,12 +182,12 @@ public class StepFileParserTests
     [Fact]
     public void The_print_modes_write_the_records()
     {
-        StepFile_ReadData aData = new();
+        ReadData aData = new();
         var aWriter = new StringWriter();
         aData.PrintOutput = aWriter;
         aData.SetModePrint(2);
         Assert.Equal(2, aData.GetModePrint());
-        new StepFile_Parser(new StepFile_Scanner(aData, new MemoryStream(Encoding.Latin1.GetBytes(Head + "#1=A(1,'x');\n" + Tail)))).parse();
+        new StepParser(new Scanner(aData, new MemoryStream(Encoding.Latin1.GetBytes(Head + "#1=A(1,'x');\n" + Tail)))).Parse();
         string aText = aWriter.ToString();
         Assert.Contains("Record no : 3 -- Ident : #1  Type : A  Nb.Arg.s : 1", aText);
         // OCCT: its two-letter codes of the argument types predate Interface_ParamType's order: a text prints "nd"

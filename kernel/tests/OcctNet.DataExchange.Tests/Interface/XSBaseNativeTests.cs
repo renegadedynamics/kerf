@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Framework;
+using Kerf.Engine.Exchange.Framework.Monitoring;
 using Kerf.Engine.Foundation;
 using System.Globalization;
 using System.IO.Compression;
@@ -64,7 +66,7 @@ public class XSBaseNativeTests
         {
             aValues.Add(NextReal());
         }
-        Interface_FloatWriter[] aWriters = [new(), new(12), new(6), new()];
+        FloatWriter[] aWriters = [new(), new(12), new(6), new()];
         aWriters[3].SetFormat("%.10g");
         for (int w = 0; w < 4; w++)
         {
@@ -88,7 +90,7 @@ public class XSBaseNativeTests
         for (int aCase = 0; aCase < 60; aCase++)
         {
             int aSize = 20 + NextInt(60);
-            var aBuf = new Interface_LineBuffer(aSize);
+            var aBuf = new LineBuffer(aSize);
             theOut.Add($"LB {aCase} size {aSize}");
             for (int anOp = 0; anOp < 80; anOp++)
             {
@@ -154,9 +156,9 @@ public class XSBaseNativeTests
         }
     }
 
-    private static void PrintStatic(Interface_StaticSet theSet, List<string> theOut, string theName)
+    private static void PrintStatic(StaticSet theSet, List<string> theOut, string theName)
     {
-        Interface_Static? aStat = theSet.Static(theName);
+        Static? aStat = theSet.Static(theName);
         if (aStat is null)
         {
             theOut.Add($"ST {theName} absent");
@@ -211,7 +213,7 @@ public class XSBaseNativeTests
 
     private static void Statics(List<string> theOut)
     {
-        var aSet = new Interface_StaticSet();
+        var aSet = new StaticSet();
         aSet.Standards();
         var aNames = new List<string>();
         NCollection_HSequence<TCollection_HAsciiString> anItems = aSet.Items();
@@ -282,7 +284,7 @@ public class XSBaseNativeTests
 
         foreach (string aName in new[] { "Integer", "Real", "Text", "Transient", "Boolean", "Logical", "Unknown" })
         {
-            MoniTool_TypedValue? aTV = MoniTool_TypedValue.FromLib(aName);
+            TypedValue? aTV = TypedValue.FromLib(aName);
             if (aTV is null)
             {
                 theOut.Add($"LIB {aName} null");
@@ -301,26 +303,26 @@ public class XSBaseNativeTests
         {
             for (int aMax = 0; aMax <= 12; aMax += 3)
             {
-                theOut.Add($"BL {aVal} {aMax} [{Interface_MSG.Blanks(aVal, aMax)}]");
+                theOut.Add($"BL {aVal} {aMax} [{FrameworkMsg.Blanks(aVal, aMax)}]");
             }
         }
         foreach (string aText in new[] { "", "a", "abcdef", "abcdefghijklmnop" })
         {
             for (int aMax = 0; aMax <= 12; aMax += 4)
             {
-                theOut.Add($"BS [{aText}] {aMax} [{Interface_MSG.Blanks(aText, aMax)}]");
+                theOut.Add($"BS [{aText}] {aMax} [{FrameworkMsg.Blanks(aText, aMax)}]");
             }
         }
         for (int aCount = -1; aCount <= 80; aCount += 9)
         {
-            theOut.Add($"BC {aCount} [{Interface_MSG.Blanks(aCount)}]");
+            theOut.Add($"BC {aCount} [{FrameworkMsg.Blanks(aCount)}]");
         }
         for (int i = 0; i < 300; i++)
         {
             double aVal = i % 10 == 0 ? 0.0 : NextReal();
             int anOrd = NextInt(12);
             bool anUp = NextInt(2) == 1;
-            double aRes = Interface_MSG.Intervalled(aVal, anOrd, anUp);
+            double aRes = FrameworkMsg.Intervalled(aVal, anOrd, anUp);
             theOut.Add("IV " + Sprintf("%.17g %d %d %.17g", aVal, anOrd, anUp ? 1 : 0, aRes));
         }
         string[] aDates = ["2026-11-02:10-20-30", "1999-01-01:00-00-00", "2026-11-02:10-20-31", "2026-11-03", "abc",
@@ -328,27 +330,27 @@ public class XSBaseNativeTests
         foreach (string aD1 in aDates)
         {
             int yy = 0, mm = 0, dd = 0, hh = 0, mn = 0, ss = 0;
-            bool anOk = Interface_MSG.NDate(aD1, ref yy, ref mm, ref dd, ref hh, ref mn, ref ss);
+            bool anOk = FrameworkMsg.NDate(aD1, ref yy, ref mm, ref dd, ref hh, ref mn, ref ss);
             var aLine = new StringBuilder($"ND [{aD1}] {B(anOk)} {yy} {mm} {dd} {hh} {mn} {ss}");
             foreach (string aD2 in aDates)
             {
-                aLine.Append(' ').Append(Interface_MSG.CDate(aD1, aD2));
+                aLine.Append(' ').Append(FrameworkMsg.CDate(aD1, aD2));
             }
             theOut.Add(aLine.ToString());
         }
-        Interface_MSG.TDate(out string aDate, 2026, 11, 2, 9, 8, 7, "");
+        FrameworkMsg.TDate(out string aDate, 2026, 11, 2, 9, 8, 7, "");
         theOut.Add($"TD [{aDate}]");
-        Interface_MSG.TDate(out aDate, 2026, 11, 2, 9, 8, 7, "C:%4.4d-%2.2d-%2.2dT%2.2d:%2.2d:%2.2d");
+        FrameworkMsg.TDate(out aDate, 2026, 11, 2, 9, 8, 7, "C:%4.4d-%2.2d-%2.2dT%2.2d:%2.2d:%2.2d");
         theOut.Add($"TD [{aDate}]");
         for (int i = -1; i <= 10; i++)
         {
-            theOut.Add($"CAT {i} {Interface_Category.Name(i)}");
+            theOut.Add($"CAT {i} {Category.Name(i)}");
         }
         foreach (string aCat in new[] { "Shape", "Drawing", "Structure", "Description", "Auxiliary", "Professional", "FEA", "Kinematics", "Piping", "Other" })
         {
-            theOut.Add($"CATN {aCat} {Interface_Category.Number(aCat)}");
+            theOut.Add($"CATN {aCat} {Category.Number(aCat)}");
         }
-        theOut.Add($"CATS {Interface_Category.NbCategories()}");
+        theOut.Add($"CATS {Category.CategoryCount}");
     }
 
     private void BitMaps(List<string> theOut)
@@ -356,13 +358,13 @@ public class XSBaseNativeTests
         for (int aCase = 0; aCase < 20; aCase++)
         {
             int aNb = 1 + NextInt(100);
-            var aMap = new Interface_BitMap(aNb, NextInt(3));
+            var aMap = new BitMap(aNb, NextInt(3));
             theOut.Add($"BM {aCase} {aNb}");
             for (int anOp = 0; anOp < 120; anOp++)
             {
                 int aKind = NextInt(8);
                 int aNum = 1 + NextInt(aMap.Length());
-                int aFlag = NextInt(aMap.NbFlags() + 1);
+                int aFlag = NextInt(aMap.FlagCount + 1);
                 switch (aKind)
                 {
                     case 0:
@@ -380,7 +382,7 @@ public class XSBaseNativeTests
                     case 4:
                     {
                         string aName = "f" + NextInt(5).ToString(CultureInfo.InvariantCulture);
-                        theOut.Add($"BM addflag {aName} {aMap.AddFlag(aName)} nb {aMap.NbFlags()}");
+                        theOut.Add($"BM addflag {aName} {aMap.AddFlag(aName)} nb {aMap.FlagCount}");
                         break;
                     }
                     case 5:
@@ -408,11 +410,11 @@ public class XSBaseNativeTests
     {
         for (int aCase = 0; aCase < 20; aCase++)
         {
-            var aList = new Interface_EntityList();
+            var aList = new EntityList();
             int aNb = 1 + NextInt(30);
             for (int i = 0; i < aNb; i++)
             {
-                var anItem = new Interface_IntVal();
+                var anItem = new IntVal();
                 anItem.CValue() = i + 1;
                 if (NextInt(3) == 0)
                 {
@@ -433,7 +435,7 @@ public class XSBaseNativeTests
             {
                 try
                 {
-                    int aValue = ((Interface_IntVal)aList.Value(i)!).Value();
+                    int aValue = ((IntVal)aList.Value(i)!).Value();
                     aVals.Append(' ').Append(aValue);
                 }
                 catch (FailureException)

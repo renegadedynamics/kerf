@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Globalization;
@@ -50,7 +52,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
         return aBlocks;
     }
 
-    private static readonly (string Tag, StepData_Factors Factors)[] TheFactors =
+    private static readonly (string Tag, Factors Factors)[] TheFactors =
         [("mm", GeomStepRecorder.Millimetres), ("in", GeomStepRecorder.Inches)];
 
     // The port's lines of a block that differs, for diagnosis (compare with geomsteprec's "full" output)
@@ -109,12 +111,12 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
                 continue;
             }
 
-            var aModel = new StepData_StepModel();
+            var aModel = new StepModel();
             aModel.SetProtocol(aProtocol);
             int aStatus;
             using (FileStream aStream = File.OpenRead(aPath))
             {
-                aStatus = StepFile_Read.Read(aPath, aStream, aModel, aProtocol);
+                aStatus = StepFileReader.Read(aPath, aStream, aModel, aProtocol);
             }
 
             Assert.Equal(aBlock.ReadFail, aStatus != 0);

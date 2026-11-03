@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Exchange.Documents;
+using Kerf.Engine.Exchange.Gltf;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -67,22 +69,22 @@ public class RWGltfReaderTests
         };
     }
 
-    private static XdeDoc_Tree? Read(JsonNode theJson, out RWGltf_TreeReader theReader, RWGltf_ReadOptions? theOptions = null,
+    private static Tree? Read(JsonNode theJson, out TreeReader theReader, ReadOptions? theOptions = null,
                                      Func<string, Stream?>? theResolver = null)
     {
-        theReader = new RWGltf_TreeReader(theOptions);
+        theReader = new TreeReader(theOptions);
         return theReader.Read(new MemoryStream(Encoding.UTF8.GetBytes(theJson.ToJsonString())), theResolver);
     }
 
-    private static void AssertError(JsonNode theJson, string theError, RWGltf_ReadOptions? theOptions = null)
+    private static void AssertError(JsonNode theJson, string theError, ReadOptions? theOptions = null)
     {
-        XdeDoc_Tree? aTree = Read(theJson, out RWGltf_TreeReader aReader, theOptions);
+        Tree? aTree = Read(theJson, out TreeReader aReader, theOptions);
         Assert.Null(aTree);
         Assert.NotNull(aReader.Error);
         Assert.Contains(theError, aReader.Error, StringComparison.Ordinal);
     }
 
-    private static Triangulation SingleTriangulation(XdeDoc_Tree theTree, out XdeDoc_FlatItem theItem)
+    private static Triangulation SingleTriangulation(Tree theTree, out FlatItem theItem)
     {
         theItem = Assert.Single(theTree.Flatten());
         Face aFace = ShapeCasts.Face(theItem.Product.Shape);
@@ -92,9 +94,9 @@ public class RWGltfReaderTests
     [Fact]
     public void ReadsATriangleInMillimetresZUp()
     {
-        XdeDoc_Tree? aTree = Read(Model(), out RWGltf_TreeReader aReader);
+        Tree? aTree = Read(Model(), out TreeReader aReader);
         Assert.True(aTree is not null, aReader.Error);
-        Triangulation aTri = SingleTriangulation(aTree, out XdeDoc_FlatItem anItem);
+        Triangulation aTri = SingleTriangulation(aTree, out FlatItem anItem);
         Assert.Equal(1, aTri.TriangleCount);
         Assert.True(aTri.IsFrozen);
         // glTF's (1, 0, 0) m is (1000, 0, 0) mm; its (0, 1, 0), Y up, is (0, 0, 1000)
@@ -106,7 +108,7 @@ public class RWGltfReaderTests
         Assert.Empty(aReader.Warnings);
 
         // without the conversions
-        aTree = Read(Model(), out _, new RWGltf_ReadOptions { YUpToZUp = false, OutputLengthUnit = 1.0 });
+        aTree = Read(Model(), out _, new ReadOptions { YUpToZUp = false, OutputLengthUnit = 1.0 });
         aTri = SingleTriangulation(aTree!, out _);
         Assert.Equal(1.0, aTri.Node(3).Y(), 9);
     }
@@ -118,7 +120,7 @@ public class RWGltfReaderTests
         Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 5), out _)!, out _).TriangleCount);
         Assert.Equal(3, SingleTriangulation(Read(Model(aSquare, [0, 1, 2, 3, 4], 6), out _)!, out _).TriangleCount);
 
-        XdeDoc_Tree? aTree = Read(Model(null, [0, 1, 1, 2], 1), out RWGltf_TreeReader aReader);
+        Tree? aTree = Read(Model(null, [0, 1, 1, 2], 1), out TreeReader aReader);
         Assert.NotNull(aTree);
         Assert.Contains(aReader.Warnings, w => w.Contains("mode 1", StringComparison.Ordinal));
         Assert.Empty(aTree.Flatten()); // an empty node: an empty assembly
@@ -133,7 +135,7 @@ public class RWGltfReaderTests
         aRotated["nodes"]![0]!["rotation"] = new JsonArray(0.0, aS, 0.0, aS);
         aRotated["nodes"]!.AsArray().Add(new JsonObject { ["mesh"] = 0, ["translation"] = new JsonArray(0.0, 0.0, 2.0) });
         aRotated["scenes"]![0]!["nodes"]!.AsArray().Add(1);
-        XdeDoc_Tree? aTree = Read(aRotated, out RWGltf_TreeReader aReader);
+        Tree? aTree = Read(aRotated, out TreeReader aReader);
         Assert.True(aTree is not null, aReader.Error);
         Assert.Equal(2, aTree.Roots.Length);
         Assert.Same(aTree.Roots[0].Product, aTree.Roots[1].Product);
@@ -144,7 +146,7 @@ public class RWGltfReaderTests
         // a scale: applied to the mesh (a copy for the node)
         JsonObject aScaled = Model();
         aScaled["nodes"]![0]!["scale"] = new JsonArray(2.0, 1.0, 1.0);
-        Triangulation aTri = SingleTriangulation(Read(aScaled, out _)!, out XdeDoc_FlatItem anItem);
+        Triangulation aTri = SingleTriangulation(Read(aScaled, out _)!, out FlatItem anItem);
         Assert.True(anItem.Location.IsIdentity);
         Assert.Equal(2000.0, aTri.Node(2).X(), 9);
 
@@ -229,7 +231,7 @@ public class RWGltfReaderTests
         aCycle.Remove("scenes");
         aCycle.Remove("scene");
         aCycle["nodes"] = new JsonArray(new JsonObject { ["children"] = new JsonArray(1) }, new JsonObject { ["children"] = new JsonArray(0) });
-        XdeDoc_Tree? aTree = Read(aCycle, out _);
+        Tree? aTree = Read(aCycle, out _);
         Assert.NotNull(aTree);
         Assert.Empty(aTree.Roots);
 
@@ -242,22 +244,22 @@ public class RWGltfReaderTests
         }
         aDeep["nodes"] = aNodes;
         AssertError(aDeep, "deeper than the limit (256)");
-        XdeDoc_Tree? aDeepTree = Read(aDeep, out RWGltf_TreeReader aReader, new RWGltf_ReadOptions { Limits = RWGltf_ReadLimits.Default with { MaxDepth = 1000 } });
+        Tree? aDeepTree = Read(aDeep, out TreeReader aReader, new ReadOptions { Limits = ReadLimits.Default with { MaxDepth = 1000 } });
         Assert.True(aDeepTree is not null, aReader.Error);
         Assert.Single(aDeepTree.Flatten());
-        AssertError(aDeep, "300 nodes, more than the limit (100)", new RWGltf_ReadOptions { Limits = RWGltf_ReadLimits.Default with { MaxNodes = 100 } });
+        AssertError(aDeep, "300 nodes, more than the limit (100)", new ReadOptions { Limits = ReadLimits.Default with { MaxNodes = 100 } });
     }
 
     [Fact]
     public void LimitsAndExtensions()
     {
-        AssertError(Model(), "larger than the limit (100 bytes)", new RWGltf_ReadOptions { Limits = RWGltf_ReadLimits.Default with { MaxBytes = 100 } });
-        AssertError(Model(), "Buffer 0: larger than the limit (10 bytes)", new RWGltf_ReadOptions { Limits = RWGltf_ReadLimits.Default with { MaxBufferBytes = 10 } });
-        AssertError(Model(), "More triangles than the limit (0)", new RWGltf_ReadOptions { Limits = RWGltf_ReadLimits.Default with { MaxTriangles = 0 } });
+        AssertError(Model(), "larger than the limit (100 bytes)", new ReadOptions { Limits = ReadLimits.Default with { MaxBytes = 100 } });
+        AssertError(Model(), "Buffer 0: larger than the limit (10 bytes)", new ReadOptions { Limits = ReadLimits.Default with { MaxBufferBytes = 10 } });
+        AssertError(Model(), "More triangles than the limit (0)", new ReadOptions { Limits = ReadLimits.Default with { MaxTriangles = 0 } });
 
         // JSON nested deeper than allowed
         string aNested = Model().ToJsonString().Insert(1, "\"extras\":" + new string('[', 100) + new string(']', 100) + ",");
-        var aNestedReader = new RWGltf_TreeReader();
+        var aNestedReader = new TreeReader();
         Assert.Null(aNestedReader.Read(new MemoryStream(Encoding.UTF8.GetBytes(aNested))));
         Assert.StartsWith("Invalid JSON", aNestedReader.Error, StringComparison.Ordinal);
 
@@ -267,7 +269,7 @@ public class RWGltfReaderTests
 
         JsonObject anUnlit = Model();
         anUnlit["extensionsRequired"] = new JsonArray("KHR_materials_unlit");
-        Assert.NotNull(Read(anUnlit, out RWGltf_TreeReader aReader));
+        Assert.NotNull(Read(anUnlit, out TreeReader aReader));
         Assert.Single(aReader.Warnings);
     }
 
@@ -291,7 +293,7 @@ public class RWGltfReaderTests
         {
             File.WriteAllBytes(Path.Combine(aFolder, "secret data.bin"), aData);
             File.WriteAllText(Path.Combine(aSub, "m.gltf"), anExternal.ToJsonString());
-            var aReader = new RWGltf_TreeReader();
+            var aReader = new TreeReader();
             Assert.Null(aReader.ReadFile(Path.Combine(aSub, "m.gltf")));
             Assert.Contains("can't be opened", aReader.Error, StringComparison.Ordinal);
 
@@ -313,13 +315,13 @@ public class RWGltfReaderTests
     public void RefusesBrokenGlb()
     {
         var aStream = new MemoryStream();
-        Assert.True(new RWGltf_TreeWriter().WriteGlb(MeshTestKit.SampleTree(), aStream));
+        Assert.True(new GltfTreeWriter().WriteGlb(MeshTestKit.SampleTree(), aStream));
         byte[] aGlb = aStream.ToArray();
-        Assert.NotNull(new RWGltf_TreeReader().Read(new MemoryStream(aGlb)));
+        Assert.NotNull(new TreeReader().Read(new MemoryStream(aGlb)));
 
         void assertGlbError(byte[] theData, string theError)
         {
-            var aReader = new RWGltf_TreeReader();
+            var aReader = new TreeReader();
             Assert.Null(aReader.Read(new MemoryStream(theData)));
             Assert.Contains(theError, aReader.Error, StringComparison.Ordinal);
         }
