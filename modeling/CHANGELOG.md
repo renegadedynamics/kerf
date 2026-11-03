@@ -115,3 +115,7 @@ The first packages, for Bento's 3D-models extension.
   failed on loaded machines. Results are as before.
 - Kerf's unit 10J2: the kernel's `NCollection_DataMap`, `NCollection_DynamicArray` and indexed maps are `Dictionary`,
   `List`, `IndexedSet` and `IndexedMap`; the layer's uses (`Vertex`, `OneD`, among others) follow. No behaviour changes.
+- Kerf's unit 10L1: the kernel's geometry and topology getters became properties (`X`, `Direction`, `Type`,
+  `Placement`…) and `Distance`/`Angle` became `DistanceTo`/`AngleTo`; the layer's call sites follow, rewritten by
+  the same tool. The layer reaches the kernel's now-internal engine through `InternalsVisibleTo` until 10M. No
+  behaviour changes.

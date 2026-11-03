@@ -197,12 +197,13 @@ public class TopoDS_ShapeTests
     [Fact]
     public void Generated_subtypes_are_up_to_date()
     {
-        // tools/gen-topods-subtypes.cs copies TopoDS_Shape's members into the subtypes: the members match
-        string[] aShapeMembers = Members(typeof(Shape));
+        // tools/gen-topods-subtypes.cs copies TopoDS_Shape's members into the subtypes: each has them all, but for the
+        // casts only Shape has (TryAs, As); the vertex's, edge's, wire's and face's own data come beside them (unit 10L1)
+        string[] aShapeMembers = [.. Members(typeof(Shape)).Where(m => !m.Contains(" TryAs(") && !m.Contains(" As("))];
         foreach (Type aType in new[] { typeof(Vertex), typeof(Edge), typeof(Wire), typeof(Face),
                                        typeof(Shell), typeof(Solid), typeof(CompSolid), typeof(Compound) })
         {
-            Assert.Equal(aShapeMembers, Members(aType));
+            Assert.Equal(aShapeMembers, Members(aType).Intersect(aShapeMembers));
         }
 
         static string[] Members(Type theType)

@@ -1,6 +1,7 @@
 # API review: topology
 
-*Unit 10D, draft. Namespace `Kerf.Topology`, in ModelingData.*
+*Unit 10D, draft; unit 10L1 implemented it but for `WireCurve`, meshes and the measuring members (README.md, section
+10). Namespace `Kerf.Topology`, in ModelingData.*
 
 ## Main types
 

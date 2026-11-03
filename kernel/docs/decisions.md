@@ -14932,3 +14932,101 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (decision 1453),
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
+
+## Phase 10: unit 10L1, the public API, part 1: the shared types, geometry and topology
+
+16601. **The gp values take their public shape by kerf-rename** (docs/api/kerf-10l1.map, block 1; applied to Kerf.slnx
+       and the two benchmarks, 51,732 edits in 1,524 files): the parameterless getters are properties (`X`, `Y`, `Z`,
+       `Magnitude`, `Direction`, `Location`, `Position`, `Axis`, `Radius`, `Focal`, `Form`, `ScaleFactor`,
+       `Determinant`…; `Direct()` is `IsDirect`, `CoordinateSystem.Ax2()` is `Frame`, `Transform3D.HVectorialPart()` is
+       `RotationPart`, `Transform2D.RotationPart()` (an angle) is `RotationAngle`), `Distance`/`SquareDistance`/`Angle`
+       are `DistanceTo`/`SquareDistanceTo`/`AngleTo`, `GeneralTransform3D.Trsf()` is `ToTransform()`. The members that
+       show the engine (`Xyz`, `Xy`, `Matrix2x2`, `Quaternion3`: `XYZ()`, `Coord()`, the constructors from them,
+       `Transforms(ref …)`, `TranslationXyz()`, OCCT's `TranslationPart()` renamed) and OCCT's 1-based ones (`Coord(i)`,
+       `WithCoord(i, …)`, `Matrix3x3.Value(r, c)` and its indexer, `Column`, `Row`) are internal. New, in `gp/Api`: gp's
+       constants as static properties (`Point3D.Origin`, `Vector3D.Zero`, `Axis3D.XAxis`, `Frame3D.World`, `YZ`, `ZX`,
+       `CoordinateSystem.World`, `Transform3D.Identity`…), `Direction3D.UnitX`, `UnitY`, `UnitZ` and `Vector3D.UnitX`…
+       (not geometry.md's `Direction3D.Z`: a type can't have a static and an instance member of one name, and `Z` is the
+       component, as in System.Numerics), the operators `point - point`, `point ± vector` and `transform * point`
+       (vector, direction), `Deconstruct`, `ToVector3()`, `ToVector2()` and `ToMatrix4x4()` (single precision, row
+       vectors as System.Numerics), `Transform3D.Rotation(EulerSequence, …)` and `GetEulerAngles`, and `TranslationPart`
+       as a vector. Inside `Transform3D` and `Transform2D` the 34 bare uses of the enum member `Identity`, which the new
+       property hides, name `TransformForm.Identity`.
+16602. **The shared types** (docs/api/README.md, sections 2 to 6): `Interval` (a `readonly record struct`; `IsInfinite`
+       is OCCT's `Precision::IsInfinite`, since an unbounded curve's range is ±2e100), `Tolerances` (the derived values
+       computed as OCCT computes them, so they equal the engine's to the bit), `BoundingBox` (`default` is the empty box,
+       which a union ignores; the measurement area builds boxes in 10L2), `CurveDerivatives`, `CurveDerivatives2D`,
+       `SurfaceDerivatives`, `CurvePoint`, `SurfacePoint`; `ShapeHistory` (an engine `History` copied once and never
+       changed: `Modified`, `Generated`, `IsRemoved`, `Entries`, `Then`, `Compose`, and `Create` for a history of the
+       caller's own; the engine's new internal `History.Relations()` lists its maps) and `Built<TShape>` on it,
+       constrained to `IShape<TShape>`. The operation pattern is `EngineOperation.Run` (internal, ModelingAlgorithms):
+       decision 1369's steps 2 to 4 written once. The progress and token become an OCCT progress range; an engine
+       failure (or a fault `ModelAlgo.IsCaughtFailure` accepts) is a failed result, a user break an
+       `OperationCanceledException`, an unfinished algorithm its report's errors or the operation's own, a result of the
+       wrong type a failure; a success carries the history and the report's warnings. 10L2's operations call it.
+       `BRepOffset_Interval` is `OffsetInterval`: the public `Interval` took its name (design-rules 1: no two types of
+       one name; block 4).
+16603. **Curves and surfaces** (blocks 2 and 3): the getters are properties (`FirstParameter`, `LastParameter`, `Period`,
+       `Continuity`, `StartPoint`, `EndPoint`, `Degree`, `BasisCurve`, `Poles`, `Knots`, `Multiplicities`, the conics'
+       `Radius`…; `Circ()`, `Lin()`, `Pln()`… are `Circle`, `Line`, `Plane`…; the surfaces' `UPeriod`…). The lists stay
+       10G's `IReadOnlyList<T>` (decision 1374) and the surfaces' `Grid<T>` (10J2), indexed from 0, rather than
+       geometry.md's spans: callers use LINQ on them. `Weights` is always the weights (ones when not rational; OCCT's
+       null-when-not-rational form is the internal `WeightsOrNull()`), and OCCT's array-filling overloads are the
+       internal `CopyPolesTo`…. New: `Range`, `Kind` (a trimmed curve or surface is its basis's kind), `Evaluate`,
+       `Derivatives(u, order)` (0 to 3) and `DerivativeN` on `Curve3D`, `Curve2D` and `Surface`, and the surface's
+       `Bounds`; constructors of the B-splines and Béziers from spans and grids indexed from 0, which turn OCCT's
+       construction errors into `ArgumentException`s (they build OCCT's way, then keep a copy). Internal: `D0`…`DN`,
+       `Value`, `EvalD0`…`EvalDN` and their `ResD1`…`ResD3`, OCCT's 1-based `Pole(i)`, `Knot(i)`, `Weight(i)` and the
+       copies taking 1-based indices (`WithPole`, `WithKnot`, `KnotInserted`…), `Local…`, `LocateU`, `Resolution`, the
+       parameter transformations, the evaluation representations. The concrete curves and surfaces are sealed and the
+       abstract bases have `private protected` constructors: only the kernel derives from them; their protected members
+       are `private protected` (`private` in a sealed class).
+16604. **Topology** (blocks 5 and 6): `ShapeType()`, `Location()` and `Orientation()` are `Type`, `Placement` and
+       `Orientation`, and the flags `Closed()`, `Infinite()`, `Orientable()` and `Convex()` are `IsClosed`… (`IsConvex`
+       internal), on `Shape` and the eight typed shapes; the internal in-place setter `Orientation(o)` is `Orient(o)`, so
+       that the property can take the name. `Free`, `Locked`, `Modified`, `Checked`, `TShape()` and `IsNotEqual` are
+       internal. New, in `Topology/`: `IShape<TSelf>` (its static `Type` implemented explicitly, since each shape has an
+       instance `Type`), `AsShape`, `TryAs`, `As` and explicit casts that throw `InvalidCastException`; `Explore<T>(avoid)`
+       as an instance method of each shape (a generic extension method would need the receiver's type spelt out,
+       `solid.Explore<Solid, Face>()`), and, as C# 14 extension members for all nine, `Children`, `Vertices()`…`Solids()`
+       (distinct by `IsSame`, in exploration order), `TopLevelShapes()`, `Moved(Transform3D)` (rigid only),
+       `WithChildren` and `WithoutChild` (raw assembly: a frozen copy of the shape's data holding the children);
+       `Compound.Create`, `Wire.Create`, `Shell.Create`, `Solid.Create` and `CompSolid.Create` (10B's builders, misuse as
+       `ArgumentException`), which replace what the modelling layer's `UnsafeAccessor`s reached for; the vertices',
+       edges', faces' and wires' own data through BRep_Tool, TopExp and BRepTools (`Vertex.Point`, `Edge.Range`,
+       `TryGetCurve`, `TryGetCurveOnFace`, `IsSeam`, `ParameterOf`, `FirstVertex`, `Face.TryGetSurface`, `OuterWire`,
+       `UVBounds`, `Wire.OrderedEdges()`); `EdgeCurve` and `FaceSurface` (evaluation, kind, `TryGetLine`…`TryGetTorus`,
+       the face's `Normal` with its orientation), which keep the adaptors' caches and so, unlike design-rules 10, are one
+       per thread; `ShapeComparer.Same` and `Equal`; `ShapeGraph` (each ancestor once: `MapShapesAndUniqueAncestors`).
+       `SubShapes<T>`'s enumerator is mutable, as enumerators are: KERF0003 is off for it.
+16605. **Question 62, read as decision 1349 words it.** `Placement`'s `==`, `Equals` and `GetHashCode` compare the
+       transformations, exactly. The engine compares locations by datum identity as OCCT does (`IsEqual`, `IsDifferent`
+       and `HashCode`, now internal, and `PlacementIdentityComparer` for its location tables: `LocationSet`,
+       `BinaryLocationSet`, the binary writer's), and "whether two shapes are the same depends on it": a shape's
+       `IsSame`, `IsEqual`, `==` and `ShapeComparer` keep identity, so two shapes moved by equal transforms built apart
+       are not the same. The 44 places the engine compared placements with `==` call `IsEqual` (found by marking the
+       operator obsolete). Tests changed one for one: `TopLoc_LocationSemanticsTests` (2: identity through `IsEqual` and
+       the comparer, value through `==`) and the oracle's `Location_algebra` (native's `IsDifferent` against the port's
+       `IsDifferent`, not `!=`; still level 1).
+16606. **No engine type in a public signature.** Found by compiling the kernel once with every type of `Kerf.Engine.*` and
+       `Occt` internal (but `Transient`, question 55): the errors named the public members that showed one, and they
+       became internal (with the overrides that followed them, also in tests: 38 `public override` became
+       `internal override`), then the engine types went back. `InternalsVisibleTo` also goes to Draw-lite's tests, the two
+       benchmarks and, until 10M, `Kerf.Modeling` and its tests (`Build123d.Tests`): question 54. In the same trial the
+       modelling layer's public API showed 12 engine types (`Xyz`, `ColorWithAlpha`, `History`, `MakeShape`,
+       `BuilderAlgo`, `UnifySameDomain`, `Sewing`, `Box`, `OrientedBox`, `CurveAdaptorBase`, `EdgeCurveAdaptor`,
+       `WireCurveAdaptor`): 10M's to replace.
+16607. **277 of the 356 engine types of `Kerf.Engine.Geometry…` and `Kerf.Engine.Topology…` are internal**, and
+       GeomGridEval's 34 before them (their interfaces named the now-internal `ResD1`…). The 79 left public are those a
+       public engine type of another area, or the modelling layer, shows in a signature (`Xyz`, the adaptors, `Box`,
+       `History`, `BrepBuilder`, `Explorer`…): found by rounds of builds, each making public again the types the
+       inconsistent-accessibility errors named (14 rounds). They go internal with the areas that show them.
+16608. **Tests.** Every suite keeps its count. The call sites the renames touched in the tests were rewritten by the tool
+       (669 files of the kernel's tests, 7 of the modelling layer's), and seven tests changed by hand, one for one:
+       16605's three; `DiagnosticShapesTests`' two `Built` tests, which take a `ShapeHistory`;
+       `TopoDS_ShapeTests.Generated_subtypes_are_up_to_date`, as the typed shapes now have members of their own beside
+       Shape's and Shape the casts; and `PublicBuilderTests`' theory `TheModellingLayersMembersArePublic`, now
+       `…AreReachable` (public, or internal with `InternalsVisibleTo` to the modelling layer: `BrepBuilder` is internal). New:
+       `Kerf.Kernel.PublicApi.Tests` (39 tests; it has no `InternalsVisibleTo`, so a test that reaches for the engine
+       doesn't compile) and ModelingAlgorithms.Tests' `PublicApi` folder (19: topology, whose fixtures need the engine's
+       primitives until 10L2's, and `EngineOperation`).

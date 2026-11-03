@@ -1859,3 +1859,24 @@ Phase 10 (part): heap and collections, the rest (unit 10J2).
 - KERF0002 checks the two indexed collections.
 - `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
   (docs/collections-plan.md). Results are unchanged.
+
+Phase 10 (part): the public API, part 1: the shared types, geometry and topology (unit 10L1).
+- Kerf.Geometry's values read as .NET: `X`, `Y`, `Z`, `Direction`, `Location`, `Radius`… are properties;
+  `DistanceTo`, `SquareDistanceTo` and `AngleTo` replace `Distance`, `SquareDistance` and `Angle`; gp's constants are
+  static properties (`Point3D.Origin`, `Direction3D.UnitZ`, `Axis3D.ZAxis`, `Frame3D.World`, `Transform3D.Identity`);
+  points, vectors and transforms combine with operators (`b - a`, `p + v`, `t * p`); `ToVector3()` and `ToMatrix4x4()`
+  convert to System.Numerics.
+- Curves and surfaces: `Evaluate`, `Derivatives(u, order)`, `Range`, `Kind` and the surface's `Bounds` replace OCCT's
+  `D0`…`DN`, `Value` and out-parameter bounds; `Poles`, `Knots`, `Weights` and the other getters are properties indexed
+  from 0; the B-splines and Béziers are built from spans and grids. The concrete classes are sealed.
+- Kerf.Topology: `Type`, `Placement` and `Orientation` properties; `IShape<T>`, `TryAs`, `As` and explicit casts;
+  `Explore<T>()`, `Children`, `Faces()`, `Edges()`… for every shape type; raw assembly (`Compound.Create`,
+  `Wire.Create`…, `WithChildren`, `WithoutChild`); vertices', edges' and faces' data (`Vertex.Point`, `Edge.Range`,
+  `TryGetCurve`, `Face.TryGetSurface`, `OuterWire`…); `EdgeCurve` and `FaceSurface`; `ShapeComparer`; `ShapeGraph`.
+- New shared types: `Interval`, `Tolerances`, `BoundingBox`, `CurveDerivatives`, `SurfaceDerivatives`, `CurvePoint`,
+  `SurfacePoint`, and `ShapeHistory`, which `Built<T>` now carries.
+- `Placement` compares by value (its transformation); shapes still compare their placements by identity, as OCCT.
+- OCCT-shaped members (`D1(u, out …)`, 1-based `Pole(i)`, members taking `Xyz`) and 277 geometry and topology engine
+  types are internal; the kernel's assemblies, its tests, Draw-lite, the benchmarks and, until unit 10M, the modelling
+  layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
+- `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
