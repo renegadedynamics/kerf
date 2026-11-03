@@ -2,7 +2,7 @@
 
 *Unit 10H1, 3 November 2026. The work list for units 10H2 to 10H6 (phase10-plan.md, section 2.4). Counted at Kerf
 `main` db338009 plus 10H1, with `tools/overlay-survey.py` (run `python -I tools/overlay-survey.py src --files` from
-`kernel/` to recount). Decisions 15601 to 15607.*
+`kernel/` to recount). Decisions 15601 to 15606.*
 
 ## What this is
 
@@ -129,7 +129,7 @@ the overlay takes.
 | Face surface, location, tolerance, restriction | `UpdateFace(f, s, l, tol)`, `UpdateFace(f, tol)`, `NaturalRestriction` | `BrepTFace`'s setters | Taken |
 | Sub-shapes added or removed | `Builder.Add`, `Builder.Remove` | `TShape._shapes`, `Modified` | Taken: the working copy's child list |
 | Shape flags | `Shape.Free(bool)`, `Closed(bool)`, … | `TShape`'s flag setters | Taken |
-| Child lists edited directly | none: `tShape._shapes.Append/Clear` | `TShape._shapes` | **Not taken**: 46 sites (13 outside the copy helpers: BOPTools `ConnexityBlock`, `ToolSet`; `Sewing`; `LibraryMakeFace`; LocOpe `WorkingShapes`; ShapeFix `FaceFixer`, `WireVertexFixer`, `ShapeFix_Wire.CopyAtEntry`; TopOpeBRepBuild `WireToFace`). Each unit reroutes its module's through `Builder` or `WorkingOverlay.ForWrite`, or shows they act on unfrozen TShapes only |
+| Child lists edited directly | none: `tShape._shapes.Append/Clear` | `TShape._shapes` | **Not taken**: 46 sites, 17 of them in algorithms (BOPTools `ConnexityBlock`, `ToolSet`; `Sewing`; `LibraryMakeFace`; LocOpe `WorkingShapes`; ShapeFix `FaceFixer`, `WireVertexFixer`, `ShapeFix_Wire.CopyAtEntry`; TopOpeBRepBuild `WireToFace`; the rest are the copy helpers and the hooks themselves). Each unit reroutes its module's through `Builder` or `WorkingOverlay.ForWrite`, or shows they act on unfrozen TShapes only |
 | Representations edited directly | none: `gc.SetRange(…)`, `pr.Parameter(…)` on a representation | the representation | Taken when the representation came from `ChangeCurves()`/`ChangePoints()`. One read through `Curves()`/`Points()` of a frozen TShape without a working copy is the frozen one: editing it throws, as today (fail fast). 53 sites, mostly ModelingData's own |
 | Orientation and location | `Shape.Orientation(o)`, `Location(l)`, `Reverse()`, `Move(l)` | none: they change the shape value, never a TShape | Nothing to take. OCCT reorients a sub-shape in place only by `Remove` and `Add`, counted above |
 

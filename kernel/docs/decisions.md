@@ -13918,3 +13918,91 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1358. **The native recorders go** (`tools/*rec`, 41 folders): they built against the old build123d.net checkout's
        native OCCT, gone since 10B, and decision 1343 froze what they recorded. Two inputs that tests embed moved beside
        those tests.
+
+## Phase 10: unit 10H1, the working overlay
+
+15601. **The working overlay** (plan 2.4; `WorkingOverlay`, internal, ModelingData's BRepTools folder). An operation
+       opens one at its public entry (`WorkingOverlay.Begin(input, context)`), runs OCCT's in-place code on the caller's
+       frozen shape, and ends with `Finish(result, others)`.
+       - **Edits are replacements of TShapes.** The first write into a frozen TShape (through `BrepBuilder`'s updates,
+         `Builder.Add`/`Remove`, or the TShapes' internal setters and `Change…` lists) makes its working copy: a new
+         TShape with its data (`BrepTools.CopyData`: representations copied, geometry shared), flags and children. That
+         write and every later one go there. A frozen TShape is never written; unfrozen ones (the operation's own) are
+         written in place, as in OCCT.
+       - **Reads go through it.** While the overlay is open, a frozen TShape's getters (flags, `ChildCount`, the
+         vertex's, edge's and face's data, their `EmptyCopy`) and `TopoDS_Iterator` (so `TopExp_Explorer` and
+         `MapShapes`) answer from its working copy. `BRep_Tool` and code reading TShapes directly need no change.
+       - **Identity stays the caller's.** Shapes keep the input's TShapes while the operation runs, so `IsSame`, shape
+         maps and the operation's ReShape context are keyed by the caller's own sub-shapes: nothing is re-keyed, at the
+         entry or the end.
+       - **The result shares the rest.** `Finish` walks the result, the shapes in `others` and the context's
+         replacements: a frozen TShape with no change below it is itself; a changed one is its working copy (or a copy
+         of its data when only its children changed) holding the assembled children; the operation's own TShapes get
+         their children replaced in place. A working copy whose data and children equal its original's (a tolerance
+         "raised" to its value; the cache bits ignored, as `KeepUnchanged`) gives back the original. Nothing written,
+         the input itself.
+       - **The history is direct**: `History()` has each of the input's vertices, edges, faces and solids that changed,
+         modified into what stands for it now; `Final(s)` maps any shape; `Composed(h)` maps the operation's own history
+         (already over the caller's sub-shapes) and adds the in-place changes. In the context, a sub-shape changed
+         without a request is recorded as replaced, as `CopyAtEntry` does (decision 643).
+       - **Nesting**: an overlay opened inside another sees the outer one's working copies and keeps its own writes; its
+         result is its own and the outer state doesn't change.
+       - **Threads**: the current overlay is an `AsyncLocal`, so tasks and `Parallel.For` bodies an operation starts
+         share it, and operations elsewhere, on the same frozen inputs, have their own. The accessors read it from a
+         thread static the `AsyncLocal`'s change handler keeps equal, and skip most lookups with a small filter of the
+         written TShapes' hashes. Working copies are made under a lock (a `ConcurrentDictionary` for the reads).
+       - **Without an overlay nothing changes**: the same exceptions on writes into frozen shapes
+         (`LockedShapeException`, `ImmutableObjectException`), the same reads. When no overlay is open anywhere, an
+         accessor costs one more static read; when one is open somewhere, a frozen TShape's accessor also reads a
+         thread static (decision 15605's measurements).
+       - **Not taken** (overlay-survey.md section 3): code editing `TShape._shapes` itself (17 sites in algorithms) and representations obtained through the read-only `Curves()`/`Points()` of a frozen TShape without a
+         working copy, which stay frozen and throw as before (fail fast). 10H2 to 10H6 reroute their modules' sites.
+15602. **The context the builder consults, not an explicit builder and tool pair.** Both were prototyped on
+       ShapeFix_ShapeTolerance's `LimitTolerance` (`WorkingOverlayPrototypeTests`; they give the same result).
+       - **A, an overlay-aware pair** the algorithm calls instead of `BRep_Builder` and `BRep_Tool`: `LimitTolerance`
+         needed each of its 6 reads and writes rewritten and the pair passed down. On ShapeFix_Edge, the pilot, the pair
+         would have to reach every helper the fixes call: ShapeAnalysis_Edge, ShapeBuild_Edge, ShapeFix_EdgeProjAux,
+         ShapeFix_ShapeTolerance, BRepLib's `SameParameter` and BRepAdaptor, about 300 `BRep_Tool`, builder and TShape
+         sites in 8 classes; across the engine `BRep_Tool` alone is called at about 6,200 sites. Every helper would
+         need an overlay parameter or a second form, and a read missed would silently see the old data.
+       - **B, a context consulted by the TShapes, the builder and the iterator**: no edit in the algorithm or its
+         helpers; the hooks are in seven files of ModelingData (TShape, BrepTVertex, BrepTEdge, BrepTFace, BrepBuilder's
+         29 `Locked()` tests, Builder, Iterator). A missed write still throws, as today. Chosen.
+       - The cost of B is process-wide state, which plan 2.7 otherwise removes. It is scoped to one operation and flows
+         with its tasks, which a static never did; 10I keeps it.
+15603. **Built on `KeepUnchanged`'s machinery, not on ReShape.** The working copies are made with
+       `BrepTools.CopyData`/`CopyFlags` (decision 416's exact copy, one TShape at a time) and compared with `IsSameData`
+       (`KeepUnchanged`'s test), now internal rather than private; `Finish` is `KeepUnchangedIn` without the copy.
+       `BRepTools_ReShape` and `ShapeBuild_ReShape` record replacements of shapes that an algorithm requests and rebuild
+       parents when applied; they can't make the algorithm's later reads see an edit, which is what in-place code
+       needs. They stay what they are, the algorithms' own contexts, now keyed by the caller's shapes directly
+       (15601). `CopyAtEntry`, `ExactCopyForWrite`, `KeepUnchanged…` and `CopyFrozenForWrite` stay until 10H6 removes
+       them with the last site.
+15604. **The overlay survey** (docs/overlay-survey.md, `tools/overlay-survey.py`): 113 copy-at-entry sites before
+       10H1 (Booleans 10, construction 34, healing 38, offsets 5, fillets 2, features 6, other 18), 110 after the
+       pilot; 227 frozen-shape checks and markers; the in-place edit kinds with the builder method and TShape member
+       each reaches, and how the overlay takes it. It is 10H2 to 10H6's work list, with a recipe (section 6).
+15605. **The pilot: ShapeFix_Edge's twins on the overlay**, with ShapeFix_ShapeTolerance's (where the prototypes ran).
+       Each twin opens an overlay, runs the in-place fix on the caller's edge and finishes; `CopyAtEntry` is gone from
+       both. Level 1: the tests are unchanged, and `The_pilot_gives_what_copy_at_entry_gave` compares six twins with
+       the copy-at-entry path value for value (flags, tolerances, ranges, representations, geometry by identity) and
+       sharing for sharing. Measured (a fix repeated 2,000 times, Release, one thread):
+       - `AddPCurveFixed` (a frozen circle on a frozen cylinder): 7.9 to 18.9 µs and 12.3 KB on a copy; 5.9 to 14.8 µs
+         and 9.2 KB on the overlay (allocation −25%).
+       - `ToleranceLimited` (a frozen box, every tolerance limited): 24 to 38 µs and 87.8 KB; 25 to 27 µs and 50 KB
+         (−43%).
+       - `SameParameterFixed` with nothing to do: 3.5 to 4.4 µs and 10.2 KB; 2.4 to 3.0 µs and 7.1 KB (−30%).
+       - The ranges are the machine's noise (other units ran beside): the best of 9 rounds, in several runs. On `main`
+         the copy path measured the same (18.9 to 19.9 µs, 38 to 42 µs, 5.4 µs).
+       - The hooks' cost on reads (a loop of `BRep_Tool` reads and an explorer over a frozen box, 1,000 times): 1.42 to
+         1.80 ms on `main`; with the hooks and no overlay open, 1.42 to 2.30 ms, within the noise; with an overlay open on
+         another thread, 1.70 to 1.96 ms; inside an overlay holding a working copy, 2.03 to 2.49 ms (about 1.3 times).
+15606. **Rules for 10H2 to 10H6** (overlay-survey.md section 6). Open the overlay at the public entry only, run on the
+       caller's shape, and pass everything the operation hands out through `Finish` (or `Final`): a generated shape
+       left out holds the caller's TShapes without the edits. Histories are kept over the caller's sub-shapes, as
+       OCCT keeps them; `Composed` adds the in-place changes. Each unit removes its module's copy-at-entry sites and
+       the `// OCCT.NET: frozen` workarounds the overlay makes unnecessary, reroutes its direct `_shapes` and
+       read-only-representation edits, and keeps its tests at level 1, or level 2 with a reason. The last (10H6)
+       removes `CopyAtEntry`, `ExactCopyForWrite`, `KeepUnchanged…`, `CopyFrozenForWrite`, `HoldsFrozen` and the
+       `…Unfrozen`/`…OfFrozen` builder forms; the frozen-shape exceptions stay as long as a write outside an overlay can
+       reach a frozen shape.
