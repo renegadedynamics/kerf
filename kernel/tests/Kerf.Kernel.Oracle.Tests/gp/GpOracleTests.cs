@@ -125,11 +125,49 @@ public class GpOracleTests(ITestOutputHelper output)
 
                 int aPower = anOracle.Int(-4, 5);
                 using var aNPow = aN1.Powered(aPower);
-                anOracle.Same(aNPow, aT1.Powered(aPower), $"{aKind1} to the power {aPower}", 1e-10);
+                if (aT1.Form() == TransformForm.CompoundTrsf && aT1.ScaleFactor() != 1.0 && Math.Abs(aPower) >= 3)
+                {
+                    SamePowerOfScaled(anOracle, aNPow, aT1, aPower, $"{aKind1} to the power {aPower}");
+                }
+                else
+                {
+                    anOracle.Same(aNPow, aT1.Powered(aPower), $"{aKind1} to the power {aPower}", 1e-10);
+                }
             }
         }
 
         anOracle.Report("gp_Trsf composition");
+    }
+
+    // Plan 3.2's third level (occt-issues.md, gp_Trsf::Power's compound branch, unit 10K3's row; Kerf decision 16802):
+    // OCCT squares a scaled transformation's scale before scaling the square's translation with it, so from the cube
+    // on its translation is wrong. The form and the matrix are compared with native's; the translation with the
+    // transformation applied |N| times (to the origin), native's read as recorded.
+    private static void SamePowerOfScaled(Oracle theOracle, N.gp_Trsf theNative, in Transform3D theT, int thePower, string theWhat)
+    {
+        Transform3D aPort = theT.Powered(thePower);
+        Transform3D aStep = thePower > 0 ? theT : theT.Inverted();
+        var aMoved = new Point3D();
+        for (int k = 0; k < Math.Abs(thePower); k++)
+        {
+            aMoved = aMoved.Transformed(aStep);
+        }
+        Assert.Equal((int)theNative.Form(), (int)aPort.Form());
+        for (int i = 1; i <= 3; i++)
+        {
+            for (int j = 1; j <= 4; j++)
+            {
+                if (j < 4)
+                {
+                    theOracle.Same(theNative.Value(i, j), aPort.Value(i, j), $"{theWhat}({i},{j})", 1e-10);
+                }
+                else
+                {
+                    _ = theNative.Value(i, j);
+                    Assert.Equal(aMoved.Coord(i), aPort.Value(i, j), 1e-9 * Math.Max(1.0, Math.Abs(aMoved.Coord(i))));
+                }
+            }
+        }
     }
 
     [Fact]

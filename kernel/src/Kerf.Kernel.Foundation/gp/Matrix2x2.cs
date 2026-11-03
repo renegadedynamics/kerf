@@ -168,10 +168,12 @@ public struct Matrix2x2 : IEquatable<Matrix2x2>
 
     internal void Multiply(in Matrix2x2 other)
     {
-        double t00 = _m00 * other._m00 + _m01 * other._m10;
-        double t10 = _m10 * other._m00 + _m11 * other._m10;
-        _m01 = _m00 * other._m01 + _m01 * other._m11;
-        _m11 = _m10 * other._m01 + _m11 * other._m11;
+        // other's values are read first: it may be this matrix (M.Multiply(M) squares it; decision 16802)
+        double o00 = other._m00, o01 = other._m01, o10 = other._m10, o11 = other._m11;
+        double t00 = _m00 * o00 + _m01 * o10;
+        double t10 = _m10 * o00 + _m11 * o10;
+        _m01 = _m00 * o01 + _m01 * o11;
+        _m11 = _m10 * o01 + _m11 * o11;
         _m00 = t00;
         _m10 = t10;
     }
@@ -228,8 +230,6 @@ public struct Matrix2x2 : IEquatable<Matrix2x2>
                     break;
                 }
 
-                // OCCT squares aTemp in place: Multiply reads theOther.myMat[0][1] after writing it (aliasing,
-                // docs/occt-issues.md); `in` passes aTemp by reference, so the same result as OCCT
                 temp.Multiply(temp);
                 npower = npower / 2;
             }

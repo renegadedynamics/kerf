@@ -14949,3 +14949,21 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        curve is checked against the curve before the raise, and native's recorded poles make the curve the chain's
        later edits work on (`Geom2dOracle.SameStructure`'s `thePolesFromNative`), so they ask native what they asked
        when recorded. No other recording moved.
+16802. **gp's seven rows** (occt-issues.md, unit 1's gp table; one commit, as the brief allows). Each is tested against an
+       independent reference (`GpFixedBugsTests`, eight tests, all failing before):
+       - `Direction3D.Mirrored(Axis3D)` takes the axis direction's Z for its third component: the reflection
+         2(d·a)a − d, the vector's mirror.
+       - `Matrix2x2.Multiply` reads the other matrix before writing, so squaring in place (`M.Multiply(M)`) squares:
+         the matrix, 2D transformation and 2D affinity powers of 2 or more, against products of the factor.
+       - `Transform2D.Multiplied`, rotation by rotation, adds the other rotation's translation when the other has one
+         (OCCT tested this one's), as gp_Trsf does: (T1 T2)(p) = T1(T2(p)).
+       - `Transform2D.Powered`'s compound branch no longer folds the scale into the matrix's diagonal, and, like
+         `Transform3D.Powered`'s, scales the square's translation by the scale before squaring it. The 3D branch had
+         the same mistake, which the 2D row's tests found: a new row, fixed here too (OCCT's gp_Trsf::Power).
+       - `Hyperbola2D.Asymptote1` and `Asymptote2` point along X ± (b/a)Y (the far points of the branches), and the
+         second no longer throws for equal radii; `Directrix2` is at the centre less (a/e)X, where the second branch's
+         points are e times as far from the second focus as from it.
+       - `GeneralTransform3D.Powered` inverts an affinity raised to a power below −1.
+       One oracle replay moves to plan 3.2's third level: `GpOracleTests.Trsf_composition`'s powers of scaled compound
+       transformations from the cube on (`SamePowerOfScaled`: form and matrix against native's, the translation
+       against the transformation applied |N| times). The 2D rows reach no recording.
