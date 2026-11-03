@@ -14302,3 +14302,84 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          most 15 s of wall time: alone they take 1 to 3 s; twelve at once take 10 to 12 s, on `main` as on this branch
          (measured both ways); with the class's other cases and other units' suites beside, 18 to 21 s. A timing check
          under load, not a regression; it passed in the first full run.
+
+## Phase 10: unit 10H4, no copy at entry in healing
+
+16101. **Healing's copy-at-entry sites run in working overlays** (overlay-survey.md section 6), 34 of the 35: ShapeFix
+       (Shape, Solid, Shell, Face, Wire, WireVertex, Wireframe, FixSmallFace, FreeBounds, ComposeShell, the connect
+       fixers, the statics' twins), ShapeBuild_Edge's and ShapeConstruct's twins, ShapeUpgrade's dividers and
+       UnifySameDomain, ShapeProcess's context and its modifiers, and sewing. Each runs OCCT's in-place code on the
+       caller's shapes; the copies' re-keying goes with the copies (ShapeFix_Shape's fixed-shape keys, UnifySameDomain's
+       kept shapes, the context's `Working`/`Copied`, sewing's `ToWork`/`FromWork` maps, the connect fixers' recorded
+       shapes, ShapeFix_Wire's Free flags). ShapeContext's `RecModif` is OCCT's again, and its re-copy when an operator
+       published the result (`InternalEnsureWritable`) goes: the overlay takes writes into frozen shapes. ShapeFix_Face's
+       `Add` adds the wire to the loaded face in the overlay, as OCCT adds it to the caller's, in place of a shallow copy
+       (a direct `_shapes` edit). The one site left is `OperLibrary`'s `HoldsFrozen`, asked only outside an overlay
+       (16104). The modelling layer's three private copies before ShapeFix (`Fix`, the 2D chamfer, `FixDegenerateEdges`)
+       go too.
+16102. **Three ways in, by what the tool is.**
+       - **One call, OCCT-shaped** (ShapeFix_Shape/Solid/Shell's `Perform`, `UnifySameDomain.Build`, the dividers'
+         `Perform`, ShapeProcess's run of operators, sewing's `Perform`, the free-bounds fixer): an overlay of its own,
+         unless one that takes writes is open here (`WorkingOverlay.BeginUnlessWriting`). Then the tool runs in place in
+         that one, as OCCT's in-place tools write into the shapes the tool that called them works on: ShapeFix_Shape →
+         Solid → Shell → Face → Wire, ShapeProcess → ShapeFix, the dividers → ComposeShell, all in the outermost
+         overlay, as they were all on one copy. A nested overlay would keep each inner tool's writes from the outer one.
+       - **Several public calls** (a load, fixes one by one, a result: ShapeFix_Face, _Wire, _WireVertex, _Wireframe,
+         _FixSmallFace, _ComposeShell): an overlay kept from the first fix to the public result, current only inside each
+         call (`WorkingOverlay.Detached`, `Enter`; `ForTool` borrows the current one instead, which the tool then doesn't
+         finish). Leaving an overlay open between calls would let a caller's own writes into frozen shapes pass silently,
+         and leak if the result were never asked for. The cost: between a fix and the result the tool's shapes show
+         the changes only to its fixes (the edges of ShapeFix_Wire's `WireData()`, FixSmallFace's returned shapes); the
+         results are as before.
+       - **Functional twins** (`…Fixed`, `SameParametered`, `RangesCopied`, `PCurvesJoined`, `Built`, the connect
+         fixers' `Build`): always their own overlay (nested if one is open), as 10H1's pilot, now with a caller's
+         unfrozen TShapes (a compound built to hold frozen edges) copied first (`WithUnfrozenCopied`) and given back where
+         left equal (`UncopiedWhereUnchanged`), so a twin never writes into a caller's shape, frozen or not. The pilot's
+         twins take the same step.
+16103. **The overlay, two fixes and its additions.** `Finish` maps the input's sub-shapes before it assembles: an
+       unfrozen input (a Boolean's result, which `SimplifyResult` unifies) has its children replaced in place by the
+       assembly, and mapped afterwards it no longer held the sub-shapes that changed, so `Composed` lost them
+       (BRepAlgoAPI's simplified history and six defeaturing histories differed from native). Added: `Writing`,
+       `BeginUnlessWriting`, `Detached`, `ForTool`, `Enter` and its `Scope`, `Initial` (the inverse of `Final`, for a
+       tool's queries keyed by the shapes it worked with: sewing's sections), `IsReadOnly`, `WithUnfrozenCopied`,
+       `CopiedIn`, `UncopiedWhereUnchanged` (`WorkingOverlay.Tools.cs`). A detached overlay is counted open only inside
+       its `Enter` scopes and needs no disposal.
+16104. **A frozen check that refuses a write asks `WorkingOverlay.IsReadOnly`** (frozen, and no overlay here takes
+       writes), not `IsFrozen`: inside an overlay the frozen input stands where the copy stood, and the write goes
+       where OCCT's does. ShapeBuild_Edge's and ShapeConstruct's exception filters, ShapeFix_EdgeProjAux's reversed
+       pcurve, ShapeFix_Solid's Free flags, `BRepTools::Update(face)`, and BRepLib's SameParameter, which edits the
+       representations it reads through `Curves()`: in an overlay it takes them through `ChangeCurves()`, the working
+       copy's (sewing POINT-TANK.brep gave lines where native gives the approximated pcurves; now identical).
+       `OperLibrary` runs the modifiers in the mutable-input mode inside an overlay. Left as they are, outside healing
+       or harmless: BRepLib's no-op tolerance write on a frozen vertex, `BRep_Tool::Range`'s Modified flag, the
+       modifier's flags, LibraryMakeWire's vertex choices (construction, 10H3).
+16105. **The tests stay at level 1.** Every suite keeps its counts and results; no test moved to level 2, and the
+       Draw-lite healing groups' cases (heal, sewing, shape upgrade and divide, shape processing, defeaturing) have the
+       same statuses case by case. One test changed because it tested the copy, not a result:
+       `LoadWireData_WithFrozenEdges_IsCopiedAtTheFirstFix` is `…_IsFixedInAWorkingOverlay` (the wire data holds the
+       caller's frozen edges between the fixes). New: `HealingInputsUnchangedTests` (15 cases: ShapeFix_Shape on four
+       of OCCT's heal-group inputs, the shell, solid, face, wire and vertex fixers on every sub-shape of one, the
+       wireframe, small-face, free-bounds and connect fixers, sewing, UnifySameDomain, the dividers, the twins, every
+       ShapeProcess operator on two inputs, and no overlay left open after a tool's calls) and
+       `StepHealingInputsUnchangedTests` (STEP import's "FromSTEP" sequence on a frozen imported shape), each checking
+       the input untouched (`ShapeSnapshot`), the result frozen, and sub-shapes or geometry shared. The modelling layer's
+       `clean` and `fix` cases already check its inputs. UnifySameDomain still makes new faces where it adds p-curves
+       to their edges (decision 1382's defeaturing face): a face holding a changed edge is a changed face.
+16106. **Measured** (Release, serial, one machine shared with other units: the times carry its noise). The new
+       `Kerf.Kernel.Benchmarks -- healing` reads the dataset's 289 STEP files up to 400 kB, then runs ShapeFix_Shape and
+       UnifySameDomain on each imported (frozen) shape, the fastest of three runs each; before is `main` at 4052982b.
+       - Allocation: STEP import with its healing 6,519 MB before, 6,431 MB after (−1.4%); ShapeFix_Shape 5,548 MB,
+         5,365 MB (−3.3%); UnifySameDomain 1,569 MB, 1,364 MB (−13%): each now writes working copies of the TShapes it
+         changes, where it copied the whole input.
+       - Time: 9,043, 4,614 and 1,185 ms before; 10,852, 5,742 and 1,316 ms in one run after and 8,295, 4,678 and
+         1,029 ms in another: within the machine's noise.
+       - Bento's benchmark (11 examples, 7 passes): the same results; allocation per example the same or lower (the
+         working point 5.8 to 5.4 MB, nesting locations 36.2 to 33.0, the for-loops 22.0 to 20.1 and 17.1 to 15.7, the
+         largest 802 MB either way); median recalculation 1,546 ms before, 1,646 and 1,301 ms in two runs after.
+       - Tests: ModelingAlgorithms 4,763 (4,748 and the 15 new; 9 skipped), DataExchange 276 (2 new; 1 skipped),
+         ModelingData 3,145, Oracle 383, the modelling layer 1,876, Draw-lite's healing classes 23 (every case's status
+         as before).
+16107. **The survey recounted** (overlay-survey.md): copy at entry 105 → 71 sites (healing 35 → 1); frozen-shape checks
+       221 → 187 (healing 83 → 45: the copy's markers gone, the write checks asking `IsReadOnly`); healing's direct
+       `_shapes` edits 8 → 4, the four left filling compounds its tools make. Section 7 records 10H4's patterns for
+       10H5 and 10H6.

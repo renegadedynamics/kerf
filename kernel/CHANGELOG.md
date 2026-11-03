@@ -1758,3 +1758,17 @@ Phase 10 (part): state (unit 10I).
 - Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
   the modelling layer's parts on many threads, each giving its serial BRep text.
 
+Phase 10 (part): no copy at entry in healing (unit 10H4).
+- ShapeFix (every fixer and the statics' twins), ShapeBuild's and ShapeConstruct's twins, ShapeUpgrade's dividers and
+  `UnifySameDomain`, ShapeProcess's operators and sewing no longer copy a frozen input: they run OCCT's in-place code on
+  the caller's shape in a working overlay, and a tool called by another (ShapeFix_Wire by ShapeFix_Face, ShapeFix by
+  ShapeProcess) writes into the outer one's, as in OCCT. Results are as before and share more of the input; the input is
+  never written, and a twin no longer writes into a caller's unfrozen compound either.
+- Tools fixed over several calls (ShapeFix_Face, _Wire, _WireVertex, _Wireframe, _FixSmallFace, _ComposeShell) keep
+  their overlay between calls without leaving it open: the shapes they hold show the fixes only in their result.
+- The overlay maps its input before assembling the result, which corrects the history of an operation on an unfrozen
+  input whose sub-shapes it changed (a Boolean's simplified result). BRepLib's SameParameter and the frozen-shape checks
+  write where OCCT does inside an overlay.
+- `HealingInputsUnchangedTests` and a STEP import healing test check the inputs untouched; the benchmarks gain
+  `healing` (STEP import, ShapeFix_Shape and UnifySameDomain on the dataset's STEP files).
+

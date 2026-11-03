@@ -95,3 +95,7 @@ The first packages, for Bento's 3D-models extension.
   diagnostics are the kernel's (a failed Boolean's alerts, with their codes and shapes) and whose inner exception is the
   kernel's own (OCCT.NET's exception type before). A STEP file that can't be read keeps its `ArgumentException`, with
   the exchange status's message. The 2D chamfer's history is read without an exception per vertex.
+- Kerf's unit 10H4: `Fix`, the 2D chamfer and `FixDegenerateEdges` hand the shape to ShapeFix directly instead of a
+  private copy: the kernel's healing no longer writes into its input, so the results share what wasn't fixed. Results
+  are otherwise as before.
+
