@@ -320,7 +320,7 @@ public partial struct Shape : IEquatable<Shape>
     internal static int HashCodeOf(TShape? tShape, in Placement location)
     {
         int hl = location.HashCode();
-        int ht = RuntimeHelpers.GetHashCode(tShape);
+        int ht = tShape?._hash ?? 0;
         return hl == 0 ? ht : HashCode.Combine(ht, hl);
     }
 

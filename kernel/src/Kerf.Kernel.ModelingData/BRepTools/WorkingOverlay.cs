@@ -253,7 +253,7 @@ internal sealed class WorkingOverlay : IDisposable
 
     private static (int Word, long Bit) FilterBit(TShape tShape)
     {
-        int hash = RuntimeHelpers.GetHashCode(tShape) & (FilterWords * 64 - 1);
+        int hash = tShape._hash & (FilterWords * 64 - 1);
         return (hash >> 6, 1L << (hash & 63));
     }
 
