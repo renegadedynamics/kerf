@@ -13,6 +13,8 @@
 //     -- booleans-profile [filter]: the port's pave filler and builder apart;
 //   ... -- stepfile [steprec-bench.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the port's fastest of 5
 //     parses from memory, against native's from tools/steprec/build.ps1 -Bench when its file is given (StepFileBench.cs);
+//   ... -- construction [filter]: prisms, revolutions, pipes, lofts and the makers on frozen inputs (unit 10H3,
+//     Construction.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
 // Pass the same -p:OcctSourceDir as for the tests.
 
@@ -67,6 +69,11 @@ if (args.Length > 0 && args[0] == "booleans-profile")
 if (args.Length > 0 && args[0] == "stepfile")
 {
     StepFileBench.Run(aFilter);
+    return 0;
+}
+if (args.Length > 0 && args[0] == "construction")
+{
+    Construction.Run(aFilter);
     return 0;
 }
 if (args.Length > 0 && args[0] == "alloc")
