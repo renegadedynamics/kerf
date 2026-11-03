@@ -14681,3 +14681,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the arcs and the analytic extrema (`BndLibTurnedConicTests`; the two pinned GeomBndLib tests rewritten). The box
        oracle's parabolic edges (`BndLibOracleTests`, three tests) move to plan 3.2's third level: the port's box, and
        its oriented box, contain native's.
+16503. **Extrema_ExtCS reports the point on the line** (row 265). Where a line's range, clipped to the surface's box,
+       is shorter than Precision::Confusion, OCCT passed a default Extrema_POnCurv's point (the origin) as the point on
+       the curve; it is now the range's middle, the point projected. Test: a short line against a torus
+       (`Extrema_ExtCSTests`). Two oracle replays move to the third level, accepting native's origin: BRepExtrema's twin
+       scenes (a box edge at the origin, so native's origin was within 5e-8 of the right point) and Draw-lite's
+       `distmini` on MODERN_Refrigerator_1.brep, whose contact points native reported at the origin where they are at
+       (5e-8, 70, 150) and the like.
