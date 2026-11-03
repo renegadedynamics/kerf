@@ -35,7 +35,7 @@ internal static class TrihedronOracle
                 continue;
             }
             var anOracle = new Oracle(theOutput, theSeed + aKind);
-            for (int i = 0; i < theCases; i++)
+            foreach (int i in Tape.Budget(theCases))
             {
                 (N.Geom_Curve aNC, Geom_Curve aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)

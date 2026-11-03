@@ -720,7 +720,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
     {
         var aTally = new Tally("modifications");
         var aRandom = new Random(3204);
-        foreach (string aSource in Tape.Budget(SmallFiles(), isSpread: true, isRollingBack: true))
+        foreach (string aSource in Tape.Budget(SmallFiles(), isSpread: true))
         {
             string aName = Path.GetFileName(aSource);
             (string aFile, N.TopoDS_Shape aShape) = NativeRead(aSource);

@@ -80,7 +80,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261101);
         using var aRun = new ShapeFixOracleRun(output, "usd");
         var aTally = new Tally();
-        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true, isRollingBack: true))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {

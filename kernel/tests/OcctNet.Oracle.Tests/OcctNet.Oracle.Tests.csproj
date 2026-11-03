@@ -19,8 +19,8 @@
     <Using Include="OcctNative" Alias="N" Condition="'$(OracleDirect)' != 'true'" />
     <Using Include="Build123d.Occt" Alias="N" Condition="'$(OracleDirect)' == 'true'" />
     <Using Include="OcctNative.Tape" Alias="Tape" />
-    <!-- Native OCCT's results, one file per test class -->
-    <EmbeddedResource Include="Recordings\*.tape.gz" LogicalName="Recordings.%(Filename)%(Extension)" />
+    <!-- Native OCCT's results, one file per test class; native's log of build123d.NET's suite (decision 15003) -->
+    <EmbeddedResource Include="Recordings\*.tape.gz;Recordings\*.native.gz" LogicalName="Recordings.%(Filename)%(Extension)" />
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>OracleRecordingsDir</_Parameter1>
       <_Parameter2>$(MSBuildProjectDirectory)\Recordings\</_Parameter2>

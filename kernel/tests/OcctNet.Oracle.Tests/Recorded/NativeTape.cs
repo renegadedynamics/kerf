@@ -29,7 +29,16 @@ public static partial class Tape
     /// <summary>The environment variable that switches recording on.</summary>
     public const string RecordVariable = "OCCTNET_ORACLE_RECORD";
 
-    private static readonly AsyncLocal<Session?> s_session = new();
+    // the running test's session, in a holder: a theory's row (Row, called in the test) replaces it for the After hook,
+    // which an AsyncLocal changed inside the test method wouldn't see
+    private sealed class Holder
+    {
+        public Session? Value;
+    }
+
+    private static readonly AsyncLocal<Holder?> s_holder = new();
+
+    private static Holder s_session => s_holder.Value ??= new Holder();
     private static readonly ConcurrentDictionary<string, Dictionary<string, byte[]>> s_files = new(StringComparer.Ordinal);
     private static readonly Lock s_saveLock = new();
 
@@ -56,7 +65,7 @@ public static partial class Tape
         ?? throw new InvalidOperationException("The assembly doesn't say where its recordings are (OracleRecordingsDir)");
 
     /// <summary>The running test's session.</summary>
-    internal static Session Current => s_session.Value
+    internal static Session Current => s_holder.Value?.Value
                                       ?? throw new InvalidOperationException("A native call outside a test: native OCCT is recorded per test "
                                                                              + "(a static field or a constructor can't call it)");
 
@@ -64,7 +73,7 @@ public static partial class Tape
     internal static void Begin(MethodInfo theMethod)
     {
         Type aClass = theMethod.ReflectedType ?? theMethod.DeclaringType!;
-        s_session.Value = new Session(aClass.Name, theMethod.Name);
+        s_holder.Value = new Holder { Value = new Session(aClass.Name, theMethod.Name) };
     }
 
     /// <summary>
@@ -139,18 +148,24 @@ public static partial class Tape
     public static int Cases(int theLive, int theRecorded) => IsSampled ? theRecorded : theLive;
 
     /// <summary>The recorded bytes a loop under <see cref="Budget{T}"/> may take by default (uncompressed).</summary>
-    public const long DefaultBudget = 1_500_000;
+    public const long DefaultBudget = 750_000;
 
     /// <summary>
     /// A loop's items, within a budget of recorded bytes (decision 15002): live, all of them; when recording, the items in
-    /// turn while the loop's recording stays under <paramref name="theBudget"/>, the rest skipped; when replaying, the
-    /// items recorded. With <paramref name="isSpread"/> the items are taken in a spread order (every seventh first, then
-    /// the next...), so a corpus's sample reaches across it; with <paramref name="isRollingBack"/> an item whose own
-    /// recording passes a quarter of the budget is dropped again (its native calls, replayed, would be skipped too):
-    /// only for loops whose items don't depend on each other, nor on a random generator the loop shares.
+    /// turn while the loop's recording stays under <paramref name="theBudget"/>; when replaying, the items recorded. In
+    /// order and lazily (for items from a random generator, or that make native calls themselves), the loop stops at the
+    /// budget; with <paramref name="isSpread"/> (a corpus), the items are taken in a spread order (every seventh first,
+    /// then the next...) so the sample reaches across the corpus, and those past the budget are skipped.
+    /// <paramref name="theWeight"/> and <paramref name="theMaxWeight"/> leave out, as recorded, the items too large to
+    /// keep (a corpus file's size, say).
     /// </summary>
-    public static IEnumerable<T> Budget<T>(IEnumerable<T> theItems, long theBudget = DefaultBudget, bool isSpread = false, bool isRollingBack = false)
+    public static IEnumerable<T> Budget<T>(IEnumerable<T> theItems, long theBudget = DefaultBudget, bool isSpread = false,
+                                           Func<T, long>? theWeight = null, long theMaxWeight = long.MaxValue)
     {
+        if (IsSampled && theWeight is not null)
+        {
+            theItems = theItems.Where(t => theWeight(t) <= theMaxWeight);
+        }
         if (!IsSampled)
         {
             foreach (T anItem in theItems)
@@ -161,53 +176,25 @@ public static partial class Tape
         }
         Session aSession = Current;
         long aStart = aSession.Recorded;
-        if (!isSpread)
+        IEnumerable<T> anOrder = isSpread
+            ? theItems.Select((t, i) => (t, i)).ToList().OrderBy(p => p.i % 7).ThenBy(p => p.i).Select(p => p.t)
+            : theItems;
+        foreach (T anItem in anOrder)
         {
-            // in order, lazily (the items may come from a random generator, or make native calls): stop at the budget
-            foreach (T anItem in theItems)
+            bool isTaken = IsRecording ? aSession.Take(aSession.Recorded - aStart < theBudget) : aSession.Take(null);
+            if (isTaken)
             {
-                Session.Mark aMark = IsRecording ? aSession.MarkHere() : default;
-                bool isTaken = IsRecording ? aSession.Take(aSession.Recorded - aStart < theBudget) : aSession.Take(null);
-                if (!isTaken)
-                {
-                    yield break;
-                }
                 yield return anItem;
-                if (IsRecording && isRollingBack && aSession.Recorded - aMark.Position > theBudget / 4)
-                {
-                    aSession.Rollback(aMark);
-                    aSession.Take(false);
-                    yield break;
-                }
             }
-            yield break;
-        }
-        List<T> anItems = [.. theItems];
-        foreach (T anItem in anItems.Select((t, i) => (t, i)).OrderBy(p => p.i % 7).ThenBy(p => p.i).Select(p => p.t))
-        {
-            if (!IsRecording)
+            else if (!isSpread)
             {
-                if (aSession.Take(null))
-                {
-                    yield return anItem;
-                }
-                continue;
-            }
-            if (aSession.Recorded - aStart >= theBudget)
-            {
-                aSession.Take(false);
-                continue;
-            }
-            Session.Mark aMark = aSession.MarkHere();
-            aSession.Take(true);
-            yield return anItem;
-            if (isRollingBack && aSession.Recorded - aMark.Position > theBudget / 4)
-            {
-                aSession.Rollback(aMark);
-                aSession.Take(false);
+                yield break;
             }
         }
     }
+
+    /// <summary>A file's size, as a weight for <see cref="Budget{T}"/>.</summary>
+    public static long FileSize(string thePath) => new FileInfo(thePath).Length;
 
     /// <summary>A loop of <paramref name="theCount"/> cases (0 to count - 1), in order, within a budget: see <see cref="Budget{T}"/>.</summary>
     public static IEnumerable<int> Budget(int theCount, long theBudget = DefaultBudget) => Budget(Enumerable.Range(0, theCount), theBudget);
@@ -334,29 +321,6 @@ public static partial class Tape
                     throw new InvalidOperationException($"{File}.{Key}: a budgeted loop's item, where the recording has {aStep}");
                 }
                 return Reader.Byte() != 0;
-            }
-        }
-
-        /// <summary>Where the tape is, to go back to.</summary>
-        public readonly record struct Mark(long Position, int Strings, int Ids, uint Running, int Calls);
-
-        public Mark MarkHere()
-        {
-            lock (myLock)
-            {
-                return new Mark(myWriter!.Length, myWriter.StringCount, myIds, myRunning, myCalls);
-            }
-        }
-
-        /// <summary>Drops what was recorded since <paramref name="theMark"/>.</summary>
-        public void Rollback(Mark theMark)
-        {
-            lock (myLock)
-            {
-                myWriter!.Truncate(theMark.Position, theMark.Strings);
-                myIds = theMark.Ids;
-                myRunning = theMark.Running;
-                myCalls = theMark.Calls;
             }
         }
 
@@ -628,7 +592,7 @@ public static partial class Tape
                     theHash.Add(aHandle.Id);
                     break;
                 case string aText when IsPath(aText):
-                    theHash.Add(System.IO.File.Exists(aText) ? "file " + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.IO.File.ReadAllBytes(aText)))
+                    theHash.Add(System.IO.File.Exists(aText) ? "file " + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(FileContent(aText)))
                                 : Directory.Exists(aText) ? "directory" : "no file");
                     break;
                 case string aText:
@@ -663,6 +627,18 @@ public static partial class Tape
                     break;
             }
         }
+    }
+
+    /// <summary>A file's content as an argument: a STEP file's FILE_NAME (its time stamp) left out.</summary>
+    private static byte[] FileContent(string thePath)
+    {
+        byte[] aBytes = System.IO.File.ReadAllBytes(thePath);
+        if (aBytes.Length > 12 && Encoding.ASCII.GetString(aBytes, 0, 12) == "ISO-10303-21")
+        {
+            string aText = Encoding.Latin1.GetString(aBytes);
+            return Encoding.Latin1.GetBytes(System.Text.RegularExpressions.Regex.Replace(aText, @"FILE_NAME\((?s:.*?)\);", "FILE_NAME();"));
+        }
+        return aBytes;
     }
 
     /// <summary>Whether a string argument names a file: rooted, with a separator.</summary>
@@ -745,19 +721,6 @@ public sealed class TapeWriter
     internal byte[] ToArray() => myStream.ToArray();
 
     internal long Length => myStream.Length;
-
-    internal int StringCount => myStrings.Count;
-
-    /// <summary>Goes back to an earlier length, forgetting the strings pooled since.</summary>
-    internal void Truncate(long theLength, int theStrings)
-    {
-        myStream.SetLength(theLength);
-        myStream.Position = theLength;
-        foreach (string aText in myStrings.Where(p => p.Value >= theStrings).Select(p => p.Key).ToList())
-        {
-            myStrings.Remove(aText);
-        }
-    }
 
     internal void Byte(byte theValue) => myStream.WriteByte(theValue);
 

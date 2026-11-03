@@ -251,7 +251,11 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     [InlineData(Conic.Hyperbola, Surf.Cylinder)]
     [InlineData(Conic.Hyperbola, Surf.Cone)]
     [InlineData(Conic.Hyperbola, Surf.Sphere)]
-    public void ConicQuadric(Conic theConic, Surf theSurf) => Run(theConic, theSurf);
+    public void ConicQuadric(Conic theConic, Surf theSurf)
+    {
+        Tape.Row($"{theConic} {theSurf}");
+        Run(theConic, theSurf);
+    }
 
     [Fact]
     public void Line_torus()

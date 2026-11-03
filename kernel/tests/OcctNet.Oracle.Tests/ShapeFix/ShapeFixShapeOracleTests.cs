@@ -401,7 +401,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfsol-");
         int aShapes = 0;
-        foreach ((string aFile, _) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true, isRollingBack: true))
+        foreach ((string aFile, _) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -427,7 +427,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "occtnet-sfs-");
         int aShapes = 0;
-        foreach ((string aFile, string aGrids) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true, isRollingBack: true))
+        foreach ((string aFile, string aGrids) in Tape.Budget(aRun.Inputs(1_000_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {

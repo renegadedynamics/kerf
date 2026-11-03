@@ -147,7 +147,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
-        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true, isRollingBack: true))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(300_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {
@@ -169,7 +169,7 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
     {
         var aWatch = Stopwatch.StartNew();
         using var aRun = new ShapeFixOracleRun(output, "shcustom");
-        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(100_000), isSpread: true, isRollingBack: true))
+        foreach ((string aFile, string _) in Tape.Budget(aRun.Inputs(100_000), isSpread: true))
         {
             if (ShapeFixOracleRun.NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {

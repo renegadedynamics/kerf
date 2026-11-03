@@ -253,7 +253,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
         Assert.Equal(42, aFiles.Length); // 37 .brep and 5 .rle
         var anOracle = new Oracle(output);
         int aChecks = 0;
-        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aName = Path.GetFileName(aFile);
             var aLog = new StringWriter { NewLine = "\n" };
@@ -370,7 +370,7 @@ public partial class DrawLiteShapesOracleTests(ITestOutputHelper output)
             ("tscale s 1 -2 3 1.75", () => { var t = new N.gp_Trsf(); t.SetScale(new N.gp_Pnt(1, -2, 3), 1.75); return t; }),
             ("tmirror s 5 0 0 1 1 0", () => { var t = new N.gp_Trsf(); t.SetMirror(new N.gp_Ax2(new N.gp_Pnt(5, 0, 0), new N.gp_Dir(1, 1, 0))); return t; }),
         ];
-        foreach (string aFileName in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFileName in Tape.Budget(aFiles, isSpread: true))
         {
             string aFile = Path.Combine(OcctSourceDirectory, "data", "occ", aFileName);
             var aNS = new N.TopoDS_Shape();

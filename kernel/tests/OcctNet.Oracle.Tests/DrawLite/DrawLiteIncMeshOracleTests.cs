@@ -302,7 +302,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         aFiles.AddRange(MeshGroupFiles().Where((_, k) => k % 2 == 0));
         output.WriteLine($"{aDataOcc} data/occ files, {aFiles.Count - aDataOcc} mesh-group files");
 
-        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aName = Path.GetFileName(aFile);
             string aF1;

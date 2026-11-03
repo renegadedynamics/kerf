@@ -118,6 +118,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     [InlineData(Approx_IsoParametric)]
     public void PointsToBSpline_ParametrizationType(Approx_ParametrizationType theParType)
     {
+        Tape.Row(theParType);
         Oracle anOracle = new(output, 20261029 + (int)theParType);
         int aCompared = 0;
         for (int aCase = 0; aCase < Cases; aCase++)

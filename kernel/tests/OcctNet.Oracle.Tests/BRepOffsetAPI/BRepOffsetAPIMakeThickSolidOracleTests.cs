@@ -201,7 +201,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         using var aRun = new ShapeFixOracleRun(output, "offset");
         string aDir = Path.Combine(ShapeFixOracleRun.Metadata("OcctSourceDir"), "data", "occ");
         var aWatch = Stopwatch.StartNew();
-        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             if (new FileInfo(aFile).Length > 300_000)
             {

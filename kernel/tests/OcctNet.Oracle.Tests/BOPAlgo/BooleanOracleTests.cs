@@ -108,7 +108,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "bop");
         Op[] anAll = [Op.Fuse, Op.Cut, Op.Common, Op.Section, Op.Splitter, Op.GeneralFuse];
         int k = 0;
-        foreach ((int anId, string aName, string aShapes, double aFuzzy) in Tape.Budget(s_recorded.Value, isSpread: true, isRollingBack: true))
+        foreach ((int anId, string aName, string aShapes, double aFuzzy) in Tape.Budget(s_recorded.Value, isSpread: true))
         {
             var anOps = new List<Op> { OpOfName(aName), Op.Section };
             if (k++ % 4 == 0)

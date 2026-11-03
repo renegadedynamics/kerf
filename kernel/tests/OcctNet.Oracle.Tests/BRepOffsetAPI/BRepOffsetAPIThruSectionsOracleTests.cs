@@ -723,7 +723,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                              bool theVertices, bool theCheckOff, bool theLooping)
     {
         var anOracle = new Oracle(output, theSeed);
-        for (int aCase = 0; aCase < theNb; aCase++)
+        foreach (int aCase in Tape.Budget(theNb))
         {
             int aNbSect = anOracle.Int(theLooping ? 3 : 2, 5);
             bool isTilted = anOracle.Bool();

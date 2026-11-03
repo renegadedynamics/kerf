@@ -344,7 +344,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
         for (int aKind = 0; aKind < aKinds.Length; aKind++)
         {
             var anOracle = new Oracle(output, 20261123 + aKind);
-            for (int i = 0; i < 25; i++)
+            foreach (int i in Tape.Budget(25, Tape.DefaultBudget / aKinds.Length))
             {
                 (N.Geom_Surface aNB, Geom_Surface aPB) = aKind switch
                 {

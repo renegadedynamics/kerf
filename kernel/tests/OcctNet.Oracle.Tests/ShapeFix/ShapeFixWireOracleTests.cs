@@ -477,7 +477,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
             output.WriteLine("OcctTestDataDir isn't set: data/occ only");
         }
 
-        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             if (NativeRead(aFile) is N.TopoDS_Shape aShape)
             {

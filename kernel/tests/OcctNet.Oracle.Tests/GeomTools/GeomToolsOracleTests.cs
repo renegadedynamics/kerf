@@ -256,7 +256,7 @@ public class GeomToolsOracleTests(ITestOutputHelper output) : IDisposable
     {
         int aFiles = 0, anObjects = 0;
         long aBytes = 0;
-        foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(CorpusDirectory, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(CorpusDirectory, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             string aF1 = NativeReadWrite(aFile);
             string aF2 = NativeReadWrite(Path.Combine(myDirectory, $"s{myFileNumber - 1}.brep"));

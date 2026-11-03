@@ -51,7 +51,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "bop");
         int k = 0;
-        foreach (Run aCase in Tape.Budget(BooleanOracleTests.RecordedRuns(), isSpread: true, isRollingBack: true))
+        foreach (Run aCase in Tape.Budget(BooleanOracleTests.RecordedRuns(), isSpread: true))
         {
             // every third case's own operation, simplified
             if (k++ % 3 == 0)
@@ -108,7 +108,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "bop");
         int aRecorded = 0, aScriptsWithRuns = 0;
         var aStops = new List<string>();
-        foreach (string aScript in Tape.Budget(aScripts, isSpread: true, isRollingBack: true))
+        foreach (string aScript in Tape.Budget(aScripts, isSpread: true))
         {
             string aRel = Path.GetRelativePath(aTests, aScript).Replace('\\', '/');
             string[] aParts = aRel.Split('/');

@@ -295,13 +295,13 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     }
 
     private static IEnumerable<string> DataOccFiles()
-        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= 1_000_000);
+        => Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal).Where(f => new FileInfo(f).Length <= (Tape.IsSampled ? 60_000 : 1_000_000));
 
     [Fact]
     public void Extraction_of_the_same_mesh_matches_native_float_for_float()
     {
         var aTally = new Tally();
-        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -311,12 +311,12 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             CompareSameMesh(aTally, Path.GetFileName(aFile) + " viewer", aF1, -1, false, 0.2);
             CompareSameMesh(aTally, Path.GetFileName(aFile) + " rel 0.05", aF1, 0.05, true, 0.5);
         }
-        foreach ((string aName, string aF1) in SpecialShapes())
+        foreach ((string aName, string aF1) in Tape.Budget(SpecialShapes()))
         {
             CompareSameMesh(aTally, aName, aF1, -1, false, 0.2);
         }
         Report(aTally, "extraction of native's mesh");
-        Assert.True(aTally.Shapes > 50);
+        Assert.True(aTally.Shapes > (Tape.IsSampled ? 0 : 50)); // as recorded, a budgeted sample (decision 15002)
         Assert.Empty(aTally.Differences);
     }
 
@@ -324,7 +324,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Mesh_and_extract_matches_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -333,7 +333,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             }
             CompareEndToEnd(aTally, Path.GetFileName(aFile) + " viewer", aF1, -1, false, 0.2, true);
         }
-        foreach ((string aName, string aF1) in SpecialShapes())
+        foreach ((string aName, string aF1) in Tape.Budget(SpecialShapes()))
         {
             CompareEndToEnd(aTally, aName + " viewer", aF1, -1, false, 0.2, false);
             CompareEndToEnd(aTally, aName + " rel 0.1", aF1, 0.1, true, 0.3, true);
@@ -383,7 +383,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Mesh_group_data_meshes_and_extracts_as_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in Tape.Budget(MeshGroupFiles(), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(MeshGroupFiles(), isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -393,7 +393,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             CompareEndToEnd(aTally, Path.GetFileName(aFile) + " viewer", aF1, -1, false, 0.2, true);
         }
         Report(aTally, "mesh group data, mesh and extract");
-        Assert.True(aTally.Shapes > 50);
+        Assert.True(aTally.Shapes > (Tape.IsSampled ? 0 : 50)); // as recorded, a budgeted sample (decision 15002)
         Assert.True(aTally.FaceShare >= 0.99, $"faces {aTally.FaceShare:P3}");
         Assert.True(aTally.EdgeShare >= 0.99, $"edges {aTally.EdgeShare:P3}");
     }
@@ -402,7 +402,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     public void Unmeshed_shapes_extract_edges_by_tangential_deflection_as_native()
     {
         var aTally = new Tally();
-        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(DataOccFiles(), isSpread: true))
         {
             string? aF1 = TryF1(aFile);
             if (aF1 is null)
@@ -423,7 +423,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             Compare(aTally, Path.GetFileName(aFile) + " unmeshed", aPortBuffers, aNativeBuffers);
         }
         Report(aTally, "unmeshed shapes (every edge by GCPnts_TangentialDeflection)");
-        Assert.True(aTally.Edges > 2000);
+        Assert.True(aTally.Edges > (Tape.IsSampled ? 0 : 2000)); // as recorded, a budgeted sample (decision 15002)
         // GCPnts on circles uses Math.Sin and Math.Cos, which may round differently from MSVC's (decision 494)
         Assert.True(aTally.EdgeShare >= 0.99, $"edges {aTally.EdgeShare:P3}");
     }

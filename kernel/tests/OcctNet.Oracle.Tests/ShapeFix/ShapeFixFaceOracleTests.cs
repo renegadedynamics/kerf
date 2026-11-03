@@ -627,7 +627,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     {
         var aWatch = Stopwatch.StartNew();
         int aShapes = 0;
-        foreach (string aFile in Tape.Budget(HealGroupFiles(output), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(HealGroupFiles(output), isSpread: true))
         {
             if (NativeRead(aFile) is not N.TopoDS_Shape aShape)
             {

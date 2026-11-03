@@ -39,11 +39,8 @@ if git diff --name-only --diff-filter=U | grep -q .; then echo "Stopping: resolv
 perl "$S/renumber.pl" kernel
 note="Decisions renumbered into sequence."
 if [ $gate = 1 ]; then
+# the oracle tests are in Kerf.slnx since unit 10A: they replay native OCCT's recorded results, needing no native build
 out=$(dotnet test Kerf.slnx -c Release -nologo --logger "console;verbosity=normal" 2>&1)
-# the oracle tests, outside Kerf.slnx while native OCCT is in use (phase 10, unit 10R): against the native build in
-# BUILD123D_NATIVE_ROOT (build123d.NET's native/out and .deps/install), compiled out without one
-out="$out
-$(dotnet test kernel/tests/OcctNet.Oracle.Tests -c Release -nologo --logger "console;verbosity=normal" ${BUILD123D_NATIVE_ROOT:+"-p:Build123dNativeRoot=$BUILD123D_NATIVE_ROOT"} 2>&1)"
 # the whole output, with each test's duration and the failures' messages (inside .git, so never committed)
 echo "$out" > .git/merge-unit-test.log
 echo "$out" | grep -E ": error [A-Z]+[0-9]+|Passed!|Failed!|Test Run (Successful|Failed|Aborted)|Total tests|\[FAIL\]" | sed 's/\[C:.*//' | sort | uniq -c

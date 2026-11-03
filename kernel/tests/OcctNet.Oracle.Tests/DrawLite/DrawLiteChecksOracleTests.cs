@@ -386,7 +386,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         Assert.Equal(42, aFiles.Length);
         var anOracle = new Oracle(output);
         int aCheckshape = 0, aBounding = 0, aClassify = 0, aValid = 0;
-        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             string aName = Path.GetFileName(aFile);
             var aFileWatch = Stopwatch.StartNew();
@@ -452,7 +452,7 @@ public partial class DrawLiteChecksOracleTests(ITestOutputHelper output) : IDisp
         var anOracle = new Oracle(output);
         var aWatch = Stopwatch.StartNew();
         int aChecked = 0, aSkipped = 0, aCheckshape = 0, aBounding = 0, aClassify = 0;
-        foreach (string aFile in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(aFiles, isSpread: true))
         {
             if (new FileInfo(aFile).Length > 2_000_000 || NativeRead(aFile) is not { } aRead)
             {

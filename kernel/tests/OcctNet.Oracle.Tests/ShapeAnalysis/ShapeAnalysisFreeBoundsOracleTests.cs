@@ -345,7 +345,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         int aShapes = 0;
 
         foreach (string aFile in Tape.Budget(Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep")
-                                                      .Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+                                                      .Order(StringComparer.Ordinal), isSpread: true))
         {
             if (NativeRead(aFile) is N.TopoDS_Shape aShape)
             {
@@ -358,7 +358,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         if (!string.IsNullOrEmpty(aRoot) && Directory.Exists(aRoot))
         {
             foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(aRoot, "*.brep", SearchOption.AllDirectories)
-                                                          .Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+                                                          .Order(StringComparer.Ordinal), isSpread: true))
             {
                 if (new FileInfo(aFile).Length > 1_000_000 || NativeRead(aFile) is not N.TopoDS_Shape aShape
                     || Occurrences(aShape, 50_000) > 50_000)

@@ -450,7 +450,8 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
     {
         var aWatch = Stopwatch.StartNew();
         var aFiles = new List<(string File, string What)>();
-        foreach (string aFile in Directory.EnumerateFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal))
+        foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal), isSpread: true,
+                                             theWeight: Tape.FileSize, theMaxWeight: 100_000))
         {
             if (HasTriangulations(aFile) && NativeCopy(aFile, false) is { } aCopy)
             {
@@ -466,7 +467,8 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
         string aDataset = Path.Combine(Metadata("OcctTestDataDir"), "brep");
         if (Directory.Exists(aDataset))
         {
-            foreach (string aFile in Directory.EnumerateFiles(aDataset, "*.brep").Order(StringComparer.Ordinal))
+            foreach (string aFile in Tape.Budget(Directory.EnumerateFiles(aDataset, "*.brep").Order(StringComparer.Ordinal), isSpread: true,
+                                                 theWeight: Tape.FileSize, theMaxWeight: 100_000))
             {
                 if (new FileInfo(aFile).Length <= 400_000 && HasTriangulations(aFile) && NativeCopy(aFile, false) is { } aCopy)
                 {
@@ -475,7 +477,7 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
             }
         }
 
-        foreach ((string aFile, string aWhat) in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach ((string aFile, string aWhat) in Tape.Budget(aFiles, isSpread: true))
         {
             try
             {

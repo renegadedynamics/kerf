@@ -595,7 +595,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             output.WriteLine(aD);
         }
         Assert.Empty(myDifferences);
-        Assert.True(myFiles > 1000);
+        Assert.True(myFiles > (Tape.IsSampled ? 0 : 1000)); // as recorded, a budgeted sample (decision 15002)
     }
 
     // A plane for the [plane(ax2)] forms, bound to pl; its native gp_Ax2 (Pln().Position().Ax2(), as Draw reads it),

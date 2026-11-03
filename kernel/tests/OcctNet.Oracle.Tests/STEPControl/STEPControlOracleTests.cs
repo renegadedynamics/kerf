@@ -159,7 +159,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
         }
         var aCounts = new SortedDictionary<string, int>(StringComparer.Ordinal);
         var aDifferent = new List<string>();
-        foreach (string aPath in Tape.Budget(aFiles, isSpread: true, isRollingBack: true))
+        foreach (string aPath in Tape.Budget(aFiles, isSpread: true, theWeight: Tape.FileSize, theMaxWeight: 200_000))
         {
             ReadResult aNative = NativeRead(aPath);
             ReadResult aPort = PortRead(aPath);
@@ -301,7 +301,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             }
         }
 
-        foreach ((string aName, string aFile) in Tape.Budget(anInputs, isSpread: true, isRollingBack: true))
+        foreach ((string aName, string aFile) in Tape.Budget(anInputs, isSpread: true))
         {
             foreach ((STEPControl_StepModelType aPortMode, N.STEPControl_StepModelType aNativeMode) in ModelTypes)
             {

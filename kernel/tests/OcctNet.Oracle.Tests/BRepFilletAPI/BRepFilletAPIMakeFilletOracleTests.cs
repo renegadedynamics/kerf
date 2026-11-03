@@ -165,7 +165,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "fillet");
         string aDir = Path.Combine(ShapeFixOracleRun.Metadata("OcctSourceDir"), "data", "occ");
         var aWatch = Stopwatch.StartNew();
-        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(aDir, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             if (new FileInfo(aFile).Length > 300_000)
             {

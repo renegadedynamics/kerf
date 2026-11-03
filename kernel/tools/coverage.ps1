@@ -6,9 +6,9 @@
   Runs, each with Microsoft's code coverage (part of Microsoft.NET.Test.Sdk) writing Cobertura: the kernel's unit tests
   (Foundation, ModelingData, ModelingAlgorithms, DataExchange), the Draw-lite tests in their default form (the corpus
   classes sample their cases; OCCTNET_CORPUS_FULL isn't set) and the modeling layer's suite (Build123d.Tests, on
-  OCCT.NET); with -WithOracle, the oracle tests too (replayed from their recordings). Then tools/coverage-report.cs merges them and writes the report: coverage per
-  OCCT package (the folder under each kernel assembly) and per folder of the modeling layer, the packages under the
-  floor listed.
+  OCCT.NET); with -WithOracle, the oracle tests too (replayed from their recordings). Then tools/coverage-report.cs
+  merges them and writes the report: coverage per OCCT package (the folder under each kernel assembly) and per folder
+  of the modeling layer, the packages under the floor listed.
 .PARAMETER Results
   The folder for the Cobertura files (a temporary one by default).
 .PARAMETER Report

@@ -351,7 +351,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     {
         var anOracle = new Oracle(output, 40301);
         var aTally = new Tally();
-        foreach (string aFile in Tape.Budget(Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal), isSpread: true, isRollingBack: true))
+        foreach (string aFile in Tape.Budget(Directory.GetFiles(DataOcc, "*.brep").Order(StringComparer.Ordinal), isSpread: true))
         {
             if (new FileInfo(aFile).Length > 1_000_000)
             {

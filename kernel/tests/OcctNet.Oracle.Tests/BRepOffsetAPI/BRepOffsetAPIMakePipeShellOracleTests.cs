@@ -859,7 +859,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // (SetMode(wire, true)), and its twisted extrusion (SetMode(auxSpine, false)).
         var anOracle = new Oracle(output, 20261105);
         int aCase = 0;
-        for (int i = 0; i < 30; i++)
+        foreach (int i in Tape.Budget(30))
         {
             (TopoDS_Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
             gp_Ax2 aFrame = StartFrame(aSpine);

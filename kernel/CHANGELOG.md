@@ -1645,3 +1645,12 @@ Phase 9 complete (2 November 2026): the switch-over.
 Phase 10 (part): one repository, Kerf (unit 10R).
 - OCCT.NET and build123d.NET move, with their histories, into one repository: `kernel/` and `modeling/`. The packages
   keep their names until 0.2.0, when they become Kerf.Kernel and Kerf.Modeling.
+
+Phase 10 (part): test independence (unit 10A).
+- The oracle tests no longer need native OCCT: native's results are recorded (`tests/OcctNet.Oracle.Tests/Recordings`,
+  109 MB) and replayed through a generated facade, the port compared with them exactly as before; they can be recorded
+  again while native OCCT exists. They join Kerf.slnx. The largest corpora and random runs are sampled in the
+  recordings (run in full live).
+- The differential run compares build123d.NET's suite on OCCT.NET with native's log as recorded (digests, properties,
+  and the texts that differed).
+- `tools/coverage.ps1` measures line coverage per OCCT package (`docs/coverage.md`).
