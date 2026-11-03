@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>A check that fails (OCCT raises it from a check to be thrown).</summary>
+[OcctName("Interface_CheckFailure")]
 public class Interface_CheckFailure : Interface_InterfaceError
 {
     public Interface_CheckFailure() { }

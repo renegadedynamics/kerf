@@ -6,6 +6,7 @@ namespace Occt;
 
 /// <summary>Thrown when a derivative of a Geom2d object is undefined (not continuous enough, or singular).</summary>
 /// <remarks>OCCT's <c>Geom2d_UndefinedDerivative_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
+[OcctName("Geom2d_UndefinedDerivative")]
 public class Geom2d_UndefinedDerivative : Standard_DomainError
 {
     public Geom2d_UndefinedDerivative() { }

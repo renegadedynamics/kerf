@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>Raised when a method refers to an undefined inertia axis of symmetry.</summary>
+[OcctName("GProp_UndefinedAxis")]
 public class GProp_UndefinedAxis : Standard_DomainError
 {
     public GProp_UndefinedAxis() { }

@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>Thrown when the arguments of a construction are parallel and the solution is undefined.</summary>
+[OcctName("Geom2dGcc_IsParallel")]
 public class Geom2dGcc_IsParallel : Standard_DomainError
 {
     public Geom2dGcc_IsParallel() { }

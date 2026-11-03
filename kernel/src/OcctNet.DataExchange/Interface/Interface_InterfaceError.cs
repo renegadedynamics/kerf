@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>An error of the exchange framework.</summary>
+[OcctName("Interface_InterfaceError")]
 public class Interface_InterfaceError : Standard_Failure
 {
     public Interface_InterfaceError() { }

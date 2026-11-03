@@ -530,13 +530,13 @@ internal static class GeometryTestCommands
     }
 
     private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d2TanRad ct3, string name)
-        => Solutions(theDI, di, ct3.IsDone(), ct3.NbSolutions, ct3.ThisSolution, name, "Circ2d2TanRad Not done");
+        => Solutions(theDI, di, ct3.IsDone(), () => ct3.NbSolutions(), ct3.ThisSolution, name, "Circ2d2TanRad Not done");
 
     private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d3Tan ct3, string name)
-        => Solutions(theDI, di, ct3.IsDone(), ct3.NbSolutions, ct3.ThisSolution, name, "Circ2d3Tan Not done");
+        => Solutions(theDI, di, ct3.IsDone(), () => ct3.NbSolutions(), ct3.ThisSolution, name, "Circ2d3Tan Not done");
 
     private static int Solutions(DrawInterpreter theDI, DrawResult theDIResult, Geom2dGcc_Circ2dTanCen theCt2, string theName)
-        => Solutions(theDI, theDIResult, theCt2.IsDone(), theCt2.NbSolutions, theCt2.ThisSolution, theName, "Circ2dTanCen Not done");
+        => Solutions(theDI, theDIResult, theCt2.IsDone(), () => theCt2.NbSolutions(), theCt2.ThisSolution, theName, "Circ2dTanCen Not done");
 
     /// <summary>
     /// cirtang cname [-t Tolerance] -c curve -p point -r Radius...: circles tangent to up to three unqualified curves,

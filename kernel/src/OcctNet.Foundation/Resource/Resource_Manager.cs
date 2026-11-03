@@ -9,6 +9,7 @@ using System.Text;
 namespace Occt;
 
 /// <summary>Raised by <see cref="Resource_Manager.Value"/> for a resource that isn't defined.</summary>
+[OcctName("Resource_NoSuchResource")]
 public class Resource_NoSuchResource : Standard_NoSuchObject
 {
     public Resource_NoSuchResource() { }

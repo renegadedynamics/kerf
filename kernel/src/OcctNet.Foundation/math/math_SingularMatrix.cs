@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>Thrown when a matrix is singular.</summary>
+[OcctName("math_SingularMatrix")]
 public class math_SingularMatrix : Standard_Failure
 {
     public math_SingularMatrix() { }

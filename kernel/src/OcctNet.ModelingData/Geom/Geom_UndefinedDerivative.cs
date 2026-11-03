@@ -6,6 +6,7 @@ namespace Occt;
 
 /// <summary>Thrown when a derivative of a Geom object is undefined (not continuous enough, or singular).</summary>
 /// <remarks>OCCT's <c>Geom_UndefinedDerivative_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
+[OcctName("Geom_UndefinedDerivative")]
 public class Geom_UndefinedDerivative : Standard_DomainError
 {
     public Geom_UndefinedDerivative() { }

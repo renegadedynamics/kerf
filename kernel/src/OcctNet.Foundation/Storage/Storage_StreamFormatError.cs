@@ -9,6 +9,7 @@ namespace Occt;
 /// they can't read safely: counts larger than the rest of the input could hold, words longer than OCCT's buffers,
 /// nesting beyond the caps, references to entries that don't exist, and input that ends where OCCT would loop.
 /// </summary>
+[OcctName("Storage_StreamFormatError")]
 public class Storage_StreamFormatError : Standard_Failure
 {
     public Storage_StreamFormatError() { }

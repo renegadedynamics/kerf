@@ -6,6 +6,7 @@ namespace Occt;
 
 /// <summary>Thrown when a local property needs more continuity than the curve or surface has.</summary>
 /// <remarks>OCCT's <c>LProp_BadContinuity_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
+[OcctName("LProp_BadContinuity")]
 public class LProp_BadContinuity : Standard_Failure
 {
     public LProp_BadContinuity() { }

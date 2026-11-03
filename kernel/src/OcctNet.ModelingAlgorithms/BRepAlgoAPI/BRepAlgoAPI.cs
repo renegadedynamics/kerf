@@ -149,6 +149,7 @@ public static class BRepAlgoAPI
 }
 
 /// <summary>A Boolean operation of <see cref="BRepAlgoAPI"/> failed; <see cref="Report"/> holds its errors and warnings.</summary>
+[OcctName("BRepAlgoAPI_Failure")]
 public sealed class BRepAlgoAPI_Failure : StdFail_NotDone
 {
     private readonly Message_Report myReport;

@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>A qualifier the construction can't use with this kind of argument (a line qualified enclosing).</summary>
+[OcctName("GccEnt_BadQualifier")]
 public class GccEnt_BadQualifier : Standard_DomainError
 {
     public GccEnt_BadQualifier() { }

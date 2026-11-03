@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>A failure of a transfer (a binding refused, a transfer in error status...).</summary>
+[OcctName("Transfer_TransferFailure")]
 public class Transfer_TransferFailure : Interface_InterfaceError
 {
     public Transfer_TransferFailure() { }

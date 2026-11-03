@@ -115,8 +115,8 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
         (Func<int> N, Func<int> P, string What)[] aCounts =
         [
             (theN.UDegree, theP.UDegree, "UDegree"), (theN.VDegree, theP.VDegree, "VDegree"),
-            (theN.NbUPoles, theP.NbUPoles, "NbUPoles"), (theN.NbVPoles, theP.NbVPoles, "NbVPoles"),
-            (theN.NbUKnots, theP.NbUKnots, "NbUKnots"), (theN.NbVKnots, theP.NbVKnots, "NbVKnots"),
+            (theN.NbUPoles, () => theP.NbUPoles(), "NbUPoles"), (theN.NbVPoles, () => theP.NbVPoles(), "NbVPoles"),
+            (theN.NbUKnots, () => theP.NbUKnots(), "NbUKnots"), (theN.NbVKnots, () => theP.NbVKnots(), "NbVKnots"),
         ];
         foreach ((Func<int> aNF, Func<int> aPF, string aCountWhat) in aCounts)
         {

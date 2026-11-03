@@ -197,7 +197,7 @@ internal static class GccAnaRecordings
     private static string B(bool b) => b ? "1" : "0";
 
     private static void Dump(Writer w, GccAna_Circ2d3Tan S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -214,7 +214,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Circ2d2TanOn S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -234,7 +234,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Circ2d2TanRad S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -249,7 +249,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Circ2dTanOnRad S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -267,7 +267,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Circ2dTanCen S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -280,7 +280,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Lin2d2Tan S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -293,7 +293,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanObl S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -306,7 +306,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanPar S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -318,7 +318,7 @@ internal static class GccAnaRecordings
         });
 
     private static void Dump(Writer w, GccAna_Lin2dTanPer S)
-        => w.Solutions(S.IsDone(), S.NbSolutions, i =>
+        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
@@ -414,7 +414,7 @@ internal static class GccAnaRecordings
                         var a = r.Lin();
                         var b = r.Lin();
                         GccAna_Lin2dBisec S = new(a, b);
-                        w.Solutions(S.IsDone(), S.NbSolutions, i =>
+                        w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
                         {
                             w.Tok("sol", () => Hex(S.ThisSolution(i)));
                             w.Tok("i1", () => Tan((out double x, out double y, out gp_Pnt2d p) => S.Intersection1(i, out x, out y, out p)));
@@ -422,10 +422,10 @@ internal static class GccAnaRecordings
                         });
                         break;
                     }
-                case "Bisec.CL": { var a = r.Circ(); var b = r.Lin(); GccAna_CircLin2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), S.NbSolutions, S.ThisSolution); break; }
-                case "Bisec.CP": { var a = r.Circ(); var b = r.Pnt(); GccAna_CircPnt2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), S.NbSolutions, S.ThisSolution); break; }
-                case "Bisec.CPt": { var a = r.Circ(); var b = r.Pnt(); double t = r.D(); GccAna_CircPnt2dBisec S = new(a, b, t); DumpBisec(w, S.IsDone(), S.NbSolutions, S.ThisSolution); break; }
-                case "Bisec.CC": { var a = r.Circ(); var b = r.Circ(); GccAna_Circ2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), S.NbSolutions, S.ThisSolution); break; }
+                case "Bisec.CL": { var a = r.Circ(); var b = r.Lin(); GccAna_CircLin2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
+                case "Bisec.CP": { var a = r.Circ(); var b = r.Pnt(); GccAna_CircPnt2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
+                case "Bisec.CPt": { var a = r.Circ(); var b = r.Pnt(); double t = r.D(); GccAna_CircPnt2dBisec S = new(a, b, t); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
+                case "Bisec.CC": { var a = r.Circ(); var b = r.Circ(); GccAna_Circ2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
                 default:
                     throw new InvalidOperationException(theCase.Ctor);
             }

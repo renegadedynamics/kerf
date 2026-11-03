@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>A parameter was asked of a solution whose support isn't of that kind (an edge or a face).</summary>
+[OcctName("BRepExtrema_UnCompatibleShape")]
 public class BRepExtrema_UnCompatibleShape : Standard_DomainError
 {
     public BRepExtrema_UnCompatibleShape() { }

@@ -573,14 +573,14 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
     internal static PSolver PCirc2d2TanRad(Geom2dGcc_Circ2d2TanRad s)
-        => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
+        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
     internal static NSolver NCirc2d2TanOn(N.Geom2dGcc_Circ2d2TanOn s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
     internal static PSolver PCirc2d2TanOn(Geom2dGcc_Circ2d2TanOn s)
-        => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
+        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
     internal static NSolver NCirc2d3Tan(N.Geom2dGcc_Circ2d3Tan s)
@@ -588,20 +588,20 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
     internal static PSolver PCirc2d3Tan(Geom2dGcc_Circ2d3Tan s)
-        => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
+        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
     internal static NSolver NCirc2dTanCen(N.Geom2dGcc_Circ2dTanCen s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
     internal static PSolver PCirc2dTanCen(Geom2dGcc_Circ2dTanCen s)
-        => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
+        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
     internal static NSolver NCirc2dTanOnRad(N.Geom2dGcc_Circ2dTanOnRad s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
     internal static PSolver PCirc2dTanOnRad(Geom2dGcc_Circ2dTanOnRad s)
-        => new(s.IsDone, s.NbSolutions, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
+        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
     internal static NSolver NLin2d2Tan(N.Geom2dGcc_Lin2d2Tan s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
@@ -611,7 +611,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         }, [s.Tangency1, s.Tangency2], [], null);
 
     internal static PSolver PLin2d2Tan(Geom2dGcc_Lin2d2Tan s)
-        => new(s.IsDone, s.NbSolutions, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Tangency2], [], null);
+        => new(() => s.IsDone(), () => s.NbSolutions(), (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Tangency2], [], null);
 
     internal static NSolver NLin2dTanObl(N.Geom2dGcc_Lin2dTanObl s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
@@ -621,7 +621,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         }, [s.Tangency1, s.Intersection2], [], null);
 
     internal static PSolver PLin2dTanObl(Geom2dGcc_Lin2dTanObl s)
-        => new(s.IsDone, s.NbSolutions, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Intersection2], [], null);
+        => new(() => s.IsDone(), () => s.NbSolutions(), (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Intersection2], [], null);
 
     private static bool Starts(string theName, params string[] thePrefixes) => thePrefixes.Any(p => theName.StartsWith(p, StringComparison.Ordinal));
 

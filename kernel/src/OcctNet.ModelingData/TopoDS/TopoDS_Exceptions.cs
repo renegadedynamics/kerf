@@ -7,6 +7,7 @@
 namespace Occt;
 
 /// <summary>An attempt was made to modify a shape already shared or protected (OCCT's Free flag is off).</summary>
+[OcctName("TopoDS_FrozenShape")]
 public class TopoDS_FrozenShape : Standard_DomainError
 {
     public TopoDS_FrozenShape() { }
@@ -17,6 +18,7 @@ public class TopoDS_FrozenShape : Standard_DomainError
 /// An attempt was made to modify a geometry of a shape already shared or protected: the shape is Locked, which in
 /// the port includes every frozen shape (docs/phase3-design.md, section 4.3).
 /// </summary>
+[OcctName("TopoDS_LockedShape")]
 public class TopoDS_LockedShape : Standard_DomainError
 {
     public TopoDS_LockedShape() { }
@@ -24,6 +26,7 @@ public class TopoDS_LockedShape : Standard_DomainError
 }
 
 /// <summary>An attempt was made to add a shape to a shape of a type that can't contain it.</summary>
+[OcctName("TopoDS_UnCompatibleShapes")]
 public class TopoDS_UnCompatibleShapes : Standard_DomainError
 {
     public TopoDS_UnCompatibleShapes() { }

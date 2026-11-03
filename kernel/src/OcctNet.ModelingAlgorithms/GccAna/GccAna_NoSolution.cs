@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>A solution was asked of a construction that has none (the bisector of two coincident points).</summary>
+[OcctName("GccAna_NoSolution")]
 public class GccAna_NoSolution : Standard_Failure
 {
     public GccAna_NoSolution() { }

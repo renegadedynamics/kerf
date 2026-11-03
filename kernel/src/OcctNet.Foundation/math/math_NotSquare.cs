@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>Thrown when an operation needs a square matrix.</summary>
+[OcctName("math_NotSquare")]
 public class math_NotSquare : Standard_DimensionError
 {
     public math_NotSquare() { }

@@ -5,6 +5,7 @@
 namespace Occt;
 
 /// <summary>Thrown when a local property (tangent, normal, curvature, centre of curvature) is not defined.</summary>
+[OcctName("LProp_NotDefined")]
 public class LProp_NotDefined : Standard_Failure
 {
     public LProp_NotDefined() { }
