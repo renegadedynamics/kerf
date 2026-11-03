@@ -14993,3 +14993,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        equivalent surface is gone. The test that pinned the double scale checks, for offsets of a plane, a cylinder
        and a sphere, with and without the equivalent surface, that the transformed surface's point at the transformed
        parameters is the transformed point, and that the parameters are ParametricTransformation's.
+16807. **A B-spline surface split in V, from the larger parameter, is reversed in V** (occt-issues.md,
+       GeomConvert::SplitBSplineSurface). The V branch tests V's periodicity and calls `VReverse`, where OCCT tested U's
+       and reversed U. The test that pinned the U reversal checks the split's corners and an inner point against the
+       surface with V reversed.

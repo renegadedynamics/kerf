@@ -158,16 +158,17 @@ public class GeomConvert_PortTests
     }
 
     [Fact]
-    public void SplitBSplineSurface_InV_ReversesU_OCCT()
+    public void SplitBSplineSurface_InV_ReversesV()
     {
-        // OCCT's split by parameters in V tests FromParam1 > ToParam2 and reverses U where V is meant
-        // (occt-issues.md): the V range is not reversed, the U one is.
+        // A split by parameters in V with FromParam1 > ToParam2 reverses V, as the U split reverses U (OCCT reversed
+        // U here: occt-issues.md, GeomConvert::SplitBSplineSurface; Kerf decision 16807)
         BSplineSurface aS = BiCubic();
         BSplineSurface aSplit = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.5, 0.5, false, 1e-9);
         aSplit.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        Assert.Equal((0.5, 1.5), (aV1, aV2));
-        Assert.True(aSplit.Value(aU1, 0.5).Distance(aS.Value(3.0, 0.5)) < Tol);
-        Assert.True(aSplit.Value(aU2, 1.5).Distance(aS.Value(0.0, 1.5)) < Tol);
+        Assert.Equal((0.0, 3.0), (aU1, aU2));
+        Assert.True(aSplit.Value(aU1, aV1).Distance(aS.Value(0.0, 1.5)) < Tol);
+        Assert.True(aSplit.Value(aU2, aV2).Distance(aS.Value(3.0, 0.5)) < Tol);
+        Assert.True(aSplit.Value(1.2, aV1 + 0.25).Distance(aS.Value(1.2, 1.25)) < Tol);
     }
 
     [Fact]
