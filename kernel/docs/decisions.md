@@ -15077,8 +15077,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        a surface). OCCT's writers put the second parameter first and its readers took the first for the first, so the
        two were swapped on every round trip. The readers (`BinaryShapeSet`, the table format, and `ShapeReader`, the
        position format) now take the first value written for the second parameter; the writers are unchanged. So
-       binary BRep files don't change, byte for byte (the BinTools write tests against native's bytes pass as they
-       were), and every file written before, by OCCT or by the port, reads right: its first value is the second
-       parameter, as OCCT has always written it. OCCT itself still reads the port's files swapped, as it reads its own.
+       binary BRep files don't change, byte for byte (BinToolsFormatTests, which check the bytes against OCCT's
+       sources, pass as they were, and the round trip test finds the second parameter written first), and every file
+       written before, by OCCT or by the port, reads right: its first value is the second parameter, as OCCT has always
+       written it. OCCT itself still reads the port's files swapped, as it reads its own.
        The test that pinned the swap (`Point_representations_round_trip`) checks both parameters in place for the
        table format's versions 2 to 4 and the position format.
