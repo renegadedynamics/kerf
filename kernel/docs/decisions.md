@@ -15004,3 +15004,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        knots, and their adaptive areas against the closed forms. The BRepGProp face-tool oracle moves to plan 3.2's third
        level for those knots (native's are its U bounds, the port's its V bounds); the properties' recordings didn't
        move.
+16713. **A continuous least-squares approximation with free ends is done** (unit 2D's AppCont_LeastSquare row). The
+       constructor set `myDone` only after solving a constrained system, so with both ends free Approx_ComputeCLine
+       (FitAndDivide) reported "not done" though the poles were computed. It is done. The row's other case, constraints
+       that fix every pole (tangency at both ends of a cubic), is left: FitAndDivide then goes on to degree 4, a valid
+       result, and accepting degree 3 would move every tangent-constrained approximation of the default degrees with no
+       error to correct. Tests: the pinned polynomial test asserts IsDone for every pair of constraints; a cubic with
+       free ends is approximated by FitAndDivide.
