@@ -14695,3 +14695,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 16505. **ShapeConstruct::ConvertSurfaceToBSpline gives up after C0** (row 702). When GeomConvert_ApproxSurface threw at
        C0, OCCT retried C0 without end; it now returns the last result (null if none). Test: a surface whose evaluation
        always fails returns null within the time limit.
+16506. **A fillet's radius by a law follows the law** (rows 1552, 1763). ChFiDS_FilSpine's `SetRadius(Law, IinC)`
+       built a composite law, dropped it and cleared the radii, so `BRepFilletAPI_MakeFillet.Add(law, edge)` and
+       `SetRadius(law, IC, IinC)` threw at Build. The law's range is now mapped onto the spine's, first vertex to last,
+       and sampled at 33 evenly spaced points into the spine's (parameter, radius) pairs, which the fillet interpolates
+       as it does pairs given directly (`FilSpine.LawSamples`; IinC unused, as in OCCT). `TheEvolvingRadii` checks the
+       fillets against the volume they remove, (1 − π/4)·∫r² along the edge: a linear law within 0.01, a sine law within
+       0.5. OCCT's own linear `Add(R1, R2, E)` differs from that integral by 0.18, as before.

@@ -137,16 +137,41 @@ public class BRepFilletAPITests
         Assert.True(aLinear.IsDone);
         Assert.False(aLinear.IsConstant(1));
 
-        // OCCT: SetRadius by a law (ChFiDS_FilSpine::SetRadius(Law_Function, IinC)) builds a composite law, drops it and
-        // clears the radii, so Build then fails on the empty radii (occt-issues, unit 7N3); reproduced
+        // with sections nearly circles of radius r(s) in the planes normal to the edge, the fillet removes about
+        // (1 - pi/4) * integral of r(s)^2 over the edge: (1 - pi/4) * (3^3 - 1^3) / (3 * 0.2) for r = 1 + 0.2 s
+        double aRemoved = (1.0 - Math.PI / 4.0) * (27.0 - 1.0) / 0.6;
+        Assert.Equal(1000.0 - aRemoved, ReconComparison.Volume(aLinear.Shape()), 0.5);
+
+        // SetRadius by a law: OCCT's ChFiDS_FilSpine::SetRadius(Law_Function, IinC) built a composite law, dropped it
+        // and cleared the radii, so Build threw on the empty radii (occt-issues, unit 7N3); the law now gives the
+        // radius (Kerf unit 10K1, decision 16506)
         MakeFillet aLaw = new(aBox);
         aLaw.Add(E);
         Linear L = new();
         L.Set(0.0, 1.0, aLaw.Length(1), 3.0);
         aLaw.SetRadius(L, 1, 1);
         Assert.False(aLaw.IsConstant(1));
-        Assert.Throws<OutOfRangeException>(() => aLaw.Build());
-        Assert.False(aLaw.IsDone);
+        aLaw.Build();
+        Assert.True(aLaw.IsDone);
+        Assert.True(new Analyzer(aLaw.Shape()).IsValid());
+        Assert.Equal(1000.0 - aRemoved, ReconComparison.Volume(aLaw.Shape()), 1.0e-2);
+
+        // Add(law, edge), the law's range mapped onto the edge's: r = 2 + sin(pi s / 10), from 2 to 3 and back; the
+        // removed volume against the integral of r^2, (1 - pi/4) * 10 * (4 + 8/pi + 1/2)
+        MakeFillet aSine = new(aBox);
+        Interpol aSineLaw = new();
+        NCollection_Array1<Point2D> aSamples = new(1, 41);
+        for (int i = 0; i <= 40; i++)
+        {
+            double t = i / 40.0;
+            aSamples.SetValue(i + 1, new Point2D(t, 2.0 + Math.Sin(Math.PI * t)));
+        }
+        aSineLaw.Set(aSamples);
+        aSine.Add(aSineLaw, E);
+        aSine.Build();
+        Assert.True(aSine.IsDone);
+        Assert.True(new Analyzer(aSine.Shape()).IsValid());
+        Assert.Equal(1000.0 - (1.0 - Math.PI / 4.0) * 10.0 * (4.0 + 8.0 / Math.PI + 0.5), ReconComparison.Volume(aSine.Shape()), 0.5);
 
         // the radius interpolating (parameter, radius) pairs
         NCollection_Array1<Point2D> UandR = new(1, 3);

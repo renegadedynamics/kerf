@@ -1549,7 +1549,7 @@ Found by porting Blend, BlendFunc and ChFiDS and by tools/blendrec. The port rep
 | BlendFunc_Chamfer, ConstThroat, ChAsym, Ruled (GenChamfer) `GetTolerance` | Leave `Tol1D` unset | The caller's vector keeps whatever it held (uninitialised memory natively) | leave |
 | BlendFunc `Knots`, `Mults` | Declared, never defined | Left out | leave |
 | ChFiDS_Stripe `Reset` | `pcrv1.Nullify()` twice | The last pcurve is kept | touch |
-| ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost | fix K2 |
+| ChFiDS_FilSpine `SetRadius(Law, IinC)` | Builds a composite law from the law, drops it, and clears the radii | The law is lost | fixed (decision 16506) |
 | Blend_CurvPointFuncInv `NbVariables` | Documented as 3, returns 2 | Reproduced | leave |
 ## Phase 7: unit 7G, drafts and the rest of TKOffset
 
@@ -1760,7 +1760,7 @@ for the hang in `chamf` (decision 1146).
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| ChFiDS_FilSpine::SetRadius(Law_Function, IinC) (BRepFilletAPI_MakeFillet's `Add(L, E)` and `SetRadius(L, IC, IinC)`) | Builds a Law_Composite holding the law, drops it, and clears the radii | The law is lost; Build throws Standard_OutOfRange on the empty radii | fix K2 |
+| ChFiDS_FilSpine::SetRadius(Law_Function, IinC) (BRepFilletAPI_MakeFillet's `Add(L, E)` and `SetRadius(L, IC, IinC)`) | Builds a Law_Composite holding the law, drops it, and clears the radii | The law is lost; Build throws Standard_OutOfRange on the empty radii | fixed (decision 16506) |
 | FilletSurf_InternalBuilder::Add | The loop over the edge's faces re-initializes the iterator of the loop over the edges | Only the first edge is checked for being sharp and on the shape; the outer loop then runs on over the first edge's faces | touch |
 | FilletSurf_Builder::EndSectionStatus | Its StdFail_NotDone says "StartSectionStatus" | None but the message | leave |
 | BRepTest_ChamferCommands.cxx, `chamf` | When an edge is followed by a face and fewer than two more words (`chamf r s e f 1`), neither branch advances `i` and the `while (i + 1 < narg)` loop never ends | Draw-lite stops reading the words there (decision 1146); no corpus case reaches it | leave |

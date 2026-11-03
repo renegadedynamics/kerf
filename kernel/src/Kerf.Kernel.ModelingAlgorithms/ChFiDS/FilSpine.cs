@@ -221,17 +221,27 @@ public sealed class FilSpine : Spine
     }
 
     /// <summary>
-    /// The law of evolution of the radius on the whole spine. OCCT builds a composite law from <paramref name="c"/>,
-    /// drops it, and clears the radii.
+    /// The law of evolution of the radius on the whole spine: the law's range is mapped onto the spine's, from its
+    /// first vertex to its last, and the radius interpolates the law's values at <see cref="LawSamples"/> + 1 evenly
+    /// spaced points. OCCT built a composite law from <paramref name="c"/>, dropped it and cleared the radii, so a fillet
+    /// by a law failed (decision 16506). <paramref name="iinC"/> is unused, as in OCCT.
     /// </summary>
     internal void SetRadius(LawsFunction c, int iinC)
     {
+        _ = iinC;
         _splitdone = false;
-        Composite prout = new();
-        NCollection_List<LawsFunction> lst = prout.ChangeLaws();
-        lst.Append(c);
         _parandrad.Clear();
+        c.Bounds(out double lawFirst, out double lawLast);
+        double spineFirst = FirstParameter(), spineLast = LastParameter();
+        for (int i = 0; i <= LawSamples; i++)
+        {
+            double t = (double)i / LawSamples;
+            SetRadius(new Xy(spineFirst + t * (spineLast - spineFirst), c.Value(lawFirst + t * (lawLast - lawFirst))), 0);
+        }
     }
+
+    /// <summary>The intervals in which a radius law is sampled (decision 16506).</summary>
+    internal const int LawSamples = 32;
 
     /// <summary>True if the radius is constant all along the spine.</summary>
     public bool IsConstant()
