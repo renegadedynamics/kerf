@@ -191,8 +191,7 @@ public sealed class Quadric
 
         double cxx, cyy, czz, cxy, cxz, cyz, cx, cy, cz, ccte;
 
-        Transform3D trans = new();
-        trans = trans.WithTransformation(axis);
+        Transform3D trans = new Transform3D().WithTransformation(axis);
         trans = trans.Inverted();
         t11 = trans.Value(1, 1);
         t12 = trans.Value(1, 2);

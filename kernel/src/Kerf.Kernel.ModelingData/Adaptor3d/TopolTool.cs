@@ -1572,8 +1572,7 @@ public class TopolTool : Transient
         double sAngle = c.SemiAngle();
         Point3D p = c.Apex();
 
-        Transform3D t = new();
-        t = t.WithTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
 
         if (ploc.X() == 0.0 && ploc.Y() == 0.0)

@@ -55,8 +55,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
 
     private static Shape Moved(in Shape theS, double x, double y, double z)
     {
-        Transform3D aT = new();
-        aT = aT.WithTranslation(new Vector3D(x, y, z));
+        Transform3D aT = new Transform3D().WithTranslation(new Vector3D(x, y, z));
         return new Transform(theS, aT, true).Shape();
     }
 

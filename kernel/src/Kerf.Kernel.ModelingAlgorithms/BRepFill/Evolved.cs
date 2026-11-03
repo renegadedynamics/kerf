@@ -273,8 +273,7 @@ public sealed class Evolved
         // Positioning of mySpine and myProfil in the workspace.
         //-------------------------------------------------------------------
         Placement lSpine = FindLocation(_spine);
-        Transform3D t = new();
-        t = t.WithTransformation(axeProf);
+        Transform3D t = new Transform3D().WithTransformation(axeProf);
         Placement lProfile = new(t);
         Placement initLS = _spine.Location();
         Placement initLP = _profile.Location();
@@ -1220,8 +1219,7 @@ public sealed class Evolved
             // Construction of faces limited by parallels.
             // - set to the height of the support face.
             //----------------------------------------------------
-            Transform3D t = new();
-            t = t.WithTranslation(new Vector3D(0, 0, alt));
+            Transform3D t = new Transform3D().WithTranslation(new Vector3D(0, 0, alt));
             Placement lt = new(t);
             Shape localShape2 = _spine.Moved(lt);
             fr.Init(ShapeCasts.Face(localShape2));
@@ -2097,8 +2095,7 @@ public sealed class Evolved
 
         // Position of the sewing on the edge of the spine
         // so that the bissectrices didn't cross the sewings.
-        Transform3D dummy = new();
-        dummy = dummy.WithRotation(axeRev, 1.5 * Math.PI);
+        Transform3D dummy = new Transform3D().WithRotation(axeRev, 1.5 * Math.PI);
         Placement dummyLoc = new(dummy);
         genProf.Move(dummyLoc);
 
@@ -2456,8 +2453,7 @@ public sealed class Evolved
         Vector3D v3d = new(d1.X(), d1.Y(), 0.0);
 
         CoordinateSystem ax = new(p3d, Constants.DZ(), new Direction3D(v3d));
-        Transform3D trans = new();
-        trans = trans.WithTransformation(ax, axeRef);
+        Transform3D trans = new Transform3D().WithTransformation(ax, axeRef);
         Shape localShape = profRef.Moved(new Placement(trans));
         prof = ShapeCasts.Wire(localShape);
         return prof;

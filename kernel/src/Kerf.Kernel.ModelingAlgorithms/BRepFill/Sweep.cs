@@ -842,8 +842,7 @@ internal sealed class Sweep
         Point3D P1, P2, p;
 
         // Choose the angle of opening
-        Transform3D tf = new();
-        tf = tf.WithTransformation(new CoordinateSystem(Axe));
+        Transform3D tf = new Transform3D().WithTransformation(new CoordinateSystem(Axe));
 
         // Choose the furthest point from the "center of revolution"
         // to provide correct angle measurement.

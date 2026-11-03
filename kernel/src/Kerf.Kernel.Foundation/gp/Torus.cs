@@ -138,8 +138,7 @@ public readonly partial struct Torus : IEquatable<Torus>
         const int lowIndex = 0;
         Standard_DimensionError_Raise_if(coef.Length < 35, "gp_Torus::theCoefficients(): Dimension mismatch");
 
-        Transform3D tr = new();
-        tr = tr.WithTransformation(_pos);
+        Transform3D tr = new Transform3D().WithTransformation(_pos);
         double t11 = tr.Value(1, 1);
         double t12 = tr.Value(1, 2);
         double t13 = tr.Value(1, 3);

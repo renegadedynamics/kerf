@@ -23,8 +23,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void ConstructFromTrsf2d()
     {
-        Transform2D aGpTrsf = new();
-        aGpTrsf = aGpTrsf.WithTranslation(new Vector2D(3.0, 4.0));
+        Transform2D aGpTrsf = new Transform2D().WithTranslation(new Vector2D(3.0, 4.0));
 
         Transformation2 aTrsf = new Transformation2(aGpTrsf);
         Assert.Equal(Translation, aTrsf.Form());
@@ -217,8 +216,7 @@ public class Geom2d_TransformationTest
     [Fact]
     public void Trsf2d_RoundTrip()
     {
-        Transform2D aGpTrsf = new();
-        aGpTrsf = aGpTrsf.WithRotation(new Point2D(1.0, 2.0), M_PI / 3.0);
+        Transform2D aGpTrsf = new Transform2D().WithRotation(new Point2D(1.0, 2.0), M_PI / 3.0);
 
         Transformation2 aTrsf = new Transformation2(aGpTrsf);
         Transform2D                          aBack = aTrsf.Trsf2d();

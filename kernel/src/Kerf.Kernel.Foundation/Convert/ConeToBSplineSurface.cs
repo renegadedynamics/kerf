@@ -117,8 +117,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
         double w1;
-        Transform3D trsf = new();
-        trsf = trsf.WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -180,8 +179,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // replace bspline in the mark of the cone.
         // and calculate the weight of bspline.
         double w;
-        Transform3D trsf = new();
-        trsf = trsf.WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {

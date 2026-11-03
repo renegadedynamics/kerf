@@ -71,8 +71,7 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = e.XAxis().Direction();
         Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf = trsf.WithTransformation(e.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;
@@ -130,8 +129,7 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = e.XAxis().Direction();
         Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf = trsf.WithTransformation(e.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;

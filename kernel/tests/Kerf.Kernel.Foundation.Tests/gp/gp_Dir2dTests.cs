@@ -122,8 +122,7 @@ public class gp_Dir2dTests
     public void Transform()
     {
         Direction2D aDir = new(1.0, 0.0);
-        Transform2D aTrsf = new();
-        aTrsf = aTrsf.WithRotation(new Point2D(0.0, 0.0), M_PI);
+        Transform2D aTrsf = new Transform2D().WithRotation(new Point2D(0.0, 0.0), M_PI);
         Direction2D aTransformed = aDir.Transformed(aTrsf);
         Assert.Equal(-1.0, aTransformed.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aTransformed.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

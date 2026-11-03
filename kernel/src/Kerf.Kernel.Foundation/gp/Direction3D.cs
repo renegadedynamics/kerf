@@ -261,8 +261,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
     public readonly Direction3D Rotated(in Axis3D a1, double ang)
     {
         Xyz coord = _coord;
-        Transform3D t = new();
-        t = t.WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(a1, ang);
         coord.Multiply(t.HVectorialPart());
         return new Direction3D(coord, isUnit: true);
     }

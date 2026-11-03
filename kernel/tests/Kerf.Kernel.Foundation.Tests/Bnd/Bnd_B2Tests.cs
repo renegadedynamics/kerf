@@ -226,8 +226,7 @@ public class Bnd_B2dTest
     {
         B2d aBox = new(new Xy(1.0, 1.0), new Xy(1.0, 1.0));
 
-        Transform2D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector2D(2.0, 3.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(2.0, 3.0));
 
         B2d aTransformedBox = aBox.Transformed(aTrsf);
 

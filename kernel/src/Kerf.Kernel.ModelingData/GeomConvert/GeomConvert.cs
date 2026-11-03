@@ -45,8 +45,7 @@ public static class GeomConvert
         }
 
         theCurve = new BSplineCurve3D(poles, weights, knots, mults, convert.Degree(), convert.IsPeriodic);
-        Transform3D t = new();
-        t = t.WithTransformation(new CoordinateSystem(theConic.Position()), new CoordinateSystem(Constants.XOY()));
+        Transform3D t = new Transform3D().WithTransformation(new CoordinateSystem(theConic.Position()), new CoordinateSystem(Constants.XOY()));
         BSplineCurve3D cres;
         cres = (BSplineCurve3D)theCurve.Transformed(t);
         return cres;
@@ -1853,8 +1852,7 @@ public static class GeomConvert
                     }
                 }
 
-                GeneralTransform3D aff = new();
-                aff = aff.WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
+                GeneralTransform3D aff = new GeneralTransform3D().WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
                 for (j = 1; j <= nbVPoles; j++)
                 {
@@ -2095,8 +2093,7 @@ public static class GeomConvert
                     }
                 }
 
-                GeneralTransform3D aff = new();
-                aff = aff.WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
+                GeneralTransform3D aff = new GeneralTransform3D().WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
                 for (j = 1; j <= nbVPoles; j++)
                 {

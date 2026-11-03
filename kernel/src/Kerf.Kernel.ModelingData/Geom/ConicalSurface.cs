@@ -176,8 +176,7 @@ public class ConicalSurface : ElementarySurface
                              out double c3,
                              out double d)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double kAng = Math.Tan(_semiAngle);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);

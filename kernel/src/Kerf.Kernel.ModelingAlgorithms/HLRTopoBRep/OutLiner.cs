@@ -126,8 +126,7 @@ public class OutLiner : Transient
                 Contour fo = new();
                 if (p.Perspective())
                 {
-                    Point3D eye = new();
-                    eye = eye.WithXYZ(p.Focus() * vecz.XYZ());
+                    Point3D eye = new Point3D().WithXYZ(p.Focus() * vecz.XYZ());
                     fo.Init(eye);
                 }
                 else

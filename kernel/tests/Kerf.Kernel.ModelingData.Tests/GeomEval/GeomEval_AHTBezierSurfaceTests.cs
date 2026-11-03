@@ -145,8 +145,7 @@ public class GeomEval_AHTBezierSurfaceTest
     public void Transform_NotImplemented()
     {
         AhtBezierSurface aSurf = createPolynomialSurface();
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector3D(1.0, 2.0, 3.0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));

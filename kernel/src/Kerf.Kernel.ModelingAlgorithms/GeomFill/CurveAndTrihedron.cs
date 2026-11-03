@@ -62,8 +62,7 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     public override void SetTrsf(in Matrix3x3 transfo)
     {
         _trans = transfo;
-        Matrix3x3 aux = new Matrix3x3();
-        aux = aux.WithIdentity();
+        Matrix3x3 aux = new Matrix3x3().WithIdentity();
         aux -= _trans;
 
         _withTrans = false; // Au cas ou Trans = I

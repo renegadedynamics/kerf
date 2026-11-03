@@ -2722,8 +2722,7 @@ internal static class Builder_2
 
         // Projection of the vector
         CoordinateSystem axe = new(point, new Direction3D(normal), new Direction3D(vec3d[0]));
-        Transform3D transf = new();
-        transf = transf.WithTransformation(axe);
+        Transform3D transf = new Transform3D().WithTransformation(axe);
         Xyz coord = vec.XYZ();
         transf.Transforms(ref coord);
         coord.SetZ(0);

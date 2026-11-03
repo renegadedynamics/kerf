@@ -308,8 +308,7 @@ public class BuildPlateSurface
         p = _proj.Point(nearest);
         double u, v;
         p.Parameter(out u, out v);
-        Point2D p2d = new Point2D();
-        p2d = p2d.WithCoord(u, v);
+        Point2D p2d = new Point2D().WithCoord(u, v);
 
         return p2d;
     }

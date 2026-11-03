@@ -289,8 +289,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void Transform()
     {
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         Point3D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point3D aPtAfter = myOriginalCurve.Value(0.5);

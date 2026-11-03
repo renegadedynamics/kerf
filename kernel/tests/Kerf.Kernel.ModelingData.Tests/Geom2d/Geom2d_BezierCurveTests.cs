@@ -256,8 +256,7 @@ public class Geom2d_BezierCurve_Test
     [Fact]
     public void Transform()
     {
-        Transform2D aTrsf = new Transform2D();
-        aTrsf = aTrsf.WithTranslation(new Vector2D(10, 20));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10, 20));
         Point2D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point2D aPtAfter = myOriginalCurve.Value(0.5);

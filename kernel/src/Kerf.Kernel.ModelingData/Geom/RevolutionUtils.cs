@@ -28,8 +28,7 @@ internal static class RevolutionUtils
                                      out Point3D p)
     {
         p = curvePt;
-        Transform3D rotation = new Transform3D();
-        rotation = rotation.WithRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
         p = p.Transformed(rotation);
     }
 
@@ -55,8 +54,7 @@ internal static class RevolutionUtils
             d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
 
-        Transform3D rotation = new Transform3D();
-        rotation = rotation.WithRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
         p = p.Transformed(rotation);
         d1U = d1U.Transformed(rotation);
         d1V = curveD1;
@@ -93,8 +91,7 @@ internal static class RevolutionUtils
         d2U = new Vector3D(dir.Dot(cq) * dir - cq);
         d2UV = new Vector3D(dir.Crossed(curveD1.XYZ()));
 
-        Transform3D rotation = new Transform3D();
-        rotation = rotation.WithRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
         p = p.Transformed(rotation);
         d1U = d1U.Transformed(rotation);
         d1V = curveD1;
@@ -143,8 +140,7 @@ internal static class RevolutionUtils
         d3UUV = new Vector3D(dir.Dot(curveD1.XYZ()) * dir - curveD1.XYZ());
         d3UVV = new Vector3D(dir.Crossed(curveD2.XYZ()));
 
-        Transform3D rotation = new Transform3D();
-        rotation = rotation.WithRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
         p = p.Transformed(rotation);
         d1U = d1U.Transformed(rotation);
         d1V = curveD1;
@@ -173,8 +169,7 @@ internal static class RevolutionUtils
         // theDerV is part of the interface contract - caller provides different data based on its value
         _ = derV;
 
-        Transform3D rotation = new Transform3D();
-        rotation = rotation.WithRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
 
         Vector3D result;
         if (derU == 0)

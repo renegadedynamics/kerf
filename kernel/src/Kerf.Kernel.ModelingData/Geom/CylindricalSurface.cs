@@ -127,8 +127,7 @@ public class CylindricalSurface : ElementarySurface
                              out double c3,
                              out double d)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);

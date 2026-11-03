@@ -86,8 +86,7 @@ internal static class EdgeIntersectorRecordings
                             Vector3D aShift = new(FromHex(f[4]), FromHex(f[5]), FromHex(f[6]));
                             if (aShift.SquareMagnitude() != 0.0)
                             {
-                                Transform3D aT = new();
-                                aT = aT.WithTranslation(aShift);
+                                Transform3D aT = new Transform3D().WithTranslation(aShift);
                                 aB = aB.Moved(new Placement(aT));
                             }
                         }

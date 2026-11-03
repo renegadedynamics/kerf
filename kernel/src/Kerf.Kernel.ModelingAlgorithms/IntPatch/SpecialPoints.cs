@@ -719,8 +719,7 @@ public static class SpecialPoints
             pSurf.D1(u0, v0, out _, out Vector3D vecDu, out Vector3D vecDv);
 
             // Transforms parametric surface in coordinate-system of the quadric
-            Transform3D tr = new();
-            tr = tr.WithTransformation(qSurf.Cone().Position());
+            Transform3D tr = new Transform3D().WithTransformation(qSurf.Cone().Position());
 
             // Derivatives of transformed thePSurf
             vecDu = vecDu.Transformed(tr);

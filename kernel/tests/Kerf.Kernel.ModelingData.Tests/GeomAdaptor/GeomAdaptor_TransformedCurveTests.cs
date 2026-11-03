@@ -26,16 +26,14 @@ public class GeomAdaptor_TransformedCurveTest
     //! Helper function to create a translation transformation.
     private static Transform3D CreateTranslation(double theDx, double theDy, double theDz)
     {
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector3D(theDx, theDy, theDz));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(theDx, theDy, theDz));
         return aTrsf;
     }
 
     //! Helper function to create a rotation transformation around Z axis.
     private static Transform3D CreateRotationZ(double theAngleRad)
     {
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theAngleRad);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theAngleRad);
         return aTrsf;
     }
 

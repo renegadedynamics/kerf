@@ -2424,8 +2424,7 @@ public sealed partial class IntConicConic
                                                          out int nbsol)
     {
         Frame2D elAxis = ellipse.Axis();
-        Transform2D tr = new();
-        tr = tr.WithTransformation(elAxis.XAxis());
+        Transform2D tr = new Transform2D().WithTransformation(elAxis.XAxis());
         Ellipse2D tEllipse = ellipse.Transformed(tr);
         Line2D tLine = line.Transformed(tr);
         double dy = tLine.Position().Direction().Y();

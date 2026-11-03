@@ -501,8 +501,7 @@ public static class AlgoTools3D
         c2D!.D1(aT, out Point2D px2D, out Vector2D vx2D);
         Direction2D dx2D = new(vx2D);
 
-        Direction2D dp = new();
-        dp = dp.WithCoord(-dx2D.Y(), dx2D.X());
+        Direction2D dp = new Direction2D().WithCoord(-dx2D.Y(), dx2D.X());
 
         if (aE.Orientation() == Reversed)
         {
@@ -893,8 +892,7 @@ public static class AlgoTools3D
         c2D.D1(t, out Point2D aP2D, out Vector2D v2D);
         Direction2D d2Dx = new(v2D);
         //
-        Direction2D d2D = new();
-        d2D = d2D.WithCoord(-d2Dx.Y(), d2Dx.X());
+        Direction2D d2D = new Direction2D().WithCoord(-d2Dx.Y(), d2Dx.X());
         //
         if (e.Orientation() == Reversed)
         {

@@ -100,8 +100,7 @@ public sealed class LinearForm
         Modifier modif = new();
         if (_isTrans)
         {
-            Transform3D t = new();
-            t = t.WithTranslation(_tra);
+            Transform3D t = new Transform3D().WithTranslation(_tra);
             TrsfModification modbase = new(t);
             modif.Init(theBase);
             modif.Perform(modbase);

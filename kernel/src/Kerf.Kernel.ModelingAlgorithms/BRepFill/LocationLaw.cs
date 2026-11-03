@@ -228,8 +228,7 @@ public abstract class LocationLaw : Transient
     /// <summary>Removes the transformations set by <see cref="TransformInG0Law"/> or TransformInCompatibleLaw.</summary>
     public void DeleteTransform()
     {
-        Matrix3x3 id = new();
-        id = id.WithIdentity();
+        Matrix3x3 id = new Matrix3x3().WithIdentity();
         for (int ii = 1; ii <= _edges!.Length(); ii++)
         {
             _laws!.ChangeValue(ii).SetTrsf(id);

@@ -100,8 +100,7 @@ public readonly partial struct Cylinder : IEquatable<Cylinder>
     {
         // Dans le repere local du cylindre :
         // X**2 + Y**2 - radius = 0.0
-        Transform3D t = new();
-        t = t.WithTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);

@@ -714,8 +714,7 @@ public sealed class SurfaceSectionPlacement
         CoordinateSystem saxe = new CoordinateSystem(p, Constants.DZ(), Constants.DX());
 
         // Transfo
-        Transform3D tf = new Transform3D();
-        tf = tf.WithTransformation(saxe, paxe);
+        Transform3D tf = new Transform3D().WithTransformation(saxe, paxe);
 
         if (withCorrection)
         {

@@ -204,8 +204,7 @@ public class LocationGuide : SurfaceLocationLaw
             // calculer transfo entre triedre et Oxyz
             Direction3D n2 = new Direction3D(n);
             CoordinateSystem n3 = new CoordinateSystem(p, d, n2);
-            Transform3D transfo = new Transform3D();
-            transfo = transfo.WithTransformation(n3, rep);
+            Transform3D transfo = new Transform3D().WithTransformation(n3, rep);
 
             // transformer la section
             if (!isconst)
@@ -435,8 +434,7 @@ public class LocationGuide : SurfaceLocationLaw
     public override void SetTrsf(in Matrix3x3 transfo)
     {
         _trans = transfo;
-        Matrix3x3 aux = new Matrix3x3();
-        aux = aux.WithIdentity();
+        Matrix3x3 aux = new Matrix3x3().WithIdentity();
         aux -= _trans;
         _withTrans = false; // Au cas ou Trans = I
         for (int ii = 1; ii <= 3 && !_withTrans; ii++)
@@ -508,8 +506,7 @@ public class LocationGuide : SurfaceLocationLaw
             result.Root(_r);
 
             // rotation
-            Matrix3x3 rot = new Matrix3x3();
-            rot = rot.WithRotation(t, _r[2]);
+            Matrix3x3 rot = new Matrix3x3().WithRotation(t, _r[2]);
             b *= rot;
             n *= rot;
 

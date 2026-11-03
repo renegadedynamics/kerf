@@ -541,8 +541,7 @@ public class MakePeriodicAlgorithm : Options
             }
 
             // Translate the shape to the negative side
-            Transform3D negTrsf = new();
-            negTrsf = negTrsf.WithTranslationPart(new Vector3D(MY_DIRECTIONS[i].Reversed()) * Period(i));
+            Transform3D negTrsf = new Transform3D().WithTranslationPart(new Vector3D(MY_DIRECTIONS[i].Reversed()) * Period(i));
             Transform negT = new(_shape, negTrsf, false);
 
             // Split the negative side of the shape.
@@ -606,8 +605,7 @@ public class MakePeriodicAlgorithm : Options
             }
 
             // Translate the shape to the positive side
-            Transform3D posTrsf = new();
-            posTrsf = posTrsf.WithTranslationPart(new Vector3D(MY_DIRECTIONS[i]) * Period(i));
+            Transform3D posTrsf = new Transform3D().WithTranslationPart(new Vector3D(MY_DIRECTIONS[i]) * Period(i));
             Transform translator = new(_shape, posTrsf, false);
             tools.Append(translator.InternalShape());
 
@@ -803,8 +801,7 @@ public class MakePeriodicAlgorithm : Options
         // Create translated copies of the shape
         for (int i = 1; i <= Math.Abs(times); ++i)
         {
-            Transform3D trsf = new();
-            trsf = trsf.WithTranslationPart(new Vector3D(MY_DIRECTIONS[id]) * (iDir * i * period));
+            Transform3D trsf = new Transform3D().WithTranslationPart(new Vector3D(MY_DIRECTIONS[id]) * (iDir * i * period));
             Transform translator = new(_repeatedShape, trsf, false);
             shapes.Append(translator.InternalShape());
 

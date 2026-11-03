@@ -108,8 +108,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     public readonly void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
     {
         double p = 2.0 * _focalLength;
-        Transform2D t = new();
-        t = t.WithTransformation(_pos.XAxis());
+        Transform2D t = new Transform2D().WithTransformation(_pos.XAxis());
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);

@@ -566,8 +566,7 @@ public class QuadQuadGeo
                     Xyz omega1 = new(omegaXYZtrnsl.X() - distt * a,
                                         omegaXYZtrnsl.Y() - distt * b,
                                         omegaXYZtrnsl.Z() - distt * c);
-                    Point3D ppt1 = new();
-                    ppt1 = ppt1.WithXYZ(omega1);
+                    Point3D ppt1 = new Point3D().WithXYZ(omega1);
                     Vector3D vv1 = new(_pt1, ppt1);
                     Direction3D dd1 = new(vv1);
                     _dir1 = dd1;

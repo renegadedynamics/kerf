@@ -488,8 +488,7 @@ public sealed class SurfToAnaSurf
         Vector3D t = new(sign * avR * norm.XYZ());
         loc = loc.Translated(t);
         Axis3D ax1 = new(loc, axD);
-        Cylinder cyl = new();
-        cyl = cyl.WithAxis(ax1);
+        Cylinder cyl = new Cylinder().WithAxis(ax1);
         cyl = cyl.WithRadius(avR);
 
         if (leastSquare)

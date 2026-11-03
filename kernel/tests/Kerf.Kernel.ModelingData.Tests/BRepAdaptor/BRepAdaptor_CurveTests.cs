@@ -18,8 +18,7 @@ public class BRepAdaptor_CurveTests
 {
     private static Placement SomeLocation()
     {
-        Transform3D aT = new Transform3D();
-        aT = aT.WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7);
+        Transform3D aT = new Transform3D().WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7);
         Transform3D aT2 = Transform3D.Translation(new Vector3D(5, -1, 2));
         return new Placement(aT2.Multiplied(aT));
     }

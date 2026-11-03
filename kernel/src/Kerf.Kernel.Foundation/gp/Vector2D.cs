@@ -259,8 +259,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     public readonly Vector2D Rotated(double ang)
     {
         Xy coord = _coord;
-        Transform2D t = new();
-        t = t.WithRotation(new Point2D(0.0, 0.0), ang);
+        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
         coord.Multiply(t.VectorialPart());
         return new Vector2D(coord);
     }

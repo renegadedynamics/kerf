@@ -89,8 +89,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
     public readonly Point3D Mirrored(in Axis3D a1)
     {
         Xyz coord = _coord;
-        Transform3D t = new();
-        t = t.WithMirror(a1);
+        Transform3D t = new Transform3D().WithMirror(a1);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }
@@ -98,8 +97,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
     public readonly Point3D Mirrored(in Frame3D a2)
     {
         Xyz coord = _coord;
-        Transform3D t = new();
-        t = t.WithMirror(a2);
+        Transform3D t = new Transform3D().WithMirror(a2);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }
@@ -107,8 +105,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
     public readonly Point3D Rotated(in Axis3D a1, double ang)
     {
         Xyz coord = _coord;
-        Transform3D t = new();
-        t = t.WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(a1, ang);
         t.Transforms(ref coord);
         return new Point3D(coord);
     }

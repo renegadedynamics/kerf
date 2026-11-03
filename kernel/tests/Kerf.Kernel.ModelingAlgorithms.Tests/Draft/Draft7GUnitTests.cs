@@ -66,8 +66,7 @@ public class Draft7GUnitTests
     {
         // two squares side by side, made apart: their common side is one contiguous edge; a box's faces share theirs
         Face aF1 = new MakeFace(Square(0)).Face();
-        Transform3D aT = new();
-        aT = aT.WithTranslation(new Vector3D(10, 0, 0));
+        Transform3D aT = new Transform3D().WithTranslation(new Vector3D(10, 0, 0));
         Shape aF2 = new Transform(new MakeFace(Square(0)).Face(), aT, true).Shape();
         var aFinder = new FindContiguousEdges();
         aFinder.Add(aF1);

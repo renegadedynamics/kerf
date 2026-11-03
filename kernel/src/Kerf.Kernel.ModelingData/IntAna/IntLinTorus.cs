@@ -55,8 +55,7 @@ public class IntLinTorus
         //--------------------------------------------------------------
         //-- Coefficients of the line in the torus reference frame
         //--
-        Transform3D trsf = new();
-        trsf = trsf.WithTransformation(T.Position());
+        Transform3D trsf = new Transform3D().WithTransformation(T.Position());
         newPL = newPL.Transformed(trsf);
         dl = dl.Transformed(trsf);
 

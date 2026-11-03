@@ -143,8 +143,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
         else
         {
-            Transform2D t = new();
-            t = t.WithTransformation(_pos.XAxis());
+            Transform2D t = new Transform2D().WithTransformation(_pos.XAxis());
             double t11 = t.Value(1, 1);
             double t12 = t.Value(1, 2);
             double t13 = t.Value(1, 3);

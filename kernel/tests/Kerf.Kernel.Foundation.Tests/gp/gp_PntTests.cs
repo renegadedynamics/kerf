@@ -41,8 +41,7 @@ public class gp_PntTest
     [Fact]
     public void SetCoord()
     {
-        Point3D aPnt = new();
-        aPnt = aPnt.WithX(10.0);
+        Point3D aPnt = new Point3D().WithX(10.0);
         aPnt = aPnt.WithY(20.0);
         aPnt = aPnt.WithZ(30.0);
         Assert.Equal(10.0, aPnt.X());
@@ -177,8 +176,7 @@ public class gp_PntTest
     public void Transformed()
     {
         Point3D aPnt = new(1.0, 0.0, 0.0);
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector3D(0.0, 0.0, 5.0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0.0, 0.0, 5.0));
         Point3D aResult = aPnt.Transformed(aTrsf);
         Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

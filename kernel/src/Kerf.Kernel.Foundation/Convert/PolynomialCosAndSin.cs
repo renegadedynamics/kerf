@@ -91,8 +91,7 @@ internal static class PolynomialCosAndSin
         tPoles[6] = tPoles[6].WithCoord(-0.199043, -1.871905);
         tPoles[7] = tPoles[7].WithCoord(1.0, -1.013854);
         tPoles[8] = tPoles[8].WithCoord(1.0, 0.0);
-        Transform2D t = new();
-        t = t.WithRotation(Constants.Origin2d(), angle);
+        Transform2D t = new Transform2D().WithRotation(Constants.Origin2d(), angle);
         for (ii = 1; ii <= num_poles; ii++)
         {
             tPoles[ii] = tPoles[ii].Transformed(t);

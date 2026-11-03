@@ -84,8 +84,7 @@ public sealed class LocalRevol
         Modifier modif = new();
         if (_isTrans)
         {
-            Transform3D t = new();
-            t = t.WithRotation(_axis, _angTra);
+            Transform3D t = new Transform3D().WithRotation(_axis, _angTra);
             TrsfModification modbase = new(t);
             modif.Init(theBase);
             modif.Perform(modbase);

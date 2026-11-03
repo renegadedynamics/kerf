@@ -213,8 +213,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         Matrix3x3 tm = m;
         tm = tm.Transposed();
         tm = tm.Multiplied(m);
-        Matrix3x3 identity = new();
-        identity = identity.WithIdentity();
+        Matrix3x3 identity = new Matrix3x3().WithIdentity();
         tm = tm.Subtracted(identity);
         if (shape == Other)
         {

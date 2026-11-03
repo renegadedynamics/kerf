@@ -199,8 +199,7 @@ public class PlaneSurface : ElementarySurface
     /// <summary>A scale of |T.ScaleFactor()| about the parametric origin.</summary>
     public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
-        Transform2D t2 = new Transform2D();
-        t2 = t2.WithScale(Constants.Origin2d(), Math.Abs(t.ScaleFactor()));
+        Transform2D t2 = new Transform2D().WithScale(Constants.Origin2d(), Math.Abs(t.ScaleFactor()));
         return new GeneralTransform2D(t2);
     }
 

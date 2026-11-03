@@ -159,8 +159,7 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
 
     private static Transform3D TrsfFrom(in CoordinateSystem theAx3)
     {
-        Transform3D aT = new();
-        aT = aT.WithTransformation(theAx3);
+        Transform3D aT = new Transform3D().WithTransformation(theAx3);
         return aT.Inverted();
     }
 }

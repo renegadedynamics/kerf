@@ -118,8 +118,7 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void Transform_Translation()
     {
-        Transform2D aTrsf = new Transform2D();
-        aTrsf = aTrsf.WithTranslation(new Vector2D(5.0, 10.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(5.0, 10.0));
         myParabola.Transform(aTrsf);
         Assert.Equal(5.0, myParabola.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(10.0, myParabola.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

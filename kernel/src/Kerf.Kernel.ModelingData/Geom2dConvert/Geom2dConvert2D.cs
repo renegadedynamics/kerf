@@ -41,13 +41,11 @@ public static class Geom2dConvert2D
         if ((axis.XDirection() ^ axis.YDirection()) < 0.0)
         {
             // Then the axis is left-handed, apply a symmetry to the curve.
-            Transform2D sym = new();
-            sym = sym.WithMirror(Constants.OX2d());
+            Transform2D sym = new Transform2D().WithMirror(Constants.OX2d());
             theCurve.Transform(sym);
         }
 
-        Transform2D t = new();
-        t = t.WithTransformation(theConic.XAxis(), Constants.OX2d());
+        Transform2D t = new Transform2D().WithTransformation(theConic.XAxis(), Constants.OX2d());
         BSplineCurve2D cres = (BSplineCurve2D)theCurve.Transformed(t);
         return cres;
     }

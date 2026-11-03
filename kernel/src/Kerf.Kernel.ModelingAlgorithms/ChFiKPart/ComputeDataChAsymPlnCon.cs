@@ -252,8 +252,7 @@ internal static class ComputeDataChAsymPlnCon
             Circle2D cir2dPln = new(ax2dPln, chamfRad);
             gCir2dPln = new CircleCurve2D(cir2dPln);
             // pcurve on chamfer
-            Point2D p2dch = new();
-            p2dch = p2dch.WithCoord(0.0, 0.0);
+            Point2D p2dch = new Point2D().WithCoord(0.0, 0.0);
             // ElSLib::CylinderD1(0.,0.,ChamfAx3,ChamfRad,Pt,deru,derv);
             Line2D lin2dch = new(p2dch, Constants.DX2d());
             LineCurve2D gLin2dCh1 = new(lin2dch);
@@ -439,8 +438,7 @@ internal static class ComputeDataChAsymPlnCon
                 gCir2dPln = new CircleCurve2D(cir2dPln);
             }
             // pcurve on chamfer
-            Point2D p2dch = new();
-            p2dch = p2dch.WithCoord(0.0, 0.0);
+            Point2D p2dch = new Point2D().WithCoord(0.0, 0.0);
             global::Kerf.Engine.Geometry.ElSLib.ConeD1(0.0, 0.0, chamfAx3, chamfRad, semiAngl, out pt, out deru, out derv);
             Line2D lin2dch = new(p2dch, Constants.DX2d());
             LineCurve2D gLin2dCh1 = new(lin2dch);

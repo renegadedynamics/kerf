@@ -271,8 +271,7 @@ public class DraftTrihedron : TrihedronLaw
                     break;
                 case Line:
                 { // La normale du plan de la courbe est il perpendiculaire a la BiNormale ?
-                    Vector3D v = new Vector3D();
-                    v = v.WithXYZ(_curve.Line().Direction().XYZ());
+                    Vector3D v = new Vector3D().WithXYZ(_curve.Line().Direction().XYZ());
                     return v.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
                 }
                 default:
@@ -280,8 +279,7 @@ public class DraftTrihedron : TrihedronLaw
             }
 
             // La normale du plan de la courbe est il // a la BiNormale ?
-            Vector3D v2 = new Vector3D();
-            v2 = v2.WithXYZ(theAxe.Direction().XYZ());
+            Vector3D v2 = new Vector3D().WithXYZ(theAxe.Direction().XYZ());
             return v2.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }

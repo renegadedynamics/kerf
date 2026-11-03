@@ -1320,8 +1320,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the plane: its coordinates in the plane's system.</summary>
     public static void PlaneParameters(in CoordinateSystem pos, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         u = ploc.X();
         v = ploc.Y();
@@ -1330,8 +1329,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the cylinder, U in [0, 2*PI].</summary>
     public static void CylinderParameters(in CoordinateSystem pos, double radius, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         u = Math.Atan2(ploc.Y(), ploc.X());
         NormalizeAngle(ref u);
@@ -1345,8 +1343,7 @@ public static class ElSLib
     public static void ConeParameters(in CoordinateSystem pos, double radius, double sAngle, in Point3D p,
                                       out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
 
         // Check if point is at the apex
@@ -1380,8 +1377,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the sphere, U in [0, 2*PI] and V in [-PI/2, PI/2].</summary>
     public static void SphereParameters(in CoordinateSystem pos, double radius, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t = t.WithTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         ploc.Coord(out double x, out double y, out double z);
         double l = Math.Sqrt(x * x + y * y);
@@ -1411,8 +1407,7 @@ public static class ElSLib
     public static void TorusParameters(in CoordinateSystem pos, double majorRadius, double minorRadius, in Point3D p,
                                        out double u, out double v)
     {
-        Transform3D tref = new Transform3D();
-        tref = tref.WithTransformation(pos);
+        Transform3D tref = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(tref);
         ploc.Coord(out double x, out double y, out double z);
 

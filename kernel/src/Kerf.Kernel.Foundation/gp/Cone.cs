@@ -132,8 +132,7 @@ public readonly partial struct Cone : IEquatable<Cone>
     {
         // Dans le repere du cone :
         // X**2 + Y**2 - (radius + Z * std::tan(semiAngle))**2 = 0.0
-        Transform3D t = new();
-        t = t.WithTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double kAng = Math.Tan(_semiAngle);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);

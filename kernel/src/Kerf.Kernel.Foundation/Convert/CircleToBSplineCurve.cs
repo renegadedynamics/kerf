@@ -70,8 +70,7 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = c.XAxis().Direction();
         Direction2D oy = c.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf = trsf.WithTransformation(c.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;
@@ -131,8 +130,7 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = c.XAxis().Direction();
         Direction2D oy = c.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf = trsf.WithTransformation(c.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;

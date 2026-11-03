@@ -65,8 +65,7 @@ public class GTrsfModification : Modification
     {
         tol = 0.0;
         revWires = revFace = false;
-        GeneralTransform3D gtrsf = new GeneralTransform3D();
-        gtrsf = gtrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
         gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
         s = Tool.Surface(f, out l);
         if (s is null)
@@ -126,8 +125,7 @@ public class GTrsfModification : Modification
     /// <exception cref="NoSuchObjectException">The curve is neither a B-spline nor a Bezier curve.</exception>
     public override bool NewCurve(in Edge e, out Curve3D? c, out Placement L, out double tol)
     {
-        GeneralTransform3D gtrsf = new GeneralTransform3D();
-        gtrsf = gtrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
         gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
         tol = Tool.Tolerance(e) * _gScale;
         c = Tool.Curve(e, out L, out double f, out double l);
@@ -230,8 +228,7 @@ public class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D();
-        gTrsf = gTrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
         gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
         gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
 
@@ -284,8 +281,7 @@ public class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D();
-        gTrsf = gTrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
         gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
         gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
 

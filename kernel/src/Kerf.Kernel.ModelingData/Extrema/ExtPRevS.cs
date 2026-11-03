@@ -299,8 +299,7 @@ public class ExtPRevS : Transient
             }
         }
 
-        Transform3D t = new();
-        t = t.WithRotation(ax, -u);
+        Transform3D t = new Transform3D().WithRotation(ax, -u);
         p1 = p.Transformed(t);
 
         Point3D e;

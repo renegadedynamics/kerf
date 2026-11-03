@@ -302,8 +302,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     public readonly Vector3D Rotated(in Axis3D a1, double ang)
     {
         Xyz coord = _coord;
-        Transform3D t = new();
-        t = t.WithRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(a1, ang);
         coord.Multiply(t.VectorialPart());
         return new Vector3D(coord);
     }

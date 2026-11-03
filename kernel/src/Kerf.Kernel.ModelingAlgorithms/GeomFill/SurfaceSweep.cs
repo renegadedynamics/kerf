@@ -778,8 +778,7 @@ public sealed class SurfaceSweep
 
                     // On verifie d'abord que le plan de la section est // a
                     // l'axe de rotation
-                    Vector3D nc = new Vector3D();
-                    nc = nc.WithXYZ(c.Position().Direction().XYZ());
+                    Vector3D nc = new Vector3D().WithXYZ(c.Position().Direction().XYZ());
                     nc = nc.Normalized();
                     error = Math.Abs(nc.Dot(dn));
                     // Puis on evalue l'erreur commise sur la section,
@@ -897,8 +896,7 @@ public sealed class SurfaceSweep
                 {
                     Line3D L = ac.Line();
                     L = L.Transformed(tf2);
-                    Vector3D dl = new Vector3D();
-                    dl = dl.WithXYZ(L.Direction().XYZ());
+                    Vector3D dl = new Vector3D().WithXYZ(L.Direction().XYZ());
                     levier = Max(Math.Abs(ac.FirstParameter()), ac.LastParameter());
                     // si la line est ortogonale au cercle de rotation
                     _sError = error + levier * Math.Abs(dl.Dot(dp));

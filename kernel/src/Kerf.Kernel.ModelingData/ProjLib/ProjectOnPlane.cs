@@ -442,8 +442,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         double alpha = po * new Vector3D(thePlane.Direction());
         alpha /= theDir * thePlane.Direction();
 
-        Point3D p = new();
-        p = p.WithXYZ(point.XYZ() + alpha * theDir.XYZ());
+        Point3D p = new Point3D().WithXYZ(point.XYZ() + alpha * theDir.XYZ());
 
         return p;
     }
@@ -661,10 +660,8 @@ public class ProjectOnPlane : CurveAdaptorBase
                             // calculate the rotation angle for the plane axes to meet the correct axes of the
                             // projected ellipse (swap eigenvectors in respect to major and minor axes)
                             Matrix eigenVec = eigenCalc.Vectors();
-                            Transform2D trsfInPlane = new();
-                            trsfInPlane = trsfInPlane.WithValues(eigenVec[1, 2], eigenVec[1, 1], 0.0, eigenVec[2, 2], eigenVec[2, 1], 0.0);
-                            Transform3D rot = new();
-                            rot = rot.WithRotation(new Axis3D(p, _plane.Direction()), trsfInPlane.RotationPart());
+                            Transform2D trsfInPlane = new Transform2D().WithValues(eigenVec[1, 2], eigenVec[1, 1], 0.0, eigenVec[2, 2], eigenVec[2, 1], 0.0);
+                            Transform3D rot = new Transform3D().WithRotation(new Axis3D(p, _plane.Direction()), trsfInPlane.RotationPart());
 
                             dx = _plane.XDirection().Transformed(rot);
                             dy = _plane.YDirection().Transformed(rot);

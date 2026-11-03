@@ -449,8 +449,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                 TrimmedCurve3D anArc = new MakeArcOfEllipse(new Ellipse3D(new Frame3D(), 6, 3), 3.5, 5.9, true).Value();
                 Edge anEdge = new MakeEdge(anArc).Edge();
                 Shape aFace = new ApiMakePrism(anEdge, new Vector3D(0, 0, 4)).Shape();
-                Transform3D aT = new();
-                aT = aT.WithTranslation(new Vector3D(0, 0, -2));
+                Transform3D aT = new Transform3D().WithTranslation(new Vector3D(0, 0, -2));
                 return (aFace.Moved(new Placement(aT)), "extruded elliptical face");
             }
             default:

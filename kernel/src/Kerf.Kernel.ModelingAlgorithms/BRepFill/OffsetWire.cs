@@ -532,8 +532,7 @@ public sealed class OffsetWire
         {
             ALT = -alt;
         }
-        Transform3D t = new();
-        t = t.WithTranslation(new Vector3D(0.0, 0.0, ALT));
+        Transform3D t = new Transform3D().WithTranslation(new Vector3D(0.0, 0.0, ALT));
         Placement l = new(t);
 
         for (Explorer exp = new(spine, ShapeType.Wire); exp.More(); exp.Next())

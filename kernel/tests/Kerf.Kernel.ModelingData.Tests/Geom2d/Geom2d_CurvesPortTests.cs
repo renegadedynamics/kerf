@@ -23,8 +23,7 @@ public class Geom2d_CurvesPortTest
 
     private static Transform2D Translation(double theX, double theY)
     {
-        Transform2D aTrsf = new Transform2D();
-        aTrsf = aTrsf.WithTranslation(new Vector2D(theX, theY));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(theX, theY));
         return aTrsf;
     }
 

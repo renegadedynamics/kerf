@@ -481,8 +481,7 @@ public sealed class SurfacePipe
 
         Curve3D sect;
         _adpPath = new CurveAdaptor((Curve3D)path.Copy());
-        Vector3D v = new Vector3D();
-        v = v.WithXYZ(direction.XYZ());
+        Vector3D v = new Vector3D().WithXYZ(direction.XYZ());
         ConstantBiNormal tLaw = new ConstantBiNormal(new Direction3D(v));
 
         _loc = new CurveAndTrihedron(tLaw);

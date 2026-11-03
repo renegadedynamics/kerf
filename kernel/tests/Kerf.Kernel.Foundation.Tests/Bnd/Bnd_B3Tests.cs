@@ -242,8 +242,7 @@ public class Bnd_B3dTest
     {
         B3d aBox = new(new Xyz(1.0, 1.0, 1.0), new Xyz(1.0, 1.0, 1.0));
 
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Vector3D(2.0, 3.0, 4.0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(2.0, 3.0, 4.0));
 
         B3d aTransformedBox = aBox.Transformed(aTrsf);
 
@@ -263,8 +262,7 @@ public class Bnd_B3dTest
     {
         B3d aBox = new(new Xyz(1.0, 0.0, 0.0), new Xyz(0.5, 0.5, 0.5));
 
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 2.0);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI / 2.0);
 
         B3d aTransformedBox = aBox.Transformed(aTrsf);
 

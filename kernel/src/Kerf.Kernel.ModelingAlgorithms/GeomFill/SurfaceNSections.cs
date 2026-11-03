@@ -583,8 +583,7 @@ public class SurfaceNSections : SurfaceSectionLaw
     public override Point3D BarycentreOfSurf()
     {
         Point3D p;
-        Point3D bary = new Point3D();
-        bary = bary.WithCoord(0.0, 0.0, 0.0);
+        Point3D bary = new Point3D().WithCoord(0.0, 0.0, 0.0);
 
         if (_surface is null)
         {

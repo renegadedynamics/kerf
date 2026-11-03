@@ -266,8 +266,7 @@ public class ShapeLaw : SectionLaw
 
         if (_theLaw is not null)
         {
-            Transform3D t = new();
-            t = t.WithScale(new Point3D(0, 0, 0), _theLaw.Value(param));
+            Transform3D t = new Transform3D().WithScale(new Point3D(0, 0, 0), _theLaw.Value(param));
             // TopLoc_Location L(T);
             // V.Move(L);
             v = ShapeCasts.Vertex(new Transform(v, t).Shape());
@@ -477,8 +476,7 @@ public class ShapeLaw : SectionLaw
         s = _shape;
         if (_theLaw is not null)
         {
-            Transform3D t = new();
-            t = t.WithScale(new Point3D(0, 0, 0), _theLaw.Value(u));
+            Transform3D t = new Transform3D().WithScale(new Point3D(0, 0, 0), _theLaw.Value(u));
             // TopLoc_Location L(T);
             // S.Move(L);
             s = new Transform(s, t).Shape();

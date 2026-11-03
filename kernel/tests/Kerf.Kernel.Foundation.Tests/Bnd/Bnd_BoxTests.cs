@@ -279,8 +279,7 @@ public class Bnd_BoxTest
         Box aBox = new();
         aBox.Update(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
-        Transform3D aTranslation = new();
-        aTranslation = aTranslation.WithTranslation(new Vector3D(2.0, 3.0, 4.0));
+        Transform3D aTranslation = new Transform3D().WithTranslation(new Vector3D(2.0, 3.0, 4.0));
 
         Box aTransformed = aBox.Transformed(aTranslation);
 
@@ -299,8 +298,7 @@ public class Bnd_BoxTest
     public void TransformationVoidBox()
     {
         Box aVoidBox = new();
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 4);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 4);
 
         Box aTransformed = aVoidBox.Transformed(aRotation);
 
@@ -612,8 +610,7 @@ public class Bnd_BoxTest
         aBox.Update(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         aBox.OpenXmax();
 
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 2);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 2);
 
         Box aTransformed = aBox.Transformed(aRotation);
 

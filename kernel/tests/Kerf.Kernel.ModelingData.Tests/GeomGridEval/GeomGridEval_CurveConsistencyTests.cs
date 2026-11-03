@@ -398,8 +398,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 // Any adaptor other than GeomAdaptor_Curve: GeomGridEval_OtherCurve, point by point
                 if (aKind is "Circle" or "BSpline" or "Bezier" or "OffsetEllipse")
                 {
-                    Transform3D aTrsf = new();
-                    aTrsf = aTrsf.WithRotation(new Axis3D(RandomPnt(aRnd, 5.0), RandomDir(aRnd)), aRnd.NextDouble() * 6);
+                    Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(RandomPnt(aRnd, 5.0), RandomDir(aRnd)), aRnd.NextDouble() * 6);
                     TransformedCurve anOther = new(aCurve, aTrsf);
                     CurveGrid anOtherEval = new(anOther);
                     Assert.Equal(anOther.GetType(), anOtherEval.GetType());

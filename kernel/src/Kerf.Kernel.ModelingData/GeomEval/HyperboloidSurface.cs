@@ -432,8 +432,7 @@ public sealed class HyperboloidSurface : ElementarySurface
 
         // Local equation: aA1Loc*X'^2 + aA2Loc*Y'^2 + aA3Loc*Z'^2 + aDLoc = 0
         // where (X',Y',Z') = T * (X,Y,Z), T = SetTransformation(pos).
-        Transform3D trsf = new Transform3D();
-        trsf = trsf.WithTransformation(_pos);
+        Transform3D trsf = new Transform3D().WithTransformation(_pos);
         double t11 = trsf.Value(1, 1);
         double t12 = trsf.Value(1, 2);
         double t13 = trsf.Value(1, 3);

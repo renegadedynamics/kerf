@@ -81,8 +81,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
     public readonly Point2D Mirrored(in Axis2D a)
     {
         Xy coord = _coord;
-        Transform2D t = new();
-        t = t.WithMirror(a);
+        Transform2D t = new Transform2D().WithMirror(a);
         t.Transforms(ref coord);
         return new Point2D(coord);
     }
@@ -90,8 +89,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
     public readonly Point2D Rotated(in Point2D p, double ang)
     {
         Xy coord = _coord;
-        Transform2D t = new();
-        t = t.WithRotation(p, ang);
+        Transform2D t = new Transform2D().WithRotation(p, ang);
         t.Transforms(ref coord);
         return new Point2D(coord);
     }

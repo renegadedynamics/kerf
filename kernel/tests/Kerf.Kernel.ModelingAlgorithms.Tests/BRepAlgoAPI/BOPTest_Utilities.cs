@@ -137,8 +137,7 @@ public static class BOPTest_Utilities
     /// <summary>Rotate shape around axis.</summary>
     public static Shape RotateShape(in Shape theShape, in Axis3D theAxis, double theAngle)
     {
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithRotation(theAxis, theAngle);
+        Transform3D aTrsf = new Transform3D().WithRotation(theAxis, theAngle);
         Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
@@ -146,8 +145,7 @@ public static class BOPTest_Utilities
     /// <summary>Translate shape by vector.</summary>
     public static Shape TranslateShape(in Shape theShape, in Vector3D theVector)
     {
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(theVector);
+        Transform3D aTrsf = new Transform3D().WithTranslation(theVector);
         Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
@@ -497,8 +495,7 @@ public static class BOPTest_Utilities
     /// <summary>Apply rotation around Z-axis (equivalent to "trotate shape 0 0 0 0 0 1 angle").</summary>
     public static Shape RotateZ(in Shape theShape, double theAngleDeg)
     {
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -506,8 +503,7 @@ public static class BOPTest_Utilities
     /// <summary>Apply rotation around Y-axis (equivalent to "trotate shape 0 0 0 0 1 0 angle").</summary>
     public static Shape RotateY(in Shape theShape, double theAngleDeg)
     {
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -515,8 +511,7 @@ public static class BOPTest_Utilities
     /// <summary>Apply rotation around X-axis (equivalent to "trotate shape 0 0 0 1 0 0 angle").</summary>
     public static Shape RotateX(in Shape theShape, double theAngleDeg)
     {
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -531,8 +526,7 @@ public static class BOPTest_Utilities
     /// <summary>Apply translation (equivalent to "ttranslate shape dx dy dz").</summary>
     public static Shape Translate(in Shape theShape, double theDx, double theDy, double theDz)
     {
-        Transform3D aTranslation = new();
-        aTranslation = aTranslation.WithTranslation(new Vector3D(theDx, theDy, theDz));
+        Transform3D aTranslation = new Transform3D().WithTranslation(new Vector3D(theDx, theDy, theDz));
         Transform aTransform = new(theShape, aTranslation);
         return aTransform.Shape();
     }
@@ -540,8 +534,7 @@ public static class BOPTest_Utilities
     /// <summary>Apply Y-axis 90-degree rotation (common pattern: "trotate shape 0 0 1 0 1 0 90").</summary>
     public static Shape RotateY90(in Shape theShape)
     {
-        Transform3D aRotation = new();
-        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }

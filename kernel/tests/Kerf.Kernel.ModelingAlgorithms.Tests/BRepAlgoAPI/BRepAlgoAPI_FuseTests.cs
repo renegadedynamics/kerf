@@ -429,8 +429,7 @@ public static class BRepAlgoAPI_FuseTests
             // Create rotated narrow box: r=sqrt(31), box(0,0,0,r/4,0.25,1), rotate 34.73 degrees around Z
             const double r = 5.5677643628300219;
             Shape aBox2 = BOPTest_Utilities.CreateBox(new Point3D(0, 0, 0), r / 4.0, 0.25, 1.0);
-            Transform3D aTrsf = new();
-            aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 34.73 * M_PI / 180.0);
+            Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 34.73 * M_PI / 180.0);
             aBox2 = aBox2.Moved(new Placement(aTrsf));
 
             Shape aResult = PerformFuse(aBox2, aBox1);
@@ -622,8 +621,7 @@ public static class BRepAlgoAPI_FuseTests
 
             // Create cylinder: "pcylinder cylb 1 9; ttranslate cylb 5 0 -2"
             Shape aCylinder = BOPTest_Utilities.CreateCylinder(1.0, 9.0);
-            Transform3D aTrsf = new();
-            aTrsf = aTrsf.WithTranslation(new Vector3D(5, 0, -2));
+            Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(5, 0, -2));
             aCylinder = aCylinder.Moved(new Placement(aTrsf));
 
             Shape aResult = PerformFuse(aRevolution, aCylinder);

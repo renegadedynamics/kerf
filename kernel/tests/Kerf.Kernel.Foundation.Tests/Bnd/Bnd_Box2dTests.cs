@@ -352,8 +352,7 @@ public class Bnd_Box2dTest
         Box2d aBox = new();
         aBox.Update(0.0, 0.0, 10.0, 10.0);
 
-        Transform2D aTrsf = new();
-        aTrsf = aTrsf.WithTranslation(new Point2D(0.0, 0.0), new Point2D(5.0, 5.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Point2D(0.0, 0.0), new Point2D(5.0, 5.0));
         Box2d aTransformed = aBox.Transformed(aTrsf);
 
         double aXmin = 0.0, aYmin = 0.0, aXmax = 0.0, aYmax = 0.0;

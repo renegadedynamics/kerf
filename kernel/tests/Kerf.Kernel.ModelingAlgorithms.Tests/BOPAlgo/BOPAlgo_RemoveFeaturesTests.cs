@@ -92,10 +92,8 @@ public class BOPAlgo_RemoveFeaturesTests
     {
         // a slab on the side y + z >= 18 of the plane through (y, z) = (8, 10) and (10, 8)
         Shape aTool = new MakeBox(new Point3D(-1, -10, 0), 12.0, 20.0, 10.0).Shape();
-        Transform3D aRot = new();
-        aRot = aRot.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -Math.PI / 4.0);
-        Transform3D aMove = new();
-        aMove = aMove.WithTranslation(new Vector3D(0, 9.0, 9.0));
+        Transform3D aRot = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -Math.PI / 4.0);
+        Transform3D aMove = new Transform3D().WithTranslation(new Vector3D(0, 9.0, 9.0));
         Shape aTurned = aTool.Moved(new Placement(aMove * aRot));
         return new Cut(Box(), aTurned).Shape();
     }

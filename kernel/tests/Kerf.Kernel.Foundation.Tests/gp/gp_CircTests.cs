@@ -83,8 +83,7 @@ public class gp_CircTest
     {
         Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Circle3D aCirc = new(anAxis, 3.0);
-        Transform3D aTrsf = new();
-        aTrsf = aTrsf.WithScale(new Point3D(0.0, 0.0, 0.0), 2.0);
+        Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0.0, 0.0, 0.0), 2.0);
         Circle3D aTransformed = aCirc.Transformed(aTrsf);
         Assert.Equal(6.0, aTransformed.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
