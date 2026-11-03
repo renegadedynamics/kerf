@@ -30,9 +30,9 @@ namespace Kerf.Engine.Booleans.Algo;
 /// <para>
 /// Edges without a pcurve on the surface get one (the projection of their 3D curve with <c>Proj</c>, else their first
 /// pcurve placed on the surface), and the wires are flagged closed: OCCT writes into the caller's wires.
-/// <see cref="Perform"/> works on a copy of frozen wires (<see cref="CopyAtEntry"/>) and gives the
-/// caller's wires and edges back wherever nothing was written (on a plane with closed-flagged wires, nothing is), so
-/// the faces hold the caller's own wires as native's do (decision 793). <see cref="Current"/> hands out frozen faces;
+/// <see cref="Perform"/> runs on the caller's wires in a working overlay, so the faces hold the caller's own wires and
+/// edges wherever nothing was written (on a plane with closed-flagged wires, nothing is), as native's do (decision
+/// 793), and new ones where something was. <see cref="Current"/> hands out frozen faces;
 /// <see cref="InternalCurrent"/> doesn't, for ported callers.
 /// </para>
 /// </remarks>
@@ -117,35 +117,14 @@ public sealed class FaceRestrictor
     /// <summary>Builds the faces bounded by the wires.</summary>
     public void Perform()
     {
-        // OCCT.NET: copy at entry (decision 793)
-        Shape holder = WireToFace.HolderOf(_wires);
-        CopyAtEntry entry = new(holder);
-        if (!entry.IsCopied)
+        // Kerf: the writes into the caller's wires go to the overlay; the faces get what stands for them
+        using var overlay = WorkingOverlay.Begin(new Shape());
+        InternalPerform();
+        overlay.Finish(new Shape(), _faces);
+        for (NCollection_List<Shape>.Iterator it = new(_faces); it.More(); it.Next())
         {
-            InternalPerform();
-            return;
+            it.ChangeValue() = overlay.Final(it.Value());
         }
-        NCollection_List<Shape> saved = new(_wires);
-        _wires.Clear();
-        for (NCollection_List<Shape>.Iterator it = new(saved); it.More(); it.Next())
-        {
-            _wires.Append(entry.Copied(it.Value()));
-        }
-        try
-        {
-            InternalPerform();
-        }
-        finally
-        {
-            // the caller's wires, with the orientations the correction mode gave their copies
-            NCollection_List<Shape>.Iterator itc = new(_wires);
-            for (NCollection_List<Shape>.Iterator it = new(saved); it.More() && itc.More(); it.Next(), itc.Next())
-            {
-                it.ChangeValue() = it.Value().Oriented(itc.Value().Orientation());
-            }
-            _wires.Assign(saved);
-        }
-        entry.Finish(new Shape(), _faces);
     }
 
     /// <summary>OCCT's <c>Perform</c>, in place, for ported callers whose wires are unfrozen.</summary>

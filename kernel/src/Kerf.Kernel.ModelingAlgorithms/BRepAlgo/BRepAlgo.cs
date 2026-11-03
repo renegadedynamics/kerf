@@ -33,9 +33,8 @@ namespace Kerf.Engine.Booleans.Algo;
 /// <remarks>
 /// <para>
 /// The results are frozen. <see cref="ConcatenateWireC0"/> computes missing 3D curves and fixes the wire before
-/// concatenating, which OCCT does on the caller's wire: the port works on a copy of a frozen wire
-/// (<see cref="CopyAtEntry"/>) and gives the caller's vertices back in the result where they weren't changed
-/// (decision 793).
+/// concatenating, which OCCT does on the caller's wire: the port does it in a working overlay, so the result holds the
+/// caller's vertices where they weren't changed (decision 793) and the wire is never written.
 /// </para>
 /// <para>
 /// <see cref="IsValid(NCollection_List{Shape}, in Shape, bool, bool)"/> resets the SameParameter flags
@@ -388,9 +387,9 @@ public static class BRepAlgo
 
         Edge resEdge = new();
 
-        // OCCT.NET: copy at entry (decision 793): OCCT computes the 3D curves on the caller's wire
-        CopyAtEntry entry = new(aWire);
-        Wire theWire = ShapeCasts.Wire(entry.Shape());
+        // Kerf: OCCT computes the 3D curves on the caller's wire: the overlay takes the writes (decision 793)
+        using var overlay = WorkingOverlay.Begin(aWire);
+        Wire theWire = aWire;
         BrepLibrary.BuildCurves3d(theWire);
         ShapeFixer fixer = new(theWire);
         fixer.SetPrecision(linTol);
@@ -665,7 +664,7 @@ public static class BRepAlgo
 
         if (curveSeq.IsEmpty())
         {
-            entry.Finish(resEdge);
+            overlay.Finish(resEdge);
             return resEdge;
         }
 
@@ -776,7 +775,7 @@ public static class BRepAlgo
             resEdge.Reverse();
         }
 
-        resEdge = ShapeCasts.Edge(entry.Finish(resEdge));
+        resEdge = ShapeCasts.Edge(overlay.Finish(resEdge));
         resEdge.TShape()?.FreezeGraph();
         return resEdge;
     }

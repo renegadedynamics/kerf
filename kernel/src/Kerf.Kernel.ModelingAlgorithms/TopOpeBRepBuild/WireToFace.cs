@@ -25,9 +25,9 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// </para>
 /// <para>
 /// OCCT flags every wire closed and stores computed pcurves on edges without one: it writes into the caller's wires.
-/// The port's <see cref="MakeFaces"/> works on a copy of frozen wires (<see cref="CopyAtEntry"/>) and gives
-/// the caller's wires and edges back wherever nothing was written, so the faces hold the caller's own wires as
-/// native's do when the wires are already flagged closed (decision 793). The faces handed out are frozen.
+/// <see cref="MakeFaces"/> runs on the caller's wires in a working overlay, so the faces hold the caller's own wires and
+/// edges wherever nothing was written, as native's do when the wires are already flagged closed (decision 793), and new
+/// ones where something was. The faces handed out are frozen.
 /// </para>
 /// </remarks>
 public sealed class WireToFace
@@ -56,30 +56,15 @@ public sealed class WireToFace
     /// </summary>
     public void MakeFaces(in Face f, NCollection_List<Shape> lf)
     {
-        // OCCT.NET: copy at entry (decision 793)
-        Shape holder = HolderOf(_lw);
-        CopyAtEntry entry = new(holder);
-        if (!entry.IsCopied)
+        // Kerf: the writes into the caller's wires go to the overlay; the faces get what stands for them
+        using (var overlay = WorkingOverlay.Begin(new Shape()))
         {
             InternalMakeFaces(f, lf);
-        }
-        else
-        {
-            NCollection_List<Shape> saved = new(_lw);
-            _lw.Clear();
-            for (NCollection_List<Shape>.Iterator it = new(saved); it.More(); it.Next())
+            overlay.Finish(new Shape(), lf);
+            for (NCollection_List<Shape>.Iterator it = new(lf); it.More(); it.Next())
             {
-                _lw.Append(entry.Copied(it.Value()));
+                it.ChangeValue() = overlay.Final(it.Value());
             }
-            try
-            {
-                InternalMakeFaces(f, lf);
-            }
-            finally
-            {
-                _lw.Assign(saved);
-            }
-            entry.Finish(new Shape(), lf);
         }
         for (NCollection_List<Shape>.Iterator it = new(lf); it.More(); it.Next())
         {
@@ -105,25 +90,5 @@ public sealed class WireToFace
         DsBuildTool bt = new(OutCurveType.Approx);
         LegacyBuilder b = new(bt);
         b.MakeFaces(f, fb, lf);
-    }
-
-    /// <summary>
-    /// OCCT.NET: an unfrozen compound holding <paramref name="shapes"/> as children, appended directly so their
-    /// Free flags don't change, to copy them at once with <see cref="CopyAtEntry"/> (shared sub-shapes stay
-    /// shared).
-    /// </summary>
-    internal static Shape HolderOf(NCollection_List<Shape> shapes)
-    {
-        Compound holder = new();
-        new BrepBuilder().MakeCompound(ref holder);
-        TShape holderTShape = holder.TShape()!;
-        for (NCollection_List<Shape>.Iterator it = new(shapes); it.More(); it.Next())
-        {
-            if (!it.Value().IsNull)
-            {
-                holderTShape._shapes.Append(it.Value());
-            }
-        }
-        return holder;
     }
 }
