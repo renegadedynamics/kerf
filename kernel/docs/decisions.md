@@ -15140,3 +15140,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        and a comma ran on to a later quote. Its class's double quote stays: it decides only malformed input. The
        scanner test that pinned the run-on reads `'a'` there; StepFileNativeTests' one such input (string/003) moves to
        the third level: it parses as with a space in place of the tab.
+16830. **The tests and the corpus.** Foundation 2,297 → 2,305, ModelingData 3,149 → 3,152, ModelingAlgorithms 4,814 →
+       4,815 (9 skipped), DataExchange 276 → 282 (1 skipped), the oracle 383, the modelling layer 1,884: all pass. The
+       new tests are the fixes'; the rewritten ones are those the decisions above name. The moved comparisons are at
+       plan 3.2's third level, each with its reason. Draw-lite's corpus tests for STL, STEP, STEP with documents, XDE,
+       data exchange, construction (lofts), surfaces from curves and the cheap gaps (B-spline commands) pass with their
+       recorded status counts, so no case's status changed; no Draw-lite override was needed. The "before" run was
+       those tests' recorded expectations, not a fresh run of the base commit.
