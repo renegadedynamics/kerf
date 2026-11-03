@@ -15088,3 +15088,15 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        along a 3D B-spline: each section is the circle about the path's point at its parameter, across the tangent.
        The sweep recordings' secgen cases of those types (18 of 40) move to plan 3.2's third level: only the sections'
        poles and derivatives differ.
+16712. **AdvApp2Var's error estimate: reclassified to touch** (unit 2D's AdvApp2Var_ApproxF2var::mma2ce1_ row). The fix
+       is one line (the U Jacobi maxima written at ipt4, not over the V ones at ipt5), and it does what the row says on
+       the row's own case: sin(u)cos(v) at C0 is approximated within its tolerance instead of degree 1 in V a unit off.
+       It was tried and left out of this unit. It moves every surface approximated through AdvApp2Var: six native
+       suites (pipes, evolved sweeps, two fillet corner patches through GeomPlate, ShapeCustom's BSplineRestriction,
+       ShapeProcess's operators), two oracle suites (GeomConvert's offsets, BSplineRestriction), each by a few cases;
+       the Draw-lite groups this unit runs didn't move. Checked against the surfaces they approximate (points of the
+       result projected back), the trimmed offsets' approximations are no better with it: of three, one stays at
+       1.3e-3, one at 2e-6, and the third went from 0.3 off with OCCT's estimate to 1.5 off with the corrected one, at
+       degree 14 and 106 × 132 poles. So the estimate isn't the only fault on that path, and a fix that moves results
+       broadly without a shown benefit waits for AdvApp2Var's own review (with a geometric check of its results, as
+       here, rather than recordings). The pinned `SinCos_C0_ReproducesOcctsUnderestimatedError` stays as it was.
