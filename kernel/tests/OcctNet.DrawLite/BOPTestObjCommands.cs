@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Diagnostics;
@@ -204,7 +205,7 @@ internal static class BOPTestObjCommands
             aLC.Append(aS);
         }
         //
-        BOPAlgo_PaveFiller aPF = aSession.PaveFiller();
+        PaveFiller aPF = aSession.PaveFiller();
         aPF.SetArguments(aLC);
         aPF.SetRunParallel(aSession.RunParallel);
         aPF.SetNonDestructive(aSession.NonDestructive);
@@ -215,7 +216,7 @@ internal static class BOPTestObjCommands
         Stopwatch aTimer = Stopwatch.StartNew();
         aPF.Perform();
         BOPTestObjects.ReportAlerts(theDI, di, aPF.GetReport());
-        if (aPF.HasErrors())
+        if (aPF.HasErrors)
         {
             return 0;
         }
@@ -247,12 +248,12 @@ internal static class BOPTestObjCommands
             return 0;
         }
         //
-        BOPAlgo_GlueEnum aGlue = aSession.Glue;
+        GlueMode aGlue = aSession.Glue;
         static string YesNo(bool theFlag) => theFlag ? "Yes" : "No";
         di.Append($" RunParallel: {YesNo(aSession.RunParallel)} \t\t(use \"brunparallel\" command to change)\n");
         di.Append($" NonDestructive: {YesNo(aSession.NonDestructive)} \t\t(use \"bnondestructive\" command to change)\n");
         di.Append($" FuzzyValue: {DrawFormat.AsciiString(aSession.FuzzyValue)} \t\t(use \"bfuzzyvalue\" command to change)\n");
-        di.Append($" GlueOption: {(aGlue == BOPAlgo_GlueEnum.BOPAlgo_GlueOff ? "Off" : aGlue == BOPAlgo_GlueEnum.BOPAlgo_GlueFull ? "Full" : "Shift")} \t\t(use \"bglue\" command to change)\n");
+        di.Append($" GlueOption: {(aGlue == GlueMode.GlueOff ? "Off" : aGlue == GlueMode.GlueFull ? "Full" : "Shift")} \t\t(use \"bglue\" command to change)\n");
         di.Append($" Draw Warning Shapes: {YesNo(aSession.DrawWarnShapes)} \t(use \"bdrawwarnshapes\" command to change)\n");
         di.Append($" Check for invert solids: {YesNo(aSession.CheckInverted)} \t(use \"bcheckinverted\" command to change)\n");
         di.Append($" Use OBB: {YesNo(aSession.UseOBB)} \t\t\t(use \"buseobb\" command to change)\n");
@@ -304,7 +305,7 @@ internal static class BOPTestObjCommands
             di.Append("Wrong value.\n");
             return 1;
         }
-        BOPTestObjects.Of(theDI).Glue = (BOPAlgo_GlueEnum)iGlue;
+        BOPTestObjects.Of(theDI).Glue = (GlueMode)iGlue;
         return 0;
     }
 

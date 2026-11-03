@@ -498,7 +498,7 @@ public class XSControl_Reader
             else
             {
                 Interface_CheckStatus cst = binder.Check().Status();
-                if ((cst == Interface_CheckOK) || (cst == Interface_CheckWarning))
+                if ((cst == Interface_CheckStatus.Interface_CheckOK) || (cst == Interface_CheckStatus.Interface_CheckWarning))
                 {
                     nbWithResult++;
                 }
@@ -553,7 +553,7 @@ public class XSControl_Reader
     /// <summary>
     /// Sets flags defining operations to be performed on shapes.
     /// </summary>
-    public void SetShapeProcessFlags(ShapeProcess.OperationsFlags theFlags)
+    public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags)
     {
         Transfer_ActorOfTransientProcess anActor = GetActor();
         if (anActor is not null)
@@ -565,7 +565,7 @@ public class XSControl_Reader
     /// <summary>
     /// Returns flags defining operations to be performed on shapes, and whether they were set.
     /// </summary>
-    public (ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
+    public (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
     {
         Transfer_ActorOfTransientProcess anActor = GetActor();
         return anActor is null ? default : anActor.GetProcessingFlags();
@@ -589,9 +589,9 @@ public class XSControl_Reader
     /// Returns default flags for shape processing. This method should be implemented in the derived classes to
     /// return default flags for shape processing. @return Default flags for shape processing.
     /// </summary>
-    protected virtual ShapeProcess.OperationsFlags GetDefaultShapeProcessFlags()
+    protected virtual global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags GetDefaultShapeProcessFlags()
     {
-        return new ShapeProcess.OperationsFlags();
+        return new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags();
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 
@@ -268,7 +269,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
     private static readonly double[] Tolerances = [1.0e-6, 1.0e-7, 1.0e-4, 1.0e-9];
 
     private static void SameIntersections(Oracle theO, N.Geom2dAPI_InterCurveCurve theNative,
-                                          Geom2dAPI_InterCurveCurve thePort, string theWhat)
+                                          CurveCurveIntersection2D thePort, string theWhat)
     {
         theO.Same(theNative.NbPoints(), thePort.NbPoints(), $"{theWhat} NbPoints");
         theO.Same(theNative.NbSegments(), thePort.NbSegments(), $"{theWhat} NbSegments");
@@ -305,9 +306,9 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             using (aN2)
             {
                 N.Geom2dAPI_InterCurveCurve? aN = null;
-                Geom2dAPI_InterCurveCurve? aP = null;
+                CurveCurveIntersection2D? aP = null;
                 if (!Both(anOracle, () => aN = new N.Geom2dAPI_InterCurveCurve(aN1, aN2, aTol),
-                          () => aP = new Geom2dAPI_InterCurveCurve(aP1, aP2, aTol), aW))
+                          () => aP = new CurveCurveIntersection2D(aP1, aP2, aTol), aW))
                 {
                     continue;
                 }
@@ -346,9 +347,9 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             using (aNC)
             {
                 N.Geom2dAPI_InterCurveCurve? aN = null;
-                Geom2dAPI_InterCurveCurve? aP = null;
+                CurveCurveIntersection2D? aP = null;
                 if (!Both(anOracle, () => aN = new N.Geom2dAPI_InterCurveCurve(aNC, aTol),
-                          () => aP = new Geom2dAPI_InterCurveCurve(aPC, aTol), aW))
+                          () => aP = new CurveCurveIntersection2D(aPC, aTol), aW))
                 {
                     continue;
                 }
@@ -369,7 +370,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output, 20261102);
         int aProjections = 0;
-        var aPort = new Geom2dAPI_ProjectPointOnCurve();
+        var aPort = new ProjectPointOnCurve2D();
         for (int c = 0; c < 600; c++)
         {
             CurveSpec aS = RandomCurve(anOracle, 10);

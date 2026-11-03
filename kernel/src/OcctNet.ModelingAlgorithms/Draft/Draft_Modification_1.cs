@@ -7,100 +7,104 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.CurveSurface;
+using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
-using static Occt.Draft_ErrorStatus;
+using static Kerf.Engine.Features.Draft.DraftErrorStatus;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.ResultType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Features.Draft;
 
 // OCCT_DEBUG blocks (the traces of the vertex recomputation and of NewSurface's failures) are left out.
 
-public sealed partial class Draft_Modification
+public sealed partial class DraftModification
 {
     //=================================================================================================
 
-    private bool InternalAdd(in Face F, in Direction3D Direction, double Angle, in Plane3D NeutralPlane, bool Flag = true)
+    private bool InternalAdd(in Face F, in Direction3D direction, double angle, in Plane3D neutralPlane, bool flag = true)
     {
-        if (myFMap.Contains(F))
+        if (_fMap.Contains(F))
         {
-            return (badShape.IsNull);
+            return (_badShape.IsNull);
         }
 
-        Orientation oris = Orientation(myShape, F);
-        Placement Lo;
+        Orientation oris = Orientation(_shape, F);
+        Placement lo;
         // gp_Dir NewDirection = Direction;
         // double NewAngle = Angle;
-        Surface S = Tool.Surface(F, out Lo)!;
-        S = (Surface)S.Transformed(Lo.Transformation());
-        if (S.GetType() == typeof(TrimmedSurface))
+        Surface s = Tool.Surface(F, out lo)!;
+        s = (Surface)s.Transformed(lo.Transformation());
+        if (s.GetType() == typeof(TrimmedSurface))
         {
-            S = ((TrimmedSurface)S).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface();
         }
-        Surface? NewS = null;
+        Surface? newS = null;
         CircleCurve3D? theCircle = null;
 
-        bool postponed = (!Flag);
+        bool postponed = (!flag);
         if (postponed)
         {
-            Type typS = S.GetType();
+            Type typS = s.GetType();
             if (typS == typeof(CylindricalSurface) || typS == typeof(ExtrusionSurface))
             {
-                Circle3D Cir;
+                Circle3D cir;
                 if (typS == typeof(CylindricalSurface))
                 {
-                    Cylinder cyl = ((CylindricalSurface)S).Cylinder();
+                    Cylinder cyl = ((CylindricalSurface)s).Cylinder();
                     Axis3D axcyl = cyl.Axis();
-                    Cir = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
-                    Vector3D VV = new(cyl.Location(), NeutralPlane.Location());
-                    Cir.Translate(VV.Dot(new Vector3D(axcyl.Direction())) * new Vector3D(axcyl.Direction()));
+                    cir = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
+                    Vector3D vv = new(cyl.Location(), neutralPlane.Location());
+                    cir.Translate(vv.Dot(new Vector3D(axcyl.Direction())) * new Vector3D(axcyl.Direction()));
                 }
                 else
                 {
-                    Curve3D Cbas = ((ExtrusionSurface)S).BasisCurve();
-                    Direction3D theDirextr = ((ExtrusionSurface)S).Direction();
+                    Curve3D cbas = ((ExtrusionSurface)s).BasisCurve();
+                    Direction3D theDirextr = ((ExtrusionSurface)s).Direction();
 
-                    if (Cbas is TrimmedCurve3D aTrimmed)
+                    if (cbas is TrimmedCurve3D trimmed)
                     {
-                        Cbas = aTrimmed.BasisCurve();
+                        cbas = trimmed.BasisCurve();
                     }
-                    if (Cbas is CircleCurve3D aCircle)
+                    if (cbas is CircleCurve3D circle)
                     {
-                        Cir = aCircle.Circ();
-                        Direction3D dircir = Cir.Axis().Direction();
-                        if (!Direction.IsParallel(dircir, global::Kerf.Engine.Foundation.Precision.Angular()))
+                        cir = circle.Circ();
+                        Direction3D dircir = cir.Axis().Direction();
+                        if (!direction.IsParallel(dircir, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            badShape = F;
-                            errStat = Draft_FaceRecomputation;
+                            _badShape = F;
+                            _errStat = DraftErrorStatus.FaceRecomputation;
                             return false;
                         }
                     }
                     else
                     {
-                        badShape = F;
-                        errStat = Draft_FaceRecomputation;
+                        _badShape = F;
+                        _errStat = DraftErrorStatus.FaceRecomputation;
                         return false;
                     }
 
-                    CoordinateSystem Axis = NeutralPlane.Position();
-                    double L = new Vector3D(Cir.Location(), Axis.Location()).Dot(new Vector3D(Axis.Direction()));
-                    double Cos = theDirextr.Dot(Axis.Direction());
-                    Vector3D VV = (L / Cos) * new Vector3D(theDirextr);
-                    Cir.Translate(VV);
+                    CoordinateSystem axis = neutralPlane.Position();
+                    double L = new Vector3D(cir.Location(), axis.Location()).Dot(new Vector3D(axis.Direction()));
+                    double cos = theDirextr.Dot(axis.Direction());
+                    Vector3D vv = (L / cos) * new Vector3D(theDirextr);
+                    cir.Translate(vv);
                 }
 
-                theCircle = new CircleCurve3D(Cir);
+                theCircle = new CircleCurve3D(cir);
             }
             else
             {
@@ -110,15 +114,15 @@ public sealed partial class Draft_Modification
 
         if (!postponed)
         {
-            NewS = NewSurface(S, oris, Direction, Angle, NeutralPlane);
-            if (NewS is null)
+            newS = NewSurface(s, oris, direction, angle, neutralPlane);
+            if (newS is null)
             {
-                badShape = F;
-                errStat = Draft_FaceRecomputation;
+                _badShape = F;
+                _errStat = DraftErrorStatus.FaceRecomputation;
                 return false;
             }
             // To avoid some problems with infinite restrictions
-            Type typs = NewS.GetType();
+            Type typs = newS.GetType();
             if (typs == typeof(CylindricalSurface) || typs == typeof(ConicalSurface))
             {
                 BrepTools.UVBounds(F, out double umin, out double umax, out double vmin, out double vmax);
@@ -132,13 +136,13 @@ public sealed partial class Draft_Modification
                     }
                     else
                     {
-                        Cone Co = ((ConicalSurface)NewS).Cone();
-                        double Vapex = -Co.RefRadius() / Math.Sin(Co.SemiAngle());
-                        if (vmin < Vapex)
+                        Cone co = ((ConicalSurface)newS).Cone();
+                        double vapex = -co.RefRadius() / Math.Sin(co.SemiAngle());
+                        if (vmin < vapex)
                         { // vmax should not exceed Vapex
-                            if (vmax + deltav > Vapex)
+                            if (vmax + deltav > vapex)
                             {
-                                vmax = Vapex;
+                                vmax = vapex;
                                 vmin = vmin - 10.0 * (vmax - vmin);
                                 // JAG debug to avoid apex
                                 vmax = vmax - global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -151,9 +155,9 @@ public sealed partial class Draft_Modification
                         }
                         else
                         { // Vapex <= vmin < vmax
-                            if (vmin - deltav < Vapex)
+                            if (vmin - deltav < vapex)
                             {
-                                vmin = Vapex;
+                                vmin = vapex;
                                 vmax = vmax + 10.0 * (vmax - vmin);
                                 // JAG debug to avoid apex
                                 vmin = vmin + global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -165,32 +169,32 @@ public sealed partial class Draft_Modification
                             }
                         }
                     }
-                    NewS = new TrimmedSurface(NewS, 0.0, 2.0 * M_PI, vmin, vmax);
+                    newS = new TrimmedSurface(newS, 0.0, 2.0 * M_PI, vmin, vmax);
                 }
             }
         }
 
-        if (postponed || S != NewS)
+        if (postponed || s != newS)
         {
-            Draft_FaceInfo FI = new(NewS, true);
-            FI.RootFace(curFace);
-            myFMap.Add(F, FI);
+            DraftFaceInfo fi = new(newS, true);
+            fi.RootFace(_curFace);
+            _fMap.Add(F, fi);
             if (postponed)
             {
-                myFMap.ChangeFromKey(F).ChangeCurve() = theCircle;
+                _fMap.ChangeFromKey(F).ChangeCurve() = theCircle;
             }
         }
 
-        Explorer aExp = new(F, ShapeType.Edge);
-        NCollection_Map<Shape> MapOfE = new(ShapeHasher.Instance);
-        while (aExp.More() && badShape.IsNull)
+        Explorer exp = new(F, ShapeType.Edge);
+        NCollection_Map<Shape> mapOfE = new(ShapeHasher.Instance);
+        while (exp.More() && _badShape.IsNull)
         {
-            Edge edg = ShapeCasts.Edge(aExp.Current());
-            if (!myEMap.Contains(edg))
+            Edge edg = ShapeCasts.Edge(exp.Current());
+            if (!_eMap.Contains(edg))
             {
                 bool addedg = false;
                 bool addface = false;
-                Face OtherF = new();
+                Face otherF = new();
                 // if (BRep_Tool::IsClosed(edg,F)) {
                 if (BrepTools.IsReallyClosed(edg, F))
                 {
@@ -201,23 +205,23 @@ public sealed partial class Draft_Modification
                 {
                     // Find the other face containing the edge.
                     int nbother = 0;
-                    for (NCollection_List<Shape>.Iterator it = new(myEFMap.FindFromKey(edg)); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(_efMap.FindFromKey(edg)); it.More(); it.Next())
                     {
                         if (!it.Value().IsSame(F))
                         {
-                            if (OtherF.IsNull)
+                            if (otherF.IsNull)
                             {
-                                OtherF = ShapeCasts.Face(it.Value());
+                                otherF = ShapeCasts.Face(it.Value());
                             }
                             nbother++;
                         }
                     }
                     if (nbother >= 2)
                     {
-                        badShape = edg;
-                        errStat = Draft_EdgeRecomputation;
+                        _badShape = edg;
+                        _errStat = DraftErrorStatus.EdgeRecomputation;
                     }
-                    else if (!OtherF.IsNull && Tool.Continuity(edg, F, OtherF) >= G1)
+                    else if (!otherF.IsNull && Tool.Continuity(edg, F, otherF) >= G1)
                     {
                         addface = true;
                         addedg = true;
@@ -231,65 +235,65 @@ public sealed partial class Draft_Modification
                 {
                     if (postponed)
                     {
-                        myFMap.ChangeFromKey(F).Add(OtherF);
+                        _fMap.ChangeFromKey(F).Add(otherF);
                     }
-                    Curve3D C = Tool.Curve(edg, out Placement L, out double f, out double l)!;
-                    C = (Curve3D)C.Transformed(L.Transformation());
-                    if (C.GetType() == typeof(TrimmedCurve3D))
+                    Curve3D c = Tool.Curve(edg, out Placement L, out double f, out double l)!;
+                    c = (Curve3D)c.Transformed(L.Transformation());
+                    if (c.GetType() == typeof(TrimmedCurve3D))
                     {
-                        C = ((TrimmedCurve3D)C).BasisCurve();
+                        c = ((TrimmedCurve3D)c).BasisCurve();
                     }
-                    Curve3D? NewC = null;
-                    Draft_EdgeInfo EInf = new(true);
+                    Curve3D? newC = null;
+                    DraftEdgeInfo eInf = new(true);
                     if (postponed)
                     {
-                        EInf.Add(F);
-                        EInf.Add(OtherF);
+                        eInf.Add(F);
+                        eInf.Add(otherF);
 
                         // find fixed point
-                        if (C is not LineCurve3D aLocalGeom)
+                        if (c is not LineCurve3D localGeom)
                         {
-                            badShape = edg;
-                            errStat = Draft_EdgeRecomputation;
+                            _badShape = edg;
+                            _errStat = DraftErrorStatus.EdgeRecomputation;
                         }
                         else
                         {
-                            Line3D lin = aLocalGeom.Lin();
-                            IntConicQuad ilipl = new(lin, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
+                            Line3D lin = localGeom.Lin();
+                            IntConicQuad ilipl = new(lin, neutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
                             if (ilipl.IsDone && ilipl.PointCount != 0)
                             {
-                                EInf.Tangent(ilipl.Point(1));
+                                eInf.Tangent(ilipl.Point(1));
                             }
                             else
                             {
-                                badShape = edg;
-                                errStat = Draft_EdgeRecomputation;
+                                _badShape = edg;
+                                _errStat = DraftErrorStatus.EdgeRecomputation;
                             }
                         }
                     }
                     else
                     {
-                        NewC = NewCurve(C, S, oris, Direction, Angle, NeutralPlane, Flag);
-                        if (NewC is null)
+                        newC = NewCurve(c, s, oris, direction, angle, neutralPlane, flag);
+                        if (newC is null)
                         {
-                            badShape = edg;
-                            errStat = Draft_EdgeRecomputation;
+                            _badShape = edg;
+                            _errStat = DraftErrorStatus.EdgeRecomputation;
                         }
                     }
 
-                    if (NewC is TrimmedCurve3D T)
+                    if (newC is TrimmedCurve3D t)
                     {
-                        NewC = T.BasisCurve();
+                        newC = t.BasisCurve();
                     }
-                    EInf.ChangeGeometry() = NewC;
+                    eInf.ChangeGeometry() = newC;
 
-                    EInf.RootFace(curFace);
-                    myEMap.Add(edg, EInf);
-                    MapOfE.Add(edg);
+                    eInf.RootFace(_curFace);
+                    _eMap.Add(edg, eInf);
+                    mapOfE.Add(edg);
                     if (addface)
                     {
-                        bool Fl = Flag;
-                        Surface alocalSurface = Tool.Surface(OtherF, out Lo)!;
+                        bool fl = flag;
+                        Surface alocalSurface = Tool.Surface(otherF, out lo)!;
                         if (alocalSurface.GetType() == typeof(TrimmedSurface))
                         {
                             alocalSurface = ((TrimmedSurface)alocalSurface).BasisSurface();
@@ -297,73 +301,73 @@ public sealed partial class Draft_Modification
                         Type typS = alocalSurface.GetType();
                         if (typS == typeof(CylindricalSurface) || typS == typeof(ExtrusionSurface))
                         {
-                            if (myFMap.Contains(F))
+                            if (_fMap.Contains(F))
                             {
-                                if (!Flag && !postponed)
+                                if (!flag && !postponed)
                                 {
-                                    myFMap.RemoveKey(F);
-                                    foreach (Shape aKey in MapOfE)
+                                    _fMap.RemoveKey(F);
+                                    foreach (Shape key in mapOfE)
                                     {
-                                        myEMap.RemoveKey(ShapeCasts.Edge(aKey));
+                                        _eMap.RemoveKey(ShapeCasts.Edge(key));
                                     }
                                 }
                             }
                         }
-                        InternalAdd(OtherF, Direction, Angle, NeutralPlane, Fl);
+                        InternalAdd(otherF, direction, angle, neutralPlane, fl);
                     }
                 }
             }
-            aExp.Next();
+            exp.Next();
         }
-        return (badShape.IsNull);
+        return (_badShape.IsNull);
     }
 
     //=================================================================================================
 
     private bool Propagate()
     {
-        if (!badShape.IsNull)
+        if (!_badShape.IsNull)
         {
             return false;
         }
 
         // Set all edges and vertices of modified faces
         Face F;
-        Edge E;
-        Vertex V;
+        Edge e;
+        Vertex v;
         Explorer editer = new();
         Explorer vtiter = new();
 
-        for (int i = 1; i <= myFMap.Extent(); i++)
+        for (int i = 1; i <= _fMap.Extent(); i++)
         {
-            Face Fc = ShapeCasts.Face(myFMap.FindKey(i));
+            Face fc = ShapeCasts.Face(_fMap.FindKey(i));
 
             // Exploration of the edges of the face
-            editer.Init(Fc, ShapeType.Edge);
+            editer.Init(fc, ShapeType.Edge);
             while (editer.More())
             {
-                E = ShapeCasts.Edge(editer.Current());
+                e = ShapeCasts.Edge(editer.Current());
 
-                if (!myEMap.Contains(E))
+                if (!_eMap.Contains(e))
                 {
-                    Draft_EdgeInfo EInf = new(true);
-                    myEMap.Add(E, EInf);
+                    DraftEdgeInfo eInf = new(true);
+                    _eMap.Add(e, eInf);
                 }
-                myEMap.ChangeFromKey(E).Add(Fc);
+                _eMap.ChangeFromKey(e).Add(fc);
 
                 // Exploration of the vertices of the edge
-                vtiter.Init(E, ShapeType.Vertex);
+                vtiter.Init(e, ShapeType.Vertex);
                 while (vtiter.More())
                 {
-                    V = ShapeCasts.Vertex(vtiter.Current());
-                    if (!myVMap.Contains(V))
+                    v = ShapeCasts.Vertex(vtiter.Current());
+                    if (!_vMap.Contains(v))
                     {
-                        Draft_VertexInfo VInf = new();
-                        myVMap.Add(V, VInf);
+                        VertexInfo vInf = new();
+                        _vMap.Add(v, vInf);
                     }
 
-                    myVMap.ChangeFromKey(V).Add(E);
-                    myVMap.ChangeFromKey(V).ChangeParameter(E) = Tool.Parameter(V, E);
+                    _vMap.ChangeFromKey(v).Add(e);
+                    _vMap.ChangeFromKey(v).ChangeParameter(e) = Tool.Parameter(v, e);
                     vtiter.Next();
                 }
                 editer.Next();
@@ -375,21 +379,21 @@ public sealed partial class Draft_Modification
 
         // Set edges containing modified vertices.
 
-        for (int i = 1; i <= myVMap.Extent(); i++)
+        for (int i = 1; i <= _vMap.Extent(); i++)
         {
-            Vertex Vt = ShapeCasts.Vertex(myVMap.FindKey(i));
+            Vertex vt = ShapeCasts.Vertex(_vMap.FindKey(i));
 
             // Exploration of the ancestors of the vertex
-            anc.Init(myShape, ShapeType.Edge);
+            anc.Init(_shape, ShapeType.Edge);
 
             while (anc.More())
             {
-                E = ShapeCasts.Edge(anc.Current());
-                vtiter.Init(E, ShapeType.Vertex);
+                e = ShapeCasts.Edge(anc.Current());
+                vtiter.Init(e, ShapeType.Vertex);
                 found = false;
                 while (vtiter.More())
                 {
-                    if (Vt.IsSame(ShapeCasts.Vertex(vtiter.Current())))
+                    if (vt.IsSame(ShapeCasts.Vertex(vtiter.Current())))
                     {
                         found = true;
                         break;
@@ -398,31 +402,31 @@ public sealed partial class Draft_Modification
                 }
                 if (found)
                 {
-                    if (!myEMap.Contains(E))
+                    if (!_eMap.Contains(e))
                     {
-                        Draft_EdgeInfo EInf = new(false);
-                        myEMap.Add(E, EInf);
+                        DraftEdgeInfo eInf = new(false);
+                        _eMap.Add(e, eInf);
                     }
-                    myVMap.ChangeFromKey(Vt).Add(E);
-                    myVMap.ChangeFromKey(Vt).ChangeParameter(E) = Tool.Parameter(Vt, E);
+                    _vMap.ChangeFromKey(vt).Add(e);
+                    _vMap.ChangeFromKey(vt).ChangeParameter(e) = Tool.Parameter(vt, e);
                 }
                 anc.Next();
             }
         }
 
         // Set faces containing modified edges
-        for (int i = 1; i <= myEMap.Extent(); i++)
+        for (int i = 1; i <= _eMap.Extent(); i++)
         {
-            Edge Ed = ShapeCasts.Edge(myEMap.FindKey(i));
-            for (NCollection_List<Shape>.Iterator it = new(myEFMap.FindFromKey(Ed)); it.More(); it.Next())
+            Edge ed = ShapeCasts.Edge(_eMap.FindKey(i));
+            for (NCollection_List<Shape>.Iterator it = new(_efMap.FindFromKey(ed)); it.More(); it.Next())
             {
                 F = ShapeCasts.Face(it.Value());
-                if (!myFMap.Contains(F))
+                if (!_fMap.Contains(F))
                 {
-                    Surface S = Tool.Surface(F, out Placement L)!;
-                    Surface NewS = (Surface)S.Transformed(L.Transformation());
+                    Surface s = Tool.Surface(F, out Placement L)!;
+                    Surface newS = (Surface)s.Transformed(L.Transformation());
 
-                    Type typs = S.GetType();
+                    Type typs = s.GetType();
                     if (typs == typeof(CylindricalSurface) || typs == typeof(ConicalSurface))
                     {
                         BrepTools.UVBounds(F, out double umin, out double umax, out double vmin, out double vmax);
@@ -431,137 +435,137 @@ public sealed partial class Draft_Modification
                             double deltav = 10.0 * (vmax - vmin);
                             vmin = vmin - deltav;
                             vmax = vmax + deltav;
-                            NewS = new TrimmedSurface(NewS, 0.0, 2.0 * M_PI, vmin, vmax);
+                            newS = new TrimmedSurface(newS, 0.0, 2.0 * M_PI, vmin, vmax);
                         }
                     }
 
-                    Draft_FaceInfo FInf = new(NewS, false);
-                    myFMap.Add(F, FInf);
+                    DraftFaceInfo fInf = new(newS, false);
+                    _fMap.Add(F, fInf);
                 }
-                myEMap.ChangeFromKey(Ed).Add(F);
+                _eMap.ChangeFromKey(ed).Add(F);
             }
         }
 
         //  Try to add faces for free borders...
         // JAG 09.11.95
-        for (int i = 1; i <= myEMap.Extent(); i++)
+        for (int i = 1; i <= _eMap.Extent(); i++)
         {
-            Draft_EdgeInfo Einf = myEMap.ChangeFromIndex(i);
-            if (Einf.NewGeometry() && Einf.Geometry() is null && Einf.SecondFace().IsNull)
+            DraftEdgeInfo einf = _eMap.ChangeFromIndex(i);
+            if (einf.NewGeometry() && einf.Geometry() is null && einf.SecondFace().IsNull)
             {
-                Placement Loc;
-                Surface S1 = Tool.Surface(Einf.FirstFace(), out Loc)!;
-                S1 = (Surface)S1.Transformed(Loc.Transformation());
-                Surface? S2 = null;
+                Placement loc;
+                Surface s1 = Tool.Surface(einf.FirstFace(), out loc)!;
+                s1 = (Surface)s1.Transformed(loc.Transformation());
+                Surface? s2 = null;
 
                 double f, l;
-                Edge EK = ShapeCasts.Edge(myEMap.FindKey(i));
-                Curve3D C = Tool.Curve(EK, out Loc, out f, out l)!;
-                C = (Curve3D)C.Transformed(Loc.Transformation());
-                if (C.GetType() == typeof(TrimmedCurve3D))
+                Edge ek = ShapeCasts.Edge(_eMap.FindKey(i));
+                Curve3D c = Tool.Curve(ek, out loc, out f, out l)!;
+                c = (Curve3D)c.Transformed(loc.Transformation());
+                if (c.GetType() == typeof(TrimmedCurve3D))
                 {
-                    C = ((TrimmedCurve3D)C).BasisCurve();
+                    c = ((TrimmedCurve3D)c).BasisCurve();
                 }
-                if (S1 is not PlaneSurface)
+                if (s1 is not PlaneSurface)
                 {
-                    if (C is ConicCurve3D aConic)
+                    if (c is ConicCurve3D conic)
                     {
-                        CoordinateSystem thePl = new(aConic.Position());
-                        S2 = new PlaneSurface(thePl);
+                        CoordinateSystem thePl = new(conic.Position());
+                        s2 = new PlaneSurface(thePl);
                     }
-                    else if (C.GetType() == typeof(LineCurve3D))
+                    else if (c.GetType() == typeof(LineCurve3D))
                     {
                         Axis3D axis;
-                        if (S1.GetType() == typeof(TrimmedSurface))
+                        if (s1.GetType() == typeof(TrimmedSurface))
                         {
-                            axis = ((ElementarySurface)((TrimmedSurface)S1).BasisSurface()).Axis();
+                            axis = ((ElementarySurface)((TrimmedSurface)s1).BasisSurface()).Axis();
                         }
                         else
                         {
-                            axis = ((ElementarySurface)S1).Axis();
+                            axis = ((ElementarySurface)s1).Axis();
                         }
-                        Vector3D they = new(axis.Location(), C.Value(0.0));
+                        Vector3D they = new(axis.Location(), c.Value(0.0));
                         Direction3D axz = new(new Vector3D(axis.Direction()).Crossed(they));
-                        S2 = new PlaneSurface(new CoordinateSystem(axis.Location(), axz, axis.Direction()));
+                        s2 = new PlaneSurface(new CoordinateSystem(axis.Location(), axz, axis.Direction()));
                     }
                     else
                     {
-                        badShape = EK;
-                        errStat = Draft_EdgeRecomputation;
+                        _badShape = ek;
+                        _errStat = DraftErrorStatus.EdgeRecomputation;
                         break; // leave from for
                     }
                 }
                 else
                 { // on the plane
-                    for (int j = 1; j <= myVMap.Extent(); j++)
+                    for (int j = 1; j <= _vMap.Extent(); j++)
                     {
-                        Draft_VertexInfo Vinf = myVMap.ChangeFromIndex(j);
-                        for (Vinf.InitEdgeIterator(); Vinf.MoreEdge(); Vinf.NextEdge())
+                        VertexInfo vinf = _vMap.ChangeFromIndex(j);
+                        for (vinf.InitEdgeIterator(); vinf.MoreEdge(); vinf.NextEdge())
                         {
-                            if (Vinf.Edge().IsSame(EK))
+                            if (vinf.Edge().IsSame(ek))
                             {
                                 break;
                             }
                         }
-                        if (Vinf.MoreEdge())
+                        if (vinf.MoreEdge())
                         {
-                            for (Vinf.InitEdgeIterator(); Vinf.MoreEdge(); Vinf.NextEdge())
+                            for (vinf.InitEdgeIterator(); vinf.MoreEdge(); vinf.NextEdge())
                             {
-                                Edge edg = Vinf.Edge();
-                                if (!edg.IsSame(EK))
+                                Edge edg = vinf.Edge();
+                                if (!edg.IsSame(ek))
                                 {
-                                    Draft_EdgeInfo EI = myEMap.FindFromKey(edg);
-                                    if (!EI.FirstFace().IsSame(Einf.FirstFace())
-                                        && (EI.SecondFace().IsNull || !EI.SecondFace().IsSame(Einf.FirstFace())))
+                                    DraftEdgeInfo ei = _eMap.FindFromKey(edg);
+                                    if (!ei.FirstFace().IsSame(einf.FirstFace())
+                                        && (ei.SecondFace().IsNull || !ei.SecondFace().IsSame(einf.FirstFace())))
                                     {
                                         break;
                                     }
                                 }
                             }
-                            if (Vinf.MoreEdge())
+                            if (vinf.MoreEdge())
                             {
-                                Curve3D C2 = Tool.Curve(Vinf.Edge(), out Loc, out f, out l)!;
-                                CurveAdaptor HCur;
-                                Vector3D Direc;
-                                C2 = (Curve3D)C2.Transformed(Loc.Transformation());
-                                if (C2.GetType() == typeof(TrimmedCurve3D))
+                                Curve3D c2 = Tool.Curve(vinf.Edge(), out loc, out f, out l)!;
+                                CurveAdaptor hCur;
+                                Vector3D direc;
+                                c2 = (Curve3D)c2.Transformed(loc.Transformation());
+                                if (c2.GetType() == typeof(TrimmedCurve3D))
                                 {
-                                    C2 = ((TrimmedCurve3D)C2).BasisCurve();
+                                    c2 = ((TrimmedCurve3D)c2).BasisCurve();
                                 }
-                                if (C.GetType() == typeof(LineCurve3D))
+                                if (c.GetType() == typeof(LineCurve3D))
                                 {
-                                    Direc = new Vector3D(((LineCurve3D)C).Lin().Direction());
-                                    HCur = new CurveAdaptor(C2);
+                                    direc = new Vector3D(((LineCurve3D)c).Lin().Direction());
+                                    hCur = new CurveAdaptor(c2);
                                 }
-                                else if (C2.GetType() == typeof(LineCurve3D))
+                                else if (c2.GetType() == typeof(LineCurve3D))
                                 {
-                                    Direc = new Vector3D(((LineCurve3D)C2).Lin().Direction());
-                                    HCur = new CurveAdaptor(C);
+                                    direc = new Vector3D(((LineCurve3D)c2).Lin().Direction());
+                                    hCur = new CurveAdaptor(c);
                                 }
                                 else
                                 {
-                                    badShape = EK;
-                                    errStat = Draft_EdgeRecomputation;
+                                    _badShape = ek;
+                                    _errStat = DraftErrorStatus.EdgeRecomputation;
                                     break; // leave from while
                                 }
-                                SurfaceOfLinearExtrusion SLE = new(HCur, new Direction3D(Direc));
-                                switch (SLE.GetType())
+                                SurfaceOfLinearExtrusion sle = new(hCur, new Direction3D(direc));
+                                switch (sle.GetType())
                                 {
                                     case Plane:
-                                        S2 = new PlaneSurface(SLE.Plane());
+                                        s2 = new PlaneSurface(sle.Plane());
                                         break;
                                     case SurfaceKind.Cylinder:
-                                        S2 = new CylindricalSurface(SLE.Cylinder());
+                                        s2 = new CylindricalSurface(sle.Cylinder());
                                         break;
                                     default:
-                                        S2 = new ExtrusionSurface(HCur.Curve()!, new Direction3D(Direc));
+                                        s2 = new ExtrusionSurface(hCur.Curve()!, new Direction3D(direc));
                                         break;
                                 }
                             }
                             else
                             {
-                                badShape = EK;
-                                errStat = Draft_EdgeRecomputation;
+                                _badShape = ek;
+                                _errStat = DraftErrorStatus.EdgeRecomputation;
                                 break; // leave from while
                             }
                             break;
@@ -570,14 +574,14 @@ public sealed partial class Draft_Modification
                     }
                 }
 
-                if (badShape.IsNull)
+                if (_badShape.IsNull)
                 {
-                    BrepBuilder B = new();
-                    Face TheNewFace = new();
-                    B.MakeFace(ref TheNewFace, S2, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    Einf.Add(TheNewFace);
-                    Draft_FaceInfo FI = new(S2, false);
-                    myFMap.Add(TheNewFace, FI);
+                    BrepBuilder b = new();
+                    Face theNewFace = new();
+                    b.MakeFace(ref theNewFace, s2, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    einf.Add(theNewFace);
+                    DraftFaceInfo fi = new(s2, false);
+                    _fMap.Add(theNewFace, fi);
                 }
                 else
                 {
@@ -586,7 +590,7 @@ public sealed partial class Draft_Modification
                 // Fin JAG 09.11.95
             }
         }
-        return (badShape.IsNull);
+        return (_badShape.IsNull);
     }
 
     //=================================================================================================
@@ -598,14 +602,14 @@ public sealed partial class Draft_Modification
     /// <exception cref="ConstructionErrorException">An Add failed and the bad face wasn't removed.</exception>
     public void Perform()
     {
-        if (!badShape.IsNull)
+        if (!_badShape.IsNull)
         {
             throw new ConstructionErrorException();
         }
 
-        if (!myComp)
+        if (!_comp)
         {
-            myComp = true;
+            _comp = true;
             if (!Propagate())
             {
                 return;
@@ -613,76 +617,76 @@ public sealed partial class Draft_Modification
 
             // Calculate eventual faces
 
-            for (int i = 1; i <= myFMap.Extent(); i++)
+            for (int i = 1; i <= _fMap.Extent(); i++)
             {
-                Face FK = ShapeCasts.Face(myFMap.FindKey(i));
-                Draft_FaceInfo Finf = myFMap.ChangeFromIndex(i);
-                if (Finf.NewGeometry() && Finf.Geometry() is null)
+                Face fk = ShapeCasts.Face(_fMap.FindKey(i));
+                DraftFaceInfo finf = _fMap.ChangeFromIndex(i);
+                if (finf.NewGeometry() && finf.Geometry() is null)
                 {
-                    Face F1 = Finf.FirstFace();
-                    Face F2 = Finf.SecondFace();
+                    Face f1 = finf.FirstFace();
+                    Face f2 = finf.SecondFace();
 
-                    if (F1.IsNull || F2.IsNull)
+                    if (f1.IsNull || f2.IsNull)
                     {
-                        errStat = Draft_FaceRecomputation;
-                        badShape = FK;
+                        _errStat = DraftErrorStatus.FaceRecomputation;
+                        _badShape = fk;
                         return;
                     }
-                    Surface? S1 = myFMap.FindFromKey(F1).Geometry();
-                    Surface? S2 = myFMap.FindFromKey(F2).Geometry();
-                    if (S1 is null || S2 is null)
+                    Surface? s1 = _fMap.FindFromKey(f1).Geometry();
+                    Surface? s2 = _fMap.FindFromKey(f2).Geometry();
+                    if (s1 is null || s2 is null)
                     {
-                        errStat = Draft_FaceRecomputation;
-                        badShape = FK;
+                        _errStat = DraftErrorStatus.FaceRecomputation;
+                        _badShape = fk;
                         return;
                     }
-                    if (S1.GetType() == typeof(TrimmedSurface))
+                    if (s1.GetType() == typeof(TrimmedSurface))
                     {
-                        S1 = ((TrimmedSurface)S1).BasisSurface();
+                        s1 = ((TrimmedSurface)s1).BasisSurface();
                     }
-                    if (S2.GetType() == typeof(TrimmedSurface))
+                    if (s2.GetType() == typeof(TrimmedSurface))
                     {
-                        S2 = ((TrimmedSurface)S2).BasisSurface();
+                        s2 = ((TrimmedSurface)s2).BasisSurface();
                     }
-                    PlaneSurface? P1 = S1 as PlaneSurface;
-                    PlaneSurface? P2 = S2 as PlaneSurface;
-                    if (P1 is null || P2 is null)
+                    PlaneSurface? p1 = s1 as PlaneSurface;
+                    PlaneSurface? p2 = s2 as PlaneSurface;
+                    if (p1 is null || p2 is null)
                     {
-                        errStat = Draft_FaceRecomputation;
-                        badShape = FK;
+                        _errStat = DraftErrorStatus.FaceRecomputation;
+                        _badShape = fk;
                         return;
                     }
-                    Plane3D pp1 = P1.Pln();
-                    Plane3D pp2 = P2.Pln();
+                    Plane3D pp1 = p1.Pln();
+                    Plane3D pp2 = p2.Pln();
                     QuadQuadGeo i2p = new(pp1, pp2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (!i2p.IsDone || i2p.TypeInter() != Line)
                     {
-                        errStat = Draft_FaceRecomputation;
-                        badShape = FK;
+                        _errStat = DraftErrorStatus.FaceRecomputation;
+                        _badShape = fk;
                         return;
                     }
 
                     Direction3D extrdir = i2p.Line(1).Direction();
 
                     // Preserve the same direction as the base face
-                    Surface RefSurf = Tool.Surface(FK)!;
-                    if (RefSurf.GetType() == typeof(TrimmedSurface))
+                    Surface refSurf = Tool.Surface(fk)!;
+                    if (refSurf.GetType() == typeof(TrimmedSurface))
                     {
-                        RefSurf = ((TrimmedSurface)RefSurf).BasisSurface();
+                        refSurf = ((TrimmedSurface)refSurf).BasisSurface();
                     }
-                    Direction3D DirRef = new();
+                    Direction3D dirRef = new();
 
-                    if (RefSurf.GetType() == typeof(CylindricalSurface))
+                    if (refSurf.GetType() == typeof(CylindricalSurface))
                     {
-                        CoordinateSystem AxeRef = ((CylindricalSurface)RefSurf).Cylinder().Position();
-                        DirRef = AxeRef.Direction();
+                        CoordinateSystem axeRef = ((CylindricalSurface)refSurf).Cylinder().Position();
+                        dirRef = axeRef.Direction();
                     }
-                    else if (RefSurf.GetType() == typeof(ExtrusionSurface))
+                    else if (refSurf.GetType() == typeof(ExtrusionSurface))
                     {
-                        DirRef = ((ExtrusionSurface)RefSurf).Direction();
+                        dirRef = ((ExtrusionSurface)refSurf).Direction();
                     }
 
-                    if (extrdir.Dot(DirRef) < 0.0)
+                    if (extrdir.Dot(dirRef) < 0.0)
                     {
                         extrdir.Reverse();
                     }
@@ -691,10 +695,10 @@ public sealed partial class Draft_Modification
                     // InternalAdd --> modification of FaceInfo to preserve the circle
 
                     // OCCT down-casts the curve without a check; a null circle throws in the extrusion's constructor.
-                    CircleCurve3D CCir = (CircleCurve3D)Finf.Curve()!;
-                    Surface NewS = new ExtrusionSurface(CCir, extrdir);
+                    CircleCurve3D cCir = (CircleCurve3D)finf.Curve()!;
+                    Surface newS = new ExtrusionSurface(cCir, extrdir);
 
-                    BrepTools.UVBounds(FK, out double umin, out double umax, out double vmin, out double vmax);
+                    BrepTools.UVBounds(fk, out double umin, out double umax, out double vmin, out double vmax);
                     if (!global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vmin) && !global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vmax))
                     {
                         double deltav = 2.0 * (vmax - vmin);
@@ -709,19 +713,19 @@ public sealed partial class Draft_Modification
                         vmin = -300;
                     }
 
-                    NewS = new TrimmedSurface(NewS, 0.0, 1.9 * M_PI, vmin, vmax);
-                    Finf.ChangeGeometry() = NewS;
+                    newS = new TrimmedSurface(newS, 0.0, 1.9 * M_PI, vmin, vmax);
+                    finf.ChangeGeometry() = newS;
                 }
             }
 
             // Calculate new edges.
-            for (int ii = 1; ii <= myEMap.Extent(); ii++)
+            for (int ii = 1; ii <= _eMap.Extent(); ii++)
             {
-                Draft_EdgeInfo Einf = myEMap.ChangeFromIndex(ii);
+                DraftEdgeInfo Einf = _eMap.ChangeFromIndex(ii);
 
-                Edge theEdge = ShapeCasts.Edge(myEMap.FindKey(ii));
+                Edge theEdge = ShapeCasts.Edge(_eMap.FindKey(ii));
 
-                Surface? S1, S2;
+                Surface? s1, s2;
                 Curve3D C;
                 Curve3D? newC = null;
                 C = Tool.Curve(theEdge, out Placement L, out double f, out double l)!;
@@ -731,35 +735,35 @@ public sealed partial class Draft_Modification
                 {
                     if (!Einf.IsTangent(out Point3D ptfixe))
                     {
-                        Face FirstFace = Einf.FirstFace();
-                        Face SecondFace = Einf.SecondFace();
+                        Face firstFace = Einf.FirstFace();
+                        Face secondFace = Einf.SecondFace();
 
-                        S1 = myFMap.FindFromKey(FirstFace).Geometry()!;
-                        S2 = myFMap.FindFromKey(SecondFace).Geometry()!;
+                        s1 = _fMap.FindFromKey(firstFace).Geometry()!;
+                        s2 = _fMap.FindFromKey(secondFace).Geometry()!;
 
                         int detrompeur = 0;
 
                         // Return FirstVertex and the tangent at this point.
-                        Vertex FV = Exploration.FirstVertex(theEdge);
-                        Vertex LV = Exploration.LastVertex(theEdge);
+                        Vertex fv = Exploration.FirstVertex(theEdge);
+                        Vertex lv = Exploration.LastVertex(theEdge);
                         double pmin = 0.0;
-                        double prmfv = Tool.Parameter(FV, theEdge);
-                        double prmlv = Tool.Parameter(LV, theEdge);
+                        double prmfv = Tool.Parameter(fv, theEdge);
+                        double prmlv = Tool.Parameter(lv, theEdge);
                         Point3D pfv, plv;
                         Vector3D d1fv, d1lv, newd1;
                         C.D1(prmfv, out pfv, out d1fv);
                         C.D1(prmlv, out plv, out d1lv);
 
-                        double TolF1 = Tool.Tolerance(FirstFace);
-                        double TolF2 = Tool.Tolerance(SecondFace);
+                        double tolF1 = Tool.Tolerance(firstFace);
+                        double tolF2 = Tool.Tolerance(secondFace);
 
                         // Pass the tolerance of the face to project
-                        GeomAPI_ProjectPointOnSurf proj1 = new(pfv, S1, TolF1);
-                        GeomAPI_ProjectPointOnSurf proj2 = new(plv, S1, TolF1);
-                        GeomAPI_ProjectPointOnSurf proj3 = new(pfv, S2, TolF2);
-                        GeomAPI_ProjectPointOnSurf proj4 = new(plv, S2, TolF2);
+                        ProjectPointOnSurface proj1 = new(pfv, s1, tolF1);
+                        ProjectPointOnSurface proj2 = new(plv, s1, tolF1);
+                        ProjectPointOnSurface proj3 = new(pfv, s2, tolF2);
+                        ProjectPointOnSurface proj4 = new(plv, s2, tolF2);
 
-                        if (proj1.IsDone() && proj2.IsDone())
+                        if (proj1.IsDone && proj2.IsDone)
                         {
                             if (proj1.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion()
                                 && proj2.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -768,7 +772,7 @@ public sealed partial class Draft_Modification
                             }
                         }
 
-                        if (proj3.IsDone() && proj4.IsDone())
+                        if (proj3.IsDone && proj4.IsDone)
                         {
                             if (proj3.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion()
                                 && proj4.LowerDistance() <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -777,102 +781,102 @@ public sealed partial class Draft_Modification
                             }
                         }
 
-                        Direction3D TheDirExtr = new();
-                        CoordinateSystem Axis = new();
-                        Curve3D? TheNewCurve = null;
-                        bool KPart = false;
+                        Direction3D theDirExtr = new();
+                        CoordinateSystem axis = new();
+                        Curve3D? theNewCurve = null;
+                        bool kPart = false;
 
-                        if (S1.GetType() == typeof(TrimmedSurface))
+                        if (s1.GetType() == typeof(TrimmedSurface))
                         {
-                            S1 = ((TrimmedSurface)S1).BasisSurface();
+                            s1 = ((TrimmedSurface)s1).BasisSurface();
                         }
-                        if (S2.GetType() == typeof(TrimmedSurface))
+                        if (s2.GetType() == typeof(TrimmedSurface))
                         {
-                            S2 = ((TrimmedSurface)S2).BasisSurface();
+                            s2 = ((TrimmedSurface)s2).BasisSurface();
                         }
 
-                        bool PC1 = true; // KPart on S1
-                        if (S1.GetType() == typeof(ExtrusionSurface) && S2.GetType() == typeof(PlaneSurface))
+                        bool pc1 = true; // KPart on S1
+                        if (s1.GetType() == typeof(ExtrusionSurface) && s2.GetType() == typeof(PlaneSurface))
                         {
-                            KPart = true;
-                            Axis = ((PlaneSurface)S2).Position();
-                            TheNewCurve = ((ExtrusionSurface)S1).BasisCurve();
-                            TheDirExtr = ((ExtrusionSurface)S1).Direction();
+                            kPart = true;
+                            axis = ((PlaneSurface)s2).Position();
+                            theNewCurve = ((ExtrusionSurface)s1).BasisCurve();
+                            theDirExtr = ((ExtrusionSurface)s1).Direction();
                         }
-                        else if (S2.GetType() == typeof(ExtrusionSurface)
-                                 && S1.GetType() == typeof(PlaneSurface))
+                        else if (s2.GetType() == typeof(ExtrusionSurface)
+                                 && s1.GetType() == typeof(PlaneSurface))
                         {
-                            KPart = true;
-                            PC1 = false;
-                            Axis = ((PlaneSurface)S1).Position();
-                            TheNewCurve = ((ExtrusionSurface)S2).BasisCurve();
-                            TheDirExtr = ((ExtrusionSurface)S2).Direction();
+                            kPart = true;
+                            pc1 = false;
+                            axis = ((PlaneSurface)s1).Position();
+                            theNewCurve = ((ExtrusionSurface)s2).BasisCurve();
+                            theDirExtr = ((ExtrusionSurface)s2).Direction();
                         }
-                        CircleCurve3D? aCirc = null;
-                        if (KPart)
+                        CircleCurve3D? circ = null;
+                        if (kPart)
                         { // very temporary on circles !!!
-                            aCirc = TheNewCurve as CircleCurve3D;
-                            if (aCirc is null)
+                            circ = theNewCurve as CircleCurve3D;
+                            if (circ is null)
                             {
-                                KPart = false;
+                                kPart = false;
                             }
                             else
                             {
-                                Direction3D AxofCirc = aCirc.Position().Direction();
-                                KPart = AxofCirc.IsParallel(Axis.Direction(), global::Kerf.Engine.Foundation.Precision.Angular());
+                                Direction3D axofCirc = circ.Position().Direction();
+                                kPart = axofCirc.IsParallel(axis.Direction(), global::Kerf.Engine.Foundation.Precision.Angular());
                             }
                         }
 
                         int imin;
-                        GeomInt_IntSS i2s = new();
-                        if (KPart)
+                        IntSS i2s = new();
+                        if (kPart)
                         {
                             // direct calculation of NewC
-                            double aLocalReal = new Vector3D(aCirc!.Circ().Location(), Axis.Location())
-                                                    .Dot(new Vector3D(Axis.Direction()));
-                            double Cos = TheDirExtr.Dot(Axis.Direction());
-                            Vector3D VV = (aLocalReal / Cos) * new Vector3D(TheDirExtr);
-                            newC = (Curve3D)TheNewCurve!.Translated(VV);
+                            double localReal = new Vector3D(circ!.Circ().Location(), axis.Location())
+                                                    .Dot(new Vector3D(axis.Direction()));
+                            double cos = theDirExtr.Dot(axis.Direction());
+                            Vector3D vv = (localReal / cos) * new Vector3D(theDirExtr);
+                            newC = (Curve3D)theNewCurve!.Translated(vv);
                             // it is possible to calculate PCurve
-                            LineCurve2D L2d = new(new Point2D(0.0, aLocalReal / Cos), Constants.DX2d());
+                            LineCurve2D l2d = new(new Point2D(0.0, localReal / cos), Constants.DX2d());
 
-                            if (PC1)
+                            if (pc1)
                             {
-                                Einf.ChangeFirstPC() = L2d;
+                                Einf.ChangeFirstPC() = l2d;
                             }
                             else
                             {
-                                Einf.ChangeSecondPC() = L2d;
+                                Einf.ChangeSecondPC() = l2d;
                             }
                         }
                         else
                         {
-                            S1 = myFMap.FindFromKey(Einf.FirstFace()).Geometry()!;
-                            S2 = myFMap.FindFromKey(Einf.SecondFace()).Geometry()!;
+                            s1 = _fMap.FindFromKey(Einf.FirstFace()).Geometry()!;
+                            s2 = _fMap.FindFromKey(Einf.SecondFace()).Geometry()!;
 
                             // PCurves are not calculated immediately for 2 reasons:
                             // 1 - If ProjLib should make an Approx, it is stupid to approximate the
                             //     entire intersection curve.
                             // 2 - Additionally, if YaRev, there is a risk to not be SameRange.
-                            i2s.Perform(S1, S2, global::Kerf.Engine.Foundation.Precision.Confusion(), true, false, false);
+                            i2s.Perform(s1, s2, global::Kerf.Engine.Foundation.Precision.Confusion(), true, false, false);
 
-                            if (!i2s.IsDone() || i2s.NbLines() <= 0)
+                            if (!i2s.IsDone || i2s.LineCount <= 0)
                             {
-                                errStat = Draft_EdgeRecomputation;
-                                badShape = theEdge;
+                                _errStat = DraftErrorStatus.EdgeRecomputation;
+                                _badShape = theEdge;
                                 return;
                             }
 
-                            double Glob2Min = RealLast();
+                            double glob2Min = RealLast();
                             CurveAdaptor TheCurve = new();
 
                             int i, j; //,jmin;
 
                             if (i2s.Line(1).GetType() != typeof(BSplineCurve3D))
                             {
-                                double Dist2Min = RealLast();
+                                double dist2Min = RealLast();
                                 imin = 0;
-                                for (i = 1; i <= i2s.NbLines(); i++)
+                                for (i = 1; i <= i2s.LineCount; i++)
                                 {
                                     TheCurve.Load(i2s.Line(i));
                                     CurvePointExtrema myExtPC = new(pfv, TheCurve);
@@ -882,10 +886,10 @@ public sealed partial class Draft_Modification
                                     {
                                         if (myExtPC.ExtCount >= 1)
                                         {
-                                            Dist2Min = myExtPC.SquareDistance(1);
+                                            dist2Min = myExtPC.SquareDistance(1);
                                             locpmin = myExtPC.Point(1).Parameter();
                                         }
-                                        if (myExtPC.ExtCount == 2 && Dist2Min > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                                        if (myExtPC.ExtCount == 2 && dist2Min > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                         {
                                             // to avoid incorrectly choosing the image
                                             // of the first vertex of the initial edge
@@ -893,12 +897,12 @@ public sealed partial class Draft_Modification
                                             double d2_2 = myExtPC.SquareDistance(2);
                                             if (d1_2 > 1.21 * d2_2)
                                             {
-                                                Dist2Min = myExtPC.SquareDistance(2);
+                                                dist2Min = myExtPC.SquareDistance(2);
                                                 locpmin = myExtPC.Point(2).Parameter();
                                             }
                                             else if (d2_2 > 1.21 * d1_2)
                                             {
-                                                Dist2Min = myExtPC.SquareDistance(1);
+                                                dist2Min = myExtPC.SquareDistance(1);
                                                 locpmin = myExtPC.Point(1).Parameter();
                                             }
                                             else
@@ -913,19 +917,19 @@ public sealed partial class Draft_Modification
                                                 Surface? theSurf = null;
                                                 if (detrompeur == 1)
                                                 {
-                                                    if (S1.GetType() == typeof(TrimmedSurface))
+                                                    if (s1.GetType() == typeof(TrimmedSurface))
                                                     {
-                                                        S1 = ((TrimmedSurface)S1).BasisSurface();
+                                                        s1 = ((TrimmedSurface)s1).BasisSurface();
                                                     }
-                                                    theSurf = S1;
+                                                    theSurf = s1;
                                                 }
                                                 else if (detrompeur == 2)
                                                 {
-                                                    if (S2.GetType() == typeof(TrimmedSurface))
+                                                    if (s2.GetType() == typeof(TrimmedSurface))
                                                     {
-                                                        S2 = ((TrimmedSurface)S2).BasisSurface();
+                                                        s2 = ((TrimmedSurface)s2).BasisSurface();
                                                     }
-                                                    theSurf = S2;
+                                                    theSurf = s2;
                                                 }
                                                 if (detrompeur != 0 && detrompeur != 4)
                                                 {
@@ -935,7 +939,7 @@ public sealed partial class Draft_Modification
                                                     if (theSurf!.GetType() == typeof(PlaneSurface))
                                                     {
                                                         // OCCT reads S2 whatever theSurf is (a null down-cast throws).
-                                                        Plane3D pl = downCast<PlaneSurface>(S2).Pln();
+                                                        Plane3D pl = DownCast<PlaneSurface>(s2).Pln();
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, plv, out ul, out vl);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pfv, out uf, out vf);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, plvprim, out ulprim, out vlprim);
@@ -943,7 +947,7 @@ public sealed partial class Draft_Modification
                                                     }
                                                     else if (theSurf.GetType() == typeof(CylindricalSurface))
                                                     {
-                                                        Cylinder cy = downCast<CylindricalSurface>(S2).Cylinder();
+                                                        Cylinder cy = DownCast<CylindricalSurface>(s2).Cylinder();
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plv, out ul, out vl);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, pfv, out uf, out vf);
                                                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, plvprim, out ulprim, out vlprim);
@@ -961,7 +965,7 @@ public sealed partial class Draft_Modification
                                                         Vector2D v2 = new((ulprim - ufprim), (vlprim - vfprim));
                                                         if ((v1.Dot(norm)) * (v2.Dot(norm)) < 0)
                                                         {
-                                                            Dist2Min = myExtPC.SquareDistance(2);
+                                                            dist2Min = myExtPC.SquareDistance(2);
                                                             locpmin = myExtPC.Point(2).Parameter();
                                                         }
                                                     }
@@ -970,14 +974,14 @@ public sealed partial class Draft_Modification
                                         }
                                         if (myExtPC.ExtCount == 1 || myExtPC.ExtCount > 2 || detrompeur == 4)
                                         {
-                                            Dist2Min = myExtPC.SquareDistance(1);
+                                            dist2Min = myExtPC.SquareDistance(1);
                                             locpmin = myExtPC.Point(1).Parameter();
                                             for (j = 2; j <= myExtPC.ExtCount; j++)
                                             {
-                                                double Dist2 = myExtPC.SquareDistance(j);
-                                                if (Dist2 < Dist2Min)
+                                                double dist2 = myExtPC.SquareDistance(j);
+                                                if (dist2 < dist2Min)
                                                 {
-                                                    Dist2Min = Dist2;
+                                                    dist2Min = dist2;
                                                     locpmin = myExtPC.Point(j).Parameter();
                                                 }
                                             }
@@ -988,19 +992,19 @@ public sealed partial class Draft_Modification
                                                                            out Point3D _, out Point3D _);
                                             if (dist1_2 < dist2_2)
                                             {
-                                                Dist2Min = dist1_2;
+                                                dist2Min = dist1_2;
                                                 locpmin = TheCurve.FirstParameter();
                                             }
                                             else
                                             {
-                                                Dist2Min = dist2_2;
+                                                dist2Min = dist2_2;
                                                 locpmin = TheCurve.LastParameter();
                                             }
                                         }
 
-                                        if (Dist2Min < Glob2Min)
+                                        if (dist2Min < glob2Min)
                                         {
-                                            Glob2Min = Dist2Min;
+                                            glob2Min = dist2Min;
                                             imin = i;
                                             pmin = locpmin;
                                         }
@@ -1008,36 +1012,36 @@ public sealed partial class Draft_Modification
                                 }
                                 if (imin == 0)
                                 {
-                                    errStat = Draft_EdgeRecomputation;
-                                    badShape = theEdge;
+                                    _errStat = DraftErrorStatus.EdgeRecomputation;
+                                    _badShape = theEdge;
                                     return;
                                 }
 
                                 newC = i2s.Line(imin);
 
                                 newC.D1(pmin, out pfv, out newd1);
-                                bool YaRev = d1fv.Dot(newd1) < 0.0;
+                                bool yaRev = d1fv.Dot(newd1) < 0.0;
 
-                                if (YaRev)
+                                if (yaRev)
                                 {
-                                    reverse(ref newC);
+                                    Reverse(ref newC);
                                 }
 
                                 if (i2s.HasLineOnS1(imin))
                                 {
                                     Einf.ChangeFirstPC() = i2s.LineOnS1(imin);
-                                    if (YaRev)
+                                    if (yaRev)
                                     {
-                                        reverse(ref Einf.ChangeFirstPC());
+                                        Reverse(ref Einf.ChangeFirstPC());
                                     }
                                 }
 
                                 if (i2s.HasLineOnS2(imin))
                                 {
                                     Einf.ChangeSecondPC() = i2s.LineOnS2(imin);
-                                    if (YaRev)
+                                    if (yaRev)
                                     {
-                                        reverse(ref Einf.ChangeSecondPC());
+                                        Reverse(ref Einf.ChangeSecondPC());
                                     }
                                 }
                             } // if (i2s.Line(1)->DynamicType() != STANDARD_TYPE(Geom_BSplineCurve))
@@ -1046,161 +1050,161 @@ public sealed partial class Draft_Modification
                                 // OCCT.NET: OCCT reverses the intersection's own curves in place and compares them
                                 // by handle; the port's are frozen, so this branch works on unfrozen copies of them,
                                 // made once (the same handles throughout).
-                                NCollection_Array1<Curve3D> aLines = new(1, i2s.NbLines());
-                                for (i = 1; i <= i2s.NbLines(); i++)
+                                NCollection_Array1<Curve3D> lines = new(1, i2s.LineCount);
+                                for (i = 1; i <= i2s.LineCount; i++)
                                 {
-                                    aLines[i] = (Curve3D)i2s.Line(i).Copy();
+                                    lines[i] = (Curve3D)i2s.Line(i).Copy();
                                 }
 
                                 // Find the first curve to glue
-                                NCollection_Sequence<Curve3D> Candidates = new();
-                                if (S1.GetType() == typeof(CylindricalSurface)
-                                    || S1.GetType() == typeof(ConicalSurface))
+                                NCollection_Sequence<Curve3D> candidates = new();
+                                if (s1.GetType() == typeof(CylindricalSurface)
+                                    || s1.GetType() == typeof(ConicalSurface))
                                 {
-                                    for (i = 1; i <= i2s.NbLines(); i++)
+                                    for (i = 1; i <= i2s.LineCount; i++)
                                     {
-                                        Curve3D aCurve = aLines[i];
-                                        Point3D Pnt = aCurve.Value(aCurve.FirstParameter());
-                                        GeomAPI_ProjectPointOnSurf projector = new(Pnt, S1, global::Kerf.Engine.Foundation.Precision.Confusion());
-                                        projector.LowerDistanceParameters(out double U, out double V);
-                                        if (Math.Abs(U) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                            || Math.Abs(U - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                        Curve3D curve = lines[i];
+                                        Point3D pnt = curve.Value(curve.FirstParameter());
+                                        ProjectPointOnSurface projector = new(pnt, s1, global::Kerf.Engine.Foundation.Precision.Confusion());
+                                        projector.LowerDistanceParameters(out double u, out double v);
+                                        if (Math.Abs(u) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(u - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
-                                            Candidates.Append(aCurve);
+                                            candidates.Append(curve);
                                         }
                                         else
                                         {
-                                            Pnt = aCurve.Value(aCurve.LastParameter());
-                                            projector.Init(Pnt, S1, global::Kerf.Engine.Foundation.Precision.Confusion());
-                                            projector.LowerDistanceParameters(out U, out V);
-                                            if (Math.Abs(U) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                                || Math.Abs(U - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                            pnt = curve.Value(curve.LastParameter());
+                                            projector.Init(pnt, s1, global::Kerf.Engine.Foundation.Precision.Confusion());
+                                            projector.LowerDistanceParameters(out u, out v);
+                                            if (Math.Abs(u) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                                || Math.Abs(u - 2.0 * M_PI) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                             {
-                                                aCurve.Reverse();
-                                                Candidates.Append(aCurve);
+                                                curve.Reverse();
+                                                candidates.Append(curve);
                                             }
                                         }
                                     }
 
-                                    if (Candidates.Length() == 0)
+                                    if (candidates.Length() == 0)
                                     {
                                         // errStat = Draft_EdgeRecomputation;
                                         // badShape = TopoDS::Edge(ite.Key());
                                         // return;
-                                        for (i = 1; i <= i2s.NbLines(); i++)
+                                        for (i = 1; i <= i2s.LineCount; i++)
                                         {
-                                            Candidates.Append(aLines[i]);
+                                            candidates.Append(lines[i]);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    for (i = 1; i <= i2s.NbLines(); i++)
+                                    for (i = 1; i <= i2s.LineCount; i++)
                                     {
-                                        Candidates.Append(aLines[i]);
+                                        candidates.Append(lines[i]);
                                     }
                                 }
 
-                                Curve3D? FirstCurve = null;
-                                if (Candidates.Length() > 1)
+                                Curve3D? firstCurve = null;
+                                if (candidates.Length() > 1)
                                 {
-                                    double DistMin = global::Kerf.Engine.Foundation.Precision.Infinite();
-                                    for (i = 1; i <= Candidates.Length(); i++)
+                                    double distMin = global::Kerf.Engine.Foundation.Precision.Infinite();
+                                    for (i = 1; i <= candidates.Length(); i++)
                                     {
-                                        Curve3D aCurve = Candidates[i];
-                                        Point3D Pnt = aCurve.Value(aCurve.FirstParameter());
-                                        double Dist = Pnt.Distance(pfv);
-                                        if (Dist - DistMin < -global::Kerf.Engine.Foundation.Precision.Confusion())
+                                        Curve3D curve = candidates[i];
+                                        Point3D pnt = curve.Value(curve.FirstParameter());
+                                        double dist = pnt.Distance(pfv);
+                                        if (dist - distMin < -global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
-                                            DistMin = Dist;
-                                            FirstCurve = aCurve;
+                                            distMin = dist;
+                                            firstCurve = curve;
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    FirstCurve = Candidates[1];
+                                    firstCurve = candidates[1];
                                 }
 
                                 // Glueing
-                                NCollection_Sequence<Curve3D> Curves = new();
-                                for (i = 1; i <= i2s.NbLines(); i++)
+                                NCollection_Sequence<Curve3D> curves = new();
+                                for (i = 1; i <= i2s.LineCount; i++)
                                 {
-                                    if (FirstCurve != aLines[i])
+                                    if (firstCurve != lines[i])
                                     {
-                                        Curves.Append(aLines[i]);
+                                        curves.Append(lines[i]);
                                     }
                                 }
 
-                                NCollection_Sequence<Curve3D> ToGlue = new();
+                                NCollection_Sequence<Curve3D> toGlue = new();
                                 // OCCT reads FirstCurve before its null check below.
-                                Point3D EndPoint = FirstCurve!.Value(FirstCurve.LastParameter());
+                                Point3D endPoint = firstCurve!.Value(firstCurve.LastParameter());
                                 bool added = true;
                                 while (added)
                                 {
                                     added = false;
-                                    for (i = 1; i <= Curves.Length(); i++)
+                                    for (i = 1; i <= curves.Length(); i++)
                                     {
-                                        Curve3D aCurve = Curves[i];
+                                        Curve3D curve = curves[i];
                                         Point3D pfirst, plast;
-                                        pfirst = aCurve.Value(aCurve.FirstParameter());
-                                        plast = aCurve.Value(aCurve.LastParameter());
-                                        if (pfirst.Distance(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                        pfirst = curve.Value(curve.FirstParameter());
+                                        plast = curve.Value(curve.LastParameter());
+                                        if (pfirst.Distance(endPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
-                                            ToGlue.Append(aCurve);
-                                            EndPoint = plast;
-                                            Curves.Remove(i);
+                                            toGlue.Append(curve);
+                                            endPoint = plast;
+                                            curves.Remove(i);
                                             added = true;
                                             break;
                                         }
-                                        if (plast.Distance(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                        if (plast.Distance(endPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
-                                            aCurve.Reverse();
-                                            ToGlue.Append(aCurve);
-                                            EndPoint = pfirst;
-                                            Curves.Remove(i);
+                                            curve.Reverse();
+                                            toGlue.Append(curve);
+                                            endPoint = pfirst;
+                                            curves.Remove(i);
                                             added = true;
                                             break;
                                         }
                                     }
                                 }
 
-                                if (FirstCurve is null)
+                                if (firstCurve is null)
                                 {
-                                    errStat = Draft_EdgeRecomputation;
-                                    badShape = theEdge;
+                                    _errStat = DraftErrorStatus.EdgeRecomputation;
+                                    _badShape = theEdge;
                                     return;
                                 }
 
-                                CompCurveToBSplineCurve Concat = new(downCast<BSplineCurve3D>(FirstCurve));
-                                for (i = 1; i <= ToGlue.Length(); i++)
+                                CompCurveToBSplineCurve concat = new(DownCast<BSplineCurve3D>(firstCurve));
+                                for (i = 1; i <= toGlue.Length(); i++)
                                 {
-                                    Concat.Add(downCast<BSplineCurve3D>(ToGlue[i]), global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+                                    concat.Add(DownCast<BSplineCurve3D>(toGlue[i]), global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                                 }
 
-                                newC = Concat.BSplineCurve()!;
+                                newC = concat.BSplineCurve()!;
 
                                 TheCurve.Load(newC);
                                 CurvePointExtrema myExtPC = new(pfv, TheCurve);
-                                double Dist2Min = RealLast();
+                                double dist2Min = RealLast();
                                 for (i = 1; i <= myExtPC.ExtCount; i++)
                                 {
                                     if (myExtPC.IsMin(i))
                                     {
-                                        double Dist2 = myExtPC.SquareDistance(i);
-                                        if (Dist2 < Dist2Min)
+                                        double dist2 = myExtPC.SquareDistance(i);
+                                        if (dist2 < dist2Min)
                                         {
-                                            Dist2Min = Dist2;
+                                            dist2Min = dist2;
                                             pmin = myExtPC.Point(i).Parameter();
                                         }
                                     }
                                 }
                                 newC.D1(pmin, out pfv, out newd1);
-                                bool YaRev = d1fv.Dot(newd1) < 0.0;
+                                bool yaRev = d1fv.Dot(newd1) < 0.0;
 
-                                if (YaRev)
+                                if (yaRev)
                                 {
-                                    reverse(ref newC);
+                                    Reverse(ref newC);
                                 }
                             } // else: i2s.NbLines() > 2 && S1 is Cylinder or Cone
 
@@ -1209,104 +1213,104 @@ public sealed partial class Draft_Modification
                     }
                     else
                     { // case of tangency
-                        Face F1 = Einf.FirstFace();
-                        Face F2 = Einf.SecondFace();
+                        Face f1 = Einf.FirstFace();
+                        Face f2 = Einf.SecondFace();
 
-                        Surface? aLocalS1 = myFMap.FindFromKey(F1).Geometry();
-                        Surface? aLocalS2 = myFMap.FindFromKey(F2).Geometry();
-                        if (aLocalS1 is null || aLocalS2 is null)
+                        Surface? localS1 = _fMap.FindFromKey(f1).Geometry();
+                        Surface? localS2 = _fMap.FindFromKey(f2).Geometry();
+                        if (localS1 is null || localS2 is null)
                         {
-                            errStat = Draft_EdgeRecomputation;
-                            badShape = theEdge;
+                            _errStat = DraftErrorStatus.EdgeRecomputation;
+                            _badShape = theEdge;
                             return;
                         }
-                        if (aLocalS1.GetType() == typeof(TrimmedSurface))
+                        if (localS1.GetType() == typeof(TrimmedSurface))
                         {
-                            aLocalS1 = ((TrimmedSurface)aLocalS1).BasisSurface();
+                            localS1 = ((TrimmedSurface)localS1).BasisSurface();
                         }
-                        if (aLocalS2.GetType() == typeof(TrimmedSurface))
+                        if (localS2.GetType() == typeof(TrimmedSurface))
                         {
-                            aLocalS2 = ((TrimmedSurface)aLocalS2).BasisSurface();
+                            localS2 = ((TrimmedSurface)localS2).BasisSurface();
                         }
 
                         Direction3D dirextr = new();
                         // bool dirfound = false;
-                        if (aLocalS1.GetType() == typeof(CylindricalSurface))
+                        if (localS1.GetType() == typeof(CylindricalSurface))
                         {
-                            Cylinder cyl = ((CylindricalSurface)aLocalS1).Cylinder();
+                            Cylinder cyl = ((CylindricalSurface)localS1).Cylinder();
                             dirextr = cyl.Axis().Direction();
                             // dirfound = true;
                             //  see direction...
                         }
-                        else if (aLocalS1.GetType() == typeof(ExtrusionSurface))
+                        else if (localS1.GetType() == typeof(ExtrusionSurface))
                         {
-                            dirextr = ((ExtrusionSurface)aLocalS1).Direction();
+                            dirextr = ((ExtrusionSurface)localS1).Direction();
                             // dirfound = true;
                             //  see direction...
 
                             // Here it is possible to calculate PCurve.
-                            ExtrusionSurface SEL = (ExtrusionSurface)aLocalS1;
-                            if (SEL.BasisCurve() is CircleCurve3D GCir)
+                            ExtrusionSurface sel = (ExtrusionSurface)localS1;
+                            if (sel.BasisCurve() is CircleCurve3D gCir)
                             {
-                                double U = global::Kerf.Engine.Geometry.ElCLib.Parameter(GCir.Circ(), ptfixe);
-                                LineCurve2D PC1 = new(new Point2D(U, 0.0), Constants.DY2d());
-                                Einf.ChangeFirstPC() = PC1;
+                                double u = global::Kerf.Engine.Geometry.ElCLib.Parameter(gCir.Circ(), ptfixe);
+                                LineCurve2D pc1 = new(new Point2D(u, 0.0), Constants.DY2d());
+                                Einf.ChangeFirstPC() = pc1;
                             }
                         }
 
-                        else if (aLocalS2.GetType() == typeof(CylindricalSurface))
+                        else if (localS2.GetType() == typeof(CylindricalSurface))
                         {
-                            Cylinder cyl = ((CylindricalSurface)aLocalS2).Cylinder();
+                            Cylinder cyl = ((CylindricalSurface)localS2).Cylinder();
                             dirextr = cyl.Axis().Direction();
                             // dirfound = true;
                             // see direction...
                         }
-                        else if (aLocalS2.GetType() == typeof(ExtrusionSurface))
+                        else if (localS2.GetType() == typeof(ExtrusionSurface))
                         {
-                            dirextr = ((ExtrusionSurface)aLocalS2).Direction();
+                            dirextr = ((ExtrusionSurface)localS2).Direction();
                             // dirfound = true;
                             // see direction...
 
                             // Here it is possible to calculate PCurve.
-                            ExtrusionSurface SEL = (ExtrusionSurface)aLocalS2;
-                            if (SEL.BasisCurve() is CircleCurve3D GCir)
+                            ExtrusionSurface sel = (ExtrusionSurface)localS2;
+                            if (sel.BasisCurve() is CircleCurve3D gCir)
                             {
-                                double U = global::Kerf.Engine.Geometry.ElCLib.Parameter(GCir.Circ(), ptfixe);
-                                LineCurve2D PC2 = new(new Point2D(U, 0.0), Constants.DY2d());
-                                Einf.ChangeSecondPC() = PC2;
+                                double u = global::Kerf.Engine.Geometry.ElCLib.Parameter(gCir.Circ(), ptfixe);
+                                LineCurve2D pc2 = new(new Point2D(u, 0.0), Constants.DY2d());
+                                Einf.ChangeSecondPC() = pc2;
                             }
                         }
                         newC = new LineCurve3D(ptfixe, dirextr);
 
                         C.D1(0.0, out Point3D pfv, out Vector3D d1fv);
                         newC.D1(0.0, out pfv, out Vector3D newd1);
-                        bool YaRev = d1fv.Dot(newd1) < 0.0;
-                        if (YaRev)
+                        bool yaRev = d1fv.Dot(newd1) < 0.0;
+                        if (yaRev)
                         {
-                            reverse(ref newC);
+                            Reverse(ref newC);
                             if (Einf.FirstPC() is not null)
                             {
-                                reverse(ref Einf.ChangeFirstPC());
+                                Reverse(ref Einf.ChangeFirstPC());
                             }
                             if (Einf.SecondPC() is not null)
                             {
-                                reverse(ref Einf.ChangeSecondPC());
+                                Reverse(ref Einf.ChangeSecondPC());
                             }
                         }
                     }
 
-                    if (newC is TrimmedCurve3D T)
+                    if (newC is TrimmedCurve3D t)
                     {
-                        newC = T.BasisCurve();
+                        newC = t.BasisCurve();
                     }
                     Einf.ChangeGeometry() = newC;
                 }
                 else if (!Einf.NewGeometry())
                 {
                     // set existing curve 3D
-                    if (C is TrimmedCurve3D T)
+                    if (C is TrimmedCurve3D t)
                     {
-                        C = T.BasisCurve();
+                        C = t.BasisCurve();
                     }
                     Einf.ChangeGeometry() = C;
                 }
@@ -1314,124 +1318,124 @@ public sealed partial class Draft_Modification
 
             // Calculate new vertices.
 
-            CurveAdaptor HAC = new();
-            SurfaceAdaptor HAS = new();
+            CurveAdaptor hac = new();
+            SurfaceAdaptor has = new();
 
-            for (int ii = 1; ii <= myVMap.Extent(); ii++)
+            for (int ii = 1; ii <= _vMap.Extent(); ii++)
             {
-                CurveAdaptor AC = HAC;
-                SurfaceAdaptor AS = HAS;
+                CurveAdaptor ac = hac;
+                SurfaceAdaptor AS = has;
 
-                Vertex TVV = ShapeCasts.Vertex(myVMap.FindKey(ii));
-                Draft_VertexInfo Vinf = myVMap.ChangeFromIndex(ii);
-                if (!Choose(myFMap, myEMap, TVV, Vinf, AC, AS))
+                Vertex tvv = ShapeCasts.Vertex(_vMap.FindKey(ii));
+                VertexInfo vinf = _vMap.ChangeFromIndex(ii);
+                if (!Choose(_fMap, _eMap, tvv, vinf, ac, AS))
                 {
                     // no concerted edge => alignment of two consecutive edges.
                     Point3D pvt = new();
-                    Vinf.ChangeGeometry() = pvt;
-                    Vinf.InitEdgeIterator();
-                    if (Vinf.MoreEdge())
+                    vinf.ChangeGeometry() = pvt;
+                    vinf.InitEdgeIterator();
+                    if (vinf.MoreEdge())
                     {
-                        Edge Edg1 = Vinf.Edge();
+                        Edge edg1 = vinf.Edge();
                         // const Draft_EdgeInfo& Einf1 = myEMap(Edg1);
-                        Draft_EdgeInfo Einf1 = myEMap.ChangeFromKey(Edg1);
-                        Point3D vtori = Tool.Pnt(TVV);
+                        DraftEdgeInfo einf1 = _eMap.ChangeFromKey(edg1);
+                        Point3D vtori = Tool.Pnt(tvv);
                         // Einf1.Geometry()->D0(Vinf.Parameter(Edg1), pvt);
-                        GeomAPI_ProjectPointOnCurve Projector = new(vtori, Einf1.Geometry()!); // patch
+                        ProjectPointOnCurve Projector = new(vtori, einf1.Geometry()!); // patch
                         pvt = Projector.NearestPoint();
 
                         double dion = pvt.SquareDistance(vtori);
-                        Vinf.NextEdge();
-                        if (Vinf.MoreEdge())
+                        vinf.NextEdge();
+                        if (vinf.MoreEdge())
                         {
-                            Edge Edg2 = Vinf.Edge();
+                            Edge edg2 = vinf.Edge();
                             // const Draft_EdgeInfo& Einf2 = myEMap(Edg2);
-                            Draft_EdgeInfo Einf2 = myEMap.ChangeFromKey(Edg2);
+                            DraftEdgeInfo einf2 = _eMap.ChangeFromKey(edg2);
                             //	    double f;
-                            Einf2.Geometry()!.D0(Vinf.Parameter(Edg2), out Point3D opvt);
+                            einf2.Geometry()!.D0(vinf.Parameter(edg2), out Point3D opvt);
 
                             if (opvt.SquareDistance(vtori) < dion)
                             {
                                 pvt = opvt;
                             }
                             // Vinf.ChangeParameter(Edg2) = Parameter(Einf2.Geometry(), pvt);
-                            double param2 = Parameter(Einf2.Geometry()!, pvt, out int done2);
+                            double param2 = Parameter(einf2.Geometry()!, pvt, out int done2);
                             if (done2 != 0)
                             {
-                                Surface S1 = myFMap.FindFromKey(Einf2.FirstFace()).Geometry()!;
-                                Surface S2 = myFMap.FindFromKey(Einf2.SecondFace()).Geometry()!;
-                                Vinf.ChangeParameter(Edg2) =
-                                    SmartParameter(Einf2, Tool.Tolerance(Edg2), pvt, done2, S1, S2);
+                                Surface s1 = _fMap.FindFromKey(einf2.FirstFace()).Geometry()!;
+                                Surface s2 = _fMap.FindFromKey(einf2.SecondFace()).Geometry()!;
+                                vinf.ChangeParameter(edg2) =
+                                    SmartParameter(einf2, Tool.Tolerance(edg2), pvt, done2, s1, s2);
                             }
                             else
                             {
-                                Vinf.ChangeParameter(Edg2) = param2;
+                                vinf.ChangeParameter(edg2) = param2;
                             }
                         }
 
-                        Vinf.ChangeGeometry() = pvt;
+                        vinf.ChangeGeometry() = pvt;
                         // Vinf.ChangeParameter(Edg1) = Parameter(Einf1.Geometry(), pvt);
-                        double param = Parameter(Einf1.Geometry()!, pvt, out int done);
+                        double param = Parameter(einf1.Geometry()!, pvt, out int done);
                         if (done != 0)
                         {
-                            Surface S1 = myFMap.FindFromKey(Einf1.FirstFace()).Geometry()!;
-                            Surface S2 = myFMap.FindFromKey(Einf1.SecondFace()).Geometry()!;
-                            Vinf.ChangeParameter(Edg1) =
-                                SmartParameter(Einf1, Tool.Tolerance(Edg1), pvt, done, S1, S2);
+                            Surface s1 = _fMap.FindFromKey(einf1.FirstFace()).Geometry()!;
+                            Surface s2 = _fMap.FindFromKey(einf1.SecondFace()).Geometry()!;
+                            vinf.ChangeParameter(edg1) =
+                                SmartParameter(einf1, Tool.Tolerance(edg1), pvt, done, s1, s2);
                         }
                         else
                         {
-                            Vinf.ChangeParameter(Edg1) = param;
+                            vinf.ChangeParameter(edg1) = param;
                         }
                         continue;
                     }
 
-                    errStat = Draft_VertexRecomputation;
-                    badShape = TVV;
+                    _errStat = DraftErrorStatus.VertexRecomputation;
+                    _badShape = tvv;
                     return;
                 }
 
-                IntCurveSurface_HInter myintcs = new();
-                myintcs.Perform(HAC, HAS);
-                if (!myintcs.IsDone())
+                HInter myintcs = new();
+                myintcs.Perform(hac, has);
+                if (!myintcs.IsDone)
                 {
-                    errStat = Draft_VertexRecomputation;
-                    badShape = TVV;
+                    _errStat = DraftErrorStatus.VertexRecomputation;
+                    _badShape = tvv;
                     return;
                 }
 
                 {
-                    Point3D vtori = Tool.Pnt(TVV);
+                    Point3D vtori = Tool.Pnt(tvv);
                     Point3D pvt;
 
-                    int nbsol = myintcs.NbPoints();
+                    int nbsol = myintcs.PointCount;
                     if (nbsol <= 0)
                     {
-                        ExtCS extr = new(AC, AS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
+                        ExtCS extr = new(ac, AS, global::Kerf.Engine.Foundation.Precision.PConfusion(), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
                         if (!extr.IsDone || extr.ExtCount == 0)
                         {
-                            errStat = Draft_VertexRecomputation;
-                            badShape = TVV;
+                            _errStat = DraftErrorStatus.VertexRecomputation;
+                            _badShape = tvv;
                             return;
                         }
 
                         double disref = RealLast();
                         int iref = 0;
-                        POnCurv Pc;
-                        POnSurf Ps;
+                        POnCurv pc;
+                        POnSurf ps;
                         for (int i = 1; i <= extr.ExtCount; i++)
                         {
-                            extr.Points(i, out Pc, out Ps);
-                            double distemp = Pc.Value().SquareDistance(vtori);
+                            extr.Points(i, out pc, out ps);
+                            double distemp = pc.Value().SquareDistance(vtori);
                             if (distemp < disref)
                             {
                                 disref = distemp;
                                 iref = i;
                             }
                         }
-                        extr.Points(iref, out Pc, out Ps);
-                        pvt = Pc.Value();
+                        extr.Points(iref, out pc, out ps);
+                        pvt = pc.Value();
                     }
                     else
                     {
@@ -1449,33 +1453,33 @@ public sealed partial class Draft_Modification
                         pvt = myintcs.Point(iref).Pnt();
                     }
 
-                    Vinf.ChangeGeometry() = pvt;
+                    vinf.ChangeGeometry() = pvt;
 
-                    for (Vinf.InitEdgeIterator(); Vinf.MoreEdge(); Vinf.NextEdge())
+                    for (vinf.InitEdgeIterator(); vinf.MoreEdge(); vinf.NextEdge())
                     {
-                        Edge Edg = Vinf.Edge();
-                        double initpar = Vinf.Parameter(Edg);
+                        Edge Edg = vinf.Edge();
+                        double initpar = vinf.Parameter(Edg);
                         // const Draft_EdgeInfo& Einf = myEMap(Edg);
-                        Draft_EdgeInfo Einf = myEMap.ChangeFromKey(Edg);
+                        DraftEdgeInfo Einf = _eMap.ChangeFromKey(Edg);
                         // Vinf.ChangeParameter(Edg) = Parameter(Einf.Geometry(),pvt);
                         double param = Parameter(Einf.Geometry()!, pvt, out int done);
                         if (done != 0)
                         {
-                            Surface S1 = myFMap.FindFromKey(Einf.FirstFace()).Geometry()!;
-                            Surface S2 = myFMap.FindFromKey(Einf.SecondFace()).Geometry()!;
-                            Vinf.ChangeParameter(Edg) = SmartParameter(Einf, Tool.Tolerance(Edg), pvt, done, S1, S2);
+                            Surface s1 = _fMap.FindFromKey(Einf.FirstFace()).Geometry()!;
+                            Surface s2 = _fMap.FindFromKey(Einf.SecondFace()).Geometry()!;
+                            vinf.ChangeParameter(Edg) = SmartParameter(Einf, Tool.Tolerance(Edg), pvt, done, s1, s2);
                         }
                         else
                         {
                             if (Math.Abs(initpar - param) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                Curve3D? aC = Tool.Curve(Edg, out Placement Loc, out double f, out double l);
-                                if (aC!.GetType() == typeof(TrimmedCurve3D))
+                                Curve3D? c = Tool.Curve(Edg, out Placement loc, out double f, out double l);
+                                if (c!.GetType() == typeof(TrimmedCurve3D))
                                 {
                                     Einf.SetNewGeometry(true);
                                 }
                             }
-                            Vinf.ChangeParameter(Edg) = param;
+                            vinf.ChangeParameter(Edg) = param;
                         }
                     }
                 }
@@ -1484,9 +1488,9 @@ public sealed partial class Draft_Modification
 
         // small loop of validation/protection
 
-        for (int i = 1; i <= myEMap.Extent(); i++)
+        for (int i = 1; i <= _eMap.Extent(); i++)
         {
-            Edge edg = ShapeCasts.Edge(myEMap.FindKey(i));
+            Edge edg = ShapeCasts.Edge(_eMap.FindKey(i));
 
             Exploration.Vertices(edg, out Vertex Vf, out Vertex Vl);
             if (edg.Orientation() == Reversed)
@@ -1495,69 +1499,69 @@ public sealed partial class Draft_Modification
                 Vl.Reverse();
             }
 
-            if (myVMap.Contains(Vf) && myVMap.Contains(Vl))
+            if (_vMap.Contains(Vf) && _vMap.Contains(Vl))
             {
                 // Here, we compare directions of the source edge (from input shape)
                 // and corresponding selected part of the intersection edge.
                 // If these directions are opposite then we reverse intersection edge
                 // and recompute corresponding vertex-parameters.
 
-                double aParF = myVMap.ChangeFromKey(Vf).Parameter(edg);
-                double aParL = myVMap.ChangeFromKey(Vl).Parameter(edg);
+                double parF = _vMap.ChangeFromKey(Vf).Parameter(edg);
+                double parL = _vMap.ChangeFromKey(Vl).Parameter(edg);
 
-                if (aParL < aParF)
+                if (parL < parF)
                 {
-                    Draft_EdgeInfo aEinf = myEMap.ChangeFromKey(edg);
-                    Curve3D aSCurve = Tool.Curve(edg, out double aF, out double aL)!;
-                    Curve3D? anIntCurv = aEinf.Geometry()!;
+                    DraftEdgeInfo einf = _eMap.ChangeFromKey(edg);
+                    Curve3D sCurve = Tool.Curve(edg, out double aF, out double aL)!;
+                    Curve3D? intCurv = einf.Geometry()!;
                     Point3D aPf, aPl;
-                    Vector3D aDirNF, aDirNL, aDirOF, aDirOL;
-                    aSCurve.D1(Tool.Parameter(Vf, edg), out aPf, out aDirOF);
-                    aSCurve.D1(Tool.Parameter(Vl, edg), out aPl, out aDirOL);
-                    anIntCurv.D1(aParF, out aPf, out aDirNF);
-                    anIntCurv.D1(aParL, out aPl, out aDirNL);
+                    Vector3D dirNF, dirNL, dirOF, dirOL;
+                    sCurve.D1(Tool.Parameter(Vf, edg), out aPf, out dirOF);
+                    sCurve.D1(Tool.Parameter(Vl, edg), out aPl, out dirOL);
+                    intCurv.D1(parF, out aPf, out dirNF);
+                    intCurv.D1(parL, out aPl, out dirNL);
 
-                    double aSqMagn = aDirNF.SquareMagnitude();
+                    double sqMagn = dirNF.SquareMagnitude();
 
-                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        aDirNF.Divide(Math.Sqrt(aSqMagn));
+                        dirNF.Divide(Math.Sqrt(sqMagn));
                     }
 
-                    aSqMagn = aDirNL.SquareMagnitude();
-                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    sqMagn = dirNL.SquareMagnitude();
+                    if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        aDirNL.Divide(Math.Sqrt(aSqMagn));
+                        dirNL.Divide(Math.Sqrt(sqMagn));
                     }
 
-                    aSqMagn = aDirOF.SquareMagnitude();
-                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    sqMagn = dirOF.SquareMagnitude();
+                    if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        aDirOF.Divide(Math.Sqrt(aSqMagn));
+                        dirOF.Divide(Math.Sqrt(sqMagn));
                     }
 
-                    aSqMagn = aDirOL.SquareMagnitude();
-                    if (aSqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    sqMagn = dirOL.SquareMagnitude();
+                    if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        aDirOL.Divide(Math.Sqrt(aSqMagn));
+                        dirOL.Divide(Math.Sqrt(sqMagn));
                     }
 
-                    double aCosF = aDirNF.Dot(aDirOF), aCosL = aDirNL.Dot(aDirOL);
-                    double aCosMax = Math.Abs(aCosF) > Math.Abs(aCosL) ? aCosF : aCosL;
+                    double cosF = dirNF.Dot(dirOF), cosL = dirNL.Dot(dirOL);
+                    double cosMax = Math.Abs(cosF) > Math.Abs(cosL) ? cosF : cosL;
 
-                    if (aCosMax < 0.0)
+                    if (cosMax < 0.0)
                     {
-                        reverse(ref anIntCurv);
-                        aEinf.ChangeGeometry() = anIntCurv;
-                        double aPar = Parameter(aEinf.Geometry()!, aPf, out int anErr);
-                        if (anErr == 0)
+                        Reverse(ref intCurv);
+                        einf.ChangeGeometry() = intCurv;
+                        double par = Parameter(einf.Geometry()!, aPf, out int err);
+                        if (err == 0)
                         {
-                            myVMap.ChangeFromKey(Vf).ChangeParameter(edg) = aPar;
+                            _vMap.ChangeFromKey(Vf).ChangeParameter(edg) = par;
                         }
-                        aPar = Parameter(aEinf.Geometry()!, aPl, out anErr);
-                        if (anErr == 0)
+                        par = Parameter(einf.Geometry()!, aPl, out err);
+                        if (err == 0)
                         {
-                            myVMap.ChangeFromKey(Vl).ChangeParameter(edg) = aPar;
+                            _vMap.ChangeFromKey(Vl).ChangeParameter(edg) = par;
                         }
                     }
                 }
@@ -1579,395 +1583,395 @@ public sealed partial class Draft_Modification
                 //	pl = gc->LastParameter();
                 //	pf = gc->FirstParameter();
                 //      }
-                Curve3D theCurve = myEMap.FindFromKey(edg).Geometry()!;
+                Curve3D theCurve = _eMap.FindFromKey(edg).Geometry()!;
                 if (theCurve.IsClosed)
                 {
                     // pf >= pl
-                    double FirstPar = theCurve.FirstParameter(), LastPar = theCurve.LastParameter();
+                    double firstPar = theCurve.FirstParameter(), lastPar = theCurve.LastParameter();
                     double pconf = global::Kerf.Engine.Foundation.Precision.PConfusion();
-                    if (Math.Abs(pf - LastPar) <= pconf)
+                    if (Math.Abs(pf - lastPar) <= pconf)
                     {
-                        pf = FirstPar;
+                        pf = firstPar;
                     }
-                    else if (Math.Abs(pl - FirstPar) <= pconf)
+                    else if (Math.Abs(pl - firstPar) <= pconf)
                     {
-                        pl = LastPar;
+                        pl = lastPar;
                     }
 
                     if (pl <= pf)
                     {
-                        pl += (LastPar - FirstPar);
+                        pl += (lastPar - firstPar);
                     }
                 }
                 if (pl <= pf)
                 {
-                    errStat = Draft_EdgeRecomputation;
-                    badShape = edg;
+                    _errStat = DraftErrorStatus.EdgeRecomputation;
+                    _badShape = edg;
                     return;
                 }
             }
-            if (myVMap.Contains(Vf))
+            if (_vMap.Contains(Vf))
             {
-                myVMap.ChangeFromKey(Vf).ChangeParameter(edg) = pf;
+                _vMap.ChangeFromKey(Vf).ChangeParameter(edg) = pf;
             }
-            if (myVMap.Contains(Vl))
+            if (_vMap.Contains(Vl))
             {
-                myVMap.ChangeFromKey(Vl).ChangeParameter(edg) = pl;
+                _vMap.ChangeFromKey(Vl).ChangeParameter(edg) = pl;
             }
         }
     }
 
     //=================================================================================================
 
-    private Surface? NewSurface(Surface S,
-                                     Orientation Oris,
-                                     in Direction3D Direction,
-                                     double Angle,
-                                     in Plane3D NeutralPlane)
+    private Surface? NewSurface(Surface s,
+                                     Orientation oris,
+                                     in Direction3D direction,
+                                     double angle,
+                                     in Plane3D neutralPlane)
     {
-        Surface? NewS = null;
+        Surface? newS = null;
 
-        Type TypeS = S.GetType();
+        Type typeS = s.GetType();
 
-        if (TypeS == typeof(PlaneSurface))
+        if (typeS == typeof(PlaneSurface))
         {
-            Plane3D Pl = ((PlaneSurface)S).Pln();
-            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out Axis3D Axe, out double Theta))
+            Plane3D pl = ((PlaneSurface)s).Pln();
+            if (FindRotation(pl, oris, direction, angle, neutralPlane, out Axis3D axe, out double theta))
             {
-                if (Math.Abs(Theta) > global::Kerf.Engine.Foundation.Precision.Angular())
+                if (Math.Abs(theta) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
-                    NewS = (Surface)S.Rotated(Axe, Theta);
+                    newS = (Surface)s.Rotated(axe, theta);
                 }
                 else
                 {
-                    NewS = S;
+                    newS = s;
                 }
             }
         }
-        else if (TypeS == typeof(CylindricalSurface))
+        else if (typeS == typeof(CylindricalSurface))
         {
-            double testdir = Direction.Dot(NeutralPlane.Axis().Direction());
+            double testdir = direction.Dot(neutralPlane.Axis().Direction());
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                return NewS;
+                return newS;
             }
-            Cylinder Cy = ((CylindricalSurface)S).Cylinder();
-            testdir = Direction.Dot(Cy.Axis().Direction());
+            Cylinder cy = ((CylindricalSurface)s).Cylinder();
+            testdir = direction.Dot(cy.Axis().Direction());
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                return NewS;
+                return newS;
             }
-            if (Math.Abs(Angle) > global::Kerf.Engine.Foundation.Precision.Angular())
+            if (Math.Abs(angle) > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 QuadQuadGeo i2s = new();
-                i2s.Perform(NeutralPlane, Cy, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+                i2s.Perform(neutralPlane, cy, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 bool isIntDone = i2s.IsDone;
 
                 if (i2s.TypeInter() == Ellipse)
                 {
-                    Ellipse3D anEl = i2s.Ellipse(1);
-                    double aMajorR = anEl.MajorRadius();
-                    double aMinorR = anEl.MinorRadius();
-                    isIntDone = (aMajorR < 100000.0 * aMinorR);
+                    Ellipse3D el = i2s.Ellipse(1);
+                    double majorR = el.MajorRadius();
+                    double minorR = el.MinorRadius();
+                    isIntDone = (majorR < 100000.0 * minorR);
                 }
 
                 if (!isIntDone || i2s.TypeInter() != Circle)
                 {
-                    return NewS;
+                    return newS;
                 }
-                CoordinateSystem axcone = Cy.Position();
+                CoordinateSystem axcone = cy.Position();
                 // Pb : Where is the material???
-                double alpha = Angle;
+                double alpha = angle;
                 bool direct = axcone.Direct();
-                if ((direct && Oris == Reversed) || (!direct && Oris == Forward))
+                if ((direct && oris == Reversed) || (!direct && oris == Forward))
                 {
                     alpha = -alpha;
                 }
 
-                Point3D Center = i2s.Circle(1).Location();
+                Point3D center = i2s.Circle(1).Location();
                 if (testdir < 0.0)
                 {
                     alpha = -alpha;
                 }
-                double Z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Cy.Axis(), Center);
-                double Rad = Cy.Radius() + Z * Math.Tan(alpha);
-                if (Rad < 0.0)
+                double z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(cy.Axis(), center);
+                double rad = cy.Radius() + z * Math.Tan(alpha);
+                if (rad < 0.0)
                 {
-                    Rad = -Rad;
+                    rad = -rad;
                 }
                 else
                 {
                     alpha = -alpha;
                 }
-                Cone co = new(axcone, alpha, Rad);
-                NewS = new ConicalSurface(co);
+                Cone co = new(axcone, alpha, rad);
+                newS = new ConicalSurface(co);
             }
             else
             {
-                NewS = S;
+                newS = s;
             }
         }
-        else if (TypeS == typeof(ConicalSurface))
+        else if (typeS == typeof(ConicalSurface))
         {
-            double testdir = Direction.Dot(NeutralPlane.Axis().Direction());
+            double testdir = direction.Dot(neutralPlane.Axis().Direction());
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                return NewS;
+                return newS;
             }
 
-            Cone Co1 = ((ConicalSurface)S).Cone();
+            Cone co1 = ((ConicalSurface)s).Cone();
 
-            testdir = Direction.Dot(Co1.Axis().Direction());
+            testdir = direction.Dot(co1.Axis().Direction());
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                return NewS;
+                return newS;
             }
 
             QuadQuadGeo i2s = new();
-            i2s.Perform(NeutralPlane, Co1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            i2s.Perform(neutralPlane, co1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
             if (!i2s.IsDone || i2s.TypeInter() != Circle)
             {
-                return NewS;
+                return newS;
             }
-            CoordinateSystem axcone = Co1.Position();
+            CoordinateSystem axcone = co1.Position();
             // Pb : Where is the material???
-            double alpha = Angle;
+            double alpha = angle;
             bool direct = axcone.Direct();
-            if ((direct && Oris == Reversed) || (!direct && Oris == Forward))
+            if ((direct && oris == Reversed) || (!direct && oris == Forward))
             {
                 alpha = -alpha;
             }
 
-            Point3D Center = i2s.Circle(1).Location();
-            if (Math.Abs(Angle) > global::Kerf.Engine.Foundation.Precision.Angular())
+            Point3D center = i2s.Circle(1).Location();
+            if (Math.Abs(angle) > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 if (testdir < 0.0)
                 {
                     alpha = -alpha;
                 }
-                double Z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co1.Axis(), Center);
-                double Rad = i2s.Circle(1).Radius() + Z * Math.Tan(alpha);
-                if (Rad < 0.0)
+                double z = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis(), center);
+                double rad = i2s.Circle(1).Radius() + z * Math.Tan(alpha);
+                if (rad < 0.0)
                 {
-                    Rad = -Rad;
+                    rad = -rad;
                 }
                 else
                 {
                     alpha = -alpha;
                 }
-                if (Math.Abs(alpha - Co1.SemiAngle()) < global::Kerf.Engine.Foundation.Precision.Angular())
+                if (Math.Abs(alpha - co1.SemiAngle()) < global::Kerf.Engine.Foundation.Precision.Angular())
                 {
-                    NewS = S;
+                    newS = s;
                 }
                 else
                 {
-                    Cone co = new(axcone, alpha, Rad);
-                    NewS = new ConicalSurface(co);
+                    Cone co = new(axcone, alpha, rad);
+                    newS = new ConicalSurface(co);
                 }
             }
             else
             {
-                NewS = new CylindricalSurface(new Cylinder(axcone, i2s.Circle(1).Radius()));
+                newS = new CylindricalSurface(new Cylinder(axcone, i2s.Circle(1).Radius()));
             }
         }
-        return NewS;
+        return newS;
     }
 
     //=================================================================================================
 
-    private Curve3D? NewCurve(Curve3D C,
-                                 Surface S,
-                                 Orientation Oris,
-                                 in Direction3D Direction,
-                                 double Angle,
-                                 in Plane3D NeutralPlane,
-                                 bool Flag = true)
+    private Curve3D? NewCurve(Curve3D c,
+                                 Surface s,
+                                 Orientation oris,
+                                 in Direction3D direction,
+                                 double angle,
+                                 in Plane3D neutralPlane,
+                                 bool flag = true)
     {
-        Curve3D? NewC = null;
+        Curve3D? newC = null;
 
-        Type TypeS = S.GetType();
+        Type typeS = s.GetType();
 
-        if (TypeS == typeof(PlaneSurface))
+        if (typeS == typeof(PlaneSurface))
         {
-            Plane3D Pl = ((PlaneSurface)S).Pln();
-            if (FindRotation(Pl, Oris, Direction, Angle, NeutralPlane, out Axis3D Axe, out double Theta))
+            Plane3D pl = ((PlaneSurface)s).Pln();
+            if (FindRotation(pl, oris, direction, angle, neutralPlane, out Axis3D axe, out double theta))
             {
-                if (Math.Abs(Theta) > global::Kerf.Engine.Foundation.Precision.Angular())
+                if (Math.Abs(theta) > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
-                    NewC = (Curve3D)C.Rotated(Axe, Theta);
+                    newC = (Curve3D)c.Rotated(axe, theta);
                 }
                 else
                 {
-                    NewC = C;
+                    newC = c;
                 }
             }
-            return NewC;
+            return newC;
         }
 
-        if (C.GetType() != typeof(LineCurve3D))
+        if (c.GetType() != typeof(LineCurve3D))
         {
-            return NewC;
+            return newC;
         }
 
-        Line3D lin = ((LineCurve3D)C).Lin();
+        Line3D lin = ((LineCurve3D)c).Lin();
         //  double testdir = Direction.Dot(lin.Direction());
         //  if (std::abs(testdir) <= 1.-Precision::Angular()) {
         //    return NewC;
         //  }
-        Direction3D Norm = new();
-        if (TypeS == typeof(CylindricalSurface))
+        Direction3D norm = new();
+        if (typeS == typeof(CylindricalSurface))
         {
-            Cylinder Cy = ((CylindricalSurface)S).Cylinder();
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(Cy, lin.Location(), out double U, out double V);
-            global::Kerf.Engine.Geometry.ElSLib.D1(U, V, Cy, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
-            Norm = new Direction3D(d1u.Crossed(d1v));
+            Cylinder cy = ((CylindricalSurface)s).Cylinder();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(cy, lin.Location(), out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.D1(u, v, cy, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
+            norm = new Direction3D(d1u.Crossed(d1v));
         }
-        else if (TypeS == typeof(ConicalSurface))
+        else if (typeS == typeof(ConicalSurface))
         {
-            Cone Co = ((ConicalSurface)S).Cone();
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(Co, lin.Location(), out double U, out double V);
-            global::Kerf.Engine.Geometry.ElSLib.D1(U, V, Co, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
-            Norm = new Direction3D(d1u.Crossed(d1v));
+            Cone co = ((ConicalSurface)s).Cone();
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(co, lin.Location(), out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.D1(u, v, co, out Point3D pbid, out Vector3D d1u, out Vector3D d1v);
+            norm = new Direction3D(d1u.Crossed(d1v));
         }
 
-        IntConicQuad ilipl = new(lin, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
+        IntConicQuad ilipl = new(lin, neutralPlane, global::Kerf.Engine.Foundation.Precision.Angular());
         if (ilipl.IsDone && ilipl.PointCount != 0)
         {
-            if (Oris == Reversed)
+            if (oris == Reversed)
             {
-                Norm.Reverse();
+                norm.Reverse();
             }
-            Axis3D axrot = new(ilipl.Point(1), Norm.Crossed(Direction));
-            Line3D lires = new Line3D(new Axis3D(ilipl.Point(1), Direction)).Rotated(axrot, Angle);
+            Axis3D axrot = new(ilipl.Point(1), norm.Crossed(direction));
+            Line3D lires = new Line3D(new Axis3D(ilipl.Point(1), direction)).Rotated(axrot, angle);
             if (lires.Direction().Dot(lin.Direction()) < 0.0)
             {
                 lires.Reverse();
             }
-            NewC = new LineCurve3D(lires);
+            newC = new LineCurve3D(lires);
         }
-        return NewC;
+        return newC;
     }
 
     //=================================================================================================
 
-    private static bool Choose(NCollection_IndexedDataMap<Shape, Draft_FaceInfo> theFMap,
-                               NCollection_IndexedDataMap<Shape, Draft_EdgeInfo> theEMap,
-                               in Vertex Vtx,
-                               Draft_VertexInfo Vinf,
-                               CurveAdaptor AC,
+    private static bool Choose(NCollection_IndexedDataMap<Shape, DraftFaceInfo> fMap,
+                               NCollection_IndexedDataMap<Shape, DraftEdgeInfo> eMap,
+                               in Vertex vtx,
+                               VertexInfo vinf,
+                               CurveAdaptor ac,
                                SurfaceAdaptor AS)
     {
         Vector3D tgref;
-        Vinf.InitEdgeIterator();
+        vinf.InitEdgeIterator();
 
         // Find a regular edge with null SecondFace
-        while (Vinf.MoreEdge())
+        while (vinf.MoreEdge())
         {
-            Edge E1 = Vinf.Edge();
-            Draft_EdgeInfo Einf1 = theEMap.FindFromKey(E1);
-            if (Einf1.SecondFace().IsNull)
+            Edge e1 = vinf.Edge();
+            DraftEdgeInfo einf1 = eMap.FindFromKey(e1);
+            if (einf1.SecondFace().IsNull)
             {
                 break;
             }
             else
             {
-                Continuity te = Tool.Continuity(E1, Einf1.FirstFace(), Einf1.SecondFace());
+                Continuity te = Tool.Continuity(e1, einf1.FirstFace(), einf1.SecondFace());
                 if (te >= G1)
                 {
                     break;
                 }
             }
-            Vinf.NextEdge();
+            vinf.NextEdge();
         }
-        if (!Vinf.MoreEdge())
+        if (!vinf.MoreEdge())
         { // take the first edge
-            Vinf.InitEdgeIterator();
+            vinf.InitEdgeIterator();
         }
 
-        Edge Eref = Vinf.Edge();
+        Edge eref = vinf.Edge();
         // const Draft_EdgeInfo& Einf = theEMap(Eref);
-        Draft_EdgeInfo Einf = theEMap.ChangeFromKey(Eref);
+        DraftEdgeInfo einf = eMap.ChangeFromKey(eref);
 
-        AC.Load(Einf.Geometry()!);
+        ac.Load(einf.Geometry()!);
 
         double prm;
-        Curve3D C = Tool.Curve(Eref, out Placement Loc, out double f, out double l)!;
-        C = (Curve3D)C.Transformed(Loc.Transformation());
+        Curve3D c = Tool.Curve(eref, out Placement loc, out double f, out double l)!;
+        c = (Curve3D)c.Transformed(loc.Transformation());
         // prm = Parameter(C,BRep_Tool::Pnt(Vtx));
-        double param = Parameter(C, Tool.Pnt(Vtx), out int done);
+        double param = Parameter(c, Tool.Pnt(vtx), out int done);
         if (done != 0)
         {
-            Surface S1 = theFMap.FindFromKey(Einf.FirstFace()).Geometry()!;
-            Surface S2 = theFMap.FindFromKey(Einf.SecondFace()).Geometry()!;
-            prm = SmartParameter(Einf, Tool.Tolerance(Eref), Tool.Pnt(Vtx), done, S1, S2);
+            Surface s1 = fMap.FindFromKey(einf.FirstFace()).Geometry()!;
+            Surface s2 = fMap.FindFromKey(einf.SecondFace()).Geometry()!;
+            prm = SmartParameter(einf, Tool.Tolerance(eref), Tool.Pnt(vtx), done, s1, s2);
         }
         else
         {
             prm = param;
         }
-        C.D1(prm, out Point3D ptbid, out tgref);
+        c.D1(prm, out Point3D ptbid, out tgref);
 
-        Vinf.InitEdgeIterator();
-        while (Vinf.MoreEdge())
+        vinf.InitEdgeIterator();
+        while (vinf.MoreEdge())
         {
             // Find a non tangent edge
-            Edge Edg = Vinf.Edge();
-            if (!Edg.IsSame(Eref))
+            Edge edg = vinf.Edge();
+            if (!edg.IsSame(eref))
             {
                 // const Draft_EdgeInfo& Einfo = theEMap(Edg);
-                Draft_EdgeInfo Einfo = theEMap.ChangeFromKey(Edg);
-                if (!Einfo.SecondFace().IsNull
-                    && Tool.Continuity(Edg, Einfo.FirstFace(), Einfo.SecondFace()) <= C0)
+                DraftEdgeInfo einfo = eMap.ChangeFromKey(edg);
+                if (!einfo.SecondFace().IsNull
+                    && Tool.Continuity(edg, einfo.FirstFace(), einfo.SecondFace()) <= C0)
                 {
-                    C = Tool.Curve(Edg, out Loc, out f, out l)!;
-                    C = (Curve3D)C.Transformed(Loc.Transformation());
+                    c = Tool.Curve(edg, out loc, out f, out l)!;
+                    c = (Curve3D)c.Transformed(loc.Transformation());
                     // prm = Parameter(C,BRep_Tool::Pnt(Vtx));
-                    double anewparam = Parameter(C, Tool.Pnt(Vtx), out int anewdone);
+                    double anewparam = Parameter(c, Tool.Pnt(vtx), out int anewdone);
                     if (anewdone != 0)
                     {
-                        Surface S1 = theFMap.FindFromKey(Einfo.FirstFace()).Geometry()!;
-                        Surface S2 = theFMap.FindFromKey(Einfo.SecondFace()).Geometry()!;
-                        prm = SmartParameter(Einfo, Tool.Tolerance(Edg), Tool.Pnt(Vtx), anewdone, S1, S2);
+                        Surface s1 = fMap.FindFromKey(einfo.FirstFace()).Geometry()!;
+                        Surface s2 = fMap.FindFromKey(einfo.SecondFace()).Geometry()!;
+                        prm = SmartParameter(einfo, Tool.Tolerance(edg), Tool.Pnt(vtx), anewdone, s1, s2);
                     }
                     else
                     {
                         prm = anewparam;
                     }
-                    C.D1(prm, out ptbid, out Vector3D tg);
+                    c.D1(prm, out ptbid, out Vector3D tg);
                     if (tg.CrossMagnitude(tgref) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         break;
                     }
                 }
             }
-            Vinf.NextEdge();
+            vinf.NextEdge();
         }
-        if (!Vinf.MoreEdge())
+        if (!vinf.MoreEdge())
         {
             return false;
         }
 
-        Draft_EdgeInfo Einf2 = theEMap.FindFromKey(Vinf.Edge());
-        if (!Einf.SecondFace().IsNull)
+        DraftEdgeInfo einf2 = eMap.FindFromKey(vinf.Edge());
+        if (!einf.SecondFace().IsNull)
         {
-            if (Einf2.FirstFace().IsSame(Einf.FirstFace()) || Einf2.FirstFace().IsSame(Einf.SecondFace()))
+            if (einf2.FirstFace().IsSame(einf.FirstFace()) || einf2.FirstFace().IsSame(einf.SecondFace()))
             {
-                AS.Load(theFMap.FindFromKey(Einf2.SecondFace()).Geometry()!);
+                AS.Load(fMap.FindFromKey(einf2.SecondFace()).Geometry()!);
             }
             else
             {
-                AS.Load(theFMap.FindFromKey(Einf2.FirstFace()).Geometry()!);
+                AS.Load(fMap.FindFromKey(einf2.FirstFace()).Geometry()!);
             }
         }
         else
         {
-            if (Einf2.FirstFace().IsSame(Einf.FirstFace()))
+            if (einf2.FirstFace().IsSame(einf.FirstFace()))
             {
-                AS.Load(theFMap.FindFromKey(Einf2.SecondFace()).Geometry()!);
+                AS.Load(fMap.FindFromKey(einf2.SecondFace()).Geometry()!);
             }
             else
             {
-                AS.Load(theFMap.FindFromKey(Einf2.FirstFace()).Geometry()!);
+                AS.Load(fMap.FindFromKey(einf2.FirstFace()).Geometry()!);
             }
         }
         return true;
@@ -1975,24 +1979,24 @@ public sealed partial class Draft_Modification
 
     //=================================================================================================
 
-    private static double Parameter(Curve3D C, in Point3D P, out int done)
+    private static double Parameter(Curve3D c, in Point3D p, out int done)
     {
         done = 0;
-        Curve3D cbase = C;
-        Type ctyp = C.GetType();
+        Curve3D cbase = c;
+        Type ctyp = c.GetType();
         if (ctyp == typeof(TrimmedCurve3D))
         {
-            cbase = ((TrimmedCurve3D)C).BasisCurve();
+            cbase = ((TrimmedCurve3D)c).BasisCurve();
             ctyp = cbase.GetType();
         }
         double param;
         if (ctyp == typeof(LineCurve3D))
         {
-            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((LineCurve3D)cbase).Lin(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((LineCurve3D)cbase).Lin(), p);
         }
         else if (ctyp == typeof(CircleCurve3D))
         {
-            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((CircleCurve3D)cbase).Circ(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((CircleCurve3D)cbase).Circ(), p);
             if (Math.Abs(2.0 * M_PI - param) <= Epsilon(2.0 * M_PI))
             {
                 param = 0.0;
@@ -2000,7 +2004,7 @@ public sealed partial class Draft_Modification
         }
         else if (ctyp == typeof(EllipseCurve3D))
         {
-            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((EllipseCurve3D)cbase).Elips(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((EllipseCurve3D)cbase).Elips(), p);
             if (Math.Abs(2.0 * M_PI - param) <= Epsilon(2.0 * M_PI))
             {
                 param = 0.0;
@@ -2008,30 +2012,30 @@ public sealed partial class Draft_Modification
         }
         else if (ctyp == typeof(ParabolaCurve3D))
         {
-            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((ParabolaCurve3D)cbase).Parab(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((ParabolaCurve3D)cbase).Parab(), p);
         }
         else if (ctyp == typeof(HyperbolaCurve3D))
         {
-            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((HyperbolaCurve3D)cbase).Hypr(), P);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(((HyperbolaCurve3D)cbase).Hypr(), p);
         }
         else
         {
-            CurveAdaptor TheCurve = new(C);
-            CurvePointExtrema myExtPC = new(P, TheCurve);
+            CurveAdaptor theCurve = new(c);
+            CurvePointExtrema myExtPC = new(p, theCurve);
             if (!myExtPC.IsDone)
             {
                 throw new FailureException("Draft_Modification_1::Parameter: ExtremaPC not done.");
             }
             if (myExtPC.ExtCount >= 1)
             {
-                double Dist2, Dist2Min = myExtPC.SquareDistance(1);
+                double dist2, dist2Min = myExtPC.SquareDistance(1);
                 int j, jmin = 1;
                 for (j = 2; j <= myExtPC.ExtCount; j++)
                 {
-                    Dist2 = myExtPC.SquareDistance(j);
-                    if (Dist2 < Dist2Min)
+                    dist2 = myExtPC.SquareDistance(j);
+                    if (dist2 < dist2Min)
                     {
-                        Dist2Min = Dist2;
+                        dist2Min = dist2;
                         jmin = j;
                     }
                 }
@@ -2043,20 +2047,20 @@ public sealed partial class Draft_Modification
                 if (dist1_2 < dist2_2)
                 {
                     done = -1;
-                    param = TheCurve.FirstParameter();
+                    param = theCurve.FirstParameter();
                 }
                 else
                 {
                     done = 1;
-                    param = TheCurve.LastParameter();
+                    param = theCurve.LastParameter();
                 }
             }
 
             if (cbase.IsPeriodic)
             {
-                double Per = cbase.Period();
-                double Tolp = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (Math.Abs(Per - param) <= Tolp)
+                double per = cbase.Period();
+                double tolp = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
+                if (Math.Abs(per - param) <= tolp)
                 {
                     param = 0.0;
                 }
@@ -2067,115 +2071,115 @@ public sealed partial class Draft_Modification
 
     //=================================================================================================
 
-    private static double SmartParameter(Draft_EdgeInfo Einf,
-                                         double EdgeTol,
-                                         in Point3D Pnt,
+    private static double SmartParameter(DraftEdgeInfo einf,
+                                         double edgeTol,
+                                         in Point3D pnt,
                                          int sign,
-                                         Surface S1,
-                                         Surface S2)
+                                         Surface s1,
+                                         Surface s2)
     {
-        Curve2D NewC2d;
-        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        double Etol = EdgeTol;
+        Curve2D newC2d;
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double etol = edgeTol;
 
-        Curve2D? pcu1 = Einf.FirstPC();
-        Curve2D? pcu2 = Einf.SecondPC();
+        Curve2D? pcu1 = einf.FirstPC();
+        Curve2D? pcu2 = einf.SecondPC();
 
         if (pcu1 is null)
         {
-            Curve3D theCurve = Einf.Geometry()!;
-            pcu1 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(theCurve, theCurve.FirstParameter(), theCurve.LastParameter(), S1, ref Etol);
-            Einf.ChangeFirstPC() = pcu1;
+            Curve3D theCurve = einf.Geometry()!;
+            pcu1 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(theCurve, theCurve.FirstParameter(), theCurve.LastParameter(), s1, ref etol);
+            einf.ChangeFirstPC() = pcu1;
         }
         if (pcu2 is null)
         {
-            Curve3D theCurve = Einf.Geometry()!;
-            pcu2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(theCurve, theCurve.FirstParameter(), theCurve.LastParameter(), S2, ref Etol);
-            Einf.ChangeSecondPC() = pcu2;
+            Curve3D theCurve = einf.Geometry()!;
+            pcu2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(theCurve, theCurve.FirstParameter(), theCurve.LastParameter(), s2, ref etol);
+            einf.ChangeSecondPC() = pcu2;
         }
 
-        GeomAPI_ProjectPointOnSurf Projector = new(Pnt, S1);
-        Projector.LowerDistanceParameters(out double U, out double V);
+        ProjectPointOnSurface projector = new(pnt, s1);
+        projector.LowerDistanceParameters(out double u, out double v);
 
         // OCCT dereferences the projection without a check (null if it failed).
-        NewC2d = Einf.FirstPC()!;
-        if (NewC2d.GetType() == typeof(TrimmedCurve2D))
+        newC2d = einf.FirstPC()!;
+        if (newC2d.GetType() == typeof(TrimmedCurve2D))
         {
-            NewC2d = ((TrimmedCurve2D)NewC2d).BasisCurve();
+            newC2d = ((TrimmedCurve2D)newC2d).BasisCurve();
         }
 
-        Point2D P2d = new(U, V);
-        Geom2dAPI_ProjectPointOnCurve Projector2d = new(P2d, NewC2d);
-        if (Projector2d.NbPoints() == 0 || Projector2d.LowerDistance() > Tol)
+        Point2D p2d = new(u, v);
+        ProjectPointOnCurve2D projector2d = new(p2d, newC2d);
+        if (projector2d.NbPoints() == 0 || projector2d.LowerDistance() > tol)
         {
-            BSplineCurve2D BCurve;
-            if (NewC2d.GetType() != typeof(BSplineCurve2D))
+            BSplineCurve2D bCurve;
+            if (newC2d.GetType() != typeof(BSplineCurve2D))
             {
-                BCurve = Geom2dConvert2D.CurveToBSplineCurve(NewC2d);
+                bCurve = Geom2dConvert2D.CurveToBSplineCurve(newC2d);
             }
             else
             {
-                BCurve = (BSplineCurve2D)NewC2d;
+                bCurve = (BSplineCurve2D)newC2d;
             }
             if (sign == -1)
             {
-                NCollection_Array1<Point2D> PntArray = new(1, 2);
-                PntArray[1] = P2d;
-                PntArray[2] = BCurve.Pole(1);
-                BezierCurve2D Patch = new(PntArray);
-                CompCurveToBSplineCurve2D Concat = new(BCurve, QuasiAngular);
-                Concat.Add(Patch, Tol, false);
-                BCurve = Concat.BSplineCurve()!;
+                NCollection_Array1<Point2D> pntArray = new(1, 2);
+                pntArray[1] = p2d;
+                pntArray[2] = bCurve.Pole(1);
+                BezierCurve2D patch = new(pntArray);
+                CompCurveToBSplineCurve2D concat = new(bCurve, QuasiAngular);
+                concat.Add(patch, tol, false);
+                bCurve = concat.BSplineCurve()!;
             }
             else
             {
-                NCollection_Array1<Point2D> PntArray = new(1, 2);
-                PntArray[1] = BCurve.Pole(BCurve.PoleCount);
-                PntArray[2] = P2d;
-                BezierCurve2D Patch = new(PntArray);
-                CompCurveToBSplineCurve2D Concat = new(BCurve, QuasiAngular);
-                Concat.Add(Patch, Tol, true);
-                BCurve = Concat.BSplineCurve()!;
+                NCollection_Array1<Point2D> pntArray = new(1, 2);
+                pntArray[1] = bCurve.Pole(bCurve.PoleCount);
+                pntArray[2] = p2d;
+                BezierCurve2D patch = new(pntArray);
+                CompCurveToBSplineCurve2D concat = new(bCurve, QuasiAngular);
+                concat.Add(patch, tol, true);
+                bCurve = concat.BSplineCurve()!;
             }
-            NewC2d = BCurve;
+            newC2d = bCurve;
         }
-        Einf.ChangeFirstPC() = NewC2d;
-        CurveAdaptor2D hcur = new(NewC2d);
-        SurfaceAdaptor hsur = new(S1);
+        einf.ChangeFirstPC() = newC2d;
+        CurveAdaptor2D hcur = new(newC2d);
+        SurfaceAdaptor hsur = new(s1);
         CurveOnSurface cons = new(hcur, hsur);
         CurveOnSurface hcons = cons; // OCCT copies the adaptor into a handle: one object here
-        SurfaceAdaptor hsur2 = new(S2);
-        CompProjectedCurve HProjector = new(hsur2, hcons, Tol, Tol);
-        HProjector.Bounds(1, out double Udeb, out double Ufin);
-        int MaxSeg = 20 + HProjector.NbIntervals(C3);
-        CurveOnSurfaceApproximation appr = new(HProjector, hsur2, Udeb, Ufin, Tol);
-        appr.Perform(MaxSeg, 10, C1, false, false);
-        Einf.ChangeSecondPC() = appr.Curve2d();
-        Einf.ChangeGeometry() = appr.Curve3d();
-        Einf.SetNewGeometry(true);
+        SurfaceAdaptor hsur2 = new(s2);
+        CompProjectedCurve hProjector = new(hsur2, hcons, tol, tol);
+        hProjector.Bounds(1, out double udeb, out double ufin);
+        int maxSeg = 20 + hProjector.NbIntervals(C3);
+        CurveOnSurfaceApproximation appr = new(hProjector, hsur2, udeb, ufin, tol);
+        appr.Perform(maxSeg, 10, C1, false, false);
+        einf.ChangeSecondPC() = appr.Curve2d();
+        einf.ChangeGeometry() = appr.Curve3d();
+        einf.SetNewGeometry(true);
 
         if (sign == -1)
         {
-            return Einf.Geometry()!.FirstParameter();
+            return einf.Geometry()!.FirstParameter();
         }
         else
         {
-            return Einf.Geometry()!.LastParameter();
+            return einf.Geometry()!.LastParameter();
         }
     }
 
     //=================================================================================================
 
-    private static Orientation Orientation(in Shape S, in Face F)
+    private static Orientation Orientation(in Shape s, in Face f)
     {
         //
         // change porting NT
         //
         Explorer expl = new();
-        expl.Init(S, ShapeType.Face);
+        expl.Init(s, ShapeType.Face);
         while (expl.More())
         {
-            if (ShapeCasts.Face(expl.Current()).IsSame(F))
+            if (ShapeCasts.Face(expl.Current()).IsSame(f))
             {
                 return expl.Current().Orientation();
             }
@@ -2186,41 +2190,41 @@ public sealed partial class Draft_Modification
 
     //=================================================================================================
 
-    private static bool FindRotation(in Plane3D Pl,
-                                     Orientation Oris,
-                                     in Direction3D Direction,
-                                     double Angle,
-                                     in Plane3D NeutralPlane,
-                                     out Axis3D Axe,
+    private static bool FindRotation(in Plane3D pl,
+                                     Orientation oris,
+                                     in Direction3D direction,
+                                     double angle,
+                                     in Plane3D neutralPlane,
+                                     out Axis3D axe,
                                      out double theta)
     {
-        Axe = new Axis3D();
+        axe = new Axis3D();
         theta = 0.0;
-        QuadQuadGeo i2pl = new(Pl, NeutralPlane, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        QuadQuadGeo i2pl = new(pl, neutralPlane, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (i2pl.IsDone && i2pl.TypeInter() == Line)
         {
             Line3D li = i2pl.Line(1);
             // Try to turn around this line
             Direction3D nx = li.Direction();
-            Direction3D ny = Pl.Axis().Direction().Crossed(nx);
-            double a = Direction.Dot(nx);
+            Direction3D ny = pl.Axis().Direction().Crossed(nx);
+            double a = direction.Dot(nx);
             if (Math.Abs(a) <= 1 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
-                double b = Direction.Dot(ny);
-                double c = Direction.Dot(Pl.Axis().Direction());
-                bool direct = Pl.Position().Direct();
-                if ((direct && Oris == Reversed) || (!direct && Oris == Forward))
+                double b = direction.Dot(ny);
+                double c = direction.Dot(pl.Axis().Direction());
+                bool direct = pl.Position().Direct();
+                if ((direct && oris == Reversed) || (!direct && oris == Forward))
                 {
                     b = -b;
                     c = -c;
                 }
                 double denom = Math.Sqrt(1 - a * a);
-                double Sina = Math.Sin(Angle);
-                if (denom > Math.Abs(Sina))
+                double sina = Math.Sin(angle);
+                if (denom > Math.Abs(sina))
                 {
                     double phi = Math.Atan2(b / denom, c / denom);
-                    double theta0 = Math.Acos(Sina / denom);
+                    double theta0 = Math.Acos(sina / denom);
                     theta = theta0 - phi;
                     if (Math.Cos(theta) < 0.0)
                     {
@@ -2232,7 +2236,7 @@ public sealed partial class Draft_Modification
                         theta = theta + M_PI * (theta < 0 ? 1 : -1);
                     }
                     //  modified by NIZHNY-EAP Tue Nov 16 15:53:32 1999 ___END___
-                    Axe = li.Position();
+                    axe = li.Position();
                     return true;
                 }
             }
@@ -2244,28 +2248,28 @@ public sealed partial class Draft_Modification
 
     // OCCT.NET: OCCT reverses curves in place (the intersection's curves, its pcurves, the curves kept for an edge);
     // a frozen one (the intersection's are) is reversed on a copy, which takes its place.
-    private static void reverse(ref Curve3D? theCurve)
+    private static void Reverse(ref Curve3D? curve)
     {
-        if (theCurve!.IsFrozen)
+        if (curve!.IsFrozen)
         {
-            theCurve = (Curve3D)theCurve.Copy();
+            curve = (Curve3D)curve.Copy();
         }
-        theCurve.Reverse();
+        curve.Reverse();
     }
 
-    private static void reverse(ref Curve2D? theCurve)
+    private static void Reverse(ref Curve2D? curve)
     {
-        if (theCurve!.IsFrozen)
+        if (curve!.IsFrozen)
         {
-            theCurve = (Curve2D)theCurve.Copy();
+            curve = (Curve2D)curve.Copy();
         }
-        theCurve.Reverse();
+        curve.Reverse();
     }
 
     // OCCT's occ::down_cast followed by a dereference: a null handle there is an access violation, a
     // NullReferenceException here.
-    private static T downCast<T>(Geometry3D? theGeom) where T : Geometry3D
+    private static T DownCast<T>(Geometry3D? geom) where T : Geometry3D
     {
-        return theGeom as T ?? throw new NullReferenceException();
+        return geom as T ?? throw new NullReferenceException();
     }
 }

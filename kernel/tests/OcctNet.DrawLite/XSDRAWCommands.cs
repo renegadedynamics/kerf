@@ -170,7 +170,7 @@ internal static class XSDRAWCommands
         }
     }
 
-    private static int Status(IFSelect_ReturnStatus theStatus) => theStatus is IFSelect_RetError or IFSelect_RetFail ? 1 : 0;
+    private static int Status(IFSelect_ReturnStatus theStatus) => theStatus is IFSelect_ReturnStatus.IFSelect_RetError or IFSelect_ReturnStatus.IFSelect_RetFail ? 1 : 0;
 
     // IFSelect_SessionPilot::CommandPart: the words from the given one on
     private static string CommandPart(IReadOnlyList<string> argv, int numword) =>
@@ -222,19 +222,19 @@ internal static class XSDRAWCommands
         //          -1 file not found, -2 reading done but empty result
         switch (status)
         {
-            case IFSelect_RetVoid:
+            case IFSelect_ReturnStatus.IFSelect_RetVoid:
                 sout.Append("file:").Append(arg1).Append(" gives empty result").Append('\n');
                 break;
-            case IFSelect_RetError:
+            case IFSelect_ReturnStatus.IFSelect_RetError:
                 sout.Append("file:").Append(arg1).Append(" could not be opened").Append('\n');
                 break;
-            case IFSelect_RetDone:
+            case IFSelect_ReturnStatus.IFSelect_RetDone:
                 sout.Append("file:").Append(arg1).Append(" read").Append('\n');
                 break;
-            case IFSelect_RetFail:
+            case IFSelect_ReturnStatus.IFSelect_RetFail:
                 sout.Append("file:").Append(arg1).Append(" : error while reading").Append('\n');
                 break;
-            case IFSelect_RetStop:
+            case IFSelect_ReturnStatus.IFSelect_RetStop:
                 sout.Append("file:").Append(arg1).Append(" : EXCEPTION while reading").Append('\n');
                 break;
             default:
@@ -242,7 +242,7 @@ internal static class XSDRAWCommands
                 break;
         }
         Send(di, sout);
-        if (status != IFSelect_RetDone)
+        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return Status(status);
         }
@@ -264,7 +264,7 @@ internal static class XSDRAWCommands
         }
         var aStream = new MemoryStream();
         IFSelect_ReturnStatus aStatus = WS.SendAll(argv[1], false, aStream);
-        if (aStream.Length > 0 || aStatus == IFSelect_RetDone)
+        if (aStream.Length > 0 || aStatus == IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             theDI.Files.WriteBytes(argv[1], aStream.ToArray());
         }
@@ -315,7 +315,7 @@ internal static class XSDRAWCommands
         }
         var aStream = new MemoryStream();
         IFSelect_ReturnStatus aStatus = WS.SendSelected(argv[1], sp, false, aStream);
-        if (aStream.Length > 0 || aStatus == IFSelect_RetDone)
+        if (aStream.Length > 0 || aStatus == IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             theDI.Files.WriteBytes(argv[1], aStream.ToArray());
         }

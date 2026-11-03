@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
@@ -28,9 +30,9 @@ internal sealed partial class BOPTestObjects
         Init();
     }
 
-    private BOPAlgo_PaveFiller myPaveFiller = null!;
-    private BOPAlgo_Builder myBuilder = null!;
-    private BOPAlgo_Builder myBuilderDefault = null!;
+    private PaveFiller myPaveFiller = null!;
+    private BooleanBuilder myBuilder = null!;
+    private BooleanBuilder myBuilderDefault = null!;
 
     /// <summary>The objects (baddobjects).</summary>
     public NCollection_List<Shape> Shapes { get; } = new();
@@ -44,7 +46,7 @@ internal sealed partial class BOPTestObjects
 
     public double FuzzyValue { get; set; }
 
-    public BOPAlgo_GlueEnum Glue { get; set; }
+    public GlueMode Glue { get; set; }
 
     public bool DrawWarnShapes { get; set; }
 
@@ -61,8 +63,8 @@ internal sealed partial class BOPTestObjects
     /// <summary>A new pave filler and default builder (Init).</summary>
     public void Init()
     {
-        myPaveFiller = new BOPAlgo_PaveFiller();
-        myBuilderDefault = new BOPAlgo_Builder();
+        myPaveFiller = new PaveFiller();
+        myBuilderDefault = new BooleanBuilder();
         myBuilder = myBuilderDefault;
         SetDefaultOptions();
     }
@@ -77,15 +79,15 @@ internal sealed partial class BOPTestObjects
     }
 
     /// <summary>The pave filler of <c>bfillds</c>.</summary>
-    public BOPAlgo_PaveFiller PaveFiller() => myPaveFiller;
+    public PaveFiller PaveFiller() => myPaveFiller;
 
     /// <summary>The data structure of <c>bfillds</c>.</summary>
-    public BOPDS_DS? PDS() => myPaveFiller.PDS();
+    public DS? PDS() => myPaveFiller.PDS();
 
     /// <summary>The current builder (the default General Fuse, or the one a command set).</summary>
-    public BOPAlgo_Builder Builder() => myBuilder;
+    public BooleanBuilder Builder() => myBuilder;
 
-    public void SetBuilder(BOPAlgo_Builder theBuilder) => myBuilder = theBuilder;
+    public void SetBuilder(BooleanBuilder theBuilder) => myBuilder = theBuilder;
 
     public void SetBuilderDefault() => myBuilder = myBuilderDefault;
 
@@ -95,7 +97,7 @@ internal sealed partial class BOPTestObjects
         RunParallel = false;
         NonDestructive = false;
         FuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
+        Glue = GlueMode.GlueOff;
         DrawWarnShapes = false;
         CheckInverted = true;
         UseOBB = false;

@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -12,7 +13,7 @@ using Xunit.Abstractions;
 namespace OcctNet.Oracle.Tests;
 
 /// <summary>
-/// The viewer's mesh extraction (unit 4W, open question 12): <see cref="MeshExtraction"/> against build123d.NET's native
+/// The viewer's mesh extraction (unit 4W, open question 12): <see cref="global::Kerf.Engine.Meshing.MeshExtraction"/> against build123d.NET's native
 /// <c>Extras.ExtractMesh</c> (b3d_mesh_extract) on the same shapes, float for float.
 /// </summary>
 /// <remarks>
@@ -25,7 +26,7 @@ namespace OcctNet.Oracle.Tests;
 /// </para>
 /// <para>
 /// Faces and edges are taken in build123d.NET's <c>Shape.Faces()</c> and <c>Edges()</c> order on both sides
-/// (<see cref="MeshExtraction.Faces"/>; natively the same exploration keyed by <c>std::hash</c>).
+/// (<see cref="global::Kerf.Engine.Meshing.MeshExtraction.Faces"/>; natively the same exploration keyed by <c>std::hash</c>).
 /// </para>
 /// </remarks>
 public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDisposable
@@ -136,7 +137,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     private static double ViewerDeflection(in Shape theShape)
     {
         var aBox = new Box();
-        BRepBndLib.Add(theShape, ref aBox, true);
+        Bounds.Add(theShape, ref aBox, true);
         double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         return aDiagonal > 1e-6 ? aDiagonal * 0.1 / 100 : 1e-3;
     }
@@ -182,7 +183,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
     }
 
     /// <summary>Compares the port's buffers with native's, face by face and edge by edge, every float bit for bit.</summary>
-    private static void Compare(Tally theTally, string theWhat, MeshBuffers thePort, N.MeshBuffers theNative)
+    private static void Compare(Tally theTally, string theWhat, global::Kerf.Engine.Meshing.MeshBuffers thePort, N.MeshBuffers theNative)
     {
         theTally.Shapes++;
         Assert.Equal(theNative.FaceTypes.Length, thePort.FaceTypes.Length);
@@ -276,7 +277,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
         N.TopoDS_Shape aNativeF2 = NativeRead(aF2);
         N.MeshBuffers aNativeBuffers = NativeExtract(aNativeF2, aDeflection, theAngle);
         aNativeF2.Dispose();
-        MeshBuffers aPortBuffers = MeshExtraction.Extract(PortRead(aF2), aDeflection, theAngle);
+        global::Kerf.Engine.Meshing.MeshBuffers aPortBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(PortRead(aF2), aDeflection, theAngle);
         Compare(theTally, theName, aPortBuffers, aNativeBuffers);
     }
 
@@ -294,8 +295,8 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
         N.MeshBuffers aNativeBuffers = NativeExtract(aNative, aDeflection, theAngle);
         aNative.Dispose();
 
-        Shape aMeshed = new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theRelative, theAngle, theParallel).Shape();
-        MeshBuffers aPortBuffers = MeshExtraction.Extract(aMeshed, aDeflection, theAngle);
+        Shape aMeshed = new global::Kerf.Engine.Meshing.IncrementalMesh(aPortF1, aDeflection, theRelative, theAngle, theParallel).Shape();
+        global::Kerf.Engine.Meshing.MeshBuffers aPortBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aDeflection, theAngle);
         Compare(theTally, theName, aPortBuffers, aNativeBuffers);
     }
 
@@ -423,7 +424,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             N.TopoDS_Shape aNative = NativeRead(aF1);
             N.MeshBuffers aNativeBuffers = NativeExtract(aNative, aDeflection, 0.2);
             aNative.Dispose();
-            MeshBuffers aPortBuffers = MeshExtraction.Extract(aPort, aDeflection, 0.2);
+            global::Kerf.Engine.Meshing.MeshBuffers aPortBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aPort, aDeflection, 0.2);
             Assert.All(aPortBuffers.FaceNodes, n => Assert.Equal(0, n));
             Compare(aTally, Path.GetFileName(aFile) + " unmeshed", aPortBuffers, aNativeBuffers);
         }

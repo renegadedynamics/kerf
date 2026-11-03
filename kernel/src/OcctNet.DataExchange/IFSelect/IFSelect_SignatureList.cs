@@ -256,18 +256,18 @@ public class IFSelect_SignatureList : Transient
     /// numbers (0: "Global") - EntitiesByItem : list of (entity number/PrintLabel from the model) other modes
     /// are ignored
     /// </summary>
-    public virtual void PrintList(TextWriter S, Interface_InterfaceModel? model, IFSelect_PrintCount mod = IFSelect_ListByItem)
+    public virtual void PrintList(TextWriter S, Interface_InterfaceModel? model, IFSelect_PrintCount mod = IFSelect_PrintCount.IFSelect_ListByItem)
     {
-        if (mod == IFSelect_ItemsByEntity)
+        if (mod == IFSelect_PrintCount.IFSelect_ItemsByEntity)
         {
             return;
         }
-        if (mod == IFSelect_CountByItem)
+        if (mod == IFSelect_PrintCount.IFSelect_CountByItem)
         {
             PrintCount(S);
             return;
         }
-        if (mod == IFSelect_CountSummary)
+        if (mod == IFSelect_PrintCount.IFSelect_CountSummary)
         {
             PrintSum(S);
             return;
@@ -300,7 +300,7 @@ public class IFSelect_SignatureList : Transient
             S.Write(nb);
             S.Write(" : ");
             int nc = nb;
-            if (nb > 5 && mod == IFSelect_ShortByItem)
+            if (nb > 5 && mod == IFSelect_PrintCount.IFSelect_ShortByItem)
             {
                 nc = 5;
             }
@@ -309,21 +309,21 @@ public class IFSelect_SignatureList : Transient
                 if (list.Value(i) is null)
                 {
                     S.Write("  0");
-                    if (mod == IFSelect_EntitiesByItem)
+                    if (mod == IFSelect_PrintCount.IFSelect_EntitiesByItem)
                     {
                         S.Write(":(Global)");
                     }
                     continue;
                 }
                 int num = model.Number(list.Value(i));
-                if (num == (int)IFSelect_ShortByItem) // OCCT: compares an entity number with the enumeration's value (2)
+                if (num == (int)IFSelect_PrintCount.IFSelect_ShortByItem) // OCCT: compares an entity number with the enumeration's value (2)
                 {
                     S.Write("  ??");
                     continue;
                 }
                 S.Write("  ");
                 S.Write(num);
-                if (mod == IFSelect_EntitiesByItem)
+                if (mod == IFSelect_PrintCount.IFSelect_EntitiesByItem)
                 {
                     S.Write(":");
                     model.PrintLabel(list.Value(i), S);

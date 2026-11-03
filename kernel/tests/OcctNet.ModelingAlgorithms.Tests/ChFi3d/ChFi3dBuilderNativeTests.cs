@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Globalization;
@@ -15,24 +19,24 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class ChFi3dBuilderNativeTests
 {
     /// <summary>The reconstruction tests plug in: it records the data structure at Perform and builds nothing.</summary>
-    internal sealed class RecordingReconstruction : ChFi3d_Reconstruction
+    internal sealed class RecordingReconstruction : Reconstruction
     {
         private readonly Shape myInput;
 
         internal RecordingReconstruction(in Shape theInput) => myInput = theInput;
 
-        /// <summary>The data structure's text at Perform (<see cref="TopOpeBRepDS_TextDump"/>), null before.</summary>
+        /// <summary>The data structure's text at Perform (<see cref="TextDump"/>), null before.</summary>
         internal string? Text { get; private set; }
 
-        internal TopOpeBRepDS_HDataStructure? HDS { get; private set; }
+        internal DsHDataStructure? HDS { get; private set; }
 
         internal int NbPerform { get; private set; }
 
-        public override void Perform(TopOpeBRepDS_HDataStructure HDS)
+        public override void Perform(DsHDataStructure HDS)
         {
             NbPerform++;
             this.HDS = HDS;
-            Text = TopOpeBRepDS_TextDump.Write(HDS.DS(), myInput);
+            Text = TextDump.Write(HDS.DS(), myInput);
         }
 
         /// <summary>The queries the builder made after Perform, by member (OCCT.NET: unit 7R's measurements).</summary>
@@ -72,7 +76,7 @@ public class ChFi3dBuilderNativeTests
             return new();
         }
 
-        public override TopOpeBRepDS_HDataStructure? DataStructure() => HDS;
+        public override DsHDataStructure? DataStructure() => HDS;
     }
 
     /// <summary>
@@ -121,12 +125,12 @@ public class ChFi3dBuilderNativeTests
     /// BRepFilletAPI_MakeFillet's Add (constant or evolving radius) and Build on the port's ChFi3d_FilBuilder, with the
     /// recording reconstruction in place of TopOpeBRepBuild_HBuilder.
     /// </summary>
-    internal static (ChFi3d_FilBuilder Builder, RecordingReconstruction Rec) RunFillet(in Shape S,
+    internal static (FilBuilder Builder, RecordingReconstruction Rec) RunFillet(in Shape S,
                                                                                        IEnumerable<CaseEdge> theEdges)
     {
-        ChFi3d_FilBuilder aB = new(S);
+        FilBuilder aB = new(S);
         RecordingReconstruction aRec = new(aB.WorkingShape());
-        aB.myCoup = aRec;
+        aB._coup = aRec;
         foreach (CaseEdge e in theEdges)
         {
             Edge E = EdgeOf(S, e.K);
@@ -148,12 +152,12 @@ public class ChFi3dBuilderNativeTests
     }
 
     /// <summary>BRepFilletAPI_MakeChamfer's Add, AddDA and Build on the port's ChFi3d_ChBuilder.</summary>
-    internal static (ChFi3d_ChBuilder Builder, RecordingReconstruction Rec) RunChamfer(in Shape S,
+    internal static (ChBuilder Builder, RecordingReconstruction Rec) RunChamfer(in Shape S,
                                                                                        IEnumerable<CaseEdge> theEdges)
     {
-        ChFi3d_ChBuilder aB = new(S);
+        ChBuilder aB = new(S);
         RecordingReconstruction aRec = new(aB.WorkingShape());
-        aB.myCoup = aRec;
+        aB._coup = aRec;
         foreach (CaseEdge e in theEdges)
         {
             Edge E = EdgeOf(S, e.K);
@@ -174,16 +178,16 @@ public class ChFi3dBuilderNativeTests
         return (aB, aRec);
     }
 
-    internal static (ChFi3d_Builder Builder, RecordingReconstruction Rec) Run(DsCase theCase)
+    internal static (FilletBuilderBase Builder, RecordingReconstruction Rec) Run(DsCase theCase)
     {
         Shape anInput = theCase.Input;
         (bool aChamfer, List<CaseEdge> anEdges) = CaseEdges(theCase);
         if (aChamfer)
         {
-            (ChFi3d_ChBuilder c, RecordingReconstruction rc) = RunChamfer(anInput, anEdges);
+            (ChBuilder c, RecordingReconstruction rc) = RunChamfer(anInput, anEdges);
             return (c, rc);
         }
-        (ChFi3d_FilBuilder f, RecordingReconstruction rf) = RunFillet(anInput, anEdges);
+        (FilBuilder f, RecordingReconstruction rf) = RunFillet(anInput, anEdges);
         return (f, rf);
     }
 
@@ -202,11 +206,11 @@ public class ChFi3dBuilderNativeTests
     public void TheDataStructureAtPerformIsNatives(string theName)
     {
         DsCase aCase = DsRecordings.Cases[theName];
-        (ChFi3d_Builder aB, RecordingReconstruction aRec) = Run(aCase);
+        (FilletBuilderBase aB, RecordingReconstruction aRec) = Run(aCase);
         Assert.Equal(aCase.PerformCalls, aRec.NbPerform);
         if (aCase.PerformCalls == 0)
         {
-            Assert.False(aB.IsDone());
+            Assert.False(aB.IsDone);
             return;
         }
         Assert.NotNull(aRec.Text);
@@ -226,36 +230,36 @@ public class ChFi3dBuilderNativeTests
         {
             return;
         }
-        (ChFi3d_Builder aB, RecordingReconstruction _) = Run(aCase);
+        (FilletBuilderBase aB, RecordingReconstruction _) = Run(aCase);
         Assert.Equal(aCase.StatusInts("contours")[0], aB.NbElements());
         List<int> aFaulty = aCase.StatusInts("faulty");
-        Assert.Equal(aFaulty[0], aB.NbFaultyContours());
-        for (int i = 1; i <= aB.NbFaultyContours(); i++)
+        Assert.Equal(aFaulty[0], aB.FaultyContourCount);
+        for (int i = 1; i <= aB.FaultyContourCount; i++)
         {
             Assert.Equal(aFaulty[i], aB.FaultyContour(i));
         }
         List<int> aStatuses = aCase.StatusInts("statuses");
         for (int ic = 1; ic <= aB.NbElements(); ic++)
         {
-            Assert.Equal((ChFiDS_ErrorStatus)aStatuses[ic - 1], aB.StripeStatus(ic));
+            Assert.Equal((ErrorStatus)aStatuses[ic - 1], aB.StripeStatus(ic));
         }
-        Assert.Equal(aCase.StatusInts("faultyvertices")[0], aB.NbFaultyVertices());
-        Assert.Equal(aCase.StatusInts("hasresult")[0] == 1, aB.HasResult());
-        Assert.Equal(aCase.Done, aB.IsDone());
+        Assert.Equal(aCase.StatusInts("faultyvertices")[0], aB.FaultyVertexCount);
+        Assert.Equal(aCase.StatusInts("hasresult")[0] == 1, aB.HasResult);
+        Assert.Equal(aCase.Done, aB.IsDone);
     }
 
     /// <summary>
     /// The whole pipeline (unit 7N2's builder, unit 7R's reconstruction) on a case: the builder with its default
     /// reconstruction.
     /// </summary>
-    internal static ChFi3d_Builder RunEndToEnd(DsCase theCase)
+    internal static FilletBuilderBase RunEndToEnd(DsCase theCase)
     {
         Shape anInput = theCase.Input;
         (bool aChamfer, List<CaseEdge> anEdges) = CaseEdges(theCase);
-        ChFi3d_Builder aB;
+        FilletBuilderBase aB;
         if (aChamfer)
         {
-            ChFi3d_ChBuilder c = new(anInput);
+            ChBuilder c = new(anInput);
             foreach (CaseEdge e in anEdges)
             {
                 Edge E = EdgeOf(anInput, e.K);
@@ -276,7 +280,7 @@ public class ChFi3dBuilderNativeTests
         }
         else
         {
-            ChFi3d_FilBuilder f = new(anInput);
+            FilBuilder f = new(anInput);
             foreach (CaseEdge e in anEdges)
             {
                 Edge E = EdgeOf(anInput, e.K);
@@ -324,10 +328,10 @@ public class ChFi3dBuilderNativeTests
         {
             return;
         }
-        ChFi3d_Builder aB = RunEndToEnd(aCase);
-        Assert.True(aB.IsDone(), theName);
+        FilletBuilderBase aB = RunEndToEnd(aCase);
+        Assert.True(aB.IsDone, theName);
         Shape aMine = aB.Shape();
-        bool aValid = new BRepCheck_Analyzer(aMine).IsValid();
+        bool aValid = new Analyzer(aMine).IsValid();
         // attributed to the reconstruction (unit 7R), whose recording has no native result for these unit 7N2 cases
         Assert.True(aValid != KnownInvalidResults.Contains(theName), theName + " " + ReconComparison.Faults(aMine));
         if (!NativeDegenerate.Contains(theName) && ReconRecordings.Cases.TryGetValue(theName, out ReconCase? aRecon)

@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Features;
+using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
@@ -101,7 +104,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         foreach (Shape aF in Map(theShape, ShapeType.Face))
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(aF, aProps);
+            MassPropertiesBuilder.SurfaceProperties(aF, aProps);
             aLines.Add($"F {Q(aProps.Mass())} {Map(aF, ShapeType.Edge).Count}");
         }
         foreach (Shape anE in Map(theShape, ShapeType.Edge))
@@ -120,7 +123,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         }
         aLines.Sort(StringComparer.Ordinal);
         var aVolume = new Properties();
-        BRepGProp.VolumeProperties(theShape, aVolume);
+        MassPropertiesBuilder.VolumeProperties(theShape, aVolume);
         var aJoined = new StringBuilder();
         foreach (string aL in aLines)
         {
@@ -155,10 +158,10 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
         theTally.Differences.Add($"{theWhat}: native {theNative}, port {thePort}");
     }
 
-    private static string Result(BRepBuilderAPI_MakeShape theMaker, string theStatus, List<Shape> theFaces,
+    private static string Result(MakeShape theMaker, string theStatus, List<Shape> theFaces,
                                  List<Shape> theEdges)
     {
-        if (!theMaker.IsDone())
+        if (!theMaker.IsDone)
         {
             return "0 " + theStatus;
         }
@@ -264,7 +267,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                     {
                         "PRISM" => Run(() =>
                         {
-                            var aM = new BRepFeat_MakePrism(aS, aP, aSk, aFuse != 0 ? aN : aN.Reversed(), aFuse, isMod);
+                            var aM = new MakePrism(aS, aP, aSk, aFuse != 0 ? aN : aN.Reversed(), aFuse, isMod);
                             switch (anOp)
                             {
                                 case "length": aM.Perform(5.0); break;
@@ -278,7 +281,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         "REVOL" => Run(() =>
                         {
                             var anAxis = new Axis3D(aC.Translated(new Vector3D(aN.Crossed(aX)) * (2.5 * aSize)), aX);
-                            var aM = new BRepFeat_MakeRevol(aS, aP, aSk, anAxis, aFuse, isMod);
+                            var aM = new MakeRevol(aS, aP, aSk, anAxis, aFuse, isMod);
                             switch (anOp)
                             {
                                 case "angle": aM.Perform(30 * Math.PI / 180); break;
@@ -290,9 +293,9 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         _ => Run(() =>
                         {
                             Direction3D aDir = aFuse != 0 ? aN : aN.Reversed();
-                            Edge aSpine = new BRepBuilderAPI_MakeEdge(aC, aC.Translated(new Vector3D(aDir) * 5.0)).Edge();
-                            Wire aW = new BRepBuilderAPI_MakeWire(aSpine).Wire();
-                            var aM = new BRepFeat_MakePipe(aS, aP, aSk, aW, aFuse, isMod);
+                            Edge aSpine = new MakeEdge(aC, aC.Translated(new Vector3D(aDir) * 5.0)).Edge();
+                            Wire aW = new MakeWire(aSpine).Wire();
+                            var aM = new MakePipe(aS, aP, aSk, aW, aFuse, isMod);
                             aM.Perform();
                             return Result(aM, ((int)aM.CurrentStatusError()).ToString(CultureInfo.InvariantCulture), aFaces, anEdges);
                         }),
@@ -304,7 +307,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                     int aMode = int.Parse(aHead[2], CultureInfo.InvariantCulture);
                     aPort = Run(() =>
                     {
-                        var aM = new BRepFeat_MakeCylindricalHole();
+                        var aM = new MakeCylindricalHole();
                         aM.Init(aS, new Axis3D(aC.Translated(new Vector3D(aN) * 1.0), aN.Reversed()));
                         switch (aMode)
                         {
@@ -315,8 +318,8 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                             default: aM.Perform(aSize / 2, 0.5, 4.0); break;
                         }
                         aM.Build();
-                        string aRes = $"{(int)aM.Status()} {(aM.HasErrors() ? 1 : 0)}";
-                        if (aM.Status() == BRepFeat_Status.BRepFeat_NoError && !aM.HasErrors())
+                        string aRes = $"{(int)aM.Status()} {(aM.HasErrors ? 1 : 0)}";
+                        if (aM.Status() == FeatureStatus.NoError && !aM.HasErrors)
                         {
                             Shape aShape = aM.Shape();
                             aRes += " " + (aShape.IsNull ? "NULL NULL" : Hex(Fnv(Masked(Text(aShape)))) + " " + Coarse(aShape));
@@ -329,19 +332,19 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                 {
                     aPort = Run(() =>
                     {
-                        var aG = new BRepFeat_Gluer(aSecond, aS);
+                        var aG = new Gluer(aSecond, aS);
                         Face aFnew = new();
                         foreach (Shape aF in Map(aSecond, ShapeType.Face))
                         {
                             var aProps = new Properties();
-                            BRepGProp.SurfaceProperties(aF, aProps);
+                            MassPropertiesBuilder.SurfaceProperties(aF, aProps);
                             if (aProps.CentreOfMass().Distance(aC) < 1e-7)
                             {
                                 aFnew = ShapeCasts.Face(aF);
                             }
                         }
                         aG.Bind(aFnew, ShapeCasts.Face(aFaces[0]));
-                        var aFE = new LocOpe_FindEdges(aFnew, aFaces[0]);
+                        var aFE = new FindEdges(aFnew, aFaces[0]);
                         for (aFE.InitIterator(); aFE.More(); aFE.Next())
                         {
                             aG.Bind(aFE.EdgeFrom(), aFE.EdgeTo());

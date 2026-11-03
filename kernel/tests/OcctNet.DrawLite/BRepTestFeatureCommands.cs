@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Features.Local;
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.BRepFeat_Status;
+using static Kerf.Engine.Features.FeatureStatus;
 using static Kerf.Engine.Foundation.Standard;
 using static Kerf.Topology.ShapeType;
 
@@ -28,20 +31,20 @@ internal static partial class BRepTestFeatureCommands
 {
     private sealed class FeatureState
     {
-        public readonly BRepFeat_MakeCylindricalHole Hole = new();
+        public readonly global::Kerf.Engine.Features.MakeCylindricalHole Hole = new();
         public bool WithControl = true;
-        public readonly BRepFeat_MakePrism Prism = new();
-        public readonly BRepFeat_MakeDPrism DPrism = new();
-        public readonly BRepFeat_MakeRevol Revol = new();
-        public readonly BRepFeat_MakePipe Pipe = new();
-        public readonly BRepFeat_MakeLinearForm LinearForm = new();
-        public readonly BRepFeat_MakeRevolutionForm RevolutionForm = new();
+        public readonly global::Kerf.Engine.Features.MakePrism Prism = new();
+        public readonly global::Kerf.Engine.Features.MakeDraftPrism DPrism = new();
+        public readonly global::Kerf.Engine.Features.MakeRevol Revol = new();
+        public readonly global::Kerf.Engine.Features.MakePipe Pipe = new();
+        public readonly global::Kerf.Engine.Features.MakeLinearForm LinearForm = new();
+        public readonly global::Kerf.Engine.Features.MakeRevolutionForm RevolutionForm = new();
         // Input shapes for Prism, DPrism, Revol, Pipe
         public Shape theSbase = new(), thePbase = new();
         public Face theSkface = new();
         public bool dprdef, prdef, rvdef, pidef, lfdef, rfdef;
         // the fillet of fillet and bossage (OCCT's file-scope Rakk)
-        public BRepFilletAPI_MakeFillet? Rakk;
+        public MakeFillet? Rakk;
     }
 
     private static readonly ConditionalWeakTable<DrawInterpreter, FeatureState> s_states = new();
@@ -82,18 +85,18 @@ internal static partial class BRepTestFeatureCommands
 
     private static char At(string theWord, int theIndex) => theIndex < theWord.Length ? theWord[theIndex] : '\0';
 
-    private static void Print(DrawResult di, BRepFeat_Status St)
+    private static void Print(DrawResult di, global::Kerf.Engine.Features.FeatureStatus St)
     {
         di.Append("  Error Status : ");
         switch (St)
         {
-            case BRepFeat_NoError:
+            case global::Kerf.Engine.Features.FeatureStatus.NoError:
                 di.Append("No error");
                 break;
-            case BRepFeat_InvalidPlacement:
+            case global::Kerf.Engine.Features.FeatureStatus.InvalidPlacement:
                 di.Append("Invalid placement");
                 break;
-            case BRepFeat_HoleTooLong:
+            case global::Kerf.Engine.Features.FeatureStatus.HoleTooLong:
                 di.Append("Hole too long");
                 break;
         }
@@ -132,7 +135,7 @@ internal static partial class BRepTestFeatureCommands
         }
 
         NCollection_List<Shape> parts = new();
-        BRepFeat_Builder BLoc = new();
+        global::Kerf.Engine.Features.FeatureBuilder BLoc = new();
         BLoc.Init(S, T);
         BLoc.SetOperation(Fuse ? 1 : 0);
         BLoc.Perform();
@@ -140,7 +143,7 @@ internal static partial class BRepTestFeatureCommands
         // the interactive choice of the parts (#if 0 in OCCT) left out
 
         BLoc.PerformResult();
-        if (!BLoc.HasErrors())
+        if (!BLoc.HasErrors)
         {
             theDI.SetShape(a[1], BLoc.Shape());
             return 0;
@@ -152,7 +155,7 @@ internal static partial class BRepTestFeatureCommands
     private static int HoleDone(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a, FeatureState theState)
     {
         theState.Hole.Build();
-        if (!theState.Hole.HasErrors())
+        if (!theState.Hole.HasErrors)
         {
             theDI.SetShape(a[1], theState.Hole.Shape());
             return 0;
@@ -277,9 +280,9 @@ internal static partial class BRepTestFeatureCommands
 
     // The search of the sliding faces of wprism and fprism: the faces of the shape parallel to the prism's direction
     private static void AddSlidingFacesForPrism(in Shape S, in Shape ToPrism, in Vector3D V,
-                                                BRepFeat_MakePrism thePFace)
+                                                global::Kerf.Engine.Features.MakePrism thePFace)
     {
-        LocOpe_FindEdgesInFace FEIF = new();
+        FindEdgesInFace FEIF = new();
         for (global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face); exp.More(); exp.Next())
         {
             Face fac = global::Kerf.Engine.Topology.ShapeCasts.Face(exp.Current());
@@ -317,7 +320,7 @@ internal static partial class BRepTestFeatureCommands
 
     // The end of wprism and fprism: the prism by its bounds
     private static int PerformPrism(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a,
-                                    BRepFeat_MakePrism thePFace, int borne, double Length, in Shape FFrom,
+                                    global::Kerf.Engine.Features.MakePrism thePFace, int borne, double Length, in Shape FFrom,
                                     in Shape FUntil)
     {
         if (borne == 7)
@@ -351,7 +354,7 @@ internal static partial class BRepTestFeatureCommands
                 theCommands.Append("Not Implemented\n");
             }
         }
-        if (!thePFace.IsDone())
+        if (!thePFace.IsDone)
         {
             theCommands.Append("Local operation not done");
             return 1;
@@ -369,7 +372,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         Shape S = theDI.GetShape(a[3]);
-        BRepFeat_MakePrism thePFace = new();
+        global::Kerf.Engine.Features.MakePrism thePFace = new();
         Vector3D V = new();
         Shape FFrom = new(), FUntil = new();
         int borne;
@@ -424,7 +427,7 @@ internal static partial class BRepTestFeatureCommands
 
         Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
         Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
-        BRepFeat_SplitShape Spls = new(F);
+        global::Kerf.Engine.Features.SplitShape Spls = new(F);
         for (int i = borne + 1; i < narg; i++)
         {
             Wire wir;
@@ -495,7 +498,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         Shape S = theDI.GetShape(a[3]);
-        BRepFeat_MakePrism thePFace = new();
+        global::Kerf.Engine.Features.MakePrism thePFace = new();
         int borne;
         Vector3D V = new();
         Shape FFrom = new(), FUntil = new();
@@ -624,7 +627,7 @@ internal static partial class BRepTestFeatureCommands
             theDI.Output.WriteLine("Invalid input shape " + a[2]);
             return 1;
         }
-        BRepFeat_SplitShape Spls = new(S);
+        global::Kerf.Engine.Features.SplitShape Spls = new(S);
         Shape EF = new();
         int i = 3;
 
@@ -816,9 +819,9 @@ internal static partial class BRepTestFeatureCommands
 
     // The search of the sliding faces of wrotate and frotate: the faces of the shape around the axis
     private static void AddSlidingFacesForRevol(in Shape S, in Shape ToRotate, in Axis3D theAxis,
-                                                BRepFeat_MakeRevol theRFace)
+                                                global::Kerf.Engine.Features.MakeRevol theRFace)
     {
-        LocOpe_FindEdgesInFace FEIF = new();
+        FindEdgesInFace FEIF = new();
         for (global::Kerf.Engine.Topology.Explorer exp = new(S, ShapeType.Face); exp.More(); exp.Next())
         {
             Face fac = global::Kerf.Engine.Topology.ShapeCasts.Face(exp.Current());
@@ -856,7 +859,7 @@ internal static partial class BRepTestFeatureCommands
 
     // The end of wrotate and frotate: the revolution by its bounds
     private static int PerformRevol(DrawInterpreter theDI, DrawResult theCommands, IReadOnlyList<string> a,
-                                    BRepFeat_MakeRevol theRFace, int borne, double Angle, in Shape FFrom,
+                                    global::Kerf.Engine.Features.MakeRevol theRFace, int borne, double Angle, in Shape FFrom,
                                     in Shape FUntil)
     {
         if (borne == 11)
@@ -875,7 +878,7 @@ internal static partial class BRepTestFeatureCommands
             theRFace.Perform(FFrom, FUntil);
         }
 
-        if (!theRFace.IsDone())
+        if (!theRFace.IsDone)
         {
             theCommands.Append("Local operation not done");
             return 1;
@@ -893,7 +896,7 @@ internal static partial class BRepTestFeatureCommands
         }
 
         Shape S = theDI.GetShape(a[3]);
-        BRepFeat_MakeRevol theRFace = new();
+        global::Kerf.Engine.Features.MakeRevol theRFace = new();
         double Angle = 0;
         Shape FFrom = new(), FUntil = new();
         int i, borne;
@@ -925,7 +928,7 @@ internal static partial class BRepTestFeatureCommands
 
         Shape aLocalShape = theDI.GetShape(a[borne], ShapeType.Face);
         Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(aLocalShape);
-        BRepFeat_SplitShape Spls = new(F);
+        global::Kerf.Engine.Features.SplitShape Spls = new(F);
         for (i = borne + 1; i < narg; i++)
         {
             Wire wir;
@@ -996,7 +999,7 @@ internal static partial class BRepTestFeatureCommands
         }
 
         Shape S = theDI.GetShape(a[3]);
-        BRepFeat_MakeRevol theRFace = new();
+        global::Kerf.Engine.Features.MakeRevol theRFace = new();
         double Angle = 0;
         Shape FFrom = new(), FUntil = new();
         int i, borne;
@@ -1089,10 +1092,10 @@ internal static partial class BRepTestFeatureCommands
         Shape Sne = theDI.GetShape(a[2]);
         Shape Sba = theDI.GetShape(a[3]);
 
-        BRepFeat_Gluer theGl = new(Sne, Sba);
+        global::Kerf.Engine.Features.Gluer theGl = new(Sne, Sba);
         Shape Fne, Fba;
 
-        LocOpe_FindEdges fined = new();
+        FindEdges fined = new();
 
         int i = 4;
         bool first = true;
@@ -1178,7 +1181,7 @@ internal static partial class BRepTestFeatureCommands
 
         PlaneSurface? P = null;
 
-        BRepFeat_StatusError se;
+        global::Kerf.Engine.Features.StatusError se;
 
         if (!EqualsNoCase(a0, "FEATLF") && !EqualsNoCase(a0, "FEATRF"))
         {
@@ -1239,10 +1242,10 @@ internal static partial class BRepTestFeatureCommands
                 double H2 = theDI.Atof(a[11]);
                 Axis3D ax1 = new(Or, new Direction3D(X, Y, Z));
                 aState.RevolutionForm.Init(Sbase, W, P!, ax1, H1, H2, Fuse, Modify);
-                if (!aState.RevolutionForm.IsDone())
+                if (!aState.RevolutionForm.IsDone)
                 {
                     se = aState.RevolutionForm.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
             }
@@ -1266,10 +1269,10 @@ internal static partial class BRepTestFeatureCommands
                 Y = theDI.Atof(a[8]);
                 Z = theDI.Atof(a[9]);
                 aState.LinearForm.Init(Sbase, W, P!, Direct, new Vector3D(X, Y, Z), Fuse, Modify);
-                if (!aState.LinearForm.IsDone())
+                if (!aState.LinearForm.IsDone)
                 {
                     se = aState.LinearForm.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
             }
@@ -1672,14 +1675,14 @@ internal static partial class BRepTestFeatureCommands
             }
         }
 
-        BRepFeat_StatusError se;
+        global::Kerf.Engine.Features.StatusError se;
         switch (Kas)
         {
             case 1:
-                if (!aState.Prism.IsDone())
+                if (!aState.Prism.IsDone)
                 {
                     se = aState.Prism.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 theDI.SetShape(a[2], aState.Prism.Shape());
@@ -1694,10 +1697,10 @@ internal static partial class BRepTestFeatureCommands
                 }
                 return 0;
             case 2:
-                if (!aState.Revol.IsDone())
+                if (!aState.Revol.IsDone)
                 {
                     se = aState.Revol.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 // History
@@ -1712,10 +1715,10 @@ internal static partial class BRepTestFeatureCommands
                 theDI.SetShape(a[2], aState.Revol.Shape());
                 return 0;
             case 3:
-                if (!aState.Pipe.IsDone())
+                if (!aState.Pipe.IsDone)
                 {
                     se = aState.Pipe.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 // History
@@ -1730,10 +1733,10 @@ internal static partial class BRepTestFeatureCommands
                 theDI.SetShape(a[2], aState.Pipe.Shape());
                 return 0;
             case 4:
-                if (!aState.DPrism.IsDone())
+                if (!aState.DPrism.IsDone)
                 {
                     se = aState.DPrism.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 // History
@@ -1748,19 +1751,19 @@ internal static partial class BRepTestFeatureCommands
                 theDI.SetShape(a[2], aState.DPrism.Shape());
                 return 0;
             case 5:
-                if (!aState.LinearForm.IsDone())
+                if (!aState.LinearForm.IsDone)
                 {
                     se = aState.LinearForm.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 theDI.SetShape(a[2], aState.LinearForm.Shape());
                 return 0;
             case 6:
-                if (!aState.RevolutionForm.IsDone())
+                if (!aState.RevolutionForm.IsDone)
                 {
                     se = aState.RevolutionForm.CurrentStatusError();
-                    theCommands.Append(BRepFeat.Description(se)).Append("\n");
+                    theCommands.Append(global::Kerf.Engine.Features.BRepFeat.Description(se)).Append("\n");
                     return 1;
                 }
                 theDI.SetShape(a[2], aState.RevolutionForm.Shape());
@@ -1872,10 +1875,10 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        ChFi3d_FilletShape FSh = ChFi3d_FilletShape.ChFi3d_Rational;
+        FilletShape FSh = FilletShape.Rational;
         // the file's own tolerances (OCCT's file-scope statics, which no command of this file changes)
         const double tesp = 1.0e-4, t3d = 1.0e-4, t2d = 1.0e-5, ta = 1.0e-2, fl = 1.0e-3, tapp_angle = 1.0e-2;
-        BRepFilletAPI_MakeFillet Rakk = new(V, FSh);
+        MakeFillet Rakk = new(V, FSh);
         aState.Rakk = Rakk;
         Rakk.SetParams(ta, tesp, t2d, t3d, t2d, fl);
         Rakk.SetContinuity(Continuity.C1, tapp_angle);
@@ -1940,7 +1943,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         Rakk.Build();
-        if (!Rakk.IsDone())
+        if (!Rakk.IsDone)
         {
             return 1;
         }

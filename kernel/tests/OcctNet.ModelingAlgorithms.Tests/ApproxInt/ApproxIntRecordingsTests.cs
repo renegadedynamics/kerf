@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Approximation;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using System.Globalization;
@@ -99,10 +103,10 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
         return aDiffs;
     }
 
-    private static void Run<TS, TT, TL>(ApproxInt_Approx<TS, TT, TL> theApp, ApproxIntRecordings.Approx theRec,
+    private static void Run<TS, TT, TL>(Approx<TS, TT, TL> theApp, ApproxIntRecordings.Approx theRec,
                                        TS theS1, TS theS2, TL theLine)
-        where TT : IApproxInt_SurfaceTool<TS>
-        where TL : class, IApproxInt_WLine<TL>
+        where TT : IApproxSurfaceTool<TS>
+        where TL : class, IWLine<TL>
     {
         theApp.SetParameters(theRec.Tol3d, theRec.Tol2d, theRec.DegMin, theRec.DegMax, theRec.NbIter, theRec.NbPntMax,
                              theRec.Tangency, theRec.ParType);
@@ -128,13 +132,13 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
             Surface aS1 = ApproxIntRecordings.ReadSurface(aCase.Surface1);
             Surface aS2 = ApproxIntRecordings.ReadSurface(aCase.Surface2);
             SurfaceAdaptor aHS1 = new(aS1), aHS2 = new(aS2);
-            FaceSurfaceAdaptor aBS1 = new(new BRepBuilderAPI_MakeFace(aS1, 1e-7).Face());
-            FaceSurfaceAdaptor aBS2 = new(new BRepBuilderAPI_MakeFace(aS2, 1e-7).Face());
+            FaceSurfaceAdaptor aBS1 = new(new MakeFace(aS1, 1e-7).Face());
+            FaceSurfaceAdaptor aBS2 = new(new MakeFace(aS2, 1e-7).Face());
             foreach (ApproxIntRecordings.Line aLine in aCase.Lines)
             {
-                IntPatch_WLine aWL = ApproxIntRecordings.MakeWLine(aLine);
+                WLine aWL = ApproxIntRecordings.MakeWLine(aLine);
                 Assert.Equal(aLine.ParType,
-                             ApproxInt_KnotTools.DefineParType(aWL, 1, aWL.NbPnts(), aLine.PtXyz, aLine.PtU1V1,
+                             KnotTools.DefineParType(aWL, 1, aWL.NbPnts(), aLine.PtXyz, aLine.PtU1V1,
                                                                aLine.PtU2V2));
                 foreach (ApproxIntRecordings.Approx anA in aLine.Approxes)
                 {
@@ -144,10 +148,10 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
                     MultiBSpCurve? aCurve = null;
                     if (anA.Algo == "GeomInt")
                     {
-                        GeomInt_WLApprox anApp = new();
+                        WLApprox anApp = new();
                         Run(anApp, anA, aHS1, aHS2, aWL);
                         (aDone, aTol3d, aTol2d, aNbMC) = (anApp.IsDone(), anApp.TolReached3d(), anApp.TolReached2d(),
-                                                           anApp.NbMultiCurves());
+                                                           anApp.MultiCurveCount);
                         if (aDone)
                         {
                             aCurve = anApp.Value(1);
@@ -155,13 +159,13 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
                     }
                     else
                     {
-                        BRepApprox_ApproxLine aBL = anA.OnSurfaces
-                                                        ? new BRepApprox_ApproxLine(aWL.Curve(), false)
+                        ApproxLine aBL = anA.OnSurfaces
+                                                        ? new ApproxLine(aWL.Curve(), false)
                                                         : ApproxIntRecordings.MakeCurvesLine(aLine);
-                        BRepApprox_Approx anApp = new();
+                        ApproximationApprox anApp = new();
                         Run(anApp, anA, aBS1, aBS2, aBL);
                         (aDone, aTol3d, aTol2d, aNbMC) = (anApp.IsDone(), anApp.TolReached3d(), anApp.TolReached2d(),
-                                                           anApp.NbMultiCurves());
+                                                           anApp.MultiCurveCount);
                         if (aDone)
                         {
                             aCurve = anApp.Value(1);
@@ -196,11 +200,11 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
     {
         ApproxIntRecordings.Recording aRec = ApproxIntRecordings.Load();
         ApproxIntRecordings.Line aLine = aRec.Cases.First(c => c.Name == "bspl_bspl").Lines[0];
-        IntPatch_WLine aWL = ApproxIntRecordings.MakeWLine(aLine);
+        WLine aWL = ApproxIntRecordings.MakeWLine(aLine);
         int n = aWL.NbPnts();
-        GeomInt_TheMultiLineOfWLApprox ml = new(aWL, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, n);
+        TheMultiLineOfWLApprox ml = new(aWL, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, n);
         math_Vector pars = new(1, n);
-        GeomInt_WLApprox.Parameters(ml, 1, n, ParametrizationType.ChordLength, pars);
+        WLApprox.Parameters(ml, 1, n, ParametrizationType.ChordLength, pars);
         NCollection_Array1<Point3D> p3 = new(1, n);
         NCollection_Array1<Point2D> pa = new(1, n), pb = new(1, n);
         for (int i = 1; i <= n; i++)
@@ -214,7 +218,7 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
         foreach (ApproxIntRecordings.KnotToolsRun aRun in aRec.KnotTools)
         {
             NCollection_DynamicArray<int> aKnots = new();
-            ApproxInt_KnotTools.BuildKnots(p3, pa, pb, pars, true, true, true, aRun.MinNbPnts, aKnots);
+            KnotTools.BuildKnots(p3, pa, pb, pars, true, true, true, aRun.MinNbPnts, aKnots);
             Assert.Equal(aRun.Knots, aKnots.ToArray());
         }
     }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -22,8 +24,8 @@ public class ShapeFix_FaceConnectTests
     // Two unit squares side by side, each with its own edges (theGap apart along x = 1), in one frozen shell.
     private static Shell TwoSquares(double theGap, out Face theF1, out Face theF2)
     {
-        theF1 = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
-        theF2 = new BRepBuilderAPI_MakeFace(new Plane3D(), 1 + theGap, 2, 0, 1).Face();
+        theF1 = new MakeFace(new Plane3D(), 0, 1, 0, 1).Face();
+        theF2 = new MakeFace(new Plane3D(), 1 + theGap, 2, 0, 1).Face();
         var aB = new BrepBuilder();
         var aShell = new Shell();
         aB.MakeShell(ref aShell);
@@ -37,7 +39,7 @@ public class ShapeFix_FaceConnectTests
     public void Add_NullFace_IsFalse_AndBuildWithoutConnections_GivesTheShell()
     {
         Shell aShell = TwoSquares(0, out Face aF1, out _);
-        var aFC = new ShapeFix_FaceConnect();
+        var aFC = new FaceConnectFixer();
         Assert.False(aFC.Add(aF1, new Face()));
         Assert.True(aFC.Add(aF1, aF1));
         aFC.Clear();
@@ -54,7 +56,7 @@ public class ShapeFix_FaceConnectTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
         Assert.Equal(8, Count(aShell, ShapeType.Edge));
 
-        var aFC = new ShapeFix_FaceConnect();
+        var aFC = new FaceConnectFixer();
         Assert.True(aFC.Add(aF1, aF2));
         Shell aResult = aFC.Build(aShell, 1e-4, 1e-4);
 

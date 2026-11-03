@@ -89,36 +89,36 @@ public class StepElement_SurfaceElementPurpose : StepData_SelectType
         StepElement_SurfaceElementPurposeMember SelMem = Value() as StepElement_SurfaceElementPurposeMember;
         if (SelMem is null)
         {
-            return StepElement_MembraneDirect;
+            return StepElement_EnumeratedSurfaceElementPurpose.StepElement_MembraneDirect;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("EnumeratedSurfaceElementPurpose");
         if (name.IsDifferent(nameitem))
         {
-            return StepElement_MembraneDirect;
+            return StepElement_EnumeratedSurfaceElementPurpose.StepElement_MembraneDirect;
         }
         int numit = SelMem.Enum();
         StepElement_EnumeratedSurfaceElementPurpose val = default;
         switch (numit)
         {
             case 1:
-                val = StepElement_MembraneDirect;
+                val = StepElement_EnumeratedSurfaceElementPurpose.StepElement_MembraneDirect;
                 break;
             case 2:
-                val = StepElement_MembraneShear;
+                val = StepElement_EnumeratedSurfaceElementPurpose.StepElement_MembraneShear;
                 break;
             case 3:
-                val = StepElement_BendingDirect;
+                val = StepElement_EnumeratedSurfaceElementPurpose.StepElement_BendingDirect;
                 break;
             case 4:
-                val = StepElement_BendingTorsion;
+                val = StepElement_EnumeratedSurfaceElementPurpose.StepElement_BendingTorsion;
                 break;
             case 5:
-                val = StepElement_NormalToPlaneShear;
+                val = StepElement_EnumeratedSurfaceElementPurpose.StepElement_NormalToPlaneShear;
                 break;
             default:
-                return StepElement_MembraneDirect;
+                return StepElement_EnumeratedSurfaceElementPurpose.StepElement_MembraneDirect;
         }
         return val;
     }

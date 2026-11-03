@@ -3,28 +3,34 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ChFiDS_TypeOfConcavity;
-using static Occt.ChFi3d_Builder_0;
+using Occt;
+using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
+using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.LocalAnalysis_StatusErrorType;
+using static Kerf.Engine.Measurement.StatusErrorType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets;
 
 /// <summary>The fillet package's functions: the concavity of the connection of two faces along an edge.</summary>
 /// <remarks>
-/// The whole of <c>ChFi3d.cxx</c> is ported (unit 7E, for <see cref="BRepOffset_Analyse"/>): DefineConnectType,
+/// The whole of <c>ChFi3d.cxx</c> is ported (unit 7E, for <see cref="Analyse"/>): DefineConnectType,
 /// IsTangentFaces, ConcaveSide, both NextSide, SameSide and the file's Correct2dPoint. They reach only
-/// <c>ChFi3d_Coefficient</c> of the builders' free functions and <see cref="TopOpeBRepTool_TOOL.Nt"/>, not the fillet
+/// <c>ChFi3d_Coefficient</c> of the builders' free functions and <see cref="LegacyTool.Nt"/>, not the fillet
 /// builder (plan 1.3).
 /// </remarks>
 public static class ChFi3d
@@ -32,218 +38,218 @@ public static class ChFi3d
     //=================================================================================================
 
     /// <summary>Defines the type of concavity in the edge of connection of two faces.</summary>
-    public static ChFiDS_TypeOfConcavity DefineConnectType(in Edge E, in Face F1, in Face F2,
-                                                           double SinTol, bool CorrectPoint)
+    public static TypeOfConcavity DefineConnectType(in Edge e, in Face f1, in Face f2,
+                                                           double sinTol, bool correctPoint)
     {
-        Surface S1 = Tool.Surface(F1)!;
-        Surface S2 = Tool.Surface(F2)!;
+        Surface s1 = Tool.Surface(f1)!;
+        Surface s2 = Tool.Surface(f2)!;
         //
         double f, l;
-        Curve2D? C1 = Tool.CurveOnSurface(E, F1, out f, out l);
+        Curve2D? c1 = Tool.CurveOnSurface(e, f1, out f, out l);
         // For the case of seam edge
-        Edge EE = E;
-        if (F1.IsSame(F2))
+        Edge ee = e;
+        if (f1.IsSame(f2))
         {
-            EE.Reverse();
+            ee.Reverse();
         }
-        Curve2D? C2 = Tool.CurveOnSurface(EE, F2, out f, out l);
-        if (C1 is null || C2 is null)
+        Curve2D? c2 = Tool.CurveOnSurface(ee, f2, out f, out l);
+        if (c1 is null || c2 is null)
         {
-            return ChFiDS_Other;
+            return TypeOfConcavity.Other;
         }
 
-        EdgeCurveAdaptor C = new(E);
-        f = C.FirstParameter();
-        l = C.LastParameter();
+        EdgeCurveAdaptor c = new(e);
+        f = c.FirstParameter();
+        l = c.LastParameter();
         //
-        double ParOnC = 0.5 * (f + l);
-        Vector3D T1 = C.DN(ParOnC, 1);
-        if (T1.SquareMagnitude() <= Constants.Resolution())
+        double parOnC = 0.5 * (f + l);
+        Vector3D t1 = c.DN(parOnC, 1);
+        if (t1.SquareMagnitude() <= Constants.Resolution())
         {
-            ParOnC = IntTools_Tools.IntermediatePoint(f, l);
-            T1 = C.DN(ParOnC, 1);
+            parOnC = IntersectionTools.IntermediatePoint(f, l);
+            t1 = c.DN(parOnC, 1);
         }
-        if (T1.SquareMagnitude() > Constants.Resolution())
+        if (t1.SquareMagnitude() > Constants.Resolution())
         {
-            T1.Normalize();
-        }
-
-        if (BrepTools.OriEdgeInFace(E, F1) == Reversed)
-        {
-            T1.Reverse();
-        }
-        if (F1.Orientation() == Reversed)
-        {
-            T1.Reverse();
+            t1.Normalize();
         }
 
-        Point2D P = C1.Value(ParOnC);
-        Point3D P3;
-        Vector3D D1U, D1V;
-
-        if (CorrectPoint)
+        if (BrepTools.OriEdgeInFace(e, f1) == Reversed)
         {
-            Correct2dPoint(F1, ref P);
+            t1.Reverse();
+        }
+        if (f1.Orientation() == Reversed)
+        {
+            t1.Reverse();
+        }
+
+        Point2D p = c1.Value(parOnC);
+        Point3D p3;
+        Vector3D d1U, d1V;
+
+        if (correctPoint)
+        {
+            Correct2dPoint(f1, ref p);
         }
         //
-        S1.D1(P.X(), P.Y(), out P3, out D1U, out D1V);
-        Vector3D DN1 = D1U ^ D1V;
-        if (F1.Orientation() == Reversed)
+        s1.D1(p.X(), p.Y(), out p3, out d1U, out d1V);
+        Vector3D dn1 = d1U ^ d1V;
+        if (f1.Orientation() == Reversed)
         {
-            DN1.Reverse();
+            dn1.Reverse();
         }
 
-        P = C2.Value(ParOnC);
-        if (CorrectPoint)
+        p = c2.Value(parOnC);
+        if (correctPoint)
         {
-            Correct2dPoint(F2, ref P);
+            Correct2dPoint(f2, ref p);
         }
-        S2.D1(P.X(), P.Y(), out P3, out D1U, out D1V);
-        Vector3D DN2 = D1U ^ D1V;
-        if (F2.Orientation() == Reversed)
+        s2.D1(p.X(), p.Y(), out p3, out d1U, out d1V);
+        Vector3D dn2 = d1U ^ d1V;
+        if (f2.Orientation() == Reversed)
         {
-            DN2.Reverse();
+            dn2.Reverse();
         }
 
-        DN1.Normalize();
-        DN2.Normalize();
+        dn1.Normalize();
+        dn2.Normalize();
 
-        Vector3D ProVec = DN1 ^ DN2;
-        double NormProVec = ProVec.Magnitude();
-        if (NormProVec < SinTol)
+        Vector3D proVec = dn1 ^ dn2;
+        double normProVec = proVec.Magnitude();
+        if (normProVec < sinTol)
         {
             // plane
-            if (DN1.Dot(DN2) > 0)
+            if (dn1.Dot(dn2) > 0)
             {
                 // Tangent
-                return ChFiDS_Tangential;
+                return TypeOfConcavity.Tangential;
             }
             else
             {
                 // Mixed not finished! (OCCT_DEBUG trace left out)
-                return ChFiDS_Convex;
+                return TypeOfConcavity.Convex;
             }
         }
         else
         {
-            if (NormProVec > Constants.Resolution())
+            if (normProVec > Constants.Resolution())
             {
-                ProVec /= NormProVec;
+                proVec /= normProVec;
             }
-            double Prod = T1.Dot(ProVec);
-            if (Prod > 0.0)
+            double prod = t1.Dot(proVec);
+            if (prod > 0.0)
             {
                 //
-                return ChFiDS_Convex;
+                return TypeOfConcavity.Convex;
             }
             else
             {
                 // reenters
-                return ChFiDS_Concave;
+                return TypeOfConcavity.Concave;
             }
         }
     }
 
     //=================================================================================================
 
-    /// <summary>True if <paramref name="theEdge"/> between <paramref name="theFace1"/> and <paramref name="theFace2"/> is tangent.</summary>
-    public static bool IsTangentFaces(in Edge theEdge, in Face theFace1, in Face theFace2,
-                                      Continuity theOrder = G1)
+    /// <summary>True if <paramref name="edge"/> between <paramref name="face1"/> and <paramref name="face2"/> is tangent.</summary>
+    public static bool IsTangentFaces(in Edge edge, in Face face1, in Face face2,
+                                      Continuity order = G1)
     {
-        if (theOrder == G1 && Tool.Continuity(theEdge, theFace1, theFace2) != C0)
+        if (order == G1 && Tool.Continuity(edge, face1, face2) != C0)
         {
             return true;
         }
 
-        double TolC0 = Max(0.001, 1.5 * Tool.Tolerance(theEdge));
+        double tolC0 = Max(0.001, 1.5 * Tool.Tolerance(edge));
 
-        double aFirst;
-        double aLast;
+        double first;
+        double last;
 
-        Curve2D? aC2d1, aC2d2;
+        Curve2D? c2d1, c2d2;
 
-        if (!theFace1.IsSame(theFace2) && Tool.IsClosed(theEdge, theFace1)
-            && Tool.IsClosed(theEdge, theFace2))
+        if (!face1.IsSame(face2) && Tool.IsClosed(edge, face1)
+            && Tool.IsClosed(edge, face2))
         {
             // Find the edge in the face 1: this edge will have correct orientation
-            Edge anEdgeInFace1 = new();
-            Face aFace1 = theFace1;
+            Edge edgeInFace1 = new();
+            Face aFace1 = face1;
             aFace1.Orientation(Forward);
-            Explorer anExplo = new(aFace1, ShapeType.Edge);
-            for (; anExplo.More(); anExplo.Next())
+            Explorer explo = new(aFace1, ShapeType.Edge);
+            for (; explo.More(); explo.Next())
             {
-                Edge anEdge = ShapeCasts.Edge(anExplo.Current());
-                if (anEdge.IsSame(theEdge))
+                Edge anEdge = ShapeCasts.Edge(explo.Current());
+                if (anEdge.IsSame(edge))
                 {
-                    anEdgeInFace1 = anEdge;
+                    edgeInFace1 = anEdge;
                     break;
                 }
             }
-            if (anEdgeInFace1.IsNull)
+            if (edgeInFace1.IsNull)
             {
                 return false;
             }
 
-            aC2d1 = Tool.CurveOnSurface(anEdgeInFace1, aFace1, out aFirst, out aLast);
-            Face aFace2 = theFace2;
+            c2d1 = Tool.CurveOnSurface(edgeInFace1, aFace1, out first, out last);
+            Face aFace2 = face2;
             aFace2.Orientation(Forward);
-            anEdgeInFace1.Reverse();
-            aC2d2 = Tool.CurveOnSurface(anEdgeInFace1, aFace2, out aFirst, out aLast);
+            edgeInFace1.Reverse();
+            c2d2 = Tool.CurveOnSurface(edgeInFace1, aFace2, out first, out last);
         }
         else
         {
             // Obtaining of pcurves of edge on two faces.
-            aC2d1 = Tool.CurveOnSurface(theEdge, theFace1, out aFirst, out aLast);
+            c2d1 = Tool.CurveOnSurface(edge, face1, out first, out last);
             // For the case of seam edge
-            Edge EE = theEdge;
-            if (theFace1.IsSame(theFace2))
+            Edge ee = edge;
+            if (face1.IsSame(face2))
             {
-                EE.Reverse();
+                ee.Reverse();
             }
-            aC2d2 = Tool.CurveOnSurface(EE, theFace2, out aFirst, out aLast);
+            c2d2 = Tool.CurveOnSurface(ee, face2, out first, out last);
         }
 
-        if (aC2d1 is null || aC2d2 is null)
+        if (c2d1 is null || c2d2 is null)
         {
             return false;
         }
 
         // Obtaining of two surfaces from adjacent faces.
-        Surface? aSurf1 = Tool.Surface(theFace1);
-        Surface? aSurf2 = Tool.Surface(theFace2);
+        Surface? surf1 = Tool.Surface(face1);
+        Surface? surf2 = Tool.Surface(face2);
 
-        if (aSurf1 is null || aSurf2 is null)
+        if (surf1 is null || surf2 is null)
         {
             return false;
         }
 
         // Computation of the number of samples on the edge.
         // (OCCT copies the adaptors into handles; the port makes them on the faces directly.)
-        FaceSurfaceAdaptor aBAHS1 = new(theFace1);
-        FaceSurfaceAdaptor aBAHS2 = new(theFace2);
-        BRepTopAdaptor_TopolTool aTool1 = new(aBAHS1);
-        BRepTopAdaptor_TopolTool aTool2 = new(aBAHS2);
-        int aNbSamples1 = aTool1.NbSamples();
-        int aNbSamples2 = aTool2.NbSamples();
-        int aNbSamples = Max(aNbSamples1, aNbSamples2);
+        FaceSurfaceAdaptor bahs1 = new(face1);
+        FaceSurfaceAdaptor bahs2 = new(face2);
+        BrepTopolTool tool1 = new(bahs1);
+        BrepTopolTool tool2 = new(bahs2);
+        int nbSamples1 = tool1.NbSamples();
+        int nbSamples2 = tool2.NbSamples();
+        int nbSamples = Max(nbSamples1, nbSamples2);
 
         // Computation of the continuity.
-        double aPar;
-        double aDelta = (aLast - aFirst) / (aNbSamples - 1);
+        double par;
+        double delta = (last - first) / (nbSamples - 1);
         int i, nbNotDone = 0;
 
-        for (i = 1, aPar = aFirst; i <= aNbSamples; i++, aPar += aDelta)
+        for (i = 1, par = first; i <= nbSamples; i++, par += delta)
         {
-            if (i == aNbSamples)
+            if (i == nbSamples)
             {
-                aPar = aLast;
+                par = last;
             }
 
-            LocalAnalysis_SurfaceContinuity aCont =
-                new(aC2d1, aC2d2, aPar, aSurf1, aSurf2, theOrder, 0.001, TolC0, 0.1, 0.1, 0.1);
-            if (!aCont.IsDone())
+            SurfaceContinuity cont =
+                new(c2d1, c2d2, par, surf1, surf2, order, 0.001, tolC0, 0.1, 0.1, 0.1);
+            if (!cont.IsDone)
             {
-                if (theOrder == C2 && aCont.StatusError() == LocalAnalysis_NullSecondDerivative)
+                if (order == C2 && cont.StatusError() == StatusErrorType.NullSecondDerivative)
                 {
                     continue;
                 }
@@ -252,31 +258,31 @@ public static class ChFi3d
                 continue;
             }
 
-            if (theOrder == G1)
+            if (order == G1)
             {
-                if (!aCont.IsG1())
+                if (!cont.IsG1())
                 {
                     return false;
                 }
             }
-            else if (!aCont.IsG2())
+            else if (!cont.IsG2())
             {
                 return false;
             }
         }
 
-        if (nbNotDone == aNbSamples)
+        if (nbNotDone == nbSamples)
         {
             return false;
         }
 
         // Compare normals of tangent faces in the middle point
-        double MidPar = (aFirst + aLast) / 2.0;
-        Point2D uv1 = aC2d1.Value(MidPar);
-        Point2D uv2 = aC2d2.Value(MidPar);
+        double midPar = (first + last) / 2.0;
+        Point2D uv1 = c2d1.Value(midPar);
+        Point2D uv2 = c2d2.Value(midPar);
         Direction3D normal1 = new(), normal2 = new();
-        TopOpeBRepTool_TOOL.Nt(uv1, theFace1, ref normal1);
-        TopOpeBRepTool_TOOL.Nt(uv2, theFace2, ref normal2);
+        LegacyTool.Nt(uv1, face1, ref normal1);
+        LegacyTool.Nt(uv2, face2, ref normal2);
         double dot = normal1.Dot(normal2);
         return dot >= 0.0;
     }
@@ -288,55 +294,55 @@ public static class ChFi3d
     //=======================================================================
 
     /// <summary>
-    /// Returns Reversed in <paramref name="Or1"/> and (or) <paramref name="Or2"/> if the concave edge defined by the
-    /// interior of the faces of <paramref name="S1"/> and <paramref name="S2"/>, in the neighbourhood of their boundary
-    /// <paramref name="E"/>, is opposite to the normal of their surface. The faces' orientations are not taken into
+    /// Returns Reversed in <paramref name="or1"/> and (or) <paramref name="or2"/> if the concave edge defined by the
+    /// interior of the faces of <paramref name="s1"/> and <paramref name="s2"/>, in the neighbourhood of their boundary
+    /// <paramref name="e"/>, is opposite to the normal of their surface. The faces' orientations are not taken into
     /// account. Returns 0 if the calculation fails (tangency), otherwise the number of the choice of fillet or chamfer
-    /// matching the orientations computed and the tangent to the guide line read on <paramref name="E"/>.
+    /// matching the orientations computed and the tangent to the guide line read on <paramref name="e"/>.
     /// </summary>
-    public static int ConcaveSide(FaceSurfaceAdaptor S1, FaceSurfaceAdaptor S2, in Edge E,
-                                  out Orientation Or1, out Orientation Or2)
+    public static int ConcaveSide(FaceSurfaceAdaptor s1, FaceSurfaceAdaptor s2, in Edge e,
+                                  out Orientation or1, out Orientation or2)
     {
-        int ChoixConge;
-        Or1 = Or2 = Forward;
-        EdgeCurveAdaptor CE = new(E);
-        double first = CE.FirstParameter();
-        double last = CE.LastParameter();
+        int choixConge;
+        or1 = or2 = Forward;
+        EdgeCurveAdaptor ce = new(e);
+        double first = ce.FirstParameter();
+        double last = ce.LastParameter();
         double par = 0.691254 * first + 0.308746 * last;
 
         Point3D pt, pt1, pt2;
         Vector3D tgE, tgE1, tgE2, ns1, ns2, dint1, dint2;
-        Face F1 = S1.Face();
-        Face F2 = S2.Face();
+        Face f1 = s1.Face();
+        Face f2 = s2.Face();
         // F1.Orientation(TopAbs_FORWARD);
         // F2.Orientation(TopAbs_FORWARD);
 
-        CE.D1(par, out pt, out tgE);
+        ce.D1(par, out pt, out tgE);
         tgE.Normalize();
         tgE2 = tgE1 = tgE;
-        if (E.Orientation() == Reversed)
+        if (e.Orientation() == Reversed)
         {
             tgE.Reverse();
         }
 
-        Edge E1 = E, E2 = E;
-        E1.Orientation(Forward);
-        E2.Orientation(Forward);
+        Edge e1 = e, e2 = e;
+        e1.Orientation(Forward);
+        e2.Orientation(Forward);
 
-        if (F1.IsSame(F2) && Tool.IsClosed(E, F1))
+        if (f1.IsSame(f2) && Tool.IsClosed(e, f1))
         {
-            E2.Orientation(Reversed);
+            e2.Orientation(Reversed);
             tgE2.Reverse();
         }
         else
         {
-            Explorer Exp = new();
+            Explorer exp = new();
             bool found = false;
-            for (Exp.Init(F1, ShapeType.Edge); Exp.More() && !found; Exp.Next())
+            for (exp.Init(f1, ShapeType.Edge); exp.More() && !found; exp.Next())
             {
-                if (E.IsSame(ShapeCasts.Edge(Exp.Current())))
+                if (e.IsSame(ShapeCasts.Edge(exp.Current())))
                 {
-                    if (Exp.Current().Orientation() == Reversed)
+                    if (exp.Current().Orientation() == Reversed)
                     {
                         tgE1.Reverse();
                     }
@@ -348,11 +354,11 @@ public static class ChFi3d
                 return 0;
             }
             found = false;
-            for (Exp.Init(F2, ShapeType.Edge); Exp.More() && !found; Exp.Next())
+            for (exp.Init(f2, ShapeType.Edge); exp.More() && !found; exp.Next())
             {
-                if (E.IsSame(ShapeCasts.Edge(Exp.Current())))
+                if (e.IsSame(ShapeCasts.Edge(exp.Current())))
                 {
-                    if (Exp.Current().Orientation() == Reversed)
+                    if (exp.Current().Orientation() == Reversed)
                     {
                         tgE2.Reverse();
                     }
@@ -364,23 +370,23 @@ public static class ChFi3d
                 return 0;
             }
         }
-        EdgeCurve2DAdaptor pc1 = new(E1, F1);
-        EdgeCurve2DAdaptor pc2 = new(E2, F2);
+        EdgeCurve2DAdaptor pc1 = new(e1, f1);
+        EdgeCurve2DAdaptor pc2 = new(e2, f2);
         Point2D p2d1, p2d2;
-        Vector3D DU1, DV1, DU2, DV2;
+        Vector3D du1, dv1, du2, dv2;
         p2d1 = pc1.Value(par);
         p2d2 = pc2.Value(par);
-        S1.D1(p2d1.X(), p2d1.Y(), out pt1, out DU1, out DV1);
-        ns1 = DU1.Crossed(DV1);
+        s1.D1(p2d1.X(), p2d1.Y(), out pt1, out du1, out dv1);
+        ns1 = du1.Crossed(dv1);
         ns1.Normalize();
-        if (F1.Orientation() == Reversed)
+        if (f1.Orientation() == Reversed)
         {
             ns1.Reverse();
         }
-        S2.D1(p2d2.X(), p2d2.Y(), out pt2, out DU2, out DV2);
-        ns2 = DU2.Crossed(DV2);
+        s2.D1(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2);
+        ns2 = du2.Crossed(dv2);
         ns2.Normalize();
-        if (F2.Orientation() == Reversed)
+        if (f2.Orientation() == Reversed)
         {
             ns2.Reverse();
         }
@@ -394,13 +400,13 @@ public static class ChFi3d
             if (scal <= 0.0)
             {
                 ns2.Reverse();
-                Or2 = Reversed;
+                or2 = Reversed;
             }
             scal = ns1.Dot(dint2);
             if (scal <= 0.0)
             {
                 ns1.Reverse();
-                Or1 = Reversed;
+                or1 = Reversed;
             }
         }
         else
@@ -409,22 +415,22 @@ public static class ChFi3d
             if (dint1.Dot(dint2) < 0.0)
             {
                 // This is a forgotten regularity
-                Vector3D DDU, DDV, DDUV;
-                S1.D2(p2d1.X(), p2d1.Y(), out pt1, out DU1, out DV1, out DDU, out DDV, out DDUV);
-                DU1 += (DU1 * dint1 < 0) ? -DDU : DDU;
-                DV1 += (DV1 * dint1 < 0) ? -DDV : DDV;
-                ns1 = DU1.Crossed(DV1);
+                Vector3D ddu, ddv, dduv;
+                s1.D2(p2d1.X(), p2d1.Y(), out pt1, out du1, out dv1, out ddu, out ddv, out dduv);
+                du1 += (du1 * dint1 < 0) ? -ddu : ddu;
+                dv1 += (dv1 * dint1 < 0) ? -ddv : ddv;
+                ns1 = du1.Crossed(dv1);
                 ns1.Normalize();
-                if (F1.Orientation() == Reversed)
+                if (f1.Orientation() == Reversed)
                 {
                     ns1.Reverse();
                 }
-                S2.D2(p2d2.X(), p2d2.Y(), out pt2, out DU2, out DV2, out DDU, out DDV, out DDUV);
-                DU2 += (DU2 * dint2 < 0) ? -DDU : DDU;
-                DV2 += (DV2 * dint2 < 0) ? -DDV : DDV;
-                ns2 = DU2.Crossed(DV2);
+                s2.D2(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2, out ddu, out ddv, out dduv);
+                du2 += (du2 * dint2 < 0) ? -ddu : ddu;
+                dv2 += (dv2 * dint2 < 0) ? -ddv : ddv;
+                ns2 = du2.Crossed(dv2);
                 ns2.Normalize();
-                if (F2.Orientation() == Reversed)
+                if (f2.Orientation() == Reversed)
                 {
                     ns2.Reverse();
                 }
@@ -438,13 +444,13 @@ public static class ChFi3d
                     if (scal <= 0.0)
                     {
                         ns2.Reverse();
-                        Or2 = Reversed;
+                        or2 = Reversed;
                     }
                     scal = ns1.Dot(dint2);
                     if (scal <= 0.0)
                     {
                         ns1.Reverse();
-                        Or1 = Reversed;
+                        or1 = Reversed;
                     }
                 }
                 else
@@ -459,63 +465,63 @@ public static class ChFi3d
                 // here it turns back, the points are taken in faces
                 // neither too close nor too far as much as possible.
                 double u, v;
-                ChFi3d_Coefficient(dint1, DU1, DV1, out u, out v);
+                ChFi3d_Coefficient(dint1, du1, dv1, out u, out v);
                 p2d1.SetX(p2d1.X() + u);
                 p2d1.SetY(p2d1.Y() + v);
-                ChFi3d_Coefficient(dint1, DU2, DV2, out u, out v);
+                ChFi3d_Coefficient(dint1, du2, dv2, out u, out v);
                 p2d2.SetX(p2d2.X() + u);
                 p2d2.SetY(p2d2.Y() + v);
-                S1.D1(p2d1.X(), p2d1.Y(), out pt1, out DU1, out DV1);
-                ns1 = DU1.Crossed(DV1);
-                if (F1.Orientation() == Reversed)
+                s1.D1(p2d1.X(), p2d1.Y(), out pt1, out du1, out dv1);
+                ns1 = du1.Crossed(dv1);
+                if (f1.Orientation() == Reversed)
                 {
                     ns1.Reverse();
                 }
-                S2.D1(p2d2.X(), p2d2.Y(), out pt2, out DU2, out DV2);
-                ns2 = DU2.Crossed(DV2);
-                if (F2.Orientation() == Reversed)
+                s2.D1(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2);
+                ns2 = du2.Crossed(dv2);
+                if (f2.Orientation() == Reversed)
                 {
                     ns2.Reverse();
                 }
                 Vector3D vref = new(pt1, pt2);
                 if (ns1.Dot(vref) < 0.0)
                 {
-                    Or1 = Reversed;
+                    or1 = Reversed;
                 }
                 if (ns2.Dot(vref) > 0.0)
                 {
-                    Or2 = Reversed;
+                    or2 = Reversed;
                 }
             }
         }
 
-        if (Or1 == Forward)
+        if (or1 == Forward)
         {
-            if (Or2 == Forward)
+            if (or2 == Forward)
             {
-                ChoixConge = 1;
+                choixConge = 1;
             }
             else
             {
-                ChoixConge = 7;
+                choixConge = 7;
             }
         }
         else
         {
-            if (Or2 == Forward)
+            if (or2 == Forward)
             {
-                ChoixConge = 3;
+                choixConge = 3;
             }
             else
             {
-                ChoixConge = 5;
+                choixConge = 5;
             }
         }
         if ((ns1.Crossed(ns2)).Dot(tgE) >= 0.0)
         {
-            ChoixConge++;
+            choixConge++;
         }
-        return ChoixConge;
+        return choixConge;
     }
 
     //=================================================================================================
@@ -524,82 +530,82 @@ public static class ChFi3d
     /// As <see cref="ConcaveSide"/>, with the orientations deduced from the result of <see cref="ConcaveSide"/> on the
     /// first pair of faces of the fillet or chamfer.
     /// </summary>
-    public static int NextSide(ref Orientation Or1, ref Orientation Or2, Orientation OrSave1,
-                               Orientation OrSave2, int ChoixSave)
+    public static int NextSide(ref Orientation or1, ref Orientation or2, Orientation orSave1,
+                               Orientation orSave2, int choixSave)
     {
-        if (Or1 == Forward)
+        if (or1 == Forward)
         {
-            Or1 = OrSave1;
+            or1 = orSave1;
         }
         else
         {
-            Or1 = global::Kerf.Engine.Topology.TopAbs.Reverse(OrSave1);
+            or1 = global::Kerf.Engine.Topology.TopAbs.Reverse(orSave1);
         }
-        if (Or2 == Forward)
+        if (or2 == Forward)
         {
-            Or2 = OrSave2;
+            or2 = orSave2;
         }
         else
         {
-            Or2 = global::Kerf.Engine.Topology.TopAbs.Reverse(OrSave2);
+            or2 = global::Kerf.Engine.Topology.TopAbs.Reverse(orSave2);
         }
 
-        int ChoixConge;
-        if (Or1 == Forward)
+        int choixConge;
+        if (or1 == Forward)
         {
-            if (Or2 == Forward)
+            if (or2 == Forward)
             {
-                ChoixConge = 1;
+                choixConge = 1;
             }
             else
             {
-                if (ChoixSave < 0)
+                if (choixSave < 0)
                 {
-                    ChoixConge = 3;
+                    choixConge = 3;
                 }
                 else
                 {
-                    ChoixConge = 7;
+                    choixConge = 7;
                 }
             }
         }
         else
         {
-            if (Or2 == Forward)
+            if (or2 == Forward)
             {
-                if (ChoixSave < 0)
+                if (choixSave < 0)
                 {
-                    ChoixConge = 7;
+                    choixConge = 7;
                 }
                 else
                 {
-                    ChoixConge = 3;
+                    choixConge = 3;
                 }
             }
             else
             {
-                ChoixConge = 5;
+                choixConge = 5;
             }
         }
-        if (Math.Abs(ChoixSave) % 2 == 0)
+        if (Math.Abs(choixSave) % 2 == 0)
         {
-            ChoixConge++;
+            choixConge++;
         }
-        return ChoixConge;
+        return choixConge;
     }
 
     //=================================================================================================
 
     /// <summary>As the other NextSide, on an edge only.</summary>
-    public static void NextSide(ref Orientation Or, Orientation OrSave, Orientation OrFace)
+    public static void NextSide(ref Orientation or, Orientation orSave, Orientation orFace)
     {
-        if (Or == OrFace)
+        if (or == orFace)
         {
-            Or = OrSave;
+            or = orSave;
         }
         else
         {
-            Or = global::Kerf.Engine.Topology.TopAbs.Reverse(OrSave);
+            or = global::Kerf.Engine.Topology.TopAbs.Reverse(orSave);
         }
     }
 
@@ -609,35 +615,35 @@ public static class ChFi3d
     /// While processing a corner, true if two fillets or chamfers making a face have the same concave sides, false if
     /// opposite ones.
     /// </summary>
-    public static bool SameSide(Orientation Or, Orientation OrSave1, Orientation OrSave2,
-                                Orientation OrFace1, Orientation OrFace2)
+    public static bool SameSide(Orientation or, Orientation orSave1, Orientation orSave2,
+                                Orientation orFace1, Orientation orFace2)
     {
         Orientation o1, o2;
-        if (Or == OrFace1)
+        if (or == orFace1)
         {
-            o1 = OrSave1;
+            o1 = orSave1;
         }
         else
         {
-            o1 = global::Kerf.Engine.Topology.TopAbs.Reverse(OrSave1);
+            o1 = global::Kerf.Engine.Topology.TopAbs.Reverse(orSave1);
         }
-        if (Or == OrFace2)
+        if (or == orFace2)
         {
-            o2 = OrSave2;
+            o2 = orSave2;
         }
         else
         {
-            o2 = global::Kerf.Engine.Topology.TopAbs.Reverse(OrSave2);
+            o2 = global::Kerf.Engine.Topology.TopAbs.Reverse(orSave2);
         }
         return (o1 == o2);
     }
 
     //=================================================================================================
 
-    private static void Correct2dPoint(in Face theF, ref Point2D theP2d)
+    private static void Correct2dPoint(in Face f, ref Point2D p2d)
     {
-        FaceSurfaceAdaptor aBAS = new(theF, false);
-        if (aBAS.GetType() < SurfaceKind.BezierSurface)
+        FaceSurfaceAdaptor bas = new(f, false);
+        if (bas.GetType() < SurfaceKind.BezierSurface)
         {
             return;
         }
@@ -646,33 +652,33 @@ public static class ChFi3d
         double eps;
         double u1, u2, v1, v2;
         //
-        aBAS.Initialize(theF, true);
-        u1 = aBAS.FirstUParameter();
-        u2 = aBAS.LastUParameter();
-        v1 = aBAS.FirstVParameter();
-        v2 = aBAS.LastVParameter();
+        bas.Initialize(f, true);
+        u1 = bas.FirstUParameter();
+        u2 = bas.LastUParameter();
+        v1 = bas.FirstVParameter();
+        v2 = bas.LastVParameter();
         if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2)))
         {
             eps = Max(coeff * (u2 - u1), global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (Math.Abs(theP2d.X() - u1) < eps)
+            if (Math.Abs(p2d.X() - u1) < eps)
             {
-                theP2d.SetX(u1 + eps);
+                p2d.SetX(u1 + eps);
             }
-            if (Math.Abs(theP2d.X() - u2) < eps)
+            if (Math.Abs(p2d.X() - u2) < eps)
             {
-                theP2d.SetX(u2 - eps);
+                p2d.SetX(u2 - eps);
             }
         }
         if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2)))
         {
             eps = Max(coeff * (v2 - v1), global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (Math.Abs(theP2d.Y() - v1) < eps)
+            if (Math.Abs(p2d.Y() - v1) < eps)
             {
-                theP2d.SetY(v1 + eps);
+                p2d.SetY(v1 + eps);
             }
-            if (Math.Abs(theP2d.Y() - v2) < eps)
+            if (Math.Abs(p2d.Y() - v2) < eps)
             {
-                theP2d.SetY(v2 - eps);
+                p2d.SetY(v2 - eps);
             }
         }
     }

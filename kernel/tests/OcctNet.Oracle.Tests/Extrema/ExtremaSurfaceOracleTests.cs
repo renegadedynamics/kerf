@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Kerf.Engine.Extrema.ExtAlgo;
@@ -117,7 +118,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 aN.SetExtremaFlag((N.Extrema_ExtFlag)(int)aFlag);
                 var aNAlgo = (N.Extrema_ExtAlgo)(int)anAlgo;
 
-                var aPort = new GeomAPI_ProjectPointOnSurf();
+                var aPort = new ProjectPointOnSurface();
                 aPort.SetExtremaFlag(aFlag);
 
                 int aNbPoints = anOracle.Int(1, 3);
@@ -179,7 +180,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                         break;
                     }
                     aCases++;
-                    anOracle.Same(aN.IsDone(), aPort.IsDone(), $"{aWP} IsDone");
+                    anOracle.Same(aN.IsDone(), aPort.IsDone, $"{aWP} IsDone");
                     int aNb = aN.NbPoints();
                     anOracle.Same(aNb, aPort.NbPoints(), $"{aWP} NbPoints");
                     for (int i = 1; i <= aNb; i++)

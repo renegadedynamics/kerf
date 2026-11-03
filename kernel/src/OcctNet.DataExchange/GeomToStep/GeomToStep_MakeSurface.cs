@@ -53,7 +53,7 @@ public sealed class GeomToStep_MakeSurface : GeomToStep_Root
                 return;
             }
             StepGeom_OffsetSurface Surf = new StepGeom_OffsetSurface();
-            Surf.Init(new TCollection_HAsciiString(""), MkBasis.Value(), S1.Offset() / theLocalFactors.LengthFactor(), StepData_LFalse);
+            Surf.Init(new TCollection_HAsciiString(""), MkBasis.Value(), S1.Offset() / theLocalFactors.LengthFactor(), StepData_Logical.StepData_LFalse);
             theSurface = Surf;
         }
         else

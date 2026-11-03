@@ -61,11 +61,11 @@ internal class RWStepBasic_RWSiUnitAndMassUnit
         }
 
         // --- field : prefix ---
-        StepBasic_SiPrefix aPrefix = StepBasic_spExa;
+        StepBasic_SiPrefix aPrefix = StepBasic_SiPrefix.StepBasic_spExa;
         bool hasAprefix = false;
         if (data.IsParamDefined(num, 1))
         {
-            if (data.ParamType(num, 1) == Interface_ParamEnum)
+            if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = data.ParamCValue(num, 1);
                 hasAprefix = RWStepBasic_RWSiPrefix.ConvertToEnum(text, ref aPrefix);
@@ -84,7 +84,7 @@ internal class RWStepBasic_RWSiUnitAndMassUnit
 
         // --- field : name ---
         StepBasic_SiUnitName aName = default;
-        if (data.ParamType(num, 2) == Interface_ParamEnum)
+        if (data.ParamType(num, 2) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 2);
             if (!RWStepBasic_RWSiUnitName.ConvertToEnum(text, ref aName))

@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -18,19 +21,19 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntTools_EdgeIntersectorTests
 {
     private static global::Kerf.Topology.Edge Segment(double x1, double y1, double z1, double x2, double y2, double z2) =>
-        new BRepBuilderAPI_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
+        new MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     private static global::Kerf.Topology.Face PlaneFace(double theSize) =>
-        new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -theSize, theSize, -theSize, theSize).Face();
+        new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -theSize, theSize, -theSize, theSize).Face();
 
     [Fact]
     public void EdgeEdge_CrossingLines_GiveOneVertex()
     {
-        IntTools_EdgeEdge anEE = new(Segment(-1, 0, 0, 1, 0, 0), Segment(0, -1, 0, 0, 1, 0));
+        EdgeEdge anEE = new(Segment(-1, 0, 0, 1, 0, 0), Segment(0, -1, 0, 0, 1, 0));
         anEE.Perform();
-        Assert.True(anEE.IsDone());
+        Assert.True(anEE.IsDone);
         Assert.Equal(1, anEE.CommonParts().Length());
-        IntTools_CommonPrt aCP = anEE.CommonParts().Value(1);
+        CommonPrt aCP = anEE.CommonParts().Value(1);
         Assert.Equal(ShapeType.Vertex, aCP.Type());
         Assert.Equal(1.0, aCP.VertexParameter1(), 1e-12);
         Assert.Equal(1.0, aCP.VertexParameter2(), 1e-12);
@@ -39,10 +42,10 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeEdge_OverlappingLines_GiveOneEdge()
     {
-        IntTools_EdgeEdge anEE = new(Segment(0, 0, 0, 2, 0, 0), Segment(1, 0, 0, 3, 0, 0));
+        EdgeEdge anEE = new(Segment(0, 0, 0, 2, 0, 0), Segment(1, 0, 0, 3, 0, 0));
         anEE.Perform();
         Assert.Equal(1, anEE.CommonParts().Length());
-        IntTools_CommonPrt aCP = anEE.CommonParts().Value(1);
+        CommonPrt aCP = anEE.CommonParts().Value(1);
         Assert.Equal(global::Kerf.Topology.ShapeType.Edge, aCP.Type());
         aCP.Range1(out double f, out double l);
         Assert.Equal(1.0, f, 1e-12);
@@ -54,26 +57,26 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeEdge_DisjointEdges_GiveNothing_AndNullEdgeIsNotDone()
     {
-        IntTools_EdgeEdge anEE = new(Segment(0, 0, 0, 1, 0, 0), Segment(0, 1, 1, 1, 1, 1));
+        EdgeEdge anEE = new(Segment(0, 0, 0, 1, 0, 0), Segment(0, 1, 1, 1, 1, 1));
         anEE.Perform();
-        Assert.True(anEE.IsDone());
+        Assert.True(anEE.IsDone);
         Assert.Equal(0, anEE.CommonParts().Length());
 
-        IntTools_EdgeEdge aNull = new();
+        EdgeEdge aNull = new();
         aNull.SetEdge1(Segment(0, 0, 0, 1, 0, 0));
         aNull.Perform();
-        Assert.False(aNull.IsDone());
+        Assert.False(aNull.IsDone);
     }
 
     [Fact]
     public void EdgeEdge_CircleAndLine_GiveTwoVertices_InEdge1sParameters()
     {
-        global::Kerf.Topology.Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0)).Edge();
+        global::Kerf.Topology.Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0)).Edge();
         global::Kerf.Topology.Edge aLine = Segment(-2, 0.5, 0, 2, 0.5, 0);
-        IntTools_EdgeEdge anEE = new(aLine, aCircle);
+        EdgeEdge anEE = new(aLine, aCircle);
         anEE.Perform();
         Assert.Equal(2, anEE.CommonParts().Length());
-        foreach (IntTools_CommonPrt aCP in anEE.CommonParts())
+        foreach (CommonPrt aCP in anEE.CommonParts())
         {
             Assert.Equal(ShapeType.Vertex, aCP.Type());
             Assert.True(aCP.Edge1().IsSame(aLine)); // the edges are swapped inside, not in the common parts
@@ -92,13 +95,13 @@ public class IntTools_EdgeIntersectorTests
                      (Segment(-1, 0, 0, 3, 0, 0), global::Kerf.Topology.ShapeType.Edge, 0.0),
                  })
         {
-            IntTools_EdgeFace anEF = new();
+            EdgeFace anEF = new();
             anEF.SetEdge(E);
             anEF.SetFace(aF);
             Tool.Range(E, out double f, out double l);
             anEF.SetRange(f, l);
             anEF.Perform();
-            Assert.True(anEF.IsDone());
+            Assert.True(anEF.IsDone);
             Assert.Equal(0, anEF.ErrorStatus());
             Assert.Equal(1, anEF.CommonParts().Length());
             Assert.Equal(Type, anEF.CommonParts().Value(1).Type());
@@ -112,8 +115,8 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void EdgeFace_NotStarted_AndDegenerated()
     {
-        IntTools_EdgeFace anEF = new();
-        Assert.False(anEF.IsDone());
+        EdgeFace anEF = new();
+        Assert.False(anEF.IsDone);
         Assert.Equal(1, anEF.ErrorStatus());
         Assert.Equal(RealLast(), anEF.MinimalDistance());
     }
@@ -121,40 +124,40 @@ public class IntTools_EdgeIntersectorTests
     [Fact]
     public void BeanFace_CircleOnCylinder_IsCoincident_LineMissingSphere_IsEmpty()
     {
-        global::Kerf.Topology.Face aCyl = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeCylinder(1, 2).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
-        global::Kerf.Topology.Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0)).Edge();
-        IntTools_BeanFaceIntersector aBF = new(aCircle, aCyl);
+        global::Kerf.Topology.Face aCyl = ShapeCasts.Face(new Explorer(new ApiMakeCylinder(1, 2).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
+        global::Kerf.Topology.Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0)).Edge();
+        BeanFaceIntersector aBF = new(aCircle, aCyl);
         Tool.Range(aCircle, out double f, out double l);
         aBF.SetBeanParameters(f, l);
         aBF.Perform();
-        Assert.True(aBF.IsDone());
+        Assert.True(aBF.IsDone);
         Assert.Equal(1, aBF.Result().Length());
         Assert.Equal(f, aBF.Result().Value(1).First());
         Assert.Equal(l, aBF.Result().Value(1).Last());
-        NCollection_Sequence<IntTools_Range> aCopy = new();
+        NCollection_Sequence<ParameterRange> aCopy = new();
         aBF.Result(aCopy);
         Assert.Equal(1, aCopy.Length());
 
-        global::Kerf.Topology.Face aSph = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeSphere(1).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
+        global::Kerf.Topology.Face aSph = ShapeCasts.Face(new Explorer(new MakeSphere(1).Shape(), global::Kerf.Topology.ShapeType.Face).Current());
         global::Kerf.Topology.Edge aLine = Segment(-3, 2, 0, 3, 2, 0);
-        IntTools_BeanFaceIntersector aBF2 = new(aLine, aSph);
+        BeanFaceIntersector aBF2 = new(aLine, aSph);
         aBF2.SetBeanParameters(0, 6);
         aBF2.Perform();
-        Assert.True(aBF2.IsDone());
+        Assert.True(aBF2.IsDone);
         Assert.Equal(0, aBF2.Result().Length());
     }
 
     /// <summary>An edge/face pair as BOPAlgo_EdgeFace runs it: through BOPTools_Parallel with the worker's context.</summary>
     private sealed class EFSolver(global::Kerf.Topology.Edge theE, global::Kerf.Topology.Face theF, double theFuzz)
-        : BOPTools_Parallel.IContextSolver<IntTools_Context>
+        : BooleanParallel.IContextSolver<IntersectionContext>
     {
-        private IntTools_Context? myContext;
+        private IntersectionContext? myContext;
 
         public string Result { get; private set; } = "";
 
         public EFSolver Fresh() => new(theE, theF, theFuzz);
 
-        public void SetContext(IntTools_Context theContext) => myContext = theContext;
+        public void SetContext(IntersectionContext theContext) => myContext = theContext;
 
         public void Perform() => Result = RunEF(theE, theF, myContext!, theFuzz);
     }
@@ -162,7 +165,7 @@ public class IntTools_EdgeIntersectorTests
     private static List<string> Run(List<EFSolver> theTemplate, bool theParallel)
     {
         List<EFSolver> aSolvers = [.. theTemplate.Select(s => s.Fresh())];
-        BOPTools_Parallel.Perform(theParallel, aSolvers, new IntTools_Context());
+        BooleanParallel.Perform(theParallel, aSolvers, new IntersectionContext());
         return [.. aSolvers.Select(s => s.Result)];
     }
 
@@ -193,7 +196,7 @@ public class IntTools_EdgeIntersectorTests
         List<string> aFresh = [.. aTemplate.Select(s =>
         {
             EFSolver aS = s.Fresh();
-            aS.SetContext(new IntTools_Context());
+            aS.SetContext(new IntersectionContext());
             aS.Perform();
             return aS.Result;
         })];

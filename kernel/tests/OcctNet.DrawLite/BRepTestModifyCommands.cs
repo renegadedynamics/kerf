@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -69,7 +71,7 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        BRepOffsetAPI_NormalProjection OrtProj = new(Args.Last());
+        ApiNormalProjection OrtProj = new(Args.Last());
 
         for (i = 1; i < Args.Length(); i++)
         {
@@ -156,7 +158,7 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        var nbscv = new BRepBuilderAPI_NurbsConvert();
+        var nbscv = new NurbsConvert();
         for (int i = 0; i < (n - 1) / 2; i++)
         {
             Shape S = theDI.GetShape(a[2 * i + 2]);
@@ -167,7 +169,7 @@ internal static class BRepTestModifyCommands
             else
             {
                 nbscv.Perform(S);
-                if (nbscv.IsDone())
+                if (nbscv.IsDone)
                 {
                     theDI.SetShape(a[2 * i + 1], nbscv.Shape());
                 }
@@ -192,7 +194,7 @@ internal static class BRepTestModifyCommands
         var GT = new GeneralTransform3D(new Transform3D());
         var rot = new Matrix3x3(theDI.Atof(a[3]), 0, 0, 0, theDI.Atof(a[4]), 0, 0, 0, theDI.Atof(a[5]));
         GT.SetVectorialPart(rot);
-        var gtrf = new BRepBuilderAPI_GTransform(GT);
+        var gtrf = new GTransform(GT);
         Shape aShape = theDI.GetShape(a[2]);
         if (aShape.IsNull)
         {
@@ -201,7 +203,7 @@ internal static class BRepTestModifyCommands
         }
 
         gtrf.Perform(aShape);
-        if (!gtrf.IsDone())
+        if (!gtrf.IsDone)
         {
             di.Append("Error: transformation failed");
             return 1;
@@ -230,8 +232,8 @@ internal static class BRepTestModifyCommands
         var aGTrsf = new GeneralTransform3D();
         var rot = new Matrix3x3(aFactorX, 0, 0, 0, aFactorY, 0, 0, 0, aFactorZ);
         aGTrsf.SetVectorialPart(rot);
-        var aBRepGTrsf = new BRepBuilderAPI_GTransform(aShapeBase, aGTrsf, false);
-        if (!aBRepGTrsf.IsDone())
+        var aBRepGTrsf = new GTransform(aShapeBase, aGTrsf, false);
+        if (!aBRepGTrsf.IsDone)
         {
             throw new ConstructionErrorException("Scaling not done");
         }
@@ -270,14 +272,14 @@ internal static class BRepTestModifyCommands
         if ((n == 4 && IsUseTol) || (n == 3 && !IsUseTol))
         {
             var aResh = new ReShape();
-            BRepLib.SameParameter(anInpS, aResh, aTol, force);
+            BrepLibrary.SameParameter(anInpS, aResh, aTol, force);
             theDI.SetShape(a[1], aResh.Apply(anInpS));
         }
         else
         {
             // in place in OCCT: on a copy of the graph here
             Shape aCopy = DrawShapeCopy.Copy(anInpS);
-            BRepLib.SameParameter(aCopy, aTol, force);
+            BrepLibrary.SameParameter(aCopy, aTol, force);
             theDI.SetShape(a[1], aCopy);
         }
 
@@ -307,14 +309,14 @@ internal static class BRepTestModifyCommands
         if ((n == 4 && IsF) || (n == 3 && !IsF))
         {
             var aResh = new ReShape();
-            BRepLib.UpdateTolerances(anInpS, aResh, IsF);
+            BrepLibrary.UpdateTolerances(anInpS, aResh, IsF);
             theDI.SetShape(a[1], aResh.Apply(anInpS));
         }
         else
         {
             // in place in OCCT: on a copy of the graph here
             Shape aCopy = DrawShapeCopy.Copy(anInpS);
-            BRepLib.UpdateTolerances(aCopy, IsF);
+            BrepLibrary.UpdateTolerances(aCopy, IsF);
             theDI.SetShape(a[1], aCopy);
         }
 
@@ -341,7 +343,7 @@ internal static class BRepTestModifyCommands
         }
 
         Solid aSolid = ShapeCasts.Solid(S);
-        BRepLib.OrientClosedSolid(ref aSolid);
+        BrepLibrary.OrientClosedSolid(ref aSolid);
         theDI.SetShape(a[1], aSolid);
         return 0;
     }
@@ -362,7 +364,7 @@ internal static class BRepTestModifyCommands
         }
 
         Shape aCopy = DrawShapeCopy.Copy(S);
-        BRepLib.BuildCurves3d(aCopy, Tolerance);
+        BrepLibrary.BuildCurves3d(aCopy, Tolerance);
         theDI.SetShape(a[1], aCopy);
         return 0;
     }
@@ -381,7 +383,7 @@ internal static class BRepTestModifyCommands
         }
 
         double tolerance = 1.0e-5;
-        var a_plane_finder = new BRepBuilderAPI_FindPlane(S, tolerance);
+        var a_plane_finder = new FindPlane(S, tolerance);
         if (a_plane_finder.Found())
         {
             di.Append(" a plane is found \n");

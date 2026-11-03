@@ -2,6 +2,7 @@
 // results. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 
 using Kerf.Engine.Topology.Brep;
@@ -9,18 +10,19 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Fixes;
 
-public partial class ShapeFix_Wire
+public partial class WireFixer
 {
     // The copy of the loaded edges, from the first fix to the public result; null when the loaded edges hold no frozen
     // shape (they are the caller's working shapes, fixed in place as in OCCT).
-    private CopyAtEntry? myEntry;
+    private CopyAtEntry? _entry;
 
     // True when the loaded edges must be checked (and copied if frozen) before the next fix: after Load, Init and a
     // public result.
-    private bool myToEnter;
+    private bool _toEnter;
 
     /// <summary>
     /// Returns the resulting wire (made with a builder): the edges of <see cref="WireData"/>, frozen. Where the loaded
@@ -29,8 +31,8 @@ public partial class ShapeFix_Wire
     /// </summary>
     public Wire Wire()
     {
-        endWork();
-        return myAnalyzer.WireData()!.Wire();
+        EndWork();
+        return _analyzer.WireData()!.Wire();
     }
 
     /// <summary>
@@ -39,53 +41,53 @@ public partial class ShapeFix_Wire
     /// </summary>
     public Wire WireAPIMake()
     {
-        endWork();
-        return myAnalyzer.WireData()!.WireAPIMake();
+        EndWork();
+        return _analyzer.WireData()!.WireAPIMake();
     }
 
     /// <summary>
     /// The resulting wire, unfrozen, for ported code fixing a wire it owns (ShapeFix_Face, UnifySameDomain): its edges
     /// are the working ones.
     /// </summary>
-    internal Wire InternalWire() => myAnalyzer.WireData()!.InternalWire();
+    internal Wire InternalWire() => _analyzer.WireData()!.InternalWire();
 
     /// <summary>The resulting wire made with BRepBuilderAPI_MakeWire, unfrozen; see <see cref="InternalWire"/>.</summary>
-    internal Wire InternalWireAPIMake() => myAnalyzer.WireData()!.InternalWireAPIMake();
+    internal Wire InternalWireAPIMake() => _analyzer.WireData()!.InternalWireAPIMake();
 
     /// <summary>
     /// Called at the start of <see cref="Perform"/> and of every public fix: after a load or a public result, copies
     /// the loaded edges (and the non-manifold ones) when they hold a frozen shape, and works on the copies.
     /// </summary>
-    private void enterWork()
+    private void EnterWork()
     {
-        if (!myToEnter)
+        if (!_toEnter)
         {
             return;
         }
-        myToEnter = false;
-        myEntry   = null;
+        _toEnter = false;
+        _entry   = null;
 
-        ShapeExtend_WireData? sbwd = myAnalyzer.WireData();
+        ExtendWireData? sbwd = _analyzer.WireData();
         if (sbwd is null)
         {
             return;
         }
-        Compound anEdges = edgesCompound(sbwd);
-        if (!BrepTools.HoldsFrozen(anEdges))
+        Compound edges = EdgesCompound(sbwd);
+        if (!BrepTools.HoldsFrozen(edges))
         {
             return;
         }
 
-        myEntry = new CopyAtEntry(anEdges, Context());
-        Shape aCopy = myEntry.Shape();
-        setEdges(sbwd, aCopy);
+        _entry = new CopyAtEntry(edges, Context());
+        Shape copy = _entry.Shape();
+        SetEdges(sbwd, copy);
 
         // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
         // bit, which KeepUnchanged ignores), so the fixes that test E.Free() (FixConnected, ...) take OCCT's branch.
-        var anOriginal = new Iterator(anEdges, false, false);
-        for (var aCopied = new Iterator(aCopy, false, false); aCopied.More(); aCopied.Next(), anOriginal.Next())
+        var original = new Iterator(edges, false, false);
+        for (var copied = new Iterator(copy, false, false); copied.More(); copied.Next(), original.Next())
         {
-            aCopied.Value().TShape()!.Free(anOriginal.Value().TShape()!.Free());
+            copied.Value().TShape()!.Free(original.Value().TShape()!.Free());
         }
     }
 
@@ -94,57 +96,57 @@ public partial class ShapeFix_Wire
     /// unchanged, in the wire data and in the context, and records in the context the copies changed in place. The
     /// next fix copies again (the published edges are frozen).
     /// </summary>
-    private void endWork()
+    private void EndWork()
     {
-        myToEnter = true;
-        CopyAtEntry? anEntry = myEntry;
-        myEntry = null;
-        ShapeExtend_WireData? sbwd = myAnalyzer.WireData();
-        if (anEntry is null || sbwd is null)
+        _toEnter = true;
+        CopyAtEntry? entry = _entry;
+        _entry = null;
+        ExtendWireData? sbwd = _analyzer.WireData();
+        if (entry is null || sbwd is null)
         {
             return;
         }
 
-        Compound aWorked = edgesCompound(sbwd);
-        Shape aFinal = anEntry.Finish(aWorked);
-        setEdges(sbwd, aFinal);
+        Compound worked = EdgesCompound(sbwd);
+        Shape final = entry.Finish(worked);
+        SetEdges(sbwd, final);
     }
 
     // The edges, then the non-manifold edges, of the wire data, appended to a new compound as they are (no Free flag
     // changed).
-    private static Compound edgesCompound(ShapeExtend_WireData sbwd)
+    private static Compound EdgesCompound(ExtendWireData sbwd)
     {
-        var aCompound = new Compound();
-        new BrepBuilder().MakeCompound(ref aCompound);
-        TShape aTShape = aCompound.TShape()!;
-        for (int i = 1; i <= sbwd.NbEdges(); i++)
+        var compound = new Compound();
+        new BrepBuilder().MakeCompound(ref compound);
+        TShape tShape = compound.TShape()!;
+        for (int i = 1; i <= sbwd.EdgeCount; i++)
         {
-            aTShape._shapes.Append(sbwd.Edge(i));
+            tShape._shapes.Append(sbwd.Edge(i));
         }
-        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
-        for (int i = 1; i <= aNM.Length(); i++)
+        NCollection_HSequence<Shape> nm = sbwd.InternalNonmanifoldEdges();
+        for (int i = 1; i <= nm.Length(); i++)
         {
-            aTShape._shapes.Append(aNM[i]);
+            tShape._shapes.Append(nm[i]);
         }
-        return aCompound;
+        return compound;
     }
 
     // Puts back into the wire data, in order, the children of a compound made by edgesCompound.
-    private static void setEdges(ShapeExtend_WireData sbwd, in Shape theCompound)
+    private static void SetEdges(ExtendWireData sbwd, in Shape compound)
     {
-        int aNbEdges = sbwd.NbEdges();
-        NCollection_HSequence<Shape> aNM = sbwd.InternalNonmanifoldEdges();
+        int nbEdges = sbwd.EdgeCount;
+        NCollection_HSequence<Shape> nm = sbwd.InternalNonmanifoldEdges();
         int i = 1;
-        for (var anIt = new Iterator(theCompound, false, false); anIt.More(); anIt.Next(), i++)
+        for (var it = new Iterator(compound, false, false); it.More(); it.Next(), i++)
         {
-            Shape anEdge = anIt.Value();
-            if (i <= aNbEdges)
+            Shape edge = it.Value();
+            if (i <= nbEdges)
             {
-                sbwd.InternalSetEdge(ShapeCasts.Edge(anEdge), i);
+                sbwd.InternalSetEdge(ShapeCasts.Edge(edge), i);
             }
             else
             {
-                aNM.SetValue(i - aNbEdges, anEdge);
+                nm.SetValue(i - nbEdges, edge);
             }
         }
     }

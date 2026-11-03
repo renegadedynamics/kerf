@@ -4,36 +4,37 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Occt;
 using static Kerf.Geometry.Continuity;
-using static Occt.LocalAnalysis_StatusErrorType;
+using static Kerf.Engine.Measurement.StatusErrorType;
 
-namespace Occt;
+namespace Kerf.Engine.Measurement;
 
 /// <summary>Writes the results of local continuity analyses.</summary>
 public static class LocalAnalysis
 {
     // OCCT's `o << value`: the writer's precision (6 by default), as printf's %g
-    private static string R(TextWriter o, double theValue) => StreamUtilities.FormatReal(theValue, StreamUtilities.Precision(o));
+    private static string R(TextWriter o, double value) => StreamUtilities.FormatReal(value, StreamUtilities.Precision(o));
 
     /// <summary>Writes the status and values of a surface continuity analysis.</summary>
-    public static void Dump(LocalAnalysis_SurfaceContinuity surfconti, TextWriter o)
+    public static void Dump(SurfaceContinuity surfconti, TextWriter o)
     {
-        if (!surfconti.IsDone())
+        if (!surfconti.IsDone)
         {
             o.Write("Problem in the computation " + '\n');
-            if (surfconti.StatusError() == LocalAnalysis_NullFirstDerivative)
+            if (surfconti.StatusError() == StatusErrorType.NullFirstDerivative)
             {
                 o.Write("one of the first derivatives is null" + '\n');
             }
-            else if (surfconti.StatusError() == LocalAnalysis_NullSecondDerivative)
+            else if (surfconti.StatusError() == StatusErrorType.NullSecondDerivative)
             {
                 o.Write("one of the  second derivatives is null" + '\n');
             }
-            else if (surfconti.StatusError() == LocalAnalysis_NormalNotDefined)
+            else if (surfconti.StatusError() == StatusErrorType.NormalNotDefined)
             {
                 o.Write("one (or both) normal is undefined" + '\n');
             }
-            else if (surfconti.StatusError() == LocalAnalysis_CurvatureNotDefined)
+            else if (surfconti.StatusError() == StatusErrorType.CurvatureNotDefined)
             {
                 o.Write("one of the mean curvatures is undefined" + '\n');
             }
@@ -163,24 +164,24 @@ public static class LocalAnalysis
     }
 
     /// <summary>Writes the status and values of a curve continuity analysis.</summary>
-    public static void Dump(LocalAnalysis_CurveContinuity curvconti, TextWriter o)
+    public static void Dump(CurveContinuity curvconti, TextWriter o)
     {
-        if (!curvconti.IsDone())
+        if (!curvconti.IsDone)
         {
             o.Write("Problem in the computation " + '\n');
-            if (curvconti.StatusError() == LocalAnalysis_NullFirstDerivative)
+            if (curvconti.StatusError() == StatusErrorType.NullFirstDerivative)
             {
                 o.Write("one (or both) first derivative is null" + '\n');
             }
-            else if (curvconti.StatusError() == LocalAnalysis_NullSecondDerivative)
+            else if (curvconti.StatusError() == StatusErrorType.NullSecondDerivative)
             {
                 o.Write("one (or both) second derivative is null" + '\n');
             }
-            else if (curvconti.StatusError() == LocalAnalysis_TangentNotDefined)
+            else if (curvconti.StatusError() == StatusErrorType.TangentNotDefined)
             {
                 o.Write("one (or both) tangent is undefined " + '\n');
             }
-            else if (curvconti.StatusError() == LocalAnalysis_NormalNotDefined)
+            else if (curvconti.StatusError() == StatusErrorType.NormalNotDefined)
             {
                 o.Write("one (or both) normal is undefined" + '\n');
             }

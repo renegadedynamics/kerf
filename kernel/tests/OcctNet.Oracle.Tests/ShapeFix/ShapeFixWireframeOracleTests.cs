@@ -1,10 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Topology;
 using System.Diagnostics;
 using Xunit.Abstractions;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -27,11 +29,11 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
         SmallThenGaps,
     }
 
-    private static N.ShapeExtend_Status NS(ShapeExtend_Status theStatus) => (N.ShapeExtend_Status)(int)theStatus;
+    private static N.ShapeExtend_Status NS(ExtendStatus theStatus) => (N.ShapeExtend_Status)(int)theStatus;
 
-    private static string Status(Func<ShapeExtend_Status, bool> theGaps, Func<ShapeExtend_Status, bool> theSmall)
-        => $"gaps {theGaps(ShapeExtend_DONE1)}/{theGaps(ShapeExtend_DONE2)}/{theGaps(ShapeExtend_FAIL1)}/{theGaps(ShapeExtend_FAIL2)}, "
-           + $"small {theSmall(ShapeExtend_DONE1)}/{theSmall(ShapeExtend_DONE2)}/{theSmall(ShapeExtend_DONE3)}/{theSmall(ShapeExtend_FAIL1)}";
+    private static string Status(Func<ExtendStatus, bool> theGaps, Func<ExtendStatus, bool> theSmall)
+        => $"gaps {theGaps(DONE1)}/{theGaps(DONE2)}/{theGaps(FAIL1)}/{theGaps(FAIL2)}, "
+           + $"small {theSmall(DONE1)}/{theSmall(DONE2)}/{theSmall(DONE3)}/{theSmall(FAIL1)}";
 
     private static void Compare(ShapeFixOracleRun theRun, N.TopoDS_Shape theShape, string theWhat, Fix theFix, double thePrecision,
                                 double theMaxTol = -1.0, double theLimitAngle = -1.0)
@@ -72,7 +74,7 @@ public class ShapeFixWireframeOracleTests(ITestOutputHelper output)
         string aPStatus = "";
         try
         {
-            var aFix = new ShapeFix_Wireframe(aPS);
+            var aFix = new WireframeFixer(aPS);
             aFix.SetPrecision(thePrecision);
             if (theMaxTol > 0.0)
             {

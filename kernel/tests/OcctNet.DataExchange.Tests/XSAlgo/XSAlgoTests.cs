@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -30,7 +31,7 @@ public class XSAlgoTests
         Occt.XSAlgo.Init(anOther);
         Assert.Equal(2, anOther.IVal("xstep.cascade.unit")); // sets are independent
         Assert.Same(Occt.XSAlgo.AlgoContainer(), Occt.XSAlgo.AlgoContainer());
-        Assert.True(ShapeProcess.FindOperator("FixShape", out _));
+        Assert.True(global::Kerf.Engine.Healing.Process.ShapeProcess.FindOperator("FixShape", out _));
     }
 
     [Fact]
@@ -88,7 +89,7 @@ public class XSAlgoTests
         Assert.Equal(1, anActor.GetShapeFixParameters().Extent()); // a copy at the exit
         anActor.SetShapeFixParameters(new DE_ShapeFixParameters());
         Assert.Equal(55, anActor.GetShapeFixParameters().Extent());
-        var aFlags = new ShapeProcess.OperationsFlags(ShapeProcess.Operation.FixShape);
+        var aFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.FixShape);
         anActor.SetProcessingFlags(aFlags);
         Assert.Equal((aFlags, true), anActor.GetProcessingFlags());
 
@@ -103,9 +104,9 @@ public class XSAlgoTests
     public void ReadProcessingData_reads_a_resource_file_or_the_statics()
     {
         Interface_StaticSet aStatics = XSAlgoNativeTests.StepStatics();
-        (NCollection_DataMap<string, string> aParams, ShapeProcess.OperationsFlags aFlags) =
+        (NCollection_DataMap<string, string> aParams, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             XSAlgo_ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aStatics);
-        Assert.True(aFlags.Test(ShapeProcess.Operation.FixShape));
+        Assert.True(aFlags.Test(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.FixShape));
         Assert.Equal(1, aFlags.Count());
         Assert.Equal("&Runtime.Tolerance", aParams.Find("FixShape.Tolerance3d"));
         Assert.False(aParams.IsBound("exec.op"));
@@ -121,20 +122,20 @@ public class XSAlgoTests
     [Fact]
     public void The_processor_never_changes_its_input()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Shape aBox = new MakeBox(1.0, 2.0, 3.0).Shape();
         ulong aBefore = XSAlgoNativeTests.BRepHash(aBox);
         var aParams = new NCollection_DataMap<string, string>();
         aParams.Bind("DetalizationLevel", ((int)ShapeType.Face).ToString(System.Globalization.CultureInfo.InvariantCulture));
         aParams.Bind("NonManifold", "1");
         var aProcessor = new XSAlgo_ShapeProcessor(aParams);
         Assert.Null(aProcessor.GetContext());
-        Shape aResult = aProcessor.ProcessShape(aBox, new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
-                                                                                               ShapeProcess.Operation.DirectFaces));
+        Shape aResult = aProcessor.ProcessShape(aBox, new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex,
+                                                                                               global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces));
         Assert.Equal(aBefore, XSAlgoNativeTests.BRepHash(aBox));
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(ShapeType.Face, aProcessor.GetContext()!.GetDetalisation());
-        Assert.True(aProcessor.GetContext()!.IsNonManifold());
-        Assert.True(aProcessor.ProcessShape(new Shape(), new ShapeProcess.OperationsFlags()).IsNull);
+        Assert.True(aProcessor.GetContext()!.IsNonManifold);
+        Assert.True(aProcessor.ProcessShape(new Shape(), new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags()).IsNull);
 
         // merging an empty history changes nothing
         var TP = new Transfer_TransientProcess();
@@ -149,12 +150,12 @@ public class XSAlgoTests
     public void The_container_runs_a_sequence_or_default_fixes()
     {
         Interface_StaticSet aStatics = XSAlgoNativeTests.StepStatics();
-        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+        Shape aBox = new MakeBox(1.0, 2.0, 3.0).Shape();
         Transient? anInfo = null;
         XSAlgo_AlgoContainer aContainer = Occt.XSAlgo.AlgoContainer();
         Shape aResult = aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "read.step.sequence", ref anInfo,
                                                        aStatics);
-        var aContext = Assert.IsType<ShapeProcess_ShapeContext>(anInfo);
+        var aContext = Assert.IsType<global::Kerf.Engine.Healing.Process.ShapeContext>(anInfo);
         Assert.Equal(ShapeType.Vertex, aContext.GetDetalisation());
         Assert.Equal("0.001", aContext.ResourceManager()!.Value("Runtime.Tolerance"));
         Assert.True(aResult.IsSame(aBox) || aResult.TShape()!.IsFrozen);
@@ -163,7 +164,7 @@ public class XSAlgoTests
         Transient? aSame = anInfo;
         aContainer.ProcessShape(aBox, 1e-3, 1.0, "read.step.resource.name", "write.none", ref anInfo, aStatics, default, true);
         Assert.Same(aSame, anInfo);
-        Assert.True(aContext.IsNonManifold());
+        Assert.True(aContext.IsNonManifold);
         Assert.Equal("DirectFaces", aContext.ResourceManager()!.Value(".exec.op"));
         Assert.True(aContainer.ProcessShape(new Shape(), 0, 0, "", "", ref anInfo, aStatics).IsNull);
 

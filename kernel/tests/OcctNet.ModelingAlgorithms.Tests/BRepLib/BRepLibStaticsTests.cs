@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -79,11 +80,11 @@ public class BRepLibStaticsTests
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
 
-        Assert.False(BRepLib.CheckSameRange(anE));
-        Assert.True(BRepLib.CheckSameRange(anE, 10.5));
+        Assert.False(BrepLibrary.CheckSameRange(anE));
+        Assert.True(BrepLibrary.CheckSameRange(anE, 10.5));
 
-        BRepLib.SameRange(anE);
-        Assert.True(BRepLib.CheckSameRange(anE));
+        BrepLibrary.SameRange(anE);
+        Assert.True(BrepLibrary.CheckSameRange(anE));
         Assert.True(Tool.SameRange(anE));
         Curve2D aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
         Assert.Equal(0, f, 1e-12);
@@ -111,13 +112,13 @@ public class BRepLibStaticsTests
         aB.Add(aF, aW);
 
         Assert.Null(Tool.Curve(anE, out _, out _));
-        Assert.True(BRepLib.BuildCurve3d(anE));
+        Assert.True(BrepLibrary.BuildCurve3d(anE));
         Curve3D? aC = Tool.Curve(anE, out double f, out double l);
         Assert.NotNull(aC);
         Assert.Equal(0.25, f, 1e-12);
         Assert.Equal(2.5, l, 1e-12);
         Assert.True(MaxDeviation(anE, aF) < 1e-12);
-        Assert.True(BRepLib.BuildCurve3d(anE)); // existing curve
+        Assert.True(BrepLibrary.BuildCurve3d(anE)); // existing curve
     }
 
     [Fact]
@@ -146,7 +147,7 @@ public class BRepLibStaticsTests
         }
         aB.Add(aF, aW);
 
-        Assert.True(BRepLib.BuildCurves3d(aF, 1e-6));
+        Assert.True(BrepLibrary.BuildCurves3d(aF, 1e-6));
         foreach (Edge anE in anEdges)
         {
             Assert.NotNull(Tool.Curve(anE, out _, out _));
@@ -166,16 +167,16 @@ public class BRepLibStaticsTests
         aB.MakeEdge(ref anE);
         aB.UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Degenerated(anE, true);
-        Assert.False(BRepLib.BuildCurve3d(anE));
+        Assert.False(BrepLibrary.BuildCurve3d(anE));
     }
 
     [Fact]
     public void SameParameter_makes_the_pcurve_follow_the_3d_curve()
     {
         (Edge anE, Face aF) = BentEdge();
-        Assert.False(BRepLib.CheckSameRange(anE));
+        Assert.False(BrepLibrary.CheckSameRange(anE));
 
-        BRepLib.SameParameter(anE, 1e-6);
+        BrepLibrary.SameParameter(anE, 1e-6);
 
         Assert.True(Tool.SameParameter(anE));
         Assert.True(Tool.SameRange(anE));
@@ -191,7 +192,7 @@ public class BRepLibStaticsTests
         var aB = new BrepBuilder();
         aB.UpdateFace(aF, 1e-4);
 
-        BRepLib.SameParameter(aF, 1e-6);
+        BrepLibrary.SameParameter(aF, 1e-6);
 
         Assert.True(Tool.SameParameter(anE));
         Assert.True(Tool.Tolerance(anE) >= 1e-4);
@@ -208,10 +209,10 @@ public class BRepLibStaticsTests
         aB.SameParameter(anE, true); // a false flag: the pcurve is still bent
         Curve2D aBefore = Tool.CurveOnSurface(anE, aF, out _, out _)!;
 
-        BRepLib.SameParameter(aF, 1e-6);
+        BrepLibrary.SameParameter(aF, 1e-6);
         Assert.Same(aBefore, Tool.CurveOnSurface(anE, aF, out _, out _));
 
-        BRepLib.SameParameter(aF, 1e-6, true);
+        BrepLibrary.SameParameter(aF, 1e-6, true);
         Assert.NotSame(aBefore, Tool.CurveOnSurface(anE, aF, out _, out _));
         Assert.True(MaxDeviation(anE, aF) <= Tool.Tolerance(anE));
     }
@@ -222,7 +223,7 @@ public class BRepLibStaticsTests
         (Edge anE, Face aF) = BentEdge();
         Curve2D aBefore = Tool.CurveOnSurface(anE, aF, out _, out _)!;
         double aNewTol = -1;
-        Edge aNE = BRepLib.SameParameter(anE, 1e-6, ref aNewTol, false);
+        Edge aNE = BrepLibrary.SameParameter(anE, 1e-6, ref aNewTol, false);
 
         Assert.False(aNE.IsSame(anE));
         Assert.False(Tool.SameParameter(anE));
@@ -240,7 +241,7 @@ public class BRepLibStaticsTests
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
         var aReShape = new ReShape();
-        BRepLib.SameParameter(aFrozen, aReShape, 1e-6);
+        BrepLibrary.SameParameter(aFrozen, aReShape, 1e-6);
         aSnapshot.AssertUnchanged(aFrozen);
 
         Face aResult = ShapeCasts.Face(aReShape.Apply(aFrozen));
@@ -260,7 +261,7 @@ public class BRepLibStaticsTests
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
         var aReShape = new ReShape();
-        BRepLib.SameParameter(aFrozen, aReShape, 1e-6, true);
+        BrepLibrary.SameParameter(aFrozen, aReShape, 1e-6, true);
         aSnapshot.AssertUnchanged(aFrozen);
         Shape aResult = aReShape.Apply(aFrozen);
         Edge aNE = ShapeCasts.Edge(new Explorer(aResult, ShapeType.Edge).Current());
@@ -276,7 +277,7 @@ public class BRepLibStaticsTests
         Face aTop = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         aB.UpdateFace(aTop, 1e-3);
 
-        BRepLib.UpdateTolerances(aBox);
+        BrepLibrary.UpdateTolerances(aBox);
 
         for (var anExp = new Explorer(aTop, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -299,7 +300,7 @@ public class BRepLibStaticsTests
             aB.UpdateFace(ShapeCasts.Face(anExp.Current()), 0.5);
         }
 
-        BRepLib.UpdateTolerances(aBox, true);
+        BrepLibrary.UpdateTolerances(aBox, true);
 
         // a plane face: Confusion times its largest box dimension (enlarged by the face's own old tolerance)
         for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
@@ -320,7 +321,7 @@ public class BRepLibStaticsTests
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
         var aReShape = new ReShape();
-        BRepLib.UpdateTolerances(aFrozen, aReShape);
+        BrepLibrary.UpdateTolerances(aFrozen, aReShape);
         aSnapshot.AssertUnchanged(aFrozen);
 
         Shape aResult = aReShape.Apply(aFrozen);
@@ -344,7 +345,7 @@ public class BRepLibStaticsTests
         aB.Add(aW, anE);
         aB.Add(aF, aW);
 
-        BRepLib.UpdateInnerTolerances(aF);
+        BrepLibrary.UpdateInnerTolerances(aF);
 
         Assert.True(Tool.Tolerance(aV1) >= 1e-4);
         Assert.True(Tool.Tolerance(aV1) < 1.1e-4);
@@ -357,8 +358,8 @@ public class BRepLibStaticsTests
         (Edge anE, Face _) = BentEdge();
         new BrepBuilder().SameRange(anE, true);
         // the 3D curve and the pcurve differ by up to 0.9 at the same parameter (t on [0, 1] against 10 t)
-        Assert.False(BRepLib.UpdateEdgeTol(anE, 1e-5, 1e-8));
-        Assert.True(BRepLib.UpdateEdgeTolerance(anE, 1e-5, 1.0));
+        Assert.False(BrepLibrary.UpdateEdgeTol(anE, 1e-5, 1e-8));
+        Assert.True(BrepLibrary.UpdateEdgeTolerance(anE, 1e-5, 1.0));
         // not same parameter: the distance is measured along the pcurve, not at equal parameters
         Assert.True(Tool.Tolerance(anE) < 1e-3);
     }
@@ -368,11 +369,11 @@ public class BRepLibStaticsTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Solid aSolid = aBox;
-        Assert.True(BRepLib.OrientClosedSolid(ref aSolid));
+        Assert.True(BrepLibrary.OrientClosedSolid(ref aSolid));
         Assert.Equal(Forward, aSolid.Orientation());
 
         Solid aReversed = ShapeCasts.Solid(aBox.Reversed());
-        Assert.True(BRepLib.OrientClosedSolid(ref aReversed));
+        Assert.True(BrepLibrary.OrientClosedSolid(ref aReversed));
         Assert.Equal(Forward, aReversed.Orientation());
         Assert.True(aReversed.IsSame(aBox));
     }
@@ -383,7 +384,7 @@ public class BRepLibStaticsTests
         // BRepClass3d_SClassifier::PerformInfinitePoint classifies everything IN a solid without faces
         Solid aSolid = new();
         new BrepBuilder().MakeSolid(ref aSolid);
-        Assert.True(BRepLib.OrientClosedSolid(ref aSolid));
+        Assert.True(BrepLibrary.OrientClosedSolid(ref aSolid));
         Assert.Equal(Reversed, aSolid.Orientation());
     }
 
@@ -396,17 +397,17 @@ public class BRepLibStaticsTests
         Edge aFrozenE = ShapeCasts.Edge(new Explorer(aFrozen, ShapeType.Edge).Current());
         var aSnapshot = ShapeSnapshot.Of(aFrozen);
 
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameParameter(aFrozen, 1e-6));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameParameter(aFrozenE, 1e-6));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.SameRange(aFrozenE));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateInnerTolerances(aFrozen));
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozen, 1e-6));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameParameter(aFrozenE, 1e-6));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.SameRange(aFrozenE));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateInnerTolerances(aFrozen));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateEdgeTolerance(aFrozen, 1e-5, 1.0));
         aSnapshot.AssertUnchanged(aFrozen);
 
         Shape aCopy = BrepTools.CopyForWrite(aFrozen, out History aHistory);
-        BRepLib.SameParameter(aCopy, 1e-6);
-        BRepLib.UpdateTolerances(aCopy, true);
-        BRepLib.UpdateInnerTolerances(aCopy);
+        BrepLibrary.SameParameter(aCopy, 1e-6);
+        BrepLibrary.UpdateTolerances(aCopy, true);
+        BrepLibrary.UpdateInnerTolerances(aCopy);
         Edge aCopyE = ShapeCasts.Edge(aHistory.Modified(aFrozenE)[0]);
         Assert.True(Tool.SameParameter(aCopyE));
         Assert.True(MaxDeviation(aCopyE, ShapeCasts.Face(aCopy)) <= Tool.Tolerance(aCopyE));
@@ -420,7 +421,7 @@ public class BRepLibStaticsTests
         Face aTop = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         new BrepBuilder().UpdateFace(aTop, 1e-3);
         Solid aFrozen = TestShapes.Frozen(aBox);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BRepLib.UpdateTolerances(aFrozen));
-        Assert.True(BRepLib.BuildCurves3d(aFrozen)); // every edge has its curve: nothing is written
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BrepLibrary.UpdateTolerances(aFrozen));
+        Assert.True(BrepLibrary.BuildCurves3d(aFrozen)); // every edge has its curve: nothing is written
     }
 }

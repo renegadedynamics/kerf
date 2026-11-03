@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -17,26 +18,26 @@ public class GeomFill_LocationGuideTests
     private const double Theta = 0.7;
 
     // The path: the Z axis over [0, 4]; the guide: the parallel line at radius 2 and angle Theta.
-    private static (GeomFill_LocationGuide Law, TestFixedGuideTrihedron Tri) Guided()
+    private static (LocationGuide Law, TestFixedGuideTrihedron Tri) Guided()
     {
         var aGuide = new CurveAdaptor(
             new LineCurve3D(new Point3D(2 * Math.Cos(Theta), 2 * Math.Sin(Theta), 0), new Direction3D(0, 0, 1)), -1, 5);
         var aTri = new TestFixedGuideTrihedron(aGuide, new Vector3D(0, 0, 1), new Vector3D(1, 0, 0));
-        var aLaw = new GeomFill_LocationGuide(aTri);
+        var aLaw = new LocationGuide(aTri);
         Assert.True(aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(Constants.OZ()), 0, 4)));
         return (aLaw, aTri);
     }
 
     // The section: the radial segment [0, 3] along X, which the rotation must turn onto the guide.
-    private static GeomFill_UniformSection Segment() =>
+    private static UniformSection Segment() =>
         new(new TrimmedCurve3D(new LineCurve3D(Constants.OX()), 0, 3), 0, 4);
 
     [Fact]
     public void WithoutRotation_IsTheTrihedron()
     {
-        (GeomFill_LocationGuide aLaw, TestFixedGuideTrihedron aTri) = Guided();
+        (LocationGuide aLaw, TestFixedGuideTrihedron aTri) = Guided();
         Assert.Equal(1, aTri.NbOrigine);
-        Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
+        Assert.Equal(SurfacePipeError.PipeOk, aLaw.ErrorStatus());
         Matrix3x3 M = new();
         Vector3D V = new();
         Assert.True(aLaw.D0(1.5, ref M, ref V));
@@ -57,8 +58,8 @@ public class GeomFill_LocationGuideTests
     [Fact]
     public void ComputeAutomaticLaw_GivesTheDistanceToTheGuide()
     {
-        (GeomFill_LocationGuide aLaw, _) = Guided();
-        Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ComputeAutomaticLaw(out NCollection_HArray1<Point2D> aParAndRad));
+        (LocationGuide aLaw, _) = Guided();
+        Assert.Equal(SurfacePipeError.PipeOk, aLaw.ComputeAutomaticLaw(out NCollection_HArray1<Point2D> aParAndRad));
         Assert.Equal(21, aParAndRad.Length());
         Assert.Equal(0.0, aParAndRad[1].X());
         Assert.Equal(4.0, aParAndRad[21].X());
@@ -71,10 +72,10 @@ public class GeomFill_LocationGuideTests
     [Fact]
     public void Rotation_TurnsTheSectionOntoTheGuide()
     {
-        (GeomFill_LocationGuide aLaw, _) = Guided();
+        (LocationGuide aLaw, _) = Guided();
         double aLastAngle = 0;
         aLaw.Set(Segment(), true, 0, 4, 0, ref aLastAngle);
-        Assert.Equal(GeomFill_PipeError.GeomFill_PipeOk, aLaw.ErrorStatus());
+        Assert.Equal(SurfacePipeError.PipeOk, aLaw.ErrorStatus());
         Assert.Equal(Theta, aLastAngle, 1e-6);
 
         foreach (double t in new[] { 0.0, 0.33, 2.0, 3.9 })
@@ -111,21 +112,21 @@ public class GeomFill_LocationGuideTests
     [Fact]
     public void Copy_WithARotation_ThrowsAsInOcct()
     {
-        (GeomFill_LocationGuide aLaw, _) = Guided();
+        (LocationGuide aLaw, _) = Guided();
         double aLastAngle = 0;
         aLaw.Set(Segment(), true, 0, 4, 0, ref aLastAngle);
         // OCCT: the copy computes its rotation before it has a path
         Assert.Throws<ConstructionErrorException>(() => aLaw.Copy());
 
         aLaw.EraseRotation();
-        var aCopy = (GeomFill_LocationGuide)aLaw.Copy();
+        var aCopy = (LocationGuide)aLaw.Copy();
         Assert.Null(aCopy.GetCurve());
     }
 
     [Fact]
     public void D2_WithATransformation_DoesNotApplyItAsInOcct()
     {
-        (GeomFill_LocationGuide aLaw, _) = Guided();
+        (LocationGuide aLaw, _) = Guided();
         Matrix3x3 aTrsf = new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         aLaw.SetTrsf(aTrsf);
         var P = new NCollection_Array1<Point2D>(1, 1);
@@ -144,7 +145,7 @@ public class GeomFill_LocationGuideTests
     [Fact]
     public void Intervals_Tolerance_Average()
     {
-        (GeomFill_LocationGuide aLaw, _) = Guided();
+        (LocationGuide aLaw, _) = Guided();
         Assert.Equal(1, aLaw.NbIntervals(Continuity.C2));
         var T = new NCollection_Array1<double>(1, 2);
         aLaw.Intervals(T, Continuity.C2);

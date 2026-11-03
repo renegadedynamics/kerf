@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
@@ -17,9 +18,9 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class BOPTestMkConnectedCommands
 {
-    private static readonly ConditionalWeakTable<DrawInterpreter, BOPAlgo_MakeConnected> theTools = new();
+    private static readonly ConditionalWeakTable<DrawInterpreter, MakeConnectedAlgorithm> theTools = new();
 
-    private static BOPAlgo_MakeConnected Tool(DrawInterpreter theDI) => theTools.GetValue(theDI, static _ => new BOPAlgo_MakeConnected());
+    private static MakeConnectedAlgorithm Tool(DrawInterpreter theDI) => theTools.GetValue(theDI, static _ => new MakeConnectedAlgorithm());
 
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -39,7 +40,7 @@ internal static class BOPTestMkConnectedCommands
             return 1;
         }
 
-        BOPAlgo_MakeConnected aTool = Tool(theDI);
+        MakeConnectedAlgorithm aTool = Tool(theDI);
         aTool.Clear();
 
         for (int i = 2; i < theArgc; ++i)
@@ -63,7 +64,7 @@ internal static class BOPTestMkConnectedCommands
         // Set the history of the operation in session
         BRepTestHistoryCommands.SetHistory(theDI, aTool.History());
 
-        if (aTool.HasErrors())
+        if (aTool.HasErrors)
         {
             return 0;
         }
@@ -81,14 +82,14 @@ internal static class BOPTestMkConnectedCommands
             return 1;
         }
 
-        BOPAlgo_MakeConnected aTool = Tool(theDI);
-        if (aTool.InternalShape().IsNull || aTool.HasErrors())
+        MakeConnectedAlgorithm aTool = Tool(theDI);
+        if (aTool.InternalShape().IsNull || aTool.HasErrors)
         {
             di.Append("Make the shapes connected first.\n");
             return 1;
         }
 
-        BOPAlgo_MakePeriodic.PeriodicityParams aParams = new();
+        MakePeriodicAlgorithm.PeriodicityParams aParams = new();
 
         for (int i = 2; i < theArgc;)
         {
@@ -144,7 +145,7 @@ internal static class BOPTestMkConnectedCommands
         // Set the history of the operation in session
         BRepTestHistoryCommands.SetHistory(theDI, aTool.History());
 
-        if (aTool.HasErrors())
+        if (aTool.HasErrors)
         {
             return 0;
         }
@@ -162,8 +163,8 @@ internal static class BOPTestMkConnectedCommands
             return 1;
         }
 
-        BOPAlgo_MakeConnected aTool = Tool(theDI);
-        if (aTool.PeriodicityTool().HasErrors())
+        MakeConnectedAlgorithm aTool = Tool(theDI);
+        if (aTool.PeriodicityTool().HasErrors)
         {
             di.Append("The shapes have not been made periodic yet.\n");
             return 1;
@@ -201,7 +202,7 @@ internal static class BOPTestMkConnectedCommands
         // Set the history of the operation in session
         BRepTestHistoryCommands.SetHistory(theDI, aTool.History());
 
-        if (aTool.HasErrors())
+        if (aTool.HasErrors)
         {
             return 0;
         }
@@ -242,7 +243,7 @@ internal static class BOPTestMkConnectedCommands
             return 1;
         }
 
-        BOPAlgo_MakeConnected aTool = Tool(theDI);
+        MakeConnectedAlgorithm aTool = Tool(theDI);
         IReadOnlyList<Shape> aLS = [.. bPositive ? aTool.MaterialsOnPositiveSide(aShape) : aTool.MaterialsOnNegativeSide(aShape)];
         if (aLS.Count == 0)
         {
@@ -278,7 +279,7 @@ internal static class BOPTestMkConnectedCommands
 
     private static int ClearRepetitions(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgv)
     {
-        BOPAlgo_MakeConnected aTool = Tool(theDI);
+        MakeConnectedAlgorithm aTool = Tool(theDI);
         // Clear all previous repetitions
         aTool.ClearRepetitions();
 

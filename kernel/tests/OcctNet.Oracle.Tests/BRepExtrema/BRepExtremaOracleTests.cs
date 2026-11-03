@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -136,7 +138,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         aN.LoadS2(theS2.N);
         bool aNDone = aN.Perform();
 
-        var aP = new BRepExtrema_DistShapeShape();
+        var aP = new DistanceShapeShape();
         aP.SetDeflection(aDeflection);
         aP.SetMultiThread(aMulti);
         aP.SetFlag((ExtFlag)aFlag);
@@ -147,7 +149,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
 
         myNbComputations++;
         theOracle.Same(aNDone, aPDone, aWhat + " Perform");
-        theOracle.Same(aN.IsDone(), aP.IsDone(), aWhat + " IsDone");
+        theOracle.Same(aN.IsDone(), aP.IsDone, aWhat + " IsDone");
         theOracle.Same(aN.InnerSolution(), aP.InnerSolution(), aWhat + " InnerSolution");
         if (aMulti && aP.InnerSolution())
         {
@@ -158,7 +160,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             theOracle.Same(aN.Value(), aP.Value(), aWhat + " Value");
             var aMapsA = new Maps(theS1.N, theS1.P);
             var aMapsB = new Maps(theS2.N, theS2.P);
-            for (int i = 1; i <= aP.NbSolution(); i++)
+            for (int i = 1; i <= aP.SolutionCount; i++)
             {
                 Shape aV = aP.SupportOnShape1(i);
                 Assert.True(aP.SupportOnShape2(i).IsSame(aV), aWhat);
@@ -168,8 +170,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             return;
         }
 
-        theOracle.Same(aN.NbSolution(), aP.NbSolution(), aWhat + " NbSolution");
-        if (!aP.IsDone())
+        theOracle.Same(aN.NbSolution(), aP.SolutionCount, aWhat + " NbSolution");
+        if (!aP.IsDone)
         {
             return;
         }
@@ -183,7 +185,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         if (Environment.GetEnvironmentVariable("OCCTNET_DEBUG") == "1")
         {
             output.WriteLine($"{aWhat}: value {aN.Value():R} / {aP.Value():R}");
-            for (int i = 1; i <= aP.NbSolution(); i++)
+            for (int i = 1; i <= aP.SolutionCount; i++)
             {
                 using N.gp_Pnt a1 = aN.PointOnShape1(i);
                 using N.gp_Pnt a2 = aN.PointOnShape2(i);
@@ -193,7 +195,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         }
         var aMaps1 = new Maps(theS1.N, theS1.P);
         var aMaps2 = new Maps(theS2.N, theS2.P);
-        for (int i = 1; i <= aP.NbSolution(); i++)
+        for (int i = 1; i <= aP.SolutionCount; i++)
         {
             myNbSolutions++;
             string aSol = $"{aWhat} solution {i}";
@@ -208,7 +210,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
 
             for (int aSide = 1; aSide <= 2; aSide++)
             {
-                BRepExtrema_SupportType aType = aSide == 1 ? aP.SupportTypeShape1(i) : aP.SupportTypeShape2(i);
+                SupportType aType = aSide == 1 ? aP.SupportTypeShape1(i) : aP.SupportTypeShape2(i);
                 N.BRepExtrema_SupportType aNType = aSide == 1 ? aN.SupportTypeShape1(i) : aN.SupportTypeShape2(i);
                 theOracle.Same((int)aNType, (int)aType, $"{aSol} SupportTypeShape{aSide}");
                 mySupportKinds[(int)aType]++;
@@ -218,7 +220,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
                                    $"{aSol} SupportOnShape{aSide}");
                 }
 
-                if (aType == BRepExtrema_SupportType.BRepExtrema_IsOnEdge)
+                if (aType == SupportType.IsOnEdge)
                 {
                     double aNT = 0;
                     double aPT;
@@ -234,7 +236,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
                     }
                     theOracle.Same(aNT, aPT, $"{aSol} ParOnEdgeS{aSide}");
                 }
-                else if (aType == BRepExtrema_SupportType.BRepExtrema_IsInFace)
+                else if (aType == SupportType.IsInFace)
                 {
                     double aNU = 0, aNV = 0;
                     double aPU, aPV;
@@ -273,7 +275,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         using var aNP = Oracle.ToNative(theP);
         using var aNMaker = new N.BRepBuilderAPI_MakeVertex(aNP);
-        return new(aNMaker.Vertex(), new BRepBuilderAPI_MakeVertex(theP).Vertex());
+        return new(aNMaker.Vertex(), new MakeVertex(theP).Vertex());
     }
 
     // A direction that native OCCT and the port normalise to the same numbers.
@@ -298,7 +300,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         using var aND = Oracle.ToNative(aD);
         using var aNL = new N.gp_Lin(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeEdge(aNL);
-        return new(aNMaker.Edge(), new BRepBuilderAPI_MakeEdge(new Line3D(theP, aD)).Edge());
+        return new(aNMaker.Edge(), new MakeEdge(new Line3D(theP, aD)).Edge());
     }
 
     /// <summary>An infinite horizontal plane at the point's height, as a face.</summary>
@@ -308,7 +310,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         using var aND = new N.gp_Dir(0, 0, 1);
         using var aNPl = new N.gp_Pln(aNP, aND);
         using var aNMaker = new N.BRepBuilderAPI_MakeFace(aNPl);
-        return new(aNMaker.Face(), new BRepBuilderAPI_MakeFace(new Plane3D(theP, new Direction3D(0, 0, 1))).Face());
+        return new(aNMaker.Face(), new MakeFace(new Plane3D(theP, new Direction3D(0, 0, 1))).Face());
     }
 
     [Fact]

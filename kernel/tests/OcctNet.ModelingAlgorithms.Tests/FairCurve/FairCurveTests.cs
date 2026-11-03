@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Fairing;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.FairCurve_AnalysisCode;
+using static Kerf.Engine.Construction.Fairing.AnalysisCode;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -29,7 +30,7 @@ public class FairCurveTests
     [Fact]
     public void Batten_starts_as_a_straight_line_of_degree_9()
     {
-        FairCurve_Batten b = new(new Point2D(1, 2), new Point2D(10, 2), 0.5);
+        Batten b = new(new Point2D(1, 2), new Point2D(10, 2), 0.5);
         BSplineCurve2D c = b.Curve();
         Assert.Equal(9, c.Degree());
         Assert.Equal(10, c.PoleCount);
@@ -53,10 +54,10 @@ public class FairCurveTests
     public void Batten_checks_its_arguments()
     {
         Point2D p = new(1, 1);
-        Assert.Throws<NullValueException>(() => new FairCurve_Batten(p, new Point2D(1, 1 + 1e-8), 1));
-        Assert.Throws<NegativeValueException>(() => new FairCurve_Batten(p, new Point2D(2, 1), 0));
-        Assert.Throws<NegativeValueException>(() => new FairCurve_MinimalVariation(p, new Point2D(2, 1), -1));
-        FairCurve_MinimalVariation b = new(p, new Point2D(2, 1), 1);
+        Assert.Throws<NullValueException>(() => new Batten(p, new Point2D(1, 1 + 1e-8), 1));
+        Assert.Throws<NegativeValueException>(() => new Batten(p, new Point2D(2, 1), 0));
+        Assert.Throws<NegativeValueException>(() => new MinimalVariation(p, new Point2D(2, 1), -1));
+        MinimalVariation b = new(p, new Point2D(2, 1), 1);
         Assert.Throws<NegativeValueException>(() => b.SetHeight(0));
         Assert.Throws<NullValueException>(() => b.SetP1(new Point2D(2, 1)));
         Assert.Throws<NullValueException>(() => b.SetP2(p));
@@ -64,7 +65,7 @@ public class FairCurveTests
         Assert.Throws<DomainErrorException>(() => b.SetPhysicalRatio(-0.1));
 
         // a ratio out of range given to the constructor is caught by the energy, in Compute
-        FairCurve_MinimalVariation m = new(p, new Point2D(2, 1), 1, 0, 2);
+        MinimalVariation m = new(p, new Point2D(2, 1), 1, 0, 2);
         Assert.Throws<DomainErrorException>(() => m.Compute(out _));
     }
 
@@ -76,11 +77,11 @@ public class FairCurveTests
         {
             Point2D P1 = new(0, 0), P2 = new(10, 5);
             double aChord = Math.Atan2(5, 10);
-            FairCurve_Batten b = new(P1, P2, 0.3);
+            Batten b = new(P1, P2, 0.3);
             b.SetAngle1(a1 * M_PI / 180);
             b.SetAngle2(a2 * M_PI / 180);
-            Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
-            Assert.Equal(FairCurve_OK, aCode);
+            Assert.True(b.Compute(out AnalysisCode aCode));
+            Assert.Equal(AnalysisCode.OK, aCode);
             BSplineCurve2D c = b.Curve();
             Assert.True(c.StartPoint().IsEqual(P1, 1e-12));
             Assert.True(c.EndPoint().IsEqual(P2, 1e-12));
@@ -94,11 +95,11 @@ public class FairCurveTests
     [Fact]
     public void A_symmetric_batten_is_symmetric()
     {
-        FairCurve_Batten b = new(new Point2D(-5, 0), new Point2D(5, 0), 0.2);
+        Batten b = new(new Point2D(-5, 0), new Point2D(5, 0), 0.2);
         b.SetAngle1(0.5);
         b.SetAngle2(0.5);
-        Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
-        Assert.Equal(FairCurve_OK, aCode);
+        Assert.True(b.Compute(out AnalysisCode aCode));
+        Assert.Equal(AnalysisCode.OK, aCode);
         BSplineCurve2D c = b.Curve();
         int n = c.PoleCount;
         for (int i = 1; i <= n; i++)
@@ -112,12 +113,12 @@ public class FairCurveTests
     [Fact]
     public void Free_angles_and_free_sliding()
     {
-        FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         b.SetAngle1(0.6);
         b.SetConstraintOrder2(0);
         b.SetFreeSliding(true);
-        Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
-        Assert.Equal(FairCurve_OK, aCode);
+        Assert.True(b.Compute(out AnalysisCode aCode));
+        Assert.Equal(AnalysisCode.OK, aCode);
         Assert.Equal(0, b.GetConstraintOrder2());
         Assert.True(b.GetFreeSliding());
         // the free sliding is computed, and the free angle is the curve's
@@ -130,7 +131,7 @@ public class FairCurveTests
     public void The_sliding_factor_sets_the_length()
     {
         // OCCT's documentation: b.SetSlidingFactor(L / b.SlidingOfReference()) gives the batten a length L
-        FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         b.SetAngle1(0.3);
         b.SetAngle2(0.3);
         double aRef = b.SlidingOfReference();
@@ -140,7 +141,7 @@ public class FairCurveTests
         b.Compute(out _);
         Assert.Equal(12.0 / aRef, b.GetSlidingFactor());
         // a longer batten bulges more
-        FairCurve_Batten b2 = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        Batten b2 = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         b2.SetAngle1(0.3);
         b2.SetAngle2(0.3);
         b2.Compute(out _);
@@ -150,18 +151,18 @@ public class FairCurveTests
     [Fact]
     public void A_batten_without_matter_at_an_end_reports_NullHeight()
     {
-        FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.1, 0.5);
+        Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.1, 0.5);
         b.SetAngle1(0.3);
         b.SetAngle2(0.3);
-        Assert.True(b.Compute(out FairCurve_AnalysisCode aCode));
-        Assert.Equal(FairCurve_NullHeight, aCode);
+        Assert.True(b.Compute(out AnalysisCode aCode));
+        Assert.Equal(AnalysisCode.NullHeight, aCode);
         Assert.Contains("AnalysisCode : NullHeight\n", b.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
     public void Large_angles_need_more_knots()
     {
-        FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         // |a1| + |a2| + 2 |a2 - a1| above 5: a knot more (multiplicity Degree - 3)
         b.SetAngle1(1.5);
         b.SetAngle2(-1.5);
@@ -177,15 +178,15 @@ public class FairCurveTests
     [Fact]
     public void Minimal_variation_meets_its_curvatures()
     {
-        FairCurve_MinimalVariation m = new(new Point2D(0, 0), new Point2D(10, 0), 0.5, 0, 0.2);
+        MinimalVariation m = new(new Point2D(0, 0), new Point2D(10, 0), 0.5, 0, 0.2);
         m.SetAngle1(0.4);
         m.SetAngle2(0.2);
         m.SetConstraintOrder1(2);
         m.SetConstraintOrder2(2);
         m.SetCurvature1(0.05);
         m.SetCurvature2(-0.02);
-        Assert.True(m.Compute(out FairCurve_AnalysisCode aCode));
-        Assert.Equal(FairCurve_OK, aCode);
+        Assert.True(m.Compute(out AnalysisCode aCode));
+        Assert.Equal(AnalysisCode.OK, aCode);
         BSplineCurve2D c = m.Curve();
         Assert.Equal(0.05, Curvature(c, c.FirstParameter()), 1e-9);
         Assert.Equal(-0.02, Curvature(c, c.LastParameter()), 1e-9);
@@ -204,7 +205,7 @@ public class FairCurveTests
     [Fact]
     public void Curves_handed_out_are_new_and_frozen()
     {
-        FairCurve_Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        Batten b = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         b.SetAngle1(0.3);
         b.Compute(out _);
         BSplineCurve2D c1 = b.Curve(), c2 = b.Curve();
@@ -222,7 +223,7 @@ public class FairCurveTests
     [Fact]
     public void Dump_writes_old_and_new_values()
     {
-        FairCurve_MinimalVariation m = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
+        MinimalVariation m = new(new Point2D(0, 0), new Point2D(10, 0), 0.5);
         m.SetAngle1(0.25);
         string s = m.ToString();
         Assert.StartsWith("  MVCurve      |Old  |   New\n  P1    X      |      0 | 0\n", s, StringComparison.Ordinal);
@@ -236,14 +237,14 @@ public class FairCurveTests
     [Fact]
     public void BattenLaw_is_linear_and_copies_are_independent()
     {
-        FairCurve_BattenLaw l = new(2.0, 0.5, 4.0);
+        BattenLaw l = new(2.0, 0.5, 4.0);
         Assert.True(l.Value(0.5, out double h));
         Assert.Equal(2.0, h);
         Assert.True(l.Value(1.0, out h));
         Assert.Equal(3.0, h);
         Assert.False(l.Value(-0.5, out h));
         Assert.Equal(0.0, h);
-        FairCurve_BattenLaw copy = new(l);
+        BattenLaw copy = new(l);
         l.SetSliding(8.0);
         Assert.True(copy.Value(1.0, out h));
         Assert.Equal(3.0, h);
@@ -295,10 +296,10 @@ public class FairCurveTests
     public void Energy_derivatives_match_finite_differences(bool theMVC, int theOrder1, int theOrder2, bool theFree)
     {
         NCollection_HArray1<Point2D> aPoles = Poles(10, 0.3);
-        FairCurve_BattenLaw aLaw = new(0.4, 0.05, 9.0);
-        FairCurve_Energy E = theMVC
-            ? new FairCurve_EnergyOfMVC(10, FlatKnots(), aPoles, theOrder1, theOrder2, aLaw, 0.3, 9.0, theFree, 0.3, 0.2, 0.05, -0.04)
-            : new FairCurve_EnergyOfBatten(10, FlatKnots(), aPoles, theOrder1, theOrder2, aLaw, 9.0, theFree, 0.3, 0.2);
+        BattenLaw aLaw = new(0.4, 0.05, 9.0);
+        Energy E = theMVC
+            ? new EnergyOfMvc(10, FlatKnots(), aPoles, theOrder1, theOrder2, aLaw, 0.3, 9.0, theFree, 0.3, 0.2, 0.05, -0.04)
+            : new EnergyOfBatten(10, FlatKnots(), aPoles, theOrder1, theOrder2, aLaw, 9.0, theFree, 0.3, 0.2);
         int n = E.VariableCount;
         Assert.Equal(2 * 8 - theOrder1 - theOrder2 + (theFree ? 1 : 0), n);
         math_Vector X = new(1, n), G = new(1, n), G1 = new(1, n), G2 = new(1, n);

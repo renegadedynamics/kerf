@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Diagnostics;
@@ -16,7 +18,7 @@ public sealed class DemoResult
 {
     public double ReadMs, MeshMs, ExtractMs, Deflection;
     public int Faces, Edges, Nodes, Triangles;
-    public MeshBuffers Buffers = null!;
+    public global::Kerf.Engine.Meshing.MeshBuffers Buffers = null!;
     public ulong[] FaceHashes = [], NormalHashes = [], EdgeHashes = [];
 }
 
@@ -43,14 +45,14 @@ public static class DemoCore
         aShape = BrepTools.Cleaned(aShape);
 
         var aBox = new Box();
-        BRepBndLib.Add(aShape, ref aBox, true);
+        Bounds.Add(aShape, ref aBox, true);
         double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         aResult.Deflection = aDiagonal > 1e-6 ? aDiagonal * thePercent / 100 : 1e-3;
 
         long t2 = Stopwatch.GetTimestamp();
-        Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, aResult.Deflection, false, Angle, true).Shape();
+        Shape aMeshed = new IncrementalMesh(aShape, aResult.Deflection, false, Angle, true).Shape();
         long t3 = Stopwatch.GetTimestamp();
-        MeshBuffers aBuffers = MeshExtraction.Extract(aMeshed, aResult.Deflection, Angle);
+        global::Kerf.Engine.Meshing.MeshBuffers aBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aResult.Deflection, Angle);
         long t4 = Stopwatch.GetTimestamp();
 
         aResult.ReadMs = Stopwatch.GetElapsedTime(t0, t1).TotalMilliseconds;

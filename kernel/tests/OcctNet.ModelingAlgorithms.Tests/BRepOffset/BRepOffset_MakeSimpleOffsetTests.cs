@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -39,18 +42,18 @@ public class BRepOffset_MakeSimpleOffsetTests
     [Fact]
     public void Shell_OfAFrozenBox_IsTheLargerBox_TheInputIsUnchanged()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
+        Shape aBox = new MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
-        var anAlgo = new BRepOffset_MakeSimpleOffset(aBox, 1.0);
+        var anAlgo = new MakeSimpleOffset(aBox, 1.0);
         anAlgo.Perform();
 
         aSnap.AssertUnchanged(aBox);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(BRepOffsetSimple_Status.BRepOffsetSimple_OK, anAlgo.GetError());
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(SimpleOffsetStatus.OK, anAlgo.GetError());
         Shape aResult = anAlgo.GetResultShape();
         Assert.True(AllFrozen(aResult));
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
         // each face is on its plane moved out by 1 (the sharp edges get large tolerances, as in OCCT)
         foreach (Shape anF in SubShapes(aBox, ShapeType.Face))
@@ -71,23 +74,23 @@ public class BRepOffset_MakeSimpleOffsetTests
     [Fact]
     public void Solid_OfAFrozenFace_BuildsTheWalls_TheInputIsUnchanged()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
+        Shape aBox = new MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
         Shape aFace = SubShapes(aBox, ShapeType.Face)[0];
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
-        var anAlgo = new BRepOffset_MakeSimpleOffset(aFace, 2.0);
+        var anAlgo = new MakeSimpleOffset(aFace, 2.0);
         anAlgo.SetBuildSolidFlag(true);
         anAlgo.Perform();
 
         aSnap.AssertUnchanged(aBox);
-        Assert.True(anAlgo.IsDone(), anAlgo.GetErrorMessage());
+        Assert.True(anAlgo.IsDone, anAlgo.GetErrorMessage());
         Shape aResult = anAlgo.GetResultShape();
         Assert.Equal(ShapeType.Solid, aResult.ShapeType());
         Assert.True(AllFrozen(aResult));
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aResult, aProps);
+        MassPropertiesBuilder.VolumeProperties(aResult, aProps);
         Assert.Equal(2.0 * SurfaceArea(aFace), Math.Abs(aProps.Mass()), 6);
 
         Shape aGen = anAlgo.Generated(aFace);
@@ -98,28 +101,28 @@ public class BRepOffset_MakeSimpleOffsetTests
     [Fact]
     public void Solid_OfAFrozenCylinderSide_IsATube_TheInputIsUnchanged()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(5.0, 10.0).Shape();
         Shape aSide = SubShapes(aCyl, ShapeType.Face).First(f => Tool.Surface(ShapeCasts.Face(f)) is CylindricalSurface);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
-        var anAlgo = new BRepOffset_MakeSimpleOffset(aSide, 1.0);
+        var anAlgo = new MakeSimpleOffset(aSide, 1.0);
         anAlgo.SetBuildSolidFlag(true);
         anAlgo.Perform();
 
         aSnap.AssertUnchanged(aCyl);
-        Assert.True(anAlgo.IsDone(), anAlgo.GetErrorMessage());
+        Assert.True(anAlgo.IsDone, anAlgo.GetErrorMessage());
         Shape aResult = anAlgo.GetResultShape();
         Assert.True(AllFrozen(aResult));
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aResult, aProps);
+        MassPropertiesBuilder.VolumeProperties(aResult, aProps);
         Assert.Equal(Math.PI * (6.0 * 6.0 - 5.0 * 5.0) * 10.0, Math.Abs(aProps.Mass()), 3);
     }
 
     private static double SurfaceArea(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 }

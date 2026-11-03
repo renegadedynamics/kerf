@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -44,7 +47,7 @@ public class ShapeBuildTests
 
     private static (Edge E, Face F) BoxEdge()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new MakeBox(10, 20, 30).Shape();
         var aFExp = new Explorer(aBox, ShapeType.Face);
         Face aF = ShapeCasts.Face(aFExp.Current());
         Edge anE = ShapeCasts.Edge(new Explorer(aF, ShapeType.Edge).Current());
@@ -90,8 +93,8 @@ public class ShapeBuildTests
     [Fact]
     public void PlaneXOY_is_one_frozen_plane()
     {
-        PlaneSurface aP = ShapeBuild.PlaneXOY();
-        Assert.Same(aP, ShapeBuild.PlaneXOY());
+        PlaneSurface aP = ShapeBuildBuilder.PlaneXOY();
+        Assert.Same(aP, ShapeBuildBuilder.PlaneXOY());
         Assert.True(aP.IsFrozen);
         Assert.True(aP.Axis().Direction().IsEqual(new Direction3D(0, 0, 1), 0));
         Assert.Equal(0.0, aP.Location().Z());
@@ -100,7 +103,7 @@ public class ShapeBuildTests
     [Fact]
     public void CombineVertex_covers_both_vertices()
     {
-        var sbv = new ShapeBuild_Vertex();
+        var sbv = new VertexBuilder();
         // the first covers the second
         Vertex aV = sbv.CombineVertex(new Point3D(0, 0, 0), new Point3D(0.5, 0, 0), 1.0, 0.1);
         Assert.True(aV.TShape()!.IsFrozen);
@@ -125,13 +128,13 @@ public class ShapeBuildTests
     {
         (Edge anE, Face aF) = BoxEdge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         Vertex aV1 = TestShapes.Vertex(new Point3D(-1, -1, -1));
         Edge aNew = sbe.CopyReplaceVertices(anE, aV1, new Vertex());
         aSnap.AssertUnchanged(anE);
         Assert.True(aNew.TShape()!.IsFrozen);
         Assert.False(aNew.IsSame(anE));
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         Exploration.Vertices(aNew, out Vertex aF1, out Vertex aL1);
         Exploration.Vertices(anE, out Vertex aF0, out Vertex aL0);
         Assert.True(aF1.IsSame(aV1));
@@ -158,7 +161,7 @@ public class ShapeBuildTests
     [Fact]
     public void Twins_leave_their_inputs_and_give_the_in_place_results()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         (Edge anE, Face aF) = BoxEdge();
 
         AssertTwin(anE, e => sbe.WithRange3d(e, 1, 2), e => sbe.SetRange3d(e, 1, 2));
@@ -193,7 +196,7 @@ public class ShapeBuildTests
 
         Edge aBare = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
         AssertTwin(aBare, e => sbe.PCurvesCopied(e, aFrom), e => sbe.CopyPCurves(e, aFrom));
-        Assert.True(new ShapeAnalysis_Edge().HasPCurve(sbe.PCurvesCopied(aBare, aFrom), aShiftedF));
+        Assert.True(new EdgeAnalysis().HasPCurve(sbe.PCurvesCopied(aBare, aFrom), aShiftedF));
 
         (Edge aPOnly, Face aPF) = PCurveOnlyEdge();
         Edge aFrozenPOnly = TestShapes.Frozen(aPOnly);
@@ -208,7 +211,7 @@ public class ShapeBuildTests
     [Fact]
     public void PCurveReassigned_moves_the_pcurve_to_another_face()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         var aB = new BrepBuilder();
         (Edge anE, Face aF) = ShiftedEdge();
         Face aSub = new();
@@ -226,7 +229,7 @@ public class ShapeBuildTests
         Assert.NotSame(aPC, Tool.CurveOnSurface(aResult, aF, out _, out _));
 
         // no pcurve on old (not a plane, so none is computed): false, and the input comes back unchanged
-        Face aCyl = ShapeCasts.Face(new Explorer(new BRepPrimAPI_MakeCylinder(1, 1).Shape(), ShapeType.Face).Current());
+        Face aCyl = ShapeCasts.Face(new Explorer(new ApiMakeCylinder(1, 1).Shape(), ShapeType.Face).Current());
         Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 5), new Point3D(1, 0, 5)));
         Edge aSame = sbe.PCurveReassigned(anOther, aCyl, aFrozenSub, out isDone);
         Assert.False(isDone);
@@ -236,7 +239,7 @@ public class ShapeBuildTests
     [Fact]
     public void In_place_writers_throw_on_frozen_edges()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         (Edge anE, Face aF) = BoxEdge();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.RemoveCurve3d(anE));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => sbe.SetRange3d(anE, 0, 1));
@@ -252,7 +255,7 @@ public class ShapeBuildTests
     [Fact]
     public void CopyRanges_shifts_into_the_period()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
         Edge aFrom = TestShapes.Edge(aCircle, 7, 8);
         Edge aTo = TestShapes.Edge(aCircle, 0, 1);
@@ -274,7 +277,7 @@ public class ShapeBuildTests
     [Fact]
     public void TransformPCurve_scales_along_u()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         var anId = new Transform2D();
 
         // a line: stays a line
@@ -331,7 +334,7 @@ public class ShapeBuildTests
     [Fact]
     public void MakeEdge_from_curves_and_pcurves()
     {
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         var aT = new Transform3D();
         aT.SetTranslation(new Vector3D(0, 0, 5));
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
@@ -376,8 +379,8 @@ public class ShapeBuildTests
     public void TransferParameters_maps_ranges_linearly()
     {
         (Edge anE, Face aF) = ShiftedEdge();
-        var aTP = new ShapeAnalysis_TransferParameters(anE, aF);
-        Assert.False(aTP.IsSameRange());
+        var aTP = new TransferParametersAnalysis(anE, aF);
+        Assert.False(aTP.IsSameRange);
         Assert.Equal(15.0, aTP.Perform(5, true));
         Assert.Equal(5.0, aTP.Perform(15, false));
         var aSeq = new NCollection_HSequence<double>();
@@ -388,7 +391,7 @@ public class ShapeBuildTests
         Assert.Equal(20.0, aRes.Value(2));
 
         // a part of the edge: the ranges of [2, 4] in 3D
-        var sbe = new ShapeBuild_Edge();
+        var sbe = new BuildEdgeBuilder();
         Edge aPart = sbe.InternalCopy(anE);
         aTP.TransferRange(aPart, 2, 4, false);
         Tool.Range(aPart, out double f, out double l);
@@ -404,12 +407,12 @@ public class ShapeBuildTests
 
         // a box edge: same range; without a face, the identity
         (Edge aBoxE, Face aBoxF) = BoxEdge();
-        Assert.True(new ShapeAnalysis_TransferParameters(aBoxE, aBoxF).IsSameRange());
-        var aFree = new ShapeAnalysis_TransferParameters(aBoxE, new Face());
-        Assert.True(aFree.IsSameRange());
+        Assert.True(new TransferParametersAnalysis(aBoxE, aBoxF).IsSameRange);
+        var aFree = new TransferParametersAnalysis(aBoxE, new Face());
+        Assert.True(aFree.IsSameRange);
         Assert.Equal(3.0, aFree.Perform(3, true));
-        var anEmpty = new ShapeAnalysis_TransferParameters();
-        Assert.True(anEmpty.IsSameRange());
+        var anEmpty = new TransferParametersAnalysis();
+        Assert.True(anEmpty.IsSameRange);
         anEmpty.SetMaxTolerance(1e-3);
     }
 }

@@ -2,7 +2,9 @@
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixBRep_BuilderHelix_Integration_Test.cxx (HelixBRepTest),
 // and the port's own tests of the builder's frozen result.
 
+using Kerf.Engine.Construction.Helix;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -38,7 +40,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void TCL_Test_A1_PureCylindricalHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Parameters from TCL test A1: helix, D1 = 100, 1 part, pitch = 5, number of turns, PFi=0
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 100.0; // H1 = 100
@@ -64,7 +66,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void TCL_Test_B1_CompositeCylindricalHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Parameters from TCL test B1: comphelix, D1 = D2 = 100, 1 part, pitch = 20, PFi=1
         NCollection_Array1<double> aDiams = new(1, 2);
         aDiams[1] = 100.0; // D1
@@ -92,7 +94,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void TCL_Test_C1_SpiralHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Parameters from TCL test C1: spiral, D1 = 100, D2 = 20, 3 parts
         NCollection_Array1<double> aHeights = new(1, 3);
         aHeights[1] = 20.0; // H1
@@ -121,7 +123,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void TCL_Test_F1_Helix2Interface()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Parameters from TCL test F1: comphelix2 with turns interface
         NCollection_Array1<double> aPitches = new(1, 3);
         aPitches[1] = 10.0; // P1
@@ -148,7 +150,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void TCL_Test_E1_CustomerExample()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Parameters from TCL test E1: Customer example with 5 parts
         NCollection_Array1<double> aDiams = new(1, 6);
         aDiams[1] = 150.0; // D1
@@ -190,7 +192,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void ErrorConditions_InvalidDimensions()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Test mismatched array dimensions
         NCollection_Array1<double> aDiams = new(1, 3);   // 3 elements = 2 parts
         NCollection_Array1<double> aHeights = new(1, 1); // 1 element - should cause error (need 2 for 2 parts)
@@ -208,7 +210,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void ErrorConditions_TurnsInterface()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Test mismatched dimensions in turns interface
         NCollection_Array1<double> aPitches = new(1, 2);
         NCollection_Array1<double> aNbTurns = new(1, 1); // Mismatched size
@@ -222,7 +224,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void ApproximationQuality()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 50.0;
         NCollection_Array1<double> aPitches = new(1, 1);
@@ -246,7 +248,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void ParameterValidation()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         NCollection_Array1<double> aHeights = new(1, 1);
         NCollection_Array1<double> aPitches = new(1, 1);
         NCollection_Array1<bool> aIsPitches = new(1, 1);
@@ -270,7 +272,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void MultiPartContinuity()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // 2-part helix with different parameters
         NCollection_Array1<double> aDiams = new(1, 3);
         aDiams[1] = 80.0;
@@ -297,7 +299,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         Assert.True(aNbEdges > 1); // Should have multiple edges for multiple parts
         // Verify wire continuity by checking connectivity
         Wire aWire = ShapeCasts.Wire(aHelixWire);
-        var aCheck = new BRepCheck_Analyzer(aWire);
+        var aCheck = new Analyzer(aWire);
         Assert.True(aCheck.IsValid());
     }
 
@@ -310,7 +312,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     [Fact]
     public void The_result_is_frozen_and_the_initial_statuses_are_OCCTs()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         Assert.Equal(1, aBuilder.ErrorStatus());
         Assert.Equal(1, aBuilder.WarningStatus());
         Assert.Equal(99.0, aBuilder.ToleranceReached());
@@ -341,6 +343,6 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         // a second Perform builds a new wire and leaves the first unchanged
         aBuilder.Perform();
         Assert.False(aWire.IsSame(aBuilder.Shape()));
-        Assert.True(new BRepCheck_Analyzer(aWire).IsValid());
+        Assert.True(new Analyzer(aWire).IsValid());
     }
 }

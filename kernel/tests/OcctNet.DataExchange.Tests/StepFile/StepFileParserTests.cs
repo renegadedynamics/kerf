@@ -40,7 +40,7 @@ public class StepFileParserTests
         Assert.True(aData.GetRecordDescription(out string? anIdent, out string? aType, out int aNbArg));
         Assert.Equal(("$1", "/* (SUB) */", 1), (anIdent, aType, aNbArg));
         Assert.True(aData.GetArgDescription(out Interface_ParamType anArgType, out string? aValue));
-        Assert.Equal((Interface_ParamText, "'d'"), (anArgType, aValue));
+        Assert.Equal((Interface_ParamType.Interface_ParamText, "'d'"), (anArgType, aValue));
         Assert.False(aData.GetArgDescription(out _, out _));
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
@@ -54,19 +54,19 @@ public class StepFileParserTests
             anArgs.Add((anArgType, aValue));
         }
 
-        Assert.Equal([(Interface_ParamReal, "0."), (Interface_ParamReal, "1.E+00"), (Interface_ParamReal, "-2.5")], anArgs);
+        Assert.Equal([(Interface_ParamType.Interface_ParamReal, "0."), (Interface_ParamType.Interface_ParamReal, "1.E+00"), (Interface_ParamType.Interface_ParamReal, "-2.5")], anArgs);
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
         Assert.Equal(("#1", "CARTESIAN_POINT"), (anIdent, aType));
         Assert.True(aData.GetArgDescription(out _, out _));
         Assert.True(aData.GetArgDescription(out anArgType, out aValue));
-        Assert.Equal((Interface_ParamSub, "$1"), (anArgType, aValue));
+        Assert.Equal((Interface_ParamType.Interface_ParamSub, "$1"), (anArgType, aValue));
         aData.NextRecord();
         aData.GetRecordDescription(out anIdent, out aType, out _);
         Assert.Equal(("#2", "VERTEX_POINT"), (anIdent, aType));
         aData.GetArgDescription(out _, out _);
         aData.GetArgDescription(out anArgType, out aValue);
-        Assert.Equal((Interface_ParamIdent, "#1"), (anArgType, aValue));
+        Assert.Equal((Interface_ParamType.Interface_ParamIdent, "#1"), (anArgType, aValue));
         aData.NextRecord();
         Assert.False(aData.GetRecordDescription(out _, out _, out _));
     }

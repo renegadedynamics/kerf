@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -15,9 +16,9 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void LocFunction_DN_IsTheVectorThenTheColumns()
     {
-        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
+        var aLaw = new CurveAndTrihedron(new DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
         aLaw.SetCurve(new CurveAdaptor(WavyCurve()));
-        var aFunc = new GeomFill_LocFunction(aLaw);
+        var aFunc = new LocFunction(aLaw);
 
         var P = new NCollection_Array1<Point2D>(1, 1);
         var DP = new NCollection_Array1<Vector2D>(1, 1);
@@ -52,9 +53,9 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void LocFunction_DN_ReportsAFailedLaw()
     {
-        var aLaw = new GeomFill_CurveAndTrihedron(new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
+        var aLaw = new CurveAndTrihedron(new DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
         aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1));
-        var aFunc = new GeomFill_LocFunction(aLaw);
+        var aFunc = new LocFunction(aLaw);
         var aRes = new double[12];
         int anIer = 0;
         aFunc.DN(0.5, 0, 1, 0, aRes, ref anIer);
@@ -99,7 +100,7 @@ public class GeomFill_FunctionsTests
     {
         var aSurf = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(Constants.XOY()), 5));
         var aGen = new CurveAdaptor(new LineCurve3D(new Point3D(1, 2, 0), new Direction3D(1, 1, -1)));
-        var E = new GeomFill_FunctionDraft(aSurf, aGen);
+        var E = new FunctionDraft(aSurf, aGen);
         Assert.Equal(3, E.NbVariables());
         Assert.Equal(3, E.NbEquations());
         var X = new math_Vector(1, 3);
@@ -109,7 +110,7 @@ public class GeomFill_FunctionsTests
         CheckDerivatives(E, X, 1e-6);
 
         // the second derivatives in (u, v) are the surface's, negated
-        var T = new GeomFill_Tensor(3, 3, 3);
+        var T = new SurfaceTensor(3, 3, 3);
         Assert.True(E.Deriv2X(X, T));
         aSurf.D2(0.4, -0.3, out _, out _, out _, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
         for (int i = 1; i <= 3; i++)
@@ -134,7 +135,7 @@ public class GeomFill_FunctionsTests
     [Fact]
     public void Tensor_Multiply()
     {
-        var T = new GeomFill_Tensor(2, 3, 2);
+        var T = new SurfaceTensor(2, 3, 2);
         T.Init(1.0);
         T[2, 3, 2] = 5.0;
         T.ChangeValue(1, 1, 1) = 2.0;
@@ -152,9 +153,9 @@ public class GeomFill_FunctionsTests
     public void FunctionGuide_DerivativesMatchFiniteDifferences()
     {
         // a constant section: the radial segment [0, 3] along X, revolved about the path's tangent
-        var aSection = new GeomFill_UniformSection(new TrimmedCurve3D(new LineCurve3D(Constants.OX()), 0, 3));
+        var aSection = new UniformSection(new TrimmedCurve3D(new LineCurve3D(Constants.OX()), 0, 3));
         var aGuide = new CurveAdaptor(new LineCurve3D(new Point3D(1, 1, 0), new Direction3D(0, 0.3, 1)));
-        var E = new GeomFill_FunctionGuide(aSection, aGuide);
+        var E = new FunctionGuide(aSection, aGuide);
         E.SetParam(0.0, new Point3D(0, 0, 1), new Xyz(0, 0, 1), new Xyz(1, 0, 0));
         var X = new math_Vector(1, 3);
         X[1] = 0.8;

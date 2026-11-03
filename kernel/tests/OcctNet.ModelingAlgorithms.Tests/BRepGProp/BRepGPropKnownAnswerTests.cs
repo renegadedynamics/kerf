@@ -58,19 +58,19 @@ public class BRepGPropKnownAnswerTests
         Shape aCube = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var aCentre = new Point3D(0.5, 0.5, 0.5);
 
-        Properties aV = BRepGProp.VolumeProperties(aCube);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aCube);
         Assert.Equal(1.0, aV.Mass(), Tol);
         AssertPnt(aCentre, aV.CentreOfMass());
         AssertMat(Diag(1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0), aV.MatrixOfInertia(), Tol);
         Assert.Equal(1.0 / 6.0, aV.MomentOfInertia(new Axis3D(aCentre, new Direction3D(1, 1, 1))), Tol);
 
-        Properties aS = BRepGProp.SurfaceProperties(aCube);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aCube);
         Assert.Equal(6.0, aS.Mass(), Tol);
         AssertPnt(aCentre, aS.CentreOfMass());
         // about X: the two faces across X give 1/12 + 1/12 each, the four others 1/4 + 1/12 each: 5/3
         AssertMat(Diag(5.0 / 3.0, 5.0 / 3.0, 5.0 / 3.0), aS.MatrixOfInertia(), Tol);
 
-        Properties aL = BRepGProp.LinearProperties(aCube, true);
+        Properties aL = MassPropertiesBuilder.LinearProperties(aCube, true);
         Assert.Equal(12.0, aL.Mass(), Tol);
         AssertPnt(aCentre, aL.CentreOfMass());
     }
@@ -79,7 +79,7 @@ public class BRepGPropKnownAnswerTests
     public void Box_inertia_is_the_closed_form()
     {
         double a = 2, b = 3, c = 4, m = a * b * c;
-        Properties aV = BRepGProp.VolumeProperties(TestShapes.Frozen(TestShapes.Box(a, b, c)));
+        Properties aV = MassPropertiesBuilder.VolumeProperties(TestShapes.Frozen(TestShapes.Box(a, b, c)));
         Assert.Equal(m, aV.Mass(), 1e-12);
         AssertPnt(new Point3D(1, 1.5, 2), aV.CentreOfMass(), 1e-12);
         AssertMat(Diag(m * (b * b + c * c) / 12, m * (a * a + c * c) / 12, m * (a * a + b * b) / 12), aV.MatrixOfInertia(), 1e-10);
@@ -97,28 +97,28 @@ public class BRepGPropKnownAnswerTests
         Shape aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
         Shape aMoved = aBox.Moved(aLoc);
 
-        Properties aRef = BRepGProp.VolumeProperties(aBox);
-        Properties aV = BRepGProp.VolumeProperties(aMoved);
+        Properties aRef = MassPropertiesBuilder.VolumeProperties(aBox);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aMoved);
         Assert.Equal(24.0, aV.Mass(), 1e-11);
         AssertPnt(aRef.CentreOfMass().Transformed(aT), aV.CentreOfMass(), 1e-11);
         Matrix3x3 aR = aT.VectorialPart();
         AssertMat(aR.Multiplied(aRef.MatrixOfInertia()).Multiplied(aR.Transposed()), aV.MatrixOfInertia(), 1e-9);
 
-        Assert.Equal(52.0, BRepGProp.SurfaceProperties(aMoved).Mass(), 1e-11);
-        Assert.Equal(36.0, BRepGProp.LinearProperties(aMoved, true).Mass(), 1e-11);
-        AssertPnt(BRepGProp.LinearProperties(aBox, true).CentreOfMass().Transformed(aT),
-                  BRepGProp.LinearProperties(aMoved, true).CentreOfMass(), 1e-11);
+        Assert.Equal(52.0, MassPropertiesBuilder.SurfaceProperties(aMoved).Mass(), 1e-11);
+        Assert.Equal(36.0, MassPropertiesBuilder.LinearProperties(aMoved, true).Mass(), 1e-11);
+        AssertPnt(MassPropertiesBuilder.LinearProperties(aBox, true).CentreOfMass().Transformed(aT),
+                  MassPropertiesBuilder.LinearProperties(aMoved, true).CentreOfMass(), 1e-11);
     }
 
     [Fact]
     public void Reversed_solid_has_a_negative_volume()
     {
         Shape aCube = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        Properties aV = BRepGProp.VolumeProperties(aCube.Reversed());
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aCube.Reversed());
         Assert.Equal(-6.0, aV.Mass(), 1e-12);
         AssertPnt(new Point3D(0.5, 1, 1.5), aV.CentreOfMass(), 1e-12);
         // the area doesn't depend on the orientation
-        Assert.Equal(22.0, BRepGProp.SurfaceProperties(aCube.Reversed()).Mass(), 1e-12);
+        Assert.Equal(22.0, MassPropertiesBuilder.SurfaceProperties(aCube.Reversed()).Mass(), 1e-12);
     }
 
     [Fact]
@@ -126,8 +126,8 @@ public class BRepGPropKnownAnswerTests
     {
         Shape aCube = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         var aProps = new Properties(new Point3D(100, 100, 100));
-        aProps.Add(BRepGProp.VolumeProperties(aCube), 3.0);
-        BRepGProp.VolumeProperties(aCube, aProps);
+        aProps.Add(MassPropertiesBuilder.VolumeProperties(aCube), 3.0);
+        MassPropertiesBuilder.VolumeProperties(aCube, aProps);
         Assert.Equal(1.0, aProps.Mass(), Tol);
         AssertPnt(new Point3D(0.5, 0.5, 0.5), aProps.CentreOfMass());
     }
@@ -142,7 +142,7 @@ public class BRepGPropKnownAnswerTests
         var aL2 = new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)));
         Shape aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(aL1), aBox.Moved(aL2)));
 
-        Properties aV = BRepGProp.VolumeProperties(aC);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aC);
         Assert.Equal(18.0, aV.Mass(), 1e-11);
         var aC0 = new Point3D(0.5, 1, 1.5);
         Xyz anExpected = (aC0.XYZ() + aC0.Transformed(aL1.Transformation()).XYZ() + aC0.Transformed(aL2.Transformation()).XYZ()) / 3.0;
@@ -150,9 +150,9 @@ public class BRepGPropKnownAnswerTests
 
         // the same as adding the instances one by one
         var aSum = new Properties();
-        aSum.Add(BRepGProp.VolumeProperties(aBox));
-        aSum.Add(BRepGProp.VolumeProperties(aBox.Moved(aL1)));
-        aSum.Add(BRepGProp.VolumeProperties(aBox.Moved(aL2)));
+        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox));
+        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.Moved(aL1)));
+        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.Moved(aL2)));
         AssertMat(aSum.MatrixOfInertia(), aV.MatrixOfInertia(), 1e-9);
     }
 
@@ -163,19 +163,19 @@ public class BRepGPropKnownAnswerTests
 
         // a reversed instance cancels the first one
         Shape aC1 = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Reversed()));
-        Assert.Equal(0.0, BRepGProp.VolumeProperties(aC1).Mass(), 1e-12);
+        Assert.Equal(0.0, MassPropertiesBuilder.VolumeProperties(aC1).Mass(), 1e-12);
 
         // a scaled instance is integrated face by face
         var aScale = new Placement(Transform3D.Scale(new Point3D(0, 0, 0), 2.0));
         Shape aC2 = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(aScale)));
-        Assert.Equal(6.0 + 48.0, BRepGProp.VolumeProperties(aC2).Mass(), 1e-10);
+        Assert.Equal(6.0 + 48.0, MassPropertiesBuilder.VolumeProperties(aC2).Mass(), 1e-10);
 
         // twice in place: SkipShared counts it once
         Shape aC3 = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox));
-        Assert.Equal(12.0, BRepGProp.VolumeProperties(aC3).Mass(), 1e-11);
-        Assert.Equal(6.0, BRepGProp.VolumeProperties(aC3, false, true).Mass(), 1e-11);
-        Assert.Equal(44.0, BRepGProp.SurfaceProperties(aC3).Mass(), 1e-11);
-        Assert.Equal(22.0, BRepGProp.SurfaceProperties(aC3, true).Mass(), 1e-11);
+        Assert.Equal(12.0, MassPropertiesBuilder.VolumeProperties(aC3).Mass(), 1e-11);
+        Assert.Equal(6.0, MassPropertiesBuilder.VolumeProperties(aC3, false, true).Mass(), 1e-11);
+        Assert.Equal(44.0, MassPropertiesBuilder.SurfaceProperties(aC3).Mass(), 1e-11);
+        Assert.Equal(22.0, MassPropertiesBuilder.SurfaceProperties(aC3, true).Mass(), 1e-11);
     }
 
     [Fact]
@@ -190,8 +190,8 @@ public class BRepGPropKnownAnswerTests
 
         // the shared-solid path (cache and free faces) agrees with the face-by-face path; the free face's
         // contribution depends on the reference point, which is the same for both
-        Properties aV1 = BRepGProp.VolumeProperties(aShared);
-        Properties aV2 = BRepGProp.VolumeProperties(aDistinct);
+        Properties aV1 = MassPropertiesBuilder.VolumeProperties(aShared);
+        Properties aV2 = MassPropertiesBuilder.VolumeProperties(aDistinct);
         Assert.Equal(aV2.Mass(), aV1.Mass(), 1e-12);
         AssertPnt(aV2.CentreOfMass(), aV1.CentreOfMass(), 1e-11);
         AssertMat(aV2.MatrixOfInertia(), aV1.MatrixOfInertia(), 1e-10);
@@ -205,17 +205,17 @@ public class BRepGPropKnownAnswerTests
         double r = 2, h = 3, m = Math.PI * r * r * h;
         Shape aCyl = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(r, h));
 
-        Properties aV = BRepGProp.VolumeProperties(aCyl);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aCyl);
         Assert.Equal(m, aV.Mass(), 1e-9);
         AssertPnt(new Point3D(0, 0, h / 2), aV.CentreOfMass(), 1e-9);
         AssertMat(Diag(m * (3 * r * r + h * h) / 12, m * (3 * r * r + h * h) / 12, m * r * r / 2), aV.MatrixOfInertia(), 1e-8);
         Assert.True(aV.PrincipalProperties().HasSymmetryAxis());
 
-        Properties aS = BRepGProp.SurfaceProperties(aCyl);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aCyl);
         Assert.Equal(2 * Math.PI * r * r + 2 * Math.PI * r * h, aS.Mass(), 1e-9);
         AssertPnt(new Point3D(0, 0, h / 2), aS.CentreOfMass(), 1e-9);
 
-        Properties aL = BRepGProp.LinearProperties(aCyl, true);
+        Properties aL = MassPropertiesBuilder.LinearProperties(aCyl, true);
         Assert.Equal(2 * 2 * Math.PI * r + h, aL.Mass(), 1e-9);
     }
 
@@ -225,13 +225,13 @@ public class BRepGPropKnownAnswerTests
         double r = 2, m = 4.0 / 3.0 * Math.PI * r * r * r, a = 4 * Math.PI * r * r;
         Shape aSphere = TestShapes.Frozen(BRepGPropTestShapes.SphereSolid(r));
 
-        Properties aV = BRepGProp.VolumeProperties(aSphere);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aSphere);
         Assert.Equal(m, aV.Mass(), 1e-9);
         AssertPnt(new Point3D(0, 0, 0), aV.CentreOfMass(), 1e-9);
         AssertMat(Diag(0.4 * m * r * r, 0.4 * m * r * r, 0.4 * m * r * r), aV.MatrixOfInertia(), 1e-8);
         Assert.True(aV.PrincipalProperties().HasSymmetryPoint());
 
-        Properties aS = BRepGProp.SurfaceProperties(aSphere);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aSphere);
         Assert.Equal(a, aS.Mass(), 1e-9);
         AssertMat(Diag(2.0 / 3.0 * a * r * r, 2.0 / 3.0 * a * r * r, 2.0 / 3.0 * a * r * r), aS.MatrixOfInertia(), 1e-8);
     }
@@ -245,18 +245,18 @@ public class BRepGPropKnownAnswerTests
         // upper hemisphere: 2 Pi r^2, centroid r/2 above the centre
         Face aHemi = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(
             new TrimmedSurface(aSphere, 0, 2 * Math.PI, 0, Math.PI / 2)));
-        Properties aS = BRepGProp.SurfaceProperties(aHemi);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aHemi);
         Assert.Equal(2 * Math.PI * r * r, aS.Mass(), 1e-9);
         AssertPnt(new Point3D(1, 2, 3 + r / 2), aS.CentreOfMass(), 1e-9);
 
         // a quarter of the upper hemisphere: r^2 (Pi / 2) (sin(Pi/2) - sin(0))
         Face aPatch = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(
             new TrimmedSurface(aSphere, 0, Math.PI / 2, 0, Math.PI / 2)));
-        Assert.Equal(r * r * Math.PI / 2, BRepGProp.SurfaceProperties(aPatch).Mass(), 1e-9);
+        Assert.Equal(r * r * Math.PI / 2, MassPropertiesBuilder.SurfaceProperties(aPatch).Mass(), 1e-9);
 
         // adaptive integration gives the same area within its error
         var aProps = new Properties();
-        double anError = BRepGProp.SurfaceProperties(aPatch, aProps, 1.0e-8);
+        double anError = MassPropertiesBuilder.SurfaceProperties(aPatch, aProps, 1.0e-8);
         Assert.Equal(r * r * Math.PI / 2, aProps.Mass(), 1e-7);
         Assert.True(anError >= 0.0 && anError < 1e-6);
     }
@@ -300,20 +300,20 @@ public class BRepGPropKnownAnswerTests
     public void Holed_face_area_centre_and_boundary_length()
     {
         Face aF = HoledSquare();
-        Properties aS = BRepGProp.SurfaceProperties(aF);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aF);
         Assert.Equal(92.0, aS.Mass(), 1e-11);
         AssertPnt(new Point3D((100 * 5 - 8 * 3) / 92.0, (100 * 5 - 8 * 5) / 92.0, 0), aS.CentreOfMass(), 1e-11);
 
-        Properties aL = BRepGProp.LinearProperties(aF);
+        Properties aL = MassPropertiesBuilder.LinearProperties(aF);
         Assert.Equal(40.0 + 12.0, aL.Mass(), 1e-11);
 
         // the same through the adaptive form
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(aF, aProps, 1e-9);
+        MassPropertiesBuilder.SurfaceProperties(aF, aProps, 1e-9);
         Assert.Equal(92.0, aProps.Mass(), 1e-9);
 
         // reversing the face doesn't change its area
-        Assert.Equal(92.0, BRepGProp.SurfaceProperties(aF.Reversed()).Mass(), 1e-11);
+        Assert.Equal(92.0, MassPropertiesBuilder.SurfaceProperties(aF.Reversed()).Mass(), 1e-11);
     }
 
     // The adaptive and Gauss-Kronrod forms
@@ -324,12 +324,12 @@ public class BRepGPropKnownAnswerTests
         double r = 2, h = 3;
         Shape aCyl = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(r, h));
         var aProps = new Properties();
-        double anError = BRepGProp.VolumeProperties(aCyl, aProps, 1e-8);
+        double anError = MassPropertiesBuilder.VolumeProperties(aCyl, aProps, 1e-8);
         Assert.Equal(Math.PI * r * r * h, aProps.Mass(), 1e-7);
         Assert.True(anError >= 0.0 && anError < 1e-6, $"error {anError}");
 
         Shape aCube = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        BRepGProp.VolumeProperties(aCube, aProps, 1e-6, true);
+        MassPropertiesBuilder.VolumeProperties(aCube, aProps, 1e-6, true);
         Assert.Equal(1.0, aProps.Mass(), 1e-9);
     }
 
@@ -338,7 +338,7 @@ public class BRepGPropKnownAnswerTests
     {
         Shape aCube = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aProps = new Properties();
-        double anError = BRepGProp.VolumePropertiesGK(aCube, aProps, 1e-6, false, false, true, true);
+        double anError = MassPropertiesBuilder.VolumePropertiesGK(aCube, aProps, 1e-6, false, false, true, true);
         Assert.Equal(6.0, aProps.Mass(), 1e-9);
         AssertPnt(new Point3D(0.5, 1, 1.5), aProps.CentreOfMass(), 1e-9);
         AssertMat(Diag(6 * 13 / 12.0, 6 * 10 / 12.0, 6 * 5 / 12.0), aProps.MatrixOfInertia(), 1e-8);
@@ -346,13 +346,13 @@ public class BRepGPropKnownAnswerTests
 
         double r = 2, h = 3;
         Shape aCyl = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(r, h));
-        BRepGProp.VolumePropertiesGK(aCyl, aProps, 1e-8, true, true, true);
+        MassPropertiesBuilder.VolumePropertiesGK(aCyl, aProps, 1e-8, true, true, true);
         Assert.Equal(Math.PI * r * r * h, aProps.Mass(), 1e-6);
         AssertPnt(new Point3D(0, 0, h / 2), aProps.CentreOfMass(), 1e-6);
 
         // the region between the faces of a closed shell and any plane is the enclosed volume
         var aPln = new Plane3D(new Point3D(0, 0, -5), new Direction3D(1, 2, 2));
-        BRepGProp.VolumePropertiesGK(aCube, aProps, aPln, 1e-6, false, false, true);
+        MassPropertiesBuilder.VolumePropertiesGK(aCube, aProps, aPln, 1e-6, false, false, true);
         Assert.Equal(6.0, aProps.Mass(), 1e-8);
         AssertPnt(new Point3D(0.5, 1, 1.5), aProps.CentreOfMass(), 1e-8);
     }
@@ -375,14 +375,14 @@ public class BRepGPropKnownAnswerTests
         }
 
         Shape aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, BRepGPropTestShapes.SolidOf(anOpen)));
-        Assert.Equal(1.0, BRepGProp.VolumeProperties(aC, true).Mass(), 1e-12);
+        Assert.Equal(1.0, MassPropertiesBuilder.VolumeProperties(aC, true).Mass(), 1e-12);
 
         var aProps = new Properties();
-        Assert.True(BRepGProp.VolumePropertiesGK(aC, aProps, 1e-6, true) >= 0.0);
+        Assert.True(MassPropertiesBuilder.VolumePropertiesGK(aC, aProps, 1e-6, true) >= 0.0);
         Assert.Equal(1.0, aProps.Mass(), 1e-9);
 
         // no closed shell: GK returns -1
-        Assert.Equal(-1.0, BRepGProp.VolumePropertiesGK(TestShapes.Frozen(anOpen), aProps, 1e-6, true));
+        Assert.Equal(-1.0, MassPropertiesBuilder.VolumePropertiesGK(TestShapes.Frozen(anOpen), aProps, 1e-6, true));
     }
 
     // Meshes
@@ -394,28 +394,28 @@ public class BRepGPropKnownAnswerTests
         BRepGPropTestShapes.AttachQuadMeshes(aBox);
         Shape aMeshed = TestShapes.Frozen(aBox);
 
-        Properties aV = BRepGProp.VolumeProperties(aMeshed, false, false, true);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aMeshed, false, false, true);
         Assert.Equal(6.0, aV.Mass(), 1e-12);
         AssertPnt(new Point3D(0.5, 1, 1.5), aV.CentreOfMass(), 1e-12);
         AssertMat(Diag(6 * 13 / 12.0, 6 * 10 / 12.0, 6 * 5 / 12.0), aV.MatrixOfInertia(), 1e-11);
 
-        Properties aS = BRepGProp.SurfaceProperties(aMeshed, false, true);
+        Properties aS = MassPropertiesBuilder.SurfaceProperties(aMeshed, false, true);
         Assert.Equal(22.0, aS.Mass(), 1e-12);
         AssertPnt(new Point3D(0.5, 1, 1.5), aS.CentreOfMass(), 1e-12);
 
         // located: the rotation path, and a scale (the copy path)
         Placement aLoc = RigidLocation();
-        Properties aVL = BRepGProp.VolumeProperties(aMeshed.Moved(aLoc), false, false, true);
+        Properties aVL = MassPropertiesBuilder.VolumeProperties(aMeshed.Moved(aLoc), false, false, true);
         Assert.Equal(6.0, aVL.Mass(), 1e-11);
         AssertPnt(new Point3D(0.5, 1, 1.5).Transformed(aLoc.Transformation()), aVL.CentreOfMass(), 1e-11);
         Matrix3x3 aR = aLoc.Transformation().VectorialPart();
         AssertMat(aR.Multiplied(aV.MatrixOfInertia()).Multiplied(aR.Transposed()), aVL.MatrixOfInertia(), 1e-9);
 
         var aScale = new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0));
-        Properties aVS = BRepGProp.VolumeProperties(aMeshed.Moved(aScale), false, false, true);
+        Properties aVS = MassPropertiesBuilder.VolumeProperties(aMeshed.Moved(aScale), false, false, true);
         Assert.Equal(48.0, aVS.Mass(), 1e-11);
         AssertPnt(new Point3D(0, 1, 2), aVS.CentreOfMass(), 1e-11);
-        Assert.Equal(88.0, BRepGProp.SurfaceProperties(aMeshed.Moved(aScale), false, true).Mass(), 1e-11);
+        Assert.Equal(88.0, MassPropertiesBuilder.SurfaceProperties(aMeshed.Moved(aScale), false, true).Mass(), 1e-11);
     }
 
     [Fact]
@@ -431,13 +431,13 @@ public class BRepGPropKnownAnswerTests
         }
 
         Shape aTetra = TestShapes.Frozen(BRepGPropTestShapes.SolidOf(aShell));
-        Properties aV = BRepGProp.VolumeProperties(aTetra);
+        Properties aV = MassPropertiesBuilder.VolumeProperties(aTetra);
         Assert.Equal(1.0 / 6.0, aV.Mass(), 1e-14);
         AssertPnt(new Point3D(0.25, 0.25, 0.25), aV.CentreOfMass(), 1e-14);
-        Assert.Equal(1.5 + Math.Sqrt(3) / 2, BRepGProp.SurfaceProperties(aTetra).Mass(), 1e-14);
+        Assert.Equal(1.5 + Math.Sqrt(3) / 2, MassPropertiesBuilder.SurfaceProperties(aTetra).Mass(), 1e-14);
 
         Edge aPolyline = TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new(0, 0, 0), new(3, 0, 0), new(3, 4, 0)));
-        Properties aL = BRepGProp.LinearProperties(aPolyline);
+        Properties aL = MassPropertiesBuilder.LinearProperties(aPolyline);
         Assert.Equal(7.0, aL.Mass(), 1e-14);
         AssertPnt(new Point3D((3 * 1.5 + 4 * 3) / 7.0, 4 * 2 / 7.0, 0), aL.CentreOfMass(), 1e-14);
     }
@@ -449,7 +449,7 @@ public class BRepGPropKnownAnswerTests
         aNodes[1] = new Point3D(0, 0, 0);
         aNodes[2] = new Point3D(0, 0, 0); // a null segment is skipped
         aNodes[3] = new Point3D(0, 0, 2);
-        var aMC = new BRepGProp_MeshCinert();
+        var aMC = new MeshCinert();
         aMC.SetLocation(new Point3D(1, 1, 1));
         aMC.Perform(aNodes);
         Assert.Equal(2.0, aMC.Mass(), 1e-15);
@@ -463,15 +463,15 @@ public class BRepGPropKnownAnswerTests
         aTri.SetNode(2, new Point3D(3, 0, 0));
         aTri.SetNode(3, new Point3D(0, 3, 0));
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
-        var aMP = new BRepGProp_MeshProps(BRepGProp_MeshProps.BRepGProp_MeshObjType.Sinert);
+        var aMP = new MeshProps(MeshProps.BRepGProp_MeshObjType.Sinert);
         aMP.SetLocation(new Point3D(0, 0, 0));
         aMP.Perform(aTri, Forward);
         Assert.Equal(4.5, aMP.Mass(), 1e-14);
         AssertPnt(new Point3D(1, 1, 0), aMP.CentreOfMass(), 1e-14);
-        Assert.Equal(BRepGProp_MeshProps.BRepGProp_MeshObjType.Sinert, aMP.GetMeshObjType());
+        Assert.Equal(MeshProps.BRepGProp_MeshObjType.Sinert, aMP.GetMeshObjType());
 
         // a pyramid from (0, 0, 1) on it: volume base * height / 3, negative seen from above when reversed
-        var aMV = new BRepGProp_MeshProps(BRepGProp_MeshProps.BRepGProp_MeshObjType.Vinert);
+        var aMV = new MeshProps(MeshProps.BRepGProp_MeshObjType.Vinert);
         aMV.SetLocation(new Point3D(0, 0, 1));
         aMV.Perform(aTri, Reversed);
         Assert.Equal(1.5, aMV.Mass(), 1e-14);
@@ -484,7 +484,7 @@ public class BRepGPropKnownAnswerTests
 
         // a degenerate triangle adds nothing
         Span<double> aGProps = stackalloc double[10];
-        BRepGProp_MeshProps.CalculateProps(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0), new Point3D(0, 0, 0),
+        MeshProps.CalculateProps(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0), new Point3D(0, 0, 0),
                                            false, aGProps, 1, [1.0 / 3.0, 1.0 / 3.0, 0.5]);
         Assert.Equal(0.0, aGProps[0]);
     }
@@ -496,7 +496,7 @@ public class BRepGPropKnownAnswerTests
     {
         Shape aCyl = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2, 3));
         Face aLateral = BRepGPropTestShapes.Faces(aCyl)[0];
-        var aBF = new BRepGProp_Face(aLateral);
+        var aBF = new FaceIntegrand(aLateral);
         aBF.Bounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal(0.0, u1, 1e-12);
         Assert.Equal(2 * Math.PI, u2, 1e-12);
@@ -517,12 +517,12 @@ public class BRepGPropKnownAnswerTests
         Assert.True(aBF.GetFace().IsSame(aLateral));
 
         // reversed: the normal turns
-        var aBR = new BRepGProp_Face(ShapeCasts.Face(aLateral.Reversed()));
+        var aBR = new FaceIntegrand(ShapeCasts.Face(aLateral.Reversed()));
         aBR.Normal(0.0, 1.0, out _, out Vector3D aNR);
         Assert.True(aNR.X() < 0);
 
         // the boundary arcs: the edges' pcurves, and the sides of the UV rectangle
-        var aBD = new BRepGProp_Domain(aLateral);
+        var aBD = new Domain(aLateral);
         int aNb = 0;
         for (; aBD.More(); aBD.Next())
         {
@@ -567,7 +567,7 @@ public class BRepGPropKnownAnswerTests
         aB.Add(aF, aW);
         Face aFace = TestShapes.Frozen(aF);
 
-        var aD = new BRepGProp_Domain(aFace);
+        var aD = new Domain(aFace);
         var anOrientations = new List<Orientation>();
         for (; aD.More(); aD.Next())
         {
@@ -588,20 +588,20 @@ public class BRepGPropKnownAnswerTests
     {
         // OCCT: BRepGProp_Gauss::convert clears the mass and centre of a region bounded by a plane (occt-issues.md)
         Face aTop = BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(1, 1, 1)))[1];
-        var aBF = new BRepGProp_Face(aTop);
-        var aBD = new BRepGProp_Domain(aTop);
+        var aBF = new FaceIntegrand(aTop);
+        var aBD = new Domain(aTop);
         var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aV = new BRepGProp_Vinert(aBF, aBD, aPln, new Point3D(0, 0, 0));
+        var aV = new Vinert(aBF, aBD, aPln, new Point3D(0, 0, 0));
         Assert.Equal(0.0, aV.Mass());
 
         // by point it is the pyramid on the face: base 1, height 1
         aBD.Init();
-        var aVP = new BRepGProp_Vinert(aBF, aBD, new Point3D(0, 0, 0));
+        var aVP = new Vinert(aBF, aBD, new Point3D(0, 0, 0));
         Assert.Equal(1.0 / 3.0, aVP.Mass(), 1e-14);
 
         // the Gauss-Kronrod form by plane is right: the prism down to z = 0
         aBD.Init();
-        var aGK = new BRepGProp_VinertGK(aBF, aBD, aPln, new Point3D(0, 0, 0), 1e-8, true);
+        var aGK = new VinertGK(aBF, aBD, aPln, new Point3D(0, 0, 0), 1e-8, true);
         Assert.Equal(1.0, aGK.Mass(), 1e-9);
         AssertPnt(new Point3D(0.5, 0.5, 0.5), aGK.CentreOfMass(), 1e-9);
         Assert.Equal(aGK.GetErrorReached() * aGK.Mass(), aGK.GetAbsolutError(), 1e-20);
@@ -611,8 +611,8 @@ public class BRepGPropKnownAnswerTests
     public void Gauss_asserts_the_type()
     {
         Face aF = BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(1, 1, 1)))[0];
-        var aBF = new BRepGProp_Face(aF);
-        var aGauss = new BRepGProp_Gauss(BRepGProp_Gauss.BRepGProp_GaussType.Vinert);
+        var aBF = new FaceIntegrand(aF);
+        var aGauss = new MeasurementGauss(MeasurementGauss.BRepGProp_GaussType.Vinert);
         double aMass = 0;
         Point3D aG = new();
         Matrix3x3 anI = new();

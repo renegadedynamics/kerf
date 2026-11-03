@@ -30,25 +30,25 @@ internal class RWStepVisual_RWSurfaceStyleRenderingWithProperties
 
         // Inherited fields of SurfaceStyleRendering
 
-        StepVisual_ShadingSurfaceMethod aSurfaceStyleRendering_RenderingMethod = StepVisual_ssmNormalShading;
-        if (data.ParamType(num, 1) == Interface_ParamEnum)
+        StepVisual_ShadingSurfaceMethod aSurfaceStyleRendering_RenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmNormalShading;
+        if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
             if (string.CompareOrdinal(text, ".CONSTANT_SHADING.") != 0)
             {
-                aSurfaceStyleRendering_RenderingMethod = StepVisual_ssmConstantShading;
+                aSurfaceStyleRendering_RenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmConstantShading;
             }
             else if (string.CompareOrdinal(text, ".COLOUR_SHADING.") != 0)
             {
-                aSurfaceStyleRendering_RenderingMethod = StepVisual_ssmColourShading;
+                aSurfaceStyleRendering_RenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmColourShading;
             }
             else if (string.CompareOrdinal(text, ".DOT_SHADING.") != 0)
             {
-                aSurfaceStyleRendering_RenderingMethod = StepVisual_ssmDotShading;
+                aSurfaceStyleRendering_RenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmDotShading;
             }
             else if (string.CompareOrdinal(text, ".NORMAL_SHADING.") != 0)
             {
-                aSurfaceStyleRendering_RenderingMethod = StepVisual_ssmNormalShading;
+                aSurfaceStyleRendering_RenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmNormalShading;
             }
             else
             {
@@ -90,16 +90,16 @@ internal class RWStepVisual_RWSurfaceStyleRenderingWithProperties
 
         switch (ent.RenderingMethod())
         {
-            case StepVisual_ssmConstantShading:
+            case StepVisual_ShadingSurfaceMethod.StepVisual_ssmConstantShading:
                 SW.SendEnum(".CONSTANT_SHADING.");
                 break;
-            case StepVisual_ssmColourShading:
+            case StepVisual_ShadingSurfaceMethod.StepVisual_ssmColourShading:
                 SW.SendEnum(".COLOUR_SHADING.");
                 break;
-            case StepVisual_ssmDotShading:
+            case StepVisual_ShadingSurfaceMethod.StepVisual_ssmDotShading:
                 SW.SendEnum(".DOT_SHADING.");
                 break;
-            case StepVisual_ssmNormalShading:
+            case StepVisual_ShadingSurfaceMethod.StepVisual_ssmNormalShading:
                 SW.SendEnum(".NORMAL_SHADING.");
                 break;
         }

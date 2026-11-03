@@ -1,5 +1,11 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -267,7 +273,7 @@ public partial class Face : Shape2D
             if (IsEmpty)
                 throw new InvalidOperationException("an empty face has no convexity");
             var surface = new FaceSurfaceAdaptor(TopoFace);
-            var outward = new BRepGProp_Face(TopoFace);
+            var outward = new FaceIntegrand(TopoFace);
             var (uMin, uMax, vMin, vMax) = UVBounds();
             double[] fractions = [0.15, 0.5, 0.85];
             var kinds = new HashSet<Convexity>();
@@ -434,7 +440,7 @@ public partial class Face : Shape2D
     {
         get
         {
-            var analysis = new ShapeAnalysis_Edge();
+            var analysis = new EdgeAnalysis();
             return Edges().FilterBy(e => analysis.IsSeam(e.TopoEdge, TopoFace));
         }
     }
@@ -489,7 +495,7 @@ public partial class Face : Shape2D
         }
         else
             bezier = new BezierSurface(poles);
-        var maker = new BRepBuilderAPI_MakeFace(bezier, global::Kerf.Engine.Foundation.Precision.Confusion());
+        var maker = new MakeFace(bezier, global::Kerf.Engine.Foundation.Precision.Confusion());
         return new Face(maker.Face());
     }
 
@@ -498,7 +504,7 @@ public partial class Face : Shape2D
     {
         plane ??= Plane.XY;
         var pln = plane.ToGpPln();
-        var maker = new BRepBuilderAPI_MakeFace(pln, -width * 0.5, width * 0.5, -height * 0.5, height * 0.5);
+        var maker = new MakeFace(pln, -width * 0.5, width * 0.5, -height * 0.5, height * 0.5);
         return new Face(maker.Face());
     }
 
@@ -511,7 +517,7 @@ public partial class Face : Shape2D
         var edges = exterior.ToList();
         if (edges.Any(e => e.IsEmpty))
             throw new ArgumentException("exterior contains empty edges");
-        var surface = new BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
+        var surface = new MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9);
         foreach (var edge in edges)
             surface.Add(edge.TopoEdge, Continuity.C0);
         var face = BuildFilling(surface, "Error building non-planar face with provided exterior");
@@ -541,7 +547,7 @@ public partial class Face : Shape2D
     public static Face MakeSurface(Wire exterior, IEnumerable<Vector>? surfacePoints = null, IEnumerable<Wire>? interiorWires = null) =>
         MakeSurface(exterior.Edges(), surfacePoints, interiorWires);
 
-    private static Face BuildFilling(BRepOffsetAPI_MakeFilling surface, string error)
+    private static Face BuildFilling(MakeFilling surface, string error)
     {
         try
         {
@@ -556,7 +562,7 @@ public partial class Face : Shape2D
 
     private static Face AddSurfaceHoles(Face surfaceFace, IEnumerable<Wire> interiorWires)
     {
-        var maker = new BRepBuilderAPI_MakeFace(surfaceFace.TopoFace);
+        var maker = new MakeFace(surfaceFace.TopoFace);
         foreach (var wire in interiorWires)
         {
             if (wire.IsEmpty)
@@ -587,26 +593,26 @@ public partial class Face : Shape2D
                 var p = points[i][j].ToGpPnt();
                 array.SetValue(i + 1, j + 1, p);
             }
-        GeomAPI_PointsToBSplineSurface builder;
+        PointsToBSplineSurface builder;
         if (smoothing is var (w1, w2, w3))
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
-            builder = new GeomAPI_PointsToBSplineSurface(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
+            builder = new PointsToBSplineSurface(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
         else
-            builder = new GeomAPI_PointsToBSplineSurface(array, minDeg, maxDeg, Continuity.C2, tolerance);
+            builder = new PointsToBSplineSurface(array, minDeg, maxDeg, Continuity.C2, tolerance);
         {
-            if (!builder.IsDone())
+            if (!builder.IsDone)
                 throw new InvalidOperationException("B-spline approximation failed");
             var surface = builder.Surface();
-            var maker = new BRepBuilderAPI_MakeFace(surface, global::Kerf.Engine.Foundation.Precision.Confusion());
+            var maker = new MakeFace(surface, global::Kerf.Engine.Foundation.Precision.Confusion());
             return new Face(maker.Face());
         }
     }
 
     /// <summary>A ruled surface between two edges.</summary>
-    public static Face MakeSurfaceFromCurves(Edge edge1, Edge edge2) => (Face)new Face().CastLike(BRepFill.Face(edge1.TopoEdge, edge2.TopoEdge));
+    public static Face MakeSurfaceFromCurves(Edge edge1, Edge edge2) => (Face)new Face().CastLike(Fill.Face(edge1.TopoEdge, edge2.TopoEdge));
 
     /// <summary>A ruled surface between two wires with the same number of edges: a face, or a shell of several.</summary>
-    public static Shape MakeSurfaceFromCurves(Wire wire1, Wire wire2) => new Face().CastLike(BRepFill.Shell(wire1.TopoWire, wire2.TopoWire));
+    public static Shape MakeSurfaceFromCurves(Wire wire1, Wire wire2) => new Face().CastLike(Fill.Shell(wire1.TopoWire, wire2.TopoWire));
 
     /// <summary>
     /// A possibly non-planar patch bounded by edges, each optionally tangent (or curvature) continuous with a support face,
@@ -621,7 +627,7 @@ public partial class Face : Shape2D
             ContinuityLevel.C1 => global::Kerf.Geometry.Continuity.G1,
             _ => global::Kerf.Geometry.Continuity.G2,
         };
-        var patch = new BRepOffsetAPI_MakeFilling();
+        var patch = new MakeFilling();
         foreach (var (edge, face, continuity) in edgeFaceConstraints ?? [])
             patch.Add(edge.TopoEdge, face.TopoFace, Continuity(continuity));
         foreach (var edge in edgeConstraints ?? [])
@@ -641,7 +647,7 @@ public partial class Face : Shape2D
     public static Face Revolve(Edge profile, double angle, Axis axis)
     {
         var ax1 = axis.ToGpAx1();
-        var builder = new BRepPrimAPI_MakeRevol(profile.TopoShape, ax1, angle * Constants.DegToRad, true);
+        var builder = new ApiMakeRevol(profile.TopoShape, ax1, angle * Constants.DegToRad, true);
         return new Face(ShapeCasts.Face(builder.Shape()));
     }
 
@@ -673,7 +679,7 @@ public partial class Face : Shape2D
             throw new ArgumentException("Use Shell.sweep for multi Edge objects");
         var profileWire = new Wire([profile.SingleEdge()]);
         var pathWire = new Wire([path.SingleEdge()]);
-        var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+        var builder = new MakePipeShell(pathWire.TopoWire);
         builder.Add(profileWire.TopoShape, false, false);
         builder.SetTransitionMode(TransitionMode(transition));
         builder.Build();
@@ -683,11 +689,11 @@ public partial class Face : Shape2D
         return SkipClean.Clean ? result.Clean() : result;
     }
 
-    internal static BRepBuilderAPI_TransitionMode TransitionMode(Transition transition) => transition switch
+    internal static TransitionMode TransitionMode(Transition transition) => transition switch
     {
-        Transition.Transformed => BRepBuilderAPI_TransitionMode.BRepBuilderAPI_Transformed,
-        Transition.Round => BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RoundCorner,
-        _ => BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RightCorner,
+        Transition.Transformed => global::Kerf.Engine.Construction.Api.TransitionMode.Transformed,
+        Transition.Round => global::Kerf.Engine.Construction.Api.TransitionMode.RoundCorner,
+        _ => global::Kerf.Engine.Construction.Api.TransitionMode.RightCorner,
     };
 
     // ---- Evaluation ----
@@ -743,7 +749,7 @@ public partial class Face : Shape2D
             return NormalAt(0.5, 0.5);
         var surface = GeomAdaptor();
         var pnt = surfacePoint.Value.ToGpPnt();
-        var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
+        var projector = new ProjectPointOnSurface(pnt, surface);
         double u = 0, v = 0;
         projector.LowerDistanceParameters(out u, out v);
         return NormalAtParameters(u, v);
@@ -754,7 +760,7 @@ public partial class Face : Shape2D
     {
         var pnt = new Point3D();
         var normal = new Vector3D();
-        var props = new BRepGProp_Face(TopoFace);
+        var props = new FaceIntegrand(TopoFace);
         props.Normal(u, v, out pnt, out normal);
         return new Vector(normal).Normalized();
     }
@@ -798,7 +804,7 @@ public partial class Face : Shape2D
         var inverse = trsf.Inverted();
         var pnt = point.ToGpPnt();
         var local = pnt.Transformed(inverse);
-        var analysis = new ShapeAnalysis_Surface(surface);
+        var analysis = new SurfaceAnalysis(surface);
         var uv = analysis.ValueOfUV(local, Constants.Tolerance);
         var separation = analysis.Gap();
         if (separation > Constants.Tolerance)
@@ -842,7 +848,7 @@ public partial class Face : Shape2D
             return LocationAt(0.5, 0.5, xDir);
         var surface = GeomAdaptor();
         var pnt = surfacePoint.Value.ToGpPnt();
-        var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
+        var projector = new ProjectPointOnSurface(pnt, surface);
         double u = 0, v = 0;
         projector.LowerDistanceParameters(out u, out v);
         return LocationAtParameters(u, v, xDir);
@@ -888,7 +894,7 @@ public partial class Face : Shape2D
         var (u0, _, v0, _) = UVBounds();
         var pnt = new Point3D();
         var normal = new Vector3D();
-        var props = new BRepGProp_Face(TopoFace);
+        var props = new FaceIntegrand(TopoFace);
         props.Normal(u0, v0, out pnt, out normal);
         return plane.Contains(new Vector(pnt)) && 1 - Math.Abs(plane.ZDir.Dot(new Vector(normal))) < Constants.Tolerance;
     }
@@ -902,7 +908,7 @@ public partial class Face : Shape2D
     /// </summary>
     public Face MakeHoles(IEnumerable<Wire> interiorWires)
     {
-        var maker = new BRepBuilderAPI_MakeFace(TopoFace);
+        var maker = new MakeFace(TopoFace);
         foreach (var wire in interiorWires)
             maker.Add(wire.TopoWire);
         Face face;
@@ -985,7 +991,7 @@ public partial class Face : Shape2D
         var intersected = new List<Shape2D>();
         if (targetObject is Face face)
         {
-            var common = new BRepAlgoAPI_Common();
+            var common = new Common();
             var shape = TopoUtil.BoolOp([extruded], [face.TopoShape], common);
             if (!shape.IsNull)
                 intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(f => new Face(ShapeCasts.Face(f))));
@@ -993,7 +999,7 @@ public partial class Face : Shape2D
         else
             foreach (var shell in targetObject.Shells())
             {
-                var common = new BRepAlgoAPI_Common();
+                var common = new Common();
                 var shape = TopoUtil.BoolOp([extruded], [shell.TopoShape], common);
                 intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => new Shell(ShapeCasts.Shell(s))));
             }

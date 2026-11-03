@@ -9,8 +9,9 @@ using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Upgrade;
 
 /// <summary>
 /// ShapeUpgrade's package functions: the conversion of a C0 B-spline curve into a sequence of C1 B-spline curves.
@@ -29,152 +30,152 @@ public static class ShapeUpgrade
     /// OCCT makes the curve non-periodic in place before splitting it. The port does so only for a curve ported code
     /// owns; a frozen curve (any a caller holds) is left as it is and a non-periodic copy is split (decision 998).
     /// </remarks>
-    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D? BS,
+    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D? bs,
                                                            ref NCollection_HSequence<BoundedCurve3D>? seqBS)
     {
-        if (BS is null || (BS.IsCN(1)))
+        if (bs is null || (bs.IsCN(1)))
         {
             return false;
         }
 
         seqBS = new NCollection_HSequence<BoundedCurve3D>();
         // OCCT.NET: copy on write of a frozen curve (decision 998)
-        if (BS.IsFrozen)
+        if (bs.IsFrozen)
         {
-            BS = (BSplineCurve3D)BS.Copy();
+            bs = (BSplineCurve3D)bs.Copy();
         }
-        BS.SetNotPeriodic(); // to have equation NbPoles = NbKnots with Multiplicities - degree - 1
+        bs.SetNotPeriodic(); // to have equation NbPoles = NbKnots with Multiplicities - degree - 1
 
-        int deg = BS.Degree();
-        NCollection_Array1<Point3D> Poles = BS.InternalPoles();
-        NCollection_Array1<double> Weights = BS.InternalWeightsArray();
-        NCollection_Array1<double> Knots = BS.InternalKnots();
-        NCollection_Array1<int> Mults = BS.InternalMultiplicities();
-        NCollection_Array1<double> KnotSequence = BS.InternalKnotSequence();
+        int deg = bs.Degree();
+        NCollection_Array1<Point3D> poles = bs.InternalPoles();
+        NCollection_Array1<double> weights = bs.InternalWeightsArray();
+        NCollection_Array1<double> knots = bs.InternalKnots();
+        NCollection_Array1<int> mults = bs.InternalMultiplicities();
+        NCollection_Array1<double> knotSequence = bs.InternalKnotSequence();
 
-        int StartKnotIndex, EndKnotIndex, j;
+        int startKnotIndex, endKnotIndex, j;
 
-        StartKnotIndex = BS.FirstUKnotIndex();
-        for (EndKnotIndex = StartKnotIndex + 1; EndKnotIndex <= BS.LastUKnotIndex(); EndKnotIndex++)
+        startKnotIndex = bs.FirstUKnotIndex();
+        for (endKnotIndex = startKnotIndex + 1; endKnotIndex <= bs.LastUKnotIndex(); endKnotIndex++)
         {
-            if ((Mults[EndKnotIndex] < deg) && (EndKnotIndex < BS.LastUKnotIndex()))
+            if ((mults[endKnotIndex] < deg) && (endKnotIndex < bs.LastUKnotIndex()))
             {
                 continue;
             }
 
-            int StartFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, StartKnotIndex, Mults, false);
+            int startFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, startKnotIndex, mults, false);
             //    StartFlatIndex += Mults (StartKnotIndex) - 1;
-            int EndFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, EndKnotIndex, Mults, false);
-            EndFlatIndex -= Mults[EndKnotIndex] - 1;
+            int endFlatIndex = global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatIndex(deg, endKnotIndex, mults, false);
+            endFlatIndex -= mults[endKnotIndex] - 1;
 
-            var TempKnots = new NCollection_Array1<double>(1, Knots.Length());
-            var TempMults = new NCollection_Array1<int>(1, Knots.Length());
-            TempMults.Init(1);
-            int TempKnotIndex = 1;
-            TempKnots[TempKnotIndex] = KnotSequence[StartFlatIndex - deg];
+            var tempKnots = new NCollection_Array1<double>(1, knots.Length());
+            var tempMults = new NCollection_Array1<int>(1, knots.Length());
+            tempMults.Init(1);
+            int tempKnotIndex = 1;
+            tempKnots[tempKnotIndex] = knotSequence[startFlatIndex - deg];
 
-            for (j = StartFlatIndex - deg + 1; j <= EndFlatIndex + deg; j++)
+            for (j = startFlatIndex - deg + 1; j <= endFlatIndex + deg; j++)
             {
-                if (Math.Abs(KnotSequence[j] - KnotSequence[j - 1]) <= Constants.Resolution())
+                if (Math.Abs(knotSequence[j] - knotSequence[j - 1]) <= Constants.Resolution())
                 {
-                    TempMults[TempKnotIndex]++;
+                    tempMults[tempKnotIndex]++;
                 }
                 else
                 {
-                    TempKnots[++TempKnotIndex] = KnotSequence[j];
+                    tempKnots[++tempKnotIndex] = knotSequence[j];
                 }
             }
 
-            int TempStartIndex = 1, TempEndIndex = TempKnotIndex;
-            if (TempMults[TempStartIndex] == 1)
+            int tempStartIndex = 1, tempEndIndex = tempKnotIndex;
+            if (tempMults[tempStartIndex] == 1)
             {
-                TempMults[++TempStartIndex]++;
+                tempMults[++tempStartIndex]++;
             }
-            if (TempMults[TempEndIndex] == 1)
+            if (tempMults[tempEndIndex] == 1)
             {
-                TempMults[--TempEndIndex]++;
-            }
-
-            int NewNbKnots = TempEndIndex - TempStartIndex + 1;
-            var newMults = new NCollection_Array1<int>(1, NewNbKnots);
-            var newKnots = new NCollection_Array1<double>(1, NewNbKnots);
-            for (j = 1; j <= NewNbKnots; j++)
-            {
-                newMults[j] = TempMults[j + TempStartIndex - 1];
-                newKnots[j] = TempKnots[j + TempStartIndex - 1];
+                tempMults[--tempEndIndex]++;
             }
 
-            int NewNbPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(deg, false, newMults);
-            var newPoles = new NCollection_Array1<Point3D>(1, NewNbPoles);
-            var newWeights = new NCollection_Array1<double>(1, NewNbPoles);
-            int PoleIndex = StartFlatIndex - deg; // Index of starting pole when splitting B-Spline is an index of starting knot
-            for (j = 1; j <= NewNbPoles; j++)
+            int newNbKnots = tempEndIndex - tempStartIndex + 1;
+            var newMults = new NCollection_Array1<int>(1, newNbKnots);
+            var newKnots = new NCollection_Array1<double>(1, newNbKnots);
+            for (j = 1; j <= newNbKnots; j++)
             {
-                newWeights[j] = Weights[j + PoleIndex - 1];
-                newPoles[j] = Poles[j + PoleIndex - 1];
+                newMults[j] = tempMults[j + tempStartIndex - 1];
+                newKnots[j] = tempKnots[j + tempStartIndex - 1];
+            }
+
+            int newNbPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(deg, false, newMults);
+            var newPoles = new NCollection_Array1<Point3D>(1, newNbPoles);
+            var newWeights = new NCollection_Array1<double>(1, newNbPoles);
+            int poleIndex = startFlatIndex - deg; // Index of starting pole when splitting B-Spline is an index of starting knot
+            for (j = 1; j <= newNbPoles; j++)
+            {
+                newWeights[j] = weights[j + poleIndex - 1];
+                newPoles[j] = poles[j + poleIndex - 1];
             }
 
             var newC = new BSplineCurve3D(newPoles, newWeights, newKnots, newMults, deg);
             seqBS.Append(newC);
 
-            StartKnotIndex = EndKnotIndex;
+            startKnotIndex = endKnotIndex;
         }
         return true;
     }
 
-    private static BSplineCurve3D BSplineCurve2dTo3d(BSplineCurve2D BS)
+    private static BSplineCurve3D BSplineCurve2dTo3d(BSplineCurve2D bs)
     {
-        int deg = BS.Degree();
-        int NbPoles = BS.PoleCount;
-        NCollection_Array1<Point2D> Poles2d = BS.InternalPoles();
-        NCollection_Array1<double> Weights = BS.InternalWeightsArray();
-        NCollection_Array1<double> Knots = BS.InternalKnots();
-        NCollection_Array1<int> Mults = BS.InternalMultiplicities();
+        int deg = bs.Degree();
+        int nbPoles = bs.PoleCount;
+        NCollection_Array1<Point2D> poles2d = bs.InternalPoles();
+        NCollection_Array1<double> weights = bs.InternalWeightsArray();
+        NCollection_Array1<double> knots = bs.InternalKnots();
+        NCollection_Array1<int> mults = bs.InternalMultiplicities();
 
-        var Poles3d = new NCollection_Array1<Point3D>(1, NbPoles);
-        for (int i = 1; i <= NbPoles; i++)
+        var poles3d = new NCollection_Array1<Point3D>(1, nbPoles);
+        for (int i = 1; i <= nbPoles; i++)
         {
-            Poles3d[i] = new Point3D(Poles2d[i].X(), Poles2d[i].Y(), 0);
+            poles3d[i] = new Point3D(poles2d[i].X(), poles2d[i].Y(), 0);
         }
 
-        var BS3d = new BSplineCurve3D(Poles3d, Weights, Knots, Mults, deg, BS.IsPeriodic);
-        return BS3d;
+        var bs3d = new BSplineCurve3D(poles3d, weights, knots, mults, deg, bs.IsPeriodic);
+        return bs3d;
     }
 
-    private static BSplineCurve2D BSplineCurve3dTo2d(BSplineCurve3D BS)
+    private static BSplineCurve2D BSplineCurve3dTo2d(BSplineCurve3D bs)
     {
-        int deg = BS.Degree();
-        int NbPoles = BS.PoleCount;
-        NCollection_Array1<Point3D> Poles3d = BS.InternalPoles();
-        NCollection_Array1<double> Weights = BS.InternalWeightsArray();
-        NCollection_Array1<double> Knots = BS.InternalKnots();
-        NCollection_Array1<int> Mults = BS.InternalMultiplicities();
+        int deg = bs.Degree();
+        int nbPoles = bs.PoleCount;
+        NCollection_Array1<Point3D> poles3d = bs.InternalPoles();
+        NCollection_Array1<double> weights = bs.InternalWeightsArray();
+        NCollection_Array1<double> knots = bs.InternalKnots();
+        NCollection_Array1<int> mults = bs.InternalMultiplicities();
 
-        var Poles2d = new NCollection_Array1<Point2D>(1, NbPoles);
-        for (int i = 1; i <= NbPoles; i++)
+        var poles2d = new NCollection_Array1<Point2D>(1, nbPoles);
+        for (int i = 1; i <= nbPoles; i++)
         {
-            Poles2d[i] = new Point2D(Poles3d[i].X(), Poles3d[i].Y());
+            poles2d[i] = new Point2D(poles3d[i].X(), poles3d[i].Y());
         }
 
-        var BS2d = new BSplineCurve2D(Poles2d, Weights, Knots, Mults, deg, BS.IsPeriodic);
-        return BS2d;
+        var bs2d = new BSplineCurve2D(poles2d, weights, knots, mults, deg, bs.IsPeriodic);
+        return bs2d;
     }
 
     /// <summary>
     /// The 2D form of <see cref="C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve3D?, ref NCollection_HSequence{BoundedCurve3D}?)"/>,
     /// through a 3D copy of the curve (so the curve given is never changed).
     /// </summary>
-    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve2D? BS,
+    public static bool C0BSplineToSequenceOfC1BSplineCurve(BSplineCurve2D? bs,
                                                            ref NCollection_HSequence<BoundedCurve2D>? seqBS)
     {
-        if (BS is null || (BS.IsCN(1)))
+        if (bs is null || (bs.IsCN(1)))
         {
             return false;
         }
 
-        BSplineCurve3D BS3d = BSplineCurve2dTo3d(BS);
+        BSplineCurve3D bs3d = BSplineCurve2dTo3d(bs);
         NCollection_HSequence<BoundedCurve3D>? seqBS3d = null;
-        bool result = C0BSplineToSequenceOfC1BSplineCurve(BS3d, ref seqBS3d);
+        bool result = C0BSplineToSequenceOfC1BSplineCurve(bs3d, ref seqBS3d);
         if (result)
         {
             seqBS = new NCollection_HSequence<BoundedCurve2D>();
@@ -191,7 +192,7 @@ public static class ShapeUpgrade
     /// NullReferenceException where OCCT dereferences a null handle (an access violation natively, decision 977);
     /// never a write into a frozen object (Standard_ImmutableObject, TopoDS_LockedShape: decision 423).
     /// </summary>
-    internal static bool IsCaughtFailure(Exception theException)
-        => theException is not (ImmutableObjectException or LockedShapeException)
-           && theException is FailureException or NullReferenceException;
+    internal static bool IsCaughtFailure(Exception exception)
+        => exception is not (ImmutableObjectException or LockedShapeException)
+           && exception is FailureException or NullReferenceException;
 }

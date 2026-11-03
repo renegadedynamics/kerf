@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -44,7 +45,7 @@ public class GeomFill_AppSurfTests
     public void Profiler_brings_the_curves_to_one_profile_and_keeps_their_shapes()
     {
         List<Curve3D> aCurves = Sections();
-        GeomFill_Profiler aP = new();
+        Profiler aP = new();
         foreach (Curve3D aC in aCurves)
         {
             aP.AddCurve(aC);
@@ -53,7 +54,7 @@ public class GeomFill_AppSurfTests
         aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         Assert.Equal(3, aP.Degree());
-        Assert.False(aP.IsPeriodic());
+        Assert.False(aP.IsPeriodic);
         int aNbK = aP.NbKnots();
         Assert.Equal(5, aNbK); // 0, 0.25, 0.5, 0.75, 1
         NCollection_Array1<double> aK = new(1, aNbK);
@@ -85,7 +86,7 @@ public class GeomFill_AppSurfTests
         {
             aC.Freeze();
         }
-        GeomFill_Profiler aP = new();
+        Profiler aP = new();
         foreach (Curve3D aC in aCurves)
         {
             aP.AddCurve(aC);
@@ -126,11 +127,11 @@ public class GeomFill_AppSurfTests
             return new BSplineCurve3D(aPoles, aKnots, aMults, theDeg, true);
         }
 
-        GeomFill_Profiler aP = new();
+        Profiler aP = new();
         aP.AddCurve(Loop(0.0, 5, 4));
         aP.AddCurve(Loop(3.0, 6, 1));
         aP.AddCurve(Loop(7.0, 7, 1));
-        Assert.True(aP.IsPeriodic());
+        Assert.True(aP.IsPeriodic);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.RangeErrorException>(() => aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion()));
     }
 
@@ -138,7 +139,7 @@ public class GeomFill_AppSurfTests
     public void Generator_makes_a_ruled_surface_through_the_sections()
     {
         List<Curve3D> aCurves = Sections();
-        GeomFill_Generator aGen = new();
+        SurfaceGenerator aGen = new();
         foreach (Curve3D aC in aCurves)
         {
             aGen.AddCurve(aC);
@@ -170,7 +171,7 @@ public class GeomFill_AppSurfTests
     public void SectionGenerator_gives_the_sections_and_their_parameters()
     {
         List<Curve3D> aCurves = Sections();
-        GeomFill_SectionGenerator aSec = new();
+        SectionGenerator aSec = new();
         foreach (Curve3D aC in aCurves)
         {
             aSec.AddCurve(aC);
@@ -210,16 +211,16 @@ public class GeomFill_AppSurfTests
     [Fact]
     public void Line_points_are_their_indices()
     {
-        GeomFill_Line aLine = new(5);
+        SurfaceLine aLine = new(5);
         Assert.Equal(5, aLine.NbPoints());
         Assert.Equal(3, aLine.Point(3));
-        Assert.Equal(0, new GeomFill_Line().NbPoints());
+        Assert.Equal(0, new SurfaceLine().NbPoints());
     }
 
-    private static (GeomFill_SectionGenerator, GeomFill_Line, List<Curve3D>) Approximation()
+    private static (SectionGenerator, SurfaceLine, List<Curve3D>) Approximation()
     {
         List<Curve3D> aCurves = Sections();
-        GeomFill_SectionGenerator aSec = new();
+        SectionGenerator aSec = new();
         foreach (Curve3D aC in aCurves)
         {
             aSec.AddCurve(aC);
@@ -232,10 +233,10 @@ public class GeomFill_AppSurfTests
             aParams.SetValue(i, aV[i - 1]);
         }
         aSec.SetParam(aParams);
-        return (aSec, new GeomFill_Line(aCurves.Count), aCurves);
+        return (aSec, new SurfaceLine(aCurves.Count), aCurves);
     }
 
-    private static BSplineSurface Surface(GeomFill_AppSurf theApp) =>
+    private static BSplineSurface Surface(SurfaceAppSurf theApp) =>
         new(theApp.SurfPoles(), theApp.SurfWeights(), theApp.SurfUKnots(), theApp.SurfVKnots(), theApp.SurfUMults(),
             theApp.SurfVMults(), theApp.UDegree(), theApp.VDegree());
 
@@ -246,8 +247,8 @@ public class GeomFill_AppSurfTests
     [InlineData(3)]
     public void AppSurf_passes_through_the_sections_at_their_parameters(int theWay)
     {
-        (GeomFill_SectionGenerator aSec, GeomFill_Line aLine, List<Curve3D> aCurves) = Approximation();
-        GeomFill_AppSurf anApp = new(2, 8, 1e-7, 1e-7, theWay == 2 ? 2 : 0, KnownParameters: true);
+        (SectionGenerator aSec, SurfaceLine aLine, List<Curve3D> aCurves) = Approximation();
+        SurfaceAppSurf anApp = new(2, 8, 1e-7, 1e-7, theWay == 2 ? 2 : 0, knownParameters: true);
         anApp.SetContinuity(C2);
         switch (theWay)
         {
@@ -256,11 +257,11 @@ public class GeomFill_AppSurfTests
             case 2: anApp.PerformSmoothing(aLine, aSec); break;
             default: anApp.Perform(aLine, aSec, 3); break;
         }
-        Assert.True(anApp.IsDone());
+        Assert.True(anApp.IsDone);
         anApp.SurfShape(out int ud, out int vd, out int nup, out int nvp, out int nuk, out int nvk);
         Assert.Equal((3, aSec.NbPoles(), aSec.NbKnots()), (ud, nup, nuk));
         Assert.Equal((anApp.VDegree(), anApp.SurfVKnots().Length(), anApp.SurfPoles().RowLength()), (vd, nvk, nvp));
-        Assert.Equal(0, anApp.NbCurves2d());
+        Assert.Equal(0, anApp.Curves2dCount);
         Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anApp.Curves2dDegree());
 
         BSplineSurface aS = Surface(anApp);
@@ -301,8 +302,8 @@ public class GeomFill_AppSurfTests
     [Fact]
     public void AppSurf_checks_its_state_and_arguments()
     {
-        GeomFill_AppSurf anApp = new();
-        Assert.False(anApp.IsDone());
+        SurfaceAppSurf anApp = new();
+        Assert.False(anApp.IsDone);
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.UDegree());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.SurfPoles());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApp.TolReached(out _, out _));
@@ -320,20 +321,20 @@ public class GeomFill_AppSurfTests
         Assert.Equal((0.4, 0.2, 0.4), (w1, w2, w3));
 
         // no line: not done
-        (GeomFill_SectionGenerator aSec, _, _) = Approximation();
+        (SectionGenerator aSec, _, _) = Approximation();
         anApp.Perform(null, aSec);
-        Assert.False(anApp.IsDone());
+        Assert.False(anApp.IsDone);
     }
 
     [Fact]
     public void AppSurf_leaves_the_sections_unchanged_and_approximates_the_same_twice()
     {
-        (GeomFill_SectionGenerator aSec, GeomFill_Line aLine, List<Curve3D> aCurves) = Approximation();
+        (SectionGenerator aSec, SurfaceLine aLine, List<Curve3D> aCurves) = Approximation();
         foreach (Curve3D aC in aCurves)
         {
             aC.Freeze();
         }
-        GeomFill_AppSurf anApp = new(3, 8, 1e-6, 1e-6, 0);
+        SurfaceAppSurf anApp = new(3, 8, 1e-6, 1e-6, 0);
         anApp.Perform(aLine, aSec, true);
         NCollection_Array2<Point3D> aFirst = new(anApp.SurfPoles());
         anApp.Perform(aLine, aSec, true);

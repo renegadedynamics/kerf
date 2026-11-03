@@ -51,7 +51,7 @@ public class IFSelect_ParamEditor : IFSelect_Editor
             new Interface_TypedValue(longname.Length == 0 ? shortname : longname);
         tv.SetCStringValue(val);
         SetNbValues(NbValues() + 1);
-        SetValue(NbValues(), tv, shortname, IFSelect_EditRead);
+        SetValue(NbValues(), tv, shortname, IFSelect_EditValue.IFSelect_EditRead);
     }
 
     public override string Label()

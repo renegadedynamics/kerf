@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -30,7 +31,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
     public TopoDSToStep_MakeStepFace()
     {
-        myError = TopoDSToStep_FaceOther;
+        myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceOther;
         done = false;
     }
 
@@ -69,7 +70,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 var aLinkingAF = new StepShape_AdvancedFace();
                 aLinkingAF.Init(anAF.Name(), anAF.Bounds(), anAF.FaceGeometry(), !anAF.SameSense());
 
-                myError = TopoDSToStep_FaceDone;
+                myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceDone;
                 myResult = aLinkingAF;
                 done = true;
                 return;
@@ -79,7 +80,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
 
         if (aTool.IsBound(aFace))
         {
-            myError = TopoDSToStep_FaceDone;
+            myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceDone;
             done = true;
             myResult = aTool.Find(aFace);
             return;
@@ -88,7 +89,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
         if (aFace.Orientation() == Internal || aFace.Orientation() == External)
         {
             FP.AddWarning(errShape, " Face from Non Manifold Topology");
-            myError = TopoDSToStep_NonManifoldFace;
+            myError = TopoDSToStep_MakeFaceError.TopoDSToStep_NonManifoldFace;
             done = false;
             return;
         }
@@ -102,7 +103,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
         if (theOuterWire.IsNull)
         {
             FP.AddWarning(errShape, " Face without wire not mapped");
-            myError = TopoDSToStep_InfiniteFace;
+            myError = TopoDSToStep_MakeFaceError.TopoDSToStep_InfiniteFace;
             done = false;
             return;
         }
@@ -117,7 +118,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
             if (Su is null)
             {
                 FP.AddWarning(errShape, " Face without geometry not mapped");
-                myError = TopoDSToStep_FaceOther;
+                myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceOther;
                 done = false;
                 return;
             }
@@ -172,7 +173,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                         Direction3D X = Ax3.XDirection();
 
                         // create basis curve
-                        ShapeAlgo.AlgoContainer().GetFaceUVBounds(aFace, out double UF, out double UL, out double VF, out double VL);
+                        global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().GetFaceUVBounds(aFace, out double UF, out double UL, out double VF, out double VL);
                         Frame3D Ax2 = new Frame3D(new Point3D(pos.XYZ() + X.XYZ() * TS.MajorRadius()), X ^ dir, X);
                         Curve3D BasisCurve = new CircleCurve3D(Ax2, TS.MinorRadius());
 
@@ -180,7 +181,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                         // surface of revolution (necessary e.g. for CATIA)
                         if (VL - VF - 2 * M_PI < -global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            BasisCurve = ShapeAlgo.AlgoContainer().ConvertCurveToBSpline(BasisCurve, VF, VL, global::Kerf.Engine.Foundation.Precision.Approximation(),
+                            BasisCurve = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().ConvertCurveToBSpline(BasisCurve, VF, VL, global::Kerf.Engine.Foundation.Precision.Approximation(),
                                                                                         C1, 100, 9);
                         }
 
@@ -418,7 +419,7 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 Fpms.Init(aName, aBounds, Spms, aFace.Orientation() == Forward);
 
                 aTool.Bind(aFace, Fpms);
-                myError = TopoDSToStep_FaceDone;
+                myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceDone;
                 myResult = Fpms;
                 done = true;
             }
@@ -428,14 +429,14 @@ public sealed class TopoDSToStep_MakeStepFace : TopoDSToStep_Root
                 // MakeFace Face Error Handling
                 // ----------------------------
                 FP.AddWarning(errShape, " No Wires of this Face were mapped");
-                myError = TopoDSToStep_NoWireMapped;
+                myError = TopoDSToStep_MakeFaceError.TopoDSToStep_NoWireMapped;
                 done = false;
             }
         }
         catch (FailureException theFailure)
         {
             FP.AddFail(errShape, Transfer_ProcessForTransient.What(theFailure));
-            myError = TopoDSToStep_FaceOther;
+            myError = TopoDSToStep_MakeFaceError.TopoDSToStep_FaceOther;
             done = false;
         }
     }

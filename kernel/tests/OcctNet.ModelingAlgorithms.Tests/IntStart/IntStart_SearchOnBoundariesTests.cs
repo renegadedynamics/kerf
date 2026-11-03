@@ -1,12 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.CurveSurface;
+using Kerf.Engine.Intersection.Implicit;
+using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.IntSurf_TypeTrans;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -29,20 +33,20 @@ public class IntStart_SearchOnBoundariesTests
     private const double TolBoundary = 1e-7;
     private const double TolTangency = 1e-6;
 
-    private sealed record Search(IntPatch_TheSOnBounds Result, FaceSurfaceAdaptor Surface, BRepTopAdaptor_TopolTool Domain,
-                                 IntSurf_Quadric Quadric, List<Curve2DAdaptorBase> Arcs);
+    private sealed record Search(TheSOnBounds Result, FaceSurfaceAdaptor Surface, BrepTopolTool Domain,
+                                 global::Kerf.Engine.Intersection.Walking.SurfaceQuadric Quadric, List<Curve2DAdaptorBase> Arcs);
 
     private static Search Run(Face theFace, Plane3D thePlane)
     {
         FaceSurfaceAdaptor aSurf = new(theFace);
-        BRepTopAdaptor_TopolTool aDomain = new(aSurf);
-        IntSurf_Quadric aQuad = new(thePlane);
-        IntPatch_ArcFunction aFunc = new();
+        BrepTopolTool aDomain = new(aSurf);
+        global::Kerf.Engine.Intersection.Walking.SurfaceQuadric aQuad = new(thePlane);
+        PatchArcFunction aFunc = new();
         aFunc.SetQuadric(aQuad);
         aFunc.Set(aSurf);
-        IntPatch_TheSOnBounds aSearch = new();
+        TheSOnBounds aSearch = new();
         aSearch.Perform(aFunc, aDomain, TolBoundary, TolTangency);
-        Assert.True(aSearch.IsDone());
+        Assert.True(aSearch.IsDone);
 
         List<Curve2DAdaptorBase> anArcs = [];
         aDomain.Init();
@@ -54,22 +58,22 @@ public class IntStart_SearchOnBoundariesTests
         return new Search(aSearch, aSurf, aDomain, aQuad, anArcs);
     }
 
-    private static Face Cylinder() => new BRepPrimAPI_MakeCylinder(1, 2).Face();
+    private static Face Cylinder() => new ApiMakeCylinder(1, 2).Face();
 
-    private static Face Sphere() => new BRepPrimAPI_MakeSphere(2).Face();
+    private static Face Sphere() => new MakeSphere(2).Face();
 
     private static Plane3D Plane(double x, double y, double z, double nx, double ny, double nz) =>
         new(new Point3D(x, y, z), new Direction3D(nx, ny, nz));
 
     // (arc rank in wire order, parameter, is new, tolerance) of every point, in the order found
     private static (int Arc, double Param, bool IsNew, double Tol)[] Points(Search theSearch)
-        => Enumerable.Range(1, theSearch.Result.NbPoints())
+        => Enumerable.Range(1, theSearch.Result.PointCount)
                      .Select(i => theSearch.Result.Point(i))
                      .Select(p => (theSearch.Arcs.FindIndex(a => ReferenceEquals(a, p.Arc())) + 1, p.Parameter(), p.IsNew(),
                                    p.Tolerance()))
                      .ToArray();
 
-    private static void OnBoth(Search theSearch, in IntPatch_ThePathPointOfTheSOnBounds theP, double theTol)
+    private static void OnBoth(Search theSearch, in ThePathPointOfTheSOnBounds theP, double theTol)
     {
         Point2D aUV = theP.Arc().Value(theP.Parameter());
         Point3D anOnSurf = theSearch.Surface.Value(aUV.X(), aUV.Y());
@@ -78,13 +82,13 @@ public class IntStart_SearchOnBoundariesTests
     }
 
     // The transitions of the intersection line and of the arc at a point, as IntPatch_ImpPrmIntersection makes them.
-    private static (IntSurf_TypeTrans Line, IntSurf_TypeTrans Arc) Transitions(Search theSearch,
-                                                                                in IntPatch_ThePathPointOfTheSOnBounds theP)
+    private static (global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans Line, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans Arc) Transitions(Search theSearch,
+                                                                                in ThePathPointOfTheSOnBounds theP)
     {
         theP.Arc().D1(theP.Parameter(), out Point2D aUV, out Vector2D aD2d);
         theSearch.Surface.D1(aUV.X(), aUV.Y(), out _, out Vector3D aD1u, out Vector3D aD1v);
 
-        IntPatch_TheSurfFunction aFunc = new(theSearch.Surface, theSearch.Quadric);
+        TheSurfFunction aFunc = new(theSearch.Surface, theSearch.Quadric);
         math_Vector aX = new(1, 2);
         aX[1] = aUV.X();
         aX[2] = aUV.Y();
@@ -97,8 +101,8 @@ public class IntStart_SearchOnBoundariesTests
         Vector3D aTgRst = new();
         aTgRst.SetLinearForm(aD2d.X(), aD1u, aD2d.Y(), aD1v);
         Direction3D aNormal = new(aD1u.Crossed(aD1v));
-        IntSurf_Transition aTLine = new(), aTArc = new();
-        IntSurf.MakeTransition(aTgLine, aTgRst, aNormal, ref aTLine, ref aTArc);
+        global::Kerf.Engine.Intersection.Walking.WalkingTransition aTLine = new(), aTArc = new();
+        global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(aTgLine, aTgRst, aNormal, ref aTLine, ref aTArc);
         return (aTLine.TransitionType(), aTArc.TransitionType());
     }
 
@@ -107,7 +111,7 @@ public class IntStart_SearchOnBoundariesTests
     {
         Search aS = Run(Cylinder(), Plane(0, 0, 1, 0, 0, 1));
         Assert.False(aS.Result.AllArcSolution());
-        Assert.Equal(0, aS.Result.NbSegments());
+        Assert.Equal(0, aS.Result.SegmentCount);
         Assert.Equal(new[] { (2, 1.0, true, 1e-4), (4, 1.0, true, 1e-4) },
                      Points(aS).Select(p => (p.Arc, Math.Round(p.Param, 12), p.IsNew, Math.Round(p.Tol, 12))).ToArray());
         for (int i = 1; i <= 2; i++)
@@ -117,8 +121,8 @@ public class IntStart_SearchOnBoundariesTests
 
         // The circle z = 1 goes the way of u; it leaves the arc (both seam pcurves go up), which the face uses once
         // forward and once reversed.
-        Assert.Equal((IntSurf_Out, IntSurf_In), Transitions(aS, aS.Result.Point(1)));
-        Assert.Equal((IntSurf_Out, IntSurf_In), Transitions(aS, aS.Result.Point(2)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In), Transitions(aS, aS.Result.Point(1)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In), Transitions(aS, aS.Result.Point(2)));
         Assert.NotEqual(aS.Domain.Orientation(aS.Arcs[1]), aS.Domain.Orientation(aS.Arcs[3]));
     }
 
@@ -127,7 +131,7 @@ public class IntStart_SearchOnBoundariesTests
     {
         // x = 0.5: the lines u = π/3 and u = 5π/3, crossing the top (arc 1) and bottom (arc 3) circles.
         Search aS = Run(Cylinder(), Plane(0.5, 0, 0, 1, 0, 0));
-        Assert.Equal(0, aS.Result.NbSegments());
+        Assert.Equal(0, aS.Result.SegmentCount);
         var aPoints = Points(aS);
         Assert.Equal(new[] { 1, 1, 3, 3 }, aPoints.Select(p => p.Arc).ToArray());
         Assert.All(aPoints, p => Assert.True(p.IsNew));
@@ -140,10 +144,10 @@ public class IntStart_SearchOnBoundariesTests
 
         // At u = π/3 the line goes up (the way of v), entering the side of the circle the normal and the arc point
         // to; at u = 5π/3 it goes down. Same on both circles, whose pcurves go the way of u.
-        Assert.Equal((IntSurf_In, IntSurf_Out), Transitions(aS, aS.Result.Point(1)));
-        Assert.Equal((IntSurf_Out, IntSurf_In), Transitions(aS, aS.Result.Point(2)));
-        Assert.Equal((IntSurf_In, IntSurf_Out), Transitions(aS, aS.Result.Point(3)));
-        Assert.Equal((IntSurf_Out, IntSurf_In), Transitions(aS, aS.Result.Point(4)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out), Transitions(aS, aS.Result.Point(1)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In), Transitions(aS, aS.Result.Point(2)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out), Transitions(aS, aS.Result.Point(3)));
+        Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In), Transitions(aS, aS.Result.Point(4)));
     }
 
     [Fact]
@@ -158,10 +162,10 @@ public class IntStart_SearchOnBoundariesTests
         Assert.All(Points(aS), p => Assert.Equal(TolBoundary, p.Tol));
 
         // The bottom circle is on the plane from end to end; its limits are the vertex points already found.
-        Assert.Equal(1, aS.Result.NbSegments());
-        IntPatch_TheSegmentOfTheSOnBounds aSeg = aS.Result.Segment(1);
+        Assert.Equal(1, aS.Result.SegmentCount);
+        TheSegmentOfTheSOnBounds aSeg = aS.Result.Segment(1);
         Assert.Same(aS.Arcs[2], aSeg.Curve());
-        Assert.True(aSeg.HasFirstPoint() && aSeg.HasLastPoint());
+        Assert.True(aSeg.HasFirstPoint && aSeg.HasLastPoint);
         Assert.Equal(aS.Result.Point(2), aSeg.FirstPoint());
         Assert.Equal(aS.Result.Point(3), aSeg.LastPoint());
         Assert.Same(aS.Result.Point(2).Vertex(), aSeg.FirstPoint().Vertex());
@@ -175,10 +179,10 @@ public class IntStart_SearchOnBoundariesTests
         Assert.All(Points(aS), p => Assert.False(p.IsNew));
         Assert.Equal(new[] { 1, 1, 2, 2, 3, 3, 4, 4 }, Points(aS).Select(p => p.Arc).ToArray());
 
-        Assert.Equal(2, aS.Result.NbSegments());
+        Assert.Equal(2, aS.Result.SegmentCount);
         for (int i = 1; i <= 2; i++)
         {
-            IntPatch_TheSegmentOfTheSOnBounds aSeg = aS.Result.Segment(i);
+            TheSegmentOfTheSOnBounds aSeg = aS.Result.Segment(i);
             Assert.Same(aS.Arcs[2 * i - 1], aSeg.Curve()); // the seams, arcs 2 and 4
             Assert.Equal(0.0, aSeg.FirstPoint().Parameter());
             Assert.Equal(2.0, aSeg.LastPoint().Parameter());
@@ -190,7 +194,7 @@ public class IntStart_SearchOnBoundariesTests
     public void Sphere_cut_by_a_horizontal_plane_meets_both_seams()
     {
         Search aS = Run(Sphere(), Plane(0, 0, 1, 0, 0, 1));
-        Assert.Equal(0, aS.Result.NbSegments());
+        Assert.Equal(0, aS.Result.SegmentCount);
         var aPoints = Points(aS);
         Assert.Equal(new[] { 2, 4 }, aPoints.Select(p => p.Arc).ToArray());
         foreach (var p in aPoints)
@@ -201,7 +205,7 @@ public class IntStart_SearchOnBoundariesTests
         for (int i = 1; i <= 2; i++)
         {
             OnBoth(aS, aS.Result.Point(i), 1e-9);
-            Assert.Equal((IntSurf_Out, IntSurf_In), Transitions(aS, aS.Result.Point(i)));
+            Assert.Equal((global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.Out, global::Kerf.Engine.Intersection.Walking.WalkingTypeTrans.In), Transitions(aS, aS.Result.Point(i)));
         }
     }
 
@@ -215,7 +219,7 @@ public class IntStart_SearchOnBoundariesTests
         Assert.Equal(new[] { 1, 1, 2, 4 }, aPoints.Select(p => p.Arc).ToArray());
         Assert.Equal(5 * Math.PI / 2, aPoints[2].Param, 1e-15);
         // the degenerated edge is on the plane from end to end
-        Assert.Equal(1, aS.Result.NbSegments());
+        Assert.Equal(1, aS.Result.SegmentCount);
         Assert.Same(aS.Arcs[0], aS.Result.Segment(1).Curve());
     }
 
@@ -225,19 +229,19 @@ public class IntStart_SearchOnBoundariesTests
         // y = 0 contains both meridians (the seam) and the poles: every arc is a solution.
         Search aS = Run(Sphere(), Plane(0, 0, 0, 0, 1, 0));
         Assert.True(aS.Result.AllArcSolution());
-        Assert.Equal(4, aS.Result.NbSegments());
+        Assert.Equal(4, aS.Result.SegmentCount);
         Assert.All(Points(aS), p => Assert.False(p.IsNew));
     }
 
     [Fact]
     public void Results_are_not_readable_before_Perform()
     {
-        IntPatch_TheSOnBounds aSearch = new();
-        Assert.False(aSearch.IsDone());
-        Assert.ThrowsAny<NotDoneException>(() => aSearch.NbPoints());
+        TheSOnBounds aSearch = new();
+        Assert.False(aSearch.IsDone);
+        Assert.ThrowsAny<NotDoneException>(() => aSearch.PointCount);
         Assert.ThrowsAny<NotDoneException>(() => aSearch.AllArcSolution());
-        Assert.ThrowsAny<DomainErrorException>(() => new IntPatch_ThePathPointOfTheSOnBounds().Vertex());
-        Assert.ThrowsAny<DomainErrorException>(() => new IntPatch_TheSegmentOfTheSOnBounds().FirstPoint());
+        Assert.ThrowsAny<DomainErrorException>(() => new ThePathPointOfTheSOnBounds().Vertex());
+        Assert.ThrowsAny<DomainErrorException>(() => new TheSegmentOfTheSOnBounds().FirstPoint());
     }
 
     [Fact]
@@ -257,19 +261,19 @@ public class IntStart_SearchInsideTests
     [Fact]
     public void SearchInside_finds_points_of_the_circle_inside_a_cylinder_face()
     {
-        Face aFace = new BRepPrimAPI_MakeCylinder(1, 2).Face();
+        Face aFace = new ApiMakeCylinder(1, 2).Face();
         FaceSurfaceAdaptor aSurf = new(aFace);
-        BRepTopAdaptor_TopolTool aDomain = new(aSurf);
-        IntSurf_Quadric aQuad = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
-        IntPatch_TheSurfFunction aFunc = new(aQuad);
-        aFunc.Set(IntSurf_QuadricTool.Tolerance(aQuad));
+        BrepTopolTool aDomain = new(aSurf);
+        global::Kerf.Engine.Intersection.Walking.SurfaceQuadric aQuad = new(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
+        TheSurfFunction aFunc = new(aQuad);
+        aFunc.Set(global::Kerf.Engine.Intersection.Walking.QuadricTool.Tolerance(aQuad));
 
-        IntPatch_TheSearchInside aSearch = new(aFunc, aSurf, aDomain, 1e-6);
-        Assert.True(aSearch.IsDone());
-        Assert.True(aSearch.NbPoints() > 0);
-        for (int i = 1; i <= aSearch.NbPoints(); i++)
+        PatchTheSearchInside aSearch = new(aFunc, aSurf, aDomain, 1e-6);
+        Assert.True(aSearch.IsDone);
+        Assert.True(aSearch.PointCount > 0);
+        for (int i = 1; i <= aSearch.PointCount; i++)
         {
-            IntSurf_InteriorPoint aP = aSearch.Value(i);
+            global::Kerf.Engine.Intersection.Walking.InteriorPoint aP = aSearch.Value(i);
             Point3D aPnt = aP.Value();
             Assert.Equal(1.0, aPnt.Z(), 1e-9);
             Assert.Equal(1.0, Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y()), 1e-9);
@@ -285,21 +289,21 @@ public class IntStart_SearchInsideTests
         }
 
         // From a start point: one point, the nearest on the circle.
-        IntPatch_TheSearchInside aOne = new();
+        PatchTheSearchInside aOne = new();
         aOne.Perform(aFunc, aSurf, 1.0, 0.9);
-        Assert.Equal(1, aOne.NbPoints());
+        Assert.Equal(1, aOne.PointCount);
         Assert.Equal(1.0, aOne.Value(1).UParameter(), 1e-12);
         Assert.Equal(1.0, aOne.Value(1).VParameter(), 1e-9);
         // Out of the surface's bounds: none.
         aOne.Perform(aFunc, aSurf, 1.0, 3.0);
-        Assert.Equal(0, aOne.NbPoints());
+        Assert.Equal(0, aOne.PointCount);
     }
 
     [Fact]
     public void ZerImpFunc_is_tangent_where_the_surfaces_are()
     {
         SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 1));
-        IntPatch_TheSurfFunction aFunc = new(aCyl, new IntSurf_Quadric(new Plane3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0))));
+        TheSurfFunction aFunc = new(aCyl, new global::Kerf.Engine.Intersection.Walking.SurfaceQuadric(new Plane3D(new Point3D(1, 0, 0), new Direction3D(1, 0, 0))));
         math_Vector aX = new(1, 2);
         math_Vector aF = new(1, 1);
         Matrix aD = new(1, 1, 1, 2);
@@ -321,7 +325,7 @@ public class IntStart_SearchInsideTests
     {
         SurfaceAdaptor aPln = new(new PlaneSurface(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1))), -5, 5, -5, 5);
         SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, -5, 5);
-        IntImp_Int2S<SurfaceAdaptorBase, IntCurveSurface_TheHSurfaceTool> anInt = new(aPln, aCyl, 1e-6);
+        Int2S<SurfaceAdaptorBase, TheHSurfaceTool> anInt = new(aPln, aCyl, 1e-6);
         FunctionSetRoot aRsnld = new(anInt.Function());
 
         // near (cos 0.7, sin 0.7, 1): u1, v1 on the plane, u2, v2 on the cylinder
@@ -331,9 +335,9 @@ public class IntStart_SearchInsideTests
         aParam[3] = 0.72;
         aParam[4] = 1.05;
         anInt.Perform(aParam, aRsnld);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
-        Assert.False(anInt.IsTangent());
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
+        Assert.False(anInt.IsTangent);
         Point3D aP = anInt.Point().Value();
         Assert.Equal(1.0, aP.Z(), 1e-9);
         Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-9);
@@ -347,13 +351,13 @@ public class IntStart_SearchInsideTests
         Assert.Equal(0.0, aT.X() * aP.X() + aT.Y() * aP.Y(), 1e-9);
         Assert.Equal(0.0, anInt.DirectionOnS2().Y(), 1e-9);
 
-        ref IntSurf_PntOn2S aChange = ref anInt.ChangePoint();
+        ref global::Kerf.Engine.Intersection.Walking.PntOn2S aChange = ref anInt.ChangePoint();
         aChange.SetValue(new Point3D(9, 9, 9));
         Assert.Equal(new Point3D(9, 9, 9), anInt.Point().Value());
 
         // the constructor that searches at once
-        IntImp_Int2S<SurfaceAdaptorBase, IntCurveSurface_TheHSurfaceTool> anAtOnce = new(aParam, aPln, aCyl, 1e-6);
-        Assert.False(anAtOnce.IsEmpty());
+        Int2S<SurfaceAdaptorBase, TheHSurfaceTool> anAtOnce = new(aParam, aPln, aCyl, 1e-6);
+        Assert.False(anAtOnce.IsEmpty);
         Assert.Equal(0.0, aP.Distance(anAtOnce.Point().Value()), 1e-9);
     }
 
@@ -362,14 +366,14 @@ public class IntStart_SearchInsideTests
     {
         SurfaceAdaptor aP1 = new(new PlaneSurface(new Plane3D()), -5, 5, -5, 5);
         SurfaceAdaptor aP2 = new(new PlaneSurface(new Plane3D()), -5, 5, -5, 5);
-        IntImp_Int2S<SurfaceAdaptorBase, IntCurveSurface_TheHSurfaceTool> anInt = new(aP1, aP2, 1e-6);
+        Int2S<SurfaceAdaptorBase, TheHSurfaceTool> anInt = new(aP1, aP2, 1e-6);
         NCollection_Array1<double> aParam = new(1, 4);
         aParam[1] = 1;
         aParam[2] = 1;
         aParam[3] = 1;
         aParam[4] = 1;
         anInt.Perform(aParam, new FunctionSetRoot(anInt.Function()));
-        Assert.True(anInt.IsEmpty()); // ComputeTangence: the surfaces are tangent, no search
+        Assert.True(anInt.IsEmpty); // ComputeTangence: the surfaces are tangent, no search
         Assert.ThrowsAny<DomainErrorException>(() => anInt.Point());
     }
 
@@ -380,10 +384,10 @@ public class IntStart_SearchInsideTests
         SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 1));
         // the line u = 0.3 on the cylinder, v from -5 to 5
         CurveAdaptor2D anArc = new(new LineCurve2D(new Point2D(0.3, 0), new Direction2D(0, 1)), -5, 5);
-        IntPatch_CSFunction aFunc = new(aPln, anArc, aCyl);
-        IntPatch_CurvIntSurf anInt = new(0.0, 0.0, 0.0, aFunc, 1e-9);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
+        PatchCSFunction aFunc = new(aPln, anArc, aCyl);
+        CurvIntSurf anInt = new(0.0, 0.0, 0.0, aFunc, 1e-9);
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
         Assert.Equal(1.0, anInt.ParameterOnCurve(), 1e-9);
         anInt.ParameterOnSurface(out double u, out double v);
         Assert.Equal(Math.Cos(0.3), u, 1e-9);
@@ -401,7 +405,7 @@ public class IntPatch_HInterToolTests
     {
         // A cylinder on u in [0, 2π], v in [0, 3]: 10 samples in u, 15 in v, so a grid of 5 x 8 interior points.
         SurfaceAdaptor aCyl = new(new CylindricalSurface(new CoordinateSystem(), 1), 0, 2 * Math.PI, 0, 3);
-        IntPatch_HInterTool aTool = new();
+        HInterTool aTool = new();
         Assert.Equal(6 * 8, aTool.NbSamplePoints(aCyl));
         double du = 2 * Math.PI / 6, dv = 3.0 / 9;
 
@@ -420,8 +424,8 @@ public class IntPatch_HInterToolTests
         aTool.SamplePoint(aPln, 1, out u, out v);
         Assert.Equal((0.24 * 10, 0.26 * 10), (u, v));
 
-        Assert.Equal(2, IntPatch_HInterTool.NbSamplesOnArc(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D(1, 0)))));
-        Assert.Equal(10, IntPatch_HInterTool.NbSamplesOnArc(new CurveAdaptor2D(new CircleCurve2D(new Axis2D(), 1))));
-        Assert.Equal(2, IntPatch_HCurve2dTool.NbSamples(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D(1, 0))), 0, 1));
+        Assert.Equal(2, HInterTool.NbSamplesOnArc(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D(1, 0)))));
+        Assert.Equal(10, HInterTool.NbSamplesOnArc(new CurveAdaptor2D(new CircleCurve2D(new Axis2D(), 1))));
+        Assert.Equal(2, PatchHCurve2dTool.NbSamples(new CurveAdaptor2D(new LineCurve2D(new Point2D(), new Direction2D(1, 0))), 0, 1));
     }
 }

@@ -2,6 +2,7 @@
 // Port of OCCT's GTests src/ModelingAlgorithms/TKHelix/GTests/HelixGeom_BuilderHelixCoil_Test.cxx
 // (HelixGeom_BuilderHelixCoil_Test) and HelixGeom_BuilderHelix_Test.cxx (HelixGeom_BuilderHelix_Test).
 
+using Kerf.Engine.Construction.Helix.Geometry;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -14,7 +15,7 @@ public class HelixGeom_BuilderHelixCoilTests
     [Fact]
     public void BasicConstruction()
     {
-        var aBuilder = new HelixGeom_BuilderHelixCoil();
+        var aBuilder = new BuilderHelixCoil();
         aBuilder.SetTolerance(myTolerance);
         aBuilder.SetCurveParameters(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
         aBuilder.Perform();
@@ -37,7 +38,7 @@ public class HelixGeom_BuilderHelixCoilTests
     [Fact]
     public void DefaultParameters()
     {
-        var aBuilder = new HelixGeom_BuilderHelixCoil();
+        var aBuilder = new BuilderHelixCoil();
         // Use default parameters
         aBuilder.Perform();
         Assert.Equal(0, aBuilder.ErrorStatus());
@@ -52,7 +53,7 @@ public class HelixGeom_BuilderHelixCoilTests
     [Fact]
     public void ParameterSymmetry()
     {
-        var aBuilder = new HelixGeom_BuilderHelixCoil();
+        var aBuilder = new BuilderHelixCoil();
         // Set parameters
         double aT1 = 0.5, aT2 = 5.5, aPitch = 12.5, aRStart = 3.5, aTaperAngle = 0.15;
         bool aIsClockwise = false;
@@ -71,7 +72,7 @@ public class HelixGeom_BuilderHelixCoilTests
     [Fact]
     public void TaperedHelix()
     {
-        var aBuilder = new HelixGeom_BuilderHelixCoil();
+        var aBuilder = new BuilderHelixCoil();
         aBuilder.SetTolerance(myTolerance);
         aBuilder.SetApproxParameters(C2, 8, 100);
         aBuilder.SetCurveParameters(0.0, 4.0 * M_PI, 20.0, 5.0, 0.1, true);
@@ -98,7 +99,7 @@ public class HelixGeom_BuilderHelixTests
     [Fact]
     public void SingleCoil()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
@@ -111,7 +112,7 @@ public class HelixGeom_BuilderHelixTests
     [Fact]
     public void MultipleCoils()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
@@ -125,7 +126,7 @@ public class HelixGeom_BuilderHelixTests
     [Fact]
     public void PositionGetterSetter()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         Frame3D aTestPosition = new(new Point3D(10.0, 20.0, 30.0), new Direction3D(Direction3D.D.X), new Direction3D(Direction3D.D.Y));
         aBuilder.SetPosition(aTestPosition);
         Frame3D aRetrievedPosition = aBuilder.Position();
@@ -137,7 +138,7 @@ public class HelixGeom_BuilderHelixTests
     [Fact]
     public void ParameterManagement()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         // Set curve parameters
         double aT1 = 1.0, aT2 = 7.0, aPitch = 15.0, aRStart = 4.0, aTaperAngle = 0.2;
         bool aIsClockwise = false;

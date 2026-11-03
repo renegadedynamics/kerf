@@ -1,12 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,7 +15,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>BRepCheck's statics, BRepCheck_Result's status bookkeeping and BRepCheck_Shell on BRep_Builder shells.</summary>
 public class BRepCheckTests
 {
-    private static List<BRepCheck_Status> ToList(NCollection_List<BRepCheck_Status> theList) => [.. theList];
+    private static List<StatusCheck> ToList(NCollection_List<StatusCheck> theList) => [.. theList];
 
     private static Shell ShellOf(params Shape[] theFaces)
     {
@@ -93,50 +94,50 @@ public class BRepCheckTests
     [Fact]
     public void Add_ReplacesNoErrorAndSkipsDuplicates()
     {
-        var aList = new NCollection_List<BRepCheck_Status>();
-        BRepCheck.Add(aList, BRepCheck_NoError);
-        Assert.Equal([BRepCheck_NoError], ToList(aList));
-        BRepCheck.Add(aList, BRepCheck_NotClosed);
-        Assert.Equal([BRepCheck_NotClosed], ToList(aList));
-        BRepCheck.Add(aList, BRepCheck_NotClosed);
-        BRepCheck.Add(aList, BRepCheck_FreeEdge);
-        Assert.Equal([BRepCheck_NotClosed, BRepCheck_FreeEdge], ToList(aList));
+        var aList = new NCollection_List<StatusCheck>();
+        BRepCheckCheck.Add(aList, StatusCheck.NoError);
+        Assert.Equal([StatusCheck.NoError], ToList(aList));
+        BRepCheckCheck.Add(aList, StatusCheck.NotClosed);
+        Assert.Equal([StatusCheck.NotClosed], ToList(aList));
+        BRepCheckCheck.Add(aList, StatusCheck.NotClosed);
+        BRepCheckCheck.Add(aList, StatusCheck.FreeEdge);
+        Assert.Equal([StatusCheck.NotClosed, StatusCheck.FreeEdge], ToList(aList));
         // NoError is appended after real errors, as in OCCT
-        BRepCheck.Add(aList, BRepCheck_NoError);
-        Assert.Equal([BRepCheck_NotClosed, BRepCheck_FreeEdge, BRepCheck_NoError], ToList(aList));
+        BRepCheckCheck.Add(aList, StatusCheck.NoError);
+        Assert.Equal([StatusCheck.NotClosed, StatusCheck.FreeEdge, StatusCheck.NoError], ToList(aList));
     }
 
     [Fact]
     public void Print_WritesTheNameOfEachStatus()
     {
-        foreach (BRepCheck_Status aStatus in Enum.GetValues<BRepCheck_Status>())
+        foreach (StatusCheck aStatus in Enum.GetValues<StatusCheck>())
         {
             var aWriter = new StringWriter();
-            BRepCheck.Print(aStatus, aWriter);
-            Assert.Equal(aStatus + "\n", aWriter.ToString());
+            BRepCheckCheck.Print(aStatus, aWriter);
+            Assert.Equal(Kerf.Engine.Foundation.OcctTypeNames.Of(aStatus) + "\n", aWriter.ToString());
         }
 
         var anUnknown = new StringWriter();
-        BRepCheck.Print((BRepCheck_Status)1000, anUnknown);
+        BRepCheckCheck.Print((StatusCheck)1000, anUnknown);
         Assert.Equal("", anUnknown.ToString());
     }
 
     [Fact]
     public void PrecCurve_EllipseUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecCurve(new CurveAdaptor(new LineCurve3D(new Point3D(500, 0, 0), new Direction3D(1, 0, 0)))));
+        Assert.Equal(RealEpsilon(), BRepCheckCheck.PrecCurve(new CurveAdaptor(new LineCurve3D(new Point3D(500, 0, 0), new Direction3D(1, 0, 0)))));
         var anEllipse = new EllipseCurve3D(new Frame3D(new Point3D(-300, 20, 1), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 10, 5);
-        Assert.Equal(Epsilon(300.0), BRepCheck.PrecCurve(new CurveAdaptor(anEllipse)));
+        Assert.Equal(Epsilon(300.0), BRepCheckCheck.PrecCurve(new CurveAdaptor(anEllipse)));
         var aBig = new EllipseCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 4000, 5);
-        Assert.Equal(Epsilon(4000.0), BRepCheck.PrecCurve(new CurveAdaptor(aBig)));
+        Assert.Equal(Epsilon(4000.0), BRepCheckCheck.PrecCurve(new CurveAdaptor(aBig)));
     }
 
     [Fact]
     public void PrecSurface_ConeUsesItsLargestNumber()
     {
-        Assert.Equal(RealEpsilon(), BRepCheck.PrecSurface(new SurfaceAdaptor(new PlaneSurface(new Point3D(900, 0, 0), new Direction3D(0, 0, 1)))));
+        Assert.Equal(RealEpsilon(), BRepCheckCheck.PrecSurface(new SurfaceAdaptor(new PlaneSurface(new Point3D(900, 0, 0), new Direction3D(0, 0, 1)))));
         var aCone = new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, -200), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 0.3, 3);
-        Assert.Equal(Epsilon(200.0), BRepCheck.PrecSurface(new SurfaceAdaptor(aCone)));
+        Assert.Equal(Epsilon(200.0), BRepCheckCheck.PrecSurface(new SurfaceAdaptor(aCone)));
     }
 
     [Fact]
@@ -144,20 +145,20 @@ public class BRepCheckTests
     {
         Solid aBox = TestShapes.Box(1, 2, 3);
         Shell aShell = ShapeCasts.Shell(new Iterator(aBox).Value());
-        var aCheck = new BRepCheck_Shell(aShell);
-        Assert.True(aCheck.IsMinimum());
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_NoError, aCheck.Orientation());
+        var aCheck = new ShellCheck(aShell);
+        Assert.True(aCheck.IsMinimum);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.NoError, aCheck.Orientation());
         Assert.False(aCheck.IsUnorientable());
 
         aCheck.InContext(aBox);
         Assert.True(aCheck.IsStatusOnShape(aBox));
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape(aBox)));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape(aBox)));
         aCheck.InitContextIterator();
         Assert.True(aCheck.MoreShapeInContext());
         Assert.True(aCheck.ContextualShape().IsSame(aBox));
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape()));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape()));
         aCheck.NextShapeInContext();
         Assert.False(aCheck.MoreShapeInContext());
 
@@ -170,11 +171,11 @@ public class BRepCheckTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Shell aShell = ShapeCasts.Shell(new Iterator(aBox).Value());
-        var aCheck = new BRepCheck_Shell(aShell);
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed(true));
-        Assert.Equal(BRepCheck_NoError, aCheck.Orientation(true));
+        var aCheck = new ShellCheck(aShell);
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed(true));
+        Assert.Equal(StatusCheck.NoError, aCheck.Orientation(true));
         aCheck.InContext(aBox);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape(aBox)));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape(aBox)));
     }
 
     [Fact]
@@ -182,21 +183,21 @@ public class BRepCheckTests
     {
         List<Shape> aFaces = Faces(BoxShell());
         Shell anOpen = ShellOf([.. aFaces.Take(5)]);
-        var aCheck = new BRepCheck_Shell(anOpen);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NotClosed, aCheck.Closed());
+        var aCheck = new ShellCheck(anOpen);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotClosed, aCheck.Closed());
         // Orientation accepts an open shell
-        Assert.Equal(BRepCheck_NoError, aCheck.Orientation());
+        Assert.Equal(StatusCheck.NoError, aCheck.Orientation());
         // the status list is changed only on request
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NotClosed, aCheck.Closed(true));
-        Assert.Equal([BRepCheck_NotClosed], ToList(aCheck.Status()));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotClosed, aCheck.Closed(true));
+        Assert.Equal([StatusCheck.NotClosed], ToList(aCheck.Status()));
 
         // in a solid, the shell must be closed
-        var aCheck2 = new BRepCheck_Shell(anOpen);
+        var aCheck2 = new ShellCheck(anOpen);
         Solid aSolid = SolidOf(anOpen);
         aCheck2.InContext(aSolid);
-        Assert.Equal([BRepCheck_NotClosed], ToList(aCheck2.StatusOnShape(aSolid)));
+        Assert.Equal([StatusCheck.NotClosed], ToList(aCheck2.StatusOnShape(aSolid)));
     }
 
     [Fact]
@@ -205,36 +206,36 @@ public class BRepCheckTests
         List<Shape> aFaces = Faces(BoxShell());
         aFaces[2] = aFaces[2].Reversed();
         Shell aShell = ShellOf([.. aFaces]);
-        var aCheck = new BRepCheck_Shell(aShell);
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_BadOrientationOfSubshape, aCheck.Orientation());
+        var aCheck = new ShellCheck(aShell);
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.BadOrientationOfSubshape, aCheck.Orientation());
         Assert.True(aCheck.IsUnorientable());
 
-        var aCheck2 = new BRepCheck_Shell(aShell);
+        var aCheck2 = new ShellCheck(aShell);
         Solid aSolid = SolidOf(aShell);
         aCheck2.InContext(aSolid);
-        Assert.Equal([BRepCheck_BadOrientationOfSubshape], ToList(aCheck2.StatusOnShape(aSolid)));
+        Assert.Equal([StatusCheck.BadOrientationOfSubshape], ToList(aCheck2.StatusOnShape(aSolid)));
 
         // marked unorientable, the shell isn't checked for orientation in a solid
-        var aCheck3 = new BRepCheck_Shell(aShell);
+        var aCheck3 = new ShellCheck(aShell);
         aCheck3.SetUnorientable();
         Assert.True(aCheck3.IsUnorientable());
-        Assert.Equal([BRepCheck_UnorientableShape], ToList(aCheck3.Status()));
+        Assert.Equal([StatusCheck.UnorientableShape], ToList(aCheck3.Status()));
     }
 
     [Fact]
     public void Shell_EmptyAndDisconnected()
     {
-        var anEmpty = new BRepCheck_Shell(ShellOf());
-        Assert.Equal([BRepCheck_EmptyShell], ToList(anEmpty.Status()));
-        Assert.Equal(BRepCheck_EmptyShell, anEmpty.Closed());
-        Assert.Equal(BRepCheck_EmptyShell, anEmpty.Orientation());
+        var anEmpty = new ShellCheck(ShellOf());
+        Assert.Equal([StatusCheck.EmptyShell], ToList(anEmpty.Status()));
+        Assert.Equal(StatusCheck.EmptyShell, anEmpty.Closed());
+        Assert.Equal(StatusCheck.EmptyShell, anEmpty.Orientation());
 
         var aFaces = new List<Shape>(Faces(BoxShell()));
         aFaces.AddRange(Faces(BoxShell(2, 2, 2)));
-        var aTwo = new BRepCheck_Shell(ShellOf([.. aFaces]));
-        Assert.Equal([BRepCheck_NotConnected], ToList(aTwo.Status()));
-        Assert.Equal(BRepCheck_NotConnected, aTwo.Closed());
+        var aTwo = new ShellCheck(ShellOf([.. aFaces]));
+        Assert.Equal([StatusCheck.NotConnected], ToList(aTwo.Status()));
+        Assert.Equal(StatusCheck.NotConnected, aTwo.Closed());
     }
 
     [Fact]
@@ -243,30 +244,30 @@ public class BRepCheckTests
         List<Shape> aFaces = Faces(BoxShell());
         aFaces.Add(aFaces[0]);
         Shell aShell = ShellOf([.. aFaces]);
-        var aCheck = new BRepCheck_Shell(aShell);
+        var aCheck = new ShellCheck(aShell);
         // Minimum counts 7 faces but reaches 6 distinct ones, so the shell is "not connected", and Closed and
         // Orientation report that first status (Closed's own RedundantFace check can't fire anyway, occt-issues.md)
-        Assert.Equal([BRepCheck_NotConnected], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NotConnected, aCheck.Closed());
-        Assert.Equal(BRepCheck_NotConnected, aCheck.Orientation());
+        Assert.Equal([StatusCheck.NotConnected], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotConnected, aCheck.Closed());
+        Assert.Equal(StatusCheck.NotConnected, aCheck.Orientation());
 
         // with a blind status list (Init's Minimum reset to NoError), Closed still finds no redundant face
-        var aBlind = new BRepCheck_Shell(aShell);
+        var aBlind = new ShellCheck(aShell);
         aBlind.Status().Clear();
-        aBlind.Status().Append(BRepCheck_NoError);
+        aBlind.Status().Append(StatusCheck.NoError);
         // OCCT: IndexedMap::Add returns an index, never 0, so Closed's RedundantFace check never fires; the face's
         // edges are then found three times, and NbConnectedSet splits the shell at them
-        Assert.Equal(BRepCheck_InvalidMultiConnexity, aBlind.Closed());
-        Assert.Equal(BRepCheck_InvalidMultiConnexity, aBlind.Orientation());
+        Assert.Equal(StatusCheck.InvalidMultiConnexity, aBlind.Closed());
+        Assert.Equal(StatusCheck.InvalidMultiConnexity, aBlind.Orientation());
     }
 
     [Fact]
     public void Shell_TwoBoxesSharingAnEdge()
     {
         Shell aShell = TwoBoxesSharingAnEdge();
-        var aCheck = new BRepCheck_Shell(aShell);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_InvalidMultiConnexity, aCheck.Closed());
+        var aCheck = new ShellCheck(aShell);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.InvalidMultiConnexity, aCheck.Closed());
 
         var aSets = new NCollection_List<Shape>();
         Assert.Equal(2, aCheck.NbConnectedSet(aSets));
@@ -276,48 +277,48 @@ public class BRepCheckTests
             Assert.Equal(6, Faces(aSet).Count);
             Assert.True(aSet.TShape()!.IsFrozen);
             Assert.True(aSet.Closed());
-            Assert.Equal(BRepCheck_NoError, new BRepCheck_Shell(ShapeCasts.Shell(aSet)).Closed());
+            Assert.Equal(StatusCheck.NoError, new ShellCheck(ShapeCasts.Shell(aSet)).Closed());
         }
     }
 
     [Fact]
     public void Shell_NotInContext()
     {
-        var aCheck = new BRepCheck_Shell(BoxShell());
+        var aCheck = new ShellCheck(BoxShell());
         Solid anOther = TestShapes.Box(1, 1, 1);
         aCheck.InContext(anOther);
-        Assert.Equal([BRepCheck_SubshapeNotInShape], ToList(aCheck.StatusOnShape(anOther)));
+        Assert.Equal([StatusCheck.SubshapeNotInShape], ToList(aCheck.StatusOnShape(anOther)));
         // a second call does nothing
         aCheck.InContext(anOther);
-        Assert.Equal([BRepCheck_SubshapeNotInShape], ToList(aCheck.StatusOnShape(anOther)));
+        Assert.Equal([StatusCheck.SubshapeNotInShape], ToList(aCheck.StatusOnShape(anOther)));
     }
 
     [Fact]
     public void Result_SetFailStatusAndContexts()
     {
         Shell aShell = BoxShell();
-        var aCheck = new BRepCheck_Shell(aShell);
+        var aCheck = new ShellCheck(aShell);
         aCheck.SetParallel(true);
-        Assert.True(aCheck.IsParallel());
+        Assert.True(aCheck.IsParallel);
         aCheck.SetFailStatus(aShell);
-        Assert.Equal([BRepCheck_CheckFail], ToList(aCheck.Status()));
+        Assert.Equal([StatusCheck.CheckFail], ToList(aCheck.Status()));
         Face aFace = ShapeCasts.Face(Faces(aShell)[0]);
         Assert.False(aCheck.IsStatusOnShape(aFace));
         aCheck.SetFailStatus(aFace);
-        Assert.Equal([BRepCheck_CheckFail], ToList(aCheck.StatusOnShape(aFace)));
+        Assert.Equal([StatusCheck.CheckFail], ToList(aCheck.StatusOnShape(aFace)));
         // the contexts skip the shell itself
         aCheck.InitContextIterator();
         Assert.True(aCheck.ContextualShape().IsSame(aFace));
         aCheck.NextShapeInContext();
         Assert.False(aCheck.MoreShapeInContext());
         // Closed reports the first status already saved
-        Assert.Equal(BRepCheck_CheckFail, aCheck.Closed());
-        Assert.False(aCheck.IsBlind());
+        Assert.Equal(StatusCheck.CheckFail, aCheck.Closed());
+        Assert.False(aCheck.IsBlind);
         aCheck.Blind();
-        Assert.True(aCheck.IsBlind());
+        Assert.True(aCheck.IsBlind);
         // Init starts again
         aCheck.Init(aShell);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
         Assert.False(aCheck.IsStatusOnShape(aFace));
     }
 }

@@ -1,27 +1,30 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using System.Globalization;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets.Api;
 
 /// <summary>
-/// The options of a fillet for the functional twin <see cref="BRepFilletAPI.Fillet(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_FilletOptions, out History)"/>
+/// The options of a fillet for the functional twin <see cref="BRepFilletApi.Fillet(in Shape, IReadOnlyList{Edge}, double, in FilletOptions, out History)"/>
 /// (decision 1139): BRepFilletAPI_MakeFillet's options under OCCT's names, with OCCT's defaults.
 /// </summary>
 /// <remarks>
-/// An OCCT.NET addition, as <see cref="BRepAlgoAPI_Options"/> (decision 579): a struct with public fields, equatable
+/// An OCCT.NET addition, as <see cref="AlgoApiOptions"/> (decision 579): a struct with public fields, equatable
 /// field by field (doubles as <c>double.Equals</c>). <c>new BRepFilletAPI_FilletOptions()</c> has OCCT's defaults
 /// (those of the MakeFillet constructor); <c>default</c> doesn't (all zero).
 /// </remarks>
-public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptions>
+public struct FilletOptions : IEquatable<FilletOptions>
 {
     /// <summary>OCCT's defaults.</summary>
-    public BRepFilletAPI_FilletOptions()
+    public FilletOptions()
     {
-        FShape = ChFi3d_FilletShape.ChFi3d_Rational;
+        FShape = FilletShape.Rational;
         Tang = 1.0e-2;
         Tesp = 1.0e-4;
         T2d = 1.0e-5;
@@ -33,7 +36,7 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
     }
 
     /// <summary>The type of fillet surface (the constructor's <c>FShape</c>; ChFi3d_Rational by default).</summary>
-    public ChFi3d_FilletShape FShape;
+    public FilletShape FShape;
 
     /// <summary><c>SetParams</c>' angular tolerance (1e-2 by default).</summary>
     public double Tang;
@@ -59,31 +62,31 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
     /// <summary><c>SetContinuity</c>'s G1 tolerance between the fillets and their faces (1e-2 by default).</summary>
     public double AngularTolerance;
 
-    public readonly bool Equals(BRepFilletAPI_FilletOptions theOther) =>
-        FShape == theOther.FShape && Tang.Equals(theOther.Tang) && Tesp.Equals(theOther.Tesp) && T2d.Equals(theOther.T2d)
-        && TApp3d.Equals(theOther.TApp3d) && TolApp2d.Equals(theOther.TolApp2d) && Fleche.Equals(theOther.Fleche)
-        && InternalContinuity == theOther.InternalContinuity && AngularTolerance.Equals(theOther.AngularTolerance);
+    public readonly bool Equals(FilletOptions other) =>
+        FShape == other.FShape && Tang.Equals(other.Tang) && Tesp.Equals(other.Tesp) && T2d.Equals(other.T2d)
+        && TApp3d.Equals(other.TApp3d) && TolApp2d.Equals(other.TolApp2d) && Fleche.Equals(other.Fleche)
+        && InternalContinuity == other.InternalContinuity && AngularTolerance.Equals(other.AngularTolerance);
 
-    public override readonly bool Equals(object? theObj) => theObj is BRepFilletAPI_FilletOptions anOther && Equals(anOther);
+    public override readonly bool Equals(object? obj) => obj is FilletOptions other && Equals(other);
 
     public override readonly int GetHashCode()
     {
-        HashCode aHash = new();
-        aHash.Add(FShape);
-        aHash.Add(Tang);
-        aHash.Add(Tesp);
-        aHash.Add(T2d);
-        aHash.Add(TApp3d);
-        aHash.Add(TolApp2d);
-        aHash.Add(Fleche);
-        aHash.Add(InternalContinuity);
-        aHash.Add(AngularTolerance);
-        return aHash.ToHashCode();
+        HashCode hash = new();
+        hash.Add(FShape);
+        hash.Add(Tang);
+        hash.Add(Tesp);
+        hash.Add(T2d);
+        hash.Add(TApp3d);
+        hash.Add(TolApp2d);
+        hash.Add(Fleche);
+        hash.Add(InternalContinuity);
+        hash.Add(AngularTolerance);
+        return hash.ToHashCode();
     }
 
-    public static bool operator ==(BRepFilletAPI_FilletOptions theLeft, BRepFilletAPI_FilletOptions theRight) => theLeft.Equals(theRight);
+    public static bool operator ==(FilletOptions left, FilletOptions right) => left.Equals(right);
 
-    public static bool operator !=(BRepFilletAPI_FilletOptions theLeft, BRepFilletAPI_FilletOptions theRight) => !theLeft.Equals(theRight);
+    public static bool operator !=(FilletOptions left, FilletOptions right) => !left.Equals(right);
 
     public override readonly string ToString() =>
         string.Create(CultureInfo.InvariantCulture,
@@ -91,29 +94,29 @@ public struct BRepFilletAPI_FilletOptions : IEquatable<BRepFilletAPI_FilletOptio
 }
 
 /// <summary>
-/// The options of a chamfer for the functional twin <see cref="BRepFilletAPI.Chamfer(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_ChamferOptions, out History)"/>
+/// The options of a chamfer for the functional twin <see cref="BRepFilletApi.Chamfer(in Shape, IReadOnlyList{Edge}, double, in ChamferOptions, out History)"/>
 /// (decision 1139): BRepFilletAPI_MakeChamfer's one option, <c>SetMode</c>, with OCCT's default.
 /// </summary>
-public struct BRepFilletAPI_ChamferOptions : IEquatable<BRepFilletAPI_ChamferOptions>
+public struct ChamferOptions : IEquatable<ChamferOptions>
 {
     /// <summary>OCCT's default.</summary>
-    public BRepFilletAPI_ChamferOptions()
+    public ChamferOptions()
     {
-        Mode = ChFiDS_ChamfMode.ChFiDS_ClassicChamfer;
+        Mode = ChamfMode.ClassicChamfer;
     }
 
     /// <summary><c>SetMode</c>: the classic chamfer (the default) or a throat chamfer.</summary>
-    public ChFiDS_ChamfMode Mode;
+    public ChamfMode Mode;
 
-    public readonly bool Equals(BRepFilletAPI_ChamferOptions theOther) => Mode == theOther.Mode;
+    public readonly bool Equals(ChamferOptions other) => Mode == other.Mode;
 
-    public override readonly bool Equals(object? theObj) => theObj is BRepFilletAPI_ChamferOptions anOther && Equals(anOther);
+    public override readonly bool Equals(object? obj) => obj is ChamferOptions other && Equals(other);
 
     public override readonly int GetHashCode() => Mode.GetHashCode();
 
-    public static bool operator ==(BRepFilletAPI_ChamferOptions theLeft, BRepFilletAPI_ChamferOptions theRight) => theLeft.Equals(theRight);
+    public static bool operator ==(ChamferOptions left, ChamferOptions right) => left.Equals(right);
 
-    public static bool operator !=(BRepFilletAPI_ChamferOptions theLeft, BRepFilletAPI_ChamferOptions theRight) => !theLeft.Equals(theRight);
+    public static bool operator !=(ChamferOptions left, ChamferOptions right) => !left.Equals(right);
 
     public override readonly string ToString() => $"BRepFilletAPI_ChamferOptions(Mode={Mode})";
 }

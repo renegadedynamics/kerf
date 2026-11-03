@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -16,22 +19,22 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BOPAlgo_BuilderFaceTests
 {
-    private static Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
+    private static Vertex V(double x, double y) => new MakeVertex(new Point3D(x, y, 0)).Vertex();
 
-    private static Edge E(in Vertex a, in Vertex b) => new BRepBuilderAPI_MakeEdge(a, b).Edge();
+    private static Edge E(in Vertex a, in Vertex b) => new MakeEdge(a, b).Edge();
 
     // A 10 x 10 square on z = 0 whose bottom and top sides are split at x = 5, and the edge between the split points.
     private static (Face Face, Edge Middle) SplitSquare()
     {
         Vertex v1 = V(0, 0), v2 = V(5, 0), v3 = V(10, 0), v4 = V(10, 10), v5 = V(5, 10), v6 = V(0, 10);
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         aMW.Add(E(v1, v2));
         aMW.Add(E(v2, v3));
         aMW.Add(E(v3, v4));
         aMW.Add(E(v4, v5));
         aMW.Add(E(v5, v6));
         aMW.Add(E(v6, v1));
-        Face aF = new BRepBuilderAPI_MakeFace(aMW.Wire(), true).Face();
+        Face aF = new MakeFace(aMW.Wire(), true).Face();
         return (aF, E(v2, v5));
     }
 
@@ -51,21 +54,21 @@ public class BOPAlgo_BuilderFaceTests
         theLE.Append(theE.Oriented(Reversed));
     }
 
-    private static BOPAlgo_BuilderFace Build(in Face theF, NCollection_List<Shape> theLE, bool theParallel = false)
+    private static BuilderFace Build(in Face theF, NCollection_List<Shape> theLE, bool theParallel = false)
     {
-        BOPAlgo_BuilderFace aBF = new();
+        BuilderFace aBF = new();
         aBF.SetFace(theF);
         aBF.SetShapes(theLE);
         aBF.SetRunParallel(theParallel);
         aBF.Perform();
-        Assert.False(aBF.HasErrors());
+        Assert.False(aBF.HasErrors);
         return aBF;
     }
 
     private static double Area(in Shape theS)
     {
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theS, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theS, aProps);
         return aProps.Mass();
     }
 
@@ -87,7 +90,7 @@ public class BOPAlgo_BuilderFaceTests
     {
         for (NCollection_List<Shape>.Iterator aIt = new(theLS); aIt.More(); aIt.Next())
         {
-            Assert.True(new BRepCheck_Analyzer(aIt.Value()).IsValid());
+            Assert.True(new Analyzer(aIt.Value()).IsValid());
         }
     }
 
@@ -98,7 +101,7 @@ public class BOPAlgo_BuilderFaceTests
         NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, aMiddle);
 
-        BOPAlgo_BuilderFace aBF = Build(global::Kerf.Engine.Topology.ShapeCasts.Face(aF.Oriented(Reversed)), aLE);
+        BuilderFace aBF = Build(global::Kerf.Engine.Topology.ShapeCasts.Face(aF.Oriented(Reversed)), aLE);
         Assert.Equal(Reversed, aBF.Orientation());
         Assert.Equal(Forward, aBF.Face().Orientation());
         Assert.Equal(2, aBF.Loops().Extent());
@@ -108,7 +111,7 @@ public class BOPAlgo_BuilderFaceTests
             Assert.Equal(50.0, Area(aIt.Value()), 1e-9);
         }
         AssertValid(aBF.Areas());
-        Assert.False(aBF.HasWarnings());
+        Assert.False(aBF.HasWarnings);
     }
 
     [Fact]
@@ -116,10 +119,10 @@ public class BOPAlgo_BuilderFaceTests
     {
         (Face aF, _) = SplitSquare();
         NCollection_List<Shape> aLE = EdgesOf(aF);
-        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 5, 0), new Direction3D(0, 0, 1)), 2)).Edge();
+        Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(5, 5, 0), new Direction3D(0, 0, 1)), 2)).Edge();
         AddTwice(aLE, aCircle);
 
-        BOPAlgo_BuilderFace aBF = Build(aF, aLE);
+        BuilderFace aBF = Build(aF, aLE);
         Assert.Equal(2, aBF.Areas().Extent());
         double aTotal = 0;
         bool hasHole = false, hasDisc = false;
@@ -155,7 +158,7 @@ public class BOPAlgo_BuilderFaceTests
         NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, E(V(2, 2), V(3, 3)));
 
-        BOPAlgo_BuilderFace aBF = Build(aF, aLE);
+        BuilderFace aBF = Build(aF, aLE);
         Assert.Equal(1, aBF.Areas().Extent());
         Shape aR = aBF.Areas().First();
         int aNbInternal = 0, aNbW = 0;
@@ -171,12 +174,12 @@ public class BOPAlgo_BuilderFaceTests
         Assert.Equal(1, aNbInternal);
         Assert.Equal(100.0, Area(aR), 1e-9);
 
-        BOPAlgo_BuilderFace aBF2 = new();
+        BuilderFace aBF2 = new();
         aBF2.SetFace(aF);
         aBF2.SetShapes(aLE);
         aBF2.SetAvoidInternalShapes(true);
         aBF2.Perform();
-        Assert.True(aBF2.IsAvoidInternalShapes());
+        Assert.True(aBF2.IsAvoidInternalShapes);
         Assert.Equal(1, aBF2.Areas().Extent());
         int aNbW2 = 0;
         for (global::Kerf.Engine.Topology.Iterator aItW = new(aBF2.Areas().First()); aItW.More(); aItW.Next())
@@ -193,9 +196,9 @@ public class BOPAlgo_BuilderFaceTests
         NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, E(V(20, 20), V(21, 21)));
 
-        BOPAlgo_BuilderFace aBF = Build(aF, aLE);
+        BuilderFace aBF = Build(aF, aLE);
         Assert.Equal(1, aBF.Areas().Extent());
-        Assert.True(aBF.HasWarning(typeof(BOPAlgo_AlertFaceBuilderUnusedEdges)));
+        Assert.True(aBF.HasWarning(typeof(AlertFaceBuilderUnusedEdges)));
     }
 
     // The lateral face of a cylinder rebuilt from its own edges: the seam is given twice, so the block is irregular
@@ -203,7 +206,7 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void CylinderLateralFace_WithItsSeam_IsRebuilt()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+        Shape aCyl = new ApiMakeCylinder(5, 10).Shape();
         Face aLateral = new();
         for (global::Kerf.Engine.Topology.Explorer anExp = new(aCyl, ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -215,7 +218,7 @@ public class BOPAlgo_BuilderFaceTests
         }
         Assert.False(aLateral.IsNull);
 
-        BOPAlgo_BuilderFace aBF = Build(aLateral, EdgesOf(aLateral));
+        BuilderFace aBF = Build(aLateral, EdgesOf(aLateral));
         Assert.Equal(1, aBF.Areas().Extent());
         Assert.Equal(Area(aLateral), Area(aBF.Areas().First()), 1e-9);
         AssertValid(aBF.Areas());
@@ -224,10 +227,10 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void SphereFace_WithDegeneratedEdges_IsRebuilt()
     {
-        Shape aSph = new BRepPrimAPI_MakeSphere(3).Shape();
+        Shape aSph = new MakeSphere(3).Shape();
         Face aF = global::Kerf.Engine.Topology.ShapeCasts.Face(new global::Kerf.Engine.Topology.Explorer(aSph, ShapeType.Face).Current());
 
-        BOPAlgo_BuilderFace aBF = Build(aF, EdgesOf(aF));
+        BuilderFace aBF = Build(aF, EdgesOf(aF));
         Assert.Equal(1, aBF.Areas().Extent());
         Assert.Equal(Area(aF), Area(aBF.Areas().First()), 1e-9);
     }
@@ -238,11 +241,11 @@ public class BOPAlgo_BuilderFaceTests
         (Face aF, Edge aMiddle) = SplitSquare();
         NCollection_List<Shape> aLE = EdgesOf(aF);
         AddTwice(aLE, aMiddle);
-        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(2.5, 5, 0), new Direction3D(0, 0, 1)), 1)).Edge();
+        Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(2.5, 5, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         AddTwice(aLE, aCircle);
 
-        BOPAlgo_BuilderFace aSerial = Build(aF, aLE);
-        BOPAlgo_BuilderFace aParallel = Build(aF, aLE, true);
+        BuilderFace aSerial = Build(aF, aLE);
+        BuilderFace aParallel = Build(aF, aLE, true);
         Assert.Equal(3, aSerial.Areas().Extent());
         Assert.Equal(Text(aSerial.Areas()), Text(aParallel.Areas()));
         double aTotal = 0;
@@ -256,12 +259,12 @@ public class BOPAlgo_BuilderFaceTests
     [Fact]
     public void NullFace_IsAnError()
     {
-        BOPAlgo_BuilderFace aBF = new();
+        BuilderFace aBF = new();
         aBF.Perform();
-        Assert.True(aBF.HasError(typeof(BOPAlgo_AlertNullInputShapes)));
+        Assert.True(aBF.HasError(typeof(AlertNullInputShapes)));
 
-        BOPAlgo_WireSplitter aWS = new();
+        WireSplitter aWS = new();
         aWS.Perform();
-        Assert.True(aWS.HasError(typeof(BOPAlgo_AlertNullInputShapes)));
+        Assert.True(aWS.HasError(typeof(AlertNullInputShapes)));
     }
 }

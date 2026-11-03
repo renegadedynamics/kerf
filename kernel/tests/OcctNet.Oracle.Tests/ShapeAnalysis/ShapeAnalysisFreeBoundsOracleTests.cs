@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -210,7 +211,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         {
             string w = $"{theWhat}, Shell (internal {anInternal})";
             using var aNSas = new N.ShapeAnalysis_Shell();
-            var aPSas = new ShapeAnalysis_Shell();
+            var aPSas = new ShellAnalysis();
             object? aNRes = Try<object>(() => aNSas.CheckOrientedShells(aNS, true, anInternal), out string? aNErr);
             object? aPRes = Try<object>(() => aPSas.CheckOrientedShells(aPS, true, anInternal), out string? aPErr);
             if (Failed(aNErr, aPErr, w))
@@ -218,10 +219,10 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                 continue;
             }
             SameValue(B((bool)aNRes!), B((bool)aPRes!), w + ", result");
-            SameValue(B(aNSas.HasBadEdges()), B(aPSas.HasBadEdges()), w + ", HasBadEdges");
-            SameValue(B(aNSas.HasFreeEdges()), B(aPSas.HasFreeEdges()), w + ", HasFreeEdges");
-            SameValue(B(aNSas.HasConnectedEdges()), B(aPSas.HasConnectedEdges()), w + ", HasConnectedEdges");
-            SameValue(aNSas.NbLoaded(), aPSas.NbLoaded(), w + ", NbLoaded");
+            SameValue(B(aNSas.HasBadEdges()), B(aPSas.HasBadEdges), w + ", HasBadEdges");
+            SameValue(B(aNSas.HasFreeEdges()), B(aPSas.HasFreeEdges), w + ", HasFreeEdges");
+            SameValue(B(aNSas.HasConnectedEdges()), B(aPSas.HasConnectedEdges), w + ", HasConnectedEdges");
+            SameValue(aNSas.NbLoaded(), aPSas.LoadedCount, w + ", NbLoaded");
             SameShape(aNSas.BadEdges(), aPSas.BadEdges(), w + ", BadEdges");
             SameShape(aNSas.FreeEdges(), aPSas.FreeEdges(), w + ", FreeEdges");
 
@@ -239,7 +240,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                     aPSeq.Append(anExp.Current());
                 }
                 N.TopTools_HSequenceOfShape? aNW = Try(() => N.ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aNSeq, 1e-4, false)!, out aNErr);
-                NCollection_HSequence<Shape>? aPW = Try(() => ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false), out aPErr);
+                NCollection_HSequence<Shape>? aPW = Try(() => FreeBounds.ConnectEdgesToWires(aPSeq, 1e-4, false), out aPErr);
                 if (Failed(aNErr, aPErr, w + ", ConnectEdgesToWires"))
                 {
                     continue;
@@ -263,7 +264,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         {
             string w = $"{theWhat}, FreeBounds ({aSplitClosed}, {aSplitOpen})";
             using N.ShapeAnalysis_FreeBounds? aNFb = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, aSplitClosed, aSplitOpen), out string? aNErr);
-            ShapeAnalysis_FreeBounds? aPFb = Try(() => new ShapeAnalysis_FreeBounds(aPS, aSplitClosed, aSplitOpen), out string? aPErr);
+            FreeBounds? aPFb = Try(() => new FreeBounds(aPS, aSplitClosed, aSplitOpen), out string? aPErr);
             if (Failed(aNErr, aPErr, w))
             {
                 continue;
@@ -276,7 +277,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
         {
             string w = $"{theWhat}, FreeBounds (tolerance {aTol})";
             using N.ShapeAnalysis_FreeBounds? aNFb = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, aTol, false, true), out string? aNErr);
-            ShapeAnalysis_FreeBounds? aPFb = Try(() => new ShapeAnalysis_FreeBounds(aPS, aTol, false, true), out string? aPErr);
+            FreeBounds? aPFb = Try(() => new FreeBounds(aPS, aTol, false, true), out string? aPErr);
             if (Failed(aNErr, aPErr, w))
             {
                 continue;
@@ -285,7 +286,7 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
             SameShape(aNFb.GetOpenWires(), aPFb.GetOpenWires(), w + ", open wires");
         }
         using N.ShapeAnalysis_FreeBounds? aNFbI = Try(() => new N.ShapeAnalysis_FreeBounds(aNS, false, true, true), out string? aNErrI);
-        ShapeAnalysis_FreeBounds? aPFbI = Try(() => new ShapeAnalysis_FreeBounds(aPS, false, true, true), out string? aPErrI);
+        FreeBounds? aPFbI = Try(() => new FreeBounds(aPS, false, true, true), out string? aPErrI);
         if (Failed(aNErrI, aPErrI, theWhat + ", FreeBounds (internal edges)"))
         {
             return;

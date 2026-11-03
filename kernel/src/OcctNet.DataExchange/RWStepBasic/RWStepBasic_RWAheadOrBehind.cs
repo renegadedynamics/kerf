@@ -24,11 +24,11 @@ internal static class RWStepBasic_RWAheadOrBehind
     {
         switch (theSourceEnum)
         {
-            case StepBasic_aobAhead:
+            case StepBasic_AheadOrBehind.StepBasic_aobAhead:
                 return aobAhead;
-            case StepBasic_aobExact:
+            case StepBasic_AheadOrBehind.StepBasic_aobExact:
                 return aobExact;
-            case StepBasic_aobBehind:
+            case StepBasic_AheadOrBehind.StepBasic_aobBehind:
                 return aobBehind;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepBasic_RWAheadOrBehind
     {
         if (theAheadOrBehindStr == aobAhead)
         {
-            theResultEnum = StepBasic_aobAhead;
+            theResultEnum = StepBasic_AheadOrBehind.StepBasic_aobAhead;
         }
         else if (theAheadOrBehindStr == aobExact)
         {
-            theResultEnum = StepBasic_aobExact;
+            theResultEnum = StepBasic_AheadOrBehind.StepBasic_aobExact;
         }
         else if (theAheadOrBehindStr == aobBehind)
         {
-            theResultEnum = StepBasic_aobBehind;
+            theResultEnum = StepBasic_AheadOrBehind.StepBasic_aobBehind;
         }
         else
         {

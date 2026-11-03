@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,7 +15,7 @@ public class IntSurf_Quadric_Test
     {
         Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
                             0.5, 0.0);
-        IntSurf_Quadric aQuadric = new(aCone);
+        SurfaceQuadric aQuadric = new(aCone);
         Point3D anApex = aCone.Apex();
 
         Vector3D aGradient = aQuadric.Gradient(anApex);
@@ -35,19 +36,19 @@ public class IntSurf_QuadricTests
 
     public static TheoryData<int> Kinds => new() { 0, 1, 2, 3, 4 };
 
-    private static IntSurf_Quadric Make(int theKind) => theKind switch
+    private static SurfaceQuadric Make(int theKind) => theKind switch
     {
-        0 => new IntSurf_Quadric(new Plane3D(Frame)),
-        1 => new IntSurf_Quadric(new Cylinder(Frame, 2.0)),
-        2 => new IntSurf_Quadric(new Sphere(Frame, 3.0)),
-        3 => new IntSurf_Quadric(new Cone(Frame, 0.4, 1.5)),
-        _ => new IntSurf_Quadric(new Torus(Frame, 4.0, 1.0)),
+        0 => new SurfaceQuadric(new Plane3D(Frame)),
+        1 => new SurfaceQuadric(new Cylinder(Frame, 2.0)),
+        2 => new SurfaceQuadric(new Sphere(Frame, 3.0)),
+        3 => new SurfaceQuadric(new Cone(Frame, 0.4, 1.5)),
+        _ => new SurfaceQuadric(new Torus(Frame, 4.0, 1.0)),
     };
 
     [Fact]
     public void DefaultIsAnEmptyQuadric()
     {
-        IntSurf_Quadric aQ = new();
+        SurfaceQuadric aQ = new();
         Assert.Equal(SurfaceKind.OtherSurface, aQ.TypeQuadric());
         Assert.Equal(0.0, aQ.Distance(new Point3D(1, 2, 3)));
         double aDist = 7.0;
@@ -61,14 +62,14 @@ public class IntSurf_QuadricTests
     [MemberData(nameof(Kinds))]
     public void PointsOnTheSurfaceAreAtZeroDistance(int theKind)
     {
-        IntSurf_Quadric aQ = Make(theKind);
+        SurfaceQuadric aQ = Make(theKind);
         for (double u = 0.1; u < 6.0; u += 0.7)
         {
             for (double v = -0.9; v < 1.0; v += 0.3)
             {
                 Point3D aP = aQ.Value(u, v);
                 Assert.Equal(0.0, aQ.Distance(aP), 1e-12);
-                Assert.Equal(0.0, IntSurf_QuadricTool.Value(aQ, aP.X(), aP.Y(), aP.Z()), 1e-12);
+                Assert.Equal(0.0, QuadricTool.Value(aQ, aP.X(), aP.Y(), aP.Z()), 1e-12);
             }
         }
     }
@@ -77,7 +78,7 @@ public class IntSurf_QuadricTests
     [MemberData(nameof(Kinds))]
     public void GradientIsTheNormalAndMatchesFiniteDifferences(int theKind)
     {
-        IntSurf_Quadric aQ = Make(theKind);
+        SurfaceQuadric aQ = Make(theKind);
         double h = 1e-6;
         foreach (Point3D aP in new[] { new Point3D(3.0, 1.0, 2.0), new Point3D(-2.0, 0.5, -1.0), new Point3D(0.7, 4.0, 1.5) })
         {
@@ -96,7 +97,7 @@ public class IntSurf_QuadricTests
             aQ.ValAndGrad(aP, ref aDist, ref aG2);
             Assert.Equal(aQ.Distance(aP), aDist, 1e-14);
             Assert.True(aG2.IsEqual(aGrad, 1e-14, 1e-12));
-            IntSurf_QuadricTool.Gradient(aQ, aP.X(), aP.Y(), aP.Z(), out Vector3D aG3);
+            QuadricTool.Gradient(aQ, aP.X(), aP.Y(), aP.Z(), out Vector3D aG3);
             Assert.Equal(aGrad, aG3);
         }
     }
@@ -105,7 +106,7 @@ public class IntSurf_QuadricTests
     [MemberData(nameof(Kinds))]
     public void ParametersInvertValue(int theKind)
     {
-        IntSurf_Quadric aQ = Make(theKind);
+        SurfaceQuadric aQ = Make(theKind);
         double u0 = 1.2, v0 = theKind == 0 ? 0.6 : 0.4;
         Point3D aP = aQ.Value(u0, v0);
         double u = 0, v = 0;
@@ -131,23 +132,23 @@ public class IntSurf_QuadricTests
     public void QuadricsKeepTheirDefinition()
     {
         Cylinder aCyl = new(Frame, 2.0);
-        IntSurf_Quadric aQ = new(aCyl);
+        SurfaceQuadric aQ = new(aCyl);
         Assert.Equal(SurfaceKind.Cylinder, aQ.TypeQuadric());
         Assert.Equal(2.0, aQ.Cylinder().Radius());
-        Assert.Equal(4.0e-6, IntSurf_QuadricTool.Tolerance(aQ));
-        Assert.Equal(6.0e-6, IntSurf_QuadricTool.Tolerance(new IntSurf_Quadric(new Sphere(Frame, 3.0))));
-        Assert.Equal(1.0e-6, IntSurf_QuadricTool.Tolerance(new IntSurf_Quadric(new Plane3D(Frame))));
+        Assert.Equal(4.0e-6, QuadricTool.Tolerance(aQ));
+        Assert.Equal(6.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Sphere(Frame, 3.0))));
+        Assert.Equal(1.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Plane3D(Frame))));
 
         Cone aCone = new(Frame, 0.4, 1.5);
-        IntSurf_Quadric aQc = new(aCone);
+        SurfaceQuadric aQc = new(aCone);
         Assert.Equal(0.4, aQc.Cone().SemiAngle());
         Assert.Equal(1.5, aQc.Cone().RefRadius());
 
         // SetValue rebuilds the whole quadric, as the constructor does
-        IntSurf_Quadric aQs = new(new Plane3D(Frame));
+        SurfaceQuadric aQs = new(new Plane3D(Frame));
         aQs.SetValue(aCyl);
         Assert.Equal(aQ, aQs);
-        IntSurf_Quadric aQt = new(new Torus(Frame, 4.0, 1.0));
+        SurfaceQuadric aQt = new(new Torus(Frame, 4.0, 1.0));
         Assert.Equal(4.0, aQt.Torus().MajorRadius());
         Assert.Equal(1.0, aQt.Torus().MinorRadius());
     }

@@ -6,11 +6,14 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Occt.StepGeom_TransitionCode;
 
 namespace Occt;
@@ -89,7 +92,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
             }
         }
 
-        var sbwd = new ShapeExtend_WireData();
+        var sbwd = new ExtendWireData();
         int nbs = CC.NbSegments();
         for (int i = 1; i <= nbs; i++)
         {
@@ -107,7 +110,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                 return false;
             }
 
-            isClosed = (ccs.Transition() != StepGeom_tcDiscontinuous);
+            isClosed = (ccs.Transition() != StepGeom_TransitionCode.StepGeom_tcDiscontinuous);
 
             // if segment is itself a composite_curve, translate recursively
             if (crv is StepGeom_CompositeCurve)
@@ -124,7 +127,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                     continue;
                 }
 
-                int nb = sbwd.NbEdges() + 1;
+                int nb = sbwd.EdgeCount + 1;
                 for (var it = new Iterator(myWire); it.More(); it.Next())
                 {
                     Edge edge = ShapeCasts.Edge(it.Value());
@@ -135,7 +138,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                     else
                     {
                         edge.Reverse();
-                        sbwd.Add(edge, nb > sbwd.NbEdges() ? 0 : nb);
+                        sbwd.Add(edge, nb > sbwd.EdgeCount ? 0 : nb);
                     }
                 }
 
@@ -194,8 +197,8 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                     Curve3D c3d = StepToGeom.MakeCurve(crv, theLocalFactors);
                     if (c3d is not null)
                     {
-                        var MkEdge = new BRepBuilderAPI_MakeEdge(c3d, c3d.FirstParameter(), c3d.LastParameter());
-                        if (MkEdge.IsDone())
+                        var MkEdge = new MakeEdge(c3d, c3d.FirstParameter(), c3d.LastParameter());
+                        if (MkEdge.IsDone)
                         {
                             if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c3d.FirstParameter())
                                 || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c3d.LastParameter()))
@@ -225,8 +228,8 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
                     {
                         if (edge1.IsNull)
                         {
-                            var MkEdge = new BRepBuilderAPI_MakeEdge(c2d, Surf, c2d.FirstParameter(), c2d.LastParameter());
-                            if (MkEdge.IsDone())
+                            var MkEdge = new MakeEdge(c2d, Surf, c2d.FirstParameter(), c2d.LastParameter());
+                            if (MkEdge.IsDone)
                             {
                                 if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c2d.FirstParameter())
                                     || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c2d.LastParameter()))
@@ -269,7 +272,7 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
             sbwd.Add(edge1);
         }
 
-        if (sbwd.NbEdges() <= 0)
+        if (sbwd.EdgeCount <= 0)
         {
             TP.AddFail(CC, "Translation gives no result");
             return false;
@@ -277,24 +280,24 @@ public sealed class StepToTopoDS_TranslateCompositeCurve : StepToTopoDS_Root
 
         // connect wire; all other fixes are left for caller
         double preci = Precision();
-        var sfw = new ShapeFix_Wire();
+        var sfw = new WireFixer();
         sfw.Load(sbwd);
         sfw.SetPrecision(preci);
         sfw.ClosedWireMode() = isClosed;
         sfw.FixReorder(); //: o3 abv 17 Feb 99: r0301_db.stp #57082
-        if (sfw.StatusReorder(ShapeExtend_DONE))
+        if (sfw.StatusReorder(ExtendStatus.Done))
         {
             TP.AddWarning(CC, "Segments were disordered; fixed");
         }
 
         sfw.FixConnected(preci);
-        if (sfw.StatusConnected(ShapeExtend_FAIL))
+        if (sfw.StatusConnected(ExtendStatus.Fail))
         {
             TP.AddWarning(CC, "Segments are not connected");
         }
 
         myWire = sbwd.InternalWire();
-        done = (sbwd.NbEdges() > 0);
+        done = (sbwd.EdgeCount > 0);
         return true;
     }
 

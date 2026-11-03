@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Fairing;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Geometry;
 using Occt;
@@ -15,7 +16,7 @@ namespace OcctNet.DrawLite;
 /// </summary>
 public sealed class DrawFairCurve : DrawDrawable
 {
-    internal DrawFairCurve(FairCurve_Batten theBatten)
+    internal DrawFairCurve(Batten theBatten)
     {
         Batten = theBatten;
         Curve = theBatten.Curve();
@@ -23,12 +24,12 @@ public sealed class DrawFairCurve : DrawDrawable
     }
 
     /// <summary>The batten (a FairCurve_MinimalVariation for minvarcurve).</summary>
-    public FairCurve_Batten Batten { get; }
+    public Batten Batten { get; }
 
     /// <summary>The curve of the latest computation (frozen).</summary>
     public BSplineCurve2D Curve { get; private set; }
 
-    public override string TypeName => Batten is FairCurve_MinimalVariation ? "DrawFairCurve_MinimalVariation" : "DrawFairCurve_Batten";
+    public override string TypeName => Batten is MinimalVariation ? "DrawFairCurve_MinimalVariation" : "DrawFairCurve_Batten";
 
     /// <summary>DrawTrSurf_Curve2d::Whatis.</summary>
     public override void Whatis(DrawResult theResult) => theResult.Append("2d curve");
@@ -93,10 +94,10 @@ internal static class GeometryTestFairCurveCommands
 
     private static DrawFairCurve? GetBatten(DrawInterpreter theDI, string theName) => theDI.GetDrawable(theName) as DrawFairCurve;
 
-    private static FairCurve_MinimalVariation? GetMVC(DrawInterpreter theDI, string theName, out DrawFairCurve? theDrawable)
+    private static MinimalVariation? GetMVC(DrawInterpreter theDI, string theName, out DrawFairCurve? theDrawable)
     {
         theDrawable = GetBatten(theDI, theName);
-        return theDrawable?.Batten as FairCurve_MinimalVariation;
+        return theDrawable?.Batten as MinimalVariation;
     }
 
     /// <summary>battencurve P1 P2 Angle1 Angle2 Heigth BattenName (angles in degrees).</summary>
@@ -119,7 +120,7 @@ internal static class GeometryTestFairCurveCommands
             return 1;
         }
 
-        FairCurve_Batten Bat = new(P1, P2, h);
+        Batten Bat = new(P1, P2, h);
         Bat.SetAngle1(a1 * M_PI / 180);
         Bat.SetAngle2(a2 * M_PI / 180);
 
@@ -150,7 +151,7 @@ internal static class GeometryTestFairCurveCommands
             return 1;
         }
 
-        FairCurve_MinimalVariation MVC = new(P1, P2, h);
+        MinimalVariation MVC = new(P1, P2, h);
         MVC.SetAngle1(a1 * M_PI / 180);
         MVC.SetAngle2(a2 * M_PI / 180);
 
@@ -360,7 +361,7 @@ internal static class GeometryTestFairCurveCommands
         double rho = theDI.Atof(argv[2]);
         int cote = theDI.Atoi(argv[1]);
 
-        FairCurve_MinimalVariation? MVC = GetMVC(theDI, argv[3], out DrawFairCurve? aDrawable);
+        MinimalVariation? MVC = GetMVC(theDI, argv[3], out DrawFairCurve? aDrawable);
         if (MVC is null)
         {
             return 1;
@@ -390,7 +391,7 @@ internal static class GeometryTestFairCurveCommands
 
         int cote = theDI.Atoi(argv[1]);
 
-        FairCurve_MinimalVariation? MVC = GetMVC(theDI, argv[2], out DrawFairCurve? aDrawable);
+        MinimalVariation? MVC = GetMVC(theDI, argv[2], out DrawFairCurve? aDrawable);
         if (MVC is null)
         {
             return 1;
@@ -424,7 +425,7 @@ internal static class GeometryTestFairCurveCommands
 
         double ratio = theDI.Atof(argv[1]);
 
-        FairCurve_MinimalVariation? MVC = GetMVC(theDI, argv[2], out DrawFairCurve? aDrawable);
+        MinimalVariation? MVC = GetMVC(theDI, argv[2], out DrawFairCurve? aDrawable);
         if (MVC is null)
         {
             return 1;

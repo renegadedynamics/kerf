@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification.Hatching;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -12,12 +13,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>OCCT's Geom2dHatch_Elements GTest (the suite is named after the class, hence the suffix).</summary>
 public class Geom2dHatch_ElementsTest
 {
-    private static Geom2dHatch_Element makeCircleElement()
+    private static Element2D makeCircleElement()
     {
         Axis2D anAxis = new(new Point2D(0, 0), new Direction2D(1, 0));
         CircleCurve2D aCircle = new(anAxis, 1.0);
         CurveAdaptor2D aCurve = new(aCircle);
-        Geom2dHatch_Element anElem = new(aCurve, Forward);
+        Element2D anElem = new(aCurve, Forward);
         return anElem;
     }
 
@@ -27,7 +28,7 @@ public class Geom2dHatch_ElementsTest
     [Fact]
     public void CurrentEdge_ReturnsValidData()
     {
-        Geom2dHatch_Elements anElements = new();
+        Elements2D anElements = new();
         anElements.Bind(1, makeCircleElement());
 
         anElements.InitWires();
@@ -50,13 +51,13 @@ public class Geom2dHatch_ElementsTest
     [Fact]
     public void BindAndFind()
     {
-        Geom2dHatch_Elements anElements = new();
+        Elements2D anElements = new();
         Assert.False(anElements.IsBound(1));
 
         anElements.Bind(1, makeCircleElement());
         Assert.True(anElements.IsBound(1));
 
-        Geom2dHatch_Element anElem = anElements.Find(1);
+        Element2D anElem = anElements.Find(1);
         Assert.Equal(Forward, anElem.Orientation());
     }
 
@@ -64,7 +65,7 @@ public class Geom2dHatch_ElementsTest
     [Fact]
     public void Clear_RemovesAll()
     {
-        Geom2dHatch_Elements anElements = new();
+        Elements2D anElements = new();
         anElements.Bind(1, makeCircleElement());
         anElements.Bind(2, makeCircleElement());
         Assert.True(anElements.IsBound(1));

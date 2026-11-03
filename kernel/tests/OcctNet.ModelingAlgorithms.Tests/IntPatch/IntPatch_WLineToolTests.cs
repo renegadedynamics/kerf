@@ -2,8 +2,10 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -18,19 +20,19 @@ public class IntPatch_WLineToolTests
 {
     private const double Tol = 1.0e-7;
 
-    private static void AssertOnBoth(IntPatch_WLine theWL, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
+    private static void AssertOnBoth(WLine theWL, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                      double theTol)
     {
         for (int k = 1; k <= theWL.NbPnts(); k++)
         {
-            IntSurf_PntOn2S aP = theWL.Point(k);
+            PntOn2S aP = theWL.Point(k);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
             Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"point {k} off S1");
             Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"point {k} off S2");
         }
-        for (int k = 1; k <= theWL.NbVertex(); k++)
+        for (int k = 1; k <= theWL.VertexCount; k++)
         {
-            IntPatch_Point aV = theWL.Vertex(k);
+            PatchPoint aV = theWL.Vertex(k);
             int anIdx = (int)aV.ParameterOnLine();
             Assert.True(anIdx >= 1 && anIdx <= theWL.NbPnts(), $"vertex {k} off the line");
             Assert.True(theWL.Point(anIdx).Value().Distance(aV.Value()) < theTol, $"vertex {k} not at its point");
@@ -44,20 +46,20 @@ public class IntPatch_WLineToolTests
         var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchB());
         var aD1 = new TopolTool(aS1);
         var aD2 = new TopolTool(aS2);
-        var anInt = new IntPatch_PrmPrmIntersection();
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS1, aD1, aS2, aD2, Tol, Tol, 0.01, 0.05);
-        Assert.True(anInt.NbLines() > 0);
+        Assert.True(anInt.LineCount > 0);
         int aNbPurged = 0;
-        for (int i = 1; i <= anInt.NbLines(); i++)
+        for (int i = 1; i <= anInt.LineCount; i++)
         {
-            var aWL = (IntPatch_WLine)anInt.Line(i);
+            var aWL = (WLine)anInt.Line(i);
             int aNbBefore = aWL.NbPnts();
             Point3D aFirst = aWL.Point(1).Value(), aLast = aWL.Point(aNbBefore).Value();
-            IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aWL, aS1, aS2, aD1, aD2);
+            WLine? aRW = WLineTool.ComputePurgedWLine(aWL, aS1, aS2, aD1, aD2);
             Assert.NotNull(aRW);
             Assert.Equal(aNbBefore, aWL.NbPnts()); // the given line is unchanged
             Assert.True(aRW.NbPnts() <= aNbBefore);
-            Assert.Equal(aWL.NbVertex(), aRW.NbVertex());
+            Assert.Equal(aWL.VertexCount, aRW.VertexCount);
             Assert.Equal(aWL.GetCreatingWay(), aRW.GetCreatingWay());
             Assert.Equal(aFirst, aRW.Point(1).Value());
             Assert.Equal(aLast, aRW.Point(aRW.NbPnts()).Value());
@@ -78,17 +80,17 @@ public class IntPatch_WLineToolTests
         var aS2 = new SurfaceAdaptor(IntPatchPrmPrmNativeTests.PatchA());
         var aD1 = new TopolTool(aS1);
         var aD2 = new TopolTool(aS2);
-        var anInt = new IntPatch_ImpPrmIntersection(aS1, aD1, aS2, aD2, Tol, Tol, 0.01, 0.05);
-        Assert.True(anInt.IsDone());
+        var anInt = new ImpPrmIntersection(aS1, aD1, aS2, aD2, Tol, Tol, 0.01, 0.05);
+        Assert.True(anInt.IsDone);
         int aNbW = 0;
-        for (int i = 1; i <= anInt.NbLines(); i++)
+        for (int i = 1; i <= anInt.LineCount; i++)
         {
-            if (anInt.Line(i) is not IntPatch_WLine aWL)
+            if (anInt.Line(i) is not WLine aWL)
             {
                 continue;
             }
             aNbW++;
-            IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aWL, aS1, aS2, aD1, aD2);
+            WLine? aRW = WLineTool.ComputePurgedWLine(aWL, aS1, aS2, aD1, aD2);
             Assert.NotNull(aRW);
             Assert.Equal(aWL.Point(1).Value(), aRW.Point(1).Value());
             Assert.Equal(aWL.Point(aWL.NbPnts()).Value(), aRW.Point(aRW.NbPnts()).Value());
@@ -97,16 +99,16 @@ public class IntPatch_WLineToolTests
         Assert.True(aNbW > 0);
     }
 
-    private static IntSurf_PntOn2S Pnt(double x)
+    private static PntOn2S Pnt(double x)
     {
-        var aP = new IntSurf_PntOn2S();
+        var aP = new PntOn2S();
         aP.SetValue(new Point3D(x, 0, 0), x, 0, x, 1);
         return aP;
     }
 
-    private static IntPatch_Point Vtx(double x, double theParam)
+    private static PatchPoint Vtx(double x, double theParam)
     {
-        var aV = new IntPatch_Point();
+        var aV = new PatchPoint();
         aV.SetValue(new Point3D(x, 0, 0), 1e-7, false);
         aV.SetParameters(x, 0, x, 1);
         aV.SetParameter(theParam);
@@ -117,18 +119,18 @@ public class IntPatch_WLineToolTests
     public void ComputePurgedWLine_removes_equal_points_and_renumbers_vertices()
     {
         // Points 0, 1, 1, 2, 3 (a duplicate at index 3): fewer than 30 points, so only the equal points go.
-        var aL = new IntSurf_LineOn2S();
+        var aL = new LineOn2S();
         foreach (double x in new[] { 0.0, 1.0, 1.0, 2.0, 3.0 })
         {
             aL.Add(Pnt(x));
         }
-        var aW = new IntPatch_WLine(aL, false);
+        var aW = new WLine(aL, false);
         aW.AddVertex(Vtx(0, 1));
         aW.AddVertex(Vtx(2, 4));
         aW.AddVertex(Vtx(3, 5));
         var aS = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
         var aD = new TopolTool(aS);
-        IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(aW, aS, aS, aD, aD);
+        WLine? aRW = WLineTool.ComputePurgedWLine(aW, aS, aS, aD, aD);
         Assert.NotNull(aRW);
         Assert.Equal(4, aRW.NbPnts());
         Assert.Equal(5, aW.NbPnts());
@@ -142,23 +144,23 @@ public class IntPatch_WLineToolTests
         var aS = new SurfaceAdaptor(new PlaneSurface(new CoordinateSystem()));
         var aD = new TopolTool(aS);
 
-        var aL2 = new IntSurf_LineOn2S();
+        var aL2 = new LineOn2S();
         aL2.Add(Pnt(1));
         aL2.Add(Pnt(1));
-        Assert.Null(IntPatch_WLineTool.ComputePurgedWLine(new IntPatch_WLine(aL2, false), aS, aS, aD, aD));
+        Assert.Null(WLineTool.ComputePurgedWLine(new WLine(aL2, false), aS, aS, aD, aD));
 
         // Three equal points: one is left, so the line is dropped.
-        var aL3 = new IntSurf_LineOn2S();
+        var aL3 = new LineOn2S();
         aL3.Add(Pnt(1));
         aL3.Add(Pnt(1));
         aL3.Add(Pnt(1));
-        Assert.Null(IntPatch_WLineTool.ComputePurgedWLine(new IntPatch_WLine(aL3, false), aS, aS, aD, aD));
+        Assert.Null(WLineTool.ComputePurgedWLine(new WLine(aL3, false), aS, aS, aD, aD));
 
         // Two distinct points are kept as they are.
-        var aL4 = new IntSurf_LineOn2S();
+        var aL4 = new LineOn2S();
         aL4.Add(Pnt(0));
         aL4.Add(Pnt(1));
-        IntPatch_WLine? aRW = IntPatch_WLineTool.ComputePurgedWLine(new IntPatch_WLine(aL4, false), aS, aS, aD, aD);
+        WLine? aRW = WLineTool.ComputePurgedWLine(new WLine(aL4, false), aS, aS, aD, aD);
         Assert.NotNull(aRW);
         Assert.Equal(2, aRW.NbPnts());
     }
@@ -168,33 +170,33 @@ public class IntPatch_WLineToolTests
         new(new Point3D(x, y, z), new Direction3D(dx, dy, dz), new Direction3D(xx, xy, xz));
 
     // IntPatch_Intersection's GeomGeomPerfom on two cylinders: the ImpImp lines and points, then JoinWLines.
-    private static (NCollection_Sequence<IntPatch_Line>, SurfaceAdaptor, SurfaceAdaptor) JoinCylinders(
+    private static (NCollection_Sequence<PatchLine>, SurfaceAdaptor, SurfaceAdaptor) JoinCylinders(
         Surface theC1, Surface theC2)
     {
         var aS1 = new SurfaceAdaptor(theC1);
         var aS2 = new SurfaceAdaptor(theC2);
-        var anInter = new IntPatch_ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
+        var anInter = new ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
                                                       new TopolTool(aS2), Tol, Tol);
-        Assert.True(anInter.IsDone());
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
-        var aSPnt = new NCollection_Sequence<IntPatch_Point>();
-        for (int i = 1; i <= anInter.NbLines(); i++)
+        Assert.True(anInter.IsDone);
+        var aSLin = new NCollection_Sequence<PatchLine>();
+        var aSPnt = new NCollection_Sequence<PatchPoint>();
+        for (int i = 1; i <= anInter.LineCount; i++)
         {
-            IntPatch_Line aL = anInter.Line(i);
-            if (aL is IntPatch_WLine aWL)
+            PatchLine aL = anInter.Line(i);
+            if (aL is WLine aWL)
             {
                 aWL.EnablePurging(false);
             }
-            if (aL.ArcType() != IntPatch_Restriction)
+            if (aL.ArcType() != PatchLineType.Restriction)
             {
                 aSLin.Append(aL);
             }
         }
-        for (int i = 1; i <= anInter.NbPnts(); i++)
+        for (int i = 1; i <= anInter.PntCount; i++)
         {
             aSPnt.Append(anInter.Point(i));
         }
-        IntPatch_WLineTool.JoinWLines(aSLin, aSPnt, aS1, aS2, Tol);
+        WLineTool.JoinWLines(aSLin, aSPnt, aS1, aS2, Tol);
         return (aSLin, aS1, aS2);
     }
 
@@ -209,7 +211,7 @@ public class IntPatch_WLineToolTests
         Assert.Equal(6, a23178.Length());
         for (int i = 1; i <= a23178.Length(); i++)
         {
-            AssertOnBoth((IntPatch_WLine)a23178.Value(i), aS1, aS2, 1.0e-6);
+            AssertOnBoth((WLine)a23178.Value(i), aS1, aS2, 1.0e-6);
         }
 
         var (a28222, aT1, aT2) = JoinCylinders(
@@ -219,7 +221,7 @@ public class IntPatch_WLineToolTests
         Assert.Equal(4, a28222.Length());
         for (int i = 1; i <= a28222.Length(); i++)
         {
-            AssertOnBoth((IntPatch_WLine)a28222.Value(i), aT1, aT2, 1.0e-6);
+            AssertOnBoth((WLine)a28222.Value(i), aT1, aT2, 1.0e-6);
         }
     }
 
@@ -236,7 +238,7 @@ public class IntPatch_WLineToolTests
             var aSb = new System.Text.StringBuilder();
             for (int i = 1; i <= aSLin.Length(); i++)
             {
-                var aWL = (IntPatch_WLine)aSLin.Value(i);
+                var aWL = (WLine)aSLin.Value(i);
                 for (int k = 1; k <= aWL.NbPnts(); k++)
                 {
                     aSb.Append(aWL.Point(k).ToString()).Append(';');
@@ -253,24 +255,24 @@ public class IntPatch_WLineToolTests
 
     // A plane (z = 0) and a cylinder (axis Z, radius 1) meet in the unit circle; parameters on the plane are (x, y),
     // on the cylinder (t, 0).
-    private static IntSurf_PntOn2S CirclePnt(double t)
+    private static PntOn2S CirclePnt(double t)
     {
-        var aP = new IntSurf_PntOn2S();
+        var aP = new PntOn2S();
         aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
         return aP;
     }
 
-    private static IntPatch_WLine CircleLine(double t0, double t1, int theNb)
+    private static WLine CircleLine(double t0, double t1, int theNb)
     {
-        var aL = new IntSurf_LineOn2S();
+        var aL = new LineOn2S();
         for (int i = 0; i < theNb; i++)
         {
             aL.Add(CirclePnt(t0 + (t1 - t0) * i / (theNb - 1)));
         }
-        var aW = new IntPatch_WLine(aL, false);
+        var aW = new WLine(aL, false);
         foreach ((double t, int k) in new[] { (t0, 1), (t1, theNb) })
         {
-            var aV = new IntPatch_Point();
+            var aV = new PatchPoint();
             aV.SetValue(CirclePnt(t));
             aV.SetParameter(k);
             aW.AddVertex(aV);
@@ -293,14 +295,14 @@ public class IntPatch_WLineToolTests
     public void ExtendTwoWLines_joins_lines_across_a_small_gap()
     {
         var (aS1, aS2, aB1, aB2, aPer) = PlaneCylinder();
-        IntPatch_WLine aW1 = CircleLine(0.2, 1.0, 9);
-        IntPatch_WLine aW2 = CircleLine(1.0 + 1.0e-4, 2.0, 11);
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
+        WLine aW1 = CircleLine(0.2, 1.0, 9);
+        WLine aW2 = CircleLine(1.0 + 1.0e-4, 2.0, 11);
+        var aSLin = new NCollection_Sequence<PatchLine>();
         aSLin.Append(aW1);
         aSLin.Append(aW2);
-        IntPatch_WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
+        WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
         Assert.Equal(1, aSLin.Length());
-        var aW = (IntPatch_WLine)aSLin.Value(1);
+        var aW = (WLine)aSLin.Value(1);
         Assert.Same(aW1, aW);
         // 9 + 11 points and the common point (the mid point of the gap, added to both lines' ends)
         Assert.Equal(21, aW.NbPnts());
@@ -308,36 +310,36 @@ public class IntPatch_WLineToolTests
         Assert.Equal(0.2, aW.Point(1).ParametersOnS2Tuple().Item1, 15);
         Assert.Equal(2.0, aW.Point(aW.NbPnts()).ParametersOnS2Tuple().Item1, 15);
         Assert.Equal(1.0, aW.Vertex(1).ParameterOnLine());
-        Assert.Equal(aW.NbPnts(), aW.Vertex(aW.NbVertex()).ParameterOnLine());
+        Assert.Equal(aW.NbPnts(), aW.Vertex(aW.VertexCount).ParameterOnLine());
     }
 
     [Fact]
     public void ExtendTwoWLines_skips_critical_points_and_wide_angles()
     {
         var (aS1, aS2, aB1, aB2, aPer) = PlaneCylinder();
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
+        var aSLin = new NCollection_Sequence<PatchLine>();
         aSLin.Append(CircleLine(0.2, 1.0, 9));
         aSLin.Append(CircleLine(1.0 + 1.0e-4, 2.0, 11));
         var aCrit = new NCollection_List<Point3D>();
         aCrit.Append(CirclePnt(1.0).Value());
-        IntPatch_WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, aCrit);
+        WLineTool.ExtendTwoWLines(aSLin, aS1, aS2, Tol, aPer, aB1, aB2, aCrit);
         Assert.Equal(2, aSLin.Length());
-        Assert.Equal(9, ((IntPatch_WLine)aSLin.Value(1)).NbPnts());
+        Assert.Equal(9, ((WLine)aSLin.Value(1)).NbPnts());
 
         // A gap too wide for the chord's mid point to be on both surfaces: nothing changes.
-        var aWide = new NCollection_Sequence<IntPatch_Line>();
+        var aWide = new NCollection_Sequence<PatchLine>();
         aWide.Append(CircleLine(0.2, 1.0, 9));
         aWide.Append(CircleLine(1.05, 2.0, 11));
-        IntPatch_WLineTool.ExtendTwoWLines(aWide, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
+        WLineTool.ExtendTwoWLines(aWide, aS1, aS2, Tol, aPer, aB1, aB2, new NCollection_List<Point3D>());
         Assert.Equal(2, aWide.Length());
-        Assert.Equal(9, ((IntPatch_WLine)aWide.Value(1)).NbPnts());
-        Assert.Equal(11, ((IntPatch_WLine)aWide.Value(2)).NbPnts());
+        Assert.Equal(9, ((WLine)aWide.Value(1)).NbPnts());
+        Assert.Equal(11, ((WLine)aWide.Value(2)).NbPnts());
     }
 }
 
 internal static class IntSurfPntOn2STestExtensions
 {
-    internal static (double, double) ParametersOnS2Tuple(this IntSurf_PntOn2S theP)
+    internal static (double, double) ParametersOnS2Tuple(this PntOn2S theP)
     {
         theP.ParametersOnS2(out double u, out double v);
         return (u, v);

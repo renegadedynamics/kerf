@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -16,14 +19,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_BuilderTests
 {
     // A = [0, 10]^3 and B = [5, 15]^3: the General Fuse splits them into A \ B, A & B and B \ A.
-    private static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape BoxA() => new MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    private static Shape BoxB() => new MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
     private static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -37,9 +40,9 @@ public class BOPAlgo_BuilderTests
         return aSolids;
     }
 
-    private static BOPAlgo_Builder GeneralFuse(Shape theA, Shape theB, bool theParallel = false)
+    private static BooleanBuilder GeneralFuse(Shape theA, Shape theB, bool theParallel = false)
     {
-        BOPAlgo_Builder aBuilder = new();
+        BooleanBuilder aBuilder = new();
         aBuilder.AddArgument(theA);
         aBuilder.AddArgument(theB);
         aBuilder.SetRunParallel(theParallel);
@@ -50,8 +53,8 @@ public class BOPAlgo_BuilderTests
     [Fact]
     public void TwoOverlappingBoxes_GiveThreeSolids()
     {
-        BOPAlgo_Builder aBuilder = GeneralFuse(BoxA(), BoxB());
-        Assert.False(aBuilder.HasErrors());
+        BooleanBuilder aBuilder = GeneralFuse(BoxA(), BoxB());
+        Assert.False(aBuilder.HasErrors);
 
         Shape aResult = aBuilder.Shape();
         Assert.Equal(ShapeType.Compound, aResult.ShapeType());
@@ -63,29 +66,29 @@ public class BOPAlgo_BuilderTests
         Assert.Equal(875.0, aVolumes[1], 1.0e-6);
         Assert.Equal(875.0, aVolumes[2], 1.0e-6);
         Assert.Equal(1875.0, Volume(aResult), 1.0e-6);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
     }
 
     [Fact]
     public void TwoOverlappingBoxes_History()
     {
         Shape aA = BoxA(), aB = BoxB();
-        BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB);
-        Assert.False(aBuilder.HasErrors());
+        BooleanBuilder aBuilder = GeneralFuse(aA, aB);
+        Assert.False(aBuilder.HasErrors);
 
         // each box is split in two solids
         Assert.Equal(2, aBuilder.Modified(aA).Count);
         Assert.Equal(2, aBuilder.Modified(aB).Count);
         Assert.False(aBuilder.IsDeleted(aA));
-        Assert.True(aBuilder.HasModified());
-        Assert.True(aBuilder.HasGenerated());
+        Assert.True(aBuilder.HasModified);
+        Assert.True(aBuilder.HasGenerated);
 
         // A's face at x = 0 is untouched: neither modified nor deleted; its face at x = 10 is split by B
         Shape aFaceX0 = new(), aFaceX10 = new();
         for (Explorer anExp = new(aA, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             double aX = aProps.CentreOfMass().X();
             if (Math.Abs(aX) < 1.0e-9)
             {
@@ -117,8 +120,8 @@ public class BOPAlgo_BuilderTests
     {
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
-        BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB);
-        Assert.False(aBuilder.HasErrors());
+        BooleanBuilder aBuilder = GeneralFuse(aA, aB);
+        Assert.False(aBuilder.HasErrors);
         Assert.True(aBuilder.PPaveFiller()!.NonDestructive());
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
@@ -131,8 +134,8 @@ public class BOPAlgo_BuilderTests
         Shape aA = BoxA(), aB = BoxB();
         DeterminismHarness.AssertSerialEqualsParallel([aA, aB], () =>
         {
-            BOPAlgo_Builder aBuilder = GeneralFuse(aA, aB, true);
-            Assert.False(aBuilder.HasErrors());
+            BooleanBuilder aBuilder = GeneralFuse(aA, aB, true);
+            Assert.False(aBuilder.HasErrors);
             return (aBuilder.Shape(), aBuilder.History());
         });
     }

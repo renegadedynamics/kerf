@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -363,7 +364,7 @@ internal static class ClassificationScenes
     public static List<Point3D> SamplePoints(Oracle theOracle, in Shape theShape, int theNbRandom, int thePerFace)
     {
         var aPoints = new List<Point3D>();
-        Box aBox = BRepBndLib.Box(theShape);
+        Box aBox = Bounds.Box(theShape);
         aBox.Get(out double x1, out double y1, out double z1, out double x2, out double y2, out double z2);
         double dx = (x2 - x1) * 0.2, dy = (y2 - y1) * 0.2, dz = (z2 - z1) * 0.2;
         for (int i = 0; i < theNbRandom; i++)

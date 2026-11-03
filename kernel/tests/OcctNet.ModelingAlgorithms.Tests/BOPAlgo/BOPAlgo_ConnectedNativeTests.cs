@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -135,7 +136,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return aMap;
     }
 
-    private static string Twins(BOPAlgo_MakePeriodic theMaker, Shape theResult)
+    private static string Twins(MakePeriodicAlgorithm theMaker, Shape theResult)
     {
         if (theResult.IsNull)
         {
@@ -154,7 +155,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return aB.ToString();
     }
 
-    private static string Materials(BOPAlgo_MakeConnected theTool, Shape theResult, List<Shape> theArgs)
+    private static string Materials(MakeConnectedAlgorithm theTool, Shape theResult, List<Shape> theArgs)
     {
         if (theResult.IsNull)
         {
@@ -181,9 +182,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
     /// <summary>The replay state of a case: one periodicity maker and one connection tool, as BOPTest's.</summary>
     private sealed class State(bool thePublish, bool theParallel)
     {
-        public readonly BOPAlgo_MakePeriodic Periodic = new();
+        public readonly MakePeriodicAlgorithm Periodic = new();
         public List<Shape> PeriodicArgs = [];
-        public readonly BOPAlgo_MakeConnected Connected = new();
+        public readonly MakeConnectedAlgorithm Connected = new();
         public List<Shape> ConnectedArgs = [];
         public readonly bool Publish = thePublish;
         public readonly bool Parallel = theParallel;
@@ -194,8 +195,8 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         string[] a = theStep.Words;
         int n = a.Length;
         Shape Shape(string theName) => theShapes.TryGetValue(theName, out Shape aS) ? aS : new Shape();
-        BOPAlgo_MakePeriodic aM = theState.Periodic;
-        BOPAlgo_MakeConnected aT = theState.Connected;
+        MakePeriodicAlgorithm aM = theState.Periodic;
+        MakeConnectedAlgorithm aT = theState.Connected;
         switch (a[0])
         {
             case "makeperiodic":
@@ -217,7 +218,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                     }
                 }
                 aM.Perform();
-                Shape aR = aM.HasErrors() ? new Shape() : theState.Publish ? aM.Shape() : aM.InternalShape();
+                Shape aR = aM.HasErrors ? new Shape() : theState.Publish ? aM.Shape() : aM.InternalShape();
                 return Dump(aM.GetReport(), aR, theState.PeriodicArgs, aM.InternalHistory(), Twins(aM, aR));
             }
             case "repeatshape":
@@ -231,7 +232,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                         int anID = DirID(a[i]);
                         aM.InternalRepeatShape(anID, int.Parse(a[++i], CultureInfo.InvariantCulture));
                     }
-                    aR = aM.HasErrors() ? new Shape() : theState.Publish ? aM.RepeatedShape() : aM.InternalRepeatedShape();
+                    aR = aM.HasErrors ? new Shape() : theState.Publish ? aM.RepeatedShape() : aM.InternalRepeatedShape();
                 }
                 else
                 {
@@ -255,12 +256,12 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
                     }
                 }
                 aT.Perform();
-                Shape aR = aT.HasErrors() ? new Shape() : theState.Publish ? aT.Shape() : aT.InternalShape();
+                Shape aR = aT.HasErrors ? new Shape() : theState.Publish ? aT.Shape() : aT.InternalShape();
                 return Dump(aT.GetReport(), aR, theState.ConnectedArgs, aT.InternalHistory(), Materials(aT, aR, theState.ConnectedArgs));
             }
             case "cmakeperiodic":
             {
-                var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+                var aParams = new MakePeriodicAlgorithm.PeriodicityParams();
                 for (int i = 2; i < n;)
                 {
                     int anID = DirID(a[i]);
@@ -290,7 +291,7 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
             default:
                 throw new InvalidOperationException(a[0]);
         }
-        Shape aCR = aT.HasErrors() ? new Shape() : theState.Publish ? aT.PeriodicShape() : aT.InternalPeriodicShape();
+        Shape aCR = aT.HasErrors ? new Shape() : theState.Publish ? aT.PeriodicShape() : aT.InternalPeriodicShape();
         return Dump(aT.GetReport(), aCR, theState.ConnectedArgs, aT.InternalHistory(),
                     Materials(aT, aCR, theState.ConnectedArgs) + Twins(aT.PeriodicityTool(), aCR));
     }

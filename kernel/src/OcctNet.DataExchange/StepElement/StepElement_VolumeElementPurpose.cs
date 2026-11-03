@@ -89,24 +89,24 @@ public class StepElement_VolumeElementPurpose : StepData_SelectType
         StepElement_VolumeElementPurposeMember SelMem = Value() as StepElement_VolumeElementPurposeMember;
         if (SelMem is null)
         {
-            return StepElement_StressDisplacement;
+            return StepElement_EnumeratedVolumeElementPurpose.StepElement_StressDisplacement;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("EnumeratedVolumeElementPurpose");
         if (name.IsDifferent(nameitem))
         {
-            return StepElement_StressDisplacement;
+            return StepElement_EnumeratedVolumeElementPurpose.StepElement_StressDisplacement;
         }
         int numit = SelMem.Enum();
         StepElement_EnumeratedVolumeElementPurpose val = default;
         switch (numit)
         {
             case 1:
-                val = StepElement_StressDisplacement;
+                val = StepElement_EnumeratedVolumeElementPurpose.StepElement_StressDisplacement;
                 break;
             default:
-                return StepElement_StressDisplacement;
+                return StepElement_EnumeratedVolumeElementPurpose.StepElement_StressDisplacement;
         }
         return val;
     }

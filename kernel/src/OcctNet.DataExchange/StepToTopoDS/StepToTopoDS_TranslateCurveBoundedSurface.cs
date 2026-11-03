@@ -5,6 +5,8 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology.Brep;
 
 using Kerf.Geometry;
@@ -58,7 +60,7 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
         StepGeom_BSplineSurface sgbss = S as StepGeom_BSplineSurface;
         if (sgbss is not null)
         {
-            Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(Surf);
+            Surface periodicSurf = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().ConvertToPeriodic(Surf);
             if (periodicSurf is not null)
             {
                 TP.AddWarning(S, "Surface forced to be periodic");
@@ -75,7 +77,7 @@ public sealed class StepToTopoDS_TranslateCurveBoundedSurface : StepToTopoDS_Roo
         {
             if (Surf is BoundedSurface)
             {
-                var mf = new BRepBuilderAPI_MakeFace(Surf, Kerf.Engine.Foundation.Precision.Confusion());
+                var mf = new MakeFace(Surf, Kerf.Engine.Foundation.Precision.Confusion());
                 myFace = mf.InternalFace();
             }
             else

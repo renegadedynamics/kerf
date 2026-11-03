@@ -2,6 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -17,7 +21,7 @@ internal static class CanonicalRecognitionTestUtils
     // OCCT's tests: BRepBuilderAPI_Sewing with its defaults, each face added, Perform, SewedShape.
     public static Shape Sew(params Face[] theFaces)
     {
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         foreach (Face aFace in theFaces)
         {
             aSewing.Add(aFace);
@@ -28,8 +32,8 @@ internal static class CanonicalRecognitionTestUtils
 
     public static Shape NurbsConverted(in Shape theShape)
     {
-        var aNurbsConvert = new BRepBuilderAPI_NurbsConvert(theShape);
-        Assert.True(aNurbsConvert.IsDone(), "Failed to convert to NURBS");
+        var aNurbsConvert = new NurbsConvert(theShape);
+        Assert.True(aNurbsConvert.IsDone, "Failed to convert to NURBS");
         return aNurbsConvert.Shape();
     }
 }
@@ -37,20 +41,20 @@ internal static class CanonicalRecognitionTestUtils
 /// <summary>Surface recognition tests (cr/approx).</summary>
 public class CanonicalRecognitionApproxTest
 {
-    private readonly ShapeAnalysis_CanonicalRecognition myRecognizer = new();
+    private readonly CanonicalRecognitionAnalysis myRecognizer = new();
     private readonly double myTolerance = 1.0e-3;
 
     [Fact]
     public void PolylineToPlaneRecognition_A1()
     {
-        var aPolygonMaker = new BRepBuilderAPI_MakePolygon();
+        var aPolygonMaker = new MakePolygon();
         aPolygonMaker.Add(new Point3D(0, 0, 0));
         aPolygonMaker.Add(new Point3D(1, 0, 0));
         aPolygonMaker.Add(new Point3D(1, 1, 0));
         aPolygonMaker.Add(new Point3D(0, 1, 0));
         aPolygonMaker.Close();
 
-        Assert.True(aPolygonMaker.IsDone(), "Failed to create polyline");
+        Assert.True(aPolygonMaker.IsDone, "Failed to create polyline");
         Wire aWire = aPolygonMaker.Wire();
 
         myRecognizer.SetShape(aWire);
@@ -70,8 +74,8 @@ public class CanonicalRecognitionApproxTest
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 1, 1));
         var aCylSurf = new CylindricalSurface(new CoordinateSystem(aAxis), 1.0);
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aCylSurf, 0, 2 * M_PI, 0, 1, Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceMaker.IsDone());
+        var aFaceMaker = new MakeFace(aCylSurf, 0, 2 * M_PI, 0, 1, Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFaceMaker.IsDone);
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
@@ -88,8 +92,8 @@ public class CanonicalRecognitionApproxTest
         double aHalfAngle = M_PI / 6.0;
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
         var aConeSurf = new ConicalSurface(new CoordinateSystem(aAxis), aHalfAngle, 2.0);
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aConeSurf, 0, 2 * M_PI, 0, 3, Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceMaker.IsDone());
+        var aFaceMaker = new MakeFace(aConeSurf, 0, 2 * M_PI, 0, 3, Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFaceMaker.IsDone);
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
@@ -105,8 +109,8 @@ public class CanonicalRecognitionApproxTest
     {
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
         var aSphereSurf = new SphericalSurface(new CoordinateSystem(aAxis), 1.0);
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aSphereSurf, 0, 2 * M_PI, 0, M_PI / 2, Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceMaker.IsDone());
+        var aFaceMaker = new MakeFace(aSphereSurf, 0, 2 * M_PI, 0, M_PI / 2, Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFaceMaker.IsDone);
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(aFaceMaker.Face()));
 
         myRecognizer.SetShape(aNurbsFace);
@@ -121,7 +125,7 @@ public class CanonicalRecognitionApproxTest
 /// <summary>Curve recognition tests (cr/base A-series).</summary>
 public class CanonicalRecognitionBaseCurveTest
 {
-    private readonly ShapeAnalysis_CanonicalRecognition myRecognizer = new();
+    private readonly CanonicalRecognitionAnalysis myRecognizer = new();
     private readonly double myTolerance = 1.0e-3;
 
     private static BezierCurve3D NearlyLinearBezier(double theDeviation)
@@ -135,24 +139,24 @@ public class CanonicalRecognitionBaseCurveTest
 
     private static Wire ThreeEdgeWire(Curve3D theCurve, double theP1, double theP2, double theP3, double theP4)
     {
-        var aEdgeMaker1 = new BRepBuilderAPI_MakeEdge(theCurve, theP1, theP2);
-        var aEdgeMaker2 = new BRepBuilderAPI_MakeEdge(theCurve, theP2, theP3);
-        var aEdgeMaker3 = new BRepBuilderAPI_MakeEdge(theCurve, theP3, theP4);
-        Assert.True(aEdgeMaker1.IsDone() && aEdgeMaker2.IsDone() && aEdgeMaker3.IsDone(), "Failed to create edges");
+        var aEdgeMaker1 = new MakeEdge(theCurve, theP1, theP2);
+        var aEdgeMaker2 = new MakeEdge(theCurve, theP2, theP3);
+        var aEdgeMaker3 = new MakeEdge(theCurve, theP3, theP4);
+        Assert.True(aEdgeMaker1.IsDone && aEdgeMaker2.IsDone && aEdgeMaker3.IsDone, "Failed to create edges");
 
-        var aWireMaker = new BRepBuilderAPI_MakeWire();
+        var aWireMaker = new MakeWire();
         aWireMaker.Add(aEdgeMaker1.Edge());
         aWireMaker.Add(aEdgeMaker2.Edge());
         aWireMaker.Add(aEdgeMaker3.Edge());
-        Assert.True(aWireMaker.IsDone(), "Failed to create wire");
+        Assert.True(aWireMaker.IsDone, "Failed to create wire");
         return aWireMaker.Wire();
     }
 
     [Fact]
     public void BezierToLineRecognition_A1()
     {
-        var aEdgeMaker = new BRepBuilderAPI_MakeEdge(NearlyLinearBezier(0.0005));
-        Assert.True(aEdgeMaker.IsDone());
+        var aEdgeMaker = new MakeEdge(NearlyLinearBezier(0.0005));
+        Assert.True(aEdgeMaker.IsDone);
         Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
@@ -167,8 +171,8 @@ public class CanonicalRecognitionBaseCurveTest
     [Fact]
     public void BezierToCircleRecognition_A2()
     {
-        var aEdgeMaker = new BRepBuilderAPI_MakeEdge(NearlyLinearBezier(0.0005));
-        Assert.True(aEdgeMaker.IsDone());
+        var aEdgeMaker = new MakeEdge(NearlyLinearBezier(0.0005));
+        Assert.True(aEdgeMaker.IsDone);
         Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
@@ -185,8 +189,8 @@ public class CanonicalRecognitionBaseCurveTest
         var aAxis = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         var aEllipse = new EllipseCurve3D(aAxis, 1.0, 0.5);
         BSplineCurve3D aBSplineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aEllipse);
-        var aEdgeMaker = new BRepBuilderAPI_MakeEdge(aBSplineCurve);
-        Assert.True(aEdgeMaker.IsDone());
+        var aEdgeMaker = new MakeEdge(aBSplineCurve);
+        Assert.True(aEdgeMaker.IsDone);
         Edge anEdge = aEdgeMaker.Edge();
 
         myRecognizer.SetShape(anEdge);
@@ -247,13 +251,13 @@ public class CanonicalRecognitionBaseCurveTest
 /// <summary>Surface recognition tests (cr/base B-series).</summary>
 public class CanonicalRecognitionBaseSurfaceTest
 {
-    private readonly ShapeAnalysis_CanonicalRecognition myRecognizer = new();
+    private readonly CanonicalRecognitionAnalysis myRecognizer = new();
     private readonly double myTolerance = 1.0e-7;
 
     private static Face Face(Surface theSurf, double theU1, double theU2, double theV1, double theV2)
     {
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(theSurf, theU1, theU2, theV1, theV2, Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceMaker.IsDone(), "Failed to create face");
+        var aFaceMaker = new MakeFace(theSurf, theU1, theU2, theV1, theV2, Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFaceMaker.IsDone, "Failed to create face");
         return aFaceMaker.Face();
     }
 
@@ -305,8 +309,8 @@ public class CanonicalRecognitionBaseSurfaceTest
     {
         var aSphereSurf = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
         BSplineSurface aBSplineSurf = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aSphereSurf);
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aBSplineSurf, Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceMaker.IsDone());
+        var aFaceMaker = new MakeFace(aBSplineSurf, Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFaceMaker.IsDone);
         Face aFace = aFaceMaker.Face();
 
         myRecognizer.SetShape(aFace);
@@ -406,9 +410,9 @@ public class CanonicalRecognitionBaseSurfaceTest
         var aCylSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), 1.0);
         var aGeomPlane = new PlaneSurface(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)));
 
-        var anIntersector = new GeomAPI_IntSS(aCylSurf, aGeomPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anIntersector.IsDone(), "Surface-surface intersection failed");
-        Assert.True(anIntersector.NbLines() > 0, "No intersection curves found");
+        var anIntersector = new SurfaceSurfaceIntersection(aCylSurf, aGeomPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(anIntersector.IsDone, "Surface-surface intersection failed");
+        Assert.True(anIntersector.LineCount > 0, "No intersection curves found");
         Curve3D anIntCurve = anIntersector.Line(1);
         Assert.NotNull(anIntCurve);
 

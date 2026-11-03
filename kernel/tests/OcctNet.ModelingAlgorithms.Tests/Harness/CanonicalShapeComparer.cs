@@ -9,6 +9,7 @@
 // CanonicalKeys.Build(shape) gives each sub-shape's key, which HistoryComparison uses to compare histories.
 
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -454,12 +455,12 @@ internal static class CanonicalShapeComparer
     {
         var aNativeVolume = new Properties();
         var aPortVolume = new Properties();
-        BRepGProp.VolumeProperties(theNative, aNativeVolume);
-        BRepGProp.VolumeProperties(thePort, aPortVolume);
+        MassPropertiesBuilder.VolumeProperties(theNative, aNativeVolume);
+        MassPropertiesBuilder.VolumeProperties(thePort, aPortVolume);
         var aNativeArea = new Properties();
         var aPortArea = new Properties();
-        BRepGProp.SurfaceProperties(theNative, aNativeArea);
-        BRepGProp.SurfaceProperties(thePort, aPortArea);
+        MassPropertiesBuilder.SurfaceProperties(theNative, aNativeArea);
+        MassPropertiesBuilder.SurfaceProperties(thePort, aPortArea);
 
         Check("volume", aNativeVolume.Mass(), aPortVolume.Mass());
         Check("area", aNativeArea.Mass(), aPortArea.Mass());
@@ -489,5 +490,5 @@ internal static class CanonicalShapeComparer
         }
     }
 
-    private static bool IsValid(Shape theShape) => theShape.IsNull || new BRepCheck_Analyzer(theShape).IsValid();
+    private static bool IsValid(Shape theShape) => theShape.IsNull || new Analyzer(theShape).IsValid();
 }

@@ -2,17 +2,20 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>
     /// Turns the non-destructive mode on if an argument is locked. Frozen shapes are locked, so every operation on
@@ -21,46 +24,46 @@ public partial class BOPAlgo_PaveFiller
     /// </summary>
     protected void SetNonDestructive()
     {
-        if (!myIsPrimary || myNonDestructive)
+        if (!_isPrimary || _nonDestructive)
         {
             return;
         }
         //
         bool bFlag;
-        NCollection_List<Shape>.Iterator aItLS = new();
+        NCollection_List<Shape>.Iterator itLS = new();
         //
         bFlag = false;
-        aItLS.Initialize(myArguments);
-        for (; aItLS.More() && (!bFlag); aItLS.Next())
+        itLS.Initialize(_arguments);
+        for (; itLS.More() && (!bFlag); itLS.Next())
         {
-            Shape aS = aItLS.Value();
+            Shape s = itLS.Value();
             // OCCT.NET: an unfrozen argument may hold frozen sub-shapes (ported code's intermediate shapes sharing a
             // caller's unchanged ones, decision 1013); a destructive operation would throw writing into them, so they
             // count as locked too (decision 1056)
-            bFlag = aS.Locked() || BrepTools.HoldsFrozen(aS);
+            bFlag = s.Locked() || BrepTools.HoldsFrozen(s);
         }
-        myNonDestructive = bFlag;
+        _nonDestructive = bFlag;
     }
 
     /// <summary>Increases the tolerance of the edge and of its vertices (not of an argument edge when non-destructive).</summary>
-    protected void UpdateEdgeTolerance(int nE, double theTol)
+    protected void UpdateEdgeTolerance(int nE, double tol)
     {
-        BOPDS_ShapeInfo aSIE = myDS!.ChangeShapeInfo(nE);
-        NCollection_List<int> aLI = aSIE.SubShapes();
+        ShapeInfo sie = _ds!.ChangeShapeInfo(nE);
+        NCollection_List<int> li = sie.SubShapes();
 
         // For the safe input mode avoid modifying the input shapes
-        if (myNonDestructive)
+        if (_nonDestructive)
         {
-            if (!myDS.IsNewShape(nE))
+            if (!_ds.IsNewShape(nE))
             {
                 return;
             }
 
-            NCollection_List<int>.Iterator itLI0 = new(aLI);
+            NCollection_List<int>.Iterator itLI0 = new(li);
             for (; itLI0.More(); itLI0.Next())
             {
                 int nV = itLI0.Value(), nVSD = 0;
-                if (!myDS.IsNewShape(nV) && !myDS.HasShapeSD(nV, ref nVSD))
+                if (!_ds.IsNewShape(nV) && !_ds.HasShapeSD(nV, ref nVSD))
                 {
                     return;
                 }
@@ -68,18 +71,18 @@ public partial class BOPAlgo_PaveFiller
         }
 
         // Update edge
-        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
-        new BrepBuilder().UpdateEdge(aE, theTol);
-        ref Box aBoxE = ref aSIE.ChangeBox();
-        BRepBndLib.Add(aE, ref aBoxE);
-        aBoxE.SetGap(aBoxE.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Edge e = ShapeCasts.Edge(_ds.Shape(nE));
+        new BrepBuilder().UpdateEdge(e, tol);
+        ref Box boxE = ref sie.ChangeBox();
+        Bounds.Add(e, ref boxE);
+        boxE.SetGap(boxE.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Update vertices
-        NCollection_List<int>.Iterator itLI = new(aLI);
+        NCollection_List<int>.Iterator itLI = new(li);
         for (; itLI.More(); itLI.Next())
         {
             int nV = itLI.Value();
-            UpdateVertex(nV, theTol);
+            UpdateVertex(nV, tol);
         }
     }
 
@@ -90,127 +93,127 @@ public partial class BOPAlgo_PaveFiller
     protected int UpdateVertex(int nV, double aTolNew)
     {
         int nVNew;
-        double aTolV;
-        BrepBuilder aBB = new();
+        double tolV;
+        BrepBuilder bb = new();
 
         nVNew = nV;
-        if (myDS!.IsNewShape(nVNew) || myDS.HasShapeSD(nV, ref nVNew) || !myNonDestructive)
+        if (_ds!.IsNewShape(nVNew) || _ds.HasShapeSD(nV, ref nVNew) || !_nonDestructive)
         {
             // nV is a new vertex, it has SD or non-destructive mode is not in force
-            Vertex aVSD = ShapeCasts.Vertex(myDS.Shape(nVNew));
-            aTolV = Tool.Tolerance(aVSD);
-            if (aTolV < aTolNew)
+            Vertex vsd = ShapeCasts.Vertex(_ds.Shape(nVNew));
+            tolV = Tool.Tolerance(vsd);
+            if (tolV < aTolNew)
             {
-                aBB.UpdateVertex(aVSD, aTolNew);
-                BOPDS_ShapeInfo aSIV = myDS.ChangeShapeInfo(nVNew);
-                ref Box aBoxV = ref aSIV.ChangeBox();
-                BRepBndLib.Add(aVSD, ref aBoxV);
-                aBoxV.SetGap(aBoxV.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
-                myIncreasedSS.Add(nV);
+                bb.UpdateVertex(vsd, aTolNew);
+                ShapeInfo siv = _ds.ChangeShapeInfo(nVNew);
+                ref Box boxV = ref siv.ChangeBox();
+                Bounds.Add(vsd, ref boxV);
+                boxV.SetGap(boxV.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
+                _increasedSS.Add(nV);
             }
             return nVNew;
         }
         //
         // nV is old vertex
-        Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV));
-        aTolV = Tool.Tolerance(aV);
+        Vertex v = ShapeCasts.Vertex(_ds.Shape(nV));
+        tolV = Tool.Tolerance(v);
         //
         // create new vertex
-        Vertex aVNew = new();
-        Point3D aPV = Tool.Pnt(aV);
-        aBB.MakeVertex(ref aVNew, aPV, Max(aTolV, aTolNew));
+        Vertex vNew = new();
+        Point3D pv = Tool.Pnt(v);
+        bb.MakeVertex(ref vNew, pv, Max(tolV, aTolNew));
         //
         // append new vertex to DS
-        BOPDS_ShapeInfo aSIV0 = new();
-        aSIV0.SetShapeType(ShapeType.Vertex);
-        aSIV0.SetShape(aVNew);
-        nVNew = myDS.Append(aSIV0);
+        ShapeInfo siv0 = new();
+        siv0.SetShapeType(ShapeType.Vertex);
+        siv0.SetShape(vNew);
+        nVNew = _ds.Append(siv0);
         //
         // bounding box for the new vertex
-        BOPDS_ShapeInfo aSIDS = myDS.ChangeShapeInfo(nVNew);
-        ref Box aBoxDS = ref aSIDS.ChangeBox();
-        BRepBndLib.Add(aVNew, ref aBoxDS);
-        aBoxDS.SetGap(aBoxDS.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
+        ShapeInfo sids = _ds.ChangeShapeInfo(nVNew);
+        ref Box boxDS = ref sids.ChangeBox();
+        Bounds.Add(vNew, ref boxDS);
+        boxDS.SetGap(boxDS.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // add vertex to SD map
-        myDS.AddShapeSD(nV, nVNew);
+        _ds.AddShapeSD(nV, nVNew);
 
         // Add new vertex to map of vertices to avoid further extension
-        myVertsToAvoidExtension.Add(nVNew);
+        _vertsToAvoidExtension.Add(nVNew);
 
-        if (aTolV < aTolNew)
+        if (tolV < aTolNew)
         {
-            myIncreasedSS.Add(nV);
+            _increasedSS.Add(nV);
         }
 
         return nVNew;
     }
 
     /// <summary>Replaces the vertices of the pave blocks by their same-domain vertices.</summary>
-    protected void UpdatePaveBlocksWithSDVertices() => myDS!.UpdatePaveBlocksWithSDVertices();
+    protected void UpdatePaveBlocksWithSDVertices() => _ds!.UpdatePaveBlocksWithSDVertices();
 
     /// <summary>Replaces the vertices of the common blocks by their same-domain vertices.</summary>
     protected void UpdateCommonBlocksWithSDVertices()
     {
-        if (!myNonDestructive)
+        if (!_nonDestructive)
         {
             UpdatePaveBlocksWithSDVertices();
             return;
         }
-        int aNbPBP;
+        int nbPBP;
         //
-        NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS!.ChangePaveBlocksPool();
-        aNbPBP = aPBP.Length();
-        if (aNbPBP == 0)
+        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        nbPBP = pbp.Length();
+        if (nbPBP == 0)
         {
             return;
         }
         //
         int i, nV1, nV2;
-        double aTolV;
-        NCollection_Map<BOPDS_CommonBlock> aMCB = new();
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
-        BOPDS_PaveBlock aPB;
+        double tolV;
+        NCollection_Map<CommonBlock> mcb = new();
+        NCollection_List<PaveBlock>.Iterator itPB = new();
+        PaveBlock pb;
         //
-        aTolV = global::Kerf.Engine.Foundation.Precision.Confusion();
+        tolV = global::Kerf.Engine.Foundation.Precision.Confusion();
         //
-        for (i = 0; i < aNbPBP; ++i)
+        for (i = 0; i < nbPBP; ++i)
         {
-            NCollection_List<BOPDS_PaveBlock> aLPB = aPBP[i];
-            aItPB.Initialize(aLPB);
-            for (; aItPB.More(); aItPB.Next())
+            NCollection_List<PaveBlock> lpb = pbp[i];
+            itPB.Initialize(lpb);
+            for (; itPB.More(); itPB.Next())
             {
-                aPB = aItPB.Value();
-                BOPDS_CommonBlock? aCB = myDS.CommonBlock(aPB);
-                if (aCB is null)
+                pb = itPB.Value();
+                CommonBlock? cb = _ds.CommonBlock(pb);
+                if (cb is null)
                 {
                     continue;
                 }
                 //
-                if (aMCB.Add(aCB))
+                if (mcb.Add(cb))
                 {
-                    aPB.Indices(out nV1, out nV2);
-                    UpdateVertex(nV1, aTolV);
-                    UpdateVertex(nV2, aTolV);
-                    myDS.UpdateCommonBlockWithSDVertices(aCB);
+                    pb.Indices(out nV1, out nV2);
+                    UpdateVertex(nV1, tolV);
+                    UpdateVertex(nV2, tolV);
+                    _ds.UpdateCommonBlockWithSDVertices(cb);
                 }
             }
         }
         UpdatePaveBlocksWithSDVertices();
     }
 
-    private static void UpdateIntfsWithSDVertices<InterfType>(BOPDS_DS theDS, NCollection_DynamicArray<InterfType> theInterfs)
-        where InterfType : BOPDS_Interf
+    private static void UpdateIntfsWithSDVertices<InterfType>(DS ds, NCollection_DynamicArray<InterfType> interfs)
+        where InterfType : Interf
     {
-        for (int i = 0; i < theInterfs.Length(); i++)
+        for (int i = 0; i < interfs.Length(); i++)
         {
-            InterfType anIntf = theInterfs[i];
-            if (anIntf.HasIndexNew(out int anInd))
+            InterfType intf = interfs[i];
+            if (intf.HasIndexNew(out int ind))
             {
-                int anIndSD = 0;
-                if (theDS.HasShapeSD(anInd, ref anIndSD))
+                int indSD = 0;
+                if (ds.HasShapeSD(ind, ref indSD))
                 {
-                    anIntf.SetIndexNew(anIndSD);
+                    intf.SetIndexNew(indSD);
                 }
             }
         }
@@ -219,10 +222,10 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>Replaces the new vertices of the interferences by their same-domain vertices.</summary>
     protected void UpdateInterfsWithSDVertices()
     {
-        UpdateIntfsWithSDVertices(myDS!, myDS!.InterfVV());
-        UpdateIntfsWithSDVertices(myDS, myDS.InterfVE());
-        UpdateIntfsWithSDVertices(myDS, myDS.InterfVF());
-        UpdateIntfsWithSDVertices(myDS, myDS.InterfEE());
-        UpdateIntfsWithSDVertices(myDS, myDS.InterfEF());
+        UpdateIntfsWithSDVertices(_ds!, _ds!.InterfVV());
+        UpdateIntfsWithSDVertices(_ds, _ds.InterfVE());
+        UpdateIntfsWithSDVertices(_ds, _ds.InterfVF());
+        UpdateIntfsWithSDVertices(_ds, _ds.InterfEE());
+        UpdateIntfsWithSDVertices(_ds, _ds.InterfEF());
     }
 }

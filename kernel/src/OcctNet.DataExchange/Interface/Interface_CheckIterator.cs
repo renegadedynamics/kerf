@@ -284,18 +284,18 @@ public class Interface_CheckIterator
     /// </summary>
     public Interface_CheckStatus Status()
     {
-        Interface_CheckStatus stat = Interface_CheckOK;
+        Interface_CheckStatus stat = Interface_CheckStatus.Interface_CheckOK;
         int i, nb = thelist.Length();
         for (i = 1; i <= nb; i++)
         {
             Interface_Check ach = thelist.Value(i);
             if (ach.HasFailed())
             {
-                return Interface_CheckFail;
+                return Interface_CheckStatus.Interface_CheckFail;
             }
             if (ach.NbWarnings() > 0)
             {
-                stat = Interface_CheckWarning;
+                stat = Interface_CheckStatus.Interface_CheckWarning;
             }
         }
         return stat;
@@ -307,7 +307,7 @@ public class Interface_CheckIterator
     /// </summary>
     public bool Complies(Interface_CheckStatus stat)
     {
-        bool res = (stat == Interface_CheckNoFail);
+        bool res = (stat == Interface_CheckStatus.Interface_CheckNoFail);
         int nb = thelist.Length();
         for (int i = 1; i <= nb; ++i)
         {
@@ -315,14 +315,14 @@ public class Interface_CheckIterator
             int nbf = ach.NbFails(), nbw = ach.NbWarnings();
             switch (stat)
             {
-                case Interface_CheckOK: {
+                case Interface_CheckStatus.Interface_CheckOK: {
                     if (nbf + nbw > 0)
                     {
                         return false;
                     }
                     break;
                 }
-                case Interface_CheckWarning: {
+                case Interface_CheckStatus.Interface_CheckWarning: {
                     if (nbf > 0)
                     {
                         return false;
@@ -333,24 +333,24 @@ public class Interface_CheckIterator
                     }
                     break;
                 }
-                case Interface_CheckFail: {
+                case Interface_CheckStatus.Interface_CheckFail: {
                     if (nbf > 0)
                     {
                         return true;
                     }
                     break;
                 }
-                case Interface_CheckAny: {
+                case Interface_CheckStatus.Interface_CheckAny: {
                     return true;
                 }
-                case Interface_CheckMessage: {
+                case Interface_CheckStatus.Interface_CheckMessage: {
                     if (nbf + nbw > 0)
                     {
                         return true;
                     }
                     break;
                 }
-                case Interface_CheckNoFail: {
+                case Interface_CheckStatus.Interface_CheckNoFail: {
                     if (nbf > 0)
                     {
                         return false;
@@ -381,22 +381,22 @@ public class Interface_CheckIterator
             bool prend = false;
             switch (stat)
             {
-                case Interface_CheckOK:
+                case Interface_CheckStatus.Interface_CheckOK:
                     prend = (nbf + nbw == 0);
                     break;
-                case Interface_CheckWarning:
+                case Interface_CheckStatus.Interface_CheckWarning:
                     prend = (nbf == 0 && nbw > 0);
                     break;
-                case Interface_CheckFail:
+                case Interface_CheckStatus.Interface_CheckFail:
                     prend = (nbf > 0);
                     break;
-                case Interface_CheckAny:
+                case Interface_CheckStatus.Interface_CheckAny:
                     prend = true;
                     break;
-                case Interface_CheckMessage:
+                case Interface_CheckStatus.Interface_CheckMessage:
                     prend = (nbf + nbw > 0);
                     break;
-                case Interface_CheckNoFail:
+                case Interface_CheckStatus.Interface_CheckNoFail:
                     prend = (nbf == 0);
                     break;
                 default:

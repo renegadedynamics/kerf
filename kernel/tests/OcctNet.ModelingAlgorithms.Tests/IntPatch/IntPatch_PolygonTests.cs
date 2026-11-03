@@ -3,6 +3,8 @@
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -21,10 +23,10 @@ public class IntPatch_PolygonTests
     public void PolyArc_on_a_half_circle()
     {
         CurveAdaptor2D aCircle = new(new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
-        IntPatch_PolyArc aPoly = new(aCircle, 10, 0.0, Math.PI, Box(-1, 0, 1, 1));
+        PolyArc aPoly = new(aCircle, 10, 0.0, Math.PI, Box(-1, 0, 1, 1));
 
-        Assert.Equal(10, aPoly.NbPoints());
-        Assert.Equal(9, aPoly.NbSegments());
+        Assert.Equal(10, aPoly.PointCount);
+        Assert.Equal(9, aPoly.SegmentCount);
         Assert.False(aPoly.Closed());
         for (int i = 1; i <= 10; i++)
         {
@@ -44,8 +46,8 @@ public class IntPatch_PolygonTests
         Assert.Equal(1 + 2 * Math.PI, aPoly.Point(1).X(), 1e-15);
 
         // A full circle is closed; infinite bounds or one sample are refused.
-        Assert.True(new IntPatch_PolyArc(aCircle, 12, 0.0, 2 * Math.PI, Box(-1, -1, 1, 1)).Closed());
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new IntPatch_PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
+        Assert.True(new PolyArc(aCircle, 12, 0.0, 2 * Math.PI, Box(-1, -1, 1, 1)).Closed());
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new PolyArc(aCircle, 1, 0.0, 1.0, Box(-1, -1, 1, 1)));
     }
 
     [Fact]
@@ -53,8 +55,8 @@ public class IntPatch_PolygonTests
     {
         // A long segment whose middle only is near the box: the polygon is resampled between the indices around it.
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)));
-        IntPatch_PolyArc aPoly = new(aLine, 11, 0.0, 1000.0, Box(499, -0.5, 501, 0.5));
-        Assert.Equal(11, aPoly.NbPoints());
+        PolyArc aPoly = new(aLine, 11, 0.0, 1000.0, Box(499, -0.5, 501, 0.5));
+        Assert.Equal(11, aPoly.PointCount);
         Assert.True(aPoly.Parameter(1) > 0.0 && aPoly.Parameter(11) < 1000.0);
         Assert.True(aPoly.Parameter(1) <= 500.0 && aPoly.Parameter(11) >= 500.0);
     }
@@ -62,12 +64,12 @@ public class IntPatch_PolygonTests
     [Fact]
     public void PolyLine_on_a_straight_WLine_pushes_the_ends_out()
     {
-        IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(3), false);
-        IntPatch_PolyLine aPoly = new();
+        WLine aW = new(IntPatch_WLineTests.StraightLine(3), false);
+        PolyLine aPoly = new();
         double anInit = aPoly.Error();
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.PConfusion() * 100.0, anInit);
         aPoly.SetWLine(true, aW);
-        Assert.Equal(3, aPoly.NbPoints());
+        Assert.Equal(3, aPoly.PointCount);
         Assert.Equal(new Point2D(0 + 1e-7 * (0 - 1), 0), aPoly.Point(1));
         Assert.Equal(new Point2D(1, 0), aPoly.Point(2));
         Assert.Equal(new Point2D(2 + 1e-7 * (2 - 1), 0), aPoly.Point(3));
@@ -80,17 +82,17 @@ public class IntPatch_PolygonTests
     [Fact]
     public void PolyLine_on_a_curved_line_estimates_its_deflection()
     {
-        IntSurf_LineOn2S aCurve = new();
+        LineOn2S aCurve = new();
         for (int k = 0; k <= 8; k++)
         {
             double t = k * Math.PI / 8;
-            IntSurf_PntOn2S aP = new();
+            PntOn2S aP = new();
             aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), 0, 0);
             aCurve.Add(aP);
         }
-        IntPatch_RLine aR = new(false);
+        RLine aR = new(false);
         aR.Add(aCurve);
-        IntPatch_PolyLine aPoly = new(0.0);
+        PolyLine aPoly = new(0.0);
         aPoly.SetRLine(true, aR);
         // The sagitta of a chord of pi / 8 on the unit circle, within the parabola's estimate.
         double aSagitta = 1 - Math.Cos(Math.PI / 16);

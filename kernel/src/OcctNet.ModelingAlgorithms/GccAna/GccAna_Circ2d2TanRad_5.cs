@@ -5,11 +5,12 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2d2TanRad
+public sealed partial class AnalyticCirc2d2TanRad
 {
     //   Circle passing by two points of given radius.
     //   ==============================================
@@ -19,85 +20,85 @@ public sealed partial class GccAna_Circ2d2TanRad
     //==============================================================================
     /// <summary>Circles of radius Radius passing through two points.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public GccAna_Circ2d2TanRad(in Point2D Point1, in Point2D Point2, double Radius, double Tolerance)
+    public AnalyticCirc2d2TanRad(in Point2D point1, in Point2D point2, double radius, double tolerance)
     {
-        qualifier1 = new(1, 2);
-        qualifier2 = new(1, 2);
-        TheSame1 = new(1, 2);
-        TheSame2 = new(1, 2);
-        cirsol = new(1, 2);
-        pnttg1sol = new(1, 2);
-        pnttg2sol = new(1, 2);
-        par1sol = new(1, 2);
-        par2sol = new(1, 2);
-        pararg1 = new(1, 2);
-        pararg2 = new(1, 2);
+        _qualifier1 = new(1, 2);
+        _qualifier2 = new(1, 2);
+        _theSame1 = new(1, 2);
+        _theSame2 = new(1, 2);
+        _cirsol = new(1, 2);
+        _pnttg1sol = new(1, 2);
+        _pnttg2sol = new(1, 2);
+        _par1sol = new(1, 2);
+        _par2sol = new(1, 2);
+        _pararg1 = new(1, 2);
+        _pararg2 = new(1, 2);
 
 
         Direction2D dirx = new(Direction2D.D.X);
-        double   Tol = Math.Abs(Tolerance);
-        NbrSol       = 0;
-        WellDone     = false;
-        if (Radius < 0.0)
+        double   tol = Math.Abs(tolerance);
+        _nbrSol       = 0;
+        _wellDone     = false;
+        if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
         else
         {
-            if (Point1.Distance(Point2) - Radius * 2.0 > Tol)
+            if (point1.Distance(point2) - radius * 2.0 > tol)
             {
-                WellDone = true;
+                _wellDone = true;
             }
             else
             {
-                if (Point1.Distance(Point2) - Radius * 2.0 > 0.0)
+                if (point1.Distance(point2) - radius * 2.0 > 0.0)
                 {
-                    WellDone = true;
-                    NbrSol   = 1;
-                    Axis2D axe = new(new Point2D(0.5 * (Point1.XY() + Point2.XY())), dirx);
-                    cirsol[1] = new Circle2D(axe, Radius);
+                    _wellDone = true;
+                    _nbrSol   = 1;
+                    Axis2D axe = new(new Point2D(0.5 * (point1.XY() + point2.XY())), dirx);
+                    _cirsol[1] = new Circle2D(axe, radius);
                     //      =================================
-                    qualifier1[1] = GccEnt_noqualifier;
-                    qualifier2[1] = GccEnt_noqualifier;
-                    TheSame1[1]   = 0;
-                    TheSame2[1]   = 0;
-                    pnttg1sol[1]  = Point1;
-                    pnttg2sol[1]  = Point2;
+                    _qualifier1[1] = Qualifier.Noqualifier;
+                    _qualifier2[1] = Qualifier.Noqualifier;
+                    _theSame1[1]   = 0;
+                    _theSame2[1]   = 0;
+                    _pnttg1sol[1]  = point1;
+                    _pnttg2sol[1]  = point2;
                 }
                 else
                 {
-                    Circle2D C1 = new(new Axis2D(Point1, dirx), Radius);
-                    Circle2D C2 = new(new Axis2D(Point2, dirx), Radius);
-                    AnalyticIntersection Intp = new(C1, C2);
-                    if (Intp.IsDone)
+                    Circle2D c1 = new(new Axis2D(point1, dirx), radius);
+                    Circle2D c2 = new(new Axis2D(point2, dirx), radius);
+                    AnalyticIntersection intp = new(c1, c2);
+                    if (intp.IsDone)
                     {
-                        if (!Intp.IsEmpty)
+                        if (!intp.IsEmpty)
                         {
-                            for (int i = 1; i <= Intp.PointCount; i++)
+                            for (int i = 1; i <= intp.PointCount; i++)
                             {
-                                NbrSol++;
-                                Point2D Center = Intp.Point(i).Value();
-                                cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
+                                _nbrSol++;
+                                Point2D center = intp.Point(i).Value();
+                                _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                                 //            =======================================================
-                                qualifier1[NbrSol] = GccEnt_noqualifier;
-                                qualifier2[NbrSol] = GccEnt_noqualifier;
-                                TheSame1[NbrSol]   = 0;
-                                TheSame2[NbrSol]   = 0;
-                                pnttg1sol[NbrSol]  = Point1;
-                                pnttg2sol[NbrSol]  = Point2;
+                                _qualifier1[_nbrSol] = Qualifier.Noqualifier;
+                                _qualifier2[_nbrSol] = Qualifier.Noqualifier;
+                                _theSame1[_nbrSol]   = 0;
+                                _theSame2[_nbrSol]   = 0;
+                                _pnttg1sol[_nbrSol]  = point1;
+                                _pnttg2sol[_nbrSol]  = point2;
                             }
                         }
-                        WellDone = true;
+                        _wellDone = true;
                     }
                 }
             }
         }
-        for (int i = 1; i <= NbrSol; i++)
+        for (int i = 1; i <= _nbrSol; i++)
         {
-            pararg1[i] = 0.0;
-            pararg2[i] = 0.0;
-            par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[i], pnttg1sol[i]);
-            par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[i], pnttg2sol[i]);
+            _pararg1[i] = 0.0;
+            _pararg2[i] = 0.0;
+            _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg1sol[i]);
+            _par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg2sol[i]);
         }
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -29,8 +31,8 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
     public void Removefeatures_on_a_hand_made_hole()
     {
         DrawInterpreter i = Load();
-        Shape aTool = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
-        Shape aShape = new BRepAlgoAPI_Cut(new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
+        Shape aTool = new ApiMakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
+        Shape aShape = new Cut(new MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
         i.SetShape("s", aShape);
         var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShape, ShapeType.Face, aMap);

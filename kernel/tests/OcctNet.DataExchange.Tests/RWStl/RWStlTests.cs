@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -38,7 +39,7 @@ public class RWStlTests
     private static Shape FaceWith(Triangulation theTriangulation, double theSize)
     {
         var aPlane = new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0, 0, 1));
-        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, theSize, 0.0, theSize).InternalFace();
+        Face aFace = new MakeFace(aPlane, 0.0, theSize, 0.0, theSize).InternalFace();
         new BrepBuilder().UpdateFace(aFace, theTriangulation);
         aFace.TShape()!.FreezeGraph();
         return aFace;

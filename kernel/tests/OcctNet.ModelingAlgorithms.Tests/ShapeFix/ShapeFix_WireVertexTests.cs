@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -15,9 +19,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFix_WireVertexTests
 {
-    private static Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
+    private static Vertex V(double x, double y) => new MakeVertex(new Point3D(x, y, 0)).Vertex();
 
-    private static Edge E(in Vertex v1, in Vertex v2) => new BRepBuilderAPI_MakeEdge(v1, v2).Edge();
+    private static Edge E(in Vertex v1, in Vertex v2) => new MakeEdge(v1, v2).Edge();
 
     // A square whose first joint has two distinct vertices 1e-5 apart; the edges are frozen.
     private static Edge[] GappedSquare()
@@ -38,9 +42,9 @@ public class ShapeFix_WireVertexTests
         return aC;
     }
 
-    private static ShapeExtend_WireData WireData(IEnumerable<Edge> theEdges)
+    private static ExtendWireData WireData(IEnumerable<Edge> theEdges)
     {
-        var sbwd = new ShapeExtend_WireData();
+        var sbwd = new ExtendWireData();
         foreach (Edge anE in theEdges)
         {
             sbwd.Add(anE);
@@ -64,7 +68,7 @@ public class ShapeFix_WireVertexTests
         Edge[] anEdges = GappedSquare();
         Compound anInput = Compound(anEdges);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anInput);
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         sfwv.Init(WireData(anEdges), 1.0e-3);
         Assert.Equal(2, sfwv.Analyzer().Status(1)); // close
         Assert.Equal(1, sfwv.Analyzer().Status(2)); // same coords (OCCT: a shared vertex is never "same", see FixSame)
@@ -76,7 +80,7 @@ public class ShapeFix_WireVertexTests
         Assert.True(aWire.TShape()!.IsFrozen);
         List<Edge> aResult = Edges(aWire);
         Assert.Equal(4, aResult.Count);
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         for (int i = 0; i < 4; i++)
         {
             Assert.True(aResult[i].TShape()!.IsFrozen);
@@ -96,13 +100,13 @@ public class ShapeFix_WireVertexTests
         Edge[] anEdges = GappedSquare();
         Compound anInput = Compound(anEdges);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anInput);
-        var sawv = new ShapeAnalysis_WireVertex();
+        var sawv = new WireVertexAnalysis();
         sawv.Init(WireData(anEdges), 1.0e-3);
         sawv.SetPrecision(1.0e-3); // Init doesn't take it, as in OCCT
         sawv.Analyze();
         sawv.SetSameVertex(2); // joints edge 2/3 and 3/4 declared done: edge 3 is not touched
         sawv.SetSameVertex(3);
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         sfwv.Init(sawv);
 
         Assert.Equal(2, sfwv.FixSame());
@@ -113,7 +117,7 @@ public class ShapeFix_WireVertexTests
         Assert.False(ReferenceEquals(aResult[0].TShape(), anEdges[0].TShape()));
         // OCCT: FixSame adds the vertex without removing the edge's own: edge 2 now has three vertices, the first
         // still its old one
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         Vertex aV1 = sae.LastVertex(aResult[0]);
         int aNbVertices = 0;
         bool hasV1 = false;
@@ -132,10 +136,10 @@ public class ShapeFix_WireVertexTests
         // OCCT: FixSame compares the last vertex of an edge (REVERSED) with the first of the next (FORWARD) with ==,
         // which compares orientations, so a shared vertex is added again; and it adds it without making the edge Free
         // (Fix does), so on the edges of a wire TopoDS_Builder::Add throws TopoDS_FrozenShape.
-        Wire aSquare = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0),
+        Wire aSquare = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0),
                                                              new Point3D(1, 1, 0), new Point3D(0, 1, 0), true).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSquare);
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         sfwv.Init(aSquare, 1.0e-3);
         Assert.Equal(1, sfwv.Analyzer().Status(1));
 
@@ -147,7 +151,7 @@ public class ShapeFix_WireVertexTests
     public void FixAfterWire_CopiesAgain()
     {
         Edge[] anEdges = GappedSquare();
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         sfwv.Init(WireData(anEdges), 1.0e-3);
         Assert.Equal(4, sfwv.Fix());
         Wire aFirst = sfwv.Wire();
@@ -163,7 +167,7 @@ public class ShapeFix_WireVertexTests
     [Fact]
     public void NotAnalysed_DoesNothing()
     {
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         Assert.Equal(0, sfwv.Fix());
         Assert.Equal(0, sfwv.FixSame());
         Assert.Null(sfwv.WireData());
@@ -172,11 +176,11 @@ public class ShapeFix_WireVertexTests
     [Fact]
     public void UnfrozenEdges_AreFixedInPlace()
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true);
+        var aPoly = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true);
         Wire aWire = aPoly.InternalWire();
-        var sbwd = new ShapeExtend_WireData(aWire);
+        var sbwd = new ExtendWireData(aWire);
         Edge aFirst = sbwd.Edge(1);
-        var sfwv = new ShapeFix_WireVertex();
+        var sfwv = new WireVertexFixer();
         sfwv.Init(sbwd, 1.0e-3);
         Assert.Equal(3, sfwv.Fix());
         Wire aResult = sfwv.InternalWire();

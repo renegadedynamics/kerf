@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -56,13 +59,13 @@ internal static class BOPTestDebugCommands
             di.Append("Shows the shapes from DS. Use: bopds [v/e/w/f/sh/s/cs/c]\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        int aNbS = pDS.NbSourceShapes();
+        int aNbS = pDS.SourceShapeCount;
         ShapeType aType = ShapeType.Shape;
         if (n == 2)
         {
@@ -70,7 +73,7 @@ internal static class BOPTestDebugCommands
         }
         for (int i = 0; i < aNbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = pDS.ShapeInfo(i);
+            ShapeInfo aSI = pDS.ShapeInfo(i);
             Shape aS = aSI.Shape();
             ShapeType aTypeShape = aSI.ShapeType();
             if (n == 1)
@@ -102,14 +105,14 @@ internal static class BOPTestDebugCommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPDS_DS? pDS = aSession.PDS();
+        DS? pDS = aSession.PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        BOPDS_Iterator aIt = new();
-        IntTools_Context aCtx = new();
+        DataIterator aIt = new();
+        IntersectionContext aCtx = new();
         aIt.SetDS(pDS);
         aIt.Prepare(aCtx, aSession.UseOBB, aSession.FuzzyValue);
         if (n == 1)
@@ -154,7 +157,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows interferences of given type. Use: bopinterf type1 type2\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -225,7 +228,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows where the new shape was created. Use: bopwho #\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -238,7 +241,7 @@ internal static class BOPTestDebugCommands
             return 1;
         }
         int i1 = 0;
-        int i2 = pDS.NbShapes();
+        int i2 = pDS.ShapeCount;
         // OCCT: ind == NbShapes() passes the check and ShapeInfo reads past the end
         if (ind < i1 || ind > i2)
         {
@@ -252,7 +255,7 @@ internal static class BOPTestDebugCommands
             return 0;
         }
         di.Append("the shape is new\n");
-        BOPDS_ShapeInfo aSI = pDS.ShapeInfo(ind);
+        ShapeInfo aSI = pDS.ShapeInfo(ind);
         if (aSI.ShapeType() != ShapeType.Vertex)
         {
             return 0;
@@ -263,18 +266,18 @@ internal static class BOPTestDebugCommands
         SearchNewIndex("V/F: ", ind, pDS.InterfVF(), di);
         SearchNewIndex("E/F: ", ind, pDS.InterfEF(), di);
         bool bFound = false;
-        NCollection_DynamicArray<BOPDS_InterfFF> aFFs = pDS.InterfFF();
+        NCollection_DynamicArray<InterfFF> aFFs = pDS.InterfFF();
         int aNb = aFFs.Length();
         for (int i = 0; i < aNb; ++i)
         {
-            BOPDS_InterfFF anInt = aFFs[i];
+            InterfFF anInt = aFFs[i];
             anInt.Indices(out int n1, out int n2);
-            NCollection_DynamicArray<BOPDS_Curve> aVNC = anInt.Curves();
+            NCollection_DynamicArray<SectionCurve> aVNC = anInt.Curves();
             int aNbC = aVNC.Length();
             for (int k = 0; k < aNbC; ++k)
             {
-                BOPDS_Curve aNC = aVNC[k];
-                foreach (BOPDS_PaveBlock aPB in aNC.PaveBlocks())
+                SectionCurve aNC = aVNC[k];
+                foreach (PaveBlock aPB in aNC.PaveBlocks())
                 {
                     aPB.Indices(out int nV1, out int nV2);
                     if (ind == nV1 || ind == nV2)
@@ -294,11 +297,11 @@ internal static class BOPTestDebugCommands
                 di.Append("\n");
             }
             bFound = false;
-            NCollection_DynamicArray<BOPDS_Point> aVNP = anInt.Points();
+            NCollection_DynamicArray<DataPoint> aVNP = anInt.Points();
             int aNbP = aVNP.Length();
             for (int k = 0; k < aNbP; ++k)
             {
-                BOPDS_Point aNP = aVNP[k];
+                DataPoint aNP = aVNP[k];
                 int nV1 = aNP.Index();
                 if (ind == nV1)
                 {
@@ -325,7 +328,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows the newly created shapes. Use: bopnews v/e/f\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -338,11 +341,11 @@ internal static class BOPTestDebugCommands
             return 1;
         }
         bool bFound = false;
-        int i1 = pDS.NbSourceShapes();
-        int i2 = pDS.NbShapes();
+        int i1 = pDS.SourceShapeCount;
+        int i2 = pDS.ShapeCount;
         for (int i = i1; i < i2; ++i)
         {
-            BOPDS_ShapeInfo aSI = pDS.ShapeInfo(i);
+            ShapeInfo aSI = pDS.ShapeInfo(i);
             if (aSI.ShapeType() == aType)
             {
                 theDI.SetShape(Z(i), aSI.Shape());
@@ -368,7 +371,7 @@ internal static class BOPTestDebugCommands
             di.Append("Gets the index of the shape in the DS. Use: bopindex s\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -401,7 +404,7 @@ internal static class BOPTestDebugCommands
             di.Append("Gets the Same domain shape. Use: bopsd #\n");
             return 0;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -409,7 +412,7 @@ internal static class BOPTestDebugCommands
         }
         int ind = theDI.Atoi(a[1]);
         int i1 = 0;
-        int i2 = pDS.NbShapes();
+        int i2 = pDS.ShapeCount;
         if (ind < i1 || ind > i2)
         {
             di.Append(" DS does not contain the shape\n");
@@ -435,7 +438,7 @@ internal static class BOPTestDebugCommands
         {
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -450,13 +453,13 @@ internal static class BOPTestDebugCommands
         {
             nSF2 = theDI.Atoi(a[2]);
         }
-        NCollection_DynamicArray<BOPDS_InterfFF> aFFs = pDS.InterfFF();
+        NCollection_DynamicArray<InterfFF> aFFs = pDS.InterfFF();
         int iCnt = 0;
         int iPriz = 0;
         int aNb = aFFs.Length();
         for (int j = 0; j < aNb; ++j)
         {
-            BOPDS_InterfFF aFF = aFFs[j];
+            InterfFF aFF = aFFs[j];
             if (n == 3)
             {
                 if (!aFF.Contains(nSF1) || !aFF.Contains(nSF2))
@@ -474,12 +477,12 @@ internal static class BOPTestDebugCommands
             }
             aFF.Indices(out int nF1, out int nF2);
             int iX = 0;
-            NCollection_DynamicArray<BOPDS_Curve> aVNC = aFF.Curves();
+            NCollection_DynamicArray<SectionCurve> aVNC = aFF.Curves();
             int aNbC = aVNC.Length();
             for (int k = 0; k < aNbC; ++k)
             {
-                BOPDS_Curve aNC = aVNC[k];
-                foreach (BOPDS_PaveBlock aPB in aNC.PaveBlocks())
+                SectionCurve aNC = aVNC[k];
+                foreach (PaveBlock aPB in aNC.PaveBlocks())
                 {
                     if (!aPB.HasEdge(out int nSp))
                     {
@@ -502,11 +505,11 @@ internal static class BOPTestDebugCommands
                 di.Append("\n");
             }
             iX = 0;
-            NCollection_DynamicArray<BOPDS_Point> aVNP = aFF.Points();
+            NCollection_DynamicArray<DataPoint> aVNP = aFF.Points();
             int aNbP = aVNP.Length();
             for (int k = 0; k < aNbP; ++k)
             {
-                BOPDS_Point aNP = aVNP[k];
+                DataPoint aNP = aVNP[k];
                 int nSp = aNP.Index();
                 if (nSp < 0)
                 {
@@ -544,10 +547,10 @@ internal static class BOPTestDebugCommands
     }
 
     /// <summary>The edges between i1 and i2 (one edge when an index is given) that have pave blocks (boppb, bopcb, bopsp).</summary>
-    private static IEnumerable<int> EdgesWithPaveBlocks(BOPDS_DS pDS, IReadOnlyList<string> a, DrawInterpreter theDI)
+    private static IEnumerable<int> EdgesWithPaveBlocks(DS pDS, IReadOnlyList<string> a, DrawInterpreter theDI)
     {
         int i1 = 0;
-        int i2 = pDS.NbSourceShapes();
+        int i2 = pDS.SourceShapeCount;
         if (a.Count == 2)
         {
             int ind = theDI.Atoi(a[1]);
@@ -556,7 +559,7 @@ internal static class BOPTestDebugCommands
         }
         for (int ind = i1; ind < i2; ++ind)
         {
-            BOPDS_ShapeInfo aSI = pDS.ShapeInfo(ind);
+            ShapeInfo aSI = pDS.ShapeInfo(ind);
             if (aSI.ShapeType() != ShapeType.Edge)
             {
                 continue;
@@ -576,7 +579,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows information about pave blocks. Use: boppb [#e]\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -584,7 +587,7 @@ internal static class BOPTestDebugCommands
         }
         foreach (int ind in EdgesWithPaveBlocks(pDS, a, theDI))
         {
-            foreach (BOPDS_PaveBlock aPB in pDS.PaveBlocks(ind))
+            foreach (PaveBlock aPB in pDS.PaveBlocks(ind))
             {
                 aPB.Dump(theDI.Output);
                 theDI.Output.Write("\n");
@@ -600,20 +603,20 @@ internal static class BOPTestDebugCommands
             di.Append("Shows information about common blocks. Use: bopcb [#e]\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
             return 1;
         }
-        HashSet<BOPDS_CommonBlock> aMCB = new(ReferenceEqualityComparer.Instance);
+        HashSet<CommonBlock> aMCB = new(ReferenceEqualityComparer.Instance);
         foreach (int ind in EdgesWithPaveBlocks(pDS, a, theDI))
         {
-            foreach (BOPDS_PaveBlock aPB in pDS.PaveBlocks(ind))
+            foreach (PaveBlock aPB in pDS.PaveBlocks(ind))
             {
                 if (pDS.IsCommonBlock(aPB))
                 {
-                    BOPDS_CommonBlock aCB = pDS.CommonBlock(aPB)!;
+                    CommonBlock aCB = pDS.CommonBlock(aPB)!;
                     if (aMCB.Add(aCB))
                     {
                         aCB.Dump(theDI.Output);
@@ -632,7 +635,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows the splits of edges. Use: bopsp [#e]\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -641,7 +644,7 @@ internal static class BOPTestDebugCommands
         foreach (int ind in EdgesWithPaveBlocks(pDS, a, theDI))
         {
             di.Append("Edge ").Append(ind).Append(": ");
-            foreach (BOPDS_PaveBlock aPB in pDS.PaveBlocks(ind))
+            foreach (PaveBlock aPB in pDS.PaveBlocks(ind))
             {
                 int nSp = aPB.Edge();
                 string aText = $"z{ind}_{nSp}";
@@ -661,7 +664,7 @@ internal static class BOPTestDebugCommands
               .Append(" information for the face. Use: bopf* #f\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -669,7 +672,7 @@ internal static class BOPTestDebugCommands
         }
         int nF = theDI.Atoi(a[1]);
         int i1 = 0;
-        int i2 = pDS.NbSourceShapes();
+        int i2 = pDS.SourceShapeCount;
         // OCCT: nF == NbSourceShapes() passes the check
         if (nF < i1 || nF > i2)
         {
@@ -686,8 +689,8 @@ internal static class BOPTestDebugCommands
             di.Append(" The face has no face information\n");
             return 0;
         }
-        BOPDS_FaceInfo aFI = pDS.ChangeFaceInfo(nF);
-        (string aText, NCollection_IndexedMap<BOPDS_PaveBlock> aMPB, NCollection_IntMap aMI) = iPriz switch
+        FaceInfo aFI = pDS.ChangeFaceInfo(nF);
+        (string aText, NCollection_IndexedMap<PaveBlock> aMPB, NCollection_IntMap aMI) = iPriz switch
         {
             0 => ("On", aFI.PaveBlocksOn(), aFI.VerticesOn()),
             1 => ("In", aFI.PaveBlocksIn(), aFI.VerticesIn()),
@@ -731,7 +734,7 @@ internal static class BOPTestDebugCommands
             di.Append("Shows information about alone vertices for the face. Use: bopfav #f\n");
             return 1;
         }
-        BOPDS_DS? pDS = BOPTestObjects.Of(theDI).PDS();
+        DS? pDS = BOPTestObjects.Of(theDI).PDS();
         if (pDS is null)
         {
             di.Append(" prepare PaveFiller first\n");
@@ -739,7 +742,7 @@ internal static class BOPTestDebugCommands
         }
         int nF = theDI.Atoi(a[1]);
         int i1 = 0;
-        int i2 = pDS.NbSourceShapes();
+        int i2 = pDS.SourceShapeCount;
         // OCCT: nF == NbSourceShapes() passes the check
         if (nF < i1 || nF > i2)
         {
@@ -952,12 +955,12 @@ internal static class BOPTestDebugCommands
                 aLE.Append(aSx);
             }
         }
-        BOPAlgo_BuilderFace aBF = new();
+        BuilderFace aBF = new();
         aBF.SetFace(aF);
         aBF.SetShapes(aLE);
         aBF.Perform();
         BOPTestObjects.ReportAlerts(theDI, di, aBF.GetReport());
-        if (aBF.HasErrors())
+        if (aBF.HasErrors)
         {
             return 0;
         }
@@ -1004,11 +1007,11 @@ internal static class BOPTestDebugCommands
             di.Append(" No faces to build solids\n");
             return 1;
         }
-        BOPAlgo_BuilderSolid aBS = new();
+        BuilderSolid aBS = new();
         aBS.SetShapes(aLF);
         aBS.Perform();
         BOPTestObjects.ReportAlerts(theDI, di, aBS.GetReport());
-        if (aBS.HasErrors())
+        if (aBS.HasErrors)
         {
             return 0;
         }
@@ -1058,7 +1061,7 @@ internal static class BOPTestDebugCommands
         _ => "Shape",
     };
 
-    private static void DumpInterfs<TInterf>(NCollection_DynamicArray<TInterf> theVInterf, DrawResult di) where TInterf : BOPDS_Interf
+    private static void DumpInterfs<TInterf>(NCollection_DynamicArray<TInterf> theVInterf, DrawResult di) where TInterf : Interf
     {
         int aNb = theVInterf.Length();
         if (aNb == 0)
@@ -1083,7 +1086,7 @@ internal static class BOPTestDebugCommands
     }
 
     private static void SearchNewIndex<TInterf>(string theCType, int theInd, NCollection_DynamicArray<TInterf> theVInterf, DrawResult di)
-        where TInterf : BOPDS_Interf
+        where TInterf : Interf
     {
         bool bFound = false;
         int aNb = theVInterf.Length();

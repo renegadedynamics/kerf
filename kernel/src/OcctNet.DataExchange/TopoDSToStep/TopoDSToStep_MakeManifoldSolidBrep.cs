@@ -91,7 +91,7 @@ public sealed class TopoDSToStep_MakeManifoldSolidBrep : TopoDSToStep_Root
     public TopoDSToStep_MakeManifoldSolidBrep(in Solid aSolid, Transfer_FinderProcess FP, in StepData_Factors theLocalFactors,
                                               ProgressRange theProgress = default)
     {
-        Shell aOuterShell = BRepClass3d.OuterShell(aSolid);
+        Shell aOuterShell = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(aSolid);
         if (!aOuterShell.IsNull)
         {
             (StepShape_ManifoldSolidBrep, StepVisual_TessellatedItem) aResult =

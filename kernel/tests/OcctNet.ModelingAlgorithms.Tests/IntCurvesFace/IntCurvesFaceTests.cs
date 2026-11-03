@@ -2,12 +2,13 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.IntCurveSurface_TransitionOnCurve;
+using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -31,71 +32,71 @@ public class IntCurvesFaceTests
         Face aBottom = FaceAt(aBox, 0), aTop = FaceAt(aBox, 1);
         var aLine = new Line3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1));
 
-        var aTopInter = new IntCurvesFace_Intersector(aTop, 1e-7);
+        var aTopInter = new CurveSurfaceIntersector(aTop, 1e-7);
         Assert.Equal(Plane, aTopInter.SurfaceType());
         Assert.True(aTopInter.Bounding().IsVoid); // no polyhedron on a plane
         aTopInter.Perform(aLine, -RealLast(), RealLast());
-        Assert.True(aTopInter.IsDone());
-        Assert.Equal(1, aTopInter.NbPnt());
+        Assert.True(aTopInter.IsDone);
+        Assert.Equal(1, aTopInter.PntCount);
         Assert.Equal(15.0, aTopInter.WParameter(1), 1e-9);
         Assert.True(aTopInter.Pnt(1).IsEqual(new Point3D(3, 4, 10), 1e-9));
-        Assert.Equal(In, aTopInter.State(1));
+        Assert.Equal(global::Kerf.Topology.Containment.In, aTopInter.State(1));
         Assert.True(aTopInter.Face().IsSame(aTop));
         // the box's faces point out: the line leaves the box at the top and enters it at the bottom
-        Assert.Equal(IntCurveSurface_Out, aTopInter.Transition(1));
+        Assert.Equal(TransitionOnCurve.Out, aTopInter.Transition(1));
 
-        var aBottomInter = new IntCurvesFace_Intersector(aBottom, 1e-7);
+        var aBottomInter = new CurveSurfaceIntersector(aBottom, 1e-7);
         aBottomInter.Perform(aLine, -RealLast(), RealLast());
-        Assert.Equal(1, aBottomInter.NbPnt());
+        Assert.Equal(1, aBottomInter.PntCount);
         Assert.Equal(5.0, aBottomInter.WParameter(1), 1e-9);
-        Assert.Equal(IntCurveSurface_In, aBottomInter.Transition(1));
+        Assert.Equal(TransitionOnCurve.In, aBottomInter.Transition(1));
 
         // the reversed face reverses the transition
-        var aReversed = new IntCurvesFace_Intersector(ShapeCasts.Face(aTop.Reversed()), 1e-7);
+        var aReversed = new CurveSurfaceIntersector(ShapeCasts.Face(aTop.Reversed()), 1e-7);
         aReversed.Perform(aLine, -RealLast(), RealLast());
-        Assert.Equal(IntCurveSurface_In, aReversed.Transition(1));
+        Assert.Equal(TransitionOnCurve.In, aReversed.Transition(1));
 
         // the segment ends before the face
         aTopInter.Perform(aLine, 0.0, 14.0);
-        Assert.True(aTopInter.IsDone());
-        Assert.Equal(0, aTopInter.NbPnt());
+        Assert.True(aTopInter.IsDone);
+        Assert.Equal(0, aTopInter.PntCount);
     }
 
     [Fact]
     public void Line_outside_on_and_in_the_plane_of_a_face()
     {
         Face aTop = FaceAt(Box10(), 1);
-        var anInter = new IntCurvesFace_Intersector(aTop, 1e-7);
+        var anInter = new CurveSurfaceIntersector(aTop, 1e-7);
 
         // misses the face
         anInter.Perform(new Line3D(new Point3D(20, 4, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
-        Assert.Equal(0, anInter.NbPnt());
+        Assert.Equal(0, anInter.PntCount);
 
         // through an edge: ON
         anInter.Perform(new Line3D(new Point3D(10, 4, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
-        Assert.Equal(1, anInter.NbPnt());
+        Assert.Equal(1, anInter.PntCount);
         Assert.Equal(On, anInter.State(1));
 
         // in the face's plane
         anInter.Perform(new Line3D(new Point3D(-5, 4, 10), new Direction3D(1, 0, 0)), -RealLast(), RealLast());
-        Assert.Equal(0, anInter.NbPnt());
-        Assert.True(anInter.IsParallel());
+        Assert.Equal(0, anInter.PntCount);
+        Assert.True(anInter.IsParallel);
 
-        Assert.Equal(In, anInter.ClassifyUVPoint(new Point2D(1, 1)));
+        Assert.Equal(global::Kerf.Topology.Containment.In, anInter.ClassifyUVPoint(new Point2D(1, 1)));
     }
 
     [Fact]
     public void Extruded_tube_is_met_through_its_polyhedron()
     {
         Face aTube = TestShapes.Frozen(ClassificationTestShapes.ExtrudedTube(2.0, 3.0));
-        var anInter = new IntCurvesFace_Intersector(aTube, 1e-7);
+        var anInter = new CurveSurfaceIntersector(aTube, 1e-7);
         Assert.Equal(SurfaceOfExtrusion, anInter.SurfaceType());
         Box aBox = anInter.Bounding();
         Assert.False(aBox.IsVoid);
 
         // across the tube at height 1: two points, sorted along the line
         anInter.Perform(new Line3D(new Point3D(-5, 0, 1), new Direction3D(1, 0, 0)), -RealLast(), RealLast());
-        Assert.Equal(2, anInter.NbPnt());
+        Assert.Equal(2, anInter.PntCount);
         Assert.Equal(3.0, anInter.WParameter(1), 1e-7);
         Assert.Equal(7.0, anInter.WParameter(2), 1e-7);
         Assert.Equal(1.0, anInter.VParameter(1), 1e-7);
@@ -103,15 +104,15 @@ public class IntCurvesFaceTests
 
         // above the tube
         anInter.Perform(new Line3D(new Point3D(-5, 0, 4), new Direction3D(1, 0, 0)), -RealLast(), RealLast());
-        Assert.Equal(0, anInter.NbPnt());
+        Assert.Equal(0, anInter.PntCount);
 
         // a circle around the axis, inside the tube's radius: no point; through it: two
         var aCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 1.0));
         anInter.Perform(aCircle, -RealLast(), RealLast());
-        Assert.Equal(0, anInter.NbPnt());
+        Assert.Equal(0, anInter.PntCount);
         var aBigCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), 2.5));
         anInter.Perform(aBigCircle, -RealLast(), RealLast());
-        Assert.Equal(2, anInter.NbPnt());
+        Assert.Equal(2, anInter.PntCount);
         for (int i = 1; i <= 2; i++)
         {
             Point3D aP = anInter.Pnt(i);
@@ -123,19 +124,19 @@ public class IntCurvesFaceTests
     public void ShapeIntersector_sorts_the_points_along_the_line()
     {
         Shape aBox = Box10();
-        var anInter = new IntCurvesFace_ShapeIntersector();
+        var anInter = new ShapeIntersector();
         anInter.Load(aBox, 1e-7);
         var aLine = new Line3D(new Point3D(3, 4, -5), new Direction3D(0, 0, 1));
         anInter.Perform(aLine, -RealLast(), RealLast());
-        Assert.True(anInter.IsDone());
-        Assert.Equal(2, anInter.NbPnt());
+        Assert.True(anInter.IsDone);
+        Assert.Equal(2, anInter.PntCount);
         Assert.Equal(5.0, anInter.WParameter(1), 1e-9);
         Assert.Equal(15.0, anInter.WParameter(2), 1e-9);
         Assert.True(anInter.Face(1).IsSame(FaceAt(aBox, 0)));
         Assert.True(anInter.Face(2).IsSame(FaceAt(aBox, 1)));
-        Assert.Equal(IntCurveSurface_In, anInter.Transition(1));
-        Assert.Equal(IntCurveSurface_Out, anInter.Transition(2));
-        Assert.Equal(In, anInter.State(1));
+        Assert.Equal(TransitionOnCurve.In, anInter.Transition(1));
+        Assert.Equal(TransitionOnCurve.Out, anInter.Transition(2));
+        Assert.Equal(global::Kerf.Topology.Containment.In, anInter.State(1));
         Assert.Equal(3.0, anInter.UParameter(2), 1e-9);
         Assert.Equal(4.0, anInter.VParameter(2), 1e-9);
         Assert.True(anInter.Pnt(2).IsEqual(new Point3D(3, 4, 10), 1e-9));
@@ -144,15 +145,15 @@ public class IntCurvesFaceTests
         for (int k = 0; k < 2; k++)
         {
             anInter.PerformNearest(aLine, -RealLast(), RealLast());
-            Assert.True(anInter.IsDone());
-            Assert.True(anInter.NbPnt() >= 1);
+            Assert.True(anInter.IsDone);
+            Assert.True(anInter.PntCount >= 1);
             Assert.Equal(5.0, anInter.WParameter(1), 1e-9);
         }
 
         // a curve: a circle around the box's centre crossing its four sides twice each
         var aCircle = new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0));
         anInter.Perform(aCircle, -RealLast(), RealLast());
-        Assert.Equal(8, anInter.NbPnt());
+        Assert.Equal(8, anInter.PntCount);
         for (int i = 2; i <= 8; i++)
         {
             Assert.True(anInter.WParameter(i) >= anInter.WParameter(i - 1));
@@ -166,12 +167,12 @@ public class IntCurvesFaceTests
         // the intersector still meets the first box's faces (occt-issues.md, pinned)
         Shape aBox = Box10();
         Shape aFar = ClassificationTestShapes.Translated(aBox, new Vector3D(100, 0, 0));
-        var anInter = new IntCurvesFace_ShapeIntersector();
+        var anInter = new ShapeIntersector();
         anInter.Load(aBox, 1e-7);
         anInter.Load(aFar, 1e-7);
         anInter.Perform(new Line3D(new Point3D(105, 5, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
-        Assert.Equal(0, anInter.NbPnt()); // the second box is missed
+        Assert.Equal(0, anInter.PntCount); // the second box is missed
         anInter.Perform(new Line3D(new Point3D(5, 5, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
-        Assert.Equal(2, anInter.NbPnt()); // the first box is met
+        Assert.Equal(2, anInter.PntCount); // the first box is met
     }
 }

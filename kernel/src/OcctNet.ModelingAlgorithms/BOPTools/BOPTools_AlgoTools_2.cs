@@ -2,21 +2,24 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans.Tools;
 
 // BOPTools_AlgoTools_2.cxx: vertices, edges, ranges and dimensions.
-public static partial class BOPTools_AlgoTools
+public static partial class AlgoTools
 {
     /// <summary>
     /// Raises the tolerance of <paramref name="aVF"/> to cover <paramref name="aNewVertex"/> (distance plus its
@@ -24,20 +27,20 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void UpdateVertex(in Vertex aVF, in Vertex aNewVertex)
     {
-        double aTolVF, aTolNewVertex, aDist, aNewTol;
+        double tolVF, tolNewVertex, dist, newTol;
         //
-        Point3D aPVF = Tool.Pnt(aVF);
-        Point3D aPNewVertex = Tool.Pnt(aNewVertex);
-        aTolVF = Tool.Tolerance(aVF);
-        aTolNewVertex = Tool.Tolerance(aNewVertex);
+        Point3D pvf = Tool.Pnt(aVF);
+        Point3D pNewVertex = Tool.Pnt(aNewVertex);
+        tolVF = Tool.Tolerance(aVF);
+        tolNewVertex = Tool.Tolerance(aNewVertex);
 
-        aDist = aPVF.Distance(aPNewVertex);
-        aNewTol = aDist + aTolNewVertex;
+        dist = pvf.Distance(pNewVertex);
+        newTol = dist + tolNewVertex;
 
-        if (aNewTol > aTolVF)
+        if (newTol > tolVF)
         {
-            BrepBuilder BB = new();
-            BB.UpdateVertex(aVF, aNewTol + DTolerance());
+            BrepBuilder bb = new();
+            bb.UpdateVertex(aVF, newTol + DTolerance());
         }
     }
 
@@ -47,19 +50,19 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void UpdateVertex(in Edge aE, double aT, in Vertex aV)
     {
-        double aTolV, aDist;
-        Point3D aPc;
+        double tolV, dist;
+        Point3D pc;
 
-        Point3D aPv = Tool.Pnt(aV);
-        aTolV = Tool.Tolerance(aV);
+        Point3D pv = Tool.Pnt(aV);
+        tolV = Tool.Tolerance(aV);
 
-        CurveAdaptor aCA = new(Tool.Curve(aE, out _, out _)!);
-        aCA.D0(aT, out aPc);
-        aDist = aPv.Distance(aPc);
-        if (aDist > aTolV)
+        CurveAdaptor ca = new(Tool.Curve(aE, out _, out _)!);
+        ca.D0(aT, out pc);
+        dist = pv.Distance(pc);
+        if (dist > tolV)
         {
-            BrepBuilder BB = new();
-            BB.UpdateVertex(aV, aDist + DTolerance());
+            BrepBuilder bb = new();
+            bb.UpdateVertex(aV, dist + DTolerance());
         }
     }
 
@@ -67,55 +70,55 @@ public static partial class BOPTools_AlgoTools
     /// Raises the vertex's tolerance to cover the point of the intersection curve at the parameter. Writes into
     /// <paramref name="aV"/>.
     /// </summary>
-    public static void UpdateVertex(in IntTools_Curve aC, double aT, in Vertex aV)
+    public static void UpdateVertex(in IntersectionCurve aC, double aT, in Vertex aV)
     {
-        double aTolV, aDist;
-        Point3D aPc;
+        double tolV, dist;
+        Point3D pc;
 
-        Point3D aPv = Tool.Pnt(aV);
-        aTolV = Tool.Tolerance(aV);
+        Point3D pv = Tool.Pnt(aV);
+        tolV = Tool.Tolerance(aV);
 
-        CurveAdaptor aCA = new(aC.Curve()!);
-        aCA.D0(aT, out aPc);
-        aDist = aPv.Distance(aPc);
-        if (aDist > aTolV)
+        CurveAdaptor ca = new(aC.Curve()!);
+        ca.D0(aT, out pc);
+        dist = pv.Distance(pc);
+        if (dist > tolV)
         {
-            BrepBuilder BB = new();
-            BB.UpdateVertex(aV, aDist + DTolerance());
+            BrepBuilder bb = new();
+            bb.UpdateVertex(aV, dist + DTolerance());
         }
     }
 
     /// <summary>
     /// Makes an edge on the intersection curve between the vertices at the parameters, keeping the range as given.
     /// </summary>
-    public static void MakeSectEdge(in IntTools_Curve aIC, in Vertex aV1, double aP1, in Vertex aV2, double aP2,
+    public static void MakeSectEdge(in IntersectionCurve aIC, in Vertex aV1, double aP1, in Vertex aV2, double aP2,
                                     out Edge aNewEdge)
     {
-        Curve3D aC = aIC.Curve()!;
+        Curve3D c = aIC.Curve()!;
 
-        BRepBuilderAPI_MakeEdge aMakeEdge = new(aC, aV1, aV2, aP1, aP2);
+        MakeEdge makeEdge = new(c, aV1, aV2, aP1, aP2);
 
         // The maker's unfrozen result: the edge is new, and the range is written into it.
-        Edge aE = ShapeCasts.Edge(aMakeEdge.InternalShape());
+        Edge e = ShapeCasts.Edge(makeEdge.InternalShape());
         //
         // Range must be as it was !
-        BrepBuilder aBB = new();
-        aBB.Range(aE, aP1, aP2);
+        BrepBuilder bb = new();
+        bb.Range(e, aP1, aP2);
         //
-        aNewEdge = aE;
+        aNewEdge = e;
     }
 
     /// <summary>A new edge with the edge's geometry and sub-shapes (an empty copy refilled), and its orientation.</summary>
-    public static Edge CopyEdge(in Edge theEdge)
+    public static Edge CopyEdge(in Edge edge)
     {
-        Edge aNewEdge = ShapeCasts.Edge(theEdge.Oriented(Forward));
-        aNewEdge.EmptyCopy();
-        for (Iterator it = new(theEdge, false); it.More(); it.Next())
+        Edge newEdge = ShapeCasts.Edge(edge.Oriented(Forward));
+        newEdge.EmptyCopy();
+        for (Iterator it = new(edge, false); it.More(); it.Next())
         {
-            new BrepBuilder().Add(aNewEdge, it.Value());
+            new BrepBuilder().Add(newEdge, it.Value());
         }
-        aNewEdge.Orientation(theEdge.Orientation());
-        return aNewEdge;
+        newEdge.Orientation(edge.Orientation());
+        return newEdge;
     }
 
     /// <summary>
@@ -125,43 +128,43 @@ public static partial class BOPTools_AlgoTools
     public static void MakeSplitEdge(in Edge aE, in Vertex aV1, double aP1, in Vertex aV2, double aP2,
                                      out Edge aNewEdge)
     {
-        Edge E = ShapeCasts.Edge(aE.Oriented(Forward));
-        E.EmptyCopy();
+        Edge e = ShapeCasts.Edge(aE.Oriented(Forward));
+        e.EmptyCopy();
         //
-        BrepBuilder BB = new();
+        BrepBuilder bb = new();
         if (!aV1.IsNull)
         {
             if (aP1 < aP2)
             {
-                BB.Add(E, ShapeCasts.Vertex(aV1.Oriented(Forward)));
+                bb.Add(e, ShapeCasts.Vertex(aV1.Oriented(Forward)));
             }
             else
             {
-                BB.Add(E, ShapeCasts.Vertex(aV1.Oriented(Reversed)));
+                bb.Add(e, ShapeCasts.Vertex(aV1.Oriented(Reversed)));
             }
         }
         if (!aV2.IsNull)
         {
             if (aP1 < aP2)
             {
-                BB.Add(E, ShapeCasts.Vertex(aV2.Oriented(Reversed)));
+                bb.Add(e, ShapeCasts.Vertex(aV2.Oriented(Reversed)));
             }
             else
             {
-                BB.Add(E, ShapeCasts.Vertex(aV2.Oriented(Forward)));
+                bb.Add(e, ShapeCasts.Vertex(aV2.Oriented(Forward)));
             }
         }
 
         if (aP1 < aP2)
         {
-            BB.Range(E, aP1, aP2);
+            bb.Range(e, aP1, aP2);
         }
         else
         {
-            BB.Range(E, aP2, aP1);
+            bb.Range(e, aP2, aP1);
         }
 
-        aNewEdge = E;
+        aNewEdge = e;
         aNewEdge.Orientation(aE.Orientation());
     }
 
@@ -170,34 +173,34 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void MakeNewVertex(in Vertex aV1, in Vertex aV2, out Vertex aNewVertex)
     {
-        Point3D aPnt1 = Tool.Pnt(aV1);
-        double aTol1 = Tool.Tolerance(aV1);
+        Point3D pnt1 = Tool.Pnt(aV1);
+        double tol1 = Tool.Tolerance(aV1);
 
-        Point3D aPnt2 = Tool.Pnt(aV2);
-        double aTol2 = Tool.Tolerance(aV2);
+        Point3D pnt2 = Tool.Pnt(aV2);
+        double tol2 = Tool.Tolerance(aV2);
 
-        double aMaxTol, aDist;
+        double maxTol, dist;
 
-        aDist = aPnt1.Distance(aPnt2);
-        aMaxTol = (aTol1 > aTol2) ? aTol1 : aTol2;
-        aMaxTol = aMaxTol + 0.5 * aDist;
+        dist = pnt1.Distance(pnt2);
+        maxTol = (tol1 > tol2) ? tol1 : tol2;
+        maxTol = maxTol + 0.5 * dist;
 
-        Xyz aXYZ1 = aPnt1.XYZ();
-        Xyz aXYZ2 = aPnt2.XYZ();
-        Xyz aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
+        Xyz xyz1 = pnt1.XYZ();
+        Xyz xyz2 = pnt2.XYZ();
+        Xyz newXYZ = 0.5 * (xyz1 + xyz2);
 
-        Point3D aNewPnt = new(aNewXYZ);
-        BrepBuilder aBB = new();
+        Point3D newPnt = new(newXYZ);
+        BrepBuilder bb = new();
         aNewVertex = new Vertex();
-        aBB.MakeVertex(ref aNewVertex, aNewPnt, aMaxTol);
+        bb.MakeVertex(ref aNewVertex, newPnt, maxTol);
     }
 
     /// <summary>A new vertex at the point with the tolerance.</summary>
     public static void MakeNewVertex(in Point3D aP, double aTol, out Vertex aNewVertex)
     {
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
         aNewVertex = new Vertex();
-        aBB.MakeVertex(ref aNewVertex, aP, aTol);
+        bb.MakeVertex(ref aNewVertex, aP, aTol);
     }
 
     /// <summary>
@@ -206,26 +209,26 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void MakeNewVertex(in Edge aE1, double aParm1, in Edge aE2, double aParm2, out Vertex aNewVertex)
     {
-        double aTol1, aTol2, aMaxTol, aDist;
+        double tol1, tol2, maxTol, dist;
 
-        PointOnEdge(aE1, aParm1, out Point3D aPnt1);
-        PointOnEdge(aE2, aParm2, out Point3D aPnt2);
+        PointOnEdge(aE1, aParm1, out Point3D pnt1);
+        PointOnEdge(aE2, aParm2, out Point3D pnt2);
 
-        aTol1 = Tool.Tolerance(aE1);
-        aTol2 = Tool.Tolerance(aE2);
+        tol1 = Tool.Tolerance(aE1);
+        tol2 = Tool.Tolerance(aE2);
 
-        aDist = aPnt1.Distance(aPnt2);
-        aMaxTol = (aTol1 > aTol2) ? aTol1 : aTol2;
-        aMaxTol = aMaxTol + 0.5 * aDist;
+        dist = pnt1.Distance(pnt2);
+        maxTol = (tol1 > tol2) ? tol1 : tol2;
+        maxTol = maxTol + 0.5 * dist;
 
-        Xyz aXYZ1 = aPnt1.XYZ();
-        Xyz aXYZ2 = aPnt2.XYZ();
-        Xyz aNewXYZ = 0.5 * (aXYZ1 + aXYZ2);
+        Xyz xyz1 = pnt1.XYZ();
+        Xyz xyz2 = pnt2.XYZ();
+        Xyz newXYZ = 0.5 * (xyz1 + xyz2);
 
-        Point3D aNewPnt = new(aNewXYZ);
-        BrepBuilder aBB = new();
+        Point3D newPnt = new(newXYZ);
+        BrepBuilder bb = new();
         aNewVertex = new Vertex();
-        aBB.MakeVertex(ref aNewVertex, aNewPnt, aMaxTol);
+        bb.MakeVertex(ref aNewVertex, newPnt, maxTol);
     }
 
     /// <summary>
@@ -233,95 +236,95 @@ public static partial class BOPTools_AlgoTools
     /// </summary>
     public static void MakeNewVertex(in Edge aE1, double aParm1, in Face aF1, out Vertex aNewVertex)
     {
-        double aTol1, aTol2, aMaxTol;
+        double tol1, tol2, maxTol;
 
-        PointOnEdge(aE1, aParm1, out Point3D aPnt);
+        PointOnEdge(aE1, aParm1, out Point3D pnt);
 
-        aTol1 = Tool.Tolerance(aE1);
-        aTol2 = Tool.Tolerance(aF1);
+        tol1 = Tool.Tolerance(aE1);
+        tol2 = Tool.Tolerance(aF1);
         //
-        aMaxTol = aTol1 + aTol2 + DTolerance();
+        maxTol = tol1 + tol2 + DTolerance();
         //
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
         aNewVertex = new Vertex();
-        aBB.MakeVertex(ref aNewVertex, aPnt, aMaxTol);
+        bb.MakeVertex(ref aNewVertex, pnt, maxTol);
     }
 
     /// <summary>The point of the edge's 3D curve at the parameter.</summary>
     public static void PointOnEdge(in Edge aE, double aParm, out Point3D aPnt)
     {
-        Curve3D C1 = Tool.Curve(aE, out _, out _)!;
-        C1.D0(aParm, out aPnt);
+        Curve3D c1 = Tool.Curve(aE, out _, out _)!;
+        c1.D0(aParm, out aPnt);
     }
 
     /// <summary>
     /// The range shrunk at both ends by the resolution of twice the two edges' tolerances on the first edge (not for
     /// lines); the range itself if it would become shorter than PConfusion.
     /// </summary>
-    public static void CorrectRange(in Edge aE1, in Edge aE2, in IntTools_Range aSR, out IntTools_Range aNewSR)
+    public static void CorrectRange(in Edge aE1, in Edge aE2, in ParameterRange aSR, out ParameterRange aNewSR)
     {
         int i;
-        double aRes, aTolE1, aTolE2, aTF, aTL, dT;
-        EdgeCurveAdaptor aBC = new();
-        CurveKind aCT;
+        double res, tolE1, tolE2, tf, tl, dT;
+        EdgeCurveAdaptor bc = new();
+        CurveKind ct;
         //
         aNewSR = aSR;
         //
-        aBC.Initialize(aE1);
-        aCT = aBC.GetType();
-        if (aCT == Line)
+        bc.Initialize(aE1);
+        ct = bc.GetType();
+        if (ct == Line)
         {
             return;
         }
         //
         dT = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        aTF = aSR.First();
-        aTL = aSR.Last();
+        tf = aSR.First();
+        tl = aSR.Last();
         //
-        aTolE1 = Tool.Tolerance(aE1);
-        aTolE2 = Tool.Tolerance(aE2);
+        tolE1 = Tool.Tolerance(aE1);
+        tolE2 = Tool.Tolerance(aE2);
         //
         for (i = 0; i < 2; ++i)
         {
-            aRes = 2.0 * (aTolE1 + aTolE2);
+            res = 2.0 * (tolE1 + tolE2);
             //
-            if (aCT == BezierCurve || aCT == BSplineCurve || aCT == OffsetCurve
-                || aCT == OtherCurve)
+            if (ct == BezierCurve || ct == BSplineCurve || ct == OffsetCurve
+                || ct == OtherCurve)
             {
-                Point3D aP;
-                Vector3D aDer;
+                Point3D p;
+                Vector3D der;
                 if (i == 0)
                 {
-                    aBC.D1(aTF, out aP, out aDer);
+                    bc.D1(tf, out p, out der);
                 }
                 else
                 {
-                    aBC.D1(aTL, out aP, out aDer);
+                    bc.D1(tl, out p, out der);
                 }
                 //
-                double aMgn = aDer.Magnitude();
+                double mgn = der.Magnitude();
 
-                if (aMgn > 1.0e-12)
+                if (mgn > 1.0e-12)
                 {
-                    aRes = aRes / aMgn;
+                    res = res / mgn;
                 }
                 else
                 {
-                    aRes = aBC.Resolution(aRes);
+                    res = bc.Resolution(res);
                 }
             } // if (aCT==GeomAbs_BezierCurve||...
             else
             {
-                aRes = aBC.Resolution(aRes);
+                res = bc.Resolution(res);
             }
             //
             if (i == 0)
             {
-                aNewSR.SetFirst(aTF + aRes);
+                aNewSR.SetFirst(tf + res);
             }
             else
             {
-                aNewSR.SetLast(aTL - aRes);
+                aNewSR.SetLast(tl - res);
             }
             //
             if ((aNewSR.Last() - aNewSR.First()) < dT)
@@ -336,65 +339,65 @@ public static partial class BOPTools_AlgoTools
     /// The range shrunk at both ends by the resolution of the face's tolerance on the edge; the range itself if it
     /// would become shorter than PConfusion.
     /// </summary>
-    public static void CorrectRange(in Edge aE, in Face aF, in IntTools_Range aSR, out IntTools_Range aNewSR)
+    public static void CorrectRange(in Edge aE, in Face aF, in ParameterRange aSR, out ParameterRange aNewSR)
     {
         int i;
-        double aRes, aTolF, aTF, aTL, dT;
-        EdgeCurveAdaptor aBC = new();
-        CurveKind aCT;
+        double res, tolF, tf, tl, dT;
+        EdgeCurveAdaptor bc = new();
+        CurveKind ct;
         //
         aNewSR = aSR;
         //
         dT = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        aTF = aSR.First();
-        aTL = aSR.Last();
+        tf = aSR.First();
+        tl = aSR.Last();
         //
-        aBC.Initialize(aE);
-        aCT = aBC.GetType();
+        bc.Initialize(aE);
+        ct = bc.GetType();
         //
-        aTolF = Tool.Tolerance(aF);
+        tolF = Tool.Tolerance(aF);
         //
         for (i = 0; i < 2; ++i)
         {
-            aRes = aTolF;
+            res = tolF;
 
-            if (aCT == BezierCurve || aCT == BSplineCurve || aCT == OffsetCurve
-                || aCT == OtherCurve)
+            if (ct == BezierCurve || ct == BSplineCurve || ct == OffsetCurve
+                || ct == OtherCurve)
             {
-                Point3D aP;
-                Vector3D aDer;
+                Point3D p;
+                Vector3D der;
                 if (i == 0)
                 {
-                    aBC.D1(aTF, out aP, out aDer);
+                    bc.D1(tf, out p, out der);
                 }
                 else
                 {
-                    aBC.D1(aTL, out aP, out aDer);
+                    bc.D1(tl, out p, out der);
                 }
                 //
-                double aMgn = aDer.Magnitude();
+                double mgn = der.Magnitude();
 
-                if (aMgn > 1.0e-12)
+                if (mgn > 1.0e-12)
                 {
-                    aRes = aRes / aMgn;
+                    res = res / mgn;
                 }
                 else
                 {
-                    aRes = aBC.Resolution(aRes);
+                    res = bc.Resolution(res);
                 }
             } // if (aCT==GeomAbs_BezierCurve||...
             else
             {
-                aRes = aBC.Resolution(aRes);
+                res = bc.Resolution(res);
             }
             //
             if (i == 0)
             {
-                aNewSR.SetFirst(aTF + aRes);
+                aNewSR.SetFirst(tf + res);
             }
             else
             {
-                aNewSR.SetLast(aTL - aRes);
+                aNewSR.SetLast(tl - res);
             }
             //
             if ((aNewSR.Last() - aNewSR.First()) < dT)
@@ -405,9 +408,9 @@ public static partial class BOPTools_AlgoTools
     }
 
     // The dimension of an elementary shape (-1 for compounds).
-    private static int dimension(in Shape theS)
+    private static int DimensionCore(in Shape s)
     {
-        switch (theS.ShapeType())
+        switch (s.ShapeType())
         {
             case ShapeType.Vertex:
                 return 0;
@@ -429,66 +432,66 @@ public static partial class BOPTools_AlgoTools
     /// The minimal and maximal dimensions of the shape's elementary parts (compounds explored); -1 and -1 for an empty
     /// shape.
     /// </summary>
-    public static void Dimensions(in Shape theS, out int theDMin, out int theDMax)
+    public static void Dimensions(in Shape s, out int dMin, out int dMax)
     {
-        theDMin = theDMax = dimension(theS);
-        if (theDMax >= 0)
+        dMin = dMax = DimensionCore(s);
+        if (dMax >= 0)
         {
             return;
         }
 
-        NCollection_List<Shape> aLS = new();
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
-        TreatCompound(theS, aLS, aMFence);
-        if (aLS.IsEmpty())
+        NCollection_List<Shape> ls = new();
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        TreatCompound(s, ls, mFence);
+        if (ls.IsEmpty())
         {
             // empty shape
-            theDMin = theDMax = -1;
+            dMin = dMax = -1;
             return;
         }
 
-        theDMin = 3;
-        theDMax = 0;
-        for (NCollection_List<Shape>.Iterator it = new(aLS); it.More(); it.Next())
+        dMin = 3;
+        dMax = 0;
+        for (NCollection_List<Shape>.Iterator it = new(ls); it.More(); it.Next())
         {
-            int aDim = dimension(it.Value());
-            if (aDim < theDMin)
+            int dim = DimensionCore(it.Value());
+            if (dim < dMin)
             {
-                theDMin = aDim;
+                dMin = dim;
             }
-            if (aDim > theDMax)
+            if (dim > dMax)
             {
-                theDMax = aDim;
+                dMax = dim;
             }
         }
     }
 
     /// <summary>The dimension of the shape, or -1 for a shape mixing dimensions (or empty).</summary>
-    public static int Dimension(in Shape theS)
+    public static int Dimension(in Shape s)
     {
-        Dimensions(theS, out int aDMin, out int aDMax);
-        return (aDMin == aDMax) ? aDMin : -1;
+        Dimensions(s, out int dMin, out int dMax);
+        return (dMin == dMax) ? dMin : -1;
     }
 
     /// <summary>
     /// Appends the non-compound parts of the shape (exploring compounds) to the list, each once if a fence map is
     /// given.
     /// </summary>
-    public static void TreatCompound(in Shape theS, NCollection_List<Shape> theLS, NCollection_Map<Shape>? theMFence = null)
+    public static void TreatCompound(in Shape s, NCollection_List<Shape> ls, NCollection_Map<Shape>? mFence = null)
     {
-        ShapeType aType = theS.ShapeType();
-        if (aType != ShapeType.Compound)
+        ShapeType type = s.ShapeType();
+        if (type != ShapeType.Compound)
         {
-            if (theMFence is null || theMFence.Add(theS))
+            if (mFence is null || mFence.Add(s))
             {
-                theLS.Append(theS);
+                ls.Append(s);
             }
             return;
         }
 
-        for (Iterator it = new(theS); it.More(); it.Next())
+        for (Iterator it = new(s); it.More(); it.Next())
         {
-            TreatCompound(it.Value(), theLS, theMFence);
+            TreatCompound(it.Value(), ls, mFence);
         }
     }
 }

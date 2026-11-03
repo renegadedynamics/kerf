@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -29,7 +31,7 @@ public class ShapeFix_SplitToolTests
         Edge anE = Segment();
         Vertex aV = TestShapes.Vertex(new Point3D(4, 0, 0));
         Edge aE1 = new(), aE2 = new();
-        var aTool = new ShapeFix_SplitTool();
+        var aTool = new SplitToolFixer();
         Assert.True(aTool.SplitEdge(anE, 4.0, aV, aF, ref aE1, ref aE2, 1e-7, 1e-9));
         Tool.Range(aE1, out double f1, out double l1);
         Tool.Range(aE2, out double f2, out double l2);
@@ -49,7 +51,7 @@ public class ShapeFix_SplitToolTests
         Edge anE = Segment();
         Vertex aV = TestShapes.Vertex(new Point3D(4, 0.01, 0));
         Edge aE1 = new(), aE2 = new();
-        Assert.True(new ShapeFix_SplitTool().SplitEdge(anE, 4.0, aV, PlaneFace(), ref aE1, ref aE2, 1e-7, 1e-9));
+        Assert.True(new SplitToolFixer().SplitEdge(anE, 4.0, aV, PlaneFace(), ref aE1, ref aE2, 1e-7, 1e-9));
         Assert.True(Tool.Tolerance(aV) >= 0.01 - 1e-12);
     }
 
@@ -58,12 +60,12 @@ public class ShapeFix_SplitToolTests
     {
         Edge anE = Segment();
         bool isCutLine = true;
-        Assert.True(new ShapeFix_SplitTool().CutEdge(anE, 0.0, 6.0, PlaneFace(), ref isCutLine));
+        Assert.True(new SplitToolFixer().CutEdge(anE, 0.0, 6.0, PlaneFace(), ref isCutLine));
         Assert.False(isCutLine);
         Tool.Range(anE, out double f, out double l);
         Assert.Equal(0.0, f, 1e-12);
         Assert.Equal(6.0, l, 1e-12);
-        Assert.False(new ShapeFix_SplitTool().CutEdge(anE, 3.0, 3.0, PlaneFace(), ref isCutLine));
+        Assert.False(new SplitToolFixer().CutEdge(anE, 3.0, 3.0, PlaneFace(), ref isCutLine));
     }
 
     [Fact]
@@ -75,8 +77,8 @@ public class ShapeFix_SplitToolTests
         Vertex aV2 = TestShapes.Vertex(new Point3D(6, 0, 0));
         var aSeq = new NCollection_Sequence<Shape>();
         int aNum = -1;
-        var aContext = new ShapeBuild_ReShape();
-        Assert.True(new ShapeFix_SplitTool().SplitEdge(anE, 2.0, aV1, 6.0, aV2, aF, aSeq, ref aNum, aContext, 1e-7, 1e-9));
+        var aContext = new ReShapeBuilder();
+        Assert.True(new SplitToolFixer().SplitEdge(anE, 2.0, aV1, 6.0, aV2, aF, aSeq, ref aNum, aContext, 1e-7, 1e-9));
         Assert.Equal(3, aSeq.Length());
         Assert.Equal(2, aNum);
         Assert.Equal(ShapeType.Wire, aContext.InternalValue(anE).ShapeType());

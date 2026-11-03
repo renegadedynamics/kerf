@@ -4,6 +4,7 @@
 // - TestEdge.test_make_spline_failure, test_make_spline_approx_failure: patch OCCT classes with mocks.
 // - TestEdgeParamAt.test_param_at_point_fallback_returns_native_parameter_in_both_modes,
 //   test_param_at_point_search_fallback, test_param_at_point_not_found: patch OCCT classes with mocks.
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Occt;
 using static Build123d.Operations;
@@ -515,7 +516,7 @@ public class EdgeTests
         var rim = Edge.MakeSpline([.. Enumerable.Range(0, 11).Select(i => -10 + 2 * i).Select(x =>
             new Vector(x, 5 * Math.Cos(Math.PI / 2 * x / 10), 5 * Math.Sin(Math.PI / 2 * x / 10)))]);
         var wall = Face.MakeSurfaceFromCurves(along, rim);
-        var sewing = new BRepBuilderAPI_Sewing(1e-6);
+        var sewing = new Sewing(1e-6);
         sewing.Add(plate.Wrapped);
         sewing.Add(wall.Wrapped);
         sewing.Perform();

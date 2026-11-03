@@ -1,14 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.HiddenLines;
+using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.HLRBRep_TypeOfResultingEdge;
+using static Kerf.Engine.HiddenLines.TypeOfResultingEdge;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -22,9 +26,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class HLRBRepAlgoTests
 {
-    private static readonly HLRAlgo_Projector Top = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+    private static readonly AlgorithmProjector Top = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
 
-    private static readonly HLRAlgo_Projector Axo =
+    private static readonly AlgorithmProjector Axo =
         new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)));
 
     private static string BRepText(Shape theShape)
@@ -51,9 +55,9 @@ public class HLRBRepAlgoTests
         return theShape;
     }
 
-    private static HLRBRep_Algo Hide(HLRAlgo_Projector P, int nbIso, params Shape[] theShapes)
+    private static HiddenLineAlgo Hide(AlgorithmProjector P, int nbIso, params Shape[] theShapes)
     {
-        HLRBRep_Algo anAlgo = new();
+        HiddenLineAlgo anAlgo = new();
         foreach (Shape aS in theShapes)
         {
             anAlgo.Add(aS, nbIso);
@@ -67,10 +71,10 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Algo_box_from_the_top_shows_its_top_and_hides_its_bottom()
     {
-        Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
+        Shape aBox = Frozen(new MakeBox(10.0, 20.0, 30.0).Shape());
         string aBefore = BRepText(aBox);
-        HLRBRep_Algo anAlgo = Hide(Top, 0, aBox);
-        HLRBRep_HLRToShape aToShape = new(anAlgo);
+        HiddenLineAlgo anAlgo = Hide(Top, 0, aBox);
+        HlrToShape aToShape = new(anAlgo);
 
         // the vertical edges project to points; the top face's four edges are visible, the bottom's hidden under them
         Shape aV = aToShape.VCompound();
@@ -83,12 +87,12 @@ public class HLRBRepAlgoTests
         Assert.True(aToShape.IsoLineVCompound().IsNull);
         // 2D edges: on the XOY plane; their total length is the top face's perimeter
         Properties aProps = new();
-        BRepGProp.LinearProperties(aV, aProps);
+        MassPropertiesBuilder.LinearProperties(aV, aProps);
         Assert.Equal(60.0, aProps.Mass(), 1.0e-9);
         // the 3D edges are on the box's edges, at z = 30
-        Shape aV3d = aToShape.CompoundOfEdges(HLRBRep_Sharp, true, true);
+        Shape aV3d = aToShape.CompoundOfEdges(TypeOfResultingEdge.Sharp, true, true);
         Box aBnd = new();
-        BRepBndLib.Add(aV3d, ref aBnd);
+        Bounds.Add(aV3d, ref aBnd);
         aBnd.Get(out _, out _, out double aZmin, out _, out _, out double aZmax);
         Assert.Equal(30.0, aZmin, 1.0e-6);
         Assert.Equal(30.0, aZmax, 1.0e-6);
@@ -99,27 +103,27 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Algo_keeps_its_shapes_and_finds_them_by_their_original_shape()
     {
-        Shape aBox = Frozen(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
-        Shape aSph = Frozen(new BRepPrimAPI_MakeSphere(new Point3D(5, 10, 40), 6.0).Shape());
-        HLRBRep_Algo anAlgo = Hide(Axo, 0, aBox, aSph);
-        Assert.Equal(2, anAlgo.NbShapes());
+        Shape aBox = Frozen(new MakeBox(10.0, 20.0, 30.0).Shape());
+        Shape aSph = Frozen(new MakeSphere(new Point3D(5, 10, 40), 6.0).Shape());
+        HiddenLineAlgo anAlgo = Hide(Axo, 0, aBox, aSph);
+        Assert.Equal(2, anAlgo.ShapeCount);
         Assert.Equal(1, anAlgo.Index(aBox));
         Assert.Equal(2, anAlgo.Index(aSph));
-        Assert.Equal(0, anAlgo.Index(new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape()));
+        Assert.Equal(0, anAlgo.Index(new MakeBox(1.0, 1.0, 1.0).Shape()));
         Assert.NotNull(anAlgo.DataStructure());
         // the data structure holds both shapes, the bounds of each
         anAlgo.ShapeBounds(2).Bounds(out _, out _, out int e1, out int e2, out int f1, out int f2);
-        Assert.Equal(anAlgo.DataStructure()!.NbEdges(), e2);
+        Assert.Equal(anAlgo.DataStructure()!.EdgeCount, e2);
         Assert.Equal(13, e1); // after the box's twelve edges
         Assert.True(f2 >= f1);
 
         // a shape's results by the shape, and a face's by exploring (the face of a frozen shape: found in the copy)
-        HLRBRep_HLRToShape aToShape = new(anAlgo);
+        HlrToShape aToShape = new(anAlgo);
         Assert.Equal(NbEdges(aToShape.OutLineVCompound()), NbEdges(aToShape.OutLineVCompound(aSph)));
         // an edge's results (explored: the edge of a frozen shape is found in the outliner's copy), as for an
         // unfrozen box, which the outlining works on in place
-        Shape anUnfrozen = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
-        HLRBRep_HLRToShape anUnfrozenToShape = new(Hide(Axo, 0, anUnfrozen, aSph));
+        Shape anUnfrozen = new MakeBox(10.0, 20.0, 30.0).Shape();
+        HlrToShape anUnfrozenToShape = new(Hide(Axo, 0, anUnfrozen, aSph));
         int anEdgeResults = 0;
         Explorer anExp = new(aBox, ShapeType.Edge);
         Explorer anUnfrozenExp = new(anUnfrozen, ShapeType.Edge);
@@ -133,9 +137,9 @@ public class HLRBRepAlgoTests
         Assert.True(anEdgeResults >= 12);
 
         // OCCT's copy shares the data structure
-        HLRBRep_Algo aCopy = new(anAlgo);
+        HiddenLineAlgo aCopy = new(anAlgo);
         Assert.Same(anAlgo.DataStructure(), aCopy.DataStructure());
-        Assert.Equal(2, aCopy.NbShapes());
+        Assert.Equal(2, aCopy.ShapeCount);
 
         // remove: the data structure is gone until the next update
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(3));
@@ -144,39 +148,39 @@ public class HLRBRepAlgoTests
         Assert.Equal(1, anAlgo.Index(aSph));
         anAlgo.Update();
         anAlgo.Hide();
-        Assert.True(NbEdges(new HLRBRep_HLRToShape(anAlgo).OutLineVCompound()) > 0);
+        Assert.True(NbEdges(new HlrToShape(anAlgo).OutLineVCompound()) > 0);
 
         // the outlined shapes are rebuilt after OutLinedShapeNullify
         anAlgo.OutLinedShapeNullify();
         Assert.True(anAlgo.ShapeBounds(1).Shape()!.OutLinedShape().IsNull);
         anAlgo.Update();
         anAlgo.Hide();
-        Assert.True(NbEdges(new HLRBRep_HLRToShape(anAlgo).OutLineVCompound()) > 0);
+        Assert.True(NbEdges(new HlrToShape(anAlgo).OutLineVCompound()) > 0);
     }
 
     [Fact]
     public void InternalAlgo_shows_and_hides_all_and_hides_partially()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
-        Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(-2, -2, 40), 4.0, 4.0, 4.0).Shape();
-        HLRBRep_Algo anAlgo = new();
+        Shape aBox = new MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aBox2 = new MakeBox(new Point3D(-2, -2, 40), 4.0, 4.0, 4.0).Shape();
+        HiddenLineAlgo anAlgo = new();
         anAlgo.Add(aBox);
         anAlgo.Add(aBox2);
         anAlgo.Projector(Top);
         anAlgo.Update();
         anAlgo.Select();
         anAlgo.ShowAll();
-        Assert.Equal(16, NbEdges(new HLRBRep_HLRToShape(anAlgo).VCompound())); // not hidden: both tops and bottoms
+        Assert.Equal(16, NbEdges(new HlrToShape(anAlgo).VCompound())); // not hidden: both tops and bottoms
         anAlgo.HideAll();
-        Assert.True(new HLRBRep_HLRToShape(anAlgo).VCompound().IsNull);
+        Assert.True(new HlrToShape(anAlgo).VCompound().IsNull);
         anAlgo.ShowAll(1);
         anAlgo.Select();
-        Assert.Equal(8, NbEdges(new HLRBRep_HLRToShape(anAlgo).VCompound()));
+        Assert.Equal(8, NbEdges(new HlrToShape(anAlgo).VCompound()));
         // each by itself: the small box doesn't hide the big one's top
         anAlgo.PartialHide();
-        int aPartial = NbEdges(new HLRBRep_HLRToShape(anAlgo).HCompound());
+        int aPartial = NbEdges(new HlrToShape(anAlgo).HCompound());
         anAlgo.Hide();
-        int aTotal = NbEdges(new HLRBRep_HLRToShape(anAlgo).HCompound());
+        int aTotal = NbEdges(new HlrToShape(anAlgo).HCompound());
         Assert.True(aTotal > aPartial, $"{aTotal} > {aPartial}");
         Assert.False(anAlgo.Debug());
         anAlgo.Debug(true);
@@ -186,9 +190,9 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Isolines_and_smooth_edges_of_a_cylinder()
     {
-        Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
-        HLRBRep_Algo anAlgo = Hide(Axo, 3, aCyl);
-        HLRBRep_HLRToShape aToShape = new(anAlgo);
+        Shape aCyl = Frozen(new ApiMakeCylinder(10.0, 30.0).Shape());
+        HiddenLineAlgo anAlgo = Hide(Axo, 3, aCyl);
+        HlrToShape aToShape = new(anAlgo);
         Assert.True(NbEdges(aToShape.IsoLineVCompound()) > 0);
         Assert.True(NbEdges(aToShape.OutLineVCompound()) >= 2); // the two silhouettes (split at the isolines)
         Shape aOut3d = aToShape.OutLineVCompound3d();
@@ -199,15 +203,15 @@ public class HLRBRepAlgoTests
     [Fact]
     public void ReflectLines_gives_the_outlines_in_3d_and_2d()
     {
-        Shape aCyl = Frozen(new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape());
+        Shape aCyl = Frozen(new ApiMakeCylinder(10.0, 30.0).Shape());
         string aBefore = BRepText(aCyl);
-        HLRAppli_ReflectLines aReflector = new(aCyl);
+        ReflectLines aReflector = new(aCyl);
         aReflector.SetAxes(1.0, -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
         aReflector.Perform();
         Shape aResult = aReflector.GetResult();
         Assert.True(NbEdges(aResult) >= 2);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.True(NbEdges(aReflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, false)) > 0);
+        Assert.True(NbEdges(aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, true, false)) > 0);
         Assert.Equal(aBefore, BRepText(aCyl));
     }
 
@@ -215,34 +219,34 @@ public class HLRBRepAlgoTests
     public void PolyAlgo_hides_meshed_shapes_and_skips_unmeshed_ones()
     {
         // without a mesh: nothing to hide
-        HLRBRep_PolyAlgo aNoMesh = new(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape());
+        PolyAlgo aNoMesh = new(new MakeBox(10.0, 20.0, 30.0).Shape());
         aNoMesh.Projector(Top);
         aNoMesh.Update();
         aNoMesh.InitHide();
         Assert.False(aNoMesh.MoreHide());
 
-        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
-        aBox = Frozen(new BRepMesh_IncrementalMesh(aBox, 0.5).Shape());
+        Shape aBox = new MakeBox(10.0, 20.0, 30.0).Shape();
+        aBox = Frozen(new IncrementalMesh(aBox, 0.5).Shape());
         string aBefore = BRepText(aBox);
-        HLRBRep_PolyAlgo anAlgo = new();
+        PolyAlgo anAlgo = new();
         anAlgo.Load(aBox);
-        Assert.Equal(1, anAlgo.NbShapes());
+        Assert.Equal(1, anAlgo.ShapeCount);
         Assert.Equal(1, anAlgo.Index(aBox));
         Assert.Equal(0.1, anAlgo.TolCoef());
         Assert.Equal(0.001, anAlgo.TolAngular());
         anAlgo.Projector(Top);
         anAlgo.Update();
 
-        HLRBRep_PolyHLRToShape aToShape = new();
+        PolyHlrToShape aToShape = new();
         aToShape.Update(anAlgo);
         Shape aV = aToShape.VCompound();
         Assert.True(aV.TShape()!.IsFrozen);
         Properties aProps = new();
-        BRepGProp.LinearProperties(aV, aProps);
+        MassPropertiesBuilder.LinearProperties(aV, aProps);
         Assert.Equal(60.0, aProps.Mass(), 1.0e-6); // the top face's perimeter, in segments
         Assert.True(NbEdges(aToShape.HCompound()) > 0);
         Assert.True(NbEdges(aToShape.VCompound(aBox)) > 0);
-        Assert.True(aToShape.VCompound(new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape()).IsNull);
+        Assert.True(aToShape.VCompound(new MakeBox(1.0, 1.0, 1.0).Shape()).IsNull);
         // shown without hiding: all the segments, the bottom's too
         aToShape.Show();
         Assert.True(NbEdges(aToShape.VCompound()) > NbEdges(aV));
@@ -250,7 +254,7 @@ public class HLRBRepAlgoTests
         Assert.Equal(NbEdges(aV), NbEdges(aToShape.VCompound()));
 
         // the segments come from the caller's own edges
-        HLRAlgo_EdgeStatus aStatus = new();
+        EdgeStatus aStatus = new();
         anAlgo.InitHide();
         Assert.True(anAlgo.MoreHide());
         anAlgo.Hide(aStatus, out Shape anEdge, out _, out _, out _, out _);
@@ -260,21 +264,21 @@ public class HLRBRepAlgoTests
 
         Assert.Equal(aBefore, BRepText(aBox));
         // OCCT's copy shares the algorithm
-        HLRBRep_PolyAlgo aCopy = new(anAlgo);
+        PolyAlgo aCopy = new(anAlgo);
         Assert.Same(anAlgo.Algo(), aCopy.Algo());
-        Assert.Equal(1, aCopy.NbShapes());
+        Assert.Equal(1, aCopy.ShapeCount);
         anAlgo.TolCoef(0.2);
         Assert.Equal(0.2, anAlgo.TolCoef());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anAlgo.Remove(2));
         anAlgo.Remove(1);
-        Assert.Equal(0, anAlgo.NbShapes());
+        Assert.Equal(0, anAlgo.ShapeCount);
     }
 
     [Fact]
     public void PolyAlgo_outlined_shape_holds_the_shape_and_its_internal_outlines()
     {
-        Shape aSph = new BRepMesh_IncrementalMesh(new BRepPrimAPI_MakeSphere(10.0).Shape(), 0.2).Shape();
-        HLRBRep_PolyAlgo anAlgo = new(aSph);
+        Shape aSph = new IncrementalMesh(new MakeSphere(10.0).Shape(), 0.2).Shape();
+        PolyAlgo anAlgo = new(aSph);
         anAlgo.Projector(Axo);
         Assert.Equal(1, NbChildren(anAlgo.OutLinedShape(aSph))); // before Update: the shape alone
         anAlgo.Update();
@@ -289,9 +293,9 @@ public class HLRBRepAlgoTests
     [Fact]
     public void Exact_hiding_on_several_threads_gives_the_serial_results()
     {
-        Shape aTorus = Frozen(new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape());
-        string Run() => BRepText(new HLRBRep_HLRToShape(Hide(Axo, 2, aTorus)).OutLineVCompound())
-                        + BRepText(new HLRBRep_HLRToShape(Hide(Axo, 2, aTorus)).HCompound());
+        Shape aTorus = Frozen(new MakeTorus(30.0, 10.0).Shape());
+        string Run() => BRepText(new HlrToShape(Hide(Axo, 2, aTorus)).OutLineVCompound())
+                        + BRepText(new HlrToShape(Hide(Axo, 2, aTorus)).HCompound());
         string aSerial = Run();
         string[] aParallel = new string[8];
         Parallel.For(0, aParallel.Length, i => aParallel[i] = Run());
@@ -304,7 +308,7 @@ public class HLRBRepAlgoTests
     [InlineData(1.0)]
     public void PolyHLRAngleAndDeflection_as_OCCT(double theAngle)
     {
-        HLRBRep.PolyHLRAngleAndDeflection(theAngle, out double anAngle, out double aDefl);
+        HlrbRep.PolyHLRAngleAndDeflection(theAngle, out double anAngle, out double aDefl);
         double aMin = 1 * Math.PI / 180, aLim = 5 * Math.PI / 180, aMax = 35 * Math.PI / 180;
         double anIn = Math.Clamp(theAngle, aMin, aMax);
         double anExpected = aLim + Math.Sqrt((anIn - aMin) * (aMax - aLim) * (aMax - aLim) / (aMax - aMin));
@@ -315,37 +319,37 @@ public class HLRBRepAlgoTests
     [Fact]
     public void BiPoints_are_values()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
-        HLRBRep_BiPnt2D a = new(0.0, 0.0, 1.0, 1.0, aBox, true, false, false, false);
-        HLRBRep_BiPnt2D b = new(new Xy(0.0, 0.0), new Xy(1.0, 1.0), aBox, true, false, false, false);
+        Shape aBox = new MakeBox(1.0, 1.0, 1.0).Shape();
+        BiPnt2D a = new(0.0, 0.0, 1.0, 1.0, aBox, true, false, false, false);
+        BiPnt2D b = new(new Xy(0.0, 0.0), new Xy(1.0, 1.0), aBox, true, false, false, false);
         Assert.Equal(a, b);
         Assert.True(a.Rg1Line());
         Assert.NotEqual(a, a.WithOutLine(true));
         Assert.True(a.WithIntLine(true).IntLine());
-        HLRBRep_BiPoint p = new(0.0, 0.0, 0.0, 1.0, 2.0, 3.0, aBox, false, true, false, true);
+        BiPoint p = new(0.0, 0.0, 0.0, 1.0, 2.0, 3.0, aBox, false, true, false, true);
         Assert.Equal(new Point3D(1.0, 2.0, 3.0), p.P2());
         Assert.True(p.RgNLine() && p.IntLine());
         Assert.False(p.WithRgNLine(false).RgNLine());
-        Assert.True(new HLRBRep_BiPoint().Shape().IsNull);
+        Assert.True(new BiPoint().Shape().IsNull);
     }
 
     [Fact]
     public void MakeEdge_builds_the_projected_part_of_an_edge()
     {
         // a circle seen from the top: a 2D circle; its 3D edge shares the curve
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(Constants.XOY(), 5.0)).Edge();
-        HLRBRep_Curve aCurve = new();
-        aCurve.Projector(new System.Runtime.CompilerServices.StrongBox<HLRAlgo_Projector>(Top));
+        Edge anEdge = new MakeEdge(new Circle3D(Constants.XOY(), 5.0)).Edge();
+        HiddenLineCurve aCurve = new();
+        aCurve.Projector(new System.Runtime.CompilerServices.StrongBox<AlgorithmProjector>(Top));
         aCurve.Curve(anEdge);
         Span<double> aMin = stackalloc double[16];
         Span<double> aMax = stackalloc double[16];
-        HLRAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), aMin, aMax);
+        HlrAlgo.InitMinMax(global::Kerf.Engine.Foundation.Precision.Infinite(), aMin, aMax);
         aCurve.Update(aMin, aMax);
-        Edge a2d = HLRBRep.MakeEdge(aCurve, 0.0, Math.PI);
+        Edge a2d = HlrbRep.MakeEdge(aCurve, 0.0, Math.PI);
         Properties aProps = new();
-        BRepGProp.LinearProperties(a2d, aProps);
+        MassPropertiesBuilder.LinearProperties(a2d, aProps);
         Assert.Equal(5.0 * Math.PI, aProps.Mass(), 1.0e-9);
-        Edge a3d = HLRBRep.MakeEdge3d(aCurve, 0.0, Math.PI);
+        Edge a3d = HlrbRep.MakeEdge3d(aCurve, 0.0, Math.PI);
         Tool.Range(a3d, out double f, out double l);
         Assert.Equal(0.0, f);
         Assert.Equal(Math.PI, l);

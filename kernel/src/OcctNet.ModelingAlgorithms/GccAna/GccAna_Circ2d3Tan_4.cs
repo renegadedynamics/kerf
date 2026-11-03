@@ -4,273 +4,274 @@
 
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
-using static Occt.GccInt_IType;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
+using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2d3Tan
+public sealed partial class AnalyticCirc2d3Tan
 {
     private const int MaxSol = 20;
 
     //=========================================================================
     //   Creation of a circle tangent to two circles and a point.           +
     //=========================================================================
-    public GccAna_Circ2d3Tan(in GccEnt_QualifiedCirc Qualified1,
-        in GccEnt_QualifiedCirc Qualified2,
-        in Point2D Point3,
-        double Tolerance)
+    public AnalyticCirc2d3Tan(in QualifiedCirc qualified1,
+        in QualifiedCirc qualified2,
+        in Point2D point3,
+        double tolerance)
     {
-        cirsol = new NCollection_Array1<Circle2D>(1, MaxSol);
-        qualifier1 = new NCollection_Array1<GccEnt_Position>(1, MaxSol);
-        qualifier2 = new NCollection_Array1<GccEnt_Position>(1, MaxSol);
-        qualifier3 = new NCollection_Array1<GccEnt_Position>(1, MaxSol);
-        TheSame1 = new NCollection_Array1<int>(1, MaxSol);
-        TheSame2 = new NCollection_Array1<int>(1, MaxSol);
-        TheSame3 = new NCollection_Array1<int>(1, MaxSol);
-        pnttg1sol = new NCollection_Array1<Point2D>(1, MaxSol);
-        pnttg2sol = new NCollection_Array1<Point2D>(1, MaxSol);
-        pnttg3sol = new NCollection_Array1<Point2D>(1, MaxSol);
-        par1sol = new NCollection_Array1<double>(1, MaxSol);
-        par2sol = new NCollection_Array1<double>(1, MaxSol);
-        par3sol = new NCollection_Array1<double>(1, MaxSol);
-        pararg1 = new NCollection_Array1<double>(1, MaxSol);
-        pararg2 = new NCollection_Array1<double>(1, MaxSol);
-        pararg3 = new NCollection_Array1<double>(1, MaxSol);
+        _cirsol = new NCollection_Array1<Circle2D>(1, MaxSol);
+        _qualifier1 = new NCollection_Array1<Qualifier>(1, MaxSol);
+        _qualifier2 = new NCollection_Array1<Qualifier>(1, MaxSol);
+        _qualifier3 = new NCollection_Array1<Qualifier>(1, MaxSol);
+        _theSame1 = new NCollection_Array1<int>(1, MaxSol);
+        _theSame2 = new NCollection_Array1<int>(1, MaxSol);
+        _theSame3 = new NCollection_Array1<int>(1, MaxSol);
+        _pnttg1sol = new NCollection_Array1<Point2D>(1, MaxSol);
+        _pnttg2sol = new NCollection_Array1<Point2D>(1, MaxSol);
+        _pnttg3sol = new NCollection_Array1<Point2D>(1, MaxSol);
+        _par1sol = new NCollection_Array1<double>(1, MaxSol);
+        _par2sol = new NCollection_Array1<double>(1, MaxSol);
+        _par3sol = new NCollection_Array1<double>(1, MaxSol);
+        _pararg1 = new NCollection_Array1<double>(1, MaxSol);
+        _pararg2 = new NCollection_Array1<double>(1, MaxSol);
+        _pararg3 = new NCollection_Array1<double>(1, MaxSol);
 
         Direction2D dirx = new(Direction2D.D.X);
-        double Tol = Math.Abs(Tolerance);
-        WellDone = false;
-        NbrSol = 0;
-        if (!(Qualified1.IsEnclosed() || Qualified1.IsEnclosing() || Qualified1.IsOutside()
-              || Qualified1.IsUnqualified())
-            || !(Qualified2.IsEnclosed() || Qualified2.IsEnclosing() || Qualified2.IsOutside()
-                 || Qualified2.IsUnqualified()))
+        double tol = Math.Abs(tolerance);
+        _wellDone = false;
+        _nbrSol = 0;
+        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
+              || qualified1.IsUnqualified)
+            || !(qualified2.IsEnclosed || qualified2.IsEnclosing || qualified2.IsOutside
+                 || qualified2.IsUnqualified))
         {
-            throw new GccEnt_BadQualifier();
+            throw new BadQualifierException();
         }
 
         //=========================================================================
         //   Processing.                                                          +
         //=========================================================================
 
-        Circle2D C1 = Qualified1.Qualified();
-        Circle2D C2 = Qualified2.Qualified();
-        double R1 = C1.Radius();
-        double R2 = C2.Radius();
-        Point2D center1 = C1.Location();
-        Point2D center2 = C2.Location();
+        Circle2D c1 = qualified1.Qualified();
+        Circle2D c2 = qualified2.Qualified();
+        double r1 = c1.Radius();
+        double r2 = c2.Radius();
+        Point2D center1 = c1.Location();
+        Point2D center2 = c2.Location();
 
-        NCollection_Array1<double> Radius = new(1, 2);
-        GccAna_Circ2dBisec Bis1 = new(C1, C2);
-        GccAna_CircPnt2dBisec Bis2 = new(C1, Point3);
-        if (Bis1.IsDone() && Bis2.IsDone())
+        NCollection_Array1<double> radius = new(1, 2);
+        Circ2dBisec bis1 = new(c1, c2);
+        CircPnt2dBisec bis2 = new(c1, point3);
+        if (bis1.IsDone && bis2.IsDone)
         {
-            int nbsolution1 = Bis1.NbSolutions();
-            int nbsolution2 = Bis2.NbSolutions();
+            int nbsolution1 = bis1.SolutionCount;
+            int nbsolution2 = bis2.SolutionCount;
             for (int i = 1; i <= nbsolution1; i++)
             {
-                GccInt_Bisec Sol1 = Bis1.ThisSolution(i);
-                GccInt_IType typ1 = Sol1.ArcType();
-                AnalyticIntersection Intp = new();
+                ConstraintBisec sol1 = bis1.ThisSolution(i);
+                ConstraintCurveType typ1 = sol1.ArcType();
+                AnalyticIntersection intp = new();
                 for (int k = 1; k <= nbsolution2; k++)
                 {
-                    GccInt_Bisec Sol2 = Bis2.ThisSolution(k);
-                    GccInt_IType typ2 = Sol2.ArcType();
-                    if (typ1 == GccInt_Cir)
+                    ConstraintBisec sol2 = bis2.ThisSolution(k);
+                    ConstraintCurveType typ2 = sol2.ArcType();
+                    if (typ1 == ConstraintCurveType.Cir)
                     {
-                        if (typ2 == GccInt_Cir)
+                        if (typ2 == ConstraintCurveType.Cir)
                         {
-                            Intp.Perform(Sol1.Circle(), Sol2.Circle());
+                            intp.Perform(sol1.Circle(), sol2.Circle());
                         }
-                        else if (typ2 == GccInt_Lin)
+                        else if (typ2 == ConstraintCurveType.Lin)
                         {
-                            Intp.Perform(Sol2.Line(), Sol1.Circle());
+                            intp.Perform(sol2.Line(), sol1.Circle());
                         }
-                        else if (typ2 == GccInt_Hpr)
+                        else if (typ2 == ConstraintCurveType.Hpr)
                         {
-                            Intp.Perform(Sol1.Circle(), new Conic(Sol2.Hyperbola()));
+                            intp.Perform(sol1.Circle(), new Conic(sol2.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Ell)
+                        else if (typ2 == ConstraintCurveType.Ell)
                         {
-                            Intp.Perform(Sol1.Circle(), new Conic(Sol2.Ellipse()));
+                            intp.Perform(sol1.Circle(), new Conic(sol2.Ellipse()));
                         }
                     }
-                    else if (typ1 == GccInt_Ell)
+                    else if (typ1 == ConstraintCurveType.Ell)
                     {
-                        if (typ2 == GccInt_Cir)
+                        if (typ2 == ConstraintCurveType.Cir)
                         {
-                            Intp.Perform(Sol2.Circle(), new Conic(Sol1.Ellipse()));
+                            intp.Perform(sol2.Circle(), new Conic(sol1.Ellipse()));
                         }
-                        else if (typ2 == GccInt_Lin)
+                        else if (typ2 == ConstraintCurveType.Lin)
                         {
-                            Intp.Perform(Sol2.Line(), new Conic(Sol1.Ellipse()));
+                            intp.Perform(sol2.Line(), new Conic(sol1.Ellipse()));
                         }
-                        else if (typ2 == GccInt_Hpr)
+                        else if (typ2 == ConstraintCurveType.Hpr)
                         {
-                            Intp.Perform(Sol1.Ellipse(), new Conic(Sol2.Hyperbola()));
+                            intp.Perform(sol1.Ellipse(), new Conic(sol2.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Ell)
+                        else if (typ2 == ConstraintCurveType.Ell)
                         {
-                            Intp.Perform(Sol1.Ellipse(), new Conic(Sol2.Ellipse()));
+                            intp.Perform(sol1.Ellipse(), new Conic(sol2.Ellipse()));
                         }
                     }
-                    else if (typ1 == GccInt_Lin)
+                    else if (typ1 == ConstraintCurveType.Lin)
                     {
-                        if (typ2 == GccInt_Cir)
+                        if (typ2 == ConstraintCurveType.Cir)
                         {
-                            Intp.Perform(Sol1.Line(), Sol2.Circle());
+                            intp.Perform(sol1.Line(), sol2.Circle());
                         }
-                        else if (typ2 == GccInt_Lin)
+                        else if (typ2 == ConstraintCurveType.Lin)
                         {
-                            Intp.Perform(Sol1.Line(), Sol2.Line());
+                            intp.Perform(sol1.Line(), sol2.Line());
                         }
-                        else if (typ2 == GccInt_Hpr)
+                        else if (typ2 == ConstraintCurveType.Hpr)
                         {
-                            Intp.Perform(Sol1.Line(), new Conic(Sol2.Hyperbola()));
+                            intp.Perform(sol1.Line(), new Conic(sol2.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Ell)
+                        else if (typ2 == ConstraintCurveType.Ell)
                         {
-                            Intp.Perform(Sol1.Line(), new Conic(Sol2.Ellipse()));
+                            intp.Perform(sol1.Line(), new Conic(sol2.Ellipse()));
                         }
                     }
-                    else if (typ1 == GccInt_Hpr)
+                    else if (typ1 == ConstraintCurveType.Hpr)
                     {
-                        if (typ2 == GccInt_Cir)
+                        if (typ2 == ConstraintCurveType.Cir)
                         {
-                            Intp.Perform(Sol2.Circle(), new Conic(Sol1.Hyperbola()));
+                            intp.Perform(sol2.Circle(), new Conic(sol1.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Lin)
+                        else if (typ2 == ConstraintCurveType.Lin)
                         {
-                            Intp.Perform(Sol2.Line(), new Conic(Sol1.Hyperbola()));
+                            intp.Perform(sol2.Line(), new Conic(sol1.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Hpr)
+                        else if (typ2 == ConstraintCurveType.Hpr)
                         {
-                            Intp.Perform(Sol2.Hyperbola(), new Conic(Sol1.Hyperbola()));
+                            intp.Perform(sol2.Hyperbola(), new Conic(sol1.Hyperbola()));
                         }
-                        else if (typ2 == GccInt_Ell)
+                        else if (typ2 == ConstraintCurveType.Ell)
                         {
-                            Intp.Perform(Sol2.Ellipse(), new Conic(Sol1.Hyperbola()));
+                            intp.Perform(sol2.Ellipse(), new Conic(sol1.Hyperbola()));
                         }
                     }
-                    if (Intp.IsDone)
+                    if (intp.IsDone)
                     {
-                        if (!Intp.IsEmpty)
+                        if (!intp.IsEmpty)
                         {
-                            for (int j = 1; j <= Intp.PointCount; j++)
+                            for (int j = 1; j <= intp.PointCount; j++)
                             {
-                                double Rradius = 0;
-                                Point2D Center = Intp.Point(j).Value();
-                                double dist1 = Center.Distance(center1);
-                                double dist2 = Center.Distance(center2);
-                                double dist3 = Center.Distance(Point3);
+                                double rradius = 0;
+                                Point2D center = intp.Point(j).Value();
+                                double dist1 = center.Distance(center1);
+                                double dist2 = center.Distance(center2);
+                                double dist3 = center.Distance(point3);
                                 int nbsol1 = 0;
                                 int nbsol2 = 0;
                                 int nbsol3 = 0;
                                 bool ok = false;
-                                if (Qualified1.IsEnclosed())
+                                if (qualified1.IsEnclosed)
                                 {
-                                    if (dist1 - R1 < Tolerance)
+                                    if (dist1 - r1 < tolerance)
                                     {
-                                        Radius[1] = Math.Abs(R1 - dist1);
+                                        radius[1] = Math.Abs(r1 - dist1);
                                         nbsol1 = 1;
                                         ok = true;
                                     }
                                 }
-                                else if (Qualified1.IsOutside())
+                                else if (qualified1.IsOutside)
                                 {
-                                    if (R1 - dist1 < Tolerance)
+                                    if (r1 - dist1 < tolerance)
                                     {
-                                        Radius[1] = Math.Abs(R1 - dist1);
+                                        radius[1] = Math.Abs(r1 - dist1);
                                         nbsol1 = 1;
                                         ok = true;
                                     }
                                 }
-                                else if (Qualified1.IsEnclosing())
+                                else if (qualified1.IsEnclosing)
                                 {
                                     ok = true;
                                     nbsol1 = 1;
-                                    Radius[1] = R1 + dist1;
+                                    radius[1] = r1 + dist1;
                                 }
-                                else if (Qualified1.IsUnqualified())
+                                else if (qualified1.IsUnqualified)
                                 {
                                     ok = true;
                                     nbsol1 = 2;
-                                    Radius[1] = Math.Abs(R1 - dist1);
-                                    Radius[2] = R1 + dist1;
+                                    radius[1] = Math.Abs(r1 - dist1);
+                                    radius[2] = r1 + dist1;
                                 }
-                                if (Qualified2.IsEnclosed() && ok)
+                                if (qualified2.IsEnclosed && ok)
                                 {
-                                    if (dist2 - R2 < Tolerance)
+                                    if (dist2 - r2 < tolerance)
                                     {
                                         for (int ii = 1; ii <= nbsol1; ii++)
                                         {
-                                            if (Math.Abs(Radius[ii] - Math.Abs(R2 - dist2)) < Tol)
+                                            if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
                                             {
-                                                Radius[1] = Math.Abs(R2 - dist2);
+                                                radius[1] = Math.Abs(r2 - dist2);
                                                 ok = true;
                                                 nbsol2 = 1;
                                             }
                                         }
                                     }
                                 }
-                                else if (Qualified2.IsOutside() && ok)
+                                else if (qualified2.IsOutside && ok)
                                 {
-                                    if (R2 - dist2 < Tolerance)
+                                    if (r2 - dist2 < tolerance)
                                     {
                                         for (int ii = 1; ii <= nbsol1; ii++)
                                         {
-                                            if (Math.Abs(Radius[ii] - Math.Abs(R2 - dist2)) < Tol)
+                                            if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
                                             {
-                                                Radius[1] = Math.Abs(R2 - dist2);
+                                                radius[1] = Math.Abs(r2 - dist2);
                                                 ok = true;
                                                 nbsol2 = 1;
                                             }
                                         }
                                     }
                                 }
-                                else if (Qualified2.IsEnclosing() && ok)
+                                else if (qualified2.IsEnclosing && ok)
                                 {
                                     for (int ii = 1; ii <= nbsol1; ii++)
                                     {
-                                        if (Math.Abs(Radius[ii] - R2 - dist2) < Tol)
+                                        if (Math.Abs(radius[ii] - r2 - dist2) < tol)
                                         {
-                                            Radius[1] = R2 + dist2;
+                                            radius[1] = r2 + dist2;
                                             ok = true;
                                             nbsol2 = 1;
                                         }
                                     }
                                 }
-                                else if (Qualified2.IsUnqualified() && ok)
+                                else if (qualified2.IsUnqualified && ok)
                                 {
                                     for (int ii = 1; ii <= nbsol1; ii++)
                                     {
-                                        if (Math.Abs(Radius[ii] - Math.Abs(R2 - dist2)) < Tol)
+                                        if (Math.Abs(radius[ii] - Math.Abs(r2 - dist2)) < tol)
                                         {
-                                            Rradius = Math.Abs(R2 - dist2);
+                                            rradius = Math.Abs(r2 - dist2);
                                             ok = true;
                                             nbsol2++;
                                         }
-                                        else if (Math.Abs(Radius[ii] - R2 - dist2) < Tol)
+                                        else if (Math.Abs(radius[ii] - r2 - dist2) < tol)
                                         {
-                                            Rradius = R2 + dist2;
+                                            rradius = r2 + dist2;
                                             ok = true;
                                             nbsol2++;
                                         }
                                     }
                                     if (nbsol2 == 1)
                                     {
-                                        Radius[1] = Rradius;
+                                        radius[1] = rradius;
                                     }
                                     else if (nbsol2 == 2)
                                     {
-                                        Radius[1] = Math.Abs(R2 - dist2);
-                                        Radius[2] = R2 + dist2;
+                                        radius[1] = Math.Abs(r2 - dist2);
+                                        radius[2] = r2 + dist2;
                                     }
                                 }
                                 for (int ii = 1; ii <= nbsol2; ii++)
                                 {
-                                    if (Math.Abs(dist3 - Radius[ii]) <= Tol)
+                                    if (Math.Abs(dist3 - radius[ii]) <= tol)
                                     {
                                         nbsol3++;
                                         ok = true;
@@ -280,90 +281,90 @@ public sealed partial class GccAna_Circ2d3Tan
                                 {
                                     for (int k1 = 1; k1 <= nbsol3; k1++)
                                     {
-                                        NbrSol++;
-                                        cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius[k1]);
+                                        _nbrSol++;
+                                        _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k1]);
                                         //                 ==========================================================
-                                        double distcc1 = Center.Distance(center1);
-                                        if (!Qualified1.IsUnqualified())
+                                        double distcc1 = center.Distance(center1);
+                                        if (!qualified1.IsUnqualified)
                                         {
-                                            qualifier1[NbrSol] = Qualified1.Qualifier();
+                                            _qualifier1[_nbrSol] = qualified1.Qualifier();
                                         }
-                                        else if (Math.Abs(distcc1 + Radius[k1] - R1) < Tol)
+                                        else if (Math.Abs(distcc1 + radius[k1] - r1) < tol)
                                         {
-                                            qualifier1[NbrSol] = GccEnt_enclosed;
+                                            _qualifier1[_nbrSol] = Qualifier.Enclosed;
                                         }
-                                        else if (Math.Abs(distcc1 - R1 - Radius[k1]) < Tol)
+                                        else if (Math.Abs(distcc1 - r1 - radius[k1]) < tol)
                                         {
-                                            qualifier1[NbrSol] = GccEnt_outside;
+                                            _qualifier1[_nbrSol] = Qualifier.Outside;
                                         }
                                         else
                                         {
-                                            qualifier1[NbrSol] = GccEnt_enclosing;
+                                            _qualifier1[_nbrSol] = Qualifier.Enclosing;
                                         }
 
                                         //                   double distcc2 = Center.Distance(center1);
-                                        double distcc2 = Center.Distance(center2);
-                                        if (!Qualified2.IsUnqualified())
+                                        double distcc2 = center.Distance(center2);
+                                        if (!qualified2.IsUnqualified)
                                         {
-                                            qualifier2[NbrSol] = Qualified2.Qualifier();
+                                            _qualifier2[_nbrSol] = qualified2.Qualifier();
                                         }
-                                        else if (Math.Abs(distcc2 + Radius[k1] - R2) < Tol)
+                                        else if (Math.Abs(distcc2 + radius[k1] - r2) < tol)
                                         {
-                                            qualifier2[NbrSol] = GccEnt_enclosed;
+                                            _qualifier2[_nbrSol] = Qualifier.Enclosed;
                                         }
-                                        else if (Math.Abs(distcc2 - R2 - Radius[k1]) < Tol)
+                                        else if (Math.Abs(distcc2 - r2 - radius[k1]) < tol)
                                         {
-                                            qualifier2[NbrSol] = GccEnt_outside;
-                                        }
-                                        else
-                                        {
-                                            qualifier2[NbrSol] = GccEnt_enclosing;
-                                        }
-                                        qualifier3[NbrSol] = GccEnt_noqualifier;
-                                        if (Center.Distance(center1) <= Tolerance
-                                            && Math.Abs(Radius[k1] - R1) <= Tolerance)
-                                        {
-                                            TheSame1[NbrSol] = 1;
+                                            _qualifier2[_nbrSol] = Qualifier.Outside;
                                         }
                                         else
                                         {
-                                            TheSame1[NbrSol] = 0;
-                                            Direction2D dc = new(center1.XY() - Center.XY());
-                                            if (qualifier1[NbrSol] == GccEnt_enclosed)
+                                            _qualifier2[_nbrSol] = Qualifier.Enclosing;
+                                        }
+                                        _qualifier3[_nbrSol] = Qualifier.Noqualifier;
+                                        if (center.Distance(center1) <= tolerance
+                                            && Math.Abs(radius[k1] - r1) <= tolerance)
+                                        {
+                                            _theSame1[_nbrSol] = 1;
+                                        }
+                                        else
+                                        {
+                                            _theSame1[_nbrSol] = 0;
+                                            Direction2D dc = new(center1.XY() - center.XY());
+                                            if (_qualifier1[_nbrSol] == Qualifier.Enclosed)
                                             {
                                                 // if tangent circle is inside the source circle, moving to edge of source circle
                                                 dc.Reverse();
                                             }
-                                            pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius[k1] * dc.XY());
-                                            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                                            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                            _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k1] * dc.XY());
+                                            _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+                                            _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                                         }
-                                        if (Center.Distance(center2) <= Tolerance
-                                            && Math.Abs(Radius[k1] - R2) <= Tolerance)
+                                        if (center.Distance(center2) <= tolerance
+                                            && Math.Abs(radius[k1] - r2) <= tolerance)
                                         {
-                                            TheSame2[NbrSol] = 1;
+                                            _theSame2[_nbrSol] = 1;
                                         }
                                         else
                                         {
-                                            TheSame2[NbrSol] = 0;
-                                            Direction2D dc = new(center2.XY() - Center.XY());
+                                            _theSame2[_nbrSol] = 0;
+                                            Direction2D dc = new(center2.XY() - center.XY());
                                             // case of concentric circles :
                                             // 2nd tangency point is at the other side of the circle solution
                                             double alpha = 1.0;
-                                            if (center1.Distance(center2) <= Tolerance)
+                                            if (center1.Distance(center2) <= tolerance)
                                             {
                                                 alpha = -1;
                                             }
-                                            pnttg2sol[NbrSol] = new Point2D(Center.XY() + alpha * Radius[k1] * dc.XY());
-                                            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                            pararg2[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C2, pnttg2sol[NbrSol]);
+                                            _pnttg2sol[_nbrSol] = new Point2D(center.XY() + alpha * radius[k1] * dc.XY());
+                                            _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
+                                            _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[_nbrSol]);
                                         }
-                                        TheSame3[NbrSol] = 0;
-                                        pnttg3sol[NbrSol] = Point3;
-                                        par3sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
-                                        pararg3[NbrSol] = 0.0;
-                                        WellDone = true;
-                                        if (NbrSol == MaxSol)
+                                        _theSame3[_nbrSol] = 0;
+                                        _pnttg3sol[_nbrSol] = point3;
+                                        _par3sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg3sol[_nbrSol]);
+                                        _pararg3[_nbrSol] = 0.0;
+                                        _wellDone = true;
+                                        if (_nbrSol == MaxSol)
                                         {
                                             break;
                                         }
@@ -371,18 +372,18 @@ public sealed partial class GccAna_Circ2d3Tan
                                 }
                             }
                         }
-                        WellDone = true;
-                        if (NbrSol == MaxSol)
+                        _wellDone = true;
+                        if (_nbrSol == MaxSol)
                         {
                             break;
                         }
                     }
-                    if (NbrSol == MaxSol)
+                    if (_nbrSol == MaxSol)
                     {
                         break;
                     }
                 }
-                if (NbrSol == MaxSol)
+                if (_nbrSol == MaxSol)
                 {
                     break;
                 }
@@ -392,45 +393,45 @@ public sealed partial class GccAna_Circ2d3Tan
         // Debug to create the point on the solution circles.
 
         int kk;
-        for (kk = 1; kk <= NbrSol; kk++)
+        for (kk = 1; kk <= _nbrSol; kk++)
         {
-            Circle2D CC = cirsol[kk];
-            double NR = CC.Location().Distance(Point3);
-            if (Math.Abs(NR - CC.Radius()) > Tol)
+            Circle2D cc = _cirsol[kk];
+            double nr = cc.Location().Distance(point3);
+            if (Math.Abs(nr - cc.Radius()) > tol)
             {
-                cirsol[kk].SetRadius(NR);
+                _cirsol[kk].SetRadius(nr);
             }
         }
 
         // Debug to eliminate multiple solution.
         // this happens in case of intersection line hyperbola.
-        double Tol2 = Tol * Tol;
-        for (kk = 1; kk < NbrSol; kk++)
+        double tol2 = tol * tol;
+        for (kk = 1; kk < _nbrSol; kk++)
         {
-            Point2D PK = cirsol[kk].Location();
-            for (int ll = kk + 1; ll <= NbrSol; ll++)
+            Point2D pk = _cirsol[kk].Location();
+            for (int ll = kk + 1; ll <= _nbrSol; ll++)
             {
-                Point2D PL = cirsol[ll].Location();
-                if (PK.SquareDistance(PL) < Tol2)
+                Point2D pl = _cirsol[ll].Location();
+                if (pk.SquareDistance(pl) < tol2)
                 {
-                    for (int mm = ll + 1; mm <= NbrSol; mm++)
+                    for (int mm = ll + 1; mm <= _nbrSol; mm++)
                     {
-                        cirsol[mm - 1] = cirsol[mm];
+                        _cirsol[mm - 1] = _cirsol[mm];
                         // OCCT: TheSame1..3 are not shifted with the other arrays
-                        pnttg1sol[mm - 1] = pnttg1sol[mm];
-                        pnttg2sol[mm - 1] = pnttg2sol[mm];
-                        pnttg3sol[mm - 1] = pnttg3sol[mm];
-                        par1sol[mm - 1] = par1sol[mm];
-                        par2sol[mm - 1] = par2sol[mm];
-                        par3sol[mm - 1] = par3sol[mm];
-                        pararg1[mm - 1] = pararg1[mm];
-                        pararg2[mm - 1] = pararg2[mm];
-                        pararg3[mm - 1] = pararg3[mm];
-                        qualifier1[mm - 1] = qualifier1[mm];
-                        qualifier2[mm - 1] = qualifier2[mm];
-                        qualifier3[mm - 1] = qualifier3[mm];
+                        _pnttg1sol[mm - 1] = _pnttg1sol[mm];
+                        _pnttg2sol[mm - 1] = _pnttg2sol[mm];
+                        _pnttg3sol[mm - 1] = _pnttg3sol[mm];
+                        _par1sol[mm - 1] = _par1sol[mm];
+                        _par2sol[mm - 1] = _par2sol[mm];
+                        _par3sol[mm - 1] = _par3sol[mm];
+                        _pararg1[mm - 1] = _pararg1[mm];
+                        _pararg2[mm - 1] = _pararg2[mm];
+                        _pararg3[mm - 1] = _pararg3[mm];
+                        _qualifier1[mm - 1] = _qualifier1[mm];
+                        _qualifier2[mm - 1] = _qualifier2[mm];
+                        _qualifier3[mm - 1] = _qualifier3[mm];
                     }
-                    NbrSol--;
+                    _nbrSol--;
                 }
             }
         }

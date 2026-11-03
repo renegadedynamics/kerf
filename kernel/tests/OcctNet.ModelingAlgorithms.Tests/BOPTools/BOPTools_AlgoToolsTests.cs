@@ -1,6 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -17,7 +23,7 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPTools;
 public class BOPTools_AlgoToolsTests
 {
     private static Solid BoxSolid(double x, double y, double z, double dx, double dy, double dz) =>
-        ShapeCasts.Solid(TopExp_ExplorerFirst(new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).InternalShape(), ShapeType.Solid));
+        ShapeCasts.Solid(TopExp_ExplorerFirst(new MakeBox(new Point3D(x, y, z), dx, dy, dz).InternalShape(), ShapeType.Solid));
 
     private static Shape TopExp_ExplorerFirst(in Shape theS, ShapeType theType)
     {
@@ -45,7 +51,7 @@ public class BOPTools_AlgoToolsTests
         double du = 0.25 * (u2 - u1), dv = 0.25 * (v2 - v1);
         Surface aS = (Surface)Tool.Surface(theF)!.Copy();
         Placement aLoc = theF.Location();
-        Face aSplit = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
+        Face aSplit = ShapeCasts.Face(new MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
         return ShapeCasts.Face(aSplit.Located(aLoc));
     }
 
@@ -55,18 +61,18 @@ public class BOPTools_AlgoToolsTests
         int aNb = 0;
         foreach ((string aName, Shape aShape) in BOPToolsTestShapes.Primitives())
         {
-            IntTools_Context aCtx = new();
+            IntersectionContext aCtx = new();
             foreach (Face aF in BOPToolsTestShapes.Faces(aShape))
             {
                 Face aSp = SplitOf(aF);
                 bool bExpected = aF.Orientation() == Reversed;
-                Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSp, aF, aCtx, out int anErr));
+                Assert.Equal(bExpected, AlgoTools.IsSplitToReverse(aSp, aF, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
                 Face aSpR = ShapeCasts.Face(aSp.Reversed());
-                Assert.Equal(!bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSpR, aF, aCtx, out anErr));
+                Assert.Equal(!bExpected, AlgoTools.IsSplitToReverse(aSpR, aF, aCtx, out anErr));
                 Assert.Equal(0, anErr);
                 // the shape form dispatches
-                Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse((Shape)aSp, (Shape)aF, aCtx));
+                Assert.Equal(bExpected, AlgoTools.IsSplitToReverse((Shape)aSp, (Shape)aF, aCtx));
                 ++aNb;
             }
             _ = aName;
@@ -78,9 +84,9 @@ public class BOPTools_AlgoToolsTests
     public void IsSplitToReverse_same_surface_compares_orientations()
     {
         Face aF = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box())[0];
-        IntTools_Context aCtx = new();
-        Assert.False(BOPTools_AlgoTools.IsSplitToReverse(aF, aF, aCtx));
-        Assert.True(BOPTools_AlgoTools.IsSplitToReverse(ShapeCasts.Face(aF.Reversed()), aF, aCtx));
+        IntersectionContext aCtx = new();
+        Assert.False(AlgoTools.IsSplitToReverse(aF, aF, aCtx));
+        Assert.True(AlgoTools.IsSplitToReverse(ShapeCasts.Face(aF.Reversed()), aF, aCtx));
     }
 
     [Fact]
@@ -89,12 +95,12 @@ public class BOPTools_AlgoToolsTests
         int aNb = 0;
         foreach ((string _, Shape aShape) in Shapes())
         {
-            IntTools_Context aCtx = new();
+            IntersectionContext aCtx = new();
             foreach (Edge aE in BOPToolsTestShapes.Edges(aShape))
             {
                 if (Tool.Degenerated(aE))
                 {
-                    Assert.False(BOPTools_AlgoTools.IsSplitToReverse(aE, aE, aCtx, out int anErrD));
+                    Assert.False(AlgoTools.IsSplitToReverse(aE, aE, aCtx, out int anErrD));
                     Assert.Equal(1, anErrD);
                     continue;
                 }
@@ -104,12 +110,12 @@ public class BOPTools_AlgoToolsTests
                     continue;
                 }
                 double d = 0.25 * (l - f);
-                Edge aSp = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape());
+                Edge aSp = ShapeCasts.Edge(new MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape());
                 aSp = ShapeCasts.Edge(aSp.Located(aLoc));
                 bool bExpected = aE.Orientation() == Reversed;
-                Assert.Equal(bExpected, BOPTools_AlgoTools.IsSplitToReverse(aSp, aE, aCtx, out int anErr));
+                Assert.Equal(bExpected, AlgoTools.IsSplitToReverse(aSp, aE, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
-                Assert.Equal(!bExpected, BOPTools_AlgoTools.IsSplitToReverse(ShapeCasts.Edge(aSp.Reversed()), aE, aCtx));
+                Assert.Equal(!bExpected, AlgoTools.IsSplitToReverse(ShapeCasts.Edge(aSp.Reversed()), aE, aCtx));
                 ++aNb;
             }
         }
@@ -121,12 +127,12 @@ public class BOPTools_AlgoToolsTests
     {
         Shape aBox = BOPToolsTestShapes.Box();
         Vertex aV = ShapeCasts.Vertex(TopExp_ExplorerFirst(aBox, ShapeType.Vertex));
-        Assert.False(BOPTools_AlgoTools.IsSplitToReverse((Shape)aV, (Shape)aV, new IntTools_Context(), out int anErr));
+        Assert.False(AlgoTools.IsSplitToReverse((Shape)aV, (Shape)aV, new IntersectionContext(), out int anErr));
         Assert.Equal(100, anErr);
         global::Kerf.Engine.Foundation.Report aReport = new();
-        Assert.False(BOPTools_AlgoTools.IsSplitToReverseWithWarn(aV, aV, new IntTools_Context(), aReport));
+        Assert.False(AlgoTools.IsSplitToReverseWithWarn(aV, aV, new IntersectionContext(), aReport));
         Assert.Single(aReport.GetAlerts(global::Kerf.Engine.Foundation.Gravity.Warning));
-        Assert.IsType<BOPAlgo_AlertUnableToOrientTheShape>(aReport.GetAlerts(global::Kerf.Engine.Foundation.Gravity.Warning).First());
+        Assert.IsType<AlertUnableToOrientTheShape>(aReport.GetAlerts(global::Kerf.Engine.Foundation.Gravity.Warning).First());
     }
 
     [Fact]
@@ -142,22 +148,22 @@ public class BOPTools_AlgoToolsTests
             }
             Solid aSolid = ShapeCasts.Solid(aSolids.Current());
             Box aBox = new();
-            BRepBndLib.Add(aSolid, ref aBox);
+            Bounds.Add(aSolid, ref aBox);
             aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
-            IntTools_Context aCtx = new();
+            IntersectionContext aCtx = new();
             for (int i = 0; i < 60; ++i)
             {
                 Point3D aP = new(x0 + (x1 - x0) * (1.2 * aRnd.NextDouble() - 0.1),
                                 y0 + (y1 - y0) * (1.2 * aRnd.NextDouble() - 0.1),
                                 z0 + (z1 - z0) * (1.2 * aRnd.NextDouble() - 0.1));
-                BRepClass3d_SolidClassifier aSC = new(aSolid, aP, 1.0e-7);
-                Assert.True(aSC.State() == BOPTools_AlgoTools.ComputeState(aP, aSolid, 1.0e-7, aCtx), $"{aName} point {i}");
+                SolidClassifier aSC = new(aSolid, aP, 1.0e-7);
+                Assert.True(aSC.State() == AlgoTools.ComputeState(aP, aSolid, 1.0e-7, aCtx), $"{aName} point {i}");
             }
             // vertices, edges and faces of the solid itself are ON
             foreach (Edge aE in BOPToolsTestShapes.Edges(aSolid).Take(10))
             {
-                Assert.Equal(On, BOPTools_AlgoTools.ComputeState(aE, aSolid, 1.0e-7, aCtx));
-                Assert.Equal(On, BOPTools_AlgoTools.ComputeStateByOnePoint(Exploration.FirstVertex(aE), aSolid, 1.0e-7, aCtx));
+                Assert.Equal(On, AlgoTools.ComputeState(aE, aSolid, 1.0e-7, aCtx));
+                Assert.Equal(On, AlgoTools.ComputeStateByOnePoint(Exploration.FirstVertex(aE), aSolid, 1.0e-7, aCtx));
             }
         }
     }
@@ -168,27 +174,27 @@ public class BOPTools_AlgoToolsTests
         Solid anOuter = BoxSolid(0, 0, 0, 10, 10, 10);
         Solid anInner = BoxSolid(2, 2, 2, 3, 3, 3);
         Solid aFar = BoxSolid(20, 0, 0, 3, 3, 3);
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         NCollection_IndexedMap<Shape> aBounds = new(ShapeHasher.Instance);
         Exploration.MapShapes(anOuter, ShapeType.Edge, aBounds);
         foreach (Face aF in BOPToolsTestShapes.Faces(anInner))
         {
-            Assert.Equal(In, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aBounds, aCtx));
-            Assert.Equal(In, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
+            Assert.Equal(In, AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aBounds, aCtx));
+            Assert.Equal(In, AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
         }
         foreach (Face aF in BOPToolsTestShapes.Faces(aFar))
         {
-            Assert.Equal(Out, BOPTools_AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
+            Assert.Equal(Out, AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
         }
         // the solid's own faces: all edges are bounds, so a point inside the face is classified
         NCollection_IndexedMap<Shape> aOwn = new(ShapeHasher.Instance);
         Exploration.MapShapes(anOuter, ShapeType.Edge, aOwn);
         foreach (Face aF in BOPToolsTestShapes.Faces(anOuter))
         {
-            Assert.Equal(On, BOPTools_AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aOwn, aCtx));
+            Assert.Equal(On, AlgoTools.ComputeState(aF, anOuter, 1.0e-7, aOwn, aCtx));
         }
         // OCCT: a container's state is UNKNOWN (the sub-shape's state is discarded)
-        Assert.Equal(Unknown, BOPTools_AlgoTools.ComputeStateByOnePoint(anInner, anOuter, 1.0e-7, aCtx));
+        Assert.Equal(Unknown, AlgoTools.ComputeStateByOnePoint(anInner, anOuter, 1.0e-7, aCtx));
     }
 
     // The unit box, its edge on the z axis, the two box faces on it, and a planar face through that edge going
@@ -214,88 +220,88 @@ public class BOPTools_AlgoToolsTests
         Assert.Equal(2, aLF.Extent());
         Exploration.Vertices(aZ, out Vertex aV0, out Vertex aV1);
         Point3D p0 = Tool.Pnt(aV0), p1 = Tool.Pnt(aV1);
-        Vertex aW0 = ShapeCasts.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
-        Vertex aW1 = ShapeCasts.Vertex(new BRepBuilderAPI_MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
-        Edge e1 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aV1, aW1).InternalShape());
-        Edge e2 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aW1, aW0).InternalShape());
-        Edge e3 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aW0, aV0).InternalShape());
+        Vertex aW0 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
+        Vertex aW1 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
+        Edge e1 = ShapeCasts.Edge(new MakeEdge(aV1, aW1).InternalShape());
+        Edge e2 = ShapeCasts.Edge(new MakeEdge(aW1, aW0).InternalShape());
+        Edge e3 = ShapeCasts.Edge(new MakeEdge(aW0, aV0).InternalShape());
         Edge aZf = ShapeCasts.Edge(aZ.Oriented(Forward));
-        Wire aW = ShapeCasts.Wire(new BRepBuilderAPI_MakeWire(aZf, e1, e2, e3).InternalShape());
-        Face aFin = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(aW, true).InternalShape());
+        Wire aW = ShapeCasts.Wire(new MakeWire(aZf, e1, e2, e3).InternalShape());
+        Face aFin = ShapeCasts.Face(new MakeFace(aW, true).InternalShape());
         return (aBox, aZ, ShapeCasts.Face(aLF.First()), ShapeCasts.Face(aLF.Last()), aFin);
     }
 
     [Fact]
     public void IsInternalFace_by_angles_and_by_classification()
     {
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         (Solid aBox, Edge aE, Face aF1, Face aF2, Face aIn) = FanAtZAxis(0.5, 0.5);
-        Assert.Equal(1, BOPTools_AlgoTools.IsInternalFace(aIn, aE, aF1, aF2, aCtx));
+        Assert.Equal(1, AlgoTools.IsInternalFace(aIn, aE, aF1, aF2, aCtx));
         NCollection_List<Shape> aLF = new();
         aLF.Append(aF1);
         aLF.Append(aF2);
-        Assert.Equal(1, BOPTools_AlgoTools.IsInternalFace(aIn, aE, aLF, aCtx));
+        Assert.Equal(1, AlgoTools.IsInternalFace(aIn, aE, aLF, aCtx));
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
-        Assert.True(BOPTools_AlgoTools.IsInternalFace(aIn, aBox, aMEF, 1.0e-7, aCtx));
+        Assert.True(AlgoTools.IsInternalFace(aIn, aBox, aMEF, 1.0e-7, aCtx));
 
         (_, Edge aE2, Face aG1, Face aG2, Face aOut) = FanAtZAxis(-0.5, -0.5);
-        Assert.Equal(0, BOPTools_AlgoTools.IsInternalFace(aOut, aE2, aG1, aG2, aCtx));
+        Assert.Equal(0, AlgoTools.IsInternalFace(aOut, aE2, aG1, aG2, aCtx));
 
         // a face sharing no edge with the solid: classified by a point
         Solid anInner = BoxSolid(0.25, 0.25, 0.25, 0.5, 0.5, 0.5);
         Face anInnerFace = BOPToolsTestShapes.Faces(anInner)[0];
-        Assert.True(BOPTools_AlgoTools.IsInternalFace(anInnerFace, aBox, aMEF, 1.0e-7, aCtx));
+        Assert.True(AlgoTools.IsInternalFace(anInnerFace, aBox, aMEF, 1.0e-7, aCtx));
         Face aFarFace = BOPToolsTestShapes.Faces(BoxSolid(5, 5, 5, 1, 1, 1))[0];
-        Assert.False(BOPTools_AlgoTools.IsInternalFace(aFarFace, aBox, aMEF, 1.0e-7, aCtx));
+        Assert.False(AlgoTools.IsInternalFace(aFarFace, aBox, aMEF, 1.0e-7, aCtx));
     }
 
     [Fact]
     public void GetFaceOff_finds_the_face_making_the_smallest_angle()
     {
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         (_, Edge aE, Face aF1, Face aF2, Face aIn) = FanAtZAxis(0.5, 0.5);
         Edge aE1 = new(), aE2 = new(), aEIn = new();
-        Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aF1, ref aE1));
-        Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aF2, ref aE2));
-        Assert.True(BOPTools_AlgoTools.GetEdgeOnFace(aE, aIn, ref aEIn));
+        Assert.True(AlgoTools.GetEdgeOnFace(aE, aF1, ref aE1));
+        Assert.True(AlgoTools.GetEdgeOnFace(aE, aF2, ref aE2));
+        Assert.True(AlgoTools.GetEdgeOnFace(aE, aIn, ref aEIn));
         Assert.True(aE1.IsSame(aE) && aE2.IsSame(aE));
         Assert.NotEqual(aE1.Orientation(), aE2.Orientation());
         Edge aOff = new();
-        Assert.True(BOPTools_AlgoTools.GetEdgeOff(aE1, aF2, ref aOff));
+        Assert.True(AlgoTools.GetEdgeOff(aE1, aF2, ref aOff));
         Assert.Equal(aE2, aOff);
-        Assert.False(BOPTools_AlgoTools.GetEdgeOff(aE1, aF1, ref aOff));
+        Assert.False(AlgoTools.GetEdgeOff(aE1, aF1, ref aOff));
 
-        NCollection_List<BOPTools_CoupleOfShape> aLCS = new();
-        aLCS.Append(new BOPTools_CoupleOfShape().WithShape1(aEIn).WithShape2(aIn));
-        aLCS.Append(new BOPTools_CoupleOfShape().WithShape1(aE2).WithShape2(aF2));
+        NCollection_List<CoupleOfShape> aLCS = new();
+        aLCS.Append(new CoupleOfShape().WithShape1(aEIn).WithShape2(aIn));
+        aLCS.Append(new CoupleOfShape().WithShape1(aE2).WithShape2(aF2));
         Face aFOff = new();
-        Assert.True(BOPTools_AlgoTools.GetFaceOff(aE1, aF1, aLCS, ref aFOff, aCtx));
+        Assert.True(AlgoTools.GetFaceOff(aE1, aF1, aLCS, ref aFOff, aCtx));
         Assert.True(aFOff.IsSame(aIn) || aFOff.IsSame(aF2));
     }
 
     [Fact]
     public void AreFacesSameDomain_and_Sense()
     {
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         List<Face> aFaces = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box());
         Face aF = aFaces[0];
         Face aSp = SplitOf(aF);
-        Assert.True(BOPTools_AlgoTools.AreFacesSameDomain(aSp, aF, aCtx));
-        Assert.False(BOPTools_AlgoTools.AreFacesSameDomain(aF, aFaces[1], aCtx));
-        Assert.Equal(1, BOPTools_AlgoTools.Sense(aF, aF, aCtx));
-        Assert.Equal(-1, BOPTools_AlgoTools.Sense(aF, ShapeCasts.Face(aF.Reversed()), aCtx));
+        Assert.True(AlgoTools.AreFacesSameDomain(aSp, aF, aCtx));
+        Assert.False(AlgoTools.AreFacesSameDomain(aF, aFaces[1], aCtx));
+        Assert.Equal(1, AlgoTools.Sense(aF, aF, aCtx));
+        Assert.Equal(-1, AlgoTools.Sense(aF, ShapeCasts.Face(aF.Reversed()), aCtx));
         // no common edge
-        Assert.Equal(0, BOPTools_AlgoTools.Sense(aF, aSp, aCtx));
+        Assert.Equal(0, AlgoTools.Sense(aF, aSp, aCtx));
     }
 
     [Fact]
     public void IsHole_by_the_wire_orientation()
     {
-        Face aF = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 2, 0, 1).InternalShape());
+        Face aF = ShapeCasts.Face(new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 2, 0, 1).InternalShape());
         Wire aW = ShapeCasts.Wire(TopExp_ExplorerFirst(aF, ShapeType.Wire));
-        Assert.False(BOPTools_AlgoTools.IsHole(aW, aF));
-        Assert.True(BOPTools_AlgoTools.IsHole(aW.Reversed(), aF));
+        Assert.False(AlgoTools.IsHole(aW, aF));
+        Assert.True(AlgoTools.IsHole(aW.Reversed(), aF));
     }
 
     [Fact]
@@ -304,12 +310,12 @@ public class BOPTools_AlgoToolsTests
         foreach (ShapeType aType in new[] { ShapeType.Compound, ShapeType.CompSolid, ShapeType.Solid, ShapeType.Shell, ShapeType.Wire })
         {
             Shape aC = new();
-            BOPTools_AlgoTools.MakeContainer(aType, ref aC);
+            AlgoTools.MakeContainer(aType, ref aC);
             Assert.Equal(aType, aC.ShapeType());
             Assert.False(new Iterator(aC).More());
         }
         Shape aKeep = BOPToolsTestShapes.Box();
-        BOPTools_AlgoTools.MakeContainer(ShapeType.Face, ref aKeep);
+        AlgoTools.MakeContainer(ShapeType.Face, ref aKeep);
         Assert.Equal(ShapeType.Solid, aKeep.ShapeType());
     }
 
@@ -321,7 +327,7 @@ public class BOPTools_AlgoToolsTests
         Face aFx = new(), aFz = new();
         foreach (Face aF in BOPToolsTestShapes.Faces(aBox))
         {
-            BRepGProp_Face aProps = new(aF);
+            FaceIntegrand aProps = new(aF);
             FaceSurfaceAdaptor aBAS = new(aF);
             Plane3D aPln = aBAS.Plane();
             Point3D aLoc = aPln.Location();
@@ -338,9 +344,9 @@ public class BOPTools_AlgoToolsTests
         }
         Assert.False(aFx.IsNull || aFz.IsNull);
         LineCurve3D aLine = new(new Point3D(2, 0.5, 2), new Direction3D(0, 1, 0));
-        Edge aE = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(aLine, 0, 1).InternalShape());
-        IntTools_Curve aIC = new(aLine, null, null);
-        BOPTools_AlgoTools.MakePCurve(aE, aFx, aFz, aIC, true, true, new IntTools_Context());
+        Edge aE = ShapeCasts.Edge(new MakeEdge(aLine, 0, 1).InternalShape());
+        IntersectionCurve aIC = new(aLine, null, null);
+        AlgoTools.MakePCurve(aE, aFx, aFz, aIC, true, true, new IntersectionContext());
         foreach (Face aF in new[] { aFx, aFz })
         {
             Curve2D? aC2 = Tool.CurveOnSurface(aE, aF, out double f, out double l);
@@ -361,37 +367,37 @@ public class BOPTools_AlgoToolsTests
     public void MakeEdge_MakeSectEdge_MakeVertex_and_ComputeVV()
     {
         LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        IntTools_Curve aIC = new(aLine, null, null);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-7, out Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aV2);
-        BOPTools_AlgoTools.MakeEdge(aIC, aV1, 0, aV2, 3, 1.0e-4, out Edge aE);
+        IntersectionCurve aIC = new(aLine, null, null);
+        AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-7, out Vertex aV1);
+        AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aV2);
+        AlgoTools.MakeEdge(aIC, aV1, 0, aV2, 3, 1.0e-4, out Edge aE);
         Tool.Range(aE, out double f, out double l);
         Assert.Equal(0.0, f);
         Assert.Equal(3.0, l);
         Assert.Equal(1.0e-4, Tool.Tolerance(aE));
         Assert.Equal(1.0e-4 + 1.0e-12, Tool.Tolerance(aV1));
 
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.5, 0, 0), 1.0e-7, out Vertex aVh);
-        BOPTools_AlgoTools.MakeSectEdge(aIC, aVh, 0.5, aV2, 3, out Edge aE2);
+        AlgoTools.MakeNewVertex(new Point3D(0.5, 0, 0), 1.0e-7, out Vertex aVh);
+        AlgoTools.MakeSectEdge(aIC, aVh, 0.5, aV2, 3, out Edge aE2);
         Tool.Range(aE2, out f, out l);
         Assert.Equal(0.5, f);
 
-        Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-4, 0, 0), 0.0));
-        Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, new Point3D(1.0e-3, 0, 0), 0.0));
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1.0e-4, 0, 0), 1.0e-7, out Vertex aV3);
-        Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV3));
-        Assert.Equal(1, BOPTools_AlgoTools.ComputeVV(aV1, aV2));
-        Assert.Equal(0, BOPTools_AlgoTools.ComputeVV(aV1, aV2, 3.0));
+        Assert.Equal(0, AlgoTools.ComputeVV(aV1, new Point3D(1.0e-4, 0, 0), 0.0));
+        Assert.Equal(1, AlgoTools.ComputeVV(aV1, new Point3D(1.0e-3, 0, 0), 0.0));
+        AlgoTools.MakeNewVertex(new Point3D(1.0e-4, 0, 0), 1.0e-7, out Vertex aV3);
+        Assert.Equal(0, AlgoTools.ComputeVV(aV1, aV3));
+        Assert.Equal(1, AlgoTools.ComputeVV(aV1, aV2));
+        Assert.Equal(0, AlgoTools.ComputeVV(aV1, aV2, 3.0));
 
         NCollection_List<Shape> aLV = new();
         Vertex aVnew = new();
-        BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
+        AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.True(aVnew.IsNull);
         aLV.Append(aV1);
-        BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
+        AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.Equal(aV1, aVnew);
         aLV.Append(aV3);
-        BOPTools_AlgoTools.MakeVertex(aLV, ref aVnew);
+        AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.False(aVnew.IsSame(aV1) || aVnew.IsSame(aV3));
         Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV1)) <= Tool.Tolerance(aVnew));
         Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV3)) <= Tool.Tolerance(aVnew));
@@ -407,7 +413,7 @@ public class BOPTools_AlgoToolsTests
         aBB.Add(aC, aB1);
         aBB.Add(aC, aB2);
         NCollection_List<Shape> aLCB = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aC, ShapeType.Edge, ShapeType.Face, aLCB);
+        AlgoTools.MakeConnexityBlocks(aC, ShapeType.Edge, ShapeType.Face, aLCB);
         Assert.Equal(2, aLCB.Extent());
         foreach (Shape aBlock in aLCB)
         {
@@ -416,26 +422,26 @@ public class BOPTools_AlgoToolsTests
 
         // list form: regular for a box's faces, irregular when a face is given twice
         NCollection_List<Shape> aLS = new(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f));
-        NCollection_List<BOPTools_ConnexityBlock> aLCB2 = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB2);
+        NCollection_List<ConnexityBlock> aLCB2 = new();
+        AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB2);
         Assert.Equal(1, aLCB2.Extent());
-        Assert.True(aLCB2.First().IsRegular());
+        Assert.True(aLCB2.First().IsRegular);
         Assert.Equal(6, aLCB2.First().Shapes().Extent());
         aLS.Append(aLS.First());
-        NCollection_List<BOPTools_ConnexityBlock> aLCB3 = new();
-        BOPTools_AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB3);
-        Assert.False(aLCB3.First().IsRegular());
+        NCollection_List<ConnexityBlock> aLCB3 = new();
+        AlgoTools.MakeConnexityBlocks(aLS, ShapeType.Edge, ShapeType.Face, aLCB3);
+        Assert.False(aLCB3.First().IsRegular);
         Assert.Equal(7, aLCB3.First().Shapes().Extent());
 
         // MakeConnexityBlock: avoiding the four vertical edges of the box splits off nothing (top and bottom still
         // connect through the side faces), avoiding every edge leaves the first face alone
         NCollection_IndexedMap<Shape> aAvoid = new(ShapeHasher.Instance);
         NCollection_List<Shape> aOne = new();
-        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
+        AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
         Assert.Equal(6, aOne.Extent());
         Exploration.MapShapes(aB1, ShapeType.Edge, aAvoid);
         aOne.Clear();
-        BOPTools_AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
+        AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
         Assert.Equal(1, aOne.Extent());
     }
 
@@ -452,7 +458,7 @@ public class BOPTools_AlgoToolsTests
             aBB.Add(aW, i % 2 == 0 ? aEdges[i] : aEdges[i].Reversed());
         }
         Shape aWS = aW;
-        BOPTools_AlgoTools.OrientEdgesOnWire(ref aWS);
+        AlgoTools.OrientEdgesOnWire(ref aWS);
         List<Edge> aOut = [];
         for (Iterator it = new(aWS); it.More(); it.Next())
         {
@@ -490,7 +496,7 @@ public class BOPTools_AlgoToolsTests
             aBB.Add(aMixed, i is 1 or 4 ? aFaces[i].Reversed() : aFaces[i]);
         }
         Shape aS = aMixed;
-        BOPTools_AlgoTools.OrientFacesOnShell(ref aS);
+        AlgoTools.OrientFacesOnShell(ref aS);
         Assert.Equal(6, BOPToolsTestShapes.Faces(aS).Count);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aS, ShapeType.Edge, ShapeType.Face, aMEF);
@@ -515,33 +521,33 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void IsMicroEdge_and_IsBlockInOnFace()
     {
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         Solid aBox = BoxSolid(0, 0, 0, 1, 2, 3);
         Edge aE = BOPToolsTestShapes.Edges(aBox)[0];
-        Assert.False(BOPTools_AlgoTools.IsMicroEdge(aE, aCtx));
-        Edge aTiny = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1.0e-8, 0, 0)).InternalShape());
-        Assert.True(BOPTools_AlgoTools.IsMicroEdge(aTiny, aCtx));
+        Assert.False(AlgoTools.IsMicroEdge(aE, aCtx));
+        Edge aTiny = ShapeCasts.Edge(new MakeEdge(new Point3D(0, 0, 0), new Point3D(1.0e-8, 0, 0)).InternalShape());
+        Assert.True(AlgoTools.IsMicroEdge(aTiny, aCtx));
         Edge aDegen = new();
         foreach (Edge x in BOPToolsTestShapes.Edges(BOPToolsTestShapes.Sphere()))
         {
             if (Tool.Degenerated(x)) { aDegen = x; break; }
         }
-        Assert.True(BOPTools_AlgoTools.IsMicroEdge(aDegen, aCtx));
+        Assert.True(AlgoTools.IsMicroEdge(aDegen, aCtx));
 
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
         Tool.Range(aE, out double f, out double l);
-        IntTools_Range aR = new(f, l);
+        ParameterRange aR = new(f, l);
         foreach (Shape aF in aMEF.FindFromKey(aE))
         {
-            Assert.True(BOPTools_AlgoTools.IsBlockInOnFace(aR, ShapeCasts.Face(aF), aE, aCtx));
+            Assert.True(AlgoTools.IsBlockInOnFace(aR, ShapeCasts.Face(aF), aE, aCtx));
         }
         int aNbOff = 0;
         foreach (Face aF in BOPToolsTestShapes.Faces(aBox))
         {
             if (!aMEF.FindFromKey(aE).Any(x => x.IsSame(aF)))
             {
-                aNbOff += BOPTools_AlgoTools.IsBlockInOnFace(aR, aF, aE, aCtx) ? 0 : 1;
+                aNbOff += AlgoTools.IsBlockInOnFace(aR, aF, aE, aCtx) ? 0 : 1;
             }
         }
         Assert.Equal(4, aNbOff);
@@ -550,41 +556,41 @@ public class BOPTools_AlgoToolsTests
     [Fact]
     public void AlgoTools_2_vertices_edges_and_ranges()
     {
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out Vertex aV1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out Vertex aV2);
-        BOPTools_AlgoTools.MakeNewVertex(aV1, aV2, out Vertex aVm);
+        AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out Vertex aV1);
+        AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out Vertex aV2);
+        AlgoTools.MakeNewVertex(aV1, aV2, out Vertex aVm);
         Assert.Equal(0.005, Tool.Pnt(aVm).X(), 15);
         Assert.Equal(1.0e-3 + 0.005, Tool.Tolerance(aVm), 15);
 
-        Edge aE = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
-        Edge aE2 = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
-        BOPTools_AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out Vertex aVee);
+        Edge aE = ShapeCasts.Edge(new MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
+        Edge aE2 = ShapeCasts.Edge(new MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
+        AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out Vertex aVee);
         Assert.Equal(1.0, Tool.Pnt(aVee).X(), 15);
-        Face aF = ShapeCasts.Face(new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
-        BOPTools_AlgoTools.MakeNewVertex(aE, 2.0, aF, out Vertex aVef);
+        Face aF = ShapeCasts.Face(new MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
+        AlgoTools.MakeNewVertex(aE, 2.0, aF, out Vertex aVef);
         Assert.Equal(Tool.Tolerance(aE) + Tool.Tolerance(aF) + 1.0e-12, Tool.Tolerance(aVef));
 
         // UpdateVertex forms
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.01, 0), 1.0e-7, out Vertex aVu);
-        BOPTools_AlgoTools.UpdateVertex(aE, 2.0, aVu);
+        AlgoTools.MakeNewVertex(new Point3D(2, 0.01, 0), 1.0e-7, out Vertex aVu);
+        AlgoTools.UpdateVertex(aE, 2.0, aVu);
         Assert.Equal(0.01 + 1.0e-12, Tool.Tolerance(aVu), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.02, 0), 1.0e-7, out Vertex aVc);
-        BOPTools_AlgoTools.UpdateVertex(new IntTools_Curve(Tool.Curve(aE, out _, out _), null, null), 2.0, aVc);
+        AlgoTools.MakeNewVertex(new Point3D(2, 0.02, 0), 1.0e-7, out Vertex aVc);
+        AlgoTools.UpdateVertex(new IntersectionCurve(Tool.Curve(aE, out _, out _), null, null), 2.0, aVc);
         Assert.Equal(0.02 + 1.0e-12, Tool.Tolerance(aVc), 15);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(2, 0.05, 0), 1.0e-3, out Vertex aVn);
-        BOPTools_AlgoTools.UpdateVertex(aVu, aVn);
+        AlgoTools.MakeNewVertex(new Point3D(2, 0.05, 0), 1.0e-3, out Vertex aVn);
+        AlgoTools.UpdateVertex(aVu, aVn);
         Assert.True(Tool.Tolerance(aVu) > 0.04);
 
         // split and copy
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(1, 0, 0), 1.0e-7, out Vertex aS1);
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aS2);
-        BOPTools_AlgoTools.MakeSplitEdge(aE, aS2, 3.0, aS1, 1.0, out Edge aSp);
+        AlgoTools.MakeNewVertex(new Point3D(1, 0, 0), 1.0e-7, out Vertex aS1);
+        AlgoTools.MakeNewVertex(new Point3D(3, 0, 0), 1.0e-7, out Vertex aS2);
+        AlgoTools.MakeSplitEdge(aE, aS2, 3.0, aS1, 1.0, out Edge aSp);
         Tool.Range(aSp, out double f, out double l);
         Assert.Equal((1.0, 3.0), (f, l));
         Assert.Same(Tool.Curve(aE, out _, out _), Tool.Curve(aSp, out _, out _));
         Exploration.Vertices(aSp, out Vertex aVF, out Vertex aVL);
         Assert.True(aVF.IsSame(aS1) && aVL.IsSame(aS2));
-        Edge aCopy = BOPTools_AlgoTools.CopyEdge(ShapeCasts.Edge(aE.Reversed()));
+        Edge aCopy = AlgoTools.CopyEdge(ShapeCasts.Edge(aE.Reversed()));
         Assert.False(aCopy.IsSame(aE));
         Assert.Equal(Reversed, aCopy.Orientation());
         Exploration.Vertices(aCopy, out Vertex aCF, out Vertex aCL);
@@ -592,18 +598,18 @@ public class BOPTools_AlgoToolsTests
         Assert.True(aCF.IsSame(aEF) && aCL.IsSame(aEL));
 
         // CorrectRange: lines unchanged, circles shrunk by the tolerances' resolution
-        IntTools_Range aR = new(0.5, 3.5);
-        BOPTools_AlgoTools.CorrectRange(aE, aE2, aR, out IntTools_Range aNR);
+        ParameterRange aR = new(0.5, 3.5);
+        AlgoTools.CorrectRange(aE, aE2, aR, out ParameterRange aNR);
         Assert.Equal(aR, aNR);
-        Edge aCircle = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 10)).InternalShape());
-        BOPTools_AlgoTools.CorrectRange(aCircle, aE, new IntTools_Range(1, 2), out aNR);
+        Edge aCircle = ShapeCasts.Edge(new MakeEdge(new Circle3D(new Frame3D(), 10)).InternalShape());
+        AlgoTools.CorrectRange(aCircle, aE, new ParameterRange(1, 2), out aNR);
         double aRes = 2.0 * (Tool.Tolerance(aCircle) + Tool.Tolerance(aE)) / 10.0;
         Assert.Equal(1 + aRes, aNR.First(), 14);
         Assert.Equal(2 - aRes, aNR.Last(), 14);
-        BOPTools_AlgoTools.CorrectRange(aCircle, aF, new IntTools_Range(1, 2), out aNR);
+        AlgoTools.CorrectRange(aCircle, aF, new ParameterRange(1, 2), out aNR);
         Assert.Equal(1 + Tool.Tolerance(aF) / 10.0, aNR.First(), 14);
-        BOPTools_AlgoTools.CorrectRange(aCircle, aF, new IntTools_Range(1, 1 + 1.0e-10), out aNR);
-        Assert.Equal(new IntTools_Range(1, 1 + 1.0e-10), aNR);
+        AlgoTools.CorrectRange(aCircle, aF, new ParameterRange(1, 1 + 1.0e-10), out aNR);
+        Assert.Equal(new ParameterRange(1, 1 + 1.0e-10), aNR);
     }
 
     [Fact]
@@ -612,30 +618,30 @@ public class BOPTools_AlgoToolsTests
         Solid aB = BoxSolid(0, 0, 0, 1, 1, 1);
         Face aF = BOPToolsTestShapes.Faces(aB)[0];
         Edge aE = BOPToolsTestShapes.Edges(aB)[0];
-        Assert.Equal(3, BOPTools_AlgoTools.Dimension(aB));
-        Assert.Equal(2, BOPTools_AlgoTools.Dimension(aF));
-        Assert.Equal(1, BOPTools_AlgoTools.Dimension(aE));
-        Assert.Equal(0, BOPTools_AlgoTools.Dimension(Exploration.FirstVertex(aE)));
+        Assert.Equal(3, AlgoTools.Dimension(aB));
+        Assert.Equal(2, AlgoTools.Dimension(aF));
+        Assert.Equal(1, AlgoTools.Dimension(aE));
+        Assert.Equal(0, AlgoTools.Dimension(Exploration.FirstVertex(aE)));
         Compound aC = new(), aInner = new(), aEmpty = new();
         BrepBuilder aBB = new();
         aBB.MakeCompound(ref aC);
         aBB.MakeCompound(ref aInner);
         aBB.MakeCompound(ref aEmpty);
-        BOPTools_AlgoTools.Dimensions(aEmpty, out int aMin, out int aMax);
+        AlgoTools.Dimensions(aEmpty, out int aMin, out int aMax);
         Assert.Equal((-1, -1), (aMin, aMax));
         aBB.Add(aInner, aF);
         aBB.Add(aInner, aE);
         aBB.Add(aC, aInner);
         aBB.Add(aC, aF);
         aBB.Add(aC, aEmpty);
-        BOPTools_AlgoTools.Dimensions(aC, out aMin, out aMax);
+        AlgoTools.Dimensions(aC, out aMin, out aMax);
         Assert.Equal((1, 2), (aMin, aMax));
-        Assert.Equal(-1, BOPTools_AlgoTools.Dimension(aC));
+        Assert.Equal(-1, AlgoTools.Dimension(aC));
         NCollection_List<Shape> aL = new();
-        BOPTools_AlgoTools.TreatCompound(aC, aL);
+        AlgoTools.TreatCompound(aC, aL);
         Assert.Equal(3, aL.Extent());
         aL.Clear();
-        BOPTools_AlgoTools.TreatCompound(aC, aL, new NCollection_Map<Shape>(ShapeHasher.Instance));
+        AlgoTools.TreatCompound(aC, aL, new NCollection_Map<Shape>(ShapeHasher.Instance));
         Assert.Equal(2, aL.Extent());
     }
 
@@ -645,10 +651,10 @@ public class BOPTools_AlgoToolsTests
         Shape aBox = BOPToolsTestShapes.Box(); // published: frozen
         Vertex aV = ShapeCasts.Vertex(TopExp_ExplorerFirst(aBox, ShapeType.Vertex));
         LineCurve3D aLine = new(Tool.Pnt(aV), new Direction3D(1, 0, 0));
-        BOPTools_AlgoTools.MakeNewVertex(new Point3D(100, 0, 0), 1.0e-7, out Vertex aV2);
+        AlgoTools.MakeNewVertex(new Point3D(100, 0, 0), 1.0e-7, out Vertex aV2);
         Assert.ThrowsAny<Exception>(() =>
         {
-            BOPTools_AlgoTools.MakeEdge(new IntTools_Curve(aLine, null, null), aV, 0, aV2, 1, 1.0e-3, out _);
+            AlgoTools.MakeEdge(new IntersectionCurve(aLine, null, null), aV, 0, aV2, 1, 1.0e-3, out _);
         });
     }
 
@@ -668,33 +674,33 @@ public class BOPTools_AlgoToolsTests
             {
                 Exploration.MapShapesAndAncestors(aSolid.Value, ShapeType.Edge, ShapeType.Face, aMEF);
             }
-            List<Func<IntTools_Context, string>> aQueries = [];
+            List<Func<IntersectionContext, string>> aQueries = [];
             foreach (Face aF in aFaces.Take(40))
             {
                 Face aSp = SplitOf(aF);
-                aQueries.Add(c => $"{BOPTools_AlgoTools.IsSplitToReverse(aSp, aF, c, out int e)} {e}");
+                aQueries.Add(c => $"{AlgoTools.IsSplitToReverse(aSp, aF, c, out int e)} {e}");
                 if (aSolid is not null)
                 {
                     Solid s = aSolid.Value;
-                    aQueries.Add(c => BOPTools_AlgoTools.IsInternalFace(aSp, s, aMEF, 1.0e-7, c).ToString());
-                    aQueries.Add(c => BOPTools_AlgoTools.ComputeStateByOnePoint(aSp, s, 1.0e-7, c).ToString());
+                    aQueries.Add(c => AlgoTools.IsInternalFace(aSp, s, aMEF, 1.0e-7, c).ToString());
+                    aQueries.Add(c => AlgoTools.ComputeStateByOnePoint(aSp, s, 1.0e-7, c).ToString());
                 }
             }
             foreach (Edge aE in aEdges.Take(40))
             {
                 Curve3D aC = Tool.Curve(aE, out Placement aLoc, out double f, out double l)!;
                 double d = 0.3 * (l - f);
-                Edge aSp = ShapeCasts.Edge(new BRepBuilderAPI_MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape().Located(aLoc));
-                aQueries.Add(c => $"{BOPTools_AlgoTools.IsSplitToReverse(aSp, aE, c, out int e)} {e}");
+                Edge aSp = ShapeCasts.Edge(new MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape().Located(aLoc));
+                aQueries.Add(c => $"{AlgoTools.IsSplitToReverse(aSp, aE, c, out int e)} {e}");
                 if (aSolid is not null)
                 {
                     Solid s = aSolid.Value;
-                    aQueries.Add(c => BOPTools_AlgoTools.ComputeState(aSp, s, 1.0e-7, c).ToString());
+                    aQueries.Add(c => AlgoTools.ComputeState(aSp, s, 1.0e-7, c).ToString());
                 }
             }
-            string[] aFresh = aQueries.Select(q => q(new IntTools_Context())).ToArray();
+            string[] aFresh = aQueries.Select(q => q(new IntersectionContext())).ToArray();
             int[] anOrder = Enumerable.Range(0, aQueries.Count).OrderBy(_ => aRnd.Next()).ToArray();
-            IntTools_Context aReused = new();
+            IntersectionContext aReused = new();
             foreach (int i in anOrder.Concat(anOrder.Reverse()))
             {
                 Assert.True(aFresh[i] == aQueries[i](aReused), $"{aName} query {i}");

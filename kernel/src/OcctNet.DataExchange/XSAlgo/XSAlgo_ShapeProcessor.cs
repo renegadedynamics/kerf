@@ -5,7 +5,13 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Healing.Process;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -68,7 +74,7 @@ public class XSAlgo_ShapeProcessor
     /// Process the shape by applying the specified operations. Returns the processed shape (frozen); may be the same as
     /// the input shape if no modifications were made.
     /// </summary>
-    public Shape ProcessShape(in Shape theShape, ShapeProcess.OperationsFlags theOperations,
+    public Shape ProcessShape(in Shape theShape, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theOperations,
                                      ProgressRange theProgress = default)
     {
         if (theShape.IsNull)
@@ -76,14 +82,14 @@ public class XSAlgo_ShapeProcessor
             return theShape;
         }
         initializeContext(theShape);
-        return ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.Result() : theShape;
+        return global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.Result() : theShape;
     }
 
     /// <summary>
     /// As <see cref="ProcessShape"/>, without freezing the result (OCCT.NET, for STEPControl_ActorRead, decision 1273):
     /// a reader's working shapes are processed in place, as OCCT's, so that the items sharing them keep sharing them.
     /// </summary>
-    internal Shape InternalProcessShape(in Shape theShape, ShapeProcess.OperationsFlags theOperations,
+    internal Shape InternalProcessShape(in Shape theShape, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theOperations,
                                                ProgressRange theProgress = default)
     {
         if (theShape.IsNull)
@@ -91,7 +97,7 @@ public class XSAlgo_ShapeProcessor
             return theShape;
         }
         initializeContext(theShape);
-        return ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.InternalResult() : theShape;
+        return global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(myContext, theOperations, theProgress) ? myContext.InternalResult() : theShape;
     }
 
     /// <summary>As <see cref="MergeTransferInfo(Transfer_TransientProcess, int)"/>, without freezing the history's shapes (OCCT.NET, decision 1273).</summary>
@@ -105,7 +111,7 @@ public class XSAlgo_ShapeProcessor
     }
 
     /// <summary>Get the context of the last processing. Only valid after the ProcessShape() method was called.</summary>
-    public ShapeProcess_ShapeContext? GetContext()
+    public ShapeContext? GetContext()
     {
         return myContext;
     }
@@ -113,7 +119,7 @@ public class XSAlgo_ShapeProcessor
     // Initialize the context with the specified shape.
     private void initializeContext(in Shape theShape)
     {
-        myContext = new ShapeProcess_ShapeContext(theShape, null);
+        myContext = new ShapeContext(theShape, null);
         foreach (KeyValuePair<string, string> aParameterIter in myParameters)
         {
             myContext.ResourceManager().SetResource(aParameterIter.Key, aParameterIter.Value);
@@ -133,7 +139,7 @@ public class XSAlgo_ShapeProcessor
     }
 
     // Add messages from the specified shape to the transfer binder.
-    private static void addMessages(ShapeExtend_MsgRegistrator? theMessages, in Shape theShape, Transfer_Binder theBinder)
+    private static void addMessages(MsgRegistrator? theMessages, in Shape theShape, Transfer_Binder theBinder)
     {
         if (theMessages is null)
         {
@@ -157,7 +163,7 @@ public class XSAlgo_ShapeProcessor
     public static void MergeShapeTransferInfo(Transfer_TransientProcess theTransientProcess,
                                               NCollection_DataMap<Shape, Shape> theModifiedShapesMap,
                                               int theFirstTPItemIndex,
-                                              ShapeExtend_MsgRegistrator? theMessages)
+                                              MsgRegistrator? theMessages)
     {
         if (theModifiedShapesMap.IsEmpty())
         {
@@ -241,7 +247,7 @@ public class XSAlgo_ShapeProcessor
     /// </remarks>
     public static void MergeShapeTransferInfo(Transfer_FinderProcess theFinderProcess,
                                               NCollection_DataMap<Shape, Shape> theModifiedShapesMap,
-                                              ShapeExtend_MsgRegistrator? theMessages)
+                                              MsgRegistrator? theMessages)
     {
         if (theModifiedShapesMap.IsEmpty())
         {
@@ -326,15 +332,15 @@ public class XSAlgo_ShapeProcessor
     {
         Edge aResult = new Edge();
 
-        var anEdgeAnalyzer = new ShapeAnalysis_Edge();
+        var anEdgeAnalyzer = new EdgeAnalysis();
         if (!anEdgeAnalyzer.Curve3d(aSourceEdge, out Curve3D? aSourceGeomCurve, out double aStartParam, out double anEndParam, false))
         {
             return aResult;
         }
         Point3D aCurveStartPt = aSourceGeomCurve.Value(aStartParam);
         Point3D aCurveEndPt = aSourceGeomCurve.Value(anEndParam);
-        var anEdgeMaker = new BRepBuilderAPI_MakeEdge(aSourceGeomCurve, aCurveStartPt, aCurveEndPt, aStartParam, anEndParam);
-        var SBE = new ShapeBuild_Edge();
+        var anEdgeMaker = new MakeEdge(aSourceGeomCurve, aCurveStartPt, aCurveEndPt, aStartParam, anEndParam);
+        var SBE = new BuildEdgeBuilder();
         SBE.SetRange3d(anEdgeMaker.InternalEdge(), aStartParam, anEndParam);
         aResult = anEdgeMaker.InternalEdge(); // a working edge, not published
         return aResult;
@@ -356,7 +362,7 @@ public class XSAlgo_ShapeProcessor
     internal static bool CheckPCurve(in Edge theEdge, in Face theFace, double thePrecision, bool theIsSeam,
                                      bool theStdSameParameterMode)
     {
-        var anEdgeAnalyzer = new ShapeAnalysis_Edge();
+        var anEdgeAnalyzer = new EdgeAnalysis();
 
         // Retrieve pcurve and its parameters.
         if (!anEdgeAnalyzer.PCurve(theEdge, theFace, out Curve2D? aCurve2D, out double aCurve2DParam1, out double aCurve2DParam2, false))
@@ -377,7 +383,7 @@ public class XSAlgo_ShapeProcessor
         if (anEdgeSpanX / 8.0 > (aFaceSurfaceU2 / 6.0 - aFaceSurfaceU1 / 6.0)
             || anEdgeSpanY / 8.0 > (aFaceSurfaceV2 / 6.0 - aFaceSurfaceV1 / 6.0))
         {
-            new ShapeBuild_Edge().RemovePCurve(theEdge, theFace);
+            new BuildEdgeBuilder().RemovePCurve(theEdge, theFace);
             return false;
         }
 
@@ -396,7 +402,7 @@ public class XSAlgo_ShapeProcessor
         double aDist22 = aPV2.Distance(aCurve3DPoint2);
         if ((aDist11 > thePrecision) || (aDist22 > thePrecision))
         {
-            new ShapeBuild_Edge().RemovePCurve(theEdge, theFace);
+            new BuildEdgeBuilder().RemovePCurve(theEdge, theFace);
             return false;
         }
 
@@ -434,7 +440,7 @@ public class XSAlgo_ShapeProcessor
         }
 
         // call FixSP to see what it will do
-        var anEdgeFixer = new ShapeFix_Edge();
+        var anEdgeFixer = new EdgeFixer();
         anEdgeFixer.FixSameParameter(aTmpEdge);
         double aTolerance = Tool.Tolerance(aTmpEdge);
         bool aSameRangeFlag = Tool.SameRange(aTmpEdge);
@@ -500,11 +506,11 @@ public class XSAlgo_ShapeProcessor
     /// scope named by the static <paramref name="theScopeResourceName"/> (for example "read.step.sequence", which may
     /// hold "FromSTEP"). If the resource file isn't found, the statics' values are used instead.
     /// </summary>
-    public static (NCollection_DataMap<string, string>, ShapeProcess.OperationsFlags) ReadProcessingData(
+    public static (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) ReadProcessingData(
         string theFileResourceName, string theScopeResourceName, Interface_StaticSet theStatics)
     {
         string aFileName = theStatics.CVal(theFileResourceName);
-        var aContext = new ShapeProcess_ShapeContext(new Shape(), aFileName);
+        var aContext = new ShapeContext(new Shape(), aFileName);
         if (!aContext.ResourceManager().IsInitialized)
         {
             // If resource file wasn't found, use static values instead
@@ -514,7 +520,7 @@ public class XSAlgo_ShapeProcessor
 
         // Copy parameters to the result.
         var aResultParameters = new NCollection_DataMap<string, string>();
-        var aResultFlags = new ShapeProcess.OperationsFlags();
+        var aResultFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags();
         NCollection_DataMap<string, string> aMap = aContext.ResourceManager().GetMap();
         foreach (KeyValuePair<string, string> anIter in aMap)
         {
@@ -535,7 +541,7 @@ public class XSAlgo_ShapeProcessor
                 const string aSeparators = " \t,;";
                 while ((aToken = TCollection_AsciiString.Token(anIter.Value, aSeparators, aTokenCount)).Length != 0)
                 {
-                    (ShapeProcess.Operation, bool) anOperationFlag = ShapeProcess.ToOperationFlag(aToken);
+                    (global::Kerf.Engine.Healing.Process.ShapeProcess.Operation, bool) anOperationFlag = global::Kerf.Engine.Healing.Process.ShapeProcess.ToOperationFlag(aToken);
                     if (anOperationFlag.Item2)
                     {
                         aResultFlags = aResultFlags.With(anOperationFlag.Item1);
@@ -676,5 +682,5 @@ public class XSAlgo_ShapeProcessor
     // state) is left out (decision 1203): a reader reads the unit from its static set.
 
     private readonly NCollection_DataMap<string, string> myParameters; // Parameters to be used in the processing.
-    private ShapeProcess_ShapeContext? myContext;                      // Shape context.
+    private ShapeContext? myContext;                      // Shape context.
 }

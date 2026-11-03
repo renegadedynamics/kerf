@@ -1,5 +1,7 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -7,7 +9,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using Schematiq.Collections;
-using static Occt.BRepFill_ThruSectionErrorStatus;
+using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -21,7 +23,7 @@ public class BRepFill_CompatibleWiresTests
 {
     private static Wire Polygon(double z, double theAngle, double theRadius, int theNb, bool theClosed)
     {
-        BRepBuilderAPI_MakePolygon aP = new();
+        MakePolygon aP = new();
         for (int i = 0; i < theNb; i++)
         {
             double t = theClosed ? theAngle + 2 * Math.PI * i / theNb : theAngle + Math.PI * i / (theNb - 1);
@@ -82,9 +84,9 @@ public class BRepFill_CompatibleWiresTests
     [Fact]
     public void New_algorithm_is_not_done()
     {
-        BRepFill_CompatibleWires aCW = new();
-        Assert.False(aCW.IsDone());
-        Assert.Equal(BRepFill_ThruSectionErrorStatus_NotDone, aCW.GetStatus());
+        CompatibleWires aCW = new();
+        Assert.False(aCW.IsDone);
+        Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_NotDone, aCW.GetStatus());
         Assert.Empty(aCW.Shape());
     }
 
@@ -94,11 +96,11 @@ public class BRepFill_CompatibleWiresTests
     public void Closed_sections_with_different_edge_counts_get_as_many_edges(bool theWithRotation)
     {
         Wire aSquare = Polygon(0, 0.3, 2, 4, true), aTriangle = Polygon(3, 0.1, 1.5, 3, true), aHexagon = Polygon(6, 0.0, 2, 6, true);
-        BRepFill_CompatibleWires aCW = new(Seq(aSquare, aTriangle, aHexagon));
+        CompatibleWires aCW = new(Seq(aSquare, aTriangle, aHexagon));
         aCW.Perform(theWithRotation);
-        Assert.True(aCW.IsDone());
-        Assert.False(aCW.IsDegeneratedFirstSection());
-        Assert.False(aCW.IsDegeneratedLastSection());
+        Assert.True(aCW.IsDone);
+        Assert.False(aCW.IsDegeneratedFirstSection);
+        Assert.False(aCW.IsDegeneratedLastSection);
         ISchematiqList<Shape> aRes = aCW.Shape();
         Assert.Equal(3, aRes.Count);
         int aNb = NbEdges(aRes[0]);
@@ -132,9 +134,9 @@ public class BRepFill_CompatibleWiresTests
         Wire aW1 = Polygon(0, 0.0, 2, 5, true);
         Wire aW2 = Polygon(3, 2 * Math.PI * 2 / 5 + 0.05, 2, 5, true);
         aW2 = ShapeCasts.Wire(aW2.Reversed());
-        BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
+        CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.Perform();
-        Assert.True(aCW.IsDone());
+        Assert.True(aCW.IsDone);
         ISchematiqList<Shape> aRes = aCW.Shape();
         Assert.Equal(5, NbEdges(aRes[1]));
         // the result's edges are the caller's edges
@@ -161,10 +163,10 @@ public class BRepFill_CompatibleWiresTests
         Wire aW1 = Polygon(0, 0.0, 2, 3, false);
         Wire aW2 = Polygon(3, 0.0, 2, 4, false);
         aW2 = ShapeCasts.Wire(aW2.Reversed());
-        BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
+        CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.SetPercent(0.05);
         aCW.Perform();
-        Assert.True(aCW.IsDone());
+        Assert.True(aCW.IsDone);
         ISchematiqList<Shape> aRes = aCW.Shape();
         Assert.Equal(NbEdges(aRes[0]), NbEdges(aRes[1]));
         Assert.True(NbEdges(aRes[0]) >= 3);
@@ -191,20 +193,20 @@ public class BRepFill_CompatibleWiresTests
         {
             aSecs.Add(PointSection(new Point3D(0, 0, 6)));
         }
-        BRepFill_CompatibleWires aCW = new(Seq([.. aSecs]));
+        CompatibleWires aCW = new(Seq([.. aSecs]));
         aCW.Perform();
-        Assert.True(aCW.IsDone());
-        Assert.Equal(theFirst, aCW.IsDegeneratedFirstSection());
-        Assert.Equal(theLast, aCW.IsDegeneratedLastSection());
+        Assert.True(aCW.IsDone);
+        Assert.Equal(theFirst, aCW.IsDegeneratedFirstSection);
+        Assert.Equal(theLast, aCW.IsDegeneratedLastSection);
     }
 
     [Fact]
     public void Open_and_closed_sections_are_not_processed()
     {
-        BRepFill_CompatibleWires aCW = new(Seq(Polygon(0, 0, 2, 4, true), Polygon(3, 0, 2, 4, false)));
+        CompatibleWires aCW = new(Seq(Polygon(0, 0, 2, 4, true), Polygon(3, 0, 2, 4, false)));
         aCW.Perform();
-        Assert.False(aCW.IsDone());
-        Assert.Equal(BRepFill_ThruSectionErrorStatus_NotSameTopology, aCW.GetStatus());
+        Assert.False(aCW.IsDone);
+        Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_NotSameTopology, aCW.GetStatus());
     }
 
     [Fact]
@@ -215,7 +217,7 @@ public class BRepFill_CompatibleWiresTests
         Wire aW1 = Polygon(0, 0.0, 2, 4, true), aW2 = Polygon(3, 0.7, 2, 3, true);
         string Result(double? thePct)
         {
-            BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
+            CompatibleWires aCW = new(Seq(aW1, aW2));
             if (thePct is double p)
             {
                 aCW.SetPercent(p);
@@ -234,9 +236,9 @@ public class BRepFill_CompatibleWiresTests
         Wire aW1 = Polygon(0, 0.0, 2, 4, true), aW2 = Polygon(3, 0.4, 2, 3, true);
         Assert.True(aW1.TShape()!.IsFrozen);
         string t1 = Text(aW1), t2 = Text(aW2);
-        BRepFill_CompatibleWires aCW = new(Seq(aW1, aW2));
+        CompatibleWires aCW = new(Seq(aW1, aW2));
         aCW.Perform();
-        Assert.True(aCW.IsDone());
+        Assert.True(aCW.IsDone);
         Assert.Equal(t1, Text(aW1));
         Assert.Equal(t2, Text(aW2));
         // the 4-edge wire's edges were not cut (the triangle gets cut): the result holds the caller's edges

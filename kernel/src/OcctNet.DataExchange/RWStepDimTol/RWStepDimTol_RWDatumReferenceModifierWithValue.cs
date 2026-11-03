@@ -36,25 +36,25 @@ internal class RWStepDimTol_RWDatumReferenceModifierWithValue
 
         // own fields of DatumReferenceModifierWithValue
 
-        StepDimTol_DatumReferenceModifierType aModifierType = StepDimTol_CircularOrCylindrical;
-        if (data.ParamType(num, 1) == Interface_ParamEnum)
+        StepDimTol_DatumReferenceModifierType aModifierType = StepDimTol_DatumReferenceModifierType.StepDimTol_CircularOrCylindrical;
+        if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
             if (string.CompareOrdinal(text, ".CIRCULAR_OR_CYLINDRICAL.") == 0)
             {
-                aModifierType = StepDimTol_CircularOrCylindrical;
+                aModifierType = StepDimTol_DatumReferenceModifierType.StepDimTol_CircularOrCylindrical;
             }
             else if (string.CompareOrdinal(text, ".DISTANCE.") == 0)
             {
-                aModifierType = StepDimTol_Distance;
+                aModifierType = StepDimTol_DatumReferenceModifierType.StepDimTol_Distance;
             }
             else if (string.CompareOrdinal(text, ".PROJECTED.") == 0)
             {
-                aModifierType = StepDimTol_Projected;
+                aModifierType = StepDimTol_DatumReferenceModifierType.StepDimTol_Projected;
             }
             else if (string.CompareOrdinal(text, ".SPHERICAL.") == 0)
             {
-                aModifierType = StepDimTol_Spherical;
+                aModifierType = StepDimTol_DatumReferenceModifierType.StepDimTol_Spherical;
             }
             else
             {
@@ -82,16 +82,16 @@ internal class RWStepDimTol_RWDatumReferenceModifierWithValue
 
         switch (ent.ModifierType())
         {
-            case StepDimTol_CircularOrCylindrical:
+            case StepDimTol_DatumReferenceModifierType.StepDimTol_CircularOrCylindrical:
                 SW.SendEnum(".CIRCULAR_OR_CYLINDRICAL.");
                 break;
-            case StepDimTol_Distance:
+            case StepDimTol_DatumReferenceModifierType.StepDimTol_Distance:
                 SW.SendEnum(".DISTANCE.");
                 break;
-            case StepDimTol_Projected:
+            case StepDimTol_DatumReferenceModifierType.StepDimTol_Projected:
                 SW.SendEnum(".PROJECTED.");
                 break;
-            case StepDimTol_Spherical:
+            case StepDimTol_DatumReferenceModifierType.StepDimTol_Spherical:
                 SW.SendEnum(".SPHERICAL.");
                 break;
         }

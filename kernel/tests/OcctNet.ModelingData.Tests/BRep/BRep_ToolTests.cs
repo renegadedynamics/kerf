@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRep_Tool_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -20,12 +21,12 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class BRep_ToolTests
 {
-    private static Shape MakeBox() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape MakeBox() => new MakeBox(10.0, 20.0, 30.0).Shape();
 
     private static Edge FullCircleEdge() =>
         FullCircleEdge(new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0));
 
-    private static Edge FullCircleEdge(CircleCurve3D aCircle) => new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
+    private static Edge FullCircleEdge(CircleCurve3D aCircle) => new MakeEdge(aCircle).InternalEdge();
 
     [Fact]
     public void Pnt_FromVertex()
@@ -95,7 +96,7 @@ public class BRep_ToolTests
     [Fact]
     public void IsClosed_LineEdge()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0)).Edge();
+        Edge anEdge = new MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(10.0, 0.0, 0.0)).Edge();
         Assert.False(Tool.IsClosed(anEdge));
     }
 
@@ -115,7 +116,7 @@ public class BRep_ToolTests
         aPoles.SetValue(2, new Point3D(0.5, 0.25, 0.0));
         aPoles.SetValue(3, new Point3D(1.0, 0.0, 0.0));
         var aCurve = new BezierCurve3D(aPoles);
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(aCurve).InternalEdge();
+        Edge anEdge = new MakeEdge(aCurve).InternalEdge();
 
         const double THE_EDGE_FIRST = -0.000002673149646;
         const double THE_EDGE_LAST = 0.999997326850354;
@@ -152,8 +153,8 @@ public class BRep_ToolTests
     public void CurveOnPlane_ProjectsPeriodicEdgeBuiltFromEqualParameters()
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0);
-        var anEdgeMaker = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, 0.0);
-        Assert.True(anEdgeMaker.IsDone());
+        var anEdgeMaker = new MakeEdge(aCircle, 0.0, 0.0);
+        Assert.True(anEdgeMaker.IsDone);
         Edge anEdge = anEdgeMaker.Edge();
 
         Tool.Range(anEdge, out double aEdgeFirst, out double aEdgeLast);

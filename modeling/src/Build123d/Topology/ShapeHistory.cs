@@ -1,4 +1,8 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
@@ -29,7 +33,7 @@ public enum ShapeType
 /// unchanged), modified (rebuilt into one or more sub-shapes of the same kind), generating (a sub-shape of
 /// another kind was made from it, as a face is made from an edge by an extrusion) or removed. Booleans and
 /// <c>ShapeUpgrade_UnifySameDomain</c> hand over a complete record; other algorithms answer per sub-shape and
-/// <see cref="FromAlgorithm(BRepBuilderAPI_MakeShape, IEnumerable{Kerf.Topology.Shape}, Kerf.Topology.Shape)"/> collects those answers.
+/// <see cref="FromAlgorithm(MakeShape, IEnumerable{Kerf.Topology.Shape}, Kerf.Topology.Shape)"/> collects those answers.
 /// </para>
 /// <para>
 /// Records chain with <see cref="Merge"/>, so that after a fuse and a clean a face of the original input
@@ -82,7 +86,7 @@ public sealed class ShapeHistory
     // ---- Constructors ----
 
     /// <summary>The record a boolean operation (or splitter) kept while building.</summary>
-    public static ShapeHistory FromBoolean(BRepAlgoAPI_BuilderAlgo operation, IEnumerable<global::Kerf.Topology.Shape>? before = null,
+    public static ShapeHistory FromBoolean(BuilderAlgo operation, IEnumerable<global::Kerf.Topology.Shape>? before = null,
                                            IEnumerable<global::Kerf.Topology.Shape>? brought = null)
     {
         var history = operation.History();
@@ -90,7 +94,7 @@ public sealed class ShapeHistory
     }
 
     /// <summary>The record of a <c>Clean</c>.</summary>
-    public static ShapeHistory FromUnify(ShapeUpgrade_UnifySameDomain upgrader)
+    public static ShapeHistory FromUnify(UnifySameDomain upgrader)
     {
         var history = upgrader.History();
         return FromHistory(history);
@@ -105,7 +109,7 @@ public sealed class ShapeHistory
     /// modified into something that is. An algorithm that throws when asked about a kind it doesn't track
     /// (<c>BRepFilletAPI_MakeFillet2d</c> only answers for edges) is taken to have no answer for it.
     /// </remarks>
-    public static ShapeHistory FromAlgorithm(BRepBuilderAPI_MakeShape algorithm, IEnumerable<global::Kerf.Topology.Shape> inputs, global::Kerf.Topology.Shape result) =>
+    public static ShapeHistory FromAlgorithm(MakeShape algorithm, IEnumerable<global::Kerf.Topology.Shape> inputs, global::Kerf.Topology.Shape result) =>
         FromAlgorithm(s => algorithm.Modified(s), s => algorithm.Generated(s), inputs, result);
 
     internal static ShapeHistory FromAlgorithm(Func<global::Kerf.Topology.Shape, IEnumerable<global::Kerf.Topology.Shape>> modified,
@@ -136,7 +140,7 @@ public sealed class ShapeHistory
     /// the edges and vertices it merged through <c>ModifiedSubShape</c>; a face it dropped as a duplicate is
     /// neither, and is recorded as removed.
     /// </summary>
-    public static ShapeHistory FromSewing(BRepBuilderAPI_Sewing sewing, IEnumerable<global::Kerf.Topology.Shape> inputs)
+    public static ShapeHistory FromSewing(Sewing sewing, IEnumerable<global::Kerf.Topology.Shape> inputs)
     {
         var inputList = inputs.ToList();
         var history = new History();

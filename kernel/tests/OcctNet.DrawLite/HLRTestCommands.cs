@@ -1,13 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.HiddenLines;
+using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.HLRBRep_TypeOfResultingEdge;
+using static Kerf.Engine.HiddenLines.TypeOfResultingEdge;
 
 namespace OcctNet.DrawLite;
 
@@ -26,9 +31,9 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class HLRTestCommands
 {
-    private static readonly ConditionalWeakTable<DrawInterpreter, HLRBRep_Algo> s_hiders = new();
+    private static readonly ConditionalWeakTable<DrawInterpreter, HiddenLineAlgo> s_hiders = new();
 
-    private static HLRBRep_Algo Hider(DrawInterpreter theDI) => s_hiders.GetValue(theDI, static _ => new HLRBRep_Algo());
+    private static HiddenLineAlgo Hider(DrawInterpreter theDI) => s_hiders.GetValue(theDI, static _ => new HiddenLineAlgo());
 
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -57,7 +62,7 @@ internal static class HLRTestCommands
         });
         DrawCxx.Add(theInterpreter, "hdebug", static (i, di, _) =>
         {
-            HLRBRep_Algo aHider = Hider(i);
+            HiddenLineAlgo aHider = Hider(i);
             aHider.Debug(!aHider.Debug());
             di.Append(aHider.Debug() ? "debug\n" : "no debug\n");
             return 0;
@@ -76,19 +81,19 @@ internal static class HLRTestCommands
     }
 
     // HLRTest::GetProjector
-    private static bool GetProjector(DrawInterpreter theDI, string theName, out HLRAlgo_Projector P)
+    private static bool GetProjector(DrawInterpreter theDI, string theName, out AlgorithmProjector P)
     {
         if (theDI.GetDrawable(theName) is DrawHlrProjector aHP)
         {
             P = aHP.Projector;
             return true;
         }
-        P = new HLRAlgo_Projector();
+        P = new AlgorithmProjector();
         return false;
     }
 
     // HLRTest::GetOutLiner
-    private static HLRTopoBRep_OutLiner? GetOutLiner(DrawInterpreter theDI, string theName)
+    private static OutLiner? GetOutLiner(DrawInterpreter theDI, string theName)
         => theDI.GetDrawable(theName) is DrawHlrOutLiner anHS ? anHS.OutLiner : null;
 
     private static double Atof(string theText) => double.TryParse(theText, NumberStyles.Float, CultureInfo.InvariantCulture, out double aValue) ? aValue : 0.0;
@@ -124,7 +129,7 @@ internal static class HLRTestCommands
             anAx2 = new Frame3D(anOrigin, aNormal, aDX);
         }
 
-        HLRAlgo_Projector P = new(anAx2);
+        AlgorithmProjector P = new(anAx2);
         theDI.SetDrawable(a[1], new DrawHlrProjector(P));
         return 0;
     }
@@ -142,7 +147,7 @@ internal static class HLRTestCommands
             di.Append(name).Append(" is not a shape.\n");
             return 1;
         }
-        theDI.SetDrawable(a[1], new DrawHlrOutLiner(new HLRTopoBRep_OutLiner(S)));
+        theDI.SetDrawable(a[1], new DrawHlrOutLiner(new OutLiner(S)));
         return 0;
     }
 
@@ -159,19 +164,19 @@ internal static class HLRTestCommands
             nbIso = theDI.Atoi(a[3]);
         }
         string name1 = a[1];
-        HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name1);
+        OutLiner? HS = GetOutLiner(theDI, name1);
         if (HS is null)
         {
             di.Append(name1).Append(" is not an OutLiner.\n");
             return 1;
         }
         string name2 = a[2];
-        if (!GetProjector(theDI, name2, out HLRAlgo_Projector P))
+        if (!GetProjector(theDI, name2, out AlgorithmProjector P))
         {
             di.Append(name2).Append(" is not a projector.\n");
             return 1;
         }
-        NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         HS.Fill(P, MST, nbIso);
         return 0;
     }
@@ -184,7 +189,7 @@ internal static class HLRTestCommands
         }
         string name1 = a[1];
         string name2 = a[2];
-        HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name2);
+        OutLiner? HS = GetOutLiner(theDI, name2);
         if (HS is null)
         {
             di.Append(name2).Append(" is not an OutLiner.\n");
@@ -202,7 +207,7 @@ internal static class HLRTestCommands
         }
         string name1 = a[1];
         string name2 = a[2];
-        HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name2);
+        OutLiner? HS = GetOutLiner(theDI, name2);
         if (HS is null)
         {
             di.Append(name2).Append(" is not an OutLiner.\n");
@@ -224,7 +229,7 @@ internal static class HLRTestCommands
             return 1;
         }
         string name1 = a[1];
-        HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name1);
+        OutLiner? HS = GetOutLiner(theDI, name1);
         if (HS is null)
         {
             di.Append(name1).Append(" is not an OutLiner.\n");
@@ -236,12 +241,12 @@ internal static class HLRTestCommands
 
     private static int Hrem(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        HLRBRep_Algo hider = Hider(theDI);
+        HiddenLineAlgo hider = Hider(theDI);
         if (a.Count > 1)
         {
             string name = a[1];
             int index;
-            HLRTopoBRep_OutLiner? HS = GetOutLiner(theDI, name);
+            OutLiner? HS = GetOutLiner(theDI, name);
             if (HS is null)
             {
                 Shape S = theDI.GetShape(name);
@@ -274,7 +279,7 @@ internal static class HLRTestCommands
         }
         else
         {
-            while (hider.NbShapes() > 0)
+            while (hider.ShapeCount > 0)
             {
                 hider.Remove(1);
             }
@@ -290,7 +295,7 @@ internal static class HLRTestCommands
             return 1;
         }
         string name = a[1];
-        if (!GetProjector(theDI, name, out HLRAlgo_Projector P))
+        if (!GetProjector(theDI, name, out AlgorithmProjector P))
         {
             di.Append(name).Append(" is not a projector.\n");
             return 1;
@@ -307,7 +312,7 @@ internal static class HLRTestCommands
             string name = a[1];
             S = theDI.GetShape(name);
         }
-        HLRBRep_HLRToShape HS = new(Hider(theDI));
+        HlrToShape HS = new(Hider(theDI));
 
         if (S.IsNull)
         {
@@ -348,7 +353,7 @@ internal static class HLRTestCommands
     }
 
     // reflectlines, hlrin3d and hlrin2d: HLRAppli_ReflectLines for the view direction (a[3], a[4], a[5])
-    private static HLRAppli_ReflectLines? MakeReflector(DrawInterpreter theDI, IReadOnlyList<string> a, bool theEye)
+    private static ReflectLines? MakeReflector(DrawInterpreter theDI, IReadOnlyList<string> a, bool theEye)
     {
         Shape aShape = theDI.GetShape(a[2]);
         if (aShape.IsNull)
@@ -374,7 +379,7 @@ internal static class HLRTestCommands
             aDX = theAxes.XDirection();
         }
 
-        HLRAppli_ReflectLines Reflector = new(aShape);
+        ReflectLines Reflector = new(aShape);
         Reflector.SetAxes(aNormal.X(), aNormal.Y(), aNormal.Z(), anOrigin.X(), anOrigin.Y(), anOrigin.Z(), aDX.X(), aDX.Y(),
                           aDX.Z());
         Reflector.Perform();
@@ -387,7 +392,7 @@ internal static class HLRTestCommands
         {
             return 1;
         }
-        HLRAppli_ReflectLines? Reflector = MakeReflector(theDI, a, false);
+        ReflectLines? Reflector = MakeReflector(theDI, a, false);
         if (Reflector is null)
         {
             return 1;
@@ -403,7 +408,7 @@ internal static class HLRTestCommands
         {
             return 1;
         }
-        HLRAppli_ReflectLines? Reflector = MakeReflector(theDI, a, theEye);
+        ReflectLines? Reflector = MakeReflector(theDI, a, theEye);
         if (Reflector is null)
         {
             return 1;
@@ -411,9 +416,9 @@ internal static class HLRTestCommands
 
         Shape[] aParts =
         [
-            Reflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, theIn3d),
-            Reflector.GetCompoundOf3dEdges(HLRBRep_OutLine, true, theIn3d),
-            Reflector.GetCompoundOf3dEdges(HLRBRep_Rg1Line, true, theIn3d),
+            Reflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, true, theIn3d),
+            Reflector.GetCompoundOf3dEdges(TypeOfResultingEdge.OutLine, true, theIn3d),
+            Reflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Rg1Line, true, theIn3d),
         ];
         theDI.SetShape(a[1], Builder.MakeCompound(aParts.Where(s => !s.IsNull).ToArray()));
         return 0;
@@ -446,11 +451,11 @@ internal static class HLRTestCommands
         Shape aCopy = DrawShapeCopy.Copy(S);
         if (n == 2)
         {
-            Ok = BRepLib.BuildCurves3d(aCopy);
+            Ok = BrepLibrary.BuildCurves3d(aCopy);
         }
         else
         {
-            Ok = BRepLib.BuildCurves3d(aCopy, theDI.Atof(a[2]));
+            Ok = BrepLibrary.BuildCurves3d(aCopy, theDI.Atof(a[2]));
         }
         theDI.SetShape(a[1], aCopy);
         if (!Ok)
@@ -463,10 +468,10 @@ internal static class HLRTestCommands
 }
 
 /// <summary>A projector (HLRTest_Projector): <c>hprj</c>'s value.</summary>
-public sealed class DrawHlrProjector(in HLRAlgo_Projector theProjector) : DrawDrawable
+public sealed class DrawHlrProjector(in AlgorithmProjector theProjector) : DrawDrawable
 {
     /// <summary>The projector.</summary>
-    public HLRAlgo_Projector Projector { get; } = theProjector;
+    public AlgorithmProjector Projector { get; } = theProjector;
 
     public override string TypeName => "HLRTest_Projector";
 
@@ -515,10 +520,10 @@ public sealed class DrawHlrProjector(in HLRAlgo_Projector theProjector) : DrawDr
 }
 
 /// <summary>An outliner (HLRTest_OutLiner): <c>houtl</c>'s value, a working object the HLR commands fill and load.</summary>
-public sealed class DrawHlrOutLiner(HLRTopoBRep_OutLiner theOutLiner) : DrawDrawable
+public sealed class DrawHlrOutLiner(OutLiner theOutLiner) : DrawDrawable
 {
     /// <summary>The outliner.</summary>
-    public HLRTopoBRep_OutLiner OutLiner { get; } = theOutLiner;
+    public OutLiner OutLiner { get; } = theOutLiner;
 
     public override string TypeName => "HLRTest_OutLiner";
 
@@ -532,5 +537,5 @@ public sealed class DrawHlrOutLiner(HLRTopoBRep_OutLiner theOutLiner) : DrawDraw
     }
 
     /// <summary>A new outliner on the original shape, as HLRTest_OutLiner::Copy.</summary>
-    public override DrawDrawable Copy() => new DrawHlrOutLiner(new HLRTopoBRep_OutLiner(OutLiner.OriginalShape()));
+    public override DrawDrawable Copy() => new DrawHlrOutLiner(new OutLiner(OutLiner.OriginalShape()));
 }

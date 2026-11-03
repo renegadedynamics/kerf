@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -55,13 +58,13 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         switch (theKind)
         {
             case 0:
-                BRepGProp.VolumeProperties(theShape, aProps);
+                MassPropertiesBuilder.VolumeProperties(theShape, aProps);
                 break;
             case 1:
-                BRepGProp.SurfaceProperties(theShape, aProps);
+                MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
                 break;
             default:
-                BRepGProp.LinearProperties(theShape, aProps);
+                MassPropertiesBuilder.LinearProperties(theShape, aProps);
                 break;
         }
         Point3D aG = aProps.CentreOfMass();
@@ -104,7 +107,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
         // as ShapeProcess's DropSmallSolids operator
-        var aFSS = new ShapeFix_FixSmallSolid();
+        var aFSS = new FixSmallSolidFixer();
         if (theVolume >= 0)
         {
             aFSS.SetVolumeThreshold(theVolume);
@@ -113,7 +116,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         {
             aFSS.SetWidthFactorThreshold(theWidth);
         }
-        var aReShape = new ShapeBuild_ReShape();
+        var aReShape = new ReShapeBuilder();
         Shape aResult = theMerge ? aFSS.Merge(aShape, aReShape) : aFSS.Remove(aShape, aReShape);
 
         aSnap.AssertUnchanged(aShape);
@@ -145,7 +148,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
     }
 
     private static Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
-        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
+        new MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     private static Compound Compound(params Shape[] theShapes)
     {
@@ -168,38 +171,38 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         Compound aShape = Compound(aBig, aThin);
 
         // no threshold: nothing done, the input itself
-        var aFSS = new ShapeFix_FixSmallSolid();
-        Assert.True(aFSS.Remove(aShape, new ShapeBuild_ReShape()).IsSame(aShape));
+        var aFSS = new FixSmallSolidFixer();
+        Assert.True(aFSS.Remove(aShape, new ReShapeBuilder()).IsSame(aShape));
 
         // volume only
         aFSS.SetVolumeThreshold(100);
-        Shape aResult = aFSS.Remove(aShape, new ShapeBuild_ReShape());
+        Shape aResult = aFSS.Remove(aShape, new ReShapeBuilder());
         Assert.Equal(1, Count(aResult, ShapeType.Solid));
         Assert.True(Count(aResult, ShapeType.Face) == 6);
 
         // both thresholds in mode 0: the thin solid must pass both (width factor 0.098 < 1, volume 10 < 100)
         aFSS.SetWidthFactorThreshold(0.05);
-        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
+        Assert.Equal(2, Count(aFSS.Remove(aShape, new ReShapeBuilder()), ShapeType.Solid));
         aFSS.SetWidthFactorThreshold(1);
-        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
+        Assert.Equal(1, Count(aFSS.Remove(aShape, new ReShapeBuilder()), ShapeType.Solid));
 
         // mode 2: volume only; mode 1: width only
         aFSS.SetWidthFactorThreshold(0.05);
         aFSS.SetFixMode(2);
-        Assert.Equal(1, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
+        Assert.Equal(1, Count(aFSS.Remove(aShape, new ReShapeBuilder()), ShapeType.Solid));
         aFSS.SetFixMode(1);
-        Assert.Equal(2, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
+        Assert.Equal(2, Count(aFSS.Remove(aShape, new ReShapeBuilder()), ShapeType.Solid));
         aFSS.SetWidthFactorThreshold(5); // both solids are thinner than that
-        Assert.Equal(0, Count(aFSS.Remove(aShape, new ShapeBuild_ReShape()), ShapeType.Solid));
+        Assert.Equal(0, Count(aFSS.Remove(aShape, new ReShapeBuilder()), ShapeType.Solid));
         aFSS.SetFixMode(7); // out of range: 0
         aFSS.SetVolumeThreshold(-1); // cleared
         aFSS.SetWidthFactorThreshold(-1);
-        Assert.True(aFSS.Remove(aShape, new ShapeBuild_ReShape()).IsSame(aShape));
+        Assert.True(aFSS.Remove(aShape, new ReShapeBuilder()).IsSame(aShape));
 
         // a face or a shell isn't a valid input
         Shape aFace = new Explorer(aBig, ShapeType.Face).Current();
         aFSS.SetVolumeThreshold(1e9);
-        Assert.True(aFSS.Remove(aFace, new ShapeBuild_ReShape()).IsSame(aFace));
+        Assert.True(aFSS.Remove(aFace, new ReShapeBuilder()).IsSame(aFace));
     }
 
     [Fact]
@@ -213,7 +216,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         for (var anExp = new Explorer(aBig, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
             {
                 aBigFace = ShapeCasts.Face(anExp.Current());
@@ -222,7 +225,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         for (var anExp = new Explorer(aSmall, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
             {
                 aSmallFace = ShapeCasts.Face(anExp.Current());
@@ -234,10 +237,10 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         Compound aShape = Compound(aBig, aSmallShared);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
-        var aFSS = new ShapeFix_FixSmallSolid();
+        var aFSS = new FixSmallSolidFixer();
         aFSS.SetFixMode(2);
         aFSS.SetVolumeThreshold(200);
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         Shape aResult = aFSS.Merge(aShape, aContext);
 
         aSnap.AssertUnchanged(aShape);
@@ -246,7 +249,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         // the merged shell: 5 + 5 faces, the shared one dropped
         Assert.Equal(10, Count(aResult, ShapeType.Face));
         var aProps2 = new Properties();
-        BRepGProp.VolumeProperties(aResult, aProps2);
+        MassPropertiesBuilder.VolumeProperties(aResult, aProps2);
         Assert.Equal(1100, aProps2.Mass(), 6);
         Assert.True(aContext.IsRecorded(new Explorer(aSmallShared, ShapeType.Solid).Current()));
     }

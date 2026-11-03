@@ -1,12 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -44,7 +48,7 @@ internal static class ShapeFixShapes
     public static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -141,7 +145,7 @@ internal static class ShapeFixShapes
 
     public static bool IsOriented(in Shape theShape)
     {
-        var aSas = new ShapeAnalysis_Shell();
+        var aSas = new ShellAnalysis();
         return !aSas.CheckOrientedShells(theShape, false);
     }
 }
@@ -153,9 +157,9 @@ internal static class ShapeFixShapes
 /// </summary>
 public class ShapeFix_ShellTests
 {
-    private static ShapeFix_Shell Fixer()
+    private static ShellFixer Fixer()
     {
-        var aFix = new ShapeFix_Shell();
+        var aFix = new ShellFixer();
         aFix.FixFaceMode() = 0;
         return aFix;
     }
@@ -168,11 +172,11 @@ public class ShapeFix_ShellTests
         Assert.False(ShapeFixShapes.IsOriented(aShell));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
-        Assert.True(aFix.Status(ShapeExtend_DONE2));
-        Assert.Equal(1, aFix.NbShells());
+        Assert.True(aFix.Status(ExtendStatus.DONE2));
+        Assert.Equal(1, aFix.ShellCount);
 
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aShell);
@@ -198,7 +202,7 @@ public class ShapeFix_ShellTests
     public void ValidShell_NothingDone_TheCallersFaces()
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(), -1, true)));
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.False(aFix.Perform());
         // as OCCT's, the orientation fix rebuilds the shell even when nothing is done (and records nothing): the
@@ -220,7 +224,7 @@ public class ShapeFix_ShellTests
         // a closed box shell flagged open: the orientation fix sets the flag, on a copy of the shell
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(), -1, false)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         aFix.Perform();
         Shape aResult = aFix.Shape();
@@ -243,10 +247,10 @@ public class ShapeFix_ShellTests
         List<Shape> aFaces = ShapeFixShapes.BoxFaces();
         List<Shape> anOther = ShapeFixShapes.BoxFaces(5.0);
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Shell(aFaces.Concat(anOther), 7)));
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
-        Assert.Equal(2, aFix.NbShells());
+        Assert.Equal(2, aFix.ShellCount);
         Shape aResult = aFix.Shape();
         Assert.Equal(ShapeType.Compound, aResult.ShapeType());
         Assert.Equal(2, ShapeFixShapes.Count(aResult, ShapeType.Shell));
@@ -259,17 +263,17 @@ public class ShapeFix_ShellTests
     public void MultisharedEdge_KeepsTheFinApart()
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.ShellWithFin()));
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
         Shape aResult = aFix.Shape();
         Assert.Equal(ShapeType.Compound, aResult.ShapeType());
-        Assert.Equal(2, aFix.NbShells());
+        Assert.Equal(2, aFix.ShellCount);
         Assert.Equal(7, ShapeFixShapes.Count(aResult, ShapeType.Face));
 
         // without the multiconnexity, as one shell (non-manifold)
         var aFix2 = Fixer();
-        Assert.True(aFix2.FixFaceOrientation(aShell, false, false) || aFix2.NbShells() == 1);
+        Assert.True(aFix2.FixFaceOrientation(aShell, false, false) || aFix2.ShellCount == 1);
         Assert.Equal(7, ShapeFixShapes.Count(aFix2.Shape(), ShapeType.Face));
     }
 
@@ -277,7 +281,7 @@ public class ShapeFix_ShellTests
     public void NonManifoldFlag_MakesOneShell()
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.ShellWithFin()));
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.SetNonManifoldFlag(true);
         aFix.Init(aShell);
         aFix.Perform();
@@ -290,10 +294,10 @@ public class ShapeFix_ShellTests
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Moebius()));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.False(aFix.Perform()); // OCCT: the fail status isn't DONE2, so Perform says nothing was done
-        Assert.True(aFix.Status(ShapeExtend_FAIL));
+        Assert.True(aFix.Status(ExtendStatus.Fail));
         Assert.True(aFix.FixFaceOrientation(aShell));
         Compound anErr = aFix.ErrorFaces();
         Assert.True(anErr.TShape()!.IsFrozen);
@@ -311,7 +315,7 @@ public class ShapeFix_ShellTests
     {
         List<Shape> aFaces = ShapeFixShapes.BoxFaces();
         Shell aShell = ShapeFixShapes.Shell(aFaces, 0, true);
-        ShapeFix_Shell aFix = Fixer();
+        ShellFixer aFix = Fixer();
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
         Shape aResult = aFix.InternalShape();
@@ -331,9 +335,9 @@ public class ShapeFix_ShellTests
 /// </summary>
 public class ShapeFix_SolidTests
 {
-    private static ShapeFix_Solid Fixer()
+    private static SolidFixer Fixer()
     {
-        var aFix = new ShapeFix_Solid();
+        var aFix = new SolidFixer();
         aFix.FixShellTool().FixFaceMode() = 0;
         return aFix;
     }
@@ -343,10 +347,10 @@ public class ShapeFix_SolidTests
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(), -1, true).Reversed()));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
-        var aFix = new ShapeFix_Solid();
+        var aFix = new SolidFixer();
         Solid aSolid = aFix.SolidFromShell(aShell);
         aSnap.AssertUnchanged(aShell);
-        Assert.True(aFix.Status(ShapeExtend_DONE2));
+        Assert.True(aFix.Status(ExtendStatus.DONE2));
         Assert.True(aSolid.TShape()!.IsFrozen);
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aSolid), 9);
         // the shell is the caller's
@@ -357,9 +361,9 @@ public class ShapeFix_SolidTests
     public void SolidFromShell_GoodShell_NothingReversed()
     {
         Shell aShell = ShapeCasts.Shell(TestShapes.Frozen((Shape)ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(), -1, true)));
-        var aFix = new ShapeFix_Solid();
+        var aFix = new SolidFixer();
         Solid aSolid = aFix.SolidFromShell(aShell);
-        Assert.False(aFix.Status(ShapeExtend_DONE2));
+        Assert.False(aFix.Status(ExtendStatus.DONE2));
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aSolid), 9);
         Assert.Equal(Forward, new Iterator(aSolid).Value().Orientation());
     }
@@ -372,7 +376,7 @@ public class ShapeFix_SolidTests
         Assert.True(ShapeFixShapes.Volume(aSolid) < 0);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSolid);
 
-        ShapeFix_Solid aFix = Fixer();
+        SolidFixer aFix = Fixer();
         aFix.Init(aSolid);
         aFix.Perform();
         Shape aResult = aFix.Shape();
@@ -392,7 +396,7 @@ public class ShapeFix_SolidTests
     public void Perform_ValidSolid_GivesTheInput()
     {
         Solid aSolid = TestShapes.Frozen(TestShapes.Box(10, 10, 10));
-        ShapeFix_Solid aFix = Fixer();
+        SolidFixer aFix = Fixer();
         aFix.Init(aSolid);
         aFix.Perform();
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), aSolid.TShape()));
@@ -405,13 +409,13 @@ public class ShapeFix_SolidTests
         aFaces.RemoveAt(1);
         Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(ShapeFixShapes.Shell(aFaces)));
 
-        ShapeFix_Solid aFix = Fixer();
+        SolidFixer aFix = Fixer();
         aFix.Init(aSolid);
         Assert.True(aFix.Perform());
-        Assert.True(aFix.Status(ShapeExtend_DONE3));
+        Assert.True(aFix.Status(ExtendStatus.DONE3));
         Assert.Equal(ShapeType.Shell, aFix.Shape().ShapeType());
 
-        ShapeFix_Solid aFix2 = Fixer();
+        SolidFixer aFix2 = Fixer();
         aFix2.CreateOpenSolidMode() = true;
         aFix2.Init(aSolid);
         aFix2.Perform();
@@ -424,9 +428,9 @@ public class ShapeFix_SolidTests
     {
         // an outer box and an inner box, both outward: the inner one is a hole and is reversed
         Shell anOuter = ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(10.0), -1, true);
-        Shape anInner = new BRepPrimAPI_MakeBox(new Point3D(2, 2, 2), 4, 4, 4).Shell();
+        Shape anInner = new MakeBox(new Point3D(2, 2, 2), 4, 4, 4).Shell();
         Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(anOuter, anInner));
-        ShapeFix_Solid aFix = Fixer();
+        SolidFixer aFix = Fixer();
         aFix.Init(aSolid);
         aFix.Perform();
         Shape aResult = aFix.Shape();
@@ -438,9 +442,9 @@ public class ShapeFix_SolidTests
     public void Perform_TwoDisjointShells_GiveTwoSolids()
     {
         Shell aBox1 = ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(10.0), -1, true);
-        Shape aBox2 = new BRepPrimAPI_MakeBox(new Point3D(20, 0, 0), 4, 4, 4).Shell();
+        Shape aBox2 = new MakeBox(new Point3D(20, 0, 0), 4, 4, 4).Shell();
         Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(aBox1, aBox2));
-        ShapeFix_Solid aFix = Fixer();
+        SolidFixer aFix = Fixer();
         aFix.Init(aSolid);
         aFix.Perform();
         Shape aResult = aFix.Shape();

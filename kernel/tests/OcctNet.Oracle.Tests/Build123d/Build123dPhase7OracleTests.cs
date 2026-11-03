@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -506,11 +511,11 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
 
     private static Shape PFix(in Shape theShape)
     {
-        if (new BRepCheck_Analyzer(theShape).IsValid())
+        if (new Analyzer(theShape).IsValid())
         {
             return theShape;
         }
-        var aFix = new ShapeFix_Shape(new BRepBuilderAPI_Copy(theShape, true, false).Shape());
+        var aFix = new ShapeFixer(new Copy(theShape, true, false).Shape());
         aFix.Perform();
         return aFix.Shape();
     }
@@ -541,7 +546,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
             }
         }
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aSolid, aProps);
+        MassPropertiesBuilder.VolumeProperties(aSolid, aProps);
         return aProps.Mass() < 0 ? aSolid.Reversed() : aSolid;
     }
 
@@ -555,7 +560,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                 {
                     Shell aShell1 = ShapeCasts.Shell(PFirst(theOps[0], ShapeType.Shell));
                     Shell aShell2 = ShapeCasts.Shell(PFirst(theOps[1], ShapeType.Shell));
-                    var aMaker = theCall.Args.Value > 0 ? new BRepBuilderAPI_MakeSolid(aShell1, aShell2) : new BRepBuilderAPI_MakeSolid(aShell2, aShell1);
+                    var aMaker = theCall.Args.Value > 0 ? new MakeSolid(aShell1, aShell2) : new MakeSolid(aShell2, aShell1);
                     return (null, "", PFix(aMaker.Shape()));
                 }
                 case P7Post.Offset3D:
@@ -564,14 +569,14 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                     return (null, "", PFix(PForward(theOps[0])));
                 case P7Post.Clean:
                 {
-                    var aU = new ShapeUpgrade_UnifySameDomain(theOps[0], true, true, true);
+                    var aU = new UnifySameDomain(theOps[0], true, true, true);
                     aU.AllowInternalEdges(false);
                     aU.Build();
                     return (null, "", aU.Shape());
                 }
                 case P7Post.Validity:
                 {
-                    var aCheck = new BRepCheck_Analyzer(theOps[0]);
+                    var aCheck = new Analyzer(theOps[0]);
                     aCheck.SetParallel(true);
                     return (null, $"valid={aCheck.IsValid()}", null);
                 }
@@ -586,7 +591,7 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
                             aSides.AddRange(aFaces);
                             continue;
                         }
-                        var aSewing = new BRepBuilderAPI_Sewing(Build123dTolerance);
+                        var aSewing = new Sewing(Build123dTolerance);
                         aFaces.ForEach(f => aSewing.Add(f));
                         aSewing.Perform();
                         aSides.Add(aSewing.SewedShape());

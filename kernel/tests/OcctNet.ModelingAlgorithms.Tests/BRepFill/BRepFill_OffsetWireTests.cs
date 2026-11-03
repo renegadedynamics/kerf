@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
@@ -22,7 +25,7 @@ public class BRepFill_OffsetWireTests
 {
     private static Wire Polygon(bool theClosed, params double[] theXY)
     {
-        BRepBuilderAPI_MakePolygon aMP = new();
+        MakePolygon aMP = new();
         for (int i = 0; i < theXY.Length; i += 2)
         {
             aMP.Add(new Point3D(theXY[i], theXY[i + 1], 0));
@@ -52,7 +55,7 @@ public class BRepFill_OffsetWireTests
     private static double Length(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.LinearProperties(theShape, aProps);
+        MassPropertiesBuilder.LinearProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -70,12 +73,12 @@ public class BRepFill_OffsetWireTests
     [InlineData(global::Kerf.Geometry.JoinKind.Arc, 2.5, 20.0)]
     public void Parallel_inside_a_square(global::Kerf.Geometry.JoinKind theJoin, double theOffset, double theLength)
     {
-        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
+        Face aFace = Frozen(new MakeFace(Square(), true).Face());
         string aText = Text(aFace);
 
-        BRepFill_OffsetWire anOW = new(aFace, theJoin);
+        OffsetWire anOW = new(aFace, theJoin);
         anOW.Perform(theOffset);
-        Assert.True(anOW.IsDone());
+        Assert.True(anOW.IsDone);
         Assert.Equal(theJoin, anOW.JoinType());
         Assert.False(anOW.InternalShape().TShape()!.IsFrozen);
         Shape aResult = anOW.Shape();
@@ -99,15 +102,15 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Parallel_inside_a_holed_face_and_too_far_inside()
     {
-        BRepBuilderAPI_MakeFace aMaker = new(Square(20), true);
+        MakeFace aMaker = new(Square(20), true);
         aMaker.Add(ShapeCasts.Wire(Polygon(true, 8, 8, 12, 8, 12, 12, 8, 12).Reversed()));
         Face aFace = Frozen(aMaker.Face());
         string aText = Text(aFace);
 
         // inward from both wires: a square 16 wide and one around the hole, rounded
-        BRepOffsetAPI_MakeOffset anOffset = new(aFace);
+        MakeWireOffset anOffset = new(aFace);
         anOffset.Perform(-2.0);
-        Assert.True(anOffset.IsDone());
+        Assert.True(anOffset.IsDone);
         Shape aResult = anOffset.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aResult, ShapeType.Wire));
@@ -115,7 +118,7 @@ public class BRepFill_OffsetWireTests
 
         // too far: the parallels vanish, an empty result that is done (as natively)
         anOffset.Perform(-5.0);
-        Assert.True(anOffset.IsDone());
+        Assert.True(anOffset.IsDone);
         Assert.Equal(0, Count(anOffset.Shape(), ShapeType.Edge));
         Assert.Equal(aText, Text(aFace));
     }
@@ -123,11 +126,11 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Circle_is_offset_directly()
     {
-        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
-        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(aCircle).Wire(), true).Face());
-        BRepFill_OffsetWire anOW = new(aFace);
+        Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
+        Face aFace = Frozen(new MakeFace(new MakeWire(aCircle).Wire(), true).Face());
+        OffsetWire anOW = new(aFace);
         anOW.Perform(2.0);
-        Assert.True(anOW.IsDone());
+        Assert.True(anOW.IsDone);
         Assert.Equal(2 * Math.PI * 3, Length(anOW.Shape()), 1.0e-9);
         anOW.Perform(-2.0);
         Assert.Equal(2 * Math.PI * 7, Length(anOW.Shape()), 1.0e-9);
@@ -136,13 +139,13 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Zero_offset_gives_the_spine_at_the_altitude()
     {
-        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
-        BRepFill_OffsetWire anOW = new(aFace);
+        Face aFace = Frozen(new MakeFace(Square(), true).Face());
+        OffsetWire anOW = new(aFace);
         anOW.Perform(0.0, 3.0);
-        Assert.True(anOW.IsDone());
+        Assert.True(anOW.IsDone);
         Assert.Equal(40.0, Length(anOW.Shape()), 1.0e-9);
         Box aBox = new();
-        BRepBndLib.Add(anOW.Shape(), ref aBox);
+        Bounds.Add(anOW.Shape(), ref aBox);
         aBox.Get(out _, out _, out double aZMin, out _, out _, out double aZMax);
         Assert.Equal(3.0, aZMin, 1.0e-6);
         Assert.Equal(3.0, aZMax, 1.0e-6);
@@ -156,9 +159,9 @@ public class BRepFill_OffsetWireTests
         Wire aWire = Polygon(false, 0, 0, 10, 0, 10, 10);
         aWire.TShape()!.FreezeGraph();
         string aText = Text(aWire);
-        BRepOffsetAPI_MakeOffset anOffset = new(aWire, global::Kerf.Geometry.JoinKind.Arc, theIsOpenResult);
+        MakeWireOffset anOffset = new(aWire, global::Kerf.Geometry.JoinKind.Arc, theIsOpenResult);
         anOffset.Perform(1.0);
-        Assert.True(anOffset.IsDone());
+        Assert.True(anOffset.IsDone);
         Shape aResult = anOffset.Shape();
         Assert.Equal(1, Count(aResult, ShapeType.Wire));
         if (theIsOpenResult)
@@ -180,19 +183,19 @@ public class BRepFill_OffsetWireTests
     {
         Wire aWire = Polygon(true, 0, 0, 10, 0, 10, 4, 4, 4, 4, 10, 0, 10);
         aWire.TShape()!.FreezeGraph();
-        BRepOffsetAPI_MakeOffset aReused = new(aWire, global::Kerf.Geometry.JoinKind.Intersection);
+        MakeWireOffset aReused = new(aWire, global::Kerf.Geometry.JoinKind.Intersection);
         foreach (double anOffset in new[] { 1.0, -1.0, 2.0, -0.5 })
         {
             aReused.Perform(anOffset);
-            BRepOffsetAPI_MakeOffset aFresh = new(aWire, global::Kerf.Geometry.JoinKind.Intersection);
+            MakeWireOffset aFresh = new(aWire, global::Kerf.Geometry.JoinKind.Intersection);
             aFresh.Perform(anOffset);
             Assert.Equal(Length(aFresh.Shape()), Length(aReused.Shape()), 1.0e-12);
         }
 
         // repeated runs write the same text
-        BRepOffsetAPI_MakeOffset aFirst = new(aWire);
+        MakeWireOffset aFirst = new(aWire);
         aFirst.Perform(1.5);
-        BRepOffsetAPI_MakeOffset aSecond = new(aWire);
+        MakeWireOffset aSecond = new(aWire);
         aSecond.Perform(1.5);
         Assert.Equal(Text(aFirst.Shape()), Text(aSecond.Shape()));
     }
@@ -200,8 +203,8 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Generated_lists_the_parallels_of_the_spine_edges()
     {
-        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(Square(), true).Face());
-        BRepOffsetAPI_MakeOffset anOffset = new(aFace);
+        Face aFace = Frozen(new MakeFace(Square(), true).Face());
+        MakeWireOffset anOffset = new(aFace);
         anOffset.Perform(1.0);
         Shape aResult = anOffset.Shape();
         NCollection_IndexedMap<Shape> aResultEdges = new(ShapeHasher.Instance);
@@ -222,11 +225,11 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Approximation_and_ConvertFace()
     {
-        Edge anEllipse = new BRepBuilderAPI_MakeEdge(new Ellipse3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10, 5)).Edge();
-        Face aFace = Frozen(new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeWire(anEllipse).Wire(), true).Face());
+        Edge anEllipse = new MakeEdge(new Ellipse3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10, 5)).Edge();
+        Face aFace = Frozen(new MakeFace(new MakeWire(anEllipse).Wire(), true).Face());
         string aText = Text(aFace);
 
-        Face aConverted = BRepOffsetAPI_MakeOffset.ConvertFace(aFace, 0.1);
+        Face aConverted = MakeWireOffset.ConvertFace(aFace, 0.1);
         Assert.True(aConverted.TShape()!.IsFrozen);
         for (Explorer anExp = new(aConverted, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -234,10 +237,10 @@ public class BRepFill_OffsetWireTests
             Assert.True(aType is CurveKind.Line or CurveKind.Circle, $"{aType}");
         }
 
-        BRepOffsetAPI_MakeOffset anOffset = new(aFace);
+        MakeWireOffset anOffset = new(aFace);
         anOffset.SetApprox(true);
         anOffset.Perform(1.0);
-        Assert.True(anOffset.IsDone());
+        Assert.True(anOffset.IsDone);
         Assert.True(Length(anOffset.Shape()) > Length(aFace));
         Assert.Equal(aText, Text(aFace));
     }
@@ -245,11 +248,11 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Perform_without_a_spine_throws()
     {
-        Assert.Throws<NotDoneException>(() => new BRepOffsetAPI_MakeOffset().Perform(1.0));
+        Assert.Throws<NotDoneException>(() => new MakeWireOffset().Perform(1.0));
         // a non-planar wire: not done
-        BRepBuilderAPI_MakePolygon aMP = new(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 1), new Point3D(0, 1, 0), true);
-        BRepOffsetAPI_MakeOffset anOffset = new(aMP.Wire());
+        MakePolygon aMP = new(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 1), new Point3D(0, 1, 0), true);
+        MakeWireOffset anOffset = new(aMP.Wire());
         anOffset.Perform(0.1);
-        Assert.False(anOffset.IsDone());
+        Assert.False(anOffset.IsDone);
     }
 }

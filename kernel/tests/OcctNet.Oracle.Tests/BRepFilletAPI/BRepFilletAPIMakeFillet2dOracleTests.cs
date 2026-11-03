@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -72,7 +74,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
 
     // ---- inputs ----
 
-    private static Face Face(in Wire theWire) => new BRepBuilderAPI_MakeFace(theWire, true).Face();
+    private static Face Face(in Wire theWire) => new MakeFace(theWire, true).Face();
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
         => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
@@ -93,7 +95,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         }
         if (!theArcs)
         {
-            var aPoly = new BRepBuilderAPI_MakePolygon();
+            var aPoly = new MakePolygon();
             foreach (Point3D aP in aPoints)
             {
                 aPoly.Add(aP);
@@ -101,7 +103,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             aPoly.Close();
             return Face(aPoly.Wire());
         }
-        var aWire = new BRepBuilderAPI_MakeWire();
+        var aWire = new MakeWire();
         for (int i = 0; i < aNb; i++)
         {
             Point3D a = aPoints[i], b = aPoints[(i + 1) % aNb];
@@ -111,11 +113,11 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                 var aSide = new Vector3D(a, b);
                 Vector3D aNormal = new Vector3D(anAx.Direction()).Crossed(aSide);
                 Point3D aMid = a.Translated(aSide * 0.5).Translated(aNormal * theOracle.Real(-0.3, 0.3));
-                aWire.Add(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(a, aMid, b).Value()).Edge());
+                aWire.Add(new MakeEdge(new MakeArcOfCircle(a, aMid, b).Value()).Edge());
             }
             else
             {
-                aWire.Add(new BRepBuilderAPI_MakeEdge(a, b).Edge());
+                aWire.Add(new MakeEdge(a, b).Edge());
             }
         }
         return Face(aWire.Wire());
@@ -124,7 +126,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     // build123d.NET's Face.MakeRect: a rectangle centred on the origin of Plane.XY
     private static Wire Rect(double theW, double theH, double theX = 0.0, double theY = 0.0)
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(theX - theW / 2, theY - theH / 2, 0), new Point3D(theX + theW / 2, theY - theH / 2, 0),
+        var aPoly = new MakePolygon(new Point3D(theX - theW / 2, theY - theH / 2, 0), new Point3D(theX + theW / 2, theY - theH / 2, 0),
                                                    new Point3D(theX + theW / 2, theY + theH / 2, 0), new Point3D(theX - theW / 2, theY + theH / 2, 0), true);
         return aPoly.Wire();
     }
@@ -167,13 +169,13 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     private sealed class PortRun
     {
         public readonly List<string> Steps = [];
-        public BRepFilletAPI_MakeFillet2d Maker = null!;
+        public MakeFillet2D Maker = null!;
     }
 
     private static PortRun RunPort(in Face theFace, List<Op> theOps)
     {
         var aRun = new PortRun();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(theFace);
+        var aMaker = new MakeFillet2D(theFace);
         aRun.Maker = aMaker;
         aRun.Steps.Add("init " + (int)aMaker.Status());
         NCollection_IndexedMap<Shape> aVertices = new(ShapeHasher.Instance);
@@ -215,16 +217,16 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
                         aRun.Steps.Add($"{anOp.Kind} {aStep} {(int)aMaker.Status()}");
                         continue;
                     case OpKind.ModifyChamfer:
-                        if (aMaker.NbChamfer() > 0)
+                        if (aMaker.ChamferCount > 0)
                         {
-                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
+                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.ChamferCount - 1]);
                         }
                         anEdge = aMaker.ModifyChamfer(aLastChamfer, aLastChamfer, anOp.A, Math.Min(1.4, anOp.B));
                         break;
                     case OpKind.RemoveChamfer:
-                        if (aMaker.NbChamfer() > 0)
+                        if (aMaker.ChamferCount > 0)
                         {
-                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.NbChamfer() - 1]);
+                            aLastChamfer = ShapeCasts.Edge(aMaker.ChamferEdges()[aMaker.ChamferCount - 1]);
                         }
                         aStep = aMaker.RemoveChamfer(aLastChamfer).IsNull ? "v0" : "v1";
                         aRun.Steps.Add($"{anOp.Kind} {aStep} {(int)aMaker.Status()}");
@@ -351,8 +353,8 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         aP.Maker.Build();
         bool isDone = aN.Maker.IsDone();
         string aCounts(int f, int c, int n) => $"{f}/{c}/{n}";
-        if (isDone != aP.Maker.IsDone()
-            || aCounts(aN.Maker.NbFillet(), aN.Maker.NbChamfer(), aN.Maker.NbCurves()) != aCounts(aP.Maker.NbFillet(), aP.Maker.NbChamfer(), aP.Maker.NbCurves()))
+        if (isDone != aP.Maker.IsDone
+            || aCounts(aN.Maker.NbFillet(), aN.Maker.NbChamfer(), aN.Maker.NbCurves()) != aCounts(aP.Maker.FilletCount, aP.Maker.ChamferCount, aP.Maker.CurveCount))
         {
             myDifferences.Add($"{theWhat}: IsDone or counts differ");
             return;
@@ -505,7 +507,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             Face aFace;
             if (isHole)
             {
-                var aMaker = new BRepBuilderAPI_MakeFace(Rect(w, h), true);
+                var aMaker = new MakeFace(Rect(w, h), true);
                 aMaker.Add(ShapeCasts.Wire(Rect(w / 3, h / 3, w / 10, -h / 10).Reversed()));
                 aFace = aMaker.Face();
             }

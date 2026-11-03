@@ -2,93 +2,95 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets;
 
-public abstract partial class ChFi3d_Builder
+public abstract partial class FilletBuilderBase
 {
     // The walking on a restriction (surface/restriction and restriction/restriction), which only ChFi3d_FilBuilder
     // implements: the root class throws.
 
     //=================================================================================================
 
-    internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    FaceSurfaceAdaptor HS1, TopolTool I1, EdgeCurve2DAdaptor PC1,
-                                    FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1, ref bool Decroch1,
-                                    FaceSurfaceAdaptor HS2, TopolTool I2, Orientation Or2,
-                                    double Fleche, double TolGuide, ref double First, ref double Last, bool Inside,
-                                    bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal virtual void SimulSurf(SurfData data, ElSpine hGuide, Spine spine, int choix,
+                                    FaceSurfaceAdaptor hs1, TopolTool i1, EdgeCurve2DAdaptor pc1,
+                                    FaceSurfaceAdaptor hSref1, EdgeCurve2DAdaptor pCref1, ref bool decroch1,
+                                    FaceSurfaceAdaptor hs2, TopolTool i2, Orientation or2,
+                                    double fleche, double tolGuide, ref double first, ref double last, bool inside,
+                                    bool appro, bool forward, bool recP, bool recS, bool recRst, math_Vector soldep)
     {
         throw new FailureException("SimulSurf Not Implemented");
     }
 
     //=================================================================================================
 
-    internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    FaceSurfaceAdaptor HS1, TopolTool I1, Orientation Or1,
-                                    FaceSurfaceAdaptor HS2, TopolTool I2, EdgeCurve2DAdaptor PC2,
-                                    FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2, ref bool Decroch2,
-                                    double Fleche, double TolGuide, ref double First, ref double Last, bool Inside,
-                                    bool Appro, bool Forward, bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal virtual void SimulSurf(SurfData data, ElSpine hGuide, Spine spine, int choix,
+                                    FaceSurfaceAdaptor hs1, TopolTool i1, Orientation or1,
+                                    FaceSurfaceAdaptor hs2, TopolTool i2, EdgeCurve2DAdaptor pc2,
+                                    FaceSurfaceAdaptor hSref2, EdgeCurve2DAdaptor pCref2, ref bool decroch2,
+                                    double fleche, double tolGuide, ref double first, ref double last, bool inside,
+                                    bool appro, bool forward, bool recP, bool recS, bool recRst, math_Vector soldep)
     {
         throw new FailureException("SimulSurf Not Implemented");
     }
 
     //=================================================================================================
 
-    internal virtual void SimulSurf(ChFiDS_SurfData Data, ChFiDS_ElSpine HGuide, ChFiDS_Spine Spine, int Choix,
-                                    FaceSurfaceAdaptor HS1, TopolTool I1, EdgeCurve2DAdaptor PC1,
-                                    FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1, ref bool Decroch1,
-                                    Orientation Or1, FaceSurfaceAdaptor HS2, TopolTool I2,
-                                    EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2,
-                                    ref bool Decroch2, Orientation Or2, double Fleche, double TolGuide,
-                                    ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
-                                    bool RecP1, bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
+    internal virtual void SimulSurf(SurfData data, ElSpine hGuide, Spine spine, int choix,
+                                    FaceSurfaceAdaptor hs1, TopolTool i1, EdgeCurve2DAdaptor pc1,
+                                    FaceSurfaceAdaptor hSref1, EdgeCurve2DAdaptor pCref1, ref bool decroch1,
+                                    Orientation or1, FaceSurfaceAdaptor hs2, TopolTool i2,
+                                    EdgeCurve2DAdaptor pc2, FaceSurfaceAdaptor hSref2, EdgeCurve2DAdaptor pCref2,
+                                    ref bool decroch2, Orientation or2, double fleche, double tolGuide,
+                                    ref double first, ref double last, bool inside, bool appro, bool forward,
+                                    bool recP1, bool recRst1, bool recP2, bool recRst2, math_Vector soldep)
     {
         throw new FailureException("SimulSurf Not Implemented");
     }
 
     //=================================================================================================
 
-    internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
-                                      EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
-                                      ref bool Decroch1, FaceSurfaceAdaptor HS2, TopolTool I2,
-                                      Orientation Or2, double MaxStep, double Fleche, double TolGuide,
-                                      ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
-                                      bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal virtual void PerformSurf(NCollection_Sequence<SurfData> seqData, ElSpine hGuide,
+                                      Spine spine, int choix, FaceSurfaceAdaptor hs1, TopolTool i1,
+                                      EdgeCurve2DAdaptor pc1, FaceSurfaceAdaptor hSref1, EdgeCurve2DAdaptor pCref1,
+                                      ref bool decroch1, FaceSurfaceAdaptor hs2, TopolTool i2,
+                                      Orientation or2, double maxStep, double fleche, double tolGuide,
+                                      ref double first, ref double last, bool inside, bool appro, bool forward,
+                                      bool recP, bool recS, bool recRst, math_Vector soldep)
     {
         throw new FailureException("PerformSurf Not Implemented");
     }
 
     //=================================================================================================
 
-    internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
-                                      Orientation Or1, FaceSurfaceAdaptor HS2, TopolTool I2,
-                                      EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2, EdgeCurve2DAdaptor PCref2,
-                                      ref bool Decroch2, double MaxStep, double Fleche, double TolGuide,
-                                      ref double First, ref double Last, bool Inside, bool Appro, bool Forward,
-                                      bool RecP, bool RecS, bool RecRst, math_Vector Soldep)
+    internal virtual void PerformSurf(NCollection_Sequence<SurfData> seqData, ElSpine hGuide,
+                                      Spine spine, int choix, FaceSurfaceAdaptor hs1, TopolTool i1,
+                                      Orientation or1, FaceSurfaceAdaptor hs2, TopolTool i2,
+                                      EdgeCurve2DAdaptor pc2, FaceSurfaceAdaptor hSref2, EdgeCurve2DAdaptor pCref2,
+                                      ref bool decroch2, double maxStep, double fleche, double tolGuide,
+                                      ref double first, ref double last, bool inside, bool appro, bool forward,
+                                      bool recP, bool recS, bool recRst, math_Vector soldep)
     {
         throw new FailureException("PerformSurf Not Implemented");
     }
 
     //=================================================================================================
 
-    internal virtual void PerformSurf(NCollection_Sequence<ChFiDS_SurfData> SeqData, ChFiDS_ElSpine HGuide,
-                                      ChFiDS_Spine Spine, int Choix, FaceSurfaceAdaptor HS1, TopolTool I1,
-                                      EdgeCurve2DAdaptor PC1, FaceSurfaceAdaptor HSref1, EdgeCurve2DAdaptor PCref1,
-                                      ref bool Decroch1, Orientation Or1, FaceSurfaceAdaptor HS2,
-                                      TopolTool I2, EdgeCurve2DAdaptor PC2, FaceSurfaceAdaptor HSref2,
-                                      EdgeCurve2DAdaptor PCref2, ref bool Decroch2, Orientation Or2,
-                                      double MaxStep, double Fleche, double TolGuide, ref double First,
-                                      ref double Last, bool Inside, bool Appro, bool Forward, bool RecP1,
-                                      bool RecRst1, bool RecP2, bool RecRst2, math_Vector Soldep)
+    internal virtual void PerformSurf(NCollection_Sequence<SurfData> seqData, ElSpine hGuide,
+                                      Spine spine, int choix, FaceSurfaceAdaptor hs1, TopolTool i1,
+                                      EdgeCurve2DAdaptor pc1, FaceSurfaceAdaptor hSref1, EdgeCurve2DAdaptor pCref1,
+                                      ref bool decroch1, Orientation or1, FaceSurfaceAdaptor hs2,
+                                      TopolTool i2, EdgeCurve2DAdaptor pc2, FaceSurfaceAdaptor hSref2,
+                                      EdgeCurve2DAdaptor pCref2, ref bool decroch2, Orientation or2,
+                                      double maxStep, double fleche, double tolGuide, ref double first,
+                                      ref double last, bool inside, bool appro, bool forward, bool recP1,
+                                      bool recRst1, bool recP2, bool recRst2, math_Vector soldep)
     {
         throw new FailureException("PerformSurf Not Implemented");
     }

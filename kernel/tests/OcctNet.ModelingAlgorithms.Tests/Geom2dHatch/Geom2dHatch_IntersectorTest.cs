@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification.Hatching;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
@@ -18,7 +19,7 @@ public class Geom2dHatch_IntersectorTest
         CircleCurve2D aCircle = new(anAxis, 1.0);
         CurveAdaptor2D aCurveAdaptor = new(aCircle);
 
-        Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
+        Intersector2D anIntersector = new(1.0e-7, 1.0e-7);
 
         anIntersector.LocalGeometry(aCurveAdaptor, 0.0, out Direction2D aTang, out Direction2D _, out double aCurv);
 
@@ -36,7 +37,7 @@ public class Geom2dHatch_IntersectorTest
         LineCurve2D aLine = new(anAxis);
         CurveAdaptor2D aCurveAdaptor = new(aLine);
 
-        Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
+        Intersector2D anIntersector = new(1.0e-7, 1.0e-7);
 
         anIntersector.LocalGeometry(aCurveAdaptor, 0.5, out Direction2D aTang, out Direction2D aNorm, out double aCurv);
 
@@ -72,7 +73,7 @@ public class Geom2dHatch_IntersectorTest
         BSplineCurve2D aDegenerateCurve = new(aPoles, aKnots, aMults, 3);
         CurveAdaptor2D aCurveAdaptor = new(aDegenerateCurve);
 
-        Geom2dHatch_Intersector anIntersector = new(1.0e-7, 1.0e-7);
+        Intersector2D anIntersector = new(1.0e-7, 1.0e-7);
 
         Direction2D aTang = new(), aNorm = new();
         double aCurv = -999.0;

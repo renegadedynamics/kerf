@@ -1,8 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -13,7 +20,7 @@ using System.Globalization;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.BRepOffset_Mode;
+using static Kerf.Engine.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -53,15 +60,15 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     // ---------------------------------------------------------------------------------------------------------------
     // Inputs
 
-    private static Shape Box(double x, double y, double z) => new BRepPrimAPI_MakeBox(x, y, z).Shape();
+    private static Shape Box(double x, double y, double z) => new MakeBox(x, y, z).Shape();
 
-    private static Shape Fuse(in Shape a, in Shape b) => new BRepAlgoAPI_Fuse(a, b).Shape();
+    private static Shape Fuse(in Shape a, in Shape b) => new Fuse(a, b).Shape();
 
-    private static Shape Cut(in Shape a, in Shape b) => new BRepAlgoAPI_Cut(a, b).Shape();
+    private static Shape Cut(in Shape a, in Shape b) => new Cut(a, b).Shape();
 
     private static Shape Unified(in Shape a)
     {
-        var aU = new ShapeUpgrade_UnifySameDomain(a);
+        var aU = new UnifySameDomain(a);
         aU.Build();
         return aU.Shape();
     }
@@ -70,21 +77,21 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     {
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(x, y, z));
-        return new BRepBuilderAPI_Transform(theS, aT, true).Shape();
+        return new Transform(theS, aT, true).Shape();
     }
 
     private static Frame3D Ax(double x, double y, double z) => new(new Point3D(x, y, z), new Direction3D(0, 0, 1));
 
     private static Shape Prism(double h, params (double X, double Y)[] thePoints)
     {
-        var aP = new BRepBuilderAPI_MakePolygon();
+        var aP = new MakePolygon();
         foreach ((double x, double y) in thePoints)
         {
             aP.Add(new Point3D(x, y, 0));
         }
         aP.Close();
-        Face aF = new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
-        return new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, h)).Shape();
+        Face aF = new MakeFace(aP.Wire()).Face();
+        return new ApiMakePrism(aF, new Vector3D(0, 0, h)).Shape();
     }
 
     /// <summary>Solids: primitives and Boolean results.</summary>
@@ -92,24 +99,24 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     [
         ("box 10x20x30", Box(10, 20, 30)),
         ("cube 10", Box(10, 10, 10)),
-        ("cylinder r5 h12", new BRepPrimAPI_MakeCylinder(5, 12).Shape()),
-        ("cone r6 r2 h10", new BRepPrimAPI_MakeCone(6, 2, 10).Shape()),
-        ("cone r5 r0 h10", new BRepPrimAPI_MakeCone(5, 0, 10).Shape()),
-        ("sphere r7", new BRepPrimAPI_MakeSphere(7).Shape()),
-        ("torus 10 3", new BRepPrimAPI_MakeTorus(10, 3).Shape()),
+        ("cylinder r5 h12", new ApiMakeCylinder(5, 12).Shape()),
+        ("cone r6 r2 h10", new ApiMakeCone(6, 2, 10).Shape()),
+        ("cone r5 r0 h10", new ApiMakeCone(5, 0, 10).Shape()),
+        ("sphere r7", new MakeSphere(7).Shape()),
+        ("torus 10 3", new MakeTorus(10, 3).Shape()),
         ("L prism", Prism(8, (0, 0), (20, 0), (20, 6), (6, 6), (6, 15), (0, 15))),
         ("hexagon prism", Prism(5, (4, 0), (2, 3.4641016151377544), (-2, 3.4641016151377544), (-4, 0), (-2, -3.4641016151377544),
                                 (2, -3.4641016151377544))),
-        ("wedge", new BRepPrimAPI_MakeWedge(10, 8, 6, 4).Shape()),
+        ("wedge", new MakeWedge(10, 8, 6, 4).Shape()),
         ("L fuse", Unified(Fuse(Box(10, 10, 10), Box(20, 5, 5)))),
         ("stepped fuse", Unified(Fuse(Box(20, 20, 5), Moved(Box(10, 20, 5), 0, 0, 5)))),
-        ("box with hole", Cut(Box(20, 20, 8), new BRepPrimAPI_MakeCylinder(Ax(10, 10, -1), 4, 10).Shape())),
+        ("box with hole", Cut(Box(20, 20, 8), new ApiMakeCylinder(Ax(10, 10, -1), 4, 10).Shape())),
         ("box with pocket", Cut(Box(20, 20, 10), Moved(Box(10, 10, 10), 5, 5, 4))),
-        ("box and cylinder fuse", Fuse(Box(20, 20, 5), new BRepPrimAPI_MakeCylinder(Ax(10, 10, 5), 4, 8).Shape())),
-        ("cylinder T", Fuse(new BRepPrimAPI_MakeCylinder(Ax(0, 0, 0), 3, 20).Shape(),
-                            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 10), new Direction3D(1, 0, 0)), 2, 20).Shape())),
-        ("box common sphere", new BRepAlgoAPI_Common(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new Point3D(5, 5, 5), 6.5).Shape()).Shape()),
-        ("box minus sphere", Cut(Box(10, 10, 10), new BRepPrimAPI_MakeSphere(new Point3D(10, 10, 10), 5).Shape())),
+        ("box and cylinder fuse", Fuse(Box(20, 20, 5), new ApiMakeCylinder(Ax(10, 10, 5), 4, 8).Shape())),
+        ("cylinder T", Fuse(new ApiMakeCylinder(Ax(0, 0, 0), 3, 20).Shape(),
+                            new ApiMakeCylinder(new Frame3D(new Point3D(-10, 0, 10), new Direction3D(1, 0, 0)), 2, 20).Shape())),
+        ("box common sphere", new Common(Box(10, 10, 10), new MakeSphere(new Point3D(5, 5, 5), 6.5).Shape()).Shape()),
+        ("box minus sphere", Cut(Box(10, 10, 10), new MakeSphere(new Point3D(10, 10, 10), 5).Shape())),
     ];
 
     /// <summary>Faces and shells to offset and thicken.</summary>
@@ -118,10 +125,10 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         Shape aBox = Box(10, 20, 30);
         var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Face, aFaces);
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
+        Shape aCyl = new ApiMakeCylinder(5, 12).Shape();
         var aCylFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aCyl, ShapeType.Face, aCylFaces);
-        Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
+        Shape aSph = new MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
         var aSphFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aSph, ShapeType.Face, aSphFaces);
         BrepBuilder aB = new();
@@ -145,8 +152,8 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 aPoles[i, j] = new Point3D(i * 3, j * 3, ((i + j) % 3) * 0.8);
             }
         }
-        var aSurf = new GeomAPI_PointsToBSplineSurface(aPoles).Surface();
-        Face aBsp = new BRepBuilderAPI_MakeFace(aSurf, 1.0e-7).Face();
+        var aSurf = new PointsToBSplineSurface(aPoles).Surface();
+        Face aBsp = new MakeFace(aSurf, 1.0e-7).Face();
         return
         [
             ("planar face", aFaces[1]),
@@ -268,7 +275,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     private static double Diagonal(in Shape theShape)
     {
         Box aBox = new();
-        BRepBndLib.Add(theShape, ref aBox);
+        Bounds.Add(theShape, ref aBox);
         return Math.Sqrt(aBox.SquareExtent());
     }
 
@@ -434,13 +441,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             return "counts " + string.Join(' ', theCanon.Counts.Select(c => $"{c.Key}:{c.Value.Native}/{c.Value.Port}"));
         }
         Properties aNV = new(), aPV = new(), aNS = new(), aPS = new();
-        BRepGProp.VolumeProperties(theN, aNV);
-        BRepGProp.VolumeProperties(theP, aPV);
-        BRepGProp.SurfaceProperties(theN, aNS);
-        BRepGProp.SurfaceProperties(theP, aPS);
+        MassPropertiesBuilder.VolumeProperties(theN, aNV);
+        MassPropertiesBuilder.VolumeProperties(theP, aPV);
+        MassPropertiesBuilder.SurfaceProperties(theN, aNS);
+        MassPropertiesBuilder.SurfaceProperties(theP, aPS);
         double aScale = Math.Max(1.0, Math.Abs(aNS.Mass()));
         bool Near(double a, double b, double s) => Math.Abs(a - b) <= 1.0e-7 * Math.Max(s, Math.Max(Math.Abs(a), Math.Abs(b)));
-        bool aNValid0 = new BRepCheck_Analyzer(theN).IsValid(), aPValid0 = new BRepCheck_Analyzer(theP).IsValid();
+        bool aNValid0 = new Analyzer(theN).IsValid(), aPValid0 = new Analyzer(theP).IsValid();
         if (!aNValid0 && !aPValid0 && Near(aNS.Mass(), aPS.Mass(), 1.0))
         {
             // both invalid: the volume of an invalid result depends on how its shells happen to be oriented (native's own
@@ -452,7 +459,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         {
             return $"volume {aNV.Mass():R}/{aPV.Mass():R} area {aNS.Mass():R}/{aPS.Mass():R}";
         }
-        bool aNValid = new BRepCheck_Analyzer(theN).IsValid(), aPValid = new BRepCheck_Analyzer(theP).IsValid();
+        bool aNValid = new Analyzer(theN).IsValid(), aPValid = new Analyzer(theP).IsValid();
         return aNValid == aPValid ? null : $"valid {aNValid}/{aPValid}";
     }
 
@@ -621,18 +628,18 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             {
                 case Kind.MakeOffset:
                 {
-                    var aMO = new BRepOffset_MakeOffset();
+                    var aMO = new MakeOffset();
                     if (theCase.ThreeArgs)
                     {
                         aMO.Initialize(theInput, theCase.Offset, theCase.Tol);
                     }
                     else
                     {
-                        aMO.Initialize(theInput, theCase.Offset, theCase.Tol, BRepOffset_Skin, theCase.Inter, false, theCase.Join,
+                        aMO.Initialize(theInput, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false, theCase.Join,
                                        theCase.Thickening, theCase.RemoveIntEdges);
                     }
                     aMO.MakeOffsetShape();
-                    aStatus = $"done={aMO.IsDone()} error={(int)aMO.Error()}";
+                    aStatus = $"done={aMO.IsDone} error={(int)aMO.Error()}";
                     aRes = aMO.Shape();
                     aGen = s => aMO.Generated(s);
                     aMod = s => aMO.Modified(s);
@@ -641,11 +648,11 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 }
                 case Kind.OffsetShape:
                 {
-                    var aMO = new BRepOffsetAPI_MakeOffsetShape();
-                    aMO.PerformByJoin(theInput, theCase.Offset, theCase.Tol, BRepOffset_Skin, theCase.Inter, false, theCase.Join,
+                    var aMO = new MakeOffsetShape();
+                    aMO.PerformByJoin(theInput, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false, theCase.Join,
                                       theCase.RemoveIntEdges);
-                    aStatus = $"done={aMO.IsDone()} error={(int)aMO.MakeOffset().Error()}";
-                    aRes = aMO.IsDone() ? aMO.Shape() : new Shape();
+                    aStatus = $"done={aMO.IsDone} error={(int)aMO.MakeOffset().Error()}";
+                    aRes = aMO.IsDone ? aMO.Shape() : new Shape();
                     aGen = s => aMO.Generated(s);
                     aMod = s => aMO.Modified(s);
                     aDel = s => aMO.IsDeleted(s);
@@ -653,7 +660,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 }
                 default:
                 {
-                    var aMT = new BRepOffsetAPI_MakeThickSolid();
+                    var aMT = new MakeThickSolid();
                     var aClosing = new NCollection_List<Shape>();
                     foreach (int i in theCase.Closing ?? [])
                     {
@@ -662,11 +669,11 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                             aClosing.Append(aFaces[i]);
                         }
                     }
-                    aMT.MakeThickSolidByJoin(theInput, aClosing, theCase.Offset, theCase.Tol, BRepOffset_Skin, theCase.Inter, false,
+                    aMT.MakeThickSolidByJoin(theInput, aClosing, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false,
                                              theCase.Join, theCase.RemoveIntEdges);
                     aMT.Build();
-                    aStatus = $"done={aMT.IsDone()} error={(int)aMT.MakeOffset().Error()}";
-                    aRes = aMT.IsDone() ? aMT.Shape() : new Shape();
+                    aStatus = $"done={aMT.IsDone} error={(int)aMT.MakeOffset().Error()}";
+                    aRes = aMT.IsDone ? aMT.Shape() : new Shape();
                     aGen = s => aMT.Generated(s);
                     aMod = s => aMT.Modified(s);
                     aDel = s => aMT.IsDeleted(s);

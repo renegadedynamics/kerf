@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Iterator_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -15,11 +16,11 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_IteratorTests
 {
-    private static Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static Vertex MakeVertex(in Point3D theP) => new MakeVertex(theP).Vertex();
 
-    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
-    private static Shape MakeBox(double dx, double dy, double dz) => new BRepPrimAPI_MakeBox(dx, dy, dz).Shape();
+    private static Shape MakeBox(double dx, double dy, double dz) => new MakeBox(dx, dy, dz).Shape();
 
     [Fact]
     public void OCC30708_1_InitializeWithNullShape()

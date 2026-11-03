@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Occt;
@@ -47,7 +48,7 @@ internal static class GeomliteTestAPI2dCommands
         }
 
         var P = new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]));
-        var proj = new Geom2dAPI_ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
+        var proj = new ProjectPointOnCurve2D(P, GC, GC.FirstParameter(), GC.LastParameter());
         for (int i = 1; i <= proj.NbPoints(); i++)
         {
             Point2D aP1 = proj.Point(i);
@@ -98,7 +99,7 @@ internal static class GeomliteTestAPI2dCommands
         double U2f = GC2.FirstParameter();
         double U2l = GC2.LastParameter();
 
-        var Ex = new Geom2dAPI_ExtremaCurveCurve(GC1, GC2, U1f, U1l, U2f, U2l);
+        var Ex = new ExtremaCurveCurve2D(GC1, GC2, U1f, U1l, U2f, U2l);
         bool isInfinitySolutions = Ex.Extrema().IsParallel;
         int aNExtr = Ex.NbExtrema();
 
@@ -188,7 +189,7 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        var Intersector = new Geom2dAPI_InterCurveCurve();
+        var Intersector = new CurveCurveIntersection2D();
         if (C2 is not null)
         {
             // Curves intersection
@@ -200,14 +201,14 @@ internal static class GeomliteTestAPI2dCommands
             Intersector.Init(C1, Tol);
         }
 
-        Geom2dInt_GInter anIntTool = Intersector.Intersector();
-        if (!anIntTool.IsDone())
+        GInter anIntTool = Intersector.Intersector();
+        if (!anIntTool.IsDone)
         {
             di.Append("Intersection failed\n");
             return 0;
         }
 
-        if (anIntTool.IsEmpty())
+        if (anIntTool.IsEmpty)
         {
             return 0;
         }
@@ -219,12 +220,12 @@ internal static class GeomliteTestAPI2dCommands
             Point2D P = Intersector.Point(i);
             di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
             // Intersection extended results from intersection tool
-            IntRes2d_IntersectionPoint aPInt = anIntTool.Point(i);
+            IntersectionPoint2D aPInt = anIntTool.Point(i);
             di.Append("parameter on the fist: ").Append(aPInt.ParamOnFirst());
             di.Append(" parameter on the second: ").Append(aPInt.ParamOnSecond()).Append("\n");
             if (bPrintState)
             {
-                di.Append("Intersection type: ").Append(aPInt.TransitionOfFirst().IsTangent() ? "TOUCH" : "INTERSECTION").Append("\n");
+                di.Append("Intersection type: ").Append(aPInt.TransitionOfFirst().IsTangent ? "TOUCH" : "INTERSECTION").Append("\n");
             }
         }
 

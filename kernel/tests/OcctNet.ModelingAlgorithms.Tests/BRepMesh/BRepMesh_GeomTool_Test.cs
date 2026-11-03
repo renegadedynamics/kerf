@@ -2,8 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -23,18 +25,18 @@ public class BRepMesh_GeomTool_Test
         double aFirstP = 0.0, aLastP = Math.PI;
         CircleCurve3D aCircle = new(new Frame3D(Constants.Origin(), Constants.DZ()), 10);
         TrimmedCurve3D aHalf = new(aCircle, aFirstP, aLastP);
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(aHalf).Edge();
+        Edge anEdge = new MakeEdge(aHalf).Edge();
         EdgeCurveAdaptor anAdaptor = new(anEdge);
-        BRepMesh_GeomTool aGeomTool = new(anAdaptor, aFirstP, aLastP, 0.1, 0.5);
+        GeomTool aGeomTool = new(anAdaptor, aFirstP, aLastP, 0.1, 0.5);
 
-        Assert.True(aGeomTool.NbPoints() > 0, "BRepMesh_GeomTool failed to discretize an arc");
+        Assert.True(aGeomTool.PointCount > 0, "BRepMesh_GeomTool failed to discretize an arc");
 
         // Test 2: Test Normal() static method
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
+        Face aFace = new MakeFace(new Plane3D(Constants.Origin(), Constants.DZ())).Face();
         FaceSurfaceAdaptor aSurf = new(aFace);
         FaceSurfaceAdaptor aHSurf = (FaceSurfaceAdaptor)aSurf.ShallowCopy();
 
-        bool isNormalComputed = BRepMesh_GeomTool.Normal(aHSurf, 10.0, 10.0, out Point3D _, out Direction3D _);
+        bool isNormalComputed = GeomTool.Normal(aHSurf, 10.0, 10.0, out Point3D _, out Direction3D _);
 
         Assert.True(isNormalComputed, "BRepMesh_GeomTool failed to compute a normal of surface");
 
@@ -43,7 +45,7 @@ public class BRepMesh_GeomTool_Test
 
         Point2D anIntPnt = new();
         Span<double> aParams = stackalloc double[2];
-        BRepMesh_GeomTool.IntFlag anIntFlag = BRepMesh_GeomTool.IntLinLin(aRefPnts[0],
+        GeomTool.IntFlag anIntFlag = GeomTool.IntLinLin(aRefPnts[0],
                                                                           aRefPnts[1],
                                                                           aRefPnts[2],
                                                                           aRefPnts[3],
@@ -51,11 +53,11 @@ public class BRepMesh_GeomTool_Test
                                                                           aParams);
 
         double aDiff = anIntPnt.Distance(Constants.Origin2d());
-        Assert.Equal(BRepMesh_GeomTool.IntFlag.Cross, anIntFlag);
+        Assert.Equal(GeomTool.IntFlag.Cross, anIntFlag);
         Assert.True(aDiff <= global::Kerf.Engine.Foundation.Precision.PConfusion(), "BRepMesh_GeomTool failed to intersect two lines at origin");
 
         // Test 4: Test IntSegSeg() static method - segment-segment intersection
-        anIntFlag = BRepMesh_GeomTool.IntSegSeg(aRefPnts[0],
+        anIntFlag = GeomTool.IntSegSeg(aRefPnts[0],
                                                 aRefPnts[1],
                                                 aRefPnts[2],
                                                 aRefPnts[3],
@@ -64,7 +66,7 @@ public class BRepMesh_GeomTool_Test
                                                 ref anIntPnt);
 
         aDiff = anIntPnt.Distance(Constants.Origin2d());
-        Assert.Equal(BRepMesh_GeomTool.IntFlag.Cross, anIntFlag);
+        Assert.Equal(GeomTool.IntFlag.Cross, anIntFlag);
         Assert.True(aDiff <= global::Kerf.Engine.Foundation.Precision.PConfusion(), "BRepMesh_GeomTool failed to intersect two segments at origin");
     }
 }

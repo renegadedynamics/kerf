@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -11,7 +13,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>Unit tests of ShapeFix_SplitCommonVertex (unit 6H2) on a frozen face whose two wires share a vertex.</summary>
 public class ShapeFix_SplitCommonVertexTests
 {
-    private static Vertex V(double x, double y) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, 0)).Vertex();
+    private static Vertex V(double x, double y) => new MakeVertex(new Point3D(x, y, 0)).Vertex();
 
     private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
     {
@@ -25,9 +27,9 @@ public class ShapeFix_SplitCommonVertexTests
     {
         theCommon = V(0, 0);
         Vertex v1 = V(4, 0), v2 = V(4, 4), v3 = V(0, 4), w1 = V(1, 2), w2 = V(2, 1);
-        Wire anOuter = new BRepBuilderAPI_MakePolygon(theCommon, v1, v2, v3, true).Wire();
-        Wire anInner = new BRepBuilderAPI_MakePolygon(theCommon, w1, w2, true).Wire();
-        var aMF = new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeFace(anOuter, true).Face());
+        Wire anOuter = new MakePolygon(theCommon, v1, v2, v3, true).Wire();
+        Wire anInner = new MakePolygon(theCommon, w1, w2, true).Wire();
+        var aMF = new MakeFace(new MakeFace(anOuter, true).Face());
         aMF.Add(anInner);
         return aMF.Face();
     }
@@ -37,7 +39,7 @@ public class ShapeFix_SplitCommonVertexTests
     {
         Face aFace = FaceWithCommonVertex(out Vertex aCommon);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
-        var aFix = new ShapeFix_SplitCommonVertex();
+        var aFix = new SplitCommonVertexFixer();
         aFix.Init(aFace);
         aFix.Perform();
         Shape aResult = aFix.Shape();
@@ -78,8 +80,8 @@ public class ShapeFix_SplitCommonVertexTests
     [Fact]
     public void Perform_NoCommonVertex_GivesTheInput()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        var aFix = new ShapeFix_SplitCommonVertex();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
+        var aFix = new SplitCommonVertexFixer();
         aFix.Init(aBox);
         aFix.Perform();
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), aBox.TShape()));
@@ -88,8 +90,8 @@ public class ShapeFix_SplitCommonVertexTests
     [Fact]
     public void Perform_OnAnEdge_DoesNothing()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        var aFix = new ShapeFix_SplitCommonVertex();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        var aFix = new SplitCommonVertexFixer();
         aFix.Init(anEdge);
         aFix.Perform();
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), anEdge.TShape()));

@@ -26,7 +26,7 @@ public class XSControlStepTests
         _ = TestStepController.Instance;
         var WS = new XSControl_WorkSession();
         Assert.True(WS.SelectNorm("TestSTEP"));
-        Assert.Equal(IFSelect_RetDone, TestStepController.ReadFile(WS, thePath));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, TestStepController.ReadFile(WS, thePath));
         return WS;
     }
 
@@ -45,13 +45,13 @@ public class XSControlStepTests
         SW.SendModel((StepData_Protocol)WS.Protocol()!);
         Assert.True(SW.Print(anExpected));
         var anOut = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, WS.SendAll("screw-out.step", false, anOut));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.SendAll("screw-out.step", false, anOut));
         Assert.Equal(anExpected.ToArray(), anOut.ToArray());
         // SendSelected: a new model with the selected entities and what they share
         var pointed = new IFSelect_SelectPointed();
         pointed.SetEntity(aModel.Value(1));
         anOut = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, WS.SendSelected("part.step", pointed, false, anOut));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.SendSelected("part.step", pointed, false, anOut));
         string aText = Encoding.UTF8.GetString(anOut.ToArray());
         Assert.StartsWith("ISO-10303-21;", aText, StringComparison.Ordinal);
         // DumpEntity goes to the library
@@ -98,7 +98,7 @@ public class XSControlStepTests
         }
         _ = TestStepController.Instance;
         var aReader = new XSControl_Reader("TestSTEP");
-        Assert.Equal(IFSelect_RetFail, aReader.ReadFile(aPath));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetFail, aReader.ReadFile(aPath));
         Assert.Equal(0, aReader.WS()!.NbStartingEntities());
     }
 

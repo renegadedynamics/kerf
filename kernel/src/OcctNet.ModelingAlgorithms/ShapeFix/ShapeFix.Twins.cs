@@ -3,27 +3,30 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Fixes;
 
-public static partial class ShapeFix
+public static partial class ShapeFixFixer
 {
     /// <summary>
     /// The functional twin of <see cref="SameParameter"/>: the shape with its edges made SameParameter by
     /// ShapeFix_Edge and the tolerances of its edges on planes updated, frozen. A frozen shape is copied first, the
     /// sub-shapes left unchanged are the caller's own, and a shape needing nothing is returned itself.
-    /// <paramref name="theIsDone"/> is OCCT's result (false if an edge couldn't be made SameParameter, or on a user
+    /// <paramref name="isDone"/> is OCCT's result (false if an edge couldn't be made SameParameter, or on a user
     /// break).
     /// </summary>
-    public static Shape SameParametered(in Shape shape, bool enforce, out bool theIsDone, double preci = 0.0,
-                                               ProgressRange theProgress = default,
-                                               ShapeExtend_BasicMsgRegistrator? theMsgReg = null)
+    public static Shape SameParametered(in Shape shape, bool enforce, out bool isDone, double preci = 0.0,
+                                               ProgressRange progress = default,
+                                               BasicMsgRegistrator? msgReg = null)
     {
-        var anEntry = new CopyAtEntry(shape);
-        theIsDone = SameParameter(anEntry.Shape(), enforce, preci, theProgress, theMsgReg);
-        return frozen(anEntry.Finish(anEntry.Shape()));
+        var entry = new CopyAtEntry(shape);
+        isDone = SameParameter(entry.Shape(), enforce, preci, progress, msgReg);
+        return Frozen(entry.Finish(entry.Shape()));
     }
 
     /// <summary>
@@ -32,29 +35,29 @@ public static partial class ShapeFix
     /// </summary>
     public static Shape RegularityEncoded(in Shape shape, double tolang = 1.0e-10)
     {
-        var anEntry = new CopyAtEntry(shape);
-        EncodeRegularity(anEntry.Shape(), tolang);
-        return frozen(anEntry.Finish(anEntry.Shape()));
+        var entry = new CopyAtEntry(shape);
+        EncodeRegularity(entry.Shape(), tolang);
+        return Frozen(entry.Finish(entry.Shape()));
     }
 
     /// <summary>
     /// The functional twin of <see cref="FixVertexPosition"/>: the shape with its vertices more tolerant than
-    /// <paramref name="theTolerance"/> moved to the curves' ends (the replacements recorded in
+    /// <paramref name="tolerance"/> moved to the curves' ends (the replacements recorded in
     /// <paramref name="thecontext"/>, which answers for the caller's sub-shapes), frozen; the shape itself when
-    /// nothing was done (<paramref name="theIsDone"/> false).
+    /// nothing was done (<paramref name="isDone"/> false).
     /// </summary>
-    public static Shape VertexPositionFixed(in Shape theshape, double theTolerance, ShapeBuild_ReShape thecontext,
-                                                   out bool theIsDone)
+    public static Shape VertexPositionFixed(in Shape theshape, double tolerance, ReShapeBuilder thecontext,
+                                                   out bool isDone)
     {
-        var          anEntry = new CopyAtEntry(theshape, thecontext);
-        Shape aWork   = anEntry.Shape();
-        theIsDone = FixVertexPosition(ref aWork, theTolerance, thecontext);
-        return frozen(anEntry.Finish(aWork));
+        var          entry = new CopyAtEntry(theshape, thecontext);
+        Shape work   = entry.Shape();
+        isDone = FixVertexPosition(ref work, tolerance, thecontext);
+        return Frozen(entry.Finish(work));
     }
 
-    private static Shape frozen(in Shape theShape)
+    private static Shape Frozen(in Shape shape)
     {
-        theShape.TShape()?.FreezeGraph();
-        return theShape;
+        shape.TShape()?.FreezeGraph();
+        return shape;
     }
 }

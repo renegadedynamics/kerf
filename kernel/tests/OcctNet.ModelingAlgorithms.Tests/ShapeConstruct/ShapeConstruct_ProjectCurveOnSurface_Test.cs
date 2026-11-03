@@ -3,15 +3,19 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Construct;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Geometry;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>OCCT's ShapeConstruct_ProjectCurveOnSurface GTest (the fixture's SetUp is the constructor).</summary>
 public class ShapeConstruct_ProjectCurveOnSurfaceTest
 {
-    private readonly ShapeConstruct_ProjectCurveOnSurface myProjector = new();
+    private readonly ProjectCurveOnSurface myProjector = new();
     private readonly double myTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
 
     // Helper to create a simple B-spline curve lying on Z=0 plane
@@ -24,7 +28,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         aPoles[4] = new Point3D(8, 2, 0);
         aPoles[5] = new Point3D(10, 0, 0);
 
-        GeomAPI_PointsToBSpline aBuilder = new(aPoles);
+        PointsToBSpline aBuilder = new(aPoles);
         return aBuilder.Curve();
     }
 
@@ -38,12 +42,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             double aZ = (i - 1) * 1.0;
             aPoles[i] = new Point3D(theRadius * Math.Cos(anAngle), theRadius * Math.Sin(anAngle), aZ);
         }
-        GeomAPI_PointsToBSpline aBuilder = new(aPoles);
+        PointsToBSpline aBuilder = new(aPoles);
         return aBuilder.Curve();
     }
 
     // Verifies that pcurve correctly maps to 3D points on surface
-    private static void verifyProjection(Curve3D theCurve, Curve2D thePCurve, ShapeAnalysis_Surface theSurface,
+    private static void verifyProjection(Curve3D theCurve, Curve2D thePCurve, SurfaceAnalysis theSurface,
                                          double theTolerance)
     {
         double aFirst = theCurve.FirstParameter();
@@ -76,7 +80,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         PlaneSurface aPlane = XOY();
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         double aFirst = aLine.FirstParameter();
@@ -106,7 +110,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)), aRadius);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aCylinder), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aCylinder), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -128,7 +132,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Line along cylinder axis at X=radius, Y=0 (U=0 on cylinder)
         TrimmedCurve3D aLine = Segment(new Point3D(aRadius, 0, 0), new Point3D(aRadius, 0, 10));
 
-        ShapeAnalysis_Surface aSAS = new(aCylinder);
+        SurfaceAnalysis aSAS = new(aCylinder);
         myProjector.Init(aSAS, myTolerance);
 
         double aFirst = aLine.FirstParameter();
@@ -156,7 +160,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         BSplineCurve3D aBSpline = createPlanarBSpline();
         Assert.NotNull(aBSpline);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
                                            out Curve2D? aPCurve);
@@ -183,7 +187,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         BSplineCurve3D aBSpline = createHelicalBSpline(aRadius, 9);
         Assert.NotNull(aBSpline);
 
-        ShapeAnalysis_Surface aSAS = new(aCylinder);
+        SurfaceAnalysis aSAS = new(aCylinder);
         myProjector.Init(aSAS, myTolerance);
 
         bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
@@ -211,11 +215,11 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             aPoles[i] = new Point3D(aX, aY, 0);
         }
 
-        GeomAPI_PointsToBSpline aBuilder = new(aPoles, 3, 8);
+        PointsToBSpline aBuilder = new(aPoles, 3, 8);
         BSplineCurve3D aBSpline = aBuilder.Curve();
         Assert.NotNull(aBSpline);
 
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
@@ -241,7 +245,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aRadius);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aSphere), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -264,7 +268,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aCircRadius);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aSphere), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -289,7 +293,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(aMajorRadius + aMinorRadius, 0, 0), new Direction3D(0, 1, 0)), aMinorRadius);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aTorus), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aTorus), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -315,7 +319,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aRadiusAtZ);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aCone), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aCone), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -337,7 +341,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         CircleCurve3D aFullCircle = new(aCirc);
         TrimmedCurve3D aArc = new(aFullCircle, 0.0, Math.PI / 2.0);
 
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         double aFirst = aArc.FirstParameter();
@@ -376,7 +380,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         double aQuart = aFirst2 + (aLast2 - aFirst2) / 4.0;
         TrimmedCurve3D aTrim2 = new(aTrim1, aFirst2, aQuart);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         bool aResult = myProjector.Perform(aTrim2, aTrim2.FirstParameter(), aTrim2.LastParameter(), out Curve2D? aPCurve);
 
@@ -398,7 +402,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Ellipse3D anElips = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0, 5.0);
         EllipseCurve3D anEllipse = new(anElips);
 
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         bool aResult = myProjector.Perform(anEllipse, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
@@ -475,12 +479,12 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         PlaneSurface aPlane = XOY();
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out _);
 
         // Status should indicate OK or DONE
-        Assert.True(myProjector.Status(ShapeExtend_OK) || myProjector.Status(ShapeExtend_DONE),
+        Assert.True(myProjector.Status(ExtendStatus.OK) || myProjector.Status(ExtendStatus.Done),
                     "Status should indicate OK or DONE");
     }
 
@@ -495,7 +499,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         PlaneSurface aPlane = XOY();
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1e-15);
+        myProjector.Init(new SurfaceAnalysis(aPlane), 1e-15);
 
         bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
 
@@ -515,11 +519,11 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         aPoles[2] = new Point3D(5, 5, 0.05);
         aPoles[3] = new Point3D(10, 10, 0.1);
 
-        GeomAPI_PointsToBSpline aBuilder = new(aPoles, 2, 2);
+        PointsToBSpline aBuilder = new(aPoles, 2, 2);
         BSplineCurve3D aBSpline = aBuilder.Curve();
         Assert.NotNull(aBSpline);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         double aTolFirst = 0.01;
         double aTolLast = 0.2;
@@ -543,7 +547,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
         CircleCurve3D aCircle = new(aCirc);
 
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         // Project only 0 to PI/2 (first quadrant)
@@ -569,7 +573,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         BSplineCurve3D aBSpline = createPlanarBSpline();
         Assert.NotNull(aBSpline);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         double aFirst = aBSpline.FirstParameter();
         double aLast = aBSpline.LastParameter();
@@ -591,7 +595,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     public void MultipleProjections_J1()
     {
         PlaneSurface aPlane = XOY();
-        ShapeAnalysis_Surface aSAS = new(aPlane);
+        SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
         // Project 5 different curves
@@ -613,7 +617,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     {
         // First surface
         PlaneSurface aPlane1 = XOY();
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane1), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane1), myTolerance);
 
         TrimmedCurve3D aLine1 = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
         myProjector.Perform(aLine1, aLine1.FirstParameter(), aLine1.LastParameter(), out Curve2D? aPCurve1);
@@ -621,7 +625,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         // Second surface (different plane)
         PlaneSurface aPlane2 = new(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)));
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane2), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane2), myTolerance);
 
         TrimmedCurve3D aLine2 = Segment(new Point3D(0, 0, 5), new Point3D(10, 10, 5));
         myProjector.Perform(aLine2, aLine2.FirstParameter(), aLine2.LastParameter(), out Curve2D? aPCurve2);
@@ -647,7 +651,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, aZ), new Direction3D(0, 0, 1)), aCircRadius);
         CircleCurve3D aCircle = new(aCirc);
 
-        myProjector.Init(new ShapeAnalysis_Surface(aSphere), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aSphere), myTolerance);
 
         bool aResult = myProjector.Perform(aCircle, 0.0, 2.0 * Math.PI, out Curve2D? aPCurve);
 
@@ -669,7 +673,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Very short line segment (1e-6 length)
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 0), new Point3D(1e-6, 0, 0));
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1e-4);
+        myProjector.Init(new SurfaceAnalysis(aPlane), 1e-4);
 
         // Result may vary but should not crash
         _ = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out _);
@@ -684,7 +688,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Line at Z=100, far from plane at Z=0
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 100), new Point3D(10, 10, 100));
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), myTolerance);
+        myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
         _ = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
 
@@ -701,7 +705,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Line slightly off plane
         TrimmedCurve3D aLine = Segment(new Point3D(0, 0, 0.1), new Point3D(10, 10, 0.1));
 
-        myProjector.Init(new ShapeAnalysis_Surface(aPlane), 1.0);
+        myProjector.Init(new SurfaceAnalysis(aPlane), 1.0);
 
         bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
 

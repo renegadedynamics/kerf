@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Topology;
@@ -22,7 +24,7 @@ public class BRepFill_TrimSurfaceToolTests
     // The rectangle [0, 10] x [0, 5] of the XY plane (frozen, as a caller's) and its edge on y = 0
     private static (Face Face, Edge Bottom) Rectangle()
     {
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0.0, 10.0, 0.0, 5.0).Face();
+        Face aFace = new MakeFace(new Plane3D(), 0.0, 10.0, 0.0, 5.0).Face();
         for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge anEdge = ShapeCasts.Edge(anExp.Current());
@@ -49,9 +51,9 @@ public class BRepFill_TrimSurfaceToolTests
     {
         (Face aFace, Edge anEdge) = Rectangle();
         TrimmedCurve2D aBis = Arc();
-        BRepFill_MultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
+        FillingMultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
 
-        Assert.False(aML.IsParticularCase());
+        Assert.False(aML.IsParticularCase);
         Assert.Equal(Continuity.C0, aML.Continuity());
         Assert.Equal(0.3, aML.FirstParameter());
         Assert.Equal(2.8, aML.LastParameter());
@@ -80,9 +82,9 @@ public class BRepFill_TrimSurfaceToolTests
     {
         (Face aFace, Edge anEdge) = Rectangle();
         TrimmedCurve2D aBis = Segment(2, 1, 8, 4);
-        BRepFill_MultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
+        FillingMultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
 
-        Assert.True(aML.IsParticularCase());
+        Assert.True(aML.IsParticularCase);
         aML.Curves(out Curve3D? aCurve, out Curve2D? aPC1, out Curve2D? aPC2);
         Assert.NotNull(aCurve);
         Assert.NotNull(aPC1);
@@ -98,14 +100,14 @@ public class BRepFill_TrimSurfaceToolTests
     {
         (Face aFace, Edge anEdge) = Rectangle();
         TrimmedCurve2D aBis = Arc();
-        BRepFill_MultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
+        FillingMultiLine aML = new(aFace, aFace, anEdge, anEdge, false, false, aBis);
 
-        BRepFill_ApproxSeewing anEmpty = new();
-        Assert.False(anEmpty.IsDone());
+        ApproxSeewing anEmpty = new();
+        Assert.False(anEmpty.IsDone);
         Assert.Throws<NotDoneException>(() => anEmpty.Curve());
 
-        BRepFill_ApproxSeewing anApprox = new(aML);
-        Assert.True(anApprox.IsDone());
+        ApproxSeewing anApprox = new(aML);
+        Assert.True(anApprox.IsDone);
         Curve3D aCurve = anApprox.Curve();
         Curve2D aPC1 = anApprox.CurveOnF1(), aPC2 = anApprox.CurveOnF2();
         Assert.True(aCurve.Value(aCurve.FirstParameter()).Distance(aML.Value(0.3)) < 1.0e-6);
@@ -121,7 +123,7 @@ public class BRepFill_TrimSurfaceToolTests
             Assert.True(aPC2.Value(t).Distance(new Point2D(aP.X(), aP.Y())) < 1.0e-3);
         }
 
-        BRepFill_ComputeCLine aFit = new(aML, 3, 8, 1.0e-5, 1.0e-5, true);
+        FillingComputeCLine aFit = new(aML, 3, 8, 1.0e-5, 1.0e-5, true);
         Assert.True(aFit.MultiCurveCount >= 1);
         aFit.Parameters(1, out double aFirst, out double _);
         aFit.Parameters(aFit.MultiCurveCount, out double _, out double aLast);
@@ -144,7 +146,7 @@ public class BRepFill_TrimSurfaceToolTests
 
         // a bisector crossing the bottom edge at (3.2, 0)
         TrimmedCurve2D aBis = Segment(2, -1, 8, 4);
-        BRepFill_TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
+        TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
         NCollection_Sequence<Point3D> aPoints = new();
         aTool.IntersectWith(anEdge, anEdge, aPoints);
         Assert.Equal(1, aPoints.Length());
@@ -174,7 +176,7 @@ public class BRepFill_TrimSurfaceToolTests
         // ends 5e-6 above the edge: found only once the curves are lengthened by the tolerance, in each of the two calls
         TrimmedCurve2D aBis = Segment(5, 3, 5, 5.0e-6);
         double aLast = aBis.LastParameter();
-        BRepFill_TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
+        TrimSurfaceTool aTool = new(aBis, aFace, aFace, anEdge, anEdge, false, false);
         NCollection_Sequence<Point3D> aPoints = new();
         aTool.IntersectWith(anEdge, anEdge, aPoints);
         Assert.Equal(1, aPoints.Length());

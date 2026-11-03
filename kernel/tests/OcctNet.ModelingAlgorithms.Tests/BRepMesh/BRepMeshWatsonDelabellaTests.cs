@@ -2,8 +2,9 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Meshing;
 using Kerf.Geometry;
-using static Occt.BRepMesh_DegreeOfFreedom;
+using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,39 +16,39 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BRepMeshWatsonDelabellaTests
 {
     // Builds the frontier wires and interior nodes into a fresh structure; returns it and the frontier links.
-    private static BRepMesh_DataStructureOfDelaun Build(IReadOnlyList<IReadOnlyList<Xy>> theWires,
+    private static DataStructureOfDelaun Build(IReadOnlyList<IReadOnlyList<Xy>> theWires,
                                                         IReadOnlyList<Xy> theInterior,
                                                         out List<int> theFrontier)
     {
-        BRepMesh_DataStructureOfDelaun aStructure = new();
+        DataStructureOfDelaun aStructure = new();
         theFrontier = [];
         int aLocation = 0;
         foreach (IReadOnlyList<Xy> aWire in theWires)
         {
-            List<int> aNodes = [.. aWire.Select(p => aStructure.AddNode(new BRepMesh_Vertex(p, ++aLocation, BRepMesh_Frontier)))];
+            List<int> aNodes = [.. aWire.Select(p => aStructure.AddNode(new MeshVertex(p, ++aLocation, DegreeOfFreedom.Frontier)))];
             for (int i = 0; i < aNodes.Count; ++i)
             {
-                theFrontier.Add(aStructure.AddLink(new BRepMesh_Edge(aNodes[i], aNodes[(i + 1) % aNodes.Count], BRepMesh_Frontier)));
+                theFrontier.Add(aStructure.AddLink(new MeshEdge(aNodes[i], aNodes[(i + 1) % aNodes.Count], DegreeOfFreedom.Frontier)));
             }
         }
 
         foreach (Xy aPoint in theInterior)
         {
-            aStructure.AddNode(new BRepMesh_Vertex(aPoint, ++aLocation, BRepMesh_Free));
+            aStructure.AddNode(new MeshVertex(aPoint, ++aLocation, DegreeOfFreedom.Free));
         }
 
         return aStructure;
     }
 
     // BRepMesh_DelabellaBaseMeshAlgo::buildBaseTriangulation, as unit 4D will port it.
-    private static void buildBaseTriangulation(BRepMesh_DataStructureOfDelaun aStructure)
+    private static void buildBaseTriangulation(DataStructureOfDelaun aStructure)
     {
         B2d aBox = new();
-        int aNodesNb = aStructure.NbNodes();
+        int aNodesNb = aStructure.NodeCount;
         double[] aPoints = new double[2 * (aNodesNb + 4)];
         for (int aNodeIt = 0; aNodeIt < aNodesNb; ++aNodeIt)
         {
-            BRepMesh_Vertex aVertex = aStructure.GetNode(aNodeIt + 1);
+            MeshVertex aVertex = aStructure.GetNode(aNodeIt + 1);
             aPoints[2 * aNodeIt + 0] = aVertex.Coord().X();
             aPoints[2 * aNodeIt + 1] = aVertex.Coord().Y();
             aBox.Add(new Point2D(aVertex.Coord()));
@@ -61,7 +62,7 @@ public class BRepMeshWatsonDelabellaTests
         {
             aPoints[2 * aNodesNb + 2 * k + 0] = aCorners[k].Item1;
             aPoints[2 * aNodesNb + 2 * k + 1] = aCorners[k].Item2;
-            aStructure.AddNode(new BRepMesh_Vertex(aCorners[k].Item1, aCorners[k].Item2, BRepMesh_Free));
+            aStructure.AddNode(new MeshVertex(aCorners[k].Item1, aCorners[k].Item2, DegreeOfFreedom.Free));
         }
 
         double aDiffX = (aMax.X() - aMin.X());
@@ -72,35 +73,35 @@ public class BRepMeshWatsonDelabellaTests
             aPoints[i + 1] = (aPoints[i + 1] - aMin.Y()) / aDiffY - 0.5;
         }
 
-        IDelaBella aTriangulator = IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aTriangulator = global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         int aVerticesNb = aTriangulator.Triangulate(aPoints.Length / 2, aPoints.AsSpan(0), aPoints.AsSpan(1), 2 * sizeof(double));
         Assert.True(aVerticesNb > 0);
         Span<int> aEdges = stackalloc int[3];
         Span<bool> aOrientations = stackalloc bool[3];
-        for (DelaBella_Triangle? aTrianglePtr = aTriangulator.GetFirstDelaunayTriangle(); aTrianglePtr is not null; aTrianglePtr = aTrianglePtr.next)
+        for (global::Kerf.Engine.Meshing.Delaunay.DelaunayTriangle? aTrianglePtr = aTriangulator.GetFirstDelaunayTriangle(); aTrianglePtr is not null; aTrianglePtr = aTrianglePtr.next)
         {
             Span<int> aNodes = [aTrianglePtr.v[0]!.i + 1, aTrianglePtr.v[2]!.i + 1, aTrianglePtr.v[1]!.i + 1];
             for (int k = 0; k < 3; ++k)
             {
-                int aLinkInfo = aStructure.AddLink(new BRepMesh_Edge(aNodes[k], aNodes[(k + 1) % 3], BRepMesh_Free));
+                int aLinkInfo = aStructure.AddLink(new MeshEdge(aNodes[k], aNodes[(k + 1) % 3], DegreeOfFreedom.Free));
                 aEdges[k] = Math.Abs(aLinkInfo);
                 aOrientations[k] = aLinkInfo > 0;
             }
 
-            aStructure.AddElement(new BRepMesh_Triangle(aEdges, aOrientations, BRepMesh_Free));
+            aStructure.AddElement(new Triangle(aEdges, aOrientations, DegreeOfFreedom.Free));
         }
 
         aTriangulator.Destroy();
     }
 
     // BRepMesh_CustomBaseMeshAlgo::generateMesh with the Delabella base, cells (-1, -1).
-    private static void DelabellaMesh(BRepMesh_DataStructureOfDelaun aStructure)
+    private static void DelabellaMesh(DataStructureOfDelaun aStructure)
     {
-        int aNodesNb = aStructure.NbNodes();
+        int aNodesNb = aStructure.NodeCount;
         buildBaseTriangulation(aStructure);
 
-        BRepMesh_Delaun aMesher = new(aStructure, -1, -1, false);
-        int aNewNodesNb = aStructure.NbNodes();
+        Delaun aMesher = new(aStructure, -1, -1, false);
+        int aNewNodesNb = aStructure.NodeCount;
         bool isRemoveAux = aNewNodesNb > aNodesNb;
         if (isRemoveAux)
         {
@@ -119,23 +120,23 @@ public class BRepMeshWatsonDelabellaTests
             aMesher.RemoveAuxElements();
         }
 
-        new BRepMesh_MeshTool(aStructure).EraseFreeLinks();
+        new MeshTool(aStructure).EraseFreeLinks();
     }
 
     // BRepMesh_DelaunayBaseMeshAlgo::generateMesh, cells (-1, -1).
-    private static void WatsonMesh(BRepMesh_DataStructureOfDelaun aStructure)
+    private static void WatsonMesh(DataStructureOfDelaun aStructure)
     {
-        NCollection_DynamicArray<int> aVerticesOrder = new(aStructure.NbNodes());
-        for (int i = 1; i <= aStructure.NbNodes(); ++i)
+        NCollection_DynamicArray<int> aVerticesOrder = new(aStructure.NodeCount);
+        for (int i = 1; i <= aStructure.NodeCount; ++i)
         {
             aVerticesOrder.Append(i);
         }
 
-        _ = new BRepMesh_Delaun(aStructure, aVerticesOrder, -1, -1);
-        new BRepMesh_MeshTool(aStructure).EraseFreeLinks();
+        _ = new Delaun(aStructure, aVerticesOrder, -1, -1);
+        new MeshTool(aStructure).EraseFreeLinks();
     }
 
-    private static (HashSet<int> Nodes, double Area) Coverage(BRepMesh_DataStructureOfDelaun theStructure)
+    private static (HashSet<int> Nodes, double Area) Coverage(DataStructureOfDelaun theStructure)
     {
         HashSet<int> aNodes = [];
         double anArea = 0.0;
@@ -180,10 +181,10 @@ public class BRepMeshWatsonDelabellaTests
             }
         }
 
-        BRepMesh_DataStructureOfDelaun aWatson = Build([anOuter, aHole], anInterior, out List<int> aWatsonFrontier);
+        DataStructureOfDelaun aWatson = Build([anOuter, aHole], anInterior, out List<int> aWatsonFrontier);
         WatsonMesh(aWatson);
-        BRepMesh_DataStructureOfDelaun aDelabella = Build([anOuter, aHole], anInterior, out List<int> aDelabellaFrontier);
-        int aNbInput = aDelabella.NbNodes();
+        DataStructureOfDelaun aDelabella = Build([anOuter, aHole], anInterior, out List<int> aDelabellaFrontier);
+        int aNbInput = aDelabella.NodeCount;
         DelabellaMesh(aDelabella);
 
         BRepMeshDelaunTests.CheckTriangulation(aWatson, theNbHoles: 1, theCheckEmptyCircles: false);

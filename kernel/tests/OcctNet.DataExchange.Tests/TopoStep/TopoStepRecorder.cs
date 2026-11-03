@@ -241,7 +241,7 @@ internal static class TopoStepRecorder
                     var M = new TopoDSToStep_MakeShellBasedSurfaceModel(aSolid, FP, F);
                     return (M.IsDone(), M.IsDone() ? M.Value() : null);
                 });
-                if (TopoDSToStep_FacetedTool.CheckTopoDSShape(aSolid) == TopoDSToStep_FacetedDone)
+                if (TopoDSToStep_FacetedTool.CheckTopoDSShape(aSolid) == TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone)
                 {
                     Convert(aLines, theDump, "fb-solid", i, aTag, FP =>
                     {
@@ -266,7 +266,7 @@ internal static class TopoStepRecorder
                     var M = new TopoDSToStep_MakeShellBasedSurfaceModel(aShell, FP, F);
                     return (M.IsDone(), M.IsDone() ? M.Value() : null);
                 });
-                if (aShell.Closed() && TopoDSToStep_FacetedTool.CheckTopoDSShape(aShell) == TopoDSToStep_FacetedDone)
+                if (aShell.Closed() && TopoDSToStep_FacetedTool.CheckTopoDSShape(aShell) == TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone)
                 {
                     Convert(aLines, theDump, "fb-shell", i, aTag, FP =>
                     {

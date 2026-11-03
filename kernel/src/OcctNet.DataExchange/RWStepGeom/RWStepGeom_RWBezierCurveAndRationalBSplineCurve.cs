@@ -74,8 +74,8 @@ internal class RWStepGeom_RWBezierCurveAndRationalBSplineCurve
 
         // --- field : curveForm ---
 
-        StepGeom_BSplineCurveForm aCurveForm = StepGeom_bscfPolylineForm;
-        if (data.ParamType(num, 3) == Interface_ParamEnum)
+        StepGeom_BSplineCurveForm aCurveForm = StepGeom_BSplineCurveForm.StepGeom_bscfPolylineForm;
+        if (data.ParamType(num, 3) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 3);
             if (!RWStepGeom_RWBSplineCurveForm.ConvertToEnum(text, ref aCurveForm))

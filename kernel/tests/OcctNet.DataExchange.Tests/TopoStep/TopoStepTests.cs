@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -33,9 +34,9 @@ public sealed class TopoStepTests
     [Fact]
     public void Decoders_give_OCCTs_texts()
     {
-        Assert.Equal("Builder Done", StepToTopoDS.DecodeBuilderError(StepToTopoDS_BuilderDone)!.ToCString());
-        Assert.Equal(" an Edge is degenerated", StepToTopoDS.DecodeGeometricToolError(StepToTopoDS_GeometricToolIsDegenerated));
-        Assert.Equal("The Face has no Outer Wire", TopoDSToStep.DecodeFaceError(TopoDSToStep_InfiniteFace)!.ToCString());
+        Assert.Equal("Builder Done", StepToTopoDS.DecodeBuilderError(StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone)!.ToCString());
+        Assert.Equal(" an Edge is degenerated", StepToTopoDS.DecodeGeometricToolError(StepToTopoDS_GeometricToolError.StepToTopoDS_GeometricToolIsDegenerated));
+        Assert.Equal("The Face has no Outer Wire", TopoDSToStep.DecodeFaceError(TopoDSToStep_MakeFaceError.TopoDSToStep_InfiniteFace)!.ToCString());
     }
 
     [Fact]
@@ -52,8 +53,8 @@ public sealed class TopoStepTests
     [Fact]
     public void Writers_never_change_a_frozen_input()
     {
-        ShapeAlgo.Init();
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape(); // frozen
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
+        Shape aBox = new MakeBox(10, 20, 30).Shape(); // frozen
         string aBefore = BRepText(aBox);
         Solid aSolid = ShapeCasts.Solid(aBox);
         var aMSB = new TopoDSToStep_MakeManifoldSolidBrep(aSolid, NewFP());
@@ -74,8 +75,8 @@ public sealed class TopoStepTests
     [Fact]
     public void A_written_box_reads_back_as_a_frozen_solid()
     {
-        ShapeAlgo.Init();
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
+        Shape aBox = new MakeBox(10, 20, 30).Shape();
         var aMSB = new TopoDSToStep_MakeManifoldSolidBrep(ShapeCasts.Solid(aBox), NewFP());
 
         // the entities into a model of their own, then translated back
@@ -92,7 +93,7 @@ public sealed class TopoStepTests
         Assert.True(aSolid.TShape()!.IsFrozen);
         Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aSolid, aProps);
+        MassPropertiesBuilder.VolumeProperties(aSolid, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 1e-6);
     }
 

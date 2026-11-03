@@ -37,21 +37,21 @@ internal class RWStepElement_RWVolume3dElementDescriptor
 
         // Inherited fields of ElementDescriptor
 
-        StepElement_ElementOrder aElementDescriptor_TopologyOrder = StepElement_Linear;
-        if (data.ParamType(num, 1) == Interface_ParamEnum)
+        StepElement_ElementOrder aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Linear;
+        if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
             if (string.CompareOrdinal(text, ".LINEAR.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Linear;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Linear;
             }
             else if (string.CompareOrdinal(text, ".QUADRATIC.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Quadratic;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Quadratic;
             }
             else if (string.CompareOrdinal(text, ".CUBIC.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Cubic;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Cubic;
             }
             else
             {
@@ -85,25 +85,25 @@ internal class RWStepElement_RWVolume3dElementDescriptor
             }
         }
 
-        StepElement_Volume3dElementShape aShape = StepElement_Hexahedron;
-        if (data.ParamType(num, 4) == Interface_ParamEnum)
+        StepElement_Volume3dElementShape aShape = StepElement_Volume3dElementShape.StepElement_Hexahedron;
+        if (data.ParamType(num, 4) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 4);
             if (string.CompareOrdinal(text, ".HEXAHEDRON.") == 0)
             {
-                aShape = StepElement_Hexahedron;
+                aShape = StepElement_Volume3dElementShape.StepElement_Hexahedron;
             }
             else if (string.CompareOrdinal(text, ".WEDGE.") == 0)
             {
-                aShape = StepElement_Wedge;
+                aShape = StepElement_Volume3dElementShape.StepElement_Wedge;
             }
             else if (string.CompareOrdinal(text, ".TETRAHEDRON.") == 0)
             {
-                aShape = StepElement_Tetrahedron;
+                aShape = StepElement_Volume3dElementShape.StepElement_Tetrahedron;
             }
             else if (string.CompareOrdinal(text, ".PYRAMID.") == 0)
             {
-                aShape = StepElement_Pyramid;
+                aShape = StepElement_Volume3dElementShape.StepElement_Pyramid;
             }
             else
             {
@@ -128,13 +128,13 @@ internal class RWStepElement_RWVolume3dElementDescriptor
 
         switch (ent.TopologyOrder())
         {
-            case StepElement_Linear:
+            case StepElement_ElementOrder.StepElement_Linear:
                 SW.SendEnum(".LINEAR.");
                 break;
-            case StepElement_Quadratic:
+            case StepElement_ElementOrder.StepElement_Quadratic:
                 SW.SendEnum(".QUADRATIC.");
                 break;
-            case StepElement_Cubic:
+            case StepElement_ElementOrder.StepElement_Cubic:
                 SW.SendEnum(".CUBIC.");
                 break;
         }
@@ -153,16 +153,16 @@ internal class RWStepElement_RWVolume3dElementDescriptor
 
         switch (ent.Shape())
         {
-            case StepElement_Hexahedron:
+            case StepElement_Volume3dElementShape.StepElement_Hexahedron:
                 SW.SendEnum(".HEXAHEDRON.");
                 break;
-            case StepElement_Wedge:
+            case StepElement_Volume3dElementShape.StepElement_Wedge:
                 SW.SendEnum(".WEDGE.");
                 break;
-            case StepElement_Tetrahedron:
+            case StepElement_Volume3dElementShape.StepElement_Tetrahedron:
                 SW.SendEnum(".TETRAHEDRON.");
                 break;
-            case StepElement_Pyramid:
+            case StepElement_Volume3dElementShape.StepElement_Pyramid:
                 SW.SendEnum(".PYRAMID.");
                 break;
         }

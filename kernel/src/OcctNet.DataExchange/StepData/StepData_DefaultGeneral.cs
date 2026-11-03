@@ -40,12 +40,12 @@ public class StepData_DefaultGeneral : StepData_GeneralModule
         for (int i = 1; i <= nb; i++)
         {
             Interface_ParamType ptype = cont.ParamType(i);
-            if (ptype == Interface_ParamSub)
+            if (ptype == Interface_ParamType.Interface_ParamSub)
             {
                 // Handle sub-entity parameters recursively
                 FillSharedCase(casenum, cont.ParamEntity(i), iter);
             }
-            else if (ptype == Interface_ParamIdent)
+            else if (ptype == Interface_ParamType.Interface_ParamIdent)
             {
                 // Handle entity identifier parameters
                 iter.GetOneItem(cont.ParamEntity(i));

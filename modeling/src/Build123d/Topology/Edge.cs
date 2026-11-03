@@ -1,5 +1,8 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -40,7 +43,7 @@ public partial class Edge : Shape1D
     /// <summary>An edge along the whole of a curve.</summary>
     internal static Edge FromCurve(Curve3D curve)
     {
-        var maker = new BRepBuilderAPI_MakeEdge(curve);
+        var maker = new MakeEdge(curve);
         return new Edge(maker.Edge());
     }
 
@@ -123,7 +126,7 @@ public partial class Edge : Shape1D
         var circle = new Circle3D(ax2, radius);
         if (startAngle == endAngle)   // a full circle
         {
-            var maker = new BRepBuilderAPI_MakeEdge(circle);
+            var maker = new MakeEdge(circle);
             return new Edge(maker.Edge());
         }
         bool ccw = angularDirection == AngularDirection.CounterClockwise;
@@ -159,7 +162,7 @@ public partial class Edge : Shape1D
         {
             if (startAngle == endAngle)   // a full ellipse
             {
-                var maker = new BRepBuilderAPI_MakeEdge(ellipse);
+                var maker = new MakeEdge(ellipse);
                 return new Edge(maker.Edge());
             }
             double a1 = startAngle * Constants.DegToRad - correction;
@@ -222,7 +225,7 @@ public partial class Edge : Shape1D
         {
             if (startAngle == endAngle)
             {
-                var maker = new BRepBuilderAPI_MakeEdge(hyperbola);
+                var maker = new MakeEdge(hyperbola);
                 return new Edge(maker.Edge());
             }
             var arc = new MakeArcOfHyperbola(hyperbola, startAngle * Constants.DegToRad - correction,
@@ -254,8 +257,8 @@ public partial class Edge : Shape1D
         var line = new LineCurve2D(origin2d, dir2d);
         var curve = new TrimmedCurve2D(line, 0, lineLength, true, true);
         // Wrap the segment around the surface, then give the edge its 3D curve
-        var builder = new BRepBuilderAPI_MakeEdge(curve, surface);
-        var edge = BRepLib.Curves3dBuilt(builder.Edge(), 1e-9, out _, Continuity.C1, 14, 2000);
+        var builder = new MakeEdge(curve, surface);
+        var edge = BrepLibrary.Curves3dBuilt(builder.Edge(), 1e-9, out _, Continuity.C1, 14, 2000);
         return new Edge(ShapeCasts.Edge(edge));
     }
 
@@ -264,8 +267,8 @@ public partial class Edge : Shape1D
     {
         var p1 = point1.ToGpPnt();
         var p2 = point2.ToGpPnt();
-        var maker = new BRepBuilderAPI_MakeEdge(p1, p2);
-        if (!maker.IsDone())
+        var maker = new MakeEdge(p1, p2);
+        if (!maker.IsDone)
             throw new ArgumentException($"Can't make a line from {point1} to {point2}: {maker.Error()}");
         return new Edge(maker.Edge());
     }
@@ -301,9 +304,9 @@ public partial class Edge : Shape1D
             var p = points[i].ToGpPnt();
             pnts.SetValue(i + 1, p);
         }
-        GeomAPI_Interpolate builder;
+        ApiInterpolate builder;
         if (parameters is null)
-            builder = new GeomAPI_Interpolate(pnts, periodic, tolerance);
+            builder = new ApiInterpolate(pnts, periodic, tolerance);
         else
         {
             if (parameters.Count != points.Count + (periodic ? 1 : 0))
@@ -313,7 +316,7 @@ public partial class Edge : Shape1D
             var parameterArray = new NCollection_HArray1<double>(1, parameters.Count);
             for (int i = 0; i < parameters.Count; i++)
                 parameterArray.SetValue(i + 1, parameters[i]);
-            builder = new GeomAPI_Interpolate(pnts, parameterArray, periodic, tolerance);
+            builder = new ApiInterpolate(pnts, parameterArray, periodic, tolerance);
         }
         {
             if (tangents is { Count: > 0 })
@@ -343,7 +346,7 @@ public partial class Edge : Shape1D
                 }
             }
             builder.Perform();
-            if (!builder.IsDone())
+            if (!builder.IsDone)
                 throw new InvalidOperationException("B-spline interpolation failed");
             var curve = builder.Curve();
             return FromCurve(curve!);
@@ -409,14 +412,14 @@ public partial class Edge : Shape1D
             var p = pnts.Value(i);
             array.SetValue(i, p);
         }
-        GeomAPI_PointsToBSpline builder;
+        PointsToBSpline builder;
         if (smoothing is var (w1, w2, w3))
             // The smoothing asks for C2, whose Jacobi basis needs a degree of at least 6 (OCCT 8)
-            builder = new GeomAPI_PointsToBSpline(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
+            builder = new PointsToBSpline(array, w1, w2, w3, Math.Max(maxDeg, 6), Continuity.C2, tolerance);
         else
-            builder = new GeomAPI_PointsToBSpline(array, minDeg, maxDeg, Continuity.C2, tolerance);
+            builder = new PointsToBSpline(array, minDeg, maxDeg, Continuity.C2, tolerance);
         {
-            if (!builder.IsDone())
+            if (!builder.IsDone)
                 throw new InvalidOperationException("B-spline approximation failed");
             var curve = builder.Curve();
             return FromCurve(curve!);
@@ -537,7 +540,7 @@ public partial class Edge : Shape1D
             double first = 0, last = 0;
             var curve = Tool.Curve(TopoEdge, out first, out last);
             var pnt = point.ToGpPnt();
-            var projector = new GeomAPI_ProjectPointOnCurve(pnt, curve!);
+            var projector = new ProjectPointOnCurve(pnt, curve!);
             projected = projector.LowerDistanceParameter();
         }
         {
@@ -589,7 +592,7 @@ public partial class Edge : Shape1D
         var rFirst = curve.ReversedParameter(first);
         var rLast = curve.ReversedParameter(last);
         var reversedCurve = curve.Reversed();
-        var maker = new BRepBuilderAPI_MakeEdge(reversedCurve, rLast, rFirst);
+        var maker = new MakeEdge(reversedCurve, rLast, rFirst);
         return (Edge)Rewrapped(maker.Edge());
     }
 
@@ -605,7 +608,7 @@ public partial class Edge : Shape1D
         {
             double first = startCurve.FirstParameter(), last = startCurve.LastParameter();
             var curve = Tool.Curve(TopoEdge, out first, out last);
-            var maker = new BRepBuilderAPI_MakeEdge(curve!, Math.Min(paramStart, paramEnd), Math.Max(paramStart, paramEnd));
+            var maker = new MakeEdge(curve!, Math.Min(paramStart, paramEnd), Math.Max(paramStart, paramEnd));
             trimmed = new Edge(maker.Edge());
         }
         // Reverse it if necessary
@@ -679,9 +682,9 @@ public partial class Edge : Shape1D
         var planeFace = MakePlaneFace(plane);
         var surface = Tool.Surface(planeFace);
         var selfCurve = CurveOnPlane(this, surface!);
-        Geom2dAPI_InterCurveCurve intersector = otherEdge is { IsEmpty: false }
-            ? new Geom2dAPI_InterCurveCurve(selfCurve, CurveOnPlane(otherEdge, surface!), tolerance)
-            : new Geom2dAPI_InterCurveCurve(selfCurve, tolerance);
+        CurveCurveIntersection2D intersector = otherEdge is { IsEmpty: false }
+            ? new CurveCurveIntersection2D(selfCurve, CurveOnPlane(otherEdge, surface!), tolerance)
+            : new CurveCurveIntersection2D(selfCurve, tolerance);
         var crosses = new List<Vector>();
         for (int i = 1; i <= intersector.NbPoints(); i++)
         {

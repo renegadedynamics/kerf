@@ -71,8 +71,8 @@ internal class RWStepGeom_RWBSplineCurveWithKnots
 
         // --- inherited field : curveForm ---
 
-        StepGeom_BSplineCurveForm aCurveForm = StepGeom_bscfPolylineForm;
-        if (data.ParamType(num, 4) == Interface_ParamEnum)
+        StepGeom_BSplineCurveForm aCurveForm = StepGeom_BSplineCurveForm.StepGeom_bscfPolylineForm;
+        if (data.ParamType(num, 4) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 4);
             if (!RWStepGeom_RWBSplineCurveForm.ConvertToEnum(text, ref aCurveForm))
@@ -137,8 +137,8 @@ internal class RWStepGeom_RWBSplineCurveWithKnots
 
         // --- own field : knotSpec ---
 
-        StepGeom_KnotType aKnotSpec = StepGeom_ktUniformKnots;
-        if (data.ParamType(num, 9) == Interface_ParamEnum)
+        StepGeom_KnotType aKnotSpec = StepGeom_KnotType.StepGeom_ktUniformKnots;
+        if (data.ParamType(num, 9) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 9);
             if (!RWStepGeom_RWKnotType.ConvertToEnum(text, ref aKnotSpec))

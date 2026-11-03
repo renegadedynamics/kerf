@@ -4,11 +4,12 @@
 
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2d3Tan
+public sealed partial class AnalyticCirc2d3Tan
 {
     //=========================================================================
     //   Creation of a circle passing by three points.                       +
@@ -25,118 +26,118 @@ public sealed partial class GccAna_Circ2d3Tan
     //      3/ The three points are distinct.                                +
     //      ----------------------------------                                +
     //=========================================================================
-    public GccAna_Circ2d3Tan(in Point2D Point1,
-        in Point2D Point2,
-        in Point2D Point3,
-        double Tolerance)
+    public AnalyticCirc2d3Tan(in Point2D point1,
+        in Point2D point2,
+        in Point2D point3,
+        double tolerance)
     {
-        cirsol = new NCollection_Array1<Circle2D>(1, 1);
-        qualifier1 = new NCollection_Array1<GccEnt_Position>(1, 1);
-        qualifier2 = new NCollection_Array1<GccEnt_Position>(1, 1);
-        qualifier3 = new NCollection_Array1<GccEnt_Position>(1, 1);
-        TheSame1 = new NCollection_Array1<int>(1, 1);
-        TheSame2 = new NCollection_Array1<int>(1, 1);
-        TheSame3 = new NCollection_Array1<int>(1, 1);
-        pnttg1sol = new NCollection_Array1<Point2D>(1, 1);
-        pnttg2sol = new NCollection_Array1<Point2D>(1, 1);
-        pnttg3sol = new NCollection_Array1<Point2D>(1, 1);
-        par1sol = new NCollection_Array1<double>(1, 1);
-        par2sol = new NCollection_Array1<double>(1, 1);
-        par3sol = new NCollection_Array1<double>(1, 1);
-        pararg1 = new NCollection_Array1<double>(1, 1);
-        pararg2 = new NCollection_Array1<double>(1, 1);
-        pararg3 = new NCollection_Array1<double>(1, 1);
+        _cirsol = new NCollection_Array1<Circle2D>(1, 1);
+        _qualifier1 = new NCollection_Array1<Qualifier>(1, 1);
+        _qualifier2 = new NCollection_Array1<Qualifier>(1, 1);
+        _qualifier3 = new NCollection_Array1<Qualifier>(1, 1);
+        _theSame1 = new NCollection_Array1<int>(1, 1);
+        _theSame2 = new NCollection_Array1<int>(1, 1);
+        _theSame3 = new NCollection_Array1<int>(1, 1);
+        _pnttg1sol = new NCollection_Array1<Point2D>(1, 1);
+        _pnttg2sol = new NCollection_Array1<Point2D>(1, 1);
+        _pnttg3sol = new NCollection_Array1<Point2D>(1, 1);
+        _par1sol = new NCollection_Array1<double>(1, 1);
+        _par2sol = new NCollection_Array1<double>(1, 1);
+        _par3sol = new NCollection_Array1<double>(1, 1);
+        _pararg1 = new NCollection_Array1<double>(1, 1);
+        _pararg2 = new NCollection_Array1<double>(1, 1);
+        _pararg3 = new NCollection_Array1<double>(1, 1);
 
         Direction2D dirx = new(Direction2D.D.X);
-        WellDone = false;
-        NbrSol = 0;
+        _wellDone = false;
+        _nbrSol = 0;
 
         //=========================================================================
         //   Processing.                                                          +
         //=========================================================================
 
-        double dist1 = Point1.Distance(Point2);
-        double dist2 = Point1.Distance(Point3);
-        double dist3 = Point2.Distance(Point3);
+        double dist1 = point1.Distance(point2);
+        double dist2 = point1.Distance(point3);
+        double dist3 = point2.Distance(point3);
 
-        qualifier1[1] = GccEnt_noqualifier;
-        qualifier2[1] = GccEnt_noqualifier;
-        qualifier3[1] = GccEnt_noqualifier;
+        _qualifier1[1] = Qualifier.Noqualifier;
+        _qualifier2[1] = Qualifier.Noqualifier;
+        _qualifier3[1] = Qualifier.Noqualifier;
 
-        if ((dist1 < Tolerance) && (dist2 < Tolerance) && (dist3 < Tolerance))
+        if ((dist1 < tolerance) && (dist2 < tolerance) && (dist3 < tolerance))
         {
-            NbrSol++;
-            WellDone = true;
-            cirsol[1] = new Circle2D(new Axis2D(Point1, dirx), 0.0);
+            _nbrSol++;
+            _wellDone = true;
+            _cirsol[1] = new Circle2D(new Axis2D(point1, dirx), 0.0);
             //   ===============================================
-            TheSame1[1] = 0;
-            TheSame2[1] = 0;
-            TheSame3[1] = 0;
-            pnttg1sol[1] = Point1;
-            pnttg2sol[1] = Point2;
-            pnttg3sol[1] = Point3;
-            par1sol[1] = 0.0;
-            par2sol[1] = 0.0;
-            par3sol[1] = 0.0;
-            pararg1[1] = 0.0;
-            pararg2[1] = 0.0;
-            pararg3[1] = 0.0;
+            _theSame1[1] = 0;
+            _theSame2[1] = 0;
+            _theSame3[1] = 0;
+            _pnttg1sol[1] = point1;
+            _pnttg2sol[1] = point2;
+            _pnttg3sol[1] = point3;
+            _par1sol[1] = 0.0;
+            _par2sol[1] = 0.0;
+            _par3sol[1] = 0.0;
+            _pararg1[1] = 0.0;
+            _pararg2[1] = 0.0;
+            _pararg3[1] = 0.0;
         }
         else
         {
-            Line2D L1 = new();
-            Line2D L2 = new();
-            if (dist1 >= Tolerance)
+            Line2D l1 = new();
+            Line2D l2 = new();
+            if (dist1 >= tolerance)
             {
-                L1 = new Line2D(new Point2D((Point1.XY() + Point2.XY()) / 2.0),
-                              new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                l1 = new Line2D(new Point2D((point1.XY() + point2.XY()) / 2.0),
+                              new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
             }
-            if (dist2 >= Tolerance)
+            if (dist2 >= tolerance)
             {
-                L2 = new Line2D(new Point2D((Point1.XY() + Point3.XY()) / 2.0),
-                              new Direction2D(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
+                l2 = new Line2D(new Point2D((point1.XY() + point3.XY()) / 2.0),
+                              new Direction2D(point1.Y() - point3.Y(), point3.X() - point1.X()));
             }
-            if (dist2 <= Tolerance)
+            if (dist2 <= tolerance)
             {
-                L2 = new Line2D(Point1, new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                l2 = new Line2D(point1, new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
             }
-            else if (dist1 <= Tolerance)
+            else if (dist1 <= tolerance)
             {
-                L1 = new Line2D(Point1, new Direction2D(Point1.Y() - Point3.Y(), Point3.X() - Point1.X()));
+                l1 = new Line2D(point1, new Direction2D(point1.Y() - point3.Y(), point3.X() - point1.X()));
             }
-            else if (dist3 <= Tolerance)
+            else if (dist3 <= tolerance)
             {
-                L2 = new Line2D(Point1, new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
+                l2 = new Line2D(point1, new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
             }
-            AnalyticIntersection Intp = new(L1, L2);
-            if (Intp.IsDone)
+            AnalyticIntersection intp = new(l1, l2);
+            if (intp.IsDone)
             {
-                if (!Intp.IsEmpty)
+                if (!intp.IsEmpty)
                 {
-                    for (int i = 1; i <= Intp.PointCount; i++)
+                    for (int i = 1; i <= intp.PointCount; i++)
                     {
-                        NbrSol++;
-                        cirsol[NbrSol] =
-                          new Circle2D(new Axis2D(Intp.Point(i).Value(), dirx),
+                        _nbrSol++;
+                        _cirsol[_nbrSol] =
+                          new Circle2D(new Axis2D(intp.Point(i).Value(), dirx),
                                     //         ===============================================================
-                                    Point1.Distance(Intp.Point(i).Value()));
+                                    point1.Distance(intp.Point(i).Value()));
                         //                                    =======================================
 
-                        TheSame1[NbrSol] = 0;
-                        TheSame2[NbrSol] = 0;
-                        TheSame3[NbrSol] = 0;
-                        pnttg1sol[NbrSol] = Point1;
-                        pnttg2sol[NbrSol] = Point2;
-                        pnttg3sol[NbrSol] = Point3;
-                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                        par3sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg3sol[NbrSol]);
-                        pararg1[NbrSol] = 0.0;
-                        pararg2[NbrSol] = 0.0;
-                        pararg3[NbrSol] = 0.0;
+                        _theSame1[_nbrSol] = 0;
+                        _theSame2[_nbrSol] = 0;
+                        _theSame3[_nbrSol] = 0;
+                        _pnttg1sol[_nbrSol] = point1;
+                        _pnttg2sol[_nbrSol] = point2;
+                        _pnttg3sol[_nbrSol] = point3;
+                        _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+                        _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
+                        _par3sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg3sol[_nbrSol]);
+                        _pararg1[_nbrSol] = 0.0;
+                        _pararg2[_nbrSol] = 0.0;
+                        _pararg3[_nbrSol] = 0.0;
                     }
                 }
-                WellDone = true;
+                _wellDone = true;
             }
         }
     }

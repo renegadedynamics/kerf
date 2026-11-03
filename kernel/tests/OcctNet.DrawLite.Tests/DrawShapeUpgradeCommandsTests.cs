@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -26,8 +28,8 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
     private static Shape TwoCoplanarFaces(out Shape theSharedEdge)
     {
         Face Rectangle(double x0, double x1)
-            => new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), x0, x1, 0, 4).Face();
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-6);
+            => new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), x0, x1, 0, 4).Face();
+        var aSewing = new Sewing(1.0e-6);
         aSewing.Add(Rectangle(0, 5));
         aSewing.Add(Rectangle(5, 10));
         aSewing.Perform();

@@ -130,24 +130,24 @@ public class StepElement_ElementAspect : StepData_SelectType
         StepElement_ElementAspectMember SelMem = Value() as StepElement_ElementAspectMember;
         if (SelMem is null)
         {
-            return StepElement_Volume;
+            return StepElement_ElementVolume.StepElement_Volume;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("ELEMENT_VOLUME");
         if (name.IsDifferent(nameitem))
         {
-            return StepElement_Volume;
+            return StepElement_ElementVolume.StepElement_Volume;
         }
         int numit = SelMem.Enum();
         StepElement_ElementVolume val = default;
         switch (numit)
         {
             case 1:
-                val = StepElement_Volume;
+                val = StepElement_ElementVolume.StepElement_Volume;
                 break;
             default:
-                return StepElement_Volume;
+                return StepElement_ElementVolume.StepElement_Volume;
         }
         return val;
     }
@@ -463,24 +463,24 @@ public class StepElement_ElementAspect : StepData_SelectType
         StepElement_ElementAspectMember SelMem = Value() as StepElement_ElementAspectMember;
         if (SelMem is null)
         {
-            return StepElement_ElementEdge;
+            return StepElement_CurveEdge.StepElement_ElementEdge;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("CURVE_EDGE");
         if (name.IsDifferent(nameitem))
         {
-            return StepElement_ElementEdge;
+            return StepElement_CurveEdge.StepElement_ElementEdge;
         }
         int numit = SelMem.Enum();
         StepElement_CurveEdge val = default;
         switch (numit)
         {
             case 1:
-                val = StepElement_ElementEdge;
+                val = StepElement_CurveEdge.StepElement_ElementEdge;
                 break;
             default:
-                return StepElement_ElementEdge;
+                return StepElement_CurveEdge.StepElement_ElementEdge;
         }
         return val;
     }

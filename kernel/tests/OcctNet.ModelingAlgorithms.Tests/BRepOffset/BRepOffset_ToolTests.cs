@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -16,7 +20,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>Smoke tests of BRepOffset_Tool, the offset algorithms' tools (unit 7E).</summary>
 public class BRepOffset_ToolTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape Box() => new MakeBox(10.0, 20.0, 30.0).Shape();
 
     // An unfrozen copy, for the tools that write into the shapes they are given (the offset's own shapes).
     private static Shape WritableBox() => BrepTools.ExactCopyForWrite(Box(), out _);
@@ -38,7 +42,7 @@ public class BRepOffset_ToolTests
         for (int i = 2; i <= 6; i++)
         {
             Face aF = Face(theS, i);
-            if (BRepOffset_Tool.FindCommonShapes(F1, aF, aLE, aLV))
+            if (OffsetTool.FindCommonShapes(F1, aF, aLE, aLV))
             {
                 if (F2.IsNull)
                 {
@@ -55,12 +59,12 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EdgeVertices_FollowTheOrientation()
     {
-        Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        BRepOffset_Tool.EdgeVertices(E, out Vertex V1, out Vertex V2);
+        Edge E = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        OffsetTool.EdgeVertices(E, out Vertex V1, out Vertex V2);
         Assert.Equal(0.0, Tool.Pnt(V1).X(), 1e-12);
         Assert.Equal(1.0, Tool.Pnt(V2).X(), 1e-12);
 
-        BRepOffset_Tool.EdgeVertices(global::Kerf.Engine.Topology.ShapeCasts.Edge(E.Reversed()), out V1, out V2);
+        OffsetTool.EdgeVertices(global::Kerf.Engine.Topology.ShapeCasts.Edge(E.Reversed()), out V1, out V2);
         Assert.Equal(1.0, Tool.Pnt(V1).X(), 1e-12);
         Assert.Equal(0.0, Tool.Pnt(V2).X(), 1e-12);
     }
@@ -72,11 +76,11 @@ public class BRepOffset_ToolTests
         AdjacentFaces(aBox, out Face F1, out Face F2, out Face FOpp);
         NCollection_List<Shape> aLE = new(), aLV = new();
 
-        Assert.True(BRepOffset_Tool.FindCommonShapes(F1, F2, aLE, aLV));
+        Assert.True(OffsetTool.FindCommonShapes(F1, F2, aLE, aLV));
         Assert.Equal(1, aLE.Extent());
         Assert.Equal(2, aLV.Extent());
 
-        Assert.False(BRepOffset_Tool.FindCommonShapes(F1, FOpp, aLE, aLV));
+        Assert.False(OffsetTool.FindCommonShapes(F1, FOpp, aLE, aLV));
         Assert.True(aLE.IsEmpty());
         Assert.True(aLV.IsEmpty());
     }
@@ -87,10 +91,10 @@ public class BRepOffset_ToolTests
         Shape aBox = Box();
         AdjacentFaces(aBox, out Face F1, out Face F2, out _);
         NCollection_List<Shape> aLE = new();
-        BRepOffset_Tool.FindCommonShapes(F1, F2, ShapeType.Edge, aLE);
+        OffsetTool.FindCommonShapes(F1, F2, ShapeType.Edge, aLE);
         Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(aLE.First());
 
-        BRepOffset_Tool.OrientSection(E, F1, F2, out Orientation O1, out Orientation O2);
+        OffsetTool.OrientSection(E, F1, F2, out Orientation O1, out Orientation O2);
         Assert.Equal(F1.Orientation() != F2.Orientation(), O1 == O2);
     }
 
@@ -98,7 +102,7 @@ public class BRepOffset_ToolTests
     public void Gabarit_IsTheLargestSideOfTheBox()
     {
         TrimmedCurve3D aC = new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 2, 0)), 0.0, Math.Sqrt(5.0));
-        Assert.Equal(2.0, BRepOffset_Tool.Gabarit(aC), 1e-6);
+        Assert.Equal(2.0, OffsetTool.Gabarit(aC), 1e-6);
     }
 
     [Fact]
@@ -106,9 +110,9 @@ public class BRepOffset_ToolTests
     {
         Shape aBox = Box();
         AdjacentFaces(aBox, out Face F1, out Face F2, out Face FOpp);
-        Assert.True(BRepOffset_Tool.CheckPlanesNormals(F1, F1));
-        Assert.False(BRepOffset_Tool.CheckPlanesNormals(F1, F2));
-        Assert.False(BRepOffset_Tool.CheckPlanesNormals(F1, FOpp));
+        Assert.True(OffsetTool.CheckPlanesNormals(F1, F1));
+        Assert.False(OffsetTool.CheckPlanesNormals(F1, F2));
+        Assert.False(OffsetTool.CheckPlanesNormals(F1, FOpp));
     }
 
     [Fact]
@@ -116,7 +120,7 @@ public class BRepOffset_ToolTests
     {
         Face F = Face(Box(), 1);
         NCollection_DataMap<Shape, NCollection_List<Shape>> MVE = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        BRepOffset_Tool.MapVertexEdges(F, MVE);
+        OffsetTool.MapVertexEdges(F, MVE);
         Assert.Equal(4, MVE.Extent());
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> aP in MVE)
         {
@@ -126,7 +130,7 @@ public class BRepOffset_ToolTests
         Wire W = global::Kerf.Engine.Topology.ShapeCasts.Wire(new global::Kerf.Engine.Topology.Explorer(F, ShapeType.Wire).Current());
         NCollection_DataMap<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         NCollection_DataMap<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        BRepOffset_Tool.BuildNeighbour(W, F, NOnV1, NOnV2);
+        OffsetTool.BuildNeighbour(W, F, NOnV1, NOnV2);
         for (global::Kerf.Engine.Topology.Explorer anExp = new(W, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current());
@@ -146,7 +150,7 @@ public class BRepOffset_ToolTests
         Shape aBox = Box();
         Shell aShell = global::Kerf.Engine.Topology.ShapeCasts.Shell(new global::Kerf.Engine.Topology.Explorer(aBox, ShapeType.Shell).Current());
         NCollection_Map<Shape> aBoundary = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        Assert.True(BRepOffset_Tool.Deboucle3D(aShell, aBoundary).IsSame(aShell));
+        Assert.True(OffsetTool.Deboucle3D(aShell, aBoundary).IsSame(aShell));
 
         // A shell of one face has free edges which aren't in the boundary.
         BrepBuilder B = new();
@@ -156,23 +160,23 @@ public class BRepOffset_ToolTests
         Compound aC = new();
         B.MakeCompound(ref aC);
         B.Add(aC, anOpen);
-        Assert.True(BRepOffset_Tool.Deboucle3D(anOpen, aBoundary).IsNull);
-        Assert.True(BRepOffset_Tool.Deboucle3D(aC, aBoundary).IsNull);
+        Assert.True(OffsetTool.Deboucle3D(anOpen, aBoundary).IsNull);
+        Assert.True(OffsetTool.Deboucle3D(aC, aBoundary).IsNull);
 
         // With its edges as boundary, it is kept.
         for (global::Kerf.Engine.Topology.Explorer anExp = new(anOpen, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             aBoundary.Add(anExp.Current());
         }
-        Assert.False(BRepOffset_Tool.Deboucle3D(aC, aBoundary).IsNull);
+        Assert.False(OffsetTool.Deboucle3D(aC, aBoundary).IsNull);
     }
 
     [Fact]
     public void CheckBounds_PlanesAreEnlarged()
     {
         Shape aBox = Box();
-        BRepOffset_Analyse anAnalyse = new(aBox, 0.01);
-        BRepOffset_Tool.CheckBounds(Face(aBox, 1), anAnalyse, out bool aU, out bool aVf, out bool aVl);
+        Analyse anAnalyse = new(aBox, 0.01);
+        OffsetTool.CheckBounds(Face(aBox, 1), anAnalyse, out bool aU, out bool aVf, out bool aVl);
         Assert.True(aU && aVf && aVl);
     }
 
@@ -181,7 +185,7 @@ public class BRepOffset_ToolTests
     {
         Face F = Face(Box(), 1);
         Face NF = new();
-        bool aChanged = BRepOffset_Tool.EnLargeFace(F, ref NF, true);
+        bool aChanged = OffsetTool.EnLargeFace(F, ref NF, true);
         Assert.False(aChanged); // a plane is not changed, only bounded
         Assert.Equal(F.Orientation(), NF.Orientation());
         Assert.Same(Tool.Surface(F), Tool.Surface(NF));
@@ -195,7 +199,7 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EnLargeFace_CylinderWithUpdatedPCurves()
     {
-        Shape aCyl = BrepTools.ExactCopyForWrite(new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape(), out _);
+        Shape aCyl = BrepTools.ExactCopyForWrite(new ApiMakeCylinder(5.0, 10.0).Shape(), out _);
         Face F = new();
         for (global::Kerf.Engine.Topology.Explorer anExp = new(aCyl, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -206,7 +210,7 @@ public class BRepOffset_ToolTests
         }
         Assert.False(F.IsNull);
         Face NF = new();
-        BRepOffset_Tool.EnLargeFace(F, ref NF, true, true);
+        OffsetTool.EnLargeFace(F, ref NF, true, true);
         BrepTools.UVBounds(NF, out _, out _, out double V1, out double V2);
         Assert.True(V1 < -1.0 && V2 > 11.0);
     }
@@ -215,14 +219,14 @@ public class BRepOffset_ToolTests
     public void EnLargeFace_SurfaceOfRevolutionMovesThePCurves()
     {
         // A skew segment revolved about OZ: a surface of revolution, which EnlargeGeometry extends in V.
-        Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
-        Shape aRevol = BrepTools.ExactCopyForWrite(new BRepPrimAPI_MakeRevol(E, Constants.OZ()).Shape(), out _);
+        Edge E = new MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
+        Shape aRevol = BrepTools.ExactCopyForWrite(new ApiMakeRevol(E, Constants.OZ()).Shape(), out _);
         Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(new global::Kerf.Engine.Topology.Explorer(aRevol, global::Kerf.Topology.ShapeType.Face).Current());
         Assert.IsType<RevolutionSurface>(Tool.Surface(F));
         BrepTools.UVBounds(F, out _, out _, out double FV1, out double FV2);
 
         Face NF = new();
-        Assert.True(BRepOffset_Tool.EnLargeFace(F, ref NF, true, true));
+        Assert.True(OffsetTool.EnLargeFace(F, ref NF, true, true));
         BrepTools.UVBounds(NF, out _, out _, out double V1, out double V2);
         Assert.True(V1 < FV1 - 1.0e-3 && V2 > FV2 + 1.0e-3);
 
@@ -237,12 +241,12 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EnLargeFace_LeavesAFrozenFaceAlone()
     {
-        Edge E = new BRepBuilderAPI_MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
-        Shape aRevol = new BRepPrimAPI_MakeRevol(E, Constants.OZ()).Shape();
+        Edge E = new MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
+        Shape aRevol = new ApiMakeRevol(E, Constants.OZ()).Shape();
         Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(new global::Kerf.Engine.Topology.Explorer(aRevol, global::Kerf.Topology.ShapeType.Face).Current());
         Surface? aS = Tool.Surface(F);
         Face NF = new();
-        Assert.True(BRepOffset_Tool.EnLargeFace(F, ref NF, true));
+        Assert.True(OffsetTool.EnLargeFace(F, ref NF, true));
         Assert.Same(aS, Tool.Surface(F));
         Assert.NotSame(aS, Tool.Surface(NF));
     }
@@ -250,10 +254,10 @@ public class BRepOffset_ToolTests
     [Fact]
     public void Inter3D_InfinitePlanes()
     {
-        Face F1 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).InternalFace();
-        Face F2 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))).InternalFace();
+        Face F1 = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).InternalFace();
+        Face F2 = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0))).InternalFace();
         NCollection_List<Shape> L1 = new(), L2 = new();
-        BRepOffset_Tool.Inter3D(F1, F2, L1, L2, In, new Edge(), new Face(), new Face());
+        OffsetTool.Inter3D(F1, F2, L1, L2, In, new Edge(), new Face(), new Face());
         Assert.Equal(1, L1.Extent());
         Assert.Equal(1, L2.Extent());
         Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(L1.First());
@@ -270,10 +274,10 @@ public class BRepOffset_ToolTests
     public void Inter3D_CrossingFinitePlanes()
     {
         // Finite planar faces: the pave filler's section.
-        Face F1 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -5, 5, -5, 5).InternalFace();
-        Face F2 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -5, 5, -5, 5).InternalFace();
+        Face F1 = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -5, 5, -5, 5).InternalFace();
+        Face F2 = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), -5, 5, -5, 5).InternalFace();
         NCollection_List<Shape> L1 = new(), L2 = new();
-        BRepOffset_Tool.Inter3D(F1, F2, L1, L2, In, new Edge(), new Face(), new Face());
+        OffsetTool.Inter3D(F1, F2, L1, L2, In, new Edge(), new Face(), new Face());
         Assert.False(L1.IsEmpty());
         Assert.Equal(L1.Extent(), L2.Extent());
         double aLength = 0.0;
@@ -299,13 +303,13 @@ public class BRepOffset_ToolTests
         Wire W = global::Kerf.Engine.Topology.ShapeCasts.Wire(new global::Kerf.Engine.Topology.Explorer(F, ShapeType.Wire).Current());
         NCollection_DataMap<Shape, Shape> NOnV1 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         NCollection_DataMap<Shape, Shape> NOnV2 = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        BRepOffset_Tool.BuildNeighbour(W, F, NOnV1, NOnV2);
+        OffsetTool.BuildNeighbour(W, F, NOnV1, NOnV2);
         Edge E1 = global::Kerf.Engine.Topology.ShapeCasts.Edge(new global::Kerf.Engine.Topology.Explorer(W, ShapeType.Edge).Current());
         Edge E2 = global::Kerf.Engine.Topology.ShapeCasts.Edge(NOnV2[E1]);
         global::Kerf.Engine.Topology.Exploration.Vertices(E1, out _, out Vertex aV2);
 
         NCollection_List<Shape> LV = new();
-        BRepOffset_Tool.Inter2d(F, E1, E2, LV, global::Kerf.Engine.Foundation.Precision.Confusion());
+        OffsetTool.Inter2d(F, E1, E2, LV, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1, LV.Extent());
         Assert.True(Tool.Pnt(global::Kerf.Engine.Topology.ShapeCasts.Vertex(LV.First())).Distance(Tool.Pnt(aV2)) < 1e-7);
     }
@@ -321,18 +325,18 @@ public class BRepOffset_ToolTests
             aEdges.Append(anExp.Current());
         }
         NCollection_List<Shape> L1 = new(), L2 = new();
-        Assert.True(BRepOffset_Tool.TryProject(F1, F2, aEdges, L1, L2, In, 1e-6));
+        Assert.True(OffsetTool.TryProject(F1, F2, aEdges, L1, L2, In, 1e-6));
         Assert.Equal(4, L1.Extent());
 
-        Assert.False(BRepOffset_Tool.TryProject(FOpp, F2, aEdges, L1, L2, In, 1e-6));
+        Assert.False(OffsetTool.TryProject(FOpp, F2, aEdges, L1, L2, In, 1e-6));
         Assert.True(L1.IsEmpty());
     }
     // A B-spline face's working offset face: BRepOffset_Offset puts it on an offset surface.
     private static Face OffsetCylinderFace(out Face theFace)
     {
-        Shape aCyl = new BRepBuilderAPI_NurbsConvert(new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape()).Shape();
+        Shape aCyl = new NurbsConvert(new ApiMakeCylinder(5.0, 10.0).Shape()).Shape();
         theFace = Face(aCyl, 1);
-        return new BRepOffset_Offset(theFace, -1.0).InternalFace();
+        return new Offset(theFace, -1.0).InternalFace();
     }
 
     [Fact]
@@ -343,9 +347,9 @@ public class BRepOffset_ToolTests
         Surface aBefore = Tool.Surface(anOF)!;
         Assert.IsType<OffsetSurface>(aBefore);
         aBefore.Bounds(out _, out _, out double v1, out double v2);
-        string aCheck = new BRepCheck_Analyzer(anOF).IsValid().ToString();
+        string aCheck = new Analyzer(anOF).IsValid().ToString();
         Face aNF = new();
-        Assert.True(BRepOffset_Tool.EnLargeFace(anOF, ref aNF, true));
+        Assert.True(OffsetTool.EnLargeFace(anOF, ref aNF, true));
         Surface anAfter = Tool.Surface(anOF)!;
         Assert.NotSame(aBefore, anAfter);
         Assert.Same(Tool.Surface(aNF), anAfter);
@@ -356,7 +360,7 @@ public class BRepOffset_ToolTests
         {
             Assert.NotNull(Tool.CurveOnSurface(global::Kerf.Engine.Topology.ShapeCasts.Edge(anExp.Current()), anOF, out _, out _));
         }
-        Assert.Equal(aCheck, new BRepCheck_Analyzer(anOF).IsValid().ToString());
+        Assert.Equal(aCheck, new Analyzer(anOF).IsValid().ToString());
     }
 
     [Fact]
@@ -366,7 +370,7 @@ public class BRepOffset_ToolTests
         anOF.TShape()!.FreezeGraph(); // a caller's face
         Surface aBefore = Tool.Surface(anOF)!;
         Face aNF = new();
-        Assert.True(BRepOffset_Tool.EnLargeFace(anOF, ref aNF, true));
+        Assert.True(OffsetTool.EnLargeFace(anOF, ref aNF, true));
         Assert.Same(aBefore, Tool.Surface(anOF));
         Assert.NotSame(aBefore, Tool.Surface(aNF));
     }

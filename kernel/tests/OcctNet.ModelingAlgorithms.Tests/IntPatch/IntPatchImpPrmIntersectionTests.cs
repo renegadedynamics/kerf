@@ -2,8 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -73,35 +75,35 @@ public class IntPatchImpPrmIntersectionTests
 
     private static SurfaceAdaptor Cone() => new(new ConicalSurface(Axis, M_PI / 6, 0.2), 0, 2 * M_PI, -1, 2);
 
-    private static IntPatch_ImpPrmIntersection Run(SurfaceAdaptor theS1, SurfaceAdaptor theS2) =>
+    private static ImpPrmIntersection Run(SurfaceAdaptor theS1, SurfaceAdaptor theS2) =>
         new(theS1, new TopolTool(theS1), theS2, new TopolTool(theS2), TolArc, TolTang, Fleche, Pas);
 
     // Every point of every walking line on both surfaces; end vertices present.
-    private static void CheckLines(IntPatch_ImpPrmIntersection theInt, SurfaceAdaptor theS1,
+    private static void CheckLines(ImpPrmIntersection theInt, SurfaceAdaptor theS1,
                                    SurfaceAdaptor theS2, double theTol)
     {
-        Assert.True(theInt.IsDone());
-        for (int i = 1; i <= theInt.NbLines(); i++)
+        Assert.True(theInt.IsDone);
+        for (int i = 1; i <= theInt.LineCount; i++)
         {
-            IntPatch_Line aLine = theInt.Line(i);
-            Assert.True(aLine.ArcType() == IntPatch_Walking || aLine.ArcType() == IntPatch_Restriction);
-            if (aLine is not IntPatch_WLine aWL)
+            PatchLine aLine = theInt.Line(i);
+            Assert.True(aLine.ArcType() == PatchLineType.Walking || aLine.ArcType() == PatchLineType.Restriction);
+            if (aLine is not WLine aWL)
             {
                 continue;
             }
             Assert.True(aWL.NbPnts() >= 2);
-            Assert.True(aWL.NbVertex() >= 2);
-            Assert.True(aWL.HasFirstPoint() && aWL.HasLastPoint());
+            Assert.True(aWL.VertexCount >= 2);
+            Assert.True(aWL.HasFirstPoint && aWL.HasLastPoint);
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
-                IntSurf_PntOn2S aP = aWL.Point(k);
+                PntOn2S aP = aWL.Point(k);
                 aP.Parameters(out double u1, out double v1, out double u2, out double v2);
                 Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"line {i} point {k} off S1");
                 Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"line {i} point {k} off S2");
             }
-            for (int k = 1; k <= aWL.NbVertex(); k++)
+            for (int k = 1; k <= aWL.VertexCount; k++)
             {
-                IntPatch_Point aV = aWL.Vertex(k);
+                PatchPoint aV = aWL.Vertex(k);
                 double aPrm = aV.ParameterOnLine();
                 Assert.InRange(aPrm, 1.0, aWL.NbPnts());
             }
@@ -109,14 +111,14 @@ public class IntPatchImpPrmIntersectionTests
     }
 
     // All the doubles of the result, as bits, for the determinism tests.
-    private static List<long> Bits(IntPatch_ImpPrmIntersection theInt)
+    private static List<long> Bits(ImpPrmIntersection theInt)
     {
-        List<long> aBits = [theInt.NbLines()];
-        for (int i = 1; i <= theInt.NbLines(); i++)
+        List<long> aBits = [theInt.LineCount];
+        for (int i = 1; i <= theInt.LineCount; i++)
         {
-            IntPatch_Line aLine = theInt.Line(i);
+            PatchLine aLine = theInt.Line(i);
             aBits.Add((long)aLine.ArcType());
-            if (aLine is IntPatch_PointLine aPL)
+            if (aLine is PointLine aPL)
             {
                 for (int k = 1; k <= aPL.NbPnts(); k++)
                 {
@@ -127,7 +129,7 @@ public class IntPatchImpPrmIntersectionTests
                         aBits.Add(BitConverter.DoubleToInt64Bits(d));
                     }
                 }
-                for (int k = 1; k <= aPL.NbVertex(); k++)
+                for (int k = 1; k <= aPL.VertexCount; k++)
                 {
                     aBits.Add(BitConverter.DoubleToInt64Bits(aPL.Vertex(k).ParameterOnLine()));
                 }
@@ -141,33 +143,33 @@ public class IntPatchImpPrmIntersectionTests
     {
         // No restriction point and no interior point: the walking does not run.
         SurfaceAdaptor aPln = Plane(5.0), aPatch = Patch();
-        IntPatch_ImpPrmIntersection anInt = Run(aPln, aPatch);
-        Assert.True(anInt.IsDone());
-        Assert.True(anInt.IsEmpty());
-        Assert.Equal(0, anInt.NbLines());
-        Assert.Equal(0, anInt.NbPnts());
+        ImpPrmIntersection anInt = Run(aPln, aPatch);
+        Assert.True(anInt.IsDone);
+        Assert.True(anInt.IsEmpty);
+        Assert.Equal(0, anInt.LineCount);
+        Assert.Equal(0, anInt.PntCount);
     }
 
     [Fact]
     public void NoQuadric_Throws()
     {
         SurfaceAdaptor aTorus = new(new ToroidalSurface(Axis, 1.0, 0.2));
-        IntPatch_ImpPrmIntersection anInt = new();
+        ImpPrmIntersection anInt = new();
         Assert.Throws<ConstructionErrorException>(() =>
             anInt.Perform(aTorus, new TopolTool(aTorus), Patch(), new TopolTool(Patch()), TolArc,
                           TolTang, Fleche, Pas));
-        Assert.False(anInt.IsDone());
-        Assert.Throws<NotDoneException>(() => anInt.NbLines());
+        Assert.False(anInt.IsDone);
+        Assert.Throws<NotDoneException>(() => anInt.LineCount);
     }
 
     [Fact]
     public void Plane_BSpline_OpenLine()
     {
         SurfaceAdaptor aPln = Plane(0.26), aPatch = Patch();
-        IntPatch_ImpPrmIntersection anInt = Run(aPln, aPatch);
+        ImpPrmIntersection anInt = Run(aPln, aPatch);
         CheckLines(anInt, aPln, aPatch, 1e-5);
-        Assert.False(anInt.IsEmpty());
-        Assert.True(anInt.NbLines() >= 1);
+        Assert.False(anInt.IsEmpty);
+        Assert.True(anInt.LineCount >= 1);
     }
 
     [Fact]
@@ -175,21 +177,21 @@ public class IntPatchImpPrmIntersectionTests
     {
         // The quadric second: the lines' first parameters are the patch's.
         SurfaceAdaptor aPln = Plane(0.26), aPatch = Patch();
-        IntPatch_ImpPrmIntersection anInt = Run(aPatch, aPln);
+        ImpPrmIntersection anInt = Run(aPatch, aPln);
         CheckLines(anInt, aPatch, aPln, 1e-5);
-        Assert.True(anInt.NbLines() >= 1);
+        Assert.True(anInt.LineCount >= 1);
     }
 
     [Fact]
     public void Cylinder_BSpline_ClosedLine()
     {
         SurfaceAdaptor aCyl = Cylinder(), aPatch = Patch();
-        IntPatch_ImpPrmIntersection anInt = Run(aCyl, aPatch);
+        ImpPrmIntersection anInt = Run(aCyl, aPatch);
         CheckLines(anInt, aCyl, aPatch, 1e-5);
-        Assert.True(anInt.NbLines() >= 1);
-        for (int i = 1; i <= anInt.NbLines(); i++)
+        Assert.True(anInt.LineCount >= 1);
+        for (int i = 1; i <= anInt.LineCount; i++)
         {
-            IntPatch_WLine aWL = Assert.IsType<IntPatch_WLine>(anInt.Line(i));
+            WLine aWL = Assert.IsType<WLine>(anInt.Line(i));
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
                 Point3D aP = aWL.Point(k).Value();
@@ -203,18 +205,18 @@ public class IntPatchImpPrmIntersectionTests
     public void Sphere_BSpline()
     {
         SurfaceAdaptor aSph = Sphere(), aPatch = Patch();
-        IntPatch_ImpPrmIntersection anInt = Run(aSph, aPatch);
+        ImpPrmIntersection anInt = Run(aSph, aPatch);
         CheckLines(anInt, aSph, aPatch, 1e-5);
-        Assert.True(anInt.NbLines() >= 1);
+        Assert.True(anInt.LineCount >= 1);
     }
 
     [Fact]
     public void Cone_Extrusion()
     {
         SurfaceAdaptor aCone = Cone(), aWall = Wall();
-        IntPatch_ImpPrmIntersection anInt = Run(aCone, aWall);
+        ImpPrmIntersection anInt = Run(aCone, aWall);
         CheckLines(anInt, aCone, aWall, 1e-5);
-        Assert.True(anInt.NbLines() >= 1);
+        Assert.True(anInt.LineCount >= 1);
     }
 
     [Fact]

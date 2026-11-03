@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
@@ -39,26 +40,26 @@ public class BRepMesh_IncrementalMeshTest
         List<Vertex> aVertices = new(aPnts.Length);
         foreach (Point3D aPnt in aPnts)
         {
-            aVertices.Add(new BRepBuilderAPI_MakeVertex(aPnt).Vertex());
+            aVertices.Add(new MakeVertex(aPnt).Vertex());
         }
 
-        BRepBuilderAPI_MakeWire aWireBuilder = new();
+        MakeWire aWireBuilder = new();
         for (int i = 0; i < aVertices.Count; ++i)
         {
             Vertex aV = aVertices[i];
             Vertex aW = aVertices[(i + 1) % aVertices.Count];
-            aWireBuilder.Add(new BRepBuilderAPI_MakeEdge(aV, aW).Edge());
+            aWireBuilder.Add(new MakeEdge(aV, aW).Edge());
         }
-        Assert.True(aWireBuilder.IsDone(), "Wire construction failed");
+        Assert.True(aWireBuilder.IsDone, "Wire construction failed");
 
         Point3D aV0 = aPnts[0];
         Point3D aV1 = aPnts[1];
         Point3D aV2 = aPnts[^1];
         Vector3D aFaceNormal = new Vector3D(aV0, aV1).Crossed(new Vector3D(aV0, aV2));
 
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(aV0, new Direction3D(aFaceNormal)), aWireBuilder.Wire()).Face();
+        Face aFace = new MakeFace(new Plane3D(aV0, new Direction3D(aFaceNormal)), aWireBuilder.Wire()).Face();
 
-        BRepMesh_IncrementalMesh aMesher = new(aFace, 1.0e-7);
+        IncrementalMesh aMesher = new(aFace, 1.0e-7);
         Assert.Equal(0, aMesher.GetStatusFlags());
     }
 
@@ -73,17 +74,17 @@ public class BRepMesh_IncrementalMeshTest
         const double THE_DEFLECTION = 0.05;
 
         CylindricalSurface aCylinder = new(new CoordinateSystem(Constants.Origin(), Constants.DZ()), THE_RADIUS);
-        BRepBuilderAPI_MakeFace aFaceBuilder = new(aCylinder,
+        MakeFace aFaceBuilder = new(aCylinder,
                                                    THE_FIRST_U,
                                                    THE_LAST_U,
                                                    THE_FIRST_V,
                                                    THE_LAST_V,
                                                    global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFaceBuilder.IsDone());
+        Assert.True(aFaceBuilder.IsDone);
         Face aFace = aFaceBuilder.Face();
 
-        BRepMesh_IncrementalMesh aMesher = new(aFace, THE_DEFLECTION);
-        Assert.True(aMesher.IsDone());
+        IncrementalMesh aMesher = new(aFace, THE_DEFLECTION);
+        Assert.True(aMesher.IsDone);
         aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTriangulation = Tool.Triangulation(aFace, out Placement aLocation);
@@ -130,12 +131,12 @@ public class BRepMesh_IncrementalMeshTest
     [Fact]
     public void ClosedCylinder_SeamPolygonsReferenceValidMeshNodes()
     {
-        BRepPrimAPI_MakeCylinder aCylinderBuilder = new(5.0, 10.0);
+        ApiMakeCylinder aCylinderBuilder = new(5.0, 10.0);
         Shape aCylinder = aCylinderBuilder.Shape();
-        Assert.True(aCylinderBuilder.IsDone());
+        Assert.True(aCylinderBuilder.IsDone);
 
-        BRepMesh_IncrementalMesh aMesher = new(aCylinder, 0.1);
-        Assert.True(aMesher.IsDone());
+        IncrementalMesh aMesher = new(aCylinder, 0.1);
+        Assert.True(aMesher.IsDone);
         // OCCT.NET: a maker's result may hold frozen sub-shapes; the meshed shape is Shape() (decision 489)
         aCylinder = aMesher.Shape();
 

@@ -46,12 +46,12 @@ public class Geom2dGcc_Circ2d3TanTests
     }
 
     /// <summary>Create a qualified curve from circle parameters.</summary>
-    private static Geom2dGcc_QualifiedCurve createQualifiedCircle(double theX, double theY, double theRadius)
+    private static global::Kerf.Engine.Construction.Constraints.QualifiedCurve createQualifiedCircle(double theX, double theY, double theRadius)
     {
         Point2D aCenter = new(theX, theY);
         CircleCurve2D aCircle = new(new Circle2D(new Axis2D(aCenter, new Direction2D(1, 0)), theRadius));
         CurveAdaptor2D anAdaptor = new(aCircle);
-        return Geom2dGcc.Unqualified(anAdaptor);
+        return global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anAdaptor);
     }
 
     private static Circle2D Circ(double theX, double theY, double theR)
@@ -81,19 +81,19 @@ public class Geom2dGcc_Circ2d3TanTests
     public void BUC60622_RegressionCase()
     {
         // BUC60622 test case: 3 circles that should produce 3 tangent solutions
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(500.0, 1800.0, 500.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(500.0, 1800.0, 500.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
 
         Circle2D aInputCirc1 = Circ(500.0, 1800.0, 500.0);
         Circle2D aInputCirc2 = Circ(500.0, 1900.0, 400.0);
         Circle2D aInputCirc3 = Circ(700.0, 1900.0, 200.0);
 
-        Geom2dGcc_Circ2d3Tan aTangentSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aTangentSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aTangentSolver.IsDone(), "Algorithm should succeed");
+        Assert.True(aTangentSolver.IsDone, "Algorithm should succeed");
 
-        int aNbSolutions = aTangentSolver.NbSolutions();
+        int aNbSolutions = aTangentSolver.SolutionCount;
 
         // The regression test: we should find exactly 3 solutions for BUC60622 case
         Assert.Equal(3, aNbSolutions);
@@ -119,9 +119,9 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void ToleranceImpact_Analysis()
     {
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(500.0, 1800.0, 500.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(500.0, 1800.0, 500.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(500.0, 1900.0, 400.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(700.0, 1900.0, 200.0);
 
         double[] aTestTolerances = [global::Kerf.Engine.Foundation.Precision.Confusion(), 1e-12, 1e-10, 1e-8];
 
@@ -129,11 +129,11 @@ public class Geom2dGcc_Circ2d3TanTests
 
         foreach (double aTol in aTestTolerances)
         {
-            Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, aTol, 0, 0, 0);
+            global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, aTol, 0, 0, 0);
 
-            Assert.True(aSolver.IsDone(), $"Algorithm should succeed with tolerance {aTol}");
+            Assert.True(aSolver.IsDone, $"Algorithm should succeed with tolerance {aTol}");
 
-            int aNbSol = aSolver.NbSolutions();
+            int aNbSol = aSolver.SolutionCount;
 
             if (aTol == global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -159,19 +159,19 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void Simple_ThreeCircle_Case()
     {
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 2.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(10.0, 0.0, 2.0);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(5.0, 8.0, 2.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 2.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(10.0, 0.0, 2.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(5.0, 8.0, 2.0);
 
         Circle2D aInputCirc1 = Circ(0.0, 0.0, 2.0);
         Circle2D aInputCirc2 = Circ(10.0, 0.0, 2.0);
         Circle2D aInputCirc3 = Circ(5.0, 8.0, 2.0);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Simple case should always work");
+        Assert.True(aSolver.IsDone, "Simple case should always work");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.True(aNbSol >= 1, "Should find at least one solution for simple case");
 
         for (int i = 1; i <= aNbSol; i++)
@@ -187,15 +187,15 @@ public class Geom2dGcc_Circ2d3TanTests
     public void Concentric_Circles_EdgeCase()
     {
         // Concentric circles at (0,0) with radii 1, 3 and a separate circle at (10,0) radius 2: no solutions
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(0.0, 0.0, 3.0);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(10.0, 0.0, 2.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(0.0, 0.0, 3.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(10.0, 0.0, 2.0);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Algorithm should complete successfully even when no solutions exist");
+        Assert.True(aSolver.IsDone, "Algorithm should complete successfully even when no solutions exist");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.Equal(0, aNbSol);
     }
 
@@ -203,19 +203,19 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void SmallCircles_PrecisionTest()
     {
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 0.01);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(0.1, 0.0, 0.01);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(0.05, 0.08, 0.01);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 0.01);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(0.1, 0.0, 0.01);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(0.05, 0.08, 0.01);
 
         Circle2D aInputCirc1 = Circ(0.0, 0.0, 0.01);
         Circle2D aInputCirc2 = Circ(0.1, 0.0, 0.01);
         Circle2D aInputCirc3 = Circ(0.05, 0.08, 0.01);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Small circles should be handled correctly");
+        Assert.True(aSolver.IsDone, "Small circles should be handled correctly");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.True(aNbSol >= 1, "Should find at least one solution for small circles");
 
         for (int i = 1; i <= aNbSol; i++)
@@ -230,19 +230,19 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void LargeCircles_ScalingTest()
     {
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1000.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(5000.0, 0.0, 1500.0);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(2500.0, 4000.0, 800.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1000.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(5000.0, 0.0, 1500.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(2500.0, 4000.0, 800.0);
 
         Circle2D aInputCirc1 = Circ(0.0, 0.0, 1000.0);
         Circle2D aInputCirc2 = Circ(5000.0, 0.0, 1500.0);
         Circle2D aInputCirc3 = Circ(2500.0, 4000.0, 800.0);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Large circles should be handled correctly");
+        Assert.True(aSolver.IsDone, "Large circles should be handled correctly");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.True(aNbSol >= 1, "Should find at least one solution for large circles");
 
         for (int i = 1; i <= aNbSol; i++)
@@ -257,19 +257,19 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void LinearConfiguration_GeometricTest()
     {
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(5.0, 0.0, 1.5);
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(10.0, 0.0, 1.2);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 1.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(5.0, 0.0, 1.5);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(10.0, 0.0, 1.2);
 
         Circle2D aInputCirc1 = Circ(0.0, 0.0, 1.0);
         Circle2D aInputCirc2 = Circ(5.0, 0.0, 1.5);
         Circle2D aInputCirc3 = Circ(10.0, 0.0, 1.2);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Linear configuration should be solvable");
+        Assert.True(aSolver.IsDone, "Linear configuration should be solvable");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.True(aNbSol >= 1, "Should find at least one solution for linear configuration");
 
         for (int i = 1; i <= aNbSol; i++)
@@ -285,19 +285,19 @@ public class Geom2dGcc_Circ2d3TanTests
     public void TouchingCircles_DegenerateCase()
     {
         // Two circles that touch each other externally plus a third separate circle
-        Geom2dGcc_QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 2.0);
-        Geom2dGcc_QualifiedCurve aQual2 = createQualifiedCircle(4.0, 0.0, 2.0); // Touch at (2,0)
-        Geom2dGcc_QualifiedCurve aQual3 = createQualifiedCircle(2.0, 5.0, 1.5);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual1 = createQualifiedCircle(0.0, 0.0, 2.0);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual2 = createQualifiedCircle(4.0, 0.0, 2.0); // Touch at (2,0)
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQual3 = createQualifiedCircle(2.0, 5.0, 1.5);
 
         Circle2D aInputCirc1 = Circ(0.0, 0.0, 2.0);
         Circle2D aInputCirc2 = Circ(4.0, 0.0, 2.0);
         Circle2D aInputCirc3 = Circ(2.0, 5.0, 1.5);
 
-        Geom2dGcc_Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(aQual1, aQual2, aQual3, myTolerance, 0, 0, 0);
 
-        Assert.True(aSolver.IsDone(), "Touching circles configuration should be solvable");
+        Assert.True(aSolver.IsDone, "Touching circles configuration should be solvable");
 
-        int aNbSol = aSolver.NbSolutions();
+        int aNbSol = aSolver.SolutionCount;
         Assert.True(aNbSol >= 1, "Should find at least one solution for touching circles case");
 
         for (int i = 1; i <= aNbSol; i++)
@@ -312,7 +312,7 @@ public class Geom2dGcc_Circ2d3TanTests
     // nothing (OCCT), so math_FunctionSetRoot sees the zero values of its own vectors and stops at the starting point:
     // the circle through the three starting points is kept only when it is already tangent. Native OCCT reads
     // uninitialised storage there (occt-issues.md), so these outcomes are the port's.
-    private static Geom2dGcc_QualifiedCurve StraightBSpline()
+    private static global::Kerf.Engine.Construction.Constraints.QualifiedCurve StraightBSpline()
     {
         NCollection_Array1<Point2D> aPoles = new(1, 2);
         aPoles[1] = new Point2D(-5.0, 3.0);
@@ -323,17 +323,17 @@ public class Geom2dGcc_Circ2d3TanTests
         NCollection_Array1<int> aMults = new(1, 2);
         aMults[1] = 2;
         aMults[2] = 2;
-        return Geom2dGcc.Unqualified(new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 1)));
+        return global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 1)));
     }
 
     [Fact]
     public void Iterative_StartOnSolution_IsKept_AndTangency3Throws()
     {
         double anA = Math.Atan2(0.6, 0.8);
-        Geom2dGcc_Circ2d3Tan aSolver = new(createQualifiedCircle(0.0, 0.0, 1.0), createQualifiedCircle(4.0, 0.0, 1.0),
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(createQualifiedCircle(0.0, 0.0, 1.0), createQualifiedCircle(4.0, 0.0, 1.0),
                                            StraightBSpline(), 1.0e-9, anA, Math.PI - anA, 0.7);
-        Assert.True(aSolver.IsDone());
-        Assert.Equal(1, aSolver.NbSolutions());
+        Assert.True(aSolver.IsDone);
+        Assert.Equal(1, aSolver.SolutionCount);
         Circle2D aSol = aSolver.ThisSolution(1);
         Assert.Equal(2.0, aSol.Location().X(), 1.0e-9);
         Assert.Equal(1.5, aSol.Location().Y(), 1.0e-9);
@@ -348,10 +348,10 @@ public class Geom2dGcc_Circ2d3TanTests
     [Fact]
     public void Iterative_StartOffSolution_IsNotDone()
     {
-        Geom2dGcc_Circ2d3Tan aSolver = new(createQualifiedCircle(0.0, 0.0, 1.0), createQualifiedCircle(4.0, 0.0, 1.0),
+        global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(createQualifiedCircle(0.0, 0.0, 1.0), createQualifiedCircle(4.0, 0.0, 1.0),
                                            StraightBSpline(), 1.0e-9, 0.5, 2.5, 0.6);
-        Assert.False(aSolver.IsDone());
-        Assert.Equal(1, aSolver.NbSolutions());
+        Assert.False(aSolver.IsDone);
+        Assert.Equal(1, aSolver.SolutionCount);
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.ThisSolution(1));
     }
 }

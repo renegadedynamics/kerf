@@ -5,12 +5,13 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
-using static Occt.GccInt_IType;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
+using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2d2TanOn
+public sealed partial class AnalyticCirc2d2TanOn
 {
     //=========================================================================
     //  Circles tangent to circle C1, passing by point Point2 and centers     +
@@ -28,89 +29,89 @@ public sealed partial class GccAna_Circ2d2TanOn
     //=========================================================================
 
     /// <summary>The circles tangent to a circle and through a point with their centre on a line.</summary>
-    public GccAna_Circ2d2TanOn(in GccEnt_QualifiedCirc Qualified1,
-                               in Point2D Point2,
-                               in Line2D OnLine,
-                               double Tolerance)
+    public AnalyticCirc2d2TanOn(in QualifiedCirc qualified1,
+                               in Point2D point2,
+                               in Line2D onLine,
+                               double tolerance)
         : this(4)
     {
-        TheSame1.Init(0);
-        TheSame2.Init(0);
-        double Tol = Math.Abs(Tolerance);
-        WellDone = false;
-        NbrSol = 0;
-        if (!(Qualified1.IsEnclosed() || Qualified1.IsEnclosing() || Qualified1.IsOutside()
-              || Qualified1.IsUnqualified()))
+        _theSame1.Init(0);
+        _theSame2.Init(0);
+        double tol = Math.Abs(tolerance);
+        _wellDone = false;
+        _nbrSol = 0;
+        if (!(qualified1.IsEnclosed || qualified1.IsEnclosing || qualified1.IsOutside
+              || qualified1.IsUnqualified))
         {
-            throw new GccEnt_BadQualifier();
+            throw new BadQualifierException();
         }
-        NCollection_Array1<double> Radius = new(1, 2);
+        NCollection_Array1<double> radius = new(1, 2);
         Direction2D dirx = new(Direction2D.D.X);
-        Circle2D C1 = Qualified1.Qualified();
-        double R1 = C1.Radius();
-        Point2D center1 = C1.Location();
+        Circle2D c1 = qualified1.Qualified();
+        double r1 = c1.Radius();
+        Point2D center1 = c1.Location();
 
         //=========================================================================
         //   Processing of boundary cases.                                        +
         //=========================================================================
 
-        double dp2l = OnLine.Distance(Point2);
-        Direction2D donline = OnLine.Direction();
-        Point2D pinterm = new(Point2.XY() + dp2l * new Xy(-donline.Y(), donline.X()));
-        if (OnLine.Distance(pinterm) > Tol)
+        double dp2l = onLine.Distance(point2);
+        Direction2D donline = onLine.Direction();
+        Point2D pinterm = new(point2.XY() + dp2l * new Xy(-donline.Y(), donline.X()));
+        if (onLine.Distance(pinterm) > tol)
         {
-            pinterm = new Point2D(Point2.XY() - dp2l * new Xy(-donline.Y(), donline.X()));
+            pinterm = new Point2D(point2.XY() - dp2l * new Xy(-donline.Y(), donline.X()));
         }
         double dist = pinterm.Distance(center1);
-        if (Qualified1.IsEnclosed() && Math.Abs(R1 - dist - dp2l) <= Tol)
+        if (qualified1.IsEnclosed && Math.Abs(r1 - dist - dp2l) <= tol)
         {
-            WellDone = true;
+            _wellDone = true;
         }
-        else if (Qualified1.IsEnclosing() && Math.Abs(R1 + dist - dp2l) <= Tol)
+        else if (qualified1.IsEnclosing && Math.Abs(r1 + dist - dp2l) <= tol)
         {
-            WellDone = true;
+            _wellDone = true;
         }
-        else if (Qualified1.IsOutside() && Math.Abs(dist - dp2l) <= Tol)
+        else if (qualified1.IsOutside && Math.Abs(dist - dp2l) <= tol)
         {
-            WellDone = true;
+            _wellDone = true;
         }
-        else if (Qualified1.IsUnqualified()
-                 && (Math.Abs(dist - dp2l) <= Tol || Math.Abs(R1 - dist - dp2l) <= Tol
-                     || Math.Abs(R1 + dist - dp2l) <= Tol))
+        else if (qualified1.IsUnqualified
+                 && (Math.Abs(dist - dp2l) <= tol || Math.Abs(r1 - dist - dp2l) <= tol
+                     || Math.Abs(r1 + dist - dp2l) <= tol))
         {
-            WellDone = true;
+            _wellDone = true;
         }
-        if (WellDone)
+        if (_wellDone)
         {
-            NbrSol++;
-            cirsol[NbrSol] = new Circle2D(new Axis2D(pinterm, dirx), dp2l);
+            _nbrSol++;
+            _cirsol[_nbrSol] = new Circle2D(new Axis2D(pinterm, dirx), dp2l);
             //  ======================================================
             Direction2D dc1 = new(center1.XY() - pinterm.XY());
             double distcc1 = pinterm.Distance(center1);
-            if (!Qualified1.IsUnqualified())
+            if (!qualified1.IsUnqualified)
             {
-                qualifier1[NbrSol] = Qualified1.Qualifier();
+                _qualifier1[_nbrSol] = qualified1.Qualifier();
             }
-            else if (Math.Abs(distcc1 + dp2l - R1) < Tol)
+            else if (Math.Abs(distcc1 + dp2l - r1) < tol)
             {
-                qualifier1[NbrSol] = GccEnt_enclosed;
+                _qualifier1[_nbrSol] = Qualifier.Enclosed;
             }
-            else if (Math.Abs(distcc1 - R1 - dp2l) < Tol)
+            else if (Math.Abs(distcc1 - r1 - dp2l) < tol)
             {
-                qualifier1[NbrSol] = GccEnt_outside;
+                _qualifier1[_nbrSol] = Qualifier.Outside;
             }
             else
             {
-                qualifier1[NbrSol] = GccEnt_enclosing;
+                _qualifier1[_nbrSol] = Qualifier.Enclosing;
             }
-            qualifier2[NbrSol] = GccEnt_noqualifier;
-            pnttg1sol[NbrSol] = new Point2D(pinterm.XY() + dp2l * dc1.XY());
-            par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-            pararg1[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
-            pnttg2sol[NbrSol] = Point2;
-            par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-            pntcen[NbrSol] = cirsol[NbrSol].Location();
-            parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+            _qualifier2[_nbrSol] = Qualifier.Noqualifier;
+            _pnttg1sol[_nbrSol] = new Point2D(pinterm.XY() + dp2l * dc1.XY());
+            _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+            _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
+            _pnttg2sol[_nbrSol] = point2;
+            _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
+            _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+            _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen[_nbrSol]);
             return;
         }
 
@@ -118,63 +119,63 @@ public sealed partial class GccAna_Circ2d2TanOn
         //   General case.                                                       +
         //=========================================================================
 
-        GccAna_CircPnt2dBisec Bis = new(C1, Point2);
-        if (Bis.IsDone())
+        CircPnt2dBisec bis = new(c1, point2);
+        if (bis.IsDone)
         {
-            int nbsolution = Bis.NbSolutions();
+            int nbsolution = bis.SolutionCount;
             for (int i = 1; i <= nbsolution; i++)
             {
-                GccInt_Bisec Sol = Bis.ThisSolution(i);
-                GccInt_IType type = Sol.ArcType();
-                AnalyticIntersection Intp = new();
-                if (type == GccInt_Lin)
+                ConstraintBisec sol = bis.ThisSolution(i);
+                ConstraintCurveType type = sol.ArcType();
+                AnalyticIntersection intp = new();
+                if (type == ConstraintCurveType.Lin)
                 {
-                    Intp.Perform(OnLine, Sol.Line());
+                    intp.Perform(onLine, sol.Line());
                 }
-                else if (type == GccInt_Cir)
+                else if (type == ConstraintCurveType.Cir)
                 {
-                    Intp.Perform(OnLine, Sol.Circle());
+                    intp.Perform(onLine, sol.Circle());
                 }
-                else if (type == GccInt_Ell)
+                else if (type == ConstraintCurveType.Ell)
                 {
-                    Intp.Perform(OnLine, new Conic(Sol.Ellipse()));
+                    intp.Perform(onLine, new Conic(sol.Ellipse()));
                 }
-                else if (type == GccInt_Hpr)
+                else if (type == ConstraintCurveType.Hpr)
                 {
-                    Intp.Perform(OnLine, new Conic(Sol.Hyperbola()));
+                    intp.Perform(onLine, new Conic(sol.Hyperbola()));
                 }
-                if (Intp.IsDone)
+                if (intp.IsDone)
                 {
-                    if (!Intp.IsEmpty)
+                    if (!intp.IsEmpty)
                     {
-                        for (int j = 1; j <= Intp.PointCount; j++)
+                        for (int j = 1; j <= intp.PointCount; j++)
                         {
-                            Point2D Center = Intp.Point(j).Value();
-                            double dist1 = center1.Distance(Center);
+                            Point2D center = intp.Point(j).Value();
+                            double dist1 = center1.Distance(center);
                             int nbsol = 1;
                             bool ok = false;
                             // OCCT: with C1 qualified the radius follows the qualifier only, whichever branch of the
                             // bisector the centre is on, so a solution need not pass through Point2
-                            if (Qualified1.IsEnclosed())
+                            if (qualified1.IsEnclosed)
                             {
-                                if (dist1 - C1.Radius() <= Tolerance)
+                                if (dist1 - c1.Radius() <= tolerance)
                                 {
                                     ok = true;
-                                    Radius[1] = Math.Abs(C1.Radius() - dist1);
+                                    radius[1] = Math.Abs(c1.Radius() - dist1);
                                 }
                             }
-                            else if (Qualified1.IsOutside())
+                            else if (qualified1.IsOutside)
                             {
-                                if (C1.Radius() - dist1 <= Tolerance)
+                                if (c1.Radius() - dist1 <= tolerance)
                                 {
                                     ok = true;
-                                    Radius[1] = Math.Abs(C1.Radius() - dist1);
+                                    radius[1] = Math.Abs(c1.Radius() - dist1);
                                 }
                             }
-                            else if (Qualified1.IsEnclosing())
+                            else if (qualified1.IsEnclosing)
                             {
                                 ok = true;
-                                Radius[1] = C1.Radius() + dist1;
+                                radius[1] = c1.Radius() + dist1;
                             }
                             /*	    else if (Qualified1.IsUnqualified() && ok) {
                                       ok = true;
@@ -183,14 +184,14 @@ public sealed partial class GccAna_Circ2d2TanOn
                                       Radius(2) = C1.Radius()+dist1;
                                     }
                             */
-                            else if (Qualified1.IsUnqualified())
+                            else if (qualified1.IsUnqualified)
                             {
-                                double popradius = Center.Distance(Point2);
+                                double popradius = center.Distance(point2);
                                 // OCCT: tests the difference as a boolean (non-zero), not against a tolerance
                                 if (Math.Abs(popradius - dist1) != 0.0)
                                 {
                                     ok = true;
-                                    Radius[1] = popradius;
+                                    radius[1] = popradius;
                                 }
                             }
 
@@ -198,52 +199,52 @@ public sealed partial class GccAna_Circ2d2TanOn
                             {
                                 for (int k = 1; k <= nbsol; k++)
                                 {
-                                    NbrSol++;
-                                    cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius[k]);
+                                    _nbrSol++;
+                                    _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                     //              ==========================================================
-                                    double distcc1 = Center.Distance(center1);
-                                    if (!Qualified1.IsUnqualified())
+                                    double distcc1 = center.Distance(center1);
+                                    if (!qualified1.IsUnqualified)
                                     {
-                                        qualifier1[NbrSol] = Qualified1.Qualifier();
+                                        _qualifier1[_nbrSol] = qualified1.Qualifier();
                                     }
-                                    else if (Math.Abs(distcc1 + Radius[k] - R1) < Tol)
+                                    else if (Math.Abs(distcc1 + radius[k] - r1) < tol)
                                     {
-                                        qualifier1[NbrSol] = GccEnt_enclosed;
+                                        _qualifier1[_nbrSol] = Qualifier.Enclosed;
                                     }
-                                    else if (Math.Abs(distcc1 - R1 - Radius[k]) < Tol)
+                                    else if (Math.Abs(distcc1 - r1 - radius[k]) < tol)
                                     {
-                                        qualifier1[NbrSol] = GccEnt_outside;
-                                    }
-                                    else
-                                    {
-                                        qualifier1[NbrSol] = GccEnt_enclosing;
-                                    }
-                                    qualifier2[NbrSol] = GccEnt_noqualifier;
-                                    if (Center.Distance(center1) <= Tolerance
-                                        && Math.Abs(Radius[k] - C1.Radius()) <= Tolerance)
-                                    {
-                                        TheSame1[NbrSol] = 1;
+                                        _qualifier1[_nbrSol] = Qualifier.Outside;
                                     }
                                     else
                                     {
-                                        TheSame1[NbrSol] = 0;
-                                        Direction2D dc1 = new(center1.XY() - Center.XY());
-                                        pnttg1sol[NbrSol] = new Point2D(Center.XY() + Radius[k] * dc1.XY());
-                                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
+                                        _qualifier1[_nbrSol] = Qualifier.Enclosing;
+                                    }
+                                    _qualifier2[_nbrSol] = Qualifier.Noqualifier;
+                                    if (center.Distance(center1) <= tolerance
+                                        && Math.Abs(radius[k] - c1.Radius()) <= tolerance)
+                                    {
+                                        _theSame1[_nbrSol] = 1;
+                                    }
+                                    else
+                                    {
+                                        _theSame1[_nbrSol] = 0;
+                                        Direction2D dc1 = new(center1.XY() - center.XY());
+                                        _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc1.XY());
+                                        _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                         // OCCT: indexed by the bisector's number i instead of NbrSol
-                                        pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(C1, pnttg1sol[NbrSol]);
+                                        _pararg1[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                                     }
-                                    TheSame2[NbrSol] = 0;
-                                    pnttg2sol[NbrSol] = Point2;
-                                    par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                                    pararg2[NbrSol] = 0.0;
-                                    pntcen[NbrSol] = Center;
-                                    parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+                                    _theSame2[_nbrSol] = 0;
+                                    _pnttg2sol[_nbrSol] = point2;
+                                    _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
+                                    _pararg2[_nbrSol] = 0.0;
+                                    _pntcen[_nbrSol] = center;
+                                    _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen[_nbrSol]);
                                 }
                             }
                         }
                     }
-                    WellDone = true;
+                    _wellDone = true;
                 }
             }
         }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.TestHarness;
@@ -16,16 +18,16 @@ public class BOPAlgo_CellsBuilderTests
 {
     private static NCollection_List<Shape> L(params Shape[] theShapes) => new(theShapes);
 
-    private static BOPAlgo_CellsBuilder Build(bool theParallel, params Shape[] theArgs)
+    private static CellsBuilder Build(bool theParallel, params Shape[] theArgs)
     {
-        BOPAlgo_CellsBuilder aCB = new();
+        CellsBuilder aCB = new();
         foreach (Shape aS in theArgs)
         {
             aCB.AddArgument(aS);
         }
         aCB.SetRunParallel(theParallel);
         aCB.Perform();
-        Assert.False(aCB.HasErrors());
+        Assert.False(aCB.HasErrors);
         return aCB;
     }
 
@@ -33,7 +35,7 @@ public class BOPAlgo_CellsBuilderTests
     public void Parts_are_chosen_by_the_arguments_they_belong_to()
     {
         Shape aA = BoxA(), aB = BoxB();
-        BOPAlgo_CellsBuilder aCB = Build(false, aA, aB);
+        CellsBuilder aCB = Build(false, aA, aB);
         Assert.Equal(3, Count(aCB.GetAllParts(), ShapeType.Solid));
         Assert.Equal(0, Count(aCB.Shape(), ShapeType.Solid));
 
@@ -51,7 +53,7 @@ public class BOPAlgo_CellsBuilderTests
     public void A_published_result_never_changes()
     {
         Shape aA = BoxA(), aB = BoxB();
-        BOPAlgo_CellsBuilder aCB = Build(false, aA, aB);
+        CellsBuilder aCB = Build(false, aA, aB);
         aCB.AddToResult(L(aA), L(aB));
         Shape aFirst = aCB.Shape();
         Assert.True(aFirst.TShape()!.IsFrozen);
@@ -64,7 +66,7 @@ public class BOPAlgo_CellsBuilderTests
     public void Internal_boundaries_between_parts_of_a_material_are_removed()
     {
         Shape aA = BoxA(), aB = BoxB();
-        BOPAlgo_CellsBuilder aCB = Build(false, aA, aB);
+        CellsBuilder aCB = Build(false, aA, aB);
         aCB.AddAllToResult(1, true);
         Shape aR = aCB.Shape();
         Assert.Equal(1, Count(aR, ShapeType.Solid));
@@ -85,9 +87,9 @@ public class BOPAlgo_CellsBuilderTests
     public void Faces_of_a_material_are_unified_and_parts_made_into_containers()
     {
         // two faces of a plane split by a line: the halves of one square face
-        Shape aF1 = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10, 0, 10).Shape();
-        Shape aF2 = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5, 15, 0, 10).Shape();
-        BOPAlgo_CellsBuilder aCB = Build(false, aF1, aF2);
+        Shape aF1 = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 10, 0, 10).Shape();
+        Shape aF2 = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5, 15, 0, 10).Shape();
+        CellsBuilder aCB = Build(false, aF1, aF2);
         Assert.Equal(3, Count(aCB.GetAllParts(), ShapeType.Face));
         aCB.AddAllToResult(1, true);
         Assert.Equal(1, Count(aCB.Shape(), ShapeType.Face));
@@ -103,7 +105,7 @@ public class BOPAlgo_CellsBuilderTests
     {
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
-        BOPAlgo_CellsBuilder aCB = Build(false, aA, aB);
+        CellsBuilder aCB = Build(false, aA, aB);
         aCB.AddAllToResult(1, true);
         aCB.MakeContainers();
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
@@ -116,7 +118,7 @@ public class BOPAlgo_CellsBuilderTests
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
             Shape aA = BoxA(), aB = BoxB();
-            BOPAlgo_CellsBuilder aCB = Build(true, aA, aB);
+            CellsBuilder aCB = Build(true, aA, aB);
             aCB.AddToResult(L(aA), L(), 1);
             aCB.AddToResult(L(aB), L(aA), 1, true);
             return BRepTextComparison.Write(aCB.Shape()) + DeterminismHarness.HistoryText([aA, aB], aCB.Shape(), aCB.History());

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Plate;
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
@@ -22,25 +23,25 @@ public class NLPlate_NLPlateTests
     public void Constraints_ClampTheirActiveOrder()
     {
         var p = new Xy(0.1, 0.2);
-        var aD1 = new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0));
-        var aD2 = new Plate_D2(s_zero, s_zero, s_zero);
-        var aD3 = new Plate_D3(s_zero, s_zero, s_zero, new Xyz(0.0, 0.0, 1.0));
-        NLPlate_HGPPConstraint[] aAll =
+        var aD1 = new D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0));
+        var aD2 = new D2(s_zero, s_zero, s_zero);
+        var aD3 = new D3(s_zero, s_zero, s_zero, new Xyz(0.0, 0.0, 1.0));
+        HgppConstraint[] aAll =
         [
-            new NLPlate_HPG0Constraint(p, new Xyz(1.0, 2.0, 3.0)),
-            new NLPlate_HPG0G1Constraint(p, s_zero, aD1),
-            new NLPlate_HPG0G2Constraint(p, s_zero, aD1, aD2),
-            new NLPlate_HPG0G3Constraint(p, s_zero, aD1, aD2, aD3),
-            new NLPlate_HPG1Constraint(p, aD1),
-            new NLPlate_HPG2Constraint(p, aD1, aD2),
-            new NLPlate_HPG3Constraint(p, aD1, aD2, aD3),
+            new Hpg0Constraint(p, new Xyz(1.0, 2.0, 3.0)),
+            new Hpg0G1Constraint(p, s_zero, aD1),
+            new Hpg0G2Constraint(p, s_zero, aD1, aD2),
+            new Hpg0G3Constraint(p, s_zero, aD1, aD2, aD3),
+            new Hpg1Constraint(p, aD1),
+            new Hpg2Constraint(p, aD1, aD2),
+            new Hpg3Constraint(p, aD1, aD2, aD3),
         ];
         int[] aOrders = [0, 1, 2, 3, 1, 2, 3];
         for (int i = 0; i < aAll.Length; i++)
         {
             Assert.Equal(aOrders[i], aAll[i].ActiveOrder());
             Assert.Equal(p, aAll[i].UV());
-            Assert.Equal(i < 4, aAll[i].IsG0());
+            Assert.Equal(i < 4, aAll[i].IsG0);
             aAll[i].SetActiveOrder(-1);
             Assert.Equal(-1, aAll[i].ActiveOrder());
             aAll[i].SetActiveOrder(7);
@@ -54,7 +55,7 @@ public class NLPlate_NLPlateTests
 
         // the base's defaults
         Assert.Equal(s_zero, aAll[4].G0Target());
-        Assert.Equal(new Plate_D1(s_zero, s_zero), aAll[0].G1Target());
+        Assert.Equal(new D1(s_zero, s_zero), aAll[0].G1Target());
         Assert.Equal(0.0, aAll[0].G0Criterion());
         Assert.Equal(0, aAll[0].Orientation());
         aAll[0].SetOrientation(1);
@@ -76,7 +77,7 @@ public class NLPlate_NLPlateTests
     [Fact]
     public void Solve_DeformsThePlaneThroughTheTargets()
     {
-        var aPlate = new NLPlate_NLPlate(XYPlane());
+        var aPlate = new NLPlate(XYPlane());
         var aTargets = new (Xy UV, Xyz P)[]
         {
             (new Xy(0.0, 0.0), new Xyz(0.0, 0.0, 0.0)),
@@ -87,12 +88,12 @@ public class NLPlate_NLPlateTests
         };
         foreach (var (uv, pnt) in aTargets)
         {
-            aPlate.Load(new NLPlate_HPG0Constraint(uv, pnt));
+            aPlate.Load(new Hpg0Constraint(uv, pnt));
         }
         aPlate.Load(null);
         Assert.Equal(0, aPlate.MaxActiveConstraintOrder());
         aPlate.Solve(2, 0);
-        Assert.True(aPlate.IsDone());
+        Assert.True(aPlate.IsDone);
         foreach (var (uv, pnt) in aTargets)
         {
             AssertNear(pnt, aPlate.Evaluate(uv), 1.0e-9);
@@ -107,16 +108,16 @@ public class NLPlate_NLPlateTests
     [Fact]
     public void Solve_WithG1Targets_MakesTheSurfaceTangent()
     {
-        var aPlate = new NLPlate_NLPlate(XYPlane());
-        aPlate.Load(new NLPlate_HPG0Constraint(new Xy(0.0, 0.0), new Xyz(0.0, 0.0, 0.0)));
-        aPlate.Load(new NLPlate_HPG0Constraint(new Xy(1.0, 0.0), new Xyz(1.0, 0.0, 0.0)));
-        aPlate.Load(new NLPlate_HPG0Constraint(new Xy(0.0, 1.0), new Xyz(0.0, 1.0, 0.0)));
-        var aD1 = new Plate_D1(new Xyz(1.0, 0.0, 0.3), new Xyz(0.0, 1.0, 0.1));
+        var aPlate = new NLPlate(XYPlane());
+        aPlate.Load(new Hpg0Constraint(new Xy(0.0, 0.0), new Xyz(0.0, 0.0, 0.0)));
+        aPlate.Load(new Hpg0Constraint(new Xy(1.0, 0.0), new Xyz(1.0, 0.0, 0.0)));
+        aPlate.Load(new Hpg0Constraint(new Xy(0.0, 1.0), new Xyz(0.0, 1.0, 0.0)));
+        var aD1 = new D1(new Xyz(1.0, 0.0, 0.3), new Xyz(0.0, 1.0, 0.1));
         var p = new Xy(0.6, 0.6);
-        aPlate.Load(new NLPlate_HPG0G1Constraint(p, new Xyz(0.6, 0.6, 0.2), aD1));
+        aPlate.Load(new Hpg0G1Constraint(p, new Xyz(0.6, 0.6, 0.2), aD1));
         Assert.Equal(1, aPlate.MaxActiveConstraintOrder());
         aPlate.Solve(3, 0);
-        Assert.True(aPlate.IsDone());
+        Assert.True(aPlate.IsDone);
         AssertNear(new Xyz(0.6, 0.6, 0.2), aPlate.Evaluate(p), 1.0e-6);
         Xyz aN = (aD1.DU() ^ aD1.DV()).Normalized();
         Assert.Equal(0.0, aPlate.EvaluateDerivative(p, 1, 0) * aN, 1.0e-6);
@@ -126,19 +127,19 @@ public class NLPlate_NLPlateTests
     [Fact]
     public void IncrementalSolve_ReachesTheTargets()
     {
-        var aPlate = new NLPlate_NLPlate(XYPlane());
+        var aPlate = new NLPlate(XYPlane());
         foreach (Xy uv in new Xy[] { new(0.0, 0.0), new(1.0, 0.0), new(0.0, 1.0), new(1.0, 1.0) })
         {
-            var c = new NLPlate_HPG0Constraint(uv, new Xyz(uv.X(), uv.Y(), 0.0));
+            var c = new Hpg0Constraint(uv, new Xyz(uv.X(), uv.Y(), 0.0));
             c.SetIncrementalLoadAllowed(true);
             aPlate.Load(c);
         }
-        var aD1 = new Plate_D1(new Xyz(1.0, 0.0, 0.5), new Xyz(0.0, 1.0, 0.0));
-        var aG1 = new NLPlate_HPG0G1Constraint(new Xy(0.5, 0.5), new Xyz(0.5, 0.5, 0.3), aD1);
+        var aD1 = new D1(new Xyz(1.0, 0.0, 0.5), new Xyz(0.0, 1.0, 0.0));
+        var aG1 = new Hpg0G1Constraint(new Xy(0.5, 0.5), new Xyz(0.5, 0.5, 0.3), aD1);
         aG1.SetIncrementalLoadAllowed(true);
         aPlate.Load(aG1);
         aPlate.IncrementalSolve(3, 1, 4);
-        Assert.True(aPlate.IsDone());
+        Assert.True(aPlate.IsDone);
         AssertNear(new Xyz(0.5, 0.5, 0.3), aPlate.Evaluate(new Xy(0.5, 0.5)), 1.0e-6);
         Xyz aN = (aD1.DU() ^ aD1.DV()).Normalized();
         Assert.Equal(0.0, aPlate.EvaluateDerivative(new Xy(0.5, 0.5), 1, 0) * aN, 1.0e-6);
@@ -147,12 +148,12 @@ public class NLPlate_NLPlateTests
     [Fact]
     public void ConstraintsSliding_MovesTheUVOfASlidingConstraint()
     {
-        var aPlate = new NLPlate_NLPlate(XYPlane());
+        var aPlate = new NLPlate(XYPlane());
         // a target on the plane, set at the wrong UV: sliding finds the UV of its foot
-        var aSliding = new NLPlate_HPG0Constraint(new Xy(0.2, 0.3), new Xyz(0.7, 0.4, 0.0));
+        var aSliding = new Hpg0Constraint(new Xy(0.2, 0.3), new Xyz(0.7, 0.4, 0.0));
         aSliding.SetUVFreeSliding(true);
         aPlate.Load(aSliding);
-        var aFixed = new NLPlate_HPG0Constraint(new Xy(0.9, 0.9), new Xyz(0.9, 0.9, 0.0));
+        var aFixed = new Hpg0Constraint(new Xy(0.9, 0.9), new Xyz(0.9, 0.9, 0.0));
         aPlate.Load(aFixed);
         aPlate.ConstraintsSliding();
         Assert.True(new Xy(0.7, 0.4).IsEqual(aSliding.UV(), 1.0e-12));
@@ -162,13 +163,13 @@ public class NLPlate_NLPlateTests
     [Fact]
     public void Solve2_SolvesThePolynomialPartFirst()
     {
-        var aPlate = new NLPlate_NLPlate(XYPlane());
+        var aPlate = new NLPlate(XYPlane());
         foreach (Xy uv in new Xy[] { new(0.0, 0.0), new(1.0, 0.0), new(0.0, 1.0), new(1.0, 1.0), new(0.4, 0.7) })
         {
-            aPlate.Load(new NLPlate_HPG0Constraint(uv, new Xyz(uv.X(), uv.Y(), 0.3 * uv.X() * uv.Y())));
+            aPlate.Load(new Hpg0Constraint(uv, new Xyz(uv.X(), uv.Y(), 0.3 * uv.X() * uv.Y())));
         }
         aPlate.Solve2(2, 0);
-        Assert.True(aPlate.IsDone());
+        Assert.True(aPlate.IsDone);
         AssertNear(new Xyz(0.4, 0.7, 0.3 * 0.4 * 0.7), aPlate.Evaluate(new Xy(0.4, 0.7)), 1.0e-9);
     }
 
@@ -177,13 +178,13 @@ public class NLPlate_NLPlateTests
     {
         // OCCT's Solve sets OK after its loop, whatever the loop found (occt-issues.md). A single constraint gives a
         // flat UV box, which Plate_Plate widens; two constraints at one UV make the matrix singular.
-        var aPlate = new NLPlate_NLPlate(XYPlane());
-        aPlate.Load(new NLPlate_HPG0Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 1.0)));
-        aPlate.Load(new NLPlate_HPG0Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 2.0)));
-        aPlate.Load(new NLPlate_HPG0G1Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 3.0),
-                                                 new Plate_D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0))));
+        var aPlate = new NLPlate(XYPlane());
+        aPlate.Load(new Hpg0Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 1.0)));
+        aPlate.Load(new Hpg0Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 2.0)));
+        aPlate.Load(new Hpg0G1Constraint(new Xy(0.5, 0.5), new Xyz(0.0, 0.0, 3.0),
+                                                 new D1(new Xyz(1.0, 0.0, 0.0), new Xyz(0.0, 1.0, 0.0))));
         aPlate.Solve(2, 0);
-        Assert.True(aPlate.IsDone());
+        Assert.True(aPlate.IsDone);
         // no iteration succeeded: the surface is the initial plane
         Assert.Equal(new Xyz(0.5, 0.5, 0.0), aPlate.Evaluate(new Xy(0.5, 0.5)));
     }

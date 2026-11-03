@@ -4,40 +4,42 @@
 
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Engine.Intersection.ResultType;
-using static Occt.IntPatch_IType;
-using static Occt.IntSurf_Situation;
-using static Occt.IntSurf_TypeTrans;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
+using static Kerf.Engine.Intersection.Walking.WalkingSituation;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Patches;
 
 // The quadric pairs other than plane/quadric and cylinder/cylinder: cylinder/sphere, cylinder/cone, cone/cone,
 // cone/sphere, sphere/sphere and the tori (OCCT 7.x's IntPatch_ImpImpIntersection_5.gxx), and ProcessBounds, which
 // puts the end points of their analytic lines.
-public sealed partial class IntPatch_ImpImpIntersection
+public sealed partial class ImpImpIntersection
 {
     //=======================================================================
     // function : ProcessBounds
     // purpose  : Puts the first and last points of the analytic line alig as vertices, sharing the vertices of
     //            the analytic lines already in slin that coincide with them.
     //=======================================================================
-    private static void ProcessBounds(IntPatch_ALine alig, //-- ligne courante
-                                      NCollection_Sequence<IntPatch_Line> slin,
-                                      in IntSurf_Quadric Quad1,
-                                      in IntSurf_Quadric Quad2,
+    private static void ProcessBounds(ALine alig, //-- ligne courante
+                                      NCollection_Sequence<PatchLine> slin,
+                                      in SurfaceQuadric quad1,
+                                      in SurfaceQuadric quad2,
                                       ref bool procf,
                                       in Point3D ptf,   //-- Debut Ligne Courante
                                       double first,    //-- Paramf
                                       ref bool procl,
                                       in Point3D ptl,   //-- Fin Ligne courante
                                       double last,     //-- Paraml
-                                      ref bool Multpoint,
-                                      double Tol)
+                                      ref bool multpoint,
+                                      double tol)
     {
         int j, k;
-        double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-        IntPatch_Point ptsol = new();
+        double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+        PatchPoint ptsol = new();
         double d;
 
         if (procf && procl)
@@ -55,32 +57,32 @@ public sealed partial class IntPatch_ImpImpIntersection
         {
             // OCCT: j advances only on analytic lines, so a line of another type in slin with procf or procl
             // still false loops forever. The callers here put only ALines in slin before calling.
-            if (slin.Value(j).ArcType() == IntPatch_Analytic)
+            if (slin.Value(j).ArcType() == PatchLineType.Analytic)
             {
-                IntPatch_ALine aligold = (IntPatch_ALine)slin.Value(j);
+                ALine aligold = (ALine)slin.Value(j);
                 k = 1;
 
                 //-- On prend les vertex des lignes deja enregistrees
 
-                while (k <= aligold.NbVertex())
+                while (k <= aligold.VertexCount)
                 {
                     ptsol = aligold.Vertex(k);
                     if (!procf)
                     {
                         d = ptf.Distance(ptsol.Value());
-                        if (d <= Tol)
+                        if (d <= tol)
                         {
-                            ptsol.SetTolerance(Tol);
-                            if (!ptsol.IsMultiple())
+                            ptsol.SetTolerance(tol);
+                            if (!ptsol.IsMultiple)
                             {
                                 //-- le point ptsol (de aligold) est declare multiple sur aligold
-                                Multpoint = true;
+                                multpoint = true;
                                 ptsol.SetMultiple(true);
                                 aligold.Replace(k, ptsol);
                             }
                             ptsol.SetParameter(first);
                             alig.AddVertex(ptsol);
-                            alig.SetFirstPoint(alig.NbVertex());
+                            alig.SetFirstPoint(alig.VertexCount);
                             procf = true;
 
                             //-- On restore le point avec son parametre sur aligold
@@ -89,18 +91,18 @@ public sealed partial class IntPatch_ImpImpIntersection
                     }
                     if (!procl)
                     {
-                        if (ptl.Distance(ptsol.Value()) <= Tol)
+                        if (ptl.Distance(ptsol.Value()) <= tol)
                         {
-                            ptsol.SetTolerance(Tol);
-                            if (!ptsol.IsMultiple())
+                            ptsol.SetTolerance(tol);
+                            if (!ptsol.IsMultiple)
                             {
-                                Multpoint = true;
+                                multpoint = true;
                                 ptsol.SetMultiple(true);
                                 aligold.Replace(k, ptsol);
                             }
                             ptsol.SetParameter(last);
                             alig.AddVertex(ptsol);
-                            alig.SetLastPoint(alig.NbVertex());
+                            alig.SetLastPoint(alig.VertexCount);
                             procl = true;
 
                             //-- On restore le point avec son parametre sur aligold
@@ -109,7 +111,7 @@ public sealed partial class IntPatch_ImpImpIntersection
                     }
                     if (procf && procl)
                     {
-                        k = aligold.NbVertex() + 1;
+                        k = aligold.VertexCount + 1;
                     }
                     else
                     {
@@ -127,92 +129,92 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
         }
 
-        ptsol.SetTolerance(Tol);
+        ptsol.SetTolerance(tol);
         if (!procf && !procl)
         {
-            Quad1.Parameters(ptf, ref U1, ref V1);
-            Quad2.Parameters(ptf, ref U2, ref V2);
-            ptsol.SetValue(ptf, Tol, false);
-            ptsol.SetParameters(U1, V1, U2, V2);
+            quad1.Parameters(ptf, ref u1, ref v1);
+            quad2.Parameters(ptf, ref u2, ref v2);
+            ptsol.SetValue(ptf, tol, false);
+            ptsol.SetParameters(u1, v1, u2, v2);
             ptsol.SetParameter(first);
-            if (ptf.Distance(ptl) <= Tol)
+            if (ptf.Distance(ptl) <= tol)
             {
                 ptsol.SetMultiple(true); // a voir
-                Multpoint = true;        // a voir de meme
+                multpoint = true;        // a voir de meme
                 alig.AddVertex(ptsol);
-                alig.SetFirstPoint(alig.NbVertex());
+                alig.SetFirstPoint(alig.VertexCount);
 
                 ptsol.SetParameter(last);
                 alig.AddVertex(ptsol);
-                alig.SetLastPoint(alig.NbVertex());
+                alig.SetLastPoint(alig.VertexCount);
             }
             else
             {
                 alig.AddVertex(ptsol);
-                alig.SetFirstPoint(alig.NbVertex());
-                Quad1.Parameters(ptl, ref U1, ref V1);
-                Quad2.Parameters(ptl, ref U2, ref V2);
-                ptsol.SetValue(ptl, Tol, false);
-                ptsol.SetParameters(U1, V1, U2, V2);
+                alig.SetFirstPoint(alig.VertexCount);
+                quad1.Parameters(ptl, ref u1, ref v1);
+                quad2.Parameters(ptl, ref u2, ref v2);
+                ptsol.SetValue(ptl, tol, false);
+                ptsol.SetParameters(u1, v1, u2, v2);
                 ptsol.SetParameter(last);
                 alig.AddVertex(ptsol);
-                alig.SetLastPoint(alig.NbVertex());
+                alig.SetLastPoint(alig.VertexCount);
             }
         }
         else if (!procf)
         {
-            Quad1.Parameters(ptf, ref U1, ref V1);
-            Quad2.Parameters(ptf, ref U2, ref V2);
-            ptsol.SetValue(ptf, Tol, false);
-            ptsol.SetParameters(U1, V1, U2, V2);
+            quad1.Parameters(ptf, ref u1, ref v1);
+            quad2.Parameters(ptf, ref u2, ref v2);
+            ptsol.SetValue(ptf, tol, false);
+            ptsol.SetParameters(u1, v1, u2, v2);
             ptsol.SetParameter(first);
             alig.AddVertex(ptsol);
-            alig.SetFirstPoint(alig.NbVertex());
+            alig.SetFirstPoint(alig.VertexCount);
         }
         else if (!procl)
         {
-            Quad1.Parameters(ptl, ref U1, ref V1);
-            Quad2.Parameters(ptl, ref U2, ref V2);
-            ptsol.SetValue(ptl, Tol, false);
-            ptsol.SetParameters(U1, V1, U2, V2);
+            quad1.Parameters(ptl, ref u1, ref v1);
+            quad2.Parameters(ptl, ref u2, ref v2);
+            ptsol.SetValue(ptl, tol, false);
+            ptsol.SetParameters(u1, v1, u2, v2);
             ptsol.SetParameter(last);
             alig.AddVertex(ptsol);
-            alig.SetLastPoint(alig.NbVertex());
+            alig.SetLastPoint(alig.VertexCount);
         }
     }
 
     //=================================================================================================
 
-    private static bool IntCySp(in IntSurf_Quadric Quad1,
-                                in IntSurf_Quadric Quad2,
-                                double Tol,
-                                bool Reversed,
-                                ref bool Empty,
-                                ref bool Multpoint,
-                                NCollection_Sequence<IntPatch_Line> slin,
-                                NCollection_Sequence<IntPatch_Point> spnt)
+    private static bool IntCySp(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tol,
+                                bool reversed,
+                                ref bool empty,
+                                ref bool multpoint,
+                                NCollection_Sequence<PatchLine> slin,
+                                NCollection_Sequence<PatchPoint> spnt)
     {
         int i;
 
-        IntSurf_TypeTrans trans1, trans2;
+        WalkingTypeTrans trans1, trans2;
         ResultType typint;
-        IntPatch_Point ptsol = new();
+        PatchPoint ptsol = new();
         Circle3D cirsol;
 
-        Cylinder Cy;
-        Sphere Sp;
+        Cylinder cy;
+        Sphere sp;
 
-        if (!Reversed)
+        if (!reversed)
         {
-            Cy = Quad1.Cylinder();
-            Sp = Quad2.Sphere();
+            cy = quad1.Cylinder();
+            sp = quad2.Sphere();
         }
         else
         {
-            Cy = Quad2.Cylinder();
-            Sp = Quad1.Sphere();
+            cy = quad2.Cylinder();
+            sp = quad1.Sphere();
         }
-        QuadQuadGeo inter = new(Cy, Sp, Tol);
+        QuadQuadGeo inter = new(cy, sp, tol);
 
         if (!inter.IsDone)
         {
@@ -220,120 +222,120 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.SolutionCount;
-        Empty = false;
+        int nbSol = inter.SolutionCount;
+        empty = false;
 
         switch (typint)
         {
             case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
-                Empty = true;
+                empty = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
-                double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                Quad1.Parameters(psol, ref U1, ref V1);
-                Quad2.Parameters(psol, ref U2, ref V2);
-                ptsol.SetValue(psol, Tol, true);
-                ptsol.SetParameters(U1, V1, U2, V2);
+                double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+                quad1.Parameters(psol, ref u1, ref v1);
+                quad2.Parameters(psol, ref u2, ref v2);
+                ptsol.SetValue(psol, tol, true);
+                ptsol.SetParameters(u1, v1, u2, v2);
                 spnt.Append(ptsol);
             }
             break;
 
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
                 cirsol = inter.Circle(1);
-                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
+                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D tgt);
 
-                if (NbSol == 1)
+                if (nbSol == 1)
                 {
-                    Vector3D TestCurvature = new(ptref, Sp.Location());
-                    Vector3D Normsp, Normcyl;
-                    if (!Reversed)
+                    Vector3D testCurvature = new(ptref, sp.Location());
+                    Vector3D normsp, normcyl;
+                    if (!reversed)
                     {
-                        Normcyl = Quad1.Normale(ptref);
-                        Normsp = Quad2.Normale(ptref);
+                        normcyl = quad1.Normale(ptref);
+                        normsp = quad2.Normale(ptref);
                     }
                     else
                     {
-                        Normcyl = Quad2.Normale(ptref);
-                        Normsp = Quad1.Normale(ptref);
+                        normcyl = quad2.Normale(ptref);
+                        normsp = quad1.Normale(ptref);
                     }
 
-                    IntSurf_Situation situcyl;
-                    IntSurf_Situation situsp;
+                    WalkingSituation situcyl;
+                    WalkingSituation situsp;
 
-                    if (Normcyl.Dot(TestCurvature) > 0.0)
+                    if (normcyl.Dot(testCurvature) > 0.0)
                     {
-                        situsp = IntSurf_Outside;
-                        if (Normsp.Dot(Normcyl) > 0.0)
+                        situsp = WalkingSituation.Outside;
+                        if (normsp.Dot(normcyl) > 0.0)
                         {
-                            situcyl = IntSurf_Inside;
+                            situcyl = WalkingSituation.Inside;
                         }
                         else
                         {
-                            situcyl = IntSurf_Outside;
+                            situcyl = WalkingSituation.Outside;
                         }
                     }
                     else
                     {
-                        situsp = IntSurf_Inside;
-                        if (Normsp.Dot(Normcyl) > 0.0)
+                        situsp = WalkingSituation.Inside;
+                        if (normsp.Dot(normcyl) > 0.0)
                         {
-                            situcyl = IntSurf_Outside;
+                            situcyl = WalkingSituation.Outside;
                         }
                         else
                         {
-                            situcyl = IntSurf_Inside;
+                            situcyl = WalkingSituation.Inside;
                         }
                     }
-                    IntPatch_GLine glig;
-                    if (!Reversed)
+                    GLine glig;
+                    if (!reversed)
                     {
-                        glig = new IntPatch_GLine(cirsol, true, situcyl, situsp);
+                        glig = new GLine(cirsol, true, situcyl, situsp);
                     }
                     else
                     {
-                        glig = new IntPatch_GLine(cirsol, true, situsp, situcyl);
+                        glig = new GLine(cirsol, true, situsp, situcyl);
                     }
                     slin.Append(glig);
                 }
                 else
                 {
-                    if (Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref)) > 0.0)
+                    if (tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref)) > 0.0)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
-                    IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                    GLine glig = new(cirsol, false, trans1, trans2);
                     slin.Append(glig);
 
                     cirsol = inter.Circle(2);
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out Tgt);
-                    double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out tgt);
+                    double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.0000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.0000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
-                    glig = new IntPatch_GLine(cirsol, false, trans1, trans2);
+                    glig = new GLine(cirsol, false, trans1, trans2);
                     slin.Append(glig);
                 }
             }
@@ -342,8 +344,8 @@ public sealed partial class IntPatch_ImpImpIntersection
             case NoGeometricSolution:
             {
                 Point3D psol;
-                double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                IntQuadQuad anaint = new(Cy, new Quadric(Sp), Tol);
+                double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+                IntQuadQuad anaint = new(cy, new Quadric(sp), tol);
                 if (!anaint.IsDone)
                 {
                     return false;
@@ -351,18 +353,18 @@ public sealed partial class IntPatch_ImpImpIntersection
 
                 if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
-                    Empty = true;
+                    empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.PntCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.PntCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
                         psol = anaint.Point(i);
-                        Quad1.Parameters(psol, ref U1, ref V1);
-                        Quad2.Parameters(psol, ref U2, ref V2);
-                        ptsol.SetValue(psol, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        quad1.Parameters(psol, ref u1, ref v1);
+                        quad2.Parameters(psol, ref u2, ref v2);
+                        ptsol.SetValue(psol, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
 
@@ -373,8 +375,8 @@ public sealed partial class IntPatch_ImpImpIntersection
                     bool tgfound;
                     int kount;
 
-                    NbSol = anaint.CurveCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.CurveCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
                         curvsol = anaint.Curve(i);
                         curvsol.Domain(out first, out last);
@@ -395,47 +397,47 @@ public sealed partial class IntPatch_ImpImpIntersection
                                 tgfound = kount > 5;
                             }
                         }
-                        IntPatch_ALine alig;
+                        ALine alig;
                         if (kount <= 5)
                         {
-                            double qwe = tgvalid.DotCross(Quad2.Normale(ptvalid), Quad1.Normale(ptvalid));
+                            double qwe = tgvalid.DotCross(quad2.Normale(ptvalid), quad1.Normale(ptvalid));
                             if (qwe > 0.00000001)
                             {
-                                trans1 = IntSurf_Out;
-                                trans2 = IntSurf_In;
+                                trans1 = WalkingTypeTrans.Out;
+                                trans2 = WalkingTypeTrans.In;
                             }
                             else if (qwe < -0.00000001)
                             {
-                                trans1 = IntSurf_In;
-                                trans2 = IntSurf_Out;
+                                trans1 = WalkingTypeTrans.In;
+                                trans2 = WalkingTypeTrans.Out;
                             }
                             else
                             {
-                                trans1 = trans2 = IntSurf_Undecided;
+                                trans1 = trans2 = WalkingTypeTrans.Undecided;
                             }
-                            alig = new IntPatch_ALine(curvsol, false, trans1, trans2);
+                            alig = new ALine(curvsol, false, trans1, trans2);
                         }
                         else
                         {
-                            alig = new IntPatch_ALine(curvsol, false);
+                            alig = new ALine(curvsol, false);
                         }
-                        bool TempFalse1a = false;
-                        bool TempFalse2a = false;
+                        bool tempFalse1a = false;
+                        bool tempFalse2a = false;
 
                         //-- ptf et ptl : points debut et fin de alig
 
                         ProcessBounds(alig,
                                       slin,
-                                      Quad1,
-                                      Quad2,
-                                      ref TempFalse1a,
+                                      quad1,
+                                      quad2,
+                                      ref tempFalse1a,
                                       ptf,
                                       first,
-                                      ref TempFalse2a,
+                                      ref tempFalse2a,
                                       ptl,
                                       last,
-                                      ref Multpoint,
-                                      Tol);
+                                      ref multpoint,
+                                      tol);
                         slin.Append(alig);
                     } //-- boucle sur les lignes
                 } //-- solution avec au moins une lihne
@@ -452,37 +454,37 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static bool IntCyCo(in IntSurf_Quadric Quad1,
-                                in IntSurf_Quadric Quad2,
-                                double Tol,
-                                bool Reversed,
-                                ref bool Empty,
-                                ref bool Multpoint,
-                                NCollection_Sequence<IntPatch_Line> slin,
-                                NCollection_Sequence<IntPatch_Point> spnt)
+    private static bool IntCyCo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tol,
+                                bool reversed,
+                                ref bool empty,
+                                ref bool multpoint,
+                                NCollection_Sequence<PatchLine> slin,
+                                NCollection_Sequence<PatchPoint> spnt)
     {
-        IntPatch_Point ptsol = new();
+        PatchPoint ptsol = new();
 
         int i;
 
-        IntSurf_TypeTrans trans1, trans2;
+        WalkingTypeTrans trans1, trans2;
         ResultType typint;
         Circle3D cirsol;
 
-        Cylinder Cy;
-        Cone Co;
+        Cylinder cy;
+        Cone co;
 
-        if (!Reversed)
+        if (!reversed)
         {
-            Cy = Quad1.Cylinder();
-            Co = Quad2.Cone();
+            cy = quad1.Cylinder();
+            co = quad2.Cone();
         }
         else
         {
-            Cy = Quad2.Cylinder();
-            Co = Quad1.Cone();
+            cy = quad2.Cylinder();
+            co = quad1.Cone();
         }
-        QuadQuadGeo inter = new(Cy, Co, Tol);
+        QuadQuadGeo inter = new(cy, co, tol);
 
         if (!inter.IsDone)
         {
@@ -490,32 +492,32 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.SolutionCount;
-        Empty = false;
+        int nbSol = inter.SolutionCount;
+        empty = false;
 
         switch (typint)
         {
             case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
-                Empty = true;
+                empty = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
-                double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                Quad1.Parameters(psol, ref U1, ref V1);
-                Quad1.Parameters(psol, ref U2, ref V2); // OCCT: Quad1 for the second surface's parameters
-                ptsol.SetValue(psol, Tol, true);
-                ptsol.SetParameters(U1, V1, U2, V2);
+                double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+                quad1.Parameters(psol, ref u1, ref v1);
+                quad1.Parameters(psol, ref u2, ref v2); // OCCT: Quad1 for the second surface's parameters
+                ptsol.SetValue(psol, tol, true);
+                ptsol.SetParameters(u1, v1, u2, v2);
                 spnt.Append(ptsol);
             }
             break;
 
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
-                Vector3D Tgt;
+                Vector3D tgt;
                 Point3D ptref;
                 int j;
                 double qwe;
@@ -523,23 +525,23 @@ public sealed partial class IntPatch_ImpImpIntersection
                 for (j = 1; j <= 2; ++j)
                 {
                     cirsol = inter.Circle(j);
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out Tgt);
-                    qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out tgt);
+                    qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.00000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.00000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
-                    IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                    GLine glig = new(cirsol, false, trans1, trans2);
                     slin.Append(glig);
                 }
             }
@@ -548,8 +550,8 @@ public sealed partial class IntPatch_ImpImpIntersection
             case NoGeometricSolution:
             {
                 Point3D psol;
-                double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                IntQuadQuad anaint = new(Cy, new Quadric(Co), Tol);
+                double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+                IntQuadQuad anaint = new(cy, new Quadric(co), tol);
                 if (!anaint.IsDone)
                 {
                     return false;
@@ -557,18 +559,18 @@ public sealed partial class IntPatch_ImpImpIntersection
 
                 if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
-                    Empty = true;
+                    empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.PntCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.PntCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
                         psol = anaint.Point(i);
-                        Quad1.Parameters(psol, ref U1, ref V1);
-                        Quad2.Parameters(psol, ref U2, ref V2);
-                        ptsol.SetValue(psol, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        quad1.Parameters(psol, ref u1, ref v1);
+                        quad2.Parameters(psol, ref u2, ref v2);
+                        ptsol.SetValue(psol, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
 
@@ -583,24 +585,24 @@ public sealed partial class IntPatch_ImpImpIntersection
                     //
                     //
                     // IntAna_Curve curvsol;
-                    Curve aC;
-                    NCollection_List<Curve> aLC = new();
-                    NCollection_List<Curve>.Iterator aIt = new();
+                    Curve c;
+                    NCollection_List<Curve> lc = new();
+                    NCollection_List<Curve>.Iterator it = new();
 
                     //
-                    NbSol = anaint.CurveCount;
-                    for (i = 1; i <= NbSol; ++i)
+                    nbSol = anaint.CurveCount;
+                    for (i = 1; i <= nbSol; ++i)
                     {
                         kept = false;
                         // curvsol = anaint.Curve(i);
-                        aC = anaint.Curve(i);
-                        aLC.Clear();
-                        ExploreCurve(Co, ref aC, 10.0 * Tol, aLC);
+                        c = anaint.Curve(i);
+                        lc.Clear();
+                        ExploreCurve(co, ref c, 10.0 * tol, lc);
                         //
-                        aIt.Initialize(aLC);
-                        for (; aIt.More(); aIt.Next())
+                        it.Initialize(lc);
+                        for (; it.More(); it.Next())
                         {
-                            ref Curve curvsol = ref aIt.ChangeValue();
+                            ref Curve curvsol = ref it.ChangeValue();
                             //
                             curvsol.Domain(out first, out last);
                             firstp = !curvsol.IsFirstOpen;
@@ -627,50 +629,50 @@ public sealed partial class IntPatch_ImpImpIntersection
                                     tgfound = kount > 5;
                                 }
                             }
-                            IntPatch_ALine alig;
+                            ALine alig;
                             if (kount <= 5)
                             {
-                                double qwe = tgvalid.DotCross(Quad2.Normale(ptvalid), Quad1.Normale(ptvalid));
+                                double qwe = tgvalid.DotCross(quad2.Normale(ptvalid), quad1.Normale(ptvalid));
                                 if (qwe > 0.00000001)
                                 {
-                                    trans1 = IntSurf_Out;
-                                    trans2 = IntSurf_In;
+                                    trans1 = WalkingTypeTrans.Out;
+                                    trans2 = WalkingTypeTrans.In;
                                 }
                                 else if (qwe < -0.00000001)
                                 {
-                                    trans1 = IntSurf_In;
-                                    trans2 = IntSurf_Out;
+                                    trans1 = WalkingTypeTrans.In;
+                                    trans2 = WalkingTypeTrans.Out;
                                 }
                                 else
                                 {
-                                    trans1 = trans2 = IntSurf_Undecided;
+                                    trans1 = trans2 = WalkingTypeTrans.Undecided;
                                 }
-                                alig = new IntPatch_ALine(curvsol, false, trans1, trans2);
+                                alig = new ALine(curvsol, false, trans1, trans2);
                                 kept = true;
                             }
                             else
                             {
                                 ptvalid = curvsol.Value(para);
-                                alig = new IntPatch_ALine(curvsol, false);
+                                alig = new ALine(curvsol, false);
                                 kept = true;
                                 //-- std::cout << "Transition indeterminee" << std::endl;
                             }
                             if (kept)
                             {
-                                bool Nfirstp = !firstp;
-                                bool Nlastp = !lastp;
+                                bool nfirstp = !firstp;
+                                bool nlastp = !lastp;
                                 ProcessBounds(alig,
                                               slin,
-                                              Quad1,
-                                              Quad2,
-                                              ref Nfirstp,
+                                              quad1,
+                                              quad2,
+                                              ref nfirstp,
                                               ptf,
                                               first,
-                                              ref Nlastp,
+                                              ref nlastp,
                                               ptl,
                                               last,
-                                              ref Multpoint,
-                                              Tol);
+                                              ref multpoint,
+                                              tol);
                                 slin.Append(alig);
                             }
                         } // for (; aIt.More(); aIt.Next())
@@ -690,50 +692,50 @@ public sealed partial class IntPatch_ImpImpIntersection
     // function : ExploreCurve
     // purpose  : Splits aC on several curves in the cone apex points.
     //=======================================================================
-    private static bool ExploreCurve(in Cone theCo,
-                                     ref Curve theCrv,
-                                     double theTol,
-                                     NCollection_List<Curve> theLC)
+    private static bool ExploreCurve(in Cone co,
+                                     ref Curve crv,
+                                     double tol,
+                                     NCollection_List<Curve> lc)
     {
-        double aSqTol = theTol * theTol;
-        Point3D aPapx = theCo.Apex();
+        double sqTol = tol * tol;
+        Point3D papx = co.Apex();
 
-        theCrv.Domain(out double aT1, out double aT2);
+        crv.Domain(out double t1, out double t2);
 
-        theLC.Clear();
+        lc.Clear();
         //
-        NCollection_List<double> aLParams = new();
-        theCrv.FindParameter(aPapx, aLParams);
-        if (aLParams.IsEmpty())
+        NCollection_List<double> lParams = new();
+        crv.FindParameter(papx, lParams);
+        if (lParams.IsEmpty())
         {
-            theLC.Append(theCrv);
+            lc.Append(crv);
             return false;
         }
 
-        for (NCollection_List<double>.Iterator anItr = new(aLParams); anItr.More(); anItr.Next())
+        for (NCollection_List<double>.Iterator itr = new(lParams); itr.More(); itr.Next())
         {
-            double aPrm = anItr.Value();
+            double prm = itr.Value();
 
-            if ((aPrm - aT1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if ((prm - t1) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 continue;
             }
 
             bool isLast = false;
-            if ((aT2 - aPrm) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if ((t2 - prm) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                aPrm = aT2;
+                prm = t2;
                 isLast = true;
             }
 
-            Point3D aP = theCrv.Value(aPrm);
-            double aSqD = aP.SquareDistance(aPapx);
-            if (aSqD < aSqTol)
+            Point3D p = crv.Value(prm);
+            double sqD = p.SquareDistance(papx);
+            if (sqD < sqTol)
             {
-                Curve aC1 = theCrv;
-                aC1.SetDomain(aT1, aPrm);
-                aT1 = aPrm;
-                theLC.Append(aC1);
+                Curve c1 = crv;
+                c1.SetDomain(t1, prm);
+                t1 = prm;
+                lc.Append(c1);
             }
 
             if (isLast)
@@ -742,17 +744,17 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
         }
 
-        if (theLC.IsEmpty())
+        if (lc.IsEmpty())
         {
-            theLC.Append(theCrv);
+            lc.Append(crv);
             return false;
         }
 
-        if ((aT2 - aT1) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if ((t2 - t1) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            Curve aC1 = theCrv;
-            aC1.SetDomain(aT1, aT2);
-            theLC.Append(aC1);
+            Curve c1 = crv;
+            c1.SetDomain(t1, t2);
+            lc.Append(c1);
         }
 
         return true;
@@ -760,154 +762,154 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static bool IntCoCo(in IntSurf_Quadric Quad1,
-                                in IntSurf_Quadric Quad2,
-                                double Tol,
-                                ref bool Empty,
-                                ref bool Same,
-                                ref bool Multpoint,
-                                NCollection_Sequence<IntPatch_Line> slin,
-                                NCollection_Sequence<IntPatch_Point> spnt)
+    private static bool IntCoCo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tol,
+                                ref bool empty,
+                                ref bool same,
+                                ref bool multpoint,
+                                NCollection_Sequence<PatchLine> slin,
+                                NCollection_Sequence<PatchPoint> spnt)
     {
-        int i, NbSol;
-        double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-        IntSurf_TypeTrans trans1, trans2;
+        int i, nbSol;
+        double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+        WalkingTypeTrans trans1, trans2;
         ResultType typint;
         //
-        Cone Co1 = Quad1.Cone();
-        Cone Co2 = Quad2.Cone();
+        Cone co1 = quad1.Cone();
+        Cone co2 = quad2.Cone();
         //
-        QuadQuadGeo inter = new(Co1, Co2, Tol);
+        QuadQuadGeo inter = new(co1, co2, tol);
         if (!inter.IsDone)
         {
             return false;
         }
         //
         typint = inter.TypeInter();
-        NbSol = inter.SolutionCount;
-        Empty = false;
-        Same = false;
+        nbSol = inter.SolutionCount;
+        empty = false;
+        same = false;
 
         switch (typint)
         {
             case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
-                Empty = true;
+                empty = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Same:
             {
-                Same = true;
+                same = true;
             }
             break;
 
             // modified by NIZNHY-PKV Wed Nov 30 12:56:06 2005f
             case global::Kerf.Engine.Intersection.ResultType.Line:
             {
-                double para, aDot;
-                Point3D aPApex1, aPApex2, ptbid;
+                double para, dot;
+                Point3D pApex1, pApex2, ptbid;
                 Line3D linsol;
-                Vector3D NormC1, NormC2;
-                IntPatch_Point aPtsol = new();
-                IntPatch_GLine glig;
+                Vector3D normC1, normC2;
+                PatchPoint aPtsol = new();
+                GLine glig;
                 //
-                aPApex1 = Co1.Apex();
-                aPApex2 = Co2.Apex();
+                pApex1 = co1.Apex();
+                pApex2 = co2.Apex();
                 //
-                if (NbSol == 1)
+                if (nbSol == 1)
                 {
-                    IntSurf_Situation situC1, situC2;
+                    WalkingSituation situC1, situC2;
                     //
                     linsol = inter.Line(1);
-                    para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, aPApex1);
+                    para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                     ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
-                    Quad1.Parameters(aPApex1, ref U1, ref V1);
-                    Quad2.Parameters(aPApex1, ref U2, ref V2);
+                    quad1.Parameters(pApex1, ref u1, ref v1);
+                    quad2.Parameters(pApex1, ref u2, ref v2);
                     //
-                    aPtsol.SetValue(aPApex1, Tol, false);
-                    aPtsol.SetParameters(U1, V1, U2, V2);
+                    aPtsol.SetValue(pApex1, tol, false);
+                    aPtsol.SetParameters(u1, v1, u2, v2);
                     aPtsol.SetParameter(para);
                     //
-                    NormC1 = Quad1.Normale(ptbid);
-                    NormC2 = Quad2.Normale(ptbid);
-                    aDot = NormC1.Dot(NormC2);
-                    if (aDot < 0.0)
+                    normC1 = quad1.Normale(ptbid);
+                    normC2 = quad2.Normale(ptbid);
+                    dot = normC1.Dot(normC2);
+                    if (dot < 0.0)
                     {
-                        situC1 = IntSurf_Outside;
-                        situC2 = IntSurf_Outside;
+                        situC1 = WalkingSituation.Outside;
+                        situC2 = WalkingSituation.Outside;
                     }
                     else
                     {
-                        double aR1, aR2;
-                        Line3D aLAx1 = new(aPApex1, Co1.Axis().Direction());
-                        Line3D aLAx2 = new(aPApex2, Co2.Axis().Direction());
+                        double r1, r2;
+                        Line3D lAx1 = new(pApex1, co1.Axis().Direction());
+                        Line3D lAx2 = new(pApex2, co2.Axis().Direction());
                         //
-                        aR1 = aLAx1.Distance(ptbid);
-                        aR2 = aLAx2.Distance(ptbid);
+                        r1 = lAx1.Distance(ptbid);
+                        r2 = lAx2.Distance(ptbid);
                         //
-                        situC1 = IntSurf_Inside;
-                        situC2 = IntSurf_Outside;
-                        if (aR1 > aR2)
+                        situC1 = WalkingSituation.Inside;
+                        situC2 = WalkingSituation.Outside;
+                        if (r1 > r2)
                         {
                             // Intersection line parametrizes from Apex1 to Apex2,
-                            situC1 = IntSurf_Outside; // So the distance between ptbid and aLAx1 is greater than the
-                            situC2 = IntSurf_Inside;  // distance between ptbid and aLAx2 and in that case Cone2
+                            situC1 = WalkingSituation.Outside; // So the distance between ptbid and aLAx1 is greater than the
+                            situC2 = WalkingSituation.Inside;  // distance between ptbid and aLAx2 and in that case Cone2
                                                       // is inside Cone 1
                         }
                     }
                     // 1
-                    glig = new IntPatch_GLine(linsol, true, situC1, situC2);
+                    glig = new GLine(linsol, true, situC1, situC2);
                     glig.AddVertex(aPtsol);
                     glig.SetFirstPoint(1);
                     slin.Append(glig);
                     // 2
                     linsol.SetDirection(linsol.Direction().Reversed());
-                    para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, aPApex1);
+                    para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                     aPtsol.SetParameter(para);
 
-                    glig = new IntPatch_GLine(linsol, true, situC2, situC1);
+                    glig = new GLine(linsol, true, situC2, situC1);
                     glig.AddVertex(aPtsol);
                     glig.SetFirstPoint(1);
                     slin.Append(glig);
                 } // if (NbSol==1) {
                 //////////////////////
-                else if (NbSol == 2)
+                else if (nbSol == 2)
                 {
                     //
                     for (i = 1; i <= 2; ++i)
                     {
                         linsol = inter.Line(i);
-                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, aPApex1);
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                         ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
-                        Quad1.Parameters(aPApex1, ref U1, ref V1);
-                        Quad2.Parameters(aPApex1, ref U2, ref V2);
+                        quad1.Parameters(pApex1, ref u1, ref v1);
+                        quad2.Parameters(pApex1, ref u2, ref v2);
                         //
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                         // gp_Dir::DotCross: the normals are converted to (normalised) directions, as in C++.
-                        if (linsol.Direction().DotCross(new Direction3D(Quad2.Normale(ptbid)), new Direction3D(Quad1.Normale(ptbid))) > 0.0)
+                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid))) > 0.0)
                         {
-                            trans1 = IntSurf_Out;
-                            trans2 = IntSurf_In;
+                            trans1 = WalkingTypeTrans.Out;
+                            trans2 = WalkingTypeTrans.In;
                         }
                         //
-                        Multpoint = true;
+                        multpoint = true;
                         // 1,3
-                        aPtsol.SetValue(aPApex1, Tol, false);
-                        aPtsol.SetParameters(U1, V1, U2, V2);
+                        aPtsol.SetValue(pApex1, tol, false);
+                        aPtsol.SetParameters(u1, v1, u2, v2);
                         aPtsol.SetParameter(para);
                         aPtsol.SetMultiple(true);
 
-                        glig = new IntPatch_GLine(linsol, false, trans1, trans2);
+                        glig = new GLine(linsol, false, trans1, trans2);
                         glig.AddVertex(aPtsol);
                         glig.SetFirstPoint(1);
                         slin.Append(glig);
                         // 2,4
                         linsol.SetDirection(linsol.Direction().Reversed());
-                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, aPApex1);
+                        para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                         aPtsol.SetParameter(para);
-                        glig = new IntPatch_GLine(linsol, false, trans1, trans2);
+                        glig = new GLine(linsol, false, trans1, trans2);
                         glig.AddVertex(aPtsol);
                         glig.SetFirstPoint(1);
                         slin.Append(glig);
@@ -921,70 +923,70 @@ public sealed partial class IntPatch_ImpImpIntersection
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
-                Point3D apex1 = Co1.Apex();
-                Point3D apex2 = Co2.Apex();
+                Point3D apex1 = co1.Apex();
+                Point3D apex2 = co2.Apex();
                 double param1, param2;
-                double paramapex1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co1.Axis(), apex1);
-                double paramapex2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co2.Axis(), apex2);
-                for (i = 1; i <= NbSol; i++)
+                double paramapex1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis(), apex1);
+                double paramapex2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis(), apex2);
+                for (i = 1; i <= nbSol; i++)
                 {
                     ptcontact = inter.Point(i);
-                    param1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co1.Axis(), ptcontact);
-                    param2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co2.Axis(), ptcontact);
+                    param1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis(), ptcontact);
+                    param2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis(), ptcontact);
 
-                    Quad1.Parameters(ptcontact, ref U1, ref V1);
-                    Quad2.Parameters(ptcontact, ref U2, ref V2);
+                    quad1.Parameters(ptcontact, ref u1, ref v1);
+                    quad2.Parameters(ptcontact, ref u2, ref v2);
 
-                    if (apex1.Distance(ptcontact) <= Tol && apex2.Distance(ptcontact) <= Tol)
+                    if (apex1.Distance(ptcontact) <= tol && apex2.Distance(ptcontact) <= tol)
                     {
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(ptcontact, Tol, false);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(ptcontact, tol, false);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
                     else if (param1 >= paramapex1 && param2 >= paramapex2)
                     {
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(ptcontact, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(ptcontact, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
                 }
             }
             break;
 
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
-                IntPatch_Point aPtsol = new();
-                Vector3D Tgt;
+                PatchPoint aPtsol = new();
+                Vector3D tgt;
                 Point3D ptref;
-                for (i = 1; i <= NbSol; i++)
+                for (i = 1; i <= nbSol; i++)
                 {
                     Circle3D cirsol = inter.Circle(i);
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out Tgt);
-                    double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out tgt);
+                    double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.00000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.00000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
-                    IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                    GLine glig = new(cirsol, false, trans1, trans2);
                     if (inter.HasCommonGen)
                     {
-                        Point3D aPChar = inter.PChar();
-                        Quad1.Parameters(aPChar, ref U1, ref V1);
-                        Quad2.Parameters(aPChar, ref U2, ref V2);
-                        aPtsol.SetValue(aPChar, Tol, false);
-                        aPtsol.SetParameters(U1, V1, U2, V2);
+                        Point3D pChar = inter.PChar();
+                        quad1.Parameters(pChar, ref u1, ref v1);
+                        quad2.Parameters(pChar, ref u2, ref v2);
+                        aPtsol.SetValue(pChar, tol, false);
+                        aPtsol.SetParameters(u1, v1, u2, v2);
                         aPtsol.SetParameter(0.0);
                         glig.AddVertex(aPtsol);
                     }
@@ -993,36 +995,36 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case Ellipse:
+            case global::Kerf.Engine.Intersection.ResultType.Ellipse:
             {
-                IntPatch_Point aPtsol = new();
+                PatchPoint aPtsol = new();
                 Ellipse3D elipsol = inter.Ellipse(1);
 
-                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, elipsol, out Point3D ptref, out Vector3D Tgt);
+                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, elipsol, out Point3D ptref, out Vector3D tgt);
 
-                double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                 if (qwe > 0.00000001)
                 {
-                    trans1 = IntSurf_Out;
-                    trans2 = IntSurf_In;
+                    trans1 = WalkingTypeTrans.Out;
+                    trans2 = WalkingTypeTrans.In;
                 }
                 else if (qwe < -0.00000001)
                 {
-                    trans1 = IntSurf_In;
-                    trans2 = IntSurf_Out;
+                    trans1 = WalkingTypeTrans.In;
+                    trans2 = WalkingTypeTrans.Out;
                 }
                 else
                 {
-                    trans1 = trans2 = IntSurf_Undecided;
+                    trans1 = trans2 = WalkingTypeTrans.Undecided;
                 }
-                IntPatch_GLine glig = new(elipsol, false, trans1, trans2);
+                GLine glig = new(elipsol, false, trans1, trans2);
                 if (inter.HasCommonGen)
                 {
-                    Point3D aPChar = inter.PChar();
-                    Quad1.Parameters(aPChar, ref U1, ref V1);
-                    Quad2.Parameters(aPChar, ref U2, ref V2);
-                    aPtsol.SetValue(aPChar, Tol, false);
-                    aPtsol.SetParameters(U1, V1, U2, V2);
+                    Point3D pChar = inter.PChar();
+                    quad1.Parameters(pChar, ref u1, ref v1);
+                    quad2.Parameters(pChar, ref u2, ref v2);
+                    aPtsol.SetValue(pChar, tol, false);
+                    aPtsol.SetParameters(u1, v1, u2, v2);
                     aPtsol.SetParameter(0.0);
                     glig.AddVertex(aPtsol);
                 }
@@ -1030,38 +1032,38 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case Hyperbola:
+            case global::Kerf.Engine.Intersection.ResultType.Hyperbola:
             {
-                IntPatch_Point aPtsol = new();
-                Vector3D Tgt;
+                PatchPoint aPtsol = new();
+                Vector3D tgt;
                 Point3D ptref;
                 for (i = 1; i <= 2; i++)
                 {
                     Hyperbola3D hyprsol = inter.Hyperbola(i);
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, hyprsol, out ptref, out Tgt);
-                    double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, hyprsol, out ptref, out tgt);
+                    double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.00000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.00000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
-                    IntPatch_GLine glig = new(hyprsol, false, trans1, trans2);
+                    GLine glig = new(hyprsol, false, trans1, trans2);
                     if (inter.HasCommonGen)
                     {
-                        Point3D aPChar = inter.PChar();
-                        Quad1.Parameters(aPChar, ref U1, ref V1);
-                        Quad2.Parameters(aPChar, ref U2, ref V2);
-                        aPtsol.SetValue(aPChar, Tol, false);
-                        aPtsol.SetParameters(U1, V1, U2, V2);
+                        Point3D pChar = inter.PChar();
+                        quad1.Parameters(pChar, ref u1, ref v1);
+                        quad2.Parameters(pChar, ref u2, ref v2);
+                        aPtsol.SetValue(pChar, tol, false);
+                        aPtsol.SetParameters(u1, v1, u2, v2);
                         aPtsol.SetParameter(0.0);
                         glig.AddVertex(aPtsol);
                     }
@@ -1070,37 +1072,37 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             break;
 
-            case Parabola:
+            case global::Kerf.Engine.Intersection.ResultType.Parabola:
             {
-                IntPatch_Point aPtsol = new();
+                PatchPoint aPtsol = new();
                 Parabola3D parabsol = inter.Parabola(1);
 
-                Vector3D Tgtorig = new(parabsol.YAxis().Direction());
+                Vector3D tgtorig = new(parabsol.YAxis().Direction());
                 double ptran =
-                    Tgtorig.DotCross(Quad2.Normale(parabsol.Location()), Quad1.Normale(parabsol.Location()));
+                    tgtorig.DotCross(quad2.Normale(parabsol.Location()), quad1.Normale(parabsol.Location()));
                 if (ptran > 0.00000001)
                 {
-                    trans1 = IntSurf_Out;
-                    trans2 = IntSurf_In;
+                    trans1 = WalkingTypeTrans.Out;
+                    trans2 = WalkingTypeTrans.In;
                 }
                 else if (ptran < -0.00000001)
                 {
-                    trans1 = IntSurf_In;
-                    trans2 = IntSurf_Out;
+                    trans1 = WalkingTypeTrans.In;
+                    trans2 = WalkingTypeTrans.Out;
                 }
                 else
                 {
-                    trans1 = trans2 = IntSurf_Undecided;
+                    trans1 = trans2 = WalkingTypeTrans.Undecided;
                 }
 
-                IntPatch_GLine glig = new(parabsol, false, trans1, trans2);
+                GLine glig = new(parabsol, false, trans1, trans2);
                 if (inter.HasCommonGen)
                 {
-                    Point3D aPChar = inter.PChar();
-                    Quad1.Parameters(aPChar, ref U1, ref V1);
-                    Quad2.Parameters(aPChar, ref U2, ref V2);
-                    aPtsol.SetValue(aPChar, Tol, false);
-                    aPtsol.SetParameters(U1, V1, U2, V2);
+                    Point3D pChar = inter.PChar();
+                    quad1.Parameters(pChar, ref u1, ref v1);
+                    quad2.Parameters(pChar, ref u2, ref v2);
+                    aPtsol.SetValue(pChar, tol, false);
+                    aPtsol.SetParameters(u1, v1, u2, v2);
                     aPtsol.SetParameter(0.0);
                     glig.AddVertex(aPtsol);
                 }
@@ -1111,7 +1113,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             case NoGeometricSolution:
             {
                 Point3D psol;
-                IntQuadQuad anaint = new(Co1, new Quadric(Co2), Tol);
+                IntQuadQuad anaint = new(co1, new Quadric(co2), tol);
                 if (!anaint.IsDone)
                 {
                     return false;
@@ -1119,19 +1121,19 @@ public sealed partial class IntPatch_ImpImpIntersection
 
                 if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
-                    Empty = true;
+                    empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.PntCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.PntCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
                         psol = anaint.Point(i);
-                        Quad1.Parameters(psol, ref U1, ref V1);
-                        Quad2.Parameters(psol, ref U2, ref V2);
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(psol, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        quad1.Parameters(psol, ref u1, ref v1);
+                        quad2.Parameters(psol, ref u2, ref v2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(psol, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
 
@@ -1144,10 +1146,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                     bool tgfound, firstp, lastp, kept;
                     int kount;
 
-                    NbSol = anaint.CurveCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.CurveCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
-                        IntPatch_ALine alig;
+                        ALine alig;
                         kept = false;
                         Curve curvsol = anaint.Curve(i);
                         curvsol.Domain(out first, out last);
@@ -1183,47 +1185,47 @@ public sealed partial class IntPatch_ImpImpIntersection
                         }
                         if (kount <= 5)
                         {
-                            double qwe = tgvalid.DotCross(Quad2.Normale(ptvalid), Quad1.Normale(ptvalid));
+                            double qwe = tgvalid.DotCross(quad2.Normale(ptvalid), quad1.Normale(ptvalid));
                             if (qwe > 0.000000001)
                             {
-                                trans1 = IntSurf_Out;
-                                trans2 = IntSurf_In;
+                                trans1 = WalkingTypeTrans.Out;
+                                trans2 = WalkingTypeTrans.In;
                             }
                             else if (qwe < -0.000000001)
                             {
-                                trans1 = IntSurf_In;
-                                trans2 = IntSurf_Out;
+                                trans1 = WalkingTypeTrans.In;
+                                trans2 = WalkingTypeTrans.Out;
                             }
                             else
                             {
-                                trans1 = trans2 = IntSurf_Undecided;
+                                trans1 = trans2 = WalkingTypeTrans.Undecided;
                             }
-                            alig = new IntPatch_ALine(curvsol, false, trans1, trans2);
+                            alig = new ALine(curvsol, false, trans1, trans2);
                             kept = true;
                         }
                         else
                         {
                             ptvalid = curvsol.Value(para);
-                            alig = new IntPatch_ALine(curvsol, false);
+                            alig = new ALine(curvsol, false);
                             kept = true;
                             //-- cout << "Transition indeterminee" << endl;
                         }
                         if (kept)
                         {
-                            bool Nfirstp = !firstp;
-                            bool Nlastp = !lastp;
+                            bool nfirstp = !firstp;
+                            bool nlastp = !lastp;
                             ProcessBounds(alig,
                                           slin,
-                                          Quad1,
-                                          Quad2,
-                                          ref Nfirstp,
+                                          quad1,
+                                          quad2,
+                                          ref nfirstp,
                                           ptf,
                                           first,
-                                          ref Nlastp,
+                                          ref nlastp,
                                           ptl,
                                           last,
-                                          ref Multpoint,
-                                          Tol);
+                                          ref multpoint,
+                                          tol);
                             slin.Append(alig);
                         }
                     }
@@ -1242,21 +1244,21 @@ public sealed partial class IntPatch_ImpImpIntersection
         if (inter.HasCommonGen)
         {
             double para;
-            IntPatch_Point aPtsol = new();
-            Point3D aPApex1, aPApex2;
-            aPApex1 = Co1.Apex();
-            aPApex2 = Co2.Apex();
+            PatchPoint aPtsol = new();
+            Point3D pApex1, pApex2;
+            pApex1 = co1.Apex();
+            pApex2 = co2.Apex();
             // common generatrix of cones
-            MakeLin aMkLin = new(aPApex1, aPApex2);
-            Line3D linsol = aMkLin.Value();
-            IntPatch_GLine glig = new(linsol, true, IntSurf_Undecided, IntSurf_Undecided);
+            MakeLin mkLin = new(pApex1, pApex2);
+            Line3D linsol = mkLin.Value();
+            GLine glig = new(linsol, true, WalkingTypeTrans.Undecided, WalkingTypeTrans.Undecided);
 
-            Point3D aPChar = inter.PChar();
-            Quad1.Parameters(aPChar, ref U1, ref V1);
-            Quad2.Parameters(aPChar, ref U2, ref V2);
-            aPtsol.SetValue(aPChar, Tol, false);
-            aPtsol.SetParameters(U1, V1, U2, V2);
-            para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, aPChar);
+            Point3D pChar = inter.PChar();
+            quad1.Parameters(pChar, ref u1, ref v1);
+            quad2.Parameters(pChar, ref u2, ref v2);
+            aPtsol.SetValue(pChar, tol, false);
+            aPtsol.SetParameters(u1, v1, u2, v2);
+            para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pChar);
             aPtsol.SetParameter(para);
             glig.AddVertex(aPtsol);
 
@@ -1268,35 +1270,35 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static bool IntCoSp(in IntSurf_Quadric Quad1,
-                                in IntSurf_Quadric Quad2,
-                                double Tol,
-                                bool Reversed,
-                                ref bool Empty,
-                                ref bool Multpoint,
-                                NCollection_Sequence<IntPatch_Line> slin,
-                                NCollection_Sequence<IntPatch_Point> spnt)
+    private static bool IntCoSp(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tol,
+                                bool reversed,
+                                ref bool empty,
+                                ref bool multpoint,
+                                NCollection_Sequence<PatchLine> slin,
+                                NCollection_Sequence<PatchPoint> spnt)
     {
         int i;
 
-        IntSurf_TypeTrans trans1, trans2;
+        WalkingTypeTrans trans1, trans2;
         ResultType typint;
 
-        Sphere Sp;
-        Cone Co;
-        double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
+        Sphere sp;
+        Cone co;
+        double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
 
-        if (!Reversed)
+        if (!reversed)
         {
-            Co = Quad1.Cone();
-            Sp = Quad2.Sphere();
+            co = quad1.Cone();
+            sp = quad2.Sphere();
         }
         else
         {
-            Co = Quad2.Cone();
-            Sp = Quad1.Sphere();
+            co = quad2.Cone();
+            sp = quad1.Sphere();
         }
-        QuadQuadGeo inter = new(Sp, Co, Tol);
+        QuadQuadGeo inter = new(sp, co, tol);
 
         if (!inter.IsDone)
         {
@@ -1304,77 +1306,77 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
 
         typint = inter.TypeInter();
-        int NbSol = inter.SolutionCount;
-        Empty = false;
+        int nbSol = inter.SolutionCount;
+        empty = false;
 
         switch (typint)
         {
             case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
-                Empty = true;
+                empty = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
-                Point3D apex = Co.Apex();
+                Point3D apex = co.Apex();
                 double param;
-                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), apex);
-                for (i = 1; i <= NbSol; i++)
+                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), apex);
+                for (i = 1; i <= nbSol; i++)
                 {
                     ptcontact = inter.Point(i);
-                    param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), ptcontact);
-                    Quad1.Parameters(ptcontact, ref U1, ref V1);
-                    Quad2.Parameters(ptcontact, ref U2, ref V2);
+                    param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptcontact);
+                    quad1.Parameters(ptcontact, ref u1, ref v1);
+                    quad2.Parameters(ptcontact, ref u2, ref v2);
 
-                    if (apex.Distance(ptcontact) <= Tol)
+                    if (apex.Distance(ptcontact) <= tol)
                     {
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(ptcontact, Tol, false);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(ptcontact, tol, false);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
                     else if (param >= paramapex)
                     {
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(ptcontact, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(ptcontact, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
                 }
             }
             break;
 
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
-                Vector3D Tgt;
+                Vector3D tgt;
                 Point3D ptref;
 
-                for (i = 1; i <= NbSol; i++)
+                for (i = 1; i <= nbSol; i++)
                 {
                     Circle3D cirsol = inter.Circle(i);
                     //-- param = ElCLib::LineParameter(Co.Axis(),
                     //-- 			      cirsol.Location());
                     //-- if (param >= paramapex) {
 
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out Tgt);
-                    double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out ptref, out tgt);
+                    double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.00000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.00000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
-                    IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                    GLine glig = new(cirsol, false, trans1, trans2);
                     slin.Append(glig);
                     //-- }
                 }
@@ -1383,58 +1385,58 @@ public sealed partial class IntPatch_ImpImpIntersection
 
             case PointAndCircle:
             {
-                Point3D apex = Co.Apex();
+                Point3D apex = co.Apex();
                 double param;
-                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), apex);
+                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), apex);
 
                 // le point est necessairement l apex
-                Quad1.Parameters(apex, ref U1, ref V1);
-                Quad2.Parameters(apex, ref U2, ref V2);
-                IntPatch_Point ptsol = new();
-                ptsol.SetValue(apex, Tol, false);
-                ptsol.SetParameters(U1, V1, U2, V2);
+                quad1.Parameters(apex, ref u1, ref v1);
+                quad2.Parameters(apex, ref u2, ref v2);
+                PatchPoint ptsol = new();
+                ptsol.SetValue(apex, tol, false);
+                ptsol.SetParameters(u1, v1, u2, v2);
                 spnt.Append(ptsol);
 
                 Circle3D cirsol = inter.Circle(1);
-                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), cirsol.Location());
-                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
-                double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), cirsol.Location());
+                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D tgt);
+                double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
 
                 if (param >= paramapex)
                 {
                     if (qwe > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
                 }
                 else
                 {
                     if (qwe < -global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
                 }
-                IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                GLine glig = new(cirsol, false, trans1, trans2);
                 slin.Append(glig);
             }
             break;
@@ -1442,7 +1444,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             case NoGeometricSolution:
             {
                 Point3D psol;
-                IntQuadQuad anaint = new(Co, new Quadric(Sp), Tol);
+                IntQuadQuad anaint = new(co, new Quadric(sp), tol);
                 if (!anaint.IsDone)
                 {
                     return false;
@@ -1450,19 +1452,19 @@ public sealed partial class IntPatch_ImpImpIntersection
 
                 if (anaint.PntCount == 0 && anaint.CurveCount == 0)
                 {
-                    Empty = true;
+                    empty = true;
                 }
                 else
                 {
-                    NbSol = anaint.PntCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.PntCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
                         psol = anaint.Point(i);
-                        Quad1.Parameters(psol, ref U1, ref V1);
-                        Quad2.Parameters(psol, ref U2, ref V2);
-                        IntPatch_Point ptsol = new();
-                        ptsol.SetValue(psol, Tol, true);
-                        ptsol.SetParameters(U1, V1, U2, V2);
+                        quad1.Parameters(psol, ref u1, ref v1);
+                        quad2.Parameters(psol, ref u2, ref v2);
+                        PatchPoint ptsol = new();
+                        ptsol.SetValue(psol, tol, true);
+                        ptsol.SetParameters(u1, v1, u2, v2);
                         spnt.Append(ptsol);
                     }
 
@@ -1474,10 +1476,10 @@ public sealed partial class IntPatch_ImpImpIntersection
                     bool tgfound, firstp, lastp, kept;
                     int kount;
 
-                    NbSol = anaint.CurveCount;
-                    for (i = 1; i <= NbSol; i++)
+                    nbSol = anaint.CurveCount;
+                    for (i = 1; i <= nbSol; i++)
                     {
-                        IntPatch_ALine alig;
+                        ALine alig;
                         kept = false;
                         Curve curvsol = anaint.Curve(i);
                         curvsol.Domain(out first, out last);
@@ -1508,49 +1510,49 @@ public sealed partial class IntPatch_ImpImpIntersection
                         if (kount <= 5)
                         {
                             // para is computed and never read, as in OCCT.
-                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), ptvalid);
-                            double qwe = tgvalid.DotCross(Quad2.Normale(ptvalid), Quad1.Normale(ptvalid));
+                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptvalid);
+                            double qwe = tgvalid.DotCross(quad2.Normale(ptvalid), quad1.Normale(ptvalid));
                             if (qwe > 0.000000001)
                             {
-                                trans1 = IntSurf_Out;
-                                trans2 = IntSurf_In;
+                                trans1 = WalkingTypeTrans.Out;
+                                trans2 = WalkingTypeTrans.In;
                             }
                             else if (qwe < -0.000000001)
                             {
-                                trans1 = IntSurf_In;
-                                trans2 = IntSurf_Out;
+                                trans1 = WalkingTypeTrans.In;
+                                trans2 = WalkingTypeTrans.Out;
                             }
                             else
                             {
-                                trans1 = trans2 = IntSurf_Undecided;
+                                trans1 = trans2 = WalkingTypeTrans.Undecided;
                             }
-                            alig = new IntPatch_ALine(curvsol, false, trans1, trans2);
+                            alig = new ALine(curvsol, false, trans1, trans2);
                             kept = true;
                         }
                         else
                         {
                             ptvalid = curvsol.Value(para);
-                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(Co.Axis(), ptvalid);
-                            alig = new IntPatch_ALine(curvsol, false);
+                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptvalid);
+                            alig = new ALine(curvsol, false);
                             kept = true;
                             //-- cout << "Transition indeterminee" << endl;
                         }
                         if (kept)
                         {
-                            bool Nfirstp = !firstp;
-                            bool Nlastp = !lastp;
+                            bool nfirstp = !firstp;
+                            bool nlastp = !lastp;
                             ProcessBounds(alig,
                                           slin,
-                                          Quad1,
-                                          Quad2,
-                                          ref Nfirstp,
+                                          quad1,
+                                          quad2,
+                                          ref nfirstp,
                                           ptf,
                                           first,
-                                          ref Nlastp,
+                                          ref nlastp,
                                           ptl,
                                           last,
-                                          ref Multpoint,
-                                          Tol);
+                                          ref multpoint,
+                                          tol);
                             slin.Append(alig);
                         }
                     }
@@ -1570,77 +1572,77 @@ public sealed partial class IntPatch_ImpImpIntersection
     //=================================================================================================
 
     // Traitement du cas Sphere/Sphere
-    private static bool IntSpSp(in IntSurf_Quadric Quad1,
-                                in IntSurf_Quadric Quad2,
-                                double Tol,
-                                ref bool Empty,
-                                ref bool Same,
-                                NCollection_Sequence<IntPatch_Line> slin,
-                                NCollection_Sequence<IntPatch_Point> spnt)
+    private static bool IntSpSp(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tol,
+                                ref bool empty,
+                                ref bool same,
+                                NCollection_Sequence<PatchLine> slin,
+                                NCollection_Sequence<PatchPoint> spnt)
     {
-        IntSurf_TypeTrans trans1, trans2;
+        WalkingTypeTrans trans1, trans2;
         ResultType typint;
-        Sphere sph1 = Quad1.Sphere();
-        Sphere sph2 = Quad2.Sphere();
+        Sphere sph1 = quad1.Sphere();
+        Sphere sph2 = quad2.Sphere();
 
-        QuadQuadGeo inter = new(sph1, sph2, Tol);
+        QuadQuadGeo inter = new(sph1, sph2, tol);
         if (!inter.IsDone)
         {
             return false;
         }
 
         typint = inter.TypeInter();
-        Empty = false;
-        Same = false;
+        empty = false;
+        same = false;
 
         switch (typint)
         {
             case global::Kerf.Engine.Intersection.ResultType.Empty:
             {
-                Empty = true;
+                empty = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Same:
             {
-                Same = true;
+                same = true;
             }
             break;
 
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D psol = inter.Point(1);
-                double U1 = 0, V1 = 0, U2 = 0, V2 = 0;
-                Quad1.Parameters(psol, ref U1, ref V1);
-                Quad2.Parameters(psol, ref U2, ref V2);
-                IntPatch_Point ptsol = new();
-                ptsol.SetValue(psol, Tol, true);
-                ptsol.SetParameters(U1, V1, U2, V2);
+                double u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+                quad1.Parameters(psol, ref u1, ref v1);
+                quad2.Parameters(psol, ref u2, ref v2);
+                PatchPoint ptsol = new();
+                ptsol.SetValue(psol, tol, true);
+                ptsol.SetParameters(u1, v1, u2, v2);
                 spnt.Append(ptsol);
             }
             break;
 
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
                 Circle3D cirsol = inter.Circle(1);
-                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D Tgt);
+                global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D tgt);
 
-                double qwe = Tgt.DotCross(Quad2.Normale(ptref), Quad1.Normale(ptref));
+                double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                 if (qwe > 0.00000001)
                 {
-                    trans1 = IntSurf_Out;
-                    trans2 = IntSurf_In;
+                    trans1 = WalkingTypeTrans.Out;
+                    trans2 = WalkingTypeTrans.In;
                 }
                 else if (qwe < -0.00000001)
                 {
-                    trans1 = IntSurf_In;
-                    trans2 = IntSurf_Out;
+                    trans1 = WalkingTypeTrans.In;
+                    trans2 = WalkingTypeTrans.Out;
                 }
                 else
                 {
-                    trans1 = trans2 = IntSurf_Undecided;
+                    trans1 = trans2 = WalkingTypeTrans.Undecided;
                 }
-                IntPatch_GLine glig = new(cirsol, false, trans1, trans2);
+                GLine glig = new(cirsol, false, trans1, trans2);
                 slin.Append(glig);
             }
             break;
@@ -1655,71 +1657,71 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static bool IntCyTo(in IntSurf_Quadric theQuad1,
-                                in IntSurf_Quadric theQuad2,
-                                double theTolTang,
+    private static bool IntCyTo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tolTang,
                                 bool bReversed,
                                 ref bool bEmpty,
-                                NCollection_Sequence<IntPatch_Line> theSeqLin)
+                                NCollection_Sequence<PatchLine> seqLin)
     {
-        Cylinder aCyl = bReversed ? theQuad2.Cylinder() : theQuad1.Cylinder();
-        Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
+        Cylinder cyl = bReversed ? quad2.Cylinder() : quad1.Cylinder();
+        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
-        QuadQuadGeo anInt = new(aCyl, aTorus, theTolTang);
-        bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
+        QuadQuadGeo anInt = new(cyl, torus, tolTang);
+        bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
         //
         return bRet;
     }
 
     //=================================================================================================
 
-    private static bool IntCoTo(in IntSurf_Quadric theQuad1,
-                                in IntSurf_Quadric theQuad2,
-                                double theTolTang,
+    private static bool IntCoTo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tolTang,
                                 bool bReversed,
                                 ref bool bEmpty,
-                                NCollection_Sequence<IntPatch_Line> theSeqLin)
+                                NCollection_Sequence<PatchLine> seqLin)
     {
-        Cone aCone = bReversed ? theQuad2.Cone() : theQuad1.Cone();
-        Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
+        Cone cone = bReversed ? quad2.Cone() : quad1.Cone();
+        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
-        QuadQuadGeo anInt = new(aCone, aTorus, theTolTang);
-        bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
+        QuadQuadGeo anInt = new(cone, torus, tolTang);
+        bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
         //
         return bRet;
     }
 
     //=================================================================================================
 
-    private static bool IntSpTo(in IntSurf_Quadric theQuad1,
-                                in IntSurf_Quadric theQuad2,
-                                double theTolTang,
+    private static bool IntSpTo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tolTang,
                                 bool bReversed,
                                 ref bool bEmpty,
-                                NCollection_Sequence<IntPatch_Line> theSeqLin)
+                                NCollection_Sequence<PatchLine> seqLin)
     {
-        Sphere aSphere = bReversed ? theQuad2.Sphere() : theQuad1.Sphere();
-        Torus aTorus = bReversed ? theQuad1.Torus() : theQuad2.Torus();
+        Sphere sphere = bReversed ? quad2.Sphere() : quad1.Sphere();
+        Torus torus = bReversed ? quad1.Torus() : quad2.Torus();
         //
-        QuadQuadGeo anInt = new(aSphere, aTorus, theTolTang);
-        bool bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
+        QuadQuadGeo anInt = new(sphere, torus, tolTang);
+        bool bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
         //
         return bRet;
     }
 
     //=================================================================================================
 
-    private static bool IntToTo(in IntSurf_Quadric theQuad1,
-                                in IntSurf_Quadric theQuad2,
-                                double theTolTang,
+    private static bool IntToTo(in SurfaceQuadric quad1,
+                                in SurfaceQuadric quad2,
+                                double tolTang,
                                 ref bool bSameSurf,
                                 ref bool bEmpty,
-                                NCollection_Sequence<IntPatch_Line> theSeqLin)
+                                NCollection_Sequence<PatchLine> seqLin)
     {
-        Torus aTorus1 = theQuad1.Torus();
-        Torus aTorus2 = theQuad2.Torus();
+        Torus torus1 = quad1.Torus();
+        Torus torus2 = quad2.Torus();
         //
-        QuadQuadGeo anInt = new(aTorus1, aTorus2, theTolTang);
+        QuadQuadGeo anInt = new(torus1, torus2, tolTang);
         bool bRet = anInt.IsDone;
         if (bRet)
         {
@@ -1730,7 +1732,7 @@ public sealed partial class IntPatch_ImpImpIntersection
             }
             else
             {
-                bRet = TreatResultTorus(theQuad1, theQuad2, anInt, ref bEmpty, theSeqLin);
+                bRet = TreatResultTorus(quad1, quad2, anInt, ref bEmpty, seqLin);
             }
         }
         //
@@ -1739,11 +1741,11 @@ public sealed partial class IntPatch_ImpImpIntersection
 
     //=================================================================================================
 
-    private static bool TreatResultTorus(in IntSurf_Quadric theQuad1,
-                                         in IntSurf_Quadric theQuad2,
+    private static bool TreatResultTorus(in SurfaceQuadric quad1,
+                                         in SurfaceQuadric quad2,
                                          QuadQuadGeo anInt,
                                          ref bool bEmpty,
-                                         NCollection_Sequence<IntPatch_Line> theSeqLin)
+                                         NCollection_Sequence<PatchLine> seqLin)
     {
         bool bRet = anInt.IsDone;
         //
@@ -1753,7 +1755,7 @@ public sealed partial class IntPatch_ImpImpIntersection
         }
         //
         ResultType typint = anInt.TypeInter();
-        int NbSol = anInt.SolutionCount;
+        int nbSol = anInt.SolutionCount;
         bEmpty = false;
         //
         switch (typint)
@@ -1762,39 +1764,39 @@ public sealed partial class IntPatch_ImpImpIntersection
                 bEmpty = true;
                 break;
             //
-            case Circle:
+            case global::Kerf.Engine.Intersection.ResultType.Circle:
             {
                 int i;
-                IntSurf_TypeTrans trans1, trans2;
-                Vector3D Tgt;
+                WalkingTypeTrans trans1, trans2;
+                Vector3D tgt;
                 Point3D ptref;
                 //
-                for (i = 1; i <= NbSol; ++i)
+                for (i = 1; i <= nbSol; ++i)
                 {
-                    Circle3D aC = anInt.Circle(i);
-                    if (theQuad1.TypeQuadric() == theQuad2.TypeQuadric())
+                    Circle3D c = anInt.Circle(i);
+                    if (quad1.TypeQuadric() == quad2.TypeQuadric())
                     {
-                        AdjustToSeam(theQuad1.Torus(), ref aC);
+                        AdjustToSeam(quad1.Torus(), ref c);
                     }
-                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, aC, out ptref, out Tgt);
-                    double qwe = Tgt.DotCross(theQuad2.Normale(ptref), theQuad1.Normale(ptref));
+                    global::Kerf.Engine.Geometry.ElCLib.D1(0.0, c, out ptref, out tgt);
+                    double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
                     if (qwe > 0.00000001)
                     {
-                        trans1 = IntSurf_Out;
-                        trans2 = IntSurf_In;
+                        trans1 = WalkingTypeTrans.Out;
+                        trans2 = WalkingTypeTrans.In;
                     }
                     else if (qwe < -0.00000001)
                     {
-                        trans1 = IntSurf_In;
-                        trans2 = IntSurf_Out;
+                        trans1 = WalkingTypeTrans.In;
+                        trans2 = WalkingTypeTrans.Out;
                     }
                     else
                     {
-                        trans1 = trans2 = IntSurf_Undecided;
+                        trans1 = trans2 = WalkingTypeTrans.Undecided;
                     }
                     //
-                    IntPatch_GLine glig = new(aC, false, trans1, trans2);
-                    theSeqLin.Append(glig);
+                    GLine glig = new(c, false, trans1, trans2);
+                    seqLin.Append(glig);
                 }
             }
             break;

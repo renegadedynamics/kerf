@@ -25,13 +25,13 @@ internal static class RWStepGeom_RWTransitionCode
     {
         switch (theTransitionCodeEnum)
         {
-            case StepGeom_tcDiscontinuous:
+            case StepGeom_TransitionCode.StepGeom_tcDiscontinuous:
                 return tcDiscontinuous;
-            case StepGeom_tcContSameGradientSameCurvature:
+            case StepGeom_TransitionCode.StepGeom_tcContSameGradientSameCurvature:
                 return tcContSameGradientSameCurvature;
-            case StepGeom_tcContSameGradient:
+            case StepGeom_TransitionCode.StepGeom_tcContSameGradient:
                 return tcContSameGradient;
-            case StepGeom_tcContinuous:
+            case StepGeom_TransitionCode.StepGeom_tcContinuous:
                 return tcContinuous;
         }
         return null;
@@ -47,19 +47,19 @@ internal static class RWStepGeom_RWTransitionCode
     {
         if (theTransitionCodeStr == tcDiscontinuous)
         {
-            theResultEnum = StepGeom_tcDiscontinuous;
+            theResultEnum = StepGeom_TransitionCode.StepGeom_tcDiscontinuous;
         }
         else if (theTransitionCodeStr == tcContSameGradientSameCurvature)
         {
-            theResultEnum = StepGeom_tcContSameGradientSameCurvature;
+            theResultEnum = StepGeom_TransitionCode.StepGeom_tcContSameGradientSameCurvature;
         }
         else if (theTransitionCodeStr == tcContSameGradient)
         {
-            theResultEnum = StepGeom_tcContSameGradient;
+            theResultEnum = StepGeom_TransitionCode.StepGeom_tcContSameGradient;
         }
         else if (theTransitionCodeStr == tcContinuous)
         {
-            theResultEnum = StepGeom_tcContinuous;
+            theResultEnum = StepGeom_TransitionCode.StepGeom_tcContinuous;
         }
         else
         {

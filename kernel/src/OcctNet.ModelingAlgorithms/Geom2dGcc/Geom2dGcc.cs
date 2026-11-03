@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>
 /// Qualified curves for the Geom2dGcc solvers: circles and lines tangent to curves, through points, or centred on
@@ -15,26 +16,26 @@ namespace Occt;
 public static class Geom2dGcc
 {
     /// <summary>A curve whose solutions are not qualified: all solutions apply.</summary>
-    public static Geom2dGcc_QualifiedCurve Unqualified(CurveAdaptor2D Curve)
+    public static QualifiedCurve Unqualified(CurveAdaptor2D curve)
     {
-        return new Geom2dGcc_QualifiedCurve(Curve, GccEnt_unqualified);
+        return new QualifiedCurve(curve, Qualifier.Unqualified);
     }
 
     /// <summary>A curve that the solutions enclose.</summary>
-    public static Geom2dGcc_QualifiedCurve Enclosing(CurveAdaptor2D Curve)
+    public static QualifiedCurve Enclosing(CurveAdaptor2D curve)
     {
-        return new Geom2dGcc_QualifiedCurve(Curve, GccEnt_enclosing);
+        return new QualifiedCurve(curve, Qualifier.Enclosing);
     }
 
     /// <summary>A curve that encloses the solutions.</summary>
-    public static Geom2dGcc_QualifiedCurve Enclosed(CurveAdaptor2D Curve)
+    public static QualifiedCurve Enclosed(CurveAdaptor2D curve)
     {
-        return new Geom2dGcc_QualifiedCurve(Curve, GccEnt_enclosed);
+        return new QualifiedCurve(curve, Qualifier.Enclosed);
     }
 
     /// <summary>A curve outside the solutions, and they outside it.</summary>
-    public static Geom2dGcc_QualifiedCurve Outside(CurveAdaptor2D Curve)
+    public static QualifiedCurve Outside(CurveAdaptor2D curve)
     {
-        return new Geom2dGcc_QualifiedCurve(Curve, GccEnt_outside);
+        return new QualifiedCurve(curve, Qualifier.Outside);
     }
 }

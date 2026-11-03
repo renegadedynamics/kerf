@@ -94,16 +94,16 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
         NCollection_HArray1<double> ListKnots, ListWeights;
         StepGeom_KnotType KnotSpec;
 
-        Form = StepGeom_bscfUnspecified;
+        Form = StepGeom_BSplineCurveForm.StepGeom_bscfUnspecified;
         if (isClosed)
         {
-            Fermeture = StepData_LTrue;
+            Fermeture = StepData_Logical.StepData_LTrue;
         }
         else
         {
-            Fermeture = StepData_LFalse;
+            Fermeture = StepData_Logical.StepData_LFalse;
         }
-        Selfinter = StepData_LFalse;
+        Selfinter = StepData_Logical.StepData_LFalse;
         Mult = new NCollection_HArray1<int>(1, Nknots);
         for (i = M.Lower(); i <= M.Upper(); i++)
         {
@@ -118,19 +118,19 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnotsAndRationalBSplineCurve 
         }
         if (Distribution == NonUniform)
         {
-            KnotSpec = StepGeom_ktUnspecified;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUnspecified;
         }
         else if (Distribution == Uniform)
         {
-            KnotSpec = StepGeom_ktUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUniformKnots;
         }
         else if (Distribution == QuasiUniform)
         {
-            KnotSpec = StepGeom_ktQuasiUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktQuasiUniformKnots;
         }
         else
         {
-            KnotSpec = StepGeom_ktPiecewiseBezierKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots;
         }
         ListWeights = new NCollection_HArray1<double>(1, N);
         for (i = W.Lower(); i <= W.Upper(); i++)

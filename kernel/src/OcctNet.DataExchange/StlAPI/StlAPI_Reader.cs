@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Meshing;
@@ -12,7 +13,7 @@ namespace Occt;
 
 /// <summary>
 /// Reads STL into a shape: a compound of planar faces, one per triangle, sharing vertices and edges
-/// (<see cref="BRepBuilderAPI_MakeShapeOnMesh"/>). Slow for large files: <see cref="RWStl"/> reads them into a
+/// (<see cref="MakeShapeOnMesh"/>). Slow for large files: <see cref="RWStl"/> reads them into a
 /// triangulation.
 /// </summary>
 /// <remarks>The shape is published frozen. The limits for hostile input are an addition (<see cref="RWStl_ReadLimits"/>).</remarks>
@@ -42,9 +43,9 @@ public class StlAPI_Reader
             return false;
         }
 
-        var aConverter = new BRepBuilderAPI_MakeShapeOnMesh(aMesh);
+        var aConverter = new MakeShapeOnMesh(aMesh);
         aConverter.Build();
-        if (!aConverter.IsDone())
+        if (!aConverter.IsDone)
         {
             return false;
         }

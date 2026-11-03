@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -119,10 +121,10 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
             if (theCase.Mode < 0)
             {
                 // a middle path
-                BRepOffsetAPI_MiddlePath aMP = new(aParts[0], aParts[1], aParts[2]);
+                MiddlePath aMP = new(aParts[0], aParts[1], aParts[2]);
                 aMP.Build();
-                aOut.Append($"STATUS {(aMP.IsDone() ? 1 : 0)} -\n");
-                if (aMP.IsDone())
+                aOut.Append($"STATUS {(aMP.IsDone ? 1 : 0)} -\n");
+                if (aMP.IsDone)
                 {
                     aOut.Append(Block("OUT", Text(aMP.Shape())));
                 }
@@ -131,15 +133,15 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
             {
                 Wire aSpine = ShapeCasts.Wire(aParts[0]);
                 Shape aProfile = aParts[1];
-                GeomFill_Trihedron aTrihedron = theCase.Mode switch
+                Trihedron aTrihedron = theCase.Mode switch
                 {
-                    0 => GeomFill_Trihedron.GeomFill_IsCorrectedFrenet,
-                    1 => GeomFill_Trihedron.GeomFill_IsFrenet,
-                    _ => GeomFill_Trihedron.GeomFill_IsDiscreteTrihedron,
+                    0 => Trihedron.IsCorrectedFrenet,
+                    1 => Trihedron.IsFrenet,
+                    _ => Trihedron.IsDiscreteTrihedron,
                 };
-                BRepOffsetAPI_MakePipe aPipe = new(aSpine, aProfile, aTrihedron, theCase.ForceC1);
-                aOut.Append($"STATUS {(aPipe.IsDone() ? 1 : 0)} {Hex(aPipe.ErrorOnSurface())}\n");
-                if (aPipe.IsDone())
+                ApiMakePipe aPipe = new(aSpine, aProfile, aTrihedron, theCase.ForceC1);
+                aOut.Append($"STATUS {(aPipe.IsDone ? 1 : 0)} {Hex(aPipe.ErrorOnSurface())}\n");
+                if (aPipe.IsDone)
                 {
                     Shape aRes = aPipe.Shape();
                     aOut.Append(Block("OUT", Text(aRes)));

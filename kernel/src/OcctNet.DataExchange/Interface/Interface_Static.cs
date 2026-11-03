@@ -29,7 +29,7 @@ public class Interface_Static : Interface_TypedValue
     /// <paramref name="init"/> gives an initial value; if it is not given, the static begins as "not set".
     /// </summary>
     /// <remarks>OCCT's constructor doesn't record the static: <see cref="Interface_StaticSet.Init(string, string, Interface_ParamType, string)"/> does.</remarks>
-    public Interface_Static(string family, string name, Interface_ParamType type = Interface_ParamText, string init = "")
+    public Interface_Static(string family, string name, Interface_ParamType type = Interface_ParamType.Interface_ParamText, string init = "")
         : base(name, type, init)
     {
         thefamily = family;
@@ -46,7 +46,7 @@ public class Interface_Static : Interface_TypedValue
         theupdate = true;
         switch (Type())
         {
-            case Interface_ParamInteger:
+            case Interface_ParamType.Interface_ParamInteger:
             {
                 int lim;
                 if (other.IntegerLimit(true, out lim))
@@ -59,7 +59,7 @@ public class Interface_Static : Interface_TypedValue
                 }
             }
             break;
-            case Interface_ParamReal:
+            case Interface_ParamType.Interface_ParamReal:
             {
                 double lim;
                 if (other.RealLimit(true, out lim))
@@ -73,7 +73,7 @@ public class Interface_Static : Interface_TypedValue
                 SetUnitDef(other.UnitDef());
             }
             break;
-            case Interface_ParamEnum:
+            case Interface_ParamType.Interface_ParamEnum:
             {
                 bool match;
                 int e0, e1, i;
@@ -86,7 +86,7 @@ public class Interface_Static : Interface_TypedValue
                 }
             }
             break;
-            case Interface_ParamIdent:
+            case Interface_ParamType.Interface_ParamIdent:
                 SetObjectType(other.ObjectType());
                 break;
             default:

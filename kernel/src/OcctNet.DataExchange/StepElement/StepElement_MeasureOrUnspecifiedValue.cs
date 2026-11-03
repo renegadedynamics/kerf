@@ -128,24 +128,24 @@ public class StepElement_MeasureOrUnspecifiedValue : StepData_SelectType
         StepElement_MeasureOrUnspecifiedValueMember SelMem = Value() as StepElement_MeasureOrUnspecifiedValueMember;
         if (SelMem is null)
         {
-            return StepElement_Unspecified;
+            return StepElement_UnspecifiedValue.StepElement_Unspecified;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("UNSPECIFIED_VALUE");
         if (name.IsDifferent(nameitem))
         {
-            return StepElement_Unspecified;
+            return StepElement_UnspecifiedValue.StepElement_Unspecified;
         }
         int numit = SelMem.Enum();
         StepElement_UnspecifiedValue val = default;
         switch (numit)
         {
             case 1:
-                val = StepElement_Unspecified;
+                val = StepElement_UnspecifiedValue.StepElement_Unspecified;
                 break;
             default:
-                return StepElement_Unspecified;
+                return StepElement_UnspecifiedValue.StepElement_Unspecified;
         }
         return val;
     }

@@ -1,3 +1,4 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -14,15 +15,15 @@ public class HarnessTests
 {
     // ---- Shapes
 
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape Box() => new MakeBox(10.0, 20.0, 30.0).Shape();
 
     private static IEnumerable<Shape> Primitives()
     {
         yield return Box();
-        yield return new BRepPrimAPI_MakeCylinder(5.0, 12.0).Shape();
-        yield return new BRepPrimAPI_MakeSphere(7.0).Shape();
-        yield return new BRepPrimAPI_MakeTorus(10.0, 3.0).Shape();
-        yield return new BRepPrimAPI_MakeCone(6.0, 2.0, 9.0).Shape();
+        yield return new ApiMakeCylinder(5.0, 12.0).Shape();
+        yield return new MakeSphere(7.0).Shape();
+        yield return new MakeTorus(10.0, 3.0).Shape();
+        yield return new ApiMakeCone(6.0, 2.0, 9.0).Shape();
         yield return SharedCompound();
         yield return BoxShell(skipFace: -1);
     }
@@ -38,8 +39,8 @@ public class HarnessTests
         aBuilder.MakeCompound(ref aCompound);
         aBuilder.Add(aCompound, aBox);
         aBuilder.Add(aCompound, aBox.Located(new Placement(aTrsf)));
-        aBuilder.Add(aCompound, new BRepPrimAPI_MakeCylinder(5.0, 12.0).Shape());
-        aBuilder.Add(aCompound, new BRepPrimAPI_MakeSphere(4.0).Shape());
+        aBuilder.Add(aCompound, new ApiMakeCylinder(5.0, 12.0).Shape());
+        aBuilder.Add(aCompound, new MakeSphere(4.0).Shape());
         return aCompound;
     }
 
@@ -212,7 +213,7 @@ public class HarnessTests
     {
         foreach (Shape aShape in Primitives())
         {
-            Shape aCopy = new BRepBuilderAPI_Copy(aShape).Shape();
+            Shape aCopy = new Copy(aShape).Shape();
             CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aShape, aCopy);
             Assert.True(aComparison.IsIdentical, aComparison.ToString());
 
@@ -322,7 +323,7 @@ public class HarnessTests
     public void Determinism_ShapeAndHistory()
     {
         Shape aBox = Box();
-        Shape aResult = DeterminismHarness.AssertSerialEqualsParallel(() => new BRepBuilderAPI_Copy(aBox).Shape(), 2);
+        Shape aResult = DeterminismHarness.AssertSerialEqualsParallel(() => new Copy(aBox).Shape(), 2);
         Assert.False(aResult.IsNull);
 
         DeterminismHarness.AssertSerialEqualsParallel([aBox], () =>

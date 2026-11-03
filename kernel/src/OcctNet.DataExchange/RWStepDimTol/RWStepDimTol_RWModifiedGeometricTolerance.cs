@@ -51,21 +51,21 @@ internal class RWStepDimTol_RWModifiedGeometricTolerance
 
         // Own fields of ModifiedGeometricTolerance
 
-        StepDimTol_LimitCondition aModifier = StepDimTol_MaximumMaterialCondition;
-        if (data.ParamType(num, 5) == Interface_ParamEnum)
+        StepDimTol_LimitCondition aModifier = StepDimTol_LimitCondition.StepDimTol_MaximumMaterialCondition;
+        if (data.ParamType(num, 5) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 5);
             if (string.CompareOrdinal(text, ".MAXIMUM_MATERIAL_CONDITION.") == 0)
             {
-                aModifier = StepDimTol_MaximumMaterialCondition;
+                aModifier = StepDimTol_LimitCondition.StepDimTol_MaximumMaterialCondition;
             }
             else if (string.CompareOrdinal(text, ".LEAST_MATERIAL_CONDITION.") == 0)
             {
-                aModifier = StepDimTol_LeastMaterialCondition;
+                aModifier = StepDimTol_LimitCondition.StepDimTol_LeastMaterialCondition;
             }
             else if (string.CompareOrdinal(text, ".REGARDLESS_OF_FEATURE_SIZE.") == 0)
             {
-                aModifier = StepDimTol_RegardlessOfFeatureSize;
+                aModifier = StepDimTol_LimitCondition.StepDimTol_RegardlessOfFeatureSize;
             }
             else
             {
@@ -100,13 +100,13 @@ internal class RWStepDimTol_RWModifiedGeometricTolerance
 
         switch (ent.Modifier())
         {
-            case StepDimTol_MaximumMaterialCondition:
+            case StepDimTol_LimitCondition.StepDimTol_MaximumMaterialCondition:
                 SW.SendEnum(".MAXIMUM_MATERIAL_CONDITION.");
                 break;
-            case StepDimTol_LeastMaterialCondition:
+            case StepDimTol_LimitCondition.StepDimTol_LeastMaterialCondition:
                 SW.SendEnum(".LEAST_MATERIAL_CONDITION.");
                 break;
-            case StepDimTol_RegardlessOfFeatureSize:
+            case StepDimTol_LimitCondition.StepDimTol_RegardlessOfFeatureSize:
                 SW.SendEnum(".REGARDLESS_OF_FEATURE_SIZE.");
                 break;
         }

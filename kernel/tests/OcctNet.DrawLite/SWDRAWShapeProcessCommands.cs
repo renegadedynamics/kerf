@@ -41,7 +41,7 @@ internal static class SWDRAWShapeProcessCommands
 {
     public static void Register(DrawInterpreter theInterpreter)
     {
-        ShapeProcess_OperLibrary.Init();
+        global::Kerf.Engine.Healing.Process.OperLibrary.Init();
 
         DrawCxx.Add(theInterpreter, "SPApply", ApplySequence);
         DrawCxx.Add(theInterpreter, "DT_ApplySeq", ApplySequenceAPI);
@@ -106,13 +106,13 @@ internal static class SWDRAWShapeProcessCommands
         }
 
         (string? aDefaults, string? aUser) = ResourceDirectories(theDI, arg3);
-        ShapeProcess_ShapeContext? context = null;
+        global::Kerf.Engine.Healing.Process.ShapeContext? context = null;
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape result = SWDRAWShapeFixCommands.InPlace(theDI, Shape, aWork =>
         {
-            context = new ShapeProcess_ShapeContext(aWork, arg3, "", aDefaults, aUser);
+            context = new global::Kerf.Engine.Healing.Process.ShapeContext(aWork, arg3, "", aDefaults, aUser);
             context.SetMessenger(Messenger(theDI));
-            ShapeProcess.Perform(context, arg4);
+            global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(context, arg4);
             return context.InternalResult();
         });
         context!.PrintStatistics();
@@ -155,7 +155,7 @@ internal static class SWDRAWShapeProcessCommands
         }
 
         (string? aDefaults, string? aUser) = ResourceDirectories(theDI, arg3);
-        var seq = new ShapeProcessAPI_ApplySequence(arg3, arg4, aDefaults, aUser);
+        var seq = new global::Kerf.Engine.Healing.Process.ApplySequence(arg3, arg4, aDefaults, aUser);
         seq.Context().SetMessenger(Messenger(theDI));
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         //   seq.PrepareShape(Shape, true, TopAbs_FACE); //fill history map for faces and above

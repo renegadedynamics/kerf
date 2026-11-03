@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Intersection.TwoD;
+using Kerf.Engine.Offsets.Bisectors;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -153,9 +155,9 @@ internal static class BisectorRecordings
             return;
         }
         Curve2D aBasis = theT.ChangeBasisCurve();
-        Bisector_Curve? aBis = aBasis as Bisector_Curve;
+        BisectorCurve? aBis = aBasis as BisectorCurve;
         theOut.Add(thePre + "T:" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType()));
-        if (aBasis is Bisector_BisecAna anAna)
+        if (aBasis is BisecAna anAna)
         {
             Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
@@ -167,11 +169,11 @@ internal static class BisectorRecordings
         }
         Tok(theOut, thePre + "BF", () => Hex(aBis.FirstParameter()));
         Tok(theOut, thePre + "BL", () => Hex(aBis.LastParameter()));
-        Tok(theOut, thePre + "X", () => (aBis.IsExtendAtStart() ? "1" : "0") + (aBis.IsExtendAtEnd() ? "1" : "0"));
+        Tok(theOut, thePre + "X", () => (aBis.IsExtendAtStart ? "1" : "0") + (aBis.IsExtendAtEnd ? "1" : "0"));
         Tok(theOut, thePre + "N", () =>
         {
-            StringBuilder aS = new(aBis.NbIntervals().ToString(CultureInfo.InvariantCulture));
-            for (int i = 1; i <= aBis.NbIntervals(); i++)
+            StringBuilder aS = new(aBis.IntervalCount.ToString(CultureInfo.InvariantCulture));
+            for (int i = 1; i <= aBis.IntervalCount; i++)
             {
                 aS.Append(',').Append(Hex(aBis.IntervalFirst(i))).Append(',').Append(Hex(aBis.IntervalLast(i)));
             }
@@ -192,7 +194,7 @@ internal static class BisectorRecordings
     }
 
     /// <summary>Bisector_Bisec::Perform as MAT2d_Tool2d::CreateBisector calls it, by the kinds of the elements.</summary>
-    public static void Perform(Bisector_Bisec theB, Geometry2D theE1, Geometry2D theE2, in Point2D theP,
+    public static void Perform(Bisec theB, Geometry2D theE1, Geometry2D theE2, in Point2D theP,
                                in Vector2D theV1, in Vector2D theV2, double theSense, JoinKind theJoin,
                                double theTol, bool theOnCurve)
     {
@@ -219,7 +221,7 @@ internal static class BisectorRecordings
     }
 
     /// <summary>MAT2d_Tool2d's static Domain.</summary>
-    public static IntRes2d_Domain Domain(TrimmedCurve2D Bisector1, double Tolerance)
+    public static TwoDDomain Domain(TrimmedCurve2D Bisector1, double Tolerance)
     {
         double Param1 = Bisector1.FirstParameter();
         double Param2 = Bisector1.LastParameter();
@@ -228,9 +230,9 @@ internal static class BisectorRecordings
             Param2 = 10000.0;
             Curve2D BasisCurve = Bisector1.ChangeBasisCurve();
             Type Type1 = BasisCurve.GetType();
-            if (Type1 == typeof(Bisector_BisecAna))
+            if (Type1 == typeof(BisecAna))
             {
-                BasisCurve = ((Bisector_BisecAna)Bisector1.ChangeBasisCurve()).Geom2dCurve();
+                BasisCurve = ((BisecAna)Bisector1.ChangeBasisCurve()).Geom2dCurve();
                 Type1 = BasisCurve.GetType();
             }
             double Limit = 50000.0;
@@ -254,7 +256,7 @@ internal static class BisectorRecordings
                 Param2 = (Val1 <= Val2 ? Val1 : Val2);
             }
         }
-        IntRes2d_Domain Domain1 = new(Bisector1.Value(Param1), Param1, Tolerance, Bisector1.Value(Param2), Param2,
+        TwoDDomain Domain1 = new(Bisector1.Value(Param1), Param1, Tolerance, Bisector1.Value(Param2), Param2,
                                       Tolerance);
         if (Bisector1.ChangeBasisCurve().IsPeriodic)
         {
@@ -263,24 +265,24 @@ internal static class BisectorRecordings
         return Domain1;
     }
 
-    private static void PutInter(List<string> theOut, string thePre, Bisector_Inter theI)
+    private static void PutInter(List<string> theOut, string thePre, Inter theI)
     {
-        Tok(theOut, thePre + "D", () => theI.IsDone() ? "1" : "0");
-        if (!theI.IsDone())
+        Tok(theOut, thePre + "D", () => theI.IsDone ? "1" : "0");
+        if (!theI.IsDone)
         {
             return;
         }
-        Tok(theOut, thePre + "NP", () => theI.NbPoints().ToString(CultureInfo.InvariantCulture));
-        for (int i = 1; i <= theI.NbPoints(); i++)
+        Tok(theOut, thePre + "NP", () => theI.PointCount.ToString(CultureInfo.InvariantCulture));
+        for (int i = 1; i <= theI.PointCount; i++)
         {
             int j = i;
             Tok(theOut, thePre + "p" + i, () =>
             {
-                IntRes2d_IntersectionPoint aP = theI.Point(j);
+                IntersectionPoint2D aP = theI.Point(j);
                 return Hex(aP.Value()) + "," + Hex(aP.ParamOnFirst()) + "," + Hex(aP.ParamOnSecond());
             });
         }
-        Tok(theOut, thePre + "NS", () => theI.NbSegments().ToString(CultureInfo.InvariantCulture));
+        Tok(theOut, thePre + "NS", () => theI.SegmentCount.ToString(CultureInfo.InvariantCulture));
     }
 
     /// <summary>The port's tokens for the case theInput.</summary>
@@ -300,7 +302,7 @@ internal static class BisectorRecordings
                 int aJoin = (int)aR.D();
                 double aTol = aR.D();
                 bool anOn = aR.D() != 0.0;
-                Bisector_Bisec aB = new();
+                Bisec aB = new();
                 try
                 {
                     Perform(aB, aE1, aE2, new Point2D(px, py), new Vector2D(v1x, v1y), new Vector2D(v2x, v2y), aSense,
@@ -321,7 +323,7 @@ internal static class BisectorRecordings
                 double aSense = aR.D();
                 int aJoin = (int)aR.D();
                 double aTol = aR.D();
-                Bisector_Bisec aB1 = new(), aB2 = new();
+                Bisec aB1 = new(), aB2 = new();
                 try
                 {
                     Point2D aP1 = aA.Value(aA.LastParameter());
@@ -343,9 +345,9 @@ internal static class BisectorRecordings
                     string aPre = aComun != 0 ? "i" : "j";
                     try
                     {
-                        IntRes2d_Domain aD1 = Domain(aB1.Value(), aTol);
-                        IntRes2d_Domain aD2 = Domain(aB2.Value(), aTol);
-                        Bisector_Inter anInter = new();
+                        TwoDDomain aD1 = Domain(aB1.Value(), aTol);
+                        TwoDDomain aD2 = Domain(aB2.Value(), aTol);
+                        Inter anInter = new();
                         anInter.Perform(aB1, aD1, aB2, aD2, aTol, aTol, aComun != 0);
                         PutInter(aOut, aPre, anInter);
                     }

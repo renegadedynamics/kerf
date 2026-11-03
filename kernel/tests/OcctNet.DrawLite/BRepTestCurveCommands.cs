@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -64,7 +68,7 @@ internal static class BRepTestCurveCommands
 
         Wire W = ShapeCasts.Wire(S);
 
-        Shape res = BRepAlgo.ConcatenateWireC0(W); // treatment
+        Shape res = global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWireC0(W); // treatment
         theDI.SetShape(c[1], res);
         return 0;
     }
@@ -79,7 +83,7 @@ internal static class BRepTestCurveCommands
 
         if (n >= 5)
         {
-            theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))).Shape());
+            theDI.SetShape(a[1], new MakeVertex(new Point3D(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]))).Shape());
         }
         else if (n == 4)
         {
@@ -96,7 +100,7 @@ internal static class BRepTestCurveCommands
 
             var C = new EdgeCurveAdaptor(ShapeCasts.Edge(S));
             C.D0(theDI.Atof(a[2]), out Point3D P);
-            theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(P).Shape());
+            theDI.SetShape(a[1], new MakeVertex(P).Shape());
         }
         else
         {
@@ -107,7 +111,7 @@ internal static class BRepTestCurveCommands
                 throw new global::Kerf.Engine.Foundation.NullObjectException();
             }
 
-            theDI.SetShape(a[1], new BRepBuilderAPI_MakeVertex(aP).Shape());
+            theDI.SetShape(a[1], new MakeVertex(aP).Shape());
         }
 
         return 0;
@@ -127,7 +131,7 @@ internal static class BRepTestCurveCommands
         }
 
         int np = (n - 2) / 3;
-        var W = new BRepBuilderAPI_MakePolygon();
+        var W = new MakePolygon();
         int j = 2;
         for (int i = 1; i <= np; i++)
         {
@@ -147,7 +151,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        var W = new BRepBuilderAPI_MakePolygon();
+        var W = new MakePolygon();
         for (int i = 2; i < n; i++)
         {
             Shape S = theDI.GetShape(a[i]);
@@ -176,7 +180,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        var MW = new BRepBuilderAPI_MakeWire();
+        var MW = new MakeWire();
         bool IsUnsorted = a[2] == "-unsorted";
         if (!IsUnsorted)
         {
@@ -217,18 +221,18 @@ internal static class BRepTestCurveCommands
             MW.Add(aLE);
         }
 
-        if (!MW.IsDone())
+        if (!MW.IsDone)
         {
             di.Append("Wire not done with an error:\n");
             switch (MW.Error())
             {
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_EmptyWire:
+                case WireError.EmptyWire:
                     di.Append("BRepBuilderAPI_EmptyWire\n");
                     break;
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_DisconnectedWire:
+                case WireError.DisconnectedWire:
                     di.Append("BRepBuilderAPI_DisconnectedWire\n");
                     break;
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_NonManifoldWire:
+                case WireError.NonManifoldWire:
                     di.Append("BRepBuilderAPI_NonManifoldWire\n");
                     break;
             }
@@ -263,11 +267,11 @@ internal static class BRepTestCurveCommands
         {
             if (C is not null)
             {
-                edge = new BRepBuilderAPI_MakeEdge(C).Edge();
+                edge = new MakeEdge(C).Edge();
             }
             else if (C2d is not null)
             {
-                edge = new BRepBuilderAPI_MakeEdge2d(C2d).Edge();
+                edge = new MakeEdge2d(C2d).Edge();
             }
             else
             {
@@ -294,15 +298,15 @@ internal static class BRepTestCurveCommands
                 {
                     if (C is not null)
                     {
-                        edge = new BRepBuilderAPI_MakeEdge(C, theDI.Atof(a[3]), theDI.Atof(a[4])).Edge();
+                        edge = new MakeEdge(C, theDI.Atof(a[3]), theDI.Atof(a[4])).Edge();
                     }
                     else if (S is null)
                     {
-                        edge = new BRepBuilderAPI_MakeEdge2d(C2d!, theDI.Atof(a[3]), theDI.Atof(a[4])).Edge();
+                        edge = new MakeEdge2d(C2d!, theDI.Atof(a[3]), theDI.Atof(a[4])).Edge();
                     }
                     else
                     {
-                        edge = new BRepBuilderAPI_MakeEdge(C2d!, S, theDI.Atof(a[4]), theDI.Atof(a[5])).Edge();
+                        edge = new MakeEdge(C2d!, S, theDI.Atof(a[4]), theDI.Atof(a[5])).Edge();
                     }
                 }
                 else
@@ -310,15 +314,15 @@ internal static class BRepTestCurveCommands
                     Vertex V2 = ShapeCasts.Vertex(theDI.GetShape(a[4 + i], ShapeType.Vertex));
                     if (C is not null)
                     {
-                        edge = new BRepBuilderAPI_MakeEdge(C, V1, V2).Edge();
+                        edge = new MakeEdge(C, V1, V2).Edge();
                     }
                     else if (S is null)
                     {
-                        edge = new BRepBuilderAPI_MakeEdge2d(C2d!, V1, V2).Edge();
+                        edge = new MakeEdge2d(C2d!, V1, V2).Edge();
                     }
                     else
                     {
-                        edge = new BRepBuilderAPI_MakeEdge(C2d!, S, V1, V2).Edge();
+                        edge = new MakeEdge(C2d!, S, V1, V2).Edge();
                     }
                 }
             }
@@ -327,15 +331,15 @@ internal static class BRepTestCurveCommands
                 Vertex V2 = ShapeCasts.Vertex(theDI.GetShape(a[5 + i], ShapeType.Vertex));
                 if (C is not null)
                 {
-                    edge = new BRepBuilderAPI_MakeEdge(C, V1, V2, theDI.Atof(a[4]), theDI.Atof(a[6])).Edge();
+                    edge = new MakeEdge(C, V1, V2, theDI.Atof(a[4]), theDI.Atof(a[6])).Edge();
                 }
                 else if (S is null)
                 {
-                    edge = new BRepBuilderAPI_MakeEdge2d(C2d!, V1, V2, theDI.Atof(a[4]), theDI.Atof(a[6])).Edge();
+                    edge = new MakeEdge2d(C2d!, V1, V2, theDI.Atof(a[4]), theDI.Atof(a[6])).Edge();
                 }
                 else
                 {
-                    edge = new BRepBuilderAPI_MakeEdge(C2d!, S, V1, V2, theDI.Atof(a[5]), theDI.Atof(a[7])).Edge();
+                    edge = new MakeEdge(C2d!, S, V1, V2, theDI.Atof(a[5]), theDI.Atof(a[7])).Edge();
                 }
             }
             else
@@ -464,7 +468,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        theDI.SetShape(a[1], new BRepBuilderAPI_MakeEdge(ShapeCasts.Vertex(V1), ShapeCasts.Vertex(V2)).Edge());
+        theDI.SetShape(a[1], new MakeEdge(ShapeCasts.Vertex(V1), ShapeCasts.Vertex(V2)).Edge());
         return 0;
     }
 
@@ -514,7 +518,7 @@ internal static class BRepTestCurveCommands
         }
 
         // OCCT writes the location and the pcurve into the new edge before binding it
-        Edge E = new BRepBuilderAPI_MakeEdge(C, p1, p2).InternalEdge();
+        Edge E = new MakeEdge(C, p1, p2).InternalEdge();
         E.Location(Loc);
         new BrepBuilder().UpdateEdge(E, L, ShapeCasts.Face(Sh), 0.0);
         theDI.SetShape(a[1], E);
@@ -577,7 +581,7 @@ internal static class BRepTestCurveCommands
 
         int i = 2;
         double x0 = 0, y0 = 0, x = 0, y = 0, dx = 1, dy = 0;
-        var MW = new BRepBuilderAPI_MakeWire();
+        var MW = new MakeWire();
         var P = new Plane3D(new CoordinateSystem(Constants.XOY()));
         bool face = true;
         bool close = true;
@@ -889,8 +893,8 @@ internal static class BRepTestCurveCommands
 
                     var l = new LineCurve2D(new Point2D(x, y), new Direction2D(dx, dy));
                     MW.Add(isplanar
-                               ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(l, P), 0, length).InternalEdge()
-                               : new BRepBuilderAPI_MakeEdge(l, Surface!, 0, length).InternalEdge());
+                               ? new MakeEdge(Projections.To3d(l, P), 0, length).InternalEdge()
+                               : new MakeEdge(l, Surface!, 0, length).InternalEdge());
                     x += length * dx;
                     y += length * dy;
                     break;
@@ -916,8 +920,8 @@ internal static class BRepTestCurveCommands
 
                     var c = new CircleCurve2D(ax, radius, sense);
                     MW.Add(isplanar
-                               ? new BRepBuilderAPI_MakeEdge(GeomAPI.To3d(c, P), 0, angle).InternalEdge()
-                               : new BRepBuilderAPI_MakeEdge(c, Surface!, 0, angle).InternalEdge());
+                               ? new MakeEdge(Projections.To3d(c, P), 0, angle).InternalEdge()
+                               : new MakeEdge(c, Surface!, 0, angle).InternalEdge());
                     c.D1(angle, out Point2D p, out Vector2D v);
                     x = p.X();
                     y = p.Y();
@@ -957,11 +961,11 @@ internal static class BRepTestCurveCommands
         {
             if (isplanar)
             {
-                S = new BRepBuilderAPI_MakeFace(P, MW.InternalWire()).InternalFace();
+                S = new MakeFace(P, MW.InternalWire()).InternalFace();
             }
             else
             {
-                var MFace = new BRepBuilderAPI_MakeFace();
+                var MFace = new MakeFace();
                 MFace.Init(Surface!, false, global::Kerf.Engine.Foundation.Precision.Confusion());
                 MFace.Add(MW.InternalWire());
                 S = MFace.InternalFace();
@@ -980,7 +984,7 @@ internal static class BRepTestCurveCommands
         if (!isplanar)
         {
             double Tol = 1.0e-5;
-            BRepLib.BuildCurves3d(S, Tol);
+            BrepLibrary.BuildCurves3d(S, Tol);
         }
 
         theDI.SetShape(a[1], S);
@@ -1000,7 +1004,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        BRepOffsetAPI_MakeOffset Paral = new();
+        MakeWireOffset Paral = new();
         bool ToApprox = false;
         JoinKind theJoinType = JoinKind.Arc;
 
@@ -1062,7 +1066,7 @@ internal static class BRepTestCurveCommands
             U = i * dU;
             Paral.Perform(U, Alt);
 
-            if (!Paral.IsDone())
+            if (!Paral.IsDone)
             {
                 di.Append(" Error: Offset is not done.\n");
                 return 1;
@@ -1085,7 +1089,7 @@ internal static class BRepTestCurveCommands
             return 1;
         }
 
-        BRepOffsetAPI_MakeOffset Paral = new();
+        MakeWireOffset Paral = new();
         bool ToApprox = false;
         JoinKind theJoinType = JoinKind.Arc;
 
@@ -1137,7 +1141,7 @@ internal static class BRepTestCurveCommands
             U = i * dU;
             Paral.Perform(U, Alt);
 
-            if (!Paral.IsDone())
+            if (!Paral.IsDone)
             {
                 di.Append(" Error: Offset is not done.\n");
                 return 1;

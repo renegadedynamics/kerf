@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -70,7 +71,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Plane()
     {
-        var aSAS = new ShapeAnalysis_Surface(new PlaneSurface(XOY));
+        var aSAS = new SurfaceAnalysis(new PlaneSurface(XOY));
         AssertUV(3, 4, aSAS.ValueOfUV(new Point3D(3, 4, 5), Preci));
         Assert.Equal(5.0, aSAS.Gap(), 1e-12);
         Assert.Equal(0, aSAS.NbSingularities(1e10));
@@ -92,7 +93,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Cylinder()
     {
-        var aSAS = new ShapeAnalysis_Surface(new CylindricalSurface(XOY, 2));
+        var aSAS = new SurfaceAnalysis(new CylindricalSurface(XOY, 2));
         AssertUV(0, 3, aSAS.ValueOfUV(new Point3D(2, 0, 3), Preci));
         AssertUV(1.5 * M_PI, 1, aSAS.ValueOfUV(new Point3D(0, -2, 1), Preci));
         Assert.Equal(0.0, aSAS.Gap(), 1e-15);
@@ -116,7 +117,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Cone_apex_is_a_singularity()
     {
         var aCone = new ConicalSurface(XOY, M_PI / 6, 1);
-        var aSAS = new ShapeAnalysis_Surface(aCone);
+        var aSAS = new SurfaceAnalysis(aCone);
         Assert.Equal(1, aSAS.NbSingularities(0));
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
         Point3D aP = new Point3D();
@@ -152,7 +153,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Sphere_poles_are_singularities()
     {
         var aSphere = new SphericalSurface(XOY, 1);
-        var aSAS = new ShapeAnalysis_Surface(aSphere);
+        var aSAS = new SurfaceAnalysis(aSphere);
         Assert.Equal(2, aSAS.NbSingularities(0));
         Assert.True(aSAS.HasSingularities(0));
 
@@ -206,7 +207,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Torus_singularities_depend_on_the_radii()
     {
         var aTorus = new ToroidalSurface(XOY, 3, 1);
-        var aSAS = new ShapeAnalysis_Surface(aTorus);
+        var aSAS = new SurfaceAnalysis(aTorus);
         Assert.Equal(0, aSAS.NbSingularities(Preci));
         Assert.Equal(1, aSAS.NbSingularities(2));
         AssertUV(1.0, 2.0, aSAS.ValueOfUV(aTorus.Value(1.0, 2.0), Preci));
@@ -215,7 +216,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.True(aSAS.IsVClosed());
 
         // a spindle torus (minor radius larger): two singular points
-        var aSpindle = new ShapeAnalysis_Surface(new ToroidalSurface(XOY, 1, 2));
+        var aSpindle = new SurfaceAnalysis(new ToroidalSurface(XOY, 1, 2));
         Assert.Equal(2, aSpindle.NbSingularities(0));
     }
 
@@ -224,7 +225,7 @@ public class ShapeAnalysis_SurfaceTests
     {
         var aProfile = new TrimmedCurve3D(new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0, 2);
         var aRev = new RevolutionSurface(aProfile, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
-        var aSAS = new ShapeAnalysis_Surface(aRev);
+        var aSAS = new SurfaceAnalysis(aRev);
         AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 1, 1), Preci), 1e-7);
         Assert.Equal(0.0, aSAS.Gap(), 1e-7);
         AssertUV(M_PI / 2, 1, aSAS.ValueOfUV(new Point3D(0, 3, 1), Preci), 1e-7);
@@ -240,7 +241,7 @@ public class ShapeAnalysis_SurfaceTests
 
         // a revolved line through the axis: a cone with its apex as a degenerated boundary
         var aSlant = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1)), 0, 2);
-        var aConeRev = new ShapeAnalysis_Surface(new RevolutionSurface(aSlant, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
+        var aConeRev = new SurfaceAnalysis(new RevolutionSurface(aSlant, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))));
         Assert.Equal(1, aConeRev.NbSingularities(Preci));
         Assert.True(aConeRev.IsDegenerated(new Point3D(0, 0, 0), Preci));
     }
@@ -250,20 +251,20 @@ public class ShapeAnalysis_SurfaceTests
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         var anExtr = new ExtrusionSurface(aCircle, new Direction3D(0, 0, 1));
-        var aSAS = new ShapeAnalysis_Surface(anExtr);
+        var aSAS = new SurfaceAnalysis(anExtr);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
         AssertUV(1.0, 3.0, aSAS.ValueOfUV(anExtr.Value(1.0, 3.0), Preci), 1e-7);
 
         // an open profile (an arc of half a circle): U isn't closed
         var anArc = new TrimmedCurve3D(aCircle, 0, M_PI);
-        var aSAS2 = new ShapeAnalysis_Surface(new ExtrusionSurface(anArc, new Direction3D(0, 0, 1)));
+        var aSAS2 = new SurfaceAnalysis(new ExtrusionSurface(anArc, new Direction3D(0, 0, 1)));
         Assert.False(aSAS2.IsUClosed());
         Assert.Equal(4.0, aSAS2.Gap(), 1e-12);
         Assert.Equal(RealLast(), aSAS2.UCloseVal()); // the ends are farther apart than the start and the middle
         // an almost closed profile is closed with a large enough precision
         var anAlmost = new TrimmedCurve3D(aCircle, 0, 2 * M_PI - 1e-4);
-        var aSAS3 = new ShapeAnalysis_Surface(new ExtrusionSurface(anAlmost, new Direction3D(0, 0, 1)));
+        var aSAS3 = new SurfaceAnalysis(new ExtrusionSurface(anAlmost, new Direction3D(0, 0, 1)));
         Assert.False(aSAS3.IsUClosed());
         Assert.True(aSAS3.IsUClosed(1e-3));
     }
@@ -272,7 +273,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Bezier_surface()
     {
         BezierSurface aSaddle = Saddle(2);
-        var aSAS = new ShapeAnalysis_Surface(aSaddle);
+        var aSAS = new SurfaceAnalysis(aSaddle);
         AssertUV(0.3, 0.6, aSAS.ValueOfUV(aSaddle.Value(0.3, 0.6), Preci), 1e-8);
         Assert.True(aSAS.Gap() < 1e-8);
         // a point off the surface near a corner
@@ -297,7 +298,7 @@ public class ShapeAnalysis_SurfaceTests
     public void BSpline_with_a_degenerated_edge()
     {
         BSplineSurface aBS = Degenerated();
-        var aSAS = new ShapeAnalysis_Surface(aBS);
+        var aSAS = new SurfaceAnalysis(aBS);
         Assert.Equal(1, aSAS.NbSingularities(Preci));
         Assert.True(aSAS.IsDegenerated(new Point3D(0, 0, 1), Preci));
         double aPreci = -1, aFirstPar = 0, aLastPar = 0;
@@ -341,7 +342,7 @@ public class ShapeAnalysis_SurfaceTests
         }
 
         var aBS = new BSplineSurface(aPoles, Array(0.0, 1.0, 2.0, 3.0, 4.0), Array(0.0, 1.0), Array(2, 1, 1, 1, 2), Array(2, 2), 1, 1);
-        var aSAS = new ShapeAnalysis_Surface(aBS);
+        var aSAS = new SurfaceAnalysis(aBS);
         Assert.True(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
         AssertUV(1.5, 0.25, aSAS.ValueOfUV(aBS.Value(1.5, 0.25), Preci), 1e-8);
@@ -353,7 +354,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Offset_surface()
     {
         var anOffset = new OffsetSurface(Saddle(2), 0.5);
-        var aSAS = new ShapeAnalysis_Surface(anOffset);
+        var aSAS = new SurfaceAnalysis(anOffset);
         AssertUV(0.4, 0.7, aSAS.ValueOfUV(anOffset.Value(0.4, 0.7), Preci), 1e-7);
         Assert.Equal(4, aSAS.NbSingularities(1e10));
         Assert.False(aSAS.IsUClosed());
@@ -364,7 +365,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0.25, aV, 1e-6);
 
         // an offset of a cylinder is (for GeomAdaptor) a cylinder
-        var aCylOffset = new ShapeAnalysis_Surface(new OffsetSurface(new CylindricalSurface(XOY, 2), 1));
+        var aCylOffset = new SurfaceAnalysis(new OffsetSurface(new CylindricalSurface(XOY, 2), 1));
         AssertUV(M_PI / 2, 4, aCylOffset.ValueOfUV(new Point3D(0, 3, 4), Preci));
     }
 
@@ -372,7 +373,7 @@ public class ShapeAnalysis_SurfaceTests
     public void Rectangular_trimmed_surface()
     {
         var aTrimmed = new TrimmedSurface(new CylindricalSurface(XOY, 1), 0, M_PI, 0, 2);
-        var aSAS = new ShapeAnalysis_Surface(aTrimmed);
+        var aSAS = new SurfaceAnalysis(aTrimmed);
         Assert.False(aSAS.IsUClosed());
         Assert.Equal(RealLast(), aSAS.UCloseVal()); // the ends are farther apart than the start and the middle
         Assert.Equal(2.0, aSAS.Gap(), 1e-12);
@@ -398,7 +399,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0.0, aZmax, 1e-6);
 
         // a full trimmed cylinder is U-closed by the 101-point check
-        var aFull = new ShapeAnalysis_Surface(new TrimmedSurface(new CylindricalSurface(XOY, 1), 0, 2 * M_PI, 0, 2));
+        var aFull = new SurfaceAnalysis(new TrimmedSurface(new CylindricalSurface(XOY, 1), 0, 2 * M_PI, 0, 2));
         Assert.True(aFull.IsUClosed());
     }
 
@@ -406,7 +407,7 @@ public class ShapeAnalysis_SurfaceTests
     public void UVFromIso_refines_a_rough_solution()
     {
         var aTrimmed = new TrimmedSurface(Saddle(2), 0, 1, 0, 1);
-        var aSAS = new ShapeAnalysis_Surface(aTrimmed);
+        var aSAS = new SurfaceAnalysis(aTrimmed);
         double aU = 0.1, aV = 0.9;
         double aDist = aSAS.UVFromIso(aTrimmed.Value(1.0, 0.3), Preci, ref aU, ref aV);
         Assert.True(aDist < 1e-7, $"distance {aDist}");
@@ -424,7 +425,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Init_and_SetDomain()
     {
-        var aSAS = new ShapeAnalysis_Surface(new SphericalSurface(XOY, 1));
+        var aSAS = new SurfaceAnalysis(new SphericalSurface(XOY, 1));
         Assert.Equal(2, aSAS.NbSingularities(0));
         var aCyl = new CylindricalSurface(XOY, 1);
         aSAS.Init(aCyl);
@@ -432,9 +433,9 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal(0, aSAS.NbSingularities(0));
 
         // a copy of another analyzer takes its singularities and adaptor
-        var aSphere = new ShapeAnalysis_Surface(new SphericalSurface(XOY, 1));
+        var aSphere = new SurfaceAnalysis(new SphericalSurface(XOY, 1));
         aSphere.NbSingularities(0);
-        var aCopy = new ShapeAnalysis_Surface(new PlaneSurface(XOY));
+        var aCopy = new SurfaceAnalysis(new PlaneSurface(XOY));
         aCopy.Init(aSphere);
         Assert.Equal(2, aCopy.NbSingularities(0));
         Assert.Same(aSphere.TrueAdaptor3d(), aCopy.Adaptor3d());
@@ -444,7 +445,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.Equal((0.0, 1.0, -0.5, 0.5), (aU1, aU2, aV1, aV2));
 
         // a null surface: an empty analyzer, as OCCT (which warns)
-        var aNull = new ShapeAnalysis_Surface(null);
+        var aNull = new SurfaceAnalysis(null);
         Assert.Null(aNull.Surface());
         Assert.Null(aNull.Adaptor3d());
         Assert.Equal(0, aNull.NbSingularities(1));
@@ -453,7 +454,7 @@ public class ShapeAnalysis_SurfaceTests
     [Fact]
     public void Value_evaluates_the_adaptor()
     {
-        var aSAS = new ShapeAnalysis_Surface(new CylindricalSurface(XOY, 2));
+        var aSAS = new SurfaceAnalysis(new CylindricalSurface(XOY, 2));
         Assert.True(aSAS.Value(M_PI / 2, 3).IsEqual(new Point3D(0, 2, 3), 1e-15));
         Assert.True(aSAS.Value(new Point2D(0, 1)).IsEqual(new Point3D(2, 0, 1), 1e-15));
     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Custom;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -44,7 +45,7 @@ public class ShapeCustom_GeometryTests
     {
         BSplineCurve3D aCurve = theWrapped ? WrappedBSpline() : ClosedBSpline();
         aCurve.Freeze();
-        var aTool = new ShapeCustom_Curve(aCurve);
+        var aTool = new CustomCurve(aCurve);
         Curve3D? aResult = aTool.ConvertToPeriodic(true);
         Assert.NotNull(aResult);
         Assert.True(aResult!.IsPeriodic);
@@ -57,27 +58,27 @@ public class ShapeCustom_GeometryTests
     [Fact]
     public void Curve_ConvertToPeriodic_OfAnOpenOrNonBSplineCurve_IsNull()
     {
-        Assert.Null(new ShapeCustom_Curve(new CircleCurve3D(new Frame3D(), 3)).ConvertToPeriodic(false));
+        Assert.Null(new CustomCurve(new CircleCurve3D(new Frame3D(), 3)).ConvertToPeriodic(false));
         NCollection_Array1<Point3D> aPoles = Array(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         var anOpen = new BSplineCurve3D(aPoles, Array(0.0, 1.0), Array(4, 4), 3);
-        Assert.Null(new ShapeCustom_Curve(anOpen).ConvertToPeriodic(false));
+        Assert.Null(new CustomCurve(anOpen).ConvertToPeriodic(false));
     }
 
     [Fact]
     public void Curve2d_IsLinear_AndConvertToLine2d()
     {
         double aDeviation = -1;
-        Assert.True(ShapeCustom_Curve2d.IsLinear(Array(new Point2D(0, 0), new Point2D(1, 1e-8), new Point2D(3, 0)), 1e-6, ref aDeviation));
+        Assert.True(CustomCurve2d.IsLinear(Array(new Point2D(0, 0), new Point2D(1, 1e-8), new Point2D(3, 0)), 1e-6, ref aDeviation));
         Assert.Equal(1e-8, aDeviation, 12);
         aDeviation = -1;
-        Assert.False(ShapeCustom_Curve2d.IsLinear(Array(new Point2D(0, 0), new Point2D(1, 1e-3), new Point2D(3, 0)), 1e-6, ref aDeviation));
+        Assert.False(CustomCurve2d.IsLinear(Array(new Point2D(0, 0), new Point2D(1, 1e-3), new Point2D(3, 0)), 1e-6, ref aDeviation));
         Assert.Equal(-1, aDeviation); // left unchanged
-        Assert.False(ShapeCustom_Curve2d.IsLinear(Array(new Point2D(0, 0)), 1e-6, ref aDeviation));
+        Assert.False(CustomCurve2d.IsLinear(Array(new Point2D(0, 0)), 1e-6, ref aDeviation));
 
         // a linear B-spline from (1, 1) to (5, 4), parametrised on [2, 7]
         var aBSpline = new BSplineCurve2D(Array(new Point2D(1, 1), new Point2D(3, 2.5), new Point2D(5, 4)), Array(2.0, 7.0), Array(3, 3), 2);
         double cf = 0, cl = 0;
-        LineCurve2D? aLine = ShapeCustom_Curve2d.ConvertToLine2d(aBSpline, 2, 7, 1e-7, ref cf, ref cl, ref aDeviation);
+        LineCurve2D? aLine = CustomCurve2d.ConvertToLine2d(aBSpline, 2, 7, 1e-7, ref cf, ref cl, ref aDeviation);
         Assert.NotNull(aLine);
         Assert.Equal(0.0, aDeviation, 12);
         // the line's origin is moved to its point at c1, so the curve's ends are at -c1 and -c1 + 5 on it
@@ -87,8 +88,8 @@ public class ShapeCustom_GeometryTests
         Assert.True(aLine.Value(cl).IsEqual(new Point2D(5, 4), 1e-12));
 
         var aBezier = new BezierCurve2D(Array(new Point2D(0, 0), new Point2D(1, 2), new Point2D(2, 0)));
-        Assert.Null(ShapeCustom_Curve2d.ConvertToLine2d(aBezier, 0, 1, 1e-7, ref cf, ref cl, ref aDeviation));
-        Assert.Null(ShapeCustom_Curve2d.ConvertToLine2d(new CircleCurve2D(new Axis2D(), 1), 0, 1, 1e-7, ref cf, ref cl, ref aDeviation));
+        Assert.Null(CustomCurve2d.ConvertToLine2d(aBezier, 0, 1, 1e-7, ref cf, ref cl, ref aDeviation));
+        Assert.Null(CustomCurve2d.ConvertToLine2d(new CircleCurve2D(new Axis2D(), 1), 0, 1, 1e-7, ref cf, ref cl, ref aDeviation));
     }
 
     [Theory]
@@ -108,7 +109,7 @@ public class ShapeCustom_GeometryTests
             aBSpline.Freeze();
         }
         BSplineCurve2D aCurve = aBSpline;
-        Assert.True(ShapeCustom_Curve2d.SimplifyBSpline2d(ref aCurve, 1e-7));
+        Assert.True(CustomCurve2d.SimplifyBSpline2d(ref aCurve, 1e-7));
         Assert.True(aCurve.KnotCount < 4);
         Assert.Equal(theFrozen, !ReferenceEquals(aCurve, aBSpline));
         Assert.Equal(theFrozen ? 4 : aCurve.KnotCount, aBSpline.KnotCount);
@@ -125,7 +126,7 @@ public class ShapeCustom_GeometryTests
         aPoles[2, 1] = new Point3D(1, 0, 2);
         aPoles[2, 2] = new Point3D(1, 3, 2);
         var aBilinear = new BezierSurface(aPoles);
-        var aTool = new ShapeCustom_Surface(aBilinear);
+        var aTool = new SurfaceCustom(aBilinear);
         Surface? aPlane = aTool.ConvertToAnalytical(1e-7, false);
         Assert.IsType<PlaneSurface>(aPlane);
         Assert.True(aTool.Gap() < 1e-7);
@@ -136,7 +137,7 @@ public class ShapeCustom_GeometryTests
         // half a cylinder of radius 2 as a B-spline (closed in U: the whole cylinder)
         var aCylinder = new TrimmedSurface(new CylindricalSurface(new CoordinateSystem(), 2), 0, 2 * Math.PI, 0, 5);
         BSplineSurface aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aCylinder);
-        var aTool2 = new ShapeCustom_Surface(aBSpline);
+        var aTool2 = new SurfaceCustom(aBSpline);
         Surface? aRecognised = aTool2.ConvertToAnalytical(1e-6, true);
         Assert.IsType<CylindricalSurface>(aRecognised);
         Assert.Equal(2.0, ((CylindricalSurface)aRecognised!).Radius(), 6);
@@ -152,7 +153,7 @@ public class ShapeCustom_GeometryTests
         aBSpline = (BSplineSurface)aBSpline.Copy();
         Point3D aPole = aBSpline.Pole(2, 2);
         aBSpline.SetPole(2, 2, aPole.Translated(new Vector3D(0.5, 0.5, 0)));
-        var aTool = new ShapeCustom_Surface(aBSpline);
+        var aTool = new SurfaceCustom(aBSpline);
         Assert.Null(aTool.ConvertToAnalytical(1e-6, true));
         Assert.True(aTool.Gap() > 1e-6);
         Assert.Null(aTool.ConvertToPeriodic(false)); // the tool's surface is now null
@@ -176,7 +177,7 @@ public class ShapeCustom_GeometryTests
                                                Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1), Array(2, 2), 2, 1);
         aSurface.Freeze();
         Assert.False(aSurface.IsUPeriodic);
-        Surface? aResult = new ShapeCustom_Surface(aSurface).ConvertToPeriodic(false);
+        Surface? aResult = new SurfaceCustom(aSurface).ConvertToPeriodic(false);
         Assert.NotNull(aResult);
         Assert.True(aResult!.IsUPeriodic);
         Assert.False(aSurface.IsUPeriodic);

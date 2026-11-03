@@ -4,122 +4,126 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Projection;
 using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.TwoD;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Tools;
 
 // OCCT's file also defines a global MakeBSpline(WL, ideb, ifin) that nothing calls (MakeCurve calls
 // GeomInt_IntSS::MakeBSpline); it isn't ported.
-public partial class IntTools_FaceFace
+public partial class FaceFace
 {
-    private static void Parameters(SurfaceAdaptor HS1, SurfaceAdaptor HS2, in Point3D Ptref,
-                                   out double U1, out double V1, out double U2, out double V2)
+    private static void Parameters(SurfaceAdaptor hs1, SurfaceAdaptor hs2, in Point3D ptref,
+                                   out double u1, out double v1, out double u2, out double v2)
     {
 
-        IntSurf_Quadric quad1 = new(), quad2 = new();
-        SurfaceKind typs = HS1.GetType();
+        SurfaceQuadric quad1 = new(), quad2 = new();
+        SurfaceKind typs = hs1.GetType();
 
         switch (typs)
         {
             case Plane:
-                quad1.SetValue(HS1.Plane());
+                quad1.SetValue(hs1.Plane());
                 break;
             case SurfaceKind.Cylinder:
-                quad1.SetValue(HS1.Cylinder());
+                quad1.SetValue(hs1.Cylinder());
                 break;
             case SurfaceKind.Cone:
-                quad1.SetValue(HS1.Cone());
+                quad1.SetValue(hs1.Cone());
                 break;
             case SurfaceKind.Sphere:
-                quad1.SetValue(HS1.Sphere());
+                quad1.SetValue(hs1.Sphere());
                 break;
             case SurfaceKind.Torus:
-                quad1.SetValue(HS1.Torus());
+                quad1.SetValue(hs1.Torus());
                 break;
             default:
                 throw new ConstructionErrorException("GeomInt_IntSS::MakeCurve");
         }
 
-        typs = HS2.GetType();
+        typs = hs2.GetType();
         switch (typs)
         {
             case Plane:
-                quad2.SetValue(HS2.Plane());
+                quad2.SetValue(hs2.Plane());
                 break;
             case SurfaceKind.Cylinder:
-                quad2.SetValue(HS2.Cylinder());
+                quad2.SetValue(hs2.Cylinder());
                 break;
             case SurfaceKind.Cone:
-                quad2.SetValue(HS2.Cone());
+                quad2.SetValue(hs2.Cone());
                 break;
             case SurfaceKind.Sphere:
-                quad2.SetValue(HS2.Sphere());
+                quad2.SetValue(hs2.Sphere());
                 break;
             case SurfaceKind.Torus:
-                quad2.SetValue(HS2.Torus());
+                quad2.SetValue(hs2.Torus());
                 break;
             default:
                 throw new ConstructionErrorException("GeomInt_IntSS::MakeCurve");
         }
 
-        U1 = V1 = U2 = V2 = 0.0;
-        quad1.Parameters(Ptref, ref U1, ref V1);
-        quad2.Parameters(Ptref, ref U2, ref V2);
+        u1 = v1 = u2 = v2 = 0.0;
+        quad1.Parameters(ptref, ref u1, ref v1);
+        quad2.Parameters(ptref, ref u2, ref v2);
     }
 
-    private static void CorrectSurfaceBoundaries(in Face theFace, double theTolerance, ref double theumin,
+    private static void CorrectSurfaceBoundaries(in Face face, double tolerance, ref double theumin,
                                                  ref double theumax, ref double thevmin, ref double thevmax)
     {
         bool enlarge, isuperiodic, isvperiodic;
         double uinf, usup, vinf, vsup, delta;
-        SurfaceKind aType;
-        Surface aSurface;
+        SurfaceKind type;
+        Surface surface;
         //
-        aSurface = Tool.Surface(theFace)!;
-        aSurface.Bounds(out uinf, out usup, out vinf, out vsup);
-        delta = theTolerance;
+        surface = Tool.Surface(face)!;
+        surface.Bounds(out uinf, out usup, out vinf, out vsup);
+        delta = tolerance;
         enlarge = false;
         //
-        SurfaceAdaptor anAdaptorSurface = new(aSurface);
+        SurfaceAdaptor adaptorSurface = new(surface);
         //
-        if (aSurface is TrimmedSurface aTrimmed)
+        if (surface is TrimmedSurface trimmed)
         {
-            Surface aBasisSurface = aTrimmed.BasisSurface();
+            Surface basisSurface = trimmed.BasisSurface();
 
-            if (aBasisSurface is TrimmedSurface || aBasisSurface is global::Kerf.Geometry.OffsetSurface)
+            if (basisSurface is TrimmedSurface || basisSurface is global::Kerf.Geometry.OffsetSurface)
             {
                 return;
             }
         }
         //
-        if (aSurface is global::Kerf.Geometry.OffsetSurface anOffset)
+        if (surface is global::Kerf.Geometry.OffsetSurface offset)
         {
-            Surface aBasisSurface = anOffset.BasisSurface();
+            Surface basisSurface = offset.BasisSurface();
 
-            if (aBasisSurface is TrimmedSurface || aBasisSurface is global::Kerf.Geometry.OffsetSurface)
+            if (basisSurface is TrimmedSurface || basisSurface is global::Kerf.Geometry.OffsetSurface)
             {
                 return;
             }
         }
         //
-        isuperiodic = anAdaptorSurface.IsUPeriodic;
-        isvperiodic = anAdaptorSurface.IsVPeriodic;
+        isuperiodic = adaptorSurface.IsUPeriodic;
+        isvperiodic = adaptorSurface.IsVPeriodic;
         //
-        aType = anAdaptorSurface.GetType();
-        if ((aType == SurfaceKind.BezierSurface) || (aType == SurfaceKind.BSplineSurface)
-            || (aType == SurfaceOfExtrusion) || (aType == SurfaceOfRevolution)
-            || (aType == SurfaceKind.Cylinder))
+        type = adaptorSurface.GetType();
+        if ((type == SurfaceKind.BezierSurface) || (type == SurfaceKind.BSplineSurface)
+            || (type == SurfaceOfExtrusion) || (type == SurfaceOfRevolution)
+            || (type == SurfaceKind.Cylinder))
         {
             enlarge = true;
         }
@@ -174,52 +178,52 @@ public partial class IntTools_FaceFace
             bool correct = false;
             bool correctU = false;
             bool correctV = false;
-            Box2d aBox = new();
-            Explorer anExp = new();
+            Box2d box = new();
+            Explorer exp = new();
 
-            for (anExp.Init(theFace, ShapeType.Edge); anExp.More(); anExp.Next())
+            for (exp.Init(face, ShapeType.Edge); exp.More(); exp.Next())
             {
-                if (Tool.IsClosed(ShapeCasts.Edge(anExp.Current()), theFace))
+                if (Tool.IsClosed(ShapeCasts.Edge(exp.Current()), face))
                 {
                     correct = true;
                     double f, l;
-                    Edge anEdge = ShapeCasts.Edge(anExp.Current());
+                    Edge edge = ShapeCasts.Edge(exp.Current());
 
                     for (int i = 0; i < 2; i++)
                     {
                         if (i == 0)
                         {
-                            anEdge.Orientation(Forward);
+                            edge.Orientation(Forward);
                         }
                         else
                         {
-                            anEdge.Orientation(Reversed);
+                            edge.Orientation(Reversed);
                         }
-                        Curve2D? aCurve = Tool.CurveOnSurface(anEdge, theFace, out f, out l);
+                        Curve2D? curve = Tool.CurveOnSurface(edge, face, out f, out l);
 
-                        if (aCurve is null)
+                        if (curve is null)
                         {
                             correct = false;
                             break;
                         }
-                        LineCurve2D? aLine = aCurve as LineCurve2D;
+                        LineCurve2D? line = curve as LineCurve2D;
 
-                        if (aLine is null)
+                        if (line is null)
                         {
                             correct = false;
                             break;
                         }
-                        Direction2D anUDir = new(Direction2D.D.X);
-                        Direction2D aVDir = new(Direction2D.D.Y);
-                        double anAngularTolerance = global::Kerf.Engine.Foundation.Precision.Angular();
+                        Direction2D uDir = new(Direction2D.D.X);
+                        Direction2D vDir = new(Direction2D.D.Y);
+                        double angularTolerance = global::Kerf.Engine.Foundation.Precision.Angular();
 
-                        correctU = correctU || aLine.Position().Direction().IsParallel(aVDir, anAngularTolerance);
-                        correctV = correctV || aLine.Position().Direction().IsParallel(anUDir, anAngularTolerance);
+                        correctU = correctU || line.Position().Direction().IsParallel(vDir, angularTolerance);
+                        correctV = correctV || line.Position().Direction().IsParallel(uDir, angularTolerance);
 
-                        Point2D pp1 = aCurve.Value(f);
-                        aBox.Add(pp1);
-                        Point2D pp2 = aCurve.Value(l);
-                        aBox.Add(pp2);
+                        Point2D pp1 = curve.Value(f);
+                        box.Add(pp1);
+                        Point2D pp2 = curve.Value(l);
+                        box.Add(pp2);
                     }
                     if (!correct)
                     {
@@ -230,7 +234,7 @@ public partial class IntTools_FaceFace
 
             if (correct)
             {
-                aBox.Get(out double umin, out double vmin, out double umax, out double vmax);
+                box.Get(out double umin, out double vmin, out double umax, out double vmax);
 
                 if (isuperiodic && correctU)
                 {
@@ -260,33 +264,33 @@ public partial class IntTools_FaceFace
 
     // Computes a new parameter for given curve. The corresponding 2d points
     // does not lay on any boundary of given faces
-    private static bool ParameterOutOfBoundary(double theParameter, Curve3D theCurve, in Face theFace1,
-                                               in Face theFace2, double theOtherParameter, bool bIncreasePar,
-                                               double theTol, out double theNewParameter, IntTools_Context aContext)
+    private static bool ParameterOutOfBoundary(double parameter, Curve3D curve, in Face face1,
+                                               in Face face2, double otherParameter, bool bIncreasePar,
+                                               double tol, out double newParameter, IntersectionContext aContext)
     {
         bool bIsComputed = false;
-        theNewParameter = theParameter;
+        newParameter = parameter;
 
-        double acurpar = theParameter;
-        Containment aState = On;
+        double acurpar = parameter;
+        Containment state = On;
         int iter = 0;
-        double asumtol = theTol;
+        double asumtol = tol;
         double adelta = asumtol * 0.1;
         adelta = (adelta < global::Kerf.Engine.Foundation.Precision.Confusion()) ? global::Kerf.Engine.Foundation.Precision.Confusion() : adelta;
-        Surface aSurf1 = Tool.Surface(theFace1)!;
-        Surface aSurf2 = Tool.Surface(theFace2)!;
+        Surface surf1 = Tool.Surface(face1)!;
+        Surface surf2 = Tool.Surface(face2)!;
 
         double u1, u2, v1, v2;
 
-        GeomAPI_ProjectPointOnSurf aPrj1 = new();
-        aSurf1.Bounds(out u1, out u2, out v1, out v2);
-        aPrj1.Init(aSurf1, u1, u2, v1, v2);
+        ProjectPointOnSurface prj1 = new();
+        surf1.Bounds(out u1, out u2, out v1, out v2);
+        prj1.Init(surf1, u1, u2, v1, v2);
 
-        GeomAPI_ProjectPointOnSurf aPrj2 = new();
-        aSurf2.Bounds(out u1, out u2, out v1, out v2);
-        aPrj2.Init(aSurf2, u1, u2, v1, v2);
+        ProjectPointOnSurface prj2 = new();
+        surf2.Bounds(out u1, out u2, out v1, out v2);
+        prj2.Init(surf2, u1, u2, v1, v2);
 
-        while (aState == On)
+        while (state == On)
         {
             if (bIncreasePar)
             {
@@ -296,24 +300,24 @@ public partial class IntTools_FaceFace
             {
                 acurpar -= adelta;
             }
-            Point3D aPCurrent = theCurve.Value(acurpar);
-            aPrj1.Perform(aPCurrent);
-            double U = 0.0, V = 0.0;
+            Point3D pCurrent = curve.Value(acurpar);
+            prj1.Perform(pCurrent);
+            double u = 0.0, v = 0.0;
 
-            if (aPrj1.IsDone())
+            if (prj1.IsDone)
             {
-                aPrj1.LowerDistanceParameters(out U, out V);
-                aState = aContext.StatePointFace(theFace1, new Point2D(U, V));
+                prj1.LowerDistanceParameters(out u, out v);
+                state = aContext.StatePointFace(face1, new Point2D(u, v));
             }
 
-            if (aState != On)
+            if (state != On)
             {
-                aPrj2.Perform(aPCurrent);
+                prj2.Perform(pCurrent);
 
-                if (aPrj2.IsDone())
+                if (prj2.IsDone)
                 {
-                    aPrj2.LowerDistanceParameters(out U, out V);
-                    aState = aContext.StatePointFace(theFace2, new Point2D(U, V));
+                    prj2.LowerDistanceParameters(out u, out v);
+                    state = aContext.StatePointFace(face2, new Point2D(u, v));
                 }
             }
 
@@ -326,65 +330,65 @@ public partial class IntTools_FaceFace
 
         if (iter <= 11)
         {
-            theNewParameter = acurpar;
+            newParameter = acurpar;
             bIsComputed = true;
 
             if (bIncreasePar)
             {
-                if (acurpar >= theOtherParameter)
+                if (acurpar >= otherParameter)
                 {
-                    theNewParameter = theOtherParameter;
+                    newParameter = otherParameter;
                 }
             }
             else
             {
-                if (acurpar <= theOtherParameter)
+                if (acurpar <= otherParameter)
                 {
-                    theNewParameter = theOtherParameter;
+                    newParameter = otherParameter;
                 }
             }
         }
         return bIsComputed;
     }
 
-    private static bool IsCurveValid(Curve2D? thePCurve)
+    private static bool IsCurveValid(Curve2D? pCurve)
     {
-        if (thePCurve is null)
+        if (pCurve is null)
         {
             return false;
         }
 
         double tolint = 1.0e-10;
-        CurveAdaptor2D PCA = new();
-        IntRes2d_Domain PCD = new();
-        Geom2dInt_GInter PCI = new();
+        CurveAdaptor2D pca = new();
+        TwoDDomain pcd = new();
+        GInter pci = new();
 
         double pf = 0.0, pl = 0.0;
         Point2D pntf, pntl;
 
-        if (!thePCurve.IsClosed && !thePCurve.IsPeriodic)
+        if (!pCurve.IsClosed && !pCurve.IsPeriodic)
         {
-            pf = thePCurve.FirstParameter();
-            pl = thePCurve.LastParameter();
-            pntf = thePCurve.Value(pf);
-            pntl = thePCurve.Value(pl);
-            PCA.Load(thePCurve);
-            if (!PCA.IsPeriodic)
+            pf = pCurve.FirstParameter();
+            pl = pCurve.LastParameter();
+            pntf = pCurve.Value(pf);
+            pntl = pCurve.Value(pl);
+            pca.Load(pCurve);
+            if (!pca.IsPeriodic)
             {
-                if (PCA.FirstParameter() > pf)
+                if (pca.FirstParameter() > pf)
                 {
-                    pf = PCA.FirstParameter();
+                    pf = pca.FirstParameter();
                 }
-                if (PCA.LastParameter() < pl)
+                if (pca.LastParameter() < pl)
                 {
-                    pl = PCA.LastParameter();
+                    pl = pca.LastParameter();
                 }
             }
-            PCD.SetValues(pntf, pf, tolint, pntl, pl, tolint);
-            PCI.Perform(PCA, PCD, tolint, tolint);
-            if (PCI.IsDone())
+            pcd.SetValues(pntf, pf, tolint, pntl, pl, tolint);
+            pci.Perform(pca, pcd, tolint, tolint);
+            if (pci.IsDone)
             {
-                if (PCI.NbPoints() > 0)
+                if (pci.PointCount > 0)
                 {
                     return false;
                 }
@@ -394,66 +398,66 @@ public partial class IntTools_FaceFace
         return true;
     }
 
-    private static bool ApproxWithPCurves(in Cylinder theCyl, in Sphere theSph)
+    private static bool ApproxWithPCurves(in Cylinder cyl, in Sphere sph)
     {
         bool bRes = true;
-        double R1 = theCyl.Radius(), R2 = theSph.Radius();
+        double r1 = cyl.Radius(), r2 = sph.Radius();
         //
         {
-            double aD2, aRc2, aEps;
-            Point3D aApexSph = new();
+            double d2, rc2, eps;
+            Point3D apexSph = new();
             //
-            aEps = 1.0E-7;
-            aRc2 = R1 * R1;
+            eps = 1.0E-7;
+            rc2 = r1 * r1;
             //
-            CoordinateSystem aAx3Sph = theSph.Position();
-            Point3D aLocSph = aAx3Sph.Location();
-            Direction3D aDirSph = aAx3Sph.Direction();
+            CoordinateSystem ax3Sph = sph.Position();
+            Point3D locSph = ax3Sph.Location();
+            Direction3D dirSph = ax3Sph.Direction();
             //
-            Axis3D aAx1Cyl = theCyl.Axis();
-            Line3D aLinCyl = new(aAx1Cyl);
+            Axis3D ax1Cyl = cyl.Axis();
+            Line3D linCyl = new(ax1Cyl);
             //
-            aApexSph.SetXYZ(aLocSph.XYZ() + R2 * aDirSph.XYZ());
-            aD2 = aLinCyl.SquareDistance(aApexSph);
-            if (Math.Abs(aD2 - aRc2) < aEps)
+            apexSph.SetXYZ(locSph.XYZ() + r2 * dirSph.XYZ());
+            d2 = linCyl.SquareDistance(apexSph);
+            if (Math.Abs(d2 - rc2) < eps)
             {
                 return !bRes;
             }
             //
-            aApexSph.SetXYZ(aLocSph.XYZ() - R2 * aDirSph.XYZ());
-            aD2 = aLinCyl.SquareDistance(aApexSph);
-            if (Math.Abs(aD2 - aRc2) < aEps)
+            apexSph.SetXYZ(locSph.XYZ() - r2 * dirSph.XYZ());
+            d2 = linCyl.SquareDistance(apexSph);
+            if (Math.Abs(d2 - rc2) < eps)
             {
                 return !bRes;
             }
         }
         //
 
-        if (R1 < 2.0 * R2)
+        if (r1 < 2.0 * r2)
         {
             return bRes;
         }
-        Line3D anCylAx = new(theCyl.Axis());
+        Line3D cylAx = new(cyl.Axis());
 
-        double aDist = anCylAx.Distance(theSph.Location());
-        double aDRel = Math.Abs(aDist - R1) / R2;
+        double dist = cylAx.Distance(sph.Location());
+        double dRel = Math.Abs(dist - r1) / r2;
 
-        if (aDRel > 0.2)
+        if (dRel > 0.2)
         {
             return bRes;
         }
 
-        double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anCylAx, theSph.Location());
-        Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(par, anCylAx);
-        Vector3D aV = new(aP, theSph.Location());
+        double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cylAx, sph.Location());
+        Point3D p = global::Kerf.Engine.Geometry.ElCLib.Value(par, cylAx);
+        Vector3D v = new(p, sph.Location());
 
-        double dd = aV.Dot(new Vector3D(theSph.Position().XDirection()));
+        double dd = v.Dot(new Vector3D(sph.Position().XDirection()));
 
-        if (aDist < R1 && dd > 0.0)
+        if (dist < r1 && dd > 0.0)
         {
             return false;
         }
-        if (aDist > R1 && dd < 0.0)
+        if (dist > r1 && dd < 0.0)
         {
             return false;
         }
@@ -461,134 +465,134 @@ public partial class IntTools_FaceFace
         return bRes;
     }
 
-    private static void PerformPlanes(SurfaceAdaptor theS1, SurfaceAdaptor theS2, double TolF1,
-                                      double TolF2, double TolAng, double TolTang, bool theApprox1, bool theApprox2,
-                                      NCollection_Sequence<IntTools_Curve> theSeqOfCurve, out bool theTangentFaces)
+    private static void PerformPlanes(SurfaceAdaptor s1, SurfaceAdaptor s2, double tolF1,
+                                      double tolF2, double tolAng, double tolTang, bool approx1, bool approx2,
+                                      NCollection_Sequence<IntersectionCurve> seqOfCurve, out bool tangentFaces)
     {
 
-        Plane3D aPln1 = theS1.Plane();
-        Plane3D aPln2 = theS2.Plane();
+        Plane3D pln1 = s1.Plane();
+        Plane3D pln2 = s2.Plane();
 
-        QuadQuadGeo aPlnInter = new(aPln1, aPln2, TolAng, TolTang);
+        QuadQuadGeo plnInter = new(pln1, pln2, tolAng, tolTang);
 
-        if (!aPlnInter.IsDone)
+        if (!plnInter.IsDone)
         {
-            theTangentFaces = false;
+            tangentFaces = false;
             return;
         }
 
-        ResultType aResType = aPlnInter.TypeInter();
+        ResultType resType = plnInter.TypeInter();
 
-        if (aResType == ResultType.Same)
+        if (resType == ResultType.Same)
         {
-            theTangentFaces = true;
+            tangentFaces = true;
             return;
         }
 
-        theTangentFaces = false;
+        tangentFaces = false;
 
-        if (aResType == ResultType.Empty)
+        if (resType == ResultType.Empty)
         {
             return;
         }
 
-        Line3D aLin = aPlnInter.Line(1);
+        Line3D lin = plnInter.Line(1);
 
-        PlaneProjector aProj = new();
+        PlaneProjector proj = new();
 
-        aProj.Init(aPln1);
-        aProj.Project(aLin);
-        Line2D aLin2d1 = aProj.Line();
+        proj.Init(pln1);
+        proj.Project(lin);
+        Line2D lin2d1 = proj.Line();
         //
-        aProj.Init(aPln2);
-        aProj.Project(aLin);
-        Line2D aLin2d2 = aProj.Line();
+        proj.Init(pln2);
+        proj.Project(lin);
+        Line2D lin2d2 = proj.Line();
         //
         // classify line2d1 relatively first plane
-        double P11, P12;
-        bool IsCrossed = ClassifyLin2d(theS1, aLin2d1, TolTang, out P11, out P12);
-        if (!IsCrossed)
+        double p11, p12;
+        bool isCrossed = ClassifyLin2d(s1, lin2d1, tolTang, out p11, out p12);
+        if (!isCrossed)
         {
             return;
         }
         // classify line2d2 relatively second plane
-        double P21, P22;
-        IsCrossed = ClassifyLin2d(theS2, aLin2d2, TolTang, out P21, out P22);
-        if (!IsCrossed)
+        double p21, p22;
+        isCrossed = ClassifyLin2d(s2, lin2d2, tolTang, out p21, out p22);
+        if (!isCrossed)
         {
             return;
         }
 
         // Analysis of parametric intervals: must have common part
 
-        if (P21 >= P12)
+        if (p21 >= p12)
         {
             return;
         }
-        if (P22 <= P11)
+        if (p22 <= p11)
         {
             return;
         }
 
         double pmin, pmax;
-        pmin = Max(P11, P21);
-        pmax = Min(P12, P22);
+        pmin = Max(p11, p21);
+        pmax = Min(p12, p22);
 
-        if (pmax - pmin <= TolTang)
+        if (pmax - pmin <= tolTang)
         {
             return;
         }
 
-        LineCurve3D aGLin = new(aLin);
+        LineCurve3D gLin = new(lin);
 
-        IntTools_Curve aCurve = new();
+        IntersectionCurve curve = new();
         // OCCT: on unbounded planar faces (no wires) pmin and pmax come from the infinite bounds and the trimming
         // throws Standard_ConstructionError
-        TrimmedCurve3D aGTLin = new(aGLin, pmin, pmax);
+        TrimmedCurve3D gtLin = new(gLin, pmin, pmax);
 
-        aCurve.SetCurve(aGTLin);
+        curve.SetCurve(gtLin);
 
-        if (theApprox1)
+        if (approx1)
         {
-            LineCurve2D C2d = new(aLin2d1);
-            aCurve.SetFirstCurve2d(new TrimmedCurve2D(C2d, pmin, pmax));
+            LineCurve2D c2d = new(lin2d1);
+            curve.SetFirstCurve2d(new TrimmedCurve2D(c2d, pmin, pmax));
         }
         else
         {
-            Curve2D? H1 = null;
-            aCurve.SetFirstCurve2d(H1);
+            Curve2D? h1 = null;
+            curve.SetFirstCurve2d(h1);
         }
-        if (theApprox2)
+        if (approx2)
         {
-            LineCurve2D C2d = new(aLin2d2);
-            aCurve.SetSecondCurve2d(new TrimmedCurve2D(C2d, pmin, pmax));
+            LineCurve2D c2d = new(lin2d2);
+            curve.SetSecondCurve2d(new TrimmedCurve2D(c2d, pmin, pmax));
         }
         else
         {
             // OCCT clears the first 2D curve here, not the second: without a second 2D curve the first is lost
-            Curve2D? H1 = null;
-            aCurve.SetFirstCurve2d(H1);
+            Curve2D? h1 = null;
+            curve.SetFirstCurve2d(h1);
         }
         //
         // Valid tolerance for the intersection curve between planar faces
         // is the maximal tolerance between tolerances of faces
-        double aTolC = Max(TolF1, TolF2);
-        aCurve.SetTolerance(aTolC);
+        double tolC = Max(tolF1, tolF2);
+        curve.SetTolerance(tolC);
         //
         // Computation of the tangential tolerance
-        double anAngle, aDt;
-        Direction3D aD1, aD2;
+        double angle, dt;
+        Direction3D d1, d2;
         //
-        aD1 = aPln1.Position().Direction();
-        aD2 = aPln2.Position().Direction();
-        anAngle = aD1.Angle(aD2);
+        d1 = pln1.Position().Direction();
+        d2 = pln2.Position().Direction();
+        angle = d1.Angle(d2);
         //
-        aDt = IntTools_Tools.ComputeIntRange(TolF1, TolF2, anAngle);
-        double aTangTol = Math.Sqrt(aDt * aDt + TolF1 * TolF1);
+        dt = IntersectionTools.ComputeIntRange(tolF1, tolF2, angle);
+        double tangTol = Math.Sqrt(dt * dt + tolF1 * tolF1);
         //
-        aCurve.SetTangentialTolerance(aTangTol);
+        curve.SetTangentialTolerance(tangTol);
         //
-        theSeqOfCurve.Append(aCurve);
+        seqOfCurve.Append(curve);
     }
 
     private static bool INTER(double d1, double d2, double tol)
@@ -599,49 +603,49 @@ public partial class IntTools_FaceFace
     private static bool COINC(double d1, double d2, double tol)
         => (d1 <= tol && d1 >= -tol) && (d2 <= tol && d2 >= -tol);
 
-    private static bool ClassifyLin2d(SurfaceAdaptor theS, in Line2D theLin2d, double theTol,
-                                      out double theP1, out double theP2)
+    private static bool ClassifyLin2d(SurfaceAdaptor s, in Line2D lin2d, double tol,
+                                      out double p1, out double p2)
     {
-        double xmin, xmax, ymin, ymax, d1, d2, A, B, C;
+        double xmin, xmax, ymin, ymax, d1, d2, a, b, c;
         Span<double> par = stackalloc double[2];
         int nbi = 0;
 
         // OCCT leaves theP1 and theP2 unwritten when the line misses the domain; its callers return then.
-        theP1 = theP2 = 0.0;
+        p1 = p2 = 0.0;
 
-        xmin = theS.FirstUParameter();
-        xmax = theS.LastUParameter();
-        ymin = theS.FirstVParameter();
-        ymax = theS.LastVParameter();
+        xmin = s.FirstUParameter();
+        xmax = s.LastUParameter();
+        ymin = s.FirstVParameter();
+        ymax = s.LastVParameter();
 
-        theLin2d.Coefficients(out A, out B, out C);
+        lin2d.Coefficients(out a, out b, out c);
 
         // xmin, ymin <-> xmin, ymax
-        d1 = A * xmin + B * ymin + C;
-        d2 = A * xmin + B * ymax + C;
+        d1 = a * xmin + b * ymin + c;
+        d2 = a * xmin + b * ymax + c;
 
-        if (INTER(d1, d2, theTol))
+        if (INTER(d1, d2, tol))
         {
             // Intersection with boundary
-            double y = -(C + A * xmin) / B;
-            par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmin, y));
+            double y = -(c + a * xmin) / b;
+            par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmin, y));
             nbi++;
         }
-        else if (COINC(d1, d2, theTol))
+        else if (COINC(d1, d2, tol))
         {
             // Coincidence with boundary
-            par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmin, ymin));
-            par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmin, ymax));
+            par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmin, ymin));
+            par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmin, ymax));
             nbi = 2;
         }
 
         if (nbi == 2)
         {
 
-            if (Math.Abs(par[0] - par[1]) > theTol)
+            if (Math.Abs(par[0] - par[1]) > tol)
             {
-                theP1 = Min(par[0], par[1]);
-                theP2 = Max(par[0], par[1]);
+                p1 = Min(par[0], par[1]);
+                p2 = Max(par[0], par[1]);
                 return true;
             }
             else
@@ -652,21 +656,21 @@ public partial class IntTools_FaceFace
 
         // xmin, ymax <-> xmax, ymax
         d1 = d2;
-        d2 = A * xmax + B * ymax + C;
+        d2 = a * xmax + b * ymax + c;
 
-        if (d1 > theTol || d1 < -theTol)
+        if (d1 > tol || d1 < -tol)
         { // to avoid checking of
             // coincidence with the same point
-            if (INTER(d1, d2, theTol))
+            if (INTER(d1, d2, tol))
             {
-                double x = -(C + B * ymax) / A;
-                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(x, ymax));
+                double x = -(c + b * ymax) / a;
+                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(x, ymax));
                 nbi++;
             }
-            else if (COINC(d1, d2, theTol))
+            else if (COINC(d1, d2, tol))
             {
-                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmin, ymax));
-                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmax, ymax));
+                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmin, ymax));
+                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmax, ymax));
                 nbi = 2;
             }
         }
@@ -674,10 +678,10 @@ public partial class IntTools_FaceFace
         if (nbi == 2)
         {
 
-            if (Math.Abs(par[0] - par[1]) > theTol)
+            if (Math.Abs(par[0] - par[1]) > tol)
             {
-                theP1 = Min(par[0], par[1]);
-                theP2 = Max(par[0], par[1]);
+                p1 = Min(par[0], par[1]);
+                p2 = Max(par[0], par[1]);
                 return true;
             }
             else
@@ -688,30 +692,30 @@ public partial class IntTools_FaceFace
 
         // xmax, ymax <-> xmax, ymin
         d1 = d2;
-        d2 = A * xmax + B * ymin + C;
+        d2 = a * xmax + b * ymin + c;
 
-        if (d1 > theTol || d1 < -theTol)
+        if (d1 > tol || d1 < -tol)
         {
-            if (INTER(d1, d2, theTol))
+            if (INTER(d1, d2, tol))
             {
-                double y = -(C + A * xmax) / B;
-                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmax, y));
+                double y = -(c + a * xmax) / b;
+                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmax, y));
                 nbi++;
             }
-            else if (COINC(d1, d2, theTol))
+            else if (COINC(d1, d2, tol))
             {
-                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmax, ymax));
-                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmax, ymin));
+                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmax, ymax));
+                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmax, ymin));
                 nbi = 2;
             }
         }
 
         if (nbi == 2)
         {
-            if (Math.Abs(par[0] - par[1]) > theTol)
+            if (Math.Abs(par[0] - par[1]) > tol)
             {
-                theP1 = Min(par[0], par[1]);
-                theP2 = Max(par[0], par[1]);
+                p1 = Min(par[0], par[1]);
+                p2 = Max(par[0], par[1]);
                 return true;
             }
             else
@@ -722,30 +726,30 @@ public partial class IntTools_FaceFace
 
         // xmax, ymin <-> xmin, ymin
         d1 = d2;
-        d2 = A * xmin + B * ymin + C;
+        d2 = a * xmin + b * ymin + c;
 
-        if (d1 > theTol || d1 < -theTol)
+        if (d1 > tol || d1 < -tol)
         {
-            if (INTER(d1, d2, theTol))
+            if (INTER(d1, d2, tol))
             {
-                double x = -(C + B * ymin) / A;
-                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(x, ymin));
+                double x = -(c + b * ymin) / a;
+                par[nbi] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(x, ymin));
                 nbi++;
             }
-            else if (COINC(d1, d2, theTol))
+            else if (COINC(d1, d2, tol))
             {
-                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmax, ymin));
-                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin2d, new Point2D(xmin, ymin));
+                par[0] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmax, ymin));
+                par[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, new Point2D(xmin, ymin));
                 nbi = 2;
             }
         }
 
         if (nbi == 2)
         {
-            if (Math.Abs(par[0] - par[1]) > theTol)
+            if (Math.Abs(par[0] - par[1]) > tol)
             {
-                theP1 = Min(par[0], par[1]);
-                theP2 = Max(par[0], par[1]);
+                p1 = Min(par[0], par[1]);
+                p2 = Max(par[0], par[1]);
                 return true;
             }
             else
@@ -762,42 +766,42 @@ public partial class IntTools_FaceFace
                                          out int iDegMax, out int iNbIter)
 
     {
-        SurfaceKind aTS1, aTS2;
+        SurfaceKind ts1, ts2;
 
         //
         iNbIter = 0;
         iDegMin = 4;
         iDegMax = 8;
         //
-        aTS1 = aHS1.GetType();
-        aTS2 = aHS2.GetType();
+        ts1 = aHS1.GetType();
+        ts2 = aHS2.GetType();
         //
         // Cylinder/Torus
-        if ((aTS1 == SurfaceKind.Cylinder && aTS2 == SurfaceKind.Torus) || (aTS2 == SurfaceKind.Cylinder && aTS1 == SurfaceKind.Torus))
+        if ((ts1 == SurfaceKind.Cylinder && ts2 == SurfaceKind.Torus) || (ts2 == SurfaceKind.Cylinder && ts1 == SurfaceKind.Torus))
         {
-            double aRC, aRT, dR, aPC;
-            Cylinder aCylinder;
-            Torus aTorus;
+            double rc, rt, dR, pc;
+            Cylinder cylinder;
+            Torus torus;
             //
-            aPC = global::Kerf.Engine.Foundation.Precision.Confusion();
+            pc = global::Kerf.Engine.Foundation.Precision.Confusion();
             //
-            aCylinder = (aTS1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
-            aTorus = (aTS1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
+            cylinder = (ts1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
+            torus = (ts1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
             //
-            aRC = aCylinder.Radius();
-            aRT = aTorus.MinorRadius();
-            dR = aRC - aRT;
+            rc = cylinder.Radius();
+            rt = torus.MinorRadius();
+            dR = rc - rt;
             if (dR < 0.0)
             {
                 dR = -dR;
             }
             //
-            if (dR < aPC)
+            if (dR < pc)
             {
                 iDegMax = 6;
             }
         }
-        if (aTS1 == SurfaceKind.Cylinder && aTS2 == SurfaceKind.Cylinder)
+        if (ts1 == SurfaceKind.Cylinder && ts2 == SurfaceKind.Cylinder)
         {
             iNbIter = 1;
         }
@@ -805,32 +809,32 @@ public partial class IntTools_FaceFace
 
     private static void Tolerances(SurfaceAdaptor aHS1, SurfaceAdaptor aHS2, ref double aTolTang)
     {
-        SurfaceKind aTS1, aTS2;
+        SurfaceKind ts1, ts2;
         //
-        aTS1 = aHS1.GetType();
-        aTS2 = aHS2.GetType();
+        ts1 = aHS1.GetType();
+        ts2 = aHS2.GetType();
         //
         // Cylinder/Torus
-        if ((aTS1 == SurfaceKind.Cylinder && aTS2 == SurfaceKind.Torus) || (aTS2 == SurfaceKind.Cylinder && aTS1 == SurfaceKind.Torus))
+        if ((ts1 == SurfaceKind.Cylinder && ts2 == SurfaceKind.Torus) || (ts2 == SurfaceKind.Cylinder && ts1 == SurfaceKind.Torus))
         {
-            double aRC, aRT, dR, aPC;
-            Cylinder aCylinder;
-            Torus aTorus;
+            double rc, rt, dR, pc;
+            Cylinder cylinder;
+            Torus torus;
             //
-            aPC = global::Kerf.Engine.Foundation.Precision.Confusion();
+            pc = global::Kerf.Engine.Foundation.Precision.Confusion();
             //
-            aCylinder = (aTS1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
-            aTorus = (aTS1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
+            cylinder = (ts1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
+            torus = (ts1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
             //
-            aRC = aCylinder.Radius();
-            aRT = aTorus.MinorRadius();
-            dR = aRC - aRT;
+            rc = cylinder.Radius();
+            rt = torus.MinorRadius();
+            dR = rc - rt;
             if (dR < 0.0)
             {
                 dR = -dR;
             }
             //
-            if (dR < aPC)
+            if (dR < pc)
             {
                 aTolTang = 0.1 * aTolTang;
             }
@@ -840,13 +844,13 @@ public partial class IntTools_FaceFace
     private static bool SortTypes(SurfaceKind aType1, SurfaceKind aType2)
     {
         bool bRet;
-        int aI1, aI2;
+        int i1, i2;
         //
         bRet = false;
         //
-        aI1 = IndexType(aType1);
-        aI2 = IndexType(aType2);
-        if (aI1 < aI2)
+        i1 = IndexType(aType1);
+        i2 = IndexType(aType2);
+        if (i1 < i2)
         {
             bRet = !bRet;
         }
@@ -855,224 +859,224 @@ public partial class IntTools_FaceFace
 
     private static int IndexType(SurfaceKind aType)
     {
-        int aIndex;
+        int index;
         //
-        aIndex = 11;
+        index = 11;
         //
         if (aType == Plane)
         {
-            aIndex = 0;
+            index = 0;
         }
         else if (aType == SurfaceKind.Cylinder)
         {
-            aIndex = 1;
+            index = 1;
         }
         else if (aType == SurfaceKind.Cone)
         {
-            aIndex = 2;
+            index = 2;
         }
         else if (aType == SurfaceKind.Sphere)
         {
-            aIndex = 3;
+            index = 3;
         }
         else if (aType == SurfaceKind.Torus)
         {
-            aIndex = 4;
+            index = 4;
         }
         else if (aType == SurfaceKind.BezierSurface)
         {
-            aIndex = 5;
+            index = 5;
         }
         else if (aType == SurfaceKind.BSplineSurface)
         {
-            aIndex = 6;
+            index = 6;
         }
         else if (aType == SurfaceOfRevolution)
         {
-            aIndex = 7;
+            index = 7;
         }
         else if (aType == SurfaceOfExtrusion)
         {
-            aIndex = 8;
+            index = 8;
         }
         else if (aType == SurfaceKind.OffsetSurface)
         {
-            aIndex = 9;
+            index = 9;
         }
         else if (aType == OtherSurface)
         {
-            aIndex = 10;
+            index = 10;
         }
-        return aIndex;
+        return index;
     }
 
-    private static double FindMaxDistance(Curve3D theCurve, double theFirst, double theLast, in Face theFace,
-                                          IntTools_Context theContext)
+    private static double FindMaxDistance(Curve3D curve, double first, double last, in Face face,
+                                          IntersectionContext context)
     {
-        int aNbS;
-        double aT1, aT2, aDt, aD, aDMax, anEps;
+        int nbS;
+        double t1, t2, dt, d, dMax, eps;
         //
-        aNbS = 11;
-        aDt = (theLast - theFirst) / aNbS;
-        aDMax = 0.0;
-        anEps = 1.0e-4 * aDt;
+        nbS = 11;
+        dt = (last - first) / nbS;
+        dMax = 0.0;
+        eps = 1.0e-4 * dt;
         //
-        GeomAPI_ProjectPointOnSurf aProjPS = theContext.ProjPS(theFace);
-        aT2 = theFirst;
+        ProjectPointOnSurface projPS = context.ProjPS(face);
+        t2 = first;
         for (;;)
         {
-            aT1 = aT2;
-            aT2 += aDt;
+            t1 = t2;
+            t2 += dt;
             //
-            if (aT2 > theLast)
+            if (t2 > last)
             {
                 break;
             }
             //
-            aD = FindMaxDistance(theCurve, aT1, aT2, aProjPS, anEps);
-            if (aD > aDMax)
+            d = FindMaxDistance(curve, t1, t2, projPS, eps);
+            if (d > dMax)
             {
-                aDMax = aD;
+                dMax = d;
             }
         }
         //
-        return aDMax;
+        return dMax;
     }
 
-    private static double FindMaxDistance(Curve3D theC, double theFirst, double theLast,
-                                          GeomAPI_ProjectPointOnSurf theProjPS, double theEps)
+    private static double FindMaxDistance(Curve3D c, double first, double last,
+                                          ProjectPointOnSurface projPS, double eps)
     {
-        double aA, aB, aCf, aX, aX1, aX2, aF1, aF2, aF;
+        double a, b, cf, x, x1, x2, f1, f2, f;
         //
-        aCf = 0.61803398874989484820458683436564; //(sqrt(5.)-1)/2.;
-        aA = theFirst;
-        aB = theLast;
+        cf = 0.61803398874989484820458683436564; //(sqrt(5.)-1)/2.;
+        a = first;
+        b = last;
         //
-        aX1 = aB - aCf * (aB - aA);
-        aF1 = MaxDistance(theC, aX1, theProjPS);
-        aX2 = aA + aCf * (aB - aA);
-        aF2 = MaxDistance(theC, aX2, theProjPS);
+        x1 = b - cf * (b - a);
+        f1 = MaxDistance(c, x1, projPS);
+        x2 = a + cf * (b - a);
+        f2 = MaxDistance(c, x2, projPS);
 
-        while (Math.Abs(aX1 - aX2) > theEps)
+        while (Math.Abs(x1 - x2) > eps)
         {
-            if (aF1 > aF2)
+            if (f1 > f2)
             {
-                aB = aX2;
-                aX2 = aX1;
-                aF2 = aF1;
-                aX1 = aB - aCf * (aB - aA);
-                aF1 = MaxDistance(theC, aX1, theProjPS);
+                b = x2;
+                x2 = x1;
+                f2 = f1;
+                x1 = b - cf * (b - a);
+                f1 = MaxDistance(c, x1, projPS);
             }
             else
             {
-                aA = aX1;
-                aX1 = aX2;
-                aF1 = aF2;
-                aX2 = aA + aCf * (aB - aA);
-                aF2 = MaxDistance(theC, aX2, theProjPS);
+                a = x1;
+                x1 = x2;
+                f1 = f2;
+                x2 = a + cf * (b - a);
+                f2 = MaxDistance(c, x2, projPS);
             }
         }
         //
-        aX = 0.5 * (aA + aB);
-        aF = MaxDistance(theC, aX, theProjPS);
+        x = 0.5 * (a + b);
+        f = MaxDistance(c, x, projPS);
         //
-        if (aF1 > aF)
+        if (f1 > f)
         {
-            aF = aF1;
+            f = f1;
         }
         //
-        if (aF2 > aF)
+        if (f2 > f)
         {
-            aF = aF2;
+            f = f2;
         }
         //
-        return aF;
+        return f;
     }
 
-    private static double MaxDistance(Curve3D theC, double aT, GeomAPI_ProjectPointOnSurf theProjPS)
+    private static double MaxDistance(Curve3D c, double aT, ProjectPointOnSurface projPS)
     {
-        double aD;
-        Point3D aP;
+        double d;
+        Point3D p;
         //
-        theC.D0(aT, out aP);
-        theProjPS.Perform(aP);
-        aD = theProjPS.NbPoints() != 0 ? theProjPS.LowerDistance() : 0.0;
+        c.D0(aT, out p);
+        projPS.Perform(p);
+        d = projPS.NbPoints() != 0 ? projPS.LowerDistance() : 0.0;
         //
-        return aD;
+        return d;
     }
 
     // Checks if points of the pcurve are out of the face bounds.
-    private static bool CheckPCurve(Curve2D aPC, in Face aFace, IntTools_Context theCtx)
+    private static bool CheckPCurve(Curve2D aPC, in Face aFace, IntersectionContext ctx)
     {
-        const int NPoints = 23;
+        const int nPoints = 23;
         int i;
         double umin, umax, vmin, vmax;
 
-        theCtx.UVBounds(aFace, out umin, out umax, out vmin, out vmax);
+        ctx.UVBounds(aFace, out umin, out umax, out vmin, out vmax);
         double tolU = Max((umax - umin) * 0.01, global::Kerf.Engine.Foundation.Precision.Confusion());
         double tolV = Max((vmax - vmin) * 0.01, global::Kerf.Engine.Foundation.Precision.Confusion());
         double fp = aPC.FirstParameter();
         double lp = aPC.LastParameter();
 
         // adjust domain for periodic surfaces
-        Surface aSurf = Tool.Surface(aFace, out _)!;
-        if (aSurf is TrimmedSurface aTrimmed)
+        Surface surf = Tool.Surface(aFace, out _)!;
+        if (surf is TrimmedSurface trimmed)
         {
-            aSurf = aTrimmed.BasisSurface();
+            surf = trimmed.BasisSurface();
         }
         Point2D pnt = aPC.Value((fp + lp) / 2);
         double u, v;
         pnt.Coord(out u, out v);
         //
-        if (aSurf.IsUPeriodic)
+        if (surf.IsUPeriodic)
         {
-            double aPer = aSurf.UPeriod();
-            int nshift = (int)((u - umin) / aPer);
-            if (u < umin + aPer * nshift)
+            double per = surf.UPeriod();
+            int nshift = (int)((u - umin) / per);
+            if (u < umin + per * nshift)
             {
                 nshift--;
             }
-            umin += aPer * nshift;
-            umax += aPer * nshift;
+            umin += per * nshift;
+            umax += per * nshift;
         }
-        if (aSurf.IsVPeriodic)
+        if (surf.IsVPeriodic)
         {
-            double aPer = aSurf.VPeriod();
-            int nshift = (int)((v - vmin) / aPer);
-            if (v < vmin + aPer * nshift)
+            double per = surf.VPeriod();
+            int nshift = (int)((v - vmin) / per);
+            if (v < vmin + per * nshift)
             {
                 nshift--;
             }
-            vmin += aPer * nshift;
-            vmax += aPer * nshift;
+            vmin += per * nshift;
+            vmax += per * nshift;
         }
         //
         //--------------------------------------------------------
         bool bRet;
-        int j, aNbIntervals;
-        double aT, dT;
-        Point2D aP2D;
+        int j, nbIntervals;
+        double t, dT;
+        Point2D p2D;
         //
-        CurveAdaptor2D aGAC = new(aPC);
-        aNbIntervals = aGAC.NbIntervals(CN);
+        CurveAdaptor2D gac = new(aPC);
+        nbIntervals = gac.NbIntervals(CN);
         //
-        NCollection_Array1<double> aTI = new(1, aNbIntervals + 1);
-        aGAC.Intervals(aTI, CN);
+        NCollection_Array1<double> ti = new(1, nbIntervals + 1);
+        gac.Intervals(ti, CN);
         //
         bRet = false;
         //
         // OCCT steps (NPoints - 1) * dT per interval from the first parameter on: with several intervals the samples
         // drift from the intervals and never reach the last one's end
-        aT = aGAC.FirstParameter();
-        for (j = 1; j <= aNbIntervals; ++j)
+        t = gac.FirstParameter();
+        for (j = 1; j <= nbIntervals; ++j)
         {
-            dT = (aTI[j + 1] - aTI[j]) / NPoints;
+            dT = (ti[j + 1] - ti[j]) / nPoints;
             //
-            for (i = 1; i < NPoints; i++)
+            for (i = 1; i < nPoints; i++)
             {
-                aT = aT + dT;
-                aGAC.D0(aT, out aP2D);
-                aP2D.Coord(out u, out v);
+                t = t + dT;
+                gac.D0(t, out p2D);
+                p2D.Coord(out u, out v);
                 if (umin - u > tolU || u - umax > tolU || vmin - v > tolV || v - vmax > tolV)
                 {
                     return bRet;

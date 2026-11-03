@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -17,7 +19,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepTools_CopyAtEntryTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
     private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
@@ -62,7 +64,7 @@ public class BRepTools_CopyAtEntryTests
     /// replacement of <paramref name="theFace"/> by a copy recorded in the context, the context applied), and the end
     /// gives the caller's sub-shapes back.
     /// </summary>
-    private static Shape ToyFix(in Shape theShape, ShapeBuild_ReShape theContext, in Shape theVertex,
+    private static Shape ToyFix(in Shape theShape, ReShapeBuilder theContext, in Shape theVertex,
                                        in Shape theFace, out CopyAtEntry theEntry)
     {
         // 1. the entry: the shape to work on; arguments referring to the input's sub-shapes are mapped onto the copy
@@ -101,7 +103,7 @@ public class BRepTools_CopyAtEntryTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         Shape aVertex = SubShapes(aBox, ShapeType.Vertex)[0];
         Face aFace = FaceWithout(aBox, aVertex);
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
 
         Shape aResult = ToyFix(aBox, aContext, aVertex, aFace, out CopyAtEntry anEntry);
 
@@ -140,7 +142,7 @@ public class BRepTools_CopyAtEntryTests
         Shape aBox = Box();
         Shape aVertex = SubShapes(aBox, ShapeType.Vertex)[0];
         Face aFace = FaceWithout(aBox, aVertex);
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
 
         Shape aResult = ToyFix(aBox, aContext, aVertex, aFace, out _);
 
@@ -177,7 +179,7 @@ public class BRepTools_CopyAtEntryTests
         Shape aBox = Box();
         Shape aVertex = SubShapes(aBox, ShapeType.Vertex)[0];
         Face aFace = FaceWithout(aBox, aVertex);
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
 
         // the context's history is taken over the copy before Finish, as an algorithm keeping its own would
         var anEntry = new CopyAtEntry(aBox, aContext);
@@ -218,7 +220,7 @@ public class BRepTools_CopyAtEntryTests
     public void NothingChanged_GivesTheInputItself()
     {
         Shape aBox = Box();
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         Shape aResult = ToyFix(aBox, aContext, new Vertex(), new Face(), out CopyAtEntry anEntry);
 
         Assert.True(anEntry.IsCopied);
@@ -232,7 +234,7 @@ public class BRepTools_CopyAtEntryTests
     {
         Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _); // owned by ported code: unfrozen
         Shape aVertex = SubShapes(aBox, ShapeType.Vertex)[0];
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         Shape aResult = ToyFix(aBox, aContext, aVertex, new Face(), out CopyAtEntry anEntry);
 
         Assert.False(anEntry.IsCopied);
@@ -246,7 +248,7 @@ public class BRepTools_CopyAtEntryTests
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         Shape aFace = SubShapes(aBox, ShapeType.Face)[2];
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         aContext.Remove(aFace); // a caller's request on its own face
 
         Shape aResult = ToyFix(aBox, aContext, new Vertex(), new Face(), out _);

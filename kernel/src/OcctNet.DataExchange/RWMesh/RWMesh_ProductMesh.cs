@@ -3,6 +3,7 @@
 // coordinates, the winding swapped for a reversed face or a mirroring location, normals reversed for a reversed face.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Meshing;
@@ -152,7 +153,7 @@ internal sealed class RWMesh_ProductMesh
 
         Triangulation? aNormalsTri = theTri.HasNormals
                                             ? theTri
-                                            : toComputeNormals ? BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri) : null;
+                                            : toComputeNormals ? ToolTriangulatedShape.NormalsComputed(theFace, theTri) : null;
         if (aNormalsTri is null || !aNormalsTri.HasNormals)
         {
             theGroup.HasNormals = false;

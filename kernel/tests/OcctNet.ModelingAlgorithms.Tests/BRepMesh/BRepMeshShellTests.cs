@@ -3,6 +3,9 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Data;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -26,9 +29,9 @@ public class BRepMeshShellTests
     // ------------------------------------------------------------------------------------------------ the stub mesher
 
     /// <summary>Builds a model of the shape's faces (forward) and edges, as IMeshTools_ShapeExplorer visits them.</summary>
-    private sealed class StubModelBuilder : IMeshTools_ModelBuilder
+    private sealed class StubModelBuilder : ModelBuilder
     {
-        private sealed class Visitor(BRepMeshData_Model theModel) : IMeshTools_ShapeVisitor
+        private sealed class Visitor(ModelData theModel) : ShapeVisitor
         {
             private readonly NCollection_Map<Shape> myEdges = new(ShapeHasher.Instance);
 
@@ -45,7 +48,7 @@ public class BRepMeshShellTests
 
         public bool ToThrow;
 
-        protected override IMeshData_Model? performInternal(in Shape theShape, in IMeshTools_Parameters theParameters)
+        protected override ModelModel? PerformInternal(in Shape theShape, in ToolParameters theParameters)
         {
             if (ToThrow)
             {
@@ -58,19 +61,19 @@ public class BRepMeshShellTests
                 return null;
             }
 
-            var aModel = new BRepMeshData_Model(theShape);
-            new IMeshTools_ShapeExplorer(theShape).Accept(new Visitor(aModel));
+            var aModel = new ModelData(theShape);
+            new ShapeExplorer(theShape).Accept(new Visitor(aModel));
             SetStatus(Done1);
             return aModel;
         }
     }
 
     /// <summary>A model algorithm returning the given result (or throwing).</summary>
-    private sealed class StubAlgo(bool theResult, bool theToThrow = false) : IMeshTools_ModelAlgo
+    private sealed class StubAlgo(bool theResult, bool theToThrow = false) : ModelAlgo
     {
         public int Calls;
 
-        protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
+        protected override bool PerformInternal(ModelModel? theModel, in ToolParameters theParameters,
                                                 ProgressRange theRange)
         {
             Calls++;
@@ -86,9 +89,9 @@ public class BRepMeshShellTests
     /// Meshes each planar face without a triangulation (or each one, if asked) with a fan of its outer wire's vertices
     /// through BRepMesh_ShapeTool, with the polygons of its edges on it.
     /// </summary>
-    private sealed class StubFaceDiscret(bool theToReplace = false) : IMeshTools_ModelAlgo
+    private sealed class StubFaceDiscret(bool theToReplace = false) : ModelAlgo
     {
-        protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
+        protected override bool PerformInternal(ModelModel? theModel, in ToolParameters theParameters,
                                                 ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
@@ -105,9 +108,9 @@ public class BRepMeshShellTests
     }
 
     /// <summary>Writes each face's deflection into its triangulation, in place, as ModelPostProcessor does.</summary>
-    private sealed class StubPostProcessor : IMeshTools_ModelAlgo
+    private sealed class StubPostProcessor : ModelAlgo
     {
-        protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
+        protected override bool PerformInternal(ModelModel? theModel, in ToolParameters theParameters,
                                                 ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
@@ -122,9 +125,9 @@ public class BRepMeshShellTests
         }
     }
 
-    private static IMeshTools_Context StubContext(bool theToReplace = false)
+    private static ToolContext StubContext(bool theToReplace = false)
     {
-        var aContext = new IMeshTools_Context();
+        var aContext = new ToolContext();
         aContext.SetModelBuilder(new StubModelBuilder());
         aContext.SetEdgeDiscret(new StubAlgo(true));
         aContext.SetFaceDiscret(new StubFaceDiscret(theToReplace));
@@ -157,7 +160,7 @@ public class BRepMeshShellTests
         {
             aTri.SetTriangle(i, new Triangle1(1, i + 1, i + 2));
         }
-        BRepMesh_ShapeTool.AddInFace(theFace, aTri);
+        ShapeTool.AddInFace(theFace, aTri);
 
         for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -166,7 +169,7 @@ public class BRepMeshShellTests
             var aNodes = new NCollection_Array1<int>(1, 2);
             aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
             aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
-            BRepMesh_ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Location());
+            ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Location());
         }
     }
 
@@ -183,8 +186,8 @@ public class BRepMeshShellTests
         var aSnapshot = ShapeSnapshot.Of(aBox);
 
         // Unit 4D's default context meshes the copy; the input is never written.
-        var aMesh = new BRepMesh_IncrementalMesh(aBox, 0.1);
-        Assert.True(aMesh.IsDone());
+        var aMesh = new IncrementalMesh(aBox, 0.1);
+        Assert.True(aMesh.IsDone);
         Assert.Equal(0, aMesh.GetStatusFlags());
         Shape aMeshed = aMesh.Shape();
         Assert.NotSame(aBox.TShape(), aMeshed.TShape());
@@ -196,12 +199,12 @@ public class BRepMeshShellTests
         aSnapshot.AssertUnchanged(aBox);
 
         // Meshing it again with the same parameters keeps every mesh: KeepUnchanged gives back the result itself.
-        var aMesh2 = new BRepMesh_IncrementalMesh(aMeshed, 0.1);
+        var aMesh2 = new IncrementalMesh(aMeshed, 0.1);
         Assert.Same(aMeshed.TShape(), aMesh2.Shape().TShape());
         Assert.True(aMesh2.Shape().IsEqual(aMeshed));
         Assert.Empty(aMesh2.History().Modified(Faces(aMeshed)[0]));
 
-        Shape aTwin = BRepMesh_IncrementalMesh.Meshed(aMeshed, new IMeshTools_Parameters { Deflection = 0.1 }, out History aHistory);
+        Shape aTwin = IncrementalMesh.Meshed(aMeshed, new ToolParameters { Deflection = 0.1 }, out History aHistory);
         Assert.Same(aMeshed.TShape(), aTwin.TShape());
         Assert.Empty(aHistory.Modified(Faces(aMeshed)[0]));
     }
@@ -212,11 +215,11 @@ public class BRepMeshShellTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aSnapshot = ShapeSnapshot.Of(aBox);
 
-        var aMesh = new BRepMesh_IncrementalMesh();
+        var aMesh = new IncrementalMesh();
         aMesh.SetShape(aBox);
         aMesh.ChangeParameters().Deflection = 0.25;
         aMesh.Perform(StubContext());
-        Assert.True(aMesh.IsDone());
+        Assert.True(aMesh.IsDone);
         Shape aResult = aMesh.Shape();
 
         // The input is never written.
@@ -259,7 +262,7 @@ public class BRepMeshShellTests
         }
 
         // Meshing the meshed result again with a mesher that keeps existing meshes gives it back itself.
-        var aAgain = new BRepMesh_IncrementalMesh();
+        var aAgain = new IncrementalMesh();
         aAgain.SetShape(aResult);
         aAgain.ChangeParameters().Deflection = 0.25;
         aAgain.Perform(StubContext());
@@ -267,7 +270,7 @@ public class BRepMeshShellTests
 
         // Replacing the meshes changes the faces and edges, never the frozen result.
         var aSnapshot2 = ShapeSnapshot.Of(aResult);
-        var aReplace = new BRepMesh_IncrementalMesh();
+        var aReplace = new IncrementalMesh();
         aReplace.SetShape(aResult);
         aReplace.ChangeParameters().Deflection = 0.5;
         aReplace.Perform(StubContext(theToReplace: true));
@@ -283,7 +286,7 @@ public class BRepMeshShellTests
         Solid aBox = TestShapes.Box(1, 2, 3);
         Assert.False(aBox.TShape()!.IsFrozen);
 
-        var aMesh = new BRepMesh_IncrementalMesh();
+        var aMesh = new IncrementalMesh();
         aMesh.SetShape(aBox);
         aMesh.ChangeParameters().Deflection = 0.25;
         aMesh.Perform(StubContext());
@@ -315,7 +318,7 @@ public class BRepMeshShellTests
     public void Meshed_never_writes_its_input_even_unfrozen()
     {
         Solid aBox = TestShapes.Box(1, 1, 1);
-        Shape aResult = BRepMesh_IncrementalMesh.Meshed(aBox, new IMeshTools_Parameters { Deflection = 0.1 });
+        Shape aResult = IncrementalMesh.Meshed(aBox, new ToolParameters { Deflection = 0.1 });
         Assert.True(aResult.TShape()!.IsFrozen);
         foreach (Face aF in Faces(aResult))
         {
@@ -325,18 +328,18 @@ public class BRepMeshShellTests
         {
             Assert.Null(Triangulation(aF));
         }
-        Assert.True(BRepMesh_IncrementalMesh.Meshed(new Shape(), new IMeshTools_Parameters()).IsNull);
+        Assert.True(IncrementalMesh.Meshed(new Shape(), new ToolParameters()).IsNull);
     }
 
     [Fact]
     public void Parameters_are_checked_and_completed()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.Throws<NumericErrorException>(() => new BRepMesh_IncrementalMesh(aBox, 1e-8));
-        Assert.Throws<NumericErrorException>(() => new BRepMesh_IncrementalMesh(aBox, 0.1, false, 1e-13));
+        Assert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 1e-8));
+        Assert.Throws<NumericErrorException>(() => new IncrementalMesh(aBox, 0.1, false, 1e-13));
 
-        var aMesh = new BRepMesh_IncrementalMesh(aBox, 0.2, true, 0.3, true);
-        IMeshTools_Parameters aP = aMesh.Parameters();
+        var aMesh = new IncrementalMesh(aBox, 0.2, true, 0.3, true);
+        ToolParameters aP = aMesh.Parameters();
         Assert.Equal(0.2, aP.Deflection);
         Assert.Equal(0.2, aP.DeflectionInterior);
         Assert.Equal(0.3, aP.Angle);
@@ -344,9 +347,9 @@ public class BRepMeshShellTests
         Assert.Equal(0.1 * 0.2, aP.MinSize, 1e-17);
         Assert.True(aP.Relative);
         Assert.True(aP.InParallel);
-        Assert.False(aMesh.IsModified());
+        Assert.False(aMesh.IsModified);
 
-        var aExplicit = new BRepMesh_IncrementalMesh(aBox, new IMeshTools_Parameters { Deflection = 1e-7, MinSize = 0.5 });
+        var aExplicit = new IncrementalMesh(aBox, new ToolParameters { Deflection = 1e-7, MinSize = 0.5 });
         Assert.Equal(0.5, aExplicit.Parameters().MinSize);
         Assert.Equal(1e-7, aExplicit.Parameters().DeflectionInterior);
     }
@@ -355,16 +358,16 @@ public class BRepMeshShellTests
     public void Discret_takes_the_parallel_default()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Assert.False(BRepMesh_IncrementalMesh.IsParallelDefault());
-        Assert.Equal(0, BRepMesh_IncrementalMesh.Discret(aBox, 0.3, 0.4, out BRepMesh_DiscretRoot anAlgo));
-        var aMesh = Assert.IsType<BRepMesh_IncrementalMesh>(anAlgo);
-        Assert.False(aMesh.IsDone());
+        Assert.False(IncrementalMesh.IsParallelDefault);
+        Assert.Equal(0, IncrementalMesh.Discret(aBox, 0.3, 0.4, out DiscretRoot anAlgo));
+        var aMesh = Assert.IsType<IncrementalMesh>(anAlgo);
+        Assert.False(aMesh.IsDone);
         Assert.True(aMesh.Shape().IsSame(aBox));
         Assert.Equal(0.3, aMesh.Parameters().Deflection);
         Assert.Equal(0.4, aMesh.Parameters().Angle);
         Assert.False(aMesh.Parameters().InParallel);
         aMesh.Perform();
-        Assert.True(aMesh.IsDone());
+        Assert.True(aMesh.IsDone);
     }
 
     [Fact]
@@ -374,11 +377,11 @@ public class BRepMeshShellTests
         using var aCancel = new CancellationTokenSource();
         aCancel.Cancel();
         var anIndicator = new ProgressIndicator(aCancel.Token);
-        var aMesh = new BRepMesh_IncrementalMesh();
+        var aMesh = new IncrementalMesh();
         aMesh.SetShape(aBox);
         aMesh.Perform(StubContext(), anIndicator.Start());
-        Assert.False(aMesh.IsDone());
-        Assert.Equal((int)IMeshData_Status.IMeshData_UserBreak, aMesh.GetStatusFlags());
+        Assert.False(aMesh.IsDone);
+        Assert.Equal((int)StatusModel.UserBreak, aMesh.GetStatusFlags());
         Assert.Same(aBox.TShape(), aMesh.Shape().TShape());
     }
 
@@ -390,14 +393,14 @@ public class BRepMeshShellTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
 
-        var aNoContext = new IMeshTools_MeshBuilder();
+        var aNoContext = new MeshBuilder();
         aNoContext.Perform(new ProgressRange());
         Assert.True(aNoContext.GetStatus().IsSet(Fail1));
 
-        Status Run(IMeshTools_Context theContext, in Shape theShape)
+        Status Run(ToolContext theContext, in Shape theShape)
         {
             theContext.SetShape(theShape);
-            var aBuilder = new IMeshTools_MeshBuilder(theContext);
+            var aBuilder = new MeshBuilder(theContext);
             aBuilder.Perform(new ProgressRange());
             foreach (Status aS in Enum.GetValues<Status>())
             {
@@ -409,33 +412,33 @@ public class BRepMeshShellTests
             return None;
         }
 
-        Assert.Equal(Fail1, Run(new IMeshTools_Context(), aCopy)); // no model builder
+        Assert.Equal(Fail1, Run(new ToolContext(), aCopy)); // no model builder
         Assert.Equal(Warn1, Run(StubContext(), new Shape())); // nothing to mesh
-        IMeshTools_Context aThrowing = StubContext();
+        ToolContext aThrowing = StubContext();
         ((StubModelBuilder)aThrowing.GetModelBuilder()!).ToThrow = true;
         Assert.Equal(Fail2, Run(aThrowing, aCopy));
 
-        IMeshTools_Context aNoEdges = StubContext();
+        ToolContext aNoEdges = StubContext();
         aNoEdges.SetEdgeDiscret(null);
         Assert.Equal(Fail3, Run(aNoEdges, aCopy));
-        IMeshTools_Context aHealer = StubContext();
+        ToolContext aHealer = StubContext();
         aHealer.SetModelHealer(new StubAlgo(false));
         Assert.Equal(Fail4, Run(aHealer, aCopy));
-        IMeshTools_Context aPre = StubContext();
+        ToolContext aPre = StubContext();
         aPre.SetPreProcessor(new StubAlgo(true, theToThrow: true)); // an exception is a failure
         Assert.Equal(Fail5, Run(aPre, aCopy));
-        IMeshTools_Context aFaces = StubContext();
+        ToolContext aFaces = StubContext();
         aFaces.SetFaceDiscret(new StubAlgo(false));
         Assert.Equal(Fail6, Run(aFaces, aCopy));
-        IMeshTools_Context aPost = StubContext();
+        ToolContext aPost = StubContext();
         aPost.SetPostProcessor(new StubAlgo(false));
         Assert.Equal(Fail7, Run(aPost, aCopy));
 
         // Done, and the model is cleaned when the parameters ask for it.
-        IMeshTools_Context aGood = StubContext();
+        ToolContext aGood = StubContext();
         Assert.Equal(Done1, Run(aGood, aCopy));
         Assert.Null(aGood.GetModel());
-        IMeshTools_Context aKeep = StubContext();
+        ToolContext aKeep = StubContext();
         aKeep.ChangeParameters().CleanModel = false;
         Assert.Equal(Done1, Run(aKeep, BrepTools.ExactCopyForWrite(aBox, out _)));
         Assert.Equal(6, aKeep.GetModel()!.FacesNb());
@@ -447,18 +450,18 @@ public class BRepMeshShellTests
     {
         // decision 423's rule: a write into a shared input can't fail silently
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var aContext = new IMeshTools_Context();
+        var aContext = new ToolContext();
         aContext.SetModelBuilder(new StubModelBuilder());
         aContext.SetEdgeDiscret(new StubAlgo(true));
         aContext.SetFaceDiscret(new StubFaceDiscret());
         aContext.SetShape(aBox);
-        var aBuilder = new IMeshTools_MeshBuilder(aContext);
+        var aBuilder = new MeshBuilder(aContext);
         Assert.ThrowsAny<DomainErrorException>(() => aBuilder.Perform(new ProgressRange()));
     }
 
     // ------------------------------------------------------------------------------------------- IMeshTools_ShapeExplorer
 
-    private sealed class RecordingVisitor : IMeshTools_ShapeVisitor
+    private sealed class RecordingVisitor : ShapeVisitor
     {
         public readonly List<Shape> Visited = [];
 
@@ -479,7 +482,7 @@ public class BRepMeshShellTests
 
         Compound aCompound = Builder.MakeCompound([aMovedFree, aBox, aFace.Reversed()]);
         var aVisitor = new RecordingVisitor();
-        new IMeshTools_ShapeExplorer(aCompound).Accept(aVisitor);
+        new ShapeExplorer(aCompound).Accept(aVisitor);
 
         // the free edge first, at the identity location
         Assert.Equal(ShapeType.Edge, aVisitor.Visited[0].ShapeType());
@@ -511,13 +514,13 @@ public class BRepMeshShellTests
         {
             aMax = Math.Max(aMax, Tool.Tolerance(ShapeCasts.Edge(anExp.Current())));
         }
-        Assert.Equal(aMax, BRepMesh_ShapeTool.MaxFaceTolerance(aFace));
+        Assert.Equal(aMax, ShapeTool.MaxFaceTolerance(aFace));
 
         double aDim = -1.0;
-        BRepMesh_ShapeTool.BoxMaxDimension(new Box(), ref aDim);
+        ShapeTool.BoxMaxDimension(new Box(), ref aDim);
         Assert.Equal(-1.0, aDim); // void box: unchanged
         var aBnd = new Box(new Point3D(0, 0, 0), new Point3D(1, 5, 2));
-        BRepMesh_ShapeTool.BoxMaxDimension(aBnd, ref aDim);
+        ShapeTool.BoxMaxDimension(aBnd, ref aDim);
         Assert.Equal(5.0, aDim);
 
         // A located edge: the 3D range is the located curve's, reversed with the orientation if asked.
@@ -525,24 +528,24 @@ public class BRepMeshShellTests
         aTrsf.SetTranslation(new Vector3D(0, 0, 7));
         Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1, 3));
         Edge aMoved = ShapeCasts.Edge(anEdge.Moved(new Placement(aTrsf)).Reversed());
-        Assert.True(BRepMesh_ShapeTool.Range(aMoved, out Curve3D? aCurve, out double aF, out double aL));
+        Assert.True(ShapeTool.Range(aMoved, out Curve3D? aCurve, out double aF, out double aL));
         Assert.Equal((1.0, 3.0), (aF, aL));
         Assert.True(aCurve!.Value(aF).IsEqual(new Point3D(1, 0, 7), 1e-15));
-        Assert.True(BRepMesh_ShapeTool.Range(aMoved, out _, out aF, out aL, true));
+        Assert.True(ShapeTool.Range(aMoved, out _, out aF, out aL, true));
         Assert.Equal((3.0, 1.0), (aF, aL));
 
         // Pcurve range and UV points on a box face.
         Edge aBoxEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
-        Assert.True(BRepMesh_ShapeTool.Range(aBoxEdge, aFace, out Curve2D? aPC, out aF, out aL));
+        Assert.True(ShapeTool.Range(aBoxEdge, aFace, out Curve2D? aPC, out aF, out aL));
         Assert.NotNull(aPC);
-        Assert.True(BRepMesh_ShapeTool.UVPoints(aBoxEdge, aFace, out Point2D aUV1, out Point2D aUV2));
+        Assert.True(ShapeTool.UVPoints(aBoxEdge, aFace, out Point2D aUV1, out Point2D aUV2));
         Assert.True(aUV1.IsEqual(aPC!.Value(aF), 0.0));
         Assert.True(aUV2.IsEqual(aPC.Value(aL), 0.0));
         // (an edge not on a plane still has a pcurve there: BRep_Tool projects it)
-        Assert.True(BRepMesh_ShapeTool.Range(anEdge, aFace, out _, out _, out _));
+        Assert.True(ShapeTool.Range(anEdge, aFace, out _, out _, out _));
 
-        Assert.True(BRepMesh_ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement(aTrsf)).IsEqual(new Point3D(1, 2, 10), 0.0));
-        Assert.True(BRepMesh_ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement()).IsEqual(new Point3D(1, 2, 3), 0.0));
+        Assert.True(ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement(aTrsf)).IsEqual(new Point3D(1, 2, 10), 0.0));
+        Assert.True(ShapeTool.UseLocation(new Point3D(1, 2, 3), new Placement()).IsEqual(new Point3D(1, 2, 3), 0.0));
     }
 
     [Fact]
@@ -551,11 +554,11 @@ public class BRepMeshShellTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
         Face aFace = ShapeCasts.Face(Faces(aBox)[0].Oriented(Forward));
         Edge aBoxEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
-        var aDFace = new BRepMeshData_Face(aFace);
-        var aDEdge = new BRepMeshData_Edge(aBoxEdge);
-        IMeshData_PCurve aPCurve = aDEdge.AddPCurve(aDFace, aBoxEdge.Orientation());
+        var aDFace = new FaceData(aFace);
+        var aDEdge = new EdgeData(aBoxEdge);
+        PCurveModel aPCurve = aDEdge.AddPCurve(aDFace, aBoxEdge.Orientation());
         bool aSameRange = aDEdge.GetSameRange();
-        BRepMesh_ShapeTool.CheckAndUpdateFlags(aDEdge, aPCurve);
+        ShapeTool.CheckAndUpdateFlags(aDEdge, aPCurve);
         Assert.Equal(aSameRange, aDEdge.GetSameRange());
         Assert.False(aDEdge.GetDegenerated());
 
@@ -563,7 +566,7 @@ public class BRepMeshShellTests
         aDEdge.SetSameParam(false);
         aDEdge.SetSameRange(false);
         aDEdge.SetDegenerated(true);
-        BRepMesh_ShapeTool.CheckAndUpdateFlags(aDEdge, aPCurve);
+        ShapeTool.CheckAndUpdateFlags(aDEdge, aPCurve);
         Assert.True(aDEdge.GetDegenerated());
 
         // A closed edge shorter than its vertex tolerance is degenerated.
@@ -573,10 +576,10 @@ public class BRepMeshShellTests
         CircleCurve3D aTiny = new(new Frame3D(new Point3D(0.001, 0, 0), global::Kerf.Engine.Geometry.Constants.DZ()), 0.001);
         Edge aLoop = TestShapes.Edge(aTiny, 0, 2 * Math.PI, aV, ShapeCasts.Vertex(aV.Reversed()));
         aB.UpdateEdge(aLoop, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aFace, 1e-7);
-        var aDLoop = new BRepMeshData_Edge(aLoop);
-        IMeshData_PCurve aLoopPCurve = aDLoop.AddPCurve(aDFace, Forward);
+        var aDLoop = new EdgeData(aLoop);
+        PCurveModel aLoopPCurve = aDLoop.AddPCurve(aDFace, Forward);
         Assert.False(aDLoop.GetDegenerated());
-        BRepMesh_ShapeTool.CheckAndUpdateFlags(aDLoop, aLoopPCurve);
+        ShapeTool.CheckAndUpdateFlags(aDLoop, aLoopPCurve);
         Assert.True(aDLoop.GetDegenerated());
     }
 
@@ -594,7 +597,7 @@ public class BRepMeshShellTests
         aTri.SetNode(2, new Point3D(11, 0, 0));
         aTri.SetNode(3, new Point3D(10, 1, 0));
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
-        BRepMesh_ShapeTool.AddInFace(aMoved, aTri);
+        ShapeTool.AddInFace(aMoved, aTri);
 
         // The nodes are in the face's definition: the location is taken off.
         Triangulation aStored = Tool.Triangulation(aFace, out Placement aLoc)!;
@@ -610,20 +613,20 @@ public class BRepMeshShellTests
         aNodes[1] = 1;
         aNodes[2] = 2;
         var aPoly = new PolygonOnTriangulation(aNodes);
-        BRepMesh_ShapeTool.UpdateEdge(anEdge, aPoly, aTri, new Placement());
+        ShapeTool.UpdateEdge(anEdge, aPoly, aTri, new Placement());
         Assert.Same(aPoly, Tool.PolygonOnTriangulation(anEdge, aTri, new Placement()));
         Assert.False(aPoly.IsFrozen);
 
         var aPoly2 = new PolygonOnTriangulation(aNodes);
         Edge anOther = ShapeCasts.Edge(new Explorer(Faces(aBox)[1], ShapeType.Edge).Current());
-        BRepMesh_ShapeTool.UpdateEdge(anOther, aPoly, aPoly2, aTri, new Placement());
+        ShapeTool.UpdateEdge(anOther, aPoly, aPoly2, aTri, new Placement());
         Assert.False(aPoly2.IsFrozen);
 
         var aP3dNodes = new NCollection_Array1<Point3D>(1, 2);
         aP3dNodes[1] = new Point3D(0, 0, 0);
         aP3dNodes[2] = new Point3D(1, 0, 0);
         var aP3d = new Polygon3D(aP3dNodes);
-        BRepMesh_ShapeTool.UpdateEdge(anEdge, aP3d);
+        ShapeTool.UpdateEdge(anEdge, aP3d);
         Assert.Same(aP3d, Tool.Polygon3D(anEdge, out _));
         Assert.False(aP3d.IsFrozen);
 
@@ -633,8 +636,8 @@ public class BRepMeshShellTests
         Assert.True(aPoly.IsFrozen);
         Assert.True(aPoly2.IsFrozen);
         Assert.True(aP3d.IsFrozen);
-        Assert.ThrowsAny<DomainErrorException>(() => BRepMesh_ShapeTool.NullifyFace(aFace));
-        Assert.ThrowsAny<DomainErrorException>(() => BRepMesh_ShapeTool.NullifyEdge(anEdge, new Placement()));
+        Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyFace(aFace));
+        Assert.ThrowsAny<DomainErrorException>(() => ShapeTool.NullifyEdge(anEdge, new Placement()));
     }
 
     [Fact]
@@ -654,9 +657,9 @@ public class BRepMeshShellTests
 
         Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
         Assert.NotNull(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Location()));
-        BRepMesh_ShapeTool.NullifyEdge(anEdge, aTri, aFace.Location());
+        ShapeTool.NullifyEdge(anEdge, aTri, aFace.Location());
         Assert.Null(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Location()));
-        BRepMesh_ShapeTool.NullifyFace(aFace);
+        ShapeTool.NullifyFace(aFace);
         Assert.Null(Triangulation(aFace));
 
         // the input keeps its meshes

@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -17,7 +23,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_BuilderSolidTests
 {
     private static Shape Box(double x, double y, double z, double dx, double dy, double dz) =>
-        new BRepPrimAPI_MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
+        new MakeBox(new Point3D(x, y, z), dx, dy, dz).Shape();
 
     private static NCollection_List<Shape> Faces(params Shape[] theShapes)
     {
@@ -32,17 +38,17 @@ public class BOPAlgo_BuilderSolidTests
         return aLF;
     }
 
-    private static BOPAlgo_BuilderSolid BuildSolids(NCollection_List<Shape> theFaces, bool theParallel = false)
+    private static BuilderSolid BuildSolids(NCollection_List<Shape> theFaces, bool theParallel = false)
     {
-        BOPAlgo_BuilderSolid aBS = new();
+        BuilderSolid aBS = new();
         aBS.SetShapes(theFaces);
         aBS.SetRunParallel(theParallel);
         aBS.Perform();
-        Assert.False(aBS.HasErrors());
+        Assert.False(aBS.HasErrors);
         return aBS;
     }
 
-    private static double Volume(in Shape theS) => BRepGProp.VolumeProperties(theS).Mass();
+    private static double Volume(in Shape theS) => MassPropertiesBuilder.VolumeProperties(theS).Mass();
 
     private static int Count(in Shape theS, ShapeType theType)
     {
@@ -58,27 +64,27 @@ public class BOPAlgo_BuilderSolidTests
     public void FacesOfABox_MakeOneValidSolid()
     {
         Shape aBox = Box(0, 0, 0, 1, 2, 3);
-        BOPAlgo_BuilderSolid aBS = BuildSolids(Faces(aBox));
+        BuilderSolid aBS = BuildSolids(Faces(aBox));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
         Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
         Assert.Equal(1, Count(aSolid, ShapeType.Shell));
         Assert.Equal(6.0, Volume(aSolid), 1e-9);
-        Assert.True(new BRepCheck_Analyzer(aSolid).IsValid());
+        Assert.True(new Analyzer(aSolid).IsValid());
         Assert.Equal(1, aBS.GetBoxesMap().Extent());
         Assert.True(aBS.GetBoxesMap().IsBound(aSolid));
-        Assert.False(aBS.HasWarnings());
+        Assert.False(aBS.HasWarnings);
     }
 
     [Fact]
     public void FacesOfTwoDisjointBoxes_MakeTwoSolids()
     {
-        BOPAlgo_BuilderSolid aBS = BuildSolids(Faces(Box(0, 0, 0, 1, 1, 1), Box(3, 0, 0, 2, 1, 1)));
+        BuilderSolid aBS = BuildSolids(Faces(Box(0, 0, 0, 1, 1, 1), Box(3, 0, 0, 2, 1, 1)));
         Assert.Equal(2, aBS.Areas().Extent());
         double aSum = 0;
         foreach (Shape aS in aBS.Areas())
         {
-            Assert.True(new BRepCheck_Analyzer(aS).IsValid());
+            Assert.True(new Analyzer(aS).IsValid());
             aSum += Volume(aS);
         }
         Assert.Equal(3.0, aSum, 1e-9);
@@ -90,18 +96,18 @@ public class BOPAlgo_BuilderSolidTests
         // the reversed faces of an inner box form a hole: it goes into the outer box's solid
         Shape anOuter = Box(0, 0, 0, 4, 4, 4);
         Shape anInner = Box(1, 1, 1, 2, 2, 2).Reversed();
-        BOPAlgo_BuilderSolid aBS = BuildSolids(Faces(anOuter, anInner));
+        BuilderSolid aBS = BuildSolids(Faces(anOuter, anInner));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
         Assert.Equal(2, Count(aSolid, ShapeType.Shell));
         Assert.Equal(64.0 - 8.0, Volume(aSolid), 1e-9);
-        Assert.True(new BRepCheck_Analyzer(aSolid).IsValid());
+        Assert.True(new Analyzer(aSolid).IsValid());
     }
 
     [Fact]
     public void AHoleAlone_MakesASolidOfItsOwn_WithAnInfiniteBox()
     {
-        BOPAlgo_BuilderSolid aBS = BuildSolids(Faces(Box(1, 1, 1, 2, 2, 2).Reversed()));
+        BuilderSolid aBS = BuildSolids(Faces(Box(1, 1, 1, 2, 2, 2).Reversed()));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
         Assert.True(aBS.GetBoxesMap().Find(aSolid).IsWhole);
@@ -111,10 +117,10 @@ public class BOPAlgo_BuilderSolidTests
     public void AFaceInsideTheBox_IsAddedAsAnInternalShell()
     {
         Shape aBox = Box(0, 0, 0, 4, 4, 4);
-        Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        Shape aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         NCollection_List<Shape> aLF = Faces(aBox);
         aLF.Append(aFace);
-        BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
+        BuilderSolid aBS = BuildSolids(aLF);
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
         Assert.Equal(2, Count(aSolid, ShapeType.Shell));
@@ -129,10 +135,10 @@ public class BOPAlgo_BuilderSolidTests
         }
         Assert.Equal(1, aNbInternal);
         Assert.Equal(64.0, Volume(aSolid), 1e-9);
-        Assert.False(aBS.HasWarnings());
+        Assert.False(aBS.HasWarnings);
 
         // with the internal shapes avoided, the face is left out
-        BOPAlgo_BuilderSolid aBS2 = new();
+        BuilderSolid aBS2 = new();
         aBS2.SetShapes(aLF);
         aBS2.SetAvoidInternalShapes(true);
         aBS2.Perform();
@@ -142,22 +148,22 @@ public class BOPAlgo_BuilderSolidTests
     [Fact]
     public void AFaceOutsideTheBox_IsReportedUnused()
     {
-        Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        Shape aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         NCollection_List<Shape> aLF = Faces(Box(0, 0, 0, 4, 4, 4));
         aLF.Append(aFace);
-        BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
+        BuilderSolid aBS = BuildSolids(aLF);
         Assert.Equal(1, aBS.Areas().Extent());
         Assert.Equal(1, Count(aBS.Areas().First(), ShapeType.Shell));
-        Assert.True(aBS.HasWarning(typeof(BOPAlgo_AlertSolidBuilderUnusedFaces)));
+        Assert.True(aBS.HasWarning(typeof(AlertSolidBuilderUnusedFaces)));
     }
 
     [Fact]
     public void OnlyOpenFaces_MakeOneSolidOfInternalShells()
     {
-        Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
+        Shape aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0, 1, 0, 1).Shape();
         NCollection_List<Shape> aLF = new();
         aLF.Append(aFace);
-        BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
+        BuilderSolid aBS = BuildSolids(aLF);
         Assert.Equal(1, aBS.Areas().Extent());
         Assert.Equal(1, Count(aBS.Areas().First(), ShapeType.Shell));
     }
@@ -165,26 +171,26 @@ public class BOPAlgo_BuilderSolidTests
     [Fact]
     public void ShellSplitter_FacesOfABox_OneClosedShell()
     {
-        BOPAlgo_ShellSplitter aSS = new();
+        ShellSplitter aSS = new();
         foreach (Shape aF in Faces(Box(0, 0, 0, 1, 1, 1)))
         {
             aSS.AddStartElement(aF);
         }
         aSS.Perform();
-        Assert.False(aSS.HasErrors());
+        Assert.False(aSS.HasErrors);
         Assert.Equal(6, aSS.StartElements().Extent());
         Assert.Equal(1, aSS.Shells().Extent());
         Shape aShell = aSS.Shells().First();
         Assert.True(aShell.Closed());
         Assert.True(Tool.IsClosed(aShell));
-        Assert.True(new BRepCheck_Analyzer(aShell).IsValid());
+        Assert.True(new Analyzer(aShell).IsValid());
     }
 
     // Two boxes touching along an edge, sewn in non-manifold mode so that the edge is shared by four faces: the
     // faces make one irregular connexity block, which SplitBlock splits into the two boxes' shells.
     private static NCollection_List<Shape> FacesOfTwoBoxesSharingAnEdge()
     {
-        BRepBuilderAPI_Sewing aSewing = new();
+        Sewing aSewing = new();
         aSewing.SetNonManifoldMode(true);
         aSewing.Add(Box(0, 0, 0, 1, 1, 1));
         aSewing.Add(Box(1, 1, 0, 1, 1, 1));
@@ -210,14 +216,14 @@ public class BOPAlgo_BuilderSolidTests
         NCollection_List<Shape> aLF = FacesOfTwoBoxesSharingAnEdge();
         foreach (bool aParallel in new[] { false, true })
         {
-            BOPAlgo_ShellSplitter aSS = new();
+            ShellSplitter aSS = new();
             aSS.SetRunParallel(aParallel);
             foreach (Shape aF in aLF)
             {
                 aSS.AddStartElement(aF);
             }
             aSS.Perform();
-            Assert.False(aSS.HasErrors());
+            Assert.False(aSS.HasErrors);
             Assert.Equal(2, aSS.Shells().Extent());
             foreach (Shape aShell in aSS.Shells())
             {
@@ -226,7 +232,7 @@ public class BOPAlgo_BuilderSolidTests
             }
         }
 
-        BOPAlgo_BuilderSolid aBS = BuildSolids(aLF);
+        BuilderSolid aBS = BuildSolids(aLF);
         Assert.Equal(2, aBS.Areas().Extent());
         foreach (Shape aS in aBS.Areas())
         {
@@ -238,9 +244,9 @@ public class BOPAlgo_BuilderSolidTests
     public void ClassifyFaces_InsideAndOutside()
     {
         Shape aSolid = BuildSolids(Faces(Box(0, 0, 0, 4, 4, 4))).Areas().First();
-        Shape aFIn = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
-        Shape aFOut = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 9), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
-        Shape aFFar = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 10, 13, 10, 13).Shape();
+        Shape aFIn = new MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        Shape aFOut = new MakeFace(new Plane3D(new Point3D(0, 0, 9), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        Shape aFFar = new MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 10, 13, 10, 13).Shape();
         NCollection_List<Shape> aLF = new();
         aLF.Append(aFOut);
         aLF.Append(aFIn);
@@ -250,7 +256,7 @@ public class BOPAlgo_BuilderSolidTests
         foreach (bool aParallel in new[] { false, true })
         {
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
-            BOPAlgo_Tools.ClassifyFaces(aLF, aLS, aParallel, new IntTools_Context(), anInParts);
+            BuilderTools.ClassifyFaces(aLF, aLS, aParallel, new IntersectionContext(), anInParts);
             Assert.Equal(1, anInParts.Extent());
             Assert.True(anInParts.FindKey(1).IsSame(aSolid));
             NCollection_List<Shape> aLIn = anInParts[1];
@@ -264,7 +270,7 @@ public class BOPAlgo_BuilderSolidTests
         anOwn.Append(aFIn);
         aSolidsIF.Bind(aSolid, anOwn);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
-        BOPAlgo_Tools.ClassifyFaces(aLF, aLS, false, new IntTools_Context(), anInParts2, null, aSolidsIF);
+        BuilderTools.ClassifyFaces(aLF, aLS, false, new IntersectionContext(), anInParts2, null, aSolidsIF);
         Assert.True(anInParts2[1].IsEmpty());
     }
 
@@ -272,10 +278,10 @@ public class BOPAlgo_BuilderSolidTests
     public void FillInternals_AddsThePartsInside()
     {
         Shape aSolid = BuildSolids(Faces(Box(0, 0, 0, 4, 4, 4))).Areas().First();
-        Shape aVIn = new BRepBuilderAPI_MakeVertex(new Point3D(2, 2, 2)).Shape();
-        Shape aVOut = new BRepBuilderAPI_MakeVertex(new Point3D(9, 2, 2)).Shape();
-        Shape anEIn = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 3)).Shape();
-        Shape aFIn = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
+        Shape aVIn = new MakeVertex(new Point3D(2, 2, 2)).Shape();
+        Shape aVOut = new MakeVertex(new Point3D(9, 2, 2)).Shape();
+        Shape anEIn = new MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 3)).Shape();
+        Shape aFIn = new MakeFace(new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1)), 1, 3, 1, 3).Shape();
         // a compound of parts is explored
         BrepBuilder aBB = new();
         Compound aC = new();
@@ -288,8 +294,8 @@ public class BOPAlgo_BuilderSolidTests
         aLParts.Append(aFIn);
         NCollection_List<Shape> aLS = new();
         aLS.Append(aSolid);
-        BOPAlgo_Tools.FillInternals(aLS, aLParts, new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
-                                    new IntTools_Context());
+        BuilderTools.FillInternals(aLS, aLParts, new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
+                                    new IntersectionContext());
         // the solid holds its shell, the internal vertex, the internal edge and an internal shell of the face
         Assert.Equal(2, Count(aSolid, ShapeType.Shell));
         Assert.Equal(1, Count(aSolid, ShapeType.Vertex));
@@ -316,15 +322,15 @@ public class BOPAlgo_BuilderSolidTests
     {
         // no edge, one edge, then the twelve edges of a box (already sharing their vertices)
         Shape aWires = new();
-        Assert.Equal(1, BOPAlgo_Tools.EdgesToWires(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Shape(), ref aWires, true));
+        Assert.Equal(1, BuilderTools.EdgesToWires(new MakeVertex(new Point3D(0, 0, 0)).Shape(), ref aWires, true));
         Assert.True(aWires.IsNull);
 
-        Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
-        Assert.Equal(0, BOPAlgo_Tools.EdgesToWires(anEdge, ref aWires, true));
+        Shape anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
+        Assert.Equal(0, BuilderTools.EdgesToWires(anEdge, ref aWires, true));
         Assert.Equal(1, Count(aWires, ShapeType.Wire));
 
         Shape aBox = Box(0, 0, 0, 1, 2, 3);
-        Assert.Equal(0, BOPAlgo_Tools.EdgesToWires(aBox, ref aWires, true));
+        Assert.Equal(0, BuilderTools.EdgesToWires(aBox, ref aWires, true));
         NCollection_IndexedMap<Shape> aMEIn = new(ShapeHasher.Instance), aMEOut = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, aMEIn);
         Exploration.MapShapes(aWires, ShapeType.Edge, aMEOut);
@@ -347,7 +353,7 @@ public class BOPAlgo_BuilderSolidTests
             {
                 aLF.Append(aF);
             }
-            aLF.Append(new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 10 * i + 4, 10 * i + 5, 4, 5).Shape());
+            aLF.Append(new MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 10 * i + 4, 10 * i + 5, 4, 5).Shape());
         }
         foreach (Shape aF in FacesOfTwoBoxesSharingAnEdge())
         {
@@ -355,7 +361,7 @@ public class BOPAlgo_BuilderSolidTests
         }
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
-            BOPAlgo_BuilderSolid aBS = BuildSolids(aLF, true);
+            BuilderSolid aBS = BuildSolids(aLF, true);
             BrepBuilder aBB = new();
             Compound aC = new();
             aBB.MakeCompound(ref aC);

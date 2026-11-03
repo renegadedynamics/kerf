@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -45,24 +47,24 @@ public class IntPatch_IntersectionTests
         return new SurfaceAdaptor(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 3, 3));
     }
 
-    private static IntPatch_Intersection Run(SurfaceAdaptor theS1, SurfaceAdaptor theS2,
+    private static PatchIntersection Run(SurfaceAdaptor theS1, SurfaceAdaptor theS2,
                                              bool thePostProc = true)
     {
-        var anInt = new IntPatch_Intersection();
+        var anInt = new PatchIntersection();
         anInt.SetTolerances(Tol, Tol, 0.05, 0.01);
         anInt.Perform(theS1, new TopolTool(theS1), theS2, new TopolTool(theS2), Tol, Tol,
-                      theIsReqToPostWLProc: thePostProc);
+                      isReqToPostWLProc: thePostProc);
         return anInt;
     }
 
     // Every point of every walking line on both surfaces at its parameters, and its vertices on the line.
-    private static int CheckWalkingLines(IntPatch_Intersection theInt, SurfaceAdaptor theS1,
+    private static int CheckWalkingLines(PatchIntersection theInt, SurfaceAdaptor theS1,
                                          SurfaceAdaptor theS2, double theTol = 1.0e-5)
     {
         int aNbW = 0;
-        for (int i = 1; i <= theInt.NbLines(); i++)
+        for (int i = 1; i <= theInt.LineCount; i++)
         {
-            if (theInt.Line(i) is not IntPatch_WLine aWL)
+            if (theInt.Line(i) is not WLine aWL)
             {
                 continue;
             }
@@ -70,15 +72,15 @@ public class IntPatch_IntersectionTests
             Assert.True(aWL.NbPnts() >= 2);
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
-                IntSurf_PntOn2S aP = aWL.Point(k);
+                PntOn2S aP = aWL.Point(k);
                 aP.ParametersOnS1(out double u1, out double v1);
                 aP.ParametersOnS2(out double u2, out double v2);
                 Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"line {i} point {k} off S1");
                 Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"line {i} point {k} off S2");
             }
-            for (int k = 1; k <= aWL.NbVertex(); k++)
+            for (int k = 1; k <= aWL.VertexCount; k++)
             {
-                IntPatch_Point aV = aWL.Vertex(k);
+                PatchPoint aV = aWL.Vertex(k);
                 double aPar = aV.ParameterOnLine();
                 Assert.InRange(aPar, 1.0, aWL.NbPnts());
             }
@@ -89,11 +91,11 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Not_done_before_perform()
     {
-        var anInt = new IntPatch_Intersection();
-        Assert.False(anInt.IsDone());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.IsEmpty());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.NbLines());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.NbPnts());
+        var anInt = new PatchIntersection();
+        Assert.False(anInt.IsDone);
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.IsEmpty);
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.LineCount);
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.PntCount);
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anInt.TangentFaces());
     }
 
@@ -102,13 +104,13 @@ public class IntPatch_IntersectionTests
     {
         SurfaceAdaptor aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         SurfaceAdaptor aP2 = Plane(new Point3D(0, 0, 0.5), new Direction3D(1, 0, 1));
-        IntPatch_Intersection anInt = Run(aP1, aP2);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
+        PatchIntersection anInt = Run(aP1, aP2);
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
         Assert.False(anInt.TangentFaces());
-        Assert.Equal(1, anInt.NbLines());
-        Assert.Equal(IntPatch_Lin, anInt.Line(1).ArcType());
-        Line3D aL = ((IntPatch_GLine)anInt.Line(1)).Line();
+        Assert.Equal(1, anInt.LineCount);
+        Assert.Equal(PatchLineType.Lin, anInt.Line(1).ArcType());
+        Line3D aL = ((GLine)anInt.Line(1)).Line();
         Assert.True(aL.Direction().IsParallel(new Direction3D(0, 1, 0), 1.0e-12));
         Assert.Equal(0.0, aL.Distance(new Point3D(0.5, 0, 0)), 1.0e-12);
         Assert.Same(anInt.SequenceOfLine().Value(1), anInt.Line(1));
@@ -119,8 +121,8 @@ public class IntPatch_IntersectionTests
     {
         SurfaceAdaptor aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         SurfaceAdaptor aP2 = Plane(new Point3D(1, 1, 0), new Direction3D(0, 0, -1));
-        IntPatch_Intersection anInt = Run(aP1, aP2);
-        Assert.True(anInt.IsDone());
+        PatchIntersection anInt = Run(aP1, aP2);
+        Assert.True(anInt.IsDone);
         Assert.True(anInt.TangentFaces());
         Assert.True(anInt.OppositeFaces());
     }
@@ -128,11 +130,11 @@ public class IntPatch_IntersectionTests
     [Fact]
     public void Parallel_planes_are_empty()
     {
-        IntPatch_Intersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        PatchIntersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                           Plane(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
-        Assert.True(anInt.IsDone());
-        Assert.True(anInt.IsEmpty());
-        Assert.Equal(0, anInt.NbLines());
+        Assert.True(anInt.IsDone);
+        Assert.True(anInt.IsEmpty);
+        Assert.Equal(0, anInt.LineCount);
         Assert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => anInt.OppositeFaces());
     }
 
@@ -142,29 +144,29 @@ public class IntPatch_IntersectionTests
         var aCyl = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
                                                                                   new Direction3D(0, 0, 1)), 1),
                                            0, 2 * M_PI, -3, 3);
-        IntPatch_Intersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 1, 2), 5), aCyl);
-        Assert.True(anInt.IsDone());
-        Assert.Equal(1, anInt.NbLines());
-        Assert.Equal(IntPatch_Ellipse, anInt.Line(1).ArcType());
+        PatchIntersection anInt = Run(Plane(new Point3D(0, 0, 0), new Direction3D(0, 1, 2), 5), aCyl);
+        Assert.True(anInt.IsDone);
+        Assert.Equal(1, anInt.LineCount);
+        Assert.Equal(PatchLineType.Ellipse, anInt.Line(1).ArcType());
 
-        IntPatch_Intersection aLines = Run(Plane(new Point3D(0.5, 0, 0), new Direction3D(1, 0, 0), 5), aCyl);
-        Assert.Equal(2, aLines.NbLines());
-        Assert.Equal(IntPatch_Lin, aLines.Line(1).ArcType());
-        Assert.Equal(IntPatch_Lin, aLines.Line(2).ArcType());
+        PatchIntersection aLines = Run(Plane(new Point3D(0.5, 0, 0), new Direction3D(1, 0, 0), 5), aCyl);
+        Assert.Equal(2, aLines.LineCount);
+        Assert.Equal(PatchLineType.Lin, aLines.Line(1).ArcType());
+        Assert.Equal(PatchLineType.Lin, aLines.Line(2).ArcType());
     }
 
     [Fact]
     public void Plane_and_patch_walk_without_post_processing()
     {
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
-        IntPatch_Intersection anInt = Run(aPln, aPatch, thePostProc: false);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
+        PatchIntersection anInt = Run(aPln, aPatch, thePostProc: false);
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
 
         // Either order: the quadric is found on either side.
-        IntPatch_Intersection aRev = Run(aPatch, aPln, thePostProc: false);
-        Assert.True(aRev.IsDone());
+        PatchIntersection aRev = Run(aPatch, aPln, thePostProc: false);
+        Assert.True(aRev.IsDone);
         Assert.True(CheckWalkingLines(aRev, aPatch, aPln) >= 1);
     }
 
@@ -172,13 +174,13 @@ public class IntPatch_IntersectionTests
     public void Two_patches_walk_without_post_processing()
     {
         SurfaceAdaptor aP1 = Patch(), aP2 = Patch(0.3);
-        IntPatch_Intersection anInt = Run(aP1, aP2, thePostProc: false);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
+        PatchIntersection anInt = Run(aP1, aP2, thePostProc: false);
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
         Assert.True(CheckWalkingLines(anInt, aP1, aP2) >= 1);
-        for (int i = 1; i <= anInt.NbLines(); i++)
+        for (int i = 1; i <= anInt.LineCount; i++)
         {
-            Assert.Equal(IntPatch_Walking, anInt.Line(i).ArcType());
+            Assert.Equal(PatchLineType.Walking, anInt.Line(i).ArcType());
         }
     }
 
@@ -188,10 +190,10 @@ public class IntPatch_IntersectionTests
         // isGeomInt false: two planes through IntPatch_PrmPrmIntersection, a walking line.
         SurfaceAdaptor aP1 = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), 1);
         SurfaceAdaptor aP2 = Plane(new Point3D(0, 0, 0), new Direction3D(1, 0, 1), 1);
-        var anInt = new IntPatch_Intersection();
+        var anInt = new PatchIntersection();
         anInt.Perform(aP1, new TopolTool(aP1), aP2, new TopolTool(aP2), Tol, Tol,
-                      isGeomInt: false, theIsReqToPostWLProc: false);
-        Assert.True(anInt.IsDone());
+                      isGeomInt: false, isReqToPostWLProc: false);
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aP1, aP2) >= 1);
     }
 
@@ -203,46 +205,46 @@ public class IntPatch_IntersectionTests
         var aCone = new SurfaceAdaptor(new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     0.01, 1), 0, 2 * M_PI, -2, 2);
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0.5), new Direction3D(1, 0, 0), 3);
-        IntPatch_Intersection anInt = Run(aPln, aCone, thePostProc: false);
-        Assert.True(anInt.IsDone());
-        Assert.False(anInt.IsEmpty());
+        PatchIntersection anInt = Run(aPln, aCone, thePostProc: false);
+        Assert.True(anInt.IsDone);
+        Assert.False(anInt.IsEmpty);
         Assert.True(CheckWalkingLines(anInt, aPln, aCone) >= 1);
 
         // A plane normal to the cone's axis keeps it analytic: a circle.
-        IntPatch_Intersection aCircle = Run(Plane(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1), 3), aCone);
-        Assert.Equal(1, aCircle.NbLines());
-        Assert.Equal(IntPatch_Circle, aCircle.Line(1).ArcType());
+        PatchIntersection aCircle = Run(Plane(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1), 3), aCone);
+        Assert.Equal(1, aCircle.LineCount);
+        Assert.Equal(PatchLineType.Circle, aCircle.Line(1).ArcType());
     }
 
     [Fact]
     public void Self_intersection_of_quadrics_is_empty()
     {
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var anInt = new IntPatch_Intersection(aPln, new TopolTool(aPln), Tol, Tol);
-        Assert.True(anInt.IsDone());
-        Assert.True(anInt.IsEmpty());
-        Assert.Equal(0, anInt.NbLines());
+        var anInt = new PatchIntersection(aPln, new TopolTool(aPln), Tol, Tol);
+        Assert.True(anInt.IsDone);
+        Assert.True(anInt.IsEmpty);
+        Assert.Equal(0, anInt.LineCount);
     }
 
     [Fact]
     public void Self_intersection_of_a_flat_patch_is_done()
     {
         SurfaceAdaptor aPatch = Patch();
-        var anInt = new IntPatch_Intersection(aPatch, new TopolTool(aPatch), Tol, Tol);
-        Assert.True(anInt.IsDone());
-        Assert.Equal(0, anInt.NbLines());
+        var anInt = new PatchIntersection(aPatch, new TopolTool(aPatch), Tol, Tol);
+        Assert.True(anInt.IsDone);
+        Assert.Equal(0, anInt.LineCount);
     }
 
     [Fact]
     public void Start_point_on_two_patches()
     {
         SurfaceAdaptor aP1 = Patch(), aP2 = Patch(0.3);
-        var anInt = new IntPatch_Intersection();
+        var anInt = new PatchIntersection();
         anInt.SetTolerances(Tol, Tol, 0.05, 0.01);
         // A point of the intersection: both patches meet where y = 0.5.
         anInt.Perform(aP1, new TopolTool(aP1), aP2, new TopolTool(aP2), 0.5, 0.5, 0.5, 0.5, Tol,
                       Tol);
-        Assert.True(anInt.IsDone());
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aP1, aP2) >= 1);
     }
 
@@ -250,11 +252,11 @@ public class IntPatch_IntersectionTests
     public void Start_point_with_a_plane()
     {
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
-        var anInt = new IntPatch_Intersection();
+        var anInt = new PatchIntersection();
         anInt.SetTolerances(Tol, Tol, 0.05, 0.01);
         anInt.Perform(aPln, new TopolTool(aPln), aPatch, new TopolTool(aPatch), 0.0, 0.0, 0.5,
                       0.5, Tol, Tol);
-        Assert.True(anInt.IsDone());
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
     }
 
@@ -262,8 +264,8 @@ public class IntPatch_IntersectionTests
     public void Plane_and_patch_purged()
     {
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0.24), new Direction3D(0, 0, 1)), aPatch = Patch();
-        IntPatch_Intersection anInt = Run(aPln, aPatch);
-        Assert.True(anInt.IsDone());
+        PatchIntersection anInt = Run(aPln, aPatch);
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aPln, aPatch) >= 1);
     }
 
@@ -275,13 +277,13 @@ public class IntPatch_IntersectionTests
                                            0, 2 * M_PI, -3, 3);
         var aSph = new SurfaceAdaptor(new SphericalSurface(new CoordinateSystem(new Point3D(1, 0, 0),
                                                                                 new Direction3D(0, 0, 1)), 2));
-        IntPatch_Intersection anInt = Run(aCyl, aSph);
-        Assert.True(anInt.IsDone());
+        PatchIntersection anInt = Run(aCyl, aSph);
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aCyl, aSph) >= 1);
-        for (int i = 1; i <= anInt.NbLines(); i++)
+        for (int i = 1; i <= anInt.LineCount; i++)
         {
-            Assert.Equal(IntPatch_Walking, anInt.Line(i).ArcType());
-            Assert.False(((IntPatch_WLine)anInt.Line(i)).IsPurgingAllowed());
+            Assert.Equal(PatchLineType.Walking, anInt.Line(i).ArcType());
+            Assert.False(((WLine)anInt.Line(i)).IsPurgingAllowed);
         }
     }
 
@@ -294,8 +296,8 @@ public class IntPatch_IntersectionTests
         var aC2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0),
                                                                                  new Direction3D(1, 0, 0)), 0.8),
                                           0, 2 * M_PI, -3, 3);
-        IntPatch_Intersection anInt = Run(aC1, aC2);
-        Assert.True(anInt.IsDone());
+        PatchIntersection anInt = Run(aC1, aC2);
+        Assert.True(anInt.IsDone);
         Assert.True(CheckWalkingLines(anInt, aC1, aC2) >= 1);
     }
 
@@ -306,19 +308,19 @@ public class IntPatch_IntersectionTests
                                                                                 new Direction3D(0, 0, 1)), 1));
         var aD = new TopolTool(aSph);
         SurfaceAdaptor aNear = Plane(new Point3D(0, 0, 1 + 5.0e-6), new Direction3D(0, 0, 1));
-        Assert.True(IntPatch_Intersection.CheckSingularPoints(aSph, aD, aNear, out double aDist));
+        Assert.True(PatchIntersection.CheckSingularPoints(aSph, aD, aNear, out double aDist));
         Assert.Equal(5.0e-6, aDist, 1.0e-9);
-        Assert.Equal(0.0001, IntPatch_Intersection.DefineUVMaxStep(aSph, aD, aNear, new TopolTool(aNear)));
+        Assert.Equal(0.0001, PatchIntersection.DefineUVMaxStep(aSph, aD, aNear, new TopolTool(aNear)));
 
         SurfaceAdaptor aFar = Plane(new Point3D(0, 0, 2), new Direction3D(0, 0, 1));
-        Assert.Equal(0.001, IntPatch_Intersection.DefineUVMaxStep(aSph, aD, aFar, new TopolTool(aFar)));
+        Assert.Equal(0.001, PatchIntersection.DefineUVMaxStep(aSph, aD, aFar, new TopolTool(aFar)));
 
         // The same surface: not singular, infinite distance.
-        Assert.False(IntPatch_Intersection.CheckSingularPoints(aSph, aD, aSph, out double aSame));
+        Assert.False(PatchIntersection.CheckSingularPoints(aSph, aD, aSph, out double aSame));
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aSame));
 
         // A plane has no singular boundary.
-        Assert.False(IntPatch_Intersection.CheckSingularPoints(aFar, new TopolTool(aFar), aSph, out _));
+        Assert.False(PatchIntersection.CheckSingularPoints(aFar, new TopolTool(aFar), aSph, out _));
     }
 
     [Fact]
@@ -329,7 +331,7 @@ public class IntPatch_IntersectionTests
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aV1 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
         var aV2 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
-        IntPatch_Intersection.PrepareSurfaces(aCone, new TopolTool(aCone), aPln, new TopolTool(aPln),
+        PatchIntersection.PrepareSurfaces(aCone, new TopolTool(aCone), aPln, new TopolTool(aPln),
                                               1.0e-7, aV1, aV2);
         Assert.Equal(2, aV1.Length());
         Assert.Equal(-1.0, aV1[0].FirstVParameter());
@@ -344,7 +346,7 @@ public class IntPatch_IntersectionTests
                                                                      M_PI / 6, 0), 0, 2 * M_PI, -1, 1);
         var aV3 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
         var aV4 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
-        IntPatch_Intersection.PrepareSurfaces(aCone2, new TopolTool(aCone2), aPln,
+        PatchIntersection.PrepareSurfaces(aCone2, new TopolTool(aCone2), aPln,
                                               new TopolTool(aPln), 1.0e-7, aV3, aV4);
         Assert.Equal(1, aV3.Length());
         Assert.Same(aCone2, aV3[0]);
@@ -356,14 +358,14 @@ public class IntPatch_IntersectionTests
         static string Bits()
         {
             SurfaceAdaptor aP1 = Patch(), aP2 = Patch(0.3);
-            IntPatch_Intersection anInt = Run(aP1, aP2, thePostProc: false);
+            PatchIntersection anInt = Run(aP1, aP2, thePostProc: false);
             var aSb = new System.Text.StringBuilder();
-            for (int i = 1; i <= anInt.NbLines(); i++)
+            for (int i = 1; i <= anInt.LineCount; i++)
             {
-                var aWL = (IntPatch_WLine)anInt.Line(i);
+                var aWL = (WLine)anInt.Line(i);
                 for (int k = 1; k <= aWL.NbPnts(); k++)
                 {
-                    IntSurf_PntOn2S aP = aWL.Point(k);
+                    PntOn2S aP = aWL.Point(k);
                     aP.Parameters(out double u1, out double v1, out double u2, out double v2);
                     aSb.Append(BitConverter.DoubleToInt64Bits(u1)).Append(BitConverter.DoubleToInt64Bits(v1))
                        .Append(BitConverter.DoubleToInt64Bits(u2)).Append(BitConverter.DoubleToInt64Bits(v2));

@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Api;
+using Kerf.Engine.Fillets.Planar;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -8,7 +12,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.TestHarness;
-using static Occt.ChFi2d_ConstructionError;
+using static Kerf.Engine.Fillets.Planar.ConstructionError;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -22,13 +26,13 @@ public class ChFi2d_BuilderTests
     // A frozen planar face on the closed polygon of the points, as a caller holds it.
     private static Face Polygon(params Point3D[] thePoints)
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon();
+        var aPoly = new MakePolygon();
         foreach (Point3D aP in thePoints)
         {
             aPoly.Add(aP);
         }
         aPoly.Close();
-        return new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face();
+        return new MakeFace(aPoly.Wire(), true).Face();
     }
 
     private static Face Square(double theSize = 10.0) =>
@@ -44,7 +48,7 @@ public class ChFi2d_BuilderTests
     private static double Area(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -53,23 +57,23 @@ public class ChFi2d_BuilderTests
     {
         Face aSquare = Square();
         string aBefore = BRepTextComparison.Write(aSquare);
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
-        Assert.Equal(ChFi2d_Ready, aMaker.Status());
+        var aMaker = new MakeFillet2D(aSquare);
+        Assert.Equal(ConstructionError.Ready, aMaker.Status());
         foreach (Shape aV in Sub(aSquare, ShapeType.Vertex))
         {
             Edge aFillet = aMaker.AddFillet(ShapeCasts.Vertex(aV), 2.0);
-            Assert.Equal(ChFi2d_IsDone, aMaker.Status());
+            Assert.Equal(ConstructionError.IsDone, aMaker.Status());
             Assert.True(aFillet.TShape()!.IsFrozen);
         }
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
         Shape aResult = aMaker.Shape();
-        Assert.Equal(4, aMaker.NbFillet());
-        Assert.Equal(0, aMaker.NbChamfer());
-        Assert.Equal(4, aMaker.NbCurves());
+        Assert.Equal(4, aMaker.FilletCount);
+        Assert.Equal(0, aMaker.ChamferCount);
+        Assert.Equal(4, aMaker.CurveCount);
         Assert.Equal(8, Sub(aResult, ShapeType.Edge).Count);
         Assert.Equal(100.0 - (4.0 - Math.PI) * 4.0, Area(aResult), 1.0e-9);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(aBefore, BRepTextComparison.Write(aSquare));
 
         // every edge of the square is trimmed: its descendant is in the result, and is built from it
@@ -90,17 +94,17 @@ public class ChFi2d_BuilderTests
     public void A_chamfer_trims_its_two_edges_and_leaves_the_others()
     {
         Face aSquare = Square();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
+        var aMaker = new MakeFillet2D(aSquare);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
         NCollection_List<Shape> anEdges = aMap.FindFromIndex(1);
         Edge E1 = ShapeCasts.Edge(anEdges.First()), E2 = ShapeCasts.Edge(anEdges.Last());
         Edge aChamfer = aMaker.AddChamfer(E1, E2, 1.0, 2.0);
-        Assert.Equal(ChFi2d_IsDone, aMaker.Status());
+        Assert.Equal(ConstructionError.IsDone, aMaker.Status());
         Assert.False(aChamfer.IsNull);
         aMaker.Build();
         Shape aResult = aMaker.Shape();
-        Assert.Equal(1, aMaker.NbChamfer());
+        Assert.Equal(1, aMaker.ChamferCount);
         Assert.Equal(5, Sub(aResult, ShapeType.Edge).Count);
         Assert.Equal(100.0 - 1.0, Area(aResult), 1.0e-9);
 
@@ -123,13 +127,13 @@ public class ChFi2d_BuilderTests
     public void A_chamfer_by_distance_and_angle()
     {
         Face aSquare = Square();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
+        var aMaker = new MakeFillet2D(aSquare);
         Vertex aV = ShapeCasts.Vertex(Sub(aSquare, ShapeType.Vertex)[0]);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
         Edge E = ShapeCasts.Edge(aMap.FindFromKey(aV).First());
         aMaker.AddChamfer(E, aV, 2.0, Math.PI / 4.0);
-        Assert.Equal(ChFi2d_IsDone, aMaker.Status());
+        Assert.Equal(ConstructionError.IsDone, aMaker.Status());
         aMaker.Build();
         // a 45 degree chamfer 2 along the edge cuts a right isosceles triangle of legs 2
         Assert.Equal(100.0 - 2.0, Area(aMaker.Shape()), 1.0e-9);
@@ -139,61 +143,61 @@ public class ChFi2d_BuilderTests
     public void Statuses_follow_OCCT()
     {
         // a null face, a face that isn't planar
-        Assert.Equal(ChFi2d_NoFace, new BRepFilletAPI_MakeFillet2d(new Face()).Status());
-        Shape aCylinder = new BRepPrimAPI_MakeCylinder(1.0, 2.0).Shape();
+        Assert.Equal(ConstructionError.NoFace, new MakeFillet2D(new Face()).Status());
+        Shape aCylinder = new ApiMakeCylinder(1.0, 2.0).Shape();
         Face aLateral = ShapeCasts.Face(Sub(aCylinder, ShapeType.Face)
                                            .First(f => Tool.Surface(ShapeCasts.Face(f)) is CylindricalSurface));
-        Assert.Equal(ChFi2d_NotPlanar, new BRepFilletAPI_MakeFillet2d(aLateral).Status());
+        Assert.Equal(ConstructionError.NotPlanar, new MakeFillet2D(aLateral).Status());
 
         Face aSquare = Square();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
+        var aMaker = new MakeFillet2D(aSquare);
         // a vertex not on the face
-        aMaker.AddFillet(new BRepBuilderAPI_MakeVertex(new Point3D(5, 5, 0)).Vertex(), 1.0);
-        Assert.Equal(ChFi2d_ConnexionError, aMaker.Status());
+        aMaker.AddFillet(new MakeVertex(new Point3D(5, 5, 0)).Vertex(), 1.0);
+        Assert.Equal(ConstructionError.ConnexionError, aMaker.Status());
         // a radius too large for the edges
         Vertex aV = ShapeCasts.Vertex(Sub(aSquare, ShapeType.Vertex)[0]);
         aMaker.AddFillet(aV, 20.0);
-        Assert.Equal(ChFi2d_ComputationError, aMaker.Status());
+        Assert.Equal(ConstructionError.ComputationError, aMaker.Status());
         aMaker.Build();
-        Assert.False(aMaker.IsDone());
+        Assert.False(aMaker.IsDone);
         Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
         // a chamfer distance not positive
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
         aMaker.AddChamfer(ShapeCasts.Edge(aMap.FindFromIndex(2).First()), ShapeCasts.Edge(aMap.FindFromIndex(2).Last()), -1.0, 1.0);
-        Assert.Equal(ChFi2d_ParametersError, aMaker.Status());
+        Assert.Equal(ConstructionError.ParametersError, aMaker.Status());
         // a fillet next to a fillet: the second vertex's edges include the first fillet
         Edge aFillet = aMaker.AddFillet(aV, 1.0);
-        Assert.Equal(ChFi2d_IsDone, aMaker.Status());
+        Assert.Equal(ConstructionError.IsDone, aMaker.Status());
         Exploration.Vertices(aFillet, out Vertex aFV, out _);
         aMaker.AddFillet(aFV, 0.5);
-        Assert.Equal(ChFi2d_NotAuthorized, aMaker.Status());
+        Assert.Equal(ConstructionError.NotAuthorized, aMaker.Status());
 
         // two collinear edges are tangent
         Face aFlat = Polygon(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
-        var aFlatMaker = new BRepFilletAPI_MakeFillet2d(aFlat);
+        var aFlatMaker = new MakeFillet2D(aFlat);
         Vertex aMid = ShapeCasts.Vertex(Sub(aFlat, ShapeType.Vertex)
                                            .First(v => Tool.Pnt(ShapeCasts.Vertex(v)).Distance(new Point3D(5, 0, 0)) < 1e-9));
         aFlatMaker.AddFillet(aMid, 1.0);
-        Assert.Equal(ChFi2d_TangencyError, aFlatMaker.Status());
+        Assert.Equal(ConstructionError.TangencyError, aFlatMaker.Status());
     }
 
     [Fact]
     public void Removing_and_modifying_a_fillet()
     {
         Face aSquare = Square();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
+        var aMaker = new MakeFillet2D(aSquare);
         Vertex aV = ShapeCasts.Vertex(Sub(aSquare, ShapeType.Vertex)[2]);
         Edge aFillet = aMaker.AddFillet(aV, 1.0);
         Edge aBigger = aMaker.ModifyFillet(aFillet, 3.0);
-        Assert.Equal(ChFi2d_IsDone, aMaker.Status());
-        Assert.Equal(1, aMaker.NbFillet());
+        Assert.Equal(ConstructionError.IsDone, aMaker.Status());
+        Assert.Equal(1, aMaker.FilletCount);
         aMaker.Build();
         Assert.Equal(100.0 - (4.0 - Math.PI) * 9.0 / 4.0, Area(aMaker.Shape()), 1.0e-9);
 
         Vertex aBack = aMaker.RemoveFillet(aBigger);
         Assert.True(aBack.IsSame(aV));
-        Assert.Equal(0, aMaker.NbFillet());
+        Assert.Equal(0, aMaker.FilletCount);
         aMaker.Build();
         Shape aResult = aMaker.Shape();
         Assert.Equal(100.0, Area(aResult), 1.0e-9);
@@ -210,7 +214,7 @@ public class ChFi2d_BuilderTests
     public void The_builder_on_a_face_already_filleted()
     {
         Face aSquare = Square();
-        var aMaker = new BRepFilletAPI_MakeFillet2d(aSquare);
+        var aMaker = new MakeFillet2D(aSquare);
         foreach (Shape aV in Sub(aSquare, ShapeType.Vertex).Take(2))
         {
             aMaker.AddFillet(ShapeCasts.Vertex(aV), 1.5);
@@ -222,32 +226,32 @@ public class ChFi2d_BuilderTests
         Face aModified = ShapeCasts.Face(aMaker.Shape());
 
         // Init(RefFace, ModFace) finds the fillets (circles) and the chamfers (lines) of the derived face
-        var aBuilder = new ChFi2d_Builder();
+        var aBuilder = new PlanarBuilder();
         aBuilder.Init(aSquare, aModified);
-        Assert.Equal(ChFi2d_Ready, aBuilder.Status());
-        Assert.Equal(2, aBuilder.NbFillet());
-        Assert.Equal(1, aBuilder.NbChamfer());
+        Assert.Equal(ConstructionError.Ready, aBuilder.Status());
+        Assert.Equal(2, aBuilder.FilletCount);
+        Assert.Equal(1, aBuilder.ChamferCount);
         Vertex aBack = aBuilder.RemoveFillet(ShapeCasts.Edge(aBuilder.FilletEdges()[0]));
         Assert.False(aBack.IsNull);
-        Assert.Equal(1, aBuilder.NbFillet());
+        Assert.Equal(1, aBuilder.FilletCount);
         Assert.Equal(100.0 - 0.5 - (4.0 - Math.PI) * 2.25 / 4.0, Area(aBuilder.Result()), 1.0e-9);
 
         // ChFi2d_Builder(F) builds the 3D curves the face's edges lack; these have them, so nothing is copied
-        var aDirect = new ChFi2d_Builder(aSquare);
-        Assert.Equal(ChFi2d_Ready, aDirect.Status());
+        var aDirect = new PlanarBuilder(aSquare);
+        Assert.Equal(ConstructionError.Ready, aDirect.Status());
         aDirect.AddFillet(ShapeCasts.Vertex(Sub(aSquare, ShapeType.Vertex)[0]), 1.0);
-        Assert.Equal(ChFi2d_IsDone, aDirect.Status());
+        Assert.Equal(ConstructionError.IsDone, aDirect.Status());
     }
 
     [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {
-        Edge E1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
-        Edge E2 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 0, 0), new Point3D(10, 10, 0)).Edge();
+        Edge E1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge E2 = new MakeEdge(new Point3D(10, 0, 0), new Point3D(10, 10, 0)).Edge();
         var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
 
         // segments with a common point: the analytical algorithm
-        var aFillet = new ChFi2d_FilletAPI(E1, E2, aPln);
+        var aFillet = new FilletApi(E1, E2, aPln);
         Assert.True(aFillet.Perform(2.0));
         Assert.Equal(1, aFillet.NbResults(new Point3D(10, 0, 0)));
         Edge M1 = new(), M2 = new();
@@ -259,14 +263,14 @@ public class ChFi2d_BuilderTests
         Assert.Equal(8.0, new EdgeCurveAdaptor(M1).LastParameter() - new EdgeCurveAdaptor(M1).FirstParameter(), 1.0e-12);
 
         // apart by a gap: the iterative algorithm
-        Edge E3 = new BRepBuilderAPI_MakeEdge(new Point3D(10, 1.0e-3, 0), new Point3D(10, 10, 0)).Edge();
-        var anIterative = new ChFi2d_FilletAlgo(E1, E3, aPln);
+        Edge E3 = new MakeEdge(new Point3D(10, 1.0e-3, 0), new Point3D(10, 10, 0)).Edge();
+        var anIterative = new FilletAlgo(E1, E3, aPln);
         Assert.True(anIterative.Perform(2.0));
         Edge anArc2 = anIterative.Result(new Point3D(10, 0, 0), ref M1, ref M2);
         Assert.Equal(2.0, new EdgeCurveAdaptor(anArc2).Circle().Radius(), 1.0e-12);
 
         // a chamfer of lengths 1 and 3
-        var aChamfer = new ChFi2d_ChamferAPI(E1, E2);
+        var aChamfer = new ChamferApi(E1, E2);
         Assert.True(aChamfer.Perform());
         Edge aSegment = aChamfer.Result(ref M1, ref M2, 1.0, 3.0);
         var aSeg = new EdgeCurveAdaptor(aSegment);
@@ -276,7 +280,7 @@ public class ChFi2d_BuilderTests
         Assert.True(aChamfer.Result(ref M1, ref M2, 20.0, 1.0).IsNull);
 
         // the analytical algorithm needs two edges
-        Assert.ThrowsAny<TypeMismatchException>(() => new ChFi2d_AnaFilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
-        Assert.ThrowsAny<ConstructionErrorException>(() => new ChFi2d_FilletAlgo(new BRepBuilderAPI_MakeWire(E1).Wire(), aPln));
+        Assert.ThrowsAny<TypeMismatchException>(() => new AnaFilletAlgo(new MakeWire(E1).Wire(), aPln));
+        Assert.ThrowsAny<ConstructionErrorException>(() => new FilletAlgo(new MakeWire(E1).Wire(), aPln));
     }
 }

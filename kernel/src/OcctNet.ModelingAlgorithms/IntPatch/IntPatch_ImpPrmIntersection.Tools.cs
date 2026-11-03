@@ -2,117 +2,120 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // The file-static functions of IntPatch_ImpPrmIntersection.cxx (see IntPatch_ImpPrmIntersection.cs).
 
+using Kerf.Engine.Booleans.Legacy;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.IntPatch_IType;
-using static Occt.IntPatch_SpecPntType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
+using static Kerf.Engine.Intersection.Patches.SpecPntType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Patches;
 
-public partial class IntPatch_ImpPrmIntersection
+public partial class ImpPrmIntersection
 {
-    private static IntPatch_SpecPntType IsSeamOrPole(SurfaceAdaptorBase theQSurf, IntSurf_LineOn2S theLine,
-                                                     bool IsReversed, int theRefIndex, double theTol3D,
-                                                     double theDeltaMax)
+    private static SpecPntType IsSeamOrPole(SurfaceAdaptorBase qSurf, LineOn2S line,
+                                                     bool isReversed, int refIndex, double tol3D,
+                                                     double deltaMax)
     {
-        if ((theRefIndex < 1) || (theRefIndex >= theLine.NbPoints()))
+        if ((refIndex < 1) || (refIndex >= line.PointCount))
         {
-            return IntPatch_SPntNone;
+            return SpecPntType.SPntNone;
         }
 
         // Parameters on Quadric and on parametric for reference point
-        double aUQRef, aVQRef, aUPRef, aVPRef;
-        double aUQNext, aVQNext, aUPNext, aVPNext;
+        double uqRef, vqRef, upRef, vpRef;
+        double uqNext, vqNext, upNext, vpNext;
 
-        Point3D aP3d = theLine.Value(theRefIndex + 1).Value();
+        Point3D p3d = line.Value(refIndex + 1).Value();
 
-        if (IsReversed)
+        if (isReversed)
         {
-            theLine.Value(theRefIndex).Parameters(out aUPRef, out aVPRef, out aUQRef, out aVQRef);
-            theLine.Value(theRefIndex + 1).Parameters(out aUPNext, out aVPNext, out aUQNext, out aVQNext);
+            line.Value(refIndex).Parameters(out upRef, out vpRef, out uqRef, out vqRef);
+            line.Value(refIndex + 1).Parameters(out upNext, out vpNext, out uqNext, out vqNext);
         }
         else
         {
-            theLine.Value(theRefIndex).Parameters(out aUQRef, out aVQRef, out aUPRef, out aVPRef);
-            theLine.Value(theRefIndex + 1).Parameters(out aUQNext, out aVQNext, out aUPNext, out aVPNext);
+            line.Value(refIndex).Parameters(out uqRef, out vqRef, out upRef, out vpRef);
+            line.Value(refIndex + 1).Parameters(out uqNext, out vqNext, out upNext, out vpNext);
         }
 
-        SurfaceKind aType = theQSurf.GetType();
+        SurfaceKind type = qSurf.GetType();
 
-        if ((aType == SurfaceKind.Cone) && (theQSurf.Cone().Apex().SquareDistance(aP3d) < theTol3D * theTol3D))
+        if ((type == SurfaceKind.Cone) && (qSurf.Cone().Apex().SquareDistance(p3d) < tol3D * tol3D))
         {
-            return IntPatch_SPntPoleSeamU;
+            return SpecPntType.SPntPoleSeamU;
         }
-        else if (aType == SurfaceKind.Sphere)
+        else if (type == SurfaceKind.Sphere)
         {
-            double aSqTol = theTol3D * theTol3D;
-            Point3D aP = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, M_PI_2, theQSurf.Sphere());
-            if (aP.SquareDistance(aP3d) < aSqTol)
+            double sqTol = tol3D * tol3D;
+            Point3D p = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, M_PI_2, qSurf.Sphere());
+            if (p.SquareDistance(p3d) < sqTol)
             {
-                return IntPatch_SPntPoleSeamU;
+                return SpecPntType.SPntPoleSeamU;
             }
 
-            aP = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, theQSurf.Sphere());
-            if (aP.SquareDistance(aP3d) < aSqTol)
+            p = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, qSurf.Sphere());
+            if (p.SquareDistance(p3d) < sqTol)
             {
-                return IntPatch_SPntPoleSeamU;
+                return SpecPntType.SPntPoleSeamU;
             }
         }
 
-        double aDeltaU = Math.Abs(aUQRef - aUQNext);
+        double deltaU = Math.Abs(uqRef - uqNext);
 
-        if ((aType != SurfaceKind.Torus) && (aDeltaU < theDeltaMax))
+        if ((type != SurfaceKind.Torus) && (deltaU < deltaMax))
         {
-            return IntPatch_SPntNone;
+            return SpecPntType.SPntNone;
         }
 
-        switch (aType)
+        switch (type)
         {
             case SurfaceKind.Cylinder:
-                return IntPatch_SPntSeamU;
+                return SpecPntType.SPntSeamU;
 
             case SurfaceKind.Torus:
             {
-                double aDeltaV = Math.Abs(aVQRef - aVQNext);
+                double deltaV = Math.Abs(vqRef - vqNext);
 
-                if ((aDeltaU >= theDeltaMax) && (aDeltaV >= theDeltaMax))
+                if ((deltaU >= deltaMax) && (deltaV >= deltaMax))
                 {
-                    return IntPatch_SPntSeamUV;
+                    return SpecPntType.SPntSeamUV;
                 }
 
-                if (aDeltaU >= theDeltaMax)
+                if (deltaU >= deltaMax)
                 {
-                    return IntPatch_SPntSeamU;
+                    return SpecPntType.SPntSeamU;
                 }
 
-                if (aDeltaV >= theDeltaMax)
+                if (deltaV >= deltaMax)
                 {
-                    return IntPatch_SPntSeamV;
+                    return SpecPntType.SPntSeamV;
                 }
             }
 
             break;
             case SurfaceKind.Sphere:
             case SurfaceKind.Cone:
-                return IntPatch_SPntPoleSeamU;
+                return SpecPntType.SPntPoleSeamU;
             default:
                 break;
         }
 
-        return IntPatch_SPntNone;
+        return SpecPntType.SPntNone;
     }
 
-    private static void ComputeTangency(IntPatch_TheSOnBounds solrst, NCollection_Sequence<IntSurf_PathPoint> seqpdep,
-                                        TopolTool Domain, IntPatch_TheSurfFunction Func,
-                                        SurfaceAdaptorBase PSurf, NCollection_Array1<int> Destination)
+    private static void ComputeTangency(TheSOnBounds solrst, NCollection_Sequence<PathPoint> seqpdep,
+                                        TopolTool domain, TheSurfFunction func,
+                                        SurfaceAdaptorBase pSurf, NCollection_Array1<int> destination)
     {
-        int i, k, NbPoints, seqlength;
+        int i, k, nbPoints, seqlength;
         double theparam, test;
         bool fairpt, ispassing;
         Orientation arcorien, vtxorien;
@@ -120,123 +123,123 @@ public partial class IntPatch_ImpPrmIntersection
         // OCCT keeps the vertex handle across the points: in the complex-transition branch of an INTERNAL or EXTERNAL
         // arc it is the one an earlier point left (null if none), as here.
         HVertex? vtx = null, vtxbis;
-        IntPatch_ThePathPointOfTheSOnBounds PStart;
-        IntSurf_PathPoint PPoint = new();
+        ThePathPointOfTheSOnBounds pStart;
+        PathPoint pPoint = new();
         Vector3D vectg;
         Direction2D dirtg;
         Vector3D d1u, d1v, v1, v2 = new();
         Point2D p2d;
         Vector2D d2d;
         //
-        math_Vector X = new(1, 2);
-        math_Vector F = new(1, 1);
-        Matrix D = new(1, 1, 1, 2);
+        math_Vector x = new(1, 2);
+        math_Vector f = new(1, 1);
+        Matrix d = new(1, 1, 1, 2);
         //
         seqlength = 0;
-        NbPoints = solrst.NbPoints();
-        for (i = 1; i <= NbPoints; i++)
+        nbPoints = solrst.PointCount;
+        for (i = 1; i <= nbPoints; i++)
         {
-            if (Destination.Value(i) == 0)
+            if (destination.Value(i) == 0)
             {
-                PStart = solrst.Point(i);
-                thearc = PStart.Arc();
-                theparam = PStart.Parameter();
-                arcorien = Domain.Orientation(thearc);
+                pStart = solrst.Point(i);
+                thearc = pStart.Arc();
+                theparam = pStart.Parameter();
+                arcorien = domain.Orientation(thearc);
                 ispassing = (arcorien == Internal || arcorien == External);
 
                 thearc.D0(theparam, out p2d);
-                X[1] = p2d.X();
-                X[2] = p2d.Y();
-                PPoint.SetValue(PStart.Value(), X[1], X[2]);
+                x[1] = p2d.X();
+                x[2] = p2d.Y();
+                pPoint.SetValue(pStart.Value(), x[1], x[2]);
 
-                Func.Values(X, F, D);
-                if (Func.IsTangent())
+                func.Values(x, f, d);
+                if (func.IsTangent())
                 {
-                    PPoint.SetTangency(true);
-                    Destination.SetValue(i, seqlength + 1);
-                    if (!PStart.IsNew())
+                    pPoint.SetTangency(true);
+                    destination.SetValue(i, seqlength + 1);
+                    if (!pStart.IsNew())
                     {
-                        vtx = PStart.Vertex();
-                        for (k = i + 1; k <= NbPoints; k++)
+                        vtx = pStart.Vertex();
+                        for (k = i + 1; k <= nbPoints; k++)
                         {
-                            if (Destination.Value(k) == 0)
+                            if (destination.Value(k) == 0)
                             {
-                                PStart = solrst.Point(k);
-                                if (!PStart.IsNew())
+                                pStart = solrst.Point(k);
+                                if (!pStart.IsNew())
                                 {
-                                    vtxbis = PStart.Vertex();
-                                    if (Domain.Identical(vtx, vtxbis))
+                                    vtxbis = pStart.Vertex();
+                                    if (domain.Identical(vtx, vtxbis))
                                     {
-                                        thearc = PStart.Arc();
-                                        theparam = PStart.Parameter();
-                                        arcorien = Domain.Orientation(thearc);
+                                        thearc = pStart.Arc();
+                                        theparam = pStart.Parameter();
+                                        arcorien = domain.Orientation(thearc);
                                         ispassing = ispassing
                                                     && (arcorien == Internal || arcorien == External);
 
                                         thearc.D0(theparam, out p2d);
-                                        PPoint.AddUV(p2d.X(), p2d.Y());
-                                        Destination.SetValue(k, seqlength + 1);
+                                        pPoint.AddUV(p2d.X(), p2d.Y());
+                                        destination.SetValue(k, seqlength + 1);
                                     }
                                 }
                             }
                         }
                     }
-                    PPoint.SetPassing(ispassing);
-                    seqpdep.Append(PPoint);
+                    pPoint.SetPassing(ispassing);
+                    seqpdep.Append(pPoint);
                     seqlength++;
                 }
                 else
                 { // on a un point de depart potentiel
 
-                    vectg = Func.Direction3d();
-                    dirtg = Func.Direction2d();
+                    vectg = func.Direction3d();
+                    dirtg = func.Direction2d();
 
-                    PSurf.D1(X[1], X[2], out _, out d1u, out d1v);
+                    pSurf.D1(x[1], x[2], out _, out d1u, out d1v);
                     thearc.D1(theparam, out p2d, out d2d);
                     v2.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                     v1 = d1u.Crossed(d1v);
 
                     test = vectg.Dot(v1.Crossed(v2));
-                    if (PStart.IsNew())
+                    if (pStart.IsNew())
                     {
                         if ((test < 0.0 && arcorien == Forward) || (test > 0.0 && arcorien == Reversed))
                         {
                             vectg.Reverse();
                             dirtg.Reverse();
                         }
-                        PPoint.SetDirections(vectg, dirtg);
-                        PPoint.SetPassing(ispassing);
-                        Destination.SetValue(i, seqlength + 1);
-                        seqpdep.Append(PPoint);
+                        pPoint.SetDirections(vectg, dirtg);
+                        pPoint.SetPassing(ispassing);
+                        destination.SetValue(i, seqlength + 1);
+                        seqpdep.Append(pPoint);
                         seqlength++;
                     }
                     else
                     { // traiter la transition complexe
                         Direction3D bidnorm = new(1.0, 1.0, 1.0);
                         double tole = 1.0e-8;
-                        Orientation LocTrans;
-                        TopTrans_CurveTransition comptrans = new();
+                        Orientation locTrans;
+                        CurveTransition comptrans = new();
                         comptrans.Reset(new Direction3D(vectg), bidnorm, 0.0);
                         if (arcorien == Forward || arcorien == Reversed)
                         {
                             // pour essai
 
-                            vtx = PStart.Vertex();
-                            vtxorien = Domain.Orientation(vtx);
+                            vtx = pStart.Vertex();
+                            vtxorien = domain.Orientation(vtx);
                             if (Math.Abs(test) <= tole)
                             {
-                                LocTrans = External; // et pourquoi pas INTERNAL
+                                locTrans = External; // et pourquoi pas INTERNAL
                             }
                             else
                             {
                                 if (((test > 0.0) && arcorien == Forward)
                                     || ((test < 0.0) && arcorien == Reversed))
                                 {
-                                    LocTrans = Forward;
+                                    locTrans = Forward;
                                 }
                                 else
                                 {
-                                    LocTrans = Reversed;
+                                    locTrans = Reversed;
                                 }
                                 if (arcorien == Reversed)
                                 {
@@ -244,27 +247,27 @@ public partial class IntPatch_ImpPrmIntersection
                                 }
                             }
 
-                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, LocTrans, vtxorien);
+                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, locTrans, vtxorien);
                         }
-                        Destination.SetValue(i, seqlength + 1);
-                        for (k = i + 1; k <= NbPoints; k++)
+                        destination.SetValue(i, seqlength + 1);
+                        for (k = i + 1; k <= nbPoints; k++)
                         {
-                            if (Destination.Value(k) == 0)
+                            if (destination.Value(k) == 0)
                             {
-                                PStart = solrst.Point(k);
-                                if (!PStart.IsNew())
+                                pStart = solrst.Point(k);
+                                if (!pStart.IsNew())
                                 {
-                                    vtxbis = PStart.Vertex();
-                                    if (Domain.Identical(vtx!, vtxbis))
+                                    vtxbis = pStart.Vertex();
+                                    if (domain.Identical(vtx!, vtxbis))
                                     {
-                                        thearc = PStart.Arc();
-                                        theparam = PStart.Parameter();
-                                        arcorien = Domain.Orientation(thearc);
+                                        thearc = pStart.Arc();
+                                        theparam = pStart.Parameter();
+                                        arcorien = domain.Orientation(thearc);
 
-                                        PPoint.AddUV(X[1], X[2]);
+                                        pPoint.AddUV(x[1], x[2]);
 
                                         thearc.D1(theparam, out p2d, out d2d);
-                                        PPoint.AddUV(p2d.X(), p2d.Y());
+                                        pPoint.AddUV(p2d.X(), p2d.Y());
 
                                         if (arcorien == Forward || arcorien == Reversed)
                                         {
@@ -272,21 +275,21 @@ public partial class IntPatch_ImpPrmIntersection
                                             v2.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                             test = vectg.Dot(v1.Crossed(v2));
-                                            vtxorien = Domain.Orientation(PStart.Vertex());
+                                            vtxorien = domain.Orientation(pStart.Vertex());
                                             if (Math.Abs(test) <= tole)
                                             {
-                                                LocTrans = External; // et pourquoi pas INTERNAL
+                                                locTrans = External; // et pourquoi pas INTERNAL
                                             }
                                             else
                                             {
                                                 if (((test > 0.0) && arcorien == Forward)
                                                     || ((test < 0.0) && arcorien == Reversed))
                                                 {
-                                                    LocTrans = Forward;
+                                                    locTrans = Forward;
                                                 }
                                                 else
                                                 {
-                                                    LocTrans = Reversed;
+                                                    locTrans = Reversed;
                                                 }
                                                 if (arcorien == Reversed)
                                                 {
@@ -294,9 +297,9 @@ public partial class IntPatch_ImpPrmIntersection
                                                 }
                                             }
 
-                                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, LocTrans, vtxorien);
+                                            comptrans.Compare(tole, new Direction3D(v2), bidnorm, 0.0, locTrans, vtxorien);
                                         }
-                                        Destination.SetValue(k, seqlength + 1);
+                                        destination.SetValue(k, seqlength + 1);
                                     }
                                 }
                             }
@@ -304,15 +307,15 @@ public partial class IntPatch_ImpPrmIntersection
                         fairpt = true;
                         if (!ispassing)
                         {
-                            Containment Before = comptrans.StateBefore();
-                            Containment After = comptrans.StateAfter();
-                            if ((Before == Unknown) || (After == Unknown))
+                            Containment before = comptrans.StateBefore();
+                            Containment after = comptrans.StateAfter();
+                            if ((before == Unknown) || (after == Unknown))
                             {
                                 fairpt = false;
                             }
-                            else if (Before == In)
+                            else if (before == In)
                             {
-                                if (After == In)
+                                if (after == In)
                                 {
                                     ispassing = true;
                                 }
@@ -324,7 +327,7 @@ public partial class IntPatch_ImpPrmIntersection
                             }
                             else
                             {
-                                if (After != In)
+                                if (after != In)
                                 {
                                     fairpt = false;
                                 }
@@ -332,18 +335,18 @@ public partial class IntPatch_ImpPrmIntersection
                         }
                         if (fairpt)
                         {
-                            PPoint.SetDirections(vectg, dirtg);
-                            PPoint.SetPassing(ispassing);
-                            seqpdep.Append(PPoint);
+                            pPoint.SetDirections(vectg, dirtg);
+                            pPoint.SetPassing(ispassing);
+                            seqpdep.Append(pPoint);
                             seqlength++;
                         }
                         else
                         { // il faut remettre en "ordre" si on ne garde pas le point.
-                            for (k = i; k <= NbPoints; k++)
+                            for (k = i; k <= nbPoints; k++)
                             {
-                                if (Destination.Value(k) == seqlength + 1)
+                                if (destination.Value(k) == seqlength + 1)
                                 {
-                                    Destination.SetValue(k, -Destination.Value(k));
+                                    destination.SetValue(k, -destination.Value(k));
                                 }
                             }
                         }
@@ -353,33 +356,33 @@ public partial class IntPatch_ImpPrmIntersection
         }
     }
 
-    private static void Recadre(bool _, SurfaceKind typeS1, SurfaceKind typeS2, ref IntPatch_Point pt,
-                                IntPatch_TheIWLineOfTheIWalking iwline, int Param, double U1, double V1, double U2,
-                                double V2)
+    private static void Recadre(bool _, SurfaceKind typeS1, SurfaceKind typeS2, ref PatchPoint pt,
+                                PatchTheIWLineOfTheIWalking iwline, int param, double u1, double v1, double u2,
+                                double v2)
     {
-        iwline.Line().Value(Param).Parameters(out double U1p, out double V1p, out double U2p, out double V2p);
+        iwline.Line().Value(param).Parameters(out double u1p, out double v1p, out double u2p, out double v2p);
         switch (typeS1)
         {
             case SurfaceKind.Torus:
-                while (V1 < (V1p - 1.5 * M_PI))
+                while (v1 < (v1p - 1.5 * M_PI))
                 {
-                    V1 += M_PI + M_PI;
+                    v1 += M_PI + M_PI;
                 }
-                while (V1 > (V1p + 1.5 * M_PI))
+                while (v1 > (v1p + 1.5 * M_PI))
                 {
-                    V1 -= M_PI + M_PI;
+                    v1 -= M_PI + M_PI;
                 }
                 goto case SurfaceKind.Cylinder;
             case SurfaceKind.Cylinder:
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
-                while (U1 < (U1p - 1.5 * M_PI))
+                while (u1 < (u1p - 1.5 * M_PI))
                 {
-                    U1 += M_PI + M_PI;
+                    u1 += M_PI + M_PI;
                 }
-                while (U1 > (U1p + 1.5 * M_PI))
+                while (u1 > (u1p + 1.5 * M_PI))
                 {
-                    U1 -= M_PI + M_PI;
+                    u1 -= M_PI + M_PI;
                 }
                 break;
             default:
@@ -388,124 +391,124 @@ public partial class IntPatch_ImpPrmIntersection
         switch (typeS2)
         {
             case SurfaceKind.Torus:
-                while (V2 < (V2p - 1.5 * M_PI))
+                while (v2 < (v2p - 1.5 * M_PI))
                 {
-                    V2 += M_PI + M_PI;
+                    v2 += M_PI + M_PI;
                 }
-                while (V2 > (V2p + 1.5 * M_PI))
+                while (v2 > (v2p + 1.5 * M_PI))
                 {
-                    V2 -= M_PI + M_PI;
+                    v2 -= M_PI + M_PI;
                 }
                 goto case SurfaceKind.Cylinder;
             case SurfaceKind.Cylinder:
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
-                while (U2 < (U2p - 1.5 * M_PI))
+                while (u2 < (u2p - 1.5 * M_PI))
                 {
-                    U2 += M_PI + M_PI;
+                    u2 += M_PI + M_PI;
                 }
-                while (U2 > (U2p + 1.5 * M_PI))
+                while (u2 > (u2p + 1.5 * M_PI))
                 {
-                    U2 -= M_PI + M_PI;
+                    u2 -= M_PI + M_PI;
                 }
                 break;
             default:
                 break;
         }
-        pt.SetParameters(U1, V1, U2, V2);
+        pt.SetParameters(u1, v1, u2, v2);
     }
 
-    private static double GetLocalStep(SurfaceAdaptorBase theSurf, double theStep)
+    private static double GetLocalStep(SurfaceAdaptorBase surf, double step)
     {
-        double aLocalStep = theStep;
-        if (theSurf.UContinuity() > C0 && theSurf.VContinuity() > C0)
+        double localStep = step;
+        if (surf.UContinuity() > C0 && surf.VContinuity() > C0)
         {
-            SurfaceKind aSType = theSurf.GetType();
+            SurfaceKind sType = surf.GetType();
 
-            if (aSType == SurfaceKind.BezierSurface || aSType == SurfaceKind.BSplineSurface)
+            if (sType == SurfaceKind.BezierSurface || sType == SurfaceKind.BSplineSurface)
             {
-                double aMinRes;
-                int aMaxDeg;
-                double aLimRes = 1.0e-10;
+                double minRes;
+                int maxDeg;
+                double limRes = 1.0e-10;
 
-                aMinRes = Math.Min(theSurf.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
-                                   theSurf.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
-                aMaxDeg = Math.Max(theSurf.UDegree(), theSurf.VDegree());
-                if (aMinRes < aLimRes && aMaxDeg > 3)
+                minRes = Math.Min(surf.UResolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
+                                   surf.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion()));
+                maxDeg = Math.Max(surf.UDegree(), surf.VDegree());
+                if (minRes < limRes && maxDeg > 3)
                 {
-                    aLocalStep = 0.0001;
+                    localStep = 0.0001;
                 }
             }
         }
-        if (theSurf.UContinuity() == C0)
+        if (surf.UContinuity() == C0)
         {
-            int aNbInt = theSurf.NbUIntervals(C1);
-            if (aNbInt > 1)
+            int nbInt = surf.NbUIntervals(C1);
+            if (nbInt > 1)
             {
-                NCollection_Array1<double> anInts = new(1, aNbInt + 1);
-                theSurf.UIntervals(anInts, C1);
-                double aMinInt = global::Kerf.Engine.Foundation.Precision.Infinite();
-                for (int i = 1; i <= aNbInt; ++i)
+                NCollection_Array1<double> ints = new(1, nbInt + 1);
+                surf.UIntervals(ints, C1);
+                double minInt = global::Kerf.Engine.Foundation.Precision.Infinite();
+                for (int i = 1; i <= nbInt; ++i)
                 {
-                    aMinInt = Math.Min(aMinInt, anInts.Value(i + 1) - anInts.Value(i));
+                    minInt = Math.Min(minInt, ints.Value(i + 1) - ints.Value(i));
                 }
 
-                aMinInt /= theSurf.LastUParameter() - theSurf.FirstUParameter();
-                if (aMinInt < 0.002)
+                minInt /= surf.LastUParameter() - surf.FirstUParameter();
+                if (minInt < 0.002)
                 {
-                    aLocalStep = 0.0001;
-                }
-            }
-        }
-
-        if (theSurf.VContinuity() == C0)
-        {
-            int aNbInt = theSurf.NbVIntervals(C1);
-            if (aNbInt > 1)
-            {
-                NCollection_Array1<double> anInts = new(1, aNbInt + 1);
-                theSurf.VIntervals(anInts, C1);
-                double aMinInt = global::Kerf.Engine.Foundation.Precision.Infinite();
-                for (int i = 1; i <= aNbInt; ++i)
-                {
-                    aMinInt = Math.Min(aMinInt, anInts.Value(i + 1) - anInts.Value(i));
-                }
-
-                aMinInt /= theSurf.LastVParameter() - theSurf.FirstVParameter();
-                if (aMinInt < 0.002)
-                {
-                    aLocalStep = 0.0001;
+                    localStep = 0.0001;
                 }
             }
         }
 
-        aLocalStep = Math.Min(theStep, aLocalStep);
-        return aLocalStep;
+        if (surf.VContinuity() == C0)
+        {
+            int nbInt = surf.NbVIntervals(C1);
+            if (nbInt > 1)
+            {
+                NCollection_Array1<double> ints = new(1, nbInt + 1);
+                surf.VIntervals(ints, C1);
+                double minInt = global::Kerf.Engine.Foundation.Precision.Infinite();
+                for (int i = 1; i <= nbInt; ++i)
+                {
+                    minInt = Math.Min(minInt, ints.Value(i + 1) - ints.Value(i));
+                }
+
+                minInt /= surf.LastVParameter() - surf.FirstVParameter();
+                if (minInt < 0.002)
+                {
+                    localStep = 0.0001;
+                }
+            }
+        }
+
+        localStep = Math.Min(step, localStep);
+        return localStep;
     }
 
     // correct U parameter of the start point of line on Quadric
     // (change 0->2PI or vs, if necessary)
-    private static double AdjustUFirst(double U1, double U2)
+    private static double AdjustUFirst(double u1, double u2)
     {
-        double u = U1;
+        double u = u1;
 
         // case: no adjustment
-        if (U1 > 0.0 && U1 < (2.0 * M_PI))
+        if (u1 > 0.0 && u1 < (2.0 * M_PI))
         {
             return u;
         }
 
         // case: near '0'
-        if (U1 == 0.0 || Math.Abs(U1) <= 1.0e-9)
+        if (u1 == 0.0 || Math.Abs(u1) <= 1.0e-9)
         {
-            if (U2 > 0.0 && U2 < (2.0 * M_PI))
+            if (u2 > 0.0 && u2 < (2.0 * M_PI))
             {
-                u = (U2 < ((2.0 * M_PI) - U2)) ? 0.0 : (2.0 * M_PI);
+                u = (u2 < ((2.0 * M_PI) - u2)) ? 0.0 : (2.0 * M_PI);
             }
             else
             {
-                double uu = U2;
-                if (U2 > (2.0 * M_PI))
+                double uu = u2;
+                if (u2 > (2.0 * M_PI))
                 {
                     while (uu > (2.0 * M_PI))
                     {
@@ -524,16 +527,16 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
         // case: near '2PI'
-        else if (U1 == (2.0 * M_PI) || Math.Abs((2.0 * M_PI) - Math.Abs(U1)) <= 1.0e-9)
+        else if (u1 == (2.0 * M_PI) || Math.Abs((2.0 * M_PI) - Math.Abs(u1)) <= 1.0e-9)
         {
-            if (U2 > 0.0 && U2 < (2.0 * M_PI))
+            if (u2 > 0.0 && u2 < (2.0 * M_PI))
             {
-                u = (U2 < ((2.0 * M_PI) - U2)) ? 0.0 : (2.0 * M_PI);
+                u = (u2 < ((2.0 * M_PI) - u2)) ? 0.0 : (2.0 * M_PI);
             }
             else
             {
-                double uu = U2;
-                if (U2 > (2.0 * M_PI))
+                double uu = u2;
+                if (u2 > (2.0 * M_PI))
                 {
                     while (uu > (2.0 * M_PI))
                     {
@@ -554,14 +557,14 @@ public partial class IntPatch_ImpPrmIntersection
         // case: '<0. || >2PI'
         else
         {
-            if (U1 < 0.0)
+            if (u1 < 0.0)
             {
                 while (u < 0.0)
                 {
                     u += 2.0 * M_PI;
                 }
             }
-            if (U1 > (2.0 * M_PI))
+            if (u1 > (2.0 * M_PI))
             {
                 while (u > (2.0 * M_PI))
                 {
@@ -574,37 +577,37 @@ public partial class IntPatch_ImpPrmIntersection
     }
 
     // collect vertices, reject equals
-    private static IntSurf_LineOn2S GetVertices(IntPatch_PointLine thePLine, double TOL3D, double TOL2D)
+    private static LineOn2S GetVertices(PointLine pLine, double tol3D, double tol2D)
     {
-        IntSurf_LineOn2S vertices = new();
+        LineOn2S vertices = new();
 
-        double U1, U2, V1, V2;
+        double u1, u2, v1, v2;
         int i, k;
-        int NbVrt = thePLine.NbVertex();
+        int nbVrt = pLine.VertexCount;
 
-        NCollection_Array1<int> anVrts = new(1, NbVrt);
-        anVrts.Init(0);
+        NCollection_Array1<int> vrts = new(1, nbVrt);
+        vrts.Init(0);
 
         // check equal vertices
-        for (i = 1; i <= NbVrt; i++)
+        for (i = 1; i <= nbVrt; i++)
         {
-            if (anVrts.Value(i) == -1)
+            if (vrts.Value(i) == -1)
             {
                 continue;
             }
 
-            IntPatch_Point Pi = thePLine.Vertex(i);
+            PatchPoint pi = pLine.Vertex(i);
 
-            for (k = (i + 1); k <= NbVrt; k++)
+            for (k = (i + 1); k <= nbVrt; k++)
             {
-                if (anVrts.Value(k) == -1)
+                if (vrts.Value(k) == -1)
                 {
                     continue;
                 }
 
-                IntPatch_Point Pk = thePLine.Vertex(k);
+                PatchPoint pk = pLine.Vertex(k);
 
-                if (Pi.Value().Distance(Pk.Value()) <= TOL3D)
+                if (pi.Value().Distance(pk.Value()) <= tol3D)
                 {
                     // suggest the points are equal;
                     // test 2d parameters on surface
@@ -613,198 +616,198 @@ public partial class IntPatch_ImpPrmIntersection
                     bool sameU2 = false;
                     bool sameV2 = false;
 
-                    Pi.ParametersOnS1(out U1, out V1);
-                    Pk.ParametersOnS1(out U2, out V2);
-                    if (Math.Abs(U1 - U2) <= TOL2D)
+                    pi.ParametersOnS1(out u1, out v1);
+                    pk.ParametersOnS1(out u2, out v2);
+                    if (Math.Abs(u1 - u2) <= tol2D)
                     {
                         sameU1 = true;
                     }
-                    if (Math.Abs(V1 - V2) <= TOL2D)
+                    if (Math.Abs(v1 - v2) <= tol2D)
                     {
                         sameV1 = true;
                     }
 
-                    Pi.ParametersOnS2(out U1, out V1);
-                    Pk.ParametersOnS2(out U2, out V2);
-                    if (Math.Abs(U1 - U2) <= TOL2D)
+                    pi.ParametersOnS2(out u1, out v1);
+                    pk.ParametersOnS2(out u2, out v2);
+                    if (Math.Abs(u1 - u2) <= tol2D)
                     {
                         sameU2 = true;
                     }
-                    if (Math.Abs(V1 - V2) <= TOL2D)
+                    if (Math.Abs(v1 - v2) <= tol2D)
                     {
                         sameV2 = true;
                     }
 
                     if ((sameU1 && sameV1) && (sameU2 && sameV2))
                     {
-                        anVrts.SetValue(k, -1);
+                        vrts.SetValue(k, -1);
                     }
                 }
             }
         }
 
         // copy further processed vertices
-        for (i = 1; i <= NbVrt; i++)
+        for (i = 1; i <= nbVrt; i++)
         {
-            if (anVrts.Value(i) == -1)
+            if (vrts.Value(i) == -1)
             {
                 continue;
             }
-            vertices.Add(thePLine.Vertex(i).PntOn2S());
+            vertices.Add(pLine.Vertex(i).PntOn2S());
         }
         return vertices;
     }
 
-    private static void SearchVertices(IntSurf_LineOn2S Line, IntSurf_LineOn2S Vertices, NCollection_Array1<int> PTypes)
+    private static void SearchVertices(LineOn2S line, LineOn2S vertices, NCollection_Array1<int> pTypes)
     {
-        int nbp = Line.NbPoints(), nbv = Vertices.NbPoints();
+        int nbp = line.PointCount, nbv = vertices.PointCount;
         for (int ip = 1; ip <= nbp; ip++)
         {
-            IntSurf_PntOn2S aP = Line.Value(ip);
+            PntOn2S p = line.Value(ip);
             int type = 0;
             for (int iv = 1; iv <= nbv; iv++)
             {
-                IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                PntOn2S v = vertices.Value(iv);
+                if (p.IsSame(v, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     type = iv;
                     break;
                 }
             }
-            PTypes.SetValue(ip, type);
+            pTypes.SetValue(ip, type);
         }
     }
 
-    private static bool IsSeamParameter(double U, double TOL2D) =>
-        (Math.Abs(U) <= TOL2D || Math.Abs(2.0 * M_PI - U) <= TOL2D);
+    private static bool IsSeamParameter(double u, double tol2D) =>
+        (Math.Abs(u) <= tol2D || Math.Abs(2.0 * M_PI - u) <= tol2D);
 
     private static double AdjustU(double U)
     {
-        double u = U, DBLPI = 2.0 * M_PI;
-        if (u < 0.0 || u > DBLPI)
+        double u = U, dblpi = 2.0 * M_PI;
+        if (u < 0.0 || u > dblpi)
         {
             if (u < 0.0)
             {
                 while (u < 0.0)
                 {
-                    u += DBLPI;
+                    u += dblpi;
                 }
             }
             else
             {
-                while (u > DBLPI)
+                while (u > dblpi)
                 {
-                    u -= DBLPI;
+                    u -= dblpi;
                 }
             }
         }
         return u;
     }
 
-    private static void Correct2DBounds(double UF, double UL, double VF, double VL, double TOL2D, ref double U,
-                                        ref double V)
+    private static void Correct2DBounds(double uf, double ul, double vf, double vl, double tol2D, ref double u,
+                                        ref double v)
     {
-        double Eps = 1.0e-16;
-        double dUF = Math.Abs(U - UF);
-        double dUL = Math.Abs(U - UL);
-        double dVF = Math.Abs(V - VF);
-        double dVL = Math.Abs(V - VL);
-        if (dUF <= TOL2D && dUF > Eps)
+        double eps = 1.0e-16;
+        double dUF = Math.Abs(u - uf);
+        double dUL = Math.Abs(u - ul);
+        double dVF = Math.Abs(v - vf);
+        double dVL = Math.Abs(v - vl);
+        if (dUF <= tol2D && dUF > eps)
         {
-            U = UF;
+            u = uf;
         }
-        if (dUL <= TOL2D && dUL > Eps)
+        if (dUL <= tol2D && dUL > eps)
         {
-            U = UL;
+            u = ul;
         }
-        if (dVF <= TOL2D && dVF > Eps)
+        if (dVF <= tol2D && dVF > eps)
         {
-            V = VF;
+            v = vf;
         }
-        if (dVL <= TOL2D && dVL > Eps)
+        if (dVL <= tol2D && dVL > eps)
         {
-            V = VL;
+            v = vl;
         }
     }
 
-    private static void AdjustLine(IntSurf_LineOn2S Line, bool IsReversed, SurfaceAdaptorBase QSurf, double TOL2D)
+    private static void AdjustLine(LineOn2S line, bool isReversed, SurfaceAdaptorBase qSurf, double tol2D)
     {
-        double VF = QSurf.FirstVParameter();
-        double VL = QSurf.LastVParameter();
-        double UF = QSurf.FirstUParameter();
-        double UL = QSurf.LastUParameter();
+        double vf = qSurf.FirstVParameter();
+        double vl = qSurf.LastVParameter();
+        double uf = qSurf.FirstUParameter();
+        double ul = qSurf.LastUParameter();
 
-        int nbp = Line.NbPoints();
-        double U, V;
+        int nbp = line.PointCount;
+        double u, v;
         for (int ip = 1; ip <= nbp; ip++)
         {
-            if (IsReversed)
+            if (isReversed)
             {
-                Line.Value(ip).ParametersOnS2(out U, out V);
-                U = AdjustU(U);
-                Correct2DBounds(UF, UL, VF, VL, TOL2D, ref U, ref V);
-                Line.SetUV(ip, false, U, V);
+                line.Value(ip).ParametersOnS2(out u, out v);
+                u = AdjustU(u);
+                Correct2DBounds(uf, ul, vf, vl, tol2D, ref u, ref v);
+                line.SetUV(ip, false, u, v);
             }
             else
             {
-                Line.Value(ip).ParametersOnS1(out U, out V);
-                U = AdjustU(U);
-                Correct2DBounds(UF, UL, VF, VL, TOL2D, ref U, ref V);
-                Line.SetUV(ip, true, U, V);
+                line.Value(ip).ParametersOnS1(out u, out v);
+                u = AdjustU(u);
+                Correct2DBounds(uf, ul, vf, vl, tol2D, ref u, ref v);
+                line.SetUV(ip, true, u, v);
             }
         }
     }
 
-    private static bool InsertSeamVertices(IntSurf_LineOn2S Line, bool IsReversed, IntSurf_LineOn2S Vertices,
-                                           NCollection_Array1<int> PTypes, double TOL2D)
+    private static bool InsertSeamVertices(LineOn2S line, bool isReversed, LineOn2S vertices,
+                                           NCollection_Array1<int> pTypes, double tol2D)
     {
         bool result = false;
-        int nbp = Line.NbPoints();
-        double U, V;
+        int nbp = line.PointCount;
+        double U, v;
         for (int ip = 1; ip <= nbp; ip++)
         {
-            int ipt = PTypes.Value(ip);
+            int ipt = pTypes.Value(ip);
             if (ipt != 0)
             {
-                IntSurf_PntOn2S aP = Line.Value(ip);
-                if (IsReversed)
+                PntOn2S p = line.Value(ip);
+                if (isReversed)
                 {
-                    aP.ParametersOnS2(out U, out V); // S2 - quadric
+                    p.ParametersOnS2(out U, out v); // S2 - quadric
                 }
                 else
                 {
-                    aP.ParametersOnS1(out U, out V); // S1 - quadric
+                    p.ParametersOnS1(out U, out v); // S1 - quadric
                 }
                 U = AdjustU(U);
-                if (IsSeamParameter(U, TOL2D))
+                if (IsSeamParameter(U, tol2D))
                 {
                     if (ip == 1 || ip == nbp)
                     {
-                        double U1, V1;
+                        double u1, v1;
                         int ipp = (ip == 1) ? (ip + 1) : (ip - 1);
-                        if (IsReversed)
+                        if (isReversed)
                         {
-                            Line.Value(ipp).ParametersOnS2(out U1, out V1); // S2 - quadric
+                            line.Value(ipp).ParametersOnS2(out u1, out v1); // S2 - quadric
                         }
                         else
                         {
-                            Line.Value(ipp).ParametersOnS1(out U1, out V1); // S1 - quadric
+                            line.Value(ipp).ParametersOnS1(out u1, out v1); // S1 - quadric
                         }
-                        double u = AdjustUFirst(U, U1);
+                        double u = AdjustUFirst(U, u1);
                         if (Math.Abs(u - U) >= 1.5 * M_PI)
                         {
-                            double U2, V2;
-                            if (IsReversed)
+                            double u2, v2;
+                            if (isReversed)
                             {
-                                Line.Value(ip).ParametersOnS1(out U2, out V2); // prm
-                                Line.SetUV(ip, false, u, V);
-                                Line.SetUV(ip, true, U2, V2);
+                                line.Value(ip).ParametersOnS1(out u2, out v2); // prm
+                                line.SetUV(ip, false, u, v);
+                                line.SetUV(ip, true, u2, v2);
                             }
                             else
                             {
-                                Line.Value(ip).ParametersOnS2(out U2, out V2); // prm
-                                Line.SetUV(ip, true, u, V);
-                                Line.SetUV(ip, false, U2, V2);
+                                line.Value(ip).ParametersOnS2(out u2, out v2); // prm
+                                line.SetUV(ip, true, u, v);
+                                line.SetUV(ip, false, u2, v2);
                             }
                         }
                     }
@@ -812,69 +815,69 @@ public partial class IntPatch_ImpPrmIntersection
                     {
                         int ipp = ip - 1;
                         int ipn = ip + 1;
-                        double U1, V1, U2, V2;
-                        if (IsReversed)
+                        double u1, v1, u2, v2;
+                        if (isReversed)
                         {
-                            Line.Value(ipp).ParametersOnS2(out U1, out V1); // quad
-                            Line.Value(ipn).ParametersOnS2(out U2, out V2); // quad
+                            line.Value(ipp).ParametersOnS2(out u1, out v1); // quad
+                            line.Value(ipn).ParametersOnS2(out u2, out v2); // quad
                         }
                         else
                         {
-                            Line.Value(ipp).ParametersOnS1(out U1, out V1); // quad
-                            Line.Value(ipn).ParametersOnS1(out U2, out V2); // quad
+                            line.Value(ipp).ParametersOnS1(out u1, out v1); // quad
+                            line.Value(ipn).ParametersOnS1(out u2, out v2); // quad
                         }
-                        U1 = AdjustU(U1);
-                        U2 = AdjustU(U2);
-                        bool pnearZero = Math.Abs(U1) < Math.Abs(2.0 * M_PI - U1);
+                        u1 = AdjustU(u1);
+                        u2 = AdjustU(u2);
+                        bool pnearZero = Math.Abs(u1) < Math.Abs(2.0 * M_PI - u1);
                         bool cnearZero = Math.Abs(U) < Math.Abs(2.0 * M_PI - U);
                         if (pnearZero == cnearZero)
                         {
-                            if (!IsSeamParameter(U2, TOL2D) && !IsSeamParameter(U1, TOL2D))
+                            if (!IsSeamParameter(u2, tol2D) && !IsSeamParameter(u1, tol2D))
                             {
                                 double nU = (cnearZero) ? (2.0 * M_PI) : 0.0;
-                                IntSurf_PntOn2S nP = new();
-                                nP.SetValue(aP.Value());
-                                double U3, V3;
-                                if (IsReversed)
+                                PntOn2S nP = new();
+                                nP.SetValue(p.Value());
+                                double u3, v3;
+                                if (isReversed)
                                 {
-                                    Line.Value(ip).ParametersOnS1(out U3, out V3); // prm
-                                    nP.SetValue(false, nU, V);
-                                    nP.SetValue(true, U3, V3);
+                                    line.Value(ip).ParametersOnS1(out u3, out v3); // prm
+                                    nP.SetValue(false, nU, v);
+                                    nP.SetValue(true, u3, v3);
                                 }
                                 else
                                 {
-                                    Line.Value(ip).ParametersOnS2(out U3, out V3); // prm
-                                    nP.SetValue(true, nU, V);
-                                    nP.SetValue(false, U3, V3);
+                                    line.Value(ip).ParametersOnS2(out u3, out v3); // prm
+                                    nP.SetValue(true, nU, v);
+                                    nP.SetValue(false, u3, v3);
                                 }
-                                Line.InsertBefore(ipn, nP);
-                                Vertices.Add(nP);
+                                line.InsertBefore(ipn, nP);
+                                vertices.Add(nP);
                                 result = true;
                                 break;
                             }
                         }
                         else
                         {
-                            if (!IsSeamParameter(U2, TOL2D) && !IsSeamParameter(U1, TOL2D))
+                            if (!IsSeamParameter(u2, tol2D) && !IsSeamParameter(u1, tol2D))
                             {
                                 double nU = (cnearZero) ? (2.0 * M_PI) : 0.0;
-                                IntSurf_PntOn2S nP = new();
-                                nP.SetValue(aP.Value());
-                                double U3, V3;
-                                if (IsReversed)
+                                PntOn2S nP = new();
+                                nP.SetValue(p.Value());
+                                double u3, v3;
+                                if (isReversed)
                                 {
-                                    Line.Value(ip).ParametersOnS1(out U3, out V3); // prm
-                                    nP.SetValue(false, nU, V);
-                                    nP.SetValue(true, U3, V3);
+                                    line.Value(ip).ParametersOnS1(out u3, out v3); // prm
+                                    nP.SetValue(false, nU, v);
+                                    nP.SetValue(true, u3, v3);
                                 }
                                 else
                                 {
-                                    Line.Value(ip).ParametersOnS2(out U3, out V3); // prm
-                                    nP.SetValue(true, nU, V);
-                                    nP.SetValue(false, U3, V3);
+                                    line.Value(ip).ParametersOnS2(out u3, out v3); // prm
+                                    nP.SetValue(true, nU, v);
+                                    nP.SetValue(false, u3, v3);
                                 }
-                                Line.InsertBefore(ip, nP);
-                                Vertices.Add(nP);
+                                line.InsertBefore(ip, nP);
+                                vertices.Add(nP);
                                 result = true;
                                 break;
                             }
@@ -886,82 +889,82 @@ public partial class IntPatch_ImpPrmIntersection
         return result;
     }
 
-    private static void ToSmooth(IntSurf_LineOn2S Line, bool IsReversed, in IntSurf_Quadric Quad, bool IsFirst,
-                                 ref double D3D)
+    private static void ToSmooth(LineOn2S line, bool isReversed, in SurfaceQuadric quad, bool isFirst,
+                                 ref double d3D)
     {
-        if (Line.NbPoints() <= 10)
+        if (line.PointCount <= 10)
         {
             return;
         }
 
-        D3D = 0.0;
-        int NbTestPnts = Line.NbPoints() / 5;
-        if (NbTestPnts < 5)
+        d3D = 0.0;
+        int nbTestPnts = line.PointCount / 5;
+        if (nbTestPnts < 5)
         {
-            NbTestPnts = 5;
+            nbTestPnts = 5;
         }
 
-        int startp = (IsFirst) ? 2 : (Line.NbPoints() - NbTestPnts - 2);
-        double Uc, Vc, Un, Vn, DDU = 0.0;
+        int startp = (isFirst) ? 2 : (line.PointCount - nbTestPnts - 2);
+        double uc, vc, un, vn, ddu = 0.0;
 
         // OCCT compares ip with NbTestPnts, not startp + NbTestPnts: for the last points (IsFirst false) the loop
         // runs only on short lines, and D3D and DDU stay 0 otherwise (reproduced).
-        for (int ip = startp; ip <= NbTestPnts; ip++)
+        for (int ip = startp; ip <= nbTestPnts; ip++)
         {
-            if (IsReversed)
+            if (isReversed)
             {
-                Line.Value(ip).ParametersOnS2(out Uc, out Vc); // S2 - quadric
-                Line.Value(ip + 1).ParametersOnS2(out Un, out Vn);
+                line.Value(ip).ParametersOnS2(out uc, out vc); // S2 - quadric
+                line.Value(ip + 1).ParametersOnS2(out un, out vn);
             }
             else
             {
-                Line.Value(ip).ParametersOnS1(out Uc, out Vc); // S1 - quadric
-                Line.Value(ip + 1).ParametersOnS1(out Un, out Vn);
+                line.Value(ip).ParametersOnS1(out uc, out vc); // S1 - quadric
+                line.Value(ip + 1).ParametersOnS1(out un, out vn);
             }
-            DDU += Math.Abs(Math.Abs(Uc) - Math.Abs(Un));
+            ddu += Math.Abs(Math.Abs(uc) - Math.Abs(un));
 
             if (ip > startp)
             {
-                double DP = Line.Value(ip).Value().Distance(Line.Value(ip - 1).Value());
-                D3D += DP;
+                double dp = line.Value(ip).Value().Distance(line.Value(ip - 1).Value());
+                d3D += dp;
             }
         }
 
-        DDU /= (double)NbTestPnts + 1;
+        ddu /= (double)nbTestPnts + 1;
 
-        D3D /= (double)NbTestPnts + 1;
+        d3D /= (double)nbTestPnts + 1;
 
-        int Index1 = (IsFirst) ? 1 : (Line.NbPoints());
-        int Index2 = (IsFirst) ? 2 : (Line.NbPoints() - 1);
-        int Index3 = (IsFirst) ? 3 : (Line.NbPoints() - 2);
+        int index1 = (isFirst) ? 1 : (line.PointCount);
+        int index2 = (isFirst) ? 2 : (line.PointCount - 1);
+        int index3 = (isFirst) ? 3 : (line.PointCount - 2);
 
         bool doU = false;
 
-        double U1, U2, V1, V2, U3, V3;
+        double u1, u2, v1, v2, u3, v3;
 
-        if (IsReversed)
+        if (isReversed)
         {
-            Line.Value(Index1).ParametersOnS2(out U1, out V1); // S2 - quadric
-            Line.Value(Index2).ParametersOnS2(out U2, out V2);
-            Line.Value(Index3).ParametersOnS2(out U3, out V3);
+            line.Value(index1).ParametersOnS2(out u1, out v1); // S2 - quadric
+            line.Value(index2).ParametersOnS2(out u2, out v2);
+            line.Value(index3).ParametersOnS2(out u3, out v3);
         }
         else
         {
-            Line.Value(Index1).ParametersOnS1(out U1, out V1); // S1 - quadric
-            Line.Value(Index2).ParametersOnS1(out U2, out V2);
-            Line.Value(Index3).ParametersOnS1(out U3, out V3);
+            line.Value(index1).ParametersOnS1(out u1, out v1); // S1 - quadric
+            line.Value(index2).ParametersOnS1(out u2, out v2);
+            line.Value(index3).ParametersOnS1(out u3, out v3);
         }
 
-        if (!doU && Quad.TypeQuadric() == SurfaceKind.Sphere)
+        if (!doU && quad.TypeQuadric() == SurfaceKind.Sphere)
         {
-            if (Math.Abs(Math.Abs(U1) - Math.Abs(U2)) > (M_PI / 16.0))
+            if (Math.Abs(Math.Abs(u1) - Math.Abs(u2)) > (M_PI / 16.0))
             {
                 doU = true;
             }
 
-            if (doU && (Math.Abs(U1) <= 1.0e-9 || Math.Abs(U1 - 2.0 * M_PI) <= 1.0e-9))
+            if (doU && (Math.Abs(u1) <= 1.0e-9 || Math.Abs(u1 - 2.0 * M_PI) <= 1.0e-9))
             {
-                if (Math.Abs(V1 - M_PI / 2.0) <= 1.0e-9 || Math.Abs(V1 + M_PI / 2.0) <= 1.0e-9)
+                if (Math.Abs(v1 - M_PI / 2.0) <= 1.0e-9 || Math.Abs(v1 + M_PI / 2.0) <= 1.0e-9)
                 {
                 }
                 else
@@ -971,19 +974,19 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
 
-        if (Quad.TypeQuadric() == SurfaceKind.Cone)
+        if (quad.TypeQuadric() == SurfaceKind.Cone)
         {
-            double Uapx = 0.0, Vapx = 0.0;
-            Quad.Parameters(Quad.Cone().Apex(), ref Uapx, ref Vapx);
+            double uapx = 0.0, vapx = 0.0;
+            quad.Parameters(quad.Cone().Apex(), ref uapx, ref vapx);
 
-            if (Math.Abs(Math.Abs(U1) - Math.Abs(U2)) > M_PI / 32.0)
+            if (Math.Abs(Math.Abs(u1) - Math.Abs(u2)) > M_PI / 32.0)
             {
                 doU = true;
             }
 
-            if (doU && (Math.Abs(U1) <= 1.0e-9 || Math.Abs(U1 - 2.0 * M_PI) <= 1.0e-9))
+            if (doU && (Math.Abs(u1) <= 1.0e-9 || Math.Abs(u1 - 2.0 * M_PI) <= 1.0e-9))
             {
-                if (Math.Abs(V1 - Vapx) <= 1.0e-9)
+                if (Math.Abs(v1 - vapx) <= 1.0e-9)
                 {
                 }
                 else
@@ -995,127 +998,127 @@ public partial class IntPatch_ImpPrmIntersection
 
         if (doU)
         {
-            double dU = Math.Min((DDU / 10.0), 5.0e-8);
-            double U = (U2 > U3) ? (U2 + dU) : (U2 - dU);
-            if (IsReversed)
+            double dU = Math.Min((ddu / 10.0), 5.0e-8);
+            double u = (u2 > u3) ? (u2 + dU) : (u2 - dU);
+            if (isReversed)
             {
-                Line.SetUV(Index1, false, U, V1);
+                line.SetUV(index1, false, u, v1);
             }
             else
             {
-                Line.SetUV(Index1, true, U, V1);
+                line.SetUV(index1, true, u, v1);
             }
         }
     }
 
-    private static bool TestMiddleOnPrm(in IntSurf_PntOn2S aP, in IntSurf_PntOn2S aV, bool IsReversed, double ArcTol,
-                                        TopolTool PDomain)
+    private static bool TestMiddleOnPrm(in PntOn2S aP, in PntOn2S aV, bool isReversed, double arcTol,
+                                        TopolTool pDomain)
     {
         bool result = false;
-        double Up, Vp, Uv, Vv;
-        if (IsReversed)
+        double up, vp, uv, vv;
+        if (isReversed)
         {
-            aP.ParametersOnS1(out Up, out Vp); // S1 - parametric
-            aV.ParametersOnS1(out Uv, out Vv);
+            aP.ParametersOnS1(out up, out vp); // S1 - parametric
+            aV.ParametersOnS1(out uv, out vv);
         }
         else
         {
-            aP.ParametersOnS2(out Up, out Vp); // S2 - parametric
-            aV.ParametersOnS2(out Uv, out Vv);
+            aP.ParametersOnS2(out up, out vp); // S2 - parametric
+            aV.ParametersOnS2(out uv, out vv);
         }
-        double Um = (Up + Uv) * 0.5, Vm = (Vp + Vv) * 0.5;
-        Point2D a2DPntM = new(Um, Vm);
-        Containment PosM = PDomain.Classify(a2DPntM, ArcTol);
-        if (PosM == On || PosM == In)
+        double um = (up + uv) * 0.5, vm = (vp + vv) * 0.5;
+        Point2D a2DPntM = new(um, vm);
+        Containment posM = pDomain.Classify(a2DPntM, arcTol);
+        if (posM == On || posM == In)
         {
             result = true;
         }
         return result;
     }
 
-    private static void VerifyVertices(IntSurf_LineOn2S Line, bool IsReversed, IntSurf_LineOn2S Vertices, double TOL2D,
-                                       double ArcTol, TopolTool PDomain, ref IntSurf_PntOn2S VrtF,
-                                       out bool AddFirst, ref IntSurf_PntOn2S VrtL, out bool AddLast)
+    private static void VerifyVertices(LineOn2S line, bool isReversed, LineOn2S vertices, double tol2D,
+                                       double arcTol, TopolTool pDomain, ref PntOn2S vrtF,
+                                       out bool addFirst, ref PntOn2S vrtL, out bool addLast)
     {
-        int nbp = Line.NbPoints(), nbv = Vertices.NbPoints();
-        int FIndexSame = 0, FIndexNear = 0, LIndexSame = 0, LIndexNear = 0;
-        IntSurf_PntOn2S aPF = Line.Value(1);
-        IntSurf_PntOn2S aPL = Line.Value(nbp);
-        double UF, VF, UL, VL;
-        if (IsReversed)
+        int nbp = line.PointCount, nbv = vertices.PointCount;
+        int fIndexSame = 0, fIndexNear = 0, lIndexSame = 0, lIndexNear = 0;
+        PntOn2S pf = line.Value(1);
+        PntOn2S pl = line.Value(nbp);
+        double uf, vf, ul, vl;
+        if (isReversed)
         {
-            aPF.ParametersOnS2(out UF, out VF);
-            aPL.ParametersOnS2(out UL, out VL);
+            pf.ParametersOnS2(out uf, out vf);
+            pl.ParametersOnS2(out ul, out vl);
         }
         else
         {
-            aPF.ParametersOnS1(out UF, out VF);
-            aPL.ParametersOnS1(out UL, out VL);
+            pf.ParametersOnS1(out uf, out vf);
+            pl.ParametersOnS1(out ul, out vl);
         }
-        Point2D a2DPF = new(UF, VF);
-        Point2D a2DPL = new(UL, VL);
-        double DistMinF = 1.0e+100, DistMinL = 1.0e+100;
-        int FConjugated = 0, LConjugated = 0;
+        Point2D a2DPF = new(uf, vf);
+        Point2D a2DPL = new(ul, vl);
+        double distMinF = 1.0e+100, distMinL = 1.0e+100;
+        int fConjugated = 0, lConjugated = 0;
 
         int iv;
 
         for (iv = 1; iv <= nbv; iv++)
         {
-            double Uv, Vv;
-            if (IsReversed)
+            double uv, vv;
+            if (isReversed)
             {
-                Vertices.Value(iv).ParametersOnS2(out Uv, out Vv);
-                Uv = AdjustU(Uv);
-                Vertices.SetUV(iv, false, Uv, Vv);
+                vertices.Value(iv).ParametersOnS2(out uv, out vv);
+                uv = AdjustU(uv);
+                vertices.SetUV(iv, false, uv, vv);
             }
             else
             {
-                Vertices.Value(iv).ParametersOnS1(out Uv, out Vv);
-                Uv = AdjustU(Uv);
-                Vertices.SetUV(iv, true, Uv, Vv);
+                vertices.Value(iv).ParametersOnS1(out uv, out vv);
+                uv = AdjustU(uv);
+                vertices.SetUV(iv, true, uv, vv);
             }
         }
 
         for (iv = 1; iv <= nbv; iv++)
         {
-            IntSurf_PntOn2S aV = Vertices.Value(iv);
-            if (aPF.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            PntOn2S v = vertices.Value(iv);
+            if (pf.IsSame(v, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
-                FIndexSame = iv;
+                fIndexSame = iv;
                 break;
             }
             else
             {
-                double Uv, Vv;
-                if (IsReversed)
+                double uv, vv;
+                if (isReversed)
                 {
-                    aV.ParametersOnS2(out Uv, out Vv);
+                    v.ParametersOnS2(out uv, out vv);
                 }
                 else
                 {
-                    aV.ParametersOnS1(out Uv, out Vv);
+                    v.ParametersOnS1(out uv, out vv);
                 }
-                Point2D a2DV = new(Uv, Vv);
-                double Dist = a2DV.Distance(a2DPF);
-                if (Dist < DistMinF)
+                Point2D a2DV = new(uv, vv);
+                double dist = a2DV.Distance(a2DPF);
+                if (dist < distMinF)
                 {
-                    DistMinF = Dist;
-                    FIndexNear = iv;
-                    if (FConjugated != 0)
+                    distMinF = dist;
+                    fIndexNear = iv;
+                    if (fConjugated != 0)
                     {
-                        FConjugated = 0;
+                        fConjugated = 0;
                     }
                 }
-                if (IsSeamParameter(Uv, TOL2D))
+                if (IsSeamParameter(uv, tol2D))
                 {
-                    double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    Point2D a2DCV = new(Ucv, Vv);
-                    double CDist = a2DCV.Distance(a2DPF);
-                    if (CDist < DistMinF)
+                    double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
+                    Point2D a2DCV = new(ucv, vv);
+                    double cDist = a2DCV.Distance(a2DPF);
+                    if (cDist < distMinF)
                     {
-                        DistMinF = CDist;
-                        FConjugated = iv;
-                        FIndexNear = iv;
+                        distMinF = cDist;
+                        fConjugated = iv;
+                        fIndexNear = iv;
                     }
                 }
             }
@@ -1123,103 +1126,103 @@ public partial class IntPatch_ImpPrmIntersection
 
         for (iv = 1; iv <= nbv; iv++)
         {
-            IntSurf_PntOn2S aV = Vertices.Value(iv);
-            if (aPL.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            PntOn2S v = vertices.Value(iv);
+            if (pl.IsSame(v, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
-                LIndexSame = iv;
+                lIndexSame = iv;
                 break;
             }
             else
             {
-                double Uv, Vv;
-                if (IsReversed)
+                double uv, vv;
+                if (isReversed)
                 {
-                    aV.ParametersOnS2(out Uv, out Vv);
+                    v.ParametersOnS2(out uv, out vv);
                 }
                 else
                 {
-                    aV.ParametersOnS1(out Uv, out Vv);
+                    v.ParametersOnS1(out uv, out vv);
                 }
-                Point2D a2DV = new(Uv, Vv);
-                double Dist = a2DV.Distance(a2DPL);
-                if (Dist < DistMinL)
+                Point2D a2DV = new(uv, vv);
+                double dist = a2DV.Distance(a2DPL);
+                if (dist < distMinL)
                 {
-                    DistMinL = Dist;
-                    LIndexNear = iv;
-                    if (LConjugated != 0)
+                    distMinL = dist;
+                    lIndexNear = iv;
+                    if (lConjugated != 0)
                     {
-                        LConjugated = 0;
+                        lConjugated = 0;
                     }
                 }
-                if (IsSeamParameter(Uv, TOL2D))
+                if (IsSeamParameter(uv, tol2D))
                 {
-                    double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    Point2D a2DCV = new(Ucv, Vv);
-                    double CDist = a2DCV.Distance(a2DPL);
-                    if (CDist < DistMinL)
+                    double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
+                    Point2D a2DCV = new(ucv, vv);
+                    double cDist = a2DCV.Distance(a2DPL);
+                    if (cDist < distMinL)
                     {
-                        DistMinL = CDist;
-                        LConjugated = iv;
-                        LIndexNear = iv;
+                        distMinL = cDist;
+                        lConjugated = iv;
+                        lIndexNear = iv;
                     }
                 }
             }
         }
 
-        AddFirst = false;
-        AddLast = false;
+        addFirst = false;
+        addLast = false;
 
-        if (FIndexSame == 0)
+        if (fIndexSame == 0)
         {
-            if (FIndexNear != 0)
+            if (fIndexNear != 0)
             {
-                IntSurf_PntOn2S aV = Vertices.Value(FIndexNear);
-                double Uv, Vv;
-                if (IsReversed)
+                PntOn2S v = vertices.Value(fIndexNear);
+                double uv, vv;
+                if (isReversed)
                 {
-                    aV.ParametersOnS2(out Uv, out Vv);
+                    v.ParametersOnS2(out uv, out vv);
                 }
                 else
                 {
-                    aV.ParametersOnS1(out Uv, out Vv);
+                    v.ParametersOnS1(out uv, out vv);
                 }
-                if (IsSeamParameter(Uv, TOL2D))
+                if (IsSeamParameter(uv, tol2D))
                 {
-                    double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    bool test = TestMiddleOnPrm(aPF, aV, IsReversed, ArcTol, PDomain);
+                    double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
+                    bool test = TestMiddleOnPrm(pf, v, isReversed, arcTol, pDomain);
                     if (test)
                     {
-                        VrtF.SetValue(aV.Value());
-                        if (IsReversed)
+                        vrtF.SetValue(v.Value());
+                        if (isReversed)
                         {
-                            aV.ParametersOnS1(out double U2, out double V2); // S1 - prm
-                            VrtF.SetValue(true, U2, V2);
-                            if (FConjugated == 0)
+                            v.ParametersOnS1(out double u2, out double v2); // S1 - prm
+                            vrtF.SetValue(true, u2, v2);
+                            if (fConjugated == 0)
                             {
-                                VrtF.SetValue(false, Uv, Vv);
+                                vrtF.SetValue(false, uv, vv);
                             }
                             else
                             {
-                                VrtF.SetValue(false, Ucv, Vv);
+                                vrtF.SetValue(false, ucv, vv);
                             }
                         }
                         else
                         {
-                            aV.ParametersOnS2(out double U2, out double V2); // S2 - prm
-                            VrtF.SetValue(false, U2, V2);
-                            if (FConjugated == 0)
+                            v.ParametersOnS2(out double u2, out double v2); // S2 - prm
+                            vrtF.SetValue(false, u2, v2);
+                            if (fConjugated == 0)
                             {
-                                VrtF.SetValue(true, Uv, Vv);
+                                vrtF.SetValue(true, uv, vv);
                             }
                             else
                             {
-                                VrtF.SetValue(true, Ucv, Vv);
+                                vrtF.SetValue(true, ucv, vv);
                             }
                         }
-                        double Dist3D = VrtF.Value().Distance(aPF.Value());
-                        if (Dist3D > 1.5e-7 && DistMinF > TOL2D)
+                        double dist3D = vrtF.Value().Distance(pf.Value());
+                        if (dist3D > 1.5e-7 && distMinF > tol2D)
                         {
-                            AddFirst = true;
+                            addFirst = true;
                         }
                     }
                 }
@@ -1230,57 +1233,57 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
 
-        if (LIndexSame == 0)
+        if (lIndexSame == 0)
         {
-            if (LIndexNear != 0)
+            if (lIndexNear != 0)
             {
-                IntSurf_PntOn2S aV = Vertices.Value(LIndexNear);
-                double Uv, Vv;
-                if (IsReversed)
+                PntOn2S v = vertices.Value(lIndexNear);
+                double uv, vv;
+                if (isReversed)
                 {
-                    aV.ParametersOnS2(out Uv, out Vv);
+                    v.ParametersOnS2(out uv, out vv);
                 }
                 else
                 {
-                    aV.ParametersOnS1(out Uv, out Vv);
+                    v.ParametersOnS1(out uv, out vv);
                 }
-                if (IsSeamParameter(Uv, TOL2D))
+                if (IsSeamParameter(uv, tol2D))
                 {
-                    double Ucv = (Math.Abs(Uv) < Math.Abs(2.0 * M_PI - Uv)) ? (2.0 * M_PI) : 0.0;
-                    bool test = TestMiddleOnPrm(aPL, aV, IsReversed, ArcTol, PDomain);
+                    double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
+                    bool test = TestMiddleOnPrm(pl, v, isReversed, arcTol, pDomain);
                     if (test)
                     {
-                        VrtL.SetValue(aV.Value());
-                        if (IsReversed)
+                        vrtL.SetValue(v.Value());
+                        if (isReversed)
                         {
-                            aV.ParametersOnS1(out double U2, out double V2); // S1 - prm
-                            VrtL.SetValue(true, U2, V2);
-                            if (LConjugated == 0)
+                            v.ParametersOnS1(out double u2, out double v2); // S1 - prm
+                            vrtL.SetValue(true, u2, v2);
+                            if (lConjugated == 0)
                             {
-                                VrtL.SetValue(false, Uv, Vv);
+                                vrtL.SetValue(false, uv, vv);
                             }
                             else
                             {
-                                VrtL.SetValue(false, Ucv, Vv);
+                                vrtL.SetValue(false, ucv, vv);
                             }
                         }
                         else
                         {
-                            aV.ParametersOnS2(out double U2, out double V2); // S2 - prm
-                            VrtL.SetValue(false, U2, V2);
-                            if (LConjugated == 0)
+                            v.ParametersOnS2(out double u2, out double v2); // S2 - prm
+                            vrtL.SetValue(false, u2, v2);
+                            if (lConjugated == 0)
                             {
-                                VrtL.SetValue(true, Uv, Vv);
+                                vrtL.SetValue(true, uv, vv);
                             }
                             else
                             {
-                                VrtL.SetValue(true, Ucv, Vv);
+                                vrtL.SetValue(true, ucv, vv);
                             }
                         }
-                        double Dist3D = VrtL.Value().Distance(aPL.Value());
-                        if (Dist3D > 1.5e-7 && DistMinL > TOL2D)
+                        double dist3D = vrtL.Value().Distance(pl.Value());
+                        if (dist3D > 1.5e-7 && distMinL > tol2D)
                         {
-                            AddLast = true;
+                            addLast = true;
                         }
                     }
                 }
@@ -1292,94 +1295,94 @@ public partial class IntPatch_ImpPrmIntersection
         }
     }
 
-    private static bool AddVertices(IntSurf_LineOn2S Line, in IntSurf_PntOn2S VrtF, bool AddFirst,
-                                    in IntSurf_PntOn2S VrtL, bool AddLast, double D3DF, double D3DL)
+    private static bool AddVertices(LineOn2S line, in PntOn2S vrtF, bool addFirst,
+                                    in PntOn2S vrtL, bool addLast, double d3DF, double d3DL)
     {
         bool result = false;
-        if (AddFirst)
+        if (addFirst)
         {
-            double DF = Line.Value(1).Value().Distance(VrtF.Value());
-            if ((D3DF * 2.0) > DF && DF > 1.5e-7)
+            double df = line.Value(1).Value().Distance(vrtF.Value());
+            if ((d3DF * 2.0) > df && df > 1.5e-7)
             {
-                Line.InsertBefore(1, VrtF);
+                line.InsertBefore(1, vrtF);
                 result = true;
             }
         }
-        if (AddLast)
+        if (addLast)
         {
-            double DL = Line.Value(Line.NbPoints()).Value().Distance(VrtL.Value());
-            if ((D3DL * 2.0) > DL && DL > 1.5e-7)
+            double dl = line.Value(line.PointCount).Value().Distance(vrtL.Value());
+            if ((d3DL * 2.0) > dl && dl > 1.5e-7)
             {
-                Line.Add(VrtL);
+                line.Add(vrtL);
                 result = true;
             }
         }
         return result;
     }
 
-    private static void PutIntVertices(IntPatch_PointLine Line, IntSurf_LineOn2S Result, bool theIsReversed,
-                                       IntSurf_LineOn2S Vertices, double ArcTol)
+    private static void PutIntVertices(PointLine line, LineOn2S result, bool isReversed,
+                                       LineOn2S vertices, double arcTol)
     {
-        int nbp = Result.NbPoints(), nbv = Vertices.NbPoints();
+        int nbp = result.PointCount, nbv = vertices.PointCount;
 
         if (nbp < 3)
         {
             return;
         }
 
-        IntPatch_RLine? aRLine = Line as IntPatch_RLine;
+        RLine? rLine = line as RLine;
 
-        Point3D aPnt;
-        IntPatch_Point thePnt = new();
+        Point3D pnt;
+        PatchPoint thePnt = new();
 
         for (int ip = 2; ip <= (nbp - 1); ip++)
         {
-            IntSurf_PntOn2S aP = Result.Value(ip);
+            PntOn2S p = result.Value(ip);
             for (int iv = 1; iv <= nbv; iv++)
             {
-                IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                PntOn2S v = vertices.Value(iv);
+                if (p.IsSame(v, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
-                    aPnt = Result.Value(ip).Value();
-                    Result.Value(ip).ParametersOnS1(out double U1, out double V1);
-                    Result.Value(ip).ParametersOnS2(out double U2, out double V2);
-                    thePnt.SetValue(aPnt, ArcTol, false);
-                    thePnt.SetParameters(U1, V1, U2, V2);
+                    pnt = result.Value(ip).Value();
+                    result.Value(ip).ParametersOnS1(out double u1, out double v1);
+                    result.Value(ip).ParametersOnS2(out double u2, out double v2);
+                    thePnt.SetValue(pnt, arcTol, false);
+                    thePnt.SetParameters(u1, v1, u2, v2);
 
-                    double aParam = (double)ip;
+                    double param = (double)ip;
 
-                    if (aRLine is not null)
+                    if (rLine is not null)
                     {
                         // In fact, aRLine is always on the parametric surface.
                         // If (theIsReversed == TRUE) then (U1, V1) - point on
                         // parametric surface, otherwise - point on quadric.
-                        Curve2DAdaptorBase anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
+                        Curve2DAdaptorBase arc = (rLine.IsArcOnS1 ? rLine.ArcOnS1() : rLine.ArcOnS2())!;
 
-                        Line2D aLin = anArc.Line();
-                        Point2D aPSurf;
+                        Line2D lin = arc.Line();
+                        Point2D pSurf;
 
-                        if (theIsReversed)
+                        if (isReversed)
                         {
-                            aPSurf = new Point2D(U1, V1);
+                            pSurf = new Point2D(u1, v1);
                         }
                         else
                         {
-                            aPSurf = new Point2D(U2, V2);
+                            pSurf = new Point2D(u2, v2);
                         }
 
-                        aParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aPSurf);
+                        param = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, pSurf);
                     }
 
-                    thePnt.SetParameter(aParam);
-                    Line.AddVertex(thePnt);
+                    thePnt.SetParameter(param);
+                    line.AddVertex(thePnt);
                 }
             }
         }
     }
 
-    private static bool HasInternals(IntSurf_LineOn2S Line, IntSurf_LineOn2S Vertices)
+    private static bool HasInternals(LineOn2S line, LineOn2S vertices)
     {
-        int nbp = Line.NbPoints(), nbv = Vertices.NbPoints();
+        int nbp = line.PointCount, nbv = vertices.PointCount;
         bool result = false;
 
         if (nbp < 3)
@@ -1389,11 +1392,11 @@ public partial class IntPatch_ImpPrmIntersection
 
         for (int ip = 2; ip <= (nbp - 1); ip++)
         {
-            IntSurf_PntOn2S aP = Line.Value(ip);
+            PntOn2S p = line.Value(ip);
             for (int iv = 1; iv <= nbv; iv++)
             {
-                IntSurf_PntOn2S aV = Vertices.Value(iv);
-                if (aP.IsSame(aV, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                PntOn2S v = vertices.Value(iv);
+                if (p.IsSame(v, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     result = true;
                     break;
@@ -1408,67 +1411,67 @@ public partial class IntPatch_ImpPrmIntersection
         return result;
     }
 
-    private static IntPatch_WLine MakeSplitWLine(IntPatch_WLine WLine, bool Tang, IntSurf_TypeTrans Trans1,
-                                                 IntSurf_TypeTrans Trans2, double ArcTol, int ParFirst, int ParLast)
+    private static WLine MakeSplitWLine(WLine wLine, bool tang, WalkingTypeTrans trans1,
+                                                 WalkingTypeTrans trans2, double arcTol, int parFirst, int parLast)
     {
-        IntSurf_LineOn2S SLine = WLine.Curve();
-        IntSurf_LineOn2S sline = new();
+        LineOn2S sLine = wLine.Curve();
+        LineOn2S sline = new();
 
-        for (int ip = ParFirst; ip <= ParLast; ip++)
+        for (int ip = parFirst; ip <= parLast; ip++)
         {
-            sline.Add(SLine.Value(ip));
+            sline.Add(sLine.Value(ip));
         }
 
-        IntPatch_WLine wline = new(sline, Tang, Trans1, Trans2);
-        wline.SetCreatingWayInfo(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpPrm);
+        WLine wline = new(sline, tang, trans1, trans2);
+        wline.SetCreatingWayInfo(global::Kerf.Engine.Intersection.Patches.WLine.IntPatch_WLType.WLImpPrm);
 
-        Point3D aSPnt;
-        IntPatch_Point TPntF = new(), TPntL = new();
+        Point3D sPnt;
+        PatchPoint tPntF = new(), tPntL = new();
         double uu1, vv1, uu2, vv2;
 
-        aSPnt = sline.Value(1).Value();
+        sPnt = sline.Value(1).Value();
         sline.Value(1).ParametersOnS1(out uu1, out vv1);
         sline.Value(1).ParametersOnS2(out uu2, out vv2);
-        TPntF.SetValue(aSPnt, ArcTol, false);
-        TPntF.SetParameters(uu1, vv1, uu2, vv2);
-        TPntF.SetParameter(1.0);
-        wline.AddVertex(TPntF);
+        tPntF.SetValue(sPnt, arcTol, false);
+        tPntF.SetParameters(uu1, vv1, uu2, vv2);
+        tPntF.SetParameter(1.0);
+        wline.AddVertex(tPntF);
         wline.SetFirstPoint(1);
 
-        aSPnt = sline.Value(sline.NbPoints()).Value();
-        sline.Value(sline.NbPoints()).ParametersOnS1(out uu1, out vv1);
-        sline.Value(sline.NbPoints()).ParametersOnS2(out uu2, out vv2);
-        TPntL.SetValue(aSPnt, ArcTol, false);
-        TPntL.SetParameters(uu1, vv1, uu2, vv2);
-        TPntL.SetParameter((double)sline.NbPoints());
-        wline.AddVertex(TPntL);
-        wline.SetLastPoint(wline.NbVertex());
+        sPnt = sline.Value(sline.PointCount).Value();
+        sline.Value(sline.PointCount).ParametersOnS1(out uu1, out vv1);
+        sline.Value(sline.PointCount).ParametersOnS2(out uu2, out vv2);
+        tPntL.SetValue(sPnt, arcTol, false);
+        tPntL.SetParameters(uu1, vv1, uu2, vv2);
+        tPntL.SetParameter((double)sline.PointCount);
+        wline.AddVertex(tPntL);
+        wline.SetLastPoint(wline.VertexCount);
 
         return wline;
     }
 
-    private static bool SplitOnSegments(IntPatch_WLine WLine, bool Tang, IntSurf_TypeTrans Trans1,
-                                        IntSurf_TypeTrans Trans2, double ArcTol,
-                                        NCollection_Sequence<IntPatch_Line> Segments)
+    private static bool SplitOnSegments(WLine wLine, bool tang, WalkingTypeTrans trans1,
+                                        WalkingTypeTrans trans2, double arcTol,
+                                        NCollection_Sequence<PatchLine> segments)
     {
         bool result = false;
-        Segments.Clear();
+        segments.Clear();
 
-        int nbv = WLine.NbVertex();
+        int nbv = wLine.VertexCount;
         if (nbv > 3)
         {
             for (int iv = 1; iv < nbv; iv++)
             {
-                int firstPar = (int)WLine.Vertex(iv).ParameterOnLine();
-                int lastPar = (int)WLine.Vertex(iv + 1).ParameterOnLine();
+                int firstPar = (int)wLine.Vertex(iv).ParameterOnLine();
+                int lastPar = (int)wLine.Vertex(iv + 1).ParameterOnLine();
                 if ((lastPar - firstPar) <= 1)
                 {
                     continue;
                 }
                 else
                 {
-                    IntPatch_WLine splitwline = MakeSplitWLine(WLine, Tang, Trans1, Trans2, ArcTol, firstPar, lastPar);
-                    Segments.Append(splitwline);
+                    WLine splitwline = MakeSplitWLine(wLine, tang, trans1, trans2, arcTol, firstPar, lastPar);
+                    segments.Append(splitwline);
                     if (!result)
                     {
                         result = true;
@@ -1481,104 +1484,104 @@ public partial class IntPatch_ImpPrmIntersection
 
     // Returns TRUE if point <theParam> matches <theBoundary +/- thePeriod> with given tolerance criterion.
     // For not-periodic case, thePeriod must be equal to 0.0.
-    private static bool IsPointOnBoundary(double theToler2D, double theBoundary, double thePeriod, double theParam)
+    private static bool IsPointOnBoundary(double toler2D, double boundary, double period, double param)
     {
-        double aDelta = Math.Abs(theParam - theBoundary);
-        if (thePeriod != 0.0)
+        double delta = Math.Abs(param - boundary);
+        if (period != 0.0)
         {
-            aDelta = aDelta % thePeriod; // fmod
+            delta = delta % period; // fmod
 
             // 0 <= aDelta < thePeriod
-            return ((aDelta < theToler2D) || ((thePeriod - aDelta) < theToler2D));
+            return ((delta < toler2D) || ((period - delta) < toler2D));
         }
 
         // Here, thePeriod == 0.0, aDelta > 0.0
 
-        return (aDelta < theToler2D);
+        return (delta < toler2D);
     }
 
     // Can change values of theNewLine (by adding the computed point on boundary, which parameter will be adjusted)
     // and theIsOnBoundary variables.
-    private static void DetectOfBoundaryAchievement(SurfaceAdaptorBase theQSurf, bool theIsReversed,
-                                                    IntSurf_LineOn2S theSourceLine, int thePointIndex,
-                                                    double theToler2D, IntSurf_LineOn2S theNewLine,
-                                                    ref bool theIsOnBoundary)
+    private static void DetectOfBoundaryAchievement(SurfaceAdaptorBase qSurf, bool isReversed,
+                                                    LineOn2S sourceLine, int pointIndex,
+                                                    double toler2D, LineOn2S newLine,
+                                                    ref bool isOnBoundary)
     {
-        double aUPeriod = theQSurf.IsUPeriodic ? theQSurf.UPeriod() : 0.0,
-               aVPeriod = theQSurf.IsVPeriodic ? theQSurf.VPeriod() : 0.0;
-        double aUf = theQSurf.FirstUParameter(), aUl = theQSurf.LastUParameter(), aVf = theQSurf.FirstVParameter(),
-               aVl = theQSurf.LastVParameter();
+        double uPeriod = qSurf.IsUPeriodic ? qSurf.UPeriod() : 0.0,
+               vPeriod = qSurf.IsVPeriodic ? qSurf.VPeriod() : 0.0;
+        double uf = qSurf.FirstUParameter(), ul = qSurf.LastUParameter(), vf = qSurf.FirstVParameter(),
+               vl = qSurf.LastVParameter();
 
-        IntSurf_PntOn2S aPPrev = theSourceLine.Value(thePointIndex - 1), aPCurr = theSourceLine.Value(thePointIndex);
-        double aUPrev, aVPrev, aUCurr, aVCurr;
-        if (theIsReversed)
+        PntOn2S pPrev = sourceLine.Value(pointIndex - 1), pCurr = sourceLine.Value(pointIndex);
+        double uPrev, vPrev, uCurr, vCurr;
+        if (isReversed)
         {
-            aPPrev.ParametersOnS2(out aUPrev, out aVPrev); // S2 - quadric, set U,V by Pnt3D
-            aPCurr.ParametersOnS2(out aUCurr, out aVCurr); // S2 - quadric, set U,V by Pnt3D
+            pPrev.ParametersOnS2(out uPrev, out vPrev); // S2 - quadric, set U,V by Pnt3D
+            pCurr.ParametersOnS2(out uCurr, out vCurr); // S2 - quadric, set U,V by Pnt3D
         }
         else
         {
-            aPPrev.ParametersOnS1(out aUPrev, out aVPrev); // S1 - quadric, set U,V by Pnt3D
-            aPCurr.ParametersOnS1(out aUCurr, out aVCurr); // S1 - quadric, set U,V by Pnt3D
+            pPrev.ParametersOnS1(out uPrev, out vPrev); // S1 - quadric, set U,V by Pnt3D
+            pCurr.ParametersOnS1(out uCurr, out vCurr); // S1 - quadric, set U,V by Pnt3D
         }
 
         // Ignore cases when the WLine goes along the surface boundary completely.
 
-        if (IsPointOnBoundary(theToler2D, aUf, aUPeriod, aUCurr) && !IsPointOnBoundary(theToler2D, aUf, aUPeriod, aUPrev))
+        if (IsPointOnBoundary(toler2D, uf, uPeriod, uCurr) && !IsPointOnBoundary(toler2D, uf, uPeriod, uPrev))
         {
-            theIsOnBoundary = true;
+            isOnBoundary = true;
         }
-        else if (IsPointOnBoundary(theToler2D, aUl, aUPeriod, aUCurr)
-                 && !IsPointOnBoundary(theToler2D, aUl, aUPeriod, aUPrev))
+        else if (IsPointOnBoundary(toler2D, ul, uPeriod, uCurr)
+                 && !IsPointOnBoundary(toler2D, ul, uPeriod, uPrev))
         {
-            theIsOnBoundary = true;
+            isOnBoundary = true;
         }
-        else if (IsPointOnBoundary(theToler2D, aVf, aVPeriod, aVCurr)
-                 && !IsPointOnBoundary(theToler2D, aVf, aVPeriod, aVPrev))
+        else if (IsPointOnBoundary(toler2D, vf, vPeriod, vCurr)
+                 && !IsPointOnBoundary(toler2D, vf, vPeriod, vPrev))
         {
-            theIsOnBoundary = true;
+            isOnBoundary = true;
         }
-        else if (IsPointOnBoundary(theToler2D, aVl, aVPeriod, aVCurr)
-                 && !IsPointOnBoundary(theToler2D, aVl, aVPeriod, aVPrev))
+        else if (IsPointOnBoundary(toler2D, vl, vPeriod, vCurr)
+                 && !IsPointOnBoundary(toler2D, vl, vPeriod, vPrev))
         {
-            theIsOnBoundary = true;
+            isOnBoundary = true;
         }
 
-        if (theIsOnBoundary)
+        if (isOnBoundary)
         {
             // Adjust, to avoid bad jumping of the WLine.
 
-            double aDu = (aUPrev - aUCurr);
-            double aDv = (aVPrev - aVCurr);
-            if (aUPeriod > 0.0 && (2.0 * Math.Abs(aDu) > aUPeriod))
+            double du = (uPrev - uCurr);
+            double dv = (vPrev - vCurr);
+            if (uPeriod > 0.0 && (2.0 * Math.Abs(du) > uPeriod))
             {
-                aUCurr += Math.CopySign(aUPeriod, aDu);
+                uCurr += Math.CopySign(uPeriod, du);
             }
 
-            if (aVPeriod > 0.0 && (2.0 * Math.Abs(aDv) > aVPeriod))
+            if (vPeriod > 0.0 && (2.0 * Math.Abs(dv) > vPeriod))
             {
-                aVCurr += Math.CopySign(aVPeriod, aDv);
+                vCurr += Math.CopySign(vPeriod, dv);
             }
 
-            IntSurf_PntOn2S aPoint = aPCurr;
-            aPoint.SetValue(!theIsReversed, aUCurr, aVCurr);
-            theNewLine.Add(aPoint);
+            PntOn2S point = pCurr;
+            point.SetValue(!isReversed, uCurr, vCurr);
+            newLine.Add(point);
         }
     }
 
     // Splits theLine in the places where it passes through seam edge or singularity (apex of cone or pole of
     // sphere). This passage is detected by jump of U-parameter from point to point.
-    private static bool DecomposeResult(IntPatch_PointLine theLine, bool IsReversed, in IntSurf_Quadric theQuad,
-                                        TopolTool thePDomain, SurfaceAdaptorBase theQSurf,
-                                        SurfaceAdaptorBase thePSurf, double theArcTol, double theTolTang,
-                                        NCollection_Sequence<IntPatch_Line> theLines)
+    private static bool DecomposeResult(PointLine line, bool isReversed, in SurfaceQuadric quad,
+                                        TopolTool pDomain, SurfaceAdaptorBase qSurf,
+                                        SurfaceAdaptorBase pSurf, double arcTol, double tolTang,
+                                        NCollection_Sequence<PatchLine> lines)
     {
-        if (theLine.ArcType() == IntPatch_Restriction)
+        if (line.ArcType() == PatchLineType.Restriction)
         {
-            if (theLine is IntPatch_RLine aRL)
+            if (line is RLine rl)
             {
-                Curve2DAdaptorBase anArc = (aRL.IsArcOnS1() ? aRL.ArcOnS1() : aRL.ArcOnS2())!;
-                if (anArc.GetType() != CurveKind.Line)
+                Curve2DAdaptorBase arc = (rl.IsArcOnS1 ? rl.ArcOnS1() : rl.ArcOnS2())!;
+                if (arc.GetType() != CurveKind.Line)
                 {
                     // Restriction line must be isoline.
                     // Other cases are not supported by
@@ -1589,85 +1592,85 @@ public partial class IntPatch_ImpPrmIntersection
             }
         }
 
-        double aDeltaUmax = M_PI_2;
-        double aTOL3D = 1.0e-10, aTOL2D = global::Kerf.Engine.Foundation.Precision.PConfusion(), aTOL2DS = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        double deltaUmax = M_PI_2;
+        double tol3D = 1.0e-10, tol2D = global::Kerf.Engine.Foundation.Precision.PConfusion(), tol2DS = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-        IntSurf_LineOn2S aSLine = theLine.Curve()!;
+        LineOn2S sLine = line.Curve()!;
 
-        if (aSLine.NbPoints() <= 2)
+        if (sLine.PointCount <= 2)
         {
             return false;
         }
 
         // Deletes repeated vertices
-        IntSurf_LineOn2S aVLine = GetVertices(theLine, aTOL3D, aTOL2D);
+        LineOn2S vLine = GetVertices(line, tol3D, tol2D);
 
         // OCCT's aSSLine is a second handle to the line's own points: they are edited in place.
-        IntSurf_LineOn2S aSSLine = aSLine;
+        LineOn2S ssLine = sLine;
 
-        if (aSSLine.NbPoints() <= 1)
+        if (ssLine.PointCount <= 1)
         {
             return false;
         }
 
-        AdjustLine(aSSLine, IsReversed, theQSurf, aTOL2D);
+        AdjustLine(ssLine, isReversed, qSurf, tol2D);
 
-        if (theLine.ArcType() == IntPatch_Walking)
+        if (line.ArcType() == PatchLineType.Walking)
         {
             bool isInserted = true;
             while (isInserted)
             {
-                int aNbPnts = aSSLine.NbPoints();
-                NCollection_Array1<int> aPTypes = new(1, aNbPnts);
-                SearchVertices(aSSLine, aVLine, aPTypes);
-                isInserted = InsertSeamVertices(aSSLine, IsReversed, aVLine, aPTypes, aTOL2D);
+                int nbPnts = ssLine.PointCount;
+                NCollection_Array1<int> pTypes = new(1, nbPnts);
+                SearchVertices(ssLine, vLine, pTypes);
+                isInserted = InsertSeamVertices(ssLine, isReversed, vLine, pTypes, tol2D);
             }
         }
 
-        int aLindex = aSSLine.NbPoints();
-        int aFindex = 1, aBindex = 0;
+        int lindex = ssLine.PointCount;
+        int findex = 1, bindex = 0;
 
         // build WLine parts (if any)
         bool flNextLine = true;
         bool hasBeenDecomposed = false;
-        IntPatch_SpecPntType aPrePointExist = IntPatch_SPntNone;
+        SpecPntType prePointExist = SpecPntType.SPntNone;
 
-        IntSurf_PntOn2S PrePoint = new();
+        PntOn2S prePoint = new();
         while (flNextLine)
         {
             // reset variables
             flNextLine = false;
             bool isDecomposited = false;
 
-            IntSurf_LineOn2S sline = new();
+            LineOn2S sline = new();
 
             // if((Lindex-Findex+1) <= 2 )
-            if ((aLindex <= aFindex) && aPrePointExist == IntPatch_SPntNone)
+            if ((lindex <= findex) && prePointExist == SpecPntType.SPntNone)
             {
                 // break of "while(flNextLine)" cycle
                 break;
             }
 
-            if (aPrePointExist != IntPatch_SPntNone)
+            if (prePointExist != SpecPntType.SPntNone)
             {
-                IntSurf_PntOn2S aRefPt = aSSLine.Value(aFindex);
+                PntOn2S refPt = ssLine.Value(findex);
 
-                double aURes = theQSurf.UResolution(theArcTol), aVRes = theQSurf.VResolution(theArcTol);
+                double uRes = qSurf.UResolution(arcTol), vRes = qSurf.VResolution(arcTol);
 
-                double aTol2d = (aPrePointExist == IntPatch_SPntPole)     ? -1.0
-                                : (aPrePointExist == IntPatch_SPntSeamV)  ? aVRes
-                                : (aPrePointExist == IntPatch_SPntSeamUV) ? Math.Max(aURes, aVRes)
-                                                                          : aURes;
+                double tol2d = (prePointExist == SpecPntType.SPntPole)     ? -1.0
+                                : (prePointExist == SpecPntType.SPntSeamV)  ? vRes
+                                : (prePointExist == SpecPntType.SPntSeamUV) ? Math.Max(uRes, vRes)
+                                                                          : uRes;
 
-                if (IntPatch_SpecialPoints.ContinueAfterSpecialPoint(theQSurf, thePSurf, aRefPt, aPrePointExist, aTol2d,
-                                                                     ref PrePoint, IsReversed))
+                if (SpecialPoints.ContinueAfterSpecialPoint(qSurf, pSurf, refPt, prePointExist, tol2d,
+                                                                     ref prePoint, isReversed))
                 {
-                    sline.Add(PrePoint);
+                    sline.Add(prePoint);
 
                     // Avoid adding duplicate points.
-                    for (; aFindex <= aLindex; aFindex++)
+                    for (; findex <= lindex; findex++)
                     {
-                        if (!PrePoint.IsSame(aSSLine.Value(aFindex), theTolTang))
+                        if (!prePoint.IsSame(ssLine.Value(findex), tolTang))
                         {
                             break;
                         }
@@ -1680,15 +1683,15 @@ public partial class IntPatch_ImpPrmIntersection
                 }
             }
 
-            aPrePointExist = IntPatch_SPntNone;
+            prePointExist = SpecPntType.SPntNone;
 
             // analyze other points
-            for (int k = aFindex; k <= aLindex; k++)
+            for (int k = findex; k <= lindex; k++)
             {
-                if (k == aFindex)
+                if (k == findex)
                 {
-                    PrePoint = aSSLine.Value(k);
-                    sline.Add(PrePoint);
+                    prePoint = ssLine.Value(k);
+                    sline.Add(prePoint);
                     continue;
                 }
 
@@ -1699,11 +1702,11 @@ public partial class IntPatch_ImpPrmIntersection
                 bool isOnBoundary = false;
 
                 // Values of sline and isOnBoundary can be changed by this function
-                DetectOfBoundaryAchievement(theQSurf, IsReversed, aSSLine, k, aTOL2D, sline, ref isOnBoundary);
+                DetectOfBoundaryAchievement(qSurf, isReversed, ssLine, k, tol2D, sline, ref isOnBoundary);
 
-                aPrePointExist = IsSeamOrPole(theQSurf, aSSLine, IsReversed, k - 1, theTolTang, aDeltaUmax);
+                prePointExist = IsSeamOrPole(qSurf, ssLine, isReversed, k - 1, tolTang, deltaUmax);
 
-                if (isOnBoundary && (aPrePointExist != IntPatch_SPntPoleSeamU))
+                if (isOnBoundary && (prePointExist != SpecPntType.SPntPoleSeamU))
                 {
                     // If the considered point is on seam then its UV-parameters
                     // are defined to within the surface period. Therefore, we can
@@ -1714,172 +1717,172 @@ public partial class IntPatch_ImpPrmIntersection
                     // (see IntPatch_SpecialPoints::AddSingularPole() method).
                     // E.g. see "bugs modalg_6 bug26684_2" test case.
 
-                    aPrePointExist = IntPatch_SPntNone;
+                    prePointExist = SpecPntType.SPntNone;
                 }
 
-                if (aPrePointExist != IntPatch_SPntNone)
+                if (prePointExist != SpecPntType.SPntNone)
                 {
-                    aBindex = k;
+                    bindex = k;
                     isDecomposited = true;
                     ////
-                    IntSurf_PntOn2S aRefPt = aSSLine.Value(aBindex - 1);
+                    PntOn2S refPt = ssLine.Value(bindex - 1);
 
-                    double aCompareTol3D = global::Kerf.Engine.Foundation.Precision.Confusion();
-                    double aCompareTol2D = global::Kerf.Engine.Foundation.Precision.PConfusion();
+                    double compareTol3D = global::Kerf.Engine.Foundation.Precision.Confusion();
+                    double compareTol2D = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-                    IntSurf_PntOn2S aNewPoint = aRefPt;
-                    IntPatch_SpecPntType aLastType = IntPatch_SPntNone;
+                    PntOn2S newPoint = refPt;
+                    SpecPntType lastType = SpecPntType.SPntNone;
 
-                    if (aPrePointExist == IntPatch_SPntSeamUV)
+                    if (prePointExist == SpecPntType.SPntSeamUV)
                     {
-                        aPrePointExist = IntPatch_SPntNone;
-                        aLastType = IntPatch_SPntSeamUV;
-                        IntPatch_SpecialPoints.AddCrossUVIsoPoint(theQSurf, thePSurf, aRefPt, theTolTang, ref aNewPoint,
-                                                                  IsReversed);
+                        prePointExist = SpecPntType.SPntNone;
+                        lastType = SpecPntType.SPntSeamUV;
+                        SpecialPoints.AddCrossUVIsoPoint(qSurf, pSurf, refPt, tolTang, ref newPoint,
+                                                                  isReversed);
                     }
-                    else if (aPrePointExist == IntPatch_SPntSeamV)
+                    else if (prePointExist == SpecPntType.SPntSeamV)
                     { // WLine goes through seam
-                        aPrePointExist = IntPatch_SPntNone;
-                        aLastType = IntPatch_SPntSeamV;
+                        prePointExist = SpecPntType.SPntNone;
+                        lastType = SpecPntType.SPntSeamV;
 
                         // Not quadric point
-                        double aU0, aV0;
+                        double u0, v0;
                         // Quadric point
-                        double aUQuadRef, aVQuadRef;
+                        double uQuadRef, vQuadRef;
 
-                        if (IsReversed)
+                        if (isReversed)
                         {
-                            aRefPt.Parameters(out aU0, out aV0, out aUQuadRef, out aVQuadRef);
+                            refPt.Parameters(out u0, out v0, out uQuadRef, out vQuadRef);
                         }
                         else
                         {
-                            aRefPt.Parameters(out aUQuadRef, out aVQuadRef, out aU0, out aV0);
+                            refPt.Parameters(out uQuadRef, out vQuadRef, out u0, out v0);
                         }
 
-                        math_Vector aTol = new(1, 3), aStartPoint = new(1, 3), anInfBound = new(1, 3),
-                                    aSupBound = new(1, 3);
+                        math_Vector tol = new(1, 3), startPoint = new(1, 3), infBound = new(1, 3),
+                                    supBound = new(1, 3);
 
                         // Parameters on parametric surface
-                        double aUp, aVp, aUq, aVq;
-                        if (IsReversed)
+                        double up, vp, uq, vq;
+                        if (isReversed)
                         {
-                            aSSLine.Value(k).Parameters(out aUp, out aVp, out aUq, out aVq);
+                            ssLine.Value(k).Parameters(out up, out vp, out uq, out vq);
                         }
                         else
                         {
-                            aSSLine.Value(k).Parameters(out aUq, out aVq, out aUp, out aVp);
+                            ssLine.Value(k).Parameters(out uq, out vq, out up, out vp);
                         }
 
-                        aTol[1] = thePSurf.UResolution(theArcTol);
-                        aTol[2] = thePSurf.VResolution(theArcTol);
-                        aTol[3] = theQSurf.UResolution(theArcTol);
-                        aStartPoint[1] = 0.5 * (aU0 + aUp);
-                        aStartPoint[2] = 0.5 * (aV0 + aVp);
-                        aStartPoint[3] = 0.5 * (aUQuadRef + aUq);
-                        anInfBound[1] = thePSurf.FirstUParameter();
-                        anInfBound[2] = thePSurf.FirstVParameter();
-                        anInfBound[3] = theQSurf.FirstUParameter();
-                        aSupBound[1] = thePSurf.LastUParameter();
-                        aSupBound[2] = thePSurf.LastVParameter();
-                        aSupBound[3] = theQSurf.LastUParameter();
+                        tol[1] = pSurf.UResolution(arcTol);
+                        tol[2] = pSurf.VResolution(arcTol);
+                        tol[3] = qSurf.UResolution(arcTol);
+                        startPoint[1] = 0.5 * (u0 + up);
+                        startPoint[2] = 0.5 * (v0 + vp);
+                        startPoint[3] = 0.5 * (uQuadRef + uq);
+                        infBound[1] = pSurf.FirstUParameter();
+                        infBound[2] = pSurf.FirstVParameter();
+                        infBound[3] = qSurf.FirstUParameter();
+                        supBound[1] = pSurf.LastUParameter();
+                        supBound[2] = pSurf.LastVParameter();
+                        supBound[3] = qSurf.LastUParameter();
 
-                        IntPatch_SpecialPoints.AddPointOnUorVIso(theQSurf, thePSurf, aRefPt, false, 0.0, aTol, aStartPoint,
-                                                                 anInfBound, aSupBound, ref aNewPoint, IsReversed);
+                        SpecialPoints.AddPointOnUorVIso(qSurf, pSurf, refPt, false, 0.0, tol, startPoint,
+                                                                 infBound, supBound, ref newPoint, isReversed);
                     }
-                    else if (aPrePointExist == IntPatch_SPntPoleSeamU)
+                    else if (prePointExist == SpecPntType.SPntPoleSeamU)
                     {
-                        aPrePointExist = IntPatch_SPntNone;
+                        prePointExist = SpecPntType.SPntNone;
 
-                        IntPatch_Point aVert = new();
-                        aVert.SetValue(aRefPt);
-                        aVert.SetTolerance(theTolTang);
+                        PatchPoint vert = new();
+                        vert.SetValue(refPt);
+                        vert.SetTolerance(tolTang);
 
-                        if (IntPatch_SpecialPoints.AddSingularPole(theQSurf, thePSurf, aRefPt, ref aVert, ref aNewPoint,
-                                                                   IsReversed))
+                        if (SpecialPoints.AddSingularPole(qSurf, pSurf, refPt, ref vert, ref newPoint,
+                                                                   isReversed))
                         {
-                            aPrePointExist = IntPatch_SPntPole;
-                            aLastType = IntPatch_SPntPole;
+                            prePointExist = SpecPntType.SPntPole;
+                            lastType = SpecPntType.SPntPole;
                             if (isOnBoundary)
                             {
                                 // It is necessary to replace earlier added point on
                                 // the surface boundary with the pole. For that,
                                 // here we delete excess point. New point will be added later.
                                 isOnBoundary = false;
-                                sline.RemovePoint(sline.NbPoints());
+                                sline.RemovePoint(sline.PointCount);
                             }
 
-                            aCompareTol2D = -1.0;
+                            compareTol2D = -1.0;
                         } // if(IntPatch_AddSpecialPoints::AddSingularPole(...))
                         else
                         { // Pole is not an intersection point
-                            aPrePointExist = IntPatch_SPntSeamU;
+                            prePointExist = SpecPntType.SPntSeamU;
                         }
                     }
 
-                    if (aPrePointExist == IntPatch_SPntSeamU)
+                    if (prePointExist == SpecPntType.SPntSeamU)
                     { // WLine goes through seam
-                        aPrePointExist = IntPatch_SPntNone;
-                        aLastType = IntPatch_SPntSeamU;
+                        prePointExist = SpecPntType.SPntNone;
+                        lastType = SpecPntType.SPntSeamU;
 
                         // Not quadric point
-                        double aU0, aV0;
+                        double u0, v0;
                         // Quadric point
-                        double aUQuadRef, aVQuadRef;
+                        double uQuadRef, vQuadRef;
 
-                        if (IsReversed)
+                        if (isReversed)
                         {
-                            aRefPt.Parameters(out aU0, out aV0, out aUQuadRef, out aVQuadRef);
+                            refPt.Parameters(out u0, out v0, out uQuadRef, out vQuadRef);
                         }
                         else
                         {
-                            aRefPt.Parameters(out aUQuadRef, out aVQuadRef, out aU0, out aV0);
+                            refPt.Parameters(out uQuadRef, out vQuadRef, out u0, out v0);
                         }
 
-                        math_Vector aTol = new(1, 3), aStartPoint = new(1, 3), anInfBound = new(1, 3),
-                                    aSupBound = new(1, 3);
+                        math_Vector tol = new(1, 3), startPoint = new(1, 3), infBound = new(1, 3),
+                                    supBound = new(1, 3);
 
                         // Parameters on parametric surface
-                        double aUp, aVp, aUq, aVq;
-                        if (IsReversed)
+                        double up, vp, uq, vq;
+                        if (isReversed)
                         {
-                            aSSLine.Value(k).Parameters(out aUp, out aVp, out aUq, out aVq);
+                            ssLine.Value(k).Parameters(out up, out vp, out uq, out vq);
                         }
                         else
                         {
-                            aSSLine.Value(k).Parameters(out aUq, out aVq, out aUp, out aVp);
+                            ssLine.Value(k).Parameters(out uq, out vq, out up, out vp);
                         }
 
-                        aTol[1] = thePSurf.UResolution(theArcTol);
-                        aTol[2] = thePSurf.VResolution(theArcTol);
-                        aTol[3] = theQSurf.VResolution(theArcTol);
-                        aStartPoint[1] = 0.5 * (aU0 + aUp);
-                        aStartPoint[2] = 0.5 * (aV0 + aVp);
-                        aStartPoint[3] = 0.5 * (aVQuadRef + aVq);
-                        anInfBound[1] = thePSurf.FirstUParameter();
-                        anInfBound[2] = thePSurf.FirstVParameter();
-                        anInfBound[3] = theQSurf.FirstVParameter();
-                        aSupBound[1] = thePSurf.LastUParameter();
-                        aSupBound[2] = thePSurf.LastVParameter();
-                        aSupBound[3] = theQSurf.LastVParameter();
+                        tol[1] = pSurf.UResolution(arcTol);
+                        tol[2] = pSurf.VResolution(arcTol);
+                        tol[3] = qSurf.VResolution(arcTol);
+                        startPoint[1] = 0.5 * (u0 + up);
+                        startPoint[2] = 0.5 * (v0 + vp);
+                        startPoint[3] = 0.5 * (vQuadRef + vq);
+                        infBound[1] = pSurf.FirstUParameter();
+                        infBound[2] = pSurf.FirstVParameter();
+                        infBound[3] = qSurf.FirstVParameter();
+                        supBound[1] = pSurf.LastUParameter();
+                        supBound[2] = pSurf.LastVParameter();
+                        supBound[3] = qSurf.LastVParameter();
 
-                        IntPatch_SpecialPoints.AddPointOnUorVIso(theQSurf, thePSurf, aRefPt, true, 0.0, aTol, aStartPoint,
-                                                                 anInfBound, aSupBound, ref aNewPoint, IsReversed);
+                        SpecialPoints.AddPointOnUorVIso(qSurf, pSurf, refPt, true, 0.0, tol, startPoint,
+                                                                 infBound, supBound, ref newPoint, isReversed);
                     }
 
-                    if (!aNewPoint.IsSame(aRefPt, aCompareTol3D, aCompareTol2D))
+                    if (!newPoint.IsSame(refPt, compareTol3D, compareTol2D))
                     {
                         if (isOnBoundary)
                         {
                             break;
                         }
 
-                        sline.Add(aNewPoint);
-                        aPrePointExist = aLastType;
-                        PrePoint = aNewPoint;
+                        sline.Add(newPoint);
+                        prePointExist = lastType;
+                        prePoint = newPoint;
                     }
                     else
                     {
-                        if (isOnBoundary || (sline.NbPoints() == 1))
+                        if (isOnBoundary || (sline.PointCount == 1))
                         {
                             // FIRST point of the sline is the pole of the quadric.
                             // Therefore, there is no point in decomposition.
@@ -1888,8 +1891,8 @@ public partial class IntPatch_ImpPrmIntersection
                             // it is already marked as vertex. So, decomposition is
                             // not required, too.
 
-                            PrePoint = aRefPt;
-                            aPrePointExist = isOnBoundary ? IntPatch_SPntNone : aLastType;
+                            prePoint = refPt;
+                            prePointExist = isOnBoundary ? SpecPntType.SPntNone : lastType;
                         }
                     }
 
@@ -1897,31 +1900,31 @@ public partial class IntPatch_ImpPrmIntersection
                     break;
                 } // if (aPrePointExist != IntPatch_SPntNone) cond.
 
-                PrePoint = aSSLine.Value(k);
+                prePoint = ssLine.Value(k);
 
                 if (isOnBoundary)
                 {
-                    aBindex = k;
+                    bindex = k;
                     isDecomposited = true;
-                    aPrePointExist = IntPatch_SPntNone;
+                    prePointExist = SpecPntType.SPntNone;
                     break;
                 }
                 else
                 {
-                    sline.Add(aSSLine.Value(k));
+                    sline.Add(ssLine.Value(k));
                 }
             } // for(int k = aFindex; k <= aLindex; k++)
 
             // Creation of new line as part of existing theLine.
             // This part is defined by sline.
 
-            if (sline.NbPoints() == 1)
+            if (sline.PointCount == 1)
             {
                 flNextLine = true;
 
-                if (aFindex < aBindex)
+                if (findex < bindex)
                 {
-                    aFindex = aBindex;
+                    findex = bindex;
                 }
 
                 // Go to the next part of aSSLine
@@ -1931,68 +1934,68 @@ public partial class IntPatch_ImpPrmIntersection
                 continue;
             }
 
-            IntSurf_PntOn2S aVF = new(), aVL = new();
-            VerifyVertices(sline, IsReversed, aVLine, aTOL2DS, theArcTol, thePDomain, ref aVF, out bool addVF, ref aVL,
+            PntOn2S vf = new(), vl = new();
+            VerifyVertices(sline, isReversed, vLine, tol2DS, arcTol, pDomain, ref vf, out bool addVF, ref vl,
                            out bool addVL);
 
-            bool hasInternals = HasInternals(sline, aVLine);
+            bool hasInternals = HasInternals(sline, vLine);
 
-            double D3F = 0.0, D3L = 0.0;
-            ToSmooth(sline, IsReversed, theQuad, true, ref D3F);
-            ToSmooth(sline, IsReversed, theQuad, false, ref D3L);
+            double d3F = 0.0, d3L = 0.0;
+            ToSmooth(sline, isReversed, quad, true, ref d3F);
+            ToSmooth(sline, isReversed, quad, false, ref d3L);
 
             if (addVF || addVL)
             {
-                bool isAdded = AddVertices(sline, aVF, addVF, aVL, addVL, D3F, D3L);
+                bool isAdded = AddVertices(sline, vf, addVF, vl, addVL, d3F, d3L);
                 if (isAdded)
                 {
-                    ToSmooth(sline, IsReversed, theQuad, true, ref D3F);
-                    ToSmooth(sline, IsReversed, theQuad, false, ref D3L);
+                    ToSmooth(sline, isReversed, quad, true, ref d3F);
+                    ToSmooth(sline, isReversed, quad, false, ref d3L);
                 }
             }
 
-            if (theLine.ArcType() == IntPatch_Walking)
+            if (line.ArcType() == PatchLineType.Walking)
             {
-                IntPatch_Point aTPntF = new(), aTPntL = new();
+                PatchPoint tPntF = new(), tPntL = new();
 
-                IntPatch_WLine wline = new(sline, false, theLine.TransitionOnS1(), theLine.TransitionOnS2());
-                wline.SetCreatingWayInfo(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpPrm);
+                WLine wline = new(sline, false, line.TransitionOnS1(), line.TransitionOnS2());
+                wline.SetCreatingWayInfo(WLine.IntPatch_WLType.WLImpPrm);
 
-                Point3D aSPnt = sline.Value(1).Value();
-                sline.Value(1).Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
-                aTPntF.SetValue(aSPnt, theArcTol, false);
-                aTPntF.SetParameters(aU1, aV1, aU2, aV2);
-                aTPntF.SetParameter(1.0);
-                wline.AddVertex(aTPntF);
+                Point3D sPnt = sline.Value(1).Value();
+                sline.Value(1).Parameters(out double u1, out double v1, out double u2, out double v2);
+                tPntF.SetValue(sPnt, arcTol, false);
+                tPntF.SetParameters(u1, v1, u2, v2);
+                tPntF.SetParameter(1.0);
+                wline.AddVertex(tPntF);
                 wline.SetFirstPoint(1);
 
                 if (hasInternals)
                 {
-                    PutIntVertices(wline, sline, IsReversed, aVLine, theArcTol);
+                    PutIntVertices(wline, sline, isReversed, vLine, arcTol);
                 }
 
-                aSPnt = sline.Value(sline.NbPoints()).Value();
-                sline.Value(sline.NbPoints()).Parameters(out aU1, out aV1, out aU2, out aV2);
-                aTPntL.SetValue(aSPnt, theArcTol, false);
-                aTPntL.SetParameters(aU1, aV1, aU2, aV2);
-                aTPntL.SetParameter(sline.NbPoints());
-                wline.AddVertex(aTPntL);
-                wline.SetLastPoint(wline.NbVertex());
+                sPnt = sline.Value(sline.PointCount).Value();
+                sline.Value(sline.PointCount).Parameters(out u1, out v1, out u2, out v2);
+                tPntL.SetValue(sPnt, arcTol, false);
+                tPntL.SetParameters(u1, v1, u2, v2);
+                tPntL.SetParameter(sline.PointCount);
+                wline.AddVertex(tPntL);
+                wline.SetLastPoint(wline.VertexCount);
 
-                NCollection_Sequence<IntPatch_Line> segm = new();
-                bool isSplited = SplitOnSegments(wline, false, theLine.TransitionOnS1(), theLine.TransitionOnS2(),
-                                                 theArcTol, segm);
+                NCollection_Sequence<PatchLine> segm = new();
+                bool isSplited = SplitOnSegments(wline, false, line.TransitionOnS1(), line.TransitionOnS2(),
+                                                 arcTol, segm);
 
                 if (!isSplited)
                 {
-                    theLines.Append(wline);
+                    lines.Append(wline);
                 }
                 else
                 {
                     int nbsegms = segm.Length();
                     for (int iseg = 1; iseg <= nbsegms; iseg++)
                     {
-                        theLines.Append(segm.Value(iseg));
+                        lines.Append(segm.Value(iseg));
                     }
                 }
             }
@@ -2001,90 +2004,90 @@ public partial class IntPatch_ImpPrmIntersection
                 if (!isDecomposited && !hasBeenDecomposed)
                 {
                     // The line has not been changed
-                    theLines.Append((IntPatch_RLine)theLine);
+                    lines.Append((RLine)line);
                     return hasBeenDecomposed;
                 }
 
-                IntPatch_Point aTPnt = new();
+                PatchPoint tPnt = new();
                 Point2D aPSurf;
-                Point3D aSPnt;
+                Point3D sPnt;
 
-                IntPatch_RLine aRLine = new((IntPatch_RLine)theLine);
+                RLine rLine = new((RLine)line);
 
-                aRLine.ClearVertexes();
-                aRLine.SetCurve(sline);
+                rLine.ClearVertexes();
+                rLine.SetCurve(sline);
 
                 if (hasInternals)
                 {
-                    PutIntVertices(aRLine, sline, IsReversed, aVLine, theArcTol);
+                    PutIntVertices(rLine, sline, isReversed, vLine, arcTol);
                 }
 
-                Curve2DAdaptorBase anArc = (aRLine.IsArcOnS1() ? aRLine.ArcOnS1() : aRLine.ArcOnS2())!;
+                Curve2DAdaptorBase arc = (rLine.IsArcOnS1 ? rLine.ArcOnS1() : rLine.ArcOnS2())!;
 
-                double aFPar = anArc.FirstParameter(), aLPar = anArc.LastParameter();
+                double fPar = arc.FirstParameter(), lPar = arc.LastParameter();
 
-                IntSurf_PntOn2S aRFirst = sline.Value(1), aRLast = sline.Value(sline.NbPoints());
+                PntOn2S rFirst = sline.Value(1), rLast = sline.Value(sline.PointCount);
 
-                Line2D aLin = anArc.Line();
+                Line2D lin = arc.Line();
 
-                for (int aFLIndex = 0; aFLIndex < 2; aFLIndex++)
+                for (int flIndex = 0; flIndex < 2; flIndex++)
                 {
-                    double aU1, aV1, aU2, aV2;
-                    if (aFLIndex == 0)
+                    double u1, v1, u2, v2;
+                    if (flIndex == 0)
                     {
-                        aRFirst.Parameters(out aU1, out aV1, out aU2, out aV2);
-                        aSPnt = aRFirst.Value();
+                        rFirst.Parameters(out u1, out v1, out u2, out v2);
+                        sPnt = rFirst.Value();
                     }
                     else
                     {
-                        aRLast.Parameters(out aU1, out aV1, out aU2, out aV2);
-                        aSPnt = aRLast.Value();
+                        rLast.Parameters(out u1, out v1, out u2, out v2);
+                        sPnt = rLast.Value();
                     }
 
-                    if (IsReversed)
+                    if (isReversed)
                     {
-                        aPSurf = new Point2D(aU1, aV1);
+                        aPSurf = new Point2D(u1, v1);
                     }
                     else
                     {
-                        aPSurf = new Point2D(aU2, aV2);
+                        aPSurf = new Point2D(u2, v2);
                     }
 
-                    double aPar = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin, aPSurf);
+                    double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, aPSurf);
 
-                    if (aFLIndex == 0)
+                    if (flIndex == 0)
                     {
-                        aFPar = Math.Max(aFPar, aPar);
-                        aPar = aFPar;
+                        fPar = Math.Max(fPar, par);
+                        par = fPar;
                     }
                     else
                     {
-                        aLPar = Math.Min(aLPar, aPar);
-                        aPar = aLPar;
+                        lPar = Math.Min(lPar, par);
+                        par = lPar;
                     }
 
-                    aTPnt.SetParameter(aPar);
-                    aTPnt.SetValue(aSPnt, theArcTol, false);
-                    aTPnt.SetParameters(aU1, aV1, aU2, aV2);
+                    tPnt.SetParameter(par);
+                    tPnt.SetValue(sPnt, arcTol, false);
+                    tPnt.SetParameters(u1, v1, u2, v2);
 
-                    aRLine.AddVertex(aTPnt);
+                    rLine.AddVertex(tPnt);
                 }
 
-                if (aLPar - aFPar > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (lPar - fPar > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    aRLine.SetFirstPoint(1);
-                    aRLine.SetLastPoint(aRLine.NbVertex());
+                    rLine.SetFirstPoint(1);
+                    rLine.SetLastPoint(rLine.VertexCount);
 
                     // OCCT: Trim returns a new adaptor, which is discarded; the arc itself is not trimmed (reproduced).
-                    _ = anArc.Trim(aFPar, aLPar, theArcTol);
+                    _ = arc.Trim(fPar, lPar, arcTol);
 
-                    theLines.Append(aRLine);
+                    lines.Append(rLine);
                 }
             }
 
             if (isDecomposited)
             {
-                aFindex = aBindex;
+                findex = bindex;
                 flNextLine = hasBeenDecomposed = true;
             }
         }
@@ -2093,14 +2096,14 @@ public partial class IntPatch_ImpPrmIntersection
     }
 
     // Returns TRUE if the segment [theParF, theParL] is included in the segment [theRefParF, theRefParL] segment.
-    private static bool CheckSegmSegm(double theRefParF, double theRefParL, double theParF, double theParL)
+    private static bool CheckSegmSegm(double refParF, double refParL, double parF, double parL)
     {
-        if ((theParF < theRefParF) || (theParF > theRefParL))
+        if ((parF < refParF) || (parF > refParL))
         {
             return false;
         }
 
-        if ((theParL < theRefParF) || (theParL > theRefParL))
+        if ((parL < refParF) || (parL > refParL))
         {
             return false;
         }
@@ -2110,19 +2113,19 @@ public partial class IntPatch_ImpPrmIntersection
 
     // Check, if theLine is coincided with theArc (in 2d-space). Cases when theArc is not 2d-line adaptor are
     // supported by TopOpeBRep classes only (i.e. are archaic).
-    private static bool IsCoincide(IntPatch_TheSurfFunction theFunc, IntPatch_PointLine theLine,
-                                   Curve2DAdaptorBase theArc, bool isTheSurface1Using, double theToler3D,
-                                   double theToler2D, double thePeriod)
+    private static bool IsCoincide(TheSurfFunction func, PointLine line,
+                                   Curve2DAdaptorBase arc, bool isTheSurface1Using, double toler3D,
+                                   double toler2D, double period)
     {
-        ReadOnlySpan<double> aCoeffs =
+        ReadOnlySpan<double> coeffs =
         [
             0.02447174185, 0.09549150281, 0.20610737385, 0.34549150281, /*Sin(x)*Sin(x)*/
             0.5, 0.65450849719, 0.79389262615,
         ];
-        if (theLine.ArcType() == IntPatch_Restriction)
+        if (line.ArcType() == PatchLineType.Restriction)
         { // Restriction-restriction processing
-            IntPatch_RLine aRL2 = (IntPatch_RLine)theLine;
-            Curve2DAdaptorBase anArc = (aRL2.IsArcOnS1() ? aRL2.ArcOnS1() : aRL2.ArcOnS2())!;
+            RLine rl2 = (RLine)line;
+            Curve2DAdaptorBase anArc = (rl2.IsArcOnS1 ? rl2.ArcOnS1() : rl2.ArcOnS2())!;
 
             if (anArc.GetType() != CurveKind.Line)
             {
@@ -2133,23 +2136,23 @@ public partial class IntPatch_ImpPrmIntersection
                 return false;
             }
 
-            Line2D aLin1 = theArc.Line(), aLin2 = anArc.Line();
+            Line2D lin1 = arc.Line(), lin2 = anArc.Line();
 
-            if (!aLin1.Direction().IsParallel(aLin2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+            if (!lin1.Direction().IsParallel(lin2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return false;
             }
 
-            double aDist = theArc.Line().Distance(anArc.Line());
-            if ((aDist < theToler2D) || (Math.Abs(aDist - thePeriod) < theToler2D))
+            double dist = arc.Line().Distance(anArc.Line());
+            if ((dist < toler2D) || (Math.Abs(dist - period) < toler2D))
             {
-                double aRf = theArc.FirstParameter(), aRl = theArc.LastParameter();
-                double aParf = anArc.FirstParameter(), aParl = anArc.LastParameter();
-                Point2D aP1 = global::Kerf.Engine.Geometry.ElCLib.Value(aParf, aLin2), aP2 = global::Kerf.Engine.Geometry.ElCLib.Value(aParl, aLin2);
+                double rf = arc.FirstParameter(), rl = arc.LastParameter();
+                double parf = anArc.FirstParameter(), parl = anArc.LastParameter();
+                Point2D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(parf, lin2), p2 = global::Kerf.Engine.Geometry.ElCLib.Value(parl, lin2);
 
-                double aParam1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin1, aP1), aParam2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(aLin1, aP2);
+                double param1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin1, p1), param2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin1, p2);
 
-                if (CheckSegmSegm(aRf, aRl, aParam1, aParam2))
+                if (CheckSegmSegm(rf, rl, param1, param2))
                 {
                     return true;
                 }
@@ -2158,45 +2161,45 @@ public partial class IntPatch_ImpPrmIntersection
                 // projecting points to another line in order to check
                 // if segment second line is included in segment of first one.
 
-                return CheckSegmSegm(aParam1, aParam2, aRf, aRl);
+                return CheckSegmSegm(param1, param2, rf, rl);
             }
 
             return false;
         }
 
-        int aNbPnts = theLine.NbPnts();
-        double aUAf = theArc.FirstParameter(), aUAl = theArc.LastParameter();
-        Line2D anArcLin = theArc.Line();
+        int nbPnts = line.NbPnts();
+        double uAf = arc.FirstParameter(), uAl = arc.LastParameter();
+        Line2D arcLin = arc.Line();
 
-        math_Vector aX = new(1, 2), aVal = new(1, 1);
+        math_Vector x = new(1, 2), val = new(1, 1);
 
-        for (int aPtID = 1; aPtID <= aNbPnts; aPtID++)
+        for (int ptID = 1; ptID <= nbPnts; ptID++)
         {
-            double aUf, aVf;
+            double uf, vf;
             if (isTheSurface1Using)
             {
-                theLine.Point(aPtID).ParametersOnS1(out aUf, out aVf);
+                line.Point(ptID).ParametersOnS1(out uf, out vf);
             }
             else
             {
-                theLine.Point(aPtID).ParametersOnS2(out aUf, out aVf);
+                line.Point(ptID).ParametersOnS2(out uf, out vf);
             }
 
             // Take 2d-point in parametric surface (because theArc is
             // 2d-line in parametric surface).
-            Point2D aPloc = new(aUf, aVf);
+            Point2D ploc = new(uf, vf);
 
-            double aRParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(anArcLin, aPloc);
+            double rParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(arcLin, ploc);
 
-            if ((aRParam < aUAf) || (aRParam > aUAl))
+            if ((rParam < uAf) || (rParam > uAl))
             {
                 return false;
             }
 
-            Point2D aPmin = global::Kerf.Engine.Geometry.ElCLib.Value(aRParam, anArcLin);
+            Point2D pmin = global::Kerf.Engine.Geometry.ElCLib.Value(rParam, arcLin);
 
-            double aDist = aPloc.Distance(aPmin);
-            if ((aDist < theToler2D) || (Math.Abs(aDist - thePeriod) < theToler2D))
+            double dist = ploc.Distance(pmin);
+            if ((dist < toler2D) || (Math.Abs(dist - period) < toler2D))
             { // Considered point is in Restriction line.
                 // Go to the next point.
                 continue;
@@ -2206,24 +2209,24 @@ public partial class IntPatch_ImpPrmIntersection
             // intersection point (i.e. if aPloc is in tangent zone between
             // two intersected surfaces).
 
-            double aUl = aPmin.X(), aVl = aPmin.Y();
+            double ul = pmin.X(), vl = pmin.Y();
 
-            double aU, aV;
-            double dU = aUl - aUf, dV = aVl - aVf;
+            double u, v;
+            double dU = ul - uf, dV = vl - vf;
             for (int i = 0; i < 7; i++)
             {
-                aU = aUf + aCoeffs[i] * dU;
-                aV = aVf + aCoeffs[i] * dV;
+                u = uf + coeffs[i] * dU;
+                v = vf + coeffs[i] * dV;
 
-                aX[1] = aU;
-                aX[2] = aV;
+                x[1] = u;
+                x[2] = v;
 
-                if (!theFunc.Value(aX, aVal))
+                if (!func.Value(x, val))
                 {
                     return false;
                 }
 
-                if (Math.Abs(theFunc.Root()) > theToler3D)
+                if (Math.Abs(func.Root()) > toler3D)
                 {
                     return false;
                 }

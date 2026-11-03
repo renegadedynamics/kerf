@@ -150,7 +150,7 @@ public class Transfer_TransferOutput
                 continue;
             }
             Transfer_StatusExec statex = binder.StatusExec();
-            bool ok = statex == Transfer_StatusInitial || statex == Transfer_StatusDone;
+            bool ok = statex == Transfer_StatusExec.Transfer_StatusInitial || statex == Transfer_StatusExec.Transfer_StatusDone;
             if (ok == normal)
             {
                 list.AddItem(roots ? theproc.Root(i) : theproc.Mapped(i));

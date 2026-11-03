@@ -104,7 +104,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
             if (aFASC is not null
                 // If current surface color is null, we will use negative side color.
                 // Otherwise negative side color is ignored.
-                && (theSurfaceColour is null || theSide != StepVisual_ssNegative)) // abv 30 Mar 00: trj3_s1-pe.stp
+                && (theSurfaceColour is null || theSide != StepVisual_SurfaceSide.StepVisual_ssNegative)) // abv 30 Mar 00: trj3_s1-pe.stp
             {
                 theSurfaceColour = aFASC.FillColour();
             }
@@ -554,7 +554,7 @@ public class STEPConstruct_Styles : STEPConstruct_Tool
             SSS.Init(SSSName, SSESs);
 
             StepVisual_SurfaceStyleUsage SSU = new StepVisual_SurfaceStyleUsage();
-            SSU.Init(StepVisual_ssBoth, SSS);
+            SSU.Init(StepVisual_SurfaceSide.StepVisual_ssBoth, SSS);
 
             items.Append(SSU);
         }

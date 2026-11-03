@@ -2,216 +2,219 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Engine.Foundation.Gravity;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>Extends BOPAlgo_BuilderSolid with the solid to split and its own progress range, for the builder's parallel loop.</summary>
-internal sealed class BOPAlgo_SplitSolid : BOPAlgo_BuilderSolid, BOPTools_Parallel.ISolver
+internal sealed class SplitSolid : BuilderSolid, BooleanParallel.ISolver
 {
-    private Solid mySolid = new(); //!< Solid to split
-    private ProgressRange myRange;
+    private Solid _solid = new(); //!< Solid to split
+    private ProgressRange _range;
 
     //! Sets the solid
-    public void SetSolid(in Solid theSolid) => mySolid = theSolid;
+    public void SetSolid(in Solid solid) => _solid = solid;
 
     //! Returns the solid
-    public Solid Solid() => mySolid;
+    public Solid Solid() => _solid;
 
     //! Sets progress range
-    public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
+    public void SetProgressRange(ProgressRange range) => _range = range;
 
     // New perform method, using own progress range
     public void Perform()
     {
-        using var aPS = new ProgressScope(myRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_range, null, 1);
+        if (!ps.More())
         {
             return;
         }
-        base.Perform(aPS.Next());
+        base.Perform(ps.Next());
     }
 
     //! Disables the range enabled method (private in OCCT; C# can't narrow an override)
-    public override void Perform(ProgressRange theRange = default)
+    public override void Perform(ProgressRange range = default)
     {
     }
 }
 
-public partial class BOPAlgo_Builder
+public partial class BooleanBuilder
 {
     /// <summary>Fills the images of the solids: the split solids with their internal parts.</summary>
-    protected void FillImagesSolids(ProgressRange theRange)
+    protected void FillImagesSolids(ProgressRange range)
     {
-        int i = 0, aNbS = myDS!.NbSourceShapes();
-        for (i = 0; i < aNbS; ++i)
+        int i = 0, nbS = _ds!.SourceShapeCount;
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == ShapeType.Solid)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() == ShapeType.Solid)
             {
                 break;
             }
         }
-        if (i >= aNbS)
+        if (i >= nbS)
         {
             return;
         }
 
-        using var aPS = new ProgressScope(theRange, "Building splits of solids", 10);
+        using var ps = new ProgressScope(range, "Building splits of solids", 10);
         // Draft solids
-        NCollection_DataMap<Shape, Shape> aDraftSolids = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> draftSolids = new(ShapeHasher.Instance);
         // Find all IN faces for all IN faces
-        FillIn3DParts(aDraftSolids, aPS.Next(4));
-        if (HasErrors())
+        FillIn3DParts(draftSolids, ps.Next(4));
+        if (HasErrors)
         {
             return;
         }
         // Build split of the solids
-        BuildSplitSolids(aDraftSolids, aPS.Next(5));
-        if (HasErrors())
+        BuildSplitSolids(draftSolids, ps.Next(5));
+        if (HasErrors)
         {
             return;
         }
         // Fill solids with internal parts
-        FillInternalShapes(aPS.Next());
+        FillInternalShapes(ps.Next());
     }
 
     /// <summary>Builds the draft solids and finds the faces IN each solid (its own internal ones and others').</summary>
-    protected virtual void FillIn3DParts(NCollection_DataMap<Shape, Shape> theDraftSolids, ProgressRange theRange)
+    protected virtual void FillIn3DParts(NCollection_DataMap<Shape, Shape> draftSolids, ProgressRange range)
     {
-        using var aPS = new ProgressScope(theRange, null, 2);
+        using var ps = new ProgressScope(range, null, 2);
 
         // Find all faces that are IN solids
 
         // Store boxes of the shapes into a map
-        NCollection_DataMap<Shape, Box> aShapeBoxMap = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Box> shapeBoxMap = new(ShapeHasher.Instance);
 
         // Fence map
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
 
         // Get all faces
-        NCollection_List<Shape> aLFaces = new();
+        NCollection_List<Shape> lFaces = new();
 
-        int i, aNbS = myDS!.NbSourceShapes();
-        for (i = 0; i < aNbS; ++i)
+        int i, nbS = _ds!.SourceShapeCount;
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Face)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
 
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
 
-            Shape aS = aSI.Shape();
+            Shape s = si.Shape();
 
-            if (myImages.Find(aS, out NCollection_List<Shape> pLSIm))
+            if (_images.Find(s, out NCollection_List<Shape> pLSIm))
             {
-                NCollection_List<Shape>.Iterator aItLSIm = new(pLSIm);
-                for (; aItLSIm.More(); aItLSIm.Next())
+                NCollection_List<Shape>.Iterator itLSIm = new(pLSIm);
+                for (; itLSIm.More(); itLSIm.Next())
                 {
-                    Shape aSIm = aItLSIm.Value();
-                    if (aMFence.Add(aSIm))
+                    Shape sIm = itLSIm.Value();
+                    if (mFence.Add(sIm))
                     {
-                        aLFaces.Append(aSIm);
+                        lFaces.Append(sIm);
                     }
                 }
             }
             else
             {
-                aLFaces.Append(aS);
-                aShapeBoxMap.Bind(aS, aSI.Box());
+                lFaces.Append(s);
+                shapeBoxMap.Bind(s, si.Box());
             }
         }
 
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
 
         // Get all solids
-        NCollection_List<Shape> aLSolids = new();
+        NCollection_List<Shape> lSolids = new();
         // Keep INTERNAL faces of the solids
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> solidsIF = new(ShapeHasher.Instance);
         // Draft solids
-        NCollection_IndexedDataMap<Shape, Shape> aDraftSolid = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, Shape> draftSolid = new(ShapeHasher.Instance);
 
-        for (i = 0; i < aNbS; ++i)
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ChangeShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Solid)
+            ShapeInfo si = _ds.ChangeShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            Shape aS = aSI.Shape();
-            Solid aSolid = ShapeCasts.Solid(aS);
+            Shape s = si.Shape();
+            Solid solid = ShapeCasts.Solid(s);
             //
             // Bounding box for the solid aS
-            ref Box aBoxS = ref aSI.ChangeBox();
-            if (aBoxS.IsVoid)
+            ref Box boxS = ref si.ChangeBox();
+            if (boxS.IsVoid)
             {
-                myDS.BuildBndBoxSolid(i, ref aBoxS, myCheckInverted);
+                _ds.BuildBndBoxSolid(i, ref boxS, _checkInverted);
             }
 
             // Build Draft Solid
-            NCollection_List<Shape> aLIF = new();
-            Solid aSD0 = new();
-            aBB.MakeSolid(ref aSD0);
-            Shape aSD = aSD0;
-            BuildDraftSolid(aSolid, ref aSD, aLIF);
+            NCollection_List<Shape> lif = new();
+            Solid sd0 = new();
+            bb.MakeSolid(ref sd0);
+            Shape sd = sd0;
+            BuildDraftSolid(solid, ref sd, lif);
 
-            aLSolids.Append(aSD);
-            aSolidsIF.Bind(aSD, aLIF);
-            aShapeBoxMap.Bind(aSD, aBoxS);
-            aDraftSolid.Add(aS, aSD);
+            lSolids.Append(sd);
+            solidsIF.Bind(sd, lif);
+            shapeBoxMap.Bind(sd, boxS);
+            draftSolid.Add(s, sd);
         }
 
         // Perform classification of the faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> inParts = new(ShapeHasher.Instance);
 
-        BOPAlgo_Tools.ClassifyFaces(aLFaces,
-                                    aLSolids,
-                                    myRunParallel,
-                                    myContext!,
-                                    anInParts,
-                                    aShapeBoxMap,
-                                    aSolidsIF,
-                                    aPS.Next());
+        BuilderTools.ClassifyFaces(lFaces,
+                                    lSolids,
+                                    _runParallel,
+                                    _context!,
+                                    inParts,
+                                    shapeBoxMap,
+                                    solidsIF,
+                                    ps.Next());
 
         // Analyze the results of classification
-        int aNbSol = aDraftSolid.Extent();
-        for (i = 1; i <= aNbSol; ++i)
+        int nbSol = draftSolid.Extent();
+        for (i = 1; i <= nbSol; ++i)
         {
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            Solid aSolid = ShapeCasts.Solid(aDraftSolid.FindKey(i));
-            Solid aSDraft = ShapeCasts.Solid(aDraftSolid[i]);
-            NCollection_List<Shape> aLInFaces = anInParts.FindFromKey(aSDraft);
-            NCollection_List<Shape> aLInternal = aSolidsIF.Find(aSDraft);
+            Solid solid = ShapeCasts.Solid(draftSolid.FindKey(i));
+            Solid sDraft = ShapeCasts.Solid(draftSolid[i]);
+            NCollection_List<Shape> lInFaces = inParts.FindFromKey(sDraft);
+            NCollection_List<Shape> lInternal = solidsIF.Find(sDraft);
 
-            int aNbIN = aLInFaces.Extent();
+            int nbIN = lInFaces.Extent();
 
-            if (aNbIN == 0)
+            if (nbIN == 0)
             {
                 bool bHasImage = false;
                 // Check if the shells of the solid have image
-                for (Iterator it = new(aSolid); it.More() && !bHasImage; it.Next())
+                for (Iterator it = new(solid); it.More() && !bHasImage; it.Next())
                 {
-                    bHasImage = myImages.IsBound(it.Value());
+                    bHasImage = _images.IsBound(it.Value());
                 }
 
                 if (!bHasImage)
@@ -221,103 +224,103 @@ public partial class BOPAlgo_Builder
                 }
             }
 
-            theDraftSolids.Bind(aSolid, aSDraft);
+            draftSolids.Bind(solid, sDraft);
 
-            int aNbInt = aLInternal.Extent();
-            if (aNbInt != 0 || aNbIN != 0)
+            int nbInt = lInternal.Extent();
+            if (nbInt != 0 || nbIN != 0)
             {
                 // Combine the lists
-                NCollection_List<Shape> pLIN = myInParts.Bound(aSolid, new NCollection_List<Shape>());
+                NCollection_List<Shape> pLIN = _inParts.Bound(solid, new NCollection_List<Shape>());
 
-                NCollection_List<Shape>.Iterator aItLS = new(aLInFaces);
-                for (; aItLS.More(); aItLS.Next())
+                NCollection_List<Shape>.Iterator itLS = new(lInFaces);
+                for (; itLS.More(); itLS.Next())
                 {
-                    pLIN.Append(aItLS.Value());
+                    pLIN.Append(itLS.Value());
                 }
 
-                aItLS.Initialize(aLInternal);
-                for (; aItLS.More(); aItLS.Next())
+                itLS.Initialize(lInternal);
+                for (; itLS.More(); itLS.Next())
                 {
-                    pLIN.Append(aItLS.Value());
+                    pLIN.Append(itLS.Value());
                 }
             }
         }
     }
 
     /// <summary>Builds the draft solid of the solid from the images of its faces, collecting its internal faces.</summary>
-    protected void BuildDraftSolid(in Shape theSolid, ref Shape theDraftSolid, NCollection_List<Shape> theLIF)
+    protected void BuildDraftSolid(in Shape solid, ref Shape draftSolid, NCollection_List<Shape> lif)
     {
         bool bToReverse;
         int iFlag;
-        Orientation aOrF, aOrSh, aOrSd;
-        Iterator aIt1 = new(), aIt2 = new();
-        Shell aShD = new();
-        Shape aFx;
-        BrepBuilder aBB = new();
-        NCollection_List<Shape>.Iterator aItS = new();
+        Orientation orF, orSh, orSd;
+        Iterator it1 = new(), it2 = new();
+        Shell shD = new();
+        Shape fx;
+        BrepBuilder bb = new();
+        NCollection_List<Shape>.Iterator itS = new();
         //
-        aOrSd = theSolid.Orientation();
-        theDraftSolid.Orientation(aOrSd);
+        orSd = solid.Orientation();
+        draftSolid.Orientation(orSd);
         //
-        aIt1.Initialize(theSolid);
-        for (; aIt1.More(); aIt1.Next())
+        it1.Initialize(solid);
+        for (; it1.More(); it1.Next())
         {
-            Shape aSh = aIt1.Value();
-            if (aSh.ShapeType() != ShapeType.Shell)
+            Shape sh = it1.Value();
+            if (sh.ShapeType() != ShapeType.Shell)
             {
                 continue; // mb internal edges,vertices
             }
             //
-            aOrSh = aSh.Orientation();
-            aBB.MakeShell(ref aShD);
-            aShD.Orientation(aOrSh);
+            orSh = sh.Orientation();
+            bb.MakeShell(ref shD);
+            shD.Orientation(orSh);
             iFlag = 0;
             //
-            aIt2.Initialize(aSh);
-            for (; aIt2.More(); aIt2.Next())
+            it2.Initialize(sh);
+            for (; it2.More(); it2.Next())
             {
-                Shape aF = aIt2.Value();
-                aOrF = aF.Orientation();
+                Shape f = it2.Value();
+                orF = f.Orientation();
                 //
-                if (myImages.IsBound(aF))
+                if (_images.IsBound(f))
                 {
-                    NCollection_List<Shape> aLSp = myImages.Find(aF);
-                    aItS.Initialize(aLSp);
-                    for (; aItS.More(); aItS.Next())
+                    NCollection_List<Shape> lSp = _images.Find(f);
+                    itS.Initialize(lSp);
+                    for (; itS.More(); itS.Next())
                     {
-                        aFx = aItS.Value();
+                        fx = itS.Value();
                         //
-                        if (myShapesSD.IsBound(aFx))
+                        if (_shapesSD.IsBound(fx))
                         {
                             //
-                            if (aOrF == Internal)
+                            if (orF == Internal)
                             {
-                                aFx.Orientation(aOrF);
-                                theLIF.Append(aFx);
+                                fx.Orientation(orF);
+                                lif.Append(fx);
                             }
                             else
                             {
-                                bToReverse = BOPTools_AlgoTools.IsSplitToReverseWithWarn(aFx, aF, myContext, myReport);
+                                bToReverse = AlgoTools.IsSplitToReverseWithWarn(fx, f, _context, _report);
                                 if (bToReverse)
                                 {
-                                    aFx.Reverse();
+                                    fx.Reverse();
                                 }
                                 //
                                 iFlag = 1;
-                                aBB.Add(aShD, aFx);
+                                bb.Add(shD, fx);
                             }
                         } // if (myShapesSD.IsBound(aFx)) {
                         else
                         {
-                            aFx.Orientation(aOrF);
-                            if (aOrF == Internal)
+                            fx.Orientation(orF);
+                            if (orF == Internal)
                             {
-                                theLIF.Append(aFx);
+                                lif.Append(fx);
                             }
                             else
                             {
                                 iFlag = 1;
-                                aBB.Add(aShD, aFx);
+                                bb.Add(shD, fx);
                             }
                         }
                     }
@@ -325,221 +328,221 @@ public partial class BOPAlgo_Builder
                 //
                 else
                 {
-                    if (aOrF == Internal)
+                    if (orF == Internal)
                     {
-                        theLIF.Append(aF);
+                        lif.Append(f);
                     }
                     else
                     {
                         iFlag = 1;
-                        aBB.Add(aShD, aF);
+                        bb.Add(shD, f);
                     }
                 }
             } // for (; aIt2.More(); aIt2.Next()) {
             //
             if (iFlag != 0)
             {
-                aShD.Closed(Tool.IsClosed(aShD));
-                aBB.Add(theDraftSolid, aShD);
+                shD.Closed(Tool.IsClosed(shD));
+                bb.Add(draftSolid, shD);
             }
         } // for (; aIt1.More(); aIt1.Next()) {
     }
 
     /// <summary>Builds the split solids from the draft solids and their IN faces.</summary>
-    protected void BuildSplitSolids(NCollection_DataMap<Shape, Shape> theDraftSolids, ProgressRange theRange)
+    protected void BuildSplitSolids(NCollection_DataMap<Shape, Shape> draftSolids, ProgressRange range)
     {
         bool bFlagSD;
-        int i, aNbS;
-        Explorer aExp = new();
-        NCollection_List<Shape>.Iterator aIt = new();
+        int i, nbS;
+        Explorer exp = new();
+        NCollection_List<Shape>.Iterator it = new();
         //
-        NCollection_List<Shape> aSFS = new();
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_List<Shape> sfs = new();
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives
         // the stored key back from its index, and the map is never iterated
-        NCollection_IndexedMap<BOPTools_Set> aMST = new();
-        NCollection_DynamicArray<BOPAlgo_SplitSolid> aVBS = new();
+        NCollection_IndexedMap<ToolSet> mst = new();
+        NCollection_DynamicArray<SplitSolid> vbs = new();
         //
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
+        using var psOuter = new ProgressScope(range, null, 10);
         // 0. Find same domain solids for non-interfered solids
-        aNbS = myDS!.NbSourceShapes();
-        for (i = 0; i < aNbS; ++i)
+        nbS = _ds!.SourceShapeCount;
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
+            ShapeInfo si = _ds.ShapeInfo(i);
             //
-            if (aSI.ShapeType() != ShapeType.Solid)
+            if (si.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
             //
-            Shape aS = aSI.Shape();
-            if (!aMFence.Add(aS))
+            Shape s = si.Shape();
+            if (!mFence.Add(s))
             {
                 continue;
             }
-            if (theDraftSolids.IsBound(aS))
+            if (draftSolids.IsBound(s))
             {
                 continue;
             }
             //
-            BOPTools_Set aST = new();
+            ToolSet st = new();
             //
-            aST.Add(aS, ShapeType.Face);
-            aMST.Add(aST);
+            st.Add(s, ShapeType.Face);
+            mst.Add(st);
             //
         } // for (i=1; i<=aNbS; ++i)
         //
         // Build temporary map of solids images to avoid rebuilding
         // of the solids without internal faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aSolidsIm = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> solidsIm = new(ShapeHasher.Instance);
         // 1. Build solids for interfered source solids
-        for (i = 0; i < aNbS; ++i)
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Solid)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
 
-            Shape aS = aSI.Shape();
-            Solid aSolid = ShapeCasts.Solid(aS);
-            if (!theDraftSolids.IsBound(aS))
+            Shape s = si.Shape();
+            Solid solid = ShapeCasts.Solid(s);
+            if (!draftSolids.IsBound(s))
             {
                 continue;
             }
 
-            Shape aSD = theDraftSolids.Find(aS);
-            if (!myInParts.Find(aS, out NCollection_List<Shape> pLFIN) || pLFIN.IsEmpty())
+            Shape sd = draftSolids.Find(s);
+            if (!_inParts.Find(s, out NCollection_List<Shape> pLFIN) || pLFIN.IsEmpty())
             {
-                aSolidsIm[aSolidsIm.Add(aS, new NCollection_List<Shape>())].Append(aSD);
+                solidsIm[solidsIm.Add(s, new NCollection_List<Shape>())].Append(sd);
                 continue;
             }
 
-            aSFS.Clear();
+            sfs.Clear();
             //
             // 1.1 Fill Shell Faces Set
-            aExp.Init(aSD, ShapeType.Face);
-            for (; aExp.More(); aExp.Next())
+            exp.Init(sd, ShapeType.Face);
+            for (; exp.More(); exp.Next())
             {
-                Shape aF = aExp.Current();
-                aSFS.Append(aF);
+                Shape f = exp.Current();
+                sfs.Append(f);
             }
             //
             // 1.2 Fill internal faces
-            aIt.Initialize(pLFIN);
-            for (; aIt.More(); aIt.Next())
+            it.Initialize(pLFIN);
+            for (; it.More(); it.Next())
             {
-                Shape aF = aIt.Value();
+                Shape f = it.Value();
                 //
-                aF.Orientation(Forward);
-                aSFS.Append(aF);
-                aF.Orientation(Reversed);
-                aSFS.Append(aF);
+                f.Orientation(Forward);
+                sfs.Append(f);
+                f.Orientation(Reversed);
+                sfs.Append(f);
             }
             //
             // 1.3 Build new solids
-            BOPAlgo_SplitSolid aBS = aVBS.Append(new BOPAlgo_SplitSolid());
-            aBS.SetSolid(aSolid);
-            aBS.SetShapes(aSFS);
-            aBS.SetRunParallel(myRunParallel);
+            SplitSolid bs = vbs.Append(new SplitSolid());
+            bs.SetSolid(solid);
+            bs.SetShapes(sfs);
+            bs.SetRunParallel(_runParallel);
         } // for (i=0; i<aNbS; ++i) {
         //
-        int k, aNbBS;
+        int k, nbBS;
         //
-        aNbBS = aVBS.Length();
+        nbBS = vbs.Length();
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new ProgressScope(aPSOuter.Next(9), "Splitting solids", aNbBS))
+        using (var psParallel = new ProgressScope(psOuter.Next(9), "Splitting solids", nbBS))
         {
-            for (int iS = 0; iS < aNbBS; iS++)
+            for (int iS = 0; iS < nbBS; iS++)
             {
-                BOPAlgo_SplitSolid aSplitSolid = aVBS.ChangeValue(iS);
-                aSplitSolid.SetProgressRange(aPSParallel.Next());
+                SplitSolid splitSolid = vbs.ChangeValue(iS);
+                splitSolid.SetProgressRange(psParallel.Next());
             }
             //
             //===================================================
-            BOPTools_Parallel.Perform(myRunParallel, aVBS);
+            BooleanParallel.Perform(_runParallel, vbs);
             //===================================================
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
         //
-        for (k = 0; k < aNbBS; ++k)
+        for (k = 0; k < nbBS; ++k)
         {
-            BOPAlgo_SplitSolid aBS = aVBS[k];
-            aSolidsIm.Add(aBS.Solid(), new NCollection_List<Shape>(aBS.Areas()));
+            SplitSolid bs = vbs[k];
+            solidsIm.Add(bs.Solid(), new NCollection_List<Shape>(bs.Areas()));
 
             // Merge BuilderSolid's report into main report,
             // assigning the solid with the warnings/errors which
             // have been generated for it.
             // Convert all errors of BuilderSolid into warnings for main report.
-            Report aBSReport = aBS.GetReport();
-            Span<Gravity> anAlertTypes = [Warning, Fail];
+            Report bsReport = bs.GetReport();
+            Span<Gravity> alertTypes = [Warning, Fail];
             for (int iGravity = 0; iGravity < 2; iGravity++)
             {
-                NCollection_List<Alert> anLAlerts = aBSReport.GetAlerts(anAlertTypes[iGravity]);
-                for (NCollection_List<Alert>.Iterator itA = new(anLAlerts); itA.More(); itA.Next())
+                NCollection_List<Alert> lAlerts = bsReport.GetAlerts(alertTypes[iGravity]);
+                for (NCollection_List<Alert>.Iterator itA = new(lAlerts); itA.More(); itA.Next())
                 {
-                    Alert anAlert = itA.Value();
+                    Alert alert = itA.Value();
 
-                    if (itA.Value() is AlertWithShape anAlertWithShape)
+                    if (itA.Value() is AlertWithShape alertWithShape)
                     {
-                        Compound aWarnShape0 = new();
-                        new BrepBuilder().MakeCompound(ref aWarnShape0);
-                        Shape aWarnShape = aWarnShape0;
-                        new BrepBuilder().Add(aWarnShape, aBS.Solid());
-                        new BrepBuilder().Add(aWarnShape, anAlertWithShape.InternalGetShape());
+                        Compound warnShape0 = new();
+                        new BrepBuilder().MakeCompound(ref warnShape0);
+                        Shape warnShape = warnShape0;
+                        new BrepBuilder().Add(warnShape, bs.Solid());
+                        new BrepBuilder().Add(warnShape, alertWithShape.InternalGetShape());
 
-                        anAlertWithShape.SetShape(aWarnShape);
-                        AddWarning(anAlertWithShape);
+                        alertWithShape.SetShape(warnShape);
+                        AddWarning(alertWithShape);
                     }
                     else
                     {
-                        AddWarning(anAlert);
+                        AddWarning(alert);
                     }
                 }
             }
         }
         //
         // Add new solids to images map
-        aNbBS = aSolidsIm.Extent();
-        for (k = 1; k <= aNbBS; ++k)
+        nbBS = solidsIm.Extent();
+        for (k = 1; k <= nbBS; ++k)
         {
-            Shape aS = aSolidsIm.FindKey(k);
-            NCollection_List<Shape> aLSR = aSolidsIm[k];
+            Shape s = solidsIm.FindKey(k);
+            NCollection_List<Shape> lsr = solidsIm[k];
             //
-            if (!myImages.IsBound(aS))
+            if (!_images.IsBound(s))
             {
-                NCollection_List<Shape> pLSx = myImages.Bound(aS, new NCollection_List<Shape>());
+                NCollection_List<Shape> pLSx = _images.Bound(s, new NCollection_List<Shape>());
                 //
-                aIt.Initialize(aLSR);
-                for (; aIt.More(); aIt.Next())
+                it.Initialize(lsr);
+                for (; it.More(); it.Next())
                 {
-                    BOPTools_Set aST = new();
+                    ToolSet st = new();
                     //
-                    Shape aSR = aIt.Value();
-                    aST.Add(aSR, ShapeType.Face);
+                    Shape sr = it.Value();
+                    st.Add(sr, ShapeType.Face);
                     //
-                    bFlagSD = aMST.Contains(aST);
+                    bFlagSD = mst.Contains(st);
                     //
-                    BOPTools_Set aSTx = aMST.FindKey(aMST.Add(aST)); // OCCT: aMST.Added(aST)
-                    Shape aSx = aSTx.Shape();
-                    pLSx.Append(aSx);
+                    ToolSet sTx = mst.FindKey(mst.Add(st)); // OCCT: aMST.Added(aST)
+                    Shape sx = sTx.Shape();
+                    pLSx.Append(sx);
                     //
-                    if (!myOrigins.Find(aSx, out NCollection_List<Shape> pLOr))
+                    if (!_origins.Find(sx, out NCollection_List<Shape> pLOr))
                     {
-                        pLOr = myOrigins.Bound(aSx, new NCollection_List<Shape>());
+                        pLOr = _origins.Bound(sx, new NCollection_List<Shape>());
                     }
-                    pLOr.Append(aS);
+                    pLOr.Append(s);
                     //
                     if (bFlagSD)
                     {
-                        myShapesSD.Bind(aSR, aSx);
+                        _shapesSD.Bind(sr, sx);
                     }
                 }
             }
@@ -547,281 +550,281 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Settles the internal vertices and edges of the arguments into the split solids containing them.</summary>
-    protected void FillInternalShapes(ProgressRange theRange)
+    protected void FillInternalShapes(ProgressRange range)
     {
-        int i, j, aNbS, aNbSI, aNbSx;
-        ShapeType aType;
-        Containment aState;
-        Iterator aItS = new();
-        BrepBuilder aBB = new();
-        NCollection_List<Shape>.Iterator aIt = new(), aIt1 = new();
+        int i, j, nbS, nbSI, nbSx;
+        ShapeType type;
+        Containment state;
+        Iterator itS = new();
+        BrepBuilder bb = new();
+        NCollection_List<Shape>.Iterator it = new(), it1 = new();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMSx = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> aMx = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> aMSI = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> aMSOr = new(ShapeHasher.Instance);
-        NCollection_List<Shape> aLSd = new();
-        NCollection_List<Shape> aLArgs = new();
-        NCollection_List<Shape> aLSC = new();
-        NCollection_List<Shape> aLSI = new();
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mSx = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> mx = new(ShapeHasher.Instance);
+        NCollection_IndexedMap<Shape> msi = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> msOr = new(ShapeHasher.Instance);
+        NCollection_List<Shape> lSd = new();
+        NCollection_List<Shape> lArgs = new();
+        NCollection_List<Shape> lsc = new();
+        NCollection_List<Shape> lsi = new();
 
-        using var aPS = new ProgressScope(theRange, null, 10);
+        using var ps = new ProgressScope(range, null, 10);
         //
         // 1. Shapes to process
         //
         // 1.1 Shapes from pure arguments aMSI
         // 1.1.1 vertex, edge, wire
         //
-        NCollection_List<Shape> aArguments = myDS!.Arguments();
-        aIt.Initialize(aArguments);
-        for (; aIt.More(); aIt.Next())
+        NCollection_List<Shape> arguments = _ds!.Arguments();
+        it.Initialize(arguments);
+        for (; it.More(); it.Next())
         {
-            Shape aS = aIt.Value();
-            BOPTools_AlgoTools.TreatCompound(aS, aLSC, aMFence);
+            Shape s = it.Value();
+            AlgoTools.TreatCompound(s, lsc, mFence);
         }
-        aIt.Initialize(aLSC);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(lsc);
+        for (; it.More(); it.Next())
         {
-            Shape aS = aIt.Value();
-            aType = aS.ShapeType();
-            if (aType == ShapeType.Wire)
+            Shape s = it.Value();
+            type = s.ShapeType();
+            if (type == ShapeType.Wire)
             {
-                aItS.Initialize(aS);
-                for (; aItS.More(); aItS.Next())
+                itS.Initialize(s);
+                for (; itS.More(); itS.Next())
                 {
-                    Shape aE = aItS.Value();
-                    if (aMFence.Add(aE))
+                    Shape e = itS.Value();
+                    if (mFence.Add(e))
                     {
-                        aLArgs.Append(aE);
+                        lArgs.Append(e);
                     }
                 }
             }
-            else if (aType == ShapeType.Vertex || aType == ShapeType.Edge)
+            else if (type == ShapeType.Vertex || type == ShapeType.Edge)
             {
-                aLArgs.Append(aS);
+                lArgs.Append(s);
             }
         }
-        aMFence.Clear();
+        mFence.Clear();
         //
-        aIt.Initialize(aLArgs);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(lArgs);
+        for (; it.More(); it.Next())
         {
-            Shape aS = aIt.Value();
-            aType = aS.ShapeType();
-            if (aType == ShapeType.Vertex || aType == ShapeType.Edge || aType == ShapeType.Wire)
+            Shape s = it.Value();
+            type = s.ShapeType();
+            if (type == ShapeType.Vertex || type == ShapeType.Edge || type == ShapeType.Wire)
             {
-                if (aMFence.Add(aS))
+                if (mFence.Add(s))
                 {
-                    if (myImages.IsBound(aS))
+                    if (_images.IsBound(s))
                     {
-                        NCollection_List<Shape> aLSp = myImages.Find(aS);
-                        aIt1.Initialize(aLSp);
-                        for (; aIt1.More(); aIt1.Next())
+                        NCollection_List<Shape> lSp = _images.Find(s);
+                        it1.Initialize(lSp);
+                        for (; it1.More(); it1.Next())
                         {
-                            Shape aSp = aIt1.Value();
-                            aMSI.Add(aSp);
+                            Shape sp = it1.Value();
+                            msi.Add(sp);
                         }
                     }
                     else
                     {
-                        aMSI.Add(aS);
+                        msi.Add(s);
                     }
                 }
             }
         }
-        if (UserBreak(aPS))
+        if (UserBreak(ps))
         {
             return;
         }
 
         //
         // 2. Internal vertices, edges from source solids
-        aMFence.Clear();
-        aLSd.Clear();
+        mFence.Clear();
+        lSd.Clear();
         //
-        aNbS = myDS.NbSourceShapes();
-        for (i = 0; i < aNbS; ++i)
+        nbS = _ds.SourceShapeCount;
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
+            ShapeInfo aSI = _ds.ShapeInfo(i);
             //
             if (aSI.ShapeType() != ShapeType.Solid)
             {
                 continue;
             }
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
             //
-            Shape aS = aSI.Shape();
+            Shape s = aSI.Shape();
             //
-            aMx.Clear();
-            OwnInternalShapes(aS, aMx);
+            mx.Clear();
+            OwnInternalShapes(s, mx);
             //
-            aNbSx = aMx.Extent();
-            for (j = 1; j <= aNbSx; ++j)
+            nbSx = mx.Extent();
+            for (j = 1; j <= nbSx; ++j)
             {
-                Shape aSi = aMx[j];
-                if (myImages.IsBound(aSi))
+                Shape aSi = mx[j];
+                if (_images.IsBound(aSi))
                 {
-                    NCollection_List<Shape> aLSp = myImages.Find(aSi);
-                    aIt1.Initialize(aLSp);
-                    for (; aIt1.More(); aIt1.Next())
+                    NCollection_List<Shape> lSp = _images.Find(aSi);
+                    it1.Initialize(lSp);
+                    for (; it1.More(); it1.Next())
                     {
-                        Shape aSp = aIt1.Value();
-                        aMSI.Add(aSp);
+                        Shape sp = it1.Value();
+                        msi.Add(sp);
                     }
                 }
                 else
                 {
-                    aMSI.Add(aSi);
+                    msi.Add(aSi);
                 }
             }
             //
             // build aux map from splits of solids
-            if (myImages.IsBound(aS))
+            if (_images.IsBound(s))
             {
-                NCollection_List<Shape> aLSp = myImages.Find(aS);
-                aIt.Initialize(aLSp);
-                for (; aIt.More(); aIt.Next())
+                NCollection_List<Shape> lSp = _images.Find(s);
+                it.Initialize(lSp);
+                for (; it.More(); it.Next())
                 {
-                    Shape aSp = aIt.Value();
-                    if (aMFence.Add(aSp))
+                    Shape sp = it.Value();
+                    if (mFence.Add(sp))
                     {
-                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Vertex, ShapeType.Edge, aMSx);
-                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Vertex, ShapeType.Face, aMSx);
-                        Exploration.MapShapesAndAncestors(aSp, ShapeType.Edge, ShapeType.Face, aMSx);
-                        aLSd.Append(aSp);
+                        Exploration.MapShapesAndAncestors(sp, ShapeType.Vertex, ShapeType.Edge, mSx);
+                        Exploration.MapShapesAndAncestors(sp, ShapeType.Vertex, ShapeType.Face, mSx);
+                        Exploration.MapShapesAndAncestors(sp, ShapeType.Edge, ShapeType.Face, mSx);
+                        lSd.Append(sp);
                     }
                 }
             }
             else
             {
-                if (aMFence.Add(aS))
+                if (mFence.Add(s))
                 {
-                    Exploration.MapShapesAndAncestors(aS, ShapeType.Vertex, ShapeType.Edge, aMSx);
-                    Exploration.MapShapesAndAncestors(aS, ShapeType.Vertex, ShapeType.Face, aMSx);
-                    Exploration.MapShapesAndAncestors(aS, ShapeType.Edge, ShapeType.Face, aMSx);
-                    aLSd.Append(aS);
-                    aMSOr.Add(aS);
+                    Exploration.MapShapesAndAncestors(s, ShapeType.Vertex, ShapeType.Edge, mSx);
+                    Exploration.MapShapesAndAncestors(s, ShapeType.Vertex, ShapeType.Face, mSx);
+                    Exploration.MapShapesAndAncestors(s, ShapeType.Edge, ShapeType.Face, mSx);
+                    lSd.Append(s);
+                    msOr.Add(s);
                 }
             }
         } // for (i=0; i<aNbS; ++i) {
         //
         // 3. Some shapes of aMSI can be already tied with faces of
         //    split solids
-        aNbSI = aMSI.Extent();
-        for (i = 1; i <= aNbSI; ++i)
+        nbSI = msi.Extent();
+        for (i = 1; i <= nbSI; ++i)
         {
-            Shape aSI = aMSI[i];
-            if (aMSx.Contains(aSI))
+            Shape si = msi[i];
+            if (mSx.Contains(si))
             {
-                NCollection_List<Shape> aLSx = aMSx.FindFromKey(aSI);
-                aNbSx = aLSx.Extent();
-                if (aNbSx == 0)
+                NCollection_List<Shape> lSx = mSx.FindFromKey(si);
+                nbSx = lSx.Extent();
+                if (nbSx == 0)
                 {
-                    aLSI.Append(aSI);
+                    lsi.Append(si);
                 }
             }
             else
             {
-                aLSI.Append(aSI);
+                lsi.Append(si);
             }
         }
         //
         // 4. Just check it
-        aNbSI = aLSI.Extent();
-        if (aNbSI == 0)
+        nbSI = lsi.Extent();
+        if (nbSI == 0)
         {
             return;
         }
 
-        aPS.Next();
+        ps.Next();
         //
         // 5 Settle internal vertices and edges into solids
-        aMx.Clear();
+        mx.Clear();
 
-        using var aPSLoop = new ProgressScope(aPS.Next(9), "Looking for internal shapes", aLSd.Extent());
+        using var psLoop = new ProgressScope(ps.Next(9), "Looking for internal shapes", lSd.Extent());
 
-        aIt.Initialize(aLSd);
-        for (; aIt.More(); aIt.Next(), aPSLoop.Next())
+        it.Initialize(lSd);
+        for (; it.More(); it.Next(), psLoop.Next())
         {
-            Solid aSd = ShapeCasts.Solid(aIt.Value());
+            Solid sd = ShapeCasts.Solid(it.Value());
             //
-            aIt1.Initialize(aLSI);
-            for (; aIt1.More();)
+            it1.Initialize(lsi);
+            for (; it1.More();)
             {
-                Shape aSI = aIt1.Value();
-                aSI.Orientation(Internal);
+                Shape si = it1.Value();
+                si.Orientation(Internal);
                 //
-                aState = BOPTools_AlgoTools.ComputeStateByOnePoint(aSI, aSd, 1.0e-11, myContext!);
+                state = AlgoTools.ComputeStateByOnePoint(si, sd, 1.0e-11, _context!);
                 //
-                if (aState != In)
+                if (state != In)
                 {
-                    aIt1.Next();
+                    it1.Next();
                     continue;
                 }
                 //
-                if (aMSOr.Contains(aSd))
+                if (msOr.Contains(sd))
                 {
                     // make new solid
-                    Solid aSdx = new();
+                    Solid sdx = new();
                     //
-                    aBB.MakeSolid(ref aSdx);
-                    aItS.Initialize(aSd);
-                    for (; aItS.More(); aItS.Next())
+                    bb.MakeSolid(ref sdx);
+                    itS.Initialize(sd);
+                    for (; itS.More(); itS.Next())
                     {
-                        Shape aSh = aItS.Value();
-                        aBB.Add(aSdx, aSh);
+                        Shape sh = itS.Value();
+                        bb.Add(sdx, sh);
                     }
                     //
-                    aBB.Add(aSdx, aSI);
+                    bb.Add(sdx, si);
                     //
                     // no need to check for images of aSd as aMSOr contains only original solids
-                    NCollection_List<Shape> pLS = myImages.Bound(aSd, new NCollection_List<Shape>());
-                    pLS.Append(aSdx);
+                    NCollection_List<Shape> pLS = _images.Bound(sd, new NCollection_List<Shape>());
+                    pLS.Append(sdx);
                     //
-                    NCollection_List<Shape> pLOr = myOrigins.Bound(aSdx, new NCollection_List<Shape>());
-                    pLOr.Append(aSd);
+                    NCollection_List<Shape> pLOr = _origins.Bound(sdx, new NCollection_List<Shape>());
+                    pLOr.Append(sd);
                     //
-                    aMSOr.Remove(aSd);
-                    aSd = aSdx;
+                    msOr.Remove(sd);
+                    sd = sdx;
                 }
                 else
                 {
                     // OCCT adds the shape into the split solid, which may be an argument's solid kept as the
                     // same-domain solid of a split (BuildSplitSolids' aSx; a frozen argument solid then throws, unit 6F)
-                    aBB.Add(aSd, aSI);
+                    bb.Add(sd, si);
                 }
                 //
-                aLSI.Remove(aIt1);
+                lsi.Remove(it1);
             } // for (; aIt1.More();) {
         } // for (; aIt.More(); aIt.Next()) {
         //
         //-----------------------------------------------------scope t
-        aLArgs.Clear();
-        aLSd.Clear();
-        aMSOr.Clear();
-        aMFence.Clear();
-        aMSI.Clear();
-        aMx.Clear();
-        aMSx.Clear();
+        lArgs.Clear();
+        lSd.Clear();
+        msOr.Clear();
+        mFence.Clear();
+        msi.Clear();
+        mx.Clear();
+        mSx.Clear();
     }
 
     // The own internal parts (all but the shells) of the shape.
-    private static void OwnInternalShapes(in Shape theS, NCollection_IndexedMap<Shape> theMx)
+    private static void OwnInternalShapes(in Shape s, NCollection_IndexedMap<Shape> mx)
     {
-        Iterator aIt = new();
+        Iterator it = new();
         //
-        aIt.Initialize(theS);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(s);
+        for (; it.More(); it.Next())
         {
-            Shape aSx = aIt.Value();
-            if (aSx.ShapeType() != ShapeType.Shell)
+            Shape sx = it.Value();
+            if (sx.ShapeType() != ShapeType.Shell)
             {
-                theMx.Add(aSx);
+                mx.Add(sx);
             }
         }
     }

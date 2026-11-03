@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 
 using Kerf.Engine.Topology.Tools;
@@ -19,7 +20,7 @@ public class BRepTools_Test
     // Write a box to a BRep string once, to be reused by all threads.
     private static string MakeBoxBrepString()
     {
-        BRepPrimAPI_MakeBox aBox = new(10.0, 20.0, 30.0);
+        MakeBox aBox = new(10.0, 20.0, 30.0);
         Assert.False(aBox.Shape().IsNull);
 
         var anOss = new StringWriter();
@@ -39,7 +40,7 @@ public class BRepTools_Test
     private static double AbsMass(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return Math.Abs(aProps.Mass());
     }
 

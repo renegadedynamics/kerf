@@ -2,124 +2,128 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Properties;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_WireSplitter
+public partial class WireSplitter
 {
     /// <summary>Splits an irregular connexity block of edges on the face into loops (the block's loops).</summary>
-    public static void SplitBlock(in Face myFace, BOPTools_ConnexityBlock aCB, IntTools_Context theContext)
+    public static void SplitBlock(in Face myFace, ConnexityBlock aCB, IntersectionContext context)
     {
         bool bNothingToDo, bIsClosed, bIsIN;
-        int aIx, aNb, i, aCntIn, aCntOut;
-        double aAngle;
-        Orientation aOr;
-        Iterator aItS = new();
-        Vertex aVV;
-        Shape aV1 = new();
+        int ix, nb, i, cntIn, cntOut;
+        double angle;
+        Orientation or;
+        Iterator itS = new();
+        Vertex vv;
+        Shape v1 = new();
         NCollection_List<Shape>.Iterator aIt;
-        NCollection_List<BOPAlgo_EdgeInfo>.Iterator aItLEI;
+        NCollection_List<EdgeInfo>.Iterator itLEI;
         //
-        NCollection_IndexedDataMap<Shape, NCollection_List<BOPAlgo_EdgeInfo>> mySmartMap = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, bool> aVertMap = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, bool> vertMap = new(ShapeHasher.Instance);
         //
         NCollection_List<Shape> myEdges = aCB.Shapes();
 
-        NCollection_Map<Shape> aMS = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
         //
         // 1.Filling mySmartMap
         aIt = new NCollection_List<Shape>.Iterator(myEdges);
         for (; aIt.More(); aIt.Next())
         {
-            Edge aE = ShapeCasts.Edge(aIt.Value());
-            if (!BOPTools_AlgoTools2D.HasCurveOnSurface(aE, myFace))
+            Edge e = ShapeCasts.Edge(aIt.Value());
+            if (!AlgoTools2D.HasCurveOnSurface(e, myFace))
             {
                 continue;
             }
             //
-            bIsClosed = Tool.Degenerated(aE) || Tool.IsClosed(aE, myFace);
+            bIsClosed = Tool.Degenerated(e) || Tool.IsClosed(e, myFace);
 
-            if (!aMS.Add(aE) && !bIsClosed)
+            if (!ms.Add(e) && !bIsClosed)
             {
-                aMS.Remove(aE);
+                ms.Remove(e);
             }
 
             //
-            aItS.Initialize(aE);
-            for (i = 0; aItS.More(); aItS.Next(), ++i)
+            itS.Initialize(e);
+            for (i = 0; itS.More(); itS.Next(), ++i)
             {
-                Shape aV = aItS.Value();
-                aIx = mySmartMap.FindIndex(aV);
-                if (aIx == 0)
+                Shape v = itS.Value();
+                ix = mySmartMap.FindIndex(v);
+                if (ix == 0)
                 {
-                    NCollection_List<BOPAlgo_EdgeInfo> aLEIx = new();
-                    aIx = mySmartMap.Add(aV, aLEIx);
+                    NCollection_List<EdgeInfo> leIx = new();
+                    ix = mySmartMap.Add(v, leIx);
                 }
                 //
-                NCollection_List<BOPAlgo_EdgeInfo> aLEI = mySmartMap[aIx];
-                BOPAlgo_EdgeInfo aEI = new();
+                NCollection_List<EdgeInfo> lei = mySmartMap[ix];
+                EdgeInfo ei = new();
                 //
-                aEI.SetEdge(aE);
-                aOr = aV.Orientation();
-                bIsIN = aOr == Reversed;
-                aEI.SetInFlag(bIsIN);
-                aLEI.Append(aEI);
+                ei.SetEdge(e);
+                or = v.Orientation();
+                bIsIN = or == Reversed;
+                ei.SetInFlag(bIsIN);
+                lei.Append(ei);
                 //
                 if (i == 0)
                 {
-                    aV1 = aV;
+                    v1 = v;
                 }
                 else
                 {
-                    bIsClosed = bIsClosed || aV1.IsSame(aV);
+                    bIsClosed = bIsClosed || v1.IsSame(v);
                 }
                 //
-                if (aVertMap.IsBound(aV))
+                if (vertMap.IsBound(v))
                 {
                     if (bIsClosed)
                     {
-                        aVertMap.ChangeFind(aV) = bIsClosed;
+                        vertMap.ChangeFind(v) = bIsClosed;
                     }
                 }
                 else
                 {
-                    aVertMap.Bind(aV, bIsClosed);
+                    vertMap.Bind(v, bIsClosed);
                 }
             }
         }
         //
-        aNb = mySmartMap.Extent();
+        nb = mySmartMap.Extent();
         //
         bNothingToDo = true;
-        for (i = 1; i <= aNb; i++)
+        for (i = 1; i <= nb; i++)
         {
-            aCntIn = 0;
-            aCntOut = 0;
-            NCollection_List<BOPAlgo_EdgeInfo> aLEInfo = mySmartMap[i];
-            NCollection_List<BOPAlgo_EdgeInfo>.Iterator anIt = new(aLEInfo);
-            for (; anIt.More(); anIt.Next())
+            cntIn = 0;
+            cntOut = 0;
+            NCollection_List<EdgeInfo> leInfo = mySmartMap[i];
+            NCollection_List<EdgeInfo>.Iterator it = new(leInfo);
+            for (; it.More(); it.Next())
             {
-                BOPAlgo_EdgeInfo aEI = anIt.Value();
-                if (aEI.IsIn())
+                EdgeInfo ei = it.Value();
+                if (ei.IsIn)
                 {
-                    aCntIn++;
+                    cntIn++;
                 }
                 else
                 {
-                    aCntOut++;
+                    cntOut++;
                 }
             }
-            if (aCntIn != 1 || aCntOut != 1)
+            if (cntIn != 1 || cntOut != 1)
             {
                 bNothingToDo = false;
                 break;
@@ -132,43 +136,43 @@ public partial class BOPAlgo_WireSplitter
         // If there are such edges there is something to do with.
         if (bNothingToDo)
         {
-            int aNbE, aNbMapEE;
+            int nbE, nbMapEE;
             bool bFlag;
             //
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMapEE = new(ShapeHasher.Instance);
+            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEE = new(ShapeHasher.Instance);
             //
             aIt.Initialize(myEdges);
             for (; aIt.More(); aIt.Next())
             {
-                Shape aE = aIt.Value();
-                if (!aMapEE.Contains(aE))
+                Shape e = aIt.Value();
+                if (!mapEE.Contains(e))
                 {
-                    NCollection_List<Shape> aLEx = new();
-                    aLEx.Append(aE);
-                    aMapEE.Add(aE, aLEx);
+                    NCollection_List<Shape> lEx = new();
+                    lEx.Append(e);
+                    mapEE.Add(e, lEx);
                 }
                 else
                 {
-                    NCollection_List<Shape> aLEx = aMapEE.ChangeFromKey(aE);
-                    aLEx.Append(aE);
+                    NCollection_List<Shape> lEx = mapEE.ChangeFromKey(e);
+                    lEx.Append(e);
                 }
             }
             //
             bFlag = true;
-            aNbMapEE = aMapEE.Extent();
-            for (i = 1; i <= aNbMapEE; ++i)
+            nbMapEE = mapEE.Extent();
+            for (i = 1; i <= nbMapEE; ++i)
             {
-                NCollection_List<Shape> aLEx = aMapEE[i];
-                aNbE = aLEx.Extent();
-                if (aNbE == 1)
+                NCollection_List<Shape> lEx = mapEE[i];
+                nbE = lEx.Extent();
+                if (nbE == 1)
                 { // usual case
                     continue;
                 }
-                else if (aNbE == 2)
+                else if (nbE == 2)
                 {
-                    Shape aE1 = aLEx.First();
-                    Shape aE2 = aLEx.Last();
-                    if (aE1.IsSame(aE2))
+                    Shape e1 = lEx.First();
+                    Shape e2 = lEx.Last();
+                    if (e1.IsSame(e2))
                     {
                         bFlag = false;
                         break;
@@ -184,68 +188,68 @@ public partial class BOPAlgo_WireSplitter
         } // if (bNothingToDo) {
         if (bNothingToDo)
         {
-            NCollection_List<Shape> aLECB = aCB.ChangeShapes();
-            MakeWire(aLECB, out Wire aW);
-            NCollection_List<Shape> aLoops = aCB.ChangeLoops();
-            aLoops.Append(aW);
+            NCollection_List<Shape> lecb = aCB.ChangeShapes();
+            MakeWire(lecb, out Wire w);
+            NCollection_List<Shape> loops = aCB.ChangeLoops();
+            loops.Append(w);
             //
             return;
         }
         //
         // 3. Angles in mySmartMap
-        FaceSurfaceAdaptor aBAS = theContext.SurfaceAdaptor(myFace);
+        FaceSurfaceAdaptor bas = context.SurfaceAdaptor(myFace);
         //
-        for (i = 1; i <= aNb; i++)
+        for (i = 1; i <= nb; i++)
         {
-            Vertex aV = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<BOPAlgo_EdgeInfo> aLEI = mySmartMap[i];
-            aItLEI = new NCollection_List<BOPAlgo_EdgeInfo>.Iterator(aLEI);
-            for (; aItLEI.More(); aItLEI.Next())
+            Vertex v = ShapeCasts.Vertex(mySmartMap.FindKey(i));
+            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            itLEI = new NCollection_List<EdgeInfo>.Iterator(lei);
+            for (; itLEI.More(); itLEI.Next())
             {
-                BOPAlgo_EdgeInfo aEI = aItLEI.Value();
-                Edge aE = aEI.Edge();
-                aEI.SetIsInside(!aMS.Contains(aE));
+                EdgeInfo ei = itLEI.Value();
+                Edge e = ei.Edge();
+                ei.SetIsInside(!ms.Contains(e));
                 //
-                aVV = aV;
-                bIsIN = aEI.IsIn();
-                aOr = bIsIN ? Reversed : Forward;
-                aVV.Orientation(aOr);
-                aAngle = Angle2D(aVV, aE, myFace, aBAS, bIsIN, theContext);
-                aEI.SetAngle(aAngle);
+                vv = v;
+                bIsIN = ei.IsIn;
+                or = bIsIN ? Reversed : Forward;
+                vv.Orientation(or);
+                angle = Angle2D(vv, e, myFace, bas, bIsIN, context);
+                ei.SetAngle(angle);
             }
         } // for (i=1; i<=aNb; i++) {
         //
         // Theme: The treatment p-curves convergent in node.
         // The refining the angles of p-curves taking into account
         // bounding curves if exist.
-        RefineAngles(myFace, mySmartMap, theContext);
+        RefineAngles(myFace, mySmartMap, context);
         //
         // 4. Do
         //
         bool bIsOut, bIsNotPassed;
-        NCollection_Sequence<Shape> aLS = new(), aVertVa = new();
-        NCollection_Sequence<Point2D> aCoordVa = new();
+        NCollection_Sequence<Shape> ls = new(), vertVa = new();
+        NCollection_Sequence<Point2D> coordVa = new();
         //
-        for (i = 1; i <= aNb; ++i)
+        for (i = 1; i <= nb; ++i)
         {
-            Vertex aVa = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<BOPAlgo_EdgeInfo> aLEI = mySmartMap[i];
-            aItLEI = new NCollection_List<BOPAlgo_EdgeInfo>.Iterator(aLEI);
-            for (; aItLEI.More(); aItLEI.Next())
+            Vertex va = ShapeCasts.Vertex(mySmartMap.FindKey(i));
+            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            itLEI = new NCollection_List<EdgeInfo>.Iterator(lei);
+            for (; itLEI.More(); itLEI.Next())
             {
-                BOPAlgo_EdgeInfo aEI = aItLEI.Value();
-                Edge aEOuta = aEI.Edge();
+                EdgeInfo ei = itLEI.Value();
+                Edge eOuta = ei.Edge();
                 //
-                bIsOut = !aEI.IsIn();
-                bIsNotPassed = !aEI.Passed();
+                bIsOut = !ei.IsIn;
+                bIsNotPassed = !ei.Passed();
                 if (bIsOut && bIsNotPassed)
                 {
                     //
-                    aLS.Clear();
-                    aVertVa.Clear();
-                    aCoordVa.Clear();
+                    ls.Clear();
+                    vertVa.Clear();
+                    coordVa.Clear();
                     //
-                    Path(aBAS, myFace, aVertMap, aVa, aEOuta, aEI, aLS, aVertVa, aCoordVa, aCB, mySmartMap);
+                    Path(bas, myFace, vertMap, va, eOuta, ei, ls, vertVa, coordVa, aCB, mySmartMap);
                 }
             }
         } // for (i=1; i<=aNb; ++i) {
@@ -256,81 +260,81 @@ public partial class BOPAlgo_WireSplitter
                              NCollection_DataMap<Shape, bool> aVertMap,
                              in Vertex aVFirst,
                              in Edge aEFirst,
-                             BOPAlgo_EdgeInfo aEIFirst,
+                             EdgeInfo aEIFirst,
                              NCollection_Sequence<Shape> aLS,
                              NCollection_Sequence<Shape> aVertVa,
                              NCollection_Sequence<Point2D> aCoordVa,
-                             BOPTools_ConnexityBlock aCB,
-                             NCollection_IndexedDataMap<Shape, NCollection_List<BOPAlgo_EdgeInfo>> mySmartMap)
+                             ConnexityBlock aCB,
+                             NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap)
     {
-        int i, j, aNb, aNbj;
-        double anAngleIn, anAngleOut, anAngle, aMinAngle;
-        double aTol2D, aTol2D2, aD2, aTwoPI;
-        bool anIsSameV2d, anIsSameV, anIsOut, anIsNotPassed;
+        int i, j, nb, nbj;
+        double angleIn, angleOut, angle, minAngle;
+        double tol2D, tol2D2, d2, twoPI;
+        bool isSameV2d, isSameV, isOut, isNotPassed;
         bool bIsClosed;
-        Vertex aVa, aVb;
-        Edge aEOuta;
-        NCollection_List<BOPAlgo_EdgeInfo>.Iterator anIt;
+        Vertex va, vb;
+        Edge eOuta;
+        NCollection_List<EdgeInfo>.Iterator it;
         double eps = Epsilon(1.0);
         //
-        aVa = aVFirst;
-        aEOuta = aEFirst;
-        BOPAlgo_EdgeInfo anEdgeInfo = aEIFirst;
+        va = aVFirst;
+        eOuta = aEFirst;
+        EdgeInfo edgeInfo = aEIFirst;
         //
-        aTwoPI = M_PI + M_PI;
+        twoPI = M_PI + M_PI;
 
-        NCollection_Sequence<BOPAlgo_EdgeInfo> anInfoSeq = new();
+        NCollection_Sequence<EdgeInfo> infoSeq = new();
         //
         // append block
         //
         for (;;)
         {
             // Do not escape through edge from which you enter
-            aNb = aLS.Length();
-            if (aNb == 1)
+            nb = aLS.Length();
+            if (nb == 1)
             {
-                Shape anEPrev = aLS[aNb];
-                if (anEPrev.IsSame(aEOuta))
+                Shape anEPrev = aLS[nb];
+                if (anEPrev.IsSame(eOuta))
                 {
                     return;
                 }
             }
             //
-            anEdgeInfo.SetPassed(true);
-            aLS.Append(aEOuta);
-            aVertVa.Append(aVa);
-            anInfoSeq.Append(anEdgeInfo);
+            edgeInfo.SetPassed(true);
+            aLS.Append(eOuta);
+            aVertVa.Append(va);
+            infoSeq.Append(edgeInfo);
 
-            Vertex pVa = aVa;
+            Vertex pVa = va;
             pVa.Orientation(Forward);
-            Point2D aPa = Coord2d(pVa, aEOuta, myFace);
-            aCoordVa.Append(aPa);
+            Point2D pa = Coord2d(pVa, eOuta, myFace);
+            aCoordVa.Append(pa);
 
-            GetNextVertex(pVa, aEOuta, out aVb);
+            GetNextVertex(pVa, eOuta, out vb);
 
-            Point2D aPb = Coord2d(aVb, aEOuta, myFace);
+            Point2D pb = Coord2d(vb, eOuta, myFace);
 
-            NCollection_List<BOPAlgo_EdgeInfo> aLEInfo = mySmartMap.FindFromKey(aVb);
+            NCollection_List<EdgeInfo> leInfo = mySmartMap.FindFromKey(vb);
             //
-            aTol2D = 2.0 * Tolerance2D(aVb, aGAS);
-            aTol2D2 = aTol2D * aTol2D;
+            tol2D = 2.0 * Tolerance2D(vb, aGAS);
+            tol2D2 = tol2D * tol2D;
             //
-            bIsClosed = aVertMap.Find(aVb);
+            bIsClosed = aVertMap.Find(vb);
             {
-                NCollection_List<Shape> aBuf = new();
+                NCollection_List<Shape> buf = new();
                 bool bHasEdge = false;
                 //
-                aNb = aLS.Length();
-                for (i = aNb; i > 0; --i)
+                nb = aLS.Length();
+                for (i = nb; i > 0; --i)
                 {
-                    Shape aVPrev = aVertVa[i];
-                    Point2D aPaPrev = aCoordVa[i];
-                    Edge aEPrev = ShapeCasts.Edge(aLS[i]);
+                    Shape vPrev = aVertVa[i];
+                    Point2D paPrev = aCoordVa[i];
+                    Edge ePrev = ShapeCasts.Edge(aLS[i]);
                     //
-                    aBuf.Append(aEPrev);
+                    buf.Append(ePrev);
                     if (!bHasEdge)
                     {
-                        bHasEdge = !Tool.Degenerated(aEPrev);
+                        bHasEdge = !Tool.Degenerated(ePrev);
                         // do not create wire from degenerated edges only
                         if (!bHasEdge)
                         {
@@ -338,48 +342,48 @@ public partial class BOPAlgo_WireSplitter
                         }
                     }
                     //
-                    anIsSameV = aVPrev.IsSame(aVb);
-                    anIsSameV2d = anIsSameV;
-                    if (anIsSameV)
+                    isSameV = vPrev.IsSame(vb);
+                    isSameV2d = isSameV;
+                    if (isSameV)
                     {
                         if (bIsClosed)
                         {
-                            aD2 = aPaPrev.SquareDistance(aPb);
-                            anIsSameV2d = aD2 < aTol2D2;
-                            if (anIsSameV2d)
+                            d2 = paPrev.SquareDistance(pb);
+                            isSameV2d = d2 < tol2D2;
+                            if (isSameV2d)
                             {
-                                double udist = Math.Abs(aPaPrev.X() - aPb.X());
-                                double vdist = Math.Abs(aPaPrev.Y() - aPb.Y());
-                                double aTolU = 2.0 * UTolerance2D(aVb, aGAS);
-                                double aTolV = 2.0 * VTolerance2D(aVb, aGAS);
+                                double udist = Math.Abs(paPrev.X() - pb.X());
+                                double vdist = Math.Abs(paPrev.Y() - pb.Y());
+                                double tolU = 2.0 * UTolerance2D(vb, aGAS);
+                                double tolV = 2.0 * VTolerance2D(vb, aGAS);
                                 //
-                                if ((udist > aTolU) || (vdist > aTolV))
+                                if ((udist > tolU) || (vdist > tolV))
                                 {
-                                    anIsSameV2d = false;
+                                    isSameV2d = false;
                                 }
                             }
                         }
                     } // if (anIsSameV) {
                     //
-                    if (anIsSameV && anIsSameV2d)
+                    if (isSameV && isSameV2d)
                     {
                         int iPriz;
                         iPriz = 1;
-                        if (aBuf.Extent() == 2)
+                        if (buf.Extent() == 2)
                         {
-                            if (aBuf.First().IsSame(aBuf.Last()))
+                            if (buf.First().IsSame(buf.Last()))
                             {
                                 iPriz = 0;
                             }
                         }
                         if (iPriz != 0)
                         {
-                            MakeWire(aBuf, out Wire aW);
-                            aCB.ChangeLoops().Append(aW);
+                            MakeWire(buf, out Wire w);
+                            aCB.ChangeLoops().Append(w);
                         }
                         //
-                        aNbj = i - 1;
-                        if (aNbj < 1)
+                        nbj = i - 1;
+                        if (nbj < 1)
                         {
                             //
                             aLS.Clear();
@@ -389,28 +393,28 @@ public partial class BOPAlgo_WireSplitter
                             return;
                         }
                         //
-                        NCollection_Sequence<Shape> aLSt = new(), aVertVat = new();
-                        NCollection_Sequence<Point2D> aCoordVat = new();
-                        NCollection_Sequence<BOPAlgo_EdgeInfo> anInfoSeqTmp = new();
+                        NCollection_Sequence<Shape> lSt = new(), vertVat = new();
+                        NCollection_Sequence<Point2D> coordVat = new();
+                        NCollection_Sequence<EdgeInfo> infoSeqTmp = new();
                         //
-                        aVb = ShapeCasts.Vertex(aVertVa[i]);
+                        vb = ShapeCasts.Vertex(aVertVa[i]);
                         //
-                        for (j = 1; j <= aNbj; ++j)
+                        for (j = 1; j <= nbj; ++j)
                         {
-                            aLSt.Append(aLS[j]);
-                            aVertVat.Append(aVertVa[j]);
-                            aCoordVat.Append(aCoordVa[j]);
-                            anInfoSeqTmp.Append(anInfoSeq[j]);
+                            lSt.Append(aLS[j]);
+                            vertVat.Append(aVertVa[j]);
+                            coordVat.Append(aCoordVa[j]);
+                            infoSeqTmp.Append(infoSeq[j]);
                         }
                         //
                         // OCCT assigns the caller's sequences: copied into them
-                        aLS.Assign(aLSt);
-                        aVertVa.Assign(aVertVat);
-                        aCoordVa.Assign(aCoordVat);
-                        anInfoSeq.Assign(anInfoSeqTmp);
+                        aLS.Assign(lSt);
+                        aVertVa.Assign(vertVat);
+                        aCoordVa.Assign(coordVat);
+                        infoSeq.Assign(infoSeqTmp);
 
-                        aEOuta = ShapeCasts.Edge(aLS.Last());
-                        anEdgeInfo = anInfoSeq.Last();
+                        eOuta = ShapeCasts.Edge(aLS.Last());
+                        edgeInfo = infoSeq.Last();
                         //
                         break;
                     }
@@ -418,25 +422,25 @@ public partial class BOPAlgo_WireSplitter
             }
             //
             // aEOutb
-            BOPAlgo_EdgeInfo? pEdgeInfo = null;
+            EdgeInfo? pEdgeInfo = null;
             //
-            anAngleIn = AngleIn(aEOuta, aLEInfo);
-            aMinAngle = 100.0;
-            int iCnt = NbWaysOut(aLEInfo);
+            angleIn = AngleIn(eOuta, leInfo);
+            minAngle = 100.0;
+            int iCnt = NbWaysOut(leInfo);
 
-            bool isBoundary = !anEdgeInfo.IsInside();
-            int aNbWaysInside = 0;
-            BOPAlgo_EdgeInfo? pOnlyWayIn = null;
+            bool isBoundary = !edgeInfo.IsInside;
+            int nbWaysInside = 0;
+            EdgeInfo? pOnlyWayIn = null;
 
-            anIt = new NCollection_List<BOPAlgo_EdgeInfo>.Iterator(aLEInfo);
-            for (; anIt.More(); anIt.Next())
+            it = new NCollection_List<EdgeInfo>.Iterator(leInfo);
+            for (; it.More(); it.Next())
             {
-                BOPAlgo_EdgeInfo anEI = anIt.Value();
-                Edge aE = anEI.Edge();
-                anIsOut = !anEI.IsIn();
-                anIsNotPassed = !anEI.Passed();
+                EdgeInfo ei = it.Value();
+                Edge e = ei.Edge();
+                isOut = !ei.IsIn;
+                isNotPassed = !ei.Passed();
                 //
-                if (anIsOut && anIsNotPassed)
+                if (isOut && isNotPassed)
                 {
                     //
                     // Is there one way to go out of the vertex
@@ -451,49 +455,49 @@ public partial class BOPAlgo_WireSplitter
                     if (iCnt == 1)
                     {
                         // the one and only way to go out .
-                        pEdgeInfo = anEI;
+                        pEdgeInfo = ei;
                         break;
                     }
                     //
-                    if (aE.IsSame(aEOuta))
+                    if (e.IsSame(eOuta))
                     {
-                        anAngle = aTwoPI;
+                        angle = twoPI;
                     }
                     else
                     {
                         // check 2d distance
                         if (bIsClosed)
                         {
-                            Point2D aP2Dx;
+                            Point2D p2Dx;
                             //
-                            aP2Dx = Coord2dVf(aE, myFace);
+                            p2Dx = Coord2dVf(e, myFace);
                             //
-                            aD2 = aP2Dx.SquareDistance(aPb);
-                            if (aD2 > aTol2D2)
+                            d2 = p2Dx.SquareDistance(pb);
+                            if (d2 > tol2D2)
                             {
                                 continue;
                             }
                         }
                         //
                         // Look for minimal angle and make the choice.
-                        anAngleOut = anEI.Angle();
-                        anAngle = ClockWiseAngle(anAngleIn, anAngleOut);
+                        angleOut = ei.Angle();
+                        angle = ClockWiseAngle(angleIn, angleOut);
                     }
 
-                    if (isBoundary && anEI.IsInside())
+                    if (isBoundary && ei.IsInside)
                     {
-                        ++aNbWaysInside;
-                        pOnlyWayIn = anEI;
+                        ++nbWaysInside;
+                        pOnlyWayIn = ei;
                     }
 
-                    if (anAngle < aMinAngle - eps)
+                    if (angle < minAngle - eps)
                     {
-                        aMinAngle = anAngle;
-                        pEdgeInfo = anEI;
+                        minAngle = angle;
+                        pEdgeInfo = ei;
                     }
                 }
             } // for (; anIt.More(); anIt.Next())
-            if (aNbWaysInside == 1)
+            if (nbWaysInside == 1)
             {
                 pEdgeInfo = pOnlyWayIn;
             }
@@ -504,97 +508,97 @@ public partial class BOPAlgo_WireSplitter
                 return;
             }
             //
-            aVa = aVb;
-            aEOuta = pEdgeInfo.Edge();
-            anEdgeInfo = pEdgeInfo;
+            va = vb;
+            eOuta = pEdgeInfo.Edge();
+            edgeInfo = pEdgeInfo;
         }
     }
 
     private static double ClockWiseAngle(double aAngleIn, double aAngleOut)
     {
-        double aTwoPi = M_PI + M_PI;
-        double dA, A1, A2, AIn, AOut;
+        double twoPi = M_PI + M_PI;
+        double dA, a1, a2, aIn, aOut;
 
-        AIn = aAngleIn;
-        AOut = aAngleOut;
-        if (AIn >= aTwoPi)
+        aIn = aAngleIn;
+        aOut = aAngleOut;
+        if (aIn >= twoPi)
         {
-            AIn = AIn - aTwoPi;
+            aIn = aIn - twoPi;
         }
 
-        if (AOut >= aTwoPi)
+        if (aOut >= twoPi)
         {
-            AOut = AOut - aTwoPi;
+            aOut = aOut - twoPi;
         }
 
-        A1 = AIn + M_PI;
+        a1 = aIn + M_PI;
 
-        if (A1 >= aTwoPi)
+        if (a1 >= twoPi)
         {
-            A1 = A1 - aTwoPi;
+            a1 = a1 - twoPi;
         }
 
-        A2 = AOut;
+        a2 = aOut;
 
-        dA = A1 - A2;
+        dA = a1 - a2;
         if (dA <= 0.0)
         {
-            dA = aTwoPi + dA;
+            dA = twoPi + dA;
         }
         // xx
         // else if (dA <= 1.e-15) {
         else if (dA <= 1.0e-14)
         {
-            dA = aTwoPi;
+            dA = twoPi;
         }
         return dA;
     }
 
     private static Point2D Coord2d(in Vertex aV1, in Edge aE1, in Face aF)
     {
-        double aT;
-        Curve2D? aC2D;
-        Point2D aP2D1;
+        double t;
+        Curve2D? c2D;
+        Point2D p2D1;
         //
-        aT = Tool.Parameter(aV1, aE1, aF);
-        aC2D = Tool.CurveOnSurface(aE1, aF, out _, out _);
-        aC2D!.D0(aT, out aP2D1);
+        t = Tool.Parameter(aV1, aE1, aF);
+        c2D = Tool.CurveOnSurface(aE1, aF, out _, out _);
+        c2D!.D0(t, out p2D1);
         //
-        return aP2D1;
+        return p2D1;
     }
 
     private static Point2D Coord2dVf(in Edge aE, in Face aF)
     {
-        double aCoord = 99.0;
-        Point2D aP2D1 = new(aCoord, aCoord);
-        Iterator aIt = new();
+        double coord = 99.0;
+        Point2D p2D1 = new(coord, coord);
+        Iterator it = new();
         //
-        aIt.Initialize(aE);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(aE);
+        for (; it.More(); it.Next())
         {
-            Shape aVx = aIt.Value();
-            if (aVx.Orientation() == Forward)
+            Shape vx = it.Value();
+            if (vx.Orientation() == Forward)
             {
-                Vertex aVxx = ShapeCasts.Vertex(aVx);
-                aP2D1 = Coord2d(aVxx, aE, aF);
-                return aP2D1;
+                Vertex vxx = ShapeCasts.Vertex(vx);
+                p2D1 = Coord2d(vxx, aE, aF);
+                return p2D1;
             }
         }
-        return aP2D1;
+        return p2D1;
     }
 
-    private static int NbWaysOut(NCollection_List<BOPAlgo_EdgeInfo> aLEInfo)
+    private static int NbWaysOut(NCollection_List<EdgeInfo> aLEInfo)
     {
         bool bIsOut, bIsNotPassed;
         int iCnt = 0;
-        NCollection_List<BOPAlgo_EdgeInfo>.Iterator anIt = new(aLEInfo);
+        NCollection_List<EdgeInfo>.Iterator it = new(aLEInfo);
         //
-        for (; anIt.More(); anIt.Next())
+        for (; it.More(); it.Next())
         {
-            BOPAlgo_EdgeInfo anEI = anIt.Value();
+            EdgeInfo ei = it.Value();
             //
-            bIsOut = !anEI.IsIn();
-            bIsNotPassed = !anEI.Passed();
+            bIsOut = !ei.IsIn;
+            bIsNotPassed = !ei.Passed();
             if (bIsOut && bIsNotPassed)
             {
                 iCnt++;
@@ -603,39 +607,39 @@ public partial class BOPAlgo_WireSplitter
         return iCnt;
     }
 
-    private static double AngleIn(in Edge aEIn, NCollection_List<BOPAlgo_EdgeInfo> aLEInfo)
+    private static double AngleIn(in Edge aEIn, NCollection_List<EdgeInfo> aLEInfo)
     {
-        double anAngleIn;
-        bool anIsIn;
-        NCollection_List<BOPAlgo_EdgeInfo>.Iterator anIt = new(aLEInfo);
+        double angleIn;
+        bool isIn;
+        NCollection_List<EdgeInfo>.Iterator it = new(aLEInfo);
 
-        for (; anIt.More(); anIt.Next())
+        for (; it.More(); it.Next())
         {
-            BOPAlgo_EdgeInfo anEdgeInfo = anIt.Value();
-            Edge aE = anEdgeInfo.Edge();
-            anIsIn = anEdgeInfo.IsIn();
+            EdgeInfo edgeInfo = it.Value();
+            Edge e = edgeInfo.Edge();
+            isIn = edgeInfo.IsIn;
             //
-            if (anIsIn && aE == aEIn)
+            if (isIn && e == aEIn)
             {
-                anAngleIn = anEdgeInfo.Angle();
-                return anAngleIn;
+                angleIn = edgeInfo.Angle();
+                return angleIn;
             }
         }
-        anAngleIn = 0.0;
-        return anAngleIn;
+        angleIn = 0.0;
+        return angleIn;
     }
 
     private static void GetNextVertex(in Vertex aV, in Edge aE, out Vertex aV1)
     {
-        Iterator aIt = new();
+        Iterator it = new();
         //
-        aIt.Initialize(aE);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(aE);
+        for (; it.More(); it.Next())
         {
-            Shape aVx = aIt.Value();
-            if (!aVx.IsEqual(aV))
+            Shape vx = it.Value();
+            if (!vx.IsEqual(aV))
             {
-                aV1 = ShapeCasts.Vertex(aVx);
+                aV1 = ShapeCasts.Vertex(vx);
                 return;
             }
         }
@@ -647,173 +651,173 @@ public partial class BOPAlgo_WireSplitter
                                   in Face myFace,
                                   FaceSurfaceAdaptor aGAS,
                                   bool bIsIN,
-                                  IntTools_Context theContext)
+                                  IntersectionContext context)
     {
-        double aFirst, aLast, dt, aTV, aTV1, anAngle, aTX;
-        Point2D aPV, aPV1;
-        Vector2D aV2D;
-        Curve2D? aC2D;
+        double first, last, dt, tv, tv1, angle, tx;
+        Point2D pv, pv1;
+        Vector2D v2D;
+        Curve2D? c2D;
         //
-        aTV = Tool.Parameter(aV, anEdge, myFace);
-        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aTV))
+        tv = Tool.Parameter(aV, anEdge, myFace);
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(tv))
         {
             return 0.0;
         }
         //
-        BOPTools_AlgoTools2D.CurveOnSurface(anEdge, myFace, out aC2D, out aFirst, out aLast, out _, theContext);
+        AlgoTools2D.CurveOnSurface(anEdge, myFace, out c2D, out first, out last, out _, context);
         double tol2d = 2.0 * Tolerance2D(aV, aGAS);
         //
-        CurveKind aType;
-        CurveAdaptor2D aGAC2D = new(aC2D!);
+        CurveKind type;
+        CurveAdaptor2D gac2D = new(c2D!);
         //
-        dt = Math.Max(aGAC2D.Resolution(tol2d), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        dt = Math.Max(gac2D.Resolution(tol2d), global::Kerf.Engine.Foundation.Precision.PConfusion());
         //
-        aType = aGAC2D.GetType();
-        if (aType != Line)
+        type = gac2D.GetType();
+        if (type != Line)
         {
-            CLProps2d LProp = new(aC2D!, aTV, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (LProp.IsTangentDefined())
+            CLProps2d lProp = new(c2D!, tv, 2, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            if (lProp.IsTangentDefined())
             {
-                double R = LProp.Curvature();
-                if (R > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                double r = lProp.Curvature();
+                if (r > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    R = 1.0 / R;
-                    double cosphi = R / (R + tol2d);
+                    r = 1.0 / r;
+                    double cosphi = r / (r + tol2d);
                     dt = Math.Max(dt, Math.Acos(cosphi)); // to avoid small dt for big R.
                 }
             }
         }
         // for case chl/927/r9
-        aTX = 0.05 * (aLast - aFirst); // aTX=0.25*(aLast - aFirst);
-        if (aTX < 5.0e-5)
+        tx = 0.05 * (last - first); // aTX=0.25*(aLast - aFirst);
+        if (tx < 5.0e-5)
         {
-            aTX = Math.Min(5.0e-5, (aLast - aFirst) / 2.0);
+            tx = Math.Min(5.0e-5, (last - first) / 2.0);
         }
-        if (dt > aTX)
+        if (dt > tx)
         {
             // to save direction of the curve as much as it possible
             // in the case of big tolerances
-            dt = aTX;
+            dt = tx;
         }
 
-        if (Math.Abs(aTV - aFirst) < Math.Abs(aTV - aLast))
+        if (Math.Abs(tv - first) < Math.Abs(tv - last))
         {
-            aTV1 = aTV + dt;
+            tv1 = tv + dt;
         }
         else
         {
-            aTV1 = aTV - dt;
+            tv1 = tv - dt;
         }
         //
-        aGAC2D.D0(aTV1, out aPV1);
-        aGAC2D.D0(aTV, out aPV);
+        gac2D.D0(tv1, out pv1);
+        gac2D.D0(tv, out pv);
         //
-        aV2D = bIsIN ? new Vector2D(aPV1, aPV) : new Vector2D(aPV, aPV1);
+        v2D = bIsIN ? new Vector2D(pv1, pv) : new Vector2D(pv, pv1);
         //
-        Direction2D aDir2D = new(aV2D);
-        anAngle = Angle(aDir2D);
+        Direction2D dir2D = new(v2D);
+        angle = Angle(dir2D);
         //
-        return anAngle;
+        return angle;
     }
 
     private static double Angle(in Direction2D aDir2D)
     {
-        Direction2D aRefDir = new(Direction2D.D.X);
-        double anAngle;
+        Direction2D refDir = new(Direction2D.D.X);
+        double angle;
 
-        anAngle = aRefDir.Angle(aDir2D);
-        if (anAngle < 0.0)
+        angle = refDir.Angle(aDir2D);
+        if (angle < 0.0)
         {
-            anAngle += M_PI + M_PI;
+            angle += M_PI + M_PI;
         }
-        return anAngle;
+        return angle;
     }
 
     private static double Tolerance2D(in Vertex aV, FaceSurfaceAdaptor aGAS)
     {
-        double aTol2D, anUr, aVr, aTolV3D;
-        SurfaceKind aType;
+        double tol2D, ur, vr, tolV3D;
+        SurfaceKind type;
         //
-        aType = aGAS.GetType();
-        aTolV3D = Tool.Tolerance(aV);
+        type = aGAS.GetType();
+        tolV3D = Tool.Tolerance(aV);
 
-        anUr = aGAS.UResolution(aTolV3D);
-        aVr = aGAS.VResolution(aTolV3D);
-        aTol2D = (aVr > anUr) ? aVr : anUr;
+        ur = aGAS.UResolution(tolV3D);
+        vr = aGAS.VResolution(tolV3D);
+        tol2D = (vr > ur) ? vr : ur;
         //
-        if (aTol2D < aTolV3D)
+        if (tol2D < tolV3D)
         {
-            aTol2D = aTolV3D;
+            tol2D = tolV3D;
         }
-        if (aType == SurfaceKind.BSplineSurface)
+        if (type == SurfaceKind.BSplineSurface)
         {
-            aTol2D = 1.1 * aTol2D;
+            tol2D = 1.1 * tol2D;
         }
         //
-        return aTol2D;
+        return tol2D;
     }
 
     private static double UTolerance2D(in Vertex aV, FaceSurfaceAdaptor aGAS)
     {
-        double aTolV3D = Tool.Tolerance(aV);
-        double anUr = aGAS.UResolution(aTolV3D);
+        double tolV3D = Tool.Tolerance(aV);
+        double ur = aGAS.UResolution(tolV3D);
         //
-        return anUr;
+        return ur;
     }
 
     private static double VTolerance2D(in Vertex aV, FaceSurfaceAdaptor aGAS)
     {
-        double aTolV3D = Tool.Tolerance(aV);
-        double anVr = aGAS.VResolution(aTolV3D);
+        double tolV3D = Tool.Tolerance(aV);
+        double vr = aGAS.VResolution(tolV3D);
         //
-        return anVr;
+        return vr;
     }
 
     private static void RefineAngles(in Face myFace,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<BOPAlgo_EdgeInfo>> mySmartMap,
-                                     IntTools_Context theContext)
+                                     NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap,
+                                     IntersectionContext context)
     {
-        int aNb = mySmartMap.Extent();
-        for (int i = 1; i <= aNb; ++i)
+        int nb = mySmartMap.Extent();
+        for (int i = 1; i <= nb; ++i)
         {
-            Vertex aV = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<BOPAlgo_EdgeInfo> aLEI = mySmartMap[i];
-            RefineAngles(aV, myFace, aLEI, theContext);
+            Vertex v = ShapeCasts.Vertex(mySmartMap.FindKey(i));
+            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            RefineAngles(v, myFace, lei, context);
         }
     }
 
     private static void RefineAngles(in Vertex aV,
                                      in Face myFace,
-                                     NCollection_List<BOPAlgo_EdgeInfo> aLEI,
-                                     IntTools_Context theContext)
+                                     NCollection_List<EdgeInfo> aLEI,
+                                     IntersectionContext context)
     {
         bool bIsIn, bIsBoundary, bRefined;
         int iCntBnd, iCntInt;
-        double aA, aA1, aA2;
-        NCollection_DataMap<Shape, double> aDMSR = new(ShapeHasher.Instance);
-        NCollection_List<BOPAlgo_EdgeInfo>.Iterator aItLEI = new(aLEI);
+        double a, a1, a2;
+        NCollection_DataMap<Shape, double> dmsr = new(ShapeHasher.Instance);
+        NCollection_List<EdgeInfo>.Iterator itLEI = new(aLEI);
         //
-        aA1 = 0.0; // angle of outgoing edge
-        aA2 = 0.0; // angle of incoming edge
+        a1 = 0.0; // angle of outgoing edge
+        a2 = 0.0; // angle of incoming edge
         iCntBnd = 0;
         iCntInt = 0;
-        aItLEI.Initialize(aLEI);
-        for (; aItLEI.More(); aItLEI.Next())
+        itLEI.Initialize(aLEI);
+        for (; itLEI.More(); itLEI.Next())
         {
-            BOPAlgo_EdgeInfo aEI = aItLEI.Value();
-            bIsIn = aEI.IsIn();
-            aA = aEI.Angle();
+            EdgeInfo ei = itLEI.Value();
+            bIsIn = ei.IsIn;
+            a = ei.Angle();
             //
-            if (!aEI.IsInside())
+            if (!ei.IsInside)
             {
                 ++iCntBnd;
                 if (!bIsIn)
                 {
-                    aA1 = aA;
+                    a1 = a;
                 }
                 else
                 {
-                    aA2 = aA;
+                    a2 = a;
                 }
             }
             else
@@ -827,64 +831,64 @@ public partial class BOPAlgo_WireSplitter
             return;
         }
         //
-        double aDelta = ClockWiseAngle(aA2, aA1);
-        aItLEI.Initialize(aLEI);
-        for (; aItLEI.More(); aItLEI.Next())
+        double delta = ClockWiseAngle(a2, a1);
+        itLEI.Initialize(aLEI);
+        for (; itLEI.More(); itLEI.Next())
         {
-            BOPAlgo_EdgeInfo aEI = aItLEI.Value();
-            Edge aE = aEI.Edge();
+            EdgeInfo ei = itLEI.Value();
+            Edge e = ei.Edge();
             //
-            bIsBoundary = !aEI.IsInside();
-            bIsIn = aEI.IsIn();
+            bIsBoundary = !ei.IsInside;
+            bIsIn = ei.IsIn;
             if (bIsBoundary || bIsIn)
             {
                 continue;
             }
             //
-            aA = aEI.Angle();
-            double aDA = ClockWiseAngle(aA2, aA);
-            if (aDA < aDelta)
+            a = ei.Angle();
+            double da = ClockWiseAngle(a2, a);
+            if (da < delta)
             {
                 continue; // already inside
             }
             //
-            bRefined = RefineAngle2D(aV, aE, myFace, aA1, aA2, aDelta, ref aA, theContext);
+            bRefined = RefineAngle2D(aV, e, myFace, a1, a2, delta, ref a, context);
             if (bRefined)
             {
-                aDMSR.Bind(aE, aA);
+                dmsr.Bind(e, a);
             }
             else if (iCntInt == 2)
             {
-                aA = (aA <= aA1) ? (aA1 + global::Kerf.Engine.Foundation.Precision.Angular()) : (aA2 - global::Kerf.Engine.Foundation.Precision.Angular());
-                aDMSR.Bind(aE, aA);
+                a = (a <= a1) ? (a1 + global::Kerf.Engine.Foundation.Precision.Angular()) : (a2 - global::Kerf.Engine.Foundation.Precision.Angular());
+                dmsr.Bind(e, a);
             }
         }
 
-        if (aDMSR.IsEmpty())
+        if (dmsr.IsEmpty())
         {
             return;
         }
         //
         // update Angles
-        aItLEI.Initialize(aLEI);
-        for (; aItLEI.More(); aItLEI.Next())
+        itLEI.Initialize(aLEI);
+        for (; itLEI.More(); itLEI.Next())
         {
-            BOPAlgo_EdgeInfo aEI = aItLEI.Value();
-            Edge aE = aEI.Edge();
+            EdgeInfo ei = itLEI.Value();
+            Edge e = ei.Edge();
             //
-            bIsIn = aEI.IsIn();
-            if (!aDMSR.IsBound(aE))
+            bIsIn = ei.IsIn;
+            if (!dmsr.IsBound(e))
             {
                 continue;
             }
             //
-            aA = aDMSR.Find(aE);
+            a = dmsr.Find(e);
             if (bIsIn)
             {
-                aA = aA + M_PI;
+                a = a + M_PI;
             }
             //
-            aEI.SetAngle(aA);
+            ei.SetAngle(a);
         }
     }
 
@@ -895,86 +899,86 @@ public partial class BOPAlgo_WireSplitter
                                       double aA2,
                                       double aDelta,
                                       ref double aA,
-                                      IntTools_Context theContext)
+                                      IntersectionContext context)
     {
         bool bRet;
-        int i, j, aNbP;
-        double aTV, aT1, aT2, dT, aAngle, aT, aTOp;
-        double aTolInt, aAi, aXi, aYi, aT1j, aT2j, aT1max, aT2max, aCf;
-        Point2D aPV, aP, aP1, aP2;
-        Curve2D? aC2D;
-        LineCurve2D aLi;
-        CurveAdaptor2D aGAC1 = new(), aGAC2 = new();
-        Geom2dInt_GInter aGInter = new();
-        IntRes2d_Domain aDomain1 = new(), aDomain2 = new();
+        int i, j, nbP;
+        double tv, t1, t2, dT, angle, t, tOp;
+        double tolInt, ai, xi, yi, t1j, t2j, t1max, t2max, cf;
+        Point2D pv, p, p1, p2;
+        Curve2D? c2D;
+        LineCurve2D li;
+        CurveAdaptor2D gac1 = new(), gac2 = new();
+        GInter gInter = new();
+        TwoDDomain domain1 = new(), domain2 = new();
         //
         bRet = true;
-        aCf = 0.01;
-        aTolInt = 1.0e-10;
+        cf = 0.01;
+        tolInt = 1.0e-10;
         //
-        BOPTools_AlgoTools2D.CurveOnSurface(aE, myFace, out aC2D, out aT1, out aT2, out _, theContext);
-        aGAC1.Load(aC2D!, aT1, aT2);
+        AlgoTools2D.CurveOnSurface(aE, myFace, out c2D, out t1, out t2, out _, context);
+        gac1.Load(c2D!, t1, t2);
         //
-        aTV = Tool.Parameter(aV, aE, myFace);
-        aGAC1.D0(aTV, out aPV);
+        tv = Tool.Parameter(aV, aE, myFace);
+        gac1.D0(tv, out pv);
         //
-        aTOp = (Math.Abs(aTV - aT1) < Math.Abs(aTV - aT2)) ? aT2 : aT1;
+        tOp = (Math.Abs(tv - t1) < Math.Abs(tv - t2)) ? t2 : t1;
         //
-        double MaxDT = 0.3 * (aT2 - aT1);
-        aGAC1.D0(aT1, out aP1);
-        aGAC1.D0(aT2, out aP2);
-        aDomain1.SetValues(aP1, aT1, aTolInt, aP2, aT2, aTolInt);
+        double maxDT = 0.3 * (t2 - t1);
+        gac1.D0(t1, out p1);
+        gac1.D0(t2, out p2);
+        domain1.SetValues(p1, t1, tolInt, p2, t2, tolInt);
         //
         for (i = 0; i < 2; ++i)
         {
-            aAi = (i == 0) ? aA1 : (aA2 + M_PI);
-            aXi = Math.Cos(aAi);
-            aYi = Math.Sin(aAi);
-            Direction2D aDiri = new(aXi, aYi);
-            aLi = new LineCurve2D(aPV, aDiri);
+            ai = (i == 0) ? aA1 : (aA2 + M_PI);
+            xi = Math.Cos(ai);
+            yi = Math.Sin(ai);
+            Direction2D diri = new(xi, yi);
+            li = new LineCurve2D(pv, diri);
             //
-            aGAC2.Load(aLi);
+            gac2.Load(li);
             //
-            aGInter.Perform(aGAC1, aDomain1, aGAC2, aDomain2, aTolInt, aTolInt);
-            if (!aGInter.IsDone())
+            gInter.Perform(gac1, domain1, gac2, domain2, tolInt, tolInt);
+            if (!gInter.IsDone)
             {
                 continue;
             }
             //
-            aNbP = aGInter.NbPoints();
-            aT1max = aTV;
-            aT2max = -1.0;
-            for (j = 1; j <= aNbP; ++j)
+            nbP = gInter.PointCount;
+            t1max = tv;
+            t2max = -1.0;
+            for (j = 1; j <= nbP; ++j)
             {
-                IntRes2d_IntersectionPoint aIPj = aGInter.Point(j);
-                aT1j = aIPj.ParamOnFirst();
-                aT2j = aIPj.ParamOnSecond();
+                IntersectionPoint2D iPj = gInter.Point(j);
+                t1j = iPj.ParamOnFirst();
+                t2j = iPj.ParamOnSecond();
                 //
-                if (aT2j > aT2max && Math.Abs(aT1j - aTV) < MaxDT)
+                if (t2j > t2max && Math.Abs(t1j - tv) < maxDT)
                 {
-                    aT2max = aT2j;
-                    aT1max = aT1j;
+                    t2max = t2j;
+                    t1max = t1j;
                 }
             }
             //
-            if (aT2max > 0)
+            if (t2max > 0)
             {
-                dT = aTOp - aT1max;
-                if (Math.Abs(dT) < aTolInt)
+                dT = tOp - t1max;
+                if (Math.Abs(dT) < tolInt)
                 {
                     continue;
                 }
                 //
-                aT = aT1max + aCf * dT;
-                aGAC1.D0(aT, out aP);
-                Vector2D aV2D = new(aPV, aP);
-                Direction2D aDir2D = new(aV2D);
+                t = t1max + cf * dT;
+                gac1.D0(t, out p);
+                Vector2D v2D = new(pv, p);
+                Direction2D dir2D = new(v2D);
                 //
-                aAngle = Angle(aDir2D);
-                double aDA = ClockWiseAngle(aA2, aAngle);
-                if (aDA < aDelta)
+                angle = Angle(dir2D);
+                double da = ClockWiseAngle(aA2, angle);
+                if (da < aDelta)
                 {
-                    aA = aAngle;
+                    aA = angle;
                     return bRet;
                 }
             }

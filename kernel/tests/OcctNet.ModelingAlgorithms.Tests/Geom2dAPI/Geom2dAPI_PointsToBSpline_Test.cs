@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
 
@@ -18,9 +19,9 @@ public class Geom2dAPI_PointsToBSpline_Test
         aYValues[2] = 1.0;
         aYValues[3] = 0.0;
 
-        Geom2dAPI_PointsToBSpline anApprox = new();
+        PointsToBSpline2D anApprox = new();
         anApprox.Init(aYValues, -2.0, 1.0, 3, 5, C2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
 
         BSplineCurve2D aCurve = anApprox.Curve();
         Assert.NotNull(aCurve);
@@ -39,10 +40,10 @@ public class Geom2dAPI_PointsToBSpline_Test
         aParameters[2] = 5.0;
         aParameters[3] = 5.0;
 
-        Geom2dAPI_PointsToBSpline anApprox = new(aPoints, 3, 5, C2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anApprox.IsDone());
+        PointsToBSpline2D anApprox = new(aPoints, 3, 5, C2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(anApprox.IsDone);
 
         anApprox.Init(aPoints, aParameters, 3, 5, C2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.False(anApprox.IsDone());
+        Assert.False(anApprox.IsDone);
     }
 }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -43,13 +45,13 @@ internal static class BRepTestExtremaCommands
         }
 
         Point3D P1 = new(), P2 = new();
-        if (!BRepExtrema_Poly.Distance(S1, S2, ref P1, ref P2, out double D))
+        if (!DistancePoly.Distance(S1, S2, ref P1, ref P2, out double D))
         {
             return 1;
         }
 
         di.Append(" distance : ").Append(D).Append("\n");
-        theDI.SetShape("distance", new BRepLib_MakeEdge(P1, P2).Edge());
+        theDI.SetShape("distance", new LibraryMakeEdge(P1, P2).Edge());
         return 0;
     }
 
@@ -87,14 +89,14 @@ internal static class BRepTestExtremaCommands
             }
         }
 
-        var dst = new BRepExtrema_DistShapeShape();
+        var dst = new DistanceShapeShape();
         dst.LoadS1(S1);
         dst.LoadS2(S2);
         dst.SetDeflection(aDeflection);
         dst.SetMultiThread(isMultiThread);
         dst.Perform();
 
-        if (dst.IsDone())
+        if (dst.IsDone)
         {
             di.Append("\"distmini\" command returns:\n");
 
@@ -102,14 +104,14 @@ internal static class BRepTestExtremaCommands
             theDI.SetNumber(named, dst.Value());
             di.Append(named).Append(" ");
 
-            for (int i1 = 1; i1 <= dst.NbSolution(); i1++)
+            for (int i1 = 1; i1 <= dst.SolutionCount; i1++)
             {
                 Point3D P1 = dst.PointOnShape1(i1);
                 Point3D P2 = dst.PointOnShape2(i1);
                 string aName = i1 == 1 ? ns0 : ns0 + i1.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 Shape aSolution = dst.Value() <= 1.0e-9
-                                       ? new BRepLib_MakeVertex(P1).Vertex()
-                                       : new BRepLib_MakeEdge(P1, P2).Edge();
+                                       ? new LibraryMakeVertex(P1).Vertex()
+                                       : new LibraryMakeEdge(P1, P2).Edge();
                 theDI.SetShape(aName, aSolution);
                 di.Append(aName).Append(" ");
             }
@@ -145,7 +147,7 @@ internal static class BRepTestExtremaCommands
             return 1;
         }
 
-        var aTool = new BRepExtrema_ShapeProximity(0.0);
+        var aTool = new ShapeProximity(0.0);
         bool aProfile = false;
         bool isTolerance = false;
         bool isValue = false;
@@ -195,7 +197,7 @@ internal static class BRepTestExtremaCommands
         aTool.Perform();
         double aWorkTime = aTimer.Elapsed.TotalSeconds;
 
-        if (!aTool.IsDone())
+        if (!aTool.IsDone)
         {
             theDI.Output.WriteLine("Error: Failed to perform proximity test");
             return 1;
@@ -212,8 +214,8 @@ internal static class BRepTestExtremaCommands
         if (isValue)
         {
             theResult.Append("Proximity value: ").Append(aTool.Proximity()).Append("\n");
-            theDI.SetShape("ProxPnt1", new BRepLib_MakeVertex(aTool.ProximityPoint1()).Vertex());
-            theDI.SetShape("ProxPnt2", new BRepLib_MakeVertex(aTool.ProximityPoint2()).Vertex());
+            theDI.SetShape("ProxPnt1", new LibraryMakeVertex(aTool.ProximityPoint1()).Vertex());
+            theDI.SetShape("ProxPnt2", new LibraryMakeVertex(aTool.ProximityPoint2()).Vertex());
             theResult.Append(" Status of ProxPnt1 on ").Append(theArgs[1]).Append(" : ").Append(Status(aTool.ProxPntStatus1())).Append("\n");
             theResult.Append(" Status of ProxPnt2 on ").Append(theArgs[2]).Append(" : ").Append(Status(aTool.ProxPntStatus2())).Append("\n");
         }
@@ -249,10 +251,10 @@ internal static class BRepTestExtremaCommands
         return 0;
     }
 
-    private static string Status(BRepExtrema_ProximityDistTool.ProxPnt_Status theStatus) => theStatus switch
+    private static string Status(ProximityDistTool.ProxPnt_Status theStatus) => theStatus switch
     {
-        BRepExtrema_ProximityDistTool.ProxPnt_Status.ProxPnt_Status_BORDER => "Border",
-        BRepExtrema_ProximityDistTool.ProxPnt_Status.ProxPnt_Status_MIDDLE => "Middle",
+        ProximityDistTool.ProxPnt_Status.ProxPnt_Status_BORDER => "Border",
+        ProximityDistTool.ProxPnt_Status.ProxPnt_Status_MIDDLE => "Middle",
         _ => "Unknown",
     };
 
@@ -302,11 +304,11 @@ internal static class BRepTestExtremaCommands
         }
 
         var aTimer = Stopwatch.StartNew();
-        var aTool = new BRepExtrema_SelfIntersection(aShape, aTolerance);
+        var aTool = new SelfIntersection(aShape, aTolerance);
         double aInitTime = aTimer.Elapsed.TotalSeconds;
         aTimer.Restart();
         aTool.Perform();
-        if (!aTool.IsDone())
+        if (!aTool.IsDone)
         {
             theDI.Output.WriteLine("Error: Failed to perform proximity test");
             return 1;

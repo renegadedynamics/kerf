@@ -1,8 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.HiddenLines.Presentation;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -145,10 +150,10 @@ internal static class MeshTestCommands
         }
 
         var aListOfShapes = new List<Shape>();
-        var aMeshParams = new IMeshTools_Parameters();
+        var aMeshParams = new ToolParameters();
         bool hasDefl = false, hasAngDefl = false, isPrsDefl = false;
 
-        IMeshTools_Context aContext = new BRepMesh_Context();
+        ToolContext aContext = new MeshContext();
         for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
         {
             string aNameCase = theArgVec[anArgIter].ToLowerInvariant();
@@ -189,13 +194,13 @@ internal static class MeshTestCommands
                 string anAlgoStr = theArgVec[++anArgIter].ToLowerInvariant();
                 if (anAlgoStr is "watson" or "0")
                 {
-                    aMeshParams.MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Watson;
-                    aContext.SetFaceDiscret(new BRepMesh_FaceDiscret(new BRepMesh_MeshAlgoFactory()));
+                    aMeshParams.MeshAlgo = MeshAlgoType.MeshAlgoType_Watson;
+                    aContext.SetFaceDiscret(new FaceDiscret(new DefaultMeshAlgoFactory()));
                 }
                 else if (anAlgoStr is "delabella" or "1")
                 {
-                    aMeshParams.MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Delabella;
-                    aContext.SetFaceDiscret(new BRepMesh_FaceDiscret(new BRepMesh_DelabellaMeshAlgoFactory()));
+                    aMeshParams.MeshAlgo = MeshAlgoType.MeshAlgoType_Delabella;
+                    aContext.SetFaceDiscret(new FaceDiscret(new DelabellaMeshAlgoFactory()));
                 }
                 else if (anAlgoStr is "-1" or "default")
                 {
@@ -290,20 +295,20 @@ internal static class MeshTestCommands
         Shape aShape = aListOfShapes.Count == 1 ? aListOfShapes[0] : global::Kerf.Engine.Topology.Builder.MakeCompound(aListOfShapes);
         if (isPrsDefl)
         {
-            var aDrawer = new Prs3d_Drawer();
+            var aDrawer = new Drawer();
             if (hasDefl)
             {
                 aDrawer.SetDeviationCoefficient(aMeshParams.Deflection);
             }
 
-            aMeshParams.Deflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, aDrawer);
+            aMeshParams.Deflection = PresentationToolTriangulatedShape.GetDeflection(aShape, aDrawer);
             if (!hasAngDefl)
             {
                 aMeshParams.Angle = aDrawer.DeviationAngle();
             }
         }
 
-        var aMesher = new BRepMesh_IncrementalMesh();
+        var aMesher = new IncrementalMesh();
         aMesher.SetShape(aShape);
         aMesher.ChangeParameters() = aMeshParams;
         aMesher.Perform(aContext);
@@ -324,17 +329,17 @@ internal static class MeshTestCommands
             int aFlag = aStatus & (1 << i);
             if (aFlag != 0)
             {
-                di.Append((IMeshData_Status)aFlag switch
+                di.Append((StatusModel)aFlag switch
                 {
-                    IMeshData_Status.IMeshData_OpenWire => "OpenWire ",
-                    IMeshData_Status.IMeshData_SelfIntersectingWire => "SelfIntersectingWire ",
-                    IMeshData_Status.IMeshData_Failure => "Failure ",
-                    IMeshData_Status.IMeshData_ReMesh => "ReMesh ",
-                    IMeshData_Status.IMeshData_UnorientedWire => "UnorientedWire ",
-                    IMeshData_Status.IMeshData_TooFewPoints => "TooFewPoints ",
-                    IMeshData_Status.IMeshData_Outdated => "Outdated ",
-                    IMeshData_Status.IMeshData_Reused => "Reused ",
-                    IMeshData_Status.IMeshData_UserBreak => "UserBreak ",
+                    StatusModel.OpenWire => "OpenWire ",
+                    StatusModel.SelfIntersectingWire => "SelfIntersectingWire ",
+                    StatusModel.Failure => "Failure ",
+                    StatusModel.ReMesh => "ReMesh ",
+                    StatusModel.UnorientedWire => "UnorientedWire ",
+                    StatusModel.TooFewPoints => "TooFewPoints ",
+                    StatusModel.Outdated => "Outdated ",
+                    StatusModel.Reused => "Reused ",
+                    StatusModel.UserBreak => "UserBreak ",
                     _ => "",
                 });
             }
@@ -408,8 +413,8 @@ internal static class MeshTestCommands
             return 1;
         }
 
-        var aFaceMaker = new BRepBuilderAPI_MakeFace(aSurf, aUMin, aUMax, aVMin, aVMax, global::Kerf.Engine.Foundation.Precision.Confusion());
-        if (!aFaceMaker.IsDone())
+        var aFaceMaker = new MakeFace(aSurf, aUMin, aUMax, aVMin, aVMax, global::Kerf.Engine.Foundation.Precision.Confusion());
+        if (!aFaceMaker.IsDone)
         {
             theDI.Output.WriteLine("Error: cannot build face with natural bounds, aborting");
             return 1;
@@ -795,7 +800,7 @@ internal static class MeshTestCommands
                     }
 
                     string newname = anEdgeMap.Count > 1 ? $"{aPrefix}{nbEdge}_{j}" : $"{aPrefix}{j}";
-                    theDI.SetShape(newname, new BRepBuilderAPI_MakeVertex(P3d).Shape());
+                    theDI.SetShape(newname, new MakeVertex(P3d).Shape());
                     di.AppendElement(newname);
                 }
 
@@ -974,7 +979,7 @@ internal static class MeshTestCommands
 
         // OCCT bug: EnsureNormalConsistency reads UV nodes a triangulation may not have (after trmergenodes); the port
         // throws Standard_OutOfRange there (occt-issues.md)
-        bool isCorrected = BRepLib.EnsureNormalConsistency(aCopy);
+        bool isCorrected = BrepLibrary.EnsureNormalConsistency(aCopy);
         foreach ((global::Kerf.Engine.Topology.TShape aTFace, bool aModified, bool aChecked) in aFlags)
         {
             aTFace.Modified(aModified);
@@ -1002,10 +1007,10 @@ internal static class MeshTestCommands
     {
         if (argv.Count == 2)
         {
-            BRepMesh_IncrementalMesh.SetParallelDefault(theDI.Atoi(argv[1]) == 1);
+            global::Kerf.Engine.Meshing.IncrementalMesh.SetParallelDefault(theDI.Atoi(argv[1]) == 1);
         }
 
-        theDI.Output.Write("Incremental Mesh, multi-threading " + (BRepMesh_IncrementalMesh.IsParallelDefault() ? "ON\n" : "OFF\n"));
+        theDI.Output.Write("Incremental Mesh, multi-threading " + (global::Kerf.Engine.Meshing.IncrementalMesh.IsParallelDefault ? "ON\n" : "OFF\n"));
         return 0;
     }
 
@@ -1018,7 +1023,7 @@ internal static class MeshTestCommands
             return 0;
         }
 
-        NCollection_List<BRepMesh_DiscretAlgoFactory> aFactories = BRepMesh_DiscretAlgoFactory.Factories();
+        NCollection_List<DiscretAlgoFactory> aFactories = DiscretAlgoFactory.Factories();
         if (aFactories.IsEmpty())
         {
             theDI.Output.Write(" *no algorithms registered\n");
@@ -1026,7 +1031,7 @@ internal static class MeshTestCommands
         }
 
         theDI.Output.Write(" *available algorithms:\n");
-        foreach (BRepMesh_DiscretAlgoFactory aFactory in aFactories)
+        foreach (DiscretAlgoFactory aFactory in aFactories)
         {
             theDI.Output.Write("  " + aFactory.Name() + "\n");
         }
@@ -1044,7 +1049,7 @@ internal static class MeshTestCommands
         }
 
         string aName = a[1];
-        if (BRepMesh_DiscretFactory.Get().SetDefaultName(aName))
+        if (DiscretFactory.Get().SetDefaultName(aName))
         {
             theDI.Output.Write(" *ready\n");
         }
@@ -1065,7 +1070,7 @@ internal static class MeshTestCommands
             return 0;
         }
 
-        theDI.Output.Write(" *default name: " + BRepMesh_DiscretFactory.Get().DefaultName() + "\n");
+        theDI.Output.Write(" *default name: " + DiscretFactory.Get().DefaultName() + "\n");
         return 0;
     }
 
@@ -1095,7 +1100,7 @@ internal static class MeshTestCommands
             aAngle = theDI.Atof(a[3]);
         }
 
-        BRepMesh_DiscretRoot? aMeshAlgo = BRepMesh_DiscretFactory.Get().Discret(aS, aDeflection, aAngle);
+        DiscretRoot? aMeshAlgo = DiscretFactory.Get().Discret(aS, aDeflection, aAngle);
         if (aMeshAlgo is null)
         {
             theDI.Output.Write(" *Cannot create the meshing algorithm\n");
@@ -1103,7 +1108,7 @@ internal static class MeshTestCommands
         }
 
         aMeshAlgo.Perform();
-        if (!aMeshAlgo.IsDone())
+        if (!aMeshAlgo.IsDone)
         {
             theDI.Output.Write(" *Meshing not done\n");
         }
@@ -1180,11 +1185,11 @@ internal static class MeshTestCommands
         var props = new Properties();
         if (anEps <= 0.0)
         {
-            BRepGProp.SurfaceProperties(shape, props);
+            MassPropertiesBuilder.SurfaceProperties(shape, props);
         }
         else
         {
-            BRepGProp.SurfaceProperties(shape, props, anEps);
+            MassPropertiesBuilder.SurfaceProperties(shape, props, anEps);
         }
 
         double aGeomArea = props.Mass();

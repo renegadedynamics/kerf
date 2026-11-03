@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -79,10 +80,10 @@ public class GeomAPI_IntSS_Test
     {
         MakeOCC26675Surfaces(out Surface aS1, out Surface aS2);
 
-        GeomAPI_IntSS anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anIntersection.IsDone(), "Intersection failed");
+        SurfaceSurfaceIntersection anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(anIntersection.IsDone, "Intersection failed");
 
-        int aNbLines = anIntersection.NbLines();
+        int aNbLines = anIntersection.LineCount;
         Assert.True(aNbLines == 1, $"Expected exactly 1 intersection curve, got {aNbLines}");
     }
 
@@ -92,9 +93,9 @@ public class GeomAPI_IntSS_Test
     {
         MakeOCC26675Surfaces(out Surface aS1, out Surface aS2);
 
-        GeomAPI_IntSS anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(anIntersection.IsDone(), "Intersection failed");
-        Assert.True(anIntersection.NbLines() >= 1, "No intersection curves found");
+        SurfaceSurfaceIntersection anIntersection = new(aS1, aS2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(anIntersection.IsDone, "Intersection failed");
+        Assert.True(anIntersection.LineCount >= 1, "No intersection curves found");
 
         // Verify the first curve has a non-degenerate parameter range
         Curve3D aCurve = anIntersection.Line(1);
@@ -133,15 +134,15 @@ public class GeomAPI_IntSS_Test
         Surface aS1 = new TrimmedSurface(aCone1, 0.0, 2.0 * M_PI, 0.0, 10.0);
         Surface aS2 = new TrimmedSurface(aCone2, 0.0, 2.0 * M_PI, 0.0, 10.0);
 
-        GeomAPI_IntSS anIntersection = new();
+        SurfaceSurfaceIntersection anIntersection = new();
         Assert.Null(Record.Exception(() => anIntersection.Perform(aS1, aS2, 1.0e-7)));
-        Assert.True(anIntersection.IsDone(), "Surface-surface intersection not done");
+        Assert.True(anIntersection.IsDone, "Surface-surface intersection not done");
         // The original unbounded test expected exactly 2 curves; with finite trim bounds the
         // algorithm may report additional boundary-crossing segments, so check for at least 2.
-        Assert.True(anIntersection.NbLines() >= 2, "Expected at least 2 intersection curves");
+        Assert.True(anIntersection.LineCount >= 2, "Expected at least 2 intersection curves");
 
         // Verify each intersection curve is non-null and has a non-degenerate parameter range.
-        for (int anIdx = 1; anIdx <= anIntersection.NbLines(); ++anIdx)
+        for (int anIdx = 1; anIdx <= anIntersection.LineCount; ++anIdx)
         {
             Curve3D aCurve = anIntersection.Line(anIdx);
             Assert.NotNull(aCurve);

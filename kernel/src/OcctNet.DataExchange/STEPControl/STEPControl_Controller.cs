@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
@@ -40,8 +41,8 @@ public class STEPControl_Controller : XSControl_Controller
         myAdaptorWrite = ActWrite;
 
         ActWrite.SetShapeFixParameters(DESTEP_Parameters.GetDefaultShapeFixParameters(), new NCollection_DataMap<string, string>());
-        ShapeProcess.OperationsFlags aDefaultProcFlags = new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
-                                                                                         ShapeProcess.Operation.DirectFaces);
+        global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aDefaultProcFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex,
+                                                                                         global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
         ActWrite.SetShapeProcessFlags(aDefaultProcFlags);
 
         StepSelect_WorkLibrary swl = new StepSelect_WorkLibrary();
@@ -428,7 +429,7 @@ public class STEPControl_Controller : XSControl_Controller
     {
         if (modeshape < 0 || modeshape > 4)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         STEPControl_ActorWrite ActWrite = myAdaptorWrite as STEPControl_ActorWrite;
         //    A PRESENT ON PASSE PAR LE PROFILE
@@ -441,7 +442,7 @@ public class STEPControl_Controller : XSControl_Controller
         NCollection_DataMap<Shape, Shape> aModifedMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         if (aModel.InternalParameters.WriteNonmanifold)
         {
-            ShapeUpgrade_RemoveLocations aRemLoc = new ShapeUpgrade_RemoveLocations();
+            RemoveLocations aRemLoc = new RemoveLocations();
             aRemLoc.SetRemoveLevel(ShapeType.Compound);
             aRemLoc.Remove(aShape);
             aShape = aRemLoc.GetResult();
@@ -463,7 +464,7 @@ public class STEPControl_Controller : XSControl_Controller
         {
             if (theRecorded is null)
             {
-                ShapeAlgo.Init();
+                global::Kerf.Engine.Healing.ShapeAlgo.Init();
                 STEPControl_Controller STEPCTL = new STEPControl_Controller();
                 STEPCTL.AutoRecord(); // avec les noms donnes a la construction
                 // OCCT's XSAlgo::Init() declares XSAlgo's statics process-wide: here per parameter set (InitStatics)

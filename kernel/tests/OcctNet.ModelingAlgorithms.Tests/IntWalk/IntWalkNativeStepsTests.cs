@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
@@ -60,7 +62,7 @@ public class IntWalkNativeStepsTests
     private static void Hex(StringBuilder theOut, double theValue) =>
         theOut.Append(' ').Append(BitConverter.DoubleToUInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture));
 
-    private static void RecPnt(StringBuilder theOut, string theTag, int theStatus, in IntSurf_PntOn2S theP)
+    private static void RecPnt(StringBuilder theOut, string theTag, int theStatus, in PntOn2S theP)
     {
         theOut.Append(theTag).Append(' ').Append(theStatus.ToString(CultureInfo.InvariantCulture));
         Hex(theOut, theP.Value().X());
@@ -74,51 +76,51 @@ public class IntWalkNativeStepsTests
         theOut.Append('\n');
     }
 
-    private static void DumpVertex(StringBuilder theOut, in IntPatch_Point theV)
+    private static void DumpVertex(StringBuilder theOut, in PatchPoint theV)
     {
-        theOut.Append("V ").Append(theV.IsOnDomS1() ? 1 : 0).Append(' ').Append(theV.IsOnDomS2() ? 1 : 0);
+        theOut.Append("V ").Append(theV.IsOnDomS1 ? 1 : 0).Append(' ').Append(theV.IsOnDomS2 ? 1 : 0);
         Hex(theOut, theV.ParameterOnLine());
         RecPnt(theOut, "", 0, theV.PntOn2S());
     }
 
-    private static void DumpResult(StringBuilder theOut, IntPatch_ImpPrmIntersection theInt)
+    private static void DumpResult(StringBuilder theOut, ImpPrmIntersection theInt)
     {
-        theOut.Append("DONE ").Append(theInt.IsDone() ? 1 : 0).Append('\n');
-        if (!theInt.IsDone())
+        theOut.Append("DONE ").Append(theInt.IsDone ? 1 : 0).Append('\n');
+        if (!theInt.IsDone)
         {
             return;
         }
         theOut.Append(CultureInfo.InvariantCulture,
-                      $"EMPTY {(theInt.IsEmpty() ? 1 : 0)} NBPNTS {theInt.NbPnts()} NBLINES {theInt.NbLines()}\n");
-        for (int i = 1; i <= theInt.NbLines(); i++)
+                      $"EMPTY {(theInt.IsEmpty ? 1 : 0)} NBPNTS {theInt.PntCount} NBLINES {theInt.LineCount}\n");
+        for (int i = 1; i <= theInt.LineCount; i++)
         {
-            IntPatch_Line aLine = theInt.Line(i);
+            PatchLine aLine = theInt.Line(i);
             theOut.Append(CultureInfo.InvariantCulture,
                           $"LINE {i} TYPE {(int)aLine.ArcType()} TRANS {(int)aLine.TransitionOnS1()} {(int)aLine.TransitionOnS2()}\n");
-            if (aLine is IntPatch_WLine aWL)
+            if (aLine is WLine aWL)
             {
-                theOut.Append(CultureInfo.InvariantCulture, $"NBP {aWL.NbPnts()} NBV {aWL.NbVertex()}\n");
+                theOut.Append(CultureInfo.InvariantCulture, $"NBP {aWL.NbPnts()} NBV {aWL.VertexCount}\n");
                 for (int k = 1; k <= aWL.NbPnts(); k++)
                 {
                     RecPnt(theOut, "P", 0, aWL.Point(k));
                 }
-                for (int k = 1; k <= aWL.NbVertex(); k++)
+                for (int k = 1; k <= aWL.VertexCount; k++)
                 {
                     DumpVertex(theOut, aWL.Vertex(k));
                 }
             }
-            else if (aLine is IntPatch_RLine aRL)
+            else if (aLine is RLine aRL)
             {
                 theOut.Append(CultureInfo.InvariantCulture,
-                              $"RLINE NBP {(aRL.HasPolygon() ? aRL.NbPnts() : 0)} NBV {aRL.NbVertex()}\n");
-                if (aRL.HasPolygon())
+                              $"RLINE NBP {(aRL.HasPolygon ? aRL.NbPnts() : 0)} NBV {aRL.VertexCount}\n");
+                if (aRL.HasPolygon)
                 {
                     for (int k = 1; k <= aRL.NbPnts(); k++)
                     {
                         RecPnt(theOut, "P", 0, aRL.Point(k));
                     }
                 }
-                for (int k = 1; k <= aRL.NbVertex(); k++)
+                for (int k = 1; k <= aRL.VertexCount; k++)
                 {
                     DumpVertex(theOut, aRL.Vertex(k));
                 }
@@ -133,15 +135,15 @@ public class IntWalkNativeStepsTests
         var aS2 = new SurfaceAdaptor(theS2);
         var aD1 = new TopolTool(aS1);
         var aD2 = new TopolTool(aS2);
-        IntPatch_TheIWalking.ThreadStepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
+        PatchTheIWalking.s_threadStepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
         try
         {
-            var anInt = new IntPatch_ImpPrmIntersection(aS1, aD1, aS2, aD2, 1.0e-7, 1.0e-7, theFleche, thePas);
+            var anInt = new ImpPrmIntersection(aS1, aD1, aS2, aD2, 1.0e-7, 1.0e-7, theFleche, thePas);
             DumpResult(aOut, anInt);
         }
         finally
         {
-            IntPatch_TheIWalking.ThreadStepTrace = null;
+            PatchTheIWalking.s_threadStepTrace = null;
         }
         return aOut.ToString();
     }
@@ -152,19 +154,19 @@ public class IntWalkNativeStepsTests
         var aOut = new StringBuilder();
         var aS1 = new SurfaceAdaptor(theS1);
         var aS2 = new SurfaceAdaptor(theS2);
-        var aPW = new IntWalk_PWalking(aS1, aS2, 1.0e-8, 1.0e-8, 0.01, 0.05);
-        aPW.StepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
+        var aPW = new PWalking(aS1, aS2, 1.0e-8, 1.0e-8, 0.01, 0.05);
+        aPW._stepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
         var aParDep = new NCollection_Array1<double>(1, 4);
         aParDep[1] = theU1;
         aParDep[2] = theV1;
         aParDep[3] = theU2;
         aParDep[4] = theV2;
         aPW.Perform(aParDep);
-        aOut.Append("DONE ").Append(aPW.IsDone() ? 1 : 0).Append('\n');
-        if (aPW.IsDone())
+        aOut.Append("DONE ").Append(aPW.IsDone ? 1 : 0).Append('\n');
+        if (aPW.IsDone)
         {
-            aOut.Append(CultureInfo.InvariantCulture, $"NBP {aPW.NbPoints()} CLOSED {(aPW.IsClosed() ? 1 : 0)}\n");
-            for (int k = 1; k <= aPW.NbPoints(); k++)
+            aOut.Append(CultureInfo.InvariantCulture, $"NBP {aPW.PointCount} CLOSED {(aPW.IsClosed ? 1 : 0)}\n");
+            for (int k = 1; k <= aPW.PointCount; k++)
             {
                 RecPnt(aOut, "P", 0, aPW.Value(k));
             }

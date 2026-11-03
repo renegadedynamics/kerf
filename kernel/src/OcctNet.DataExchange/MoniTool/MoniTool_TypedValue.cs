@@ -29,20 +29,20 @@ public class MoniTool_TypedValue : Transient
     {
         var aLib = new NCollection_DataMap<string, Transient>();
         MoniTool_TypedValue tv;
-        tv = new MoniTool_TypedValue("Integer", MoniTool_ValueInteger);
+        tv = new MoniTool_TypedValue("Integer", MoniTool_ValueType.MoniTool_ValueInteger);
         aLib.Bind("Integer", tv);
-        tv = new MoniTool_TypedValue("Real", MoniTool_ValueReal);
+        tv = new MoniTool_TypedValue("Real", MoniTool_ValueType.MoniTool_ValueReal);
         aLib.Bind("Real", tv);
-        tv = new MoniTool_TypedValue("Text", MoniTool_ValueText);
+        tv = new MoniTool_TypedValue("Text", MoniTool_ValueType.MoniTool_ValueText);
         aLib.Bind("Text", tv);
-        tv = new MoniTool_TypedValue("Transient", MoniTool_ValueIdent);
+        tv = new MoniTool_TypedValue("Transient", MoniTool_ValueType.MoniTool_ValueIdent);
         aLib.Bind("Transient", tv);
-        tv = new MoniTool_TypedValue("Boolean", MoniTool_ValueEnum);
+        tv = new MoniTool_TypedValue("Boolean", MoniTool_ValueType.MoniTool_ValueEnum);
         tv.AddDef("enum 0"); //    = 0 False  ,  > 0 True
         tv.AddDef("eval False");
         tv.AddDef("eval True");
         aLib.Bind("Boolean", tv);
-        tv = new MoniTool_TypedValue("Logical", MoniTool_ValueEnum);
+        tv = new MoniTool_TypedValue("Logical", MoniTool_ValueType.MoniTool_ValueEnum);
         tv.AddDef("enum -1"); //    < 0 False  ,  = 0 Unk  ,  > 0 True
         tv.AddDef("eval False");
         tv.AddDef("eval Unknown");
@@ -59,7 +59,7 @@ public class MoniTool_TypedValue : Transient
     /// to the TypedValue once created init gives an initial value. If it is not given, the TypedValue begins as
     /// "not set", its value is empty
     /// </summary>
-    public MoniTool_TypedValue(string name, MoniTool_ValueType type = MoniTool_ValueText, string init = "")
+    public MoniTool_TypedValue(string name, MoniTool_ValueType type = MoniTool_ValueType.MoniTool_ValueText, string init = "")
     {
         thename = name;
         thetype = type;
@@ -73,8 +73,8 @@ public class MoniTool_TypedValue : Transient
         thesatisf = null;
         theival = 0;
         thehval = new TCollection_HAsciiString("");
-        if (type != MoniTool_ValueInteger && type != MoniTool_ValueReal && type != MoniTool_ValueEnum
-                && type != MoniTool_ValueText && type != MoniTool_ValueIdent)
+        if (type != MoniTool_ValueType.MoniTool_ValueInteger && type != MoniTool_ValueType.MoniTool_ValueReal && type != MoniTool_ValueType.MoniTool_ValueEnum
+                && type != MoniTool_ValueType.MoniTool_ValueText && type != MoniTool_ValueType.MoniTool_ValueIdent)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : Type not supported");
         }
@@ -234,7 +234,7 @@ public class MoniTool_TypedValue : Transient
         string mess;
         switch (thetype)
         {
-            case MoniTool_ValueInteger: {
+            case MoniTool_ValueType.MoniTool_ValueInteger: {
                 def += "Integer";
                 int ilim;
                 if (IntegerLimit(false, out ilim))
@@ -249,7 +249,7 @@ public class MoniTool_TypedValue : Transient
                 }
             }
             break;
-            case MoniTool_ValueReal: {
+            case MoniTool_ValueType.MoniTool_ValueReal: {
                 def += "Real";
                 double rlim;
                 if (RealLimit(false, out rlim))
@@ -269,7 +269,7 @@ public class MoniTool_TypedValue : Transient
                 }
             }
             break;
-            case MoniTool_ValueEnum: {
+            case MoniTool_ValueType.MoniTool_ValueEnum: {
                 def += "Enum";
                 int startcase = 0, endcase = 0;
                 bool match = false;
@@ -305,7 +305,7 @@ public class MoniTool_TypedValue : Transient
                 }
             }
             break;
-            case MoniTool_ValueIdent: {
+            case MoniTool_ValueType.MoniTool_ValueIdent: {
                 def += "Object(Entity)";
                 if (theotyp is not null)
                 {
@@ -314,7 +314,7 @@ public class MoniTool_TypedValue : Transient
                 }
             }
             break;
-            case MoniTool_ValueText: {
+            case MoniTool_ValueType.MoniTool_ValueText: {
                 def += "Text";
                 if (themaxlen > 0)
                 {
@@ -375,14 +375,14 @@ public class MoniTool_TypedValue : Transient
     {
         if (IsSetValue())
         {
-            if (thetype == MoniTool_ValueIdent)
+            if (thetype == MoniTool_ValueType.MoniTool_ValueIdent)
             {
                 S.Write(" (type) ");
                 S.Write(theoval.DynamicTypeName());
             }
             if (thehval is not null)
             {
-                S.Write((thetype == MoniTool_ValueIdent ? " : " : ""));
+                S.Write((thetype == MoniTool_ValueType.MoniTool_ValueIdent ? " : " : ""));
                 S.Write(thehval.ToCString());
             }
 
@@ -521,7 +521,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void SetIntegerLimit(bool max, int val)
     {
-        if (thetype != MoniTool_ValueInteger)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueInteger)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : SetIntegerLimit, not an Integer");
         }
@@ -564,7 +564,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void SetRealLimit(bool max, double val)
     {
-        if (thetype != MoniTool_ValueReal)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueReal)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : SetRealLimit, not a Real");
         }
@@ -626,7 +626,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void StartEnum(int start = 0, bool match = true)
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : StartEnum, Not an Enum");
         }
@@ -645,7 +645,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void AddEnum(string v1 = "", string v2 = "", string v3 = "", string v4 = "", string v5 = "", string v6 = "", string v7 = "", string v8 = "", string v9 = "", string v10 = "")
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Enum");
         }
@@ -734,7 +734,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void AddEnumValue(string val, int num)
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Enum");
         }
@@ -782,7 +782,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public bool EnumDef(out int startcase, out int endcase, out bool match)
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             startcase = endcase = 0; // OCCT leaves them as they were
             match = false;
@@ -799,7 +799,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public string EnumVal(int num)
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             return "";
         }
@@ -816,7 +816,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public int EnumCase(string val)
     {
-        if (thetype != MoniTool_ValueEnum)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueEnum)
         {
             return (theintlow - 1);
         }
@@ -853,7 +853,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public void SetObjectType(Type? typ)
     {
-        if (thetype != MoniTool_ValueIdent)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueIdent)
         {
             throw new ConstructionErrorException("MoniTool_TypedValue : AddEnum, Not an Entity/Object");
         }
@@ -890,7 +890,7 @@ public class MoniTool_TypedValue : Transient
         {
             return true;
         }
-        if (thetype == MoniTool_ValueEnum)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueEnum)
         {
             return true;
         }
@@ -924,7 +924,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public bool IsSetValue()
     {
-        if (thetype == MoniTool_ValueIdent)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueIdent)
         {
             return (theoval is not null);
         }
@@ -976,7 +976,7 @@ public class MoniTool_TypedValue : Transient
         {
             return theinterp(this, hval, native);
         }
-        if (thetype == MoniTool_ValueEnum)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueEnum)
         {
             //  We accept both forms : Enum preferably, otherwise Integer
             int startcase, endcase;
@@ -1022,7 +1022,7 @@ public class MoniTool_TypedValue : Transient
         }
         switch (thetype)
         {
-            case MoniTool_ValueInteger: {
+            case MoniTool_ValueType.MoniTool_ValueInteger: {
                 if (!val.IsIntegerValue())
                 {
                     return false;
@@ -1045,7 +1045,7 @@ public class MoniTool_TypedValue : Transient
                 }
                 return true;
             }
-            case MoniTool_ValueReal: {
+            case MoniTool_ValueType.MoniTool_ValueReal: {
                 if (!val.IsRealValue())
                 {
                     return false;
@@ -1068,7 +1068,7 @@ public class MoniTool_TypedValue : Transient
                 }
                 return true;
             }
-            case MoniTool_ValueEnum: {
+            case MoniTool_ValueType.MoniTool_ValueEnum: {
                 //  We accept both forms : Enum preferably, otherwise Integer
                 int startcase, endcase; // unused ival;
                 bool match;
@@ -1089,7 +1089,7 @@ public class MoniTool_TypedValue : Transient
                 //      if (ival >= startcase && ival <= endcase) return true;
                 return false;
             }
-            case MoniTool_ValueText: {
+            case MoniTool_ValueType.MoniTool_ValueText: {
                 if (themaxlen > 0 && val.Length() > themaxlen)
                 {
                     return false;
@@ -1127,13 +1127,13 @@ public class MoniTool_TypedValue : Transient
         {
             return false;
         }
-        if (thetype == MoniTool_ValueInteger)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueInteger)
         {
             thehval.Clear();
             theival = Atoi(val);
             thehval.AssignCat(val);
         }
-        else if (thetype == MoniTool_ValueEnum)
+        else if (thetype == MoniTool_ValueType.MoniTool_ValueEnum)
         {
             int ival = EnumCase(val);
             string cval = EnumVal(ival);
@@ -1171,11 +1171,11 @@ public class MoniTool_TypedValue : Transient
             return false;
         }
         thehval = hval;
-        if (thetype == MoniTool_ValueInteger)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueInteger)
         {
             theival = Atoi(hval.ToCString());
         }
-        else if (thetype == MoniTool_ValueEnum)
+        else if (thetype == MoniTool_ValueType.MoniTool_ValueEnum)
         {
             theival = EnumCase(hval.ToCString());
         }
@@ -1208,7 +1208,7 @@ public class MoniTool_TypedValue : Transient
             return false;
         }
         thehval.Clear();
-        if (thetype == MoniTool_ValueEnum)
+        if (thetype == MoniTool_ValueType.MoniTool_ValueEnum)
         {
             thehval.AssignCat(EnumVal(ival));
         }
@@ -1279,7 +1279,7 @@ public class MoniTool_TypedValue : Transient
     /// </summary>
     public virtual bool SetObjectValue(Transient? obj)
     {
-        if (thetype != MoniTool_ValueIdent)
+        if (thetype != MoniTool_ValueType.MoniTool_ValueIdent)
         {
             return false;
         }

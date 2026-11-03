@@ -1,3 +1,4 @@
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Occt;
@@ -229,7 +230,7 @@ public partial class Compound : Shape3D
         var summands = GetTopLevelShapes().Concat(brought).ToList();
         if (summands.Count <= 1)
             return MakeComposite(summands.Take(1), Dim);
-        var fuse = new BRepAlgoAPI_Fuse();
+        var fuse = new Fuse();
         fuse.SetFuzzyValue(Constants.Tolerance);
         summands[0] = CopyAttributesTo(summands[0]);
         var result = BoolOp(summands.Take(1), summands.Skip(1), fuse);
@@ -276,13 +277,13 @@ public partial class Compound : Shape3D
                     case global::Kerf.Topology.ShapeType.Vertex:
                         throw new NotSupportedException("The centre of mass of a compound of vertices isn't defined");
                     case global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire:
-                        BRepGProp.LinearProperties(TopoShape, props);
+                        MassPropertiesBuilder.LinearProperties(TopoShape, props);
                         break;
                     case global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell:
-                        BRepGProp.SurfaceProperties(TopoShape, props);
+                        MassPropertiesBuilder.SurfaceProperties(TopoShape, props);
                         break;
                     default:
-                        BRepGProp.VolumeProperties(TopoShape, props);
+                        MassPropertiesBuilder.VolumeProperties(TopoShape, props);
                         break;
                 }
                 var c = props.CentreOfMass();

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -108,7 +109,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
     internal static string Run(NCollection_List<Shape> theArgs, bool theNonDestructive, bool theParallel = false,
                                double theFuzzy = 0.0)
     {
-        BOPAlgo_PaveFiller aPF = new();
+        PaveFiller aPF = new();
         aPF.SetArguments(theArgs);
         aPF.SetNonDestructive(theNonDestructive);
         aPF.SetRunParallel(theParallel);

@@ -2,6 +2,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Collections.Immutable;
@@ -216,11 +218,11 @@ public sealed class XdeDoc_Tree
     }
 
     /// <summary>
-    /// The tree with every part meshed (<see cref="BRepMesh_IncrementalMesh.Meshed(in Shape, in IMeshTools_Parameters, out History)"/>),
+    /// The tree with every part meshed (<see cref="IncrementalMesh.Meshed(in Shape, in ToolParameters, out History)"/>),
     /// sharing what meshing leaves unchanged: faces already meshed, and products whose faces all are. Sub-shape
     /// attributes follow their sub-shapes into the meshed parts. Null if cancelled.
     /// </summary>
-    public XdeDoc_Tree? Meshed(in IMeshTools_Parameters theParameters, ProgressRange theProgress = default)
+    public XdeDoc_Tree? Meshed(in ToolParameters theParameters, ProgressRange theProgress = default)
     {
         var aParts = Products().Where(p => !p.IsAssembly).ToList();
         var aMap = new Dictionary<XdeDoc_Product, XdeDoc_Product>(ReferenceEqualityComparer.Instance);
@@ -233,7 +235,7 @@ public sealed class XdeDoc_Tree
                     return null;
                 }
                 aPS.Next();
-                Shape aMeshed = BRepMesh_IncrementalMesh.Meshed(aPart.Shape, theParameters, out History aHistory);
+                Shape aMeshed = IncrementalMesh.Meshed(aPart.Shape, theParameters, out History aHistory);
                 if (aMeshed.IsEqual(aPart.Shape))
                 {
                     aMap[aPart] = aPart;

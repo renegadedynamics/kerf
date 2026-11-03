@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Intersection.Approximation;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -213,18 +216,18 @@ internal static class ApproxIntRecordings
         return aSurf!;
     }
 
-    internal static IntPatch_WLine MakeWLine(Line theLine)
+    internal static WLine MakeWLine(Line theLine)
     {
-        IntSurf_LineOn2S aLin = new();
+        LineOn2S aLin = new();
         foreach (double[] p in theLine.Points)
         {
-            aLin.Add(new IntSurf_PntOn2S().WithValue(new Point3D(p[0], p[1], p[2]), p[3], p[4], p[5], p[6]));
+            aLin.Add(new PntOn2S().WithValue(new Point3D(p[0], p[1], p[2]), p[3], p[4], p[5], p[6]));
         }
-        return new IntPatch_WLine(aLin, false);
+        return new WLine(aLin, false);
     }
 
     /// <summary>The line of approximation H: degree-1 B-splines through the points, knots 1..n.</summary>
-    internal static BRepApprox_ApproxLine MakeCurvesLine(Line theLine)
+    internal static ApproxLine MakeCurvesLine(Line theLine)
     {
         int n = theLine.Points.Length;
         NCollection_Array1<Point3D> p3 = new(1, n);
@@ -242,7 +245,7 @@ internal static class ApproxIntRecordings
         }
         mu[1] = 2;
         mu[n] = 2;
-        return new BRepApprox_ApproxLine(new BSplineCurve3D(p3, kn, mu, 1), new BSplineCurve2D(pa, kn, mu, 1),
+        return new ApproxLine(new BSplineCurve3D(p3, kn, mu, 1), new BSplineCurve2D(pa, kn, mu, 1),
                                          new BSplineCurve2D(pb, kn, mu, 1));
     }
 }

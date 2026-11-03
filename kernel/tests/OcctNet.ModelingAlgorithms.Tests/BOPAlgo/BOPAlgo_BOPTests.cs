@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.BOPAlgo_Operation;
+using static Kerf.Engine.Booleans.Operation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -27,7 +29,7 @@ public static class BOPAlgo_BOPTests
             return 0.0;
         }
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -38,27 +40,27 @@ public static class BOPAlgo_BOPTests
             return 0.0;
         }
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     private static bool IsEmpty(in Shape theShape, double theTolerance) => GetSurfaceArea(theShape) <= theTolerance;
 
-    private static Shape CreateUnitBox() => new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
+    private static Shape CreateUnitBox() => new MakeBox(1.0, 1.0, 1.0).Shape();
 
     private static Shape CreateBox(Point3D theCorner, double theX, double theY, double theZ) =>
-        new BRepPrimAPI_MakeBox(theCorner, theX, theY, theZ).Shape();
+        new MakeBox(theCorner, theX, theY, theZ).Shape();
 
-    private static Shape CreateUnitSphere() => new BRepPrimAPI_MakeSphere(1.0).Shape();
+    private static Shape CreateUnitSphere() => new MakeSphere(1.0).Shape();
 
-    private static Shape CreateSphere(Point3D theCenter, double theRadius) => new BRepPrimAPI_MakeSphere(theCenter, theRadius).Shape();
+    private static Shape CreateSphere(Point3D theCenter, double theRadius) => new MakeSphere(theCenter, theRadius).Shape();
 
-    private static Shape CreateCylinder(double theRadius, double theHeight) => new BRepPrimAPI_MakeCylinder(theRadius, theHeight).Shape();
+    private static Shape CreateCylinder(double theRadius, double theHeight) => new ApiMakeCylinder(theRadius, theHeight).Shape();
 
     private static Shape ConvertToNurbs(in Shape theShape)
     {
-        BRepBuilderAPI_NurbsConvert aNurbsConverter = new(theShape);
-        if (!aNurbsConverter.IsDone())
+        NurbsConvert aNurbsConverter = new(theShape);
+        if (!aNurbsConverter.IsDone)
         {
             return new Shape(); // Return null shape on failure
         }
@@ -72,11 +74,11 @@ public static class BOPAlgo_BOPTests
     {
         protected double myTolerance = DefaultTolerance();
         protected double myFuzzyValue = DefaultFuzzyValue();
-        protected BOPAlgo_PaveFiller? myPaveFiller;
+        protected PaveFiller? myPaveFiller;
 
-        protected Shape PerformDirectBOP(in Shape theShape1, in Shape theShape2, BOPAlgo_Operation theOp)
+        protected Shape PerformDirectBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
         {
-            BOPAlgo_BOP aBOP = new();
+            Bop aBOP = new();
 
             aBOP.AddArgument(theShape1);
             aBOP.AddTool(theShape2);
@@ -87,11 +89,11 @@ public static class BOPAlgo_BOPTests
 
             aBOP.Perform();
 
-            Assert.False(aBOP.HasErrors(), "Direct BOP operation failed");
+            Assert.False(aBOP.HasErrors, "Direct BOP operation failed");
             return aBOP.Shape();
         }
 
-        protected Shape PerformTwoStepBOP(in Shape theShape1, in Shape theShape2, BOPAlgo_Operation theOp)
+        protected Shape PerformTwoStepBOP(in Shape theShape1, in Shape theShape2, Operation theOp)
         {
             PreparePaveFiller(theShape1, theShape2);
             return PerformBOPWithPaveFiller(theOp);
@@ -103,7 +105,7 @@ public static class BOPAlgo_BOPTests
             aLC.Append(theShape1);
             aLC.Append(theShape2);
 
-            myPaveFiller = new BOPAlgo_PaveFiller();
+            myPaveFiller = new PaveFiller();
 
             myPaveFiller.SetArguments(aLC);
             myPaveFiller.SetFuzzyValue(myFuzzyValue);
@@ -111,14 +113,14 @@ public static class BOPAlgo_BOPTests
             myPaveFiller.SetNonDestructive(false);
 
             myPaveFiller.Perform();
-            Assert.False(myPaveFiller.HasErrors(), "PaveFiller preparation failed");
+            Assert.False(myPaveFiller.HasErrors, "PaveFiller preparation failed");
         }
 
-        protected Shape PerformBOPWithPaveFiller(BOPAlgo_Operation theOp)
+        protected Shape PerformBOPWithPaveFiller(Operation theOp)
         {
             Assert.NotNull(myPaveFiller); // PaveFiller must be prepared first
 
-            BOPAlgo_BOP aBOP = new();
+            Bop aBOP = new();
             NCollection_List<Shape> aArguments = myPaveFiller.Arguments();
             Assert.Equal(2, aArguments.Extent()); // Wrong number of arguments
 
@@ -132,7 +134,7 @@ public static class BOPAlgo_BOPTests
 
             aBOP.PerformWithFiller(myPaveFiller);
 
-            Assert.False(aBOP.HasErrors(), "BOP operation with PaveFiller failed");
+            Assert.False(aBOP.HasErrors, "BOP operation with PaveFiller failed");
             return aBOP.Shape();
         }
 
@@ -175,7 +177,7 @@ public static class BOPAlgo_BOPTests
             Shape aSphere = CreateUnitSphere();
             Shape aBox = CreateUnitBox();
 
-            Shape aResult = PerformDirectBOP(aSphere, aBox, BOPAlgo_CUT);
+            Shape aResult = PerformDirectBOP(aSphere, aBox, Operation.Cut);
             Assert.False(aResult.IsNull, "Result shape should not be null");
 
             double aSurfaceArea = GetSurfaceArea(aResult);
@@ -189,7 +191,7 @@ public static class BOPAlgo_BOPTests
             Shape aSphere = CreateUnitSphere();
             Shape aBox = CreateUnitBox();
 
-            Shape aResult = PerformDirectBOP(aSphere, aBox, BOPAlgo_FUSE);
+            Shape aResult = PerformDirectBOP(aSphere, aBox, Operation.Fuse);
             Assert.False(aResult.IsNull, "Result shape should not be null");
 
             double aVolume = GetVolume(aResult);
@@ -206,7 +208,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 2.0, 2.0, 2.0);
             Shape aBox2 = CreateBox(new Point3D(1, 1, 1), 2.0, 2.0, 2.0);
 
-            Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_COMMON);
+            Shape aResult = PerformDirectBOP(aBox1, aBox2, Operation.Common);
             ValidateResult(aResult, -1.0, 1.0); // Expected volume = 1.0
         }
 
@@ -217,7 +219,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             Shape aBox2 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
-            Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_CUT21);
+            Shape aResult = PerformDirectBOP(aBox1, aBox2, Operation.CUT21);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
         }
 
@@ -231,7 +233,7 @@ public static class BOPAlgo_BOPTests
 
             Shape aBox2 = CreateBox(new Point3D(0, 1, 0), 1.0, 0.5, 1.0);
 
-            Shape aResult = PerformDirectBOP(aBox1, aBox2, BOPAlgo_CUT);
+            Shape aResult = PerformDirectBOP(aBox1, aBox2, Operation.Cut);
             double aSurfaceArea = GetSurfaceArea(aResult);
             Assert.True(aSurfaceArea > 0.0, "NURBS cut result should have positive surface area");
         }
@@ -249,7 +251,7 @@ public static class BOPAlgo_BOPTests
             Shape aSphere = CreateUnitSphere();
             Shape aBox = CreateUnitBox();
 
-            Shape aResult = PerformTwoStepBOP(aSphere, aBox, BOPAlgo_CUT);
+            Shape aResult = PerformTwoStepBOP(aSphere, aBox, Operation.Cut);
             double aSurfaceArea = GetSurfaceArea(aResult);
             Assert.True(aSurfaceArea > 0.0, "Two-step cut result should have positive surface area");
         }
@@ -261,7 +263,7 @@ public static class BOPAlgo_BOPTests
             Shape aSphere = CreateUnitSphere();
             Shape aBox = CreateUnitBox();
 
-            Shape aResult = PerformTwoStepBOP(aSphere, aBox, BOPAlgo_FUSE);
+            Shape aResult = PerformTwoStepBOP(aSphere, aBox, Operation.Fuse);
             Assert.False(aResult.IsNull, "Result shape should not be null");
 
             double aVolume = GetVolume(aResult);
@@ -278,7 +280,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 2.0, 2.0, 2.0);
             Shape aBox2 = CreateBox(new Point3D(1, 1, 1), 2.0, 2.0, 2.0);
 
-            Shape aResult = PerformTwoStepBOP(aBox1, aBox2, BOPAlgo_COMMON);
+            Shape aResult = PerformTwoStepBOP(aBox1, aBox2, Operation.Common);
             ValidateResult(aResult, -1.0, 1.0); // Expected volume = 1.0
         }
 
@@ -289,7 +291,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox1 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
             Shape aBox2 = CreateBox(new Point3D(0, 0, 0), 1.0, 1.0, 1.0);
 
-            Shape aResult = PerformTwoStepBOP(aBox1, aBox2, BOPAlgo_CUT21);
+            Shape aResult = PerformTwoStepBOP(aBox1, aBox2, Operation.CUT21);
             ValidateResult(aResult, -1.0, -1.0, true); // Expected empty
         }
     }
@@ -307,11 +309,11 @@ public static class BOPAlgo_BOPTests
             Shape aBox = CreateBox(new Point3D(-0.5, -0.5, -0.5), 1.0, 1.0, 1.0);
 
             // First intersect sphere with cylinder
-            Shape aIntermediate = PerformDirectBOP(aSphere, aCylinder, BOPAlgo_COMMON);
+            Shape aIntermediate = PerformDirectBOP(aSphere, aCylinder, Operation.Common);
             Assert.False(aIntermediate.IsNull, "Intermediate result should not be null");
 
             // Then fuse with box
-            Shape aFinalResult = PerformDirectBOP(aIntermediate, aBox, BOPAlgo_FUSE);
+            Shape aFinalResult = PerformDirectBOP(aIntermediate, aBox, Operation.Fuse);
             double aVolume = GetVolume(aFinalResult);
             Assert.True(aVolume > 0.0, "Complex operation result should have positive volume");
         }
@@ -324,10 +326,10 @@ public static class BOPAlgo_BOPTests
             Shape aBox = CreateUnitBox();
 
             // Perform direct operation
-            Shape aDirectResult = PerformDirectBOP(aSphere, aBox, BOPAlgo_FUSE);
+            Shape aDirectResult = PerformDirectBOP(aSphere, aBox, Operation.Fuse);
 
             // Perform two-step operation
-            Shape aTwoStepResult = PerformTwoStepBOP(aSphere, aBox, BOPAlgo_FUSE);
+            Shape aTwoStepResult = PerformTwoStepBOP(aSphere, aBox, Operation.Fuse);
 
             // Results should be equivalent
             double aDirectVolume = GetVolume(aDirectResult);
@@ -347,7 +349,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
             Shape aThin = CreateBox(new Point3D(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
 
-            Shape aRes = PerformDirectBOP(aBox, aThin, BOPAlgo_CUT);
+            Shape aRes = PerformDirectBOP(aBox, aThin, Operation.Cut);
             double aBoxVol = GetVolume(aBox);
             double aOverlapV = 100.0 * 1.0e-6 * 100.0;
             Assert.False(aRes.IsNull);
@@ -360,7 +362,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
             Shape aThin = CreateBox(new Point3D(-500.0, 25.0, -500.0), 1500.0, 1.0e-6, 1500.0);
 
-            Shape aRes = PerformDirectBOP(aBox, aThin, BOPAlgo_FUSE);
+            Shape aRes = PerformDirectBOP(aBox, aThin, Operation.Fuse);
             double aBoxVol = GetVolume(aBox);
             double aThinVol = 1500.0 * 1.0e-6 * 1500.0;
             double aOverlapV = 100.0 * 1.0e-6 * 100.0;
@@ -374,7 +376,7 @@ public static class BOPAlgo_BOPTests
             Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
             Shape aSlab = CreateBox(new Point3D(0.0, 0.0, 50.0), 100.0, 100.0, 1.0);
 
-            Shape aRes = PerformDirectBOP(aBox, aSlab, BOPAlgo_CUT);
+            Shape aRes = PerformDirectBOP(aBox, aSlab, Operation.Cut);
             Assert.False(aRes.IsNull);
             Assert.Equal(GetVolume(aBox) - GetVolume(aSlab), GetVolume(aRes), myTolerance);
         }
@@ -384,11 +386,11 @@ public static class BOPAlgo_BOPTests
         {
             Shape aBox = CreateBox(new Point3D(0.0, 0.0, 0.0), 100.0, 100.0, 100.0);
             Plane3D aPln = new(new Point3D(0.0, 0.0, 50.0), new Direction3D(0.0, 0.0, 1.0));
-            BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -200.0, 200.0, -200.0, 200.0);
-            Assert.True(aFaceMaker.IsDone());
+            MakeFace aFaceMaker = new(aPln, -200.0, 200.0, -200.0, 200.0);
+            Assert.True(aFaceMaker.IsDone);
             Shape aFace = aFaceMaker.Face();
 
-            Shape aRes = PerformDirectBOP(aBox, aFace, BOPAlgo_COMMON);
+            Shape aRes = PerformDirectBOP(aBox, aFace, Operation.Common);
             Assert.False(aRes.IsNull);
             Assert.Equal(1.0e4, GetSurfaceArea(aRes), 1.0);
         }
@@ -398,12 +400,12 @@ public static class BOPAlgo_BOPTests
         {
             Shape aBox = CreateBox(new Point3D(0.0, -1.0, -1.0), 2.0, 2.0, 2.0);
             Plane3D aPln = new(new Point3D(-0.5, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-            BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -0.5, 0.5, -0.5, 0.5);
-            Assert.True(aFaceMaker.IsDone());
-            BRepPrimAPI_MakePrism aPrismMaker = new(aFaceMaker.Face(), new Direction3D(1.0, 0.0, 0.0), true);
-            Assert.True(aPrismMaker.IsDone());
+            MakeFace aFaceMaker = new(aPln, -0.5, 0.5, -0.5, 0.5);
+            Assert.True(aFaceMaker.IsDone);
+            ApiMakePrism aPrismMaker = new(aFaceMaker.Face(), new Direction3D(1.0, 0.0, 0.0), true);
+            Assert.True(aPrismMaker.IsDone);
 
-            Shape aRes = PerformDirectBOP(aBox, aPrismMaker.Shape(), BOPAlgo_CUT);
+            Shape aRes = PerformDirectBOP(aBox, aPrismMaker.Shape(), Operation.Cut);
             Assert.False(aRes.IsNull);
             Assert.True(GetVolume(aRes) > 1.0);
         }
@@ -413,12 +415,12 @@ public static class BOPAlgo_BOPTests
         {
             Shape aBox = CreateBox(new Point3D(0.0, 0.0, -30.0), 150.0, 200.0, 200.0);
             Plane3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-            BRepBuilderAPI_MakeFace aFaceMaker = new(aPln, -250.0, 250.0, -250.0, 250.0);
-            Assert.True(aFaceMaker.IsDone());
-            BRepPrimAPI_MakeHalfSpace aHSMaker = new(aFaceMaker.Face(), new Point3D(0.0, 0.0, -100.0));
+            MakeFace aFaceMaker = new(aPln, -250.0, 250.0, -250.0, 250.0);
+            Assert.True(aFaceMaker.IsDone);
+            MakeHalfSpace aHSMaker = new(aFaceMaker.Face(), new Point3D(0.0, 0.0, -100.0));
             Shape aHalfSpace = aHSMaker.Solid();
 
-            Shape aRes = PerformDirectBOP(aBox, aHalfSpace, BOPAlgo_COMMON);
+            Shape aRes = PerformDirectBOP(aBox, aHalfSpace, Operation.Common);
             Assert.False(aRes.IsNull);
             Assert.True(GetVolume(aRes) > 1.0);
         }

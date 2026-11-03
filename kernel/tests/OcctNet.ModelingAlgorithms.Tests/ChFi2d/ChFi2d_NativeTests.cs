@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Planar;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -118,17 +120,17 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
     private static Edge MakeEdge(EdgeData d, in Vertex V1, in Vertex V2)
     {
-        BRepBuilderAPI_MakeEdge aMaker;
+        MakeEdge aMaker;
         switch (d.Type)
         {
             case 0:
-                aMaker = new BRepBuilderAPI_MakeEdge(V1, V2);
+                aMaker = new MakeEdge(V1, V2);
                 break;
             case 1:
-                aMaker = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(d.Center, d.N, d.X), d.R1), V1, V2);
+                aMaker = new MakeEdge(new Circle3D(new Frame3D(d.Center, d.N, d.X), d.R1), V1, V2);
                 break;
             case 2:
-                aMaker = new BRepBuilderAPI_MakeEdge(new Ellipse3D(new Frame3D(d.Center, d.N, d.X), d.R1, d.R2), V1, V2);
+                aMaker = new MakeEdge(new Ellipse3D(new Frame3D(d.Center, d.N, d.X), d.R1, d.R2), V1, V2);
                 break;
             default:
                 {
@@ -144,11 +146,11 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
                     aMults[1] = 4;
                     aMults[2] = 4;
                     var aC = new BSplineCurve3D(aPoles, aKnots, aMults, 3);
-                    aMaker = new BRepBuilderAPI_MakeEdge(aC, V1, V2);
+                    aMaker = new MakeEdge(aC, V1, V2);
                     break;
                 }
         }
-        return aMaker.IsDone() ? aMaker.Edge() : new Edge();
+        return aMaker.IsDone ? aMaker.Edge() : new Edge();
     }
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
@@ -223,10 +225,10 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         }
         Assert.True(r.AtEnd, "inputs not all read");
 
-        Vertex aV11 = new BRepBuilderAPI_MakeVertex(d1.P1).Vertex();
-        Vertex aV12 = new BRepBuilderAPI_MakeVertex(d1.P2).Vertex();
-        Vertex aV21 = isShared ? aV12 : new BRepBuilderAPI_MakeVertex(d2.P1).Vertex();
-        Vertex aV22 = new BRepBuilderAPI_MakeVertex(d2.P2).Vertex();
+        Vertex aV11 = new MakeVertex(d1.P1).Vertex();
+        Vertex aV12 = new MakeVertex(d1.P2).Vertex();
+        Vertex aV21 = isShared ? aV12 : new MakeVertex(d2.P1).Vertex();
+        Vertex aV22 = new MakeVertex(d2.P2).Vertex();
 
         Edge anE1 = new(), anE2 = new();
         try
@@ -254,8 +256,8 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         Wire aWire = new();
         if (isWire)
         {
-            var aMW = new BRepBuilderAPI_MakeWire(anE1, anE2);
-            if (!aMW.IsDone())
+            var aMW = new MakeWire(anE1, anE2);
+            if (!aMW.IsDone)
             {
                 aOut.Add("wire:0");
                 return aOut;
@@ -265,7 +267,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
         if (isFillet)
         {
-            var anAlgo = new ChFi2d_FilletAPI();
+            var anAlgo = new FilletApi();
             bool isInit = false;
             Tok("init", () =>
             {
@@ -313,7 +315,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         }
         else
         {
-            var anAlgo = new ChFi2d_ChamferAPI();
+            var anAlgo = new ChamferApi();
             if (isWire)
             {
                 anAlgo.Init(aWire);

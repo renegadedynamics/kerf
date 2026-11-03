@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -146,7 +147,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
                     $"variant {theCase.Variant} {(aV.Approx ? 1 : 0)} {(aV.Approx1 ? 1 : 0)} {(aV.Approx2 ? 1 : 0)}");
         aRec.Append(Hex(aV.TolApprox)).Append(Hex(aV.Fuzz))
             .Append(CultureInfo.InvariantCulture, $" {(aV.Reverse ? 1 : 0)} {aV.Prepare}\n");
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         try
         {
             aFF.SetParameters(aV.Approx, aV.Approx1, aV.Approx2, aV.TolApprox);
@@ -159,7 +160,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
             {
                 aFF.Perform(aF1, aF2, theToRunParallel);
             }
-            if (aFF.IsDone() && aV.Prepare != 0)
+            if (aFF.IsDone && aV.Prepare != 0)
             {
                 aFF.PrepareLines3D(aV.Prepare == 2);
             }
@@ -168,12 +169,12 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         {
             return aRec.Append("out throws\n").ToString();
         }
-        if (!aFF.IsDone())
+        if (!aFF.IsDone)
         {
             return aRec.Append(CultureInfo.InvariantCulture, $"out notdone {(aFF.TangentFaces() ? 1 : 0)}\n").ToString();
         }
-        NCollection_Sequence<IntTools_Curve> aLines = aFF.Lines();
-        NCollection_Sequence<IntTools_PntOn2Faces> aPoints = aFF.Points();
+        NCollection_Sequence<IntersectionCurve> aLines = aFF.Lines();
+        NCollection_Sequence<PntOn2Faces> aPoints = aFF.Points();
         aRec.Append(CultureInfo.InvariantCulture,
                     $"out done {(aFF.TangentFaces() ? 1 : 0)} {aLines.Length()} {aPoints.Length()}\n");
         PlaneSurface aP1 = new(new Plane3D());
@@ -181,7 +182,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         BrepBuilder aBB = new();
         for (int i = 1; i <= aLines.Length(); i++)
         {
-            IntTools_Curve aIC = aLines.Value(i);
+            IntersectionCurve aIC = aLines.Value(i);
             aRec.Append(CultureInfo.InvariantCulture,
                         $"line {i} {(aIC.Curve() is null ? 0 : 1)} {(aIC.FirstCurve2d() is null ? 0 : 1)} {(aIC.SecondCurve2d() is null ? 0 : 1)}");
             aRec.Append(Hex(aIC.Tolerance())).Append(Hex(aIC.TangentialTolerance())).Append('\n');
@@ -222,7 +223,7 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         }
         for (int i = 1; i <= aPoints.Length(); i++)
         {
-            IntTools_PntOn2Faces aP = aPoints.Value(i);
+            PntOn2Faces aP = aPoints.Value(i);
             aP.P1().Parameters(out double u1, out double v1);
             aP.P2().Parameters(out double u2, out double v2);
             aRec.Append(CultureInfo.InvariantCulture, $"pnt {i}");

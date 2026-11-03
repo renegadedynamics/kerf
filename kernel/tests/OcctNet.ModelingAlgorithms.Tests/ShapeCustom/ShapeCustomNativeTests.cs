@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -105,9 +106,9 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
 
     private static string Text(Curve2D? theC) => theC is null ? "" : Text(w => global::Kerf.Engine.Exchange.Brep.GeomTools.Write(theC, w));
 
-    private static ShapeCustom_RestrictionParameters Parameters(int theSet)
+    private static RestrictionParameters Parameters(int theSet)
     {
-        var aP = new ShapeCustom_RestrictionParameters();
+        var aP = new RestrictionParameters();
         if (theSet == 1)
         {
             aP.ConvertPlane() = true;
@@ -137,8 +138,8 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         try
         {
             Shape aRes = theSet == 1
-                                  ? ShapeCustom.BSplineRestriction(theShape, 1e-3, 1e-3, 5, 100, C1, C1, true, true, Parameters(1))
-                                  : ShapeCustom.BSplineRestriction(theShape, 1e-2, 1e-4, 3, 4, C2, C1, false, false, Parameters(2));
+                                  ? Customize.BSplineRestriction(theShape, 1e-3, 1e-3, 5, 100, C1, C1, true, true, Parameters(1))
+                                  : Customize.BSplineRestriction(theShape, 1e-2, 1e-4, 3, 4, C2, C1, false, false, Parameters(2));
             Assert.True(aRes.TShape()!.IsFrozen);
             theW.Block("OUT", Text(w => BrepTools.Write(aRes, w, true, false, global::Kerf.Engine.Exchange.Brep.FormatVersion.FormatVersion_VERSION_3)));
         }
@@ -169,7 +170,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             {
                 try
                 {
-                    var aTool = new ShapeCustom_Surface(aS);
+                    var aTool = new SurfaceCustom(aS);
                     Surface? aRes = aTool.ConvertToAnalytical(aTol, false);
                     theW.Block($"ANA {Hex(aTol)} {Hex(aTool.Gap())}", Text(aRes));
                 }
@@ -182,7 +183,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             {
                 // the caller's frozen surface itself: the port converts a copy where OCCT changes it (decision 974)
                 bool wasPeriodic = aS.IsUPeriodic || aS.IsVPeriodic;
-                Surface? aRes = new ShapeCustom_Surface(aS).ConvertToPeriodic(false);
+                Surface? aRes = new SurfaceCustom(aS).ConvertToPeriodic(false);
                 Assert.Equal(wasPeriodic, aS.IsUPeriodic || aS.IsVPeriodic);
                 Assert.True(aRes is null || !ReferenceEquals(aRes, aS));
                 theW.Block("PER", Text(aRes));
@@ -206,7 +207,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
             try
             {
                 bool wasPeriodic = aC.IsPeriodic;
-                Curve3D? aRes = new ShapeCustom_Curve(aC).ConvertToPeriodic(false);
+                Curve3D? aRes = new CustomCurve(aC).ConvertToPeriodic(false);
                 Assert.Equal(wasPeriodic, aC.IsPeriodic);
                 theW.Block("PER", Text(aRes));
             }
@@ -235,7 +236,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                 try
                 {
                     double cf = 0, cl = 0, aDev = 0;
-                    LineCurve2D? aLine = ShapeCustom_Curve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
+                    LineCurve2D? aLine = CustomCurve2d.ConvertToLine2d(aC, f, l, 1e-4, ref cf, ref cl, ref aDev);
                     theW.Block($"LINE {Hex(cf)} {Hex(cl)} {Hex(aDev)}", Text(aLine));
                 }
                 catch (global::Kerf.Engine.Foundation.FailureException e) when (e is not (global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException))
@@ -249,7 +250,7 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
                         // the caller's frozen pcurve itself: the port removes the knots from a copy (decision 974)
                         int aNbKnots = aBS.KnotCount;
                         BSplineCurve2D aCurve = aBS;
-                        bool isDone = ShapeCustom_Curve2d.SimplifyBSpline2d(ref aCurve, global::Kerf.Engine.Foundation.Precision.Approximation());
+                        bool isDone = CustomCurve2d.SimplifyBSpline2d(ref aCurve, global::Kerf.Engine.Foundation.Precision.Approximation());
                         Assert.Equal(aNbKnots, aBS.KnotCount);
                         theW.Block("SIMP " + (isDone ? "1" : "0"), Text(aCurve));
                     }

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -194,8 +198,8 @@ internal static class SWDRAWShapeToolCommands
         B.MakeSolid(ref solid);
         B.Add(solid, sh);
         //   Pas encore fini : il faut une bonne orientation
-        var bsc3d = new BRepClass3d_SolidClassifier(solid);
-        bsc3d.PerformInfinitePoint(BRepBuilderAPI.Precision());
+        var bsc3d = new SolidClassifier(solid);
+        bsc3d.PerformInfinitePoint(BRepBuilderApi.Precision());
         if (bsc3d.State() == Containment.In)
         {
             //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
@@ -230,7 +234,7 @@ internal static class SWDRAWShapeToolCommands
                 for (var exp = new Explorer(aWork, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Edge edge = ShapeCasts.Edge(exp.Current());
-                    BRepLib.SameRange(edge, global::Kerf.Engine.Foundation.Precision.PConfusion());
+                    BrepLibrary.SameRange(edge, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 }
                 return aWork;
             });
@@ -285,7 +289,7 @@ internal static class SWDRAWShapeToolCommands
 
         if (argc < 4)
         {
-            var sbx = new ShapeExtend_Explorer();
+            var sbx = new ExtendExplorer();
             for (int i = 0; i < 2; i++)
             {
                 bool viaCompound = i != 0;
@@ -374,7 +378,7 @@ internal static class SWDRAWShapeToolCommands
                     modexp = modcom = true;
                     break;
             }
-            var sbx = new ShapeExtend_Explorer();
+            var sbx = new ExtendExplorer();
             Shape = sbx.SortedCompound(Shape, tse, modexp, modcom);
             if (Shape.IsNull)
             {

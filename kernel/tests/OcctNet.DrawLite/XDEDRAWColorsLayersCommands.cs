@@ -769,12 +769,12 @@ internal static class XDEDRAWColorsLayersCommands
         {
             double anEps = argv.Count > 3 ? theDI.Atof(argv[3]) : 0.001;
             var G = new Properties();
-            BRepGProp.VolumeProperties(aShape, G, anEps, true);
+            MassPropertiesBuilder.VolumeProperties(aShape, G, anEps, true);
             double Vres = G.Mass();
             Point3D aPoint = G.CentreOfMass();
             aDoc.SetVolume(aLabel, Vres);
             aDoc.SetCentroid(aLabel, aPoint);
-            BRepGProp.SurfaceProperties(aShape, G, anEps);
+            MassPropertiesBuilder.SurfaceProperties(aShape, G, anEps);
             double Ares = G.Mass();
             aDoc.SetArea(aLabel, Ares);
             di.Append(argv[2]).Append(": Volume = ").Append(Vres).Append(", Area = ").Append(Ares)

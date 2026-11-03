@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -302,7 +304,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     private static Edge Edge(Oracle theO, int theKind, out bool theClosed)
     {
         Curve3D aC = Curve(theO, theKind, out double aU1, out double aU2, out theClosed);
-        return new BRepBuilderAPI_MakeEdge(aC, aU1, aU2).Edge();
+        return new MakeEdge(aC, aU1, aU2).Edge();
     }
 
     private static Shape Dressed(Oracle theO, in Shape theShape, Placement? theLoc)
@@ -335,23 +337,23 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             if (aMode == 0)
             {
                 // edges sharing their first vertex: the ruled face degenerates there
-                var aA = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
-                var aB = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
-                var aC = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
-                aE1 = new BRepBuilderAPI_MakeEdge(aA, aB).Edge();
-                aE2 = new BRepBuilderAPI_MakeEdge(aA, aC).Edge();
+                var aA = new MakeVertex(anO.Pnt()).Vertex();
+                var aB = new MakeVertex(anO.Pnt()).Vertex();
+                var aC = new MakeVertex(anO.Pnt()).Vertex();
+                aE1 = new MakeEdge(aA, aB).Edge();
+                aE2 = new MakeEdge(aA, aC).Edge();
                 aKind = "shared vertex";
             }
             else if (aMode == 1)
             {
                 // two edges sharing both vertices (a lens)
-                var aA = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
-                var aB = new BRepBuilderAPI_MakeVertex(anO.Pnt()).Vertex();
-                aE1 = new BRepBuilderAPI_MakeEdge(aA, aB).Edge();
+                var aA = new MakeVertex(anO.Pnt()).Vertex();
+                var aB = new MakeVertex(anO.Pnt()).Vertex();
+                aE1 = new MakeEdge(aA, aB).Edge();
                 Point3D aPA = Tool.Pnt(aA), aPB = Tool.Pnt(aB);
                 Point3D aMid = new((aPA.X() + aPB.X()) / 2 + anO.Real(1, 5), (aPA.Y() + aPB.Y()) / 2, (aPA.Z() + aPB.Z()) / 2 + 3);
                 var aArc = new MakeArcOfCircle(aPA, aMid, aPB).Value();
-                aE2 = new BRepBuilderAPI_MakeEdge(aArc, aA, aB).Edge();
+                aE2 = new MakeEdge(aArc, aA, aB).Edge();
                 aKind = "shared ends";
             }
             else if (aMode == 2)
@@ -403,7 +405,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             try
             {
-                aPR = BRepFill.Face(aE1, aE2);
+                aPR = Fill.Face(aE1, aE2);
             }
             catch (FailureException anEx)
             {
@@ -445,7 +447,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         {
             case 0:
                 {
-                    var aMP = new BRepBuilderAPI_MakePolygon();
+                    var aMP = new MakePolygon();
                     foreach (Point3D aP in aPnts)
                     {
                         aMP.Add(aP);
@@ -459,17 +461,17 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             case 1:
                 {
                     // arcs of one circle (a closed wire of theNb arcs) or a chain of arcs through the points
-                    var aMW = new BRepBuilderAPI_MakeWire();
+                    var aMW = new MakeWire();
                     if (theClosed)
                     {
                         var aC = new CircleCurve3D(theO.Ax2(), theO.Real(3, 30));
                         double a0 = theO.Real(-1, 1);
-                        Vertex aFirst = new BRepBuilderAPI_MakeVertex(aC.Value(a0)).Vertex(), aPrev = aFirst;
+                        Vertex aFirst = new MakeVertex(aC.Value(a0)).Vertex(), aPrev = aFirst;
                         for (int i = 1; i <= theNb; i++)
                         {
                             double a1 = a0 + 2 * Math.PI * (i - 1) / theNb, a2 = a0 + 2 * Math.PI * i / theNb;
-                            Vertex aNext = i == theNb ? aFirst : new BRepBuilderAPI_MakeVertex(aC.Value(a2)).Vertex();
-                            aMW.Add(new BRepBuilderAPI_MakeEdge(aC, aPrev, aNext, a1, a2).Edge());
+                            Vertex aNext = i == theNb ? aFirst : new MakeVertex(aC.Value(a2)).Vertex();
+                            aMW.Add(new MakeEdge(aC, aPrev, aNext, a1, a2).Edge());
                             aPrev = aNext;
                         }
                     }
@@ -480,7 +482,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                             Point3D aM = new((aPnts[i].X() + aPnts[i + 1].X()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Y() + aPnts[i + 1].Y()) / 2 + theO.Real(-2, 2),
                                             (aPnts[i].Z() + aPnts[i + 1].Z()) / 2 + theO.Real(-2, 2));
-                            aMW.Add(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
+                            aMW.Add(new MakeEdge(new MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
                         }
                     }
                     return aMW.Wire();
@@ -488,7 +490,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             default:
                 {
                     // a chain of Bezier curves through the points
-                    var aMW = new BRepBuilderAPI_MakeWire();
+                    var aMW = new MakeWire();
                     int aNbE = theClosed ? aPnts.Length : aPnts.Length - 1;
                     for (int i = 0; i < aNbE; i++)
                     {
@@ -498,7 +500,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                         aPoles[2] = new Point3D(a1.X() + theO.Real(-3, 3), a1.Y() + theO.Real(-3, 3), a1.Z() + theO.Real(-3, 3));
                         aPoles[3] = new Point3D(a2.X() + theO.Real(-3, 3), a2.Y() + theO.Real(-3, 3), a2.Z() + theO.Real(-3, 3));
                         aPoles[4] = a2;
-                        aMW.Add(new BRepBuilderAPI_MakeEdge(new BezierCurve3D(aPoles)).Edge());
+                        aMW.Add(new MakeEdge(new BezierCurve3D(aPoles)).Edge());
                     }
                     return aMW.Wire();
                 }
@@ -555,7 +557,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             try
             {
-                aPR = BRepFill.Shell(aW1, aW2);
+                aPR = Fill.Shell(aW1, aW2);
             }
             catch (FailureException anEx)
             {
@@ -585,7 +587,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             CoordinateSystem anAx = anO.Ax3();
             int aNb = anO.Int(3, 7);
             double aR = anO.Real(5, 30);
-            var aMP = new BRepBuilderAPI_MakePolygon();
+            var aMP = new MakePolygon();
             var aSpinePnts = new Point3D[aNb];
             for (int i = 0; i < aNb; i++)
             {
@@ -599,11 +601,11 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             if (anO.Int(0, 9) == 0)
             {
                 // a face that isn't planar: OCCT throws Standard_NoSuchObject
-                aSpine = new BRepBuilderAPI_MakeFace(new CylindricalSurface(anAx, aR), 0, anO.Real(1, 6), 0, anO.Real(1, 20), 1e-7).Face();
+                aSpine = new MakeFace(new CylindricalSurface(anAx, aR), 0, anO.Real(1, 6), 0, anO.Real(1, 20), 1e-7).Face();
             }
             else if (anO.Bool())
             {
-                aSpine = new BRepBuilderAPI_MakeFace(aMP.Wire(), true).Face();
+                aSpine = new MakeFace(aMP.Wire(), true).Face();
             }
 
             // the profile: from a spine vertex, from a point on a spine edge, or away from the spine
@@ -625,7 +627,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     aStart = new Point3D(aStart.XYZ() + anAx.Direction().XYZ() * anO.Real(0.5, 5));
                 }
             }
-            var aPP = new BRepBuilderAPI_MakePolygon();
+            var aPP = new MakePolygon();
             aPP.Add(aStart);
             int aNbP = anO.Int(1, 3);
             for (int i = 0; i < aNbP; i++)
@@ -658,7 +660,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             try
             {
-                BRepFill.Axe(aSpine, aProfile, out aPAx, out aPOn, aTol);
+                Fill.Axe(aSpine, aProfile, out aPAx, out aPOn, aTol);
             }
             catch (FailureException anEx)
             {
@@ -728,7 +730,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             using var aNACR = new N.TColStd_Array1OfReal(0, aNbEdges);
             var aPACR = new NCollection_Array1<double>(0, aNbEdges);
             N.BRepFill.ComputeACR(N.TopoDS.Wire(aN[0]), aNACR);
-            BRepFill.ComputeACR(aW, aPACR);
+            Fill.ComputeACR(aW, aPACR);
             Unchanged(aTally, aWhat, aBefore, anInput);
             aTally.Identical++;
             for (int i = 0; i <= aNbEdges; i++)
@@ -751,7 +753,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             int aNbCuts = anO.Int(1, 6);
             var aCuts = new double[aNbCuts];
             var aACR = new NCollection_Array1<double>(0, aNbEdges);
-            BRepFill.ComputeACR(aW, aACR);
+            Fill.ComputeACR(aW, aACR);
             for (int i = 0; i < aNbCuts; i++)
             {
                 // random abscissae, some on the edges' ends
@@ -786,7 +788,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             try
             {
-                aPR = BRepFill.InsertACR(aW, aPCuts, aPrec);
+                aPR = Fill.InsertACR(aW, aPCuts, aPrec);
             }
             catch (FailureException anEx)
             {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Adaptors;
@@ -13,15 +14,15 @@ public class LawTests
     [Fact]
     public void MixBnd_FollowsTheLinearLawWithFlatEnds()
     {
-        var aLin = new Law_Linear();
+        var aLin = new global::Kerf.Engine.Construction.Laws.Linear();
         aLin.Set(0.0, 1.0, 2.0, 3.0);
-        Law_BSpFunc aMix = Law.MixBnd(aLin);
+        global::Kerf.Engine.Construction.Laws.BSpFunc aMix = global::Kerf.Engine.Construction.Laws.Law.MixBnd(aLin);
         aMix.Bounds(out double f, out double l);
         Assert.Equal((0.0, 2.0), (f, l));
-        Law_BSpline aCurve = aMix.Curve()!;
+        global::Kerf.Engine.Construction.Laws.BSpline aCurve = aMix.Curve()!;
         Assert.True(aCurve.IsFrozen);
         Assert.Equal(3, aCurve.Degree());
-        Assert.Equal(6, aCurve.NbPoles());
+        Assert.Equal(6, aCurve.PoleCount);
         Assert.Equal(aCurve.Pole(1), aCurve.Pole(2));
         Assert.Equal(aCurve.Pole(5), aCurve.Pole(6));
         Assert.Equal(1.0, aMix.Value(0.0), 1.0e-14);
@@ -35,7 +36,7 @@ public class LawTests
         aKnots[2] = 2.0;
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = aMults[2] = 3;
-        NCollection_HArray1<double> aPoles = Law.MixBnd(2, aKnots, aMults, aLin);
+        NCollection_HArray1<double> aPoles = global::Kerf.Engine.Construction.Laws.Law.MixBnd(2, aKnots, aMults, aLin);
         // three poles: a quadratic Bezier interpolating a line at 0, 1, 2 is that line
         Assert.Equal(3, aPoles.Length());
         Assert.Equal([1.0, 2.0, 3.0], aPoles.AsSpan().ToArray().Select(x => Math.Round(x, 12)).ToArray());
@@ -53,9 +54,9 @@ public class LawTests
         aMults[2] = 1;
         foreach (bool aRight in new[] { true, false })
         {
-            NCollection_HArray1<double> aPoles = Law.MixTgt(3, aKnots, aMults, aRight, 2);
+            NCollection_HArray1<double> aPoles = global::Kerf.Engine.Construction.Laws.Law.MixTgt(3, aKnots, aMults, aRight, 2);
             Assert.Equal(5, aPoles.Length());
-            var aCurve = new Law_BSpline(aPoles, aKnots, aMults, 3);
+            var aCurve = new global::Kerf.Engine.Construction.Laws.BSpline(aPoles, aKnots, aMults, 3);
             // interpolates eval1 at the Schoenberg points: 0 at the far end
             Assert.Equal(0.0, aCurve.Value(aRight ? 2.0 : 0.0), 1.0e-14);
             Assert.Equal(0.0, aCurve.Value(aRight ? 0.0 : 2.0), 1.0e-14);
@@ -65,25 +66,25 @@ public class LawTests
     [Fact]
     public void Scale_AndScaleCub_GoFromTheEndValuesToOne()
     {
-        Law_BSpline aScale = Law.Scale(0.0, 4.0, true, true, 2.0, 0.5);
+        global::Kerf.Engine.Construction.Laws.BSpline aScale = global::Kerf.Engine.Construction.Laws.Law.Scale(0.0, 4.0, true, true, 2.0, 0.5);
         Assert.False(aScale.IsFrozen);
         Assert.Equal(2.0, aScale.Value(0.0), 1.0e-12);
         Assert.Equal(0.5, aScale.Value(4.0), 1.0e-12);
         Assert.Equal(1.0, aScale.Value(2.0), 1.0e-12);
-        Assert.Equal(6, aScale.NbPoles());
-        Law_BSpline aNone = Law.Scale(0.0, 4.0, false, false, 2.0, 0.5);
+        Assert.Equal(6, aScale.PoleCount);
+        global::Kerf.Engine.Construction.Laws.BSpline aNone = global::Kerf.Engine.Construction.Laws.Law.Scale(0.0, 4.0, false, false, 2.0, 0.5);
         for (double x = 0.0; x <= 4.0; x += 0.5)
         {
             Assert.Equal(1.0, aNone.Value(x), 1.0e-12);
         }
 
-        Law_BSpline aCub = Law.ScaleCub(1.0, 3.0, true, false, 3.0, 7.0);
+        global::Kerf.Engine.Construction.Laws.BSpline aCub = global::Kerf.Engine.Construction.Laws.Law.ScaleCub(1.0, 3.0, true, false, 3.0, 7.0);
         Assert.Equal(3.0, aCub.Value(1.0), 1.0e-14);
         Assert.Equal(1.0, aCub.Value(3.0), 1.0e-14);
         aCub.D1(1.0, out _, out double D);
         Assert.Equal(0.0, D, 1.0e-13);
-        Assert.Equal(5, aCub.NbPoles());
-        Law_BSpline aCub2 = Law.ScaleCub(1.0, 3.0, false, true, 3.0, 7.0);
+        Assert.Equal(5, aCub.PoleCount);
+        global::Kerf.Engine.Construction.Laws.BSpline aCub2 = global::Kerf.Engine.Construction.Laws.Law.ScaleCub(1.0, 3.0, false, true, 3.0, 7.0);
         Assert.Equal(1.0, aCub2.Value(1.0), 1.0e-14);
         Assert.Equal(7.0, aCub2.Value(3.0), 1.0e-14);
     }
@@ -97,7 +98,7 @@ public class LawTests
         aPoles[2] = new Point3D(0.5, 0, 0);
         aPoles[3] = new Point3D(1, 1, 0);
         var aCurve = new CurveAdaptor(new BezierCurve3D(aPoles));
-        Law_BSpline aLaw = Law.Reparametrize(aCurve, 0.0, 1.0, false, false, 0.0, 0.0, false, 21);
+        global::Kerf.Engine.Construction.Laws.BSpline aLaw = global::Kerf.Engine.Construction.Laws.Law.Reparametrize(aCurve, 0.0, 1.0, false, false, 0.0, 0.0, false, 21);
         Assert.False(aLaw.IsFrozen);
         Assert.Equal(0.0, aLaw.Value(0.0), 1.0e-12);
         Assert.Equal(1.0, aLaw.Value(1.0), 1.0e-12);
@@ -115,7 +116,7 @@ public class LawTests
         Assert.True(aMax - aMin < 1.0e-2 * aMax, $"chords {aMin} to {aMax}");
 
         // reversed, with end derivatives
-        Law_BSpline aRev = Law.Reparametrize(aCurve, 0.0, 2.0, true, true, 0.25, 0.75, true, 11);
+        global::Kerf.Engine.Construction.Laws.BSpline aRev = global::Kerf.Engine.Construction.Laws.Law.Reparametrize(aCurve, 0.0, 2.0, true, true, 0.25, 0.75, true, 11);
         Assert.Equal(1.0, aRev.Value(0.0), 1.0e-12);
         Assert.Equal(0.0, aRev.Value(2.0), 1.0e-12);
         aRev.D1(0.0, out _, out double D0);
@@ -138,13 +139,13 @@ public class LawTests
         aMults[3] = 2; // C1
         aMults[4] = 3; // C0
         var aPoles = new NCollection_Array1<double>(1, global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(3, false, aMults));
-        var aCurve = new Law_BSpline(aPoles, aKnots, aMults, 3);
+        var aCurve = new global::Kerf.Engine.Construction.Laws.BSpline(aPoles, aKnots, aMults, 3);
         int[] Splits(int theCont)
         {
-            var aSplit = new Law_BSplineKnotSplitting(aCurve, theCont);
-            var anArray = new NCollection_Array1<int>(1, aSplit.NbSplits());
+            var aSplit = new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, theCont);
+            var anArray = new NCollection_Array1<int>(1, aSplit.SplitCount);
             aSplit.Splitting(anArray);
-            for (int i = 1; i <= aSplit.NbSplits(); i++)
+            for (int i = 1; i <= aSplit.SplitCount; i++)
             {
                 Assert.Equal(anArray[i], aSplit.SplitValue(i));
             }
@@ -154,11 +155,11 @@ public class LawTests
         Assert.Equal([1, 4, 5], Splits(1));
         Assert.Equal([1, 3, 4, 5], Splits(2));
         Assert.Equal([1, 2, 3, 4, 5], Splits(3));
-        Assert.Throws<RangeErrorException>(() => new Law_BSplineKnotSplitting(aCurve, -1));
-        Assert.Throws<RangeErrorException>(() => new Law_BSplineKnotSplitting(aCurve, 1).SplitValue(4));
+        Assert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, -1));
+        Assert.Throws<RangeErrorException>(() => new global::Kerf.Engine.Construction.Laws.BSplineKnotSplitting(aCurve, 1).SplitValue(4));
     }
 
-    private sealed class ConstantField : GeomFill_TgtField
+    private sealed class ConstantField : TgtField
     {
         public override Vector3D Value(double W) => new Vector3D(1, 0, 0);
 
@@ -175,8 +176,8 @@ public class LawTests
     public void TgtField_IsNotScalableByDefault()
     {
         var aField = new ConstantField();
-        Assert.False(aField.IsScalable());
-        aField.Scale(Law.ScaleCub(0, 1, true, true, 2, 2)); // does nothing
+        Assert.False(aField.IsScalable);
+        aField.Scale(global::Kerf.Engine.Construction.Laws.Law.ScaleCub(0, 1, true, true, 2, 2)); // does nothing
         Assert.Equal(1.0, aField.Value(0.5).X());
     }
 }

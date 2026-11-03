@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Build;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -161,8 +162,8 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             case "convertwire":
                 try
                 {
-                    Result("result", BRepAlgo.ConvertWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[1]), 0.01, global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0])));
-                    Result("face", BRepAlgo.ConvertFace(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]), 0.01));
+                    Result("result", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConvertWire(global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[1]), 0.01, global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0])));
+                    Result("face", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConvertFace(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]), 0.01));
                 }
                 catch (FailureException)
                 {
@@ -174,16 +175,16 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 Wire aRW = global::Kerf.Engine.Topology.ShapeCasts.Wire(anIn[0]);
                 try
                 {
-                    Result("c1", BRepAlgo.ConcatenateWire(aRW, Continuity.C1));
-                    Result("g1", BRepAlgo.ConcatenateWire(aRW, Continuity.G1));
-                    Result("c0", BRepAlgo.ConcatenateWireC0(aRW));
+                    Result("c1", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWire(aRW, Continuity.C1));
+                    Result("g1", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWire(aRW, Continuity.G1));
+                    Result("c0", global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWireC0(aRW));
                 }
                 catch (FailureException)
                 {
                     aRec.Append("exception\n");
                 }
                 aRec.Append(CultureInfo.InvariantCulture,
-                            $"valid {(BRepAlgo.IsValid(aRW) ? 1 : 0)} {(BRepAlgo.IsTopologicallyValid(aRW) ? 1 : 0)}\n");
+                            $"valid {(Kerf.Engine.Booleans.Algo.BRepAlgo.IsValid(aRW) ? 1 : 0)} {(Kerf.Engine.Booleans.Algo.BRepAlgo.IsTopologicallyValid(aRW) ? 1 : 0)}\n");
                 break;
             }
             default:
@@ -191,7 +192,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 bool withHole = theCase.Kind == "loop-hole";
                 try
                 {
-                    BRepAlgo_Loop aLoop = new();
+                    global::Kerf.Engine.Booleans.Algo.Loop aLoop = new();
                     aLoop.Init(global::Kerf.Engine.Topology.ShapeCasts.Face(anIn[0]));
                     Edge aCut = global::Kerf.Engine.Topology.ShapeCasts.Edge(anIn[3]);
                     NCollection_List<Shape> aLV = new();
@@ -283,7 +284,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             bool isDone = true;
             if (theCase.Mode == 3)
             {
-                TopOpeBRepBuild_WireToFace aWTF = new();
+                WireToFace aWTF = new();
                 foreach (Wire aW in aWires)
                 {
                     aWTF.AddWire(aW);
@@ -299,7 +300,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             }
             else
             {
-                BRepAlgo_FaceRestrictor aFR = new();
+                global::Kerf.Engine.Booleans.Algo.FaceRestrictor aFR = new();
                 aFR.Init(aFace, theCase.Mode == 1, theCase.Mode == 2);
                 foreach (Wire aW in aWires)
                 {
@@ -313,7 +314,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
                 {
                     aFR.Perform();
                 }
-                isDone = aFR.IsDone();
+                isDone = aFR.IsDone;
                 for (; aFR.More(); aFR.Next())
                 {
                     aFaces.Append(theInPlace ? aFR.InternalCurrent() : aFR.Current());
@@ -410,7 +411,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
         (Face aFace, List<Wire> aWires) = Input(theInput);
         if (theMode == 3)
         {
-            TopOpeBRepBuild_WireToFace aWTF = new();
+            WireToFace aWTF = new();
             foreach (Wire aW in aWires)
             {
                 aWTF.AddWire(aW);
@@ -418,7 +419,7 @@ public class BRepAlgo_FaceRestrictorNativeTests(ITestOutputHelper output)
             aWTF.MakeFaces(aFace, new NCollection_List<Shape>());
             return;
         }
-        BRepAlgo_FaceRestrictor aFR = new();
+        global::Kerf.Engine.Booleans.Algo.FaceRestrictor aFR = new();
         aFR.Init(aFace, theMode == 1, theMode == 2);
         foreach (Wire aW in aWires)
         {

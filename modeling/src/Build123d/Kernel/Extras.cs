@@ -1,6 +1,8 @@
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -28,7 +30,7 @@ internal static partial class Extras
             if (rep.IsCurve3D)
             {
                 var n = normal;   // OCCT computes a normal into a null one; the caller's stays as it is
-                return ShapeAnalysis_Curve.IsPlanar(rep.Curve3D()!, ref n, tolerance);
+                return CurveAnalysis.IsPlanar(rep.Curve3D()!, ref n, tolerance);
             }
         return null;
     }
@@ -100,7 +102,7 @@ internal static partial class Extras
     /// The names of the errors an algorithm reported ("BOPAlgo_AlertTooFewArguments, BOPAlgo_AlertSelfInterferingShape"),
     /// or null if it reported none.
     /// </summary>
-    public static string? AlgoErrors(BRepAlgoAPI_Algo algo)
+    public static string? AlgoErrors(Algo algo)
     {
         try
         {

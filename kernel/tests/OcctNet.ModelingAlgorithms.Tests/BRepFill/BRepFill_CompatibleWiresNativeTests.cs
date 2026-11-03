@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -124,7 +125,7 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
         var aOut = new StringBuilder();
         try
         {
-            BRepFill_CompatibleWires aCW = new(aSeq);
+            CompatibleWires aCW = new(aSeq);
             if (theCase.Percent is double aPct)
             {
                 aCW.SetPercent(aPct);
@@ -134,7 +135,7 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
                 aCW.SetPercent();
             }
             aCW.Perform(theCase.WithRotation);
-            aOut.Append($"STATUS {(int)aCW.GetStatus()} {(aCW.IsDone() ? 1 : 0)} {(aCW.IsDegeneratedFirstSection() ? 1 : 0)} {(aCW.IsDegeneratedLastSection() ? 1 : 0)}\n");
+            aOut.Append($"STATUS {(int)aCW.GetStatus()} {(aCW.IsDone ? 1 : 0)} {(aCW.IsDegeneratedFirstSection ? 1 : 0)} {(aCW.IsDegeneratedLastSection ? 1 : 0)}\n");
             BrepBuilder B = new();
             Compound anOut = new();
             B.MakeCompound(ref anOut);

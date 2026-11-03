@@ -5,6 +5,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Intersection.Polyhedra;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -70,11 +71,11 @@ public class IntPolyhTests
             MakeBSpline(-0.5, -0.3, 5.0, (x, y) => 0.25 * x - 0.5 + 0.05 * (y - 2.0) * (y - 2.0)));
 
     // Every double of the results, as bits, with the counts
-    private static List<long> Fingerprint(IntPolyh_Intersection theInter)
+    private static List<long> Fingerprint(PolyhedronIntersection theInter)
     {
-        List<long> aBits = [theInter.IsDone() ? 1 : 0, theInter.IsParallel() ? 1 : 0, theInter.NbSectionLines(),
-                            theInter.NbTangentZones()];
-        for (int iL = 1; iL <= theInter.NbSectionLines(); ++iL)
+        List<long> aBits = [theInter.IsDone ? 1 : 0, theInter.IsParallel ? 1 : 0, theInter.SectionLineCount,
+                            theInter.TangentZoneCount];
+        for (int iL = 1; iL <= theInter.SectionLineCount; ++iL)
         {
             aBits.Add(theInter.NbPointsInLine(iL));
             for (int iP = 1; iP <= theInter.NbPointsInLine(iL); ++iP)
@@ -88,7 +89,7 @@ public class IntPolyhTests
             }
         }
 
-        for (int iZ = 1; iZ <= theInter.NbTangentZones(); ++iZ)
+        for (int iZ = 1; iZ <= theInter.TangentZoneCount; ++iZ)
         {
             theInter.GetTangentZonePoint(iZ, 1, out double x, out double y, out double z, out double u1, out double v1,
                                          out double u2, out double v2);
@@ -102,9 +103,9 @@ public class IntPolyhTests
     }
 
     // The steps of IntPolyh_Intersection's standard intersection (ComputeIntersection)
-    private static IntPolyh_MaillageAffinage Triangulate(SurfaceAdaptor theS1, SurfaceAdaptor theS2, int theNbS)
+    private static PolyhedronMaillageAffinage Triangulate(SurfaceAdaptor theS1, SurfaceAdaptor theS2, int theNbS)
     {
-        IntPolyh_MaillageAffinage aMaillage = new(theS1, theNbS, theNbS, theS2, theNbS, theNbS, 0);
+        PolyhedronMaillageAffinage aMaillage = new(theS1, theNbS, theNbS, theS2, theNbS, theNbS, 0);
         aMaillage.FillArrayOfPnt(1);
         aMaillage.FillArrayOfPnt(2);
         aMaillage.CommonBox();
@@ -117,12 +118,12 @@ public class IntPolyhTests
         return aMaillage;
     }
 
-    private static List<long> CouplesFingerprint(IntPolyh_MaillageAffinage theMaillage)
+    private static List<long> CouplesFingerprint(PolyhedronMaillageAffinage theMaillage)
     {
-        List<long> aBits = [theMaillage.GetArrayOfPoints(1).NbItems(), theMaillage.GetArrayOfPoints(2).NbItems(),
-                            theMaillage.GetArrayOfTriangles(1).NbItems(), theMaillage.GetArrayOfTriangles(2).NbItems(),
-                            theMaillage.GetArrayOfEdges(1).NbItems(), theMaillage.GetArrayOfEdges(2).NbItems()];
-        foreach (IntPolyh_Couple aCouple in theMaillage.GetCouples())
+        List<long> aBits = [theMaillage.GetArrayOfPoints(1).ItemCount, theMaillage.GetArrayOfPoints(2).ItemCount,
+                            theMaillage.GetArrayOfTriangles(1).ItemCount, theMaillage.GetArrayOfTriangles(2).ItemCount,
+                            theMaillage.GetArrayOfEdges(1).ItemCount, theMaillage.GetArrayOfEdges(2).ItemCount];
+        foreach (PolyhedronCouple aCouple in theMaillage.GetCouples())
         {
             aBits.Add(aCouple.FirstValue());
             aBits.Add(aCouple.SecondValue());
@@ -136,23 +137,23 @@ public class IntPolyhTests
     public void BSplinePair_Couples_AreContactsOfMarkedTriangles()
     {
         (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
-        IntPolyh_MaillageAffinage aMaillage = Triangulate(aS1, aS2, 10);
+        PolyhedronMaillageAffinage aMaillage = Triangulate(aS1, aS2, 10);
 
-        NCollection_List<IntPolyh_Couple> aCouples = aMaillage.GetCouples();
+        NCollection_List<PolyhedronCouple> aCouples = aMaillage.GetCouples();
         Assert.True(aCouples.Extent() > 10);
 
-        IntPolyh_Array<IntPolyh_Triangle> aTr1 = aMaillage.GetArrayOfTriangles(1), aTr2 = aMaillage.GetArrayOfTriangles(2);
-        IntPolyh_Array<IntPolyh_Point> aPt1 = aMaillage.GetArrayOfPoints(1), aPt2 = aMaillage.GetArrayOfPoints(2);
+        PolyhedronArray<PolyhedronTriangle> aTr1 = aMaillage.GetArrayOfTriangles(1), aTr2 = aMaillage.GetArrayOfTriangles(2);
+        PolyhedronArray<PolyhedronPoint> aPt1 = aMaillage.GetArrayOfPoints(1), aPt2 = aMaillage.GetArrayOfPoints(2);
         int aPrevious = -1;
-        foreach (IntPolyh_Couple aCouple in aCouples)
+        foreach (PolyhedronCouple aCouple in aCouples)
         {
             // TriangleCompare walks the BVH pairs sorted by the first triangle, then the second
             Assert.True(aCouple.FirstValue() >= aPrevious);
             aPrevious = aCouple.FirstValue();
 
-            IntPolyh_Triangle aT1 = aTr1.Value(aCouple.FirstValue()), aT2 = aTr2.Value(aCouple.SecondValue());
-            Assert.True(aT1.HasIntersection() && aT2.HasIntersection());
-            Assert.True(aT1.IsIntersectionPossible() && aT2.IsIntersectionPossible());
+            PolyhedronTriangle aT1 = aTr1.Value(aCouple.FirstValue()), aT2 = aTr2.Value(aCouple.SecondValue());
+            Assert.True(aT1.HasIntersection && aT2.HasIntersection);
+            Assert.True(aT1.IsIntersectionPossible && aT2.IsIntersectionPossible);
             double anAngle = -2.0;
             Assert.Equal(1, aMaillage.TriContact(aPt1.Value(aT1.FirstPoint()), aPt1.Value(aT1.SecondPoint()),
                                                  aPt1.Value(aT1.ThirdPoint()), aPt2.Value(aT2.FirstPoint()),
@@ -161,7 +162,7 @@ public class IntPolyhTests
             Assert.InRange(Math.Abs(anAngle), 0.0, 1.0 + 1e-12);
 
             // The start points of the couple lie in both triangles' boxes
-            IntPolyh_StartPoint aSP1 = new(), aSP2 = new();
+            PolyhedronStartPoint aSP1 = new(), aSP2 = new();
             int aNb = aMaillage.StartingPointsResearch(aCouple.FirstValue(), aCouple.SecondValue(), ref aSP1, ref aSP2);
             if (aNb >= 1)
             {
@@ -190,16 +191,16 @@ public class IntPolyhTests
         }
 
         // The same for the start points chained by the whole algorithm, on fresh adaptors too
-        List<long> aLines = Fingerprint(new IntPolyh_Intersection(aS1, aS2));
+        List<long> aLines = Fingerprint(new PolyhedronIntersection(aS1, aS2));
         for (int i = 0; i < 3; ++i)
         {
             (SurfaceAdaptor aT1, SurfaceAdaptor aT2) = CrossingPair();
-            Assert.Equal(aLines, Fingerprint(new IntPolyh_Intersection(aT1, aT2)));
+            Assert.Equal(aLines, Fingerprint(new PolyhedronIntersection(aT1, aT2)));
         }
 
         using (OsdParallel.ForceSerialScope())
         {
-            Assert.Equal(aLines, Fingerprint(new IntPolyh_Intersection(aS1, aS2)));
+            Assert.Equal(aLines, Fingerprint(new PolyhedronIntersection(aS1, aS2)));
         }
     }
 
@@ -207,13 +208,13 @@ public class IntPolyhTests
     public void BSplinePair_SectionLines_LieOnBothSurfaces()
     {
         (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
-        IntPolyh_Intersection anInter = new(aS1, 15, 15, aS2, 15, 15);
-        Assert.True(anInter.IsDone());
-        Assert.False(anInter.IsParallel());
-        Assert.True(anInter.NbSectionLines() > 0);
+        PolyhedronIntersection anInter = new(aS1, 15, 15, aS2, 15, 15);
+        Assert.True(anInter.IsDone);
+        Assert.False(anInter.IsParallel);
+        Assert.True(anInter.SectionLineCount > 0);
 
         int aNbPoints = 0;
-        for (int iL = 1; iL <= anInter.NbSectionLines(); ++iL)
+        for (int iL = 1; iL <= anInter.SectionLineCount; ++iL)
         {
             for (int iP = 1; iP <= anInter.NbPointsInLine(iL); ++iP)
             {
@@ -240,16 +241,16 @@ public class IntPolyhTests
         SurfaceAdaptor aTop = MakeBSpline(0.0, 0.0, 2.0, (x, y) => -0.0001);
 
         // IntPolyh_Intersection::IsAdvRequired: no couple, or at most 10 with one nearly parallel
-        NCollection_List<IntPolyh_Couple> aStd = Triangulate(aBump, aTop, 10).GetCouples();
+        NCollection_List<PolyhedronCouple> aStd = Triangulate(aBump, aTop, 10).GetCouples();
         Assert.True(aStd.Extent() <= 10);
         Assert.True(aStd.Extent() == 0 || aStd.Any(c => Math.Abs(c.Angle()) > 0.996));
 
-        IntPolyh_Intersection anInter = new(aBump, aTop);
-        Assert.True(anInter.IsDone());
+        PolyhedronIntersection anInter = new(aBump, aTop);
+        Assert.True(anInter.IsDone);
         List<long> aFirst = Fingerprint(anInter);
         for (int i = 0; i < 3; ++i)
         {
-            Assert.Equal(aFirst, Fingerprint(new IntPolyh_Intersection(aBump, aTop)));
+            Assert.Equal(aFirst, Fingerprint(new PolyhedronIntersection(aBump, aTop)));
         }
     }
 
@@ -262,11 +263,11 @@ public class IntPolyhTests
         SurfaceAdaptor aFlat = MakeBSpline(0.0, 0.0, 1.0, (x, y) => 0.1 * x * y);
         SurfaceAdaptor aWall = MakeVerticalBSpline((y, z) => 1.004, -0.2, -0.5, 1.4);
 
-        IntPolyh_MaillageAffinage aMaillage = Triangulate(aFlat, aWall, 10);
+        PolyhedronMaillageAffinage aMaillage = Triangulate(aFlat, aWall, 10);
         Assert.Equal(0, aMaillage.GetCouples().Extent());
-        IntPolyh_Array<IntPolyh_Triangle> aTriangles = aMaillage.GetArrayOfTriangles(1);
+        PolyhedronArray<PolyhedronTriangle> aTriangles = aMaillage.GetArrayOfTriangles(1);
         List<Box> aBoxes = [];
-        for (int i = 0; i < aTriangles.NbItems(); ++i)
+        for (int i = 0; i < aTriangles.ItemCount; ++i)
         {
             aBoxes.Add(aTriangles.Value(i).CachedBoundingBox());
         }
@@ -283,12 +284,12 @@ public class IntPolyhTests
         Assert.Equal(0, aMaillage.TriangleCompare());
         for (int i = 0; i < aBoxes.Count; ++i)
         {
-            Assert.False(aTriangles.Value(i).IsIntersectionPossible());
+            Assert.False(aTriangles.Value(i).IsIntersectionPossible);
             Assert.Equal(aBoxes[i], aTriangles.Value(i).CachedBoundingBox());
         }
 
         // A fresh MaillageAffinage on the enlarged sampling finds the contact
-        IntPolyh_MaillageAffinage aFresh = new(aFlat, 10, 10, aWall, 10, 10, 0);
+        PolyhedronMaillageAffinage aFresh = new(aFlat, 10, 10, aWall, 10, 10, 0);
         aFresh.SetEnlargeZone(true);
         aFresh.FillArrayOfPnt(1);
         aFresh.FillArrayOfPnt(2);
@@ -300,10 +301,10 @@ public class IntPolyhTests
         aFresh.TrianglesDeflectionsRefinementBSB();
         Assert.True(aFresh.TriangleCompare() > 0);
 
-        IntPolyh_Intersection anInter = new(aFlat, aWall);
-        Assert.True(anInter.IsDone());
-        Assert.Equal(0, anInter.NbSectionLines());
-        Assert.Equal(0, anInter.NbTangentZones());
+        PolyhedronIntersection anInter = new(aFlat, aWall);
+        Assert.True(anInter.IsDone);
+        Assert.Equal(0, anInter.SectionLineCount);
+        Assert.Equal(0, anInter.TangentZoneCount);
     }
 
     [Fact]
@@ -311,33 +312,33 @@ public class IntPolyhTests
     {
         // OCCT: FillArrayOfPnt(SurfID, isShiftFwd, Upars, Vpars) always fills the first surface's points
         (SurfaceAdaptor aS1, SurfaceAdaptor aS2) = CrossingPair();
-        IntPolyh_MaillageAffinage aMaillage = new(aS1, 10, 10, aS2, 10, 10, 0);
+        PolyhedronMaillageAffinage aMaillage = new(aS1, 10, 10, aS2, 10, 10, 0);
         NCollection_Array1<double> aU = new(), aV = new();
         aMaillage.MakeSampling(2, aU, aV);
         aMaillage.FillArrayOfPnt(2, true, aU, aV);
-        Assert.Equal(100, aMaillage.GetArrayOfPoints(1).NbItems());
-        Assert.Equal(0, aMaillage.GetArrayOfPoints(2).NbItems());
+        Assert.Equal(100, aMaillage.GetArrayOfPoints(1).ItemCount);
+        Assert.Equal(0, aMaillage.GetArrayOfPoints(2).ItemCount);
     }
 
     [Fact]
     public void Array_References_StayValidWhileGrowing()
     {
-        IntPolyh_Array<IntPolyh_Triangle> anArray = new(4);
+        PolyhedronArray<PolyhedronTriangle> anArray = new(4);
         anArray.Init(2);
         Assert.Equal(2, anArray.GetN());
         Assert.Equal(-1, anArray.Value(0).FirstPoint());
-        Assert.True(anArray.Value(1).IsIntersectionPossible());
+        Assert.True(anArray.Value(1).IsIntersectionPossible);
 
-        ref IntPolyh_Triangle aFirst = ref anArray[0];
+        ref PolyhedronTriangle aFirst = ref anArray[0];
         for (int i = 0; i < 2000; ++i)
         {
-            anArray[anArray.NbItems()].SetFirstPoint(i);
+            anArray[anArray.ItemCount].SetFirstPoint(i);
             anArray.IncrementNbItems();
         }
 
         aFirst.SetDeflection(5.0);
         Assert.Equal(5.0, anArray.Value(0).Deflection());
-        Assert.Equal(2000, anArray.NbItems());
+        Assert.Equal(2000, anArray.ItemCount);
         Assert.True(anArray.GetN() > 2000);
 
         // Init again keeps the items, resetting only the last allocated one
@@ -351,25 +352,25 @@ public class IntPolyhTests
     [Fact]
     public void SectionLine_AppendPrependAndCopy()
     {
-        IntPolyh_SectionLine aLine = new();
+        PolyhedronSectionLine aLine = new();
         Assert.Equal(0, aLine.GetN());
         aLine.Init(10000);
         Assert.Equal(1, aLine.GetN());
-        Assert.Equal(0, aLine.NbStartPoints());
+        Assert.Equal(0, aLine.StartPointCount);
 
-        IntPolyh_StartPoint aSP = new IntPolyh_StartPoint().WithXYZ(1, 2, 3);
-        aLine[aLine.NbStartPoints()] = aSP;
+        PolyhedronStartPoint aSP = new PolyhedronStartPoint().WithXYZ(1, 2, 3);
+        aLine[aLine.StartPointCount] = aSP;
         aLine.IncrementNbStartPoints();
         aLine.Prepend(aSP.WithXYZ(4, 5, 6));
-        Assert.Equal(2, aLine.NbStartPoints());
+        Assert.Equal(2, aLine.StartPointCount);
         Assert.Equal(4.0, aLine.Value(0).X());
         Assert.Equal(1.0, aLine.Value(1).X());
 
-        IntPolyh_SectionLine aCopy = new(aLine);
+        PolyhedronSectionLine aCopy = new(aLine);
         aLine[0] = aSP;
         Assert.Equal(4.0, aCopy.Value(0).X());
 
-        IntPolyh_Array<IntPolyh_SectionLine> aLines = new();
+        PolyhedronArray<PolyhedronSectionLine> aLines = new();
         aLines.Init(3);
         Assert.NotSame(aLines.Value(0), aLines.Value(1));
     }
@@ -377,24 +378,24 @@ public class IntPolyhTests
     [Fact]
     public void Couple_HasherIsOcctsUnorderedEquality()
     {
-        NCollection_Map<IntPolyh_Couple> aMap = new(IntPolyh_Couple.Hasher.Instance);
-        Assert.True(aMap.Add(new IntPolyh_Couple(3, 7, 0.5)));
-        Assert.False(aMap.Add(new IntPolyh_Couple(7, 3)));
-        Assert.True(aMap.Add(new IntPolyh_Couple(3, 8)));
-        Assert.NotEqual(new IntPolyh_Couple(3, 7, 0.5), new IntPolyh_Couple(7, 3, 0.5));
-        Assert.True(new IntPolyh_Couple(3, 7, 0.5).IsEqual(new IntPolyh_Couple(7, 3, 0.1)));
+        NCollection_Map<PolyhedronCouple> aMap = new(PolyhedronCouple.Hasher.Instance);
+        Assert.True(aMap.Add(new PolyhedronCouple(3, 7, 0.5)));
+        Assert.False(aMap.Add(new PolyhedronCouple(7, 3)));
+        Assert.True(aMap.Add(new PolyhedronCouple(3, 8)));
+        Assert.NotEqual(new PolyhedronCouple(3, 7, 0.5), new PolyhedronCouple(7, 3, 0.5));
+        Assert.True(new PolyhedronCouple(3, 7, 0.5).IsEqual(new PolyhedronCouple(7, 3, 0.1)));
     }
 
     [Fact]
     public void Dumps_WriteOcctsFormat()
     {
         StringWriter aWriter = new();
-        new IntPolyh_Point(1.5, -2.0, 0.0, 0.25, 1.0).Dump(3, aWriter);
+        new PolyhedronPoint(1.5, -2.0, 0.0, 0.25, 1.0).Dump(3, aWriter);
         Assert.Equal("\nPoint(  3) : x=+1.500e+00g y=-2.000e+00g z=+0.000e+00g u=+2.500e-01g v=+1.000e+00g poc=  1\n",
                      aWriter.ToString());
 
         aWriter = new StringWriter();
-        new IntPolyh_Couple(1, 22, 0.5).Dump(0, aWriter);
+        new PolyhedronCouple(1, 22, 0.5).Dump(0, aWriter);
         Assert.Equal("\nCouple(  0) :     1    22   0 0.500000\n", aWriter.ToString());
     }
 }

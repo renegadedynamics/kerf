@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.SurfaceKind;
@@ -25,7 +29,7 @@ public class BRepMeshRangeSplitterTests
                 aPoles[i, j] = new Point3D(i * 2.0, j * 2.0, (i == 2 && j == 2) ? 3.0 : 0.0);
             }
         }
-        return new BRepBuilderAPI_MakeFace(new global::Kerf.Geometry.BezierSurface(aPoles), global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
+        return new MakeFace(new global::Kerf.Geometry.BezierSurface(aPoles), global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
     }
 
     private static Shape ExtrusionFace()
@@ -35,16 +39,16 @@ public class BRepMeshRangeSplitterTests
         aPoles[2] = new Point3D(1, 2, 0);
         aPoles[3] = new Point3D(3, -1, 0);
         aPoles[4] = new Point3D(4, 1, 0);
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new BezierCurve3D(aPoles)).Edge();
-        return new BRepPrimAPI_MakePrism(anEdge, new Vector3D(0, 0, 5)).Shape();
+        Edge anEdge = new MakeEdge(new BezierCurve3D(aPoles)).Edge();
+        return new ApiMakePrism(anEdge, new Vector3D(0, 0, 5)).Shape();
     }
 
     // The first face of the model on a surface of the type.
-    private static IMeshData_Face FaceOfType(IMeshData_Model theModel, SurfaceKind theType)
+    private static FaceModel FaceOfType(ModelModel theModel, SurfaceKind theType)
     {
         for (int i = 0; i < theModel.FacesNb(); ++i)
         {
-            IMeshData_Face aDFace = theModel.GetFace(i);
+            FaceModel aDFace = theModel.GetFace(i);
             if (aDFace.GetSurface().GetType() == theType)
             {
                 return aDFace;
@@ -55,19 +59,19 @@ public class BRepMeshRangeSplitterTests
     }
 
     // Drives the splitter as the face algorithms do; returns the generated nodes.
-    private static NCollection_List<Point2D>? Split(BRepMesh_DefaultRangeSplitter theSplitter, IMeshData_Face theDFace,
-                                                    in IMeshTools_Parameters theParams)
+    private static NCollection_List<Point2D>? Split(DefaultRangeSplitter theSplitter, FaceModel theDFace,
+                                                    in ToolParameters theParams)
     {
         theSplitter.Reset(theDFace, theParams);
         for (int w = 0; w < theDFace.WiresNb(); ++w)
         {
-            IMeshData_Wire aDWire = theDFace.GetWire(w);
+            WireModel aDWire = theDFace.GetWire(w);
             for (int e = 0; e < aDWire.EdgesNb(); ++e)
             {
-                IMeshData_Edge aDEdge = aDWire.GetEdge(e);
+                EdgeModel aDEdge = aDWire.GetEdge(e);
                 for (int p = 0; p < aDEdge.PCurvesNb(); ++p)
                 {
-                    IMeshData_PCurve aDPCurve = aDEdge.GetPCurve(p);
+                    PCurveModel aDPCurve = aDEdge.GetPCurve(p);
                     if (!ReferenceEquals(aDPCurve.GetFace(), theDFace))
                     {
                         continue;
@@ -80,7 +84,7 @@ public class BRepMeshRangeSplitterTests
             }
         }
         theSplitter.AdjustRange();
-        Assert.True(theSplitter.IsValid());
+        Assert.True(theSplitter.IsValid);
         return theSplitter.GenerateSurfaceNodes(theParams);
     }
 
@@ -97,7 +101,7 @@ public class BRepMeshRangeSplitterTests
         return aBits;
     }
 
-    private static void AssertInside(BRepMesh_DefaultRangeSplitter theSplitter, NCollection_List<Point2D> theNodes)
+    private static void AssertInside(DefaultRangeSplitter theSplitter, NCollection_List<Point2D> theNodes)
     {
         (double first, double second) aU = theSplitter.GetRangeU();
         (double first, double second) aV = theSplitter.GetRangeV();
@@ -112,11 +116,11 @@ public class BRepMeshRangeSplitterTests
     // after a Reset of the same one.
     private static NCollection_List<Point2D> Check<TSplitter>(in Shape theShape, SurfaceKind theType,
                                                                int theMinNodes, double theDeflection = 0.1)
-        where TSplitter : BRepMesh_DefaultRangeSplitter, new()
+        where TSplitter : DefaultRangeSplitter, new()
     {
-        IMeshTools_Parameters aParams = Params(theDeflection);
-        IMeshData_Model aModel = Model(theShape, aParams);
-        IMeshData_Face aDFace = FaceOfType(aModel, theType);
+        ToolParameters aParams = Params(theDeflection);
+        ModelModel aModel = Model(theShape, aParams);
+        FaceModel aDFace = FaceOfType(aModel, theType);
 
         var aSplitter = new TSplitter();
         NCollection_List<Point2D>? aNodes = Split(aSplitter, aDFace, aParams);
@@ -132,9 +136,9 @@ public class BRepMeshRangeSplitterTests
     [Fact]
     public void UVParam_CollectsNothingByItself_AndResetClears()
     {
-        IMeshTools_Parameters aParams = Params(0.1);
-        IMeshData_Face aDFace = Model(new BRepPrimAPI_MakeBox(1, 2, 3).Solid(), aParams).GetFace(0);
-        var aSplitter = new BRepMesh_UVParamRangeSplitter();
+        ToolParameters aParams = Params(0.1);
+        FaceModel aDFace = Model(new MakeBox(1, 2, 3).Solid(), aParams).GetFace(0);
+        var aSplitter = new UVParamRangeSplitter();
         aSplitter.Reset(aDFace, aParams);
         aSplitter.GetParametersU().Add(0.5);
         aSplitter.GetParametersV().Add(0.25);
@@ -150,13 +154,13 @@ public class BRepMeshRangeSplitterTests
     {
         // OCCT leaves the V subdivision out, so a cylinder gets no grid nodes: one row at most would sit on the
         // border, which the loop's half-step margin excludes.
-        NCollection_List<Point2D> aNodes = Check<BRepMesh_CylinderRangeSplitter>(
-            new BRepPrimAPI_MakeCylinder(2, 5).Solid(), SurfaceKind.Cylinder, 0);
+        NCollection_List<Point2D> aNodes = Check<CylinderRangeSplitter>(
+            new ApiMakeCylinder(2, 5).Solid(), SurfaceKind.Cylinder, 0);
         Assert.Equal(0, aNodes.Size());
 
-        IMeshTools_Parameters aParams = Params(0.1);
-        IMeshData_Face aDFace = FaceOfType(Model(new BRepPrimAPI_MakeCylinder(2, 5).Solid(), aParams), SurfaceKind.Cylinder);
-        var aSplitter = new BRepMesh_CylinderRangeSplitter();
+        ToolParameters aParams = Params(0.1);
+        FaceModel aDFace = FaceOfType(Model(new ApiMakeCylinder(2, 5).Solid(), aParams), SurfaceKind.Cylinder);
+        var aSplitter = new CylinderRangeSplitter();
         Split(aSplitter, aDFace, aParams);
         Assert.Equal(1.0, aSplitter.GetDelta().second);
         double aDu = TangentialDeflection.ArcAngularStep(2.0, aDFace.GetDeflection(), aParams.Angle, aParams.MinSize);
@@ -168,7 +172,7 @@ public class BRepMeshRangeSplitterTests
     public void Sphere_StaggeredGrid()
     {
         NCollection_List<Point2D> aNodes =
-            Check<BRepMesh_SphereRangeSplitter>(new BRepPrimAPI_MakeSphere(3).Solid(), SurfaceKind.Sphere, 20);
+            Check<SphereRangeSplitter>(new MakeSphere(3).Solid(), SurfaceKind.Sphere, 20);
 
         // Rows alternate between an offset of half a step and none.
         var aRows = new SortedDictionary<double, double>();
@@ -186,16 +190,16 @@ public class BRepMeshRangeSplitterTests
     [Fact]
     public void Torus_GridFromBorderParameters()
     {
-        Check<BRepMesh_TorusRangeSplitter>(new BRepPrimAPI_MakeTorus(5, 1).Solid(), SurfaceKind.Torus, 20);
-        Check<BRepMesh_TorusRangeSplitter>(new BRepPrimAPI_MakeTorus(5, 1, Math.PI).Solid(), SurfaceKind.Torus, 10);
+        Check<TorusRangeSplitter>(new MakeTorus(5, 1).Solid(), SurfaceKind.Torus, 20);
+        Check<TorusRangeSplitter>(new MakeTorus(5, 1, Math.PI).Solid(), SurfaceKind.Torus, 10);
     }
 
     [Fact]
     public void Torus_RegistersBorderParameters()
     {
-        IMeshTools_Parameters aParams = Params(0.1);
-        IMeshData_Face aDFace = FaceOfType(Model(new BRepPrimAPI_MakeTorus(5, 1).Solid(), aParams), SurfaceKind.Torus);
-        var aSplitter = new BRepMesh_TorusRangeSplitter();
+        ToolParameters aParams = Params(0.1);
+        FaceModel aDFace = FaceOfType(Model(new MakeTorus(5, 1).Solid(), aParams), SurfaceKind.Torus);
+        var aSplitter = new TorusRangeSplitter();
         Split(aSplitter, aDFace, aParams);
         Assert.True(aSplitter.GetParametersU().Extent() > 2);
         Assert.True(aSplitter.GetParametersV().Extent() > 2);
@@ -204,34 +208,34 @@ public class BRepMeshRangeSplitterTests
     [Fact]
     public void NURBS_BezierFace()
     {
-        NCollection_List<Point2D> aNodes = Check<BRepMesh_NURBSRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
+        NCollection_List<Point2D> aNodes = Check<NurbsRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
         Assert.All(aNodes, aNode => Assert.InRange(aNode.X(), 0.0, 1.0));
     }
 
     [Fact]
     public void NURBS_BezierOutOfRangeIsInvalid()
     {
-        IMeshTools_Parameters aParams = Params(0.1);
-        IMeshData_Face aDFace = Model(BezierFace(), aParams).GetFace(0);
-        var aSplitter = new BRepMesh_NURBSRangeSplitter();
+        ToolParameters aParams = Params(0.1);
+        FaceModel aDFace = Model(BezierFace(), aParams).GetFace(0);
+        var aSplitter = new NurbsRangeSplitter();
         aSplitter.Reset(aDFace, aParams);
         // Outside the surface's domain without overlapping it, so AdjustRange keeps the range.
         aSplitter.AddPoint(new Point2D(-3.0, -3.0));
         aSplitter.AddPoint(new Point2D(-2.0, -2.0));
         aSplitter.AdjustRange();
-        Assert.False(aSplitter.IsValid());
+        Assert.False(aSplitter.IsValid);
     }
 
     [Fact]
     public void BoundaryParams_BezierFace()
     {
-        Check<BRepMesh_BoundaryParamsRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
+        Check<BoundaryParamsRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
     }
 
     [Fact]
     public void Extrusion_BezierProfile()
     {
-        Check<BRepMesh_ExtrusionRangeSplitter>(ExtrusionFace(), SurfaceOfExtrusion, 4, 0.01);
+        Check<ExtrusionRangeSplitter>(ExtrusionFace(), SurfaceOfExtrusion, 4, 0.01);
     }
 
     [Fact]
@@ -240,7 +244,7 @@ public class BRepMeshRangeSplitterTests
         // One interval along each direction (the surface's own bounds), split at its middle where the normal is
         // defined: a grid of at most 3 by 3 parameters.
         NCollection_List<Point2D> aNodes =
-            Check<BRepMesh_UndefinedRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 1, 0.01);
+            Check<UndefinedRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 1, 0.01);
         Assert.True(aNodes.Size() <= 9);
     }
 
@@ -249,8 +253,8 @@ public class BRepMeshRangeSplitterTests
     {
         // An extrusion's V range is infinite: its single interval's bounds are outside the face's range, so the
         // splitter has no parameters and generates nothing (null), as OCCT's.
-        IMeshTools_Parameters aParams = Params(0.01);
-        IMeshData_Face aDFace = FaceOfType(Model(ExtrusionFace(), aParams), SurfaceOfExtrusion);
-        Assert.Null(Split(new BRepMesh_UndefinedRangeSplitter(), aDFace, aParams));
+        ToolParameters aParams = Params(0.01);
+        FaceModel aDFace = FaceOfType(Model(ExtrusionFace(), aParams), SurfaceOfExtrusion);
+        Assert.Null(Split(new UndefinedRangeSplitter(), aDFace, aParams));
     }
 }

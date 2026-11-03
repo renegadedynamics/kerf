@@ -56,7 +56,7 @@ internal class RWStepAP242_RWItemIdentifiedRepresentationUsage
         StepRepr_RepresentationItem anEnt = null;
         int nbSub = 0;
         Interface_ParamType aType = data.ParamType(num, 5);
-        if (aType == Interface_ParamIdent)
+        if (aType == Interface_ParamType.Interface_ParamIdent)
         {
             data.ReadEntity(num, 5, "item_identified_representation_usage.identified_item", ach, typeof(StepRepr_RepresentationItem), ref anEnt);
             anItems = new NCollection_HArray1<StepRepr_RepresentationItem>(1, 1);

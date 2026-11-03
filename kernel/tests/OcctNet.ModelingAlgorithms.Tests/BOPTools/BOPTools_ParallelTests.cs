@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using System.Collections.Concurrent;
 
@@ -15,7 +16,7 @@ public class BOPTools_ParallelTests
     }
 
     private sealed class Solver(int theIndex, ConcurrentDictionary<TestContext, ConcurrentBag<int>> theThreadsOfContext)
-        : BOPTools_Parallel.IContextSolver<TestContext>
+        : BooleanParallel.IContextSolver<TestContext>
     {
         public TestContext? Context;
         public int Thread = -1;
@@ -41,7 +42,7 @@ public class BOPTools_ParallelTests
         }
     }
 
-    private sealed class PureSolver(int theIndex) : BOPTools_Parallel.ISolver
+    private sealed class PureSolver(int theIndex) : BooleanParallel.ISolver
     {
         public int Result;
 
@@ -59,7 +60,7 @@ public class BOPTools_ParallelTests
     {
         (List<Solver> aSolvers, _) = Solvers(50);
         TestContext aMain = new();
-        BOPTools_Parallel.Perform(false, aSolvers, aMain);
+        BooleanParallel.Perform(false, aSolvers, aMain);
         Assert.All(aSolvers, s => Assert.Same(aMain, s.Context));
         Assert.Equal(50, aMain.NbUses);
     }
@@ -68,14 +69,14 @@ public class BOPTools_ParallelTests
     public void Parallel_EachThreadHasItsOwnContext_AndTheResultIsTheSerialOne()
     {
         (List<Solver> aSerial, _) = Solvers(400);
-        BOPTools_Parallel.Perform(false, aSerial, new TestContext());
+        BooleanParallel.Perform(false, aSerial, new TestContext());
 
         for (int aRun = 0; aRun < 5; ++aRun)
         {
             (List<Solver> aSolvers, ConcurrentDictionary<TestContext, ConcurrentBag<int>> aThreads) = Solvers(400);
             TestContext aMain = new();
             int aCaller = Environment.CurrentManagedThreadId;
-            BOPTools_Parallel.Perform(true, aSolvers, aMain);
+            BooleanParallel.Perform(true, aSolvers, aMain);
 
             // a context is used by one thread only
             foreach (KeyValuePair<TestContext, ConcurrentBag<int>> aPair in aThreads)
@@ -109,7 +110,7 @@ public class BOPTools_ParallelTests
         TestContext aMain = new();
         using (OsdParallel.ForceSerialScope())
         {
-            BOPTools_Parallel.Perform(true, aSolvers, aMain);
+            BooleanParallel.Perform(true, aSolvers, aMain);
         }
         Assert.All(aSolvers, s => Assert.Same(aMain, s.Context));
     }
@@ -122,7 +123,7 @@ public class BOPTools_ParallelTests
         {
             aPure.Append(new PureSolver(i));
         }
-        BOPTools_Parallel.Perform(true, aPure);
+        BooleanParallel.Perform(true, aPure);
         for (int i = 0; i < 100; ++i)
         {
             Assert.Equal(i * i, aPure.Value(i).Result);
@@ -135,7 +136,7 @@ public class BOPTools_ParallelTests
             aVector.Append(aSolver);
         }
         TestContext aMain = new();
-        BOPTools_Parallel.Perform(false, aVector, aMain);
+        BooleanParallel.Perform(false, aVector, aMain);
         Assert.All(aSolvers, s => Assert.Same(aMain, s.Context));
     }
 
@@ -144,14 +145,14 @@ public class BOPTools_ParallelTests
     {
         ConcurrentDictionary<TestContext, ConcurrentBag<int>> aMap = new(ReferenceEqualityComparer.Instance);
         List<Solver> aSolvers = [.. Enumerable.Range(0, 64).Select(i => new Solver(i == 40 ? -1 : i, aMap))];
-        Assert.Throws<DomainErrorException>(() => BOPTools_Parallel.Perform(true, aSolvers, new TestContext()));
-        Assert.Throws<DomainErrorException>(() => BOPTools_Parallel.Perform(false, aSolvers, new TestContext()));
+        Assert.Throws<DomainErrorException>(() => BooleanParallel.Perform(true, aSolvers, new TestContext()));
+        Assert.Throws<DomainErrorException>(() => BooleanParallel.Perform(false, aSolvers, new TestContext()));
     }
 
     [Fact]
     public void ContextFunctor_MakesOneContextPerThread()
     {
-        BOPTools_Parallel.ContextFunctor<TestContext> aFunctor = new();
+        BooleanParallel.ContextFunctor<TestContext> aFunctor = new();
         TestContext aMain = new();
         aFunctor.SetContext(aMain);
         Assert.Same(aMain, aFunctor.GetThreadContext());
@@ -161,6 +162,6 @@ public class BOPTools_ParallelTests
         aThread.Join();
         Assert.NotNull(anOther);
         Assert.NotSame(aMain, anOther);
-        Assert.Equal(2, aFunctor.NbContexts());
+        Assert.Equal(2, aFunctor.ContextCount);
     }
 }

@@ -62,7 +62,7 @@ internal static class ShapeLog
                 if (!Register(wrapped))
                     return;
                 var text = Extras.WriteBRep(wrapped);
-                var header = $"@@ {++s_seq} {shape.GetType().Name} {wrapped.ShapeType()} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
+                var header = $"@@ {++s_seq} {shape.GetType().Name} {Kerf.Engine.Foundation.OcctTypeNames.Of(wrapped.ShapeType())} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
                 Directory.CreateDirectory(Folder!);
                 using var file = new FileStream(Path.Combine(Folder!, FileName(test) + ".brlog"), FileMode.Append, FileAccess.Write);
                 file.Write(Encoding.ASCII.GetBytes(header));

@@ -22,7 +22,7 @@ public class Transfer_ResultFromModel : Transient
     public Transfer_ResultFromModel()
     {
         themnum = 0;
-        themchk = Interface_CheckAny;
+        themchk = Interface_CheckStatus.Interface_CheckAny;
     }
 
     /// <summary>Sets starting Model.</summary>
@@ -141,7 +141,7 @@ public class Transfer_ResultFromModel : Transient
     /// <summary>Sets a new value for the main recorded ResultFromTransient.</summary>
     public void SetMainResult(Transfer_ResultFromTransient? amain)
     {
-        themchk = Interface_CheckAny;
+        themchk = Interface_CheckStatus.Interface_CheckAny;
         themain = amain;
         if (themodel is null || themain is null)
         {
@@ -288,7 +288,7 @@ public class Transfer_ResultFromModel : Transient
                 continue;
             }
             Interface_CheckStatus stat = unres.CheckStatus();
-            if (stat == Interface_CheckOK || (stat == Interface_CheckWarning && erronly))
+            if (stat == Interface_CheckStatus.Interface_CheckOK || (stat == Interface_CheckStatus.Interface_CheckWarning && erronly))
             {
                 continue;
             }
@@ -306,7 +306,7 @@ public class Transfer_ResultFromModel : Transient
     /// </summary>
     public Interface_CheckStatus CheckStatus()
     {
-        if (themchk != Interface_CheckAny)
+        if (themchk != Interface_CheckStatus.Interface_CheckAny)
         {
             return themchk;
         }
@@ -317,7 +317,7 @@ public class Transfer_ResultFromModel : Transient
     /// <summary>Computes and records check status (see CheckStatus). Does not computes it if already done and <paramref name="enforce"/> False.</summary>
     public Interface_CheckStatus ComputeCheckStatus(bool enforce)
     {
-        if (themchk == Interface_CheckAny || enforce)
+        if (themchk == Interface_CheckStatus.Interface_CheckAny || enforce)
         {
             themchk = CheckStatus();
         }

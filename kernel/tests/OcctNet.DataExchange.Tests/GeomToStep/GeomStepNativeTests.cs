@@ -95,7 +95,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
             return; // OCCT's source not fetched
         }
 
-        ShapeAlgo.Init(); // as STEPControl_Controller does natively (MakeSurface's C0 offset surfaces)
+        global::Kerf.Engine.Healing.ShapeAlgo.Init(); // as STEPControl_Controller does natively (MakeSurface's C0 offset surfaces)
         List<Block> aBlocks = Recording("GeomToStep.geomsteprec-s2g.txt.gz");
         Assert.Equal(338, aBlocks.Count);
         int aRun = 0, aLines = 0;
@@ -163,7 +163,7 @@ public sealed class GeomStepNativeTests(ITestOutputHelper output)
             return; // OCCT's source not fetched
         }
 
-        ShapeAlgo.Init();
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
         List<Block> aBlocks = Recording("GeomToStep.geomsteprec-g2s.txt.gz");
         List<string> aCases = Cases();
         int aRun = 0, aLines = 0;

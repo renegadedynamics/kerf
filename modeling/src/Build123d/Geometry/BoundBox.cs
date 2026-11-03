@@ -1,3 +1,4 @@
+using Kerf.Engine.Measurement;
 using Occt;
 
 namespace Build123d;
@@ -71,12 +72,12 @@ public sealed class BoundBox
         var box = new global::Kerf.Engine.Geometry.Bounds.Box();
         // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape
         if (optimal)
-            BRepBndLib.AddOptimal(shape, ref box, false);
+            Bounds.AddOptimal(shape, ref box, false);
         else
-            BRepBndLib.Add(shape, ref box, false);
+            Bounds.Add(shape, ref box, false);
         // A shape with faces holding only triangles (STL, glTF) has no geometry to bound but its mesh: use it then
         if (box.IsVoid)
-            BRepBndLib.Add(shape, ref box, true);
+            Bounds.Add(shape, ref box, true);
         return new BoundBox(box);
     }
 

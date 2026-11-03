@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -178,14 +179,14 @@ internal static class AppSurfRecordings
     // As appsurfrec's PutProfile: false when the curves have not been brought to one number of poles.
     private static bool PutProfile(Writer theW, List<Curve3D> theCurves)
     {
-        GeomFill_Profiler aP = new();
+        Profiler aP = new();
         foreach (Curve3D aC in theCurves)
         {
             aP.AddCurve(aC);
         }
         aP.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
         int aDeg = aP.Degree(), aNbP = aP.NbPoles(), aNbK = aP.NbKnots();
-        theW.Put("prof:" + Int(aDeg) + "," + Int(aNbP) + "," + Int(aNbK) + "," + (aP.IsPeriodic() ? "1" : "0"));
+        theW.Put("prof:" + Int(aDeg) + "," + Int(aNbP) + "," + Int(aNbK) + "," + (aP.IsPeriodic ? "1" : "0"));
         NCollection_Array1<double> aK = new(1, aNbK);
         NCollection_Array1<int> aM = new(1, aNbK);
         aP.KnotsAndMults(aK, aM);
@@ -264,10 +265,10 @@ internal static class AppSurfRecordings
         theW.Put("sd0:" + aD);
     }
 
-    private static void PutApprox(Writer theW, GeomFill_AppSurf theA)
+    private static void PutApprox(Writer theW, SurfaceAppSurf theA)
     {
-        theW.Put("done:" + (theA.IsDone() ? "1" : "0"));
-        if (!theA.IsDone())
+        theW.Put("done:" + (theA.IsDone ? "1" : "0"));
+        if (!theA.IsDone)
         {
             return;
         }
@@ -298,7 +299,7 @@ internal static class AppSurfRecordings
         theW.Put("auk:" + aU);
         theW.Put("avk:" + aV);
         theA.TolReached(out double t3, out double t2);
-        theW.Put("tol:" + Hex(t3) + "," + Hex(t2) + "," + Hex(theA.TolCurveOnSurf(1)) + "," + Int(theA.NbCurves2d()));
+        theW.Put("tol:" + Hex(t3) + "," + Hex(t2) + "," + Hex(theA.TolCurveOnSurf(1)) + "," + Int(theA.Curves2dCount));
         // the surface Draw's appsurf builds
         try
         {
@@ -343,7 +344,7 @@ internal static class AppSurfRecordings
                 {
                     return aW.Tokens;
                 }
-                GeomFill_Generator aGen = new();
+                SurfaceGenerator aGen = new();
                 foreach (Curve3D aC in aCurves)
                 {
                     aGen.AddCurve(aC);
@@ -384,7 +385,7 @@ internal static class AppSurfRecordings
             {
                 return aW.Tokens;
             }
-            GeomFill_SectionGenerator aSec = new();
+            SectionGenerator aSec = new();
             foreach (Curve3D aC in aCurves)
             {
                 aSec.AddCurve(aC);
@@ -396,8 +397,8 @@ internal static class AppSurfRecordings
                 aPar.SetValue(i, aParams[i - 1]);
             }
             aSec.SetParam(aPar);
-            GeomFill_Line aLine = new(aNb);
-            GeomFill_AppSurf anApp = new();
+            SurfaceLine aLine = new(aNb);
+            SurfaceAppSurf anApp = new();
             if (aDraw)
             {
                 anApp.Init(3, 8, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(), 0);

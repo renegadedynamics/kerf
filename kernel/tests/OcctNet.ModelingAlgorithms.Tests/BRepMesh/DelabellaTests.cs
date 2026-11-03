@@ -8,9 +8,9 @@ public class DelabellaTests
     private sealed record Result(int Verts, List<(int A, int B, int C)> Triangles, List<int> Hull, List<string> Log);
 
     // OCCT's call shape: an interleaved array, x at [0], y at [1], 2 doubles apart.
-    private static Result Run(double[] theXY, IDelaBella? theTriangulator = null)
+    private static Result Run(double[] theXY, global::Kerf.Engine.Meshing.Delaunay.IDelaBella? theTriangulator = null)
     {
-        IDelaBella aDb = theTriangulator ?? IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aDb = theTriangulator ?? global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         List<string> aLog = [];
         aDb.SetErrLog((theStream, theMsg) => { aLog.Add(theMsg); return 0; }, null);
         int aVerts = aDb.Triangulate(theXY.Length / 2, theXY.AsSpan(0), theXY.AsSpan(1), 2 * sizeof(double));
@@ -19,13 +19,13 @@ public class DelabellaTests
         List<int> aHull = [];
         if (aVerts > 0)
         {
-            for (DelaBella_Triangle? t = aDb.GetFirstDelaunayTriangle(); t is not null; t = t.next)
+            for (global::Kerf.Engine.Meshing.Delaunay.DelaunayTriangle? t = aDb.GetFirstDelaunayTriangle(); t is not null; t = t.next)
             {
                 aTris.Add((t.v[0]!.i, t.v[1]!.i, t.v[2]!.i));
             }
 
-            DelaBella_Vertex aFirst = aDb.GetFirstHullVertex()!;
-            DelaBella_Vertex? aV = aFirst;
+            global::Kerf.Engine.Meshing.Delaunay.DelaunayVertex aFirst = aDb.GetFirstHullVertex()!;
+            global::Kerf.Engine.Meshing.Delaunay.DelaunayVertex? aV = aFirst;
             do
             {
                 aHull.Add(aV!.i);
@@ -35,7 +35,7 @@ public class DelabellaTests
         }
         else if (aVerts < 0)
         {
-            for (DelaBella_Vertex? aV = aDb.GetFirstHullVertex(); aV is not null; aV = aV.next)
+            for (global::Kerf.Engine.Meshing.Delaunay.DelaunayVertex? aV = aDb.GetFirstHullVertex(); aV is not null; aV = aV.next)
             {
                 aHull.Add(aV.i);
             }
@@ -141,7 +141,7 @@ public class DelabellaTests
         Assert.Equal(r1.Triangles, r2.Triangles);
         Assert.Equal(r1.Hull, r2.Hull);
 
-        IDelaBella aDb = IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aDb = global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         Run(RandomPoints(8, 500), aDb); // a larger run first, so buffers are reused
         Result r3 = Run(p, aDb);
         Assert.Equal(r1.Triangles, r3.Triangles);
@@ -278,13 +278,13 @@ public class DelabellaTests
         // integer points of the circle of radius 5; the port throws NullReferenceException.
         double[] aSquare = [1, 0, -1, 0, 0, 1, 0, -1];
         List<string> aLog = [];
-        IDelaBella aDb = IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aDb = global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         aDb.SetErrLog((s, m) => { aLog.Add(m); return 0; }, null);
         Assert.ThrowsAny<NullReferenceException>(() => aDb.Triangulate(4, aSquare));
         Assert.Contains("[NFO] all input points are cocircular.\n", aLog);
 
         double[] aCircle5 = [5, 0, -5, 0, 0, 5, 0, -5, 3, 4, 3, -4, -3, 4, -3, -4, 4, 3, 4, -3, -4, 3, -4, -3];
-        Assert.ThrowsAny<NullReferenceException>(() => IDelaBella.Create().Triangulate(12, aCircle5));
+        Assert.ThrowsAny<NullReferenceException>(() => global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create().Triangulate(12, aCircle5));
     }
 
     // Integer coordinates on a 1/1024 grid, exactly representable, from the LCG of C's rand() family.
@@ -340,13 +340,13 @@ public class DelabellaTests
         double[] p = RandomPoints(21, 40);
         Result r = Run(p);
 
-        IDelaBella aDb = IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aDb = global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         // C++'s null y: y = x + 1; an advance below 2 * sizeof(double) is raised to it (so separate x and y arrays
         // with a stride of one double can't be passed, as in C++)
         Assert.Equal(r.Verts, aDb.Triangulate(40, p));
         Assert.Equal(r.Verts, aDb.Triangulate(40, p, default, sizeof(double)));
         List<(int, int, int)> aTris = [];
-        for (DelaBella_Triangle? t = aDb.GetFirstDelaunayTriangle(); t is not null; t = t.next)
+        for (global::Kerf.Engine.Meshing.Delaunay.DelaunayTriangle? t = aDb.GetFirstDelaunayTriangle(); t is not null; t = t.next)
         {
             aTris.Add((t.v[0]!.i, t.v[1]!.i, t.v[2]!.i));
         }
@@ -362,7 +362,7 @@ public class DelabellaTests
     {
         // OCCT: with 0 points the duplicate removal reports "-1 dups" and the single-point branch writes into an
         // empty allocation (a null pointer on a first call). The port throws there.
-        IDelaBella aDb = IDelaBella.Create();
+        global::Kerf.Engine.Meshing.Delaunay.IDelaBella aDb = global::Kerf.Engine.Meshing.Delaunay.IDelaBella.Create();
         List<string> aLog = [];
         aDb.SetErrLog((s, m) => { aLog.Add(m); return 0; }, null);
         Assert.ThrowsAny<NullReferenceException>(() => aDb.Triangulate(0, new double[2]));

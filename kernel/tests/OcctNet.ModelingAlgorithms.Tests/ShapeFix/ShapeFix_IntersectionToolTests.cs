@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -19,13 +24,13 @@ public class ShapeFix_IntersectionToolTests
     // An unfrozen planar face bounded by the polygon.
     private static Face PlanarFace(params Point3D[] thePoints)
     {
-        var aPoly = new BRepBuilderAPI_MakePolygon();
+        var aPoly = new MakePolygon();
         foreach (Point3D aP in thePoints)
         {
             aPoly.Add(aP);
         }
         aPoly.Close();
-        return new BRepBuilderAPI_MakeFace(aPoly.InternalWire(), true).InternalFace();
+        return new MakeFace(aPoly.InternalWire(), true).InternalFace();
     }
 
     private static Wire OuterWire(in Face theFace)
@@ -46,14 +51,14 @@ public class ShapeFix_IntersectionToolTests
     {
         // (0,0) -> (2,2) -> (2,0) -> (0,2) -> back: two opposite edges cross at (1,1)
         Face aFace = PlanarFace(P(0, 0), P(2, 2), P(2, 0), P(0, 2));
-        var sewd = new ShapeExtend_WireData(OuterWire(aFace));
+        var sewd = new ExtendWireData(OuterWire(aFace));
         var anOriginals = new List<Edge>();
-        for (int i = 1; i <= sewd.NbEdges(); i++)
+        for (int i = 1; i <= sewd.EdgeCount; i++)
         {
             anOriginals.Add(sewd.Edge(i));
         }
-        var aContext = new ShapeBuild_ReShape();
-        var aTool = new ShapeFix_IntersectionTool(aContext, 1.0e-7);
+        var aContext = new ReShapeBuilder();
+        var aTool = new IntersectionToolFixer(aContext, 1.0e-7);
 
         int aNbSplit = 0, aNbCut = 0, aNbRemoved = 0;
         Assert.True(aTool.FixSelfIntersectWire(sewd, aFace, ref aNbSplit, ref aNbCut, ref aNbRemoved));
@@ -61,19 +66,19 @@ public class ShapeFix_IntersectionToolTests
         Assert.Equal(2, aNbSplit);
         Assert.Equal(0, aNbCut);
         Assert.Equal(0, aNbRemoved);
-        Assert.Equal(6, sewd.NbEdges());
+        Assert.Equal(6, sewd.EdgeCount);
         Assert.Equal(2, anOriginals.Count(e => aContext.IsRecorded(e))); // the two crossing edges were replaced
 
         // the new vertex is shared by the four halves and lies at (1,1)
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         int aNbAtCross = 0;
-        for (int i = 1; i <= sewd.NbEdges(); i++)
+        for (int i = 1; i <= sewd.EdgeCount; i++)
         {
             Point3D anEnd = Tool.Pnt(sae.LastVertex(sewd.Edge(i)));
             if (anEnd.Distance(new Point3D(1, 1, 0)) < 1.0e-9)
             {
                 aNbAtCross++;
-                int j = i == sewd.NbEdges() ? 1 : i + 1;
+                int j = i == sewd.EdgeCount ? 1 : i + 1;
                 Assert.True(sae.LastVertex(sewd.Edge(i)).IsSame(sae.FirstVertex(sewd.Edge(j))));
             }
         }
@@ -84,24 +89,24 @@ public class ShapeFix_IntersectionToolTests
     public void FixSelfIntersectWire_NoContextOrNoFace_DoesNothing()
     {
         Face aFace = PlanarFace(P(0, 0), P(2, 2), P(2, 0), P(0, 2));
-        var sewd = new ShapeExtend_WireData(OuterWire(aFace));
+        var sewd = new ExtendWireData(OuterWire(aFace));
         int aNbSplit = 0, aNbCut = 0, aNbRemoved = 0;
-        Assert.False(new ShapeFix_IntersectionTool(null, 1.0e-7)
+        Assert.False(new IntersectionToolFixer(null, 1.0e-7)
                          .FixSelfIntersectWire(sewd, aFace, ref aNbSplit, ref aNbCut, ref aNbRemoved));
-        Assert.False(new ShapeFix_IntersectionTool(new ShapeBuild_ReShape(), 1.0e-7)
+        Assert.False(new IntersectionToolFixer(new ReShapeBuilder(), 1.0e-7)
                          .FixSelfIntersectWire(sewd, new Face(), ref aNbSplit, ref aNbCut, ref aNbRemoved));
-        Assert.Equal(4, sewd.NbEdges());
+        Assert.Equal(4, sewd.EdgeCount);
     }
 
     [Fact]
     public void FixSelfIntersectWire_Square_IsUnchanged()
     {
         Face aFace = PlanarFace(P(0, 0), P(2, 0), P(2, 2), P(0, 2));
-        var sewd = new ShapeExtend_WireData(OuterWire(aFace));
+        var sewd = new ExtendWireData(OuterWire(aFace));
         int aNbSplit = 0, aNbCut = 0, aNbRemoved = 0;
-        Assert.False(new ShapeFix_IntersectionTool(new ShapeBuild_ReShape(), 1.0e-7)
+        Assert.False(new IntersectionToolFixer(new ReShapeBuilder(), 1.0e-7)
                          .FixSelfIntersectWire(sewd, aFace, ref aNbSplit, ref aNbCut, ref aNbRemoved));
-        Assert.Equal(4, sewd.NbEdges());
+        Assert.Equal(4, sewd.EdgeCount);
     }
 
     [Fact]
@@ -109,14 +114,14 @@ public class ShapeFix_IntersectionToolTests
     {
         Face aFace = PlanarFace(P(0, 0), P(4, 0), P(4, 4), P(0, 4));
         // an inner rectangle crossing the side x = 4
-        var aPoly = new BRepBuilderAPI_MakePolygon(new Point3D(3, 1, 0), new Point3D(5, 1, 0), new Point3D(5, 2, 0),
+        var aPoly = new MakePolygon(new Point3D(3, 1, 0), new Point3D(5, 1, 0), new Point3D(5, 2, 0),
                                                    new Point3D(3, 2, 0), true);
         Wire anInner = aPoly.InternalWire();
         anInner.Reverse();
         new BrepBuilder().Add(aFace, anInner);
         Face anOriginal = aFace;
-        var aContext = new ShapeBuild_ReShape();
-        var aTool = new ShapeFix_IntersectionTool(aContext, 1.0e-7);
+        var aContext = new ReShapeBuilder();
+        var aTool = new IntersectionToolFixer(aContext, 1.0e-7);
 
         Assert.True(aTool.FixIntersectingWires(ref aFace));
 
@@ -137,7 +142,7 @@ public class ShapeFix_IntersectionToolTests
     {
         Face aFace = PlanarFace(P(0, 0), P(4, 0), P(4, 4), P(0, 4));
         Face anOriginal = aFace;
-        Assert.False(new ShapeFix_IntersectionTool(new ShapeBuild_ReShape(), 1.0e-7).FixIntersectingWires(ref aFace));
+        Assert.False(new IntersectionToolFixer(new ReShapeBuilder(), 1.0e-7).FixIntersectingWires(ref aFace));
         Assert.True(ReferenceEquals(aFace.TShape(), anOriginal.TShape()));
     }
 
@@ -145,9 +150,9 @@ public class ShapeFix_IntersectionToolTests
     public void SplitEdge_AtAParameter_GivesTwoEdgesSharingTheVertex()
     {
         Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(4, 0, 0)).InternalVertex();
-        var aTool = new ShapeFix_IntersectionTool(null, 1.0e-7);
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        Vertex aV = new MakeVertex(new Point3D(4, 0, 0)).InternalVertex();
+        var aTool = new IntersectionToolFixer(null, 1.0e-7);
 
         Edge aE1 = new(), aE2 = new();
         Assert.True(aTool.SplitEdge(anEdge, 4.0, aV, aFace, ref aE1, ref aE2, 1.0e-7));
@@ -157,7 +162,7 @@ public class ShapeFix_IntersectionToolTests
         Assert.Equal(4.0, l1, 1e-12);
         Assert.Equal(4.0, f2, 1e-12);
         Assert.Equal(10.0, l2, 1e-12);
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         Assert.True(sae.LastVertex(aE1).IsSame(aV));
         Assert.True(sae.FirstVertex(aE2).IsSame(aV));
 
@@ -170,10 +175,10 @@ public class ShapeFix_IntersectionToolTests
     public void SplitEdge_VertexOffTheEdge_RaisesItsTolerance()
     {
         Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(4, 0.01, 0)).InternalVertex();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        Vertex aV = new MakeVertex(new Point3D(4, 0.01, 0)).InternalVertex();
         Edge aE1 = new(), aE2 = new();
-        Assert.True(new ShapeFix_IntersectionTool(null, 1.0e-7).SplitEdge(anEdge, 4.0, aV, aFace, ref aE1, ref aE2, 1.0e-7));
+        Assert.True(new IntersectionToolFixer(null, 1.0e-7).SplitEdge(anEdge, 4.0, aV, aFace, ref aE1, ref aE2, 1.0e-7));
         Assert.True(Tool.Tolerance(aV) >= 0.01);
     }
 
@@ -181,8 +186,8 @@ public class ShapeFix_IntersectionToolTests
     public void CutEdge_ChangesTheRangeInPlace_AndRefusesFrozenEdges()
     {
         Face aFace = PlanarFace(P(0, 0), P(10, 0), P(10, 10), P(0, 10));
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
-        var aTool = new ShapeFix_IntersectionTool(null, 1.0e-7);
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        var aTool = new IntersectionToolFixer(null, 1.0e-7);
         bool isCutLine = false;
 
         Assert.True(aTool.CutEdge(anEdge, 10.0, 6.0, aFace, ref isCutLine));
@@ -195,7 +200,7 @@ public class ShapeFix_IntersectionToolTests
         Assert.False(aTool.CutEdge(anEdge, 10.0, 10.0, aFace, ref isCutLine));
         Assert.False(aTool.CutEdge(anEdge, 10.0, 6.0, aFace, ref isCutLine));
 
-        Edge aFrozen = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge aFrozen = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         Assert.ThrowsAny<Exception>(() => aTool.CutEdge(aFrozen, 10.0, 6.0, aFace, ref isCutLine));
     }
 }

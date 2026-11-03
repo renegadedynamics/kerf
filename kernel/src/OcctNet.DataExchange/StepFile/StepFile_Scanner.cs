@@ -217,7 +217,7 @@ public sealed class StepFile_Scanner
                         {
                             myStart = INITIAL;
                             CreateNewText(myTextStart, p + 1);
-                            SetTypeArg(Interface_ParamText);
+                            SetTypeArg(Interface_ParamType.Interface_ParamText);
                             return StepFile_Parser.token.QUID;
                         }
 
@@ -293,7 +293,7 @@ public sealed class StepFile_Scanner
                 case '$':
                     myPos = p + 1;
                     CreateNewText(p, p + 1);
-                    SetTypeArg(Interface_ParamVoid);
+                    SetTypeArg(Interface_ParamType.Interface_ParamVoid);
                     return StepFile_Parser.token.QUID;
                 case '=':
                     myPos = p + 1;
@@ -338,7 +338,7 @@ public sealed class StepFile_Scanner
 
                     myPos = i + 1;
                     CreateNewText(p, i + 1);
-                    SetTypeArg(Interface_ParamHexa);
+                    SetTypeArg(Interface_ParamType.Interface_ParamHexa);
                     return StepFile_Parser.token.QUID;
                 }
                 case '&':
@@ -386,7 +386,7 @@ public sealed class StepFile_Scanner
     {
         myPos = p + 1;
         CreateNewText(p, p + 1);
-        SetTypeArg(Interface_ParamMisc);
+        SetTypeArg(Interface_ParamType.Interface_ParamMisc);
         return StepFile_Parser.token.QUID;
     }
 
@@ -577,16 +577,16 @@ public sealed class StepFile_Scanner
         {
             case 18:
                 CreateNewText(p, p + aLen);
-                SetTypeArg(Interface_ParamInteger);
+                SetTypeArg(Interface_ParamType.Interface_ParamInteger);
                 return StepFile_Parser.token.QUID;
             case 19:
             case 20:
                 CreateNewText(p, p + aLen);
-                SetTypeArg(Interface_ParamReal);
+                SetTypeArg(Interface_ParamType.Interface_ParamReal);
                 return StepFile_Parser.token.QUID;
             case 22:
                 CreateNewText(p, p + aLen);
-                SetTypeArg(Interface_ParamEnum);
+                SetTypeArg(Interface_ParamType.Interface_ParamEnum);
                 return StepFile_Parser.token.QUID;
             case 29:
             case 36:

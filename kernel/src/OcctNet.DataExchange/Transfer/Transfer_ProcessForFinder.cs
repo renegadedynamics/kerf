@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using static Occt.Transfer_StatusExec;
 using static Occt.Transfer_StatusResult;
 
@@ -230,7 +231,7 @@ public class Transfer_ProcessForFinder : Transient
             StartTrace(binder, start, thelevel, 4);
             throw new Transfer_TransferFailure("TransferProcess : IsAlreadyUsed, transfer not done cannot be used...");
         }
-        return binder.Status() == Transfer_StatusUsed;
+        return binder.Status() == Transfer_StatusResult.Transfer_StatusUsed;
     }
 
     // Same as Find but stores the last access to the map, for a faster access on next calls (as Bind does too)
@@ -276,7 +277,7 @@ public class Transfer_ProcessForFinder : Transient
                 binder.Merge(former);
                 themap[theindex] = binder;
             }
-            else if (former.Status() == Transfer_StatusUsed)
+            else if (former.Status() == Transfer_StatusResult.Transfer_StatusUsed)
             {
                 StartTrace(former, start, thelevel, 4);
                 throw new Transfer_TransferFailure("TransferProcess : Bind, already Bound");
@@ -558,7 +559,7 @@ public class Transfer_ProcessForFinder : Transient
         Transfer_SimpleBinderOfTransient? binder = former as Transfer_SimpleBinderOfTransient;
         if (binder is not null)
         {
-            if (binder.Status() == Transfer_StatusVoid)
+            if (binder.Status() == Transfer_StatusResult.Transfer_StatusVoid)
             {
                 binder.SetResult(res);
                 return;
@@ -820,15 +821,15 @@ public class Transfer_ProcessForFinder : Transient
             Transfer_StatusExec statex = former.StatusExec();
             switch (statex)
             {
-                case Transfer_StatusInitial:
+                case Transfer_StatusExec.Transfer_StatusInitial:
                     break;
-                case Transfer_StatusDone:
+                case Transfer_StatusExec.Transfer_StatusDone:
                     aSender.Append(" .. and Transfer done").Append('\n');
                     return former;
-                case Transfer_StatusRun:
-                    former.SetStatusExec(Transfer_StatusLoop);
+                case Transfer_StatusExec.Transfer_StatusRun:
+                    former.SetStatusExec(Transfer_StatusExec.Transfer_StatusLoop);
                     return former;
-                case Transfer_StatusError:
+                case Transfer_StatusExec.Transfer_StatusError:
                     if (thetrace != 0)
                     {
                         aSender.Append("                  *** Transfer in Error Status  :").Append('\n');
@@ -839,7 +840,7 @@ public class Transfer_ProcessForFinder : Transient
                         StartTrace(former, start, thelevel, 4);
                     }
                     throw new Transfer_TransferFailure("TransferProcess : Transfer in Error Status");
-                case Transfer_StatusLoop:
+                case Transfer_StatusExec.Transfer_StatusLoop:
                     if (thetrace != 0)
                     {
                         aSender.Append("                  *** Transfer  Head of Dead Loop  :").Append('\n');
@@ -854,7 +855,7 @@ public class Transfer_ProcessForFinder : Transient
             }
             if (!hasDeadLoop)
             {
-                former.SetStatusExec(Transfer_StatusRun);
+                former.SetStatusExec(Transfer_StatusExec.Transfer_StatusRun);
             }
         }
 
@@ -890,7 +891,7 @@ public class Transfer_ProcessForFinder : Transient
             {
                 binder = TransferProduct(start, theProgress);
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 // OCC_CATCH_SIGNALS: a Standard_Failure, or a system signal (their .NET counterparts, decision 1183)
                 if (binder is null)
@@ -945,7 +946,7 @@ public class Transfer_ProcessForFinder : Transient
         {
             if (former is not null)
             {
-                former.SetStatusExec(Transfer_StatusDone); //+
+                former.SetStatusExec(Transfer_StatusExec.Transfer_StatusDone); //+
             }
             return null; // Null Binder ... what else to do?
         }
@@ -954,7 +955,7 @@ public class Transfer_ProcessForFinder : Transient
         if (therootl >= thelevel) // OCCT: nested transfers ending at the level of the first one done are roots too
         {
             therootl = 0;
-            if (therootm && binder.Status() != Transfer_StatusVoid)
+            if (therootm && binder.Status() != Transfer_StatusResult.Transfer_StatusVoid)
             {
                 SetRoot(start);
             }
@@ -1014,7 +1015,7 @@ public class Transfer_ProcessForFinder : Transient
             }
             return binder;
         }
-        if (therootl == 0 && binder.StatusExec() == Transfer_StatusDone)
+        if (therootl == 0 && binder.StatusExec() == Transfer_StatusExec.Transfer_StatusDone)
         {
             therootl = thelevel - 1;
         }
@@ -1105,7 +1106,7 @@ public class Transfer_ProcessForFinder : Transient
             bool hasres = false;
             while (bnd is not null)
             {
-                if (bnd.Status() != Transfer_StatusVoid)
+                if (bnd.Status() != Transfer_StatusResult.Transfer_StatusVoid)
                 {
                     // ---  Result Type: binder->ResultType()  ---  Binder : binder->DynamicType();
                     if (!hasres)
@@ -1226,7 +1227,7 @@ public class Transfer_ProcessForFinder : Transient
                 continue;
             }
             Transfer_StatusExec statex = binder.StatusExec();
-            if (statex != Transfer_StatusInitial && statex != Transfer_StatusDone)
+            if (statex != Transfer_StatusExec.Transfer_StatusInitial && statex != Transfer_StatusExec.Transfer_StatusDone)
             {
                 iter.Add(binder, Mapped(i)); // on note les cas "pas normaux"
             }
@@ -1252,7 +1253,7 @@ public class Transfer_ProcessForFinder : Transient
             }
             Transfer_StatusExec statex = binder.StatusExec();
             Interface_Check check = binder.Check();
-            if (statex != Transfer_StatusInitial && statex != Transfer_StatusDone && !check.HasFailed())
+            if (statex != Transfer_StatusExec.Transfer_StatusInitial && statex != Transfer_StatusExec.Transfer_StatusDone && !check.HasFailed())
             {
                 check.AddFail("Transfer in Abnormal Status (!= Initial or Done)");
             }
@@ -1352,7 +1353,7 @@ public class Transfer_ProcessForFinder : Transient
 
             Transfer_StatusExec statex = binder.StatusExec();
             Interface_Check check = binder.Check();
-            if (statex != Transfer_StatusInitial && statex != Transfer_StatusDone && !check.HasFailed())
+            if (statex != Transfer_StatusExec.Transfer_StatusInitial && statex != Transfer_StatusExec.Transfer_StatusDone && !check.HasFailed())
             {
                 check.AddFail("Transfer in Abnormal Status (!= Initial or Done)");
             }
@@ -1405,7 +1406,7 @@ public class Transfer_ProcessForFinder : Transient
 
             Transfer_StatusExec statex = binder.StatusExec();
             Interface_Check check = binder.Check();
-            if (statex != Transfer_StatusInitial && statex != Transfer_StatusDone)
+            if (statex != Transfer_StatusExec.Transfer_StatusInitial && statex != Transfer_StatusExec.Transfer_StatusDone)
             {
                 return false;
             }

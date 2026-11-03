@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -36,12 +38,12 @@ public class ShapeAnalysis_FreeBoundsTest
         aBuilder.MakeVertex(ref aVertex3, new Point3D(0.0, 1.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.MakeVertex(ref aNonManifoldVertex, new Point3D(2.0, -1.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        var anEdgeMaker1 = new BRepBuilderAPI_MakeEdge(aVertex1, aVertex2);
-        var anEdgeMaker2 = new BRepBuilderAPI_MakeEdge(aVertex2, aVertex3);
-        var anEdgeMaker3 = new BRepBuilderAPI_MakeEdge(aVertex3, aVertex1);
-        var aNonManifoldMaker = new BRepBuilderAPI_MakeEdge(aVertex1, aNonManifoldVertex);
-        if (!anEdgeMaker1.IsDone() || !anEdgeMaker2.IsDone() || !anEdgeMaker3.IsDone()
-            || !aNonManifoldMaker.IsDone())
+        var anEdgeMaker1 = new MakeEdge(aVertex1, aVertex2);
+        var anEdgeMaker2 = new MakeEdge(aVertex2, aVertex3);
+        var anEdgeMaker3 = new MakeEdge(aVertex3, aVertex1);
+        var aNonManifoldMaker = new MakeEdge(aVertex1, aNonManifoldVertex);
+        if (!anEdgeMaker1.IsDone || !anEdgeMaker2.IsDone || !anEdgeMaker3.IsDone
+            || !aNonManifoldMaker.IsDone)
         {
             return false;
         }
@@ -106,12 +108,12 @@ public class ShapeAnalysis_FreeBoundsTest
 
     internal static Face MakeSquareFace(in Point3D theA, in Point3D theB, in Point3D theC, in Point3D theD)
     {
-        var aMakeWire = new BRepBuilderAPI_MakeWire();
-        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(theA, theB).Edge());
-        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(theB, theC).Edge());
-        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(theC, theD).Edge());
-        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(theD, theA).Edge());
-        return new BRepBuilderAPI_MakeFace(aMakeWire.Wire()).Face();
+        var aMakeWire = new MakeWire();
+        aMakeWire.Add(new MakeEdge(theA, theB).Edge());
+        aMakeWire.Add(new MakeEdge(theB, theC).Edge());
+        aMakeWire.Add(new MakeEdge(theC, theD).Edge());
+        aMakeWire.Add(new MakeEdge(theD, theA).Edge());
+        return new MakeFace(aMakeWire.Wire()).Face();
     }
 
     private static NCollection_HSequence<Shape> Seq(params Shape[] theShapes)
@@ -132,7 +134,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.Loop, aData.InternalWire);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -144,7 +146,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.InternalWire, aData.Loop);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -156,7 +158,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.InternalWire, aData.ExternalWire);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 2, 1, 1, false);
     }
 
@@ -168,7 +170,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.EmptyWire, aData.InternalWire, aData.Loop);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 2, 4, 1, 0, true);
     }
 
@@ -180,7 +182,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.EmptyWire);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 0, 0, 0, 0, false);
     }
 
@@ -200,7 +202,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aMixedWire);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectWiresToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 4, 1, 0, false);
     }
 
@@ -212,7 +214,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.Edge1, aData.Edge2, aData.Edge3, aData.InternalEdge);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -224,7 +226,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.InternalEdge, aData.Edge1, aData.Edge2, aData.Edge3);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -236,7 +238,7 @@ public class ShapeAnalysis_FreeBoundsTest
         NCollection_HSequence<Shape> anInput = Seq(aData.Edge1, aData.Edge2, aData.Edge3, aData.ExternalEdge);
 
         NCollection_HSequence<Shape> aResult =
-            ShapeAnalysis_FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+            FreeBounds.ConnectEdgesToWires(anInput, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
         checkResult(aResult, 1, 3, 0, 0, true);
     }
 
@@ -247,7 +249,7 @@ public class ShapeAnalysis_FreeBoundsTest
         Face aFace = MakeSquareFace(new Point3D(0.0, 0.0, 0.0), new Point3D(1.0, 0.0, 0.0),
                                            new Point3D(1.0, 1.0, 0.0), new Point3D(0.0, 1.0, 0.0));
 
-        var aFreeBounds = new ShapeAnalysis_FreeBounds(aFace, 0.01, true, true);
+        var aFreeBounds = new FreeBounds(aFace, 0.01, true, true);
         _ = aFreeBounds.GetClosedWires();
         _ = aFreeBounds.GetOpenWires();
     }
@@ -267,7 +269,7 @@ public class ShapeAnalysis_FreeBoundsTest
         aBuilder.Add(aCompound, aFaceA);
         aBuilder.Add(aCompound, aFaceB);
 
-        var aFreeBounds = new ShapeAnalysis_FreeBounds(aCompound, 0.01, true, true);
+        var aFreeBounds = new FreeBounds(aCompound, 0.01, true, true);
         Compound aClosed = aFreeBounds.GetClosedWires();
         Compound anOpen = aFreeBounds.GetOpenWires();
 

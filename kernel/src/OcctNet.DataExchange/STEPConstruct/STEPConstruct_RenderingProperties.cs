@@ -64,7 +64,7 @@ public class STEPConstruct_RenderingProperties
     {
         mySurfaceColor = new Color(NocWhite);
         myTransparency = 0.0;
-        myRenderingMethod = StepVisual_ssmNormalShading;
+        myRenderingMethod = StepVisual_ShadingSurfaceMethod.StepVisual_ssmNormalShading;
         myIsDefined = false;
         myAmbientReflectance = (0.0, false);
         myDiffuseReflectance = (0.0, false);

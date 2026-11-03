@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -81,11 +85,11 @@ public class ShapeFix_ShapeTests
     {
         Wire aWire = GapSquare();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        var aFix = new ShapeFix_Shape(aWire);
+        var aFix = new ShapeFixer(aWire);
         aFix.SetPrecision(1e-3);
         aFix.SetMaxTolerance(1e-3);
         Assert.True(aFix.Perform());
-        Assert.True(aFix.Status(ShapeExtend_DONE2));
+        Assert.True(aFix.Status(ExtendStatus.DONE2));
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
         Assert.True(aResult.TShape()!.IsFrozen);
@@ -98,7 +102,7 @@ public class ShapeFix_ShapeTests
     public void Wire_Valid_GivesTheInput()
     {
         Wire aWire = TestShapes.Frozen(ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0)));
-        var aFix = new ShapeFix_Shape(aWire);
+        var aFix = new ShapeFixer(aWire);
         aFix.Perform();
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), aWire.TShape()));
     }
@@ -107,7 +111,7 @@ public class ShapeFix_ShapeTests
     public void FreeWireModeOff_LeavesTheWire()
     {
         Wire aWire = GapSquare();
-        var aFix = new ShapeFix_Shape(aWire);
+        var aFix = new ShapeFixer(aWire);
         aFix.FixFreeWireMode() = 0;
         aFix.FixSameParameterMode() = 0;
         Assert.False(aFix.Perform());
@@ -121,7 +125,7 @@ public class ShapeFix_ShapeTests
         Edge anEdge = TestShapes.Edge(new Point3D(50, 0, 0), new Point3D(60, 0, 0));
         Compound aComp = TestShapes.Frozen(ShapeFixPolylines.Compound(aWire, anEdge));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aComp);
-        var aFix = new ShapeFix_Shape(aComp);
+        var aFix = new ShapeFixer(aComp);
         aFix.SetPrecision(1e-3);
         aFix.SetMaxTolerance(1e-3);
         Assert.True(aFix.Perform());
@@ -138,14 +142,14 @@ public class ShapeFix_ShapeTests
     {
         Shell aShell = ShapeFixShapes.Shell(ShapeFixShapes.BoxFaces(), -1, true);
         Solid aSolid = TestShapes.Frozen(ShapeFixShapes.Solid(aShell.Reversed()));
-        var aFix = new ShapeFix_Shape(aSolid);
+        var aFix = new ShapeFixer(aSolid);
         aFix.FixShellTool().FixFaceMode() = 0;
         aFix.Perform();
-        Assert.True(aFix.Status(ShapeExtend_DONE4));
+        Assert.True(aFix.Status(ExtendStatus.DONE4));
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aFix.Shape()), 9);
 
         Solid aBox = TestShapes.Frozen(TestShapes.Box(10, 10, 10));
-        var aFix2 = new ShapeFix_Shape(aBox);
+        var aFix2 = new ShapeFixer(aBox);
         aFix2.FixShellTool().FixFaceMode() = 0;
         aFix2.Perform();
         Assert.True(ReferenceEquals(aFix2.Shape().TShape(), aBox.TShape()));
@@ -155,7 +159,7 @@ public class ShapeFix_ShapeTests
     public void RepeatedPerform_TakesTheEarlyReturn()
     {
         Wire aWire = GapSquare();
-        var aFix = new ShapeFix_Shape(aWire);
+        var aFix = new ShapeFixer(aWire);
         aFix.SetPrecision(1e-3);
         aFix.SetMaxTolerance(1e-3);
         Assert.True(aFix.Perform());
@@ -169,9 +173,9 @@ public class ShapeFix_ShapeTests
     public void Edge_VertexTolerance_Status()
     {
         Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
-        var aFix = new ShapeFix_Shape(anEdge);
+        var aFix = new ShapeFixer(anEdge);
         aFix.Perform();
-        Assert.False(aFix.Status(ShapeExtend_DONE1));
+        Assert.False(aFix.Status(ExtendStatus.DONE1));
         Assert.True(ReferenceEquals(aFix.Shape().TShape(), anEdge.TShape()));
     }
 
@@ -182,7 +186,7 @@ public class ShapeFix_ShapeTests
                                                                            new Point3D(10, 5e-8, 0), new Point3D(10, 10, 0),
                                                                            new Point3D(0, 10, 0)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        Shape aResult = ShapeFix.RemoveSmallEdges(aWire, 1e-3, out ShapeBuild_ReShape aContext);
+        Shape aResult = ShapeFixFixer.RemoveSmallEdges(aWire, 1e-3, out ReShapeBuilder aContext);
         aSnap.AssertUnchanged(aWire);
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(4, ShapeFixPolylines.NbEdges(aResult));
@@ -207,10 +211,10 @@ public class ShapeFix_WireframeTests
         Wire aWire = TestShapes.Frozen(ShapeFixPolylines.WithGaps(1e-2, new Point3D(0, 0, 0), new Point3D(10, 0, 0),
                                                                           new Point3D(10, 10, 0), new Point3D(0, 10, 0)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        var aFix = new ShapeFix_Wireframe(aWire);
+        var aFix = new WireframeFixer(aWire);
         aFix.SetPrecision(1e-3);
         Assert.True(aFix.FixWireGaps());
-        Assert.True(aFix.StatusWireGaps(ShapeExtend_DONE1));
+        Assert.True(aFix.StatusWireGaps(ExtendStatus.DONE1));
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
         Assert.True(aResult.TShape()!.IsFrozen);
@@ -222,10 +226,10 @@ public class ShapeFix_WireframeTests
     {
         Wire aWire = Step();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        var aFix = new ShapeFix_Wireframe(aWire);
+        var aFix = new WireframeFixer(aWire);
         aFix.SetPrecision(1e-3);
         Assert.True(aFix.FixSmallEdges());
-        Assert.True(aFix.StatusSmallEdges(ShapeExtend_DONE1));
+        Assert.True(aFix.StatusSmallEdges(ExtendStatus.DONE1));
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
         Assert.Equal(5, ShapeFixPolylines.NbEdges(aResult));
@@ -236,18 +240,18 @@ public class ShapeFix_WireframeTests
     [Fact]
     public void FixSmallEdges_LimitAngle_KeepsIt_DropModeDropsIt()
     {
-        var aFix = new ShapeFix_Wireframe(Step());
+        var aFix = new WireframeFixer(Step());
         aFix.SetPrecision(1e-3);
         aFix.SetLimitAngle(0.5);
         Assert.False(aFix.FixSmallEdges());
         Assert.Equal(6, ShapeFixPolylines.NbEdges(aFix.Shape()));
 
-        var aFix2 = new ShapeFix_Wireframe(Step());
+        var aFix2 = new WireframeFixer(Step());
         aFix2.SetPrecision(1e-3);
         aFix2.SetLimitAngle(0.5);
         aFix2.ModeDropSmallEdges() = true;
         Assert.True(aFix2.FixSmallEdges());
-        Assert.True(aFix2.StatusSmallEdges(ShapeExtend_DONE3));
+        Assert.True(aFix2.StatusSmallEdges(ExtendStatus.DONE3));
         Assert.Equal(5, ShapeFixPolylines.NbEdges(aFix2.Shape()));
     }
 
@@ -256,9 +260,9 @@ public class ShapeFix_WireframeTests
     {
         Wire aWire = ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 1e-4, 0),
                                                        new Point3D(10, 10, 0), new Point3D(0, 10, 0));
-        Face aFace = new BRepBuilderAPI_MakeFace(aWire, true).Face();
+        Face aFace = new MakeFace(aWire, true).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
-        var aFix = new ShapeFix_Wireframe(aFace);
+        var aFix = new WireframeFixer(aFace);
         aFix.SetPrecision(1e-3);
         Assert.True(aFix.FixSmallEdges());
         Shape aResult = aFix.Shape();
@@ -275,7 +279,7 @@ public class ShapeFix_WireframeTests
             ShapeFixPolylines.Polyline(true, new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0),
                                        new Point3D(5, 10, 0), new Point3D(5, 10.0001, 0), new Point3D(0, 10.0001, 0)),
             ShapeFixPolylines.Polyline(true, new Point3D(20, 0, 0), new Point3D(30, 0, 0), new Point3D(30, 10, 0))));
-        var aFix = new ShapeFix_Wireframe(aComp);
+        var aFix = new WireframeFixer(aComp);
         aFix.SetPrecision(1e-3);
         // OCCT: on a compound the status is the last child's (each child's fix clears it), here the second wire's
         Assert.False(aFix.FixSmallEdges());

@@ -4,11 +4,12 @@
 
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2d2TanOn
+public sealed partial class AnalyticCirc2d2TanOn
 {
     //=========================================================================
     //   Creation of a circle passing by : 2 points Point1 and Point2.        +
@@ -23,51 +24,51 @@ public sealed partial class GccAna_Circ2d2TanOn
     //=========================================================================
 
     /// <summary>The circles through two points with their centre on a line.</summary>
-    public GccAna_Circ2d2TanOn(in Point2D Point1,
-                               in Point2D Point2,
-                               in Line2D OnLine,
-                               double Tolerance)
+    public AnalyticCirc2d2TanOn(in Point2D point1,
+                               in Point2D point2,
+                               in Line2D onLine,
+                               double tolerance)
         : this(2)
     {
-        TheSame1.Init(0);
-        TheSame2.Init(0);
-        WellDone = false;
-        NbrSol = 0;
+        _theSame1.Init(0);
+        _theSame2.Init(0);
+        _wellDone = false;
+        _nbrSol = 0;
 
         Direction2D dirx = new(Direction2D.D.X);
-        double dist = Point1.Distance(Point2);
-        if (dist < Math.Abs(Tolerance))
+        double dist = point1.Distance(point2);
+        if (dist < Math.Abs(tolerance))
         {
-            WellDone = true;
+            _wellDone = true;
         }
         else
         {
-            Line2D L1 = new(new Point2D((Point1.XY() + Point2.XY()) / 2.0),
-                              new Direction2D(Point1.Y() - Point2.Y(), Point2.X() - Point1.X()));
-            AnalyticIntersection Intp = new(L1, OnLine);
-            if (Intp.IsDone)
+            Line2D l1 = new(new Point2D((point1.XY() + point2.XY()) / 2.0),
+                              new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+            AnalyticIntersection intp = new(l1, onLine);
+            if (intp.IsDone)
             {
-                if (!Intp.IsEmpty)
+                if (!intp.IsEmpty)
                 {
-                    for (int i = 1; i <= Intp.PointCount; i++)
+                    for (int i = 1; i <= intp.PointCount; i++)
                     {
-                        NbrSol++;
-                        Axis2D axe = new(Intp.Point(i).Value(), dirx);
-                        cirsol[NbrSol] = new Circle2D(axe, Point1.Distance(Intp.Point(i).Value()));
+                        _nbrSol++;
+                        Axis2D axe = new(intp.Point(i).Value(), dirx);
+                        _cirsol[_nbrSol] = new Circle2D(axe, point1.Distance(intp.Point(i).Value()));
                         //        ====================================================================
-                        qualifier1[NbrSol] = GccEnt_noqualifier;
-                        qualifier2[NbrSol] = GccEnt_noqualifier;
-                        pnttg1sol[NbrSol] = Point1;
-                        pnttg2sol[NbrSol] = Point2;
-                        pntcen[NbrSol] = cirsol[NbrSol].Location();
-                        pararg1[NbrSol] = 0.0;
-                        pararg2[NbrSol] = 0.0;
-                        par1sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                        par2sol[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg2sol[NbrSol]);
-                        parcen3[NbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen[NbrSol]);
+                        _qualifier1[_nbrSol] = Qualifier.Noqualifier;
+                        _qualifier2[_nbrSol] = Qualifier.Noqualifier;
+                        _pnttg1sol[_nbrSol] = point1;
+                        _pnttg2sol[_nbrSol] = point2;
+                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                        _pararg1[_nbrSol] = 0.0;
+                        _pararg2[_nbrSol] = 0.0;
+                        _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+                        _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
+                        _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen[_nbrSol]);
                     }
                 }
-                WellDone = true;
+                _wellDone = true;
             }
         }
     }

@@ -1,11 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.IntRes2d_Position;
-using static Occt.IntRes2d_Situation;
-using static Occt.IntRes2d_TypeTrans;
+using static Kerf.Engine.Intersection.TwoD.Position2D;
+using static Kerf.Engine.Intersection.TwoD.Situation;
+using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,7 +17,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class IntImpParGenTests
 {
     /// <summary>The circle of center <c>C</c> and radius <c>R</c>, as an implicit curve (counterclockwise from +X).</summary>
-    public readonly struct TestCircleTool(Point2D C, double R) : IIntImpParGen_ImpTool
+    public readonly struct TestCircleTool(Point2D C, double R) : global::Kerf.Engine.Intersection.Implicit.IImpTool
     {
         public Point2D Value(double U) => new(C.X() + R * Math.Cos(U), C.Y() + R * Math.Sin(U));
 
@@ -53,8 +54,8 @@ public class IntImpParGenTests
         public Point2D Value(double t) => new(P0.X() + t * V.X(), P0.Y() + t * V.Y());
     }
 
-    public readonly struct TestSegmentTool : IIntImpParGen_ParTool<TestSegment>,
-                                             IIntImpParGen_ProjectOnPCurveTool<TestSegment>
+    public readonly struct TestSegmentTool : global::Kerf.Engine.Intersection.Implicit.IParTool<TestSegment>,
+                                             global::Kerf.Engine.Intersection.Implicit.IProjectOnPCurveTool<TestSegment>
     {
         public static double EpsX(in TestSegment C) => 1.0e-10;
 
@@ -79,7 +80,7 @@ public class IntImpParGenTests
 
     /// <summary>The signed distance to the circle of the point at a parameter on the segment.</summary>
     public sealed class TestImpParTool : FunctionWithDerivative,
-                                         IIntImpParGen_MyImpParTool<TestImpParTool, TestCircleTool, TestSegment>
+                                         global::Kerf.Engine.Intersection.Implicit.IMyImpParTool<TestImpParTool, TestCircleTool, TestSegment>
     {
         private readonly TestCircleTool myImp;
         private readonly TestSegment myPar;
@@ -113,10 +114,10 @@ public class IntImpParGenTests
     }
 
     private sealed class CircleSegmentIntersector
-        : IntImpParGen_Intersector<TestCircleTool, TestSegment, TestSegmentTool, TestSegmentTool, TestImpParTool>
+        : global::Kerf.Engine.Intersection.Implicit.Intersector<TestCircleTool, TestSegment, TestSegmentTool, TestSegmentTool, TestImpParTool>
     {
-        public CircleSegmentIntersector(in TestCircleTool Imp, in IntRes2d_Domain D1, in TestSegment Par,
-                                        in IntRes2d_Domain D2, double TolConf, double Tol)
+        public CircleSegmentIntersector(in TestCircleTool Imp, in TwoDDomain D1, in TestSegment Par,
+                                        in TwoDDomain D2, double TolConf, double Tol)
             : base(Imp, D1, Par, D2, TolConf, Tol)
         {
         }
@@ -124,30 +125,30 @@ public class IntImpParGenTests
 
     private static readonly TestCircleTool theUnitCircle = new(new Point2D(0, 0), 1);
 
-    private static IntRes2d_Domain CircleDomain()
-        => new IntRes2d_Domain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(2 * Math.PI), 2 * Math.PI, 1e-7)
+    private static TwoDDomain CircleDomain()
+        => new TwoDDomain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(2 * Math.PI), 2 * Math.PI, 1e-7)
             .WithEquivalentParameters(0, 2 * Math.PI);
 
-    private static IntRes2d_Domain SegmentDomain(in TestSegment S, double t0 = 0, double t1 = 1)
+    private static TwoDDomain SegmentDomain(in TestSegment S, double t0 = 0, double t1 = 1)
         => new(S.Value(t0), t0, 1e-7, S.Value(t1), t1, 1e-7);
 
     [Fact]
     public void DetermineTransition_Crossing()
     {
         Vector2D aTan1 = new(0, 1), aTan2 = new(1, 0);
-        IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(-1, 0), ref aT1,
-                                         IntRes2d_Head, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Transition aT1 = new(), aT2 = new();
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Middle, ref aTan1, new Vector2D(-1, 0), ref aT1,
+                                         Position2D.Head, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         // Tan1 ^ Tan2 < 0: the first curve goes in, the second out
-        Assert.Equal(IntRes2d_In, aT1.TransitionType());
-        Assert.Equal(IntRes2d_Out, aT2.TransitionType());
-        Assert.Equal(IntRes2d_Head, aT2.PositionOnCurve());
-        Assert.False(aT1.IsTangent());
+        Assert.Equal(TypeTrans.In, aT1.TransitionType());
+        Assert.Equal(TypeTrans.Out, aT2.TransitionType());
+        Assert.Equal(Position2D.Head, aT2.PositionOnCurve());
+        Assert.False(aT1.IsTangent);
 
-        Assert.True(IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan2, ref aT1, IntRes2d_End, ref aTan1,
+        Assert.True(global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Middle, ref aTan2, ref aT1, Position2D.End, ref aTan1,
                                                      ref aT2, 1e-7));
-        Assert.Equal(IntRes2d_Out, aT1.TransitionType());
-        Assert.Equal(IntRes2d_In, aT2.TransitionType());
+        Assert.Equal(TypeTrans.Out, aT1.TransitionType());
+        Assert.Equal(TypeTrans.In, aT2.TransitionType());
     }
 
     [Fact]
@@ -155,24 +156,24 @@ public class IntImpParGenTests
     {
         // A circle of curvature 1 touching a straight line from above: tangents (1,0), the circle's normal (0,1).
         Vector2D aTan1 = new(1, 0), aTan2 = new(1, 0);
-        IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(0, 1), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
-        Assert.Equal(IntRes2d_Touch, aT1.TransitionType());
-        Assert.Equal(IntRes2d_Inside, aT1.Situation());
-        Assert.Equal(IntRes2d_Outside, aT2.Situation());
-        Assert.False(aT1.IsOpposite());
+        Transition aT1 = new(), aT2 = new();
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Middle, ref aTan1, new Vector2D(0, 1), ref aT1,
+                                         Position2D.Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Assert.Equal(TypeTrans.Touch, aT1.TransitionType());
+        Assert.Equal(Situation.Inside, aT1.Situation());
+        Assert.Equal(Situation.Outside, aT2.Situation());
+        Assert.False(aT1.IsOpposite);
 
         // both straight and tangent: touch, situation unknown; the opposite flag from the tangents
         aTan1 = new Vector2D(1, 0);
         aTan2 = new Vector2D(-2, 0);
-        IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, new Vector2D(0, 0), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
-        Assert.Equal(IntRes2d_Unknown, aT1.Situation());
-        Assert.True(aT2.IsOpposite());
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Middle, ref aTan1, new Vector2D(0, 0), ref aT1,
+                                         Position2D.Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Assert.Equal(Situation.Unknown, aT1.Situation());
+        Assert.True(aT2.IsOpposite);
 
         // the tangent-only form gives up on tangent curves
-        Assert.False(IntImpParGen.DetermineTransition(IntRes2d_Middle, ref aTan1, ref aT1, IntRes2d_Middle,
+        Assert.False(global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Middle, ref aTan1, ref aT1, Position2D.Middle,
                                                       ref aTan2, ref aT2, 1e-7));
     }
 
@@ -180,42 +181,42 @@ public class IntImpParGenTests
     public void DetermineTransition_ZeroTangentUsesNormalOrIsUndecided()
     {
         Vector2D aTan1 = new(0, 0), aTan2 = new(1, 0);
-        IntRes2d_Transition aT1 = new(), aT2 = new();
-        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new Vector2D(0, 1), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Transition aT1 = new(), aT2 = new();
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Head, ref aTan1, new Vector2D(0, 1), ref aT1,
+                                         Position2D.Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
         Assert.Equal(new Vector2D(0, 1), aTan1); // the normal replaced the null tangent
-        Assert.Equal(IntRes2d_In, aT1.TransitionType()); // (0,1) ^ (1,0) < 0
+        Assert.Equal(TypeTrans.In, aT1.TransitionType()); // (0,1) ^ (1,0) < 0
 
         aTan1 = new Vector2D(0, 0);
-        IntImpParGen.DetermineTransition(IntRes2d_Head, ref aTan1, new Vector2D(0, 0), ref aT1,
-                                         IntRes2d_Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
-        Assert.Equal(IntRes2d_Undecided, aT1.TransitionType());
-        Assert.Equal(IntRes2d_Undecided, aT2.TransitionType());
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(Position2D.Head, ref aTan1, new Vector2D(0, 0), ref aT1,
+                                         Position2D.Middle, ref aTan2, new Vector2D(0, 0), ref aT2, 1e-7);
+        Assert.Equal(TypeTrans.Undecided, aT1.TransitionType());
+        Assert.Equal(TypeTrans.Undecided, aT2.TransitionType());
     }
 
     [Fact]
     public void DeterminePositionAndNormalize()
     {
-        var aDom = new IntRes2d_Domain(new Point2D(0, 0), 0, 0.1, new Point2D(1, 0), 1, 0.1);
-        IntImpParGen.DeterminePosition(out IntRes2d_Position aPos, aDom, new Point2D(0.05, 0), 0.05);
-        Assert.Equal(IntRes2d_Head, aPos);
-        IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(0.5, 0), 0.5);
-        Assert.Equal(IntRes2d_Middle, aPos);
-        IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(1, 0.05), 1);
-        Assert.Equal(IntRes2d_End, aPos);
+        var aDom = new TwoDDomain(new Point2D(0, 0), 0, 0.1, new Point2D(1, 0), 1, 0.1);
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out Position2D aPos, aDom, new Point2D(0.05, 0), 0.05);
+        Assert.Equal(Position2D.Head, aPos);
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(0.5, 0), 0.5);
+        Assert.Equal(Position2D.Middle, aPos);
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out aPos, aDom, new Point2D(1, 0.05), 1);
+        Assert.Equal(Position2D.End, aPos);
         // within both tolerances: the closer bound in parameter
-        var aShort = new IntRes2d_Domain(new Point2D(0, 0), 0, 1, new Point2D(0.5, 0), 0.5, 1);
-        IntImpParGen.DeterminePosition(out aPos, aShort, new Point2D(0.3, 0), 0.3);
-        Assert.Equal(IntRes2d_End, aPos);
+        var aShort = new TwoDDomain(new Point2D(0, 0), 0, 1, new Point2D(0.5, 0), 0.5, 1);
+        global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out aPos, aShort, new Point2D(0.3, 0), 0.3);
+        Assert.Equal(Position2D.End, aPos);
 
-        IntRes2d_Domain aClosed = CircleDomain();
-        Assert.Equal(1.0, IntImpParGen.NormalizeOnDomain(1.0 + 4 * Math.PI, aClosed), 12);
-        Assert.Equal(2 * Math.PI - 1, IntImpParGen.NormalizeOnDomain(-1.0, aClosed), 12);
-        Assert.Equal(-1.0, IntImpParGen.NormalizeOnDomain(-1.0, aDom));
+        TwoDDomain aClosed = CircleDomain();
+        Assert.Equal(1.0, global::Kerf.Engine.Intersection.Implicit.IntImpParGen.NormalizeOnDomain(1.0 + 4 * Math.PI, aClosed), 12);
+        Assert.Equal(2 * Math.PI - 1, global::Kerf.Engine.Intersection.Implicit.IntImpParGen.NormalizeOnDomain(-1.0, aClosed), 12);
+        Assert.Equal(-1.0, global::Kerf.Engine.Intersection.Implicit.IntImpParGen.NormalizeOnDomain(-1.0, aDom));
 
         // IntImpParGen_Tool's variant moves up then down by one period only
-        Assert.Equal(2 * Math.PI - 1, IntImpParGen_Tool.NormalizeOnDomain(-1.0, aClosed), 12);
-        Assert.Equal(1.0 + 2 * Math.PI, IntImpParGen_Tool.NormalizeOnDomain(1.0 + 4 * Math.PI, aClosed), 12);
+        Assert.Equal(2 * Math.PI - 1, global::Kerf.Engine.Intersection.Implicit.ImplicitTool.NormalizeOnDomain(-1.0, aClosed), 12);
+        Assert.Equal(1.0 + 2 * Math.PI, global::Kerf.Engine.Intersection.Implicit.ImplicitTool.NormalizeOnDomain(1.0 + 4 * Math.PI, aClosed), 12);
     }
 
     [Fact]
@@ -224,25 +225,25 @@ public class IntImpParGenTests
         var aSeg = new TestSegment(new Point2D(-2, 0.5), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
 
-        Assert.True(anInter.IsDone());
-        Assert.Equal(0, anInter.NbSegments());
-        Assert.Equal(2, anInter.NbPoints());
+        Assert.True(anInter.IsDone);
+        Assert.Equal(0, anInter.SegmentCount);
+        Assert.Equal(2, anInter.PointCount);
         double aX = Math.Sqrt(0.75);
 
         // sorted by the parameter on the circle (the first curve): pi/6 (where the segment leaves) then 5pi/6
-        IntRes2d_IntersectionPoint aExit = anInter.Point(1);
+        IntersectionPoint2D aExit = anInter.Point(1);
         Assert.Equal(Math.PI / 6, aExit.ParamOnFirst(), 9);
         Assert.Equal((2 + aX) / 4, aExit.ParamOnSecond(), 9);
         Assert.Equal(aX, aExit.Value().X(), 9);
         Assert.Equal(0.5, aExit.Value().Y(), 9);
-        Assert.Equal(IntRes2d_In, aExit.TransitionOfFirst().TransitionType());
-        Assert.Equal(IntRes2d_Out, aExit.TransitionOfSecond().TransitionType());
-        Assert.Equal(IntRes2d_Middle, aExit.TransitionOfSecond().PositionOnCurve());
+        Assert.Equal(TypeTrans.In, aExit.TransitionOfFirst().TransitionType());
+        Assert.Equal(TypeTrans.Out, aExit.TransitionOfSecond().TransitionType());
+        Assert.Equal(Position2D.Middle, aExit.TransitionOfSecond().PositionOnCurve());
 
-        IntRes2d_IntersectionPoint anEntry = anInter.Point(2);
+        IntersectionPoint2D anEntry = anInter.Point(2);
         Assert.Equal(5 * Math.PI / 6, anEntry.ParamOnFirst(), 9);
         Assert.Equal((2 - aX) / 4, anEntry.ParamOnSecond(), 9);
-        Assert.Equal(IntRes2d_In, anEntry.TransitionOfSecond().TransitionType());
+        Assert.Equal(TypeTrans.In, anEntry.TransitionOfSecond().TransitionType());
     }
 
     [Fact]
@@ -254,7 +255,7 @@ public class IntImpParGenTests
         aReversed.SetReversedParameters(true);
         aReversed.Perform(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
 
-        Assert.Equal(2, aReversed.NbPoints());
+        Assert.Equal(2, aReversed.PointCount);
         // the points are now sorted by the segment's parameter, which is reported first
         Assert.Equal(anInter.Point(2).ParamOnSecond(), aReversed.Point(1).ParamOnFirst());
         Assert.Equal(anInter.Point(2).TransitionOfSecond(), aReversed.Point(1).TransitionOfFirst());
@@ -266,12 +267,12 @@ public class IntImpParGenTests
         // The segment ends at (0, 1), on the circle: one point, at the End of the segment.
         var aSeg = new TestSegment(new Point2D(0, 0), new Vector2D(0, 1));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
-        Assert.True(anInter.IsDone());
-        Assert.Equal(1, anInter.NbPoints());
+        Assert.True(anInter.IsDone);
+        Assert.Equal(1, anInter.PointCount);
         Assert.Equal(Math.PI / 2, anInter.Point(1).ParamOnFirst(), 9);
         Assert.Equal(1.0, anInter.Point(1).ParamOnSecond(), 9);
-        Assert.Equal(IntRes2d_End, anInter.Point(1).TransitionOfSecond().PositionOnCurve());
-        Assert.Equal(IntRes2d_Out, anInter.Point(1).TransitionOfSecond().TransitionType());
+        Assert.Equal(Position2D.End, anInter.Point(1).TransitionOfSecond().PositionOnCurve());
+        Assert.Equal(TypeTrans.Out, anInter.Point(1).TransitionOfSecond().TransitionType());
     }
 
     [Fact]
@@ -279,23 +280,23 @@ public class IntImpParGenTests
     {
         var aSeg = new TestSegment(new Point2D(-2, 3), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
-        Assert.True(anInter.IsDone());
-        Assert.True(anInter.IsEmpty());
+        Assert.True(anInter.IsDone);
+        Assert.True(anInter.IsEmpty);
 
         // the parametric curve's domain must be bounded on both sides
         Assert.ThrowsAny<ConstructionErrorException>(
-            () => new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, new IntRes2d_Domain(), 1e-9, 1e-9));
+            () => new CircleSegmentIntersector(theUnitCircle, CircleDomain(), aSeg, new TwoDDomain(), 1e-9, 1e-9));
     }
 
     [Fact]
     public void Intersector_ArcDomainRestrictsPoints()
     {
         // An open arc of the circle from 0 to pi/2: only the exit point at pi/6 is on it.
-        var anArc = new IntRes2d_Domain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(Math.PI / 2),
+        var anArc = new TwoDDomain(theUnitCircle.Value(0), 0, 1e-7, theUnitCircle.Value(Math.PI / 2),
                                         Math.PI / 2, 1e-7);
         var aSeg = new TestSegment(new Point2D(-2, 0.5), new Vector2D(4, 0));
         var anInter = new CircleSegmentIntersector(theUnitCircle, anArc, aSeg, SegmentDomain(aSeg), 1e-9, 1e-9);
-        Assert.Equal(1, anInter.NbPoints());
+        Assert.Equal(1, anInter.PointCount);
         Assert.Equal(Math.PI / 6, anInter.Point(1).ParamOnFirst(), 9);
     }
 }

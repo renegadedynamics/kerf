@@ -2,80 +2,85 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>The edge/edge intersection solver of the pave filler's parallel loops.</summary>
 /// <remarks>
 /// OCCT derives it from IntTools_EdgeEdge and BOPAlgo_ParallelAlgo. C# has one base class: it derives from
-/// IntTools_EdgeEdge, implements <see cref="BOPTools_Parallel.ISolver"/>, and holds what BOPAlgo_ParallelAlgo gives it
-/// (the progress range, and a <see cref="BOPAlgo_Options"/> for the report) as members. <see cref="Perform"/> hides the
-/// base's: it moves the edges near the origin when they are far from it (<see cref="BOPAlgo_Tools.TrsfToPoint(in Box, in Box, ref Transform3D)"/>),
+/// IntTools_EdgeEdge, implements <see cref="BooleanParallel.ISolver"/>, and holds what BOPAlgo_ParallelAlgo gives it
+/// (the progress range, and a <see cref="Options"/> for the report) as members. <see cref="Perform"/> hides the
+/// base's: it moves the edges near the origin when they are far from it (<see cref="BuilderTools.TrsfToPoint(in Box, in Box, ref Transform3D)"/>),
 /// intersects them, restores them and sets the restored edges in the common parts.
 /// </remarks>
-internal sealed class BOPAlgo_EdgeEdge : IntTools_EdgeEdge, BOPTools_Parallel.ISolver
+internal sealed class EdgeEdgeJob : EdgeEdge, BooleanParallel.ISolver
 {
-    private readonly BOPAlgo_Options myOptions = new();
-    private ProgressRange myProgressRange;
-    private BOPDS_PaveBlock? myPB1;
-    private BOPDS_PaveBlock? myPB2;
-    private Box myBox1 = new();
-    private Box myBox2 = new();
+    private readonly Options _options = new();
+    private ProgressRange _progressRange;
+    private PaveBlock? _pb1;
+    private PaveBlock? _pb2;
+    private Box _box1 = new();
+    private Box _box2 = new();
 
     //
-    public void SetPaveBlock1(BOPDS_PaveBlock aPB) => myPB1 = aPB;
+    public void SetPaveBlock1(PaveBlock aPB) => _pb1 = aPB;
 
     //
-    public BOPDS_PaveBlock PaveBlock1() => myPB1!;
+    public PaveBlock PaveBlock1() => _pb1!;
 
     //
-    public void SetPaveBlock2(BOPDS_PaveBlock aPB) => myPB2 = aPB;
+    public void SetPaveBlock2(PaveBlock aPB) => _pb2 = aPB;
 
     //
-    public BOPDS_PaveBlock PaveBlock2() => myPB2!;
+    public PaveBlock PaveBlock2() => _pb2!;
 
     //
-    public void SetBoxes(in Box theBox1, in Box theBox2)
+    public void SetBoxes(in Box box1, in Box box2)
     {
-        myBox1 = theBox1;
-        myBox2 = theBox2;
+        _box1 = box1;
+        _box2 = box2;
     }
 
     // BOPAlgo_ParallelAlgo's members
-    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange range) => _progressRange = range;
 
-    public bool HasErrors() => myOptions.HasErrors();
+    public bool HasErrors => _options.HasErrors;
 
     //
     public new void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (myOptions.UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (_options.UserBreak(ps))
         {
             return;
         }
-        Edge anE1 = myEdge1, anE2 = myEdge2;
+        Edge e1 = _edge1, e2 = _edge2;
         bool hasTrsf = false;
         try
         {
-            Transform3D aTrsf = new();
-            if (BOPAlgo_Tools.TrsfToPoint(myBox1, myBox2, ref aTrsf))
+            Transform3D trsf = new();
+            if (BuilderTools.TrsfToPoint(_box1, _box2, ref trsf))
             {
                 // Shapes are located far from origin, move the shapes to the origin,
                 // to increase the accuracy of intersection.
-                Placement aLoc = new(aTrsf);
-                myEdge1.Move(aLoc);
-                myEdge2.Move(aLoc);
+                Placement loc = new(trsf);
+                _edge1.Move(loc);
+                _edge2.Move(loc);
                 hasTrsf = true;
             }
 
@@ -83,249 +88,249 @@ internal sealed class BOPAlgo_EdgeEdge : IntTools_EdgeEdge, BOPTools_Parallel.IS
         }
         catch (FailureException)
         {
-            myOptions.AddError(new BOPAlgo_AlertIntersectionFailed());
+            _options.AddError(new AlertIntersectionFailed());
         }
 
-        myEdge1 = anE1;
-        myEdge2 = anE2;
+        _edge1 = e1;
+        _edge2 = e2;
         if (hasTrsf)
         {
-            for (int i = 1; i <= myCommonParts.Length(); ++i)
+            for (int i = 1; i <= _commonParts.Length(); ++i)
             {
-                IntTools_CommonPrt aCPart = myCommonParts[i];
-                aCPart.SetEdge1(myEdge1);
-                aCPart.SetEdge2(myEdge2);
+                CommonPrt cPart = _commonParts[i];
+                cPart.SetEdge1(_edge1);
+                cPart.SetEdge2(_edge2);
             }
         }
     }
 }
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>The edge/edge interferences: new vertices and common blocks.</summary>
-    protected virtual void PerformEE(ProgressRange theRange)
+    protected virtual void PerformEE(ProgressRange range)
     {
         FillShrunkData(ShapeType.Edge, ShapeType.Edge);
         //
-        myIterator!.Initialize(ShapeType.Edge, ShapeType.Edge);
-        int iSize = myIterator.ExpectedLength();
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
+        _iterator!.Initialize(ShapeType.Edge, ShapeType.Edge);
+        int iSize = _iterator.ExpectedLength();
+        using var psOuter = new ProgressScope(range, null, 10);
         if (iSize == 0)
         {
             return;
         }
         //
         bool bExpressCompute, bIsPBSplittable1, bIsPBSplittable2;
-        int i, iX, nE1, nE2, aNbCPrts, k, aNbEdgeEdge;
+        int i, iX, nE1, nE2, nbCPrts, k, nbEdgeEdge;
         int nV11, nV12, nV21, nV22;
         // OCCT: uninitialised, written by GetPBBox before they are read
-        double aTS11 = 0, aTS12 = 0, aTS21 = 0, aTS22 = 0, aT11 = 0, aT12 = 0, aT21 = 0, aT22 = 0;
-        ShapeType aType;
+        double ts11 = 0, ts12 = 0, ts21 = 0, ts22 = 0, t11 = 0, t12 = 0, t21 = 0, t22 = 0;
+        ShapeType type;
         // The fixed arrays of the TopAbs_VERTEX case (bIsOnPave[4], nV[4], nVS[2])
         Span<bool> bIsOnPave = stackalloc bool[4];
         Span<int> nV = stackalloc int[4];
         Span<int> nVS = stackalloc int[2];
-        NCollection_List<BOPDS_PaveBlock>.Iterator aIt1 = new(), aIt2 = new();
-        NCollection_DynamicArray<BOPAlgo_EdgeEdge> aVEdgeEdge = new();
+        NCollection_List<PaveBlock>.Iterator it1 = new(), it2 = new();
+        NCollection_DynamicArray<EdgeEdgeJob> vEdgeEdge = new();
         // keep modified edges for further update
-        NCollection_IntMap aMEdges = new();
+        NCollection_IntMap mEdges = new();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aMPBLPB = new();
-        NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> aMVCPB = new(ShapeHasher.Instance);
-        NCollection_DataMap<BOPDS_PaveBlock, Box> aDMPBBox = new();
+        NCollection_IndexedDataMap<PaveBlock, NCollection_List<PaveBlock>> mpblpb = new();
+        NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
+        NCollection_DataMap<PaveBlock, Box> dmpbBox = new();
         //
-        NCollection_DynamicArray<BOPDS_InterfEE> aEEs = myDS!.InterfEE();
+        NCollection_DynamicArray<InterfEE> eEs = _ds!.InterfEE();
         //
-        for (; myIterator.More(); myIterator.Next())
+        for (; _iterator.More(); _iterator.Next())
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            myIterator.Value(out nE1, out nE2);
+            _iterator.Value(out nE1, out nE2);
             //
-            BOPDS_ShapeInfo aSIE1 = myDS.ShapeInfo(nE1);
-            if (aSIE1.HasFlag())
+            ShapeInfo sie1 = _ds.ShapeInfo(nE1);
+            if (sie1.HasFlag())
             {
                 continue;
             }
-            BOPDS_ShapeInfo aSIE2 = myDS.ShapeInfo(nE2);
-            if (aSIE2.HasFlag())
-            {
-                continue;
-            }
-            //
-            NCollection_List<BOPDS_PaveBlock> aLPB1 = myDS.ChangePaveBlocks(nE1);
-            if (aLPB1.IsEmpty())
+            ShapeInfo sie2 = _ds.ShapeInfo(nE2);
+            if (sie2.HasFlag())
             {
                 continue;
             }
             //
-            NCollection_List<BOPDS_PaveBlock> aLPB2 = myDS.ChangePaveBlocks(nE2);
-            if (aLPB2.IsEmpty())
+            NCollection_List<PaveBlock> lpb1 = _ds.ChangePaveBlocks(nE1);
+            if (lpb1.IsEmpty())
             {
                 continue;
             }
             //
-            Edge aE1 = ShapeCasts.Edge(aSIE1.Shape());
-            Edge aE2 = ShapeCasts.Edge(aSIE2.Shape());
-            //
-            aIt1.Initialize(aLPB1);
-            for (; aIt1.More(); aIt1.Next())
+            NCollection_List<PaveBlock> lpb2 = _ds.ChangePaveBlocks(nE2);
+            if (lpb2.IsEmpty())
             {
-                if (UserBreak(aPSOuter))
+                continue;
+            }
+            //
+            Edge e1 = ShapeCasts.Edge(sie1.Shape());
+            Edge e2 = ShapeCasts.Edge(sie2.Shape());
+            //
+            it1.Initialize(lpb1);
+            for (; it1.More(); it1.Next())
+            {
+                if (UserBreak(psOuter))
                 {
                     return;
                 }
-                Box aBB1 = new();
+                Box bb1 = new();
                 //
-                BOPDS_PaveBlock aPB1 = aIt1.Value();
+                PaveBlock pb1 = it1.Value();
                 //
-                if (!GetPBBox(aE1, aPB1, aDMPBBox, ref aT11, ref aT12, ref aTS11, ref aTS12, ref aBB1))
+                if (!GetPBBox(e1, pb1, dmpbBox, ref t11, ref t12, ref ts11, ref ts12, ref bb1))
                 {
                     continue;
                 }
                 //
-                aPB1.Indices(out nV11, out nV12);
+                pb1.Indices(out nV11, out nV12);
                 //
-                aIt2.Initialize(aLPB2);
-                for (; aIt2.More(); aIt2.Next())
+                it2.Initialize(lpb2);
+                for (; it2.More(); it2.Next())
                 {
-                    Box aBB2 = new();
+                    Box bb2 = new();
                     //
-                    BOPDS_PaveBlock aPB2 = aIt2.Value();
+                    PaveBlock pb2 = it2.Value();
                     //
-                    if (!GetPBBox(aE2, aPB2, aDMPBBox, ref aT21, ref aT22, ref aTS21, ref aTS22, ref aBB2))
+                    if (!GetPBBox(e2, pb2, dmpbBox, ref t21, ref t22, ref ts21, ref ts22, ref bb2))
                     {
                         continue;
                     }
                     //
-                    if (aBB1.IsOut(aBB2))
+                    if (bb1.IsOut(bb2))
                     {
                         continue;
                     }
                     //
-                    aPB2.Indices(out nV21, out nV22);
+                    pb2.Indices(out nV21, out nV22);
                     //
                     bExpressCompute = ((nV11 == nV21 && nV12 == nV22) || (nV12 == nV21 && nV11 == nV22));
                     //
-                    BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge.Append(new BOPAlgo_EdgeEdge());
+                    EdgeEdgeJob edgeEdge = vEdgeEdge.Append(new EdgeEdgeJob());
                     //
-                    anEdgeEdge.UseQuickCoincidenceCheck(bExpressCompute);
+                    edgeEdge.UseQuickCoincidenceCheck(bExpressCompute);
                     //
-                    anEdgeEdge.SetPaveBlock1(aPB1);
-                    anEdgeEdge.SetPaveBlock2(aPB2);
+                    edgeEdge.SetPaveBlock1(pb1);
+                    edgeEdge.SetPaveBlock2(pb2);
                     //
-                    anEdgeEdge.SetEdge1(aE1, aT11, aT12);
-                    anEdgeEdge.SetEdge2(aE2, aT21, aT22);
-                    anEdgeEdge.SetBoxes(aBB1, aBB2);
-                    anEdgeEdge.SetFuzzyValue(myFuzzyValue);
+                    edgeEdge.SetEdge1(e1, t11, t12);
+                    edgeEdge.SetEdge2(e2, t21, t22);
+                    edgeEdge.SetBoxes(bb1, bb2);
+                    edgeEdge.SetFuzzyValue(_fuzzyValue);
                 } // for (; aIt2.More(); aIt2.Next()) {
             } // for (; aIt1.More(); aIt1.Next()) {
         } // for (; myIterator->More(); myIterator->Next()) {
         //
-        aNbEdgeEdge = aVEdgeEdge.Length();
+        nbEdgeEdge = vEdgeEdge.Length();
 
-        using (var aPS = new ProgressScope(aPSOuter.Next(9), "Performing Edge-edge intersection", aNbEdgeEdge))
+        using (var ps = new ProgressScope(psOuter.Next(9), "Performing Edge-edge intersection", nbEdgeEdge))
         {
-            for (k = 0; k < aNbEdgeEdge; k++)
+            for (k = 0; k < nbEdgeEdge; k++)
             {
-                BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge.ChangeValue(k);
-                anEdgeEdge.SetProgressRange(aPS.Next());
+                EdgeEdgeJob edgeEdge = vEdgeEdge.ChangeValue(k);
+                edgeEdge.SetProgressRange(ps.Next());
             }
             //======================================================
-            BOPTools_Parallel.Perform(myRunParallel, aVEdgeEdge);
+            BooleanParallel.Perform(_runParallel, vEdgeEdge);
             //======================================================
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
         //
-        for (k = 0; k < aNbEdgeEdge; ++k)
+        for (k = 0; k < nbEdgeEdge; ++k)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            Box aBB1 = new(), aBB2 = new();
+            Box bb1 = new(), bb2 = new();
             //
-            BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge[k];
-            if (!anEdgeEdge.IsDone() || anEdgeEdge.HasErrors())
+            EdgeEdgeJob edgeEdge = vEdgeEdge[k];
+            if (!edgeEdge.IsDone || edgeEdge.HasErrors)
             {
                 // Warn about failed intersection of sub-shapes
-                Shape aE1f = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
-                Shape aE2f = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
-                AddIntersectionFailedWarning(aE1f, aE2f);
+                Shape e1f = _ds.Shape(edgeEdge.PaveBlock1().OriginalEdge());
+                Shape e2f = _ds.Shape(edgeEdge.PaveBlock2().OriginalEdge());
+                AddIntersectionFailedWarning(e1f, e2f);
                 continue;
             }
             //
-            NCollection_Sequence<IntTools_CommonPrt> aCPrts = anEdgeEdge.CommonParts();
-            aNbCPrts = aCPrts.Length();
-            if (aNbCPrts == 0)
+            NCollection_Sequence<CommonPrt> cPrts = edgeEdge.CommonParts();
+            nbCPrts = cPrts.Length();
+            if (nbCPrts == 0)
             {
                 continue;
             }
             //--------------------------------------------
-            BOPDS_PaveBlock aPB1 = anEdgeEdge.PaveBlock1();
-            nE1 = aPB1.OriginalEdge();
-            aPB1.Range(out aT11, out aT12);
-            if (!aPB1.HasShrunkData())
+            PaveBlock pb1 = edgeEdge.PaveBlock1();
+            nE1 = pb1.OriginalEdge();
+            pb1.Range(out t11, out t12);
+            if (!pb1.HasShrunkData)
             {
-                aTS11 = aT11;
-                aTS12 = aT12;
+                ts11 = t11;
+                ts12 = t12;
                 bIsPBSplittable1 = false;
             }
             else
             {
-                aPB1.ShrunkData(out aTS11, out aTS12, out aBB1, out bIsPBSplittable1);
+                pb1.ShrunkData(out ts11, out ts12, out bb1, out bIsPBSplittable1);
             }
             //
-            BOPDS_PaveBlock aPB2 = anEdgeEdge.PaveBlock2();
-            nE2 = aPB2.OriginalEdge();
-            aPB2.Range(out aT21, out aT22);
-            if (!aPB2.HasShrunkData())
+            PaveBlock pb2 = edgeEdge.PaveBlock2();
+            nE2 = pb2.OriginalEdge();
+            pb2.Range(out t21, out t22);
+            if (!pb2.HasShrunkData)
             {
-                aTS21 = aT21;
-                aTS22 = aT22;
+                ts21 = t21;
+                ts22 = t22;
                 bIsPBSplittable2 = false;
             }
             else
             {
-                aPB2.ShrunkData(out aTS21, out aTS22, out aBB2, out bIsPBSplittable2);
+                pb2.ShrunkData(out ts21, out ts22, out bb2, out bIsPBSplittable2);
             }
             //
             //--------------------------------------------
-            IntTools_Range aR11 = new(aT11, aTS11), aR12 = new(aTS12, aT12), aR21 = new(aT21, aTS21), aR22 = new(aTS22, aT22);
+            ParameterRange r11 = new(t11, ts11), r12 = new(ts12, t12), r21 = new(t21, ts21), r22 = new(ts22, t22);
             //
             bool bAnalytical = false;
             {
-                Edge aOE1 = ShapeCasts.Edge(myDS.Shape(nE1));
-                Edge aOE2 = ShapeCasts.Edge(myDS.Shape(nE2));
+                Edge oe1 = ShapeCasts.Edge(_ds.Shape(nE1));
+                Edge oe2 = ShapeCasts.Edge(_ds.Shape(nE2));
                 //
-                EdgeCurveAdaptor aBAC1 = new(aOE1), aBAC2 = new(aOE2);
+                EdgeCurveAdaptor bac1 = new(oe1), bac2 = new(oe2);
                 //
-                CurveKind aType1 = aBAC1.GetType();
-                CurveKind aType2 = aBAC2.GetType();
+                CurveKind type1 = bac1.GetType();
+                CurveKind type2 = bac2.GetType();
                 //
-                bAnalytical = (aType1 == Line && aType2 == Circle)
-                              || (aType1 == Circle && aType2 == Line);
+                bAnalytical = (type1 == Line && type2 == Circle)
+                              || (type1 == Circle && type2 == Line);
             }
             //
-            for (i = 1; i <= aNbCPrts; ++i)
+            for (i = 1; i <= nbCPrts; ++i)
             {
-                if (UserBreak(aPSOuter))
+                if (UserBreak(psOuter))
                 {
                     return;
                 }
-                IntTools_CommonPrt aCPart = aCPrts[i];
+                CommonPrt cPart = cPrts[i];
                 //
-                Edge aE1 = aCPart.Edge1();
-                Edge aE2 = aCPart.Edge2();
+                Edge e1 = cPart.Edge1();
+                Edge e2 = cPart.Edge2();
                 //
-                aType = aCPart.Type();
-                switch (aType)
+                type = cPart.Type();
+                switch (type)
                 {
                     case ShapeType.Vertex:
                     {
@@ -335,27 +340,27 @@ public partial class BOPAlgo_PaveFiller
                         }
                         //
                         int j;
-                        double aT1, aT2, aTol;
-                        Vertex aVnew;
-                        IntTools_Range aCR1, aCR2;
+                        double t1, t2, tol;
+                        Vertex vnew;
+                        ParameterRange cr1, cr2;
                         //
-                        IntTools_Tools.VertexParameters(aCPart, out aT1, out aT2);
-                        aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
-                        aCR1 = aCPart.Range1();
-                        aCR2 = aCPart.Ranges2().Value(1);
+                        IntersectionTools.VertexParameters(cPart, out t1, out t2);
+                        tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+                        cr1 = cPart.Range1();
+                        cr2 = cPart.Ranges2().Value(1);
                         //
                         // decide to keep the pave or not
-                        bIsOnPave[0] = IntTools_Tools.IsOnPave1(aT1, aR11, aTol)
-                                       || IntTools_Tools.IsOnPave1(aR11.First(), aCR1, aTol);
-                        bIsOnPave[1] = IntTools_Tools.IsOnPave1(aT1, aR12, aTol)
-                                       || IntTools_Tools.IsOnPave1(aR12.Last(), aCR1, aTol);
-                        bIsOnPave[2] = IntTools_Tools.IsOnPave1(aT2, aR21, aTol)
-                                       || IntTools_Tools.IsOnPave1(aR21.First(), aCR2, aTol);
-                        bIsOnPave[3] = IntTools_Tools.IsOnPave1(aT2, aR22, aTol)
-                                       || IntTools_Tools.IsOnPave1(aR22.Last(), aCR2, aTol);
+                        bIsOnPave[0] = IntersectionTools.IsOnPave1(t1, r11, tol)
+                                       || IntersectionTools.IsOnPave1(r11.First(), cr1, tol);
+                        bIsOnPave[1] = IntersectionTools.IsOnPave1(t1, r12, tol)
+                                       || IntersectionTools.IsOnPave1(r12.Last(), cr1, tol);
+                        bIsOnPave[2] = IntersectionTools.IsOnPave1(t2, r21, tol)
+                                       || IntersectionTools.IsOnPave1(r21.First(), cr2, tol);
+                        bIsOnPave[3] = IntersectionTools.IsOnPave1(t2, r22, tol)
+                                       || IntersectionTools.IsOnPave1(r22.Last(), cr2, tol);
                         //
-                        aPB1.Indices(out nV[0], out nV[1]);
-                        aPB2.Indices(out nV[2], out nV[3]);
+                        pb1.Indices(out nV[0], out nV[1]);
+                        pb2.Indices(out nV[2], out nV[3]);
                         //
                         if ((bIsOnPave[0] && bIsOnPave[2]) || (bIsOnPave[0] && bIsOnPave[3])
                             || (bIsOnPave[1] && bIsOnPave[2]) || (bIsOnPave[1] && bIsOnPave[3]))
@@ -368,8 +373,8 @@ public partial class BOPAlgo_PaveFiller
                         {
                             if (bIsOnPave[j])
                             {
-                                BOPDS_PaveBlock aPB = (j < 2) ? aPB2 : aPB1;
-                                bIsOnPave[j] = ForceInterfVE(nV[j], aPB, aMEdges);
+                                PaveBlock pb = (j < 2) ? pb2 : pb1;
+                                bIsOnPave[j] = ForceInterfVE(nV[j], pb, mEdges);
                                 if (bIsOnPave[j])
                                 {
                                     isVExists = true;
@@ -377,8 +382,8 @@ public partial class BOPAlgo_PaveFiller
                             }
                         }
 
-                        BOPTools_AlgoTools.MakeNewVertex(aE1, aT1, aE2, aT2, out aVnew);
-                        Point3D aPnew = Tool.Pnt(aVnew);
+                        AlgoTools.MakeNewVertex(e1, t1, e2, t2, out vnew);
+                        Point3D pnew = Tool.Pnt(vnew);
 
                         if (isVExists)
                         {
@@ -388,9 +393,9 @@ public partial class BOPAlgo_PaveFiller
                             // If it is a touching point, do nothing.
                             // If it is an intersection point, update the existing vertex to cover the
                             // intersection point.
-                            Point3D aPOnE1 = new EdgeCurveAdaptor(aE1).Value(aT1);
-                            Point3D aPOnE2 = new EdgeCurveAdaptor(aE2).Value(aT2);
-                            if (aPOnE1.Distance(aPOnE2) > global::Kerf.Engine.Foundation.Precision.Intersection())
+                            Point3D pOnE1 = new EdgeCurveAdaptor(e1).Value(t1);
+                            Point3D pOnE2 = new EdgeCurveAdaptor(e2).Value(t2);
+                            if (pOnE1.Distance(pOnE2) > global::Kerf.Engine.Foundation.Precision.Intersection())
                             {
                                 // No intersection point
                                 continue;
@@ -402,47 +407,47 @@ public partial class BOPAlgo_PaveFiller
                             {
                                 if (bIsOnPave[j])
                                 {
-                                    Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV[j]));
-                                    Point3D aP = Tool.Pnt(aV);
-                                    double aDistPP = aP.Distance(aPnew);
+                                    Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
+                                    Point3D p = Tool.Pnt(v);
+                                    double distPP = p.Distance(pnew);
                                     // Just update the vertex
-                                    UpdateVertex(nV[j], aDistPP);
-                                    myVertsToAvoidExtension.Add(nV[j]);
+                                    UpdateVertex(nV[j], distPP);
+                                    _vertsToAvoidExtension.Add(nV[j]);
                                 }
                             }
                         }
 
-                        double aTolVnew = Tool.Tolerance(aVnew);
+                        double tolVnew = Tool.Tolerance(vnew);
                         if (bAnalytical)
                         {
                             // increase tolerance for Line/Circle intersection, but do not update
                             // the vertex till its intersection with some other shape
-                            double aTolMin = (new EdgeCurveAdaptor(aE1).GetType() == Line)
-                                ? (aCR1.Last() - aCR1.First()) / 2.0
-                                : (aCR2.Last() - aCR2.First()) / 2.0;
-                            if (aTolMin > aTolVnew)
+                            double tolMin = (new EdgeCurveAdaptor(e1).GetType() == Line)
+                                ? (cr1.Last() - cr1.First()) / 2.0
+                                : (cr2.Last() - cr2.First()) / 2.0;
+                            if (tolMin > tolVnew)
                             {
-                                aTolVnew = aTolMin;
+                                tolVnew = tolMin;
                             }
                         }
                         // <-LXBR
                         {
                             int iFound;
-                            double aTolVx, aD2, aDT2;
-                            NCollection_IntMap aMV = new();
-                            Point3D aPx;
+                            double tolVx, d2, dt2;
+                            NCollection_IntMap mv = new();
+                            Point3D px;
                             //
                             iFound = 0;
                             j = -1;
-                            aMV.Add(nV[0]);
-                            aMV.Add(nV[1]);
+                            mv.Add(nV[0]);
+                            mv.Add(nV[1]);
                             //
-                            if (aMV.Contains(nV[2]))
+                            if (mv.Contains(nV[2]))
                             {
                                 ++j;
                                 nVS[j] = nV[2];
                             }
-                            if (aMV.Contains(nV[3]))
+                            if (mv.Contains(nV[3]))
                             {
                                 ++j;
                                 nVS[j] = nV[3];
@@ -450,14 +455,14 @@ public partial class BOPAlgo_PaveFiller
                             //
                             for (int k1 = 0; k1 <= j; ++k1)
                             {
-                                Vertex aVx = ShapeCasts.Vertex(myDS.Shape(nVS[k1]));
-                                aTolVx = Tool.Tolerance(aVx);
-                                aPx = Tool.Pnt(aVx);
-                                aD2 = aPnew.SquareDistance(aPx);
+                                Vertex vx = ShapeCasts.Vertex(_ds.Shape(nVS[k1]));
+                                tolVx = Tool.Tolerance(vx);
+                                px = Tool.Pnt(vx);
+                                d2 = pnew.SquareDistance(px);
                                 //
-                                aDT2 = 100.0 * (aTolVnew + aTolVx) * (aTolVnew + aTolVx);
+                                dt2 = 100.0 * (tolVnew + tolVx) * (tolVnew + tolVx);
                                 //
-                                if (aD2 < aDT2)
+                                if (d2 < dt2)
                                 {
                                     iFound = 1;
                                     break;
@@ -471,44 +476,44 @@ public partial class BOPAlgo_PaveFiller
                         }
                         //
                         // 1
-                        BOPDS_InterfEE aEE = aEEs.Append(new BOPDS_InterfEE());
-                        iX = aEEs.Length() - 1;
-                        aEE.SetIndices(nE1, nE2);
-                        aEE.SetCommonPart(aCPart);
+                        InterfEE ee = eEs.Append(new InterfEE());
+                        iX = eEs.Length() - 1;
+                        ee.SetIndices(nE1, nE2);
+                        ee.SetCommonPart(cPart);
                         // 2
-                        myDS.AddInterf(nE1, nE2);
+                        _ds.AddInterf(nE1, nE2);
                         //
-                        BOPDS_CoupleOfPaveBlocks aCPB = new();
+                        CoupleOfPaveBlocks cpb = new();
                         //
-                        aCPB.SetPaveBlocks(aPB1, aPB2);
-                        aCPB.SetIndexInterf(iX);
-                        aCPB.SetTolerance(aTolVnew);
-                        aMVCPB.Add(aVnew, aCPB);
+                        cpb.SetPaveBlocks(pb1, pb2);
+                        cpb.SetIndexInterf(iX);
+                        cpb.SetTolerance(tolVnew);
+                        mvcpb.Add(vnew, cpb);
                     } // case TopAbs_VERTEX:
                         break;
                     //
                     case ShapeType.Edge:
                     {
-                        if (aNbCPrts > 1)
+                        if (nbCPrts > 1)
                         {
                             break;
                         }
                         //
                         bool bHasSameBounds;
-                        bHasSameBounds = aPB1.HasSameBounds(aPB2);
+                        bHasSameBounds = pb1.HasSameBounds(pb2);
                         if (!bHasSameBounds)
                         {
                             break;
                         }
                         // 1
-                        BOPDS_InterfEE aEE = aEEs.Append(new BOPDS_InterfEE());
-                        iX = aEEs.Length() - 1;
-                        aEE.SetIndices(nE1, nE2);
-                        aEE.SetCommonPart(aCPart);
+                        InterfEE ee = eEs.Append(new InterfEE());
+                        iX = eEs.Length() - 1;
+                        ee.SetIndices(nE1, nE2);
+                        ee.SetCommonPart(cPart);
                         // 2
-                        myDS.AddInterf(nE1, nE2);
+                        _ds.AddInterf(nE1, nE2);
                         //
-                        BOPAlgo_Tools.FillMap(aPB1, aPB2, aMPBLPB);
+                        BuilderTools.FillMap(pb1, pb2, mpblpb);
                     } // case TopAbs_EDGE
                         break;
                     default:
@@ -520,276 +525,276 @@ public partial class BOPAlgo_PaveFiller
         //=========================================
         // post treatment
         //=========================================
-        BOPAlgo_Tools.PerformCommonBlocks(aMPBLPB, myDS, myContext);
+        BuilderTools.PerformCommonBlocks(mpblpb, _ds, _context);
         // Update vertices of common blocks with real CB tolerances
         UpdateVerticesOfCB();
 
-        PerformNewVertices(aMVCPB, aPSOuter.Next());
-        if (HasErrors())
+        PerformNewVertices(mvcpb, psOuter.Next());
+        if (HasErrors)
         {
             return;
         }
         //
-        if (aMEdges.Extent() != 0)
+        if (mEdges.Extent() != 0)
         {
-            int aNbV = aMVCPB.Extent();
-            for (i = 1; i <= aNbV; ++i)
+            int nbV = mvcpb.Extent();
+            for (i = 1; i <= nbV; ++i)
             {
-                BOPDS_CoupleOfPaveBlocks aCPB = aMVCPB.FindFromIndex(i);
-                BOPDS_PaveBlock aPB1 = aCPB.PaveBlock1()!;
-                BOPDS_PaveBlock aPB2 = aCPB.PaveBlock2()!;
+                CoupleOfPaveBlocks cpb = mvcpb.FindFromIndex(i);
+                PaveBlock pb1 = cpb.PaveBlock1()!;
+                PaveBlock pb2 = cpb.PaveBlock2()!;
                 //
-                aMEdges.Remove(aPB1.OriginalEdge());
-                aMEdges.Remove(aPB2.OriginalEdge());
+                mEdges.Remove(pb1.OriginalEdge());
+                mEdges.Remove(pb2.OriginalEdge());
             }
             //
-            SplitPaveBlocks(aMEdges, false);
+            SplitPaveBlocks(mEdges, false);
         }
         //
         //-----------------------------------------------------scope t
-        aMPBLPB.Clear();
-        aMVCPB.Clear();
+        mpblpb.Clear();
+        mvcpb.Clear();
     }
 
     /// <summary>
     /// Fuses the new vertices of the edge/edge (or edge/face) interferences, adds them to the DS and splits the pave
     /// blocks by them.
     /// </summary>
-    protected void PerformNewVertices(NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
-                                      ProgressRange theRange, bool theIsEEIntersection = true)
+    protected void PerformNewVertices(NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb,
+                                      ProgressRange range, bool isEEIntersection = true)
     {
-        int aNbV = theMVCPB.Extent();
-        if (aNbV == 0)
+        int nbV = mvcpb.Extent();
+        if (nbV == 0)
         {
             return;
         }
         //
-        double aTolAdd = myFuzzyValue / 2.0;
+        double tolAdd = _fuzzyValue / 2.0;
         //
         // 1. Fuse the new vertices
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aImages = new(ShapeHasher.Instance);
-        TreatNewVertices(theMVCPB, aImages);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> images = new(ShapeHasher.Instance);
+        TreatNewVertices(mvcpb, images);
         //
         // 2. Add new vertices to myDS and connect indices to CPB structure
-        NCollection_DynamicArray<BOPDS_InterfEE> aEEs = myDS!.InterfEE();
-        NCollection_DynamicArray<BOPDS_InterfEF> aEFs = myDS.InterfEF();
+        NCollection_DynamicArray<InterfEE> eEs = _ds!.InterfEE();
+        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
         //
         // 4. Compute Extra Paves and split Pave blocks by the Extra paves
-        using var aPS = new ProgressScope(theRange, null, 2);
-        int i, aNb = aImages.Extent();
-        using (var aPS1 = new ProgressScope(aPS.Next(), null, aNb + aNbV))
+        using var ps = new ProgressScope(range, null, 2);
+        int i, nb = images.Extent();
+        using (var ps1 = new ProgressScope(ps.Next(), null, nb + nbV))
         {
-            for (i = 1; i <= aNb; ++i, aPS1.Next())
+            for (i = 1; i <= nb; ++i, ps1.Next())
             {
-                if (UserBreak(aPS))
+                if (UserBreak(ps))
                 {
                     return;
                 }
-                Vertex aV = ShapeCasts.Vertex(aImages.FindKey(i));
-                NCollection_List<Shape> aLVSD = aImages.FindFromIndex(i);
+                Vertex v = ShapeCasts.Vertex(images.FindKey(i));
+                NCollection_List<Shape> lvsd = images.FindFromIndex(i);
                 //
-                BOPDS_ShapeInfo aSI = new();
-                aSI.SetShapeType(ShapeType.Vertex);
-                aSI.SetShape(aV);
-                int iV = myDS.Append(aSI);
+                ShapeInfo si = new();
+                si.SetShapeType(ShapeType.Vertex);
+                si.SetShape(v);
+                int iV = _ds.Append(si);
                 //
-                BOPDS_ShapeInfo aSIDS = myDS.ChangeShapeInfo(iV);
-                ref Box aBox = ref aSIDS.ChangeBox();
-                aBox.Add(Tool.Pnt(aV));
-                aBox.SetGap(Tool.Tolerance(aV) + aTolAdd);
+                ShapeInfo sids = _ds.ChangeShapeInfo(iV);
+                ref Box box = ref sids.ChangeBox();
+                box.Add(Tool.Pnt(v));
+                box.SetGap(Tool.Tolerance(v) + tolAdd);
                 //
-                NCollection_List<Shape>.Iterator aItLS = new(aLVSD);
-                for (; aItLS.More(); aItLS.Next())
+                NCollection_List<Shape>.Iterator itLS = new(lvsd);
+                for (; itLS.More(); itLS.Next())
                 {
-                    Shape aVx = aItLS.Value();
-                    ref BOPDS_CoupleOfPaveBlocks aCPB = ref theMVCPB.ChangeFromKey(aVx);
-                    aCPB.SetIndex(iV);
+                    Shape vx = itLS.Value();
+                    ref CoupleOfPaveBlocks cpb = ref mvcpb.ChangeFromKey(vx);
+                    cpb.SetIndex(iV);
                     // update interference
-                    int iX = aCPB.IndexInterf();
-                    BOPDS_Interf aInt = theIsEEIntersection ? aEEs[iX] : aEFs[iX];
+                    int iX = cpb.IndexInterf();
+                    Interf aInt = isEEIntersection ? eEs[iX] : eFs[iX];
                     aInt.SetIndexNew(iV);
                 }
             }
             //
             // 3. Map PaveBlock/ListOfVertices to add to this PaveBlock ->aMPBLI
-            NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<int>> aMPBLI = new();
-            for (i = 1; i <= aNbV; ++i, aPS1.Next())
+            NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> mpbli = new();
+            for (i = 1; i <= nbV; ++i, ps1.Next())
             {
-                if (UserBreak(aPS))
+                if (UserBreak(ps))
                 {
                     return;
                 }
-                BOPDS_CoupleOfPaveBlocks aCPB = theMVCPB.FindFromIndex(i);
-                int iV = aCPB.Index();
+                CoupleOfPaveBlocks cpb = mvcpb.FindFromIndex(i);
+                int iV = cpb.Index();
                 //
-                BOPDS_PaveBlock aPB1 = aCPB.PaveBlock1()!;
-                BOPDS_PaveBlock aPB2 = aCPB.PaveBlock2()!;
-                BOPDS_PaveBlock[] aPB = [aPB1, aPB2];
+                PaveBlock pb1 = cpb.PaveBlock1()!;
+                PaveBlock pb2 = cpb.PaveBlock2()!;
+                PaveBlock[] pb = [pb1, pb2];
                 for (int j = 0; j < 2; ++j)
                 {
-                    int anIndex = aMPBLI.FindIndex(aPB[j]);
-                    NCollection_List<int> pLI = anIndex > 0 ? aMPBLI[anIndex] : aMPBLI[aMPBLI.Add(aPB[j], new NCollection_List<int>())];
+                    int index = mpbli.FindIndex(pb[j]);
+                    NCollection_List<int> pLI = index > 0 ? mpbli[index] : mpbli[mpbli.Add(pb[j], new NCollection_List<int>())];
                     pLI.Append(iV);
                     //
-                    if (aPB[0] == aPB[1])
+                    if (pb[0] == pb[1])
                     {
                         break;
                     }
                 }
             }
             // 4. Compute Extra Paves and split Pave blocks by the Extra paves
-            IntersectVE(aMPBLI, aPS.Next(), false);
+            IntersectVE(mpbli, ps.Next(), false);
         }
     }
 
     /// <summary>Fuses the coinciding new vertices: each chain of intersecting vertices becomes one vertex.</summary>
-    protected void TreatNewVertices(NCollection_IndexedDataMap<Shape, BOPDS_CoupleOfPaveBlocks> theMVCPB,
-                                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theImages)
+    protected void TreatNewVertices(NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb,
+                                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> images)
     {
         //
         // Prepare for intersection
-        NCollection_IndexedDataMap<Shape, double> aVerts = new(ShapeHasher.Instance);
-        int i, aNbV = theMVCPB.Extent();
-        for (i = 1; i <= aNbV; ++i)
+        NCollection_IndexedDataMap<Shape, double> verts = new(ShapeHasher.Instance);
+        int i, nbV = mvcpb.Extent();
+        for (i = 1; i <= nbV; ++i)
         {
-            Shape aV = theMVCPB.FindKey(i);
-            double aTol = theMVCPB.FindFromIndex(i).Tolerance();
-            aVerts.Add(aV, aTol);
+            Shape v = mvcpb.FindKey(i);
+            double tol = mvcpb.FindFromIndex(i).Tolerance();
+            verts.Add(v, tol);
         }
         //
         // Perform intersection
-        NCollection_List<NCollection_List<Shape>> aChains = new();
-        BOPAlgo_Tools.IntersectVertices(aVerts, myFuzzyValue, aChains);
+        NCollection_List<NCollection_List<Shape>> chains = new();
+        BuilderTools.IntersectVertices(verts, _fuzzyValue, chains);
         //
         // Treat the results - make new vertices for each chain
-        NCollection_List<NCollection_List<Shape>>.Iterator aItC = new(aChains);
-        for (; aItC.More(); aItC.Next())
+        NCollection_List<NCollection_List<Shape>>.Iterator itC = new(chains);
+        for (; itC.More(); itC.Next())
         {
-            NCollection_List<Shape> aLVSD = aItC.Value();
+            NCollection_List<Shape> lvsd = itC.Value();
             //
-            Vertex aVNew = new();
-            BOPTools_AlgoTools.MakeVertex(aLVSD, ref aVNew);
-            theImages.Add(aVNew, aLVSD);
+            Vertex vNew = new();
+            AlgoTools.MakeVertex(lvsd, ref vNew);
+            images.Add(vNew, lvsd);
         }
     }
 
     /// <summary>Computes the shrunk data (valid range and box) of the pave block.</summary>
-    protected void FillShrunkData(BOPDS_PaveBlock thePB)
+    protected void FillShrunkData(PaveBlock pb)
     {
         // Vertices
-        thePB.Indices(out int nV1, out int nV2);
+        pb.Indices(out int nV1, out int nV2);
 
         if (nV1 < 0 || nV2 < 0)
         {
             return;
         }
 
-        Vertex aV1 = ShapeCasts.Vertex(myDS!.Shape(nV1));
-        Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+        Vertex v1 = ShapeCasts.Vertex(_ds!.Shape(nV1));
+        Vertex v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
         // Get the edge
-        if (!thePB.HasEdge(out int nE))
+        if (!pb.HasEdge(out int nE))
         {
-            nE = thePB.OriginalEdge();
+            nE = pb.OriginalEdge();
             if (nE < 0)
             {
                 return;
             }
         }
 
-        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+        Edge e = ShapeCasts.Edge(_ds.Shape(nE));
         // Range
-        thePB.Range(out double aT1, out double aT2);
+        pb.Range(out double t1, out double t2);
         //
-        IntTools_ShrunkRange aSR = new();
-        aSR.SetContext(myContext);
-        aSR.SetData(aE, aT1, aT2, aV1, aV2);
-        aSR.Perform();
+        EdgeShrunkRange sr = new();
+        sr.SetContext(_context);
+        sr.SetData(e, t1, t2, v1, v2);
+        sr.Perform();
         // Analyze the results of computations
-        AnalyzeShrunkData(thePB, aSR);
+        AnalyzeShrunkData(pb, sr);
     }
 
     /// <summary>Sets the shrunk data of the pave block from the computation, with warnings where it failed.</summary>
-    protected void AnalyzeShrunkData(BOPDS_PaveBlock thePB, IntTools_ShrunkRange theSR)
+    protected void AnalyzeShrunkData(PaveBlock pb, EdgeShrunkRange sr)
     {
         // in case of error treat the warning status
         bool bWholeEdge = false;
-        Shape aWarnShape = new();
+        Shape warnShape = new();
         //
-        if (!theSR.IsDone() || !theSR.IsSplittable())
+        if (!sr.IsDone || !sr.IsSplittable)
         {
-            Tool.Range(theSR.Edge(), out double aEFirst, out double aELast);
-            thePB.Range(out double aPBFirst, out double aPBLast);
-            bWholeEdge = aPBFirst <= aEFirst && aPBLast >= aELast;
-            if (bWholeEdge && thePB.OriginalEdge() >= 0)
+            Tool.Range(sr.Edge(), out double eFirst, out double eLast);
+            pb.Range(out double pbFirst, out double pbLast);
+            bWholeEdge = pbFirst <= eFirst && pbLast >= eLast;
+            if (bWholeEdge && pb.OriginalEdge() >= 0)
             {
-                aWarnShape = theSR.Edge();
+                warnShape = sr.Edge();
             }
             else
             {
-                Shape aV1 = myDS!.Shape(thePB.Pave1().Index());
-                Shape aV2 = myDS.Shape(thePB.Pave2().Index());
-                Compound aWC = new();
-                new BrepBuilder().MakeCompound(ref aWC);
-                aWarnShape = aWC;
-                new BrepBuilder().Add(aWarnShape, theSR.Edge());
-                new BrepBuilder().Add(aWarnShape, aV1);
-                new BrepBuilder().Add(aWarnShape, aV2);
+                Shape v1 = _ds!.Shape(pb.Pave1().Index());
+                Shape v2 = _ds.Shape(pb.Pave2().Index());
+                Compound wc = new();
+                new BrepBuilder().MakeCompound(ref wc);
+                warnShape = wc;
+                new BrepBuilder().Add(warnShape, sr.Edge());
+                new BrepBuilder().Add(warnShape, v1);
+                new BrepBuilder().Add(warnShape, v2);
             }
             //
-            if (!theSR.IsDone())
+            if (!sr.IsDone)
             {
                 if (bWholeEdge)
                 {
-                    AddWarning(new BOPAlgo_AlertTooSmallEdge(aWarnShape));
+                    AddWarning(new AlertTooSmallEdge(warnShape));
                 }
                 else
                 {
-                    AddWarning(new BOPAlgo_AlertBadPositioning(aWarnShape));
+                    AddWarning(new AlertBadPositioning(warnShape));
                 }
-                theSR.ShrunkRange(out double aTS1f, out double aTS2f);
-                thePB.SetShrunkData(aTS1f, aTS2f, new Box(), false);
+                sr.ShrunkRange(out double ts1f, out double ts2f);
+                pb.SetShrunkData(ts1f, ts2f, new Box(), false);
                 return;
             }
             //
             if (bWholeEdge)
             {
-                AddWarning(new BOPAlgo_AlertNotSplittableEdge(aWarnShape));
+                AddWarning(new AlertNotSplittableEdge(warnShape));
             }
             else
             {
-                AddWarning(new BOPAlgo_AlertBadPositioning(aWarnShape));
+                AddWarning(new AlertBadPositioning(warnShape));
             }
         }
         //
-        theSR.ShrunkRange(out double aTS1, out double aTS2);
-        Box aBox = theSR.BndBox();
-        aBox.SetGap(aBox.GetGap() + myFuzzyValue / 2.0);
-        thePB.SetShrunkData(aTS1, aTS2, aBox, theSR.IsSplittable());
+        sr.ShrunkRange(out double ts1, out double ts2);
+        Box box = sr.BndBox();
+        box.SetGap(box.GetGap() + _fuzzyValue / 2.0);
+        pb.SetShrunkData(ts1, ts2, box, sr.IsSplittable);
     }
 
     /// <summary>
     /// Forces the vertex/edge interference of the vertex with the pave block's edge: on success adds the interference
-    /// and the extra pave, and the edge to <paramref name="theMEdges"/>.
+    /// and the extra pave, and the edge to <paramref name="mEdges"/>.
     /// </summary>
-    protected bool ForceInterfVE(int nV, BOPDS_PaveBlock aPB, NCollection_IntMap theMEdges)
+    protected bool ForceInterfVE(int nV, PaveBlock aPB, NCollection_IntMap mEdges)
     {
         int nE, nVx, nVSD = 0, iFlag;
-        double aT = 0.0, aTolVNew = 0.0; // OCCT: uninitialised, read only on success
+        double t = 0.0, tolVNew = 0.0; // OCCT: uninitialised, read only on success
         //
         nE = aPB.OriginalEdge();
         //
-        BOPDS_ShapeInfo aSIE = myDS!.ShapeInfo(nE);
-        if (aSIE.HasSubShape(nV))
+        ShapeInfo sie = _ds!.ShapeInfo(nE);
+        if (sie.HasSubShape(nV))
         {
             return true;
         }
         //
-        if (myDS.HasInterf(nV, nE))
+        if (_ds.HasInterf(nV, nE))
         {
             return true;
         }
         //
-        if (myDS.HasInterfShapeSubShapes(nV, nE))
+        if (_ds.HasInterfShapeSubShapes(nV, nE))
         {
             return true;
         }
@@ -800,52 +805,52 @@ public partial class BOPAlgo_PaveFiller
         }
         //
         nVx = nV;
-        if (myDS.HasShapeSD(nV, ref nVSD))
+        if (_ds.HasShapeSD(nV, ref nVSD))
         {
             nVx = nVSD;
         }
         //
-        Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVx));
-        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+        Vertex v = ShapeCasts.Vertex(_ds.Shape(nVx));
+        Edge e = ShapeCasts.Edge(_ds.Shape(nE));
         //
-        iFlag = myContext!.ComputeVE(aV, aE, ref aT, ref aTolVNew, myFuzzyValue);
+        iFlag = _context!.ComputeVE(v, e, ref t, ref tolVNew, _fuzzyValue);
         if (iFlag == 0 || iFlag == -4)
         {
-            BOPDS_Pave aPave = new();
+            Pave pave = new();
             //
             //
-            NCollection_DynamicArray<BOPDS_InterfVE> aVEs = myDS.InterfVE();
+            NCollection_DynamicArray<InterfVE> vEs = _ds.InterfVE();
             // 1
-            BOPDS_InterfVE aVE = aVEs.Append(new BOPDS_InterfVE());
-            aVE.SetIndices(nV, nE);
-            aVE.SetParameter(aT);
+            InterfVE ve = vEs.Append(new InterfVE());
+            ve.SetIndices(nV, nE);
+            ve.SetParameter(t);
             // 2
-            myDS.AddInterf(nV, nE);
+            _ds.AddInterf(nV, nE);
             //
             // 3 update vertex V/E if necessary
-            nVx = UpdateVertex(nV, aTolVNew);
+            nVx = UpdateVertex(nV, tolVNew);
             // 4
-            if (myDS.IsNewShape(nVx))
+            if (_ds.IsNewShape(nVx))
             {
-                aVE.SetIndexNew(nVx);
+                ve.SetIndexNew(nVx);
             }
             // 5 append ext pave to pave block
-            aPave.SetIndex(nVx);
-            aPave.SetParameter(aT);
-            aPB.AppendExtPave(aPave);
+            pave.SetIndex(nVx);
+            pave.SetParameter(t);
+            aPB.AppendExtPave(pave);
             //
-            theMEdges.Add(nE);
+            mEdges.Add(nE);
             //
             // check for self-interference
-            int iRV = myDS.Rank(nV);
-            if (iRV >= 0 && iRV == myDS.Rank(nE))
+            int iRV = _ds.Rank(nV);
+            if (iRV >= 0 && iRV == _ds.Rank(nE))
             {
                 // add warning status
-                Compound aWC = new();
-                new BrepBuilder().MakeCompound(ref aWC);
-                new BrepBuilder().Add(aWC, aV);
-                new BrepBuilder().Add(aWC, aE);
-                AddWarning(new BOPAlgo_AlertSelfInterferingShape(aWC));
+                Compound wc = new();
+                new BrepBuilder().MakeCompound(ref wc);
+                new BrepBuilder().Add(wc, v);
+                new BrepBuilder().Add(wc, e);
+                AddWarning(new AlertSelfInterferingShape(wc));
             }
             return true;
         }
@@ -854,40 +859,40 @@ public partial class BOPAlgo_PaveFiller
 
     /// <summary>
     /// The range, shrunk range and box of the pave block (its shrunk box, or a box of its range kept in
-    /// <paramref name="thePBBox"/>). False if the range is too small.
+    /// <paramref name="pbBox"/>). False if the range is too small.
     /// </summary>
-    protected bool GetPBBox(in Edge theE, BOPDS_PaveBlock thePB, NCollection_DataMap<BOPDS_PaveBlock, Box> thePBBox,
-                            ref double theFirst, ref double theLast, ref double theSFirst, ref double theSLast, ref Box theBox)
+    protected bool GetPBBox(in Edge e, PaveBlock pb, NCollection_DataMap<PaveBlock, Box> pbBox,
+                            ref double first, ref double last, ref double sFirst, ref double sLast, ref Box box)
     {
-        thePB.Range(out theFirst, out theLast);
+        pb.Range(out first, out last);
         // check the validity of PB's range
-        bool bValid = theLast - theFirst > global::Kerf.Engine.Foundation.Precision.PConfusion();
+        bool bValid = last - first > global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (!bValid)
         {
             return bValid;
         }
         //
         // check shrunk data
-        if (thePB.HasShrunkData())
+        if (pb.HasShrunkData)
         {
-            thePB.ShrunkData(out theSFirst, out theSLast, out theBox, out bool bIsSplittable);
+            pb.ShrunkData(out sFirst, out sLast, out box, out bool bIsSplittable);
             return bValid;
         }
         //
-        theSFirst = theFirst;
-        theSLast = theLast;
+        sFirst = first;
+        sLast = last;
         // check the map
-        if (thePBBox.IsBound(thePB))
+        if (pbBox.IsBound(pb))
         {
-            theBox = thePBBox.Find(thePB);
+            box = pbBox.Find(pb);
         }
         else
         {
             // build bounding box
-            EdgeCurveAdaptor aBAC = new(theE);
-            double aTol = Tool.Tolerance(theE) + global::Kerf.Engine.Foundation.Precision.Confusion();
-            Add3dCurve.Add(aBAC, theSFirst, theSLast, aTol, ref theBox);
-            thePBBox.Bind(thePB, theBox);
+            EdgeCurveAdaptor bac = new(e);
+            double tol = Tool.Tolerance(e) + global::Kerf.Engine.Foundation.Precision.Confusion();
+            Add3dCurve.Add(bac, sFirst, sLast, tol, ref box);
+            pbBox.Bind(pb, box);
         }
         return bValid;
     }
@@ -896,33 +901,33 @@ public partial class BOPAlgo_PaveFiller
     protected void UpdateVerticesOfCB()
     {
         // Fence map to avoid checking same Common block twice
-        NCollection_Map<BOPDS_PaveBlock> aMPBFence = new();
+        NCollection_Map<PaveBlock> mpbFence = new();
 
-        NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS!.ChangePaveBlocksPool();
-        int aNbPBP = aPBP.Length();
-        for (int i = 0; i < aNbPBP; ++i)
+        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Length();
+        for (int i = 0; i < nbPBP; ++i)
         {
-            NCollection_List<BOPDS_PaveBlock> aLPB = aPBP[i];
-            NCollection_List<BOPDS_PaveBlock>.Iterator itPB = new(aLPB);
+            NCollection_List<PaveBlock> lpb = pbp[i];
+            NCollection_List<PaveBlock>.Iterator itPB = new(lpb);
             for (; itPB.More(); itPB.Next())
             {
-                BOPDS_CommonBlock? aCB = myDS.CommonBlock(itPB.Value());
-                if (aCB is null)
+                CommonBlock? cb = _ds.CommonBlock(itPB.Value());
+                if (cb is null)
                 {
                     continue;
                 }
 
-                BOPDS_PaveBlock aPBR = aCB.PaveBlock1();
-                if (!aMPBFence.Add(aPBR))
+                PaveBlock pbr = cb.PaveBlock1();
+                if (!mpbFence.Add(pbr))
                 {
                     continue;
                 }
 
-                double aTolCB = aCB.Tolerance();
-                if (aTolCB > 0.0)
+                double tolCB = cb.Tolerance();
+                if (tolCB > 0.0)
                 {
-                    UpdateVertex(aPBR.Pave1().Index(), aTolCB);
-                    UpdateVertex(aPBR.Pave2().Index(), aTolCB);
+                    UpdateVertex(pbr.Pave1().Index(), tolCB);
+                    UpdateVertex(pbr.Pave2().Index(), tolCB);
                 }
             }
         }
@@ -932,7 +937,7 @@ public partial class BOPAlgo_PaveFiller
     /// Looks for more common blocks among the pave blocks with the same bounding vertices, now that the vertices have
     /// been increased and unified.
     /// </summary>
-    protected void ForceInterfEE(ProgressRange theRange)
+    protected void ForceInterfEE(ProgressRange range)
     {
         // Now that we have vertices increased and unified, try to find additional
         // common blocks among the pairs of edges.
@@ -940,140 +945,140 @@ public partial class BOPAlgo_PaveFiller
         // are interested in common blocks only, thus we need to check only
         // those pairs of pave blocks with the same bounding vertices.
 
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
+        using var psOuter = new ProgressScope(range, null, 10);
         // Initialize pave blocks for all vertices which participated in intersections
-        int aNbS = myDS!.NbSourceShapes();
-        for (int i = 0; i < aNbS; ++i)
+        int nbS = _ds!.SourceShapeCount;
+        for (int i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == ShapeType.Vertex)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() == ShapeType.Vertex)
             {
-                if (myDS.HasInterf(i))
+                if (_ds.HasInterf(i))
                 {
-                    myDS.InitPaveBlocksForVertex(i);
+                    _ds.InitPaveBlocksForVertex(i);
                 }
             }
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
         }
         // Fill the connection map from bounding vertices to pave blocks
         // having those bounding vertices
-        NCollection_IndexedDataMap<BOPDS_Pair, NCollection_List<BOPDS_PaveBlock>> aPBMap = new();
+        NCollection_IndexedDataMap<Pair, NCollection_List<PaveBlock>> pbMap = new();
         // Fence map of pave blocks
-        NCollection_Map<BOPDS_PaveBlock> aMPBFence = new();
+        NCollection_Map<PaveBlock> mpbFence = new();
 
-        for (int i = 0; i < aNbS; ++i)
+        for (int i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Edge)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Edge)
             {
                 // Not an edge
                 continue;
             }
 
-            if (!aSI.HasReference())
+            if (!si.HasReference)
             {
                 // Edge has no pave blocks
                 continue;
             }
 
-            if (aSI.HasFlag())
+            if (si.HasFlag())
             {
                 // Degenerated edge
                 continue;
             }
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<BOPDS_PaveBlock> aLPB = myDS.PaveBlocks(i);
-            NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new(aLPB);
-            for (; aItLPB.More(); aItLPB.Next())
+            NCollection_List<PaveBlock> lpb = _ds.PaveBlocks(i);
+            NCollection_List<PaveBlock>.Iterator itLPB = new(lpb);
+            for (; itLPB.More(); itLPB.Next())
             {
-                BOPDS_PaveBlock aPB = aItLPB.Value();
-                BOPDS_PaveBlock aPBR = myDS.RealPaveBlock(aPB);
-                if (!aMPBFence.Add(aPBR))
+                PaveBlock pb = itLPB.Value();
+                PaveBlock pbr = _ds.RealPaveBlock(pb);
+                if (!mpbFence.Add(pbr))
                 {
                     continue;
                 }
 
                 // Get indices
-                aPBR.Indices(out int nV1, out int nV2);
+                pbr.Indices(out int nV1, out int nV2);
 
                 // Add pave block to a map
-                BOPDS_Pair aPair = new(nV1, nV2);
-                int anIndex = aPBMap.FindIndex(aPair);
-                NCollection_List<BOPDS_PaveBlock> pList = anIndex > 0
-                    ? aPBMap[anIndex]
-                    : aPBMap[aPBMap.Add(aPair, new NCollection_List<BOPDS_PaveBlock>())];
-                pList.Append(aPBR);
+                Pair pair = new(nV1, nV2);
+                int index = pbMap.FindIndex(pair);
+                NCollection_List<PaveBlock> pList = index > 0
+                    ? pbMap[index]
+                    : pbMap[pbMap.Add(pair, new NCollection_List<PaveBlock>())];
+                pList.Append(pbr);
             }
         }
 
-        int aNbPB = aPBMap.Extent();
-        if (aNbPB == 0)
+        int nbPB = pbMap.Extent();
+        if (nbPB == 0)
         {
             return;
         }
 
-        bool bSICheckMode = (myArguments.Extent() == 1);
+        bool bSICheckMode = (_arguments.Extent() == 1);
 
         // Prepare pave blocks with the same vertices for intersection.
-        NCollection_DynamicArray<BOPAlgo_EdgeEdge> aVEdgeEdge = new();
+        NCollection_DynamicArray<EdgeEdgeJob> vEdgeEdge = new();
 
-        for (int i = 1; i <= aNbPB; ++i)
+        for (int i = 1; i <= nbPB; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<BOPDS_PaveBlock> aLPB = aPBMap[i];
-            if (aLPB.Extent() < 2)
+            NCollection_List<PaveBlock> lpb = pbMap[i];
+            if (lpb.Extent() < 2)
             {
                 continue;
             }
 
-            BOPDS_Pair aPair = aPBMap.FindKey(i);
-            aPair.Indices(out int nV1, out int nV2);
+            Pair pair = pbMap.FindKey(i);
+            pair.Indices(out int nV1, out int nV2);
 
-            Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
-            Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+            Vertex v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
+            Vertex v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
 
             // Use the max tolerance of vertices as Fuzzy value for intersection of edges.
             // In the Self-Interference check mode we are interested in real
             // intersections only, so use only the real tolerance of edges,
             // no need to use the extended tolerance.
-            double aTolAdd = (bSICheckMode ? myFuzzyValue
-                                           : 2 * Max(Tool.Tolerance(aV1), Tool.Tolerance(aV2)));
+            double tolAdd = (bSICheckMode ? _fuzzyValue
+                                           : 2 * Max(Tool.Tolerance(v1), Tool.Tolerance(v2)));
 
             // All possible pairs combined from the list <aLPB> should be checked
-            NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB1 = new(aLPB);
-            for (; aItLPB1.More(); aItLPB1.Next())
+            NCollection_List<PaveBlock>.Iterator itLPB1 = new(lpb);
+            for (; itLPB1.More(); itLPB1.Next())
             {
-                BOPDS_PaveBlock aPB1 = aItLPB1.Value();
-                BOPDS_CommonBlock? aCB1 = myDS.CommonBlock(aPB1);
-                int nE1 = aPB1.OriginalEdge();
-                int iR1 = myDS.Rank(nE1);
-                Edge aE1 = ShapeCasts.Edge(myDS.Shape(nE1));
-                aPB1.Range(out double aT11, out double aT12);
-                EdgeCurveAdaptor aBAC1 = new(aE1);
-                aBAC1.D1((aT11 + aT12) * 0.5, out Point3D aPm, out Vector3D aVTgt1);
-                if (aVTgt1.SquareMagnitude() < Constants.Resolution())
+                PaveBlock pb1 = itLPB1.Value();
+                CommonBlock? cb1 = _ds.CommonBlock(pb1);
+                int nE1 = pb1.OriginalEdge();
+                int iR1 = _ds.Rank(nE1);
+                Edge e1 = ShapeCasts.Edge(_ds.Shape(nE1));
+                pb1.Range(out double t11, out double t12);
+                EdgeCurveAdaptor bac1 = new(e1);
+                bac1.D1((t11 + t12) * 0.5, out Point3D pm, out Vector3D vTgt1);
+                if (vTgt1.SquareMagnitude() < Constants.Resolution())
                 {
                     continue;
                 }
-                aVTgt1.Normalize();
+                vTgt1.Normalize();
 
-                NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB2 = new();
-                aItLPB2.Reset(aLPB, aItLPB1.Index);
-                for (aItLPB2.Next(); aItLPB2.More(); aItLPB2.Next())
+                NCollection_List<PaveBlock>.Iterator itLPB2 = new();
+                itLPB2.Reset(lpb, itLPB1.Index);
+                for (itLPB2.Next(); itLPB2.More(); itLPB2.Next())
                 {
-                    BOPDS_PaveBlock aPB2 = aItLPB2.Value();
-                    BOPDS_CommonBlock? aCB2 = myDS.CommonBlock(aPB2);
-                    int nE2 = aPB2.OriginalEdge();
-                    int iR2 = myDS.Rank(nE2);
+                    PaveBlock pb2 = itLPB2.Value();
+                    CommonBlock? cb2 = _ds.CommonBlock(pb2);
+                    int nE2 = pb2.OriginalEdge();
+                    int iR2 = _ds.Rank(nE2);
 
                     // Check that the edges came from different arguments
                     if (iR1 == iR2)
@@ -1081,49 +1086,49 @@ public partial class BOPAlgo_PaveFiller
                         // If the sharing of the vertices is not original, but has been acquired
                         // during the operation, check the coincidence of the edges even if
                         // they came from the same argument
-                        if ((!myDS.IsNewShape(nV1) && (myDS.Rank(nV1) == iR1))
-                            || (!myDS.IsNewShape(nV2) && (myDS.Rank(nV2) == iR2)))
+                        if ((!_ds.IsNewShape(nV1) && (_ds.Rank(nV1) == iR1))
+                            || (!_ds.IsNewShape(nV2) && (_ds.Rank(nV2) == iR2)))
                         {
                             continue;
                         }
                     }
 
                     // Check that the Pave blocks do not form the Common block already
-                    if (aCB1 is not null && aCB2 is not null)
+                    if (cb1 is not null && cb2 is not null)
                     {
-                        if (aCB1 == aCB2)
+                        if (cb1 == cb2)
                         {
                             continue;
                         }
                     }
 
-                    Edge aE2 = ShapeCasts.Edge(myDS.Shape(nE2));
-                    aPB2.Range(out double aT21, out double aT22);
+                    Edge e2 = ShapeCasts.Edge(_ds.Shape(nE2));
+                    pb2.Range(out double t21, out double t22);
 
                     // Check the angle between edges in the middle point.
                     // If the angle is more than 25 degrees, do not use the additional
                     // tolerance, as it may lead to undesired unification of edges
                     bool bUseAddTol = true;
                     {
-                        EdgeCurveAdaptor aBAC2 = new(aE2);
-                        if (aBAC1.GetType() != Line || aBAC2.GetType() != Line)
+                        EdgeCurveAdaptor bac2 = new(e2);
+                        if (bac1.GetType() != Line || bac2.GetType() != Line)
                         {
-                            GeomAPI_ProjectPointOnCurve aProjPC = myContext!.ProjPC(aE2);
-                            aProjPC.Perform(aPm);
-                            if (aProjPC.NbPoints() == 0)
+                            ProjectPointOnCurve projPC = _context!.ProjPC(e2);
+                            projPC.Perform(pm);
+                            if (projPC.NbPoints() == 0)
                             {
                                 continue;
                             }
 
-                            aBAC2.D1(aProjPC.LowerDistanceParameter(), out Point3D aPm2, out Vector3D aVTgt2);
-                            if (aVTgt2.SquareMagnitude() < Constants.Resolution())
+                            bac2.D1(projPC.LowerDistanceParameter(), out Point3D pm2, out Vector3D vTgt2);
+                            if (vTgt2.SquareMagnitude() < Constants.Resolution())
                             {
                                 continue;
                             }
 
                             // The angle should be close to zero
-                            double aCos = aVTgt1.Dot(aVTgt2.Normalized());
-                            if (Math.Abs(aCos) < 0.9063)
+                            double cos = vTgt1.Dot(vTgt2.Normalized());
+                            if (Math.Abs(cos) < 0.9063)
                             {
                                 bUseAddTol = false;
                             }
@@ -1131,121 +1136,121 @@ public partial class BOPAlgo_PaveFiller
                     }
 
                     // Add pair for intersection
-                    BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge.Append(new BOPAlgo_EdgeEdge());
-                    anEdgeEdge.UseQuickCoincidenceCheck(true);
-                    anEdgeEdge.SetPaveBlock1(aPB1);
-                    anEdgeEdge.SetPaveBlock2(aPB2);
-                    anEdgeEdge.SetEdge1(aE1, aT11, aT12);
-                    anEdgeEdge.SetEdge2(aE2, aT21, aT22);
-                    anEdgeEdge.SetBoxes(myDS.ShapeInfo(nE1).Box(), myDS.ShapeInfo(nE2).Box());
+                    EdgeEdgeJob edgeEdge = vEdgeEdge.Append(new EdgeEdgeJob());
+                    edgeEdge.UseQuickCoincidenceCheck(true);
+                    edgeEdge.SetPaveBlock1(pb1);
+                    edgeEdge.SetPaveBlock2(pb2);
+                    edgeEdge.SetEdge1(e1, t11, t12);
+                    edgeEdge.SetEdge2(e2, t21, t22);
+                    edgeEdge.SetBoxes(_ds.ShapeInfo(nE1).Box(), _ds.ShapeInfo(nE2).Box());
                     if (bUseAddTol)
                     {
-                        anEdgeEdge.SetFuzzyValue(myFuzzyValue + aTolAdd);
+                        edgeEdge.SetFuzzyValue(_fuzzyValue + tolAdd);
                     }
                     else
                     {
-                        anEdgeEdge.SetFuzzyValue(myFuzzyValue);
+                        edgeEdge.SetFuzzyValue(_fuzzyValue);
                     }
                 }
             }
         }
 
-        int aNbPairs = aVEdgeEdge.Length();
-        if (aNbPairs == 0)
+        int nbPairs = vEdgeEdge.Length();
+        if (nbPairs == 0)
         {
             return;
         }
 
         // close preparation step
-        aPSOuter.Next(0.7);
+        psOuter.Next(0.7);
 
-        aPBMap.Clear();
-        aMPBFence.Clear();
+        pbMap.Clear();
+        mpbFence.Clear();
 
-        using (var aPS = new ProgressScope(aPSOuter.Next(9), "Checking for coinciding edges", aNbPairs))
+        using (var ps = new ProgressScope(psOuter.Next(9), "Checking for coinciding edges", nbPairs))
         {
-            for (int i = 0; i < aNbPairs; i++)
+            for (int i = 0; i < nbPairs; i++)
             {
-                BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge.ChangeValue(i);
-                anEdgeEdge.SetProgressRange(aPS.Next());
+                EdgeEdgeJob edgeEdge = vEdgeEdge.ChangeValue(i);
+                edgeEdge.SetProgressRange(ps.Next());
             }
 
             // Perform intersection of the found pairs
-            BOPTools_Parallel.Perform(myRunParallel, aVEdgeEdge);
+            BooleanParallel.Perform(_runParallel, vEdgeEdge);
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
-        NCollection_DynamicArray<BOPDS_InterfEE> aEEs = myDS.InterfEE();
+        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
 
         // Analyze the results of intersection looking for TopAbs_EDGE
         // intersection type only.
 
-        NCollection_IndexedDataMap<BOPDS_PaveBlock, NCollection_List<BOPDS_PaveBlock>> aMPBLPB = new();
-        for (int i = 0; i < aNbPairs; ++i)
+        NCollection_IndexedDataMap<PaveBlock, NCollection_List<PaveBlock>> mpblpb = new();
+        for (int i = 0; i < nbPairs; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPAlgo_EdgeEdge anEdgeEdge = aVEdgeEdge[i];
-            if (!anEdgeEdge.IsDone() || anEdgeEdge.HasErrors())
+            EdgeEdgeJob edgeEdge = vEdgeEdge[i];
+            if (!edgeEdge.IsDone || edgeEdge.HasErrors)
             {
                 // Warn about failed intersection of sub-shapes
-                Shape aE1 = myDS.Shape(anEdgeEdge.PaveBlock1().OriginalEdge());
-                Shape aE2 = myDS.Shape(anEdgeEdge.PaveBlock2().OriginalEdge());
-                AddIntersectionFailedWarning(aE1, aE2);
+                Shape e1 = _ds.Shape(edgeEdge.PaveBlock1().OriginalEdge());
+                Shape e2 = _ds.Shape(edgeEdge.PaveBlock2().OriginalEdge());
+                AddIntersectionFailedWarning(e1, e2);
                 continue;
             }
 
-            NCollection_Sequence<IntTools_CommonPrt> aCParts = anEdgeEdge.CommonParts();
-            if (aCParts.Length() != 1)
+            NCollection_Sequence<CommonPrt> cParts = edgeEdge.CommonParts();
+            if (cParts.Length() != 1)
             {
                 continue;
             }
 
-            IntTools_CommonPrt aCP = aCParts[1];
-            if (aCP.Type() != ShapeType.Edge)
+            CommonPrt cp = cParts[1];
+            if (cp.Type() != ShapeType.Edge)
             {
                 continue;
             }
 
-            BOPDS_PaveBlock[] aPB = [anEdgeEdge.PaveBlock1(), anEdgeEdge.PaveBlock2()];
-            int nE1 = aPB[0].OriginalEdge();
-            int nE2 = aPB[1].OriginalEdge();
+            PaveBlock[] pb = [edgeEdge.PaveBlock1(), edgeEdge.PaveBlock2()];
+            int nE1 = pb[0].OriginalEdge();
+            int nE2 = pb[1].OriginalEdge();
 
-            if (myDS.Rank(nE1) == myDS.Rank(nE2))
+            if (_ds.Rank(nE1) == _ds.Rank(nE2))
             {
                 // Add acquired self-interference warning
-                Compound aWC = new();
-                new BrepBuilder().MakeCompound(ref aWC);
-                new BrepBuilder().Add(aWC, myDS.Shape(nE1));
-                new BrepBuilder().Add(aWC, myDS.Shape(nE2));
-                AddWarning(new BOPAlgo_AlertAcquiredSelfIntersection(aWC));
+                Compound wc = new();
+                new BrepBuilder().MakeCompound(ref wc);
+                new BrepBuilder().Add(wc, _ds.Shape(nE1));
+                new BrepBuilder().Add(wc, _ds.Shape(nE2));
+                AddWarning(new AlertAcquiredSelfIntersection(wc));
             }
 
-            BOPDS_InterfEE aEE = aEEs.Append(new BOPDS_InterfEE());
-            aEE.SetIndices(nE1, nE2);
-            aEE.SetCommonPart(aCP);
-            myDS.AddInterf(nE1, nE2);
+            InterfEE ee = eEs.Append(new InterfEE());
+            ee.SetIndices(nE1, nE2);
+            ee.SetCommonPart(cp);
+            _ds.AddInterf(nE1, nE2);
 
             // Fill map for common blocks creation
             for (int j = 0; j < 2; ++j)
             {
-                if (myDS.IsCommonBlock(aPB[j]))
+                if (_ds.IsCommonBlock(pb[j]))
                 {
-                    NCollection_List<BOPDS_PaveBlock> aLPBCB = myDS.CommonBlock(aPB[j])!.PaveBlocks();
-                    NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new(aLPBCB);
-                    for (; aItLPB.More(); aItLPB.Next())
+                    NCollection_List<PaveBlock> lpbcb = _ds.CommonBlock(pb[j])!.PaveBlocks();
+                    NCollection_List<PaveBlock>.Iterator itLPB = new(lpbcb);
+                    for (; itLPB.More(); itLPB.Next())
                     {
-                        BOPAlgo_Tools.FillMap(aPB[j], aItLPB.Value(), aMPBLPB);
+                        BuilderTools.FillMap(pb[j], itLPB.Value(), mpblpb);
                     }
                 }
             }
-            BOPAlgo_Tools.FillMap(aPB[0], aPB[1], aMPBLPB);
+            BuilderTools.FillMap(pb[0], pb[1], mpblpb);
         }
         // Create new common blocks of coinciding pairs.
-        BOPAlgo_Tools.PerformCommonBlocks(aMPBLPB, myDS);
+        BuilderTools.PerformCommonBlocks(mpblpb, _ds);
     }
 }

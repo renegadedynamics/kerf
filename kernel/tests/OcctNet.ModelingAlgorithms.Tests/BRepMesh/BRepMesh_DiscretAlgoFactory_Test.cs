@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Meshing;
 using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,7 +16,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
     public BRepMesh_DiscretAlgoFactoryTest()
     {
         // Create a simple box shape for testing
-        BRepPrimAPI_MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
+        MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
         myBox = aBoxMaker.Shape();
     }
 
@@ -22,7 +24,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void Factories_AtLeastOneRegistered()
     {
-        NCollection_List<BRepMesh_DiscretAlgoFactory> aFactories = BRepMesh_DiscretAlgoFactory.Factories();
+        NCollection_List<DiscretAlgoFactory> aFactories = DiscretAlgoFactory.Factories();
 
         Assert.False(aFactories.IsEmpty(), "No factories registered");
     }
@@ -31,7 +33,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void DefaultFactory_ReturnsValid()
     {
-        BRepMesh_DiscretAlgoFactory? aFactory = BRepMesh_DiscretAlgoFactory.DefaultFactory();
+        DiscretAlgoFactory? aFactory = DiscretAlgoFactory.DefaultFactory();
 
         Assert.NotNull(aFactory);
     }
@@ -40,7 +42,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void FindFactory_FastDiscret()
     {
-        BRepMesh_DiscretAlgoFactory? aFactory = BRepMesh_DiscretAlgoFactory.FindFactory("FastDiscret");
+        DiscretAlgoFactory? aFactory = DiscretAlgoFactory.FindFactory("FastDiscret");
 
         Assert.NotNull(aFactory);
         Assert.Equal("FastDiscret", aFactory.Name());
@@ -50,7 +52,7 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void FindFactory_NonExistent_ReturnsNull()
     {
-        BRepMesh_DiscretAlgoFactory? aFactory = BRepMesh_DiscretAlgoFactory.FindFactory("NonExistentFactory");
+        DiscretAlgoFactory? aFactory = DiscretAlgoFactory.FindFactory("NonExistentFactory");
 
         Assert.Null(aFactory);
     }
@@ -59,10 +61,10 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void CreateAlgorithm_ReturnsValid()
     {
-        BRepMesh_DiscretAlgoFactory? aFactory = BRepMesh_DiscretAlgoFactory.DefaultFactory();
+        DiscretAlgoFactory? aFactory = DiscretAlgoFactory.DefaultFactory();
         Assert.NotNull(aFactory);
 
-        BRepMesh_DiscretRoot anAlgo = aFactory.CreateAlgorithm(myBox, 0.1, 0.5);
+        DiscretRoot anAlgo = aFactory.CreateAlgorithm(myBox, 0.1, 0.5);
 
         Assert.NotNull(anAlgo);
     }
@@ -71,35 +73,35 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void CreateAlgorithm_CanMesh()
     {
-        BRepMesh_DiscretAlgoFactory? aFactory = BRepMesh_DiscretAlgoFactory.DefaultFactory();
+        DiscretAlgoFactory? aFactory = DiscretAlgoFactory.DefaultFactory();
         Assert.NotNull(aFactory);
 
-        BRepMesh_DiscretRoot anAlgo = aFactory.CreateAlgorithm(myBox, 0.1, 0.5);
+        DiscretRoot anAlgo = aFactory.CreateAlgorithm(myBox, 0.1, 0.5);
         Assert.NotNull(anAlgo);
 
         anAlgo.Perform();
 
-        Assert.True(anAlgo.IsDone(), "Meshing failed");
+        Assert.True(anAlgo.IsDone, "Meshing failed");
     }
 
     // Test that BRepMesh_DiscretFactory::Discret uses the new registry
     [Fact]
     public void DiscretFactory_UsesRegistry()
     {
-        BRepMesh_DiscretFactory aFactory = BRepMesh_DiscretFactory.Get();
+        DiscretFactory aFactory = DiscretFactory.Get();
 
-        BRepMesh_DiscretRoot? anAlgo = aFactory.Discret(myBox, 0.1, 0.5);
+        DiscretRoot? anAlgo = aFactory.Discret(myBox, 0.1, 0.5);
 
         Assert.NotNull(anAlgo);
         anAlgo.Perform();
-        Assert.True(anAlgo.IsDone(), "Meshing failed");
+        Assert.True(anAlgo.IsDone, "Meshing failed");
     }
 
     // Test that SetDefaultName works with registry-based factories
     [Fact]
     public void DiscretFactory_SetDefaultName()
     {
-        BRepMesh_DiscretFactory aFactory = BRepMesh_DiscretFactory.Get();
+        DiscretFactory aFactory = DiscretFactory.Get();
 
         bool isSuccess = aFactory.SetDefaultName("FastDiscret");
         Assert.True(isSuccess, "SetDefaultName(FastDiscret) failed");
@@ -110,11 +112,11 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void RegisterFactory_Uniqueness()
     {
-        NCollection_List<BRepMesh_DiscretAlgoFactory> aFactories = BRepMesh_DiscretAlgoFactory.Factories();
+        NCollection_List<DiscretAlgoFactory> aFactories = DiscretAlgoFactory.Factories();
 
         // Count factories with name "FastDiscret"
         int aCount = 0;
-        for (NCollection_List<BRepMesh_DiscretAlgoFactory>.Iterator anIter = new(aFactories); anIter.More(); anIter.Next())
+        for (NCollection_List<DiscretAlgoFactory>.Iterator anIter = new(aFactories); anIter.More(); anIter.Next())
         {
             if (anIter.Value().Name() == "FastDiscret")
             {
@@ -129,19 +131,19 @@ public class BRepMesh_DiscretAlgoFactoryTest
     [Fact]
     public void Registry_holds_FastDiscret_then_XBRepMesh()
     {
-        NCollection_List<BRepMesh_DiscretAlgoFactory> aFactories = BRepMesh_DiscretAlgoFactory.Factories();
+        NCollection_List<DiscretAlgoFactory> aFactories = DiscretAlgoFactory.Factories();
         Assert.Equal(2, aFactories.Extent());
-        Assert.IsType<BRepMesh_IncrementalMeshFactory>(aFactories.First());
-        Assert.IsType<XBRepMesh_Factory>(aFactories.Last());
-        Assert.Same(aFactories.Last(), BRepMesh_DiscretAlgoFactory.FindFactory("xbrepmesh"));
+        Assert.IsType<IncrementalMeshFactory>(aFactories.First());
+        Assert.IsType<Factory>(aFactories.Last());
+        Assert.Same(aFactories.Last(), DiscretAlgoFactory.FindFactory("xbrepmesh"));
 
-        BRepMesh_DiscretRoot anAlgo = aFactories.Last().CreateAlgorithm(myBox, 0.2, 0.4);
-        BRepMesh_IncrementalMesh anIncMesh = Assert.IsType<BRepMesh_IncrementalMesh>(anAlgo);
+        DiscretRoot anAlgo = aFactories.Last().CreateAlgorithm(myBox, 0.2, 0.4);
+        IncrementalMesh anIncMesh = Assert.IsType<IncrementalMesh>(anAlgo);
         Assert.Equal(0.2, anIncMesh.Parameters().Deflection);
         Assert.Equal(0.4, anIncMesh.Parameters().Angle);
         Assert.False(anIncMesh.Parameters().InParallel);
 
-        Assert.False(BRepMesh_DiscretFactory.Get().SetDefaultName("NoSuchMesher"));
-        Assert.Equal("FastDiscret", BRepMesh_DiscretFactory.Get().DefaultName());
+        Assert.False(DiscretFactory.Get().SetDefaultName("NoSuchMesher"));
+        Assert.Equal("FastDiscret", DiscretFactory.Get().DefaultName());
     }
 }

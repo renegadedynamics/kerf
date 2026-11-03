@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Api;
+using Kerf.Engine.Fillets.Planar;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -53,8 +56,8 @@ internal static class BRepTestFillet2DCommands
             return 1;
         }
 
-        var MF = new BRepFilletAPI_MakeFillet2d(ShapeCasts.Face(F));
-        if (MF.Status() == ChFi2d_ConstructionError.ChFi2d_NotPlanar)
+        var MF = new MakeFillet2D(ShapeCasts.Face(F));
+        if (MF.Status() == ConstructionError.NotPlanar)
         {
             di.Append("chfi2d : not a planar face");
             return 1;
@@ -133,7 +136,7 @@ internal static class BRepTestFillet2DCommands
                 }
             }
 
-            if (MF.Status() == ChFi2d_ConstructionError.ChFi2d_TangencyError)
+            if (MF.Status() == ConstructionError.TangencyError)
             {
                 di.Append("chfi2d : ").Append(a[i - 2]).Append(" and ").Append(a[i - 1]).Append(" are tangent ");
                 if (partial_result)
@@ -144,7 +147,7 @@ internal static class BRepTestFillet2DCommands
                 return 1;
             }
 
-            if (MF.Status() == ChFi2d_ConstructionError.ChFi2d_NotAuthorized)
+            if (MF.Status() == ConstructionError.NotAuthorized)
             {
                 di.Append("chfi2d : ").Append(a[i - 2]).Append(" or ").Append(a[i - 1]).Append(" is not a line or a circle ");
                 if (partial_result)
@@ -155,7 +158,7 @@ internal static class BRepTestFillet2DCommands
                 return 1;
             }
 
-            if (MF.Status() != ChFi2d_ConstructionError.ChFi2d_IsDone)
+            if (MF.Status() != ConstructionError.IsDone)
             {
                 di.Append("chfi2d : operation failed on ").Append(a[i - 2]);
                 if (partial_result)
@@ -198,7 +201,7 @@ internal static class BRepTestFillet2DCommands
     private static PlaneSurface? findPlane(in Shape S)
     {
         PlaneSurface? plane = null;
-        var planeFinder = new BRepBuilderAPI_FindPlane(S);
+        var planeFinder = new FindPlane(S);
         if (planeFinder.Found())
         {
             plane = planeFinder.Plane();
@@ -312,7 +315,7 @@ internal static class BRepTestFillet2DCommands
         }
 
         // Algo.
-        var algo = new ChFi2d_FilletAPI();
+        var algo = new FilletApi();
         Plane3D plane = hPlane.Pln();
         if (n == 5)
         {
@@ -363,8 +366,8 @@ internal static class BRepTestFillet2DCommands
         }
         else // recreate the wire using the fillet
         {
-            var mkWire = new BRepBuilderAPI_MakeWire(M1, fillet, M2);
-            if (mkWire.IsDone())
+            var mkWire = new MakeWire(M1, fillet, M2);
+            if (mkWire.IsDone)
             {
                 theDI.SetShape(a[1], mkWire.Wire());
             }
@@ -409,7 +412,7 @@ internal static class BRepTestFillet2DCommands
         double length2 = (n == 6) ? CAtof(a[5]) : CAtof(a[4]);
 
         // Algo.
-        var algo = new ChFi2d_ChamferAPI();
+        var algo = new ChamferApi();
         if (n == 6)
         {
             Edge e1 = ShapeCasts.Edge(E1);
@@ -445,8 +448,8 @@ internal static class BRepTestFillet2DCommands
         }
         else // recreate the wire using the chamfer
         {
-            var mkWire = new BRepBuilderAPI_MakeWire(M1, chamfer, M2);
-            if (mkWire.IsDone())
+            var mkWire = new MakeWire(M1, chamfer, M2);
+            if (mkWire.IsDone)
             {
                 theDI.SetShape(a[1], mkWire.Wire());
             }

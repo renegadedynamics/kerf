@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -92,15 +94,15 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 double anAngle = FromHex(aWords[1]);
                 try
                 {
-                    var anA = new BRepOffset_Analyse(theShape, anAngle);
+                    var anA = new Analyse(theShape, anAngle);
                     var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
                     var aS = new StringBuilder();
                     for (int i = 1; i <= anEdges.Extent(); i++)
                     {
-                        NCollection_List<BRepOffset_Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i]));
+                        NCollection_List<Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i]));
                         aS.Append(i.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(aL.Extent().ToString(CultureInfo.InvariantCulture));
-                        foreach (BRepOffset_Interval anI in aL)
+                        foreach (Interval anI in aL)
                         {
                             aS.Append(' ').Append(Hex(anI.First())).Append(' ').Append(Hex(anI.Last())).Append(' ')
                               .Append(((int)anI.Type()).ToString(CultureInfo.InvariantCulture));
@@ -109,7 +111,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     }
                     aRes.Add(Block("ANA " + aWords[1], aS.ToString()));
                     var aCompounds = new NCollection_List<Shape>();
-                    anA.Explode(aCompounds, ChFiDS_TypeOfConcavity.ChFiDS_Tangential);
+                    anA.Explode(aCompounds, TypeOfConcavity.Tangential);
                     var anExplode = new StringBuilder("EXPLODE ").Append(aCompounds.Extent().ToString(CultureInfo.InvariantCulture));
                     foreach (Shape aC in aCompounds)
                     {
@@ -135,7 +137,7 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 aRes.Add((theHead, ""));
                 try
                 {
-                    var anOff = new BRepOffset_Offset(ShapeCasts.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
+                    var anOff = new Offset(ShapeCasts.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
                     Face aF = anOff.Face();
                     Assert.True(aF.TShape()!.IsFrozen);
                     aRes.Add(Block("STATUS " + ((int)anOff.Status()).ToString(CultureInfo.InvariantCulture), Text(aF)));
@@ -151,17 +153,17 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 aRes.Add((theHead, ""));
                 try
                 {
-                    var aMaker = new BRepOffset_MakeSimpleOffset(theShape, FromHex(aWords[1]));
+                    var aMaker = new MakeSimpleOffset(theShape, FromHex(aWords[1]));
                     aMaker.SetBuildSolidFlag(aWords[2] == "1");
                     aMaker.Perform();
                     string aText = "";
-                    if (aMaker.IsDone())
+                    if (aMaker.IsDone)
                     {
                         Shape aR = aMaker.GetResultShape();
                         Assert.True(aR.TShape()!.IsFrozen);
                         aText = Text(aR);
                     }
-                    aRes.Add(Block($"DONE {(aMaker.IsDone() ? "1" : "0")} {((int)aMaker.GetError()).ToString(CultureInfo.InvariantCulture)}", aText));
+                    aRes.Add(Block($"DONE {(aMaker.IsDone ? "1" : "0")} {((int)aMaker.GetError()).ToString(CultureInfo.InvariantCulture)}", aText));
                 }
                 catch (FailureException e) when (e is not (ImmutableObjectException or LockedShapeException))
                 {

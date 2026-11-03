@@ -1,5 +1,13 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Features;
+using Kerf.Engine.Fillets.Api;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -64,7 +72,7 @@ public abstract partial class Shape3D : Shape
         }
         var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
-        var builder = new BRepFilletAPI_MakeChamfer(TopoShape);
+        var builder = new MakeChamfer(TopoShape);
         var distance2 = length2 is { } l2 && l2 != 0 ? l2 : length;
         foreach (var edge in edges)
         {
@@ -111,7 +119,7 @@ public abstract partial class Shape3D : Shape
         var noBasis = new global::Kerf.Topology.Face();
         foreach (var face in faces)
         {
-            var feature = new BRepFeat_MakeDPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
+            var feature = new MakeDraftPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
                                                         taper * Constants.DegToRad, additive ? 1 : 0, false);
             if (upToFace is not null)
                 feature.Perform(upToFace.TopoShape);
@@ -129,7 +137,7 @@ public abstract partial class Shape3D : Shape
     public Shape Fillet(double radius, IEnumerable<Edge> edgeList)
     {
         var edges = edgeList.Select(e => e.TopoEdge).ToList();
-        var builder = new BRepFilletAPI_MakeFillet(TopoShape);
+        var builder = new MakeFillet(TopoShape);
         foreach (var edge in edges)
             builder.Add(radius, edge);
         Shape result;
@@ -158,21 +166,21 @@ public abstract partial class Shape3D : Shape
     }
 
     /// <summary>The faulty contours of a failed fillet, in terms of the caller's selected edges.</summary>
-    private static string FilletFailureDetails(BRepFilletAPI_MakeFillet builder, List<global::Kerf.Topology.Edge> edges)
+    private static string FilletFailureDetails(MakeFillet builder, List<global::Kerf.Topology.Edge> edges)
     {
         var faulty = new Dictionary<string, HashSet<Edge>>();
         var order = new List<string>();
-        for (int i = 1; i <= builder.NbFaultyContours(); i++)
+        for (int i = 1; i <= builder.FaultyContourCount; i++)
         {
             var contour = builder.FaultyContour(i);
             // A faulty stripe past NbContours() can lack a spine, which OCCT dereferences unchecked
-            if (contour < 1 || contour > builder.NbContours())
+            if (contour < 1 || contour > builder.ContourCount)
                 continue;
             var reason = builder.StripeStatus(contour) switch
             {
-                ChFiDS_ErrorStatus.ChFiDS_WalkingFailure => "walking failure",
-                ChFiDS_ErrorStatus.ChFiDS_StartsolFailure => "no starting solution",
-                ChFiDS_ErrorStatus.ChFiDS_TwistedSurface => "twisted surface",
+                ErrorStatus.WalkingFailure => "walking failure",
+                ErrorStatus.StartsolFailure => "no starting solution",
+                ErrorStatus.TwistedSurface => "twisted surface",
                 _ => "error",
             };
             if (!faulty.TryGetValue(reason, out var set))
@@ -221,7 +229,7 @@ public abstract partial class Shape3D : Shape
             var windowMid = (windowMin + windowMax) / 2;
             if (iteration == maxIterations)
                 throw new InvalidOperationException($"Failed to find the max value within {PyFormat.Repr(tolerance)} in {maxIterations}");
-            var builder = new BRepFilletAPI_MakeFillet(TopoShape);
+            var builder = new MakeFillet(TopoShape);
             foreach (var edge in edges)
                 builder.Add(windowMid, edge);
             // Do these numbers work? If not, try the smaller window
@@ -253,8 +261,8 @@ public abstract partial class Shape3D : Shape
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        var builder = new BRepOffsetAPI_MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join);
+        var builder = new MakeThickSolid();
+        builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, OffsetMode.Skin, true, false, join);
         builder.Build();
         var shellShape = builder.Shape();
         // OCCT can report success and still hand back a null shape
@@ -266,17 +274,17 @@ public abstract partial class Shape3D : Shape
         var shell1 = CastLike(shellShape).Shells()[0].TopoShell;
         var shell2 = Shells()[0].TopoShell;
         // The first can be the outer or inner shell depending on the thickness's sign
-        var solid = thickness > 0 ? new BRepBuilderAPI_MakeSolid(shell1, shell2) : new BRepBuilderAPI_MakeSolid(shell2, shell1);
+        var solid = thickness > 0 ? new MakeSolid(shell1, shell2) : new MakeSolid(shell2, shell1);
         return CastLike(solid.Shape()).Fix();
     }
 
     /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
     public bool IsInside(Vector point, double tolerance = 1.0e-6)
     {
-        var classifier = new BRepClass3d_SolidClassifier(TopoShape);
+        var classifier = new SolidClassifier(TopoShape);
         var p = point.ToGpPnt();
         classifier.Perform(p, tolerance);
-        return classifier.State() == Containment.In || classifier.IsOnAFace();
+        return classifier.State() == Containment.In || classifier.IsOnAFace;
     }
 
     /// <summary>
@@ -291,8 +299,8 @@ public abstract partial class Shape3D : Shape
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        var builder = new BRepOffsetAPI_MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join, true);
+        var builder = new MakeThickSolid();
+        builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, OffsetMode.Skin, true, false, join, true);
         builder.Build();
         global::Kerf.Topology.Shape solid;
         try
@@ -326,7 +334,7 @@ public abstract partial class Shape3D : Shape
         {
             case Solid or Face or Shell or Edge or Wire:
             {
-                var common = new BRepAlgoAPI_Common();
+                var common = new Common();
                 results.AddRange(BoolOpList([this], [shape], common).Expand());
                 break;
             }

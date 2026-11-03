@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Preview;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -139,7 +141,7 @@ internal static class BRepTestPrimitiveCommands
         if (isPreview)
         {
             Shape S;
-            var aPreview = new BRepPreviewAPI_MakeBox();
+            var aPreview = new MakePreviewBox();
             if (isMinMax)
             {
                 aPreview.Init(anOrigin, new Point3D(aParams));
@@ -166,20 +168,20 @@ internal static class BRepTestPrimitiveCommands
             Solid S;
             if (isMinMax)
             {
-                S = new BRepPrimAPI_MakeBox(anOrigin, new Point3D(aParams)).Solid();
+                S = new MakeBox(anOrigin, new Point3D(aParams)).Solid();
             }
             else if (!isMinMax && !isAxis)
             {
-                S = new BRepPrimAPI_MakeBox(anOrigin, aParams.X(), aParams.Y(), aParams.Z()).Solid();
+                S = new MakeBox(anOrigin, aParams.X(), aParams.Y(), aParams.Z()).Solid();
             }
             else if (isAxis)
             {
                 var anAxis = new Frame3D(anOrigin, aDir, aXDir);
-                S = new BRepPrimAPI_MakeBox(anAxis, aParams.X(), aParams.Y(), aParams.Z()).Solid();
+                S = new MakeBox(anAxis, aParams.X(), aParams.Y(), aParams.Z()).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeBox(aParams.X(), aParams.Y(), aParams.Z()).Solid();
+                S = new MakeBox(aParams.X(), aParams.Y(), aParams.Z()).Solid();
             }
 
             theDI.SetShape(a[1], S);
@@ -201,11 +203,11 @@ internal static class BRepTestPrimitiveCommands
             var Axis = new Frame3D(LocalP, LocalN, LocalVx);
             if (n == 15)
             {
-                S = new BRepPrimAPI_MakeWedge(Axis, theDI.Atof(a[11]), theDI.Atof(a[12]), theDI.Atof(a[13]), theDI.Atof(a[14])).Solid();
+                S = new MakeWedge(Axis, theDI.Atof(a[11]), theDI.Atof(a[12]), theDI.Atof(a[13]), theDI.Atof(a[14])).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeWedge(Axis,
+                S = new MakeWedge(Axis,
                                               theDI.Atof(a[11]),
                                               theDI.Atof(a[12]),
                                               theDI.Atof(a[13]),
@@ -217,11 +219,11 @@ internal static class BRepTestPrimitiveCommands
         }
         else if (n == 6)
         {
-            S = new BRepPrimAPI_MakeWedge(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
+            S = new MakeWedge(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
         }
         else if (n == 9)
         {
-            S = new BRepPrimAPI_MakeWedge(theDI.Atof(a[2]),
+            S = new MakeWedge(theDI.Atof(a[2]),
                                           theDI.Atof(a[3]),
                                           theDI.Atof(a[4]),
                                           theDI.Atof(a[5]),
@@ -251,17 +253,17 @@ internal static class BRepTestPrimitiveCommands
 
         if (n == 4)
         {
-            S = new BRepPrimAPI_MakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
+            S = new ApiMakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
         }
         else if (n == 5)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+                S = new ApiMakeCylinder(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+                S = new ApiMakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
             }
         }
         else if (n == 6)
@@ -271,7 +273,7 @@ internal static class BRepTestPrimitiveCommands
                 return 1;
             }
 
-            S = new BRepPrimAPI_MakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
+            S = new ApiMakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
         }
         else
         {
@@ -295,22 +297,22 @@ internal static class BRepTestPrimitiveCommands
 
         if (n == 5)
         {
-            S = new BRepPrimAPI_MakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+            S = new ApiMakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
         }
         else if (n == 6)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
+                S = new ApiMakeCone(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeCone(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
+                S = new ApiMakeCone(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
             }
         }
         else if (n == 7)
         {
-            S = new BRepPrimAPI_MakeCone(NonNull(P).Pln().Position().Ax2(),
+            S = new ApiMakeCone(NonNull(P).Pln().Position().Ax2(),
                                          theDI.Atof(a[3]),
                                          theDI.Atof(a[4]),
                                          theDI.Atof(a[5]),
@@ -338,42 +340,42 @@ internal static class BRepTestPrimitiveCommands
 
         if (n == 3)
         {
-            S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2])).Solid();
+            S = new MakeSphere(theDI.Atof(a[2])).Solid();
         }
         else if (n == 4)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad).Solid();
+                S = new MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3])).Solid();
+                S = new MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3])).Solid();
             }
         }
         else if (n == 5)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad, theDI.Atof(a[4]) * DegToRad).Solid();
+                S = new MakeSphere(theDI.Atof(a[2]), theDI.Atof(a[3]) * DegToRad, theDI.Atof(a[4]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+                S = new MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
             }
         }
         else if (n == 6)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeSphere(theDI.Atof(a[2]),
+                S = new MakeSphere(theDI.Atof(a[2]),
                                                theDI.Atof(a[3]) * DegToRad,
                                                theDI.Atof(a[4]) * DegToRad,
                                                theDI.Atof(a[5]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeSphere(P.Pln().Position().Ax2(),
+                S = new MakeSphere(P.Pln().Position().Ax2(),
                                                theDI.Atof(a[3]),
                                                theDI.Atof(a[4]) * DegToRad,
                                                theDI.Atof(a[5]) * DegToRad).Solid();
@@ -381,7 +383,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else if (n == 7)
         {
-            S = new BRepPrimAPI_MakeSphere(NonNull(P).Pln().Position().Ax2(),
+            S = new MakeSphere(NonNull(P).Pln().Position().Ax2(),
                                            theDI.Atof(a[3]),
                                            theDI.Atof(a[4]) * DegToRad,
                                            theDI.Atof(a[5]) * DegToRad,
@@ -409,31 +411,31 @@ internal static class BRepTestPrimitiveCommands
 
         if (n == 4)
         {
-            S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
+            S = new MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3])).Solid();
         }
         else if (n == 5)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+                S = new MakeTorus(theDI.Atof(a[2]), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+                S = new MakeTorus(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
             }
         }
         else if (n == 6)
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]),
+                S = new MakeTorus(theDI.Atof(a[2]),
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]) * DegToRad,
                                               theDI.Atof(a[5]) * DegToRad).Solid();
             }
             else
             {
-                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(),
+                S = new MakeTorus(P.Pln().Position().Ax2(),
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]),
                                               theDI.Atof(a[5]) * DegToRad).Solid();
@@ -443,7 +445,7 @@ internal static class BRepTestPrimitiveCommands
         {
             if (P is null)
             {
-                S = new BRepPrimAPI_MakeTorus(theDI.Atof(a[2]),
+                S = new MakeTorus(theDI.Atof(a[2]),
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]) * DegToRad,
                                               theDI.Atof(a[5]) * DegToRad,
@@ -451,7 +453,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new BRepPrimAPI_MakeTorus(P.Pln().Position().Ax2(),
+                S = new MakeTorus(P.Pln().Position().Ax2(),
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]),
                                               theDI.Atof(a[5]) * DegToRad,
@@ -460,7 +462,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else if (n == 8)
         {
-            S = new BRepPrimAPI_MakeTorus(NonNull(P).Pln().Position().Ax2(),
+            S = new MakeTorus(NonNull(P).Pln().Position().Ax2(),
                                           theDI.Atof(a[3]),
                                           theDI.Atof(a[4]),
                                           theDI.Atof(a[5]) * DegToRad,
@@ -498,8 +500,8 @@ internal static class BRepTestPrimitiveCommands
                 return 1;
             }
 
-            var Half = new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(Shell), RefPnt);
-            if (Half.IsDone())
+            var Half = new MakeHalfSpace(ShapeCasts.Shell(Shell), RefPnt);
+            if (Half.IsDone)
             {
                 theDI.SetShape(a[1], Half.Solid());
             }
@@ -511,8 +513,8 @@ internal static class BRepTestPrimitiveCommands
         }
         else
         {
-            var Half = new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(Face), RefPnt);
-            if (Half.IsDone())
+            var Half = new MakeHalfSpace(ShapeCasts.Face(Face), RefPnt);
+            if (Half.IsDone)
             {
                 theDI.SetShape(a[1], Half.Solid());
             }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -359,10 +360,10 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             switch (theOp)
             {
                 case 4:
-                    BRepLib.BuildCurves3d(theT.PFace, theTol, myCont, myMaxDeg, myMaxSeg);
+                    BrepLibrary.BuildCurves3d(theT.PFace, theTol, myCont, myMaxDeg, myMaxSeg);
                     break;
                 case 10:
-                    BRepLib.UpdateEdgeTolerance(theT.PFace, 1e-5, theFlag ? 1.0 : 1e-5);
+                    BrepLibrary.UpdateEdgeTolerance(theT.PFace, 1e-5, theFlag ? 1.0 : 1e-5);
                     break;
                 default:
                     throw new InvalidOperationException($"native OCCT threw on operation {theOp}");
@@ -426,19 +427,19 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 {
                     case 0:
                         N.BRepLib.SameParameter(aNE, aTol);
-                        BRepLib.SameParameter(aPE, aTol);
+                        BrepLibrary.SameParameter(aPE, aTol);
                         break;
                     case 1:
                         N.BRepLib.SameParameter(aT.NFace, aTol, aFlag);
-                        BRepLib.SameParameter(aT.PFace, aTol, aFlag);
+                        BrepLibrary.SameParameter(aT.PFace, aTol, aFlag);
                         break;
                     case 2:
                         N.BRepLib.UpdateTolerances(aT.NFace, aFlag);
-                        BRepLib.UpdateTolerances(aT.PFace, aFlag);
+                        BrepLibrary.UpdateTolerances(aT.PFace, aFlag);
                         break;
                     case 3:
                         N.BRepLib.UpdateInnerTolerances(aT.NFace);
-                        BRepLib.UpdateInnerTolerances(aT.PFace);
+                        BrepLibrary.UpdateInnerTolerances(aT.PFace);
                         break;
                     case 4:
                         {
@@ -447,19 +448,19 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             myMaxDeg = anOracle.Int(6, 14);
                             myMaxSeg = anOracle.Bool() ? 0 : anOracle.Int(30, 50);
                             bool aNOk = N.BRepLib.BuildCurves3d(aT.NFace, aTol, (N.GeomAbs_Shape)(int)aCont, myMaxDeg, myMaxSeg);
-                            CompareValue(aWhat, aNOk, BRepLib.BuildCurves3d(aT.PFace, aTol, aCont, myMaxDeg, myMaxSeg));
+                            CompareValue(aWhat, aNOk, BrepLibrary.BuildCurves3d(aT.PFace, aTol, aCont, myMaxDeg, myMaxSeg));
                             break;
                         }
                     case 5:
-                        CompareValue(aWhat, N.BRepLib.BuildCurve3d(aNE), BRepLib.BuildCurve3d(aPE));
+                        CompareValue(aWhat, N.BRepLib.BuildCurve3d(aNE), BrepLibrary.BuildCurve3d(aPE));
                         break;
                     case 6:
                         {
                             double aConf = aFlag ? 1e-12 : 1e-3;
-                            CompareValue(aWhat, N.BRepLib.CheckSameRange(aNE, aConf), BRepLib.CheckSameRange(aPE, aConf));
+                            CompareValue(aWhat, N.BRepLib.CheckSameRange(aNE, aConf), BrepLibrary.CheckSameRange(aPE, aConf));
                             N.BRepLib.SameRange(aNE, aTol);
-                            BRepLib.SameRange(aPE, aTol);
-                            CompareValue(aWhat, N.BRepLib.CheckSameRange(aNE), BRepLib.CheckSameRange(aPE));
+                            BrepLibrary.SameRange(aPE, aTol);
+                            CompareValue(aWhat, N.BRepLib.CheckSameRange(aNE), BrepLibrary.CheckSameRange(aPE));
                             break;
                         }
                     case 7:
@@ -467,7 +468,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             var aNR = new N.BRepTools_ReShape();
                             var aR = new ReShape();
                             N.BRepLib.SameParameter(aT.NFace, aNR, aTol, aFlag);
-                            BRepLib.SameParameter(aT.PFace, aR, aTol, aFlag);
+                            BrepLibrary.SameParameter(aT.PFace, aR, aTol, aFlag);
                             CompareText(aWhat + " (input)", aT.NFace, aT.PFace);
                             CompareText(aWhat, aNR.Apply(aT.NFace), aR.Apply(aT.PFace));
                             aCounts[anOp]++;
@@ -478,7 +479,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             var aNR = new N.BRepTools_ReShape();
                             var aR = new ReShape();
                             N.BRepLib.UpdateTolerances(aT.NFace, aNR, aFlag);
-                            BRepLib.UpdateTolerances(aT.PFace, aR, aFlag);
+                            BrepLibrary.UpdateTolerances(aT.PFace, aR, aFlag);
                             CompareText(aWhat + " (input)", aT.NFace, aT.PFace);
                             CompareText(aWhat, aNR.Apply(aT.NFace), aR.Apply(aT.PFace));
                             aCounts[anOp]++;
@@ -488,7 +489,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         {
                             double aNNewTol = -1, aNewTol = -1;
                             N.TopoDS_Edge aNRes = N.BRepLib.SameParameter(aNE, aTol, ref aNNewTol, false);
-                            Edge aRes = BRepLib.SameParameter(aPE, aTol, ref aNewTol, false);
+                            Edge aRes = BrepLibrary.SameParameter(aPE, aTol, ref aNewTol, false);
                             CompareValue(aWhat, aNNewTol, aNewTol);
                             CompareValue(aWhat, aNRes.IsNull(), aRes.IsNull);
                             if (!aRes.IsNull)
@@ -501,7 +502,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         {
                             double aMax = aFlag ? 1.0 : 1e-5;
                             CompareValue(aWhat, N.BRepLib.UpdateEdgeTolerance(aT.NFace, 1e-5, aMax),
-                                         BRepLib.UpdateEdgeTolerance(aT.PFace, 1e-5, aMax));
+                                         BrepLibrary.UpdateEdgeTolerance(aT.PFace, 1e-5, aMax));
                             break;
                         }
                 }
@@ -566,15 +567,15 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     {
                         case 0:
                             N.BRepLib.SameParameter(aT.NFace, aTol, aFlag);
-                            aResult = BRepLib.SameParametered(aT.PFace, aTol, aFlag);
+                            aResult = BrepLibrary.SameParametered(aT.PFace, aTol, aFlag);
                             break;
                         case 1:
                             N.BRepLib.UpdateTolerances(aT.NFace, aFlag);
-                            aResult = BRepLib.TolerancesUpdated(aT.PFace, aFlag);
+                            aResult = BrepLibrary.TolerancesUpdated(aT.PFace, aFlag);
                             break;
                         case 2:
                             N.BRepLib.UpdateInnerTolerances(aT.NFace);
-                            aResult = BRepLib.InnerTolerancesUpdated(aT.PFace);
+                            aResult = BrepLibrary.InnerTolerancesUpdated(aT.PFace);
                             break;
                         case 3:
                         {
@@ -582,13 +583,13 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                             int aMaxDeg = anOracle.Int(6, 14);
                             int aMaxSeg = anOracle.Bool() ? 0 : anOracle.Int(30, 50);
                             bool aNOk = N.BRepLib.BuildCurves3d(aT.NFace, aTol, (N.GeomAbs_Shape)(int)aCont, aMaxDeg, aMaxSeg);
-                            aResult = BRepLib.Curves3dBuilt(aT.PFace, aTol, out bool anOk, aCont, aMaxDeg, aMaxSeg);
+                            aResult = BrepLibrary.Curves3dBuilt(aT.PFace, aTol, out bool anOk, aCont, aMaxDeg, aMaxSeg);
                             CompareValue(aWhat, aNOk, anOk);
                             break;
                         }
                         default:
                             N.BRepLib.EncodeRegularity(aT.NFace, aTol);
-                            aResult = BRepLib.RegularityEncoded(aT.PFace, aTol);
+                            aResult = BrepLibrary.RegularityEncoded(aT.PFace, aTol);
                             break;
                     }
                 }
@@ -679,7 +680,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             Assert.True(BrepTools.Read(out Shape aRead, aFile));
             Solid aPS = ShapeCasts.Solid(aRead);
             bool aNOk = N.BRepLib.OrientClosedSolid(aNS);
-            bool aOk = BRepLib.OrientClosedSolid(ref aPS);
+            bool aOk = BrepLibrary.OrientClosedSolid(ref aPS);
             Assert.Equal(aNOk, aOk);
             Assert.Equal((int)aNS.Orientation(), (int)aPS.Orientation());
             aCases++;

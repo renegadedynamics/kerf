@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Topology;
 using Occt;
 
@@ -24,7 +25,7 @@ internal static class BOPTestCellsCommands
     }
 
     // Updates the history of the Cells Builder in the session
-    private static void StoreHistory(DrawInterpreter theDI, BOPAlgo_CellsBuilder theBuilder)
+    private static void StoreHistory(DrawInterpreter theDI, CellsBuilder theBuilder)
     {
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
@@ -47,9 +48,9 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_PaveFiller aPF = aSession.PaveFiller();
+        PaveFiller aPF = aSession.PaveFiller();
         //
-        BOPAlgo_CellsBuilder aCBuilder = aSession.CellsBuilder();
+        CellsBuilder aCBuilder = aSession.CellsBuilder();
         aCBuilder.Clear();
         //
         foreach (Shape aS in aSession.Shapes)
@@ -74,7 +75,7 @@ internal static class BOPTestCellsCommands
         BOPTestObjects.ReportAlerts(theDI, di, aCBuilder.GetReport());
         // Store the history of the Cells Builder into the session
         StoreHistory(theDI, aCBuilder);
-        if (aCBuilder.HasErrors())
+        if (aCBuilder.HasErrors)
         {
             return 0;
         }
@@ -117,7 +118,7 @@ internal static class BOPTestCellsCommands
             }
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         //
         aCBuilder.ClearWarnings();
         aCBuilder.AddAllToResult(iMaterial, bUpdate);
@@ -137,7 +138,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         //
         aCBuilder.RemoveAllFromResult();
         StoreHistory(theDI, aCBuilder);
@@ -200,7 +201,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         //
         aCBuilder.ClearWarnings();
         aCBuilder.AddToResult(aLSToTake, aLSToAvoid, iMaterial, bUpdate);
@@ -248,7 +249,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         aCBuilder.RemoveFromResult(aLSToTake, aLSToAvoid);
         //
         Shape aR = aCBuilder.Shape();
@@ -265,7 +266,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         //
         aCBuilder.ClearWarnings();
         aCBuilder.RemoveInternalBoundaries();
@@ -285,7 +286,7 @@ internal static class BOPTestCellsCommands
             return 1;
         }
         //
-        BOPAlgo_CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
+        CellsBuilder aCBuilder = BOPTestObjects.Of(theDI).CellsBuilder();
         aCBuilder.MakeContainers();
         //
         theDI.SetShape(a[1], aCBuilder.Shape());

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Occt;
 
 namespace OcctNet.DrawLite;
@@ -10,23 +11,23 @@ namespace OcctNet.DrawLite;
 /// </summary>
 internal sealed partial class BOPTestObjects
 {
-    private BOPAlgo_BOP? myBOP;
-    private BOPAlgo_Section? mySection;
-    private BOPAlgo_Splitter? mySplitter;
+    private Bop? myBOP;
+    private Section? mySection;
+    private Splitter? mySplitter;
 
     /// <summary>The Boolean builder of <c>bbop</c> (made on first use, as OCCT's static).</summary>
-    public BOPAlgo_BOP BOP() => myBOP ??= new BOPAlgo_BOP();
+    public Bop BOP() => myBOP ??= new Bop();
 
     /// <summary>The Section builder of <c>bbop ... section</c>.</summary>
-    public BOPAlgo_Section Section() => mySection ??= new BOPAlgo_Section();
+    public Section Section() => mySection ??= new Section();
 
     /// <summary>The Splitter of <c>bsplit</c>.</summary>
-    public BOPAlgo_Splitter Splitter() => mySplitter ??= new BOPAlgo_Splitter();
+    public Splitter Splitter() => mySplitter ??= new Splitter();
 
     /// <summary>
     /// The pave filler <c>bop</c> made, which <c>bopcommon</c>, <c>bopfuse</c>, <c>bopcut</c>, <c>boptuc</c> and
     /// <c>bopsection</c> use (OCCT's file-static <c>pPF</c>, process-wide there; per interpreter here). Null until
     /// <c>bop</c> runs; <c>bclear</c> doesn't reset it.
     /// </summary>
-    public BOPAlgo_PaveFiller? BopPaveFiller { get; set; }
+    public PaveFiller? BopPaveFiller { get; set; }
 }

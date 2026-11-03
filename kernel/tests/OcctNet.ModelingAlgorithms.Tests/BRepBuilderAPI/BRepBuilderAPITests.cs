@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -9,10 +10,10 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepBuilderAPI_EdgeError;
-using static Occt.BRepBuilderAPI_FaceError;
-using static Occt.BRepBuilderAPI_ShellError;
-using static Occt.BRepBuilderAPI_WireError;
+using static Kerf.Engine.Construction.Api.EdgeError;
+using static Kerf.Engine.Construction.Api.FaceError;
+using static Kerf.Engine.Construction.Api.ShellError;
+using static Kerf.Engine.Construction.Api.WireError;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.ShapeType;
@@ -54,8 +55,8 @@ public class BRepBuilderAPITests
     [Fact]
     public void Vertex_is_frozen_when_read_and_not_through_the_internal_accessor()
     {
-        var aMV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 2, 3));
-        Assert.True(aMV.IsDone());
+        var aMV = new MakeVertex(new Point3D(1, 2, 3));
+        Assert.True(aMV.IsDone);
         Vertex anInternal = aMV.InternalVertex();
         Assert.False(anInternal.TShape()!.IsFrozen);
         Vertex aV = aMV.Vertex();
@@ -69,17 +70,17 @@ public class BRepBuilderAPITests
     [Fact]
     public void Edge_maker_maps_BRepLib_errors()
     {
-        var aSame = new BRepBuilderAPI_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
-        Assert.False(aSame.IsDone());
-        Assert.Equal(BRepBuilderAPI_LineThroughIdenticPoints, aSame.Error());
+        var aSame = new MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
+        Assert.False(aSame.IsDone);
+        Assert.Equal(EdgeError.LineThroughIdenticPoints, aSame.Error());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSame.Shape());
 
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
-        var aOff = new BRepBuilderAPI_MakeEdge(aCirc, new Point3D(0, 0, 0), new Point3D(1, 0, 0));
-        Assert.Equal(BRepBuilderAPI_PointProjectionFailed, aOff.Error());
+        var aOff = new MakeEdge(aCirc, new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        Assert.Equal(EdgeError.PointProjectionFailed, aOff.Error());
 
-        var aLine = new BRepBuilderAPI_MakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 2);
-        Assert.Equal(BRepBuilderAPI_EdgeDone, aLine.Error());
+        var aLine = new MakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 2);
+        Assert.Equal(EdgeError.EdgeDone, aLine.Error());
         Assert.True(aLine.Vertex1().TShape()!.IsFrozen);
         Assert.True(aLine.Edge().TShape()!.IsFrozen);
         Assert.Equal(new Point3D(2, 0, 0), Tool.Pnt(aLine.Vertex2()));
@@ -88,10 +89,10 @@ public class BRepBuilderAPITests
     [Fact]
     public void Edge_maker_Init_after_a_public_read_makes_a_new_edge()
     {
-        var aME = new BRepBuilderAPI_MakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1);
+        var aME = new MakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1);
         Edge aFirst = aME.Edge();
         aME.Init(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 0, 3);
-        Assert.True(aME.IsDone());
+        Assert.True(aME.IsDone);
         Edge aSecond = aME.Edge();
         Assert.False(aSecond.IsSame(aFirst));
         Tool.Range(aFirst, out double f, out double l);
@@ -103,28 +104,28 @@ public class BRepBuilderAPITests
     [Fact]
     public void Edge2d_lies_in_the_default_plane()
     {
-        var aME = new BRepBuilderAPI_MakeEdge2d(new Point2D(0, 0), new Point2D(3, 4));
-        Assert.True(aME.IsDone());
-        Assert.Equal(BRepBuilderAPI_EdgeDone, aME.Error());
+        var aME = new MakeEdge2d(new Point2D(0, 0), new Point2D(3, 4));
+        Assert.True(aME.IsDone);
+        Assert.Equal(EdgeError.EdgeDone, aME.Error());
         Edge anE = aME.Edge();
-        Curve2D? aC = Tool.CurveOnSurface(anE, BRepBuilderAPI.Plane(), new Placement(), out double f, out double l);
+        Curve2D? aC = Tool.CurveOnSurface(anE, BRepBuilderApi.Plane(), new Placement(), out double f, out double l);
         Assert.NotNull(aC);
         Assert.Equal(5.0, l - f, 1e-12);
-        Assert.True(BRepBuilderAPI.Plane().IsFrozen);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRepBuilderAPI.Precision());
-        Assert.Equal(BRepBuilderAPI_LineThroughIdenticPoints,
-                     new BRepBuilderAPI_MakeEdge2d(new Point2D(1, 1), new Point2D(1, 1)).Error());
+        Assert.True(BRepBuilderApi.Plane().IsFrozen);
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), BRepBuilderApi.Precision());
+        Assert.Equal(EdgeError.LineThroughIdenticPoints,
+                     new MakeEdge2d(new Point2D(1, 1), new Point2D(1, 1)).Error());
     }
 
     [Fact]
     public void Polygon_adds_points_closes_and_reports_coincident_points()
     {
-        var aMP = new BRepBuilderAPI_MakePolygon();
+        var aMP = new MakePolygon();
         aMP.Add(new Point3D(0, 0, 0));
-        Assert.False(aMP.IsDone());
+        Assert.False(aMP.IsDone);
         aMP.Add(new Point3D(1, 0, 0));
         Assert.True(aMP.Added());
-        Assert.True(aMP.IsDone());
+        Assert.True(aMP.IsDone);
         aMP.Add(new Point3D(1, 0, 0));
         Assert.False(aMP.Added());
         aMP.Add(new Point3D(1, 1, 0));
@@ -143,31 +144,31 @@ public class BRepBuilderAPITests
     [Fact]
     public void Wire_Add_after_a_public_read_leaves_the_published_wire_unchanged()
     {
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Edge();
-        Edge e3 = new BRepBuilderAPI_MakeEdge(new Point3D(5, 5, 5), new Point3D(6, 6, 6)).Edge();
-        var aMW = new BRepBuilderAPI_MakeWire(e1);
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Edge();
+        Edge e3 = new MakeEdge(new Point3D(5, 5, 5), new Point3D(6, 6, 6)).Edge();
+        var aMW = new MakeWire(e1);
         Wire aFirst = aMW.Wire();
         Assert.Equal(1, Count(aFirst, ShapeType.Edge));
         aMW.Add(e2);
-        Assert.True(aMW.IsDone());
-        Assert.Equal(BRepBuilderAPI_WireDone, aMW.Error());
+        Assert.True(aMW.IsDone);
+        Assert.Equal(WireError.WireDone, aMW.Error());
         Wire aSecond = aMW.Wire();
         Assert.Equal(1, Count(aFirst, ShapeType.Edge));
         Assert.Equal(2, Count(aSecond, ShapeType.Edge));
         aMW.Add(e3);
-        Assert.Equal(BRepBuilderAPI_DisconnectedWire, aMW.Error());
-        Assert.False(aMW.IsDone());
-        Assert.Equal(BRepBuilderAPI_EmptyWire, new BRepBuilderAPI_MakeWire().Error());
+        Assert.Equal(WireError.DisconnectedWire, aMW.Error());
+        Assert.False(aMW.IsDone);
+        Assert.Equal(WireError.EmptyWire, new MakeWire().Error());
     }
 
     [Fact]
     public void Wire_Modified_answers_the_copy_of_a_frozen_vertex_that_had_to_move()
     {
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1 + 5e-8, 0, 0), new Point3D(1, 1, 0)).Edge();
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new MakeEdge(new Point3D(1 + 5e-8, 0, 0), new Point3D(1, 1, 0)).Edge();
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1), s2 = ShapeSnapshot.Of(e2);
-        var aMW = new BRepBuilderAPI_MakeWire(e1, e2);
+        var aMW = new MakeWire(e1, e2);
         Wire aW = aMW.Wire();
         s1.AssertUnchanged(e1);
         s2.AssertUnchanged(e2);
@@ -178,7 +179,7 @@ public class BRepBuilderAPITests
         Assert.False(aMW.IsDeleted(e1));
 
         // a wire of edges that meet exactly copies nothing, and Modified is empty as in OCCT
-        var aPlain = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge());
+        var aPlain = new MakeWire(new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge());
         Assert.Empty(aPlain.Modified(aPlain.Edge()));
     }
 
@@ -200,12 +201,12 @@ public class BRepBuilderAPITests
             TestShapes.Edge(new LineCurve3D(aP[2], new Direction3D(-1, 0, 0)), 0, 1, aV[2], aOff),
             TestShapes.Edge(new LineCurve3D(aP[3], new Direction3D(0, -1, 0)), 0, 1, aOff, aV[0]),
         };
-        Wire aWire = new BRepBuilderAPI_MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
+        Wire aWire = new MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
                                                         TestShapes.Frozen(anEdges[2]), TestShapes.Frozen(anEdges[3])).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        var aMF = new BRepBuilderAPI_MakeFace(aWire, true);
-        Assert.True(aMF.IsDone());
-        Assert.Equal(BRepBuilderAPI_FaceDone, aMF.Error());
+        var aMF = new MakeFace(aWire, true);
+        Assert.True(aMF.IsDone);
+        Assert.Equal(FaceError.FaceDone, aMF.Error());
         Face aF = aMF.Face();
         aSnap.AssertUnchanged(aWire);
         Assert.Empty(aMF.Modified(anEdges[0]));
@@ -226,24 +227,24 @@ public class BRepBuilderAPITests
     [Fact]
     public void Face_maker_maps_BRepLib_errors_and_adds_holes()
     {
-        Wire aSkew = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+        Wire aSkew = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
                                                            new Point3D(0, 1, 0), true).Wire();
-        var aNotPlanar = new BRepBuilderAPI_MakeFace(aSkew, true);
-        Assert.False(aNotPlanar.IsDone());
-        Assert.Equal(BRepBuilderAPI_NotPlanar, aNotPlanar.Error());
-        Assert.Equal(BRepBuilderAPI_NoFace, new BRepBuilderAPI_MakeFace().Error());
+        var aNotPlanar = new MakeFace(aSkew, true);
+        Assert.False(aNotPlanar.IsDone);
+        Assert.Equal(FaceError.NotPlanar, aNotPlanar.Error());
+        Assert.Equal(FaceError.NoFace, new MakeFace().Error());
 
-        var aSquare = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -2, 2, -2, 2);
+        var aSquare = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), -2, 2, -2, 2);
         Face aBefore = aSquare.Face();
-        Wire aHole = new BRepBuilderAPI_MakePolygon(new Point3D(-1, -1, 0), new Point3D(-1, 1, 0), new Point3D(1, 1, 0),
+        Wire aHole = new MakePolygon(new Point3D(-1, -1, 0), new Point3D(-1, 1, 0), new Point3D(1, 1, 0),
                                                            new Point3D(1, -1, 0), true).Wire();
         aSquare.Add(aHole);
-        Assert.True(aSquare.IsDone());
+        Assert.True(aSquare.IsDone);
         Face anAfter = aSquare.Face();
         Assert.Equal(1, Count(aBefore, ShapeType.Wire));
         Assert.Equal(2, Count(anAfter, ShapeType.Wire));
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(anAfter, aProps);
+        MassPropertiesBuilder.SurfaceProperties(anAfter, aProps);
         Assert.Equal(12.0, aProps.Mass(), 1e-9);
     }
 
@@ -251,17 +252,17 @@ public class BRepBuilderAPITests
     public void Shell_and_solid_makers()
     {
         var aSurf = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
-        var aMS = new BRepBuilderAPI_MakeShell(aSurf, 0, Math.PI, 0, 1);
-        Assert.True(aMS.IsDone());
-        Assert.Equal(BRepBuilderAPI_ShellDone, aMS.Error());
+        var aMS = new MakeShell(aSurf, 0, Math.PI, 0, 1);
+        Assert.True(aMS.IsDone);
+        Assert.Equal(ShellError.ShellDone, aMS.Error());
         Shell aShell = aMS.Shell();
         Assert.True(AllFrozen(aShell));
         Assert.Equal(1, Count(aShell, ShapeType.Face));
 
         Shape aBox = Box10();
         Shell aBoxShell = ShapeCasts.Shell(new Explorer(aBox, ShapeType.Shell).Current());
-        var aSolid = new BRepBuilderAPI_MakeSolid(aBoxShell);
-        Assert.True(aSolid.IsDone());
+        var aSolid = new MakeSolid(aBoxShell);
+        Assert.True(aSolid.IsDone);
         Solid aS = aSolid.Solid();
         Assert.True(aS.TShape()!.IsFrozen);
         Assert.True(new Iterator(aS).Value().IsSame(aBoxShell));
@@ -281,8 +282,8 @@ public class BRepBuilderAPITests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aTrsf = new Transform3D();
         aTrsf.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 0)), 0.3);
-        var aT = new BRepBuilderAPI_Transform(aBox, aTrsf);
-        Assert.True(aT.IsDone());
+        var aT = new Transform(aBox, aTrsf);
+        Assert.True(aT.IsDone);
         Shape aR = aT.Shape();
         Assert.True(aR.IsPartner(aBox));
         Assert.Equal(aTrsf, aR.Location().Transformation());
@@ -293,7 +294,7 @@ public class BRepBuilderAPITests
         aSnap.AssertUnchanged(aBox);
 
         // with copyGeom the modifier builds new shapes
-        var aCopied = new BRepBuilderAPI_Transform(aBox, aTrsf, true);
+        var aCopied = new Transform(aBox, aTrsf, true);
         Shape aR2 = aCopied.Shape();
         Assert.False(aR2.IsPartner(aBox));
         Assert.True(AllFrozen(aR2));
@@ -309,14 +310,14 @@ public class BRepBuilderAPITests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aTrsf = new Transform3D();
         aTrsf.SetScale(new Point3D(0, 0, 0), 0.5);
-        var aT = new BRepBuilderAPI_Transform(aTrsf);
-        Assert.False(aT.IsDone());
+        var aT = new Transform(aTrsf);
+        Assert.False(aT.IsDone);
         aT.Perform(aBox);
-        Assert.True(aT.IsDone());
+        Assert.True(aT.IsDone);
         Shape aR = aT.Shape();
         Assert.True(AllFrozen(aR));
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aR, aProps);
+        MassPropertiesBuilder.VolumeProperties(aR, aProps);
         Assert.Equal(125.0, aProps.Mass(), 1e-9);
         for (var anExp = new Explorer(aBox, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
@@ -327,10 +328,10 @@ public class BRepBuilderAPITests
         aSnap.AssertUnchanged(aBox);
 
         // the same framework reused on another shape
-        Edge anE = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).Edge();
+        Edge anE = new MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).Edge();
         aT.Perform(anE);
         var aLProps = new Properties();
-        BRepGProp.LinearProperties(aT.Shape(), aLProps);
+        MassPropertiesBuilder.LinearProperties(aT.Shape(), aLProps);
         Assert.Equal(2.0, aLProps.Mass(), 1e-12);
     }
 
@@ -339,8 +340,8 @@ public class BRepBuilderAPITests
     {
         Shape aBox = Box10();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aC = new BRepBuilderAPI_Copy();
-        Assert.False(aC.IsDone());
+        var aC = new Copy();
+        Assert.False(aC.IsDone);
         aC.Perform(aBox, false);
         Shape aFirst = aC.Shape();
         Assert.False(aFirst.IsPartner(aBox));
@@ -359,12 +360,12 @@ public class BRepBuilderAPITests
         Exploration.MapShapes(aSecond, ShapeType.Vertex, aResultVertices);
         Assert.True(aResultVertices.Contains(aFirstVertex));
         Assert.False(aResultVertices.Contains(aSecondVertex));
-        Assert.True(new BRepBuilderAPI_Copy(aBox, false).Shape().IsPartner(aFirst) == false);
+        Assert.True(new Copy(aBox, false).Shape().IsPartner(aFirst) == false);
         // copyGeom false shares the surfaces
         Face aF = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         Face aFc = ShapeCasts.Face(aC.ModifiedShape(aF));
         Assert.Same(Tool.Surface(aF), Tool.Surface(aFc));
-        var aDeep = new BRepBuilderAPI_Copy(aBox);
+        var aDeep = new Copy(aBox);
         Face aFd = ShapeCasts.Face(aDeep.ModifiedShape(aF));
         Assert.NotSame(Tool.Surface(aF), Tool.Surface(aFd));
         aSnap.AssertUnchanged(aBox);
@@ -374,7 +375,7 @@ public class BRepBuilderAPITests
         anArgs.Append(aBox);
         var aHistory = new History(anArgs, aDeep);
         Assert.True(aHistory.Modified(aF)[0].IsSame(aFd));
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepBuilderAPI_Copy(new Shape()));
+        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Copy(new Shape()));
     }
 
     [Fact]
@@ -390,7 +391,7 @@ public class BRepBuilderAPITests
         new BrepBuilder().Continuity(anE, aF1, aF2, Continuity.G1);
         TestShapes.Frozen(aBox);
 
-        var aC = new BRepBuilderAPI_Copy(aBox);
+        var aC = new Copy(aBox);
         Shape aFirst = aC.Shape();
         Edge aCopiedE = ShapeCasts.Edge(aC.ModifiedShape(anE));
         Assert.Equal(Continuity.G1,
@@ -404,8 +405,8 @@ public class BRepBuilderAPITests
     {
         Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(2, 3));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
-        var aNC = new BRepBuilderAPI_NurbsConvert(aCyl);
-        Assert.True(aNC.IsDone());
+        var aNC = new NurbsConvert(aCyl);
+        Assert.True(aNC.IsDone);
         Shape aR = aNC.Shape();
         Assert.True(AllFrozen(aR));
         Face aRF = ShapeCasts.Face(new Explorer(aR, ShapeType.Face).Current());
@@ -438,7 +439,7 @@ public class BRepBuilderAPITests
         aPoles[2, 1] = new Point3D(1, 0, 0);
         aPoles[2, 2] = new Point3D(1, 1, 0.5);
         var aSurf = new global::Kerf.Geometry.BezierSurface(aPoles);
-        Face aF = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
+        Face aF = new MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
         var aTri = new Triangulation(4, 2, true);
         (double u, double v)[] aUV = [(0, 0), (1, 0), (1, 1), (0, 1)];
         for (int i = 0; i < 4; i++)
@@ -451,25 +452,25 @@ public class BRepBuilderAPITests
         new BrepBuilder().UpdateFace(aF, aTri);
         TestShapes.Frozen(aF);
 
-        Face aConverted = ShapeCasts.Face(new BRepBuilderAPI_NurbsConvert(aF).Shape());
+        Face aConverted = ShapeCasts.Face(new NurbsConvert(aF).Shape());
         Assert.Null(Tool.Surface(aConverted));
         Assert.NotNull(Tool.Triangulation(aConverted, out _));
         Assert.NotNull(Tool.Surface(aF));
 
         // without the mesh the face keeps its surface
-        Face aBare = new BRepBuilderAPI_MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
-        Assert.NotNull(Tool.Surface(ShapeCasts.Face(new BRepBuilderAPI_NurbsConvert(aBare).Shape())));
+        Face aBare = new MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
+        Assert.NotNull(Tool.Surface(ShapeCasts.Face(new NurbsConvert(aBare).Shape())));
     }
 
     [Fact]
     public void GTransform_by_an_affinity_turns_a_circle_into_a_B_spline_ellipse()
     {
-        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge();
+        Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCircle);
         var aG = new GeneralTransform3D();
         aG.SetValue(1, 1, 3.0);
-        var aGT = new BRepBuilderAPI_GTransform(aCircle, aG);
-        Assert.True(aGT.IsDone());
+        var aGT = new GTransform(aCircle, aG);
+        Assert.True(aGT.IsDone);
         Edge anE = ShapeCasts.Edge(aGT.Shape());
         Assert.True(anE.TShape()!.IsFrozen);
         var aC = new EdgeCurveAdaptor(anE);
@@ -480,7 +481,7 @@ public class BRepBuilderAPITests
         // Modified: OCCT's list of the last converted shape's image
         Assert.True(Assert.Single(aGT.Modified(aCircle)).IsSame(anE));
         var aProps = new Properties();
-        BRepGProp.LinearProperties(anE, aProps);
+        MassPropertiesBuilder.LinearProperties(anE, aProps);
         Assert.Equal(13.364893591540853, aProps.Mass(), 1e-3); // the perimeter of the ellipse (3, 1), by Gauss integration
         aSnap.AssertUnchanged(aCircle);
     }
@@ -491,8 +492,8 @@ public class BRepBuilderAPITests
     public void Collect_records_images_against_the_initial_shapes()
     {
         Shape aBox = Box10();
-        var aT = new BRepBuilderAPI_Transform(aBox, Transform3D.Translation(new Vector3D(1, 0, 0)), true);
-        var aCollect = new BRepBuilderAPI_Collect();
+        var aT = new Transform(aBox, Transform3D.Translation(new Vector3D(1, 0, 0)), true);
+        var aCollect = new Collect();
         aCollect.Add(aBox, aT);
         Shape aF = new Explorer(aBox, ShapeType.Face).Current();
         Assert.True(aCollect.Modification().IsBound(aF));
@@ -500,7 +501,7 @@ public class BRepBuilderAPITests
         Assert.True(aImage.IsSame(aT.ModifiedShape(aF)));
 
         // a second modification of the image is recorded against the initial face
-        var aNew = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        var aNew = new MakeVertex(new Point3D(0, 0, 0)).Vertex();
         aCollect.AddModif(aImage, aNew);
         Assert.True(aCollect.Modification()[aF].First().IsSame(aNew));
         Assert.False(aCollect.Modification().IsBound(aImage));
@@ -517,25 +518,25 @@ public class BRepBuilderAPITests
     [Fact]
     public void FindPlane_finds_the_plane_of_planar_edges_only()
     {
-        Wire aSquare = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1),
+        Wire aSquare = new MakePolygon(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1),
                                                              new Point3D(0, 1, 1), true).Wire();
-        var aFP = new BRepBuilderAPI_FindPlane(aSquare);
+        var aFP = new FindPlane(aSquare);
         Assert.True(aFP.Found());
         PlaneSurface aPl = aFP.Plane()!;
         Assert.True(aPl.IsFrozen);
         Assert.True(aPl.Pln().Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-12));
         Assert.Equal(0.0, aPl.Pln().Distance(new Point3D(0.3, 0.7, 1)), 1e-12);
 
-        Wire aSkew = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+        Wire aSkew = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
                                                            new Point3D(0, 1, 0), true).Wire();
-        Assert.False(new BRepBuilderAPI_FindPlane(aSkew).Found());
-        Assert.True(new BRepBuilderAPI_FindPlane(aSkew, 0.5).Found());
+        Assert.False(new FindPlane(aSkew).Found());
+        Assert.True(new FindPlane(aSkew, 0.5).Found());
 
         // a conic gives its own plane
-        Edge aCirc = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), 2)).Edge();
-        var aFC = new BRepBuilderAPI_FindPlane(aCirc);
+        Edge aCirc = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), 2)).Edge();
+        var aFC = new FindPlane(aCirc);
         Assert.True(aFC.Found());
         Assert.True(aFC.Plane()!.Pln().Axis().Direction().IsParallel(new Direction3D(1, 0, 0), 1e-12));
-        Assert.False(new BRepBuilderAPI_FindPlane().Found());
+        Assert.False(new FindPlane().Found());
     }
 }

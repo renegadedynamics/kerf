@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -42,11 +43,11 @@ internal static class BRepTestProjectionCommands
         //
         bool bCylProj = a[0] == "prj";
         //
-        BRepProj_Projection aPrj = bCylProj
-                                       ? new BRepProj_Projection(anInputWire, anInputShape, new Direction3D(X, Y, Z))
-                                       : new BRepProj_Projection(anInputWire, anInputShape, new Point3D(X, Y, Z));
+        Projection aPrj = bCylProj
+                                       ? new Projection(anInputWire, anInputShape, new Direction3D(X, Y, Z))
+                                       : new Projection(anInputWire, anInputShape, new Point3D(X, Y, Z));
         //
-        if (!aPrj.IsDone())
+        if (!aPrj.IsDone)
         {
             di.Append("Not done\n");
             return 0;

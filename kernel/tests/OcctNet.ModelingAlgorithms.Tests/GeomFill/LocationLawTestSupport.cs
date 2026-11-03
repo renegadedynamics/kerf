@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Adaptors;
@@ -8,7 +9,7 @@ using Kerf.Geometry;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>A test trihedron law: the same orthonormal frame everywhere (T, N, T ^ N), with zero derivatives.</summary>
-internal sealed class TestFixedTrihedron : GeomFill_TrihedronLaw
+internal sealed class TestFixedTrihedron : TrihedronLaw
 {
     private readonly Vector3D myT;
     private readonly Vector3D myN;
@@ -19,12 +20,12 @@ internal sealed class TestFixedTrihedron : GeomFill_TrihedronLaw
         myN = theN.Normalized();
     }
 
-    public override GeomFill_TrihedronLaw Copy()
+    public override TrihedronLaw Copy()
     {
         var aCopy = new TestFixedTrihedron(myT, myN);
-        if (myCurve is not null)
+        if (_curve is not null)
         {
-            aCopy.SetCurve(myCurve);
+            aCopy.SetCurve(_curve);
         }
         return aCopy;
     }
@@ -58,8 +59,8 @@ internal sealed class TestFixedTrihedron : GeomFill_TrihedronLaw
 
     public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        T[T.Lower()] = myCurve!.FirstParameter();
-        T[T.Upper()] = myCurve.LastParameter();
+        T[T.Lower()] = _curve!.FirstParameter();
+        T[T.Upper()] = _curve.LastParameter();
     }
 
     public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)
@@ -67,38 +68,38 @@ internal sealed class TestFixedTrihedron : GeomFill_TrihedronLaw
         D0(0, ref ATangent, ref ANormal, ref ABiNormal);
     }
 
-    public override bool IsConstant() => true;
+    public override bool IsConstant => true;
 }
 
 /// <summary>
 /// A test trihedron law with a guide: a fixed frame (T, N, T ^ N), the current point on the guide being the
 /// guide's point at the same parameter.
 /// </summary>
-internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
+internal sealed class TestFixedGuideTrihedron : TrihedronWithGuide
 {
     private readonly Vector3D myT;
     private readonly Vector3D myN;
 
     public TestFixedGuideTrihedron(CurveAdaptorBase theGuide, Vector3D theT, Vector3D theN)
     {
-        myGuide = theGuide;
-        myTrimG = theGuide;
+        _guide = theGuide;
+        _trimG = theGuide;
         myT = theT.Normalized();
         myN = theN.Normalized();
     }
 
     public int NbOrigine { get; private set; }
 
-    public override CurveAdaptorBase Guide() => myGuide!;
+    public override CurveAdaptorBase Guide() => _guide!;
 
     public override void Origine(double Param1, double Param2) => NbOrigine++;
 
-    public override GeomFill_TrihedronLaw Copy()
+    public override TrihedronLaw Copy()
     {
-        var aCopy = new TestFixedGuideTrihedron(myGuide!, myT, myN);
-        if (myCurve is not null)
+        var aCopy = new TestFixedGuideTrihedron(_guide!, myT, myN);
+        if (_curve is not null)
         {
-            aCopy.SetCurve(myCurve);
+            aCopy.SetCurve(_curve);
         }
         return aCopy;
     }
@@ -108,7 +109,7 @@ internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
         Tangent = myT;
         Normal = myN;
         BiNormal = myT.Crossed(myN);
-        myCurPointOnGuide = myGuide!.Value(Param);
+        _curPointOnGuide = _guide!.Value(Param);
         return true;
     }
 
@@ -133,8 +134,8 @@ internal sealed class TestFixedGuideTrihedron : GeomFill_TrihedronWithGuide
 
     public override void Intervals(NCollection_Array1<double> T, Continuity S)
     {
-        T[T.Lower()] = myCurve!.FirstParameter();
-        T[T.Upper()] = myCurve.LastParameter();
+        T[T.Lower()] = _curve!.FirstParameter();
+        T[T.Upper()] = _curve.LastParameter();
     }
 
     public override void GetAverageLaw(ref Vector3D ATangent, ref Vector3D ANormal, ref Vector3D ABiNormal)

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -59,7 +60,7 @@ internal static class BOPTestTolerCommands
             // Vertex Tolerances
             ReduceVertexTolerance(aWork);
             //
-            BRepLib.SameParameter(aWork, 1.0e-7, true);
+            BrepLibrary.SameParameter(aWork, 1.0e-7, true);
             return aWork;
         });
         //

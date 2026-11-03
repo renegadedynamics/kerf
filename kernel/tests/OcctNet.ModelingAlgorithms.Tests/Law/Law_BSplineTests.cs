@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
@@ -17,7 +18,7 @@ public class Law_BSplineTests
 {
     private const double Tol = 1.0e-10;
 
-    internal sealed record Pair(Law_BSpline Law, BSplineCurve2D Curve);
+    internal sealed record Pair(BSpline Law, BSplineCurve2D Curve);
 
     /// <summary>A random 1D B-spline and its planar twin.</summary>
     internal static Pair RandomPair(Random theRnd, bool? thePeriodic = null, bool? theRational = null, int theMaxDeg = 5)
@@ -56,15 +57,15 @@ public class Law_BSplineTests
             }
             if (aRat)
             {
-                return new Pair(new Law_BSpline(aPoles, aWeights, aKnots, aMults, aDeg, aPer),
+                return new Pair(new BSpline(aPoles, aWeights, aKnots, aMults, aDeg, aPer),
                                 new BSplineCurve2D(aPoles2d, aWeights, aKnots, aMults, aDeg, aPer));
             }
-            return new Pair(new Law_BSpline(aPoles, aKnots, aMults, aDeg, aPer),
+            return new Pair(new BSpline(aPoles, aKnots, aMults, aDeg, aPer),
                             new BSplineCurve2D(aPoles2d, aKnots, aMults, aDeg, aPer));
         }
     }
 
-    private static void AssertSameFunction(Law_BSpline theLaw, BSplineCurve2D theCurve, string theWhat)
+    private static void AssertSameFunction(BSpline theLaw, BSplineCurve2D theCurve, string theWhat)
     {
         Assert.Equal(theCurve.FirstParameter(), theLaw.FirstParameter(), Tol);
         Assert.Equal(theCurve.LastParameter(), theLaw.LastParameter(), Tol);
@@ -84,9 +85,9 @@ public class Law_BSplineTests
         {
             Pair p = RandomPair(aRnd);
             Assert.Equal(p.Curve.Degree(), p.Law.Degree());
-            Assert.Equal(p.Curve.PoleCount, p.Law.NbPoles());
+            Assert.Equal(p.Curve.PoleCount, p.Law.PoleCount);
             Assert.Equal(p.Curve.Continuity(), p.Law.Continuity());
-            Assert.Equal(p.Curve.IsRational, p.Law.IsRational());
+            Assert.Equal(p.Curve.IsRational, p.Law.IsRational);
             Assert.Equal(p.Curve.KnotDistribution(), p.Law.KnotDistribution());
             for (int n = 0; n <= 4; n++)
             {
@@ -160,29 +161,29 @@ public class Law_BSplineTests
         for (int aCase = 0; aCase < 200; aCase++)
         {
             Pair p = RandomPair(aRnd);
-            Law_BSpline aLaw = p.Law;
+            BSpline aLaw = p.Law;
             double aF = aLaw.FirstParameter(), aL = aLaw.LastParameter();
 
             // knot insertion, as Geom2d does it
             double u = aF + (aL - aF) * (0.2 + 0.6 * aRnd.NextDouble());
-            Law_BSpline anIns = aLaw.KnotInserted(u, 1);
+            BSpline anIns = aLaw.KnotInserted(u, 1);
             BSplineCurve2D aCIns = (BSplineCurve2D)p.Curve.Copy();
             aCIns.InsertKnot(u, 1);
-            Assert.Equal(aCIns.PoleCount, anIns.NbPoles());
-            Assert.Equal(aCIns.KnotCount, anIns.NbKnots());
+            Assert.Equal(aCIns.PoleCount, anIns.PoleCount);
+            Assert.Equal(aCIns.KnotCount, anIns.KnotCount);
             AssertSameFunction(anIns, p.Curve, "InsertKnot");
 
             // degree elevation
-            Law_BSpline anInc = aLaw.DegreeIncreased(Math.Min(aLaw.Degree() + 2, Law_BSpline.MaxDegree()));
+            BSpline anInc = aLaw.DegreeIncreased(Math.Min(aLaw.Degree() + 2, BSpline.MaxDegree()));
             BSplineCurve2D aCInc = (BSplineCurve2D)p.Curve.Copy();
             aCInc.IncreaseDegree(anInc.Degree());
-            Assert.Equal(aCInc.PoleCount, anInc.NbPoles());
+            Assert.Equal(aCInc.PoleCount, anInc.PoleCount);
             // the same poles as Geom2d's degree elevation
-            for (int k = 1; k <= anInc.NbPoles(); k++)
+            for (int k = 1; k <= anInc.PoleCount; k++)
             {
                 Assert.Equal(aCInc.Pole(k).Y(), anInc.Pole(k), 1.0e-9);
             }
-            if (!aLaw.IsPeriodic())
+            if (!aLaw.IsPeriodic)
             {
                 // (BSplCLib's elevation of some periodic curves changes them, in Geom2d as here; not this unit's)
                 AssertSameFunction(anInc, p.Curve, "IncreaseDegree");
@@ -190,7 +191,7 @@ public class Law_BSplineTests
 
             // removing the inserted knot gives back the poles
             int anIndex = 0;
-            for (int k = 1; k <= anIns.NbKnots(); k++)
+            for (int k = 1; k <= anIns.KnotCount; k++)
             {
                 if (anIns.Knot(k) == u)
                 {
@@ -199,17 +200,17 @@ public class Law_BSplineTests
             }
             if (anIndex > anIns.FirstUKnotIndex() && anIndex < anIns.LastUKnotIndex())
             {
-                Law_BSpline? aRem = anIns.KnotRemoved(anIndex, anIns.Multiplicity(anIndex) - 1, 1.0e-7);
+                BSpline? aRem = anIns.KnotRemoved(anIndex, anIns.Multiplicity(anIndex) - 1, 1.0e-7);
                 Assert.NotNull(aRem);
-                Assert.Equal(aLaw.NbPoles(), aRem.NbPoles());
+                Assert.Equal(aLaw.PoleCount, aRem.PoleCount);
                 AssertSameFunction(aRem, p.Curve, "RemoveKnot");
             }
 
             // segment
             double u1 = aF + (aL - aF) * 0.25 * aRnd.NextDouble();
             double u2 = aL - (aL - aF) * 0.25 * aRnd.NextDouble();
-            Law_BSpline aSeg = aLaw.Segmented(u1, u2);
-            Assert.False(aSeg.IsPeriodic());
+            BSpline aSeg = aLaw.Segmented(u1, u2);
+            Assert.False(aSeg.IsPeriodic);
             Assert.Equal(u1, aSeg.FirstParameter(), 1.0e-12);
             // OCCT locates the end at NewU1 + (U2 - U1), which can round below U2 and then keep the poles of a span
             // that doesn't end at a knot of multiplicity Degree: a wrong curve (occt-issues.md;
@@ -229,7 +230,7 @@ public class Law_BSplineTests
             }
 
             // reverse
-            Law_BSpline aRev = aLaw.Reversed();
+            BSpline aRev = aLaw.Reversed();
             for (int k = 0; k <= 10; k++)
             {
                 double v = aF + (aL - aF) * k / 10.0;
@@ -237,14 +238,14 @@ public class Law_BSplineTests
             }
 
             // multiplicities
-            if (aLaw.NbKnots() > 2)
+            if (aLaw.KnotCount > 2)
             {
-                Law_BSpline aMult = aLaw.MultiplicityIncreased(2, aLaw.Degree());
+                BSpline aMult = aLaw.MultiplicityIncreased(2, aLaw.Degree());
                 // OCCT inserts M - old with Add = false (occt-issues.md): the multiplicity becomes Max(old, M - old)
                 int anOld = aLaw.Multiplicity(2);
                 Assert.Equal(Math.Max(anOld, aLaw.Degree() - anOld), aMult.Multiplicity(2));
                 AssertSameFunction(aMult, p.Curve, "IncreaseMultiplicity");
-                Law_BSpline aMult2 = aLaw.MultiplicityIncremented(2, aLaw.NbKnots() - 1, 1);
+                BSpline aMult2 = aLaw.MultiplicityIncremented(2, aLaw.KnotCount - 1, 1);
                 AssertSameFunction(aMult2, p.Curve, "IncrementMultiplicity");
             }
         }
@@ -265,12 +266,12 @@ public class Law_BSplineTests
         var aPoles = new NCollection_Array1<double>(1, 2);
         aPoles[1] = 1.0;
         aPoles[2] = 3.0;
-        var aLaw = new Law_BSpline(aPoles, aKnots, aMults, 1, true);
-        Law_BSpline aSeg = aLaw.Segmented(-0.8366561267389194, 0.18337401436557388);
+        var aLaw = new BSpline(aPoles, aKnots, aMults, 1, true);
+        BSpline aSeg = aLaw.Segmented(-0.8366561267389194, 0.18337401436557388);
         Assert.Equal(-0.8366561267389194, aSeg.FirstParameter());
         Assert.Equal(-0.10065871756554523, aSeg.LastParameter());
         // a range whose end rounds exactly is kept whole
-        Law_BSpline aSeg2 = aLaw.Segmented(-0.75, 0.25);
+        BSpline aSeg2 = aLaw.Segmented(-0.75, 0.25);
         Assert.Equal(0.25, aSeg2.LastParameter());
     }
 
@@ -281,24 +282,24 @@ public class Law_BSplineTests
         for (int aCase = 0; aCase < 100; aCase++)
         {
             Pair p = RandomPair(aRnd, thePeriodic: true);
-            Law_BSpline aLaw = p.Law;
-            Assert.True(aLaw.IsPeriodic());
+            BSpline aLaw = p.Law;
+            Assert.True(aLaw.IsPeriodic);
             double aF = aLaw.FirstParameter(), aL = aLaw.LastParameter();
             double aT = aL - aF;
             // periodic normalisation
             Assert.Equal(aLaw.Value(aF + 0.3 * aT), aLaw.Value(aF + 1.3 * aT), 1.0e-9);
             Assert.Equal(aLaw.Value(aF + 0.3 * aT), aLaw.Value(aF - 0.7 * aT), 1.0e-9);
 
-            Law_BSpline aNP = aLaw.WithNotPeriodic();
-            Assert.False(aNP.IsPeriodic());
+            BSpline aNP = aLaw.WithNotPeriodic();
+            Assert.False(aNP.IsPeriodic);
             BSplineCurve2D aCNP = (BSplineCurve2D)p.Curve.Copy();
             aCNP.SetNotPeriodic();
-            Assert.Equal(aCNP.PoleCount, aNP.NbPoles());
+            Assert.Equal(aCNP.PoleCount, aNP.PoleCount);
             AssertSameFunction(aNP, p.Curve, "SetNotPeriodic");
 
-            if (aLaw.NbKnots() > 2)
+            if (aLaw.KnotCount > 2)
             {
-                Law_BSpline anOrig = aLaw.WithOrigin(2);
+                BSpline anOrig = aLaw.WithOrigin(2);
                 Assert.Equal(aLaw.Knot(2), anOrig.FirstParameter(), 1.0e-12);
                 for (int k = 0; k <= 10; k++)
                 {
@@ -308,8 +309,8 @@ public class Law_BSplineTests
             }
 
             // a non-periodic curve whose ends join with enough continuity made periodic
-            Law_BSpline aPer = aNP.WithPeriodic();
-            Assert.True(aPer.IsPeriodic());
+            BSpline aPer = aNP.WithPeriodic();
+            Assert.True(aPer.IsPeriodic);
         }
     }
 
@@ -318,17 +319,17 @@ public class Law_BSplineTests
     {
         var aRnd = new Random(5);
         Pair p = RandomPair(aRnd, thePeriodic: false, theRational: true);
-        Law_BSpline aLaw = p.Law;
-        var aPoles = new NCollection_Array1<double>(1, aLaw.NbPoles());
+        BSpline aLaw = p.Law;
+        var aPoles = new NCollection_Array1<double>(1, aLaw.PoleCount);
         aLaw.Poles(aPoles);
         Assert.Equal(aPoles.AsSpan().ToArray(), aLaw.Poles().ToArray());
-        var aWeights = new NCollection_Array1<double>(1, aLaw.NbPoles());
+        var aWeights = new NCollection_Array1<double>(1, aLaw.PoleCount);
         aLaw.Weights(aWeights);
         Assert.Equal(aWeights.AsSpan().ToArray(), aLaw.Weights()!.ToArray());
-        var aKnots = new NCollection_Array1<double>(1, aLaw.NbKnots());
+        var aKnots = new NCollection_Array1<double>(1, aLaw.KnotCount);
         aLaw.Knots(aKnots);
         Assert.Equal(aKnots.AsSpan().ToArray(), aLaw.Knots().ToArray());
-        var aMults = new NCollection_Array1<int>(1, aLaw.NbKnots());
+        var aMults = new NCollection_Array1<int>(1, aLaw.KnotCount);
         aLaw.Multiplicities(aMults);
         Assert.Equal(aMults.AsSpan().ToArray(), aLaw.Multiplicities().ToArray());
         var aSeq = new NCollection_Array1<double>(1, aLaw.KnotSequence().Count);
@@ -336,7 +337,7 @@ public class Law_BSplineTests
         Assert.Equal(aSeq.AsSpan().ToArray(), aLaw.KnotSequence().ToArray());
         aPoles[1] = 1.0e10; // the caller's array, not the curve's
         Assert.NotEqual(1.0e10, aLaw.Pole(1));
-        Assert.Throws<DimensionErrorException>(() => aLaw.Poles(new NCollection_Array1<double>(1, aLaw.NbPoles() + 1)));
+        Assert.Throws<DimensionErrorException>(() => aLaw.Poles(new NCollection_Array1<double>(1, aLaw.PoleCount + 1)));
     }
 
     [Fact]
@@ -344,16 +345,16 @@ public class Law_BSplineTests
     {
         var aRnd = new Random(6);
         Pair p = RandomPair(aRnd, thePeriodic: false, theRational: false);
-        Law_BSpline aLaw = p.Law;
-        Law_BSpline aPole = aLaw.WithPole(1, 42.0);
+        BSpline aLaw = p.Law;
+        BSpline aPole = aLaw.WithPole(1, 42.0);
         Assert.Equal(42.0, aPole.Pole(1));
         Assert.Equal(42.0, aPole.StartPoint());
         Assert.NotEqual(42.0, aLaw.Pole(1));
-        Law_BSpline aW = aLaw.WithWeight(1, 2.0);
-        Assert.True(aW.IsRational());
+        BSpline aW = aLaw.WithWeight(1, 2.0);
+        Assert.True(aW.IsRational);
         Assert.Equal(2.0, aW.Weight(1));
-        Assert.False(aW.WithWeight(1, 1.0).IsRational()); // all weights equal again
-        Law_BSpline aPW = aLaw.WithPole(2, 3.0, 2.0);
+        Assert.False(aW.WithWeight(1, 1.0).IsRational); // all weights equal again
+        BSpline aPW = aLaw.WithPole(2, 3.0, 2.0);
         Assert.Equal(3.0, aPW.Pole(2));
         Assert.Equal(2.0, aPW.Weight(2));
         Assert.Throws<ConstructionErrorException>(() => aLaw.WithWeight(1, 0.0));
@@ -376,13 +377,13 @@ public class Law_BSplineTests
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        var aLaw = new Law_BSpline(aPoles, aKnots, aMults, 3);
+        var aLaw = new BSpline(aPoles, aKnots, aMults, 3);
         Assert.Equal(BSplKnotDistribution.QuasiUniform, aLaw.KnotDistribution());
-        Law_BSpline aK = aLaw.WithKnot(2, 1.5);
+        BSpline aK = aLaw.WithKnot(2, 1.5);
         Assert.Equal(1.5, aK.Knot(2));
         Assert.Equal(BSplKnotDistribution.NonUniform, aK.KnotDistribution());
         Assert.Throws<ConstructionErrorException>(() => aLaw.WithKnot(2, 2.0));
-        Law_BSpline aKM = aLaw.WithKnot(2, 1.25, 3);
+        BSpline aKM = aLaw.WithKnot(2, 1.25, 3);
         // OCCT's IncreaseMultiplicity inserts 3 - 1 with Add = false (occt-issues.md): multiplicity 2, not 3
         Assert.Equal(2, aKM.Multiplicity(2));
         Assert.Equal(1.25, aKM.Knot(2));
@@ -392,7 +393,7 @@ public class Law_BSplineTests
         aNewKnots[1] = -1;
         aNewKnots[2] = 0.5;
         aNewKnots[3] = 4;
-        Law_BSpline aKs = aLaw.WithKnots(aNewKnots);
+        BSpline aKs = aLaw.WithKnots(aNewKnots);
         Assert.Equal(-1.0, aKs.FirstParameter());
         Assert.Equal(4.0, aKs.LastParameter());
         Assert.Equal(aLaw.Pole(1), aKs.Value(-1.0), 1.0e-14);
@@ -412,7 +413,7 @@ public class Law_BSplineTests
         aMults[1] = 4;
         aMults[2] = 1;
         aMults[3] = 4;
-        var aLaw = new Law_BSpline(aPoles, aKnots, aMults, 3);
+        var aLaw = new BSpline(aPoles, aKnots, aMults, 3);
         aLaw.LocateU(0.0, 1.0e-9, out int i1, out int i2);
         Assert.Equal((1, 1), (i1, i2));
         aLaw.LocateU(2.0, 1.0e-9, out i1, out i2);
@@ -427,7 +428,7 @@ public class Law_BSplineTests
         Assert.Equal((3, 4), (i1, i2));
         aLaw.LocateU(0.5, 1.0e-9, out i1, out i2, true);
         Assert.Equal((4, 5), (i1, i2));
-        Assert.True(aLaw.IsClosed());
+        Assert.True(aLaw.IsClosed);
     }
 
     [Fact]
@@ -437,13 +438,13 @@ public class Law_BSplineTests
         for (int aCase = 0; aCase < 50; aCase++)
         {
             Pair p = RandomPair(aRnd, thePeriodic: false, theMaxDeg: 5);
-            Law_BSpline aLaw = p.Law;
-            if (aLaw.Degree() < 3 || aLaw.NbPoles() < 6)
+            BSpline aLaw = p.Law;
+            if (aLaw.Degree() < 3 || aLaw.PoleCount < 6)
             {
                 continue;
             }
             double u = 0.5 * (aLaw.FirstParameter() + aLaw.LastParameter());
-            Law_BSpline aMoved = aLaw.PointAndTangentMoved(u, 7.0, -2.0, 1.0e-9, 1, 1, out int anError);
+            BSpline aMoved = aLaw.PointAndTangentMoved(u, 7.0, -2.0, 1.0e-9, 1, 1, out int anError);
             if (anError != 0)
             {
                 continue;
@@ -474,13 +475,13 @@ public class Law_BSplineTests
     {
         var aRnd = new Random(10);
         Pair p = RandomPair(aRnd, thePeriodic: false);
-        Law_BSpline aLaw = p.Law;
+        BSpline aLaw = p.Law;
         aLaw.Freeze();
         Assert.Throws<ImmutableObjectException>(() => aLaw.SetPole(1, 1.0));
         Assert.Throws<ImmutableObjectException>(() => aLaw.InsertKnot(0.5 * (aLaw.FirstParameter() + aLaw.LastParameter())));
         Assert.Throws<ImmutableObjectException>(() => aLaw.Reverse());
         Assert.Throws<ImmutableObjectException>(() => aLaw.Segment(aLaw.FirstParameter(), aLaw.LastParameter()));
-        Law_BSpline aCopy = aLaw.Copy();
+        BSpline aCopy = aLaw.Copy();
         Assert.False(aCopy.IsFrozen);
         aCopy.SetPole(1, 1.0);
         Assert.Equal(1.0, aCopy.Pole(1));
@@ -496,15 +497,15 @@ public class Law_BSplineTests
         aKnots[2] = 1;
         var aMults = new NCollection_Array1<int>(1, 2);
         aMults[1] = aMults[2] = 3;
-        Assert.Throws<ConstructionErrorException>(() => new Law_BSpline(aPoles, aKnots, aMults, 3));
-        Assert.Throws<ConstructionErrorException>(() => new Law_BSpline(aPoles, aKnots, aMults, 0));
-        var aLaw = new Law_BSpline(aPoles, aKnots, aMults, 2);
+        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 3));
+        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aKnots, aMults, 0));
+        var aLaw = new BSpline(aPoles, aKnots, aMults, 2);
         Assert.Equal(BSplKnotDistribution.PiecewiseBezier, aLaw.KnotDistribution());
         Assert.Equal(Continuity.CN, aLaw.Continuity());
         var aWeights = new NCollection_Array1<double>(1, 3);
         aWeights.Init(2.0);
-        Assert.False(new Law_BSpline(aPoles, aWeights, aKnots, aMults, 2).IsRational());
+        Assert.False(new BSpline(aPoles, aWeights, aKnots, aMults, 2).IsRational);
         aWeights[2] = -1.0;
-        Assert.Throws<ConstructionErrorException>(() => new Law_BSpline(aPoles, aWeights, aKnots, aMults, 2));
+        Assert.Throws<ConstructionErrorException>(() => new BSpline(aPoles, aWeights, aKnots, aMults, 2));
     }
 }

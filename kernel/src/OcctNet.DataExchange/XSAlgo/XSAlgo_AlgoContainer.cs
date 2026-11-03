@@ -7,6 +7,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Healing.Process;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using static Kerf.Topology.ShapeType;
@@ -47,11 +51,11 @@ public class XSAlgo_AlgoContainer : Transient
             return theShape;
         }
 
-        ShapeProcess_ShapeContext? aContext = theInfo as ShapeProcess_ShapeContext;
+        ShapeContext? aContext = theInfo as ShapeContext;
         if (aContext is null)
         {
             string aRscfile = theStatics.CVal(thePrscfile);
-            aContext = new ShapeProcess_ShapeContext(theShape, aRscfile);
+            aContext = new ShapeContext(theShape, aRscfile);
             if (!aContext.ResourceManager().IsInitialized)
             {
                 // If resource file wasn't found, use static values instead
@@ -76,8 +80,8 @@ public class XSAlgo_AlgoContainer : Transient
             {
                 try
                 {
-                    var aMsg = new ShapeExtend_MsgRegistrator();
-                    ShapeFix_Shape aSfs = ShapeAlgo.AlgoContainer().ToolContainer().FixShape();
+                    var aMsg = new MsgRegistrator();
+                    ShapeFixer aSfs = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().ToolContainer().FixShape();
                     aSfs.Init(theShape);
                     aSfs.SetMsgRegistrator(aMsg);
                     aSfs.SetPrecision(thePrec);
@@ -93,7 +97,7 @@ public class XSAlgo_AlgoContainer : Transient
                         aContext.SetResult(aShape);
                     }
                 }
-                catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+                catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
                 {
                     // OCC_CATCH_SIGNALS: a Standard_Failure, or a system signal (decision 1183)
                 }
@@ -110,7 +114,7 @@ public class XSAlgo_AlgoContainer : Transient
         aRsc.SetResource("Runtime.Tolerance", thePrec);
         aRsc.SetResource("Runtime.MaxTolerance", theMaxTol);
 
-        if (!ShapeProcess.Perform(aContext, aSeq, theProgress))
+        if (!global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(aContext, aSeq, theProgress))
         {
             return theShape; // return original shape
         }
@@ -132,14 +136,14 @@ public class XSAlgo_AlgoContainer : Transient
     /// </summary>
     public virtual void MergeTransferInfo(Transfer_TransientProcess TP, Transient? info, int startTPitem = 1)
     {
-        ShapeProcess_ShapeContext? context = info as ShapeProcess_ShapeContext;
+        ShapeContext? context = info as ShapeContext;
         if (context is null)
         {
             return;
         }
 
         NCollection_DataMap<Shape, Shape> map = context.Map();
-        ShapeExtend_MsgRegistrator? msg = context.Messages();
+        MsgRegistrator? msg = context.Messages();
         if (map.Extent() <= 0 && (msg is null || msg.MapShape().Extent() <= 0))
         {
             return;
@@ -218,14 +222,14 @@ public class XSAlgo_AlgoContainer : Transient
     /// </summary>
     public virtual void MergeTransferInfo(Transfer_FinderProcess FP, Transient? info)
     {
-        ShapeProcess_ShapeContext? context = info as ShapeProcess_ShapeContext;
+        ShapeContext? context = info as ShapeContext;
         if (context is null)
         {
             return;
         }
 
         NCollection_DataMap<Shape, Shape> map = context.Map();
-        ShapeExtend_MsgRegistrator? msg = context.Messages();
+        MsgRegistrator? msg = context.Messages();
         foreach (KeyValuePair<Shape, Shape> ShapeShapeIterator in map)
         {
             Shape orig = ShapeShapeIterator.Key, res = ShapeShapeIterator.Value;

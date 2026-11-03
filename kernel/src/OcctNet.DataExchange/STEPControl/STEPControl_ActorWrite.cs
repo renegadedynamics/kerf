@@ -6,6 +6,8 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Process;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -152,7 +154,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     {
         mygroup = 0;
         mytoler = -1.0;
-        SetMode(STEPControl_ShellBasedSurfaceModel);
+        SetMode(STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel);
     }
 
     //=======================================================================
@@ -197,7 +199,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     //=======================================================================
     private void mergeInfoForNM(Transfer_FinderProcess theFP, Transient theInfo)
     {
-        ShapeProcess_ShapeContext aContext = theInfo as ShapeProcess_ShapeContext;
+        ShapeContext aContext = theInfo as ShapeContext;
         if (aContext is null)
         {
             return;
@@ -267,28 +269,28 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
     {
         switch (M)
         {
-            case STEPControl_AsIs:
+            case STEPControl_StepModelType.STEPControl_AsIs:
                 ModeTrans() = 0;
                 break;
-            case STEPControl_ManifoldSolidBrep:
+            case STEPControl_StepModelType.STEPControl_ManifoldSolidBrep:
                 ModeTrans() = 3;
                 break;
-            case STEPControl_BrepWithVoids:
+            case STEPControl_StepModelType.STEPControl_BrepWithVoids:
                 ModeTrans() = 5;
                 break;
-            case STEPControl_FacetedBrep:
+            case STEPControl_StepModelType.STEPControl_FacetedBrep:
                 ModeTrans() = 1;
                 break;
-            case STEPControl_FacetedBrepAndBrepWithVoids:
+            case STEPControl_StepModelType.STEPControl_FacetedBrepAndBrepWithVoids:
                 ModeTrans() = 6;
                 break;
-            case STEPControl_ShellBasedSurfaceModel:
+            case STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel:
                 ModeTrans() = 2;
                 break;
-            case STEPControl_GeometricCurveSet:
+            case STEPControl_StepModelType.STEPControl_GeometricCurveSet:
                 ModeTrans() = 4;
                 break;
-            case STEPControl_Hybrid:
+            case STEPControl_StepModelType.STEPControl_Hybrid:
                 ModeTrans() = 0;
                 break; // PAS IMPLEMENTE !!
             default:
@@ -301,23 +303,23 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         switch (ModeTrans())
         {
             case 0:
-                return STEPControl_AsIs;
+                return STEPControl_StepModelType.STEPControl_AsIs;
             case 1:
-                return STEPControl_FacetedBrep;
+                return STEPControl_StepModelType.STEPControl_FacetedBrep;
             case 2:
-                return STEPControl_ShellBasedSurfaceModel;
+                return STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel;
             case 3:
-                return STEPControl_ManifoldSolidBrep;
+                return STEPControl_StepModelType.STEPControl_ManifoldSolidBrep;
             case 4:
-                return STEPControl_GeometricCurveSet;
+                return STEPControl_StepModelType.STEPControl_GeometricCurveSet;
             case 5:
-                return STEPControl_BrepWithVoids;
+                return STEPControl_StepModelType.STEPControl_BrepWithVoids;
             case 6:
-                return STEPControl_FacetedBrepAndBrepWithVoids;
+                return STEPControl_StepModelType.STEPControl_FacetedBrepAndBrepWithVoids;
             default:
                 break;
         }
-        return STEPControl_AsIs;
+        return STEPControl_StepModelType.STEPControl_AsIs;
     }
 
     public void SetGroupMode(int mode)
@@ -357,7 +359,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             return false;
         }
-        if (mymode == STEPControl_AsIs)
+        if (mymode == STEPControl_StepModelType.STEPControl_AsIs)
         {
             return true;
         }
@@ -397,7 +399,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             yaface = true;
         }
-        else if (mymode != STEPControl_GeometricCurveSet)
+        else if (mymode != STEPControl_StepModelType.STEPControl_GeometricCurveSet)
         {
             return false;
         }
@@ -406,7 +408,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         //  Faceted : il est OBLIGATOIRE d avoir des surfaces support Plane et des
         //   courbes 3D Line (pcurves ignorees)
 
-        if (mymode == STEPControl_FacetedBrep || mymode == STEPControl_FacetedBrepAndBrepWithVoids)
+        if (mymode == STEPControl_StepModelType.STEPControl_FacetedBrep || mymode == STEPControl_StepModelType.STEPControl_FacetedBrepAndBrepWithVoids)
         {
             for (Explorer ffac = new Explorer(theShape, ShapeType.Face); ffac.More(); ffac.Next())
             {
@@ -432,15 +434,15 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
 
         switch (mymode)
         {
-            case STEPControl_ManifoldSolidBrep:
+            case STEPControl_StepModelType.STEPControl_ManifoldSolidBrep:
                 return (yasolid || yashell);
-            case STEPControl_BrepWithVoids:
-            case STEPControl_FacetedBrep:
-            case STEPControl_FacetedBrepAndBrepWithVoids:
+            case STEPControl_StepModelType.STEPControl_BrepWithVoids:
+            case STEPControl_StepModelType.STEPControl_FacetedBrep:
+            case STEPControl_StepModelType.STEPControl_FacetedBrepAndBrepWithVoids:
                 return yasolid;
-            case STEPControl_ShellBasedSurfaceModel:
+            case STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel:
                 return (yasolid || yashell || yaface);
-            case STEPControl_GeometricCurveSet:
+            case STEPControl_StepModelType.STEPControl_GeometricCurveSet:
                 return true; // tout OK
             default:
                 break;
@@ -517,7 +519,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         }
         if (Tol <= 0)
         {
-            ShapeAnalysis_ShapeTolerance stu = new ShapeAnalysis_ShapeTolerance();
+            ShapeToleranceAnalysis stu = new ShapeToleranceAnalysis();
             Tol = stu.Tolerance(theShape, tolmod);
             //  Par defaut, on prend une tolerance moyenne, on elimine les aberrations
             Tol = Interface_MSG.Intervalled(Tol * 1.5); // arrondi a 1 2 5 ...
@@ -846,7 +848,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         if (theShape.ShapeType() == ShapeType.Compound)
         {
             Explorer SolidExp = new Explorer(), ShellExp = new Explorer(), FaceExp = new Explorer();
-            if (mymode != STEPControl_GeometricCurveSet)
+            if (mymode != STEPControl_StepModelType.STEPControl_GeometricCurveSet)
             {
                 for (SolidExp.Init(theShape, ShapeType.Solid); SolidExp.More(); SolidExp.Next())
                 {
@@ -869,7 +871,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                     RepItemSeq.Append(theShape); //: j1
                 }
             }
-            if (mymode == STEPControl_AsIs)
+            if (mymode == STEPControl_StepModelType.STEPControl_AsIs)
             {
                 Explorer WireExp = new Explorer(), EdgeExp = new Explorer();
                 for (WireExp.Init(theShape, ShapeType.Wire, ShapeType.Face); WireExp.More(); WireExp.Next())
@@ -911,7 +913,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             }
         }
 
-        else if (mymode != STEPControl_GeometricCurveSet && mymode != STEPControl_AsIs)
+        else if (mymode != STEPControl_StepModelType.STEPControl_GeometricCurveSet && mymode != STEPControl_StepModelType.STEPControl_AsIs)
         {
             FP.AddFail(start, "The Shape is not a SOLID, nor a SHELL, nor a FACE");
             return binder;
@@ -940,21 +942,21 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             Shape xShape = RepItemSeq.Value(i);
 
-            if (mymode == STEPControl_AsIs)
+            if (mymode == STEPControl_StepModelType.STEPControl_AsIs)
             {
                 switch (xShape.ShapeType())
                 {
                     case ShapeType.Solid:
-                        trmode = STEPControl_ManifoldSolidBrep;
+                        trmode = STEPControl_StepModelType.STEPControl_ManifoldSolidBrep;
                         break;
                     case ShapeType.Shell:
-                        trmode = STEPControl_ShellBasedSurfaceModel;
+                        trmode = STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel;
                         break;
                     case ShapeType.Face:
-                        trmode = STEPControl_ShellBasedSurfaceModel;
+                        trmode = STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel;
                         break;
                     default:
-                        trmode = STEPControl_GeometricCurveSet;
+                        trmode = STEPControl_StepModelType.STEPControl_GeometricCurveSet;
                         break;
                 }
             }
@@ -988,7 +990,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
             StepGeom_GeometricRepresentationItem item = null, itemTess = null;
             switch (trmode)
             {
-                case STEPControl_ManifoldSolidBrep:
+                case STEPControl_StepModelType.STEPControl_ManifoldSolidBrep:
                     {
                         if (aShape.ShapeType() == ShapeType.Solid)
                         {
@@ -1042,7 +1044,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         break;
                     }
-                case STEPControl_BrepWithVoids:
+                case STEPControl_StepModelType.STEPControl_BrepWithVoids:
                     {
                         if (aShape.ShapeType() == ShapeType.Solid)
                         {
@@ -1057,17 +1059,17 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         break;
                     }
-                case STEPControl_FacetedBrep:
+                case STEPControl_StepModelType.STEPControl_FacetedBrep:
                     {
                         TopoDSToStep_FacetedError facErr = TopoDSToStep_FacetedTool.CheckTopoDSShape(aShape);
-                        if (facErr != TopoDSToStep_FacetedDone)
+                        if (facErr != TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone)
                         {
                             FP.AddFail(start, "Error in Faceted Shape from TopoDS");
-                            if (facErr == TopoDSToStep_SurfaceNotPlane)
+                            if (facErr == TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane)
                             {
                                 FP.AddFail(start, "-- The TopoDS_Face is not plane");
                             }
-                            else if (facErr == TopoDSToStep_PCurveNotLinear)
+                            else if (facErr == TopoDSToStep_FacetedError.TopoDSToStep_PCurveNotLinear)
                             {
                                 FP.AddFail(start, "-- The Face contains non linear PCurves");
                             }
@@ -1086,17 +1088,17 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         break;
                     }
-                case STEPControl_FacetedBrepAndBrepWithVoids:
+                case STEPControl_StepModelType.STEPControl_FacetedBrepAndBrepWithVoids:
                     {
                         TopoDSToStep_FacetedError facErr = TopoDSToStep_FacetedTool.CheckTopoDSShape(aShape);
-                        if (facErr != TopoDSToStep_FacetedDone)
+                        if (facErr != TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone)
                         {
                             FP.AddFail(start, "Error in Faceted Shape from TopoDS");
-                            if (facErr == TopoDSToStep_SurfaceNotPlane)
+                            if (facErr == TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane)
                             {
                                 FP.AddFail(start, "-- The TopoDS_Face is not plane");
                             }
-                            else if (facErr == TopoDSToStep_PCurveNotLinear)
+                            else if (facErr == TopoDSToStep_FacetedError.TopoDSToStep_PCurveNotLinear)
                             {
                                 FP.AddFail(start, "-- The Face contains non linear PCurves");
                             }
@@ -1116,7 +1118,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         break;
                     }
-                case STEPControl_ShellBasedSurfaceModel:
+                case STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel:
                     {
                         if (aShape.ShapeType() == ShapeType.Solid)
                         {
@@ -1157,7 +1159,7 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         }
                         break;
                     }
-                case STEPControl_GeometricCurveSet:
+                case STEPControl_StepModelType.STEPControl_GeometricCurveSet:
                     {
                         TopoDSToStep_MakeGeometricCurveSet MkGeometricCurveSet = new TopoDSToStep_MakeGeometricCurveSet(aShape, FP, theLocalFactors);
                         MkGeometricCurveSet.Tolerance() = Tol;
@@ -1283,17 +1285,17 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
         {
             switch (mymode)
             {
-                case STEPControl_ManifoldSolidBrep:
+                case STEPControl_StepModelType.STEPControl_ManifoldSolidBrep:
                     shapeRep = new StepShape_AdvancedBrepShapeRepresentation();
                     break;
-                case STEPControl_FacetedBrep:
+                case STEPControl_StepModelType.STEPControl_FacetedBrep:
                     shapeRep = new StepShape_FacetedBrepShapeRepresentation();
                     break;
                 // NOTE: STEPControl_AsIs mode is normally used to transfer non-manifold topology.
                 //       However, as ShellBasedSurfaceModel is used in non-manifold processing
                 //       internally, STEPControl_ShellBasedSurfaceModel is also adjusted to
                 //       be able to work with non-manifold cases
-                case STEPControl_ShellBasedSurfaceModel:
+                case STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel:
                     if (isManifold)
                     {
                         shapeRep = new StepShape_ManifoldSurfaceShapeRepresentation();
@@ -1304,18 +1306,18 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                         useExistingNMSSR = !isNewNMSSRCreated;
                     }
                     break;
-                case STEPControl_GeometricCurveSet:
+                case STEPControl_StepModelType.STEPControl_GeometricCurveSet:
                     shapeRep = new StepShape_GeometricallyBoundedWireframeShapeRepresentation();
                     break;
-                case STEPControl_AsIs:
+                case STEPControl_StepModelType.STEPControl_AsIs:
                     {
                         if (nbs == 1)
                         {
-                            if (trmode == STEPControl_ManifoldSolidBrep)
+                            if (trmode == STEPControl_StepModelType.STEPControl_ManifoldSolidBrep)
                             {
                                 shapeRep = new StepShape_AdvancedBrepShapeRepresentation();
                             }
-                            else if (trmode == STEPControl_ShellBasedSurfaceModel)
+                            else if (trmode == STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel)
                             {
                                 // Process non-manifold topology separately (ssv; 13.11.2010)
                                 if (isManifold)
@@ -1328,11 +1330,11 @@ public class STEPControl_ActorWrite : Transfer_ActorOfFinderProcess
                                     useExistingNMSSR = !isNewNMSSRCreated;
                                 }
                             }
-                            else if (trmode == STEPControl_GeometricCurveSet)
+                            else if (trmode == STEPControl_StepModelType.STEPControl_GeometricCurveSet)
                             {
                                 shapeRep = new StepShape_GeometricallyBoundedWireframeShapeRepresentation();
                             }
-                            else if (trmode == STEPControl_FacetedBrep)
+                            else if (trmode == STEPControl_StepModelType.STEPControl_FacetedBrep)
                             {
                                 shapeRep = new StepShape_FacetedBrepShapeRepresentation();
                             }

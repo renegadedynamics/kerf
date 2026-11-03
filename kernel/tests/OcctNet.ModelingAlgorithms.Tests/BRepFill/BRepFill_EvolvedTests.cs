@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -23,7 +25,7 @@ public class BRepFill_EvolvedTests
 {
     private static Wire Polygon(bool theClosed, params double[] theXYZ)
     {
-        BRepBuilderAPI_MakePolygon aMP = new();
+        MakePolygon aMP = new();
         for (int i = 0; i < theXYZ.Length; i += 3)
         {
             aMP.Add(new Point3D(theXYZ[i], theXYZ[i + 1], theXYZ[i + 2]));
@@ -49,14 +51,14 @@ public class BRepFill_EvolvedTests
     private static double Area(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     private static double Volume(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -77,11 +79,11 @@ public class BRepFill_EvolvedTests
         Wire aProfile = Polygon(false, 0, 0, 0, 0, 0, 5);
         string aSpineText = Text(aSpine), aProfileText = Text(aProfile);
 
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile);
-        Assert.True(aMaker.IsDone());
+        MakeEvolved aMaker = new(aSpine, aProfile);
+        Assert.True(aMaker.IsDone);
         Shape aResult = aMaker.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(4, Count(aResult, ShapeType.Face));
         Assert.Equal(200.0, Area(aResult), 1.0e-9);
 
@@ -102,14 +104,14 @@ public class BRepFill_EvolvedTests
     public void Solid_of_a_vertical_profile_has_its_top_and_bottom()
     {
         Wire aSpine = Square();
-        Face aFace = new BRepBuilderAPI_MakeFace(aSpine, true).Face();
+        Face aFace = new MakeFace(aSpine, true).Face();
         Wire aProfile = Polygon(false, 0, 0, 0, 0, 0, 5);
         string aFaceText = Text(aFace);
 
-        BRepOffsetAPI_MakeEvolved aMaker = new(aFace, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true);
+        MakeEvolved aMaker = new(aFace, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true);
         Shape aResult = aMaker.Shape();
         Assert.Equal(ShapeType.Solid, aResult.ShapeType());
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(500.0, Volume(aResult), 1.0e-9);
         Assert.False(aMaker.Top().IsNull);
         Assert.False(aMaker.Bottom().IsNull);
@@ -130,10 +132,10 @@ public class BRepFill_EvolvedTests
     {
         Wire aSpine = theSpine == "square" ? Square() : LShape();
         Wire aProfile = Polygon(false, 0, theOffset, 0, 0, theOffset, 3);
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true);
-        Assert.True(aMaker.IsDone());
+        MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true);
+        Assert.True(aMaker.IsDone);
         Shape aResult = aMaker.Shape();
-        Assert.Equal(theIsValid, new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.Equal(theIsValid, new Analyzer(aResult).IsValid());
         Assert.Equal(theVolume, Volume(aResult), 1.0e-12);
         Assert.Equal(theBottom, Area(aMaker.Bottom()), 1.0e-12);
         Assert.Equal(theTop, Area(aMaker.Top()), 1.0e-12);
@@ -158,10 +160,10 @@ public class BRepFill_EvolvedTests
         Wire aProfile = theProfile == "slant" ? Polygon(false, 0, 0, 0, 0, 1, 1)
                                                      : Polygon(false, 0, 0, 0, 0, 1, 1, 0, 1, 2, 0, 2, 3);
         string aSpineText = Text(aSpine), aProfileText = Text(aProfile);
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, theIsSolid);
-        Assert.True(aMaker.IsDone());
+        MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, theIsSolid);
+        Assert.True(aMaker.IsDone);
         Shape aResult = aMaker.Shape();
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(theArea, Area(aResult), 1.0e-9);
         if (theIsSolid)
         {
@@ -177,9 +179,9 @@ public class BRepFill_EvolvedTests
     {
         Wire aSpine = Square();
         Wire aProfile = Polygon(false, 0, 1, 0, 0, 3, 0);
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile);
+        MakeEvolved aMaker = new(aSpine, aProfile);
         Shape aResult = aMaker.Shape();
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.True(Count(aResult, ShapeType.Face) >= 1);
         // a ring between the parallels at distances 1 and 3 of the square, outside or inside it
         double anArea = Area(aResult);
@@ -194,8 +196,8 @@ public class BRepFill_EvolvedTests
         Wire aSpine = Square();
         // a vertical profile standing on the spine's edge y = 0, given in global coordinates
         Wire aProfile = Polygon(false, 5, 0, 0, 5, 0, 4);
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, false, false, true);
-        Assert.True(aMaker.IsDone());
+        MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, false, false, true);
+        Assert.True(aMaker.IsDone);
         Assert.Equal(160.0, Area(aMaker.Shape()), 1.0e-9);
     }
 
@@ -207,13 +209,13 @@ public class BRepFill_EvolvedTests
         Wire aProfile = Polygon(false, 5, 0, 0, 5, 0, 1);
         ShapeSnapshot aSpineSnap = ShapeSnapshot.Of(aSpine);
         ShapeSnapshot aProfileSnap = ShapeSnapshot.Of(aProfile);
-        BRepOffsetAPI_MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true, false, 1e-7, true);
+        MakeEvolved aMaker = new(aSpine, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true, false, 1e-7, true);
         aSpineSnap.AssertUnchanged(aSpine);
         aProfileSnap.AssertUnchanged(aProfile);
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
         Shape aResult = aMaker.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(100.0, Volume(aResult), 1.0e-6);
         Assert.Throws<TypeMismatchException>(() => aMaker.Evolved());
     }
@@ -224,9 +226,9 @@ public class BRepFill_EvolvedTests
         Wire aSpine = Square();
         // (a slanted profile, swept by BRepFill_Pipe, works since unit 5S2: Slanted_profiles_are_swept_by_the_pipe)
         // only the arc join is implemented, as in OCCT
-        Assert.Throws<MethodNotImplementedException>(() => new BRepOffsetAPI_MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
+        Assert.Throws<MethodNotImplementedException>(() => new MakeEvolved(aSpine, Polygon(false, 0, 0, 0, 0, 0, 1),
                                                                                     global::Kerf.Geometry.JoinKind.Intersection));
-        Assert.Throws<TypeMismatchException>(() => new BRepOffsetAPI_MakeEvolved(new BRepBuilderAPI_MakeVertex(new Point3D()).Shape(),
+        Assert.Throws<TypeMismatchException>(() => new MakeEvolved(new MakeVertex(new Point3D()).Shape(),
                                                                                   Polygon(false, 0, 0, 0, 0, 0, 1)));
     }
 
@@ -236,7 +238,7 @@ public class BRepFill_EvolvedTests
         string? aFirst = null;
         for (int i = 0; i < 3; i++)
         {
-            BRepOffsetAPI_MakeEvolved aMaker = new(LShape(), Polygon(false, 0, 1, 0, 0, 1, 2, 0, 3, 2), global::Kerf.Geometry.JoinKind.Arc, true, true);
+            MakeEvolved aMaker = new(LShape(), Polygon(false, 0, 1, 0, 0, 1, 2, 0, 3, 2), global::Kerf.Geometry.JoinKind.Arc, true, true);
             string aText = Text(aMaker.Shape());
             aFirst ??= aText;
             Assert.Equal(aFirst, aText);

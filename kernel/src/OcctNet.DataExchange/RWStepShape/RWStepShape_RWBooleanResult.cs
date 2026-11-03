@@ -37,8 +37,8 @@ internal class RWStepShape_RWBooleanResult
 
         // --- own field : operator ---
 
-        StepShape_BooleanOperator aOperator = StepShape_boDifference;
-        if (data.ParamType(num, 2) == Interface_ParamEnum)
+        StepShape_BooleanOperator aOperator = StepShape_BooleanOperator.StepShape_boDifference;
+        if (data.ParamType(num, 2) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 2);
             if (!RWStepShape_RWBooleanOperator.ConvertToEnum(text, ref aOperator))

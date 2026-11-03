@@ -24,11 +24,11 @@ internal static class RWStepGeom_RWTrimmingPreference
     {
         switch (theSourceEnum)
         {
-            case StepGeom_tpParameter:
+            case StepGeom_TrimmingPreference.StepGeom_tpParameter:
                 return tpParameter;
-            case StepGeom_tpUnspecified:
+            case StepGeom_TrimmingPreference.StepGeom_tpUnspecified:
                 return tpUnspecified;
-            case StepGeom_tpCartesian:
+            case StepGeom_TrimmingPreference.StepGeom_tpCartesian:
                 return tpCartesian;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepGeom_RWTrimmingPreference
     {
         if (thePreferenceStr == tpParameter)
         {
-            theResultEnum = StepGeom_tpParameter;
+            theResultEnum = StepGeom_TrimmingPreference.StepGeom_tpParameter;
         }
         else if (thePreferenceStr == tpUnspecified)
         {
-            theResultEnum = StepGeom_tpUnspecified;
+            theResultEnum = StepGeom_TrimmingPreference.StepGeom_tpUnspecified;
         }
         else if (thePreferenceStr == tpCartesian)
         {
-            theResultEnum = StepGeom_tpCartesian;
+            theResultEnum = StepGeom_TrimmingPreference.StepGeom_tpCartesian;
         }
         else
         {

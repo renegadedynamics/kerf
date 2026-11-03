@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using Xunit.Abstractions;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
@@ -40,7 +41,7 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         int aValid = 0, aSolids = 0;
-        var aStatuses = new Dictionary<BRepCheck_Status, int>();
+        var aStatuses = new Dictionary<StatusCheck, int>();
         for (int aScene = 0; aScene < Scenes; aScene++)
         {
             var aTwins = new TwinShapes();
@@ -118,16 +119,16 @@ public class BRepCheckShellOracleTests(ITestOutputHelper output)
             bool isNativeValid = new N.BRepCheck_Analyzer(aNShape, false).IsValid();
 
             Shell aPortShell = ShapeCasts.Shell(isInSolid ? new Iterator(aShape).Value() : aShape);
-            var aCheck = new BRepCheck_Shell(aPortShell);
-            BRepCheck_Status aStatus = aCheck.Status().First();
-            if (aStatus == BRepCheck_NoError && isInSolid)
+            var aCheck = new ShellCheck(aPortShell);
+            StatusCheck aStatus = aCheck.Status().First();
+            if (aStatus == StatusCheck.NoError && isInSolid)
             {
                 aCheck.InContext(aShape);
                 aStatus = aCheck.StatusOnShape(aShape).First();
             }
 
             aStatuses[aStatus] = aStatuses.GetValueOrDefault(aStatus) + 1;
-            bool isPortValid = aStatus == BRepCheck_NoError;
+            bool isPortValid = aStatus == StatusCheck.NoError;
             anOracle.Same(isNativeValid ? 1 : 0, isPortValid ? 1 : 0, $"scene {aScene}: IsValid (port status {aStatus})");
             if (isPortValid)
             {

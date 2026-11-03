@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -22,9 +23,9 @@ public class GccAna_Lin2dTanParTests
     {
         Line2D aL = new(new Point2D(0, 0), new Direction2D(1, 2));
         Point2D aP = new(3, -1);
-        GccAna_Lin2dTanPar anAlgo = new(aP, aL);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(1, anAlgo.NbSolutions());
+        Lin2dTanPar anAlgo = new(aP, aL);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
         Assert.True(aSol.Direction().IsEqual(aL.Direction(), 1.0e-12));
         Assert.True(aSol.Distance(aP) < Tol);
@@ -32,8 +33,8 @@ public class GccAna_Lin2dTanParTests
         Assert.Equal(aP, aT);
         Assert.Equal(0.0, aPs);
         Assert.Equal(0.0, aPa);
-        anAlgo.WhichQualifier(1, out GccEnt_Position aQ);
-        Assert.Equal(GccEnt_noqualifier, aQ);
+        anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
+        Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ);
     }
 
     [Fact]
@@ -41,8 +42,8 @@ public class GccAna_Lin2dTanParTests
     {
         Line2D aL = new(new Point2D(0, 0), new Direction2D(1, 1));
         Circle2D aC = Circ(2, -1, 1.5);
-        GccAna_Lin2dTanPar anAlgo = new(GccEnt.Unqualified(aC), aL);
-        Assert.Equal(2, anAlgo.NbSolutions());
+        Lin2dTanPar anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC), aL);
+        Assert.Equal(2, anAlgo.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
@@ -51,14 +52,14 @@ public class GccAna_Lin2dTanParTests
             anAlgo.Tangency1(i, out double aPs, out double aPa, out Point2D aT);
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
             Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).Distance(aT) < Tol);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
             // enclosing: the circle on the left (inside) of the solution
-            Assert.Equal(aQ == GccEnt_enclosing, Side(aSol, aC.Location()) > 0.0);
+            Assert.Equal(aQ == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC.Location()) > 0.0);
         }
-        anAlgo.WhichQualifier(1, out GccEnt_Position aQ1);
-        anAlgo.WhichQualifier(2, out GccEnt_Position aQ2);
-        Assert.Equal(GccEnt_outside, aQ1);
-        Assert.Equal(GccEnt_enclosing, aQ2);
+        anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
+        anAlgo.WhichQualifier(2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+        Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+        Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ2);
     }
 
     [Fact]
@@ -66,10 +67,10 @@ public class GccAna_Lin2dTanParTests
     {
         Line2D aL = new(new Point2D(0, 0), new Direction2D(1, 0));
         Circle2D aC = Circ(0, 3, 1);
-        GccAna_Lin2dTanPar anEnc = new(GccEnt.Enclosing(aC), aL);
-        GccAna_Lin2dTanPar anOut = new(GccEnt.Outside(aC), aL);
-        Assert.Equal(1, anEnc.NbSolutions());
-        Assert.Equal(1, anOut.NbSolutions());
+        Lin2dTanPar anEnc = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(aC), aL);
+        Lin2dTanPar anOut = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC), aL);
+        Assert.Equal(1, anEnc.SolutionCount);
+        Assert.Equal(1, anOut.SolutionCount);
         Assert.Equal(2.0, anEnc.ThisSolution(1).Location().Y(), Tol);
         Assert.Equal(4.0, anOut.ThisSolution(1).Location().Y(), Tol);
     }
@@ -78,15 +79,15 @@ public class GccAna_Lin2dTanParTests
     public void BadQualifiers_Throw()
     {
         Line2D aL = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Lin2dTanPar(GccEnt.Enclosed(Circ(0, 3, 1)), aL));
-        Assert.Throws<GccEnt_BadQualifier>(
-            () => new GccAna_Lin2dTanPar(new GccEnt_QualifiedCirc(Circ(0, 3, 1), GccEnt_noqualifier), aL));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new Lin2dTanPar(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(Circ(0, 3, 1)), aL));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+            () => new Lin2dTanPar(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(Circ(0, 3, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aL));
     }
 
     [Fact]
     public void Accessors_OutOfRange()
     {
-        GccAna_Lin2dTanPar anAlgo = new(new Point2D(1, 1), new Line2D(new Point2D(0, 0), DX));
+        Lin2dTanPar anAlgo = new(new Point2D(1, 1), new Line2D(new Point2D(0, 0), DX));
         Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(2));
         Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(0, out _));
         Assert.Throws<OutOfRangeException>(() => anAlgo.Tangency1(2, out _, out _, out _));

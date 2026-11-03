@@ -49,61 +49,61 @@ internal static class RWStepBasic_RWSiUnitName
     {
         switch (theNameEnum)
         {
-            case StepBasic_sunHertz:
+            case StepBasic_SiUnitName.StepBasic_sunHertz:
                 return sunHertz;
-            case StepBasic_sunDegreeCelsius:
+            case StepBasic_SiUnitName.StepBasic_sunDegreeCelsius:
                 return sunDegreeCelsius;
-            case StepBasic_sunSiemens:
+            case StepBasic_SiUnitName.StepBasic_sunSiemens:
                 return sunSiemens;
-            case StepBasic_sunSievert:
+            case StepBasic_SiUnitName.StepBasic_sunSievert:
                 return sunSievert;
-            case StepBasic_sunLux:
+            case StepBasic_SiUnitName.StepBasic_sunLux:
                 return sunLux;
-            case StepBasic_sunWatt:
+            case StepBasic_SiUnitName.StepBasic_sunWatt:
                 return sunWatt;
-            case StepBasic_sunOhm:
+            case StepBasic_SiUnitName.StepBasic_sunOhm:
                 return sunOhm;
-            case StepBasic_sunSecond:
+            case StepBasic_SiUnitName.StepBasic_sunSecond:
                 return sunSecond;
-            case StepBasic_sunBecquerel:
+            case StepBasic_SiUnitName.StepBasic_sunBecquerel:
                 return sunBecquerel;
-            case StepBasic_sunPascal:
+            case StepBasic_SiUnitName.StepBasic_sunPascal:
                 return sunPascal;
-            case StepBasic_sunHenry:
+            case StepBasic_SiUnitName.StepBasic_sunHenry:
                 return sunHenry;
-            case StepBasic_sunTesla:
+            case StepBasic_SiUnitName.StepBasic_sunTesla:
                 return sunTesla;
-            case StepBasic_sunVolt:
+            case StepBasic_SiUnitName.StepBasic_sunVolt:
                 return sunVolt;
-            case StepBasic_sunJoule:
+            case StepBasic_SiUnitName.StepBasic_sunJoule:
                 return sunJoule;
-            case StepBasic_sunKelvin:
+            case StepBasic_SiUnitName.StepBasic_sunKelvin:
                 return sunKelvin;
-            case StepBasic_sunAmpere:
+            case StepBasic_SiUnitName.StepBasic_sunAmpere:
                 return sunAmpere;
-            case StepBasic_sunGram:
+            case StepBasic_SiUnitName.StepBasic_sunGram:
                 return sunGram;
-            case StepBasic_sunSteradian:
+            case StepBasic_SiUnitName.StepBasic_sunSteradian:
                 return sunSteradian;
-            case StepBasic_sunMole:
+            case StepBasic_SiUnitName.StepBasic_sunMole:
                 return sunMole;
-            case StepBasic_sunLumen:
+            case StepBasic_SiUnitName.StepBasic_sunLumen:
                 return sunLumen;
-            case StepBasic_sunGray:
+            case StepBasic_SiUnitName.StepBasic_sunGray:
                 return sunGray;
-            case StepBasic_sunCandela:
+            case StepBasic_SiUnitName.StepBasic_sunCandela:
                 return sunCandela;
-            case StepBasic_sunFarad:
+            case StepBasic_SiUnitName.StepBasic_sunFarad:
                 return sunFarad;
-            case StepBasic_sunRadian:
+            case StepBasic_SiUnitName.StepBasic_sunRadian:
                 return sunRadian;
-            case StepBasic_sunNewton:
+            case StepBasic_SiUnitName.StepBasic_sunNewton:
                 return sunNewton;
-            case StepBasic_sunMetre:
+            case StepBasic_SiUnitName.StepBasic_sunMetre:
                 return sunMetre;
-            case StepBasic_sunWeber:
+            case StepBasic_SiUnitName.StepBasic_sunWeber:
                 return sunWeber;
-            case StepBasic_sunCoulomb:
+            case StepBasic_SiUnitName.StepBasic_sunCoulomb:
                 return sunCoulomb;
         }
         return null; // Default value
@@ -119,115 +119,115 @@ internal static class RWStepBasic_RWSiUnitName
     {
         if (theNameStr == sunHertz)
         {
-            theResultEnum = StepBasic_sunHertz;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunHertz;
         }
         else if (theNameStr == sunDegreeCelsius)
         {
-            theResultEnum = StepBasic_sunDegreeCelsius;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunDegreeCelsius;
         }
         else if (theNameStr == sunSiemens)
         {
-            theResultEnum = StepBasic_sunSiemens;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunSiemens;
         }
         else if (theNameStr == sunSievert)
         {
-            theResultEnum = StepBasic_sunSievert;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunSievert;
         }
         else if (theNameStr == sunLux)
         {
-            theResultEnum = StepBasic_sunLux;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunLux;
         }
         else if (theNameStr == sunWatt)
         {
-            theResultEnum = StepBasic_sunWatt;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunWatt;
         }
         else if (theNameStr == sunOhm)
         {
-            theResultEnum = StepBasic_sunOhm;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunOhm;
         }
         else if (theNameStr == sunSecond)
         {
-            theResultEnum = StepBasic_sunSecond;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunSecond;
         }
         else if (theNameStr == sunBecquerel)
         {
-            theResultEnum = StepBasic_sunBecquerel;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunBecquerel;
         }
         else if (theNameStr == sunPascal)
         {
-            theResultEnum = StepBasic_sunPascal;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunPascal;
         }
         else if (theNameStr == sunHenry)
         {
-            theResultEnum = StepBasic_sunHenry;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunHenry;
         }
         else if (theNameStr == sunTesla)
         {
-            theResultEnum = StepBasic_sunTesla;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunTesla;
         }
         else if (theNameStr == sunVolt)
         {
-            theResultEnum = StepBasic_sunVolt;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunVolt;
         }
         else if (theNameStr == sunJoule)
         {
-            theResultEnum = StepBasic_sunJoule;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunJoule;
         }
         else if (theNameStr == sunKelvin)
         {
-            theResultEnum = StepBasic_sunKelvin;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunKelvin;
         }
         else if (theNameStr == sunAmpere)
         {
-            theResultEnum = StepBasic_sunAmpere;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunAmpere;
         }
         else if (theNameStr == sunGram)
         {
-            theResultEnum = StepBasic_sunGram;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunGram;
         }
         else if (theNameStr == sunSteradian)
         {
-            theResultEnum = StepBasic_sunSteradian;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunSteradian;
         }
         else if (theNameStr == sunMole)
         {
-            theResultEnum = StepBasic_sunMole;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunMole;
         }
         else if (theNameStr == sunLumen)
         {
-            theResultEnum = StepBasic_sunLumen;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunLumen;
         }
         else if (theNameStr == sunGray)
         {
-            theResultEnum = StepBasic_sunGray;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunGray;
         }
         else if (theNameStr == sunCandela)
         {
-            theResultEnum = StepBasic_sunCandela;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunCandela;
         }
         else if (theNameStr == sunFarad)
         {
-            theResultEnum = StepBasic_sunFarad;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunFarad;
         }
         else if (theNameStr == sunRadian)
         {
-            theResultEnum = StepBasic_sunRadian;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunRadian;
         }
         else if (theNameStr == sunNewton)
         {
-            theResultEnum = StepBasic_sunNewton;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunNewton;
         }
         else if (theNameStr == sunMetre)
         {
-            theResultEnum = StepBasic_sunMetre;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunMetre;
         }
         else if (theNameStr == sunWeber)
         {
-            theResultEnum = StepBasic_sunWeber;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunWeber;
         }
         else if (theNameStr == sunCoulomb)
         {
-            theResultEnum = StepBasic_sunCoulomb;
+            theResultEnum = StepBasic_SiUnitName.StepBasic_sunCoulomb;
         }
         else
         {

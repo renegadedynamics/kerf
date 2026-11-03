@@ -6,6 +6,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
@@ -372,7 +373,7 @@ public sealed class RWGltf_TreeWriter
     {
         using var aPS = new ProgressScope(theProgress, "Writing glTF", Options.MeshParameters is null ? 1 : 2);
         XdeDoc_Tree aTree = theTree;
-        if (Options.MeshParameters is IMeshTools_Parameters aParams)
+        if (Options.MeshParameters is ToolParameters aParams)
         {
             XdeDoc_Tree? aMeshed = theTree.Meshed(aParams, aPS.Next());
             if (aMeshed is null)

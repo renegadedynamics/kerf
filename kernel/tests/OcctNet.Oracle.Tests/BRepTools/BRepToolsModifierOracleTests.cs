@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -142,8 +143,8 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     // by new ones). The result is read unfrozen; the count is of the input's vertices replaced.
     private static Shape NurbsConvert(in Shape S, ref int theReplaced)
     {
-        var aNC = new BRepBuilderAPI_NurbsConvert(S);
-        Assert.True(aNC.IsDone());
+        var aNC = new NurbsConvert(S);
+        Assert.True(aNC.IsDone);
         var aPlain = new Modifier(S, new NurbsConvertModification());
         for (var anExp = new Explorer(S, ShapeType.Vertex); anExp.More(); anExp.Next())
         {

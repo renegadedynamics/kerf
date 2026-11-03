@@ -2,15 +2,21 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.BRepBuilderAPI_PipeError;
-using static Occt.BRepBuilderAPI_TransitionMode;
-using static Occt.BRepFill_ThruSectionErrorStatus;
+using static Kerf.Engine.Construction.Api.PipeError;
+using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 
 namespace OcctNet.DrawLite;
 
@@ -33,8 +39,8 @@ internal static class BRepTestPipeShellCommands
 {
     private sealed class Session
     {
-        public BRepOffsetAPI_MakePipeShell? Sweep;
-        public BRepOffsetAPI_ThruSections? Generator;
+        public MakePipeShell? Sweep;
+        public ThruSections? Generator;
     }
 
     private static readonly ConditionalWeakTable<DrawInterpreter, Session> theSessions = new();
@@ -93,9 +99,9 @@ internal static class BRepTestPipeShellCommands
         {
             rotate = theDI.Atoi(a[k++]) == 1;
         }
-        var aPipe = new GeomFill_Pipe(ProfileCurve, aAdaptCurve, cStart, ByACR, rotate);
+        var aPipe = new SurfacePipe(ProfileCurve, aAdaptCurve, cStart, ByACR, rotate);
         aPipe.Perform(true);
-        if (!aPipe.IsDone())
+        if (!aPipe.IsDone)
         {
             theDI.Output.WriteLine("GeomFill_Pipe cannot make a surface");
             return 1;
@@ -108,7 +114,7 @@ internal static class BRepTestPipeShellCommands
         Face F = new();
         if (Sur is not null)
         {
-            F = new BRepBuilderAPI_MakeFace(Sur, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
+            F = new MakeFace(Sur, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
         }
         theDI.SetShape(a[1], F);
         return 0;
@@ -144,23 +150,23 @@ internal static class BRepTestPipeShellCommands
             }
             if (!YaWIRE)
             {
-                S1 = new BRepLib_MakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1)).Wire();
+                S1 = new LibraryMakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1)).Wire();
                 YaWIRE = true;
             }
         }
         else if (YaWIRE)
         {
-            S2 = new BRepLib_MakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S2)).Wire();
+            S2 = new LibraryMakeWire(global::Kerf.Engine.Topology.ShapeCasts.Edge(S2)).Wire();
         }
 
         Shape Result;
         if (YaWIRE)
         {
-            Result = BRepFill.Shell(global::Kerf.Engine.Topology.ShapeCasts.Wire(S1), global::Kerf.Engine.Topology.ShapeCasts.Wire(S2));
+            Result = Fill.Shell(global::Kerf.Engine.Topology.ShapeCasts.Wire(S1), global::Kerf.Engine.Topology.ShapeCasts.Wire(S2));
         }
         else
         {
-            Result = BRepFill.Face(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1), global::Kerf.Engine.Topology.ShapeCasts.Edge(S2));
+            Result = Fill.Face(global::Kerf.Engine.Topology.ShapeCasts.Edge(S1), global::Kerf.Engine.Topology.ShapeCasts.Edge(S2));
         }
 
         theDI.SetShape(a[1], Result);
@@ -178,7 +184,7 @@ internal static class BRepTestPipeShellCommands
 
         Shape Shape;
 
-        var aGenerator = new BRepFill_Generator();
+        var aGenerator = new Generator();
 
         for (int i = 2; i <= n - 1; i++)
         {
@@ -228,8 +234,8 @@ internal static class BRepTestPipeShellCommands
         bool isruled = theDI.Atoi(a[index + 1]) == 1;
 
         Session aSession = Of(theDI);
-        aSession.Generator = new BRepOffsetAPI_ThruSections(issolid, isruled);
-        BRepOffsetAPI_ThruSections Generator = aSession.Generator;
+        aSession.Generator = new ThruSections(issolid, isruled);
+        ThruSections Generator = aSession.Generator;
         bool IsMutableInput = true;
         int NbEdges = 0;
         bool IsFirstWire = false;
@@ -284,7 +290,7 @@ internal static class BRepTestPipeShellCommands
 
         Generator.Build();
 
-        if (Generator.IsDone())
+        if (Generator.IsDone)
         {
             Shape Shell = Generator.Shape();
             theDI.SetShape(a[index - 1], Shell);
@@ -301,25 +307,25 @@ internal static class BRepTestPipeShellCommands
         }
         else
         {
-            BRepFill_ThruSectionErrorStatus aStatus = Generator.GetStatus();
+            ThruSectionErrorStatus aStatus = Generator.GetStatus();
             switch (aStatus)
             {
-                case BRepFill_ThruSectionErrorStatus_NotDone:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_NotDone:
                     di.Append("Algorithm is not done\n");
                     break;
-                case BRepFill_ThruSectionErrorStatus_NotSameTopology:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_NotSameTopology:
                     di.Append("The input profiles should be all closed or all opened\n");
                     break;
-                case BRepFill_ThruSectionErrorStatus_ProfilesInconsistent:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_ProfilesInconsistent:
                     di.Append("Profiles inconsistent\n");
                     break;
-                case BRepFill_ThruSectionErrorStatus_WrongUsage:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_WrongUsage:
                     di.Append("Wrong usage of punctual sections\n");
                     break;
-                case BRepFill_ThruSectionErrorStatus_Null3DCurve:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_Null3DCurve:
                     di.Append("Some edges have null 3d curve");
                     break;
-                case BRepFill_ThruSectionErrorStatus_Failed:
+                case ThruSectionErrorStatus.ThruSectionErrorStatus_Failed:
                     di.Append("Algorithm has failed\n");
                     break;
                 default:
@@ -350,7 +356,7 @@ internal static class BRepTestPipeShellCommands
             if (a[2] == "-C")
             {
                 // the unifier's safe input mode copies the frozen spine
-                var aUnif = new ShapeUpgrade_UnifySameDomain(Spine, true, false, true);
+                var aUnif = new UnifySameDomain(Spine, true, false, true);
 
                 double anAngTol = 5.0;
                 double aLinTol = 0.1;
@@ -378,7 +384,7 @@ internal static class BRepTestPipeShellCommands
             }
         }
 
-        aSession.Sweep = new BRepOffsetAPI_MakePipeShell(global::Kerf.Engine.Topology.ShapeCasts.Wire(Spine));
+        aSession.Sweep = new MakePipeShell(global::Kerf.Engine.Topology.ShapeCasts.Wire(Spine));
         return 0;
     }
 
@@ -404,7 +410,7 @@ internal static class BRepTestPipeShellCommands
             return 0;
         }
 
-        BRepOffsetAPI_MakePipeShell? Sweep = Of(theDI).Sweep;
+        MakePipeShell? Sweep = Of(theDI).Sweep;
         if (Sweep is null)
         {
             di.Append("You have forgotten the <<mksweep>> command  !\n");
@@ -479,7 +485,7 @@ internal static class BRepTestPipeShellCommands
                 Shape Guide = theDI.GetShape(a[2], ShapeType.Wire);
                 bool CurvilinearEquivalence = theDI.Atoi(a[3]) != 0;
                 int KeepContact = theDI.Atoi(a[4]);
-                Sweep.SetMode(global::Kerf.Engine.Topology.ShapeCasts.Wire(Guide), CurvilinearEquivalence, (BRepFill_TypeOfContact)KeepContact);
+                Sweep.SetMode(global::Kerf.Engine.Topology.ShapeCasts.Wire(Guide), CurvilinearEquivalence, (TypeOfContact)KeepContact);
             }
         }
         else if (a[1] == "-DM")
@@ -539,7 +545,7 @@ internal static class BRepTestPipeShellCommands
             return 0;
         }
 
-        BRepOffsetAPI_MakePipeShell? Sweep = Of(theDI).Sweep;
+        MakePipeShell? Sweep = Of(theDI).Sweep;
         if (Sweep is null)
         {
             di.Append("You have forgotten the <<mksweep>> command  !\n");
@@ -548,7 +554,7 @@ internal static class BRepTestPipeShellCommands
 
         Shape Section;
         Vertex Vertex = new();
-        Law_Interpol? thelaw = null;
+        Interpol? thelaw = null;
 
         Section = theDI.GetShape(a[1], ShapeType.Shape);
         if (Section.IsNull
@@ -603,7 +609,7 @@ internal static class BRepTestPipeShellCommands
                         ParAndRad[ii].SetX(theDI.Atof(a[cur]));
                         ParAndRad[ii].SetY(theDI.Atof(a[cur + 1]));
                     }
-                    thelaw = new Law_Interpol();
+                    thelaw = new Interpol();
                     thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y() - ParAndRad[L].Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
             }
@@ -672,14 +678,14 @@ internal static class BRepTestPipeShellCommands
         }
 
         bool mksolid = false;
-        BRepOffsetAPI_MakePipeShell? Sweep = Of(theDI).Sweep;
+        MakePipeShell? Sweep = Of(theDI).Sweep;
         if (Sweep is null)
         {
             di.Append("You have forgotten the <<mksweep>> command  !\n");
             return 1;
         }
 
-        if (!Sweep.IsReady())
+        if (!Sweep.IsReady)
         {
             di.Append("You have forgotten the <<addsweep>> command  !\n");
             return 1;
@@ -689,17 +695,17 @@ internal static class BRepTestPipeShellCommands
         int cur = 2;
         if (n > cur)
         {
-            BRepBuilderAPI_TransitionMode Transition = BRepBuilderAPI_Transformed;
+            TransitionMode Transition = TransitionMode.Transformed;
 
             // Reading Transition
             if (a[cur] == "-C")
             {
-                Transition = BRepBuilderAPI_RightCorner;
+                Transition = TransitionMode.RightCorner;
                 cur++;
             }
             else if (a[cur] == "-R")
             {
-                Transition = BRepBuilderAPI_RoundCorner;
+                Transition = TransitionMode.RoundCorner;
                 cur++;
             }
             Sweep.SetTransitionMode(Transition);
@@ -712,15 +718,15 @@ internal static class BRepTestPipeShellCommands
 
         // Calcul le resultat
         Sweep.Build();
-        if (!Sweep.IsDone())
+        if (!Sweep.IsDone)
         {
             di.Append("Buildsweep : Not Done\n");
-            BRepBuilderAPI_PipeError Stat = Sweep.GetStatus();
-            if (Stat == BRepBuilderAPI_PlaneNotIntersectGuide)
+            PipeError Stat = Sweep.GetStatus();
+            if (Stat == PipeError.PlaneNotIntersectGuide)
             {
                 di.Append("Buildsweep : One Plane not intersect the guide\n");
             }
-            if (Stat == BRepBuilderAPI_ImpossibleContact)
+            if (Stat == PipeError.ImpossibleContact)
             {
                 di.Append("BuildSweep : One section can not be in contact with the guide\n");
             }
@@ -756,8 +762,8 @@ internal static class BRepTestPipeShellCommands
     private static int errorsweep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         // OCCT dereferences the maker without a check
-        BRepOffsetAPI_MakePipeShell Sweep = Of(theDI).Sweep!;
-        if (!Sweep.IsDone())
+        MakePipeShell Sweep = Of(theDI).Sweep!;
+        if (!Sweep.IsDone)
         {
             di.Append("Sweep is not done\n");
             return 1;
@@ -775,14 +781,14 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        BRepOffsetAPI_MakePipeShell? Sweep = Of(theDI).Sweep;
+        MakePipeShell? Sweep = Of(theDI).Sweep;
         if (Sweep is null)
         {
             di.Append("You have forgotten the <<mksweep>> command  !\n");
             return 1;
         }
 
-        if (!Sweep.IsReady())
+        if (!Sweep.IsReady)
         {
             di.Append("You have forgotten the <<addsweep>> command  !\n");
             return 1;
@@ -794,15 +800,15 @@ internal static class BRepTestPipeShellCommands
 
         if (n > 3)
         {
-            BRepBuilderAPI_TransitionMode Transition = BRepBuilderAPI_Transformed;
+            TransitionMode Transition = TransitionMode.Transformed;
             // Lecture Transition
             if (a[3] == "-C")
             {
-                Transition = BRepBuilderAPI_RightCorner;
+                Transition = TransitionMode.RightCorner;
             }
             else if (a[3] == "-R")
             {
-                Transition = BRepBuilderAPI_RoundCorner;
+                Transition = TransitionMode.RoundCorner;
             }
             Sweep.SetTransitionMode(Transition);
         }
@@ -844,7 +850,7 @@ internal static class BRepTestPipeShellCommands
             return 1;
         }
 
-        var Builder = new BRepOffsetAPI_MiddlePath(aShape, StartShape, EndShape);
+        var Builder = new MiddlePath(aShape, StartShape, EndShape);
         Builder.Build();
 
         Shape Result = Builder.Shape();

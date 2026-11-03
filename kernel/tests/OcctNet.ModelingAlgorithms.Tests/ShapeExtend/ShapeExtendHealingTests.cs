@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Parametrisation;
+using static Kerf.Engine.Healing.Extend.Parametrisation;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -15,7 +17,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeExtendHealingTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
     // a 2 x 1 grid of planar patches: [0,10]x[0,5] and [10,30]x[0,5] on z = 0
     private static NCollection_HArray2<Surface> Grid()
@@ -32,7 +34,7 @@ public class ShapeExtendHealingTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var see = new ShapeExtend_Explorer();
+        var see = new ExtendExplorer();
 
         Shape aFaces = see.SortedCompound(aBox, ShapeType.Face, true, false);
         Assert.Equal(ShapeType.Compound, aFaces.ShapeType());
@@ -71,7 +73,7 @@ public class ShapeExtendHealingTests
     [Fact]
     public void Explorer_InternalForms_DontFreeze()
     {
-        var see = new ShapeExtend_Explorer();
+        var see = new ExtendExplorer();
         Shape aFaces = see.InternalSortedCompound(Box(), ShapeType.Face, true, false);
         Assert.False(aFaces.TShape()!.IsFrozen);
         Assert.False(see.InternalCompoundFromSeq(see.SeqFromCompound(aFaces, false)).TShape()!.IsFrozen);
@@ -80,9 +82,9 @@ public class ShapeExtendHealingTests
     [Fact]
     public void CompositeSurface_NaturalParametrisation()
     {
-        var aSurf = new ShapeExtend_CompositeSurface(Grid());
-        Assert.Equal(2, aSurf.NbUPatches());
-        Assert.Equal(1, aSurf.NbVPatches());
+        var aSurf = new CompositeSurface(Grid());
+        Assert.Equal(2, aSurf.UPatchCount);
+        Assert.Equal(1, aSurf.VPatchCount);
         aSurf.Bounds(out double U1, out double U2, out double V1, out double V2);
         Assert.Equal((0.0, 30.0, 0.0, 5.0), (U1, U2, V1, V2));
         Assert.Equal(1, aSurf.LocateUParameter(5));
@@ -106,7 +108,7 @@ public class ShapeExtendHealingTests
     [Fact]
     public void CompositeSurface_UniformParametrisation_AndBadJoints()
     {
-        var aSurf = new ShapeExtend_CompositeSurface(Grid(), ShapeExtend_Uniform);
+        var aSurf = new CompositeSurface(Grid(), Parametrisation.Uniform);
         Assert.Equal(1.0, aSurf.UJointValue(2));
         Assert.Equal(2.0, aSurf.UJointValue(3));
         Assert.Equal(1, aSurf.LocateUParameter(0.5));
@@ -120,32 +122,32 @@ public class ShapeExtendHealingTests
         aBad[1] = 0;
         aBad[2] = 0;
         aBad[3] = 1;
-        var aSurf2 = new ShapeExtend_CompositeSurface(Grid(), aBad, new NCollection_Array1<double>(1, 2));
+        var aSurf2 = new CompositeSurface(Grid(), aBad, new NCollection_Array1<double>(1, 2));
         Assert.Equal(10.0, aSurf2.UJointValue(2));
 
         // the twins
-        ShapeExtend_CompositeSurface aShifted = aSurf.WithUFirstValue(5);
+        CompositeSurface aShifted = aSurf.WithUFirstValue(5);
         Assert.Equal(6.0, aShifted.UJointValue(2));
         Assert.Equal(1.0, aSurf.UJointValue(2));
         var aJoints = new NCollection_Array1<double>(1, 3);
         aJoints[1] = 0;
         aJoints[2] = 3;
         aJoints[3] = 4;
-        ShapeExtend_CompositeSurface aSet = aSurf.WithUJointValues(aJoints, out bool isDone);
+        CompositeSurface aSet = aSurf.WithUJointValues(aJoints, out bool isDone);
         Assert.True(isDone);
         Assert.Equal(3.0, aSet.UJointValue(2));
         aSurf.WithUJointValues(aBad, out isDone);
         Assert.False(isDone);
-        Assert.Equal(10.0, aSurf.WithJointValues(ShapeExtend_Natural).UJointValue(2));
+        Assert.Equal(10.0, aSurf.WithJointValues(Parametrisation.Natural).UJointValue(2));
     }
 
     [Fact]
     public void CompositeSurface_Copy_LosesJointValues()
     {
         // OCCT: Copy() re-initializes the copy with the natural parametrisation (occt-issues.md, 6H1)
-        var aSurf = new ShapeExtend_CompositeSurface(Grid(), ShapeExtend_Unitary);
+        var aSurf = new CompositeSurface(Grid(), Parametrisation.Unitary);
         Assert.Equal(0.5, aSurf.UJointValue(2));
-        var aCopy = (ShapeExtend_CompositeSurface)aSurf.Copy();
+        var aCopy = (CompositeSurface)aSurf.Copy();
         Assert.Equal(10.0, aCopy.UJointValue(2));
     }
 
@@ -153,7 +155,7 @@ public class ShapeExtendHealingTests
     public void CompositeSurface_FrozenPatches_AndTransform()
     {
         NCollection_HArray2<Surface> aGrid = Grid();
-        var aSurf = new ShapeExtend_CompositeSurface(aGrid);
+        var aSurf = new CompositeSurface(aGrid);
         Surface aPatch = aSurf.Patch(1, 1);
         Assert.True(aPatch.IsFrozen);
         Assert.Same(aPatch, aGrid.Value(1, 1)); // shared, not copied
@@ -164,7 +166,7 @@ public class ShapeExtendHealingTests
 
         var aT = new Transform3D();
         aT.SetTranslation(new Vector3D(0, 0, 1));
-        var aMoved = (ShapeExtend_CompositeSurface)aSurf.Transformed(aT);
+        var aMoved = (CompositeSurface)aSurf.Transformed(aT);
         Assert.Equal(1.0, aMoved.Value(new Point2D(5, 1)).Z());
         Assert.Equal(0.0, aSurf.Value(new Point2D(5, 1)).Z());
 
@@ -181,7 +183,7 @@ public class ShapeExtendHealingTests
         var aGrid = new NCollection_HArray2<Surface>(1, 2, 1, 1);
         aGrid.SetValue(1, 1, new TrimmedSurface(aCyl, 0, M_PI, 0, 1));
         aGrid.SetValue(2, 1, new TrimmedSurface(aCyl, M_PI, 2 * M_PI, 0, 1));
-        var aSurf = new ShapeExtend_CompositeSurface();
+        var aSurf = new CompositeSurface();
         Assert.True(aSurf.Init(aGrid));
         Assert.True(aSurf.IsUClosed);
         Assert.False(aSurf.IsVClosed);
@@ -192,7 +194,7 @@ public class ShapeExtendHealingTests
     {
         Shape aBox = Box();
         Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
-        var aReg = new ShapeExtend_MsgRegistrator();
+        var aReg = new MsgRegistrator();
         aReg.Send(aFace, new Msg("first"), Gravity.Warning);
         aReg.Send(aFace, new Msg("second"), Gravity.Info);
         aReg.Send(new Shape(), new Msg("ignored"), Gravity.Info);
@@ -205,7 +207,7 @@ public class ShapeExtendHealingTests
         Assert.Equal(1, aReg.MapTransient().Extent());
 
         // the base class does nothing
-        var aBasic = new ShapeExtend_BasicMsgRegistrator();
+        var aBasic = new BasicMsgRegistrator();
         aBasic.Send(aFace, new Msg("x"), Gravity.Info);
         aBasic.Send(new Msg("x"), Gravity.Info);
     }

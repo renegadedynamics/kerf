@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
 using Kerf.Topology;
 using Occt;
 
@@ -20,15 +22,15 @@ internal static class BOPTestAPICommands
     }
 
     /// <summary>The warnings, then the errors and false if any (the commands' common ending before the result).</summary>
-    private static bool DumpReport(DrawResult di, BRepAlgoAPI_Algo theAlgo)
+    private static bool DumpReport(DrawResult di, Algo theAlgo)
     {
-        if (theAlgo.HasWarnings())
+        if (theAlgo.HasWarnings)
         {
             StringWriter aSStream = new();
             theAlgo.DumpWarnings(aSStream);
             di.Append(aSStream.ToString());
         }
-        if (theAlgo.HasErrors())
+        if (theAlgo.HasErrors)
         {
             StringWriter aSStream = new();
             theAlgo.DumpErrors(aSStream);
@@ -45,23 +47,23 @@ internal static class BOPTestAPICommands
             return 1;
         }
 
-        BOPAlgo_Operation anOp = BOPTestPartitionCommands.GetOperationType(a[2]);
-        if (anOp == BOPAlgo_Operation.BOPAlgo_UNKNOWN)
+        Operation anOp = BOPTestPartitionCommands.GetOperationType(a[2]);
+        if (anOp == Operation.Unknown)
         {
             di.Append("Invalid operation type\n");
             return 0;
         }
-        BRepAlgoAPI_BooleanOperation pBuilder = anOp switch
+        BooleanOperation pBuilder = anOp switch
         {
-            BOPAlgo_Operation.BOPAlgo_COMMON => new BRepAlgoAPI_Common(),
-            BOPAlgo_Operation.BOPAlgo_FUSE => new BRepAlgoAPI_Fuse(),
-            BOPAlgo_Operation.BOPAlgo_SECTION => new BRepAlgoAPI_Section(),
-            _ => new BRepAlgoAPI_Cut(),
+            Operation.Common => new Common(),
+            Operation.Fuse => new Fuse(),
+            Operation.Section => new SectionOperation(),
+            _ => new Cut(),
         };
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
         NCollection_List<Shape> aLS = aSession.Shapes;
         NCollection_List<Shape> aLT = aSession.Tools;
-        if (anOp != BOPAlgo_Operation.BOPAlgo_CUT21)
+        if (anOp != Operation.CUT21)
         {
             pBuilder.SetArguments(aLS);
             pBuilder.SetTools(aLT);
@@ -107,7 +109,7 @@ internal static class BOPTestAPICommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BRepAlgoAPI_BuilderAlgo aBuilder = new();
+        BuilderAlgo aBuilder = new();
         NCollection_List<Shape> aLS = new(aSession.Shapes);
         foreach (Shape aS in aSession.Tools)
         {
@@ -150,7 +152,7 @@ internal static class BOPTestAPICommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BRepAlgoAPI_Splitter aSplitter = new();
+        SplitterOperation aSplitter = new();
         aSplitter.SetArguments(aSession.Shapes);
         aSplitter.SetTools(aSession.Tools);
         aSplitter.SetRunParallel(aSession.RunParallel);

@@ -5,15 +5,18 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Construct;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.BRepLib_EdgeError;
+using static Kerf.Engine.Construction.Library.LibraryEdgeError;
 using static Occt.StepToTopoDS_TranslateEdgeError;
 using static Kerf.Topology.Orientation;
 
@@ -34,7 +37,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
     //: d8
     // Used in I-DEAS-like STP processing (ssv; 15.11.2010)
 
-    private static void DecodeMakeEdgeError(BRepLib_MakeEdge ME, Transient orig, ref Curve3D myCurve, in Vertex V1,
+    private static void DecodeMakeEdgeError(LibraryMakeEdge ME, Transient orig, ref Curve3D myCurve, in Vertex V1,
                                             in Vertex V2, double U1, double U2, StepToTopoDS_Tool aTool,
                                             StepShape_TopologicalRepresentationItem tobind)
     {
@@ -46,28 +49,28 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         // OCCT_DEBUG output left out
         switch (ME.Error())
         {
-            case BRepLib_EdgeDone:
+            case LibraryEdgeError.EdgeDone:
                 return;
-            case BRepLib_PointProjectionFailed:
+            case LibraryEdgeError.PointProjectionFailed:
                 TP.AddFail(orig, " Point Projection failed");
                 break;
-            case BRepLib_ParameterOutOfRange:
+            case LibraryEdgeError.ParameterOutOfRange:
                 TP.AddFail(orig, " Parameter Out Of Range");
                 break;
-            case BRepLib_DifferentPointsOnClosedCurve:
+            case LibraryEdgeError.DifferentPointsOnClosedCurve:
                 TP.AddFail(orig, " Different Points on Closed Curve");
                 break;
-            case BRepLib_PointWithInfiniteParameter:
+            case LibraryEdgeError.PointWithInfiniteParameter:
                 TP.AddFail(orig, " Point with infinite Parameter");
                 break;
-            case BRepLib_DifferentsPointAndParameter:
+            case LibraryEdgeError.DifferentsPointAndParameter:
                 // OCCT.NET: the curve an earlier edge took is frozen; adjusted in a copy (decision 1248)
                 if (myCurve.IsFrozen)
                 {
                     myCurve = (Curve3D)myCurve.Copy();
                 }
 
-                if (!new ShapeConstruct_Curve().AdjustCurve(myCurve, Tool.Pnt(V1), Tool.Pnt(V2), true, true))
+                if (!new ConstructCurve().AdjustCurve(myCurve, Tool.Pnt(V1), Tool.Pnt(V2), true, true))
                 {
                     TP.AddFail(orig, " Different Points and Parameters");
                 }
@@ -77,7 +80,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 }
 
                 break;
-            case BRepLib_LineThroughIdenticPoints:
+            case LibraryEdgeError.LineThroughIdenticPoints:
                 TP.AddFail(orig, " Line through identic Points");
                 break;
         }
@@ -114,7 +117,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
 
     public StepToTopoDS_TranslateEdge()
     {
-        myError = StepToTopoDS_TranslateEdgeOther;
+        myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeOther;
         done = false;
     }
 
@@ -153,7 +156,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             }
             else
             {
-                myError = StepToTopoDS_TranslateEdgeDone;
+                myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
                 done = true;
                 //: S4136      B.SameRange(TopoDS::Edge(myResult), false);    //:a5 abv 11 Feb 98
                 //: S4136      B.SameParameter(TopoDS::Edge(myResult), false);//:a5
@@ -172,7 +175,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             }
 
             myResult = existingShape;
-            myError = StepToTopoDS_TranslateEdgeDone;
+            myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
             done = true;
             return;
         }
@@ -193,7 +196,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             // Register Edge for final processing (I-DEAS case)
             NMTool.RegisterNMEdge(existingShape);
             myResult = existingShape;
-            myError = StepToTopoDS_TranslateEdgeDone;
+            myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
             done = true;
             return;
         }
@@ -205,7 +208,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         if (C is null)
         {
             TP.AddFail(EC, " Geom Curve in EdgeCurve is equal to 0");
-            myError = StepToTopoDS_TranslateEdgeOther;
+            myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeOther;
             done = false;
             return;
         }
@@ -303,7 +306,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             }
 
             myResult = E;
-            myError = StepToTopoDS_TranslateEdgeDone;
+            myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
         }
     }
 
@@ -344,7 +347,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         if (C1 is null)
         {
             TP.AddFail(C3D, " Make Geom_Curve (3D) failed");
-            myError = StepToTopoDS_TranslateEdgeOther;
+            myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeOther;
             done = false;
             return;
         }
@@ -364,7 +367,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             GetCartesianPoints(EC, ref pnt1, ref pnt2, theLocalFactors);
         }
 
-        var sac = new ShapeAnalysis_Curve();
+        var sac = new CurveAnalysis();
         temp1 = sac.Project(C1, pnt1, preci, out pproj, out U1, false);
         temp2 = sac.Project(C1, pnt2, preci, out pproj, out U2, false);
 
@@ -404,15 +407,15 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
         B.UpdateVertex(V1, 1.000001 * temp1); //: h6 abv 14 Jul 98: PRO8845 #2746: *=1.0001
         B.UpdateVertex(V2, 1.000001 * temp2); //: h6
 
-        var ME = new BRepLib_MakeEdge(C1, V1, V2, U1, U2);
-        if (ME.IsDone())
+        var ME = new LibraryMakeEdge(C1, V1, V2, U1, U2);
+        if (ME.IsDone)
         {
             E = ME.InternalEdge();
             B.Range(E, U1, U2); // abv 14 Mar 00: trj3_pm1-ug.stp #91739, edge 2
         }
         else
         {
-            if (ME.Error() == BRepLib_DifferentPointsOnClosedCurve)
+            if (ME.Error() == LibraryEdgeError.DifferentPointsOnClosedCurve)
             {
                 // The Edge could be closed and trimmed by 2 Different vertices
                 if (C1.IsClosed)
@@ -422,7 +425,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                     Shape aLocalShape = V1.Reversed();
                     V2 = ShapeCasts.Vertex(aLocalShape);
                     ME.Init(C1, V1, V2, U1, U2);
-                    if (ME.IsDone())
+                    if (ME.IsDone)
                     {
                         TP.AddWarning(EC, "Wrong topology corrected : Closed Edge with TWO different Vertices");
                         E = ME.InternalEdge();
@@ -431,7 +434,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                     {
                         DecodeMakeEdgeError(ME, C3D, ref C1, V1, V2, U1, U2, aTool, EC);
                         E = MakeEdge(C1, V1, V2, U1, U2);
-                        myError = StepToTopoDS_TranslateEdgeDone;
+                        myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
                         done = true;
                         //		return;
                     }
@@ -440,7 +443,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
                 {
                     // Then, this is should be coded as degenerated
                     // To be performed later !!!
-                    myError = StepToTopoDS_TranslateEdgeDone;
+                    myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
                     //  Bon, on la fait cette petite edge, mais faudra repasser
                     //  pour l enlever ET FUSIONNER LES VERTEX, pour tout le shell !
                     //  courbe trop petite pour etre mise -> fait planter
@@ -470,7 +473,7 @@ public sealed class StepToTopoDS_TranslateEdge : StepToTopoDS_Root
             {
                 DecodeMakeEdgeError(ME, C3D, ref C1, V1, V2, U1, U2, aTool, EC);
                 E = MakeEdge(C1, V1, V2, U1, U2);
-                myError = StepToTopoDS_TranslateEdgeDone;
+                myError = StepToTopoDS_TranslateEdgeError.StepToTopoDS_TranslateEdgeDone;
                 done = true;
             }
         }

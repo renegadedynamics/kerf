@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,7 +11,7 @@ public class Law_SimpleLawsTests
     [Fact]
     public void Law_Constant_IsConstant()
     {
-        var aLaw = new Law_Constant();
+        var aLaw = new Constant();
         aLaw.Set(2.5, -1.0, 4.0);
         Assert.Equal(2.5, aLaw.Value(17.0));
         aLaw.D1(0.3, out double F, out double D);
@@ -22,7 +23,7 @@ public class Law_SimpleLawsTests
         var aT = new NCollection_Array1<double>(1, 2);
         aLaw.Intervals(aT, Continuity.CN);
         Assert.Equal([-1.0, 4.0], aT.AsSpan().ToArray());
-        var aTrim = Assert.IsType<Law_Constant>(aLaw.Trim(0.0, 1.0, 1.0e-7));
+        var aTrim = Assert.IsType<Constant>(aLaw.Trim(0.0, 1.0, 1.0e-7));
         aTrim.Bounds(out double f, out double l);
         Assert.Equal((0.0, 1.0), (f, l));
         Assert.Equal(2.5, aTrim.Value(0.5));
@@ -33,7 +34,7 @@ public class Law_SimpleLawsTests
     [Fact]
     public void Law_Linear_InterpolatesItsEnds()
     {
-        var aLaw = new Law_Linear();
+        var aLaw = new Linear();
         aLaw.Set(1.0, 3.0, 5.0, -1.0);
         Assert.Equal(3.0, aLaw.Value(1.0));
         Assert.Equal(-1.0, aLaw.Value(5.0));
@@ -44,7 +45,7 @@ public class Law_SimpleLawsTests
         Assert.Equal(0.0, D2);
         aLaw.D1(2.0, out double F1, out double D1);
         Assert.Equal((F, D), (F1, D1));
-        var aTrim = Assert.IsType<Law_Linear>(aLaw.Trim(2.0, 4.0, 0.0));
+        var aTrim = Assert.IsType<Linear>(aLaw.Trim(2.0, 4.0, 0.0));
         aTrim.Bounds(out double f, out double l);
         Assert.Equal((2.0, 4.0), (f, l));
         Assert.Equal(2.0, aTrim.Value(2.0));
@@ -58,7 +59,7 @@ public class Law_SimpleLawsTests
     [Fact]
     public void Law_S_HasTheGivenEndValuesAndDerivatives()
     {
-        var aLaw = new Law_S();
+        var aLaw = new S();
         aLaw.Set(0.0, 1.0, 2.0, 5.0);
         aLaw.D1(0.0, out double F, out double D);
         Assert.Equal(1.0, F, 1.0e-15);

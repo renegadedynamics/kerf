@@ -37,8 +37,8 @@ internal class RWStepGeom_RWSurfacePatch
 
         // --- own field : uTransition ---
 
-        StepGeom_TransitionCode aUTransition = StepGeom_tcDiscontinuous;
-        if (data.ParamType(num, 2) == Interface_ParamEnum)
+        StepGeom_TransitionCode aUTransition = StepGeom_TransitionCode.StepGeom_tcDiscontinuous;
+        if (data.ParamType(num, 2) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 2);
             if (!RWStepGeom_RWTransitionCode.ConvertToEnum(text, ref aUTransition))
@@ -53,8 +53,8 @@ internal class RWStepGeom_RWSurfacePatch
 
         // --- own field : vTransition ---
 
-        StepGeom_TransitionCode aVTransition = StepGeom_tcDiscontinuous;
-        if (data.ParamType(num, 3) == Interface_ParamEnum)
+        StepGeom_TransitionCode aVTransition = StepGeom_TransitionCode.StepGeom_tcDiscontinuous;
+        if (data.ParamType(num, 3) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 3);
             if (!RWStepGeom_RWTransitionCode.ConvertToEnum(text, ref aVTransition))

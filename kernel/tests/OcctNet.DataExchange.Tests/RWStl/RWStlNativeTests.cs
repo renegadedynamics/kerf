@@ -267,7 +267,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
             case "W":
             {
                 BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", aWords[1]));
-                Shape aMeshed = new BRepMesh_IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
+                Shape aMeshed = new IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
                 byte[] anAscii = [], aBinary = [];
                 aLines.Add(Line("ASCII", () =>
                 {

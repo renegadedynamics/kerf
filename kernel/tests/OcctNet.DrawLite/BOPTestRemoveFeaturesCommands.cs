@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
 using Kerf.Topology;
 using Occt;
 
@@ -34,7 +35,7 @@ internal static class BOPTestRemoveFeaturesCommands
             return 1;
         }
 
-        BRepAlgoAPI_Defeaturing aRF = new();
+        Defeaturing aRF = new();
         aRF.SetShape(aShape);
 
         // Add faces to remove
@@ -71,7 +72,7 @@ internal static class BOPTestRemoveFeaturesCommands
             BRepTestHistoryCommands.SetHistory(theDI, aRF.History());
         }
 
-        if (aRF.HasErrors())
+        if (aRF.HasErrors)
         {
             return 0;
         }

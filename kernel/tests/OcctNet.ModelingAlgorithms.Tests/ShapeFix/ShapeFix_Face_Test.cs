@@ -2,10 +2,17 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,9 +23,9 @@ public class ShapeFix_Face_Test
     // Returns a null face if construction fails.
     private static Face makePlanarFace()
     {
-        var aMakeFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 0.0,
+        var aMakeFace = new MakeFace(new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), 0.0,
                                                     1.0, 0.0, 1.0);
-        if (!aMakeFace.IsDone())
+        if (!aMakeFace.IsDone)
         {
             return new Face();
         }
@@ -40,28 +47,28 @@ public class ShapeFix_Face_Test
             aPts.SetValue(i, theCone.Value(anU, aV));
         }
 
-        var anInterp = new GeomAPI_Interpolate(aPts, true, 1e-6);
+        var anInterp = new ApiInterpolate(aPts, true, 1e-6);
         anInterp.Perform();
-        if (!anInterp.IsDone())
+        if (!anInterp.IsDone)
         {
             return new Face();
         }
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(anInterp.Curve());
-        if (!aMakeEdge.IsDone())
+        var aMakeEdge = new MakeEdge(anInterp.Curve());
+        if (!aMakeEdge.IsDone)
         {
             return new Face();
         }
 
-        var aMakeWire = new BRepLib_MakeWire();
+        var aMakeWire = new LibraryMakeWire();
         aMakeWire.Add(aMakeEdge.Edge());
-        if (!aMakeWire.IsDone() || !aMakeWire.Wire().Closed())
+        if (!aMakeWire.IsDone || !aMakeWire.Wire().Closed())
         {
             return new Face();
         }
 
-        var aMakeFace = new BRepBuilderAPI_MakeFace(theCone, aMakeWire.Wire(), true);
-        return aMakeFace.IsDone() ? aMakeFace.Face() : new Face();
+        var aMakeFace = new MakeFace(theCone, aMakeWire.Wire(), true);
+        return aMakeFace.IsDone ? aMakeFace.Face() : new Face();
     }
 
     [Fact]
@@ -74,14 +81,14 @@ public class ShapeFix_Face_Test
         var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
 
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         aContext.Replace(aFace, aCompound);
 
-        var aFixer = new ShapeFix_Face(aFace);
+        var aFixer = new FaceFixer(aFace);
         aFixer.SetContext(aContext);
 
         Assert.False(aFixer.Perform());
-        Assert.True(aFixer.Status(ShapeExtend_OK));
+        Assert.True(aFixer.Status(ExtendStatus.OK));
         Assert.True(aFixer.Result().IsSame(aCompound));
     }
 
@@ -91,14 +98,14 @@ public class ShapeFix_Face_Test
         Face aFace = makePlanarFace();
         Assert.False(aFace.IsNull);
 
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
         aContext.Remove(aFace);
 
-        var aFixer = new ShapeFix_Face(aFace);
+        var aFixer = new FaceFixer(aFace);
         aFixer.SetContext(aContext);
 
         Assert.False(aFixer.Perform());
-        Assert.True(aFixer.Status(ShapeExtend_OK));
+        Assert.True(aFixer.Status(ExtendStatus.OK));
         Assert.True(aFixer.Result().IsNull);
     }
 
@@ -109,7 +116,7 @@ public class ShapeFix_Face_Test
         Face aFace = MakeFaceOnPeriodicConicalSingleWire(out _);
         Assert.False(aFace.IsNull);
 
-        var aFixer = new ShapeFix_Face(aFace);
+        var aFixer = new FaceFixer(aFace);
         aFixer.Perform();
 
         Assert.False(aFixer.Face().IsNull);
@@ -122,12 +129,12 @@ public class ShapeFix_Face_Test
         Face aFace = MakeFaceOnPeriodicConicalSingleWire(out _);
         Assert.False(aFace.IsNull);
 
-        var aFixer = new ShapeFix_Face(aFace);
-        aFixer.SetContext(new ShapeBuild_ReShape());
+        var aFixer = new FaceFixer(aFace);
+        aFixer.SetContext(new ReShapeBuilder());
         aFixer.Perform();
 
         Face aFixed = aFixer.Face();
         Assert.False(aFixed.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aFixed).IsValid());
+        Assert.True(new Analyzer(aFixed).IsValid());
     }
 }

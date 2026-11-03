@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
@@ -21,13 +22,13 @@ public class MeshExtractionTests
     private const double Deflection = 0.05, Angle = 0.3;
 
     private static Shape Meshed(in Shape theShape)
-        => new BRepMesh_IncrementalMesh(theShape, Deflection, false, Angle, false).Shape();
+        => new IncrementalMesh(theShape, Deflection, false, Angle, false).Shape();
 
     private static Xyz Vec(float[] theBuffer, long theIndex)
         => new(theBuffer[3 * theIndex], theBuffer[3 * theIndex + 1], theBuffer[3 * theIndex + 2]);
 
     /// <summary>Every triangle's geometric normal (from its winding) agrees with its nodes' normals.</summary>
-    private static void AssertWoundOutward(MeshBuffers theBuffers)
+    private static void AssertWoundOutward(global::Kerf.Engine.Meshing.MeshBuffers theBuffers)
     {
         for (int f = 0; f < theBuffers.FaceTypes.Length; f++)
         {
@@ -50,7 +51,7 @@ public class MeshExtractionTests
         }
     }
 
-    private static void AssertConsistentOffsets(MeshBuffers theBuffers)
+    private static void AssertConsistentOffsets(global::Kerf.Engine.Meshing.MeshBuffers theBuffers)
     {
         Assert.Equal(theBuffers.FaceTypes.Length + 1, theBuffers.FaceNodes.Length);
         Assert.Equal(theBuffers.FaceTypes.Length + 1, theBuffers.FaceTriangles.Length);
@@ -80,12 +81,12 @@ public class MeshExtractionTests
     [Fact]
     public void A_box_gives_its_faces_and_edges_in_order_with_flat_outward_normals()
     {
-        Shape aBox = Meshed(new BRepPrimAPI_MakeBox(10, 20, 30).Shape());
-        MeshBuffers aBuffers = MeshExtraction.Extract(aBox, Deflection, Angle);
+        Shape aBox = Meshed(new MakeBox(10, 20, 30).Shape());
+        global::Kerf.Engine.Meshing.MeshBuffers aBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aBox, Deflection, Angle);
 
-        List<Shape> aFaces = MeshExtraction.Faces(aBox);
+        List<Shape> aFaces = global::Kerf.Engine.Meshing.MeshExtraction.Faces(aBox);
         Assert.Equal(6, aFaces.Count);
-        Assert.Equal(12, MeshExtraction.Edges(aBox).Count);
+        Assert.Equal(12, global::Kerf.Engine.Meshing.MeshExtraction.Edges(aBox).Count);
         Assert.Equal(6, aBuffers.FaceTypes.Length);
         Assert.Equal(12, aBuffers.EdgeTypes.Length);
         Assert.All(aBuffers.FaceTypes, t => Assert.Equal((int)SurfaceKind.Plane, t));
@@ -122,8 +123,8 @@ public class MeshExtractionTests
     [Fact]
     public void A_sphere_has_radial_normals_and_its_edges_lie_on_its_mesh()
     {
-        Shape aSphere = Meshed(new BRepPrimAPI_MakeSphere(7).Shape());
-        MeshBuffers aBuffers = MeshExtraction.Extract(aSphere, Deflection, Angle);
+        Shape aSphere = Meshed(new MakeSphere(7).Shape());
+        global::Kerf.Engine.Meshing.MeshBuffers aBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aSphere, Deflection, Angle);
         AssertConsistentOffsets(aBuffers);
         AssertWoundOutward(aBuffers);
         Assert.Equal((int)SurfaceKind.Sphere, aBuffers.FaceTypes[0]);
@@ -151,9 +152,9 @@ public class MeshExtractionTests
     [Fact]
     public void A_reversed_shape_flips_its_normals_and_winding()
     {
-        Shape aCylinder = Meshed(new BRepPrimAPI_MakeCylinder(4, 9).Shape());
-        MeshBuffers aForward = MeshExtraction.Extract(aCylinder, Deflection, Angle);
-        MeshBuffers aReversed = MeshExtraction.Extract(aCylinder.Reversed(), Deflection, Angle);
+        Shape aCylinder = Meshed(new ApiMakeCylinder(4, 9).Shape());
+        global::Kerf.Engine.Meshing.MeshBuffers aForward = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCylinder, Deflection, Angle);
+        global::Kerf.Engine.Meshing.MeshBuffers aReversed = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCylinder.Reversed(), Deflection, Angle);
         AssertWoundOutward(aForward);
         AssertWoundOutward(aReversed);
         Assert.Equal(aForward.Positions, aReversed.Positions);
@@ -179,8 +180,8 @@ public class MeshExtractionTests
     [Fact]
     public void Located_and_mirrored_shapes_give_located_buffers_wound_outward()
     {
-        Shape aCone = Meshed(new BRepPrimAPI_MakeCone(5, 2, 8).Shape());
-        MeshBuffers aPlain = MeshExtraction.Extract(aCone, Deflection, Angle);
+        Shape aCone = Meshed(new ApiMakeCone(5, 2, 8).Shape());
+        global::Kerf.Engine.Meshing.MeshBuffers aPlain = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCone, Deflection, Angle);
 
         var aRotation = new Transform3D();
         aRotation.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0.5)), 0.8);
@@ -188,7 +189,7 @@ public class MeshExtractionTests
         aMirror.SetMirror(new Frame3D(new Point3D(0, 0, 2), new Direction3D(0.2, 0.1, 1)));
         foreach (Transform3D aTrsf in new[] { aRotation, aMirror })
         {
-            MeshBuffers aMoved = MeshExtraction.Extract(aCone.Moved(new Placement(aTrsf)), Deflection, Angle);
+            global::Kerf.Engine.Meshing.MeshBuffers aMoved = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCone.Moved(new Placement(aTrsf)), Deflection, Angle);
             AssertConsistentOffsets(aMoved);
             AssertWoundOutward(aMoved);
             Assert.Equal(aPlain.FaceNodes, aMoved.FaceNodes);
@@ -210,11 +211,11 @@ public class MeshExtractionTests
     public void Edges_come_from_polygons_on_triangulation_3D_polygons_or_tangential_deflection()
     {
         // A free circle: the mesher gives it a 3D polygon
-        Edge aCircle = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(Constants.Origin(), Constants.DZ()), 3)).Edge();
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 2, 2, 2).Shape();
+        Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(Constants.Origin(), Constants.DZ()), 3)).Edge();
+        Shape aBox = new MakeBox(new Point3D(10, 0, 0), 2, 2, 2).Shape();
         Shape aMeshed = Meshed(Builder.MakeCompound(aBox, aCircle));
-        MeshBuffers aBuffers = MeshExtraction.Extract(aMeshed, Deflection, Angle);
-        List<Shape> anEdges = MeshExtraction.Edges(aMeshed);
+        global::Kerf.Engine.Meshing.MeshBuffers aBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, Deflection, Angle);
+        List<Shape> anEdges = global::Kerf.Engine.Meshing.MeshExtraction.Edges(aMeshed);
         Assert.Equal(13, anEdges.Count);
         int aCircleIndex = anEdges.FindIndex(e => BRepAdaptor_Curve_Type(e) == CurveKind.Circle);
         Assert.Equal((int)CurveKind.Circle, aBuffers.EdgeTypes[aCircleIndex]);
@@ -227,12 +228,12 @@ public class MeshExtractionTests
         }
 
         // Unmeshed: every edge is discretised with the given tolerances, and faces give no nodes
-        Shape aCylinder = new BRepPrimAPI_MakeCylinder(4, 9).Shape();
-        MeshBuffers anUnmeshed = MeshExtraction.Extract(aCylinder, Deflection, Angle);
+        Shape aCylinder = new ApiMakeCylinder(4, 9).Shape();
+        global::Kerf.Engine.Meshing.MeshBuffers anUnmeshed = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCylinder, Deflection, Angle);
         AssertConsistentOffsets(anUnmeshed);
         Assert.Empty(anUnmeshed.Positions);
         Assert.Empty(anUnmeshed.Triangles);
-        List<Shape> aCylEdges = MeshExtraction.Edges(aCylinder);
+        List<Shape> aCylEdges = global::Kerf.Engine.Meshing.MeshExtraction.Edges(aCylinder);
         for (int e = 0; e < aCylEdges.Count; e++)
         {
             var aDiscretizer = new TangentialDeflection(new EdgeCurveAdaptor(ShapeCasts.Edge(aCylEdges[e])), Angle, Deflection);
@@ -241,8 +242,8 @@ public class MeshExtractionTests
 
         // Each polyline starts at its edge's first vertex, as oriented
         Shape aMeshedCylinder = Meshed(aCylinder);
-        MeshBuffers aMeshedBuffers = MeshExtraction.Extract(aMeshedCylinder, Deflection, Angle);
-        List<Shape> aMeshedEdges = MeshExtraction.Edges(aMeshedCylinder);
+        global::Kerf.Engine.Meshing.MeshBuffers aMeshedBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshedCylinder, Deflection, Angle);
+        List<Shape> aMeshedEdges = global::Kerf.Engine.Meshing.MeshExtraction.Edges(aMeshedCylinder);
         for (int e = 0; e < aMeshedEdges.Count; e++)
         {
             Point3D aFirst = Tool.Pnt(Exploration.FirstVertex(ShapeCasts.Edge(aMeshedEdges[e]), true));
@@ -255,31 +256,31 @@ public class MeshExtractionTests
     [Fact]
     public void Each_face_and_edge_comes_once_with_its_last_orientation()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        List<Shape> aFaces = MeshExtraction.Faces(aBox);
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
+        List<Shape> aFaces = global::Kerf.Engine.Meshing.MeshExtraction.Faces(aBox);
         Compound aCompound = Builder.MakeCompound(aFaces[0], aFaces[1], aFaces[0].Reversed());
-        List<Shape> aDistinct = MeshExtraction.Faces(aCompound);
+        List<Shape> aDistinct = global::Kerf.Engine.Meshing.MeshExtraction.Faces(aCompound);
         Assert.Equal(2, aDistinct.Count);
         Assert.True(aDistinct[0].IsEqual(aFaces[0].Reversed()));
         Assert.True(aDistinct[1].IsEqual(aFaces[1]));
         // Every edge of a solid is reached twice, once each way: the second (last) one is kept
-        Assert.Equal(12, MeshExtraction.Edges(aBox).Count);
-        Assert.Empty(MeshExtraction.Faces(new Shape()));
+        Assert.Equal(12, global::Kerf.Engine.Meshing.MeshExtraction.Edges(aBox).Count);
+        Assert.Empty(global::Kerf.Engine.Meshing.MeshExtraction.Faces(new Shape()));
     }
 
     [Fact]
     public void Extraction_writes_nothing_and_is_the_same_from_any_thread()
     {
-        Shape aShape = Meshed(new BRepPrimAPI_MakeTorus(6, 2).Shape());
-        MeshBuffers aFirst = MeshExtraction.Extract(aShape, Deflection, Angle);
-        foreach (Shape aFace in MeshExtraction.Faces(aShape))
+        Shape aShape = Meshed(new MakeTorus(6, 2).Shape());
+        global::Kerf.Engine.Meshing.MeshBuffers aFirst = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aShape, Deflection, Angle);
+        foreach (Shape aFace in global::Kerf.Engine.Meshing.MeshExtraction.Faces(aShape))
         {
             Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(aFace), out _)!;
             Assert.False(aTri.HasNormals);
         }
-        var aResults = new MeshBuffers[8];
-        Parallel.For(0, aResults.Length, i => aResults[i] = MeshExtraction.Extract(aShape, Deflection, Angle));
-        foreach (MeshBuffers aResult in aResults)
+        var aResults = new global::Kerf.Engine.Meshing.MeshBuffers[8];
+        Parallel.For(0, aResults.Length, i => aResults[i] = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aShape, Deflection, Angle));
+        foreach (global::Kerf.Engine.Meshing.MeshBuffers aResult in aResults)
         {
             Assert.Equal(aFirst.Positions, aResult.Positions);
             Assert.Equal(aFirst.Normals, aResult.Normals);
@@ -291,11 +292,11 @@ public class MeshExtractionTests
     [Fact]
     public void Given_faces_and_edges_are_extracted_in_the_order_given()
     {
-        Shape aBox = Meshed(new BRepPrimAPI_MakeBox(3, 4, 5).Shape());
-        List<Shape> aFaces = MeshExtraction.Faces(aBox);
-        List<Shape> anEdges = MeshExtraction.Edges(aBox);
-        MeshBuffers anAll = MeshExtraction.Extract(aBox, Deflection, Angle);
-        MeshBuffers aSome = MeshExtraction.Extract(aBox, [aFaces[3], aFaces[1]], [anEdges[5]], Deflection, Angle);
+        Shape aBox = Meshed(new MakeBox(3, 4, 5).Shape());
+        List<Shape> aFaces = global::Kerf.Engine.Meshing.MeshExtraction.Faces(aBox);
+        List<Shape> anEdges = global::Kerf.Engine.Meshing.MeshExtraction.Edges(aBox);
+        global::Kerf.Engine.Meshing.MeshBuffers anAll = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aBox, Deflection, Angle);
+        global::Kerf.Engine.Meshing.MeshBuffers aSome = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aBox, [aFaces[3], aFaces[1]], [anEdges[5]], Deflection, Angle);
         Assert.Equal(2, aSome.FaceTypes.Length);
         Assert.Single(aSome.EdgeTypes);
         Assert.Equal(anAll.Positions.AsSpan((int)(3 * anAll.FaceNodes[3]), (int)(3 * (anAll.FaceNodes[4] - anAll.FaceNodes[3]))).ToArray(),

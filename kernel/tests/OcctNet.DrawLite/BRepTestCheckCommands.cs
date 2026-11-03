@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -8,7 +10,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Occt;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
@@ -51,7 +53,7 @@ internal static class BRepTestCheckCommands
         }
 
         double u1 = 0.0, u2 = 0.0;
-        if (BRepLib.FindValidRange(aE, ref u1, ref u2))
+        if (BrepLibrary.FindValidRange(aE, ref u1, ref u2))
         {
             if (narg > 3)
             {
@@ -130,19 +132,19 @@ internal static class BRepTestCheckCommands
         return aName;
     }
 
-    private static void PrintSub(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in Shape S, ShapeType Subtype)
+    private static void PrintSub(StringBuilder OS, DumpState theState, Analyzer Ana, in Shape S, ShapeType Subtype)
     {
         for (var exp = new Explorer(S, Subtype); exp.More(); exp.Next())
         {
-            BRepCheck_Result res = Ana.Result(exp.Current())!;
+            ResultCheck res = Ana.Result(exp.Current())!;
             Shape sub = exp.Current();
             for (res.InitContextIterator(); res.MoreShapeInContext(); res.NextShapeInContext())
             {
                 if (res.ContextualShape().IsSame(S) && !Contains(theState.theMap[sub], S))
                 {
                     theState.theMap[sub].Add(S);
-                    NCollection_List<BRepCheck_Status> aStatuses = res.StatusOnShape();
-                    if (aStatuses.First() != BRepCheck_NoError)
+                    NCollection_List<StatusCheck> aStatuses = res.StatusOnShape();
+                    if (aStatuses.First() != StatusCheck.NoError)
                     {
                         if (!FindNamed(theState, sub, out string Name))
                         {
@@ -165,19 +167,19 @@ internal static class BRepTestCheckCommands
         }
     }
 
-    private static void PrintStatuses(StringBuilder OS, NCollection_List<BRepCheck_Status> theStatuses, bool theSkipNoError)
+    private static void PrintStatuses(StringBuilder OS, NCollection_List<StatusCheck> theStatuses, bool theSkipNoError)
     {
         using var aWriter = new StringWriter(OS, CultureInfo.InvariantCulture);
-        foreach (BRepCheck_Status aStatus in theStatuses)
+        foreach (StatusCheck aStatus in theStatuses)
         {
-            if (!theSkipNoError || aStatus != BRepCheck_NoError)
+            if (!theSkipNoError || aStatus != StatusCheck.NoError)
             {
-                BRepCheck.Print(aStatus, aWriter);
+                BRepCheckCheck.Print(aStatus, aWriter);
             }
         }
     }
 
-    private static void Print(StringBuilder OS, DumpState theState, BRepCheck_Analyzer Ana, in Shape S)
+    private static void Print(StringBuilder OS, DumpState theState, Analyzer Ana, in Shape S)
     {
         for (var iter = new Iterator(S); iter.More(); iter.Next())
         {
@@ -187,8 +189,8 @@ internal static class BRepTestCheckCommands
         ShapeType styp = S.ShapeType();
         if (Ana.Result(S) is { } aResult && !theState.theMap.ContainsKey(S))
         {
-            NCollection_List<BRepCheck_Status> aStatuses = aResult.Status();
-            if (aStatuses.First() != BRepCheck_NoError)
+            NCollection_List<StatusCheck> aStatuses = aResult.Status();
+            if (aStatuses.First() != StatusCheck.NoError)
             {
                 if (!FindNamed(theState, S, out string Name))
                 {
@@ -227,7 +229,7 @@ internal static class BRepTestCheckCommands
     }
 
     /// <summary>Contextual (modeling) style of output.</summary>
-    private static void ContextualDump(DrawInterpreter theDI, DrawResult theCommands, BRepCheck_Analyzer theAna, in Shape theShape)
+    private static void ContextualDump(DrawInterpreter theDI, DrawResult theCommands, Analyzer theAna, in Shape theShape)
     {
         var aState = new DumpState(theDI);
         var aSStream = new StringBuilder();
@@ -246,7 +248,7 @@ internal static class BRepTestCheckCommands
         theCommands.Append("\n");
     }
 
-    private static void FillProblems(BRepCheck_Status stat, int[] NbProblems)
+    private static void FillProblems(StatusCheck stat, int[] NbProblems)
     {
         int anID = (int)stat;
         if (anID < 1 || anID > NumberOfStatus)
@@ -270,20 +272,20 @@ internal static class BRepTestCheckCommands
         return -1;
     }
 
-    private static void GetProblemSub(DumpState theState, BRepCheck_Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems,
+    private static void GetProblemSub(DumpState theState, Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems,
                                       ShapeType Subtype)
     {
         for (var exp = new Explorer(Shape, Subtype); exp.More(); exp.Next())
         {
-            BRepCheck_Result res = Ana.Result(exp.Current())!;
+            ResultCheck res = Ana.Result(exp.Current())!;
             Shape sub = exp.Current();
             for (res.InitContextIterator(); res.MoreShapeInContext(); res.NextShapeInContext())
             {
                 if (res.ContextualShape().IsSame(Shape) && !Contains(theState.theMap[sub], Shape))
                 {
                     theState.theMap[sub].Add(Shape);
-                    BRepCheck_Status aFirst = res.StatusOnShape().First();
-                    if (aFirst != BRepCheck_NoError)
+                    StatusCheck aFirst = res.StatusOnShape().First();
+                    if (aFirst != StatusCheck.NoError)
                     {
                         if (IndexOfSame(sl, sub) < 0)
                         {
@@ -304,7 +306,7 @@ internal static class BRepTestCheckCommands
         }
     }
 
-    private static void GetProblemShapes(DumpState theState, BRepCheck_Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems)
+    private static void GetProblemShapes(DumpState theState, Analyzer Ana, in Shape Shape, List<Shape> sl, int[] NbProblems)
     {
         for (var iter = new Iterator(Shape); iter.More(); iter.Next())
         {
@@ -314,8 +316,8 @@ internal static class BRepTestCheckCommands
         ShapeType styp = Shape.ShapeType();
         if (Ana.Result(Shape) is { } aResult && !theState.theMap.ContainsKey(Shape))
         {
-            BRepCheck_Status aFirst = aResult.Status().First();
-            if (aFirst != BRepCheck_NoError)
+            StatusCheck aFirst = aResult.Status().First();
+            if (aFirst != StatusCheck.NoError)
             {
                 sl.Add(Shape);
                 FillProblems(aFirst, NbProblems);
@@ -345,48 +347,48 @@ internal static class BRepTestCheckCommands
     }
 
     // The lines of StructuralDump's table, in its order
-    private static readonly (BRepCheck_Status Status, string Line)[] s_problemLines =
+    private static readonly (StatusCheck Status, string Line)[] s_problemLines =
     [
-        (BRepCheck_InvalidPointOnCurve, "  Invalid Point on Curve ................... "),
-        (BRepCheck_InvalidPointOnCurveOnSurface, "  Invalid Point on CurveOnSurface .......... "),
-        (BRepCheck_InvalidPointOnSurface, "  Invalid Point on Surface ................. "),
-        (BRepCheck_No3DCurve, "  No 3D Curve .............................. "),
-        (BRepCheck_Multiple3DCurve, "  Multiple 3D Curve ........................ "),
-        (BRepCheck_Invalid3DCurve, "  Invalid 3D Curve ......................... "),
-        (BRepCheck_NoCurveOnSurface, "  No Curve on Surface ...................... "),
-        (BRepCheck_InvalidCurveOnSurface, "  Invalid Curve on Surface ................. "),
-        (BRepCheck_InvalidCurveOnClosedSurface, "  Invalid Curve on closed Surface .......... "),
-        (BRepCheck_InvalidSameRangeFlag, "  Invalid SameRange Flag ................... "),
-        (BRepCheck_InvalidSameParameterFlag, "  Invalid SameParameter Flag ............... "),
-        (BRepCheck_InvalidDegeneratedFlag, "  Invalid Degenerated Flag ................. "),
-        (BRepCheck_FreeEdge, "  Free Edge ................................ "),
-        (BRepCheck_InvalidMultiConnexity, "  Invalid MultiConnexity ................... "),
-        (BRepCheck_InvalidRange, "  Invalid Range ............................ "),
-        (BRepCheck_EmptyWire, "  Empty Wire ............................... "),
-        (BRepCheck_RedundantEdge, "  Redundant Edge ........................... "),
-        (BRepCheck_SelfIntersectingWire, "  Self Intersecting Wire ................... "),
-        (BRepCheck_NoSurface, "  No Surface ............................... "),
-        (BRepCheck_InvalidWire, "  Invalid Wire ............................. "),
-        (BRepCheck_RedundantWire, "  Redundant Wire ........................... "),
-        (BRepCheck_IntersectingWires, "  Intersecting Wires ....................... "),
-        (BRepCheck_InvalidImbricationOfWires, "  Invalid Imbrication of Wires ............. "),
-        (BRepCheck_EmptyShell, "  Empty Shell .............................. "),
-        (BRepCheck_RedundantFace, "  Redundant Face ........................... "),
-        (BRepCheck_UnorientableShape, "  Unorientable Shape ....................... "),
-        (BRepCheck_NotClosed, "  Not Closed ............................... "),
-        (BRepCheck_NotConnected, "  Not Connected ............................ "),
-        (BRepCheck_SubshapeNotInShape, "  Subshape not in Shape .................... "),
-        (BRepCheck_BadOrientation, "  Bad Orientation .......................... "),
-        (BRepCheck_BadOrientationOfSubshape, "  Bad Orientation of Subshape .............. "),
-        (BRepCheck_InvalidToleranceValue, "  Invalid tolerance value................... "),
-        (BRepCheck_InvalidPolygonOnTriangulation, "  Invalid polygon on triangulation.......... "),
-        (BRepCheck_InvalidImbricationOfShells, "  Invalid Imbrication of Shells............. "),
-        (BRepCheck_EnclosedRegion, "  Enclosed Region........................... "),
-        (BRepCheck_CheckFail, "  checkshape failure........................ "),
+        (StatusCheck.InvalidPointOnCurve, "  Invalid Point on Curve ................... "),
+        (StatusCheck.InvalidPointOnCurveOnSurface, "  Invalid Point on CurveOnSurface .......... "),
+        (StatusCheck.InvalidPointOnSurface, "  Invalid Point on Surface ................. "),
+        (StatusCheck.No3DCurve, "  No 3D Curve .............................. "),
+        (StatusCheck.Multiple3DCurve, "  Multiple 3D Curve ........................ "),
+        (StatusCheck.Invalid3DCurve, "  Invalid 3D Curve ......................... "),
+        (StatusCheck.NoCurveOnSurface, "  No Curve on Surface ...................... "),
+        (StatusCheck.InvalidCurveOnSurface, "  Invalid Curve on Surface ................. "),
+        (StatusCheck.InvalidCurveOnClosedSurface, "  Invalid Curve on closed Surface .......... "),
+        (StatusCheck.InvalidSameRangeFlag, "  Invalid SameRange Flag ................... "),
+        (StatusCheck.InvalidSameParameterFlag, "  Invalid SameParameter Flag ............... "),
+        (StatusCheck.InvalidDegeneratedFlag, "  Invalid Degenerated Flag ................. "),
+        (StatusCheck.FreeEdge, "  Free Edge ................................ "),
+        (StatusCheck.InvalidMultiConnexity, "  Invalid MultiConnexity ................... "),
+        (StatusCheck.InvalidRange, "  Invalid Range ............................ "),
+        (StatusCheck.EmptyWire, "  Empty Wire ............................... "),
+        (StatusCheck.RedundantEdge, "  Redundant Edge ........................... "),
+        (StatusCheck.SelfIntersectingWire, "  Self Intersecting Wire ................... "),
+        (StatusCheck.NoSurface, "  No Surface ............................... "),
+        (StatusCheck.InvalidWire, "  Invalid Wire ............................. "),
+        (StatusCheck.RedundantWire, "  Redundant Wire ........................... "),
+        (StatusCheck.IntersectingWires, "  Intersecting Wires ....................... "),
+        (StatusCheck.InvalidImbricationOfWires, "  Invalid Imbrication of Wires ............. "),
+        (StatusCheck.EmptyShell, "  Empty Shell .............................. "),
+        (StatusCheck.RedundantFace, "  Redundant Face ........................... "),
+        (StatusCheck.UnorientableShape, "  Unorientable Shape ....................... "),
+        (StatusCheck.NotClosed, "  Not Closed ............................... "),
+        (StatusCheck.NotConnected, "  Not Connected ............................ "),
+        (StatusCheck.SubshapeNotInShape, "  Subshape not in Shape .................... "),
+        (StatusCheck.BadOrientation, "  Bad Orientation .......................... "),
+        (StatusCheck.BadOrientationOfSubshape, "  Bad Orientation of Subshape .............. "),
+        (StatusCheck.InvalidToleranceValue, "  Invalid tolerance value................... "),
+        (StatusCheck.InvalidPolygonOnTriangulation, "  Invalid polygon on triangulation.......... "),
+        (StatusCheck.InvalidImbricationOfShells, "  Invalid Imbrication of Shells............. "),
+        (StatusCheck.EnclosedRegion, "  Enclosed Region........................... "),
+        (StatusCheck.CheckFail, "  checkshape failure........................ "),
     ];
 
     /// <summary>Structural (data exchange) style of output.</summary>
-    private static void StructuralDump(DrawInterpreter theDI, DrawResult theCommands, BRepCheck_Analyzer theAna, string ShName, string Pref,
+    private static void StructuralDump(DrawInterpreter theDI, DrawResult theCommands, Analyzer theAna, string ShName, string Pref,
                                        in Shape theShape)
     {
         theCommands.Append(" -- The Shape ").Append(ShName).Append(" has problems :\n");
@@ -400,7 +402,7 @@ internal static class BRepTestCheckCommands
         GetProblemShapes(aState, theAna, theShape, sl, NbProblems);
         aState.theMap.Clear();
 
-        foreach ((BRepCheck_Status aStatus, string aLine) in s_problemLines)
+        foreach ((StatusCheck aStatus, string aLine) in s_problemLines)
         {
             int aCount = NbProblems[(int)aStatus];
             if (aCount > 0)
@@ -528,7 +530,7 @@ internal static class BRepTestCheckCommands
 
         try
         {
-            var anAna = new BRepCheck_Analyzer(aShape, aGeomCtrl, IsParallel, IsExact);
+            var anAna = new Analyzer(aShape, aGeomCtrl, IsParallel, IsExact);
             bool isValid = anAna.IsValid();
 
             if (isValid)
@@ -665,7 +667,7 @@ internal static class BRepTestCheckCommands
         double tol;
         if (S.ShapeType() == ShapeType.Edge)
         {
-            var bce = new BRepCheck_Edge(ShapeCasts.Edge(S));
+            var bce = new EdgeCheck(ShapeCasts.Edge(S));
             tol = bce.Tolerance();
             di.Append($"Tolerance de {Address(S)} : {StreamUtilities.FormatReal(tol, 6)}\n");
         }
@@ -676,7 +678,7 @@ internal static class BRepTestCheckCommands
             {
                 if (theEdges.Add(exp.Current()))
                 {
-                    var bce = new BRepCheck_Edge(ShapeCasts.Edge(exp.Current()));
+                    var bce = new EdgeCheck(ShapeCasts.Edge(exp.Current()));
                     tol = bce.Tolerance();
                     di.Append($"Tolerance de {Address(exp.Current())} : {StreamUtilities.FormatReal(tol, 6)}\n");
                 }

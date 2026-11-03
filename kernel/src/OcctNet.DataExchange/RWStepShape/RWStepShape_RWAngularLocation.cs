@@ -61,21 +61,21 @@ internal class RWStepShape_RWAngularLocation
         // PTV 16.09.2000
         // default value set as StepShape_Small, cause there wasn't default value, but may be situation
         // when value will not be initialized and returned in ent->Init.
-        StepShape_AngleRelator aAngleSelection = StepShape_Small;
-        if (data.ParamType(num, 5) == Interface_ParamEnum)
+        StepShape_AngleRelator aAngleSelection = StepShape_AngleRelator.StepShape_Small;
+        if (data.ParamType(num, 5) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 5);
             if (string.CompareOrdinal(text, ".EQUAL.") == 0)
             {
-                aAngleSelection = StepShape_Equal;
+                aAngleSelection = StepShape_AngleRelator.StepShape_Equal;
             }
             else if (string.CompareOrdinal(text, ".LARGE.") == 0)
             {
-                aAngleSelection = StepShape_Large;
+                aAngleSelection = StepShape_AngleRelator.StepShape_Large;
             }
             else if (string.CompareOrdinal(text, ".SMALL.") == 0)
             {
-                aAngleSelection = StepShape_Small;
+                aAngleSelection = StepShape_AngleRelator.StepShape_Small;
             }
             else
             {
@@ -117,13 +117,13 @@ internal class RWStepShape_RWAngularLocation
 
         switch (ent.AngleSelection())
         {
-            case StepShape_Equal:
+            case StepShape_AngleRelator.StepShape_Equal:
                 SW.SendEnum(".EQUAL.");
                 break;
-            case StepShape_Large:
+            case StepShape_AngleRelator.StepShape_Large:
                 SW.SendEnum(".LARGE.");
                 break;
-            case StepShape_Small:
+            case StepShape_AngleRelator.StepShape_Small:
                 SW.SendEnum(".SMALL.");
                 break;
         }

@@ -3,11 +3,16 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.BRepOffset_Mode;
+using static Kerf.Engine.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -23,13 +28,13 @@ public class BRepOffset_MakeOffset_Test
     {
         Frame3D anAxis = new(theCenter, theNormal);
         Circle3D aCirc = new(anAxis, theRadius);
-        BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCirc);
-        if (!anEdgeMaker.IsDone())
+        MakeEdge anEdgeMaker = new(aCirc);
+        if (!anEdgeMaker.IsDone)
         {
             return new Wire();
         }
-        BRepBuilderAPI_MakeWire aWireMaker = new(anEdgeMaker.Edge());
-        return aWireMaker.IsDone() ? aWireMaker.Wire() : new Wire();
+        MakeWire aWireMaker = new(anEdgeMaker.Edge());
+        return aWireMaker.IsDone ? aWireMaker.Wire() : new Wire();
     }
 
     //=================================================================================================
@@ -50,12 +55,12 @@ public class BRepOffset_MakeOffset_Test
         Point3D aP3 = theCenter.Translated(new Vector3D(aXDir) * (aHalfW) + new Vector3D(aYDir) * (aHalfH));
         Point3D aP4 = theCenter.Translated(new Vector3D(aXDir) * (-aHalfW) + new Vector3D(aYDir) * (aHalfH));
 
-        BRepBuilderAPI_MakeWire aWireMaker = new();
-        aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
-        aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP2, aP3).Edge());
-        aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP3, aP4).Edge());
-        aWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP4, aP1).Edge());
-        return aWireMaker.IsDone() ? aWireMaker.Wire() : new Wire();
+        MakeWire aWireMaker = new();
+        aWireMaker.Add(new MakeEdge(aP1, aP2).Edge());
+        aWireMaker.Add(new MakeEdge(aP2, aP3).Edge());
+        aWireMaker.Add(new MakeEdge(aP3, aP4).Edge());
+        aWireMaker.Add(new MakeEdge(aP4, aP1).Edge());
+        return aWireMaker.IsDone ? aWireMaker.Wire() : new Wire();
     }
 
     //=================================================================================================
@@ -66,13 +71,13 @@ public class BRepOffset_MakeOffset_Test
     {
         Frame3D anAxis = new(theCenter, theNormal);
         Ellipse3D anEllipse = new(anAxis, theMajorRadius, theMinorRadius);
-        BRepBuilderAPI_MakeEdge anEdgeMaker = new(anEllipse);
-        if (!anEdgeMaker.IsDone())
+        MakeEdge anEdgeMaker = new(anEllipse);
+        if (!anEdgeMaker.IsDone)
         {
             return new Wire();
         }
-        BRepBuilderAPI_MakeWire aWireMaker = new(anEdgeMaker.Edge());
-        return aWireMaker.IsDone() ? aWireMaker.Wire() : new Wire();
+        MakeWire aWireMaker = new(anEdgeMaker.Edge());
+        return aWireMaker.IsDone ? aWireMaker.Wire() : new Wire();
     }
 
     //=================================================================================================
@@ -84,7 +89,7 @@ public class BRepOffset_MakeOffset_Test
         Direction3D aXDir = anAxis.XDirection();
         Direction3D aYDir = anAxis.YDirection();
 
-        BRepBuilderAPI_MakePolygon aPolygon = new();
+        MakePolygon aPolygon = new();
         for (int i = 0; i <= theNbSides; ++i)
         {
             double anAngle = 2.0 * Math.PI * i / theNbSides;
@@ -93,29 +98,29 @@ public class BRepOffset_MakeOffset_Test
             aPolygon.Add(aPnt);
         }
         aPolygon.Close();
-        return aPolygon.IsDone() ? aPolygon.Wire() : new Wire();
+        return aPolygon.IsDone ? aPolygon.Wire() : new Wire();
     }
 
     private static Shape Loft(bool theRuled, params Wire[] theWires)
     {
-        BRepOffsetAPI_ThruSections aLoftMaker = new(true, theRuled);
+        ThruSections aLoftMaker = new(true, theRuled);
         foreach (Wire aW in theWires)
         {
             Assert.False(aW.IsNull, "Failed to create wire");
             aLoftMaker.AddWire(aW);
         }
         aLoftMaker.Build();
-        Assert.True(aLoftMaker.IsDone(), "Failed to create loft");
+        Assert.True(aLoftMaker.IsDone, "Failed to create loft");
         Shape aShape = aLoftMaker.Shape();
         Assert.False(aShape.IsNull, "Loft shape is null");
         return aShape;
     }
 
-    private static BRepOffsetAPI_MakeThickSolid Thick(in Shape theShape, double theOffset, bool theInter = false)
+    private static MakeThickSolid Thick(in Shape theShape, double theOffset, bool theInter = false)
     {
         NCollection_List<Shape> aFacesToRemove = new();
-        BRepOffsetAPI_MakeThickSolid aThickMaker = new();
-        aThickMaker.MakeThickSolidByJoin(theShape, aFacesToRemove, theOffset, 1.0e-3, BRepOffset_Skin, theInter, false,
+        MakeThickSolid aThickMaker = new();
+        aThickMaker.MakeThickSolidByJoin(theShape, aFacesToRemove, theOffset, 1.0e-3, OffsetMode.Skin, theInter, false,
                                          Intersection);
         aThickMaker.Build();
         return aThickMaker;
@@ -130,15 +135,15 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(new BRepCheck_Analyzer(aLoftShape).IsValid(), "Loft shape is not valid");
+        Assert.True(new Analyzer(aLoftShape).IsValid(), "Loft shape is not valid");
 
-        BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0);
-        Assert.True(aThickMaker.IsDone(), "ThickSolid operation failed (mixed connectivity regression)");
+        MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0);
+        Assert.True(aThickMaker.IsDone, "ThickSolid operation failed (mixed connectivity regression)");
         Shape aThickShape = aThickMaker.Shape();
         // Note: Shape may be null even if IsDone() is true in some edge cases
         if (!aThickShape.IsNull)
         {
-            Assert.True(new BRepCheck_Analyzer(aThickShape).IsValid(), "Thick solid shape is not valid");
+            Assert.True(new Analyzer(aThickShape).IsValid(), "Thick solid shape is not valid");
         }
     }
 
@@ -148,12 +153,12 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0, true);
-        Assert.True(aThickMaker.IsDone(), "ThickSolid operation with intersection mode failed");
+        MakeThickSolid aThickMaker = Thick(aLoftShape, 2.0, true);
+        Assert.True(aThickMaker.IsDone, "ThickSolid operation with intersection mode failed");
         Shape aThickShape = aThickMaker.Shape();
         if (!aThickShape.IsNull)
         {
-            Assert.True(new BRepCheck_Analyzer(aThickShape).IsValid(), "Thick solid shape is not valid");
+            Assert.True(new Analyzer(aThickShape).IsValid(), "Thick solid shape is not valid");
         }
     }
 
@@ -162,8 +167,8 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aShape = Loft(true, MakeRectangularWire(new Point3D(0, 0, 0), Z, 100.0, 100.0),
                                    MakeRectangularWire(new Point3D(0, 0, 50), Z, 100.0, 100.0));
-        BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aShape, 2.0);
-        Assert.True(aThickMaker.IsDone(), "ThickSolid on simple ruled solid failed");
+        MakeThickSolid aThickMaker = Thick(aShape, 2.0);
+        Assert.True(aThickMaker.IsDone, "ThickSolid on simple ruled solid failed");
         Assert.False(aThickMaker.Shape().IsNull, "Thick solid shape is null");
     }
 
@@ -172,7 +177,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeEllipticalWire(new Point3D(0, 0, 100), Z, 60.0, 40.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-ellipse loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on circle-to-ellipse loft failed");
     }
 
     [Fact]
@@ -180,7 +185,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakePolygonalWire(new Point3D(0, 0, 100), Z, 50.0, 6));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-hexagon loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on circle-to-hexagon loft failed");
     }
 
     [Fact]
@@ -188,7 +193,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 80.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-square loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on circle-to-square loft failed");
     }
 
     [Fact]
@@ -196,7 +201,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeEllipticalWire(new Point3D(0, 0, 0), Z, 60.0, 30.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 100.0, 50.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on ellipse-to-rectangle loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on ellipse-to-rectangle loft failed");
     }
 
     [Fact]
@@ -205,7 +210,7 @@ public class BRepOffset_MakeOffset_Test
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 40.0),
                                        MakeEllipticalWire(new Point3D(0, 0, 50), Z, 50.0, 35.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on three-section loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on three-section loft failed");
     }
 
     [Fact]
@@ -213,7 +218,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(true, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on ruled circle-to-rectangle loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on ruled circle-to-rectangle loft failed");
     }
 
     [Fact]
@@ -221,7 +226,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, 0.5).IsDone(), "ThickSolid with small offset failed");
+        Assert.True(Thick(aLoftShape, 0.5).IsDone, "ThickSolid with small offset failed");
     }
 
     [Fact]
@@ -229,7 +234,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, 10.0).IsDone(), "ThickSolid with large offset failed");
+        Assert.True(Thick(aLoftShape, 10.0).IsDone, "ThickSolid with large offset failed");
     }
 
     [Fact]
@@ -237,35 +242,35 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 100), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, -2.0).IsDone(), "ThickSolid with negative offset failed");
+        Assert.True(Thick(aLoftShape, -2.0).IsDone, "ThickSolid with negative offset failed");
     }
 
     [Fact]
     public void ThickSolid_Cylinder_Baseline()
     {
-        Shape aCylinder = new BRepPrimAPI_MakeCylinder(50.0, 100.0).Shape();
-        BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aCylinder, 2.0);
-        Assert.True(aThickMaker.IsDone(), "ThickSolid on cylinder failed");
-        Assert.True(new BRepCheck_Analyzer(aThickMaker.Shape()).IsValid(), "Thick cylinder is not valid");
+        Shape aCylinder = new ApiMakeCylinder(50.0, 100.0).Shape();
+        MakeThickSolid aThickMaker = Thick(aCylinder, 2.0);
+        Assert.True(aThickMaker.IsDone, "ThickSolid on cylinder failed");
+        Assert.True(new Analyzer(aThickMaker.Shape()).IsValid(), "Thick cylinder is not valid");
     }
 
     [Fact]
     public void ThickSolid_Sphere_Baseline()
     {
-        Shape aSphere = new BRepPrimAPI_MakeSphere(50.0).Shape();
-        BRepOffsetAPI_MakeThickSolid aThickMaker = Thick(aSphere, 2.0);
-        Assert.True(aThickMaker.IsDone(), "ThickSolid on sphere failed");
-        Assert.True(new BRepCheck_Analyzer(aThickMaker.Shape()).IsValid(), "Thick sphere is not valid");
+        Shape aSphere = new MakeSphere(50.0).Shape();
+        MakeThickSolid aThickMaker = Thick(aSphere, 2.0);
+        Assert.True(aThickMaker.IsDone, "ThickSolid on sphere failed");
+        Assert.True(new Analyzer(aThickMaker.Shape()).IsValid(), "Thick sphere is not valid");
     }
 
     [Fact]
     public void ThickSolid_FusedBoxCylinder()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(100.0, 100.0, 50.0).Shape();
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(50, 50, 50), new Direction3D(0, 0, 1)), 30.0, 50.0).Shape();
-        BRepAlgoAPI_Fuse aFuser = new(aBox, aCyl);
-        Assert.True(aFuser.IsDone(), "Failed to fuse shapes");
-        Assert.True(Thick(aFuser.Shape(), 2.0).IsDone(), "ThickSolid on fused box+cylinder failed");
+        Shape aBox = new MakeBox(100.0, 100.0, 50.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(new Frame3D(new Point3D(50, 50, 50), new Direction3D(0, 0, 1)), 30.0, 50.0).Shape();
+        Fuse aFuser = new(aBox, aCyl);
+        Assert.True(aFuser.IsDone, "Failed to fuse shapes");
+        Assert.True(Thick(aFuser.Shape(), 2.0).IsDone, "ThickSolid on fused box+cylinder failed");
     }
 
     // Tests that the algorithm doesn't crash on very thin lofts where edges may not have valid PCurves on all faces.
@@ -275,7 +280,7 @@ public class BRepOffset_MakeOffset_Test
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 10), Z, 80.0, 60.0));
         // The operation may or may not succeed on very thin geometry, but it must not crash
-        _ = Thick(aLoftShape, 1.0).IsDone();
+        _ = Thick(aLoftShape, 1.0).IsDone;
     }
 
     [Fact]
@@ -283,7 +288,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakeRectangularWire(new Point3D(0, 0, 500), Z, 80.0, 60.0));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on tall circle-to-rectangle loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on tall circle-to-rectangle loft failed");
     }
 
     [Fact]
@@ -292,7 +297,7 @@ public class BRepOffset_MakeOffset_Test
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakePolygonalWire(new Point3D(0, 0, 100), Z, 60.0, 3));
         // Triangle has sharp 60-degree corners
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-triangle loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on circle-to-triangle loft failed");
     }
 
     [Fact]
@@ -300,7 +305,7 @@ public class BRepOffset_MakeOffset_Test
     {
         Shape aLoftShape = Loft(false, MakeCircularWire(new Point3D(0, 0, 0), Z, 50.0),
                                        MakePolygonalWire(new Point3D(0, 0, 100), Z, 55.0, 8));
-        Assert.True(Thick(aLoftShape, 2.0).IsDone(), "ThickSolid on circle-to-octagon loft failed");
+        Assert.True(Thick(aLoftShape, 2.0).IsDone, "ThickSolid on circle-to-octagon loft failed");
     }
 }
 
@@ -317,45 +322,45 @@ public class BRepOffsetAPI_MakeThickSolidTest
     private static double Volume(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     [Fact]
     public void HollowBox()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         NCollection_List<Shape> aFacesToRemove = new();
         aFacesToRemove.Append(FirstFace(aBox));
 
-        BRepOffsetAPI_MakeThickSolid aMaker = new();
+        MakeThickSolid aMaker = new();
         aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
 
         Shape aResult = aMaker.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
     }
 
     [Fact]
     public void HollowBoxVolume()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
         double anOrigVolume = Volume(aBox);
 
         NCollection_List<Shape> aFacesToRemove = new();
         aFacesToRemove.Append(FirstFace(aBox));
 
-        BRepOffsetAPI_MakeThickSolid aMaker = new();
+        MakeThickSolid aMaker = new();
         aMaker.MakeThickSolidByJoin(aBox, aFacesToRemove, -1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
 
         Shape aResult = aMaker.Shape();
         Assert.False(aResult.IsNull);
@@ -366,39 +371,39 @@ public class BRepOffsetAPI_MakeThickSolidTest
     [Fact]
     public void MakeThickSolidBySimple()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
+        MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         // Extract a single face (non-closed shell) for MakeThickSolidBySimple.
-        BRepOffsetAPI_MakeThickSolid aMaker = new();
+        MakeThickSolid aMaker = new();
         aMaker.MakeThickSolidBySimple(FirstFace(aBox), 2.0);
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
 
         Shape aResult = aMaker.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
     }
 
     [Fact]
     public void ThickSolidLargerVolume()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
+        MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
         Face aFace = FirstFace(aBox);
 
         // Compute the area of the original face to estimate expected volume.
         Properties aFaceProps = new();
-        BRepGProp.SurfaceProperties(aFace, aFaceProps);
+        MassPropertiesBuilder.SurfaceProperties(aFace, aFaceProps);
         double aFaceArea = aFaceProps.Mass();
 
         double anOffset = 2.0;
-        BRepOffsetAPI_MakeThickSolid aMaker = new();
+        MakeThickSolid aMaker = new();
         aMaker.MakeThickSolidBySimple(aFace, anOffset);
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
 
         Shape aResult = aMaker.Shape();
         Assert.False(aResult.IsNull);

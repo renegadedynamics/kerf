@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -20,16 +22,16 @@ public class BOPAlgo_MakeConnectedTests
     private static int Count(in Shape theShape, ShapeType theType) => BOPAlgo_MakePeriodicTests.Count(theShape, theType);
 
     // [0, 10]^3 and [10, 20] x [0, 10]^2: they touch along the face x = 10
-    private static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape BoxA() => new MakeBox(10.0, 10.0, 10.0).Shape();
 
-    private static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(10, 0, 0), 10.0, 10.0, 10.0).Shape();
+    private static Shape BoxB() => new MakeBox(new Point3D(10, 0, 0), 10.0, 10.0, 10.0).Shape();
 
     private static Shape FaceAt(in Shape theShape, double theX)
     {
         for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
             {
                 return anExp.Current();
@@ -38,9 +40,9 @@ public class BOPAlgo_MakeConnectedTests
         return new Shape();
     }
 
-    private static BOPAlgo_MakeConnected Connected(params Shape[] theShapes)
+    private static MakeConnectedAlgorithm Connected(params Shape[] theShapes)
     {
-        BOPAlgo_MakeConnected aTool = new();
+        MakeConnectedAlgorithm aTool = new();
         foreach (Shape aS in theShapes)
         {
             aTool.AddArgument(aS);
@@ -54,8 +56,8 @@ public class BOPAlgo_MakeConnectedTests
     {
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
-        BOPAlgo_MakeConnected aTool = Connected(aA, aB);
-        Assert.False(aTool.HasErrors());
+        MakeConnectedAlgorithm aTool = Connected(aA, aB);
+        Assert.False(aTool.HasErrors);
         Shape aC = aTool.Shape();
         Assert.Equal(2, Count(aC, ShapeType.Solid));
         Assert.Equal(11, Count(aC, ShapeType.Face));
@@ -87,8 +89,8 @@ public class BOPAlgo_MakeConnectedTests
     public void One_argument_is_its_own_result()
     {
         Shape aA = BoxA();
-        BOPAlgo_MakeConnected aTool = Connected(aA);
-        Assert.False(aTool.HasErrors());
+        MakeConnectedAlgorithm aTool = Connected(aA);
+        Assert.False(aTool.HasErrors);
         Assert.True(aTool.Shape().IsSame(aA));
         Assert.Equal(1, aTool.MaterialsOnPositiveSide(FaceAt(aA, 0.0)).Count + aTool.MaterialsOnNegativeSide(FaceAt(aA, 0.0)).Count);
     }
@@ -96,23 +98,23 @@ public class BOPAlgo_MakeConnectedTests
     [Fact]
     public void Invalid_arguments_are_errors()
     {
-        BOPAlgo_MakeConnected aTool = new();
+        MakeConnectedAlgorithm aTool = new();
         aTool.Perform();
-        Assert.True(aTool.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
+        Assert.True(aTool.HasError(typeof(AlertTooFewArguments)));
 
-        Shape aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1, 0, 1).Shape();
+        Shape aFace = new MakeFace(new Plane3D(), 0, 1, 0, 1).Shape();
         aTool = Connected(BoxA(), aFace);
-        Assert.True(aTool.HasError(typeof(BOPAlgo_AlertMultiDimensionalArguments)));
+        Assert.True(aTool.HasError(typeof(AlertMultiDimensionalArguments)));
 
         Compound anEmpty = new();
         new BrepBuilder().MakeCompound(ref anEmpty);
         aTool = Connected(anEmpty);
-        Assert.True(aTool.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
+        Assert.True(aTool.HasError(typeof(AlertTooFewArguments)));
 
         // Repetition before periodicity: a warning
         aTool = Connected(BoxA(), BoxB());
         aTool.RepeatShape(0, 1);
-        Assert.True(aTool.HasWarning(typeof(BOPAlgo_AlertShapeIsNotPeriodic)));
+        Assert.True(aTool.HasWarning(typeof(AlertShapeIsNotPeriodic)));
     }
 
     [Fact]
@@ -120,21 +122,21 @@ public class BOPAlgo_MakeConnectedTests
     {
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA);
-        BOPAlgo_MakeConnected aTool = Connected(aA, aB);
-        var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+        MakeConnectedAlgorithm aTool = Connected(aA, aB);
+        var aParams = new MakePeriodicAlgorithm.PeriodicityParams();
         aParams.myPeriodic[0] = true;
         aParams.myPeriod[0] = 20.0;
         aParams.myPeriodic[1] = true;
         aParams.myPeriod[1] = 10.0;
         aTool.MakePeriodic(aParams);
-        Assert.False(aTool.HasWarnings());
+        Assert.False(aTool.HasWarnings);
         Assert.Equal(2, Count(aTool.PeriodicShape(), ShapeType.Solid));
         // the faces at x = 0 and x = 20 are twins
         Shape aP = aTool.PeriodicShape();
         Assert.True(aTool.PeriodicityTool().GetTwins(FaceAt(aP, 0.0)).Single().IsSame(FaceAt(aP, 20.0)));
         aTool.RepeatShape(0, 1);
         aTool.RepeatShape(1, -2);
-        Assert.False(aTool.HasWarnings());
+        Assert.False(aTool.HasWarnings);
         Shape aR = aTool.PeriodicShape();
         Assert.Equal(12, Count(aR, ShapeType.Solid));
         Assert.Equal(12000.0, BOPAlgo_MakePeriodicTests.Volume(aR), 1e-6);
@@ -160,12 +162,12 @@ public class BOPAlgo_MakeConnectedTests
         // face; the port works on copies of them (the arguments are frozen) and answers for the arguments' faces
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA);
-        BOPAlgo_MakeConnected aTool = Connected(aA, aB);
-        var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+        MakeConnectedAlgorithm aTool = Connected(aA, aB);
+        var aParams = new MakePeriodicAlgorithm.PeriodicityParams();
         aParams.myPeriodic[0] = true;
         aParams.myPeriod[0] = 30.0;
         aTool.MakePeriodic(aParams);
-        Assert.False(aTool.HasWarnings());
+        Assert.False(aTool.HasWarnings);
         Shape anOuter = FaceAt(aA, 0.0);
         Assert.Equal(1, aTool.MaterialsOnPositiveSide(anOuter).Count + aTool.MaterialsOnNegativeSide(anOuter).Count);
         aTool.RepeatShape(0, 1);
@@ -178,15 +180,15 @@ public class BOPAlgo_MakeConnectedTests
     public void Serial_equals_parallel()
     {
         Shape aA = BoxA();
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(10, 5, 0), new Direction3D(0, 0, 1)), 3.0, 10.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(new Frame3D(new Point3D(10, 5, 0), new Direction3D(0, 0, 1)), 3.0, 10.0).Shape();
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
-            BOPAlgo_MakeConnected aTool = new();
+            MakeConnectedAlgorithm aTool = new();
             aTool.AddArgument(aA);
             aTool.AddArgument(aCyl);
             aTool.SetRunParallel(true);
             aTool.Perform();
-            var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+            var aParams = new MakePeriodicAlgorithm.PeriodicityParams();
             aParams.myPeriodic[1] = true;
             aParams.myPeriod[1] = 10.0;
             aTool.MakePeriodic(aParams);

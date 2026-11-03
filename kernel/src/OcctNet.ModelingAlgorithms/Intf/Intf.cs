@@ -6,8 +6,9 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Polygons;
 
 /// <summary>
 /// Interference computation between polygons, lines and polyhedra with only triangular facets (polygonal
@@ -15,35 +16,35 @@ namespace Occt;
 /// </summary>
 public static class Intf
 {
-    /// <summary>The plane equation of the triangle <paramref name="P1"/> <paramref name="P2"/> <paramref name="P3"/>.</summary>
-    public static void PlaneEquation(in Point3D P1,
-                                     in Point3D P2,
-                                     in Point3D P3,
-                                     out Xyz NormalVector,
-                                     out double PolarDistance)
+    /// <summary>The plane equation of the triangle <paramref name="p1"/> <paramref name="p2"/> <paramref name="p3"/>.</summary>
+    public static void PlaneEquation(in Point3D p1,
+                                     in Point3D p2,
+                                     in Point3D p3,
+                                     out Xyz normalVector,
+                                     out double polarDistance)
     {
-        Xyz v1 = P2.XYZ() - P1.XYZ();
-        Xyz v2 = P3.XYZ() - P2.XYZ();
-        Xyz v3 = P1.XYZ() - P3.XYZ();
-        NormalVector = (v1 ^ v2) + (v2 ^ v3) + (v3 ^ v1);
-        double aNormLen = NormalVector.Modulus();
-        if (aNormLen < Constants.Resolution())
+        Xyz v1 = p2.XYZ() - p1.XYZ();
+        Xyz v2 = p3.XYZ() - p2.XYZ();
+        Xyz v3 = p1.XYZ() - p3.XYZ();
+        normalVector = (v1 ^ v2) + (v2 ^ v3) + (v3 ^ v1);
+        double normLen = normalVector.Modulus();
+        if (normLen < Constants.Resolution())
         {
-            PolarDistance = 0.0;
+            polarDistance = 0.0;
         }
         else
         {
-            NormalVector.Divide(aNormLen);
-            PolarDistance = NormalVector * P1.XYZ();
+            normalVector.Divide(normLen);
+            polarDistance = normalVector * p1.XYZ();
         }
     }
 
-    /// <summary>True if the triangle <paramref name="P1"/> <paramref name="P2"/> <paramref name="P3"/> contains <paramref name="ThePnt"/>.</summary>
-    public static bool Contain(in Point3D P1, in Point3D P2, in Point3D P3, in Point3D ThePnt)
+    /// <summary>True if the triangle <paramref name="p1"/> <paramref name="p2"/> <paramref name="p3"/> contains <paramref name="thePnt"/>.</summary>
+    public static bool Contain(in Point3D p1, in Point3D p2, in Point3D p3, in Point3D thePnt)
     {
-        Xyz v1 = (P2.XYZ() - P1.XYZ()) ^ (ThePnt.XYZ() - P1.XYZ());
-        Xyz v2 = (P3.XYZ() - P2.XYZ()) ^ (ThePnt.XYZ() - P2.XYZ());
-        Xyz v3 = (P1.XYZ() - P3.XYZ()) ^ (ThePnt.XYZ() - P3.XYZ());
+        Xyz v1 = (p2.XYZ() - p1.XYZ()) ^ (thePnt.XYZ() - p1.XYZ());
+        Xyz v2 = (p3.XYZ() - p2.XYZ()) ^ (thePnt.XYZ() - p2.XYZ());
+        Xyz v3 = (p1.XYZ() - p3.XYZ()) ^ (thePnt.XYZ() - p3.XYZ());
         return v1 * v2 >= 0.0 && v2 * v3 >= 0.0 && v3 * v1 >= 0.0;
     }
 }

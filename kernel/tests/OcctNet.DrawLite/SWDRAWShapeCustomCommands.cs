@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -75,7 +76,7 @@ internal static class SWDRAWShapeCustomCommands
             return 1 /* Error */;
         }
 
-        Shape result = ShapeCustom.DirectFaces(Shape);
+        Shape result = Customize.DirectFaces(Shape);
         if (result.IsNull)
         {
             di.Append("NO RESULT\n");
@@ -441,7 +442,7 @@ internal static class SWDRAWShapeCustomCommands
             return 1 /* Error */;
         }
 
-        Shape result = ShapeCustom.ScaleShape(Shape, theDI.Atof(argv[3]));
+        Shape result = Customize.ScaleShape(Shape, theDI.Atof(argv[3]));
         if (result.IsNull)
         {
             di.Append("NO RESULT\n");
@@ -481,8 +482,8 @@ internal static class SWDRAWShapeCustomCommands
             return 1;
         }
 
-        var aParameters = new ShapeCustom_RestrictionParameters();
-        Shape result = ShapeCustom.BSplineRestriction(Shape, theDI.Atof(argv[3]), theDI.Atof(argv[4]),
+        var aParameters = new RestrictionParameters();
+        Shape result = Customize.BSplineRestriction(Shape, theDI.Atof(argv[3]), theDI.Atof(argv[4]),
                                                              theDI.Atoi(argv[5]), theDI.Atoi(argv[6]), aCont3, aCont2,
                                                              theDI.Atoi(argv[9]) != 0, theDI.Atoi(argv[10]) != 0, aParameters);
         if (result.IsNull)
@@ -520,7 +521,7 @@ internal static class SWDRAWShapeCustomCommands
             return 1;
         }
 
-        Shape result = ShapeCustom.ConvertToRevolution(Shape);
+        Shape result = Customize.ConvertToRevolution(Shape);
         if (result.IsNull)
         {
             di.Append("NO RESULT\n");

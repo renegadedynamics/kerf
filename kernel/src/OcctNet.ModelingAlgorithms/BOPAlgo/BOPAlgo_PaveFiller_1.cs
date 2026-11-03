@@ -2,197 +2,200 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>The vertex/vertex interferences: the chains of coinciding vertices become same-domain vertices.</summary>
-    protected virtual void PerformVV(ProgressRange theRange)
+    protected virtual void PerformVV(ProgressRange range)
     {
-        int n1, n2, iFlag, aSize;
+        int n1, n2, iFlag, size;
         //
-        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Vertex);
-        aSize = myIterator.ExpectedLength();
-        using var aPS = new ProgressScope(theRange, null, 2.0);
-        if (aSize == 0)
+        _iterator!.Initialize(ShapeType.Vertex, ShapeType.Vertex);
+        size = _iterator.ExpectedLength();
+        using var ps = new ProgressScope(range, null, 2.0);
+        if (size == 0)
         {
             return;
         }
         //
-        NCollection_DynamicArray<BOPDS_InterfVV> aVVs = myDS!.InterfVV();
+        NCollection_DynamicArray<InterfVV> vVs = _ds!.InterfVV();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<int, NCollection_List<int>> aMILI = new();
-        NCollection_List<NCollection_List<int>> aMBlocks = new();
+        NCollection_IndexedDataMap<int, NCollection_List<int>> mili = new();
+        NCollection_List<NCollection_List<int>> mBlocks = new();
         //
         // 1. Map V/LV
         // Split progress range on intersection stage and making blocks. Display only intersection stage.
-        using (var aPSLoop = new ProgressScope(aPS.Next(1.0), "Performing Vertex-Vertex intersection", aSize))
+        using (var psLoop = new ProgressScope(ps.Next(1.0), "Performing Vertex-Vertex intersection", size))
         {
-            for (; myIterator.More(); myIterator.Next(), aPSLoop.Next())
+            for (; _iterator.More(); _iterator.Next(), psLoop.Next())
             {
-                if (UserBreak(aPS))
+                if (UserBreak(ps))
                 {
                     return;
                 }
-                myIterator.Value(out n1, out n2);
+                _iterator.Value(out n1, out n2);
                 //
-                if (myDS.HasInterf(n1, n2))
+                if (_ds.HasInterf(n1, n2))
                 {
-                    BOPAlgo_Tools.FillMap(n1, n2, aMILI);
+                    BuilderTools.FillMap(n1, n2, mili);
                     continue;
                 }
 
                 // Check for SD vertices
                 int n1SD = n1;
-                myDS.HasShapeSD(n1, ref n1SD);
+                _ds.HasShapeSD(n1, ref n1SD);
 
                 int n2SD = n2;
-                myDS.HasShapeSD(n2, ref n2SD);
+                _ds.HasShapeSD(n2, ref n2SD);
 
-                Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(n1SD));
-                Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(n2SD));
+                Vertex v1 = ShapeCasts.Vertex(_ds.Shape(n1SD));
+                Vertex v2 = ShapeCasts.Vertex(_ds.Shape(n2SD));
 
-                iFlag = BOPTools_AlgoTools.ComputeVV(aV1, aV2, myFuzzyValue);
+                iFlag = AlgoTools.ComputeVV(v1, v2, _fuzzyValue);
                 if (iFlag == 0)
                 {
-                    BOPAlgo_Tools.FillMap(n1, n2, aMILI);
+                    BuilderTools.FillMap(n1, n2, mili);
                 }
             }
         }
         //
         // 2. Make blocks
-        BOPAlgo_Tools.MakeBlocks(aMILI, aMBlocks);
+        BuilderTools.MakeBlocks(mili, mBlocks);
         //
         // 3. Make vertices
-        NCollection_List<NCollection_List<int>>.Iterator aItB = new(aMBlocks);
-        for (; aItB.More(); aItB.Next())
+        NCollection_List<NCollection_List<int>>.Iterator itB = new(mBlocks);
+        for (; itB.More(); itB.Next())
         {
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            NCollection_List<int> aLI = aItB.Value();
-            MakeSDVertices(aLI);
+            NCollection_List<int> li = itB.Value();
+            MakeSDVertices(li);
         }
         //
         // In OCCT's bucket order (decision 784): it decides the order in which InitPaveBlocksForVertex adds the edges'
         // lists to the pave-block pool, and so the order of MakeSplitEdges' new edges.
-        NCollection_IntDataMap<int> aDMII = myDS.ShapesSD();
-        foreach (KeyValuePair<int, int> aItDMII in aDMII)
+        NCollection_IntDataMap<int> dmii = _ds.ShapesSD();
+        foreach (KeyValuePair<int, int> itDMII in dmii)
         {
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            n1 = aItDMII.Key;
-            myDS.InitPaveBlocksForVertex(n1);
+            n1 = itDMII.Key;
+            _ds.InitPaveBlocksForVertex(n1);
         }
         //
         //-----------------------------------------------------scope t
-        aMBlocks.Clear();
-        aMILI.Clear();
+        mBlocks.Clear();
+        mili.Clear();
     }
 
     /// <summary>
     /// Makes one vertex of the given coinciding vertices (or updates their existing same-domain vertex), binds it as
     /// their same-domain vertex and adds the vertex/vertex interferences. Returns its index.
     /// </summary>
-    protected int MakeSDVertices(NCollection_List<int> theVertIndices, bool theAddInterfs = true)
+    protected int MakeSDVertices(NCollection_List<int> vertIndices, bool addInterfs = true)
     {
-        Vertex aVSD = new(), aVn = new();
+        Vertex vsd = new(), vn = new();
         int nSD = -1;
-        NCollection_List<int>.Iterator aItLI = new(theVertIndices);
-        NCollection_List<Shape> aLV = new();
-        for (; aItLI.More(); aItLI.Next())
+        NCollection_List<int>.Iterator itLI = new(vertIndices);
+        NCollection_List<Shape> lv = new();
+        for (; itLI.More(); itLI.Next())
         {
-            int nX = aItLI.Value(), nSD1 = 0;
-            if (myDS!.HasShapeSD(nX, ref nSD1))
+            int nX = itLI.Value(), nSD1 = 0;
+            if (_ds!.HasShapeSD(nX, ref nSD1))
             {
-                Shape aVSD1 = myDS.Shape(nSD1);
+                Shape vsd1 = _ds.Shape(nSD1);
                 if (nSD == -1)
                 {
-                    aVSD = ShapeCasts.Vertex(aVSD1);
+                    vsd = ShapeCasts.Vertex(vsd1);
                     nSD = nSD1;
                 }
                 else
                 {
-                    aLV.Append(aVSD1);
+                    lv.Append(vsd1);
                 }
             }
-            Shape aV = myDS.Shape(nX);
-            aLV.Append(aV);
+            Shape v = _ds.Shape(nX);
+            lv.Append(v);
         }
-        BOPTools_AlgoTools.MakeVertex(aLV, ref aVn);
+        AlgoTools.MakeVertex(lv, ref vn);
         int nV;
         if (nSD != -1)
         {
             // update old SD vertex with new value (a vertex the filler made: never an argument's)
-            BrepTVertex aTVertex = (BrepTVertex)aVSD.TShape()!;
-            aTVertex.Pnt(Tool.Pnt(aVn));
-            aTVertex.Tolerance(Tool.Tolerance(aVn));
-            aVn = aVSD;
+            BrepTVertex tVertex = (BrepTVertex)vsd.TShape()!;
+            tVertex.Pnt(Tool.Pnt(vn));
+            tVertex.Tolerance(Tool.Tolerance(vn));
+            vn = vsd;
             nV = nSD;
         }
         else
         {
             // Append new vertex to the DS
-            BOPDS_ShapeInfo aSIn = new();
-            aSIn.SetShapeType(ShapeType.Vertex);
-            aSIn.SetShape(aVn);
-            nV = myDS!.Append(aSIn);
+            ShapeInfo sIn = new();
+            sIn.SetShapeType(ShapeType.Vertex);
+            sIn.SetShape(vn);
+            nV = _ds!.Append(sIn);
         }
-        BOPDS_ShapeInfo aSIDS = myDS!.ChangeShapeInfo(nV);
-        ref Box aBox = ref aSIDS.ChangeBox();
-        aBox.Add(Tool.Pnt(aVn));
-        aBox.SetGap(Tool.Tolerance(aVn) + global::Kerf.Engine.Foundation.Precision.Confusion());
+        ShapeInfo sids = _ds!.ChangeShapeInfo(nV);
+        ref Box box = ref sids.ChangeBox();
+        box.Add(Tool.Pnt(vn));
+        box.SetGap(Tool.Tolerance(vn) + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // Fill ShapesSD
-        NCollection_DynamicArray<BOPDS_InterfVV> aVVs = myDS.InterfVV();
+        NCollection_DynamicArray<InterfVV> vVs = _ds.InterfVV();
         //
-        aItLI.Initialize(theVertIndices);
-        for (; aItLI.More(); aItLI.Next())
+        itLI.Initialize(vertIndices);
+        for (; itLI.More(); itLI.Next())
         {
-            int n1 = aItLI.Value();
-            myDS.AddShapeSD(n1, nV);
+            int n1 = itLI.Value();
+            _ds.AddShapeSD(n1, nV);
             //
-            int iR1 = myDS.Rank(n1);
-            Shape aV1 = myDS.Shape(n1);
+            int iR1 = _ds.Rank(n1);
+            Shape v1 = _ds.Shape(n1);
             //
-            NCollection_List<int>.Iterator aItLI2 = new();
-            aItLI2.Reset(theVertIndices, aItLI.Index);
-            aItLI2.Next();
-            for (; aItLI2.More(); aItLI2.Next())
+            NCollection_List<int>.Iterator itLI2 = new();
+            itLI2.Reset(vertIndices, itLI.Index);
+            itLI2.Next();
+            for (; itLI2.More(); itLI2.Next())
             {
-                int n2 = aItLI2.Value();
+                int n2 = itLI2.Value();
                 //
-                if (iR1 >= 0 && iR1 == myDS.Rank(n2))
+                if (iR1 >= 0 && iR1 == _ds.Rank(n2))
                 {
                     // add warning status
-                    Shape aV2 = myDS.Shape(n2);
+                    Shape v2 = _ds.Shape(n2);
                     //
-                    Compound aWC = new();
-                    new BrepBuilder().MakeCompound(ref aWC);
-                    new BrepBuilder().Add(aWC, aV1);
-                    new BrepBuilder().Add(aWC, aV2);
+                    Compound wc = new();
+                    new BrepBuilder().MakeCompound(ref wc);
+                    new BrepBuilder().Add(wc, v1);
+                    new BrepBuilder().Add(wc, v2);
                     //
-                    AddWarning(new BOPAlgo_AlertSelfInterferingShape(aWC));
+                    AddWarning(new AlertSelfInterferingShape(wc));
                 }
                 //
-                if (theAddInterfs)
+                if (addInterfs)
                 {
-                    if (myDS.AddInterf(n1, n2))
+                    if (_ds.AddInterf(n1, n2))
                     {
-                        BOPDS_InterfVV aVV = aVVs.Append(new BOPDS_InterfVV());
-                        aVV.SetIndices(n1, n2);
-                        aVV.SetIndexNew(nV);
+                        InterfVV vv = vVs.Append(new InterfVV());
+                        vv.SetIndices(n1, n2);
+                        vv.SetIndexNew(nV);
                     }
                 }
             }

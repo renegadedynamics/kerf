@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Foundation;
 
+using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.Intersection;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -20,7 +22,7 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_Default_IsIdentityAndParallel()
     {
-        HLRAlgo_Projector P = new();
+        AlgorithmProjector P = new();
         Assert.False(P.Perspective());
         Point2D aP = new();
         P.Project(new Point3D(1, 2, 3), ref aP);
@@ -34,7 +36,7 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_Parallel_DropsTheTranslationAndProjectsAlongTheViewDirection()
     {
-        HLRAlgo_Projector P = new(View());
+        AlgorithmProjector P = new(View());
         // the translation is dropped (Scaled(false)): the view's origin does not move the projection
         Point3D aOrigin = new(0, 0, 0);
         P.Project(aOrigin, out double X0, out double Y0, out double Z0);
@@ -60,7 +62,7 @@ public class HLRAlgoTests
     public void Projector_Perspective_DividesByTheDepth()
     {
         const double f = 50.0;
-        HLRAlgo_Projector P = new(View(), f);
+        AlgorithmProjector P = new(View(), f);
         Assert.True(P.Perspective());
         Assert.Equal(f, P.Focus());
         Point3D aA = new(3, -1, 2);
@@ -89,7 +91,7 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_Shoot_GoesThroughTheProjectedPoint()
     {
-        foreach (HLRAlgo_Projector P in new[] { new HLRAlgo_Projector(View()), new HLRAlgo_Projector(View(), 40.0) })
+        foreach (AlgorithmProjector P in new[] { new AlgorithmProjector(View()), new AlgorithmProjector(View(), 40.0) })
         {
             Point3D aA = new(3, -1, 2);
             Point2D aP = new();
@@ -102,7 +104,7 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_TopView_UsesTheHardCodedFormula()
     {
-        HLRAlgo_Projector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        AlgorithmProjector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         Point2D aP = new();
         P.Project(new Point3D(4, -5, 6), ref aP);
         Assert.Equal((4.0, -5.0), (aP.X(), aP.Y()));
@@ -112,7 +114,7 @@ public class HLRAlgoTests
     public void Projector_FirstAxonometricView_LeavesThePointUnset_AsOcct()
     {
         // OCCT's type-0 view matrix: Project(P, Pout) computes X and Y but does not write them (decision 1078)
-        HLRAlgo_Projector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1), new Direction3D(1.4142135623730951, -1, 1)));
+        AlgorithmProjector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1), new Direction3D(1.4142135623730951, -1, 1)));
         Point2D aP = new(-7, -7);
         P.Project(new Point3D(1, 2, 3), ref aP);
         Assert.Equal((-7.0, -7.0), (aP.X(), aP.Y()));
@@ -129,8 +131,8 @@ public class HLRAlgoTests
         Transform3D aS = new();
         aS.SetScale(new Point3D(0, 0, 0), 2.0);
         Transform3D aTS = aS * aT;
-        HLRAlgo_Projector P = new(aTS, false, 0.0);
-        HLRAlgo_Projector PS = P.WithScaled(true);
+        AlgorithmProjector P = new(aTS, false, 0.0);
+        AlgorithmProjector PS = P.WithScaled(true);
         Assert.NotEqual(P, PS);
         Assert.Equal(1.0, P.Transformation().ScaleFactor(), Tol);
         Assert.Equal(2.0, PS.Transformation().ScaleFactor(), Tol);
@@ -141,7 +143,7 @@ public class HLRAlgoTests
     [Fact]
     public void EdgeStatus_HidesIntervals()
     {
-        HLRAlgo_EdgeStatus S = new(0.0, 1e-5f, 1.0, 1e-5f);
+        EdgeStatus S = new(0.0, 1e-5f, 1.0, 1e-5f);
         Assert.True(S.AllVisible());
         Assert.Equal(1, S.NbVisiblePart());
 
@@ -158,7 +160,7 @@ public class HLRAlgoTests
         Assert.Equal(2, S.NbVisiblePart());
 
         // the hidden parts are the complement of the visible ones
-        HLRAlgo_EdgeIterator It = new();
+        EdgeIterator It = new();
         List<(double, double)> aHidden = [];
         for (It.InitHidden(S); It.MoreHidden(); It.NextHidden())
         {
@@ -182,10 +184,10 @@ public class HLRAlgoTests
     [Fact]
     public void EdgeStatus_CopyAndAssign_AreDeep()
     {
-        HLRAlgo_EdgeStatus S = new(0.0, 1e-5f, 1.0, 1e-5f);
+        EdgeStatus S = new(0.0, 1e-5f, 1.0, 1e-5f);
         S.Hide(0.2, 1e-5f, 0.4, 1e-5f, false, false);
-        HLRAlgo_EdgeStatus C = new(S);
-        HLRAlgo_EdgeStatus A = new();
+        EdgeStatus C = new(S);
+        EdgeStatus A = new();
         A.Assign(S);
         S.Hide(0.5, 1e-5f, 0.6, 1e-5f, false, false);
         Assert.Equal(3, S.NbVisiblePart());
@@ -196,13 +198,13 @@ public class HLRAlgoTests
     [Fact]
     public void Intervals_UniteSubtractIntersect()
     {
-        Intrv_Intervals I = new(new Intrv_Interval(0.0, 10.0));
-        I.Subtract(new Intrv_Interval(2.0, 3.0));
-        Assert.Equal(2, I.NbIntervals());
-        I.Unite(new Intrv_Interval(2.5, 2.75));
-        Assert.Equal(3, I.NbIntervals());
-        I.Intersect(new Intrv_Interval(1.0, 2.6));
-        Assert.Equal(2, I.NbIntervals());
+        Intervals I = new(new IntersectionInterval(0.0, 10.0));
+        I.Subtract(new IntersectionInterval(2.0, 3.0));
+        Assert.Equal(2, I.IntervalCount);
+        I.Unite(new IntersectionInterval(2.5, 2.75));
+        Assert.Equal(3, I.IntervalCount);
+        I.Intersect(new IntersectionInterval(1.0, 2.6));
+        Assert.Equal(2, I.IntervalCount);
         Assert.Equal((1.0, 2.0), (I.Value(1).Start(), I.Value(1).End()));
         Assert.Equal((2.5, 2.6), (I.Value(2).Start(), I.Value(2).End()));
     }
@@ -210,7 +212,7 @@ public class HLRAlgoTests
     [Fact]
     public void MinMax_EncodeDecode_RoundTrips()
     {
-        HLRAlgo_EdgesBlock.MinMaxIndices aMin = new(), aMax = new(), aMM = new(), aMin2 = new(), aMax2 = new();
+        EdgesBlock.MinMaxIndices aMin = new(), aMax = new(), aMM = new(), aMin2 = new(), aMax2 = new();
         for (int i = 0; i < 8; i++)
         {
             aMin.Min[i] = 10 * i + 1;
@@ -218,8 +220,8 @@ public class HLRAlgoTests
             aMax.Min[i] = 1000 + 10 * i + 3;
             aMax.Max[i] = 1000 + 10 * i + 4;
         }
-        HLRAlgo.EncodeMinMax(ref aMin, ref aMax, ref aMM);
-        HLRAlgo.DecodeMinMax(aMM, ref aMin2, ref aMax2);
+        HlrAlgo.EncodeMinMax(ref aMin, ref aMax, ref aMM);
+        HlrAlgo.DecodeMinMax(aMM, ref aMin2, ref aMax2);
         Assert.Equal(aMin, aMin2);
         Assert.Equal(aMax, aMax2);
     }

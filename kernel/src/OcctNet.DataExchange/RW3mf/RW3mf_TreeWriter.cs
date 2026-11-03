@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -29,7 +30,7 @@ public sealed record RW3mf_WriteOptions
     public bool IncludeHidden { get; init; }
 
     /// <summary>If set, the tree is meshed first (<see cref="XdeDoc_Tree.Meshed"/>).</summary>
-    public IMeshTools_Parameters? MeshParameters { get; init; }
+    public ToolParameters? MeshParameters { get; init; }
 }
 
 /// <summary>
@@ -71,7 +72,7 @@ public sealed class RW3mf_TreeWriter
         ArgumentNullException.ThrowIfNull(theStream);
         using var aPS = new ProgressScope(theProgress, "Writing 3MF", Options.MeshParameters is null ? 1 : 2);
         XdeDoc_Tree aTree = theTree;
-        if (Options.MeshParameters is IMeshTools_Parameters aParams)
+        if (Options.MeshParameters is ToolParameters aParams)
         {
             XdeDoc_Tree? aMeshed = theTree.Meshed(aParams, aPS.Next());
             if (aMeshed is null)

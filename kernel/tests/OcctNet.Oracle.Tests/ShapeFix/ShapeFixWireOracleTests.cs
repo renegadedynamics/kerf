@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -10,7 +12,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.Oracle.Tests;
@@ -106,15 +108,15 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
     private static Shape PortFixShape(in Shape theShape, double thePrecision, double theMaxTol,
                                              out bool theStatus, out bool theDone1, out bool theDone2)
     {
-        var aFix = new ShapeFix_Shape(theShape);
+        var aFix = new ShapeFixer(theShape);
         if (thePrecision != 1.0e-7 || theMaxTol != 1.0e-7)
         {
             aFix.SetPrecision(thePrecision);
             aFix.SetMaxTolerance(theMaxTol);
         }
         theStatus = aFix.Perform();
-        theDone1 = aFix.Status(ShapeExtend_DONE1);
-        theDone2 = aFix.Status(ShapeExtend_DONE2);
+        theDone1 = aFix.Status(ExtendStatus.DONE1);
+        theDone2 = aFix.Status(ExtendStatus.DONE2);
         return theShape.TShape()!.IsFrozen ? aFix.Shape() : aFix.InternalShape();
     }
 

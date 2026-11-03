@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -17,25 +20,25 @@ namespace OcctNet.ModelingAlgorithms.Tests.BOPDS;
 public class BOPDS_DSTests
 {
     internal static Shape Box(double theX, double theY, double theZ, double theSize = 10.0) =>
-        new BRepPrimAPI_MakeBox(new Point3D(theX, theY, theZ), theSize, theSize, theSize).Shape();
+        new MakeBox(new Point3D(theX, theY, theZ), theSize, theSize, theSize).Shape();
 
-    internal static BOPDS_DS MakeDS(params Shape[] theShapes)
+    internal static DS MakeDS(params Shape[] theShapes)
     {
         NCollection_List<Shape> anArgs = new();
         foreach (Shape aShape in theShapes)
         {
             anArgs.Append(aShape);
         }
-        BOPDS_DS aDS = new();
+        DS aDS = new();
         aDS.SetArguments(anArgs);
         aDS.Init();
         return aDS;
     }
 
-    private static List<int> IndicesOfType(BOPDS_DS theDS, ShapeType theType, int theRank = -1)
+    private static List<int> IndicesOfType(DS theDS, ShapeType theType, int theRank = -1)
     {
         List<int> anIndices = [];
-        for (int i = 0; i < theDS.NbSourceShapes(); ++i)
+        for (int i = 0; i < theDS.SourceShapeCount; ++i)
         {
             if (theDS.ShapeInfo(i).ShapeType() == theType && (theRank < 0 || theDS.Rank(i) == theRank))
             {
@@ -49,14 +52,14 @@ public class BOPDS_DSTests
     public void Init_TwoBoxes_ShapeInfosAndRanges()
     {
         Shape aBox1 = Box(0, 0, 0), aBox2 = Box(20, 0, 0);
-        BOPDS_DS aDS = MakeDS(aBox1, aBox2);
+        DS aDS = MakeDS(aBox1, aBox2);
 
         // A box has 1 solid, 1 shell, 6 faces, 6 wires, 12 edges and 8 vertices
-        Assert.Equal(68, aDS.NbSourceShapes());
-        Assert.Equal(68, aDS.NbShapes());
-        Assert.Equal(2, aDS.NbRanges());
-        Assert.Equal(new BOPDS_IndexRange(0, 33), aDS.Range(0));
-        Assert.Equal(new BOPDS_IndexRange(34, 67), aDS.Range(1));
+        Assert.Equal(68, aDS.SourceShapeCount);
+        Assert.Equal(68, aDS.ShapeCount);
+        Assert.Equal(2, aDS.RangeCount);
+        Assert.Equal(new IndexRange(0, 33), aDS.Range(0));
+        Assert.Equal(new IndexRange(34, 67), aDS.Range(1));
         Assert.Equal(0, aDS.Rank(5));
         Assert.Equal(1, aDS.Rank(40));
         Assert.Equal(-1, aDS.Rank(68));
@@ -67,7 +70,7 @@ public class BOPDS_DSTests
         Assert.Equal(0, aDS.Index(aBox1));
         Assert.Equal(34, aDS.Index(aBox2));
         Assert.Equal(-1, aDS.Index(Box(0, 0, 0)));
-        for (int i = 0; i < aDS.NbShapes(); ++i)
+        for (int i = 0; i < aDS.ShapeCount; ++i)
         {
             Assert.Equal(i, aDS.Index(aDS.Shape(i)));
         }
@@ -78,7 +81,7 @@ public class BOPDS_DSTests
         Assert.Equal(8, IndicesOfType(aDS, ShapeType.Vertex, 1).Count);
 
         // With two arguments the solids keep their shells as sub-shapes, and no box
-        BOPDS_ShapeInfo aSolid = aDS.ShapeInfo(0);
+        ShapeInfo aSolid = aDS.ShapeInfo(0);
         Assert.Equal(1, aSolid.SubShapes().Extent());
         Assert.Equal(ShapeType.Shell, aDS.ShapeInfo(aSolid.SubShapes().First()).ShapeType());
         Assert.True(aSolid.Box().IsVoid);
@@ -86,19 +89,19 @@ public class BOPDS_DSTests
         // A face's sub-shapes become its edges and vertices
         foreach (int nF in IndicesOfType(aDS, ShapeType.Face))
         {
-            BOPDS_ShapeInfo aFace = aDS.ShapeInfo(nF);
+            ShapeInfo aFace = aDS.ShapeInfo(nF);
             Assert.Equal(8, aFace.SubShapes().Extent());
             Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Edge));
             Assert.Equal(4, aFace.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex));
             Assert.False(aFace.Box().IsVoid);
-            Assert.True(aFace.HasBRep());
-            Assert.True(aFace.IsInterfering());
+            Assert.True(aFace.HasBRep);
+            Assert.True(aFace.IsInterfering);
         }
 
         // An edge's box holds its vertices' boxes, with the half fuzzy gap added
         foreach (int nE in IndicesOfType(aDS, ShapeType.Edge))
         {
-            BOPDS_ShapeInfo anEdge = aDS.ShapeInfo(nE);
+            ShapeInfo anEdge = aDS.ShapeInfo(nE);
             Assert.Equal(2, anEdge.SubShapes().Extent());
             Assert.False(anEdge.HasFlag());
             foreach (int nV in anEdge.SubShapes())
@@ -119,8 +122,8 @@ public class BOPDS_DSTests
     [Fact]
     public void Init_OneSolid_HasFacesAndEdgesAndABox()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
-        BOPDS_ShapeInfo aSolid = aDS.ShapeInfo(0);
+        DS aDS = MakeDS(Box(0, 0, 0));
+        ShapeInfo aSolid = aDS.ShapeInfo(0);
         // the faces, and the faces' sub-shapes: edges and vertices
         Assert.Equal(26, aSolid.SubShapes().Extent());
         Assert.Equal(6, aSolid.SubShapes().Count(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Face));
@@ -134,7 +137,7 @@ public class BOPDS_DSTests
         Assert.True(aBox.IsVoid);
 
         // with two arguments the shells stay, and the box is built from the faces' boxes
-        BOPDS_DS aDS2 = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
+        DS aDS2 = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
         Box aBox2 = new();
         aDS2.BuildBndBoxSolid(0, ref aBox2);
         Assert.False(aBox2.IsVoid);
@@ -144,7 +147,7 @@ public class BOPDS_DSTests
     [Fact]
     public void Init_OneInvertedSolid_HasTheWholeBox()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0).Reversed());
+        DS aDS = MakeDS(Box(0, 0, 0).Reversed());
         Assert.True(aDS.ShapeInfo(0).Box().IsWhole);
     }
 
@@ -152,40 +155,40 @@ public class BOPDS_DSTests
     public void Init_SameArgumentTwice_IsOneRange()
     {
         Shape aBox = Box(0, 0, 0);
-        BOPDS_DS aDS = MakeDS(aBox, aBox);
-        Assert.Equal(1, aDS.NbRanges());
-        Assert.Equal(34, aDS.NbSourceShapes());
+        DS aDS = MakeDS(aBox, aBox);
+        Assert.Equal(1, aDS.RangeCount);
+        Assert.Equal(34, aDS.SourceShapeCount);
 
-        BOPDS_DS anEmpty = MakeDS();
-        Assert.Equal(0, anEmpty.NbShapes());
-        Assert.Equal(0, anEmpty.NbRanges());
+        DS anEmpty = MakeDS();
+        Assert.Equal(0, anEmpty.ShapeCount);
+        Assert.Equal(0, anEmpty.RangeCount);
 
         aDS.Clear();
-        Assert.Equal(0, aDS.NbShapes());
+        Assert.Equal(0, aDS.ShapeCount);
         Assert.True(aDS.Arguments().IsEmpty());
     }
 
     [Fact]
     public void PaveBlocks_OfAnEdge()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
         Assert.False(aDS.HasPaveBlocks(nE));
         Assert.True(aDS.PaveBlocks(nE).IsEmpty());
 
-        NCollection_List<BOPDS_PaveBlock> aLPB = aDS.ChangePaveBlocks(nE);
+        NCollection_List<PaveBlock> aLPB = aDS.ChangePaveBlocks(nE);
         Assert.True(aDS.HasPaveBlocks(nE));
         Assert.Same(aLPB, aDS.PaveBlocks(nE));
         Assert.Equal(1, aLPB.Extent());
         Assert.Equal(1, aDS.PaveBlocksPool().Length());
 
-        BOPDS_PaveBlock aPB = aLPB.First();
+        PaveBlock aPB = aLPB.First();
         Assert.Equal(nE, aPB.OriginalEdge());
         Assert.Equal(-1, aPB.Edge());
         Assert.False(aPB.HasEdge());
-        Assert.True(aPB.IsSplitEdge());
-        Assert.False(aPB.IsToUpdate());
-        Assert.False(aPB.HasShrunkData());
+        Assert.True(aPB.IsSplitEdge);
+        Assert.False(aPB.IsToUpdate);
+        Assert.False(aPB.HasShrunkData);
         aPB.Range(out double aT1, out double aT2);
         Assert.True(aT1 < aT2);
         Tool.Range(ShapeCasts.Edge(aDS.Shape(nE)), out double aF, out double aL);
@@ -195,7 +198,7 @@ public class BOPDS_DSTests
         Assert.Contains(nV2, aDS.ShapeInfo(nE).SubShapes());
         Assert.NotEqual(nV1, nV2);
 
-        NCollection_List<BOPDS_Pave> aPaves = new();
+        NCollection_List<Pave> aPaves = new();
         aDS.Paves(nE, aPaves);
         Assert.Equal(new[] { aPB.Pave1(), aPB.Pave2() }, aPaves.ToArray());
 
@@ -209,16 +212,16 @@ public class BOPDS_DSTests
     [Fact]
     public void PaveBlock_ExtraPavesAndUpdate()
     {
-        BOPDS_PaveBlock aPB = new();
+        PaveBlock aPB = new();
         aPB.SetOriginalEdge(5);
-        aPB.SetPave1(new BOPDS_Pave(1, 0.0));
-        aPB.SetPave2(new BOPDS_Pave(2, 10.0));
+        aPB.SetPave1(new Pave(1, 0.0));
+        aPB.SetPave2(new Pave(2, 10.0));
 
-        aPB.AppendExtPave(new BOPDS_Pave(7, 6.0));
-        aPB.AppendExtPave(new BOPDS_Pave(7, 6.5)); // the same vertex again: ignored
-        aPB.AppendExtPave(new BOPDS_Pave(8, 3.0));
+        aPB.AppendExtPave(new Pave(7, 6.0));
+        aPB.AppendExtPave(new Pave(7, 6.5)); // the same vertex again: ignored
+        aPB.AppendExtPave(new Pave(8, 3.0));
         Assert.Equal(2, aPB.ExtPaves().Extent());
-        Assert.True(aPB.IsToUpdate());
+        Assert.True(aPB.IsToUpdate);
 
         int anInd = -5;
         Assert.True(aPB.ContainsParameter(3.05, 0.1, ref anInd));
@@ -229,15 +232,15 @@ public class BOPDS_DSTests
 
         aPB.RemoveExtPave(7);
         Assert.Equal(1, aPB.ExtPaves().Extent());
-        aPB.AppendExtPave(new BOPDS_Pave(7, 6.0));
+        aPB.AppendExtPave(new Pave(7, 6.0));
 
-        NCollection_List<BOPDS_PaveBlock> aLPB = new();
+        NCollection_List<PaveBlock> aLPB = new();
         aPB.Update(aLPB);
-        Assert.False(aPB.IsToUpdate());
+        Assert.False(aPB.IsToUpdate);
         Assert.Equal(3, aLPB.Extent());
         double[] aExpected = [0.0, 3.0, 6.0, 10.0];
         int i = 0;
-        foreach (BOPDS_PaveBlock aNew in aLPB)
+        foreach (PaveBlock aNew in aLPB)
         {
             aNew.Range(out double aT1, out double aT2);
             Assert.Equal((aExpected[i], aExpected[i + 1]), (aT1, aT2));
@@ -248,19 +251,19 @@ public class BOPDS_DSTests
         Assert.False(aLPB.First().HasSameBounds(aLPB.Last()));
 
         // Without the flag, only the extra paves make blocks; fewer than two make none
-        BOPDS_PaveBlock aPB2 = new();
-        aPB2.AppendExtPave1(new BOPDS_Pave(1, 1.0));
-        NCollection_List<BOPDS_PaveBlock> aLPB2 = new();
+        PaveBlock aPB2 = new();
+        aPB2.AppendExtPave1(new Pave(1, 1.0));
+        NCollection_List<PaveBlock> aLPB2 = new();
         aPB2.Update(aLPB2, false);
         Assert.True(aLPB2.IsEmpty());
-        Assert.False(aPB2.IsToUpdate());
+        Assert.False(aPB2.IsToUpdate);
 
         // Shrunk data
         Box aBox = new();
         aBox.Add(new Point3D(1, 2, 3));
         aPB.SetShrunkData(0.1, 9.9, aBox, true);
-        Assert.True(aPB.HasShrunkData());
-        Assert.True(aPB.IsSplittable());
+        Assert.True(aPB.HasShrunkData);
+        Assert.True(aPB.IsSplittable);
         aPB.ShrunkData(out double aTS1, out double aTS2, out Box aShrunkBox, out bool isSplittable);
         Assert.Equal((0.1, 9.9, true), (aTS1, aTS2, isSplittable));
         Assert.Equal(aBox, aShrunkBox);
@@ -273,29 +276,29 @@ public class BOPDS_DSTests
     [Fact]
     public void UpdatePaveBlocks_SplitsTheEdgesWithExtraPaves()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
-        BOPDS_PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
+        PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
         aPB.Range(out double aT1, out double aT2);
         int nV = IndicesOfType(aDS, ShapeType.Vertex).First(v => !aDS.ShapeInfo(nE).HasSubShape(v));
-        aPB.AppendExtPave(new BOPDS_Pave(nV, 0.5 * (aT1 + aT2)));
+        aPB.AppendExtPave(new Pave(nV, 0.5 * (aT1 + aT2)));
 
         aDS.UpdatePaveBlocks();
-        NCollection_List<BOPDS_PaveBlock> aLPB = aDS.PaveBlocks(nE);
+        NCollection_List<PaveBlock> aLPB = aDS.PaveBlocks(nE);
         Assert.Equal(2, aLPB.Extent());
         Assert.DoesNotContain(aPB, aLPB);
         aLPB.First().Indices(out _, out int n2);
         Assert.Equal(nV, n2);
 
-        NCollection_List<BOPDS_Pave> aPaves = new();
+        NCollection_List<Pave> aPaves = new();
         aDS.Paves(nE, aPaves);
         Assert.Equal(3, aPaves.Extent());
         Assert.Equal(nV, aPaves.ToArray()[1].Index());
 
         // UpdatePaveBlock splits one pave block in its edge's list
-        BOPDS_PaveBlock aPBFirst = aLPB.First();
+        PaveBlock aPBFirst = aLPB.First();
         aPBFirst.Range(out double aF, out double aL);
-        aPBFirst.AppendExtPave(new BOPDS_Pave(IndicesOfType(aDS, ShapeType.Vertex).Last(), 0.5 * (aF + aL)));
+        aPBFirst.AppendExtPave(new Pave(IndicesOfType(aDS, ShapeType.Vertex).Last(), 0.5 * (aF + aL)));
         aDS.UpdatePaveBlock(aPBFirst);
         Assert.Equal(3, aDS.PaveBlocks(nE).Extent());
         Assert.DoesNotContain(aPBFirst, aDS.PaveBlocks(nE));
@@ -304,7 +307,7 @@ public class BOPDS_DSTests
     [Fact]
     public void ReleasePaveBlocks_ForgetsUntouchedEdges()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         List<int> anEdges = IndicesOfType(aDS, ShapeType.Edge);
         aDS.ChangePaveBlocks(anEdges[0]);
         aDS.ChangePaveBlocks(anEdges[1]);
@@ -317,18 +320,18 @@ public class BOPDS_DSTests
     [Fact]
     public void CommonBlocks()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
         int nE1 = IndicesOfType(aDS, ShapeType.Edge, 0)[0];
         int nE2 = IndicesOfType(aDS, ShapeType.Edge, 1)[0];
-        BOPDS_PaveBlock aPB1 = aDS.ChangePaveBlocks(nE1).First();
-        BOPDS_PaveBlock aPB2 = aDS.ChangePaveBlocks(nE2).First();
+        PaveBlock aPB1 = aDS.ChangePaveBlocks(nE1).First();
+        PaveBlock aPB2 = aDS.ChangePaveBlocks(nE2).First();
 
-        BOPDS_CommonBlock aCB = new();
+        CommonBlock aCB = new();
         aCB.AddPaveBlock(aPB2);
         aCB.AddPaveBlock(aPB1); // the smaller original edge goes first
         Assert.Same(aPB1, aCB.PaveBlock1());
         Assert.True(aCB.Contains(aPB2));
-        Assert.False(aCB.Contains(new BOPDS_PaveBlock()));
+        Assert.False(aCB.Contains(new PaveBlock()));
         Assert.True(aCB.IsPaveBlockOnEdge(nE2));
         Assert.Same(aPB2, aCB.PaveBlockOnEdge(nE2));
         Assert.Null(aCB.PaveBlockOnEdge(1000));
@@ -378,7 +381,7 @@ public class BOPDS_DSTests
     public void UpdateCommonBlock_MakesNewCommonBlocksOfTheSplits()
     {
         // Two boxes sharing a face: the edges of the shared square coincide pairwise
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(10, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0), Box(10, 0, 0));
         int nE1 = -1, nE2 = -1;
         foreach (int e1 in IndicesOfType(aDS, ShapeType.Edge, 0))
         {
@@ -396,8 +399,8 @@ public class BOPDS_DSTests
         }
         Assert.True(nE1 >= 0);
 
-        BOPDS_PaveBlock aPB1 = aDS.ChangePaveBlocks(nE1).First();
-        BOPDS_PaveBlock aPB2 = aDS.ChangePaveBlocks(nE2).First();
+        PaveBlock aPB1 = aDS.ChangePaveBlocks(nE1).First();
+        PaveBlock aPB2 = aDS.ChangePaveBlocks(nE2).First();
         aPB1.Indices(out int n11, out int n12);
         aPB2.Indices(out int n21, out int n22);
         // The vertices coincide: same-domain them as the pave filler would
@@ -407,7 +410,7 @@ public class BOPDS_DSTests
         aPB2.Indices(out n21, out n22);
         Assert.Equal((n11, n12), (n21, n22));
 
-        BOPDS_CommonBlock aCB = new();
+        CommonBlock aCB = new();
         aCB.AddPaveBlock(aPB1);
         aCB.AddPaveBlock(aPB2);
         aCB.AddFace(1);
@@ -416,19 +419,19 @@ public class BOPDS_DSTests
 
         // A new vertex in the middle of both
         aPB1.Range(out double aT1, out double aT2);
-        int nVNew = aDS.Append(new BRepBuilderAPI_MakeVertex(new Point3D(50, 50, 50)).Vertex());
+        int nVNew = aDS.Append(new MakeVertex(new Point3D(50, 50, 50)).Vertex());
         aDS.ChangeShapeInfo(nVNew).SetShapeType(ShapeType.Vertex);
         Assert.True(aDS.IsNewShape(nVNew));
-        aPB1.AppendExtPave(new BOPDS_Pave(nVNew, 0.5 * (aT1 + aT2)));
+        aPB1.AppendExtPave(new Pave(nVNew, 0.5 * (aT1 + aT2)));
         aPB2.Range(out aT1, out aT2);
-        aPB2.AppendExtPave(new BOPDS_Pave(nVNew, 0.5 * (aT1 + aT2)));
+        aPB2.AppendExtPave(new Pave(nVNew, 0.5 * (aT1 + aT2)));
 
         aDS.UpdateCommonBlock(aCB, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2, aDS.PaveBlocks(nE1).Extent());
         Assert.Equal(2, aDS.PaveBlocks(nE2).Extent());
-        foreach (BOPDS_PaveBlock aSplit in aDS.PaveBlocks(nE1))
+        foreach (PaveBlock aSplit in aDS.PaveBlocks(nE1))
         {
-            BOPDS_CommonBlock? aNewCB = aDS.CommonBlock(aSplit);
+            CommonBlock? aNewCB = aDS.CommonBlock(aSplit);
             Assert.NotNull(aNewCB);
             Assert.NotSame(aCB, aNewCB);
             Assert.Equal(2, aNewCB!.PaveBlocks().Extent());
@@ -439,7 +442,7 @@ public class BOPDS_DSTests
     [Fact]
     public void SameDomainChains()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         aDS.AddShapeSD(5, 5); // ignored
         Assert.Equal(5, aDS.GetSameDomainIndex(5));
         aDS.AddShapeSD(5, 6);
@@ -457,8 +460,8 @@ public class BOPDS_DSTests
     [Fact]
     public void Interferences()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(5, 5, 5));
-        Assert.Equal(10, BOPDS_DS.NbInterfTypes());
+        DS aDS = MakeDS(Box(0, 0, 0), Box(5, 5, 5));
+        Assert.Equal(10, DS.InterfTypeCount);
         Assert.True(aDS.AddInterf(3, 40));
         Assert.False(aDS.AddInterf(40, 3));
         Assert.True(aDS.HasInterf(3));
@@ -468,10 +471,10 @@ public class BOPDS_DSTests
         Assert.False(aDS.HasInterf(3, 41));
         Assert.Equal(1, aDS.Interferences().Extent());
 
-        BOPDS_InterfVV aVV = aDS.InterfVV().Append(new BOPDS_InterfVV());
+        InterfVV aVV = aDS.InterfVV().Append(new InterfVV());
         aVV.SetIndices(3, 40);
         aVV.SetIndexNew(70);
-        BOPDS_InterfVV aRead = aDS.InterfVV().Value(0);
+        InterfVV aRead = aDS.InterfVV().Value(0);
         Assert.Same(aVV, aRead);
         Assert.Equal(40, aRead.OppositeIndex(3));
         Assert.Equal(3, aRead.OppositeIndex(40));
@@ -482,27 +485,27 @@ public class BOPDS_DSTests
         Assert.Equal(70, nNew);
         Assert.Equal(70, aRead.GetIndexNew());
 
-        BOPDS_InterfVE aVE = aDS.InterfVE().Append(new BOPDS_InterfVE());
+        InterfVE aVE = aDS.InterfVE().Append(new InterfVE());
         aVE.SetParameter(2.5);
         Assert.Equal(2.5, aDS.InterfVE().Value(0).Parameter());
         Assert.Null(aVE.GetIndexNew());
         Assert.False(aVE.HasIndexNew());
 
-        BOPDS_InterfVF aVF = aDS.InterfVF().Append(new BOPDS_InterfVF());
+        InterfVF aVF = aDS.InterfVF().Append(new InterfVF());
         aVF.SetUV(0.25, 0.75);
         aVF.UV(out double aU, out double aV);
         Assert.Equal((0.25, 0.75), (aU, aV));
 
-        BOPDS_InterfFF aFF = aDS.InterfFF().Append(new BOPDS_InterfFF());
+        InterfFF aFF = aDS.InterfFF().Append(new InterfFF());
         aFF.Init(2, 1);
         aFF.SetTangentFaces(true);
-        BOPDS_Curve aCurve = aFF.ChangeCurves().Append(new BOPDS_Curve());
+        SectionCurve aCurve = aFF.ChangeCurves().Append(new SectionCurve());
         aCurve.SetTolerance(1e-5);
         aCurve.InitPaveBlock1();
         aCurve.InitPaveBlock1(); // only once
         Assert.Equal(1, aCurve.PaveBlocks().Extent());
-        ref BOPDS_PaveBlock aPB1Ref = ref aCurve.ChangePaveBlock1();
-        BOPDS_PaveBlock aReplacement = new();
+        ref PaveBlock aPB1Ref = ref aCurve.ChangePaveBlock1();
+        PaveBlock aReplacement = new();
         aReplacement.SetEdge(12);
         aPB1Ref = aReplacement;
         Assert.Same(aReplacement, aCurve.PaveBlocks().First());
@@ -512,12 +515,12 @@ public class BOPDS_DSTests
         Assert.Equal(1e-5, aDS.InterfFF().Value(0).Curves().Value(0).Tolerance());
         Assert.Equal(9, aDS.InterfFF().Value(0).Points().Value(0).Index());
 
-        aDS.InterfEE().Append(new BOPDS_InterfEE());
-        aDS.InterfEF().Append(new BOPDS_InterfEF());
-        aDS.InterfVZ().Append(new BOPDS_InterfVZ());
-        aDS.InterfEZ().Append(new BOPDS_InterfEZ());
-        aDS.InterfFZ().Append(new BOPDS_InterfFZ());
-        aDS.InterfZZ().Append(new BOPDS_InterfZZ());
+        aDS.InterfEE().Append(new InterfEE());
+        aDS.InterfEF().Append(new InterfEF());
+        aDS.InterfVZ().Append(new InterfVZ());
+        aDS.InterfEZ().Append(new InterfEZ());
+        aDS.InterfFZ().Append(new InterfFZ());
+        aDS.InterfZZ().Append(new InterfZZ());
         Assert.Equal(1, aDS.InterfZZ().Length());
 
         // HasInterfShapeSubShapes / HasInterfSubShapes on a face of the first box
@@ -544,10 +547,10 @@ public class BOPDS_DSTests
     {
         // OCCT: SetCommonPart is IntTools_CommonPrt's assignment, which appends the second edge's ranges to the
         // ones already there (occt-issues.md, unit 6A)
-        IntTools_CommonPrt aCP = new();
+        CommonPrt aCP = new();
         aCP.SetType(ShapeType.Edge);
         aCP.AppendRange2(0.0, 1.0);
-        BOPDS_InterfEE anEE = new();
+        InterfEE anEE = new();
         anEE.SetCommonPart(aCP);
         Assert.Equal(1, anEE.CommonPart().Ranges2().Length());
         anEE.SetCommonPart(aCP);
@@ -558,7 +561,7 @@ public class BOPDS_DSTests
     [Fact]
     public void FaceInfo_OnInAndAloneVertices()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0), Box(20, 0, 0));
         int nF = IndicesOfType(aDS, ShapeType.Face, 0)[0];
         foreach (int nE in aDS.ShapeInfo(nF).SubShapes().Where(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Edge))
         {
@@ -567,7 +570,7 @@ public class BOPDS_DSTests
 
         Assert.False(aDS.HasFaceInfo(nF));
         Assert.Equal(-1, aDS.FaceInfo(nF).Index());
-        BOPDS_FaceInfo aFI = aDS.ChangeFaceInfo(nF);
+        FaceInfo aFI = aDS.ChangeFaceInfo(nF);
         Assert.True(aDS.HasFaceInfo(nF));
         Assert.Same(aFI, aDS.FaceInfo(nF));
         Assert.Equal(nF, aFI.Index());
@@ -578,7 +581,7 @@ public class BOPDS_DSTests
 
         // A vertex/face interference puts the vertex In the face
         int nV = IndicesOfType(aDS, ShapeType.Vertex, 1)[0];
-        BOPDS_InterfVF aVF = aDS.InterfVF().Append(new BOPDS_InterfVF());
+        InterfVF aVF = aDS.InterfVF().Append(new InterfVF());
         aVF.SetIndices(nV, nF);
         aDS.UpdateFaceInfoIn(nF);
         Assert.True(aFI.VerticesIn().Contains(nV));
@@ -600,14 +603,14 @@ public class BOPDS_DSTests
 
         // RefineFaceInfoIn removes from In what is On
         aDS.UpdateFaceInfoOn(nF);
-        BOPDS_PaveBlock anOn = aFI.PaveBlocksOn().FindKey(1);
+        PaveBlock anOn = aFI.PaveBlocksOn().FindKey(1);
         aFI.ChangePaveBlocksIn().Add(anOn);
-        aFI.ChangePaveBlocksIn().Add(new BOPDS_PaveBlock());
+        aFI.ChangePaveBlocksIn().Add(new PaveBlock());
         aDS.RefineFaceInfoIn();
         Assert.Equal(1, aFI.PaveBlocksIn().Extent());
         Assert.False(aFI.PaveBlocksIn().Contains(anOn));
 
-        aFI.ChangePaveBlocksSc().Add(new BOPDS_PaveBlock());
+        aFI.ChangePaveBlocksSc().Add(new PaveBlock());
         aFI.ChangeVerticesSc().Add(3);
         aFI.Clear(); // OCCT leaves the Sc maps
         Assert.True(aFI.PaveBlocksOn().IsEmpty());
@@ -619,7 +622,7 @@ public class BOPDS_DSTests
     [Fact]
     public void SubShapesOnIn_AndSharedEdges()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         List<int> aFaces = IndicesOfType(aDS, ShapeType.Face);
         foreach (int nE in IndicesOfType(aDS, ShapeType.Edge))
         {
@@ -640,8 +643,8 @@ public class BOPDS_DSTests
         Assert.True(aDS.ShapeInfo(nF2).HasSubShape(aShared.First()));
 
         NCollection_IntMap aMVOnIn = new(), aMVCommon = new();
-        NCollection_IndexedMap<BOPDS_PaveBlock> aPBOnIn = new();
-        NCollection_Map<BOPDS_PaveBlock> aCommonPB = new();
+        NCollection_IndexedMap<PaveBlock> aPBOnIn = new();
+        NCollection_Map<PaveBlock> aCommonPB = new();
         aDS.SubShapesOnIn(nF1, nF2, aMVOnIn, aMVCommon, aPBOnIn, aCommonPB);
         Assert.Equal(7, aPBOnIn.Extent());
         Assert.Equal(1, aCommonPB.Extent());
@@ -652,9 +655,9 @@ public class BOPDS_DSTests
     [Fact]
     public void IsValidShrunkData()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         int nE = IndicesOfType(aDS, ShapeType.Edge)[0];
-        BOPDS_PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
+        PaveBlock aPB = aDS.ChangePaveBlocks(nE).First();
         Assert.False(aDS.IsValidShrunkData(aPB));
         aPB.Range(out double aT1, out double aT2);
         Box aBox = new();
@@ -670,7 +673,7 @@ public class BOPDS_DSTests
     [Fact]
     public void Dump_WritesTheRangesAndShapes()
     {
-        BOPDS_DS aDS = MakeDS(Box(0, 0, 0));
+        DS aDS = MakeDS(Box(0, 0, 0));
         using StringWriter aWriter = new();
         aDS.Dump(aWriter);
         string aText = aWriter.ToString();
@@ -679,7 +682,7 @@ public class BOPDS_DSTests
         Assert.EndsWith(" ******\n", aText);
 
         using StringWriter aShapeWriter = new();
-        int nV = Enumerable.Range(0, aDS.NbShapes()).First(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex);
+        int nV = Enumerable.Range(0, aDS.ShapeCount).First(i => aDS.ShapeInfo(i).ShapeType() == ShapeType.Vertex);
         aDS.ShapeInfo(nV).Dump(aShapeWriter);
         Assert.Equal(" VERTEX { }", aShapeWriter.ToString());
     }

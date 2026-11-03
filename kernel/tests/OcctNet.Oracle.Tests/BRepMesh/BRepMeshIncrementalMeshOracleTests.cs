@@ -329,13 +329,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         if (aDeflection < 0)
         {
             var aBox = new Box();
-            BRepBndLib.Add(aPortF1, ref aBox, false);
+            Bounds.Add(aPortF1, ref aBox, false);
             if (aBox.IsVoid)
             {
                 return;
             }
             double aSize = 0.0;
-            BRepMesh_ShapeTool.BoxMaxDimension(aBox, ref aSize);
+            ShapeTool.BoxMaxDimension(aBox, ref aSize);
             aDeflection = -aDeflection * aSize;
         }
 
@@ -344,14 +344,14 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         {
             // Both sides reject a deflection below the confusion tolerance (a tiny shape at a relative fraction).
             Assert.ThrowsAny<N.OcctException>(() => NativeMesh(theF1, aDeflection, theSetting));
-            Assert.Throws<global::Kerf.Engine.Foundation.NumericErrorException>(() => new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
+            Assert.Throws<global::Kerf.Engine.Foundation.NumericErrorException>(() => new IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel));
             theTally.BothRejected++;
             return;
         }
 
         (string aF2, NativeTriangulation?[] aNativeTris, int aNativeStatus) = NativeMesh(theF1, aDeflection, theSetting);
 
-        var aMesh = new BRepMesh_IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel);
+        var aMesh = new IncrementalMesh(aPortF1, aDeflection, theSetting.Relative, theSetting.Angle, theSetting.Parallel);
         Shape aResult = aMesh.Shape();
         string aP = PortWrite(aResult);
 
@@ -751,13 +751,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (new N.BRepMesh_IncrementalMesh(aNative, aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel))
                 {
                 }
-                Shape aPort = new BRepMesh_IncrementalMesh(PortRead(aF1), aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
+                Shape aPort = new IncrementalMesh(PortRead(aF1), aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
                 string aWhat = $"{Path.GetFileName(aFile)} ({aSetting})";
 
                 using (var aN = new N.GProp_GProps())
                 {
                     N.BRepGProp.SurfaceProperties(aNative, aN, false, true);
-                    Properties aP = BRepGProp.SurfaceProperties(aPort, false, true);
+                    Properties aP = MassPropertiesBuilder.SurfaceProperties(aPort, false, true);
                     anOracle.Same(aN.Mass(), aP.Mass(), aWhat + " area");
                     using N.gp_Pnt aNC = aN.CentreOfMass();
                     anOracle.Same(aNC, aP.CentreOfMass(), aWhat + " area centre");
@@ -765,14 +765,14 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (var aN = new N.GProp_GProps())
                 {
                     N.BRepGProp.LinearProperties(aNative, aN, false, true);
-                    Properties aP = BRepGProp.LinearProperties(aPort, false, true);
+                    Properties aP = MassPropertiesBuilder.LinearProperties(aPort, false, true);
                     anOracle.Same(aN.Mass(), aP.Mass(), aWhat + " length");
                 }
                 using (var aNB = new N.Bnd_Box())
                 {
                     N.BRepBndLib.Add(aNative, aNB, true);
                     var aPB = new Box();
-                    BRepBndLib.Add(aPort, ref aPB, true);
+                    Bounds.Add(aPort, ref aPB, true);
                     anOracle.Same(aNB.IsVoid(), aPB.IsVoid, aWhat + " box void");
                     if (!aNB.IsVoid())
                     {
@@ -840,15 +840,15 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             foreach ((double aDeflection, bool isRelative, double anAngle) in new[] { (0.05, true, 0.5), (0.02, true, 0.2) })
             {
                 Shape aShape = PortRead(aF1);
-                string aSerial = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, false).Shape());
+                string aSerial = PortDump(new IncrementalMesh(aShape, aDeflection, isRelative, anAngle, false).Shape());
                 for (int aRun = 0; aRun < 3; aRun++)
                 {
-                    string aParallel = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
+                    string aParallel = PortDump(new IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
                     Assert.True(aSerial == aParallel, $"{aFile} ({aDeflection}, {anAngle}) parallel run {aRun} differs from serial");
                 }
                 using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
                 {
-                    string aForced = PortDump(new BRepMesh_IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
+                    string aForced = PortDump(new IncrementalMesh(aShape, aDeflection, isRelative, anAngle, true).Shape());
                     Assert.True(aSerial == aForced, $"{aFile}: forced serial differs");
                 }
 

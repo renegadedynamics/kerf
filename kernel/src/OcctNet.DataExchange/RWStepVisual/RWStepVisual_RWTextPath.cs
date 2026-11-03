@@ -25,13 +25,13 @@ internal static class RWStepVisual_RWTextPath
     {
         switch (theSourceEnum)
         {
-            case StepVisual_tpUp:
+            case StepVisual_TextPath.StepVisual_tpUp:
                 return tpUp;
-            case StepVisual_tpRight:
+            case StepVisual_TextPath.StepVisual_tpRight:
                 return tpRight;
-            case StepVisual_tpDown:
+            case StepVisual_TextPath.StepVisual_tpDown:
                 return tpDown;
-            case StepVisual_tpLeft:
+            case StepVisual_TextPath.StepVisual_tpLeft:
                 return tpLeft;
         }
         return null;
@@ -47,19 +47,19 @@ internal static class RWStepVisual_RWTextPath
     {
         if (thePathStr == tpUp)
         {
-            theResultEnum = StepVisual_tpUp;
+            theResultEnum = StepVisual_TextPath.StepVisual_tpUp;
         }
         else if (thePathStr == tpRight)
         {
-            theResultEnum = StepVisual_tpRight;
+            theResultEnum = StepVisual_TextPath.StepVisual_tpRight;
         }
         else if (thePathStr == tpDown)
         {
-            theResultEnum = StepVisual_tpDown;
+            theResultEnum = StepVisual_TextPath.StepVisual_tpDown;
         }
         else if (thePathStr == tpLeft)
         {
-            theResultEnum = StepVisual_tpLeft;
+            theResultEnum = StepVisual_TextPath.StepVisual_tpLeft;
         }
         else
         {

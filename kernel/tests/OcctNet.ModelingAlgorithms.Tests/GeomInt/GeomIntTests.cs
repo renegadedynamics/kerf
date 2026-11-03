@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Patches;
 using Kerf.Geometry;
 using static Kerf.Topology.Orientation;
 
@@ -21,43 +22,43 @@ public class GeomIntTests
     {
         double aPer = 2.0 * Math.PI;
         // Below the range: dp = 2π + 1, one period up, a positive offset.
-        Assert.True(GeomInt.AdjustPeriodic(-1.0, 0.0, aPer, aPer, out double aNew, out double aOff));
+        Assert.True(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(-1.0, 0.0, aPer, aPer, out double aNew, out double aOff));
         Assert.Equal(aPer, aOff);
         Assert.Equal(-1.0 + aPer, aNew);
         // Above the range: dp = -7, modf gives -1, a negative offset (returns false).
-        Assert.False(GeomInt.AdjustPeriodic(7.0, 0.0, aPer, aPer, out aNew, out aOff));
+        Assert.False(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(7.0, 0.0, aPer, aPer, out aNew, out aOff));
         Assert.Equal(-aPer, aOff);
         Assert.Equal(7.0 - aPer, aNew);
         // Far below: dp / period = 2.something, two periods.
-        Assert.True(GeomInt.AdjustPeriodic(-8.0, 0.0, aPer, aPer, out aNew, out aOff));
+        Assert.True(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(-8.0, 0.0, aPer, aPer, out aNew, out aOff));
         Assert.Equal(2.0 * aPer, aOff);
         // Inside, or outside by less than the tolerance: unchanged.
-        Assert.False(GeomInt.AdjustPeriodic(1.0, 0.0, aPer, aPer, out aNew, out aOff));
+        Assert.False(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(1.0, 0.0, aPer, aPer, out aNew, out aOff));
         Assert.Equal((1.0, 0.0), (aNew, aOff));
-        Assert.False(GeomInt.AdjustPeriodic(-1.0e-10, 0.0, aPer, aPer, out aNew, out aOff, 1.0e-9));
+        Assert.False(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(-1.0e-10, 0.0, aPer, aPer, out aNew, out aOff, 1.0e-9));
         Assert.Equal((-1.0e-10, 0.0), (aNew, aOff));
         // Outside by less than a period from the far bound: modf gives 0, nothing moves.
-        Assert.False(GeomInt.AdjustPeriodic(-1.0, 0.0, 1.0, 10.0, out aNew, out aOff));
+        Assert.False(global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(-1.0, 0.0, 1.0, 10.0, out aNew, out aOff));
         Assert.Equal((-1.0, 0.0), (aNew, aOff));
     }
 
     [Fact]
     public void ParameterAndOrientation_ValueSemantics()
     {
-        GeomInt_ParameterAndOrientation aDef = new();
+        global::Kerf.Engine.Intersection.Surfaces.ParameterAndOrientation aDef = new();
         Assert.Equal(0.0, aDef.Parameter());
         Assert.Equal(Forward, aDef.Orientation1());
         Assert.Equal(Forward, aDef.Orientation2());
-        Assert.Equal(default(GeomInt_ParameterAndOrientation), aDef);
+        Assert.Equal(default(global::Kerf.Engine.Intersection.Surfaces.ParameterAndOrientation), aDef);
 
-        GeomInt_ParameterAndOrientation aP = new(2.5, Reversed, Internal);
+        global::Kerf.Engine.Intersection.Surfaces.ParameterAndOrientation aP = new(2.5, Reversed, Internal);
         Assert.Equal(2.5, aP.Parameter());
         Assert.Equal(Reversed, aP.Orientation1());
         Assert.Equal(Internal, aP.Orientation2());
 
-        GeomInt_ParameterAndOrientation aQ = aP.WithOrientation1(Forward).WithOrientation2(External);
+        global::Kerf.Engine.Intersection.Surfaces.ParameterAndOrientation aQ = aP.WithOrientation1(Forward).WithOrientation2(External);
         Assert.Equal(Reversed, aP.Orientation1()); // the original is unchanged
-        Assert.Equal(new GeomInt_ParameterAndOrientation(2.5, Forward, External), aQ);
+        Assert.Equal(new global::Kerf.Engine.Intersection.Surfaces.ParameterAndOrientation(2.5, Forward, External), aQ);
         Assert.True(aQ != aP);
 
         aP.SetOrientation2(Forward);
@@ -68,9 +69,9 @@ public class GeomIntTests
     [Fact]
     public void MakeBSpline_And2d_ThroughTheWalkingPoints()
     {
-        IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(5), false);
+        WLine aW = new(IntPatch_WLineTests.StraightLine(5), false);
 
-        BSplineCurve3D aC = Assert.IsType<BSplineCurve3D>(GeomInt_IntSS.MakeBSpline(aW, 2, 4));
+        BSplineCurve3D aC = Assert.IsType<BSplineCurve3D>(global::Kerf.Engine.Intersection.Surfaces.IntSS.MakeBSpline(aW, 2, 4));
         Assert.Equal(1, aC.Degree());
         Assert.Equal(3, aC.PoleCount);
         Assert.Equal(new Point3D(1, 0, 0), aC.Pole(1));
@@ -79,8 +80,8 @@ public class GeomIntTests
         Assert.Equal([2, 1, 2], aC.Multiplicities().AsSpan().ToArray());
         Assert.False(aC.IsFrozen);
 
-        BSplineCurve2D aC1 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, true);
-        BSplineCurve2D aC2 = GeomInt_IntSS.MakeBSpline2d(aW, 2, 4, false);
+        BSplineCurve2D aC1 = global::Kerf.Engine.Intersection.Surfaces.IntSS.MakeBSpline2d(aW, 2, 4, true);
+        BSplineCurve2D aC2 = global::Kerf.Engine.Intersection.Surfaces.IntSS.MakeBSpline2d(aW, 2, 4, false);
         Assert.Equal(new Point2D(1, 0), aC1.Pole(1));
         Assert.Equal(new Point2D(3, 0), aC1.Pole(3));
         Assert.Equal(new Point2D(1, 1), aC2.Pole(1));
@@ -95,17 +96,17 @@ public class GeomIntTests
         LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 1, 0));
         double aTol = 1.0e-7;
         Curve2D? aC2d = null;
-        GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aC2d);
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aC2d);
         Assert.NotNull(aC2d);
         double s = 0.5 / Math.Sqrt(2.0);
         Assert.True(aC2d.Value(0.5).IsEqual(new Point2D(s, s), Tol));
 
         // A 2D curve already given, or no surface: nothing changes.
         Curve2D? aSame = aC2d;
-        GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aSame);
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, 1.0, ref aTol, aPlane, aLine, ref aSame);
         Assert.Same(aC2d, aSame);
         Curve2D? aNone = null;
-        GeomInt_IntSS.BuildPCurves(0.0, 1.0, ref aTol, null, aLine, ref aNone);
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, 1.0, ref aTol, null, aLine, ref aNone);
         Assert.Null(aNone);
     }
 
@@ -117,7 +118,7 @@ public class GeomIntTests
         LineCurve3D aLine = new(new Point3D(1, 2, 0), new Direction3D(1, 0, 0));
         double aTol = 1.0e-7;
         Curve2D? aC2d = null;
-        GeomInt_IntSS.BuildPCurves(0.0, 1.0e-9, -10, 10, -10, 10, ref aTol, aPlane, aLine, ref aC2d);
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, 1.0e-9, -10, 10, -10, 10, ref aTol, aPlane, aLine, ref aC2d);
         BSplineCurve2D aBS = Assert.IsType<BSplineCurve2D>(aC2d);
         Assert.Equal(2, aBS.PoleCount);
         Assert.Equal([0.0, 1.0e-9], aBS.Knots().AsSpan().ToArray());
@@ -133,7 +134,7 @@ public class GeomIntTests
         CircleCurve3D aCirc = new(new Frame3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)), 1.0);
         double aTol = 1.0e-7;
         Curve2D? aC2d = null;
-        GeomInt_IntSS.BuildPCurves(0.0, Math.PI, 2.0 * Math.PI, 4.0 * Math.PI, -10, 10, ref aTol, aCyl, aCirc,
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, Math.PI, 2.0 * Math.PI, 4.0 * Math.PI, -10, 10, ref aTol, aCyl, aCirc,
                                    ref aC2d);
         Assert.NotNull(aC2d);
         Point2D aMid = aC2d.Value(0.5 * Math.PI);
@@ -154,7 +155,7 @@ public class GeomIntTests
         NCollection_DynamicArray<double> aPars = new();
         aPars.Append(5.0);
         aPars.Append(0.0);
-        GeomInt_IntSS.TrimILineOnSurfBoundaries(aL, null, aBox1, aBox2, aPars);
+        global::Kerf.Engine.Intersection.Surfaces.IntSS.TrimILineOnSurfBoundaries(aL, null, aBox1, aBox2, aPars);
         Assert.Equal(4, aPars.Length());
         double[] anExpected = [0.0, 1.0, 2.0, 5.0];
         for (int i = 0; i < 4; i++)
@@ -166,35 +167,35 @@ public class GeomIntTests
     [Fact]
     public void LineTool_ReadsAWalkingLine()
     {
-        IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(6), false);
-        Assert.Equal(0, GeomInt_LineTool.NbVertex(aW));
-        Assert.Equal(1.0, GeomInt_LineTool.FirstParameter(aW));
-        Assert.Equal(6.0, GeomInt_LineTool.LastParameter(aW));
+        WLine aW = new(IntPatch_WLineTests.StraightLine(6), false);
+        Assert.Equal(0, global::Kerf.Engine.Intersection.Surfaces.LineTool.NbVertex(aW));
+        Assert.Equal(1.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.FirstParameter(aW));
+        Assert.Equal(6.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.LastParameter(aW));
 
         aW.AddVertex(IntPatch_WLineTests.Vtx(1, 2.0));
         aW.AddVertex(IntPatch_WLineTests.Vtx(3, 4.0));
         aW.SetFirstPoint(1);
         aW.SetLastPoint(2);
-        Assert.Equal(2, GeomInt_LineTool.NbVertex(aW));
-        Assert.Equal(4.0, GeomInt_LineTool.Vertex(aW, 2).ParameterOnLine());
-        Assert.Equal(2.0, GeomInt_LineTool.FirstParameter(aW));
-        Assert.Equal(4.0, GeomInt_LineTool.LastParameter(aW));
+        Assert.Equal(2, global::Kerf.Engine.Intersection.Surfaces.LineTool.NbVertex(aW));
+        Assert.Equal(4.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.Vertex(aW, 2).ParameterOnLine());
+        Assert.Equal(2.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.FirstParameter(aW));
+        Assert.Equal(4.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.LastParameter(aW));
 
-        IntPatch_GLine aLin = new(new Line3D(), false);
-        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), GeomInt_LineTool.FirstParameter(aLin));
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), GeomInt_LineTool.LastParameter(aLin));
-        IntPatch_GLine aCirc = new(new Circle3D(new Frame3D(), 1.0), false);
-        Assert.Equal(0.0, GeomInt_LineTool.FirstParameter(aCirc));
-        Assert.Equal(2.0 * Math.PI, GeomInt_LineTool.LastParameter(aCirc));
+        GLine aLin = new(new Line3D(), false);
+        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Intersection.Surfaces.LineTool.FirstParameter(aLin));
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Intersection.Surfaces.LineTool.LastParameter(aLin));
+        GLine aCirc = new(new Circle3D(new Frame3D(), 1.0), false);
+        Assert.Equal(0.0, global::Kerf.Engine.Intersection.Surfaces.LineTool.FirstParameter(aCirc));
+        Assert.Equal(2.0 * Math.PI, global::Kerf.Engine.Intersection.Surfaces.LineTool.LastParameter(aCirc));
     }
 
-    private static (GeomInt_LineConstructor, SurfaceAdaptor, SurfaceAdaptor) PlanePlane()
+    private static (global::Kerf.Engine.Intersection.Surfaces.LineConstructor, SurfaceAdaptor, SurfaceAdaptor) PlanePlane()
     {
         // The same plane twice: the first bounded by [0, 10] x [-1, 1], the second by [0, 4] x [0, 2].
         PlaneSurface aPlane = new(new Plane3D());
         SurfaceAdaptor aHS1 = new(aPlane, 0, 10, -1, 1);
         SurfaceAdaptor aHS2 = new(aPlane, 0, 4, 0, 2);
-        GeomInt_LineConstructor aLC = new();
+        global::Kerf.Engine.Intersection.Surfaces.LineConstructor aLC = new();
         aLC.Load(new TopolTool(aHS1), new TopolTool(aHS2), aHS1, aHS2);
         return (aLC, aHS1, aHS2);
     }
@@ -202,46 +203,46 @@ public class GeomIntTests
     [Fact]
     public void LineConstructor_KeepsTheWalkingPartsInsideBothDomains()
     {
-        (GeomInt_LineConstructor aLC, SurfaceAdaptor aHS1, SurfaceAdaptor aHS2) = PlanePlane();
-        Assert.False(aLC.IsDone());
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLC.NbParts());
+        (global::Kerf.Engine.Intersection.Surfaces.LineConstructor aLC, SurfaceAdaptor aHS1, SurfaceAdaptor aHS2) = PlanePlane();
+        Assert.False(aLC.IsDone);
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aLC.PartCount);
 
         // Points x = 0..9 at (x, 0) on S1 and (x, 1) on S2; vertices at points 1, 5 and 10. The middle of [1, 5] is
         // point 3 (x = 2), inside both; the middle of [5, 10] is point 7 (x = 6), outside the second domain.
-        IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(10), false);
+        WLine aW = new(IntPatch_WLineTests.StraightLine(10), false);
         aW.AddVertex(IntPatch_WLineTests.Vtx(0, 1.0));
         aW.AddVertex(IntPatch_WLineTests.Vtx(4, 5.0));
         aW.AddVertex(IntPatch_WLineTests.Vtx(9, 10.0));
         aLC.Perform(aW);
-        Assert.True(aLC.IsDone());
-        Assert.Equal(1, aLC.NbParts());
+        Assert.True(aLC.IsDone);
+        Assert.Equal(1, aLC.PartCount);
         aLC.Part(1, out double aF, out double aL);
         Assert.Equal((1.0, 5.0), (aF, aL));
 
         // No periodic surface: the line isn't decomposed.
-        NCollection_Sequence<IntPatch_Line> aNew = new();
-        Assert.False(GeomInt_LineTool.DecompositionOfWLine(aW, aHS1, aHS2, 2.0e-7, aLC, aNew));
+        NCollection_Sequence<PatchLine> aNew = new();
+        Assert.False(global::Kerf.Engine.Intersection.Surfaces.LineTool.DecompositionOfWLine(aW, aHS1, aHS2, 2.0e-7, aLC, aNew));
         Assert.Equal(0, aNew.Length());
     }
 
     [Fact]
     public void LineConstructor_TwoPointPartsTestBothEnds()
     {
-        (GeomInt_LineConstructor aLC, _, _) = PlanePlane();
+        (global::Kerf.Engine.Intersection.Surfaces.LineConstructor aLC, _, _) = PlanePlane();
         // Consecutive vertices at points 4 and 5 (x = 3 and 4, both in), then 5 and 6 (x = 5 is out of S2).
-        IntPatch_WLine aW = new(IntPatch_WLineTests.StraightLine(10), false);
+        WLine aW = new(IntPatch_WLineTests.StraightLine(10), false);
         aW.AddVertex(IntPatch_WLineTests.Vtx(3, 4.0));
         aW.AddVertex(IntPatch_WLineTests.Vtx(4, 5.0));
         aW.AddVertex(IntPatch_WLineTests.Vtx(5, 6.0));
         aLC.Perform(aW);
-        Assert.Equal(1, aLC.NbParts());
+        Assert.Equal(1, aLC.PartCount);
         aLC.Part(1, out double aF, out double aL);
         Assert.Equal((4.0, 5.0), (aF, aL));
 
         // An ImpPrm line classifies the middle of the two points instead: x = 4.5 is out of S2 as well.
-        aW.SetCreatingWayInfo(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpPrm);
+        aW.SetCreatingWayInfo(WLine.IntPatch_WLType.WLImpPrm);
         aLC.Perform(aW);
-        Assert.Equal(1, aLC.NbParts());
+        Assert.Equal(1, aLC.PartCount);
     }
 
     [Fact]
@@ -253,36 +254,36 @@ public class GeomIntTests
         PlaneSurface aPlane = new(new Plane3D());
         SurfaceAdaptor aHS1 = new(aCyl, 0, 2.0 * Math.PI, -1, 1);
         SurfaceAdaptor aHS2 = new(aPlane, 0, 2, -2, 2);
-        GeomInt_LineConstructor aLC = new();
+        global::Kerf.Engine.Intersection.Surfaces.LineConstructor aLC = new();
         aLC.Load(new TopolTool(aHS1), new TopolTool(aHS2), aHS1, aHS2);
 
-        IntPatch_GLine aG = new(new Circle3D(new Frame3D(), 1.0), false);
-        IntPatch_Point aV1 = new();
+        GLine aG = new(new Circle3D(new Frame3D(), 1.0), false);
+        PatchPoint aV1 = new();
         aV1.SetValue(new Point3D(0, -1, 0), 1.0e-7, false);
         aV1.SetParameter(1.5 * Math.PI);
-        IntPatch_Point aV2 = new();
+        PatchPoint aV2 = new();
         aV2.SetValue(new Point3D(0, 1, 0), 1.0e-7, false);
         aV2.SetParameter(0.5 * Math.PI);
         aG.AddVertex(aV1);
         aG.AddVertex(aV2);
         aLC.Perform(aG);
-        Assert.True(aLC.IsDone());
-        Assert.Equal(1, aLC.NbParts());
+        Assert.True(aLC.IsDone);
+        Assert.Equal(1, aLC.PartCount);
         aLC.Part(1, out double aF, out double aL);
         Assert.Equal(1.5 * Math.PI, aF, Tol);
         Assert.Equal(2.5 * Math.PI, aL, Tol);
 
         // A circle smaller than the tolerance is rejected.
-        IntPatch_GLine aMicro = new(new Circle3D(new Frame3D(), 1.0e-12), false);
+        GLine aMicro = new(new Circle3D(new Frame3D(), 1.0e-12), false);
         aLC.Perform(aMicro);
-        Assert.True(aLC.IsDone());
-        Assert.Equal(0, aLC.NbParts());
+        Assert.True(aLC.IsDone);
+        Assert.Equal(0, aLC.PartCount);
     }
 
     [Fact]
     public void IntSS_TolFixTangents()
     {
-        GeomInt_IntSS anInt = new();
+        global::Kerf.Engine.Intersection.Surfaces.IntSS anInt = new();
         anInt.TolFixTangents(out double aTol, out double anAng);
         Assert.Equal((1.0e-7, 1.0e-6), (aTol, anAng));
         anInt.SetTolFixTangents(1.0e-5, 1.0e-4);

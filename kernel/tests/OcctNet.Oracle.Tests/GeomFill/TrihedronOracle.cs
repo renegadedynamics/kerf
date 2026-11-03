@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
@@ -28,7 +29,7 @@ internal static class TrihedronOracle
 
     /// <summary>Runs <paramref name="theCases"/> random spines of every curve kind through both laws.</summary>
     internal static void Run(ITestOutputHelper theOutput, string theName, Func<N.GeomFill_TrihedronLaw> theNative,
-                             Func<GeomFill_TrihedronLaw> thePort, int theCases, int theSeed, int[]? theSkippedKinds = null)
+                             Func<TrihedronLaw> thePort, int theCases, int theSeed, int[]? theSkippedKinds = null)
     {
         for (int aKind = 0; aKind < CurveKinds.Length; aKind++)
         {
@@ -51,7 +52,7 @@ internal static class TrihedronOracle
                     using var aNA = new N.GeomAdaptor_Curve(aNC, aF, aL);
                     var aPA = new CurveAdaptor(aPC, aF, aL);
                     using N.GeomFill_TrihedronLaw aNLaw = theNative();
-                    GeomFill_TrihedronLaw aPLaw = thePort();
+                    TrihedronLaw aPLaw = thePort();
                     Compare(anOracle, aNLaw, aPLaw, aNA, aPA, $"{theName} on {CurveKinds[aKind]} #{i}");
                 }
             }
@@ -59,7 +60,7 @@ internal static class TrihedronOracle
         }
     }
 
-    internal static void Compare(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP,
+    internal static void Compare(Oracle theO, N.GeomFill_TrihedronLaw theN, TrihedronLaw theP,
                                  N.GeomAdaptor_Curve theNC, CurveAdaptor thePC, string theWhat)
     {
         bool aNOk = false, aPOk = false;
@@ -113,7 +114,7 @@ internal static class TrihedronOracle
 
         // a copy evaluates the whole curve
         using N.GeomFill_TrihedronLaw aNCopy = theN.Copy()!;
-        GeomFill_TrihedronLaw aPCopy = theP.Copy();
+        TrihedronLaw aPCopy = theP.Copy();
         Assert.Equal(theP.GetType(), aPCopy.GetType());
         for (int k = 0; k < 3; k++)
         {
@@ -149,7 +150,7 @@ internal static class TrihedronOracle
         return aParams;
     }
 
-    internal static void SameEval(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP, double theU,
+    internal static void SameEval(Oracle theO, N.GeomFill_TrihedronLaw theN, TrihedronLaw theP, double theU,
                                   string theWhat)
     {
         string aWhat = $"{theWhat} at {theU:R}";
@@ -222,7 +223,7 @@ internal static class TrihedronOracle
         }
     }
 
-    private static void SameIntervals(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP, string theWhat)
+    private static void SameIntervals(Oracle theO, N.GeomFill_TrihedronLaw theN, TrihedronLaw theP, string theWhat)
     {
         foreach (Continuity aS in Shapes)
         {
@@ -246,15 +247,15 @@ internal static class TrihedronOracle
         }
     }
 
-    private static void SameQueries(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP, string theWhat)
+    private static void SameQueries(Oracle theO, N.GeomFill_TrihedronLaw theN, TrihedronLaw theP, string theWhat)
     {
-        theO.Same(theN.IsConstant(), theP.IsConstant(), theWhat + " IsConstant");
-        theO.Same(theN.IsOnlyBy3dCurve(), theP.IsOnlyBy3dCurve(), theWhat + " IsOnlyBy3dCurve");
+        theO.Same(theN.IsConstant(), theP.IsConstant, theWhat + " IsConstant");
+        theO.Same(theN.IsOnlyBy3dCurve(), theP.IsOnlyBy3dCurve, theWhat + " IsOnlyBy3dCurve");
         theO.Same((int)theN.ErrorStatus(), (int)theP.ErrorStatus(), theWhat + " ErrorStatus");
         SameAverage(theO, theN, theP, theWhat);
     }
 
-    private static void SameAverage(Oracle theO, N.GeomFill_TrihedronLaw theN, GeomFill_TrihedronLaw theP, string theWhat)
+    private static void SameAverage(Oracle theO, N.GeomFill_TrihedronLaw theN, TrihedronLaw theP, string theWhat)
     {
         using var nT = new N.gp_Vec();
         using var nN = new N.gp_Vec();

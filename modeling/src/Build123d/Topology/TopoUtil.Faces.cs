@@ -1,3 +1,9 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -32,7 +38,7 @@ internal static partial class TopoUtil
         BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
         var point = new Point3D();
         var normal = new Vector3D();
-        var props = new BRepGProp_Face(face);
+        var props = new FaceIntegrand(face);
         props.Normal(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin), out point, out normal);
         return new Vector(normal).Normalized();
     }
@@ -41,7 +47,7 @@ internal static partial class TopoUtil
     internal static Vector FaceCenter(global::Kerf.Topology.Face face)
     {
         var props = new Properties();
-        BRepGProp.SurfaceProperties(face, props);
+        MassPropertiesBuilder.SurfaceProperties(face, props);
         var c = props.CentreOfMass();
         return new Vector(c);
     }
@@ -49,10 +55,10 @@ internal static partial class TopoUtil
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(global::Kerf.Topology.Face face, Vector point, double tolerance = Constants.Tolerance)
     {
-        var classifier = new BRepClass3d_SolidClassifier(face);
+        var classifier = new SolidClassifier(face);
         var p = point.ToGpPnt();
         classifier.Perform(p, tolerance);
-        return classifier.IsOnAFace();
+        return classifier.IsOnAFace;
     }
 
     /// <summary>One shell from faces: a single face held in a shell of its own, or several sewn together.</summary>
@@ -106,7 +112,7 @@ internal static partial class TopoUtil
         if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
             throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
         var vec = direction.ToGpVec();
-        var prism = new BRepPrimAPI_MakePrism(obj, vec);
+        var prism = new ApiMakePrism(obj, vec);
         var extrusion = Downcast(prism.Shape());
         if (extrusion.ShapeType() == global::Kerf.Topology.ShapeType.CompSolid)
         {
@@ -139,7 +145,7 @@ internal static partial class TopoUtil
             if (!(list[0].TopoShape.IsVertex() && list[^1].TopoShape.IsVertex()))
                 throw new ArgumentException("The vertices must be at the beginning and end of the list");
         }
-        var loft = new BRepOffsetAPI_ThruSections(filled, ruled);
+        var loft = new ThruSections(filled, ruled);
         foreach (var obj in list)
         {
             if (obj.TopoShape.IsVertex())
@@ -159,28 +165,28 @@ internal static partial class TopoUtil
         if (inner.Count > 0 && !Tool.IsClosed(outerWire))
             throw new ArgumentException("Cannot build face(s): outer wire is not closed");
         var verification = MakeCompound([outerWire, .. inner]);
-        var finder = new BRepLib_FindSurface(verification, -1, true);
+        var finder = new FindSurface(verification, -1, true);
         if (!finder.Found())
             throw new ArgumentException("Cannot build face(s): wires not planar");
 
-        var fixOuter = new ShapeFix_Shape(outerWire);
+        var fixOuter = new ShapeFixer(outerWire);
         fixOuter.Perform();
         var topoWire = ShapeCasts.Wire(fixOuter.Shape());
-        var builder = new BRepBuilderAPI_MakeFace(topoWire, true);
+        var builder = new MakeFace(topoWire, true);
         foreach (var innerWire in inner)
         {
             if (!Tool.IsClosed(innerWire))
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
-            var fixInner = new ShapeFix_Shape(innerWire);
+            var fixInner = new ShapeFixer(innerWire);
             fixInner.Perform();
             var fixedInner = ShapeCasts.Wire(fixInner.Shape());
             builder.Add(fixedInner);
         }
         builder.Build();
-        if (!builder.IsDone())
+        if (!builder.IsDone)
             throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
         var face = builder.Face();
-        var fixFace = new ShapeFix_Face(face);
+        var fixFace = new FaceFixer(face);
         fixFace.FixOrientation();
         fixFace.Perform();
         return ShapeCasts.Face(fixFace.Result());
@@ -193,19 +199,19 @@ internal static partial class TopoUtil
     internal static global::Kerf.Topology.Face MakeFaceOnSurface(global::Kerf.Topology.Face surfaceFace, global::Kerf.Topology.Wire outerWire, IEnumerable<global::Kerf.Topology.Wire>? innerWires = null)
     {
         var surface = Tool.Surface(surfaceFace);
-        var builder = new BRepBuilderAPI_MakeFace(surface!, outerWire, true);
+        var builder = new MakeFace(surface!, outerWire, true);
         foreach (var innerWire in innerWires ?? [])
             builder.Add(innerWire);
-        if (!builder.IsDone())
+        if (!builder.IsDone)
             throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
         var built = builder.Face();
-        var fix = new ShapeFix_Shape(built);
+        var fix = new ShapeFixer(built);
         fix.Perform();
         var fixedShape = fix.Shape();
         if (fixedShape.ShapeType() != global::Kerf.Topology.ShapeType.Face)
             throw new InvalidOperationException("Cannot build face(s): the wires do not bound one face");
         var result = ShapeCasts.Face(fixedShape);
-        var check = new BRepCheck_Analyzer(result);
+        var check = new Analyzer(result);
         if (!check.IsValid())
             throw new InvalidOperationException("Cannot build face(s): the wires do not lie on the surface");
         return result;
@@ -257,7 +263,7 @@ public static partial class TopologyUtils
     {
         var combinedEdges = TopoUtil.ListOf(combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape));
         var originalEdges = TopoUtil.ListOf(objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape));
-        var operation = new BRepAlgoAPI_Cut();
+        var operation = new Cut();
         operation.SetNonDestructive(true);   // leave the inputs' tolerances alone
         operation.SetArguments(combinedEdges);
         operation.SetTools(originalEdges);

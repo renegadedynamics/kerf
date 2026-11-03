@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
@@ -17,9 +18,9 @@ namespace OcctNet.DrawLite;
 /// </remarks>
 internal static class BOPTestPeriodicityCommands
 {
-    private static readonly ConditionalWeakTable<DrawInterpreter, BOPAlgo_MakePeriodic> theMakers = new();
+    private static readonly ConditionalWeakTable<DrawInterpreter, MakePeriodicAlgorithm> theMakers = new();
 
-    private static BOPAlgo_MakePeriodic Maker(DrawInterpreter theDI) => theMakers.GetValue(theDI, static _ => new BOPAlgo_MakePeriodic());
+    private static MakePeriodicAlgorithm Maker(DrawInterpreter theDI) => theMakers.GetValue(theDI, static _ => new MakePeriodicAlgorithm());
 
     public static void Register(DrawInterpreter theInterpreter)
     {
@@ -76,7 +77,7 @@ internal static class BOPTestPeriodicityCommands
             return 1;
         }
 
-        BOPAlgo_MakePeriodic aMaker = Maker(theDI);
+        MakePeriodicAlgorithm aMaker = Maker(theDI);
         aMaker.Clear();
         aMaker.SetShape(aShape);
 
@@ -134,7 +135,7 @@ internal static class BOPTestPeriodicityCommands
         // Set the history of the operation in session
         BRepTestHistoryCommands.SetHistory(theDI, aMaker.History());
 
-        if (aMaker.HasErrors())
+        if (aMaker.HasErrors)
         {
             return 0;
         }
@@ -176,7 +177,7 @@ internal static class BOPTestPeriodicityCommands
             return 1;
         }
 
-        BOPAlgo_MakePeriodic aMaker = Maker(theDI);
+        MakePeriodicAlgorithm aMaker = Maker(theDI);
         for (int i = 2; i < theArgc; ++i)
         {
             int aDirID = DirectionID(theArgv[i]);
@@ -209,7 +210,7 @@ internal static class BOPTestPeriodicityCommands
         // Set the history of the operation in session
         BRepTestHistoryCommands.SetHistory(theDI, aMaker.History());
 
-        if (aMaker.HasErrors())
+        if (aMaker.HasErrors)
         {
             return 0;
         }
@@ -221,7 +222,7 @@ internal static class BOPTestPeriodicityCommands
 
     private static int ClearRepetitions(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> theArgv)
     {
-        BOPAlgo_MakePeriodic aMaker = Maker(theDI);
+        MakePeriodicAlgorithm aMaker = Maker(theDI);
         // Clear all previous repetitions
         aMaker.ClearRepetitions();
 

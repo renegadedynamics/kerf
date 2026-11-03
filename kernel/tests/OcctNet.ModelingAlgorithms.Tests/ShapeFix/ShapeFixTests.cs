@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -15,12 +19,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFixTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
     [Fact]
     public void LeastEdgeSize_OfABox()
     {
-        Assert.Equal(10.0, ShapeFix.LeastEdgeSize(Box()), 1e-12);
+        Assert.Equal(10.0, ShapeFixFixer.LeastEdgeSize(Box()), 1e-12);
     }
 
     [Fact]
@@ -28,7 +32,7 @@ public class ShapeFixTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        Shape aRes = ShapeFix.SameParametered(aBox, false, out bool isDone);
+        Shape aRes = ShapeFixFixer.SameParametered(aBox, false, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(aBox);
         Assert.Same(aBox.TShape(), aRes.TShape());
@@ -39,11 +43,11 @@ public class ShapeFixTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        Shape aRes = ShapeFix.SameParametered(aBox, true, out bool isDone);
+        Shape aRes = ShapeFixFixer.SameParametered(aBox, true, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(aBox);
         Assert.True(aRes.TShape()!.IsFrozen);
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
         for (var anExp = new Explorer(aRes, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(Tool.SameParameter(ShapeCasts.Edge(anExp.Current())));
@@ -65,7 +69,7 @@ public class ShapeFixTests
         aB.MakeWire(ref aW);
         aB.Add(aW, anE);
         aB.Add(aF, aW);
-        Assert.True(ShapeFix.SameParameter(aF, false));
+        Assert.True(ShapeFixFixer.SameParameter(aF, false));
         Assert.True(Tool.SameParameter(anE));
         Assert.True(Tool.SameRange(anE));
     }
@@ -75,7 +79,7 @@ public class ShapeFixTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        Shape aRes = ShapeFix.RegularityEncoded(aBox);
+        Shape aRes = ShapeFixFixer.RegularityEncoded(aBox);
         aSnap.AssertUnchanged(aBox);
         Assert.True(aRes.TShape()!.IsFrozen);
     }
@@ -102,8 +106,8 @@ public class ShapeFixTests
     {
         Compound aC = TestShapes.Frozen(TwoEdgesOnATolerantVertex());
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aC);
-        var aContext = new ShapeBuild_ReShape();
-        Shape aRes = ShapeFix.VertexPositionFixed(aC, 0.1, aContext, out bool isDone);
+        var aContext = new ReShapeBuilder();
+        Shape aRes = ShapeFixFixer.VertexPositionFixed(aC, 0.1, aContext, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(aC);
         Assert.True(aRes.TShape()!.IsFrozen);
@@ -127,7 +131,7 @@ public class ShapeFixTests
     public void VertexPositionFixed_NothingToDo_IsTheInput()
     {
         Shape aBox = Box();
-        Shape aRes = ShapeFix.VertexPositionFixed(aBox, 1e-3, new ShapeBuild_ReShape(), out bool isDone);
+        Shape aRes = ShapeFixFixer.VertexPositionFixed(aBox, 1e-3, new ReShapeBuilder(), out bool isDone);
         Assert.False(isDone);
         Assert.Same(aBox.TShape(), aRes.TShape());
     }
@@ -136,8 +140,8 @@ public class ShapeFixTests
     public void FixVertexPosition_InPlace()
     {
         Shape aC = TwoEdgesOnATolerantVertex();
-        var aContext = new ShapeBuild_ReShape();
-        Assert.True(ShapeFix.FixVertexPosition(ref aC, 0.1, aContext));
+        var aContext = new ReShapeBuilder();
+        Assert.True(ShapeFixFixer.FixVertexPosition(ref aC, 0.1, aContext));
         var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aC, ShapeType.Vertex, aMap);
         Assert.Equal(4, aMap.Extent());

@@ -5,11 +5,12 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2dTanOnRad
+public sealed partial class AnalyticCirc2dTanOnRad
 {
     //=========================================================================
     //   Circle tangent to a point   Point1.                                  +
@@ -25,88 +26,88 @@ public sealed partial class GccAna_Circ2dTanOnRad
     //=========================================================================
     /// <summary>Circles of radius Radius passing through a point, centred on a circle.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public GccAna_Circ2dTanOnRad(in Point2D Point1, in Circle2D OnCirc, double Radius, double Tolerance)
+    public AnalyticCirc2dTanOnRad(in Point2D point1, in Circle2D onCirc, double radius, double tolerance)
     {
-        cirsol = new(1, 2);
-        qualifier1 = new(1, 2);
-        TheSame1 = new(1, 2);
-        pnttg1sol = new(1, 2);
-        pntcen3 = new(1, 2);
-        par1sol = new(1, 2);
-        pararg1 = new(1, 2);
-        parcen3 = new(1, 2);
+        _cirsol = new(1, 2);
+        _qualifier1 = new(1, 2);
+        _theSame1 = new(1, 2);
+        _pnttg1sol = new(1, 2);
+        _pntcen3 = new(1, 2);
+        _par1sol = new(1, 2);
+        _pararg1 = new(1, 2);
+        _parcen3 = new(1, 2);
 
 
         Direction2D dirx = new(Direction2D.D.X);
-        double   Tol   = Math.Abs(Tolerance);
-        WellDone       = false;
-        NbrSol         = 0;
-        double Roncirc = OnCirc.Radius();
-        double dist1   = Point1.Distance(OnCirc.Location()) - Roncirc;
-        double dist2   = Point1.Distance(OnCirc.Location()) + Roncirc;
+        double   tol   = Math.Abs(tolerance);
+        _wellDone       = false;
+        _nbrSol         = 0;
+        double roncirc = onCirc.Radius();
+        double dist1   = point1.Distance(onCirc.Location()) - roncirc;
+        double dist2   = point1.Distance(onCirc.Location()) + roncirc;
 
-        if (Radius < 0.0)
+        if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
-        else if ((dist1 - Radius > Tol) || (Tol < Radius - dist2))
+        else if ((dist1 - radius > tol) || (tol < radius - dist2))
         {
-            WellDone = true;
+            _wellDone = true;
         }
         else
         {
             int signe = 0;
-            if (Math.Abs(dist1 - Radius) < Tol)
+            if (Math.Abs(dist1 - radius) < tol)
             {
                 signe = 1;
             }
-            else if (Math.Abs(dist2 - Radius) < Tol)
+            else if (Math.Abs(dist2 - radius) < tol)
             {
                 signe = -1;
             }
             if (signe != 0)
             {
-                Axis2D axe = new(new Point2D(OnCirc.Location().XY()
-                                                          - Roncirc
-                                                                  * new Direction2D(OnCirc.Location().X() - signe * Point1.X(), // OCCT: Location - signe * Point1 is a sum when signe is -1
-                                                                                        OnCirc.Location().Y() - signe * Point1.Y())
+                Axis2D axe = new(new Point2D(onCirc.Location().XY()
+                                                          - roncirc
+                                                                  * new Direction2D(onCirc.Location().X() - signe * point1.X(), // OCCT: Location - signe * Point1 is a sum when signe is -1
+                                                                                        onCirc.Location().Y() - signe * point1.Y())
                                                                           .XY()),
                                         dirx);
-                cirsol[1] = new Circle2D(axe, Radius);
+                _cirsol[1] = new Circle2D(axe, radius);
                 //      ================================
-                qualifier1[1] = GccEnt_noqualifier;
-                TheSame1[1]   = 0;
-                pnttg1sol[1]  = Point1;
-                pntcen3[1]    = cirsol[1].Location();
-                pararg1[1]    = 0.0;
-                par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnCirc, pntcen3[1]);
-                WellDone      = true;
-                NbrSol        = 1;
+                _qualifier1[1] = Qualifier.Noqualifier;
+                _theSame1[1]   = 0;
+                _pnttg1sol[1]  = point1;
+                _pntcen3[1]    = _cirsol[1].Location();
+                _pararg1[1]    = 0.0;
+                _par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
+                _parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[1]);
+                _wellDone      = true;
+                _nbrSol        = 1;
             }
             else
             {
-                AnalyticIntersection Intp = new(OnCirc, new Circle2D(new Axis2D(Point1, dirx), Radius));
-                if (Intp.IsDone)
+                AnalyticIntersection intp = new(onCirc, new Circle2D(new Axis2D(point1, dirx), radius));
+                if (intp.IsDone)
                 {
-                    if (!Intp.IsEmpty)
+                    if (!intp.IsEmpty)
                     {
-                        for (int i = 1; i <= Intp.PointCount; i++)
+                        for (int i = 1; i <= intp.PointCount; i++)
                         {
-                            NbrSol++;
-                            Point2D Center = Intp.Point(i).Value();
-                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
+                            _nbrSol++;
+                            Point2D center = intp.Point(i).Value();
+                            _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                             //           =======================================================
-                            qualifier1[1] = GccEnt_noqualifier; // OCCT: index 1, not NbrSol, here and below
-                            TheSame1[1]   = 0;
-                            pnttg1sol[1]  = Point1;
-                            pntcen3[1]    = cirsol[1].Location();
-                            par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                            parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnCirc, pntcen3[1]);
-                            pararg1[1]    = 0.0;
+                            _qualifier1[1] = Qualifier.Noqualifier; // OCCT: index 1, not NbrSol, here and below
+                            _theSame1[1]   = 0;
+                            _pnttg1sol[1]  = point1;
+                            _pntcen3[1]    = _cirsol[1].Location();
+                            _par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
+                            _parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[1]);
+                            _pararg1[1]    = 0.0;
                         }
                     }
-                    WellDone = true;
+                    _wellDone = true;
                 }
             }
         }

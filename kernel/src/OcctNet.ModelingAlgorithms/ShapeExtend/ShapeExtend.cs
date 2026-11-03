@@ -4,15 +4,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-using static Occt.ShapeExtend_Status;
+using Kerf.Engine.Healing.Messages;
+using Occt;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Extend;
 
-/// <summary>General tools of Shape Healing: the coding of <see cref="ShapeExtend_Status"/> flags into bit masks.</summary>
+/// <summary>General tools of Shape Healing: the coding of <see cref="ExtendStatus"/> flags into bit masks.</summary>
 public static class ShapeExtend
 {
-    private static bool init = false;
-    private static readonly Lock initLock = new();
+    private static bool s_init = false;
+    private static readonly Lock InitLock = new();
 
     /// <summary>
     /// Inits using of ShapeExtend: loads the messages output by Shape Healing's algorithms (SHMessage's texts) into
@@ -25,20 +27,20 @@ public static class ShapeExtend
     /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
     public static void Init()
     {
-        lock (initLock)
+        lock (InitLock)
         {
-            if (init)
+            if (s_init)
             {
                 return;
             }
 
-            init = true;
+            s_init = true;
 
             // load Message File for Shape Healing
             if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
             {
                 // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_SHMessage", "SHAPE") left out (decision 975)
-                MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+                MsgFile.LoadFromString(ShapeMessages.Text);
                 if (!MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"))
                 {
                     throw new ProgramErrorException(
@@ -49,47 +51,47 @@ public static class ShapeExtend
     }
 
     /// <summary>Encodes a status (enumeration) to a bit flag.</summary>
-    public static int EncodeStatus(ShapeExtend_Status status)
+    public static int EncodeStatus(ExtendStatus status)
     {
         switch (status)
         {
-            case ShapeExtend_OK:
+            case ExtendStatus.OK:
                 return 0x0000;
-            case ShapeExtend_DONE1:
+            case ExtendStatus.DONE1:
                 return 0x0001;
-            case ShapeExtend_DONE2:
+            case ExtendStatus.DONE2:
                 return 0x0002;
-            case ShapeExtend_DONE3:
+            case ExtendStatus.DONE3:
                 return 0x0004;
-            case ShapeExtend_DONE4:
+            case ExtendStatus.DONE4:
                 return 0x0008;
-            case ShapeExtend_DONE5:
+            case ExtendStatus.DONE5:
                 return 0x0010;
-            case ShapeExtend_DONE6:
+            case ExtendStatus.DONE6:
                 return 0x0020;
-            case ShapeExtend_DONE7:
+            case ExtendStatus.DONE7:
                 return 0x0040;
-            case ShapeExtend_DONE8:
+            case ExtendStatus.DONE8:
                 return 0x0080;
-            case ShapeExtend_DONE:
+            case ExtendStatus.Done:
                 return 0x00ff;
-            case ShapeExtend_FAIL1:
+            case ExtendStatus.FAIL1:
                 return 0x0100;
-            case ShapeExtend_FAIL2:
+            case ExtendStatus.FAIL2:
                 return 0x0200;
-            case ShapeExtend_FAIL3:
+            case ExtendStatus.FAIL3:
                 return 0x0400;
-            case ShapeExtend_FAIL4:
+            case ExtendStatus.FAIL4:
                 return 0x0800;
-            case ShapeExtend_FAIL5:
+            case ExtendStatus.FAIL5:
                 return 0x1000;
-            case ShapeExtend_FAIL6:
+            case ExtendStatus.FAIL6:
                 return 0x2000;
-            case ShapeExtend_FAIL7:
+            case ExtendStatus.FAIL7:
                 return 0x4000;
-            case ShapeExtend_FAIL8:
+            case ExtendStatus.FAIL8:
                 return 0x8000;
-            case ShapeExtend_FAIL:
+            case ExtendStatus.Fail:
                 return 0xff00;
         }
 
@@ -97,13 +99,13 @@ public static class ShapeExtend
     }
 
     /// <summary>Tells if a bit flag contains the bit of an enumerated status.</summary>
-    public static bool DecodeStatus(int flag, ShapeExtend_Status status)
+    public static bool DecodeStatus(int flag, ExtendStatus status)
     {
-        if (status == ShapeExtend_OK)
+        if (status == ExtendStatus.OK)
         {
             return (flag == 0);
         }
 
-        return ((flag & ShapeExtend.EncodeStatus(status)) != 0);
+        return ((flag & global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(status)) != 0);
     }
 }

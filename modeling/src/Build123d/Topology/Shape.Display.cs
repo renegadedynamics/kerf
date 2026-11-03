@@ -1,4 +1,5 @@
 using Kerf.Engine.Construction.Values;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -141,7 +142,7 @@ internal static class SurfaceIntersection
         var ax1 = axis.ToGpAx1();
         var makeLin = new MakeLin(ax1);
         var line = makeLin.Value();
-        var inter = new BRepIntCurveSurface_Inter();
+        var inter = new CurveShapeIntersector();
         inter.Init(shape.TopoShape, line, tolerance);
         var plane = new Plane(axis);
         var found = new List<(global::Kerf.Topology.Face Face, Vector Point, double Distance)>();

@@ -3,11 +3,15 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Kerf.Engine.Healing.Extend;
+
+using Occt;
+
+namespace Kerf.Engine.Healing;
 
 /// <summary>
 /// The interface to Shape Healing's algorithms for the data exchange translators: the process-wide default
-/// <see cref="ShapeAlgo_AlgoContainer"/>.
+/// <see cref="AlgoContainer"/>.
 /// </summary>
 /// <remarks>
 /// Process-wide state, with OCCT's semantics (plan 2.3, decision 1000): the container is null until
@@ -17,33 +21,33 @@ namespace Occt;
 /// </remarks>
 public static class ShapeAlgo
 {
-    private static readonly object s_lock = new();
-    private static ShapeAlgo_AlgoContainer? s_container;
-    private static bool s_init;
+    private static readonly object S_lock = new();
+    private static AlgoContainer? s_s_container;
+    private static bool s_s_init;
 
     /// <summary>Creates and initializes the default AlgoContainer (the first call only).</summary>
     public static void Init()
     {
-        lock (s_lock)
+        lock (S_lock)
         {
-            if (s_init)
+            if (s_s_init)
             {
                 return;
             }
-            s_init = true;
-            Volatile.Write(ref s_container, new ShapeAlgo_AlgoContainer());
+            s_s_init = true;
+            Volatile.Write(ref s_s_container, new AlgoContainer());
         }
 
         // initialization of Standard Shape Healing
-        ShapeExtend.Init();
+        global::Kerf.Engine.Healing.Extend.ShapeExtend.Init();
     }
 
     /// <summary>Sets the default AlgoContainer.</summary>
-    public static void SetAlgoContainer(ShapeAlgo_AlgoContainer? aContainer)
+    public static void SetAlgoContainer(AlgoContainer? aContainer)
     {
-        Volatile.Write(ref s_container, aContainer);
+        Volatile.Write(ref s_s_container, aContainer);
     }
 
     /// <summary>Returns the default AlgoContainer (null before <see cref="Init"/>).</summary>
-    public static ShapeAlgo_AlgoContainer? AlgoContainer() => Volatile.Read(ref s_container);
+    public static AlgoContainer? AlgoContainer() => Volatile.Read(ref s_s_container);
 }

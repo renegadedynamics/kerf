@@ -1,8 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -20,26 +21,26 @@ public class GccAna_Circ2d2TanRadTests
     private static Line2D Lin(double x, double y, double dx, double dy) => new(new Point2D(x, y), new Direction2D(dx, dy));
 
     // The qualifier a circle argument has for a solution, from the geometry
-    private static GccEnt_Position CircQualifier(in Circle2D theArg, in Circle2D theSol)
+    private static global::Kerf.Engine.Construction.Constraints.Qualifier CircQualifier(in Circle2D theArg, in Circle2D theSol)
     {
         double d = theArg.Location().Distance(theSol.Location());
         if (Math.Abs(d + theSol.Radius() - theArg.Radius()) < 1.0e-7)
         {
-            return GccEnt_enclosed;
+            return global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed;
         }
         if (Math.Abs(d - theSol.Radius() - theArg.Radius()) < 1.0e-7)
         {
-            return GccEnt_outside;
+            return global::Kerf.Engine.Construction.Constraints.Qualifier.Outside;
         }
         Assert.Equal(theSol.Radius(), d + theArg.Radius(), 1.0e-7);
-        return GccEnt_enclosing;
+        return global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing;
     }
 
     // Enclosed: the centre on the left of the line; outside: on the right
-    private static GccEnt_Position LinQualifier(in Line2D theArg, in Circle2D theSol)
+    private static global::Kerf.Engine.Construction.Constraints.Qualifier LinQualifier(in Line2D theArg, in Circle2D theSol)
     {
         Vector2D aV = new(theArg.Location(), theSol.Location());
-        return new Vector2D(theArg.Direction()).Crossed(aV) > 0.0 ? GccEnt_enclosed : GccEnt_outside;
+        return new Vector2D(theArg.Direction()).Crossed(aV) > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside;
     }
 
     private static void AssertTangentCirc(in Circle2D theArg, in Circle2D theSol)
@@ -51,7 +52,7 @@ public class GccAna_Circ2d2TanRadTests
 
     private static void AssertNear(in Point2D theP, in Point2D theQ) => Assert.True(theP.Distance(theQ) < 1.0e-7, $"{theP} != {theQ}");
 
-    private static void CheckTangency1(GccAna_Circ2d2TanRad theAlgo, int theIndex, in Circle2D theArg)
+    private static void CheckTangency1(AnalyticCirc2d2TanRad theAlgo, int theIndex, in Circle2D theArg)
     {
         Circle2D aSol = theAlgo.ThisSolution(theIndex);
         AssertTangentCirc(theArg, aSol);
@@ -64,7 +65,7 @@ public class GccAna_Circ2d2TanRadTests
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theArg), aPnt);
     }
 
-    private static void CheckTangency2(GccAna_Circ2d2TanRad theAlgo, int theIndex, in Circle2D theArg)
+    private static void CheckTangency2(AnalyticCirc2d2TanRad theAlgo, int theIndex, in Circle2D theArg)
     {
         Circle2D aSol = theAlgo.ThisSolution(theIndex);
         AssertTangentCirc(theArg, aSol);
@@ -77,7 +78,7 @@ public class GccAna_Circ2d2TanRadTests
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theArg), aPnt);
     }
 
-    private static void CheckTangencyLin(GccAna_Circ2d2TanRad theAlgo, int theIndex, in Line2D theArg, bool theFirst)
+    private static void CheckTangencyLin(AnalyticCirc2d2TanRad theAlgo, int theIndex, in Line2D theArg, bool theFirst)
     {
         Circle2D aSol = theAlgo.ThisSolution(theIndex);
         Assert.Equal(aSol.Radius(), theArg.Distance(aSol.Location()), 1.0e-7);
@@ -95,7 +96,7 @@ public class GccAna_Circ2d2TanRadTests
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, theArg), aPnt);
     }
 
-    private static void CheckThrough(GccAna_Circ2d2TanRad theAlgo, int theIndex, in Point2D thePnt, bool theFirst)
+    private static void CheckThrough(AnalyticCirc2d2TanRad theAlgo, int theIndex, in Point2D thePnt, bool theFirst)
     {
         Circle2D aSol = theAlgo.ThisSolution(theIndex);
         Assert.Equal(aSol.Radius(), aSol.Location().Distance(thePnt), 1.0e-7);
@@ -120,17 +121,17 @@ public class GccAna_Circ2d2TanRadTests
     public void TwoPoints_Counts(double theRadius, int theNb)
     {
         Point2D aP1 = new(0, 0), aP2 = new(2, 0);
-        GccAna_Circ2d2TanRad anAlgo = new(aP1, aP2, theRadius, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(theNb, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(aP1, aP2, theRadius, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
             Assert.Equal(theRadius, anAlgo.ThisSolution(i).Radius());
             CheckThrough(anAlgo, i, aP1, true);
             CheckThrough(anAlgo, i, aP2, false);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            Assert.Equal(GccEnt_noqualifier, aQ1);
-            Assert.Equal(GccEnt_noqualifier, aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ1);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ2);
         }
     }
 
@@ -138,9 +139,9 @@ public class GccAna_Circ2d2TanRadTests
     public void TwoSecantLines_FourCirclesInTheQuadrants()
     {
         Line2D aL1 = Lin(0, 0, 1, 0), aL2 = Lin(0, 0, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(aL1), GccEnt.Unqualified(aL2), 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(4, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL2), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(4, anAlgo.SolutionCount);
         HashSet<(double, double)> aCentres = [];
         for (int i = 1; i <= 4; i++)
         {
@@ -154,21 +155,21 @@ public class GccAna_Circ2d2TanRadTests
     }
 
     [Theory]
-    [InlineData(GccEnt_enclosed, GccEnt_enclosed, -1.0, 1.0)]
-    [InlineData(GccEnt_enclosed, GccEnt_outside, 1.0, 1.0)]
-    [InlineData(GccEnt_outside, GccEnt_enclosed, -1.0, -1.0)]
-    [InlineData(GccEnt_outside, GccEnt_outside, 1.0, -1.0)]
-    public void TwoSecantLines_Qualified(GccEnt_Position theQ1, GccEnt_Position theQ2, double theX, double theY)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, -1.0, 1.0)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 1.0, 1.0)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, -1.0, -1.0)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 1.0, -1.0)]
+    public void TwoSecantLines_Qualified(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2, double theX, double theY)
     {
         // The inside of the X axis (along +X) is y > 0, the inside of the Y axis (along +Y) x < 0
         Line2D aL1 = Lin(0, 0, 1, 0), aL2 = Lin(0, 0, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedLin(aL1, theQ1), new GccEnt_QualifiedLin(aL2, theQ2), 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(1, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL2, theQ2), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(1, anAlgo.SolutionCount);
         AssertNear(anAlgo.ThisSolution(1).Location(), new Point2D(theX, theY));
         CheckTangencyLin(anAlgo, 1, aL1, true);
         CheckTangencyLin(anAlgo, 1, aL2, false);
-        anAlgo.WhichQualifier(1, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
+        anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
         Assert.Equal(theQ1, aQ1);
         Assert.Equal(theQ2, aQ2);
         Assert.Equal(theQ1, LinQualifier(aL1, anAlgo.ThisSolution(1)));
@@ -178,21 +179,21 @@ public class GccAna_Circ2d2TanRadTests
     [Fact]
     public void ParallelLines_NoSolution()
     {
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(Lin(0, 0, 1, 0)), GccEnt.Unqualified(Lin(0, 2, 1, 0)), 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(0, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 0, 1, 0)), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Lin(0, 2, 1, 0)), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(0, anAlgo.SolutionCount);
     }
 
     [Fact]
     public void LineEnclosingQualifier_Throws()
     {
         Line2D aL = Lin(0, 0, 1, 0);
-        GccEnt_QualifiedLin aBad = new(aL, GccEnt_enclosing);
-        Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2d2TanRad(aBad, GccEnt.Unqualified(aL), 1.0, Tol));
-        Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2d2TanRad(aBad, new Point2D(0, 1), 1.0, Tol));
-        Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(Circ(0, 0, 1)), aBad, 1.0, Tol));
-        GccEnt_QualifiedCirc aNoQual = new(Circ(0, 0, 1), GccEnt_noqualifier);
-        Assert.Throws<GccEnt_BadQualifier>(() => new GccAna_Circ2d2TanRad(aNoQual, GccEnt.Unqualified(Circ(4, 0, 1)), 1.0, Tol));
+        global::Kerf.Engine.Construction.Constraints.QualifiedLin aBad = new(aL, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing);
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL), 1.0, Tol));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aBad, new Point2D(0, 1), 1.0, Tol));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), aBad, 1.0, Tol));
+        global::Kerf.Engine.Construction.Constraints.QualifiedCirc aNoQual = new(Circ(0, 0, 1), global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier);
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new AnalyticCirc2d2TanRad(aNoQual, global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(4, 0, 1)), 1.0, Tol));
     }
 
     [Fact]
@@ -200,18 +201,18 @@ public class GccAna_Circ2d2TanRadTests
     {
         Line2D aL1 = Lin(0, 0, 1, 0), aL2 = Lin(0, 0, 0, 1);
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(aL1), GccEnt.Unqualified(aL2), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(aC1), GccEnt.Unqualified(aC2), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(aC1), GccEnt.Unqualified(aL1), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(aC1), new Point2D(3, 0), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(aL1), new Point2D(3, 1), -1.0, Tol));
-        Assert.Throws<NegativeValueException>(() => new GccAna_Circ2d2TanRad(new Point2D(0, 0), new Point2D(1, 0), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL2), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC2), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), new Point2D(3, 0), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aL1), new Point2D(3, 1), -1.0, Tol));
+        Assert.Throws<NegativeValueException>(() => new AnalyticCirc2d2TanRad(new Point2D(0, 0), new Point2D(1, 0), -1.0, Tol));
     }
 
     [Fact]
     public void Accessors_OutOfRange()
     {
-        GccAna_Circ2d2TanRad anAlgo = new(new Point2D(0, 0), new Point2D(2, 0), 2.0, Tol);
+        AnalyticCirc2d2TanRad anAlgo = new(new Point2D(0, 0), new Point2D(2, 0), 2.0, Tol);
         Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(0));
         Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
         Assert.Throws<OutOfRangeException>(() => anAlgo.WhichQualifier(3, out _, out _));
@@ -224,32 +225,32 @@ public class GccAna_Circ2d2TanRadTests
     // C1 at the origin, C2 at (4, 0), both of radius 1, and solutions of radius 2.5: outside both (2), enclosing one
     // and outside the other (2 + 2); none encloses both, and none is enclosed (the radius is larger).
     [Theory]
-    [InlineData(GccEnt_unqualified, GccEnt_unqualified, 6)]
-    [InlineData(GccEnt_outside, GccEnt_outside, 2)]
-    [InlineData(GccEnt_enclosing, GccEnt_outside, 2)]
-    [InlineData(GccEnt_outside, GccEnt_enclosing, 2)]
-    [InlineData(GccEnt_enclosing, GccEnt_enclosing, 0)]
-    [InlineData(GccEnt_enclosed, GccEnt_unqualified, 0)]
-    public void TwoCircles(GccEnt_Position theQ1, GccEnt_Position theQ2, int theNb)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 6)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 0)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 0)]
+    public void TwoCircles(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2, int theNb)
     {
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedCirc(aC1, theQ1), new GccEnt_QualifiedCirc(aC2, theQ2), 2.5, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(theNb, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC2, theQ2), 2.5, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
             Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(2.5, aSol.Radius());
             CheckTangency1(anAlgo, i, aC1);
             CheckTangency2(anAlgo, i, aC2);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
             Assert.Equal(CircQualifier(aC1, aSol), aQ1);
             Assert.Equal(CircQualifier(aC2, aSol), aQ2);
-            if (theQ1 != GccEnt_unqualified)
+            if (theQ1 != global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified)
             {
                 Assert.Equal(theQ1, aQ1);
             }
-            if (theQ2 != GccEnt_unqualified)
+            if (theQ2 != global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified)
             {
                 Assert.Equal(theQ2, aQ2);
             }
@@ -260,14 +261,14 @@ public class GccAna_Circ2d2TanRadTests
     // "<= Tol") always holds, and the one circle returned, centred at center1 + (Radius - R1) dir1, encloses the first
     // circle but isn't tangent to the second (the true answer here is the 2 circles enclosing C1, outside C2).
     [Theory]
-    [InlineData(GccEnt_enclosing, GccEnt_unqualified, 1.5)]
-    [InlineData(GccEnt_unqualified, GccEnt_enclosing, 2.5)]
-    public void TwoCircles_EnclosingUnqualified(GccEnt_Position theQ1, GccEnt_Position theQ2, double theX)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 1.5)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 2.5)]
+    public void TwoCircles_EnclosingUnqualified(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2, double theX)
     {
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedCirc(aC1, theQ1), new GccEnt_QualifiedCirc(aC2, theQ2), 2.5, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(1, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC2, theQ2), 2.5, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(1, anAlgo.SolutionCount);
         AssertNear(anAlgo.ThisSolution(1).Location(), new Point2D(theX, 0));
     }
 
@@ -277,16 +278,16 @@ public class GccAna_Circ2d2TanRadTests
     public void TwoCircles_UnqualifiedOutside()
     {
         Circle2D aC1 = Circ(0, 0, 1), aC2 = Circ(4, 0, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(aC1), GccEnt.Outside(aC2), 2.5, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(2, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC2), 2.5, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(2, anAlgo.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             CheckTangency1(anAlgo, i, aC1);
             CheckTangency2(anAlgo, i, aC2);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            Assert.Equal(GccEnt_outside, aQ1);
-            Assert.Equal(GccEnt_outside, aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
         }
     }
 
@@ -296,50 +297,50 @@ public class GccAna_Circ2d2TanRadTests
     public void TwoOverlappingCircles_Enclosed()
     {
         Circle2D aC1 = Circ(0, 0, 2), aC2 = Circ(1, 0, 2);
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Enclosed(aC1), GccEnt.Enclosed(aC2), 0.5, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(2, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(aC1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(aC2), 0.5, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(2, anAlgo.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             CheckTangency1(anAlgo, i, aC1);
             CheckTangency2(anAlgo, i, aC2);
-            Assert.Equal(GccEnt_enclosed, CircQualifier(aC1, anAlgo.ThisSolution(i)));
-            Assert.Equal(GccEnt_enclosed, CircQualifier(aC2, anAlgo.ThisSolution(i)));
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, CircQualifier(aC1, anAlgo.ThisSolution(i)));
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, CircQualifier(aC2, anAlgo.ThisSolution(i)));
         }
     }
 
     [Fact]
     public void ConcentricCircles_NoSolution()
     {
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(Circ(0, 0, 1)), GccEnt.Unqualified(Circ(0, 0, 3)), 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(0, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 3)), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(0, anAlgo.SolutionCount);
     }
 
     // A circle at (0, 0.5) of radius 1 cutting the X axis, solutions of radius 0.3: above the axis, outside the
     // circle (2) or inside it (2); below the axis, outside the circle (2).
     [Theory]
-    [InlineData(GccEnt_unqualified, GccEnt_unqualified, 6)]
-    [InlineData(GccEnt_outside, GccEnt_unqualified, 4)]
-    [InlineData(GccEnt_enclosed, GccEnt_unqualified, 2)]
-    [InlineData(GccEnt_unqualified, GccEnt_enclosed, 4)]
-    [InlineData(GccEnt_unqualified, GccEnt_outside, 2)]
-    [InlineData(GccEnt_outside, GccEnt_outside, 2)]
-    [InlineData(GccEnt_enclosing, GccEnt_unqualified, 0)]
-    public void CircleAndLine(GccEnt_Position theQ1, GccEnt_Position theQ2, int theNb)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 6)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 4)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 4)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 0)]
+    public void CircleAndLine(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, global::Kerf.Engine.Construction.Constraints.Qualifier theQ2, int theNb)
     {
         Circle2D aC1 = Circ(0, 0.5, 1);
         Line2D aL2 = Lin(0, 0, 1, 0);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedCirc(aC1, theQ1), new GccEnt_QualifiedLin(aL2, theQ2), 0.3, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(theNb, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL2, theQ2), 0.3, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
             Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(0.3, aSol.Radius());
             CheckTangency1(anAlgo, i, aC1);
             CheckTangencyLin(anAlgo, i, aL2, false);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
             Assert.Equal(CircQualifier(aC1, aSol), aQ1);
             Assert.Equal(LinQualifier(aL2, aSol), aQ2);
             Assert.False(anAlgo.IsTheSame1(i));
@@ -350,53 +351,53 @@ public class GccAna_Circ2d2TanRadTests
     // A unit circle at the origin and a point outside it, at (3, 0): solutions of radius 1.5 outside the circle (2);
     // a point inside it, at (0.5, 0): solutions of radius 0.5 inside the circle (2).
     [Theory]
-    [InlineData(3.0, 1.5, GccEnt_unqualified, 2)]
-    [InlineData(3.0, 1.5, GccEnt_outside, 2)]
-    [InlineData(3.0, 1.5, GccEnt_enclosing, 0)]
-    [InlineData(3.0, 1.5, GccEnt_enclosed, 0)]
-    [InlineData(0.5, 0.5, GccEnt_unqualified, 2)]
-    [InlineData(0.5, 0.5, GccEnt_enclosed, 2)]
-    [InlineData(0.5, 0.5, GccEnt_outside, 0)]
-    public void CircleAndPoint(double theX, double theRadius, GccEnt_Position theQ1, int theNb)
+    [InlineData(3.0, 1.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 2)]
+    [InlineData(3.0, 1.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 2)]
+    [InlineData(3.0, 1.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, 0)]
+    [InlineData(3.0, 1.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 0)]
+    [InlineData(0.5, 0.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 2)]
+    [InlineData(0.5, 0.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 2)]
+    [InlineData(0.5, 0.5, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 0)]
+    public void CircleAndPoint(double theX, double theRadius, global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, int theNb)
     {
         Circle2D aC1 = Circ(0, 0, 1);
         Point2D aP2 = new(theX, 0);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedCirc(aC1, theQ1), aP2, theRadius, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(theNb, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(aC1, theQ1), aP2, theRadius, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
             Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(theRadius, aSol.Radius());
             CheckTangency1(anAlgo, i, aC1);
             CheckThrough(anAlgo, i, aP2, false);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
             Assert.Equal(CircQualifier(aC1, aSol), aQ1);
-            Assert.Equal(GccEnt_noqualifier, aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ2);
         }
     }
 
     // The X axis and the point (0, 0.5): solutions of radius 1 above the axis (2)
     [Theory]
-    [InlineData(GccEnt_unqualified, 2)]
-    [InlineData(GccEnt_enclosed, 2)]
-    [InlineData(GccEnt_outside, 0)]
-    public void LineAndPoint(GccEnt_Position theQ1, int theNb)
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, 2)]
+    [InlineData(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, 0)]
+    public void LineAndPoint(global::Kerf.Engine.Construction.Constraints.Qualifier theQ1, int theNb)
     {
         Line2D aL1 = Lin(0, 0, 1, 0);
         Point2D aP2 = new(0, 0.5);
-        GccAna_Circ2d2TanRad anAlgo = new(new GccEnt_QualifiedLin(aL1, theQ1), aP2, 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.Equal(theNb, anAlgo.NbSolutions());
+        AnalyticCirc2d2TanRad anAlgo = new(new global::Kerf.Engine.Construction.Constraints.QualifiedLin(aL1, theQ1), aP2, 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.Equal(theNb, anAlgo.SolutionCount);
         for (int i = 1; i <= theNb; i++)
         {
             Circle2D aSol = anAlgo.ThisSolution(i);
             Assert.Equal(1.0, aSol.Radius());
             CheckTangencyLin(anAlgo, i, aL1, true);
             CheckThrough(anAlgo, i, aP2, false);
-            anAlgo.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            Assert.Equal(GccEnt_enclosed, aQ1);
-            Assert.Equal(GccEnt_noqualifier, aQ2);
+            anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, aQ1);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ2);
         }
     }
 
@@ -407,13 +408,13 @@ public class GccAna_Circ2d2TanRadTests
     public void CircleAndPointOnIt_SolutionIsTheArgument()
     {
         Circle2D aC1 = Circ(1, 2, 1);
-        GccAna_Circ2d2TanRad anAlgo = new(GccEnt.Unqualified(aC1), new Point2D(2, 2), 1.0, Tol);
-        Assert.True(anAlgo.IsDone());
-        Assert.True(anAlgo.NbSolutions() >= 1);
+        AnalyticCirc2d2TanRad anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC1), new Point2D(2, 2), 1.0, Tol);
+        Assert.True(anAlgo.IsDone);
+        Assert.True(anAlgo.SolutionCount >= 1);
         Assert.True(anAlgo.IsTheSame1(1));
         Assert.Equal(aC1.Location().X(), anAlgo.ThisSolution(1).Location().X());
         Assert.Throws<NotDoneException>(() => anAlgo.Tangency1(1, out _, out _, out _));
-        for (int i = 2; i <= anAlgo.NbSolutions(); i++)
+        for (int i = 2; i <= anAlgo.SolutionCount; i++)
         {
             CheckTangency1(anAlgo, i, aC1);
             CheckThrough(anAlgo, i, new Point2D(2, 2), false);
@@ -426,6 +427,6 @@ public class GccAna_Circ2d2TanRadTests
     public void CircleAtTheOriginAndPointOnIt_Throws()
     {
         Assert.Throws<ConstructionErrorException>(
-            () => new GccAna_Circ2d2TanRad(GccEnt.Unqualified(Circ(0, 0, 1)), new Point2D(1, 0), 1.0, Tol));
+            () => new AnalyticCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(Circ(0, 0, 1)), new Point2D(1, 0), 1.0, Tol));
     }
 }

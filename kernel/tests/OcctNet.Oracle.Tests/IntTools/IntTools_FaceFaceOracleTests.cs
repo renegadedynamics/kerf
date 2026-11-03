@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -117,7 +118,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             string aText2 = FaceText(NativeQuadric(anO, k2));
             aPairs++;
 
-            IntTools_FaceFace aFF = new();
+            FaceFace aFF = new();
             aFF.SetParameters(true, false, false, 1.0e-7);
             try
             {
@@ -127,12 +128,12 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 continue;
             }
-            if (!aFF.IsDone() || aFF.TangentFaces())
+            if (!aFF.IsDone || aFF.TangentFaces())
             {
                 continue;
             }
             List<Curve3D> aPort = [];
-            NCollection_Sequence<IntTools_Curve> aLines = aFF.Lines();
+            NCollection_Sequence<IntersectionCurve> aLines = aFF.Lines();
             for (int i = 1; i <= aLines.Length(); i++)
             {
                 if (aLines.Value(i).Curve() is Curve3D aC

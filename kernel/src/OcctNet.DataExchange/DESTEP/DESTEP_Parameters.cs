@@ -230,7 +230,7 @@ public struct DESTEP_Parameters
     public bool ReadShapeAspect = true; // Defines whether shapes associated with the PRODUCT_DEFINITION_SHAPE entity of the product via SHAPE_ASPECT should be translated
     public bool ReadConstrRelation = false; // Flag regulating translation of "CONSTRUCTIVE_GEOMETRY_REPRESENTATION_RELATIONSHIP" entities
     public bool ReadSubshapeNames = false; // Indicates whether to read sub-shape names from 'Name' attributes of STEP Representation Items
-    public Resource_FormatType ReadCodePage = Resource_FormatType_UTF8; // STEP file encoding for names translation
+    public Resource_FormatType ReadCodePage = Resource_FormatType.Resource_FormatType_UTF8; // STEP file encoding for names translation
     public bool ReadNonmanifold = false; // Defines non-manifold topology reading
     public bool ReadIdeas = false; // Defines !I-Deas-like STEP processing
     public bool ReadAllShapes = false; // Parameter to read all top level solids and shells
@@ -250,7 +250,7 @@ public struct DESTEP_Parameters
     public RWMode_Tessellated WriteTessellated = RWMode_Tessellated.RWMode_Tessellated_OnNoBRep; // Defines whether tessellated shapes should be translated
     public string WriteProductName = ""; // Defines the text string that will be used for field 'name' of PRODUCT entities written to the STEP file
     public bool WriteSurfaceCurMode = true; // Indicates whether parametric curves (curves in parametric space of surface) should be written into the STEP file
-    public UnitsMethods_LengthUnit WriteUnit = UnitsMethods_LengthUnit_Millimeter; // Defines a unit in which the STEP file should be written
+    public UnitsMethods_LengthUnit WriteUnit = UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter; // Defines a unit in which the STEP file should be written
     public WriteMode_VertexMode WriteVertexMode = WriteMode_VertexMode.WriteMode_VertexMode_OneCompound; // Indicates which of free vertices writing mode is switch on
     public bool WriteSubshapeNames = false; // Indicates whether to write sub-shape names to 'Name' attributes of STEP Representation Items
     public bool WriteColor = true; // ColorMode is used to indicate write Colors or not

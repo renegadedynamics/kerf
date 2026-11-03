@@ -59,7 +59,7 @@ public class StepGeom_TrimmingSelect : StepData_SelectType
         }
         Interface_ParamType type = ent.ParamType();
         //  Void : on admet "non defini" (en principe, on ne devrait pas)
-        if (type != Interface_ParamVoid && type != Interface_ParamReal)
+        if (type != Interface_ParamType.Interface_ParamVoid && type != Interface_ParamType.Interface_ParamReal)
         {
             return 0;
         }

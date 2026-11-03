@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2023-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -190,9 +191,9 @@ internal static class XSDRAWSTLCommands
             Triangulation? aMesh = RWStl.ReadFile(new MemoryStream(aBytes));
             if (aMesh is not null)
             {
-                var aConverter = new BRepBuilderAPI_MakeShapeOnMesh(aMesh);
+                var aConverter = new MakeShapeOnMesh(aMesh);
                 aConverter.Build();
-                if (aConverter.IsDone() && !aConverter.Shape().IsNull)
+                if (aConverter.IsDone && !aConverter.Shape().IsNull)
                 {
                     aShape = aConverter.Shape();
                 }

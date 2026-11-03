@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of OCCT's GTest src/ModelingAlgorithms/TKHelix/GTests/HelixBRep_BuilderHelix_Test.cxx (TKHelixTest).
 
+using Kerf.Engine.Construction.Helix;
+using Kerf.Engine.Construction.Helix.Geometry;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -39,7 +41,7 @@ public class HelixBRep_BuilderHelixTests
     internal static double ComputeWireLength(in Shape theWire)
     {
         var aLProps = new Properties();
-        BRepGProp.LinearProperties(theWire, aLProps);
+        MassPropertiesBuilder.LinearProperties(theWire, aLProps);
         return aLProps.Mass();
     }
 
@@ -47,7 +49,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomHelixCurve_Basic()
     {
-        var aHelix = new HelixGeom_HelixCurve();
+        var aHelix = new HelixCurve();
         // Test default parameters
         Assert.Equal(0.0, aHelix.FirstParameter());
         Assert.Equal(2.0 * M_PI, aHelix.LastParameter());
@@ -65,7 +67,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomHelixCurve_CustomParameters()
     {
-        var aHelix = new HelixGeom_HelixCurve();
+        var aHelix = new HelixCurve();
         aHelix.Load(0.0, 4.0 * M_PI, 10.0, 5.0, 0.0, true);
         Assert.Equal(0.0, aHelix.FirstParameter());
         Assert.Equal(4.0 * M_PI, aHelix.LastParameter());
@@ -84,7 +86,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomHelixCurve_TaperedHelix()
     {
-        var aHelix = new HelixGeom_HelixCurve();
+        var aHelix = new HelixCurve();
         double aTaperAngle = 0.1; // Small taper angle
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, aTaperAngle, true);
         // At start
@@ -100,7 +102,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomBuilderHelixCoil_Basic()
     {
-        var aBuilder = new HelixGeom_BuilderHelixCoil();
+        var aBuilder = new BuilderHelixCoil();
         aBuilder.SetTolerance(myTolerance);
         aBuilder.SetCurveParameters(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
         aBuilder.Perform();
@@ -124,7 +126,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomBuilderHelix_SingleCoil()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
@@ -137,7 +139,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixGeomBuilderHelix_MultipleCoils()
     {
-        var aBuilder = new HelixGeom_BuilderHelix();
+        var aBuilder = new GeometryBuilderHelix();
         Frame3D aPosition = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         aBuilder.SetPosition(aPosition);
         aBuilder.SetTolerance(myTolerance);
@@ -152,7 +154,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_PureCylindricalHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Single part helix with diameter 100, height 100, pitch 20
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 100.0;
@@ -182,7 +184,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_SpiralHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Single part spiral with diameter changing from 100 to 20
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 100.0;
@@ -205,7 +207,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_MultiPartHelix()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // 3-part helix with different diameters
         NCollection_Array1<double> aDiams = new(1, 4);
         aDiams[1] = 100.0;
@@ -239,7 +241,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_NumberOfTurnsInterface()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Single part helix using number of turns
         NCollection_Array1<double> aPitches = new(1, 1);
         aPitches[1] = 20.0;
@@ -264,7 +266,7 @@ public class HelixBRep_BuilderHelixTests
     {
         BSplineCurve3D? aBSpline = null;
         double aMaxError = 0;
-        int aResult = HelixGeom_Tools.ApprHelix(0.0, 2.0 * M_PI, 10.0, 5.0, 0.0, true, myTolerance, ref aBSpline, ref aMaxError);
+        int aResult = GeometryTools.ApprHelix(0.0, 2.0 * M_PI, 10.0, 5.0, 0.0, true, myTolerance, ref aBSpline, ref aMaxError);
         Assert.Equal(0, aResult); // Success
         Assert.NotNull(aBSpline);
         Assert.True(aMaxError <= myTolerance);
@@ -277,7 +279,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_ErrorConditions()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         // Test with invalid height (too small)
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 1.0e-6; // Very small height
@@ -294,7 +296,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_ZeroPitch()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 100.0;
         NCollection_Array1<double> aPitches = new(1, 1);
@@ -311,7 +313,7 @@ public class HelixBRep_BuilderHelixTests
     [Fact]
     public void HelixBRepBuilder_ToleranceReached()
     {
-        var aBuilder = new HelixBRep_BuilderHelix();
+        var aBuilder = new BuilderHelix();
         NCollection_Array1<double> aHeights = new(1, 1);
         aHeights[1] = 100.0;
         NCollection_Array1<double> aPitches = new(1, 1);

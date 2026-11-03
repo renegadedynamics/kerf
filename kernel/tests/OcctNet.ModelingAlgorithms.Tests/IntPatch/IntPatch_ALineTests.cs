@@ -2,9 +2,11 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
-using static Occt.IntSurf_TypeTrans;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,24 +17,24 @@ public class IntPatch_ALineTests
     private static readonly Cylinder theCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
     private static readonly Sphere theSph = new(new CoordinateSystem(new Point3D(0.5, 0, 0), new Direction3D(0, 0, 1)), 2.0);
 
-    private static IntPatch_ALine MakeLine()
+    private static ALine MakeLine()
     {
         IntQuadQuad anInter = new(theCyl, new Quadric(theSph), 1.0e-7);
         Assert.True(anInter.IsDone);
         Assert.True(anInter.CurveCount >= 1);
-        return new IntPatch_ALine(anInter.Curve(1), false, IntSurf_In, IntSurf_Out);
+        return new ALine(anInter.Curve(1), false, WalkingTypeTrans.In, WalkingTypeTrans.Out);
     }
 
     private static Curve2DAdaptorBase Arc() => new CurveAdaptor2D(new LineCurve2D(new Line2D(new Point2D(0, 0), new Direction2D(1, 0))));
 
-    private static IntPatch_Point Vertex(IntPatch_ALine theLine, double theParam, Curve2DAdaptorBase? theArcOnS1 = null)
+    private static PatchPoint Vertex(ALine theLine, double theParam, Curve2DAdaptorBase? theArcOnS1 = null)
     {
-        IntPatch_Point aPnt = new();
+        PatchPoint aPnt = new();
         aPnt.SetValue(theLine.Value(theParam), 1.0e-7, false);
         aPnt.SetParameter(theParam);
         if (theArcOnS1 is not null)
         {
-            aPnt.SetArc(true, theArcOnS1, theParam, new IntSurf_Transition(), new IntSurf_Transition());
+            aPnt.SetArc(true, theArcOnS1, theParam, new WalkingTransition(), new WalkingTransition());
         }
         return aPnt;
     }
@@ -40,8 +42,8 @@ public class IntPatch_ALineTests
     [Fact]
     public void ValueD1AndFindParameterFollowTheCurve()
     {
-        IntPatch_ALine aLine = MakeLine();
-        Assert.Equal(IntPatch_Analytic, aLine.ArcType());
+        ALine aLine = MakeLine();
+        Assert.Equal(PatchLineType.Analytic, aLine.ArcType());
         double aFirst = aLine.FirstParameter(out _);
         double aLast = aLine.LastParameter(out _);
         Assert.True(aLast > aFirst);
@@ -77,7 +79,7 @@ public class IntPatch_ALineTests
     [Fact]
     public void ComputeVertexParametersMergesAndDropsAsOcct()
     {
-        IntPatch_ALine aLine = MakeLine();
+        ALine aLine = MakeLine();
         double aFirst = aLine.FirstParameter(out _);
         double aLast = aLine.LastParameter(out _);
         double aMid = 0.5 * (aFirst + aLast);
@@ -89,7 +91,7 @@ public class IntPatch_ALineTests
         aLine.AddVertex(Vertex(aLine, aFirst + 0.1, anArc2));
         aLine.ComputeVertexParameters(1.0e-7);
 
-        Assert.Equal(2, aLine.NbVertex());
+        Assert.Equal(2, aLine.VertexCount);
         Assert.Equal(aFirst + 0.1, aLine.Vertex(1).ParameterOnLine());
         Assert.Same(anArc2, aLine.Vertex(1).ArcOnS1());
         Assert.Equal(aMid, aLine.Vertex(2).ParameterOnLine());
@@ -102,14 +104,14 @@ public class IntPatch_ALineTests
     [Fact]
     public void EqualParametersShareTheirRestrictions()
     {
-        IntPatch_ALine aLine = MakeLine();
+        ALine aLine = MakeLine();
         double aFirst = aLine.FirstParameter(out _);
         double aLast = aLine.LastParameter(out _);
         double aMid = 0.5 * (aFirst + aLast);
         Curve2DAdaptorBase anArc1 = Arc(), anArc2 = Arc();
 
-        IntPatch_Point aOnS2 = Vertex(aLine, aMid);
-        aOnS2.SetArc(false, anArc2, 0.75, new IntSurf_Transition(), new IntSurf_Transition());
+        PatchPoint aOnS2 = Vertex(aLine, aMid);
+        aOnS2.SetArc(false, anArc2, 0.75, new WalkingTransition(), new WalkingTransition());
         aLine.AddVertex(Vertex(aLine, aMid, anArc1));
         aLine.AddVertex(aOnS2);
         aLine.AddVertex(Vertex(aLine, aFirst + 0.2, Arc()));
@@ -117,10 +119,10 @@ public class IntPatch_ALineTests
 
         // One on S1 only and one on S2 only at the same parameter: no rule kills either; the last loop gives each the
         // other's arc.
-        Assert.Equal(3, aLine.NbVertex());
-        IntPatch_Point aV2 = aLine.Vertex(2), aV3 = aLine.Vertex(3);
-        Assert.True(aV2.IsOnDomS1() && aV2.IsOnDomS2());
-        Assert.True(aV3.IsOnDomS1() && aV3.IsOnDomS2());
+        Assert.Equal(3, aLine.VertexCount);
+        PatchPoint aV2 = aLine.Vertex(2), aV3 = aLine.Vertex(3);
+        Assert.True(aV2.IsOnDomS1 && aV2.IsOnDomS2);
+        Assert.True(aV3.IsOnDomS1 && aV3.IsOnDomS2);
         Assert.Same(anArc1, aV3.ArcOnS1());
         Assert.Same(anArc2, aV2.ArcOnS2());
     }

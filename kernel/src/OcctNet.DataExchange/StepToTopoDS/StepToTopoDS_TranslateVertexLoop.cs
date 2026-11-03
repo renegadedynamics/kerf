@@ -23,7 +23,7 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
 
     public StepToTopoDS_TranslateVertexLoop()
     {
-        myError = StepToTopoDS_TranslateVertexLoopOther;
+        myError = StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopOther;
     }
 
     public StepToTopoDS_TranslateVertexLoop(StepShape_VertexLoop VL, StepToTopoDS_Tool T, StepToTopoDS_NMTool NMTool, in StepData_Factors theLocalFactors)
@@ -59,7 +59,7 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
             else
             {
                 TP.AddWarning(VL, "VertexLoop not mapped to TopoDS ");
-                myError = StepToTopoDS_TranslateVertexLoopOther;
+                myError = StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopOther;
                 done = false;
                 return;
             }
@@ -76,13 +76,13 @@ public sealed class StepToTopoDS_TranslateVertexLoop : StepToTopoDS_Root
             B.Add(W, E);
             aTool.Bind(VL, W);
             myResult = W;
-            myError = StepToTopoDS_TranslateVertexLoopDone;
+            myError = StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopDone;
             done = true;
         }
         else
         {
             myResult = ShapeCasts.Wire(aTool.Find(VL));
-            myError = StepToTopoDS_TranslateVertexLoopDone;
+            myError = StepToTopoDS_TranslateVertexLoopError.StepToTopoDS_TranslateVertexLoopDone;
             done = true;
         }
     }

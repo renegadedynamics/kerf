@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Offsets.Api;
+using Kerf.Engine.Offsets.MedialAxis;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Kerf.Geometry.JoinKind;
-using static Occt.MAT_Side;
+using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
@@ -22,10 +24,10 @@ internal static class BRepTestMatCommands
 {
     private sealed class State
     {
-        public BRepMAT2d_BisectingLocus MapBiLo = new();
-        public BRepMAT2d_Explorer anExplo = new();
-        public BRepMAT2d_LinkTopoBilo TopoBilo = new();
-        public MAT_Side SideOfMat = MAT_Left;
+        public BisectingLocus MapBiLo = new();
+        public MedialAxisExplorer anExplo = new();
+        public LinkTopoBilo TopoBilo = new();
+        public MedialSide SideOfMat = MedialSide.Left;
         public bool LinkComputed;
     }
 
@@ -63,7 +65,7 @@ internal static class BRepTestMatCommands
         if (argc >= 3 && argv[2] == "-approx")
         {
             double aTol = 0.1;
-            aFace = BRepOffsetAPI_MakeOffset.ConvertFace(aFace, aTol);
+            aFace = MakeWireOffset.ConvertFace(aFace, aTol);
         }
 
         Get(theDI).anExplo.Perform(aFace);
@@ -72,7 +74,7 @@ internal static class BRepTestMatCommands
 
     private static int Drawcont(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        BRepMAT2d_Explorer anExplo = Get(theDI).anExplo;
+        MedialAxisExplorer anExplo = Get(theDI).anExplo;
         for (int j = 1; j <= anExplo.NumberOfContours(); j++)
         {
             for (anExplo.Init(j); anExplo.More(); anExplo.Next())
@@ -127,11 +129,11 @@ internal static class BRepTestMatCommands
             aState.LinkComputed = true;
         }
 
-        MAT_Zone TheZone = new();
+        MedialZone TheZone = new();
 
         for (aState.TopoBilo.Init(S); aState.TopoBilo.More(); aState.TopoBilo.Next())
         {
-            MAT_BasicElt BE = aState.TopoBilo.Value();
+            MedialBasicElt BE = aState.TopoBilo.Value();
             TheZone.Perform(BE);
             for (int i = 1; i <= TheZone.NumberOfArcs(); i++)
             {
@@ -145,14 +147,14 @@ internal static class BRepTestMatCommands
     // side left|right (anything but right is left).
     private static int Side(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        Get(theDI).SideOfMat = argv[1] == "right" ? MAT_Right : MAT_Left;
+        Get(theDI).SideOfMat = argv[1] == "right" ? MedialSide.Right : MedialSide.Left;
         return 0;
     }
 
     // result: every bisector of the locus.
     private static int Result(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
-        BRepMAT2d_BisectingLocus MapBiLo = Get(theDI).MapBiLo;
+        BisectingLocus MapBiLo = Get(theDI).MapBiLo;
         int NbArcs = MapBiLo.Graph().NumberOfArcs();
 
         for (int i = 1; i <= NbArcs; i++)

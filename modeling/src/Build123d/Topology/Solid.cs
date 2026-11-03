@@ -1,4 +1,11 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Occt;
@@ -21,7 +28,7 @@ public partial class Solid : Shape3D
 
     private static global::Kerf.Topology.Solid MakeSolid(Shell shell)
     {
-        var fix = new ShapeFix_Solid();
+        var fix = new SolidFixer();
         return fix.SolidFromShell(shell.TopoShell);
     }
 
@@ -40,7 +47,7 @@ public partial class Solid : Shape3D
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeBox(ax2, length, width, height);
+        var maker = new MakeBox(ax2, length, width, height);
         return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
@@ -48,7 +55,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
+        var maker = new ApiMakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
         return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
@@ -56,7 +63,7 @@ public partial class Solid : Shape3D
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
+        var maker = new ApiMakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
         return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
 
@@ -64,7 +71,7 @@ public partial class Solid : Shape3D
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
+        var maker = new MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
                                                      angle3 * Constants.DegToRad);
         return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
@@ -74,7 +81,7 @@ public partial class Solid : Shape3D
                                   double endAngle = 360, double majorAngle = 360)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
+        var maker = new MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
                                                     endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
         return new Solid(ShapeCasts.Solid(maker.Shape()));
     }
@@ -84,7 +91,7 @@ public partial class Solid : Shape3D
                                   Plane? plane = null)
     {
         var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new BRepPrimAPI_MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
+        var maker = new MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
         return new Solid(maker.Solid());
     }
 
@@ -126,7 +133,7 @@ public partial class Solid : Shape3D
     {
         static global::Kerf.Topology.Shape ExtrudeAuxSpine(global::Kerf.Topology.Wire wire, global::Kerf.Topology.Wire spine, global::Kerf.Topology.Wire auxSpine)
         {
-            var builder = new BRepOffsetAPI_MakePipeShell(spine);
+            var builder = new MakePipeShell(spine);
             builder.SetMode(auxSpine, false);   // an auxiliary spine
             builder.Add(wire);
             builder.Build();
@@ -140,7 +147,7 @@ public partial class Solid : Shape3D
         var outer = ExtrudeAuxSpine(section.TopoWire, straightSpine, auxSpine);
         var inner = (innerWires ?? []).Select(w => ExtrudeAuxSpine(w.TopoWire, straightSpine, auxSpine)).ToList();
         var innerComp = TopoUtil.MakeCompound(inner);
-        var cut = new BRepAlgoAPI_Cut(outer, innerComp);
+        var cut = new Cut(outer, innerComp);
         var difference = cut.Shape();
         // The result may be wrapped in a compound
         try
@@ -167,14 +174,14 @@ public partial class Solid : Shape3D
 
         // The prism shares the profile's face, which the draft would edit: the profile is a copy
         var original = profile;
-        var copier = new BRepBuilderAPI_Copy(original.TopoShape, false, false);
+        var copier = new Copy(original.TopoShape, false, false);
         profile = new Face(ShapeCasts.Face(copier.Shape()));
         var copyHistory = ShapeHistory.FromAlgorithm(copier, [original.TopoShape], profile.TopoShape);
         profileWires = [profile.OuterWire(), .. profile.InnerWires()];
 
         // Extrude the profile; its sides are the faces generated from its edges
         var directionVec = direction.ToGpVec();
-        var prismBuilder = new BRepPrimAPI_MakePrism(profile.TopoShape, directionVec);
+        var prismBuilder = new ApiMakePrism(profile.TopoShape, directionVec);
         var prism = prismBuilder.Shape();
         var sideFaces = new List<(global::Kerf.Topology.Face Face, double Angle)>();
         for (int i = 0; i < profileWires.Count; i++)
@@ -195,7 +202,7 @@ public partial class Solid : Shape3D
             var center = profile.Center().ToGpPnt();
             var pullDir = pull.ToGpDir();
             var neutral = new Plane3D(center, pullDir);
-            var draft = new BRepOffsetAPI_DraftAngle(prism);
+            var draft = new DraftAngle(prism);
             try
             {
                 bool ok = true;
@@ -211,7 +218,7 @@ public partial class Solid : Shape3D
                 if (ok)
                 {
                     draft.Build();
-                    if (draft.IsDone())
+                    if (draft.IsDone)
                         result = new Solid(ShapeCasts.Solid(draft.Shape()));
                 }
             }
@@ -273,7 +280,7 @@ public partial class Solid : Shape3D
         var extrusion = Extrude(profile, direction * maxDimension);
 
         // 2: the target's faces the extrusion modified
-        var intersectOp = new BRepAlgoAPI_Common();
+        var intersectOp = new Common();
         {
             var arguments = TopoUtil.ListOf([target.TopoShape]);
             var tools = TopoUtil.ListOf([extrusion.TopoShape]);
@@ -327,7 +334,7 @@ public partial class Solid : Shape3D
     public static Solid Revolve(Face section, double angle, Axis axis)
     {
         var ax1 = axis.ToGpAx1();
-        var builder = new BRepPrimAPI_MakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
+        var builder = new ApiMakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
         return Result(new Solid(ShapeCasts.Solid(builder.Shape())));
     }
 
@@ -361,7 +368,7 @@ public partial class Solid : Shape3D
         var pathWire = path as Wire ?? new Wire((Edge)path);
         foreach (var wire in innerWires.Prepend(outerWire))
         {
-            var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+            var builder = new MakePipeShell(pathWire.TopoWire);
             bool rotate = false;
             if (mode is not null)
                 rotate = SetSweepMode(builder, path, mode);
@@ -384,7 +391,7 @@ public partial class Solid : Shape3D
         return Result(outer);
     }
 
-    private static bool SetSweepMode(BRepOffsetAPI_MakePipeShell builder, Shape1D path, object binormal)
+    private static bool SetSweepMode(MakePipeShell builder, Shape1D path, object binormal)
     {
         switch (binormal)
         {
@@ -417,7 +424,7 @@ public partial class Solid : Shape3D
     public static Solid SweepMulti(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null)
     {
         var pathWire = path as Wire ?? new Wire((Edge)path);
-        var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+        var builder = new MakePipeShell(pathWire.TopoWire);
         bool rotate = false;
         if (binormal is not null)
             rotate = SetSweepMode(builder, path, binormal);
@@ -449,8 +456,8 @@ public partial class Solid : Shape3D
             if (normal.Dot(up.Normalized()) < 0)
                 adjusted = -depth;
         }
-        var builder = new BRepOffset_MakeOffset();
-        builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, BRepOffset_Mode.BRepOffset_Skin, true, false,
+        var builder = new MakeOffset();
+        builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, OffsetMode.Skin, true, false,
                            JoinKind.Intersection, true, true);
         builder.MakeOffsetShape();
         global::Kerf.Topology.Shape thickened;
@@ -477,7 +484,7 @@ public partial class Solid : Shape3D
                 throw new ArgumentException(
                     $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                     + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-        var builder = new BRepOffsetAPI_DraftAngle(TopoShape);
+        var builder = new DraftAngle(TopoShape);
         var dir = neutralPlane.ZDir.ToGpDir();
         var pln = neutralPlane.ToGpPln();
         foreach (var face in faceList)
@@ -515,7 +522,7 @@ public partial class Solid : Shape3D
         // Distance can't tell an edge on a face from one crossing it, so ask for the common part
         bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f =>
         {
-            var common = new BRepAlgoAPI_Common();
+            var common = new Common();
             return BoolOpList([s], [f], common).Count > 0;
         });
         bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => OnFaces(e, faces);
@@ -524,7 +531,7 @@ public partial class Solid : Shape3D
             var (u0, u1, v0, v1) = face.UVBounds();
             var pnt = new Point3D();
             var norm = new Vector3D();
-            var props = new BRepGProp_Face(face.TopoFace);
+            var props = new FaceIntegrand(face.TopoFace);
             props.Normal(u0 + u * (u1 - u0), v0 + v * (v1 - v0), out pnt, out norm);
             return (new Vector(pnt), new Vector(norm));
         }
@@ -606,10 +613,10 @@ public partial class Solid : Shape3D
                 {
                     if (!sfBox.Intersects(otherBox, tolerance))
                         continue;
-                    var extrema = new BRepExtrema_DistShapeShape(sf.TopoShape, other.TopoShape);
-                    if (!extrema.IsDone() || extrema.Value() > tolerance)
+                    var extrema = new DistanceShapeShape(sf.TopoShape, other.TopoShape);
+                    if (!extrema.IsDone || extrema.Value() > tolerance)
                         continue;
-                    for (int i = 1; i <= extrema.NbSolution(); i++)
+                    for (int i = 1; i <= extrema.SolutionCount; i++)
                     {
                         var p1 = extrema.PointOnShape1(i);
                         var p2 = extrema.PointOnShape2(i);

@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -22,7 +23,7 @@ public class GeomAPI_ProjectPointOnSurfTest
 
         Point3D aPoint = new(30.0, 30.0, 30.0);
 
-        GeomAPI_ProjectPointOnSurf aProjector = new();
+        ProjectPointOnSurface aProjector = new();
         Exception? anEx = Record.Exception(() =>
         {
             aProjector.Init(aTrimSurf, 0.0, 3.0, 0.0, 2.0);

@@ -30,28 +30,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         }
         // Own fields of ActuatedKinematicPair
         StepKinematics_ActuatedKinematicPair anActuatedKinematicPair = new StepKinematics_ActuatedKinematicPair();
-        StepKinematics_ActuatedDirection aTX = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aTX = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasTX = true;
         if (theData.IsParamDefined(theNum, 1))
         {
-            if (theData.ParamType(theNum, 1) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 1) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 1);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aTX = StepKinematics_adBidirectional;
+                    aTX = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aTX = StepKinematics_adPositiveOnly;
+                    aTX = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aTX = StepKinematics_adNegativeOnly;
+                    aTX = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aTX = StepKinematics_adNotActuated;
+                    aTX = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -68,28 +68,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
             hasTX = false;
         }
 
-        StepKinematics_ActuatedDirection aTY = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aTY = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasTY = true;
         if (theData.IsParamDefined(theNum, 2))
         {
-            if (theData.ParamType(theNum, 2) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 2) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 8);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aTY = StepKinematics_adBidirectional;
+                    aTY = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aTY = StepKinematics_adPositiveOnly;
+                    aTY = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aTY = StepKinematics_adNegativeOnly;
+                    aTY = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aTY = StepKinematics_adNotActuated;
+                    aTY = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -106,28 +106,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
             hasTY = false;
         }
 
-        StepKinematics_ActuatedDirection aTZ = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aTZ = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasTZ = true;
         if (theData.IsParamDefined(theNum, 3))
         {
-            if (theData.ParamType(theNum, 3) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 3) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 9);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aTZ = StepKinematics_adBidirectional;
+                    aTZ = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aTZ = StepKinematics_adPositiveOnly;
+                    aTZ = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aTZ = StepKinematics_adNegativeOnly;
+                    aTZ = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aTZ = StepKinematics_adNotActuated;
+                    aTZ = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -144,28 +144,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
             hasTZ = false;
         }
 
-        StepKinematics_ActuatedDirection aRX = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aRX = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasRX = true;
         if (theData.IsParamDefined(theNum, 4))
         {
-            if (theData.ParamType(theNum, 4) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 4) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 10);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aRX = StepKinematics_adBidirectional;
+                    aRX = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aRX = StepKinematics_adPositiveOnly;
+                    aRX = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aRX = StepKinematics_adNegativeOnly;
+                    aRX = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aRX = StepKinematics_adNotActuated;
+                    aRX = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -182,28 +182,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
             hasRX = false;
         }
 
-        StepKinematics_ActuatedDirection aRY = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aRY = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasRY = true;
         if (theData.IsParamDefined(theNum, 5))
         {
-            if (theData.ParamType(theNum, 5) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 5) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 11);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aRY = StepKinematics_adBidirectional;
+                    aRY = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aRY = StepKinematics_adPositiveOnly;
+                    aRY = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aRY = StepKinematics_adNegativeOnly;
+                    aRY = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aRY = StepKinematics_adNotActuated;
+                    aRY = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -220,28 +220,28 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
             hasRY = false;
         }
 
-        StepKinematics_ActuatedDirection aRZ = StepKinematics_adNotActuated;
+        StepKinematics_ActuatedDirection aRZ = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
         bool hasRZ = true;
         if (theData.IsParamDefined(theNum, 6))
         {
-            if (theData.ParamType(theNum, 6) == Interface_ParamEnum)
+            if (theData.ParamType(theNum, 6) == Interface_ParamType.Interface_ParamEnum)
             {
                 string text = theData.ParamCValue(theNum, 12);
                 if (string.CompareOrdinal(text, ".BIDIRECTIONAL.") != 0)
                 {
-                    aRZ = StepKinematics_adBidirectional;
+                    aRZ = StepKinematics_ActuatedDirection.StepKinematics_adBidirectional;
                 }
                 else if (string.CompareOrdinal(text, ".POSITIVE_ONLY.") != 0)
                 {
-                    aRZ = StepKinematics_adPositiveOnly;
+                    aRZ = StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NEGATIVE_ONLY.") != 0)
                 {
-                    aRZ = StepKinematics_adNegativeOnly;
+                    aRZ = StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly;
                 }
                 else if (string.CompareOrdinal(text, ".NOT_ACTUATED.") != 0)
                 {
-                    aRZ = StepKinematics_adNotActuated;
+                    aRZ = StepKinematics_ActuatedDirection.StepKinematics_adNotActuated;
                 }
                 else
                 {
@@ -1364,16 +1364,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().TX())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }
@@ -1387,16 +1387,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().TY())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }
@@ -1410,16 +1410,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().TZ())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }
@@ -1433,16 +1433,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().RX())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }
@@ -1456,16 +1456,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().RY())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }
@@ -1479,16 +1479,16 @@ internal class RWStepKinematics_RWActuatedKinPairAndOrderKinPair
         {
             switch (theEnt.GetActuatedKinematicPair().RZ())
             {
-                case StepKinematics_adBidirectional:
+                case StepKinematics_ActuatedDirection.StepKinematics_adBidirectional:
                     theSW.SendEnum(".BIDIRECTIONAL.");
                     break;
-                case StepKinematics_adPositiveOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adPositiveOnly:
                     theSW.SendEnum(".POSITIVE_ONLY.");
                     break;
-                case StepKinematics_adNegativeOnly:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNegativeOnly:
                     theSW.SendEnum(".NEGATIVE_ONLY.");
                     break;
-                case StepKinematics_adNotActuated:
+                case StepKinematics_ActuatedDirection.StepKinematics_adNotActuated:
                     theSW.SendEnum(".NOT_ACTUATED.");
                     break;
             }

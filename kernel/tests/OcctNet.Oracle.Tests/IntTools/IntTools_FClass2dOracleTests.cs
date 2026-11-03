@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -128,10 +129,10 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             double aTol = Tool.Tolerance(aPF);
             string aWhat = $"{aName} face {iF}";
-            IntTools_FClass2d aP;
+            FaceClassifier2D aP;
             try
             {
-                aP = new IntTools_FClass2d(aPF, aTol);
+                aP = new FaceClassifier2D(aPF, aTol);
             }
             catch (Exception e)
             {
@@ -140,7 +141,7 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             using var aN = new N.IntTools_FClass2d(aNF, aTol);
             myFaces++;
-            Same(aN.IsHole() ? 1 : 0, aP.IsHole() ? 1 : 0, $"{aWhat} IsHole");
+            Same(aN.IsHole() ? 1 : 0, aP.IsHole ? 1 : 0, $"{aWhat} IsHole");
             Same((int)aN.PerformInfinitePoint(), (int)aP.PerformInfinitePoint(), $"{aWhat} PerformInfinitePoint");
             foreach (Point2D aPnt in Points(theRandom, aPF))
             {

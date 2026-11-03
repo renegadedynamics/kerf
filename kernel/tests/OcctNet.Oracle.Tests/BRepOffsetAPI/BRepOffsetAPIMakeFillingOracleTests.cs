@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Plate;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -156,8 +159,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             ? new N.BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9)
             : new N.BRepOffsetAPI_MakeFilling();
         var aP = theCase.Build123dParams
-            ? new BRepOffsetAPI_MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9)
-            : new BRepOffsetAPI_MakeFilling();
+            ? new MakeFilling(3, 15, 2, false, 0.00001, 0.0001, 0.01, 0.1, 8, 9)
+            : new MakeFilling();
         int aNbBuild = 0;
         int aNbConstraints = 0;
         foreach (Step aStep in theCase.Steps)
@@ -280,7 +283,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         }
     }
 
-    private void CompareBuild(string w, N.BRepOffsetAPI_MakeFilling aN, BRepOffsetAPI_MakeFilling aP, List<N.TopoDS_Shape> aNIn,
+    private void CompareBuild(string w, N.BRepOffsetAPI_MakeFilling aN, MakeFilling aP, List<N.TopoDS_Shape> aNIn,
                               List<Shape> aPIn, int theNbConstraints)
     {
         myBuilds++;
@@ -300,7 +303,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         try
         {
             aP.Build();
-            aPRes = aP.IsDone() ? aP.Shape() : new Shape();
+            aPRes = aP.IsDone ? aP.Shape() : new Shape();
         }
         catch (Exception e)
         {
@@ -373,10 +376,10 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         SameValue(w + ": G0Error", aN.G0Error, aP.G0Error);
         SameValue(w + ": G1Error", aN.G1Error, aP.G1Error);
         SameValue(w + ": G2Error", aN.G2Error, aP.G2Error);
-        GeomPlate_BuildPlateSurface aBuilder = aP.InternalFilling().InternalBuilder()!;
+        BuildPlateSurface aBuilder = aP.InternalFilling().InternalBuilder()!;
         for (int i = 1; i <= theNbConstraints; i++)
         {
-            bool aReadsUninitialised = aBuilder.NbIntervalsChecked(i) < aBuilder.NbPtsOnCur();
+            bool aReadsUninitialised = aBuilder.NbIntervalsChecked(i) < aBuilder.PtsOnCurCount;
             SameIndexedValue(w + $": G0Error({i})", () => aN.G0Error(i), () => aP.G0Error(i), aReadsUninitialised);
             SameIndexedValue(w + $": G1Error({i})", () => aN.G1Error(i), () => aP.G1Error(i), aReadsUninitialised);
             SameIndexedValue(w + $": G2Error({i})", () => aN.G2Error(i), () => aP.G2Error(i), aReadsUninitialised);
@@ -876,13 +879,13 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 }
                 using var aNI = new N.GeomAPI_Interpolate(aNPnts, false, 1.0e-6);
                 aNI.Perform();
-                var aPI = new GeomAPI_Interpolate(aPPnts, false, 1.0e-6);
+                var aPI = new ApiInterpolate(aPPnts, false, 1.0e-6);
                 aPI.Perform();
                 N.TopoDS_Edge aNE = new N.BRepBuilderAPI_MakeEdge(aNI.Curve()).Edge();
-                Edge aPE = new BRepBuilderAPI_MakeEdge(aPI.Curve()).Edge();
+                Edge aPE = new MakeEdge(aPI.Curve()).Edge();
                 using N.gp_Vec aNV = new(aDirs[k].X(), aDirs[k].Y(), aDirs[k].Z());
                 aNFaces.Add(N.TopoDS.Face(new N.BRepPrimAPI_MakePrism(aNE, aNV, false, true).Shape()));
-                aPFaces.Add(ShapeCasts.Face(new BRepPrimAPI_MakePrism(aPE, aDirs[k]).Shape()));
+                aPFaces.Add(ShapeCasts.Face(new ApiMakePrism(aPE, aDirs[k]).Shape()));
                 aNEdges.Add(aNE);
                 aPEdges.Add(aPE);
             }
@@ -902,7 +905,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 }
             }
             using var aN = new N.BRepOffsetAPI_MakeFilling();
-            var aP = new BRepOffsetAPI_MakeFilling();
+            var aP = new MakeFilling();
             int aNb = 0;
             foreach ((int anEdge, bool anOnFace, Continuity anOrder) in aCases[c])
             {
@@ -936,7 +939,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             try
             {
                 aP.Build();
-                aPRes = aP.IsDone() ? aP.Shape() : new Shape();
+                aPRes = aP.IsDone ? aP.Shape() : new Shape();
             }
             catch (Exception e)
             {
@@ -969,10 +972,10 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             SameValue(w2 + ": G0Error", aN.G0Error, aP.G0Error);
             SameValue(w2 + ": G1Error", aN.G1Error, aP.G1Error);
             SameValue(w2 + ": G2Error", aN.G2Error, aP.G2Error);
-            GeomPlate_BuildPlateSurface aPlate = aP.InternalFilling().InternalBuilder()!;
+            BuildPlateSurface aPlate = aP.InternalFilling().InternalBuilder()!;
             for (int i = 1; i <= aNb; i++)
             {
-                bool aReadsUninitialised = aPlate.NbIntervalsChecked(i) < aPlate.NbPtsOnCur();
+                bool aReadsUninitialised = aPlate.NbIntervalsChecked(i) < aPlate.PtsOnCurCount;
                 SameIndexedValue(w2 + $": G0Error({i})", () => aN.G0Error(i), () => aP.G0Error(i), aReadsUninitialised);
                 SameIndexedValue(w2 + $": G1Error({i})", () => aN.G1Error(i), () => aP.G1Error(i), aReadsUninitialised);
             }

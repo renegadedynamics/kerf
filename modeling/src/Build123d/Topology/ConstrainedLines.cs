@@ -1,5 +1,9 @@
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Constraints;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
@@ -117,7 +121,7 @@ internal static class ConstrainedSolvers
     private static readonly PlaneSurface SurfXY = new(PlnXY);
 
     /// <summary>A target as a GCC argument: a qualified curve (with its 2D curve and range), or a point.</summary>
-    private sealed record GccArg(Geom2dGcc_QualifiedCurve? Curve, CartesianPoint2? Point, Curve2D? H2d, double First, double Last)
+    private sealed record GccArg(QualifiedCurve? Curve, CartesianPoint2? Point, Curve2D? H2d, double First, double Last)
     {
         public bool IsEdge => Curve is not null;
     }
@@ -131,16 +135,16 @@ internal static class ConstrainedSolvers
         return delta < 0.0 ? delta + period : delta;
     }
 
-    internal static (Geom2dGcc_QualifiedCurve Q, Curve2D H2d, double First, double Last, CurveAdaptor2D Adaptor) EdgeToQualified2D(
+    internal static (QualifiedCurve Q, Curve2D H2d, double First, double Last, CurveAdaptor2D Adaptor) EdgeToQualified2D(
         global::Kerf.Topology.Edge edge, Tangency tangency)
     {
         double f = 0, l = 0;
         var curve3d = Tool.Curve(edge, out f, out l);
         double first = 0, last = 0;
         Tool.Range(edge, out first, out last);
-        var h2d = GeomAPI.To2d(curve3d!, PlnXY)!;
+        var h2d = Projections.To2d(curve3d!, PlnXY)!;
         var adaptor = new CurveAdaptor2D(h2d, first, last);
-        var q = new Geom2dGcc_QualifiedCurve(adaptor, (GccEnt_Position)(int)tangency);
+        var q = new QualifiedCurve(adaptor, (Qualifier)(int)tangency);
         return (q, h2d, first, last, adaptor);
     }
 
@@ -161,8 +165,8 @@ internal static class ConstrainedSolvers
     private static global::Kerf.Topology.Edge EdgeFromCircle(CircleCurve2D circle, double u1, double u2)
     {
         var arc = new TrimmedCurve2D(circle, u1, u2, true);
-        var maker = new BRepBuilderAPI_MakeEdge(arc, SurfXY);
-        return ShapeCasts.Edge(BRepLib.Curves3dBuilt(maker.Edge(), out _));
+        var maker = new MakeEdge(arc, SurfXY);
+        return ShapeCasts.Edge(BrepLibrary.Curves3dBuilt(maker.Edge(), out _));
     }
 
     private static bool ParamInTrim(double u, double first, double last, Curve2D h2d)
@@ -204,10 +208,10 @@ internal static class ConstrainedSolvers
     {
         var a = new Point3D(p1.X(), p1.Y(), 0);
         var b = new Point3D(p2.X(), p2.Y(), 0);
-        var va = new BRepBuilderAPI_MakeVertex(a);
-        var vb = new BRepBuilderAPI_MakeVertex(b);
-        var maker = new BRepBuilderAPI_MakeEdge(va.Vertex(), vb.Vertex());
-        if (!maker.IsDone())
+        var va = new MakeVertex(a);
+        var vb = new MakeVertex(b);
+        var maker = new MakeEdge(va.Vertex(), vb.Vertex());
+        if (!maker.IsDone)
             throw new InvalidOperationException("Failed to build edge from line contacts");
         return maker.Edge();
     }
@@ -235,17 +239,17 @@ internal static class ConstrainedSolvers
     internal static ShapeList<Edge> TwoTanRadArcs(List<Tangent> tangents, double radius, Sagitta sagitta)
     {
         var args = tangents.Select(AsGccArg).ToList();
-        Geom2dGcc_Circ2d2TanRad gcc = (args[0].IsEdge, args[1].IsEdge) switch
+        Circ2d2TanRad gcc = (args[0].IsEdge, args[1].IsEdge) switch
         {
             (true, true) => new(args[0].Curve!.Value, args[1].Curve!.Value, radius, Constants.Tolerance),
             (true, false) => new(args[0].Curve!.Value, args[1].Point!, radius, Constants.Tolerance),
             _ => new(args[0].Point!, args[1].Point!, radius, Constants.Tolerance),
         };
-        if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+        if (!gcc.IsDone || gcc.SolutionCount == 0)
             throw new InvalidOperationException("Unable to find a tangent arc");
 
         var solutions = new List<global::Kerf.Topology.Edge>();
-        for (int i = 1; i <= gcc.NbSolutions(); i++)
+        for (int i = 1; i <= gcc.SolutionCount; i++)
         {
             var circ = gcc.ThisSolution(i);
             var center = circ.Location();
@@ -280,7 +284,7 @@ internal static class ConstrainedSolvers
                 }
                 // Project the centre onto the curve to find the real tangency point
                 var c2 = new Point2D(center.X(), center.Y());
-                var proj = new Geom2dAPI_ProjectPointOnCurve(c2, arg.H2d);
+                var proj = new ProjectPointOnCurve2D(c2, arg.H2d);
                 if (proj.NbPoints() == 0)
                 {
                     valid = false;
@@ -309,18 +313,18 @@ internal static class ConstrainedSolvers
         var adaptOn = new CurveAdaptor2D(args[2].H2d!, args[2].First, args[2].Last);
         // Initial guesses in the middle of each edge
         var guesses = args.Where(a => a.IsEdge).Select(a => (a.Last - a.First) / 2 + a.First).ToList();
-        Geom2dGcc_Circ2d2TanOn gcc = guesses.Count switch
+        Circ2d2TanOn gcc = guesses.Count switch
         {
             3 => new(args[0].Curve!.Value, args[1].Curve!.Value, adaptOn, Constants.Tolerance, guesses[0], guesses[1], guesses[2]),
             2 => new(args[0].Curve!.Value, args[1].Point!, adaptOn, Constants.Tolerance, guesses[0], guesses[1]),
             _ => new(args[0].Point!, args[1].Point!, adaptOn, Constants.Tolerance),
         };
-        if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+        if (!gcc.IsDone || gcc.SolutionCount == 0)
             throw new InvalidOperationException("Unable to find a tangent arc with center_on constraint");
         bool Ok(int i, double u) => !args[i].IsEdge || ParamInTrim(u, args[i].First, args[i].Last, args[i].H2d!);
 
         var solutions = new List<global::Kerf.Topology.Edge>();
-        for (int i = 1; i <= gcc.NbSolutions(); i++)
+        for (int i = 1; i <= gcc.SolutionCount; i++)
         {
             var circ = gcc.ThisSolution(i);
             var p = new Point2D();
@@ -344,21 +348,21 @@ internal static class ConstrainedSolvers
         var args = tangents.Select(AsGccArg).ToList();
         var guesses = args.Select(a => (a.Last - a.First) / 2 + a.First).ToList();
         const string message = "Unable to find a circle tangent to all three objects";
-        Geom2dGcc_Circ2d3Tan gcc;
+        Circ2d3Tan gcc;
         try
         {
-            gcc = new Geom2dGcc_Circ2d3Tan(args[0].Curve!.Value, args[1].Curve!.Value, args[2].Curve!.Value, Constants.Tolerance, guesses[0], guesses[1], guesses[2]);
+            gcc = new Circ2d3Tan(args[0].Curve!.Value, args[1].Curve!.Value, args[2].Curve!.Value, Constants.Tolerance, guesses[0], guesses[1], guesses[2]);
         }
         catch (FailureException e)
         {
             throw new InvalidOperationException(message, e);
         }
         {
-            if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+            if (!gcc.IsDone || gcc.SolutionCount == 0)
                 throw new InvalidOperationException(message);
             bool Ok(int i, double u) => ParamInTrim(u, args[i].First, args[i].Last, args[i].H2d!);
             var solutions = new List<global::Kerf.Topology.Edge>();
-            for (int i = 1; i <= gcc.NbSolutions(); i++)
+            for (int i = 1; i <= gcc.SolutionCount; i++)
             {
                 var circ = gcc.ThisSolution(i);
                 var p = new Point2D();
@@ -402,10 +406,10 @@ internal static class ConstrainedSolvers
         else
         {
             var centerPoint = new CartesianPoint2(c2d);
-            var gcc = new Geom2dGcc_Circ2dTanCen(arg.Curve!.Value, centerPoint, Constants.Tolerance);
-            if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+            var gcc = new Circ2dTanCen(arg.Curve!.Value, centerPoint, Constants.Tolerance);
+            if (!gcc.IsDone || gcc.SolutionCount == 0)
                 throw new InvalidOperationException("Unexpected: GCC failed to return a tangent circle");
-            for (int i = 1; i <= gcc.NbSolutions(); i++)
+            for (int i = 1; i <= gcc.SolutionCount; i++)
             {
                 var circ = gcc.ThisSolution(i);
                 var p = new Point2D();
@@ -426,13 +430,13 @@ internal static class ConstrainedSolvers
         if (centerOn.Edge is not { } onEdge)
             throw new ArgumentException("center_on must be an Edge (line/circle/curve) for TanOnRad.");
         var (_, hOn2d, onFirst, onLast, adaptOn) = EdgeToQualified2D(onEdge.TopoEdge, Tangency.Unqualified);
-        Geom2dGcc_Circ2dTanOnRad gcc = arg.IsEdge
+        Circ2dTanOnRad gcc = arg.IsEdge
             ? new(arg.Curve!.Value, adaptOn, radius, Constants.Tolerance)
             : new(arg.Point!, adaptOn, radius, Constants.Tolerance);
-        if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+        if (!gcc.IsDone || gcc.SolutionCount == 0)
             throw new InvalidOperationException("Unable to find circle(s) for TanOnRad constraints");
         var solutions = new List<global::Kerf.Topology.Edge>();
-        for (int i = 1; i <= gcc.NbSolutions(); i++)
+        for (int i = 1; i <= gcc.SolutionCount; i++)
         {
             var circ = gcc.ThisSolution(i);
             var p = new Point2D();
@@ -442,7 +446,7 @@ internal static class ConstrainedSolvers
                 continue;
             // The centre must lie on the trimmed locus
             var center2d = circ.Location();
-            var proj = new Geom2dAPI_ProjectPointOnCurve(center2d, hOn2d);
+            var proj = new ProjectPointOnCurve2D(center2d, hOn2d);
             if (proj.NbPoints() == 0 || !ParamInTrim(proj.Parameter(1), onFirst, onLast, hOn2d))
                 continue;
             var h2d = new CircleCurve2D(circ);
@@ -456,35 +460,35 @@ internal static class ConstrainedSolvers
     internal static ShapeList<Edge> TwoTanLines(Tangent one, Tangent two)
     {
         var a1 = AsGccArg(one);
-        Geom2dGcc_Lin2d2Tan gcc;
+        Lin2d2Tan gcc;
         GccArg? a2 = null;
         if (two.Point is { } point)
         {
             var p = new Point2D(point.X, point.Y);
-            gcc = new Geom2dGcc_Lin2d2Tan(a1.Curve!.Value, p, Constants.Tolerance);
+            gcc = new Lin2d2Tan(a1.Curve!.Value, p, Constants.Tolerance);
         }
         else
         {
             a2 = AsGccArg(two);
-            gcc = new Geom2dGcc_Lin2d2Tan(a1.Curve!.Value, a2.Curve!.Value, Constants.Tolerance);
+            gcc = new Lin2d2Tan(a1.Curve!.Value, a2.Curve!.Value, Constants.Tolerance);
         }
         {
-            if (!gcc.IsDone() || gcc.NbSolutions() == 0)
+            if (!gcc.IsDone || gcc.SolutionCount == 0)
                 throw new InvalidOperationException("Unable to find common tangent line(s)");
             var edges = new List<global::Kerf.Topology.Edge>();
-            for (int i = 1; i <= gcc.NbSolutions(); i++)
+            for (int i = 1; i <= gcc.SolutionCount; i++)
             {
                 var solution = gcc.ThisSolution(i);
                 var lin2d = new LineCurve2D(solution);
                 // The two tangency points: Tangency1/2 can index the same line differently, so intersect instead
-                var inter1 = new Geom2dAPI_InterCurveCurve(lin2d, a1.H2d!);
+                var inter1 = new CurveCurveIntersection2D(lin2d, a1.H2d!);
                 var pt1 = inter1.Point(1);   // there is always one tangent intersection
                 Point2D pt2;
                 if (two.Point is { } pp)
                     pt2 = new Point2D(pp.X, pp.Y);
                 else
                 {
-                    var inter2 = new Geom2dAPI_InterCurveCurve(lin2d, a2!.H2d!);
+                    var inter2 = new CurveCurveIntersection2D(lin2d, a2!.H2d!);
                     pt2 = inter2.Point(1);
                 }
                 {
@@ -509,9 +513,9 @@ internal static class ConstrainedSolvers
         var refDir = new Direction2D(reference.Direction.X, reference.Direction.Y);
         var refAx = new Axis2D(refPnt, refDir);
         var refLin = new Line2D(refAx);
-        var gcc = new Geom2dGcc_Lin2dTanObl(arg.Curve!.Value, refLin, Constants.Tolerance, angle);
+        var gcc = new Lin2dTanObl(arg.Curve!.Value, refLin, Constants.Tolerance, angle);
         var edges = new List<global::Kerf.Topology.Edge>();
-        for (int i = 1; i <= gcc.NbSolutions(); i++)
+        for (int i = 1; i <= gcc.SolutionCount; i++)
         {
             var pTan = new Point2D();
             double us = 0, ua = 0;

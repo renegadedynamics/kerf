@@ -5,7 +5,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.BRepMesh_DegreeOfFreedom;
+using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -20,8 +20,8 @@ public class BRepMeshCoreTests
     [Fact]
     public void PairOfIndex_holds_at_most_two_indices()
     {
-        BRepMesh_PairOfIndex aPair = new();
-        Assert.True(aPair.IsEmpty());
+        PairOfIndex aPair = new();
+        Assert.True(aPair.IsEmpty);
         Assert.Equal(0, aPair.Extent());
         aPair = aPair.Appended(5).Appended(7);
         Assert.Equal(2, aPair.Extent());
@@ -29,56 +29,56 @@ public class BRepMeshCoreTests
         Assert.Equal(7, aPair.LastIndex());
         Assert.Throws<OutOfRangeException>(() => aPair.Appended(9));
         Assert.Throws<OutOfRangeException>(() => aPair.Index(3));
-        BRepMesh_PairOfIndex aRemoved = aPair.IndexRemoved(1);
+        PairOfIndex aRemoved = aPair.IndexRemoved(1);
         Assert.Equal(1, aRemoved.Extent());
         Assert.Equal(7, aRemoved.FirstIndex());
         Assert.Equal(7, aRemoved.LastIndex());
-        Assert.True(default(BRepMesh_PairOfIndex) != new BRepMesh_PairOfIndex());
+        Assert.True(default(PairOfIndex) != new PairOfIndex());
     }
 
     [Fact]
     public void Edge_equality_is_OCCTs_in_IsEqual_and_exact_in_Equals()
     {
-        BRepMesh_Edge anEdge = new(1, 2, BRepMesh_Free);
-        BRepMesh_Edge aReversed = new(2, 1, BRepMesh_Frontier);
+        MeshEdge anEdge = new(1, 2, DegreeOfFreedom.Free);
+        MeshEdge aReversed = new(2, 1, DegreeOfFreedom.Frontier);
         Assert.True(anEdge.IsEqual(aReversed));
         Assert.False(anEdge.IsSameOrientation(aReversed));
         Assert.False(anEdge.Equals(aReversed));
-        Assert.True(BRepMesh_Edge.Hasher.Instance.Equals(anEdge, aReversed));
-        Assert.Equal(BRepMesh_Edge.Hasher.Instance.GetHashCode(anEdge), BRepMesh_Edge.Hasher.Instance.GetHashCode(aReversed));
+        Assert.True(MeshEdge.Hasher.Instance.Equals(anEdge, aReversed));
+        Assert.Equal(MeshEdge.Hasher.Instance.GetHashCode(anEdge), MeshEdge.Hasher.Instance.GetHashCode(aReversed));
 
         // A deleted link equals nothing, not even itself (OCCT's operator==).
-        BRepMesh_Edge aDeleted = anEdge.WithMovability(BRepMesh_Deleted);
+        MeshEdge aDeleted = anEdge.WithMovability(DegreeOfFreedom.Deleted);
         Assert.False(aDeleted.IsEqual(aDeleted));
         Assert.True(aDeleted.Equals(aDeleted));
-        Assert.Equal(BRepMesh_Deleted, new BRepMesh_Edge().Movability());
+        Assert.Equal(DegreeOfFreedom.Deleted, new MeshEdge().Movability());
 
-        BRepMesh_OrientedEdge anOriented = anEdge;
-        Assert.Equal(new BRepMesh_OrientedEdge(1, 2), anOriented);
+        OrientedEdge anOriented = anEdge;
+        Assert.Equal(new OrientedEdge(1, 2), anOriented);
         Assert.Equal(1 | (2 << 16), anOriented.GetHashCode());
     }
 
     [Fact]
     public void Triangle_and_vertex_equality()
     {
-        BRepMesh_Triangle aTriangle = new([1, 2, 3], [true, false, true], BRepMesh_Free);
-        BRepMesh_Triangle aRotated = new([2, 3, 1], [false, true, true], BRepMesh_Free);
+        Triangle aTriangle = new([1, 2, 3], [true, false, true], DegreeOfFreedom.Free);
+        Triangle aRotated = new([2, 3, 1], [false, true, true], DegreeOfFreedom.Free);
         Assert.True(aTriangle.IsEqual(aRotated));
         Assert.False(aTriangle.Equals(aRotated));
-        Assert.False(aTriangle.IsEqual(new BRepMesh_Triangle([1, 3, 2], [true, true, true], BRepMesh_Free)));
-        Assert.False(aTriangle.WithMovability(BRepMesh_Deleted).IsEqual(aRotated));
+        Assert.False(aTriangle.IsEqual(new Triangle([1, 3, 2], [true, true, true], DegreeOfFreedom.Free)));
+        Assert.False(aTriangle.WithMovability(DegreeOfFreedom.Deleted).IsEqual(aRotated));
         Span<int> e = stackalloc int[3];
         Span<bool> o = stackalloc bool[3];
         aTriangle.Edges(e, o);
         Assert.Equal([1, 2, 3], e.ToArray());
         Assert.Equal([true, false, true], o.ToArray());
 
-        BRepMesh_Vertex aVertex = new(new Xy(1.0, 2.0), 7, BRepMesh_Frontier);
-        BRepMesh_Vertex aNear = new(1.0 + 1e-10, 2.0, BRepMesh_Free);
+        MeshVertex aVertex = new(new Xy(1.0, 2.0), 7, DegreeOfFreedom.Frontier);
+        MeshVertex aNear = new(1.0 + 1e-10, 2.0, DegreeOfFreedom.Free);
         Assert.True(aVertex.IsEqual(aNear));
         Assert.False(aVertex.Equals(aNear));
-        Assert.False(aVertex.IsEqual(aNear.WithMovability(BRepMesh_Deleted)));
-        Assert.Equal(new BRepMesh_Vertex(), default);
+        Assert.False(aVertex.IsEqual(aNear.WithMovability(DegreeOfFreedom.Deleted)));
+        Assert.Equal(new MeshVertex(), default);
     }
 
     // ---- Tools
@@ -86,24 +86,24 @@ public class BRepMeshCoreTests
     [Fact]
     public void VertexTool_merges_coincident_vertices_and_reuses_deleted_indices()
     {
-        BRepMesh_VertexTool aTool = new();
-        int a = aTool.Add(new BRepMesh_Vertex(0.0, 0.0, BRepMesh_Free), false);
-        int b = aTool.Add(new BRepMesh_Vertex(1.0, 0.0, BRepMesh_Free), false);
-        int aSame = aTool.Add(new BRepMesh_Vertex(1.0 + 1e-8, 0.0, BRepMesh_Free), false);
-        int aForced = aTool.Add(new BRepMesh_Vertex(1.0 + 1e-8, 0.0, BRepMesh_Free), true);
+        VertexTool aTool = new();
+        int a = aTool.Add(new MeshVertex(0.0, 0.0, DegreeOfFreedom.Free), false);
+        int b = aTool.Add(new MeshVertex(1.0, 0.0, DegreeOfFreedom.Free), false);
+        int aSame = aTool.Add(new MeshVertex(1.0 + 1e-8, 0.0, DegreeOfFreedom.Free), false);
+        int aForced = aTool.Add(new MeshVertex(1.0 + 1e-8, 0.0, DegreeOfFreedom.Free), true);
         Assert.Equal((1, 2, 2, 3), (a, b, aSame, aForced));
-        Assert.Equal(2, aTool.FindIndex(new BRepMesh_Vertex(1.0, 0.0, BRepMesh_Free)));
+        Assert.Equal(2, aTool.FindIndex(new MeshVertex(1.0, 0.0, DegreeOfFreedom.Free)));
 
         aTool.DeleteVertex(1);
-        Assert.Equal(0, aTool.FindIndex(new BRepMesh_Vertex(0.0, 0.0, BRepMesh_Free)));
-        Assert.Equal(1, aTool.Add(new BRepMesh_Vertex(5.0, 5.0, BRepMesh_Free), false));
-        Assert.Equal(1, aTool.FindIndex(new BRepMesh_Vertex(5.0, 5.0, BRepMesh_Free)));
+        Assert.Equal(0, aTool.FindIndex(new MeshVertex(0.0, 0.0, DegreeOfFreedom.Free)));
+        Assert.Equal(1, aTool.Add(new MeshVertex(5.0, 5.0, DegreeOfFreedom.Free), false));
+        Assert.Equal(1, aTool.FindIndex(new MeshVertex(5.0, 5.0, DegreeOfFreedom.Free)));
     }
 
     [Fact]
     public void CircleTool_selects_the_circles_containing_a_point()
     {
-        BRepMesh_CircleTool aTool = new();
+        CircleTool aTool = new();
         aTool.SetMinMaxSize(new Xy(-10, -10), new Xy(10, 10));
         aTool.SetCellSize(1.0, 1.0);
         Assert.True(aTool.Bind(1, new Xy(0, 0), new Xy(2, 0), new Xy(0, 2)));
@@ -121,18 +121,18 @@ public class BRepMeshCoreTests
 
     // ---- Data structure
 
-    private static BRepMesh_DataStructureOfDelaun Quad(out int[] theNodes)
+    private static DataStructureOfDelaun Quad(out int[] theNodes)
     {
         // Two triangles (1, 2, 3) and (1, 3, 4) of the unit square.
-        BRepMesh_DataStructureOfDelaun aStructure = new();
+        DataStructureOfDelaun aStructure = new();
         theNodes =
         [
-            aStructure.AddNode(new BRepMesh_Vertex(0, 0, BRepMesh_Free)),
-            aStructure.AddNode(new BRepMesh_Vertex(1, 0, BRepMesh_Free)),
-            aStructure.AddNode(new BRepMesh_Vertex(1, 1, BRepMesh_Free)),
-            aStructure.AddNode(new BRepMesh_Vertex(0, 1, BRepMesh_Free)),
+            aStructure.AddNode(new MeshVertex(0, 0, DegreeOfFreedom.Free)),
+            aStructure.AddNode(new MeshVertex(1, 0, DegreeOfFreedom.Free)),
+            aStructure.AddNode(new MeshVertex(1, 1, DegreeOfFreedom.Free)),
+            aStructure.AddNode(new MeshVertex(0, 1, DegreeOfFreedom.Free)),
         ];
-        BRepMesh_MeshTool aTool = new(aStructure);
+        MeshTool aTool = new(aStructure);
         Span<int> e = stackalloc int[3];
         aTool.AddTriangle(1, 2, 3, e);
         aTool.AddTriangle(1, 3, 4, e);
@@ -142,27 +142,27 @@ public class BRepMeshCoreTests
     [Fact]
     public void Links_are_found_in_either_orientation_and_deleted_indices_are_reused()
     {
-        BRepMesh_DataStructureOfDelaun aStructure = Quad(out _);
-        Assert.Equal(5, aStructure.NbLinks());
-        int aDiagonal = aStructure.IndexOf(new BRepMesh_Edge(3, 1, BRepMesh_Free));
+        DataStructureOfDelaun aStructure = Quad(out _);
+        Assert.Equal(5, aStructure.LinkCount);
+        int aDiagonal = aStructure.IndexOf(new MeshEdge(3, 1, DegreeOfFreedom.Free));
         // The triangles stored the diagonal as 3 -> 1: the other orientation gives a negative index.
-        Assert.Equal(aDiagonal, aStructure.AddLink(new BRepMesh_Edge(3, 1, BRepMesh_Free)));
-        Assert.Equal(-aDiagonal, aStructure.AddLink(new BRepMesh_Edge(1, 3, BRepMesh_Free)));
+        Assert.Equal(aDiagonal, aStructure.AddLink(new MeshEdge(3, 1, DegreeOfFreedom.Free)));
+        Assert.Equal(-aDiagonal, aStructure.AddLink(new MeshEdge(1, 3, DegreeOfFreedom.Free)));
         Assert.Equal(2, aStructure.ElementsConnectedTo(aDiagonal).Extent());
 
         // ElementsConnectedTo is a reference that sees the removal of a triangle.
-        ref readonly BRepMesh_PairOfIndex aPair = ref aStructure.ElementsConnectedTo(aDiagonal);
+        ref readonly PairOfIndex aPair = ref aStructure.ElementsConnectedTo(aDiagonal);
         aStructure.RemoveElement(1);
         Assert.Equal(1, aPair.Extent());
         Assert.Equal(2, aPair.FirstIndex());
         aStructure.RemoveElement(2);
-        Assert.True(aPair.IsEmpty());
+        Assert.True(aPair.IsEmpty);
 
         aStructure.RemoveLink(aDiagonal);
-        Assert.Equal(BRepMesh_Deleted, aStructure.GetLink(aDiagonal).Movability());
-        Assert.Equal(0, aStructure.IndexOf(new BRepMesh_Edge(1, 3, BRepMesh_Free)));
+        Assert.Equal(DegreeOfFreedom.Deleted, aStructure.GetLink(aDiagonal).Movability());
+        Assert.Equal(0, aStructure.IndexOf(new MeshEdge(1, 3, DegreeOfFreedom.Free)));
         Assert.DoesNotContain(aDiagonal, aStructure.LinksConnectedTo(1));
-        Assert.Equal(aDiagonal, aStructure.AddLink(new BRepMesh_Edge(2, 4, BRepMesh_Free)));
+        Assert.Equal(aDiagonal, aStructure.AddLink(new MeshEdge(2, 4, DegreeOfFreedom.Free)));
         Assert.Contains(aDiagonal, aStructure.LinksConnectedTo(4));
     }
 
@@ -171,15 +171,15 @@ public class BRepMeshCoreTests
     {
         // OCCT's NCollection_List over an incremental allocator: a loop standing on a node that another loop removes
         // goes on to that node's old successor (BRepMesh_Delaun's killTrianglesAroundVertex relies on it).
-        BRepMesh_DataStructureOfDelaun.LinkedListOfInteger aList = new();
+        DataStructureOfDelaun.LinkedListOfInteger aList = new();
         foreach (int i in new[] { 1, 2, 3, 4 })
         {
             aList.Append(i);
         }
 
-        BRepMesh_DataStructureOfDelaun.LinkedListOfInteger.Iterator anOuter = new(aList);
+        DataStructureOfDelaun.LinkedListOfInteger.Iterator anOuter = new(aList);
         anOuter.Next(); // on 2
-        BRepMesh_DataStructureOfDelaun.LinkedListOfInteger.Iterator anInner = new(aList);
+        DataStructureOfDelaun.LinkedListOfInteger.Iterator anInner = new(aList);
         anInner.Next();
         aList.Remove(anInner); // removes 2
         Assert.Equal(3, anInner.Value());
@@ -190,7 +190,7 @@ public class BRepMeshCoreTests
         Assert.Equal(3, aList.Extent());
 
         // Removing the last node: Last moves back.
-        BRepMesh_DataStructureOfDelaun.LinkedListOfInteger.Iterator aLast = new(aList);
+        DataStructureOfDelaun.LinkedListOfInteger.Iterator aLast = new(aList);
         aLast.Next();
         aLast.Next();
         aList.Remove(aLast);
@@ -203,15 +203,15 @@ public class BRepMeshCoreTests
     [Fact]
     public void ClearDeleted_renumbers_links_and_nodes_ReproducesOcctError()
     {
-        BRepMesh_DataStructureOfDelaun aStructure = new();
+        DataStructureOfDelaun aStructure = new();
         for (int i = 0; i < 5; ++i)
         {
-            aStructure.AddNode(new BRepMesh_Vertex(i, i * i, BRepMesh_Free));
+            aStructure.AddNode(new MeshVertex(i, i * i, DegreeOfFreedom.Free));
         }
 
-        int l12 = aStructure.AddLink(new BRepMesh_Edge(1, 2, BRepMesh_Free));
-        int l23 = aStructure.AddLink(new BRepMesh_Edge(2, 3, BRepMesh_Free));
-        int l45 = aStructure.AddLink(new BRepMesh_Edge(4, 5, BRepMesh_Free));
+        int l12 = aStructure.AddLink(new MeshEdge(1, 2, DegreeOfFreedom.Free));
+        int l23 = aStructure.AddLink(new MeshEdge(2, 3, DegreeOfFreedom.Free));
+        int l45 = aStructure.AddLink(new MeshEdge(4, 5, DegreeOfFreedom.Free));
         Assert.Equal((1, 2, 3), (l12, l23, l45));
         aStructure.RemoveLink(l12);
         aStructure.RemoveLink(l23);
@@ -221,8 +221,8 @@ public class BRepMeshCoreTests
         aStructure.ClearDeleted();
 
         // The links: link 3 (4-5) moves to index 1.
-        Assert.Equal(1, aStructure.NbLinks());
-        BRepMesh_Edge aLink = aStructure.GetLink(1);
+        Assert.Equal(1, aStructure.LinkCount);
+        MeshEdge aLink = aStructure.GetLink(1);
         Assert.Equal(new Xy(3, 9), aStructure.GetNode(aLink.FirstNode()).Coord());
         Assert.Equal(new Xy(4, 16), aStructure.GetNode(aLink.LastNode()).Coord());
         Assert.Equal((1, 3), (aLink.FirstNode(), aLink.LastNode()));
@@ -230,10 +230,10 @@ public class BRepMeshCoreTests
         // OCCT: BRepMesh_VertexTool::RemoveLast deletes vertex Extent() but doesn't shrink the vector, so the second
         // RemoveLast of clearDeletedNodes deletes vertex 5 again instead of vertex 4: node 4 is left live, a duplicate of
         // the node moved to index 1, and NbNodes() stays 5 (occt-issues.md, unit 4B).
-        Assert.Equal(5, aStructure.NbNodes());
+        Assert.Equal(5, aStructure.NodeCount);
         Assert.Equal(new Xy(3, 9), aStructure.GetNode(4).Coord());
-        Assert.Equal(BRepMesh_Free, aStructure.GetNode(4).Movability());
-        Assert.Equal(BRepMesh_Deleted, aStructure.GetNode(5).Movability());
+        Assert.Equal(DegreeOfFreedom.Free, aStructure.GetNode(4).Movability());
+        Assert.Equal(DegreeOfFreedom.Deleted, aStructure.GetNode(5).Movability());
     }
 
     [Fact]
@@ -241,21 +241,21 @@ public class BRepMeshCoreTests
     {
         // OCCT: myElements(theIndex) indexes a vector from 0, so the triangle after theIndex is replaced
         // (occt-issues.md, unit 4B).
-        BRepMesh_DataStructureOfDelaun aStructure = Quad(out _);
-        BRepMesh_Triangle aFirst = aStructure.GetElement(1);
-        BRepMesh_Triangle aSecond = aStructure.GetElement(2);
+        DataStructureOfDelaun aStructure = Quad(out _);
+        Triangle aFirst = aStructure.GetElement(1);
+        Triangle aSecond = aStructure.GetElement(2);
         aStructure.RemoveElement(1);
         Assert.True(aStructure.SubstituteElement(1, aSecond));
-        Assert.Equal(BRepMesh_Deleted, aStructure.GetElement(1).Movability());
+        Assert.Equal(DegreeOfFreedom.Deleted, aStructure.GetElement(1).Movability());
         Assert.Equal(aSecond, aStructure.GetElement(2));
-        Assert.Equal(aFirst.WithMovability(BRepMesh_Deleted), aStructure.GetElement(1));
+        Assert.Equal(aFirst.WithMovability(DegreeOfFreedom.Deleted), aStructure.GetElement(1));
     }
 
     [Fact]
     public void ClearDomain_and_selector()
     {
-        BRepMesh_DataStructureOfDelaun aStructure = Quad(out _);
-        BRepMesh_SelectorOfDataStructureOfDelaun aSelector = new(aStructure);
+        DataStructureOfDelaun aStructure = Quad(out _);
+        SelectorOfDataStructureOfDelaun aSelector = new(aStructure);
         aSelector.NeighboursOfNode(2);
         Assert.Equal(1, aSelector.Elements().Extent());
         aSelector.NeighboursOfNode(4);
@@ -272,12 +272,12 @@ public class BRepMeshCoreTests
     public void Legalize_flips_a_non_Delaunay_diagonal()
     {
         // A thin rhombus split along its long diagonal is flipped to its short one.
-        BRepMesh_DataStructureOfDelaun aStructure = new();
-        aStructure.AddNode(new BRepMesh_Vertex(0, 0, BRepMesh_Free));
-        aStructure.AddNode(new BRepMesh_Vertex(2, -0.2, BRepMesh_Free));
-        aStructure.AddNode(new BRepMesh_Vertex(4, 0, BRepMesh_Free));
-        aStructure.AddNode(new BRepMesh_Vertex(2, 0.2, BRepMesh_Free));
-        BRepMesh_MeshTool aTool = new(aStructure);
+        DataStructureOfDelaun aStructure = new();
+        aStructure.AddNode(new MeshVertex(0, 0, DegreeOfFreedom.Free));
+        aStructure.AddNode(new MeshVertex(2, -0.2, DegreeOfFreedom.Free));
+        aStructure.AddNode(new MeshVertex(4, 0, DegreeOfFreedom.Free));
+        aStructure.AddNode(new MeshVertex(2, 0.2, DegreeOfFreedom.Free));
+        MeshTool aTool = new(aStructure);
         aTool.AddAndLegalizeTriangle(1, 2, 3);
         aTool.AddAndLegalizeTriangle(1, 3, 4);
         aTool.EraseFreeLinks();
@@ -286,16 +286,16 @@ public class BRepMeshCoreTests
         Assert.Equal(2, aTriangles.Count);
         Assert.All(aTriangles, t => Assert.True(new[] { t.Item1, t.Item2, t.Item3 }.Contains(2)
                                                && new[] { t.Item1, t.Item2, t.Item3 }.Contains(4)));
-        Assert.Equal(0, aStructure.IndexOf(new BRepMesh_Edge(1, 3, BRepMesh_Free)));
+        Assert.Equal(0, aStructure.IndexOf(new MeshEdge(1, 3, DegreeOfFreedom.Free)));
 
-        BRepMesh_MeshTool.NodeClassifier aClassifier = new(new BRepMesh_Edge(1, 3, BRepMesh_Free), aStructure);
+        MeshTool.NodeClassifier aClassifier = new(new MeshEdge(1, 3, DegreeOfFreedom.Free), aStructure);
         Assert.True(aClassifier.IsAbove(4) != aClassifier.IsAbove(2));
     }
 
     [Fact]
     public void Classifier_with_a_hole()
     {
-        BRepMesh_Classifier aClassifier = new();
+        Classifier aClassifier = new();
         NCollection_Sequence<Point2D> anOuter = new();
         foreach ((double x, double y) in new[] { (0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0) })
         {
@@ -340,7 +340,7 @@ public class BRepMeshCoreTests
         aWires.Append(aHole);
 
         NCollection_List<Triangle1> aTriangles = new();
-        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
+        Assert.True(new Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
         Assert.Equal(8, aTriangles.Extent());
 
         NCollection_Array1<Point3D> aNodes = new(1, 8);
@@ -349,7 +349,7 @@ public class BRepMeshCoreTests
             aNodes[i + 1] = new Point3D(aXYZs[i]);
         }
 
-        Triangulation aPoly = BRepMesh_Triangulator.ToPolyTriangulation(aNodes, aTriangles);
+        Triangulation aPoly = Triangulator.ToPolyTriangulation(aNodes, aTriangles);
         double anArea = 0.0;
         for (int i = 1; i <= aPoly.TriangleCount; ++i)
         {
@@ -379,7 +379,7 @@ public class BRepMeshCoreTests
         NCollection_List<NCollection_Sequence<int>> aWires = new();
         aWires.Append(aWire);
         NCollection_List<Triangle1> aTriangles = new();
-        Assert.True(new BRepMesh_Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
+        Assert.True(new Triangulator(aXYZs, aWires, Constants.DZ()).Perform(aTriangles));
         // The diagonals are equal: d24 < d13 is false, and the inner-corner check keeps the diagonal 1-3.
         Assert.Equal([new Triangle1(1, 2, 3), new Triangle1(3, 4, 1)], aTriangles);
     }

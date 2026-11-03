@@ -5,7 +5,9 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -44,7 +46,7 @@ public class XSControl_TransferReader : Transient
             return 0;
         }
         Interface_CheckStatus cst = binder.Check().Status();
-        if (cst == Interface_CheckOK)
+        if (cst == Interface_CheckStatus.Interface_CheckOK)
         {
             stat = 11;
             if (binder.HasResult())
@@ -57,7 +59,7 @@ public class XSControl_TransferReader : Transient
                 stat = 1;
             }
         }
-        else if (cst == Interface_CheckWarning)
+        else if (cst == Interface_CheckStatus.Interface_CheckWarning)
         {
             stat = 12;
             if (binder.HasResult())
@@ -70,7 +72,7 @@ public class XSControl_TransferReader : Transient
                 stat = 2;
             }
         }
-        else if (cst == Interface_CheckFail)
+        else if (cst == Interface_CheckStatus.Interface_CheckFail)
         {
             stat = 13;
             if (binder.HasResult())
@@ -625,12 +627,12 @@ public class XSControl_TransferReader : Transient
         }
         if (!BrepTools.HoldsFrozen(sh))
         {
-            ShapeFix.EncodeRegularity(sh, tolang);
+            ShapeFixFixer.EncodeRegularity(sh, tolang);
             return sh;
         }
         if (sh.TShape()!.IsFrozen)
         {
-            sh = BRepLib.RegularityEncoded(sh, tolang);
+            sh = BrepLibrary.RegularityEncoded(sh, tolang);
             return sh;
         }
         // OCCT.NET (unit 8G2): an unfrozen shape holding frozen ones (an assembly whose parts were published before):
@@ -649,7 +651,7 @@ public class XSControl_TransferReader : Transient
         }
         if (!BrepTools.HoldsFrozen(theShape))
         {
-            ShapeFix.EncodeRegularity(theShape, theTolAng);
+            ShapeFixFixer.EncodeRegularity(theShape, theTolAng);
             return;
         }
         for (var anIt = new Iterator(theShape); anIt.More(); anIt.Next())
@@ -1088,7 +1090,7 @@ public class XSControl_TransferReader : Transient
     /// &lt;check&gt; = 2 , entities with fail &lt;result&gt; : if True, only entities with an attached result
     /// Remark : result True and check=0 will give an empty list
     /// </summary>
-    public NCollection_HSequence<Transient>? CheckedList(Transient? ent, Interface_CheckStatus withcheck = Interface_CheckAny, bool level = true)
+    public NCollection_HSequence<Transient>? CheckedList(Transient? ent, Interface_CheckStatus withcheck = Interface_CheckStatus.Interface_CheckAny, bool level = true)
     {
         NCollection_HSequence<Transient> res =
             new NCollection_HSequence<Transient>();
@@ -1488,10 +1490,10 @@ public class XSControl_TransferReader : Transient
         {
             counter = new IFSelect_SignatureList(mode == 6);
         }
-        IFSelect_PrintCount pcm = IFSelect_CountByItem;
+        IFSelect_PrintCount pcm = IFSelect_PrintCount.IFSelect_CountByItem;
         if (mode == 6)
         {
-            pcm = IFSelect_ListByItem;
+            pcm = IFSelect_PrintCount.IFSelect_ListByItem;
         }
 
         sout.Write("****    Nb Recorded : ");
@@ -1762,10 +1764,10 @@ public class XSControl_TransferReader : Transient
                 counter = new IFSelect_SignatureList(mode == 6);
             }
             bool                notrec = (!nolist && mode > 2); // note the "no record"
-            IFSelect_PrintCount pcm = IFSelect_CountByItem;
+            IFSelect_PrintCount pcm = IFSelect_PrintCount.IFSelect_CountByItem;
             if (mode == 6)
             {
-                pcm = IFSelect_ListByItem;
+                pcm = IFSelect_PrintCount.IFSelect_ListByItem;
             }
 
             sout.Write("****        Entities in Model   : ");
@@ -1951,10 +1953,10 @@ public class XSControl_TransferReader : Transient
             }
             else
             {
-                IFSelect_PrintCount pcm = IFSelect_CountByItem;
+                IFSelect_PrintCount pcm = IFSelect_PrintCount.IFSelect_CountByItem;
                 if (mode == 2)
                 {
-                    pcm = IFSelect_ListByItem;
+                    pcm = IFSelect_PrintCount.IFSelect_ListByItem;
                 }
                 IFSelect_CheckCounter counter = new IFSelect_CheckCounter(true);
                 counter.Analyse(chl, model, true, (what == 5));

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints;
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
@@ -81,16 +83,16 @@ internal static class GccAnaRecordings
             return new Circle2D(new Axis2D(p, d), r, s);
         }
 
-        public GccEnt_QualifiedCirc QC()
+        public QualifiedCirc QC()
         {
             Circle2D c = Circ();
-            return new GccEnt_QualifiedCirc(c, (GccEnt_Position)(int)D());
+            return new QualifiedCirc(c, (Qualifier)(int)D());
         }
 
-        public GccEnt_QualifiedLin QL()
+        public QualifiedLin QL()
         {
             Line2D l = Lin();
-            return new GccEnt_QualifiedLin(l, (GccEnt_Position)(int)D());
+            return new QualifiedLin(l, (Qualifier)(int)D());
         }
     }
 
@@ -106,7 +108,7 @@ internal static class GccAnaRecordings
 
     private static string Hex(Line2D theL) => Hex(theL.Location()) + "," + Hex(theL.Direction());
 
-    private static string Q(GccEnt_Position p) => ((int)p).ToString(CultureInfo.InvariantCulture);
+    private static string Q(Qualifier p) => ((int)p).ToString(CultureInfo.InvariantCulture);
 
     private delegate void TanFn(out double a, out double b, out Point2D p);
 
@@ -116,7 +118,7 @@ internal static class GccAnaRecordings
         return Hex(a) + "," + Hex(b) + "," + Hex(p);
     }
 
-    private static string Bisec(GccInt_Bisec? theB)
+    private static string Bisec(ConstraintBisec? theB)
     {
         if (theB is null)
         {
@@ -124,26 +126,26 @@ internal static class GccAnaRecordings
         }
         switch (theB.ArcType())
         {
-            case GccInt_IType.GccInt_Lin:
+            case ConstraintCurveType.Lin:
                 return "Lin," + Hex(theB.Line());
-            case GccInt_IType.GccInt_Cir:
+            case ConstraintCurveType.Cir:
                 return "Cir," + Hex(theB.Circle());
-            case GccInt_IType.GccInt_Ell:
+            case ConstraintCurveType.Ell:
                 {
                     Ellipse2D anE = theB.Ellipse();
                     return "Ell," + Hex(anE.Axis()) + "," + Hex(anE.MajorRadius()) + "," + Hex(anE.MinorRadius());
                 }
-            case GccInt_IType.GccInt_Hpr:
+            case ConstraintCurveType.Hpr:
                 {
                     Hyperbola2D aH = theB.Hyperbola();
                     return "Hpr," + Hex(aH.Axis()) + "," + Hex(aH.MajorRadius()) + "," + Hex(aH.MinorRadius());
                 }
-            case GccInt_IType.GccInt_Par:
+            case ConstraintCurveType.Par:
                 {
                     Parabola2D aP = theB.Parabola();
                     return "Par," + Hex(aP.Axis()) + "," + Hex(aP.Focal());
                 }
-            case GccInt_IType.GccInt_Pnt:
+            case ConstraintCurveType.Pnt:
                 return "Pnt," + Hex(theB.Point());
         }
         return "?";
@@ -197,13 +199,13 @@ internal static class GccAnaRecordings
 
     private static string B(bool b) => b ? "1" : "0";
 
-    private static void Dump(Writer w, GccAna_Circ2d3Tan S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticCirc2d3Tan S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b, out GccEnt_Position c);
+                S.WhichQualifier(i, out Qualifier a, out Qualifier b, out Qualifier c);
                 return Q(a) + "," + Q(b) + "," + Q(c);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
@@ -214,13 +216,13 @@ internal static class GccAnaRecordings
             w.Tok("s3", () => B(S.IsTheSame3(i)));
         });
 
-    private static void Dump(Writer w, GccAna_Circ2d2TanOn S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticCirc2d2TanOn S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
+                S.WhichQualifier(i, out Qualifier a, out Qualifier b);
                 return Q(a) + "," + Q(b);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
@@ -234,13 +236,13 @@ internal static class GccAnaRecordings
             });
         });
 
-    private static void Dump(Writer w, GccAna_Circ2d2TanRad S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticCirc2d2TanRad S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
+                S.WhichQualifier(i, out Qualifier a, out Qualifier b);
                 return Q(a) + "," + Q(b);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
@@ -249,13 +251,13 @@ internal static class GccAnaRecordings
             w.Tok("s2", () => B(S.IsTheSame2(i)));
         });
 
-    private static void Dump(Writer w, GccAna_Circ2dTanOnRad S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticCirc2dTanOnRad S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a);
+                S.WhichQualifier(i, out Qualifier a);
                 return Q(a);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
@@ -267,71 +269,71 @@ internal static class GccAnaRecordings
             });
         });
 
-    private static void Dump(Writer w, GccAna_Circ2dTanCen S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticCirc2dTanCen S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a);
+                S.WhichQualifier(i, out Qualifier a);
                 return Q(a);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("s1", () => B(S.IsTheSame1(i)));
         });
 
-    private static void Dump(Writer w, GccAna_Lin2d2Tan S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticLin2d2Tan S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a, out GccEnt_Position b);
+                S.WhichQualifier(i, out Qualifier a, out Qualifier b);
                 return Q(a) + "," + Q(b);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("t2", () => Tan((out double a, out double b, out Point2D p) => S.Tangency2(i, out a, out b, out p)));
         });
 
-    private static void Dump(Writer w, GccAna_Lin2dTanObl S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, AnalyticLin2dTanObl S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a);
+                S.WhichQualifier(i, out Qualifier a);
                 return Q(a);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("i2", () => Tan((out double a, out double b, out Point2D p) => S.Intersection2(i, out a, out b, out p)));
         });
 
-    private static void Dump(Writer w, GccAna_Lin2dTanPar S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, Lin2dTanPar S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a);
+                S.WhichQualifier(i, out Qualifier a);
                 return Q(a);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
         });
 
-    private static void Dump(Writer w, GccAna_Lin2dTanPer S)
-        => w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+    private static void Dump(Writer w, Lin2dTanPer S)
+        => w.Solutions(S.IsDone, () => S.SolutionCount, i =>
         {
             w.Tok("sol", () => Hex(S.ThisSolution(i)));
             w.Tok("q", () =>
             {
-                S.WhichQualifier(i, out GccEnt_Position a);
+                S.WhichQualifier(i, out Qualifier a);
                 return Q(a);
             });
             w.Tok("t1", () => Tan((out double a, out double b, out Point2D p) => S.Tangency1(i, out a, out b, out p)));
             w.Tok("i2", () => Tan((out double a, out double b, out Point2D p) => S.Intersection2(i, out a, out b, out p)));
         });
 
-    private static void DumpBisec(Writer w, bool theDone, Func<int> theNb, Func<int, GccInt_Bisec?> theSol)
+    private static void DumpBisec(Writer w, bool theDone, Func<int> theNb, Func<int, ConstraintBisec?> theSol)
         => w.Solutions(theDone, theNb, i => w.Tok("bis", () => Bisec(theSol(i))));
 
     /// <summary>Runs the case on the port and writes its results as gccrec does.</summary>
@@ -343,61 +345,61 @@ internal static class GccAnaRecordings
         {
             switch (theCase.Ctor)
             {
-                case "3Tan.CCC": { var a = r.QC(); var b = r.QC(); var c = r.QC(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.CCL": { var a = r.QC(); var b = r.QC(); var c = r.QL(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.CLL": { var a = r.QC(); var b = r.QL(); var c = r.QL(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.LLL": { var a = r.QL(); var b = r.QL(); var c = r.QL(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.CCP": { var a = r.QC(); var b = r.QC(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.CLP": { var a = r.QC(); var b = r.QL(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.LLP": { var a = r.QL(); var b = r.QL(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.CPP": { var a = r.QC(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.LPP": { var a = r.QL(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "3Tan.PPP": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2d3Tan(a, b, c, t)); break; }
-                case "2TanOn.CCl": { var a = r.QC(); var b = r.QC(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.CLl": { var a = r.QC(); var b = r.QL(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.LLl": { var a = r.QL(); var b = r.QL(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.CPl": { var a = r.QC(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.LPl": { var a = r.QL(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.PPl": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.CCc": { var a = r.QC(); var b = r.QC(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.CLc": { var a = r.QC(); var b = r.QL(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.CPc": { var a = r.QC(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.LLc": { var a = r.QL(); var b = r.QL(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.LPc": { var a = r.QL(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanOn(a, b, c, t)); break; }
-                case "2TanRad.CC": { var a = r.QC(); var b = r.QC(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "2TanRad.CL": { var a = r.QC(); var b = r.QL(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "2TanRad.CP": { var a = r.QC(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "2TanRad.LP": { var a = r.QL(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "2TanRad.LL": { var a = r.QL(); var b = r.QL(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "2TanRad.PP": { var a = r.Pnt(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2d2TanRad(a, b, R, t)); break; }
-                case "TanOnRad.Cl": { var a = r.QC(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanOnRad.Ll": { var a = r.QL(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanOnRad.Pl": { var a = r.Pnt(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanOnRad.Cc": { var a = r.QC(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanOnRad.Lc": { var a = r.QL(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanOnRad.Pc": { var a = r.Pnt(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new GccAna_Circ2dTanOnRad(a, c, R, t)); break; }
-                case "TanCen.C": { var a = r.QC(); var p = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Circ2dTanCen(a, p, t)); break; }
-                case "TanCen.L": { var a = r.Lin(); var p = r.Pnt(); Dump(w, new GccAna_Circ2dTanCen(a, p)); break; }
-                case "TanCen.P": { var a = r.Pnt(); var p = r.Pnt(); Dump(w, new GccAna_Circ2dTanCen(a, p)); break; }
-                case "Lin2d2Tan.PP": { var a = r.Pnt(); var b = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Lin2d2Tan(a, b, t)); break; }
-                case "Lin2d2Tan.CP": { var a = r.QC(); var b = r.Pnt(); double t = r.D(); Dump(w, new GccAna_Lin2d2Tan(a, b, t)); break; }
-                case "Lin2d2Tan.CC": { var a = r.QC(); var b = r.QC(); double t = r.D(); Dump(w, new GccAna_Lin2d2Tan(a, b, t)); break; }
-                case "TanObl.P": { var a = r.Pnt(); var l = r.Lin(); double g = r.D(); Dump(w, new GccAna_Lin2dTanObl(a, l, g)); break; }
-                case "TanObl.C": { var a = r.QC(); var l = r.Lin(); double g = r.D(); Dump(w, new GccAna_Lin2dTanObl(a, l, g)); break; }
-                case "TanPar.P": { var a = r.Pnt(); var l = r.Lin(); Dump(w, new GccAna_Lin2dTanPar(a, l)); break; }
-                case "TanPar.C": { var a = r.QC(); var l = r.Lin(); Dump(w, new GccAna_Lin2dTanPar(a, l)); break; }
-                case "TanPer.Pl": { var a = r.Pnt(); var l = r.Lin(); Dump(w, new GccAna_Lin2dTanPer(a, l)); break; }
-                case "TanPer.Pc": { var a = r.Pnt(); var c = r.Circ(); Dump(w, new GccAna_Lin2dTanPer(a, c)); break; }
-                case "TanPer.Cl": { var a = r.QC(); var l = r.Lin(); Dump(w, new GccAna_Lin2dTanPer(a, l)); break; }
-                case "TanPer.Cc": { var a = r.QC(); var c = r.Circ(); Dump(w, new GccAna_Lin2dTanPer(a, c)); break; }
+                case "3Tan.CCC": { var a = r.QC(); var b = r.QC(); var c = r.QC(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.CCL": { var a = r.QC(); var b = r.QC(); var c = r.QL(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.CLL": { var a = r.QC(); var b = r.QL(); var c = r.QL(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.LLL": { var a = r.QL(); var b = r.QL(); var c = r.QL(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.CCP": { var a = r.QC(); var b = r.QC(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.CLP": { var a = r.QC(); var b = r.QL(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.LLP": { var a = r.QL(); var b = r.QL(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.CPP": { var a = r.QC(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.LPP": { var a = r.QL(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "3Tan.PPP": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2d3Tan(a, b, c, t)); break; }
+                case "2TanOn.CCl": { var a = r.QC(); var b = r.QC(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.CLl": { var a = r.QC(); var b = r.QL(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.LLl": { var a = r.QL(); var b = r.QL(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.CPl": { var a = r.QC(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.LPl": { var a = r.QL(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.PPl": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Lin(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.CCc": { var a = r.QC(); var b = r.QC(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.CLc": { var a = r.QC(); var b = r.QL(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.CPc": { var a = r.QC(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.LLc": { var a = r.QL(); var b = r.QL(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.LPc": { var a = r.QL(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanOn.PPc": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Circ(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanOn(a, b, c, t)); break; }
+                case "2TanRad.CC": { var a = r.QC(); var b = r.QC(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "2TanRad.CL": { var a = r.QC(); var b = r.QL(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "2TanRad.CP": { var a = r.QC(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "2TanRad.LP": { var a = r.QL(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "2TanRad.LL": { var a = r.QL(); var b = r.QL(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "2TanRad.PP": { var a = r.Pnt(); var b = r.Pnt(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2d2TanRad(a, b, R, t)); break; }
+                case "TanOnRad.Cl": { var a = r.QC(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanOnRad.Ll": { var a = r.QL(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanOnRad.Pl": { var a = r.Pnt(); var c = r.Lin(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanOnRad.Cc": { var a = r.QC(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanOnRad.Lc": { var a = r.QL(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanOnRad.Pc": { var a = r.Pnt(); var c = r.Circ(); double R = r.D(); double t = r.D(); Dump(w, new AnalyticCirc2dTanOnRad(a, c, R, t)); break; }
+                case "TanCen.C": { var a = r.QC(); var p = r.Pnt(); double t = r.D(); Dump(w, new AnalyticCirc2dTanCen(a, p, t)); break; }
+                case "TanCen.L": { var a = r.Lin(); var p = r.Pnt(); Dump(w, new AnalyticCirc2dTanCen(a, p)); break; }
+                case "TanCen.P": { var a = r.Pnt(); var p = r.Pnt(); Dump(w, new AnalyticCirc2dTanCen(a, p)); break; }
+                case "Lin2d2Tan.PP": { var a = r.Pnt(); var b = r.Pnt(); double t = r.D(); Dump(w, new AnalyticLin2d2Tan(a, b, t)); break; }
+                case "Lin2d2Tan.CP": { var a = r.QC(); var b = r.Pnt(); double t = r.D(); Dump(w, new AnalyticLin2d2Tan(a, b, t)); break; }
+                case "Lin2d2Tan.CC": { var a = r.QC(); var b = r.QC(); double t = r.D(); Dump(w, new AnalyticLin2d2Tan(a, b, t)); break; }
+                case "TanObl.P": { var a = r.Pnt(); var l = r.Lin(); double g = r.D(); Dump(w, new AnalyticLin2dTanObl(a, l, g)); break; }
+                case "TanObl.C": { var a = r.QC(); var l = r.Lin(); double g = r.D(); Dump(w, new AnalyticLin2dTanObl(a, l, g)); break; }
+                case "TanPar.P": { var a = r.Pnt(); var l = r.Lin(); Dump(w, new Lin2dTanPar(a, l)); break; }
+                case "TanPar.C": { var a = r.QC(); var l = r.Lin(); Dump(w, new Lin2dTanPar(a, l)); break; }
+                case "TanPer.Pl": { var a = r.Pnt(); var l = r.Lin(); Dump(w, new Lin2dTanPer(a, l)); break; }
+                case "TanPer.Pc": { var a = r.Pnt(); var c = r.Circ(); Dump(w, new Lin2dTanPer(a, c)); break; }
+                case "TanPer.Cl": { var a = r.QC(); var l = r.Lin(); Dump(w, new Lin2dTanPer(a, l)); break; }
+                case "TanPer.Cc": { var a = r.QC(); var c = r.Circ(); Dump(w, new Lin2dTanPer(a, c)); break; }
                 case "Bisec.PP":
                     {
                         var a = r.Pnt();
                         var b = r.Pnt();
-                        GccAna_Pnt2dBisec S = new(a, b);
-                        w.Put("done:" + B(S.IsDone()));
-                        w.Put("has:" + B(S.HasSolution()));
+                        Pnt2dBisec S = new(a, b);
+                        w.Put("done:" + B(S.IsDone));
+                        w.Put("has:" + B(S.HasSolution));
                         w.Tok("lin", () => Hex(S.ThisSolution()));
                         break;
                     }
@@ -405,8 +407,8 @@ internal static class GccAnaRecordings
                     {
                         var a = r.Lin();
                         var b = r.Pnt();
-                        GccAna_LinPnt2dBisec S = new(a, b);
-                        w.Put("done:" + B(S.IsDone()));
+                        LinPnt2dBisec S = new(a, b);
+                        w.Put("done:" + B(S.IsDone));
                         w.Tok("bis", () => Bisec(S.ThisSolution()));
                         break;
                     }
@@ -414,8 +416,8 @@ internal static class GccAnaRecordings
                     {
                         var a = r.Lin();
                         var b = r.Lin();
-                        GccAna_Lin2dBisec S = new(a, b);
-                        w.Solutions(S.IsDone(), () => S.NbSolutions(), i =>
+                        Lin2dBisec S = new(a, b);
+                        w.Solutions(S.IsDone, () => S.SolutionCount, i =>
                         {
                             w.Tok("sol", () => Hex(S.ThisSolution(i)));
                             w.Tok("i1", () => Tan((out double x, out double y, out Point2D p) => S.Intersection1(i, out x, out y, out p)));
@@ -423,10 +425,10 @@ internal static class GccAnaRecordings
                         });
                         break;
                     }
-                case "Bisec.CL": { var a = r.Circ(); var b = r.Lin(); GccAna_CircLin2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
-                case "Bisec.CP": { var a = r.Circ(); var b = r.Pnt(); GccAna_CircPnt2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
-                case "Bisec.CPt": { var a = r.Circ(); var b = r.Pnt(); double t = r.D(); GccAna_CircPnt2dBisec S = new(a, b, t); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
-                case "Bisec.CC": { var a = r.Circ(); var b = r.Circ(); GccAna_Circ2dBisec S = new(a, b); DumpBisec(w, S.IsDone(), () => S.NbSolutions(), S.ThisSolution); break; }
+                case "Bisec.CL": { var a = r.Circ(); var b = r.Lin(); CircLin2dBisec S = new(a, b); DumpBisec(w, S.IsDone, () => S.SolutionCount, S.ThisSolution); break; }
+                case "Bisec.CP": { var a = r.Circ(); var b = r.Pnt(); CircPnt2dBisec S = new(a, b); DumpBisec(w, S.IsDone, () => S.SolutionCount, S.ThisSolution); break; }
+                case "Bisec.CPt": { var a = r.Circ(); var b = r.Pnt(); double t = r.D(); CircPnt2dBisec S = new(a, b, t); DumpBisec(w, S.IsDone, () => S.SolutionCount, S.ThisSolution); break; }
+                case "Bisec.CC": { var a = r.Circ(); var b = r.Circ(); Circ2dBisec S = new(a, b); DumpBisec(w, S.IsDone, () => S.SolutionCount, S.ThisSolution); break; }
                 default:
                     throw new InvalidOperationException(theCase.Ctor);
             }

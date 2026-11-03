@@ -1,4 +1,5 @@
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -108,7 +109,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         Vector origin;
         {
             var props = new Properties();
-            BRepGProp.SurfaceProperties(topoFace, props);
+            MassPropertiesBuilder.SurfaceProperties(topoFace, props);
             var c = props.CentreOfMass();
             origin = new Vector(c);
         }
@@ -135,10 +136,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         var pnt = new Point3D();
         var normal = new Vector3D();
-        var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
+        var projector = new ProjectPointOnSurface(pnt, surface);
         double u = 0, v = 0;
         projector.LowerDistanceParameters(out u, out v);
-        var props = new BRepGProp_Face(face);
+        var props = new FaceIntegrand(face);
         props.Normal(u, v, out pnt, out normal);
         return new Vector(normal);
     }
@@ -479,8 +480,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         var line = new LineCurve3D(ax1);
         var ax3 = Pln.Position();
         var plane = new PlaneSurface(ax3);
-        var intersection = new GeomAPI_IntCS(line, plane);
-        if (intersection.IsDone() && intersection.NbPoints() == 1)
+        var intersection = new CurveSurfaceIntersection(line, plane);
+        if (intersection.IsDone && intersection.PointCount == 1)
         {
             var p = intersection.Point(1);
             return new Vector(p);
@@ -495,8 +496,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             return this;
         var s1 = new PlaneSurface(Pln);
         var s2 = new PlaneSurface(plane.Pln);
-        var intersector = new GeomAPI_IntSS(s1, s2, Constants.Tolerance);
-        if (intersector.IsDone() && intersector.NbLines() > 0)
+        var intersector = new SurfaceSurfaceIntersection(s1, s2, Constants.Tolerance);
+        if (intersector.IsDone && intersector.LineCount > 0)
         {
             var curve = intersector.Line(1);
             var line = (curve as LineCurve3D) ?? throw new InvalidOperationException("plane intersection isn't a line");

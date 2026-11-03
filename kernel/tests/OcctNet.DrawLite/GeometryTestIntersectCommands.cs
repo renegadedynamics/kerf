@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Geometry;
 using Occt;
 
@@ -53,7 +55,7 @@ internal static class GeometryTestIntersectCommands
 
         if (GC1 is null)
         {
-            var Inters = new GeomInt_IntSS();
+            var Inters = new IntSS();
             // Surface Surface
             if (n <= 5)
             {
@@ -126,13 +128,13 @@ internal static class GeometryTestIntersectCommands
                 return 1;
             }
 
-            if (!Inters.IsDone())
+            if (!Inters.IsDone)
             {
                 di.Append("No intersections found!\n");
                 return 1;
             }
 
-            int aNbLines = Inters.NbLines();
+            int aNbLines = Inters.LineCount;
             if (aNbLines >= 2)
             {
                 for (int i = 1; i <= aNbLines; ++i)
@@ -150,7 +152,7 @@ internal static class GeometryTestIntersectCommands
                 DrawTrSurf.Set(theDI, a[1], Result);
             }
 
-            int aNbPoints = Inters.NbPoints();
+            int aNbPoints = Inters.PointCount;
             for (int i = 1; i <= aNbPoints; ++i)
             {
                 Point = Inters.Point(i);
@@ -162,16 +164,16 @@ internal static class GeometryTestIntersectCommands
         else
         {
             // Curve Surface
-            var Inters = new GeomAPI_IntCS(GC1, GS2);
+            var Inters = new CurveSurfaceIntersection(GC1, GS2);
 
-            if (!Inters.IsDone())
+            if (!Inters.IsDone)
             {
                 di.Append("No intersections found!\n");
                 return 1;
             }
 
-            int nblines = Inters.NbSegments();
-            int nbpoints = Inters.NbPoints();
+            int nblines = Inters.SegmentCount;
+            int nbpoints = Inters.PointCount;
 
             if ((nblines + nbpoints) >= 2)
             {

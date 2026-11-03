@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 
@@ -37,7 +38,7 @@ public class GeomFill_GuideTrihedronAC_Test
         CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
         CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
-        GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
+        GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
 
         Vector3D aTangent = new(), aNormal = new(), aBiNormal = new();
@@ -54,7 +55,7 @@ public class GeomFill_GuideTrihedronAC_Test
         CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
         CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
-        GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
+        GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
 
         Vector3D aTangent = new(), aDTangent = new(), aNormal = new(), aDNormal = new(), aBiNormal = new(), aDBiNormal = new();
@@ -72,7 +73,7 @@ public class GeomFill_GuideTrihedronAC_Test
         CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1), new Point3D(0, 1, 1));
         CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
 
-        GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
+        GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
 
         Vector3D aTangent = new(), aDTangent = new(), aD2Tangent = new();
@@ -96,7 +97,7 @@ public class GeomFill_GuideTrihedronAC_Test
         CurveAdaptorBase aGuide = makeBSplineCurve(new Point3D(0, 0, 2), new Point3D(2, 0, 2), new Point3D(2, 2, 2), new Point3D(0, 2, 2));
         CurveAdaptorBase aPath = makeBSplineCurve(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0), new Point3D(0, 2, 0));
 
-        GeomFill_GuideTrihedronAC aTrihedron = new(aGuide);
+        GuideTrihedronAC aTrihedron = new(aGuide);
         aTrihedron.SetCurve(aPath);
 
         double[] aParams = [0.2, 0.4, 0.6, 0.8];

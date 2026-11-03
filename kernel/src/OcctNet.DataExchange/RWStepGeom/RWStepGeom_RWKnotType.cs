@@ -25,13 +25,13 @@ internal static class RWStepGeom_RWKnotType
     {
         switch (theSourceEnum)
         {
-            case StepGeom_ktUniformKnots:
+            case StepGeom_KnotType.StepGeom_ktUniformKnots:
                 return ktUniformKnots;
-            case StepGeom_ktQuasiUniformKnots:
+            case StepGeom_KnotType.StepGeom_ktQuasiUniformKnots:
                 return ktQuasiUniformKnots;
-            case StepGeom_ktPiecewiseBezierKnots:
+            case StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots:
                 return ktPiecewiseBezierKnots;
-            case StepGeom_ktUnspecified:
+            case StepGeom_KnotType.StepGeom_ktUnspecified:
                 return ktUnspecified;
         }
         return null;
@@ -47,19 +47,19 @@ internal static class RWStepGeom_RWKnotType
     {
         if (theKnotTypeString == ktUniformKnots)
         {
-            theResultEnum = StepGeom_ktUniformKnots;
+            theResultEnum = StepGeom_KnotType.StepGeom_ktUniformKnots;
         }
         else if (theKnotTypeString == ktQuasiUniformKnots)
         {
-            theResultEnum = StepGeom_ktQuasiUniformKnots;
+            theResultEnum = StepGeom_KnotType.StepGeom_ktQuasiUniformKnots;
         }
         else if (theKnotTypeString == ktPiecewiseBezierKnots)
         {
-            theResultEnum = StepGeom_ktPiecewiseBezierKnots;
+            theResultEnum = StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots;
         }
         else if (theKnotTypeString == ktUnspecified)
         {
-            theResultEnum = StepGeom_ktUnspecified;
+            theResultEnum = StepGeom_KnotType.StepGeom_ktUnspecified;
         }
         else
         {

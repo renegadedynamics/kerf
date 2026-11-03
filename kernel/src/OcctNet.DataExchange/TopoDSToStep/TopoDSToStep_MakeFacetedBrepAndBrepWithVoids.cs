@@ -34,7 +34,7 @@ public sealed class TopoDSToStep_MakeFacetedBrepAndBrepWithVoids : TopoDSToStep_
         NCollection_HArray1<StepShape_OrientedClosedShell> aVoids;
         var aTessShells = new NCollection_Sequence<Transient>();
 
-        aOutShell = BRepClass3d.OuterShell(aSolid);
+        aOutShell = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(aSolid);
         StepData_StepModel aStepModel = FP.Model() as StepData_StepModel;
         var StepB = new TopoDSToStep_Builder();
         var aTool = new TopoDSToStep_Tool(aStepModel);

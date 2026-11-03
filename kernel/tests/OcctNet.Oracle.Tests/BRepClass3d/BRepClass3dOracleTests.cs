@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -39,7 +40,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
 
             using var aNC = new N.BRepClass3d_SolidClassifier();
             aNC.Load(aShape.N);
-            var aPC = new BRepClass3d_SolidClassifier();
+            var aPC = new SolidClassifier();
             aPC.Load(aShape.P);
             foreach (Point3D aP in aPoints)
             {
@@ -50,7 +51,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
                 string aPWhat = $"{aWhat}, point {aP} tol {aTol}";
                 anOracle.Same((int)aNC.State(), (int)aPC.State(), aPWhat + " State");
                 anOracle.Same(aNC.Rejected(), aPC.Rejected(), aPWhat + " Rejected");
-                anOracle.Same(aNC.IsOnAFace(), aPC.IsOnAFace(), aPWhat + " IsOnAFace");
+                anOracle.Same(aNC.IsOnAFace(), aPC.IsOnAFace, aPWhat + " IsOnAFace");
                 using (N.TopoDS_Face aNF = aNC.Face())
                 {
                     anOracle.Same(ClassificationScenes.NativeIndex(aFaces, aNF), ClassificationScenes.PortIndex(aFaces, aPC.Face()), aPWhat + " Face");
@@ -76,7 +77,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             using (var aNP = Oracle.ToNative(aFirst))
             using (var aNC2 = new N.BRepClass3d_SolidClassifier(aShape.N, aNP, 1e-7))
             {
-                var aPC2 = new BRepClass3d_SolidClassifier(aShape.P, aFirst, 1e-7);
+                var aPC2 = new SolidClassifier(aShape.P, aFirst, 1e-7);
                 anOracle.Same((int)aNC2.State(), (int)aPC2.State(), aWhat + " constructor State");
             }
 

@@ -8,6 +8,7 @@ using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Engine.Geometry.Bvh;
 
+using Kerf.Engine.Intersection.Patches;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -34,13 +35,13 @@ public class IntPatch_PolyhedronTest
     public void DefaultConstructor_ProducesValidMesh()
     {
         SurfaceAdaptor aSurf = makeSphere();
-        IntPatch_Polyhedron aPoly = new(aSurf);
+        Polyhedron aPoly = new(aSurf);
 
         aPoly.Size(out int nbU, out int nbV);
         Assert.True(nbU > 0);
         Assert.True(nbV > 0);
-        Assert.True(aPoly.NbTriangles() > 0);
-        Assert.True(aPoly.NbPoints() > 0);
+        Assert.True(aPoly.TriangleCount > 0);
+        Assert.True(aPoly.PointCount > 0);
     }
 
     // Regression test for bug #51: zero nbu/nbv must not cause division-by-zero.
@@ -50,11 +51,11 @@ public class IntPatch_PolyhedronTest
     {
         SurfaceAdaptor aSurf = makePlane();
 
-        IntPatch_Polyhedron aPoly = new(aSurf, 0, 0);
+        Polyhedron aPoly = new(aSurf, 0, 0);
         aPoly.Size(out int nbU, out int nbV);
         Assert.True(nbU >= 1);
         Assert.True(nbV >= 1);
-        Assert.True(aPoly.NbTriangles() > 0);
+        Assert.True(aPoly.TriangleCount > 0);
     }
 
     // Small subdivision values should work normally.
@@ -62,12 +63,12 @@ public class IntPatch_PolyhedronTest
     public void SmallSubdivision_ProducesValidMesh()
     {
         SurfaceAdaptor aSurf = makePlane();
-        IntPatch_Polyhedron aPoly = new(aSurf, 2, 2);
+        Polyhedron aPoly = new(aSurf, 2, 2);
 
         aPoly.Size(out int nbU, out int nbV);
         Assert.Equal(2, nbU);
         Assert.Equal(2, nbV);
-        Assert.Equal(2 * 2 * 2, aPoly.NbTriangles());
+        Assert.Equal(2 * 2 * 2, aPoly.TriangleCount);
     }
 
     // Regression test for bug #53: TriConnex must not crash when Pedge == 0.
@@ -75,7 +76,7 @@ public class IntPatch_PolyhedronTest
     public void TriConnex_PedgeZero_NoCrash()
     {
         SurfaceAdaptor aSurf = makeSphere();
-        IntPatch_Polyhedron aPoly = new(aSurf, 4, 4);
+        Polyhedron aPoly = new(aSurf, 4, 4);
 
         // Get a valid triangle and pivot point.
         aPoly.Triangle(1, out int aP1, out _, out _);
@@ -91,7 +92,7 @@ public class IntPatch_PolyhedronTest
     public void TriConnex_AllVertices_NoCrash()
     {
         SurfaceAdaptor aSurf = makeSphere();
-        IntPatch_Polyhedron aPoly = new(aSurf, 3, 3);
+        Polyhedron aPoly = new(aSurf, 3, 3);
 
         aPoly.Triangle(1, out int aP1, out int aP2, out int aP3);
 
@@ -130,12 +131,12 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 10;
         const int aNbV = 10;
 
-        IntPatch_Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_PolyhedronBVH aBVH = new(aPoly);
+        Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
+        PolyhedronBvh aBVH = new(aPoly);
 
-        Assert.True(aBVH.IsInitialized());
+        Assert.True(aBVH.IsInitialized);
         Assert.True(aBVH.Size() > 0);
-        Assert.True(aBVH.Size() <= IntPatch_PolyhedronTool.NbTriangles(aPoly));
+        Assert.True(aBVH.Size() <= PolyhedronTool.NbTriangles(aPoly));
     }
 
     // Test that Box() returns valid bounding boxes
@@ -145,8 +146,8 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 5;
         const int aNbV = 5;
 
-        IntPatch_Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_PolyhedronBVH aBVH = new(aPoly);
+        Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
+        PolyhedronBvh aBVH = new(aPoly);
 
         // Check that all boxes are valid
         for (int i = 0; i < aBVH.Size(); ++i)
@@ -163,11 +164,11 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 5;
         const int aNbV = 5;
 
-        IntPatch_Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_PolyhedronBVH aBVH = new(aPoly);
+        Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
+        PolyhedronBvh aBVH = new(aPoly);
 
         // Check that centroids are within the overall bounding box
-        Box aBounding = IntPatch_PolyhedronTool.Bounding(aPoly);
+        Box aBounding = PolyhedronTool.Bounding(aPoly);
         aBounding.Get(out double aXmin, out double aYmin, out double aZmin, out double aXmax, out double aYmax,
                       out double aZmax);
 
@@ -193,11 +194,11 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 5;
         const int aNbV = 5;
 
-        IntPatch_Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_PolyhedronBVH aBVH = new(aPoly);
+        Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
+        PolyhedronBvh aBVH = new(aPoly);
 
         int aNbTri = aBVH.Size();
-        int aNbPolyTri = IntPatch_PolyhedronTool.NbTriangles(aPoly);
+        int aNbPolyTri = PolyhedronTool.NbTriangles(aPoly);
 
         // Before BVH build, indices should be sequential
         for (int i = 0; i < aNbTri; ++i)
@@ -227,13 +228,13 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 10;
         const int aNbV = 10;
 
-        IntPatch_Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_Polyhedron aPoly2 = new(myCylAdaptor, aNbU, aNbV);
+        Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
+        Polyhedron aPoly2 = new(myCylAdaptor, aNbU, aNbV);
 
-        IntPatch_PolyhedronBVH aSet1 = new(aPoly1);
-        IntPatch_PolyhedronBVH aSet2 = new(aPoly2);
+        PolyhedronBvh aSet1 = new(aPoly1);
+        PolyhedronBvh aSet2 = new(aPoly2);
 
-        IntPatch_BVHTraversal aTraversal = new();
+        BvhTraversal aTraversal = new();
         int aNbPairs = aTraversal.Perform(aSet1, aSet2, false);
 
         // The sphere and cylinder should have some overlapping triangles
@@ -241,12 +242,12 @@ public class IntPatch_PolyhedronBVHTest
         Assert.Equal(aNbPairs, aTraversal.Pairs().Size());
 
         // Verify all pairs have valid indices
-        foreach (IntPatch_BVHTraversal.TrianglePair aPair in aTraversal.Pairs())
+        foreach (BvhTraversal.TrianglePair aPair in aTraversal.Pairs())
         {
             Assert.True(aPair.First >= 1);
-            Assert.True(aPair.First <= IntPatch_PolyhedronTool.NbTriangles(aPoly1));
+            Assert.True(aPair.First <= PolyhedronTool.NbTriangles(aPoly1));
             Assert.True(aPair.Second >= 1);
-            Assert.True(aPair.Second <= IntPatch_PolyhedronTool.NbTriangles(aPoly2));
+            Assert.True(aPair.Second <= PolyhedronTool.NbTriangles(aPoly2));
         }
     }
 
@@ -257,14 +258,14 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 5;
         const int aNbV = 5;
 
-        IntPatch_Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_PolyhedronBVH aSet = new(aPoly);
+        Polyhedron aPoly = new(mySphereAdaptor, aNbU, aNbV);
+        PolyhedronBvh aSet = new(aPoly);
 
-        IntPatch_BVHTraversal aTraversal = new();
+        BvhTraversal aTraversal = new();
         aTraversal.Perform(aSet, aSet, true); // self-interference mode
 
         // In self-interference mode, First < Second for all pairs
-        foreach (IntPatch_BVHTraversal.TrianglePair aPair in aTraversal.Pairs())
+        foreach (BvhTraversal.TrianglePair aPair in aTraversal.Pairs())
         {
             Assert.True(aPair.First < aPair.Second, "Self-interference should have First < Second");
         }
@@ -277,17 +278,17 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 10;
         const int aNbV = 10;
 
-        IntPatch_Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_Polyhedron aPoly2 = new(myCylAdaptor, aNbU, aNbV);
+        Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
+        Polyhedron aPoly2 = new(myCylAdaptor, aNbU, aNbV);
 
         // Create interference and check it completes without error
-        IntPatch_InterferencePolyhedron anInterf = new(aPoly1, aPoly2);
+        InterferencePolyhedron anInterf = new(aPoly1, aPoly2);
 
         // The result should have some section points or lines
         // (exact number depends on geometry, just verify it runs)
-        int aNbPoints = anInterf.NbSectionPoints();
-        int aNbLines = anInterf.NbSectionLines();
-        int aNbZones = anInterf.NbTangentZones();
+        int aNbPoints = anInterf.SectionPointCount;
+        int aNbLines = anInterf.SectionLineCount;
+        int aNbZones = anInterf.TangentZoneCount;
 
         // At least some intersection should be found
         Assert.True(aNbPoints > 0 || aNbLines > 0 || aNbZones > 0, "Expected some intersection results");
@@ -305,13 +306,13 @@ public class IntPatch_PolyhedronBVHTest
         const int aNbU = 5;
         const int aNbV = 5;
 
-        IntPatch_Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
-        IntPatch_Polyhedron aPoly2 = new(aPlaneAdaptor, aNbU, aNbV);
+        Polyhedron aPoly1 = new(mySphereAdaptor, aNbU, aNbV);
+        Polyhedron aPoly2 = new(aPlaneAdaptor, aNbU, aNbV);
 
-        IntPatch_PolyhedronBVH aSet1 = new(aPoly1);
-        IntPatch_PolyhedronBVH aSet2 = new(aPoly2);
+        PolyhedronBvh aSet1 = new(aPoly1);
+        PolyhedronBvh aSet2 = new(aPoly2);
 
-        IntPatch_BVHTraversal aTraversal = new();
+        BvhTraversal aTraversal = new();
         int aNbPairs = aTraversal.Perform(aSet1, aSet2, false);
 
         // Far-away surfaces should have no overlapping boxes

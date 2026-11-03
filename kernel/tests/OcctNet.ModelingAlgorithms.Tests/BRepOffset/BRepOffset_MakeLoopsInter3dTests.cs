@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -21,9 +24,9 @@ public class BRepOffset_MakeLoopsInter3dTests
 {
     private static Face Square(double theZ)
     {
-        BRepBuilderAPI_MakePolygon aPoly = new(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ),
+        MakePolygon aPoly = new(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ),
                                                new Point3D(10, 10, theZ), new Point3D(0, 10, theZ), true);
-        Face aFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face();
+        Face aFace = new MakeFace(aPoly.Wire(), true).Face();
         return ShapeCasts.Face(BrepTools.ExactCopyForWrite(aFace, out _));
     }
 
@@ -43,7 +46,7 @@ public class BRepOffset_MakeLoopsInter3dTests
     public void MakeLoops_Build_RebuildsTheFaceFromItsEdges()
     {
         Face aF = Square(0);
-        BRepAlgo_AsDes anAsDes = new();
+        AsDes anAsDes = new();
         for (Explorer anExp = new(aF.Oriented(Forward), ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge anE = ShapeCasts.Edge(anExp.Current());
@@ -55,9 +58,9 @@ public class BRepOffset_MakeLoopsInter3dTests
 
         NCollection_List<Shape> aLF = new();
         aLF.Append(aF);
-        BRepAlgo_Image anImage = new();
-        BRepOffset_MakeLoops aMakeLoops = new();
-        aMakeLoops.Build(aLF, anAsDes, anImage, new BRepAlgo_Image(), new ProgressRange());
+        ShapeImage anImage = new();
+        OffsetMakeLoops aMakeLoops = new();
+        aMakeLoops.Build(aLF, anAsDes, anImage, new ShapeImage(), new ProgressRange());
 
         Assert.True(anImage.HasImage(aF));
         NCollection_List<Shape> aNF = anImage.Image(aF);
@@ -70,7 +73,7 @@ public class BRepOffset_MakeLoopsInter3dTests
         }
 
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(aNF.First(), aProps);
+        MassPropertiesBuilder.SurfaceProperties(aNF.First(), aProps);
         Assert.Equal(100.0, aProps.Mass(), 1.0e-9);
     }
 
@@ -78,7 +81,7 @@ public class BRepOffset_MakeLoopsInter3dTests
     public void Inter3d_SetDoneIsDone()
     {
         Face aF1 = Square(0), aF2 = Square(1), aF3 = Square(2);
-        BRepOffset_Inter3d anInter = new(new BRepAlgo_AsDes(), Containment.In, 1.0e-7);
+        Inter3d anInter = new(new AsDes(), Containment.In, 1.0e-7);
         Assert.False(anInter.IsDone(aF1, aF2));
         anInter.SetDone(aF1, aF2);
         Assert.True(anInter.IsDone(aF1, aF2));
@@ -92,15 +95,15 @@ public class BRepOffset_MakeLoopsInter3dTests
     public void Inter3d_ContextIntByArc_StoresOrExtendsTheFreeEdges(bool theInSide)
     {
         // The analysed shape doesn't hold the context face: none of its edges has ancestors.
-        BRepOffset_Analyse anAnalyse = new(new BRepPrimAPI_MakeBox(1, 1, 1).Shape(), 0.01);
+        Analyse anAnalyse = new(new MakeBox(1, 1, 1).Shape(), 0.01);
         Face aCF = Square(5);
         NCollection_IndexedMap<Shape> aContext = new(ShapeHasher.Instance);
         aContext.Add(aCF);
 
-        BRepAlgo_AsDes anAsDes = new();
-        BRepAlgo_Image anInitOffsetEdge = new();
-        BRepOffset_Inter3d anInter = new(anAsDes, Containment.In, 1.0e-7);
-        anInter.ContextIntByArc(aContext, theInSide, anAnalyse, new BRepAlgo_Image(), anInitOffsetEdge,
+        AsDes anAsDes = new();
+        ShapeImage anInitOffsetEdge = new();
+        Inter3d anInter = new(anAsDes, Containment.In, 1.0e-7);
+        anInter.ContextIntByArc(aContext, theInSide, anAnalyse, new ShapeImage(), anInitOffsetEdge,
                                 new ProgressRange());
 
         Assert.True(anInter.TouchedFaces().Contains(aCF));

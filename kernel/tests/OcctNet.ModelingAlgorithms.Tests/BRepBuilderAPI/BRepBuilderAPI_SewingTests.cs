@@ -2,6 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -17,9 +20,9 @@ public class BRepBuilderAPI_SewingTest
     [Fact]
     public void SewTwoFaces()
     {
-        var aBoxMaker = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aBoxMaker = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         var anExp = new Explorer(aBox, ShapeType.Face);
         Assert.True(anExp.More());
@@ -28,7 +31,7 @@ public class BRepBuilderAPI_SewingTest
         Assert.True(anExp.More());
         Face aFace2 = ShapeCasts.Face(anExp.Current());
 
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         aSewing.Add(aFace1);
         aSewing.Add(aFace2);
         aSewing.Perform();
@@ -40,9 +43,9 @@ public class BRepBuilderAPI_SewingTest
     [Fact]
     public void NbFreeEdges()
     {
-        var aBoxMaker = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aBoxMaker = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         var anExp = new Explorer(aBox, ShapeType.Face);
         Assert.True(anExp.More());
@@ -51,21 +54,21 @@ public class BRepBuilderAPI_SewingTest
         Assert.True(anExp.More());
         Face aFace2 = ShapeCasts.Face(anExp.Current());
 
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         aSewing.Add(aFace1);
         aSewing.Add(aFace2);
         aSewing.Perform();
 
         // Two faces from a box share one edge; the remaining edges are free.
-        Assert.True(aSewing.NbFreeEdges() > 0);
+        Assert.True(aSewing.FreeEdgeCount > 0);
     }
 
     [Fact]
     public void NbDegeneratedShapes()
     {
-        var aBoxMaker = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aBoxMaker = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         var anExp = new Explorer(aBox, ShapeType.Face);
         Assert.True(anExp.More());
@@ -74,19 +77,19 @@ public class BRepBuilderAPI_SewingTest
         Assert.True(anExp.More());
         Face aFace2 = ShapeCasts.Face(anExp.Current());
 
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         aSewing.Add(aFace1);
         aSewing.Add(aFace2);
         aSewing.Perform();
 
         // Planar faces should have no degenerated shapes.
-        Assert.Equal(0, aSewing.NbDegeneratedShapes());
+        Assert.Equal(0, aSewing.DegeneratedShapeCount);
     }
 
     [Fact]
     public void SetTolerance()
     {
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         const double aTol = 0.01;
         aSewing.SetTolerance(aTol);
         Assert.Equal(aTol, aSewing.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -95,11 +98,11 @@ public class BRepBuilderAPI_SewingTest
     [Fact]
     public void SewAllBoxFaces()
     {
-        var aBoxMaker = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aBoxMaker = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
             aSewing.Add(anExp.Current());
@@ -110,7 +113,7 @@ public class BRepBuilderAPI_SewingTest
         Assert.False(aResult.IsNull);
 
         // All 6 faces of a box form a closed shell, so there should be no free edges.
-        Assert.Equal(0, aSewing.NbFreeEdges());
+        Assert.Equal(0, aSewing.FreeEdgeCount);
     }
 }
 
@@ -145,17 +148,17 @@ public class BRepBuilderAPI_SewingTests
     // The faces of a box, each copied apart so that no two share an edge or a vertex.
     private static List<Shape> ExplodedBox(double theDx = 10.0)
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(theDx, theDx, theDx).Shape();
+        Shape aBox = new MakeBox(theDx, theDx, theDx).Shape();
         var aFaces = new List<Shape>();
         for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            aFaces.Add(new BRepBuilderAPI_Copy(anExp.Current()).Shape());
+            aFaces.Add(new Copy(anExp.Current()).Shape());
         }
         return aFaces;
     }
 
     private static Face Rect(double theX0, double theX1, double theY0, double theY1) =>
-        new BRepBuilderAPI_MakeFace(new Plane3D(), theX0, theX1, theY0, theY1).Face();
+        new MakeFace(new Plane3D(), theX0, theX1, theY0, theY1).Face();
 
     [Fact]
     public void Exploded_box_faces_are_sewn_into_a_closed_shell_and_the_inputs_are_not_written()
@@ -163,7 +166,7 @@ public class BRepBuilderAPI_SewingTests
         List<Shape> aFaces = ExplodedBox();
         var aSnaps = aFaces.Select(f => ShapeSnapshot.Of(f)).ToList();
 
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-6);
+        var aSewing = new Sewing(1.0e-6);
         foreach (Shape aF in aFaces)
         {
             aSewing.Add(aF);
@@ -177,10 +180,10 @@ public class BRepBuilderAPI_SewingTests
         Assert.Equal(6, Count(aResult, ShapeType.Face));
         Assert.Equal(12, Count(aResult, ShapeType.Edge));
         Assert.Equal(8, Count(aResult, ShapeType.Vertex));
-        Assert.Equal(0, aSewing.NbFreeEdges());
-        Assert.Equal(12, aSewing.NbContigousEdges());
-        Assert.Equal(0, aSewing.NbMultipleEdges());
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.Equal(0, aSewing.FreeEdgeCount);
+        Assert.Equal(12, aSewing.ContigousEdgeCount);
+        Assert.Equal(0, aSewing.MultipleEdgeCount);
+        Assert.True(new Analyzer(aResult).IsValid());
 
         for (int i = 0; i < aFaces.Count; i++)
         {
@@ -193,7 +196,7 @@ public class BRepBuilderAPI_SewingTests
         }
 
         // Each contiguous edge has two sections, each a caller's edge, bound to it.
-        for (int i = 1; i <= aSewing.NbContigousEdges(); i++)
+        for (int i = 1; i <= aSewing.ContigousEdgeCount; i++)
         {
             Assert.Equal(2, aSewing.ContigousEdgeCouple(i).Count);
             Edge anEdge = aSewing.ContigousEdge(i);
@@ -205,9 +208,9 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void Faces_already_sharing_their_edges_are_kept_as_the_callers()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(10.0, 10.0, 10.0).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         var aFaces = new List<Shape>();
         for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -238,26 +241,26 @@ public class BRepBuilderAPI_SewingTests
         Face aF1 = Rect(0.0, 1.0, 0.0, 1.0);
         Face aF2 = Rect(1.0 + 1.0e-4, 2.0, 0.0, 1.0);
 
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-3);
+        var aSewing = new Sewing(1.0e-3);
         aSewing.Add(aF1);
         aSewing.Add(aF2);
         aSewing.Perform();
         Assert.Equal(ShapeType.Shell, aSewing.SewedShape().ShapeType());
-        Assert.Equal(1, aSewing.NbContigousEdges());
-        Assert.Equal(6, aSewing.NbFreeEdges());
+        Assert.Equal(1, aSewing.ContigousEdgeCount);
+        Assert.Equal(6, aSewing.FreeEdgeCount);
         // The vertices at the gap are merged: their tolerance covers half the gap.
         Edge aCommon = aSewing.ContigousEdge(1);
         Exploration.Vertices(aCommon, out Vertex aV1, out Vertex aV2);
         Assert.True(Tool.Tolerance(aV1) >= 0.5e-4);
         Assert.True(Tool.Tolerance(aV2) >= 0.5e-4);
 
-        var aTight = new BRepBuilderAPI_Sewing(1.0e-6);
+        var aTight = new Sewing(1.0e-6);
         aTight.Add(aF1);
         aTight.Add(aF2);
         aTight.Perform();
         Assert.Equal(ShapeType.Compound, aTight.SewedShape().ShapeType());
-        Assert.Equal(0, aTight.NbContigousEdges());
-        Assert.Equal(8, aTight.NbFreeEdges());
+        Assert.Equal(0, aTight.ContigousEdgeCount);
+        Assert.Equal(8, aTight.FreeEdgeCount);
         // Nothing was sewn: the faces are the caller's.
         Assert.True(aTight.Modified(aF1).IsSame(aF1));
         Assert.True(aTight.FreeEdge(1).TShape()!.IsFrozen);
@@ -283,7 +286,7 @@ public class BRepBuilderAPI_SewingTests
         }
         Assert.False(aTop.IsNull);
 
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-6);
+        var aSewing = new Sewing(1.0e-6);
         aSewing.Add(aA);
         aSewing.Add(aB);
         aSewing.Add(aC);
@@ -292,9 +295,9 @@ public class BRepBuilderAPI_SewingTests
         Shape aResult = aSewing.SewedShape();
         Assert.Equal(ShapeType.Shell, aResult.ShapeType());
         Assert.Equal(3, Count(aResult, ShapeType.Face));
-        Assert.Equal(3, aSewing.NbContigousEdges());
-        Assert.Equal(7, aSewing.NbFreeEdges());
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.Equal(3, aSewing.ContigousEdgeCount);
+        Assert.Equal(7, aSewing.FreeEdgeCount);
+        Assert.True(new Analyzer(aResult).IsValid());
 
         // OCCT: EdgeRegularity clears the merged edges before CreateOutputInformations reads them, so after sewing no
         // section is bound to its boundary (occt-issues.md, 6S).
@@ -304,20 +307,20 @@ public class BRepBuilderAPI_SewingTests
 
         // Analysis only (no sewn shape): the two contiguous edges along y = 0 each have a section of A's edge, bound
         // to it.
-        var anAnalysis = new BRepBuilderAPI_Sewing(1.0e-6, false);
+        var anAnalysis = new Sewing(1.0e-6, false);
         anAnalysis.Add(aA);
         anAnalysis.Add(aB);
         anAnalysis.Add(aC);
         anAnalysis.Perform();
         Assert.True(anAnalysis.SewedShape().IsNull);
-        Assert.Equal(3, anAnalysis.NbContigousEdges());
+        Assert.Equal(3, anAnalysis.ContigousEdgeCount);
         Assert.Equal(2, NbBoundSections(anAnalysis, aTop, aA));
     }
 
-    private static int NbBoundSections(BRepBuilderAPI_Sewing theSewing, in Edge theBound, in Face theFace)
+    private static int NbBoundSections(Sewing theSewing, in Edge theBound, in Face theFace)
     {
         int aNbBound = 0;
-        for (int i = 1; i <= theSewing.NbContigousEdges(); i++)
+        for (int i = 1; i <= theSewing.ContigousEdgeCount; i++)
         {
             foreach (Shape aSec in theSewing.ContigousEdgeCouple(i))
             {
@@ -336,43 +339,43 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void The_degenerated_edge_of_a_cone_is_reported()
     {
-        Shape aCone = new BRepPrimAPI_MakeCone(2.0, 0.0, 3.0).Shape();
-        var aSewing = new BRepBuilderAPI_Sewing();
+        Shape aCone = new ApiMakeCone(2.0, 0.0, 3.0).Shape();
+        var aSewing = new Sewing();
         for (var anExp = new Explorer(aCone, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            aSewing.Add(new BRepBuilderAPI_Copy(anExp.Current()).Shape());
+            aSewing.Add(new Copy(anExp.Current()).Shape());
         }
         aSewing.Perform();
-        Assert.True(aSewing.NbDegeneratedShapes() >= 1);
+        Assert.True(aSewing.DegeneratedShapeCount >= 1);
         Assert.True(Tool.Degenerated(ShapeCasts.Edge(aSewing.DegeneratedShape(1))));
-        Assert.Equal(0, aSewing.NbFreeEdges());
-        Assert.True(new BRepCheck_Analyzer(aSewing.SewedShape()).IsValid());
+        Assert.Equal(0, aSewing.FreeEdgeCount);
+        Assert.True(new Analyzer(aSewing.SewedShape()).IsValid());
     }
 
     [Fact]
     public void Analysis_only_finds_free_edges_without_a_sewn_shape()
     {
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-6, false, false);
+        var aSewing = new Sewing(1.0e-6, false, false);
         foreach (Shape aF in ExplodedBox())
         {
             aSewing.Add(aF);
         }
         aSewing.Perform();
         Assert.True(aSewing.SewedShape().IsNull);
-        Assert.Equal(0, aSewing.NbFreeEdges());
-        Assert.Equal(12, aSewing.NbContigousEdges());
+        Assert.Equal(0, aSewing.FreeEdgeCount);
+        Assert.Equal(12, aSewing.ContigousEdgeCount);
         // An open box: the edges around the missing face are free.
         List<Shape> aFive = ExplodedBox();
         aFive.RemoveAt(0);
-        var anOpen = new BRepBuilderAPI_Sewing(1.0e-6, false, false);
+        var anOpen = new Sewing(1.0e-6, false, false);
         foreach (Shape aF in aFive)
         {
             anOpen.Add(aF);
         }
         anOpen.Perform();
-        Assert.Equal(4, anOpen.NbFreeEdges());
-        Assert.Equal(8, anOpen.NbContigousEdges());
-        for (int i = 1; i <= anOpen.NbFreeEdges(); i++)
+        Assert.Equal(4, anOpen.FreeEdgeCount);
+        Assert.Equal(8, anOpen.ContigousEdgeCount);
+        for (int i = 1; i <= anOpen.FreeEdgeCount; i++)
         {
             Assert.True(anOpen.FreeEdge(i).TShape()!.IsFrozen);
         }
@@ -381,7 +384,7 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void Init_and_Load_clear_the_results_and_the_options_keep_their_defaults()
     {
-        var aSewing = new BRepBuilderAPI_Sewing(1.0e-8);
+        var aSewing = new Sewing(1.0e-8);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSewing.Tolerance());
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSewing.MinTolerance());
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aSewing.MaxTolerance());
@@ -404,7 +407,7 @@ public class BRepBuilderAPI_SewingTests
         Assert.False(aSewing.SewedShape().IsNull);
         aSewing.Load(new Shape());
         Assert.True(aSewing.SewedShape().IsNull);
-        Assert.Equal(0, aSewing.NbContigousEdges());
+        Assert.Equal(0, aSewing.ContigousEdgeCount);
 
         var aWriter = new StringWriter();
         aSewing.Dump(aWriter);
@@ -414,7 +417,7 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void A_sewn_shape_can_be_sewn_again()
     {
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         foreach (Shape aF in ExplodedBox())
         {
             aSewing.Add(aF);
@@ -422,7 +425,7 @@ public class BRepBuilderAPI_SewingTests
         aSewing.Perform();
         Shape aShell = aSewing.SewedShape();
 
-        var anAgain = new BRepBuilderAPI_Sewing();
+        var anAgain = new Sewing();
         anAgain.Add(aShell);
         anAgain.Perform();
         // A new shell (BRepTools_Quilt builds its shells), holding the same faces.
@@ -443,19 +446,19 @@ public class BRepBuilderAPI_SewingTests
         // Ported callers pass shapes they built themselves (unfrozen): no copy is made, and the internal forms hand
         // the result out without freezing it.
         var aFaces = new List<Shape>();
-        var aMaker = new BRepBuilderAPI_MakeFace(new Plane3D(), 0.0, 1.0, 0.0, 1.0);
+        var aMaker = new MakeFace(new Plane3D(), 0.0, 1.0, 0.0, 1.0);
         aFaces.Add(aMaker.InternalFace());
-        aMaker = new BRepBuilderAPI_MakeFace(new Plane3D(), 1.0, 2.0, 0.0, 1.0);
+        aMaker = new MakeFace(new Plane3D(), 1.0, 2.0, 0.0, 1.0);
         aFaces.Add(aMaker.InternalFace());
         Assert.False(aFaces[0].TShape()!.IsFrozen);
 
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         aSewing.Add(aFaces[0]);
         aSewing.Add(aFaces[1]);
         aSewing.Perform();
         Shape aResult = aSewing.InternalSewedShape();
         Assert.False(aResult.TShape()!.IsFrozen);
-        Assert.Equal(1, aSewing.NbContigousEdges());
+        Assert.Equal(1, aSewing.ContigousEdgeCount);
         Assert.False(aSewing.InternalFreeEdge(1).TShape()!.IsFrozen);
     }
 
@@ -474,10 +477,10 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void FastSewing_joins_patches_along_their_common_boundary()
     {
-        var aFast = new BRepBuilderAPI_FastSewing(1.0e-6);
+        var aFast = new FastSewing(1.0e-6);
         Assert.True(aFast.Add(Patch(0.0, 1.0, 0.0, 1.0)));
         Assert.True(aFast.Add(Patch(1.0, 2.0, 0.0, 1.0)));
-        Face aFace = new BRepBuilderAPI_MakeFace(Patch(0.0, 1.0, 1.0, 2.0), 1.0e-6).Face();
+        Face aFace = new MakeFace(Patch(0.0, 1.0, 1.0, 2.0), 1.0e-6).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         Assert.True(aFast.Add(aFace));
         aFast.Perform();
@@ -489,7 +492,7 @@ public class BRepBuilderAPI_SewingTests
         Assert.Equal(3, Count(aResult, ShapeType.Face));
         Assert.Equal(10, Count(aResult, ShapeType.Edge));
         Assert.Equal(8, Count(aResult, ShapeType.Vertex));
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
         aSnap.AssertUnchanged(aFace);
 
         var aWriter = new StringWriter();
@@ -500,17 +503,17 @@ public class BRepBuilderAPI_SewingTests
     [Fact]
     public void FastSewing_reports_what_it_cannot_sew()
     {
-        var aFast = new BRepBuilderAPI_FastSewing();
+        var aFast = new FastSewing();
         aFast.Perform();
-        Assert.Equal((uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_EmptyInput, aFast.GetStatuses());
+        Assert.Equal((uint)FastSewing.FS_Statuses.FS_EmptyInput, aFast.GetStatuses());
 
         Assert.False(aFast.Add(new PlaneSurface(new Plane3D())));
         Assert.False(aFast.Add(new TrimmedSurface(new PlaneSurface(new Plane3D()), 0.0, 1.0, 0.0, 1.0)));
         Assert.False(aFast.Add((Surface?)null));
         uint aStatus = aFast.GetStatuses();
-        Assert.NotEqual(0u, aStatus & (uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_InfiniteSurface);
-        Assert.NotEqual(0u, aStatus & (uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_NotNaturalBoundsFace);
-        Assert.NotEqual(0u, aStatus & (uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_FaceWithNullSurface);
+        Assert.NotEqual(0u, aStatus & (uint)FastSewing.FS_Statuses.FS_InfiniteSurface);
+        Assert.NotEqual(0u, aStatus & (uint)FastSewing.FS_Statuses.FS_NotNaturalBoundsFace);
+        Assert.NotEqual(0u, aStatus & (uint)FastSewing.FS_Statuses.FS_FaceWithNullSurface);
 
         var aWriter = new StringWriter();
         aFast.GetStatuses(aWriter);
@@ -527,10 +530,10 @@ public class BRepBuilderAPI_SewingTests
         aPoles[2, 1] = new Point3D(1.0, 0.0, 0.0);
         aPoles[1, 2] = new Point3D(0.0, 0.0, 0.0);
         aPoles[2, 2] = new Point3D(1.0, 1.0, 0.0);
-        var aFast = new BRepBuilderAPI_FastSewing();
+        var aFast = new FastSewing();
         Assert.True(aFast.Add(new BezierSurface(aPoles)));
         aFast.Perform();
-        Assert.NotEqual(0u, aFast.GetStatuses() & (uint)BRepBuilderAPI_FastSewing.FS_Statuses.FS_Degenerated);
+        Assert.NotEqual(0u, aFast.GetStatuses() & (uint)FastSewing.FS_Statuses.FS_Degenerated);
         Assert.Equal(1, Count(aFast.GetResult(), ShapeType.Face));
     }
 }

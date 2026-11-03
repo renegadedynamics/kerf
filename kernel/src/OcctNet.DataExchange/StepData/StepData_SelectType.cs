@@ -296,7 +296,7 @@ public abstract class StepData_SelectType
     {
         if (thevalue is not StepData_SelectMember sm)
         {
-            return StepData_LUnknown;
+            return StepData_Logical.StepData_LUnknown;
         }
         return sm.Logical();
     }

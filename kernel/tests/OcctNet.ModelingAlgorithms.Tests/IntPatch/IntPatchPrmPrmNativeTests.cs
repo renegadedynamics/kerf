@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Polygons;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using System.Globalization;
 using System.Reflection;
@@ -119,7 +122,7 @@ public class IntPatchPrmPrmNativeTests
     private static void Hex(StringBuilder theOut, double theValue) =>
         theOut.Append(' ').Append(BitConverter.DoubleToUInt64Bits(theValue).ToString("x16", CultureInfo.InvariantCulture));
 
-    private static void RecPnt(StringBuilder theOut, string theTag, int theStatus, in IntSurf_PntOn2S theP)
+    private static void RecPnt(StringBuilder theOut, string theTag, int theStatus, in PntOn2S theP)
     {
         theOut.Append(theTag).Append(' ').Append(theStatus.ToString(CultureInfo.InvariantCulture));
         Hex(theOut, theP.Value().X());
@@ -133,39 +136,39 @@ public class IntPatchPrmPrmNativeTests
         theOut.Append('\n');
     }
 
-    private static void DumpPrmPrm(StringBuilder theOut, IntPatch_PrmPrmIntersection theInt)
+    private static void DumpPrmPrm(StringBuilder theOut, PrmPrmIntersection theInt)
     {
-        theOut.Append("DONE ").Append(theInt.IsDone() ? 1 : 0).Append('\n');
-        if (!theInt.IsDone())
+        theOut.Append("DONE ").Append(theInt.IsDone ? 1 : 0).Append('\n');
+        if (!theInt.IsDone)
         {
             return;
         }
-        theOut.Append(CultureInfo.InvariantCulture, $"EMPTY {(theInt.IsEmpty() ? 1 : 0)} NBLINES {theInt.NbLines()}\n");
-        for (int i = 1; i <= theInt.NbLines(); i++)
+        theOut.Append(CultureInfo.InvariantCulture, $"EMPTY {(theInt.IsEmpty ? 1 : 0)} NBLINES {theInt.LineCount}\n");
+        for (int i = 1; i <= theInt.LineCount; i++)
         {
-            IntPatch_Line aLine = theInt.Line(i);
+            PatchLine aLine = theInt.Line(i);
             theOut.Append(CultureInfo.InvariantCulture,
                           $"LINE {i} TYPE {(int)aLine.ArcType()} TRANS {(int)aLine.TransitionOnS1()} {(int)aLine.TransitionOnS2()}\n");
-            var aWL = (IntPatch_WLine)aLine;
-            theOut.Append(CultureInfo.InvariantCulture, $"NBP {aWL.NbPnts()} NBV {aWL.NbVertex()}\n");
+            var aWL = (WLine)aLine;
+            theOut.Append(CultureInfo.InvariantCulture, $"NBP {aWL.NbPnts()} NBV {aWL.VertexCount}\n");
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
                 RecPnt(theOut, "P", 0, aWL.Point(k));
             }
-            for (int k = 1; k <= aWL.NbVertex(); k++)
+            for (int k = 1; k <= aWL.VertexCount; k++)
             {
-                IntPatch_Point aV = aWL.Vertex(k);
-                theOut.Append("V ").Append(aV.IsOnDomS1() ? 1 : 0).Append(' ').Append(aV.IsOnDomS2() ? 1 : 0);
+                PatchPoint aV = aWL.Vertex(k);
+                theOut.Append("V ").Append(aV.IsOnDomS1 ? 1 : 0).Append(' ').Append(aV.IsOnDomS2 ? 1 : 0);
                 Hex(theOut, aV.ParameterOnLine());
                 RecPnt(theOut, "", 0, aV.PntOn2S());
             }
         }
     }
 
-    private static void DumpSectionPoint(StringBuilder theOut, string theTag, in Intf_SectionPoint theP)
+    private static void DumpSectionPoint(StringBuilder theOut, string theTag, in SectionPoint theP)
     {
-        theP.InfoFirst(out Intf_PIType aT1, out int a1, out int a2, out double p1);
-        theP.InfoSecond(out Intf_PIType aT2, out int a3, out int a4, out double p2);
+        theP.InfoFirst(out PIType aT1, out int a1, out int a2, out double p1);
+        theP.InfoSecond(out PIType aT2, out int a3, out int a4, out double p2);
         theOut.Append(CultureInfo.InvariantCulture, $"{theTag} {(int)aT1} {a1} {a2} {(int)aT2} {a3} {a4}");
         Hex(theOut, p1);
         Hex(theOut, p2);
@@ -176,32 +179,32 @@ public class IntPatchPrmPrmNativeTests
         theOut.Append('\n');
     }
 
-    private static void DumpPolyhedron(StringBuilder theOut, IntPatch_Polyhedron thePoly)
+    private static void DumpPolyhedron(StringBuilder theOut, Polyhedron thePoly)
     {
         thePoly.Size(out int aNbU, out int aNbV);
-        theOut.Append(CultureInfo.InvariantCulture, $"POLY {aNbU} {aNbV} {thePoly.NbTriangles()}");
+        theOut.Append(CultureInfo.InvariantCulture, $"POLY {aNbU} {aNbV} {thePoly.TriangleCount}");
         Hex(theOut, thePoly.DeflectionOverEstimation());
         theOut.Append('\n');
     }
 
-    private static void DumpInterference(StringBuilder theOut, IntPatch_InterferencePolyhedron theIntf)
+    private static void DumpInterference(StringBuilder theOut, InterferencePolyhedron theIntf)
     {
         theOut.Append(CultureInfo.InvariantCulture,
-                      $"INTF {theIntf.NbSectionPoints()} {theIntf.NbSectionLines()} {theIntf.NbTangentZones()}");
+                      $"INTF {theIntf.SectionPointCount} {theIntf.SectionLineCount} {theIntf.TangentZoneCount}");
         Hex(theOut, theIntf.GetTolerance());
         theOut.Append('\n');
-        for (int i = 1; i <= theIntf.NbSectionLines(); i++)
+        for (int i = 1; i <= theIntf.SectionLineCount; i++)
         {
-            Intf_SectionLine aL = theIntf.LineValue(i);
+            SectionLine aL = theIntf.LineValue(i);
             theOut.Append(CultureInfo.InvariantCulture, $"SL {i} {aL.NumberOfPoints()}\n");
             for (int k = 1; k <= aL.NumberOfPoints(); k++)
             {
                 DumpSectionPoint(theOut, "SP", aL.GetPoint(k));
             }
         }
-        for (int i = 1; i <= theIntf.NbTangentZones(); i++)
+        for (int i = 1; i <= theIntf.TangentZoneCount; i++)
         {
-            Intf_TangentZone aZ = theIntf.ZoneValue(i);
+            TangentZone aZ = theIntf.ZoneValue(i);
             theOut.Append(CultureInfo.InvariantCulture, $"TZ {i} {aZ.NumberOfPoints()}\n");
             for (int k = 1; k <= aZ.NumberOfPoints(); k++)
             {
@@ -220,7 +223,7 @@ public class IntPatchPrmPrmNativeTests
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
-        var anInt = new IntPatch_PrmPrmIntersection();
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS1, aD1, aS2, aD2, THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         DumpPrmPrm(theOut, anInt);
     }
@@ -229,12 +232,12 @@ public class IntPatchPrmPrmNativeTests
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
-        var aPoly1 = new IntPatch_Polyhedron(aS1);
-        var aPoly2 = new IntPatch_Polyhedron(aS2);
+        var aPoly1 = new Polyhedron(aS1);
+        var aPoly2 = new Polyhedron(aS2);
         DumpPolyhedron(theOut, aPoly1);
         DumpPolyhedron(theOut, aPoly2);
-        DumpInterference(theOut, new IntPatch_InterferencePolyhedron(aPoly1, aPoly2));
-        var anInt = new IntPatch_PrmPrmIntersection();
+        DumpInterference(theOut, new InterferencePolyhedron(aPoly1, aPoly2));
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS1, aPoly1, aD1, aS2, aD2, THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         DumpPrmPrm(theOut, anInt);
     }
@@ -242,10 +245,10 @@ public class IntPatchPrmPrmNativeTests
     private static void PrmPrmSelf(StringBuilder theOut, Surface theS)
     {
         var (aS, aD) = Domain(theS);
-        var aPoly = new IntPatch_Polyhedron(aS, aD.NbSamplesU(), aD.NbSamplesV());
+        var aPoly = new Polyhedron(aS, aD.NbSamplesU(), aD.NbSamplesV());
         DumpPolyhedron(theOut, aPoly);
-        DumpInterference(theOut, new IntPatch_InterferencePolyhedron(aPoly));
-        var anInt = new IntPatch_PrmPrmIntersection();
+        DumpInterference(theOut, new InterferencePolyhedron(aPoly));
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS, aD, THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         DumpPrmPrm(theOut, anInt);
     }
@@ -258,11 +261,11 @@ public class IntPatchPrmPrmNativeTests
         aD2.SamplePnts(THE_FLECHE, 10, 10);
         theOut.Append(CultureInfo.InvariantCulture,
                       $"SAMPLES {aD1.NbSamplesU()} {aD1.NbSamplesV()} {aD2.NbSamplesU()} {aD2.NbSamplesV()}\n");
-        var anInt = new IntPatch_PrmPrmIntersection();
-        var aLOn2S = new IntSurf_LineOn2S();
+        var anInt = new PrmPrmIntersection();
+        var aLOn2S = new LineOn2S();
         anInt.PointDepart(aLOn2S, aS1, aD1.NbSamplesU(), aD1.NbSamplesV(), aS2, aD2.NbSamplesU(), aD2.NbSamplesV());
-        theOut.Append(CultureInfo.InvariantCulture, $"DEPART {aLOn2S.NbPoints()}\n");
-        for (int k = 1; k <= aLOn2S.NbPoints(); k++)
+        theOut.Append(CultureInfo.InvariantCulture, $"DEPART {aLOn2S.PointCount}\n");
+        for (int k = 1; k <= aLOn2S.PointCount; k++)
         {
             RecPnt(theOut, "D", 0, aLOn2S.Value(k));
         }
@@ -275,7 +278,7 @@ public class IntPatchPrmPrmNativeTests
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
-        var anInt = new IntPatch_PrmPrmIntersection();
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS1, aD1, aS2, aD2, theU1, theV1, theU2, theV2, THE_TOL, THE_TOL, THE_FLECHE, THE_PAS);
         DumpPrmPrm(theOut, anInt);
     }
@@ -284,16 +287,16 @@ public class IntPatchPrmPrmNativeTests
     {
         var (aS1, aD1) = Domain(theS1);
         var (aS2, aD2) = Domain(theS2);
-        var aList = new NCollection_List<IntSurf_PntOn2S>();
-        IntSurf_PntOn2S aP = new();
+        var aList = new NCollection_List<PntOn2S>();
+        PntOn2S aP = new();
         aP.SetValue(0.0, 0.0, 1.0 / 3.0, 0.5);
         aList.Append(aP);
         aP.SetValue(0.3, 0.1, 0.4, 0.55);
         aList.Append(aP);
-        var anInt = new IntPatch_PrmPrmIntersection();
+        var anInt = new PrmPrmIntersection();
         anInt.Perform(aS1, aD1, aS2, aD2, THE_TOL, THE_TOL, THE_FLECHE, THE_PAS, aList);
         theOut.Append(CultureInfo.InvariantCulture, $"LIST {aList.Size()}\n");
-        for (var anIt = new NCollection_List<IntSurf_PntOn2S>.Iterator(aList); anIt.More(); anIt.Next())
+        for (var anIt = new NCollection_List<PntOn2S>.Iterator(aList); anIt.More(); anIt.Next())
         {
             RecPnt(theOut, "L", 0, anIt.Value());
         }
@@ -306,7 +309,7 @@ public class IntPatchPrmPrmNativeTests
     internal static string Run(string theCase)
     {
         var aOut = new StringBuilder();
-        IntWalk_PWalking.ThreadStepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
+        PWalking.s_threadStepTrace = (theStatus, theP) => RecPnt(aOut, "S", (int)theStatus, theP);
         try
         {
             switch (theCase)
@@ -339,7 +342,7 @@ public class IntPatchPrmPrmNativeTests
         }
         finally
         {
-            IntWalk_PWalking.ThreadStepTrace = null;
+            PWalking.s_threadStepTrace = null;
         }
         return aOut.ToString();
     }

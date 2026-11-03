@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -19,13 +23,13 @@ public class ShapeFix_ComposeShellTests
     private const double Conf = 1e-7;
 
     // the plane z = 0, as two patches [0, 1] x [0, 1] and [1, 2] x [0, 1]
-    private static ShapeExtend_CompositeSurface TwoPatches(out PlaneSurface thePlane)
+    private static CompositeSurface TwoPatches(out PlaneSurface thePlane)
     {
         thePlane = new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         var aGrid = new NCollection_HArray2<Surface>(1, 2, 1, 1);
         aGrid.SetValue(1, 1, new TrimmedSurface(thePlane, 0.0, 1.0, 0.0, 1.0));
         aGrid.SetValue(2, 1, new TrimmedSurface(thePlane, 1.0, 2.0, 0.0, 1.0));
-        return new ShapeExtend_CompositeSurface(aGrid);
+        return new CompositeSurface(aGrid);
     }
 
     // the face [0.2, 1.8] x [0.2, 0.8] on the plane, with pcurves
@@ -54,16 +58,16 @@ public class ShapeFix_ComposeShellTests
     [Fact]
     public void Perform_AFrozenFaceAcrossTwoPatches_MakesTwoFaces_TheInputUnchanged()
     {
-        ShapeExtend_CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
+        CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
         Face aFace = TestShapes.Frozen(Rectangle(aPlane));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
-        var aContext = new ShapeBuild_ReShape();
+        var aContext = new ReShapeBuilder();
 
-        var aTool = new ShapeFix_ComposeShell();
+        var aTool = new ComposeShellFixer();
         aTool.Init(aGrid, new Placement(), aFace, Conf);
         aTool.SetContext(aContext);
         Assert.True(aTool.Perform());
-        Assert.True(aTool.Status(ShapeExtend_DONE1));
+        Assert.True(aTool.Status(ExtendStatus.DONE1));
         Shape aResult = aTool.Result();
 
         aSnap.AssertUnchanged(aFace);
@@ -91,10 +95,10 @@ public class ShapeFix_ComposeShellTests
     [Fact]
     public void SplitEdges_RecordsTheSplitsOnly()
     {
-        ShapeExtend_CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
+        CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
         Face aFace = Rectangle(aPlane); // unfrozen: worked in place
-        var aContext = new ShapeBuild_ReShape();
-        var aTool = new ShapeFix_ComposeShell();
+        var aContext = new ReShapeBuilder();
+        var aTool = new ComposeShellFixer();
         aTool.Init(aGrid, new Placement(), aFace, Conf);
         aTool.SetContext(aContext);
         aTool.SplitEdges();
@@ -125,11 +129,11 @@ public class ShapeFix_ComposeShellTests
     [Fact]
     public void Perform_AnUnfrozenFace_KeepsTheUnsplitEdges()
     {
-        ShapeExtend_CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
+        CompositeSurface aGrid = TwoPatches(out PlaneSurface aPlane);
         Face aFace = Rectangle(aPlane);
-        var aTool = new ShapeFix_ComposeShell();
+        var aTool = new ComposeShellFixer();
         aTool.Init(aGrid, new Placement(), aFace, Conf);
-        aTool.SetContext(new ShapeBuild_ReShape());
+        aTool.SetContext(new ReShapeBuilder());
         Assert.True(aTool.Perform());
         Shape aResult = aTool.InternalResult();
         Assert.False(aResult.TShape()!.IsFrozen);
@@ -139,6 +143,6 @@ public class ShapeFix_ComposeShellTests
 
     private static class ShapeFix_FaceTestsAccess
     {
-        public static bool IsValid(in Shape theShape) => new BRepCheck_Analyzer(theShape).IsValid();
+        public static bool IsValid(in Shape theShape) => new Analyzer(theShape).IsValid();
     }
 }

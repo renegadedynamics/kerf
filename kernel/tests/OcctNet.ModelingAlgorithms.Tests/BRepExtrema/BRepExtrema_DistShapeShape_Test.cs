@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -22,13 +24,13 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void BUC60870_EdgeToVertexMinimumDistance()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 1, 0)).Edge();
-        Vertex aVertex = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0.3, 1)).Vertex();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(0, 1, 0)).Edge();
+        Vertex aVertex = new MakeVertex(new Point3D(0, 0.3, 1)).Vertex();
 
-        var aDist = new BRepExtrema_DistShapeShape(anEdge, aVertex, 2.0);
+        var aDist = new DistanceShapeShape(anEdge, aVertex, 2.0);
 
-        Assert.True(aDist.IsDone(), "BRepExtrema_DistShapeShape failed to compute");
-        Assert.True(aDist.NbSolution() >= 1, "Expected at least one solution");
+        Assert.True(aDist.IsDone, "BRepExtrema_DistShapeShape failed to compute");
+        Assert.True(aDist.SolutionCount >= 1, "Expected at least one solution");
 
         const double aTheorDist = 1.0;
         const double aPercentMax = 0.01; // 1% relative tolerance
@@ -41,16 +43,16 @@ public class BRepExtrema_DistShapeShapeTest
     [Fact]
     public void EdgeEdge_Null3DCurve_NoCrash()
     {
-        Edge aEdge1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge aEdge1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
 
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        Edge aEdge2 = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
+        Edge aEdge2 = new MakeEdge(aCircle).InternalEdge();
 
         var aBuilder = new BrepBuilder();
         aBuilder.UpdateEdge(aEdge2, (Curve3D?)null, 1e-7);
         aEdge2.TShape()!.FreezeGraph();
 
-        var aDist = new BRepExtrema_DistShapeShape(aEdge1, aEdge2, 10.0);
+        var aDist = new DistanceShapeShape(aEdge1, aEdge2, 10.0);
         _ = aDist;
     }
 
@@ -61,15 +63,15 @@ public class BRepExtrema_DistShapeShapeTest
     public void EdgeFace_Null3DCurve_NoCrash()
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        Edge aEdge = new BRepBuilderAPI_MakeEdge(aCircle).InternalEdge();
+        Edge aEdge = new MakeEdge(aCircle).InternalEdge();
 
         var aBuilder = new BrepBuilder();
         aBuilder.UpdateEdge(aEdge, (Curve3D?)null, 1e-7);
         aEdge.TShape()!.FreezeGraph();
 
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), -10, 10, -10, 10).Face();
+        Face aFace = new MakeFace(new Plane3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), -10, 10, -10, 10).Face();
 
-        var aDist = new BRepExtrema_DistShapeShape(aEdge, aFace, 10.0);
+        var aDist = new DistanceShapeShape(aEdge, aFace, 10.0);
         _ = aDist;
     }
 }

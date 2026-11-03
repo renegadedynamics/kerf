@@ -44,7 +44,7 @@ internal static class XSDRAWSTEPCommands
     {
         if (!theDI.Files.TryReadBytes(theFile, out byte[] aBytes))
         {
-            return IFSelect_RetError; // the file can not be opened: StepFile_Read gives -1
+            return IFSelect_ReturnStatus.IFSelect_RetError; // the file can not be opened: StepFile_Read gives -1
         }
         using var aStream = new MemoryStream(aBytes);
         return theParams is { } aParams ? theReader.ReadStream(theFile, aParams, aStream) : theReader.ReadStream(theFile, aStream);
@@ -71,7 +71,7 @@ internal static class XSDRAWSTEPCommands
             di.Append(" Model taken from the session : ").Append(fnom).Append("\n");
         }
         di.Append(" -- Names of variables BREP-DRAW prefixed by : ").Append(rnom).Append("\n");
-        IFSelect_ReturnStatus readstat = IFSelect_RetVoid;
+        IFSelect_ReturnStatus readstat = IFSelect_ReturnStatus.IFSelect_RetVoid;
 
         bool fromtcl = false;
         bool aFullMode = false;
@@ -108,10 +108,10 @@ internal static class XSDRAWSTEPCommands
         }
         else if (aSession.NbStartingEntities() > 0)
         {
-            readstat = IFSelect_RetDone;
+            readstat = IFSelect_ReturnStatus.IFSelect_RetDone;
         }
 
-        if (readstat != IFSelect_RetDone)
+        if (readstat != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             if (modfic)
             {
@@ -125,7 +125,7 @@ internal static class XSDRAWSTEPCommands
         }
 
         sr.SetSystemLengthUnit(XSDRAWCommands.GetLengthUnit(theDI));
-        (NCollection_DataMap<string, string> aParameters, ShapeProcess.OperationsFlags aFlags) =
+        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             XSAlgo_ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aSession.Statics());
         sr.SetShapeFixParameters(aParameters);
         sr.SetShapeProcessFlags(aFlags);
@@ -253,7 +253,7 @@ internal static class XSDRAWSTEPCommands
         for (int theIndex = 0; theIndex < aSize; theIndex++)
         {
             var aReader = new STEPControl_Reader(new XSControl_WorkSession(aStatics));
-            (NCollection_DataMap<string, string> aFixParameters, ShapeProcess.OperationsFlags aFlags) =
+            (NCollection_DataMap<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
                 XSAlgo_ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aStatics);
             aReader.SetShapeFixParameters(aFixParameters);
             aReader.SetShapeProcessFlags(aFlags);
@@ -272,7 +272,7 @@ internal static class XSDRAWSTEPCommands
             {
                 aReadStat = ReadFile(theDI, aReader, aFileNames[theIndex], aParameters);
             }
-            if (aReadStat == IFSelect_RetDone)
+            if (aReadStat == IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 aReader.TransferRoots();
                 string aName = aShName;
@@ -360,23 +360,23 @@ internal static class XSDRAWSTEPCommands
         {
             case 'a':
             case '0':
-                mode = STEPControl_AsIs;
+                mode = STEPControl_StepModelType.STEPControl_AsIs;
                 break;
             case 'f':
             case '1':
-                mode = STEPControl_FacetedBrep;
+                mode = STEPControl_StepModelType.STEPControl_FacetedBrep;
                 break;
             case 's':
             case '2':
-                mode = STEPControl_ShellBasedSurfaceModel;
+                mode = STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel;
                 break;
             case 'm':
             case '3':
-                mode = STEPControl_ManifoldSolidBrep;
+                mode = STEPControl_StepModelType.STEPControl_ManifoldSolidBrep;
                 break;
             case 'w':
             case '4':
-                mode = STEPControl_GeometricCurveSet;
+                mode = STEPControl_StepModelType.STEPControl_GeometricCurveSet;
                 break;
             default:
                 di.Append("Error: 1st arg = mode, incorrect [give fsmw]\n");
@@ -392,12 +392,12 @@ internal static class XSDRAWSTEPCommands
         Interface_InterfaceModel? stepmodel = sw.Model();
         int nbavant = stepmodel is null ? 0 : stepmodel.NbEntities();
 
-        (NCollection_DataMap<string, string> aParameters, ShapeProcess.OperationsFlags aFlags) =
+        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             XSAlgo_ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aWS.Statics());
         sw.SetShapeFixParameters(aParameters);
         sw.SetShapeProcessFlags(aFlags);
         IFSelect_ReturnStatus stat = sw.Transfer(shape, mode, true);
-        if (stat == IFSelect_RetDone)
+        if (stat == IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             di.Append("Translation: OK\n");
         }
@@ -432,13 +432,13 @@ internal static class XSDRAWSTEPCommands
         stat = Write(theDI, sw, nomfic);
         switch (stat)
         {
-            case IFSelect_RetVoid:
+            case IFSelect_ReturnStatus.IFSelect_RetVoid:
                 di.Append("Error: No file written\n");
                 return 1;
-            case IFSelect_RetDone:
+            case IFSelect_ReturnStatus.IFSelect_RetDone:
                 di.Append("File ").Append(nomfic).Append(" written\n");
                 break;
-            case IFSelect_RetStop:
+            case IFSelect_ReturnStatus.IFSelect_RetStop:
                 di.Append("Error on writing file: no space on disk or destination is write protected\n");
                 return 1;
             default:
@@ -455,12 +455,12 @@ internal static class XSDRAWSTEPCommands
         StepData_StepModel? aModel = theWriter.Model();
         if (aModel is null)
         {
-            return IFSelect_RetFail;
+            return IFSelect_ReturnStatus.IFSelect_RetFail;
         }
         new APIHeaderSection_MakeHeader().Apply(aModel);
         var aStream = new MemoryStream();
         IFSelect_ReturnStatus aStatus = theWriter.WS()!.SendAll(theFileName, false, aStream);
-        if (aStatus == IFSelect_RetDone || aStream.Length > 0)
+        if (aStatus == IFSelect_ReturnStatus.IFSelect_RetDone || aStream.Length > 0)
         {
             theDI.Files.WriteBytes(theFileName, aStream.ToArray());
         }
@@ -500,12 +500,12 @@ internal static class XSDRAWSTEPCommands
         for (int theIndex = 0; theIndex < aSize; theIndex++)
         {
             var aWriter = new STEPControl_Writer(new XSControl_WorkSession(aStatics));
-            (NCollection_DataMap<string, string> aFixParameters, ShapeProcess.OperationsFlags aFlags) =
+            (NCollection_DataMap<string, string> aFixParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
                 XSAlgo_ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aStatics);
             aWriter.SetShapeFixParameters(aFixParameters);
             aWriter.SetShapeProcessFlags(aFlags);
 
-            if (aWriter.Transfer(aShape, STEPControl_AsIs, aParameters) != IFSelect_RetDone)
+            if (aWriter.Transfer(aShape, STEPControl_StepModelType.STEPControl_AsIs, aParameters) != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 di.Append("Error: Can't transfer input shape");
                 continue;
@@ -521,7 +521,7 @@ internal static class XSDRAWSTEPCommands
             {
                 aStat = Write(theDI, aWriter, aFileNames[theIndex]);
             }
-            if (aStat != IFSelect_RetDone)
+            if (aStat != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 di.Append("Error on writing file: ").Append("[").Append(aFileNames[theIndex]).Append("]");
                 continue;
@@ -540,7 +540,7 @@ internal static class XSDRAWSTEPCommands
         }
         var aStepReader = new STEPControl_Reader(new XSControl_WorkSession(XSDRAWCommands.Session(theDI).Statics()));
         IFSelect_ReturnStatus readstat = ReadFile(theDI, aStepReader, argv[1]);
-        if (readstat != IFSelect_RetDone)
+        if (readstat != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             di.Append("No model loaded\n");
             return 1;

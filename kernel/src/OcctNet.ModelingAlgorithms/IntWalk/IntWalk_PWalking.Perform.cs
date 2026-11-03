@@ -3,174 +3,176 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.IntImp_ConstIsoparametric;
-using static Occt.IntWalk_StatusDeflection;
+using Occt;
+using static Kerf.Engine.Intersection.Implicit.ConstIsoparametric;
+using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Walking;
 
-public partial class IntWalk_PWalking
+public partial class PWalking
 {
     /// <summary>
     /// Walks from ParDep (u1, v1, u2, v2); the box (u1min..v2max) of the expected line sets the initial steps.
     /// </summary>
-    public void Perform(NCollection_Array1<double> ParDep, double u1min, double v1min, double u2min, double v2min,
+    public void Perform(NCollection_Array1<double> parDep, double u1min, double v1min, double u2min, double v2min,
                         double u1max, double v1max, double u2max, double v2max)
     {
-        const double aSQDistMax = 1.0e-14;
+        const double sqDistMax = 1.0e-14;
         // xf
 
-        int NbPasOKConseq = 0;
-        NCollection_Array1<double> Param = new(1, 4);
-        IntImp_ConstIsoparametric ChoixIso;
+        int nbPasOKConseq = 0;
+        NCollection_Array1<double> param = new(1, 4);
+        ConstIsoparametric choixIso;
         // xt
         //
-        done = false;
+        _done = false;
         //
         // Caro1 and Caro2
-        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase caro1 = _intersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase caro2 = _intersectionOn2S.Function().AuxillarSurface2();
         //
-        double UFirst1 = HSurfaceTool.FirstUParameter(Caro1);
-        double VFirst1 = HSurfaceTool.FirstVParameter(Caro1);
-        double ULast1 = HSurfaceTool.LastUParameter(Caro1);
-        double VLast1 = HSurfaceTool.LastVParameter(Caro1);
+        double uFirst1 = HSurfaceTool.FirstUParameter(caro1);
+        double vFirst1 = HSurfaceTool.FirstVParameter(caro1);
+        double uLast1 = HSurfaceTool.LastUParameter(caro1);
+        double vLast1 = HSurfaceTool.LastVParameter(caro1);
 
-        double UFirst2 = HSurfaceTool.FirstUParameter(Caro2);
-        double VFirst2 = HSurfaceTool.FirstVParameter(Caro2);
-        double ULast2 = HSurfaceTool.LastUParameter(Caro2);
-        double VLast2 = HSurfaceTool.LastVParameter(Caro2);
+        double uFirst2 = HSurfaceTool.FirstUParameter(caro2);
+        double vFirst2 = HSurfaceTool.FirstVParameter(caro2);
+        double uLast2 = HSurfaceTool.LastUParameter(caro2);
+        double vLast2 = HSurfaceTool.LastVParameter(caro2);
         //
         ComputePasInit(u1max - u1min, v1max - v1min, u2max - u2min, v2max - v2min);
 
         for (int i = 0; i < 4; ++i)
         {
-            if (pasuv[i] > 10)
+            if (_pasuv[i] > 10)
             {
-                pasuv[i] = 10;
+                _pasuv[i] = 10;
             }
 
-            pasInit[i] = pasSav[i] = pasuv[i];
+            _pasInit[i] = _pasSav[i] = _pasuv[i];
         }
         //
-        line = new IntSurf_LineOn2S();
+        _line = new LineOn2S();
         //
         for (int i = 1; i <= 4; ++i)
         {
-            Param[i] = ParDep[i];
+            param[i] = parDep[i];
         }
         //-- reproduce steps uv connected to surfaces Caro1 and Caro2
         //-- pasuv[] and pasSav[] are modified during the marching
         for (int i = 0; i < 4; ++i)
         {
-            pasSav[i] = pasuv[i] = pasInit[i];
+            _pasSav[i] = _pasuv[i] = _pasInit[i];
         }
 
         //-- calculate the first solution point
-        FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
+        FunctionSetRoot rsnld = new(_intersectionOn2S.Function());
         //
-        ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld);
-        if (!myIntersectionOn2S.IsDone())
+        choixIso = _intersectionOn2S.Perform(param, rsnld);
+        if (!_intersectionOn2S.IsDone)
         {
             return;
         }
 
         //
-        if (myIntersectionOn2S.IsEmpty())
+        if (_intersectionOn2S.IsEmpty)
         {
             return;
         }
         //
-        if (myIntersectionOn2S.IsTangent())
+        if (_intersectionOn2S.IsTangent)
         {
             return;
         }
         //
-        bool Arrive, DejaReparti;
-        const int RejectIndexMAX = 250000;
-        int IncKey, RejectIndex;
+        bool arrive, dejaReparti;
+        const int rejectIndexMAX = 250000;
+        int IncKey, rejectIndex;
         Point3D pf, pl;
         //
-        DejaReparti = false;
+        dejaReparti = false;
         IncKey = 0;
-        RejectIndex = 0;
+        rejectIndex = 0;
         //
-        previousPoint = myIntersectionOn2S.Point();
-        previoustg = false;
-        previousd = myIntersectionOn2S.Direction();
-        previousd1 = myIntersectionOn2S.DirectionOnS1();
-        previousd2 = myIntersectionOn2S.DirectionOnS2();
-        myTangentIdx = 1;
-        tgdir = previousd;
-        firstd1 = previousd1;
-        firstd2 = previousd2;
-        tgfirst = tglast = false;
-        choixIsoSav = ChoixIso;
+        _previousPoint = _intersectionOn2S.Point();
+        _previoustg = false;
+        _previousd = _intersectionOn2S.Direction();
+        _previousd1 = _intersectionOn2S.DirectionOnS1();
+        _previousd2 = _intersectionOn2S.DirectionOnS2();
+        _tangentIdx = 1;
+        _tgdir = _previousd;
+        _firstd1 = _previousd1;
+        _firstd2 = _previousd2;
+        _tgfirst = _tglast = false;
+        _choixIsoSav = choixIso;
         //------------------------------------------------------------
         //-- Test if the first point of marching corresponds
         //-- to a point on borders.
         //-- In this case, DejaReparti is initialized as True
         //--
-        pf = previousPoint.Value();
+        pf = _previousPoint.Value();
         bool bTestFirstPoint = true;
 
-        SetParameters(Param, previousPoint);
+        SetParameters(param, _previousPoint);
 
-        if (IsTangentExtCheck(Caro1, Caro2, Param[1], Param[2], Param[3], Param[4], myTolTang, pasuv))
+        if (IsTangentExtCheck(caro1, caro2, param[1], param[2], param[3], param[4], _tolTang, _pasuv))
         {
             return;
         }
 
-        AddAPoint(previousPoint);
+        AddAPoint(_previousPoint);
         //
-        IntWalk_StatusDeflection aStatus = IntWalk_OK, aPrevStatus = IntWalk_OK;
-        bool NoTestDeflection = false;
-        Span<double> SvParam = stackalloc double[4];
-        Span<double> aNewPnt = stackalloc double[4];
-        Span<double> anAbsParamDist = stackalloc double[4];
+        StatusDeflection status = StatusDeflection.OK, prevStatus = StatusDeflection.OK;
+        bool noTestDeflection = false;
+        Span<double> svParam = stackalloc double[4];
+        Span<double> newPnt = stackalloc double[4];
+        Span<double> absParamDist = stackalloc double[4];
         double f;
-        int LevelOfEmptyInmyIntersectionOn2S = 0;
-        int LevelOfPointConfondu = 0;
-        int LevelOfIterWithoutAppend = -1;
+        int levelOfEmptyInmyIntersectionOn2S = 0;
+        int levelOfPointConfondu = 0;
+        int levelOfIterWithoutAppend = -1;
         //
 
-        ReadOnlySpan<double> aTol = [Epsilon(UM1 - Um1), Epsilon(VM1 - Vm1), Epsilon(UM2 - Um2), Epsilon(VM2 - Vm2)];
+        ReadOnlySpan<double> tol = [Epsilon(_uMax1 - _uMin1), Epsilon(_vMax1 - _vMin1), Epsilon(_uMax2 - _uMin2), Epsilon(_vMax2 - _vMin2)];
 
-        int aPrevNbPoints = line.NbPoints();
+        int prevNbPoints = _line.PointCount;
 
-        Arrive = false;
-        while (!Arrive) // 010
+        arrive = false;
+        while (!arrive) // 010
         {
-            aPrevStatus = aStatus;
+            prevStatus = status;
 
-            LevelOfIterWithoutAppend++;
-            if (LevelOfIterWithoutAppend > 20)
+            levelOfIterWithoutAppend++;
+            if (levelOfIterWithoutAppend > 20)
             {
-                Arrive = true;
-                if (DejaReparti)
+                arrive = true;
+                if (dejaReparti)
                 {
                     break;
                 }
-                RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
-                LevelOfIterWithoutAppend = 0;
+                RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
+                levelOfIterWithoutAppend = 0;
             }
             //
             // compute f
             f = 0.0;
-            switch (ChoixIso)
+            switch (choixIso)
             {
-                case IntImp_UIsoparametricOnCaro1:
-                    f = Math.Abs(previousd1.X());
+                case ConstIsoparametric.UIsoparametricOnCaro1:
+                    f = Math.Abs(_previousd1.X());
                     break;
-                case IntImp_VIsoparametricOnCaro1:
-                    f = Math.Abs(previousd1.Y());
+                case ConstIsoparametric.VIsoparametricOnCaro1:
+                    f = Math.Abs(_previousd1.Y());
                     break;
-                case IntImp_UIsoparametricOnCaro2:
-                    f = Math.Abs(previousd2.X());
+                case ConstIsoparametric.UIsoparametricOnCaro2:
+                    f = Math.Abs(_previousd2.X());
                     break;
-                case IntImp_VIsoparametricOnCaro2:
-                    f = Math.Abs(previousd2.Y());
+                case ConstIsoparametric.VIsoparametricOnCaro2:
+                    f = Math.Abs(_previousd2.Y());
                     break;
                 default:
                     break;
@@ -181,151 +183,151 @@ public partial class IntWalk_PWalking
                 f = 0.1;
             }
             //
-            SetParameters(Param, previousPoint);
+            SetParameters(param, _previousPoint);
             //
             //--ofv.begin
-            double aIncKey, aEps, dP1, dP2, dP3, dP4;
+            double incKey, eps, dP1, dP2, dP3, dP4;
             //
-            dP1 = sensCheminement * pasuv[0] * previousd1.X() / f;
-            dP2 = sensCheminement * pasuv[1] * previousd1.Y() / f;
-            dP3 = sensCheminement * pasuv[2] * previousd2.X() / f;
-            dP4 = sensCheminement * pasuv[3] * previousd2.Y() / f;
+            dP1 = _sensCheminement * _pasuv[0] * _previousd1.X() / f;
+            dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y() / f;
+            dP3 = _sensCheminement * _pasuv[2] * _previousd2.X() / f;
+            dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y() / f;
             //
-            aIncKey = 5.0 * (double)IncKey;
-            aEps = 1.0e-7;
-            if (ChoixIso == IntImp_UIsoparametricOnCaro1 && Math.Abs(dP1) < aEps)
+            incKey = 5.0 * (double)IncKey;
+            eps = 1.0e-7;
+            if (choixIso == ConstIsoparametric.UIsoparametricOnCaro1 && Math.Abs(dP1) < eps)
             {
-                dP1 *= aIncKey;
+                dP1 *= incKey;
             }
 
-            if (ChoixIso == IntImp_VIsoparametricOnCaro1 && Math.Abs(dP2) < aEps)
+            if (choixIso == ConstIsoparametric.VIsoparametricOnCaro1 && Math.Abs(dP2) < eps)
             {
-                dP2 *= aIncKey;
+                dP2 *= incKey;
             }
 
-            if (ChoixIso == IntImp_UIsoparametricOnCaro2 && Math.Abs(dP3) < aEps)
+            if (choixIso == ConstIsoparametric.UIsoparametricOnCaro2 && Math.Abs(dP3) < eps)
             {
-                dP3 *= aIncKey;
+                dP3 *= incKey;
             }
 
-            if (ChoixIso == IntImp_VIsoparametricOnCaro2 && Math.Abs(dP4) < aEps)
+            if (choixIso == ConstIsoparametric.VIsoparametricOnCaro2 && Math.Abs(dP4) < eps)
             {
-                dP4 *= aIncKey;
+                dP4 *= incKey;
             }
             //--ofv.end
             //
-            Param[1] += dP1;
-            Param[2] += dP2;
-            Param[3] += dP3;
-            Param[4] += dP4;
+            param[1] += dP1;
+            param[2] += dP2;
+            param[3] += dP3;
+            param[4] += dP4;
             //==========================
-            SvParam[0] = Param[1];
-            SvParam[1] = Param[2];
-            SvParam[2] = Param[3];
-            SvParam[3] = Param[4];
+            svParam[0] = param[1];
+            svParam[1] = param[2];
+            svParam[2] = param[3];
+            svParam[3] = param[4];
             //
-            int aTryNumber = 0;
+            int tryNumber = 0;
             bool isBadPoint = false;
-            IntImp_ConstIsoparametric aBestIso = ChoixIso;
+            ConstIsoparametric bestIso = choixIso;
             do
             {
                 isBadPoint = false;
 
-                ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, aBestIso);
+                choixIso = _intersectionOn2S.Perform(param, rsnld, bestIso);
 
-                if (myIntersectionOn2S.IsDone() && !myIntersectionOn2S.IsEmpty())
+                if (_intersectionOn2S.IsDone && !_intersectionOn2S.IsEmpty)
                 {
                     // If we go along any surface boundary then it is possible
                     // to find "outboundaried" point.
                     // Nevertheless, if this deflection is quite small, we will be
                     // able to adjust this point to the boundary.
 
-                    myIntersectionOn2S.Point().Parameters(out aNewPnt[0], out aNewPnt[1], out aNewPnt[2],
-                                                          out aNewPnt[3]);
-                    ReadOnlySpan<double> aParMin = [Um1, Vm1, Um2, Vm2];
-                    ReadOnlySpan<double> aParMax = [UM1, VM1, UM2, VM2];
+                    _intersectionOn2S.Point().Parameters(out newPnt[0], out newPnt[1], out newPnt[2],
+                                                          out newPnt[3]);
+                    ReadOnlySpan<double> parMin = [_uMin1, _vMin1, _uMin2, _vMin2];
+                    ReadOnlySpan<double> parMax = [_uMax1, _vMax1, _uMax2, _vMax2];
 
                     for (int i = 0; i < 4; i++)
                     {
-                        if (Math.Abs(aNewPnt[i] - aParMin[i]) < aTol[i])
+                        if (Math.Abs(newPnt[i] - parMin[i]) < tol[i])
                         {
-                            aNewPnt[i] = aParMin[i];
+                            newPnt[i] = parMin[i];
                         }
-                        else if (Math.Abs(aNewPnt[i] - aParMax[i]) < aTol[i])
+                        else if (Math.Abs(newPnt[i] - parMax[i]) < tol[i])
                         {
-                            aNewPnt[i] = aParMax[i];
+                            newPnt[i] = parMax[i];
                         }
                     }
 
-                    if (aNewPnt[0] < Um1 || aNewPnt[0] > UM1 || aNewPnt[1] < Vm1 || aNewPnt[1] > VM1
-                        || aNewPnt[2] < Um2 || aNewPnt[2] > UM2 || aNewPnt[3] < Vm2 || aNewPnt[3] > VM2)
+                    if (newPnt[0] < _uMin1 || newPnt[0] > _uMax1 || newPnt[1] < _vMin1 || newPnt[1] > _vMax1
+                        || newPnt[2] < _uMin2 || newPnt[2] > _uMax2 || newPnt[3] < _vMin2 || newPnt[3] > _vMax2)
                     {
                         // Out of borders, process it later.
                         break;
                     }
 
-                    myIntersectionOn2S.ChangePoint().SetValue(aNewPnt[0], aNewPnt[1], aNewPnt[2], aNewPnt[3]);
+                    _intersectionOn2S.ChangePoint().SetValue(newPnt[0], newPnt[1], newPnt[2], newPnt[3]);
 
-                    anAbsParamDist[0] = Math.Abs(Param[1] - dP1 - aNewPnt[0]);
-                    anAbsParamDist[1] = Math.Abs(Param[2] - dP2 - aNewPnt[1]);
-                    anAbsParamDist[2] = Math.Abs(Param[3] - dP3 - aNewPnt[2]);
-                    anAbsParamDist[3] = Math.Abs(Param[4] - dP4 - aNewPnt[3]);
-                    if (anAbsParamDist[0] < ResoU1 && anAbsParamDist[1] < ResoV1 && anAbsParamDist[2] < ResoU2
-                        && anAbsParamDist[3] < ResoV2 && aStatus != IntWalk_PasTropGrand)
+                    absParamDist[0] = Math.Abs(param[1] - dP1 - newPnt[0]);
+                    absParamDist[1] = Math.Abs(param[2] - dP2 - newPnt[1]);
+                    absParamDist[2] = Math.Abs(param[3] - dP3 - newPnt[2]);
+                    absParamDist[3] = Math.Abs(param[4] - dP4 - newPnt[3]);
+                    if (absParamDist[0] < _resoU1 && absParamDist[1] < _resoV1 && absParamDist[2] < _resoU2
+                        && absParamDist[3] < _resoV2 && status != StatusDeflection.PasTropGrand)
                     {
                         isBadPoint = true;
-                        aBestIso = (IntImp_ConstIsoparametric)(((int)aBestIso + 1) % 4);
+                        bestIso = (ConstIsoparametric)(((int)bestIso + 1) % 4);
                     }
                 }
-            } while (isBadPoint && ++aTryNumber <= 4);
+            } while (isBadPoint && ++tryNumber <= 4);
             //
-            if (!myIntersectionOn2S.IsDone())
+            if (!_intersectionOn2S.IsDone)
             {
                 // end of line, division
-                Arrive = false;
-                Param[1] = SvParam[0];
-                Param[2] = SvParam[1];
-                Param[3] = SvParam[2];
-                Param[4] = SvParam[3];
-                RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                arrive = false;
+                param[1] = svParam[0];
+                param[2] = svParam[1];
+                param[3] = svParam[2];
+                param[4] = svParam[3];
+                RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
             }
             else // 009
             {
                 //== Calculation of exact point from Param(.) is possible
-                if (myIntersectionOn2S.IsEmpty())
+                if (_intersectionOn2S.IsEmpty)
                 {
-                    previousPoint.Parameters(out double u1, out double v1, out double u2, out double v2);
+                    _previousPoint.Parameters(out double u1, out double v1, out double u2, out double v2);
                     //
-                    Arrive = false;
-                    if (u1 < UFirst1 || u1 > ULast1)
+                    arrive = false;
+                    if (u1 < uFirst1 || u1 > uLast1)
                     {
-                        Arrive = true;
+                        arrive = true;
                     }
 
-                    if (u2 < UFirst2 || u2 > ULast2)
+                    if (u2 < uFirst2 || u2 > uLast2)
                     {
-                        Arrive = true;
+                        arrive = true;
                     }
 
-                    if (v1 < VFirst1 || v1 > VLast1)
+                    if (v1 < vFirst1 || v1 > vLast1)
                     {
-                        Arrive = true;
+                        arrive = true;
                     }
 
-                    if (v2 < VFirst2 || v2 > VLast2)
+                    if (v2 < vFirst2 || v2 > vLast2)
                     {
-                        Arrive = true;
+                        arrive = true;
                     }
 
-                    RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
-                    LevelOfEmptyInmyIntersectionOn2S++;
+                    RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
+                    levelOfEmptyInmyIntersectionOn2S++;
                     //
-                    if (LevelOfEmptyInmyIntersectionOn2S > 10)
+                    if (levelOfEmptyInmyIntersectionOn2S > 10)
                     {
-                        pasuv[0] = pasSav[0];
-                        pasuv[1] = pasSav[1];
-                        pasuv[2] = pasSav[2];
-                        pasuv[3] = pasSav[3];
+                        _pasuv[0] = _pasSav[0];
+                        _pasuv[1] = _pasSav[1];
+                        _pasuv[2] = _pasSav[2];
+                        _pasuv[3] = _pasSav[3];
                     }
                 }
                 else // 008
@@ -333,22 +335,22 @@ public partial class IntWalk_PWalking
                     //============================================================
                     //== A point has been found :  T E S T   D E F L E C T I O N
                     //============================================================
-                    if (NoTestDeflection)
+                    if (noTestDeflection)
                     {
-                        NoTestDeflection = false;
+                        noTestDeflection = false;
                     }
                     else
                     {
-                        if (--LevelOfEmptyInmyIntersectionOn2S <= 0)
+                        if (--levelOfEmptyInmyIntersectionOn2S <= 0)
                         {
-                            LevelOfEmptyInmyIntersectionOn2S = 0;
-                            if (LevelOfIterWithoutAppend < 10)
+                            levelOfEmptyInmyIntersectionOn2S = 0;
+                            if (levelOfIterWithoutAppend < 10)
                             {
-                                aStatus = TestDeflection(ChoixIso, aStatus);
+                                status = TestDeflection(choixIso, status);
                             }
                             else
                             {
-                                if (aStatus != IntWalk_StepTooSmall)
+                                if (status != StatusDeflection.StepTooSmall)
                                 {
                                     // Bug #0029682 (Boolean intersection with
                                     // fuzzy-option hangs).
@@ -358,10 +360,10 @@ public partial class IntWalk_PWalking
                                     // (see "case IntWalk_StepTooSmall:" below).
                                     // Here, we forbid this nulification and thereby provide out from
                                     // the algorithm.
-                                    pasuv[0] *= 0.5;
-                                    pasuv[1] *= 0.5;
-                                    pasuv[2] *= 0.5;
-                                    pasuv[3] *= 0.5;
+                                    _pasuv[0] *= 0.5;
+                                    _pasuv[1] *= 0.5;
+                                    _pasuv[2] *= 0.5;
+                                    _pasuv[3] *= 0.5;
                                 }
                             }
                         }
@@ -370,18 +372,18 @@ public partial class IntWalk_PWalking
                     //============================================================
                     //==       T r a i t e m e n t   s u r   S t a t u s        ==
                     //============================================================
-                    if (LevelOfPointConfondu > 5)
+                    if (levelOfPointConfondu > 5)
                     {
-                        aStatus = IntWalk_ArretSurPoint;
-                        LevelOfPointConfondu = 0;
+                        status = StatusDeflection.ArretSurPoint;
+                        levelOfPointConfondu = 0;
                     }
                     //
-                    if (aStatus == IntWalk_OK)
+                    if (status == StatusDeflection.OK)
                     {
-                        NbPasOKConseq++;
-                        if (NbPasOKConseq >= 5)
+                        nbPasOKConseq++;
+                        if (nbPasOKConseq >= 5)
                         {
-                            NbPasOKConseq = 0;
+                            nbPasOKConseq = 0;
                             bool pastroppetit;
                             double t;
                             //
@@ -389,61 +391,61 @@ public partial class IntWalk_PWalking
                             {
                                 pastroppetit = true;
                                 //
-                                if (pasuv[0] < pasInit[0])
+                                if (_pasuv[0] < _pasInit[0])
                                 {
-                                    t = (pasInit[0] - pasuv[0]) * 0.25;
-                                    if (t > 0.1 * pasInit[0])
+                                    t = (_pasInit[0] - _pasuv[0]) * 0.25;
+                                    if (t > 0.1 * _pasInit[0])
                                     {
-                                        t = 0.1 * pasuv[0];
+                                        t = 0.1 * _pasuv[0];
                                     }
 
-                                    pasuv[0] += t;
+                                    _pasuv[0] += t;
                                     pastroppetit = false;
                                 }
 
-                                if (pasuv[1] < pasInit[1])
+                                if (_pasuv[1] < _pasInit[1])
                                 {
-                                    t = (pasInit[1] - pasuv[1]) * 0.25;
-                                    if (t > 0.1 * pasInit[1])
+                                    t = (_pasInit[1] - _pasuv[1]) * 0.25;
+                                    if (t > 0.1 * _pasInit[1])
                                     {
-                                        t = 0.1 * pasuv[1];
+                                        t = 0.1 * _pasuv[1];
                                     }
 
-                                    pasuv[1] += t;
+                                    _pasuv[1] += t;
                                     pastroppetit = false;
                                 }
 
-                                if (pasuv[2] < pasInit[2])
+                                if (_pasuv[2] < _pasInit[2])
                                 {
-                                    t = (pasInit[2] - pasuv[2]) * 0.25;
-                                    if (t > 0.1 * pasInit[2])
+                                    t = (_pasInit[2] - _pasuv[2]) * 0.25;
+                                    if (t > 0.1 * _pasInit[2])
                                     {
-                                        t = 0.1 * pasuv[2];
+                                        t = 0.1 * _pasuv[2];
                                     }
 
-                                    pasuv[2] += t;
+                                    _pasuv[2] += t;
                                     pastroppetit = false;
                                 }
 
-                                if (pasuv[3] < pasInit[3])
+                                if (_pasuv[3] < _pasInit[3])
                                 {
-                                    t = (pasInit[3] - pasuv[3]) * 0.25;
-                                    if (t > 0.1 * pasInit[3])
+                                    t = (_pasInit[3] - _pasuv[3]) * 0.25;
+                                    if (t > 0.1 * _pasInit[3])
                                     {
-                                        t = 0.1 * pasuv[3];
+                                        t = 0.1 * _pasuv[3];
                                     }
-                                    pasuv[3] += t;
+                                    _pasuv[3] += t;
                                     pastroppetit = false;
                                 }
                                 if (pastroppetit)
                                 {
-                                    if (pasMax < 0.1)
+                                    if (_pasMax < 0.1)
                                     {
-                                        pasMax *= 1.1;
-                                        pasInit[0] *= 1.1;
-                                        pasInit[1] *= 1.1;
-                                        pasInit[2] *= 1.1;
-                                        pasInit[3] *= 1.1;
+                                        _pasMax *= 1.1;
+                                        _pasInit[0] *= 1.1;
+                                        _pasInit[1] *= 1.1;
+                                        _pasInit[2] *= 1.1;
+                                        _pasInit[3] *= 1.1;
                                     }
                                     else
                                     {
@@ -455,56 +457,56 @@ public partial class IntWalk_PWalking
                     } // aStatus==IntWalk_OK
                     else
                     {
-                        NbPasOKConseq = 0;
+                        nbPasOKConseq = 0;
                     }
 
                     //
-                    switch (aStatus) // 007
+                    switch (status) // 007
                     {
-                        case IntWalk_ArretSurPointPrecedent:
+                        case StatusDeflection.ArretSurPointPrecedent:
                         {
-                            Arrive = false;
-                            RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                            arrive = false;
+                            RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
                             break;
                         }
-                        case IntWalk_PasTropGrand:
+                        case StatusDeflection.PasTropGrand:
                         {
-                            Param[1] = SvParam[0];
-                            Param[2] = SvParam[1];
-                            Param[3] = SvParam[2];
-                            Param[4] = SvParam[3];
+                            param[1] = svParam[0];
+                            param[2] = svParam[1];
+                            param[3] = svParam[2];
+                            param[4] = svParam[3];
 
-                            if (LevelOfIterWithoutAppend > 5)
+                            if (levelOfIterWithoutAppend > 5)
                             {
                                 for (int i = 0; i < 4; i++)
                                 {
-                                    if (pasSav[i] > pasInit[i])
+                                    if (_pasSav[i] > _pasInit[i])
                                     {
                                         continue;
                                     }
 
-                                    double aDelta = (pasInit[i] - pasSav[i]) * 0.25;
+                                    double delta = (_pasInit[i] - _pasSav[i]) * 0.25;
 
-                                    if (aDelta > Epsilon(pasInit[i]))
+                                    if (delta > Epsilon(_pasInit[i]))
                                     {
-                                        pasInit[i] -= aDelta;
-                                        if ((aPrevStatus != IntWalk_StepTooSmall) && (line.NbPoints() != aPrevNbPoints))
+                                        _pasInit[i] -= delta;
+                                        if ((prevStatus != StatusDeflection.StepTooSmall) && (_line.PointCount != prevNbPoints))
                                         {
-                                            LevelOfIterWithoutAppend = 0;
+                                            levelOfIterWithoutAppend = 0;
                                         }
 
-                                        aPrevNbPoints = line.NbPoints();
+                                        prevNbPoints = _line.PointCount;
                                     }
                                 }
                             }
 
                             break;
                         }
-                        case IntWalk_PointConfondu:
+                        case StatusDeflection.PointConfondu:
                         {
-                            LevelOfPointConfondu++;
+                            levelOfPointConfondu++;
 
-                            if (LevelOfPointConfondu > 5)
+                            if (levelOfPointConfondu > 5)
                             {
                                 bool pastroppetit;
                                 //
@@ -514,22 +516,22 @@ public partial class IntWalk_PWalking
 
                                     for (int i = 0; i < 4; i++)
                                     {
-                                        if (pasuv[i] < pasInit[i])
+                                        if (_pasuv[i] < _pasInit[i])
                                         {
-                                            pasuv[i] += (pasInit[i] - pasuv[i]) * 0.25;
+                                            _pasuv[i] += (_pasInit[i] - _pasuv[i]) * 0.25;
                                             pastroppetit = false;
                                         }
                                     }
 
                                     if (pastroppetit)
                                     {
-                                        if (pasMax < 0.1)
+                                        if (_pasMax < 0.1)
                                         {
-                                            pasMax *= 1.1;
-                                            pasInit[0] *= 1.1;
-                                            pasInit[1] *= 1.1;
-                                            pasInit[2] *= 1.1;
-                                            pasInit[3] *= 1.1;
+                                            _pasMax *= 1.1;
+                                            _pasInit[0] *= 1.1;
+                                            _pasInit[1] *= 1.1;
+                                            _pasInit[2] *= 1.1;
+                                            _pasInit[3] *= 1.1;
                                         }
                                         else
                                         {
@@ -541,66 +543,66 @@ public partial class IntWalk_PWalking
 
                             break;
                         }
-                        case IntWalk_StepTooSmall:
+                        case StatusDeflection.StepTooSmall:
                         {
                             bool hasStepBeenIncreased = false;
 
                             for (int i = 0; i < 4; i++)
                             {
-                                double aNewStep = Math.Min(1.5 * pasuv[i], pasInit[i]);
-                                if (aNewStep > pasuv[i])
+                                double newStep = Math.Min(1.5 * _pasuv[i], _pasInit[i]);
+                                if (newStep > _pasuv[i])
                                 {
-                                    pasuv[i] = aNewStep;
+                                    _pasuv[i] = newStep;
                                     hasStepBeenIncreased = true;
                                 }
                             }
 
                             if (hasStepBeenIncreased)
                             {
-                                Param[1] = SvParam[0];
-                                Param[2] = SvParam[1];
-                                Param[3] = SvParam[2];
-                                Param[4] = SvParam[3];
+                                param[1] = svParam[0];
+                                param[2] = svParam[1];
+                                param[3] = svParam[2];
+                                param[4] = svParam[3];
 
                                 // In order to avoid cyclic changes
                                 // (PasTropGrand --> Decrease step -->
                                 // StepTooSmall --> Increase step --> PasTropGrand...)
                                 // nullify LevelOfIterWithoutAppend only if the condition
                                 // is satisfied:
-                                if ((aPrevStatus != IntWalk_PasTropGrand) && (line.NbPoints() != aPrevNbPoints))
+                                if ((prevStatus != StatusDeflection.PasTropGrand) && (_line.PointCount != prevNbPoints))
                                 {
-                                    LevelOfIterWithoutAppend = 0;
+                                    levelOfIterWithoutAppend = 0;
                                 }
 
-                                aPrevNbPoints = line.NbPoints();
+                                prevNbPoints = _line.PointCount;
 
                                 break;
                             }
 
-                            goto case IntWalk_OK; // [[fallthrough]]
+                            goto case StatusDeflection.OK; // [[fallthrough]]
                         }
-                        case IntWalk_OK:
-                        case IntWalk_ArretSurPoint: // 006
+                        case StatusDeflection.OK:
+                        case StatusDeflection.ArretSurPoint: // 006
                         {
                             //=======================================================
                             //== Stop Test t   :  Frame on Param(.)     ==
                             //=======================================================
                             // xft arrive here
-                            Arrive = TestArret(DejaReparti, Param, ref ChoixIso);
+                            arrive = TestArret(dejaReparti, param, ref choixIso);
                             // JMB 30th December 1999.
                             // Some statement below should not be put in comment because they are useful.
                             // See grid CTO 909 A1 which infinitely loops
-                            if (!Arrive && aStatus == IntWalk_ArretSurPoint)
+                            if (!arrive && status == StatusDeflection.ArretSurPoint)
                             {
-                                Arrive = true;
+                                arrive = true;
                             }
 
-                            if (Arrive)
+                            if (arrive)
                             {
-                                NbPasOKConseq = -10;
+                                nbPasOKConseq = -10;
                             }
 
-                            if (!Arrive) // 005
+                            if (!arrive) // 005
                             {
                                 //=====================================================
                                 //== Param(.) is in the limits                       ==
@@ -609,12 +611,12 @@ public partial class IntWalk_PWalking
                                 //== Check on the current point of myInters
                                 bool pointisvalid = false;
                                 {
-                                    myIntersectionOn2S.Point().Parameters(out double u1, out double v1, out double u2,
+                                    _intersectionOn2S.Point().Parameters(out double u1, out double v1, out double u2,
                                                                           out double v2);
 
                                     //
-                                    if (u1 <= UM1 && u2 <= UM2 && v1 <= VM1 && v2 <= VM2 && u1 >= Um1 && u2 >= Um2
-                                        && v1 >= Vm1 && v2 >= Vm2)
+                                    if (u1 <= _uMax1 && u2 <= _uMax2 && v1 <= _vMax1 && v2 <= _vMax2 && u1 >= _uMin1 && u2 >= _uMin2
+                                        && v1 >= _vMin1 && v2 >= _vMin2)
                                     {
                                         pointisvalid = true;
                                     }
@@ -623,27 +625,27 @@ public partial class IntWalk_PWalking
                                 //
                                 if (pointisvalid)
                                 {
-                                    previousPoint = myIntersectionOn2S.Point();
-                                    previoustg = myIntersectionOn2S.IsTangent();
+                                    _previousPoint = _intersectionOn2S.Point();
+                                    _previoustg = _intersectionOn2S.IsTangent;
 
-                                    if (!previoustg)
+                                    if (!_previoustg)
                                     {
-                                        previousd = myIntersectionOn2S.Direction();
-                                        previousd1 = myIntersectionOn2S.DirectionOnS1();
-                                        previousd2 = myIntersectionOn2S.DirectionOnS2();
+                                        _previousd = _intersectionOn2S.Direction();
+                                        _previousd1 = _intersectionOn2S.DirectionOnS1();
+                                        _previousd2 = _intersectionOn2S.DirectionOnS2();
                                     }
                                     //=====================================================
                                     //== Check on the previous Point
                                     {
-                                        previousPoint.Parameters(out double u1, out double v1, out double u2,
+                                        _previousPoint.Parameters(out double u1, out double v1, out double u2,
                                                                  out double v2);
-                                        if (u1 <= UM1 && u2 <= UM2 && v1 <= VM1 && v2 <= VM2 && u1 >= Um1 && u2 >= Um2
-                                            && v1 >= Vm1 && v2 >= Vm2)
+                                        if (u1 <= _uMax1 && u2 <= _uMax2 && v1 <= _vMax1 && v2 <= _vMax2 && u1 >= _uMin1 && u2 >= _uMin2
+                                            && v1 >= _vMin1 && v2 >= _vMin2)
                                         {
-                                            pl = previousPoint.Value();
+                                            pl = _previousPoint.Value();
                                             if (bTestFirstPoint)
                                             {
-                                                if (pf.SquareDistance(pl) < aSQDistMax)
+                                                if (pf.SquareDistance(pl) < sqDistMax)
                                                 {
                                                     IncKey++;
                                                     if (IncKey == 5000)
@@ -665,98 +667,98 @@ public partial class IntWalk_PWalking
                                             // intersection curve is closed in 3D. This catches cases where the
                                             // UV-based closure check in TestArret fails (e.g., near-tangent surfaces
                                             // with shared edges).
-                                            else if (pf.SquareDistance(pl) < aSQDistMax)
+                                            else if (pf.SquareDistance(pl) < sqDistMax)
                                             {
-                                                close = true;
-                                                Arrive = true;
-                                                AddAPoint(line.Value(1));
-                                                LevelOfIterWithoutAppend = 0;
+                                                _close = true;
+                                                arrive = true;
+                                                AddAPoint(_line.Value(1));
+                                                levelOfIterWithoutAppend = 0;
                                                 break;
                                             }
                                             //
-                                            AddAPoint(previousPoint);
-                                            RejectIndex++;
+                                            AddAPoint(_previousPoint);
+                                            rejectIndex++;
 
-                                            if (RejectIndex >= RejectIndexMAX)
+                                            if (rejectIndex >= rejectIndexMAX)
                                             {
-                                                Arrive = true;
+                                                arrive = true;
                                                 break;
                                             }
 
                                             //
-                                            LevelOfIterWithoutAppend = 0;
+                                            levelOfIterWithoutAppend = 0;
                                         }
                                     }
                                 } // pointisvalid
                                 //====================================================
 
-                                if (aStatus == IntWalk_ArretSurPoint)
+                                if (status == StatusDeflection.ArretSurPoint)
                                 {
-                                    RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                                    RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
                                 }
                                 else
                                 {
-                                    if (line.NbPoints() == 2)
+                                    if (_line.PointCount == 2)
                                     {
-                                        pasSav[0] = pasuv[0];
-                                        pasSav[1] = pasuv[1];
-                                        pasSav[2] = pasuv[2];
-                                        pasSav[3] = pasuv[3];
+                                        _pasSav[0] = _pasuv[0];
+                                        _pasSav[1] = _pasuv[1];
+                                        _pasSav[2] = _pasuv[2];
+                                        _pasSav[3] = _pasuv[3];
 
-                                        if ((aPrevStatus == IntWalk_PasTropGrand) && (LevelOfIterWithoutAppend > 0))
+                                        if ((prevStatus == StatusDeflection.PasTropGrand) && (levelOfIterWithoutAppend > 0))
                                         {
-                                            pasInit[0] = pasuv[0];
-                                            pasInit[1] = pasuv[1];
-                                            pasInit[2] = pasuv[2];
-                                            pasInit[3] = pasuv[3];
+                                            _pasInit[0] = _pasuv[0];
+                                            _pasInit[1] = _pasuv[1];
+                                            _pasInit[2] = _pasuv[2];
+                                            _pasInit[3] = _pasuv[3];
                                         }
                                     }
                                 }
                             } // 005 if(!Arrive)
                             else // 004
                             {
-                                if (close)
+                                if (_close)
                                 {
                                     //================= la ligne est fermee ===============
-                                    AddAPoint(line.Value(1)); // ligne fermee
-                                    LevelOfIterWithoutAppend = 0;
+                                    AddAPoint(_line.Value(1)); // ligne fermee
+                                    levelOfIterWithoutAppend = 0;
                                 }
                                 else //$$$
                                 {
                                     //====================================================
                                     //== Param was not in the limits (was reframed)
                                     //====================================================
-                                    bool bPrevNotTangent = !previoustg || !myIntersectionOn2S.IsTangent();
+                                    bool bPrevNotTangent = !_previoustg || !_intersectionOn2S.IsTangent;
 
-                                    IntImp_ConstIsoparametric SauvChoixIso = ChoixIso;
-                                    ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, ChoixIso);
+                                    ConstIsoparametric sauvChoixIso = choixIso;
+                                    choixIso = _intersectionOn2S.Perform(param, rsnld, choixIso);
                                     //
-                                    if (!myIntersectionOn2S.IsEmpty()) // 002
+                                    if (!_intersectionOn2S.IsEmpty) // 002
                                     {
                                         // mutially outpasses in the square or intersection in corner
 
-                                        if (TestArret(true, Param, ref ChoixIso))
+                                        if (TestArret(true, param, ref choixIso))
                                         {
-                                            NbPasOKConseq = -10;
-                                            ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, ChoixIso);
+                                            nbPasOKConseq = -10;
+                                            choixIso = _intersectionOn2S.Perform(param, rsnld, choixIso);
 
-                                            if (!myIntersectionOn2S.IsEmpty())
+                                            if (!_intersectionOn2S.IsEmpty)
                                             {
-                                                previousPoint = myIntersectionOn2S.Point();
-                                                previoustg = myIntersectionOn2S.IsTangent();
+                                                _previousPoint = _intersectionOn2S.Point();
+                                                _previoustg = _intersectionOn2S.IsTangent;
 
-                                                if (!previoustg)
+                                                if (!_previoustg)
                                                 {
-                                                    previousd = myIntersectionOn2S.Direction();
-                                                    previousd1 = myIntersectionOn2S.DirectionOnS1();
-                                                    previousd2 = myIntersectionOn2S.DirectionOnS2();
+                                                    _previousd = _intersectionOn2S.Direction();
+                                                    _previousd1 = _intersectionOn2S.DirectionOnS1();
+                                                    _previousd2 = _intersectionOn2S.DirectionOnS2();
                                                 }
 
-                                                pl = previousPoint.Value();
+                                                pl = _previousPoint.Value();
 
                                                 if (bTestFirstPoint)
                                                 {
-                                                    if (pf.SquareDistance(pl) < aSQDistMax)
+                                                    if (pf.SquareDistance(pl) < sqDistMax)
                                                     {
                                                         IncKey++;
                                                         if (IncKey == 5000)
@@ -774,26 +776,26 @@ public partial class IntWalk_PWalking
                                                     }
                                                 }
                                                 //
-                                                AddAPoint(previousPoint);
-                                                RejectIndex++;
+                                                AddAPoint(_previousPoint);
+                                                rejectIndex++;
 
-                                                if (RejectIndex >= RejectIndexMAX)
+                                                if (rejectIndex >= rejectIndexMAX)
                                                 {
-                                                    Arrive = true;
+                                                    arrive = true;
                                                     break;
                                                 }
 
                                                 //
-                                                LevelOfIterWithoutAppend = 0;
-                                                RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                                                levelOfIterWithoutAppend = 0;
+                                                RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
                                             }
                                             else
                                             {
                                                 // fail framing divides the step
-                                                Arrive = false;
-                                                RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
-                                                NoTestDeflection = true;
-                                                ChoixIso = SauvChoixIso;
+                                                arrive = false;
+                                                RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
+                                                noTestDeflection = true;
+                                                choixIso = sauvChoixIso;
                                             }
                                         } // if(TestArret())
                                         else
@@ -801,78 +803,78 @@ public partial class IntWalk_PWalking
                                             // save the last point
                                             // to revert to it if the current point is out of bounds
 
-                                            IntSurf_PntOn2S previousPointSave = previousPoint;
-                                            bool previoustgSave = previoustg;
-                                            Direction3D previousdSave = previousd;
-                                            Direction2D previousd1Save = previousd1;
-                                            Direction2D previousd2Save = previousd2;
+                                            PntOn2S previousPointSave = _previousPoint;
+                                            bool previoustgSave = _previoustg;
+                                            Direction3D previousdSave = _previousd;
+                                            Direction2D previousd1Save = _previousd1;
+                                            Direction2D previousd2Save = _previousd2;
 
-                                            previousPoint = myIntersectionOn2S.Point();
-                                            previoustg = myIntersectionOn2S.IsTangent();
-                                            Arrive = false;
+                                            _previousPoint = _intersectionOn2S.Point();
+                                            _previoustg = _intersectionOn2S.IsTangent;
+                                            arrive = false;
 
-                                            if (!previoustg)
+                                            if (!_previoustg)
                                             {
-                                                previousd = myIntersectionOn2S.Direction();
-                                                previousd1 = myIntersectionOn2S.DirectionOnS1();
-                                                previousd2 = myIntersectionOn2S.DirectionOnS2();
+                                                _previousd = _intersectionOn2S.Direction();
+                                                _previousd1 = _intersectionOn2S.DirectionOnS1();
+                                                _previousd2 = _intersectionOn2S.DirectionOnS2();
                                             }
 
                                             //========================================
                                             //== Check on PreviousPoint @@
 
                                             {
-                                                previousPoint.Parameters(out double u1, out double v1, out double u2,
+                                                _previousPoint.Parameters(out double u1, out double v1, out double u2,
                                                                          out double v2);
 
                                                 // To save initial 2d points
-                                                Point2D ParamPntOnS1 = new(Param[1], Param[2]);
-                                                Point2D ParamPntOnS2 = new(Param[3], Param[4]);
+                                                Point2D paramPntOnS1 = new(param[1], param[2]);
+                                                Point2D paramPntOnS2 = new(param[3], param[4]);
 
                                                 ///////////////////////////
-                                                Param[1] = u1;
-                                                Param[2] = v1;
-                                                Param[3] = u2;
-                                                Param[4] = v2;
+                                                param[1] = u1;
+                                                param[2] = v1;
+                                                param[3] = u2;
+                                                param[4] = v2;
                                                 //
 
                                                 // xf
                                                 bool bFlag1, bFlag2;
-                                                double aTol2D = 1.0e-11;
+                                                double tol2D = 1.0e-11;
                                                 //
-                                                bFlag1 = u1 >= Um1 - aTol2D && v1 >= Vm1 - aTol2D && u1 <= UM1 + aTol2D
-                                                         && v1 <= VM1 + aTol2D;
-                                                bFlag2 = u2 >= Um2 - aTol2D && v2 >= Vm2 - aTol2D && u2 <= UM2 + aTol2D
-                                                         && v2 <= VM2 + aTol2D;
+                                                bFlag1 = u1 >= _uMin1 - tol2D && v1 >= _vMin1 - tol2D && u1 <= _uMax1 + tol2D
+                                                         && v1 <= _vMax1 + tol2D;
+                                                bFlag2 = u2 >= _uMin2 - tol2D && v2 >= _vMin2 - tol2D && u2 <= _uMax2 + tol2D
+                                                         && v2 <= _vMax2 + tol2D;
                                                 if (bFlag1 && bFlag2)
                                                 {
-                                                    if (line.NbPoints() > 1)
+                                                    if (_line.PointCount > 1)
                                                     {
-                                                        IntSurf_PntOn2S prevprevPoint = line.Value(line.NbPoints() - 1);
+                                                        PntOn2S prevprevPoint = _line.Value(_line.PointCount - 1);
                                                         prevprevPoint.Parameters(out double ppU1, out double ppV1,
                                                                                  out double ppU2, out double ppV2);
                                                         previousPointSave.Parameters(out double pU1, out double pV1,
                                                                                      out double pU2, out double pV2);
-                                                        Vector2D V1onS1 = new(new Point2D(ppU1, ppV1), new Point2D(pU1, pV1));
-                                                        Vector2D V2onS1 = new(new Point2D(pU1, pV1), new Point2D(u1, v1));
-                                                        Vector2D V1onS2 = new(new Point2D(ppU2, ppV2), new Point2D(pU2, pV2));
-                                                        Vector2D V2onS2 = new(new Point2D(pU2, pV2), new Point2D(u2, v2));
+                                                        Vector2D v1onS1 = new(new Point2D(ppU1, ppV1), new Point2D(pU1, pV1));
+                                                        Vector2D v2onS1 = new(new Point2D(pU1, pV1), new Point2D(u1, v1));
+                                                        Vector2D v1onS2 = new(new Point2D(ppU2, ppV2), new Point2D(pU2, pV2));
+                                                        Vector2D v2onS2 = new(new Point2D(pU2, pV2), new Point2D(u2, v2));
 
-                                                        double aDot1 = V1onS1 * V2onS1;
-                                                        double aDot2 = V1onS2 * V2onS2;
+                                                        double dot1 = v1onS1 * v2onS1;
+                                                        double dot2 = v1onS2 * v2onS2;
 
-                                                        if ((aDot1 < 0.0) || (aDot2 < 0.0))
+                                                        if ((dot1 < 0.0) || (dot2 < 0.0))
                                                         {
-                                                            Arrive = true;
+                                                            arrive = true;
                                                             break;
                                                         }
                                                     }
                                                     // xt
-                                                    pl = previousPoint.Value();
+                                                    pl = _previousPoint.Value();
 
                                                     if (bTestFirstPoint)
                                                     {
-                                                        if (pf.SquareDistance(pl) < aSQDistMax)
+                                                        if (pf.SquareDistance(pl) < sqDistMax)
                                                         {
                                                             IncKey++;
 
@@ -894,7 +896,7 @@ public partial class IntWalk_PWalking
                                                     // To avoid walking around the same point
                                                     // in the tangent zone near a border
 
-                                                    if (previoustg)
+                                                    if (_previoustg)
                                                     {
                                                         // There are three consecutive points:
                                                         // previousPointSave -> ParamPnt -> curPnt.
@@ -903,56 +905,56 @@ public partial class IntWalk_PWalking
                                                                                      out double prevU2, out double prevV2);
                                                         Point2D prevPntOnS1 = new(prevU1, prevV1), prevPntOnS2 = new(prevU2, prevV2);
                                                         Point2D curPntOnS1 = new(u1, v1), curPntOnS2 = new(u2, v2);
-                                                        Vector2D PrevToParamOnS1 = new(prevPntOnS1, ParamPntOnS1);
-                                                        Vector2D PrevToCurOnS1 = new(prevPntOnS1, curPntOnS1);
-                                                        Vector2D PrevToParamOnS2 = new(prevPntOnS2, ParamPntOnS2);
-                                                        Vector2D PrevToCurOnS2 = new(prevPntOnS2, curPntOnS2);
-                                                        double MaxAngle = 3 * M_PI / 4;
-                                                        double anAngleS1 = 0.0, anAngleS2 = 0.0;
-                                                        double aSQMParS1 = PrevToParamOnS1.SquareMagnitude();
-                                                        double aSQMParS2 = PrevToParamOnS2.SquareMagnitude();
-                                                        double aSQMCurS1 = PrevToCurOnS1.SquareMagnitude();
-                                                        double aSQMCurS2 = PrevToCurOnS2.SquareMagnitude();
+                                                        Vector2D prevToParamOnS1 = new(prevPntOnS1, paramPntOnS1);
+                                                        Vector2D prevToCurOnS1 = new(prevPntOnS1, curPntOnS1);
+                                                        Vector2D prevToParamOnS2 = new(prevPntOnS2, paramPntOnS2);
+                                                        Vector2D prevToCurOnS2 = new(prevPntOnS2, curPntOnS2);
+                                                        double maxAngle = 3 * M_PI / 4;
+                                                        double angleS1 = 0.0, angleS2 = 0.0;
+                                                        double sqmParS1 = prevToParamOnS1.SquareMagnitude();
+                                                        double sqmParS2 = prevToParamOnS2.SquareMagnitude();
+                                                        double sqmCurS1 = prevToCurOnS1.SquareMagnitude();
+                                                        double sqmCurS2 = prevToCurOnS2.SquareMagnitude();
 
-                                                        if (aSQMCurS1 < Constants.Resolution())
+                                                        if (sqmCurS1 < Constants.Resolution())
                                                         {
                                                             // We came back to the one of previous point.
                                                             // Therefore, we must break;
 
-                                                            anAngleS1 = M_PI;
+                                                            angleS1 = M_PI;
                                                         }
-                                                        else if (aSQMParS1 < Constants.Resolution())
+                                                        else if (sqmParS1 < Constants.Resolution())
                                                         {
                                                             // We are walking along tangent zone.
                                                             // It should be continued.
-                                                            anAngleS1 = 0.0;
+                                                            angleS1 = 0.0;
                                                         }
                                                         else
                                                         {
-                                                            anAngleS1 = Math.Abs(PrevToParamOnS1.Angle(PrevToCurOnS1));
+                                                            angleS1 = Math.Abs(prevToParamOnS1.Angle(prevToCurOnS1));
                                                         }
 
-                                                        if (aSQMCurS2 < Constants.Resolution())
+                                                        if (sqmCurS2 < Constants.Resolution())
                                                         {
                                                             // We came back to the one of previous point.
                                                             // Therefore, we must break;
 
-                                                            anAngleS2 = M_PI;
+                                                            angleS2 = M_PI;
                                                         }
-                                                        else if (aSQMParS2 < Constants.Resolution())
+                                                        else if (sqmParS2 < Constants.Resolution())
                                                         {
                                                             // We are walking along tangent zone.
                                                             // It should be continued;
-                                                            anAngleS2 = 0.0;
+                                                            angleS2 = 0.0;
                                                         }
                                                         else
                                                         {
-                                                            anAngleS2 = Math.Abs(PrevToParamOnS2.Angle(PrevToCurOnS2));
+                                                            angleS2 = Math.Abs(prevToParamOnS2.Angle(prevToCurOnS2));
                                                         }
 
-                                                        if ((anAngleS1 > MaxAngle) && (anAngleS2 > MaxAngle))
+                                                        if ((angleS1 > maxAngle) && (angleS2 > maxAngle))
                                                         {
-                                                            Arrive = true;
+                                                            arrive = true;
                                                             break;
                                                         }
 
@@ -966,89 +968,89 @@ public partial class IntWalk_PWalking
                                                             // this case (we cannot find another 3D-point if we go thus).
 
                                                             // Direction chosen along 1st and 2nd surface correspondingly
-                                                            Vector2D aDirS1 = new(prevPntOnS1, curPntOnS1),
-                                                                     aDirS2 = new(prevPntOnS2, curPntOnS2);
+                                                            Vector2D dirS1 = new(prevPntOnS1, curPntOnS1),
+                                                                     dirS2 = new(prevPntOnS2, curPntOnS2);
 
-                                                            myIntersectionOn2S.Function().AuxillarSurface1().D1(
-                                                                curPntOnS1.X(), curPntOnS1.Y(), out Point3D aPtemp,
-                                                                out Vector3D aDuS1, out Vector3D aDvS1);
-                                                            myIntersectionOn2S.Function().AuxillarSurface2().D1(
-                                                                curPntOnS2.X(), curPntOnS2.Y(), out aPtemp,
-                                                                out Vector3D aDuS2, out Vector3D aDvS2);
+                                                            _intersectionOn2S.Function().AuxillarSurface1().D1(
+                                                                curPntOnS1.X(), curPntOnS1.Y(), out Point3D ptemp,
+                                                                out Vector3D duS1, out Vector3D dvS1);
+                                                            _intersectionOn2S.Function().AuxillarSurface2().D1(
+                                                                curPntOnS2.X(), curPntOnS2.Y(), out ptemp,
+                                                                out Vector3D duS2, out Vector3D dvS2);
 
                                                             // Derivative WLine along (it is vector-function indeed)
                                                             // directions chosen
                                                             // F1 - on the 1st surface, F2 - on the 2nd surface.
                                                             // x, y, z - coordinates of derivative vector.
-                                                            double aF1x = aDuS1.X() * aDirS1.X() + aDvS1.X() * aDirS1.Y();
-                                                            double aF1y = aDuS1.Y() * aDirS1.X() + aDvS1.Y() * aDirS1.Y();
-                                                            double aF1z = aDuS1.Z() * aDirS1.X() + aDvS1.Z() * aDirS1.Y();
-                                                            double aF2x = aDuS2.X() * aDirS2.X() + aDvS2.X() * aDirS2.Y();
-                                                            double aF2y = aDuS2.Y() * aDirS2.X() + aDvS2.Y() * aDirS2.Y();
-                                                            double aF2z = aDuS2.Z() * aDirS2.X() + aDvS2.Z() * aDirS2.Y();
+                                                            double f1x = duS1.X() * dirS1.X() + dvS1.X() * dirS1.Y();
+                                                            double f1y = duS1.Y() * dirS1.X() + dvS1.Y() * dirS1.Y();
+                                                            double f1z = duS1.Z() * dirS1.X() + dvS1.Z() * dirS1.Y();
+                                                            double f2x = duS2.X() * dirS2.X() + dvS2.X() * dirS2.Y();
+                                                            double f2y = duS2.Y() * dirS2.X() + dvS2.Y() * dirS2.Y();
+                                                            double f2z = duS2.Z() * dirS2.X() + dvS2.Z() * dirS2.Y();
 
-                                                            double aF1 = aF1x * aF1x + aF1y * aF1y + aF1z * aF1z;
-                                                            double aF2 = aF2x * aF2x + aF2y * aF2y + aF2z * aF2z;
+                                                            double f1 = f1x * f1x + f1y * f1y + f1z * f1z;
+                                                            double f2 = f2x * f2x + f2y * f2y + f2z * f2z;
 
-                                                            if ((aF1 < Constants.Resolution()) && (aF2 < Constants.Resolution()))
+                                                            if ((f1 < Constants.Resolution()) && (f2 < Constants.Resolution()))
                                                             {
                                                                 // All derivative are equal to 0. Therefore, there is
                                                                 // no point in going along direction chosen.
-                                                                Arrive = true;
+                                                                arrive = true;
                                                                 break;
                                                             }
                                                         }
                                                     } // if (previoustg) cond.
 
                                                     ////////////////////////////////////////
-                                                    AddAPoint(previousPoint);
-                                                    RejectIndex++;
+                                                    AddAPoint(_previousPoint);
+                                                    rejectIndex++;
 
-                                                    if (RejectIndex >= RejectIndexMAX)
+                                                    if (rejectIndex >= rejectIndexMAX)
                                                     {
-                                                        Arrive = true;
+                                                        arrive = true;
                                                         break;
                                                     }
 
                                                     //
 
-                                                    LevelOfIterWithoutAppend = 0;
-                                                    Arrive = true;
+                                                    levelOfIterWithoutAppend = 0;
+                                                    arrive = true;
                                                 }
                                                 else
                                                 {
                                                     // revert to the last correctly calculated point
-                                                    previousPoint = previousPointSave;
-                                                    previoustg = previoustgSave;
-                                                    previousd = previousdSave;
-                                                    previousd1 = previousd1Save;
-                                                    previousd2 = previousd2Save;
+                                                    _previousPoint = previousPointSave;
+                                                    _previoustg = previoustgSave;
+                                                    _previousd = previousdSave;
+                                                    _previousd1 = previousd1Save;
+                                                    _previousd2 = previousd2Save;
                                                 }
                                             }
 
                                             //
                                             bool wasExtended = false;
 
-                                            if (Arrive && myIntersectionOn2S.IsTangent() && bPrevNotTangent)
+                                            if (arrive && _intersectionOn2S.IsTangent && bPrevNotTangent)
                                             {
-                                                if (ExtendLineInCommonZone(SauvChoixIso, DejaReparti))
+                                                if (ExtendLineInCommonZone(sauvChoixIso, dejaReparti))
                                                 {
                                                     wasExtended = true;
-                                                    Arrive = false;
-                                                    ChoixIso = SauvChoixIso;
+                                                    arrive = false;
+                                                    choixIso = sauvChoixIso;
                                                 }
                                             }
 
-                                            RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                                            RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
 
-                                            if (Arrive && myIntersectionOn2S.IsDone() && !myIntersectionOn2S.IsEmpty()
-                                                && myIntersectionOn2S.IsTangent() && bPrevNotTangent && !wasExtended)
+                                            if (arrive && _intersectionOn2S.IsDone && !_intersectionOn2S.IsEmpty
+                                                && _intersectionOn2S.IsTangent && bPrevNotTangent && !wasExtended)
                                             {
-                                                if (ExtendLineInCommonZone(SauvChoixIso, DejaReparti))
+                                                if (ExtendLineInCommonZone(sauvChoixIso, dejaReparti))
                                                 {
                                                     wasExtended = true;
-                                                    Arrive = false;
-                                                    ChoixIso = SauvChoixIso;
+                                                    arrive = false;
+                                                    choixIso = sauvChoixIso;
                                                 }
                                             }
                                         } // else !TestArret() $
@@ -1056,9 +1058,9 @@ public partial class IntWalk_PWalking
                                     else
                                     {
                                         // echec framing on border; division of step
-                                        Arrive = false;
-                                        NoTestDeflection = true;
-                                        RepartirOuDiviser(ref DejaReparti, ref ChoixIso, ref Arrive);
+                                        arrive = false;
+                                        noTestDeflection = true;
+                                        RepartirOuDiviser(ref dejaReparti, ref choixIso, ref arrive);
                                     }
                                 } //$$$ end framing on border (!close)
                             } // 004 fin TestArret return Arrive = True
@@ -1069,6 +1071,6 @@ public partial class IntWalk_PWalking
             } // 009 end processing line (else if myIntersectionOn2S.IsDone())
         } // 010 end if first departure point allows marching  while (!Arrive)
 
-        done = true;
+        _done = true;
     }
 }

@@ -22,7 +22,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
 
     public TopoDSToStep_Builder()
     {
-        myError = TopoDSToStep_BuilderOther;
+        myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderOther;
         done = false;
     }
 
@@ -43,7 +43,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
     {
         if (myTool.IsBound(aShape))
         {
-            myError = TopoDSToStep_BuilderDone;
+            myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderDone;
             done = true;
             myResult = myTool.Find(aShape);
             return;
@@ -142,7 +142,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                 else
                 {
                     // Builder Error handling;
-                    myError = TopoDSToStep_NoFaceMapped;
+                    myError = TopoDSToStep_BuilderError.TopoDSToStep_NoFaceMapped;
                     done = false;
                 }
 
@@ -152,7 +152,7 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                     if (MkTessShell.IsDone())
                     {
                         myTessellatedResult = MkTessShell.Value();
-                        myError = TopoDSToStep_BuilderDone;
+                        myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderDone;
                         done = true;
                     }
                 }
@@ -192,13 +192,13 @@ public sealed class TopoDSToStep_Builder : TopoDSToStep_Root
                         myTessellatedResult = MkTessFace.Value();
                     }
 
-                    myError = TopoDSToStep_BuilderDone;
+                    myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderDone;
                     done = true;
                 }
                 else
                 {
                     // MakeFace Error Handling : Face not Mapped
-                    myError = TopoDSToStep_BuilderOther;
+                    myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderOther;
                     done = false;
                 }
 

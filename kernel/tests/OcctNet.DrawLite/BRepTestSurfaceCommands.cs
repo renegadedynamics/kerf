@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -59,8 +62,8 @@ internal static class BRepTestSurfaceCommands
 
         if (n == 3)
         {
-            res = mkface ? new BRepBuilderAPI_MakeFace(S, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
-                         : new BRepBuilderAPI_MakeShell(S, Segment).Shape();
+            res = mkface ? new MakeFace(S, global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
+                         : new MakeShell(S, Segment).Shape();
         }
         else if (n <= 5)
         {
@@ -76,13 +79,13 @@ internal static class BRepTestSurfaceCommands
                 return 1;
             }
 
-            res = new BRepBuilderAPI_MakeFace(S, ShapeCasts.Wire(W), orient).Shape();
+            res = new MakeFace(S, ShapeCasts.Wire(W), orient).Shape();
         }
         else
         {
             res = mkface
-                ? new BRepBuilderAPI_MakeFace(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
-                : new BRepBuilderAPI_MakeShell(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), Segment).Shape();
+                ? new MakeFace(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), global::Kerf.Engine.Foundation.Precision.Confusion()).Shape()
+                : new MakeShell(S, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]), Segment).Shape();
         }
 
         theDI.SetShape(a[1], res);
@@ -123,22 +126,22 @@ internal static class BRepTestSurfaceCommands
         }
 
         bool OnlyPlane = n == 4 && a[3] == "1";
-        var aMF = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(S), OnlyPlane);
+        var aMF = new MakeFace(ShapeCasts.Wire(S), OnlyPlane);
         switch (aMF.Error())
         {
-            case BRepBuilderAPI_FaceError.BRepBuilderAPI_FaceDone:
+            case FaceError.FaceDone:
                 theDI.SetShape(a[1], aMF.Face());
                 break;
-            case BRepBuilderAPI_FaceError.BRepBuilderAPI_NoFace:
+            case FaceError.NoFace:
                 theResult.Append("Error. mkplane has been finished with \"No Face\" status.\n");
                 break;
-            case BRepBuilderAPI_FaceError.BRepBuilderAPI_NotPlanar:
+            case FaceError.NotPlanar:
                 theResult.Append("Error. mkplane has been finished with \"Not Planar\" status.\n");
                 break;
-            case BRepBuilderAPI_FaceError.BRepBuilderAPI_CurveProjectionFailed:
+            case FaceError.CurveProjectionFailed:
                 theResult.Append("Error. mkplane has been finished with \"Fail in projection curve\" status.\n");
                 break;
-            case BRepBuilderAPI_FaceError.BRepBuilderAPI_ParametersOutOfRange:
+            case FaceError.ParametersOutOfRange:
                 theResult.Append("Error. mkplane has been finished with \"Parameters are out of range\" status.\n");
                 break;
             default:
@@ -240,13 +243,13 @@ internal static class BRepTestSurfaceCommands
         Shape aCopy = DrawShapeCopy.Copy(sh);
         if (n == 2)
         {
-            BRepLib.EncodeRegularity(aCopy);
+            BrepLibrary.EncodeRegularity(aCopy);
         }
         else
         {
             double Tol = theDI.Atof(a[2]);
             Tol *= Math.PI / 180.0;
-            BRepLib.EncodeRegularity(aCopy, Tol);
+            BrepLibrary.EncodeRegularity(aCopy, Tol);
         }
 
         // OCCT codes the TShapes in place: every variable sharing them (the edges exploded before) sees it (unit 7N3)
@@ -342,7 +345,7 @@ internal static class BRepTestSurfaceCommands
         aP = aP.Transformed(aLoc.Transformation().Inverted());
         aSurf.Bounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
 
-        var aProjPS = new GeomAPI_ProjectPointOnSurf();
+        var aProjPS = new ProjectPointOnSurface();
         aProjPS.Init(aSurf, aUMin, aUMax, aVMin, aVMax);
         aProjPS.SetExtremaAlgo(anExtAlgo);
         aProjPS.SetExtremaFlag(anExtFlag);
@@ -356,7 +359,7 @@ internal static class BRepTestSurfaceCommands
             di.Append("uvproj = ").Append(U).Append(" ").Append(V).Append("\n");
             di.Append("pproj = ").Append(aPProj.X()).Append(" ").Append(aPProj.Y()).Append(" ").Append(aPProj.Z()).Append("\n");
         }
-        else if (!aProjPS.IsDone())
+        else if (!aProjPS.IsDone)
         {
             di.Append("projection failed\n");
         }

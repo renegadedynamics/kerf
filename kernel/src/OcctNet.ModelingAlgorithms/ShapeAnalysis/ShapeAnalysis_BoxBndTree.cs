@@ -6,116 +6,118 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ShapeExtend_Status;
+using Occt;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Analysis;
 
 /// <summary>
-/// The selector of the tree of wire end boxes used by <see cref="ShapeAnalysis_FreeBounds"/>'s ConnectWiresToWires:
+/// The selector of the tree of wire end boxes used by <see cref="FreeBounds"/>'s ConnectWiresToWires:
 /// accepts the wire whose end is shared with (or closest to) the current wire's ends.
 /// </summary>
 /// <remarks>
 /// A working object for ported code (decision 21). <c>Accept</c> reads the wires of the sequence it is given; it
 /// writes nothing into shapes.
 /// </remarks>
-public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Selector
+public sealed class BoxBndTreeSelectorAnalysis : SpatialTree<int, Box>.Selector
 {
-    private Box myFBox;
-    private Box myLBox;
-    private readonly NCollection_HArray1<Shape> mySeq;
-    private readonly bool myShared;
-    private int myNb;
-    private Vertex myFVertex;
-    private Vertex myLVertex;
-    private Point3D myFPnt;
-    private Point3D myLPnt;
-    private readonly NCollection_Map<int> myList = new();
-    private double myTol;
-    private double myMin3d;
-    private readonly NCollection_Array1<int> myArrIndices;
-    private int myStatus;
+    private Box _fBox;
+    private Box _lBox;
+    private readonly NCollection_HArray1<Shape> _seq;
+    private readonly bool _shared;
+    private int _nb;
+    private Vertex _fVertex;
+    private Vertex _lVertex;
+    private Point3D _fPnt;
+    private Point3D _lPnt;
+    private readonly NCollection_Map<int> _list = new();
+    private double _tol;
+    private double _min3d;
+    private readonly NCollection_Array1<int> _arrIndices;
+    private int _status;
 
-    /// <summary>A selector over the wires of <paramref name="theSeq"/>, by shared vertices or by distance.</summary>
-    public ShapeAnalysis_BoxBndTreeSelector(NCollection_HArray1<Shape> theSeq, bool theShared)
+    /// <summary>A selector over the wires of <paramref name="seq"/>, by shared vertices or by distance.</summary>
+    public BoxBndTreeSelectorAnalysis(NCollection_HArray1<Shape> seq, bool shared)
     {
-        mySeq = theSeq;
-        myShared = theShared;
-        myNb = 0;
-        myTol = 1e-7;
-        myMin3d = 1e-7;
-        myArrIndices = new NCollection_Array1<int>(1, 2);
-        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        myFBox = new Box();
-        myLBox = new Box();
-        myFVertex = new Vertex();
-        myLVertex = new Vertex();
-        myFPnt = new Point3D();
-        myLPnt = new Point3D();
-        myArrIndices.Init(0);
+        _seq = seq;
+        _shared = shared;
+        _nb = 0;
+        _tol = 1e-7;
+        _min3d = 1e-7;
+        _arrIndices = new NCollection_Array1<int>(1, 2);
+        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
+        _fBox = new Box();
+        _lBox = new Box();
+        _fVertex = new Vertex();
+        _lVertex = new Vertex();
+        _fPnt = new Point3D();
+        _lPnt = new Point3D();
+        _arrIndices.Init(0);
     }
 
     /// <summary>Sets the boxes of the current wire's first and last vertices.</summary>
-    public void DefineBoxes(in Box theFBox, in Box theLBox)
+    public void DefineBoxes(in Box fBox, in Box lBox)
     {
-        myFBox = theFBox;
-        myLBox = theLBox;
-        myArrIndices.Init(0);
+        _fBox = fBox;
+        _lBox = lBox;
+        _arrIndices.Init(0);
     }
 
     /// <summary>Sets the current wire's first and last vertices.</summary>
-    public void DefineVertexes(Vertex theVf, Vertex theVl)
+    public void DefineVertexes(Vertex vf, Vertex vl)
     {
-        myFVertex = theVf;
-        myLVertex = theVl;
-        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        _fVertex = vf;
+        _lVertex = vl;
+        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
     }
 
     /// <summary>Sets the current wire's first and last points.</summary>
-    public void DefinePnt(in Point3D theFPnt, in Point3D theLPnt)
+    public void DefinePnt(in Point3D fPnt, in Point3D lPnt)
     {
-        myFPnt = theFPnt;
-        myLPnt = theLPnt;
-        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        _fPnt = fPnt;
+        _lPnt = lPnt;
+        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
     }
 
     /// <summary>The index of the wire accepted.</summary>
-    public int GetNb() => myNb;
+    public int GetNb() => _nb;
 
     /// <summary>Sets the index of the wire accepted.</summary>
-    public void SetNb(int theNb) => myNb = theNb;
+    public void SetNb(int nb) => _nb = nb;
 
     /// <summary>Excludes the wire of the given index from the selection.</summary>
-    public void LoadList(int elem) => myList.Add(elem);
+    public void LoadList(int elem) => _list.Add(elem);
 
     /// <summary>Clears the stop flag.</summary>
     public void SetStop() => _stop = false;
 
     /// <summary>Sets the tolerance of the distance mode.</summary>
-    public void SetTolerance(double theTol)
+    public void SetTolerance(double tol)
     {
-        myTol = theTol;
-        myMin3d = theTol;
-        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        _tol = tol;
+        _min3d = tol;
+        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
     }
 
     /// <summary>True if the wire of the given index is excluded.</summary>
-    public bool ContWire(int nbWire) => myList.Contains(nbWire);
+    public bool ContWire(int nbWire) => _list.Contains(nbWire);
 
     /// <summary>
     /// The status of the last acceptance: DONE1 (DONE2) the current wire's last vertex is the wire's first (last);
     /// DONE3 (DONE4) its first vertex is the wire's last (first); FAIL2 none.
     /// </summary>
-    public bool LastCheckStatus(ShapeExtend_Status theStatus) => ShapeExtend.DecodeStatus(myStatus, theStatus);
+    public bool LastCheckStatus(ExtendStatus status) => global::Kerf.Engine.Healing.Extend.ShapeExtend.DecodeStatus(_status, status);
 
     /// <summary>True if the box is out of both end boxes.</summary>
-    public override bool Reject(in Box theBnd)
+    public override bool Reject(in Box bnd)
     {
-        bool fch = myFBox.IsOut(theBnd);
-        bool lch = myLBox.IsOut(theBnd);
+        bool fch = _fBox.IsOut(bnd);
+        bool lch = _lBox.IsOut(bnd);
         return fch && lch;
     }
 
@@ -123,64 +125,64 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
     private const int Last = 2;
 
     /// <summary>Accepts the wire of the given index if it connects to the current wire.</summary>
-    public override bool Accept(in int theObj)
+    public override bool Accept(in int obj)
     {
-        if (theObj < 1 || theObj > mySeq.Length())
+        if (obj < 1 || obj > _seq.Length())
         {
             throw new NoSuchObjectException("ShapeAnalysis_BoxBndTreeSelector::Accept : no such object for current index");
         }
-        bool IsAccept = false;
-        if (myList.Contains(theObj))
+        bool isAccept = false;
+        if (_list.Contains(obj))
         {
             return false;
         }
 
-        Wire W = ShapeCasts.Wire(mySeq.Value(theObj));
-        ShapeAnalysis.FindBounds(W, out Vertex V1, out Vertex V2);
-        if (myShared)
+        Wire w = ShapeCasts.Wire(_seq.Value(obj));
+        ShapeAnalysisAnalysis.FindBounds(w, out Vertex v1, out Vertex v2);
+        if (_shared)
         {
-            if (myLVertex.IsSame(V1))
+            if (_lVertex.IsSame(v1))
             {
-                myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
-                IsAccept = true;
-                myArrIndices[Last] = theObj;
+                _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
+                isAccept = true;
+                _arrIndices[Last] = obj;
             }
             else
             {
-                if (myLVertex.IsSame(V2))
+                if (_lVertex.IsSame(v2))
                 {
-                    myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
-                    IsAccept = true;
-                    myArrIndices[Last] = theObj;
+                    _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
+                    isAccept = true;
+                    _arrIndices[Last] = obj;
                 }
                 else
                 {
-                    if (myFVertex.IsSame(V2))
+                    if (_fVertex.IsSame(v2))
                     {
-                        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
-                        IsAccept = true;
-                        myArrIndices[First] = theObj;
+                        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
+                        isAccept = true;
+                        _arrIndices[First] = obj;
                     }
                     else
                     {
-                        if (myFVertex.IsSame(V1))
+                        if (_fVertex.IsSame(v1))
                         {
-                            myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE4);
-                            IsAccept = true;
-                            myArrIndices[First] = theObj;
+                            _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE4);
+                            isAccept = true;
+                            _arrIndices[First] = obj;
                         }
                         else
                         {
-                            myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
+                            _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
                         }
                     }
                 }
             }
 
-            if (IsAccept)
+            if (isAccept)
             {
-                SetNb(theObj);
-                if (myArrIndices[Last] != 0)
+                SetNb(obj);
+                if (_arrIndices[Last] != 0)
                 {
                     _stop = true;
                 }
@@ -194,14 +196,14 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
 
         else
         {
-            Point3D p1 = Tool.Pnt(V1);
-            Point3D p2 = Tool.Pnt(V2);
+            Point3D p1 = Tool.Pnt(v1);
+            Point3D p2 = Tool.Pnt(v2);
 
             double tailhead, tailtail, headhead, headtail;
-            tailhead = p1.Distance(myLPnt);
-            tailtail = p2.Distance(myLPnt);
-            headhead = p1.Distance(myFPnt);
-            headtail = p2.Distance(myFPnt);
+            tailhead = p1.Distance(_lPnt);
+            tailtail = p2.Distance(_lPnt);
+            headhead = p1.Distance(_fPnt);
+            headtail = p2.Distance(_fPnt);
             double dm1 = tailhead, dm2 = headtail;
             int res1 = 0, res2 = 0;
             if (tailhead > tailtail)
@@ -217,27 +219,27 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
             int result = res1;
             double min3d;
             min3d = Min(dm1, dm2);
-            if (min3d > myMin3d)
+            if (min3d > _min3d)
             {
                 return false;
             }
 
             int minInd = (dm1 > dm2 ? First : Last);
             int maxInd = (dm1 > dm2 ? Last : First);
-            myArrIndices[minInd] = theObj;
-            if ((min3d - myMin3d) > RealSmall())
+            _arrIndices[minInd] = obj;
+            if ((min3d - _min3d) > RealSmall())
             {
-                myArrIndices[maxInd] = 0;
+                _arrIndices[maxInd] = 0;
             }
 
-            myMin3d = min3d;
-            if (min3d > myTol)
+            _min3d = min3d;
+            if (min3d > _tol)
             {
-                myStatus = ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
+                _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
                 return false;
             }
 
-            int anObj = (myArrIndices[Last] != 0 ? myArrIndices[Last] : myArrIndices[First]);
+            int anObj = (_arrIndices[Last] != 0 ? _arrIndices[Last] : _arrIndices[First]);
             SetNb(anObj);
 
             if (min3d == 0 && minInd == Last)
@@ -250,21 +252,21 @@ public sealed class ShapeAnalysis_BoxBndTreeSelector : SpatialTree<int, Box>.Sel
                 dm1 = dm2;
                 result = res2 + 2;
             }
-            if (anObj == theObj)
+            if (anObj == obj)
             {
                 switch (result)
                 {
                     case 0:
-                        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
+                        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
                         break;
                     case 1:
-                        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE2);
+                        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                         break;
                     case 2:
-                        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE3);
+                        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
                         break;
                     case 3:
-                        myStatus = ShapeExtend.EncodeStatus(ShapeExtend_DONE4);
+                        _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE4);
                         break;
                 }
             }

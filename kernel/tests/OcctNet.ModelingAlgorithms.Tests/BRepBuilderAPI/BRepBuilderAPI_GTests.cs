@@ -6,6 +6,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -20,12 +22,12 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepBuilderAPI_CopyTest
 {
-    private static Shape Box10() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape Box10() => new MakeBox(10.0, 10.0, 10.0).Shape();
 
     private static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -34,10 +36,10 @@ public class BRepBuilderAPI_CopyTest
     {
         Shape aBox = Box10();
 
-        var aCopier = new BRepBuilderAPI_Copy(aBox);
+        var aCopier = new Copy(aBox);
         Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull, "Copied shape is null");
-        Assert.True(new BRepCheck_Analyzer(aCopy).IsValid(), "aCopy is not valid");
+        Assert.True(new Analyzer(aCopy).IsValid(), "aCopy is not valid");
     }
 
     [Fact]
@@ -46,7 +48,7 @@ public class BRepBuilderAPI_CopyTest
         Shape aBox = Box10();
         double anOriginalVolume = Volume(aBox);
 
-        var aCopier = new BRepBuilderAPI_Copy(aBox);
+        var aCopier = new Copy(aBox);
         Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull, "Copied shape is null");
 
@@ -58,7 +60,7 @@ public class BRepBuilderAPI_CopyTest
     {
         Shape aBox = Box10();
 
-        var aCopier = new BRepBuilderAPI_Copy(aBox);
+        var aCopier = new Copy(aBox);
         Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull, "Copied shape is null");
 
@@ -70,7 +72,7 @@ public class BRepBuilderAPI_CopyTest
     {
         Shape aBox = Box10();
 
-        var aCopier = new BRepBuilderAPI_Copy(aBox, true);
+        var aCopier = new Copy(aBox, true);
         Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull, "Copied shape is null");
 
@@ -82,10 +84,10 @@ public class BRepBuilderAPI_CopyTest
     {
         Shape aBox = Box10();
 
-        var aCopier = new BRepBuilderAPI_Copy(aBox, false);
+        var aCopier = new Copy(aBox, false);
         Shape aCopy = aCopier.Shape();
         Assert.False(aCopy.IsNull, "Copied shape is null");
-        Assert.True(new BRepCheck_Analyzer(aCopy).IsValid(), "aCopy is not valid");
+        Assert.True(new Analyzer(aCopy).IsValid(), "aCopy is not valid");
     }
 }
 
@@ -95,7 +97,7 @@ public class BRepBuilderAPI_MakeEdgeTest
     private static double Length(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.LinearProperties(theShape, aProps);
+        MassPropertiesBuilder.LinearProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -105,8 +107,8 @@ public class BRepBuilderAPI_MakeEdgeTest
         var aP1 = new Point3D(0.0, 0.0, 0.0);
         var aP2 = new Point3D(10.0, 0.0, 0.0);
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2);
-        Assert.True(aMakeEdge.IsDone(), "Linear edge creation failed");
+        var aMakeEdge = new MakeEdge(aP1, aP2);
+        Assert.True(aMakeEdge.IsDone, "Linear edge creation failed");
 
         Edge anEdge = aMakeEdge.Edge();
         Assert.False(anEdge.IsNull, "Resulting edge is null");
@@ -121,8 +123,8 @@ public class BRepBuilderAPI_MakeEdgeTest
         var anAxis = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         var aCircle = new CircleCurve3D(anAxis, 5.0);
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aCircle);
-        Assert.True(aMakeEdge.IsDone(), "Full circular edge creation failed");
+        var aMakeEdge = new MakeEdge(aCircle);
+        Assert.True(aMakeEdge.IsDone, "Full circular edge creation failed");
 
         Edge anEdge = aMakeEdge.Edge();
         Assert.False(anEdge.IsNull);
@@ -138,8 +140,8 @@ public class BRepBuilderAPI_MakeEdgeTest
         var aCircle = new CircleCurve3D(anAxis, 5.0);
 
         // Half circle: 0 to PI
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aCircle, 0.0, Math.PI);
-        Assert.True(aMakeEdge.IsDone(), "Trimmed circular edge creation failed");
+        var aMakeEdge = new MakeEdge(aCircle, 0.0, Math.PI);
+        Assert.True(aMakeEdge.IsDone, "Trimmed circular edge creation failed");
 
         Edge anEdge = aMakeEdge.Edge();
         Assert.False(anEdge.IsNull);
@@ -153,8 +155,8 @@ public class BRepBuilderAPI_MakeEdgeTest
     {
         var aLine = new LineCurve3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aLine, 0.0, 7.0);
-        Assert.True(aMakeEdge.IsDone(), "Edge from line with bounds failed");
+        var aMakeEdge = new MakeEdge(aLine, 0.0, 7.0);
+        Assert.True(aMakeEdge.IsDone, "Edge from line with bounds failed");
 
         Edge anEdge = aMakeEdge.Edge();
         Assert.False(anEdge.IsNull);
@@ -168,8 +170,8 @@ public class BRepBuilderAPI_MakeEdgeTest
         var aP1 = new Point3D(0.0, 0.0, 0.0);
         var aP2 = new Point3D(10.0, 0.0, 0.0);
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2);
-        Assert.True(aMakeEdge.IsDone());
+        var aMakeEdge = new MakeEdge(aP1, aP2);
+        Assert.True(aMakeEdge.IsDone);
 
         Edge anEdge = aMakeEdge.Edge();
         Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
@@ -190,8 +192,8 @@ public class BRepBuilderAPI_MakeEdgeTest
         var aP1 = new Point3D(0.0, 0.0, 0.0);
         var aP2 = new Point3D(10.0, 0.0, 0.0);
 
-        var aMakeEdge = new BRepBuilderAPI_MakeEdge(aP1, aP2);
-        Assert.True(aMakeEdge.IsDone());
+        var aMakeEdge = new MakeEdge(aP1, aP2);
+        Assert.True(aMakeEdge.IsDone);
 
         Edge anEdge = aMakeEdge.Edge();
         double aTol = Tool.Tolerance(anEdge);
@@ -208,7 +210,7 @@ public class BRepBuilderAPI_MakeFaceTest
     private static double Area(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -216,8 +218,8 @@ public class BRepBuilderAPI_MakeFaceTest
     public void FaceFromPlane()
     {
         var aPln = new Plane3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        var aMakeFace = new BRepBuilderAPI_MakeFace(aPln);
-        Assert.True(aMakeFace.IsDone(), "Face from plane creation failed");
+        var aMakeFace = new MakeFace(aPln);
+        Assert.True(aMakeFace.IsDone, "Face from plane creation failed");
 
         Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull, "Resulting face is null");
@@ -232,24 +234,24 @@ public class BRepBuilderAPI_MakeFaceTest
         var aP3 = new Point3D(10.0, 5.0, 0.0);
         var aP4 = new Point3D(0.0, 5.0, 0.0);
 
-        Edge anE1 = new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
-        Edge anE2 = new BRepBuilderAPI_MakeEdge(aP2, aP3).Edge();
-        Edge anE3 = new BRepBuilderAPI_MakeEdge(aP3, aP4).Edge();
-        Edge anE4 = new BRepBuilderAPI_MakeEdge(aP4, aP1).Edge();
+        Edge anE1 = new MakeEdge(aP1, aP2).Edge();
+        Edge anE2 = new MakeEdge(aP2, aP3).Edge();
+        Edge anE3 = new MakeEdge(aP3, aP4).Edge();
+        Edge anE4 = new MakeEdge(aP4, aP1).Edge();
 
-        var aMakeWire = new BRepBuilderAPI_MakeWire();
+        var aMakeWire = new MakeWire();
         aMakeWire.Add(anE1);
         aMakeWire.Add(anE2);
         aMakeWire.Add(anE3);
         aMakeWire.Add(anE4);
-        Assert.True(aMakeWire.IsDone(), "Wire creation failed");
+        Assert.True(aMakeWire.IsDone, "Wire creation failed");
 
-        var aMakeFace = new BRepBuilderAPI_MakeFace(aMakeWire.Wire());
-        Assert.True(aMakeFace.IsDone(), "Face from wire creation failed");
+        var aMakeFace = new MakeFace(aMakeWire.Wire());
+        Assert.True(aMakeFace.IsDone, "Face from wire creation failed");
 
         Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
+        Assert.True(new Analyzer(aFace).IsValid(), "aFace is not valid");
 
         // Area should be 10 * 5 = 50
         Assert.Equal(50.0, Area(aFace), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -259,12 +261,12 @@ public class BRepBuilderAPI_MakeFaceTest
     public void FaceFromGeomPlane_WithBounds()
     {
         var aGeomPlane = new PlaneSurface(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        var aMakeFace = new BRepBuilderAPI_MakeFace(aGeomPlane, 0.0, 10.0, 0.0, 5.0, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aMakeFace.IsDone(), "Face from Geom_Plane with bounds failed");
+        var aMakeFace = new MakeFace(aGeomPlane, 0.0, 10.0, 0.0, 5.0, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aMakeFace.IsDone, "Face from Geom_Plane with bounds failed");
 
         Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
+        Assert.True(new Analyzer(aFace).IsValid(), "aFace is not valid");
 
         Assert.Equal(50.0, Area(aFace), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -276,12 +278,12 @@ public class BRepBuilderAPI_MakeFaceTest
         var aCylSurf = new CylindricalSurface(anAxis, 5.0);
 
         // Create a bounded face: U from 0 to 2*PI, V from 0 to 10
-        var aMakeFace = new BRepBuilderAPI_MakeFace(aCylSurf, 0.0, 2.0 * Math.PI, 0.0, 10.0, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aMakeFace.IsDone(), "Face from cylindrical surface failed");
+        var aMakeFace = new MakeFace(aCylSurf, 0.0, 2.0 * Math.PI, 0.0, 10.0, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aMakeFace.IsDone, "Face from cylindrical surface failed");
 
         Face aFace = aMakeFace.Face();
         Assert.False(aFace.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid(), "aFace is not valid");
+        Assert.True(new Analyzer(aFace).IsValid(), "aFace is not valid");
 
         // Area of cylinder: 2*PI*R*H = 2*PI*5*10 = 100*PI
         Assert.Equal(2.0 * Math.PI * 5.0 * 10.0, Area(aFace), 0.01);
@@ -306,11 +308,11 @@ public class BRepBuilderAPI_MakeWire_Test
         aBB.MakeVertex(ref aV3, new Point3D(10, 0, 0), 0.1);
 
         // Create edges
-        Edge anE1 = new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge();
-        Edge anE2 = new BRepBuilderAPI_MakeEdge(aV2, aV3).Edge();
+        Edge anE1 = new MakeEdge(aV1, aV2).Edge();
+        Edge anE2 = new MakeEdge(aV2, aV3).Edge();
 
         // Build wire with individually added edges
-        var aMW = new BRepBuilderAPI_MakeWire();
+        var aMW = new MakeWire();
         aMW.Add(anE1);
         aMW.Add(anE2);
 
@@ -321,8 +323,8 @@ public class BRepBuilderAPI_MakeWire_Test
         aBB.MakeVertex(ref aV6, new Point3D(10, 2, 0), 0.07);
         aBB.MakeVertex(ref aV7, new Point3D(10, -2, 0), 0.07);
 
-        Edge anE3 = new BRepBuilderAPI_MakeEdge(aV4, aV6).Edge();
-        Edge anE4 = new BRepBuilderAPI_MakeEdge(aV5, aV7).Edge();
+        Edge anE3 = new MakeEdge(aV4, aV6).Edge();
+        Edge anE4 = new MakeEdge(aV5, aV7).Edge();
 
         // Add edges as a list
         var aListOfEdges = new NCollection_List<Shape>();
@@ -332,7 +334,7 @@ public class BRepBuilderAPI_MakeWire_Test
         aMW.Add(aListOfEdges);
 
         // Verify wire was created successfully
-        Assert.True(aMW.IsDone(), "Wire builder should complete successfully");
+        Assert.True(aMW.IsDone, "Wire builder should complete successfully");
         Wire aWire = aMW.Wire();
         Assert.False(aWire.IsNull, "Resulting wire should not be null");
     }
@@ -343,12 +345,12 @@ public class BRepBuilderAPI_MakeWire_Test
 /// </summary>
 public class BRepBuilderAPI_TransformTest
 {
-    private static Shape Box10() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    private static Shape Box10() => new MakeBox(10.0, 10.0, 10.0).Shape();
 
     private static Properties VolumeProps(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps;
     }
 
@@ -360,7 +362,7 @@ public class BRepBuilderAPI_TransformTest
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
 
-        var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
+        var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull, "Transformed shape is null");
 
@@ -380,7 +382,7 @@ public class BRepBuilderAPI_TransformTest
         var aZAxis = new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         aTrsf.SetRotation(aZAxis, Math.PI / 2.0);
 
-        var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
+        var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull, "Transformed shape is null");
 
@@ -398,7 +400,7 @@ public class BRepBuilderAPI_TransformTest
         var aTrsf = new Transform3D();
         aTrsf.SetScale(new Point3D(0.0, 0.0, 0.0), 2.0);
 
-        var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
+        var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull, "Transformed shape is null");
 
@@ -408,13 +410,13 @@ public class BRepBuilderAPI_TransformTest
     [Fact]
     public void Mirror()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(10.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(new Point3D(10.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
 
         var aTrsf = new Transform3D();
         var aYZPlane = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         aTrsf.SetMirror(aYZPlane);
 
-        var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
+        var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull, "Transformed shape is null");
 
@@ -431,9 +433,9 @@ public class BRepBuilderAPI_TransformTest
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(50.0, 50.0, 50.0));
 
-        var aTransform = new BRepBuilderAPI_Transform(aBox, aTrsf);
+        var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
         Assert.False(aResult.IsNull, "Transformed shape is null");
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid(), "aResult is not valid");
+        Assert.True(new Analyzer(aResult).IsValid(), "aResult is not valid");
     }
 }

@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Fillets.Blend;
+using Kerf.Engine.Fillets.BlendFunctions;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
@@ -10,7 +15,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Text;
-using static Occt.ChFiDS_State;
+using static Kerf.Engine.Fillets.Data.State;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -252,7 +257,7 @@ internal sealed partial class BlendRecorder
         }
     }
 
-    private void RecApp(Blend_AppFunction F)
+    private void RecApp(AppFunction F)
     {
         F.GetShape(out int aNbPoles, out int aNbKnots, out int aDegree, out int aNbPoles2d);
         Tag("shape");
@@ -260,7 +265,7 @@ internal sealed partial class BlendRecorder
         Int(aNbKnots);
         Int(aDegree);
         Int(aNbPoles2d);
-        Int(F.IsRational() ? 1 : 0);
+        Int(F.IsRational ? 1 : 0);
         End();
         var aKnots = new NCollection_Array1<double>(1, aNbKnots);
         var aMults = new NCollection_Array1<int>(1, aNbKnots);
@@ -336,7 +341,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecSections(Blend_AppFunction F, in Blend_Point P, int theNbPoles2d)
+    private void RecSections(AppFunction F, in BlendPoint P, int theNbPoles2d)
     {
         F.GetShape(out int aNbPoles, out _, out _, out _);
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -435,7 +440,7 @@ internal sealed partial class BlendRecorder
         }
     }
 
-    private void RecFunction(Blend_Function F, PairCase C)
+    private void RecFunction(BlendFunction F, PairCase C)
     {
         F.Set(C.W);
         math_Vector X0 = new(1, 4), Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4), Sol = new(1, 4);
@@ -468,11 +473,11 @@ internal sealed partial class BlendRecorder
 
         Tag("issolution");
         Int(isSol ? 1 : 0);
-        Int(F.IsTangencyPoint() ? 1 : 0);
+        Int(F.IsTangencyPoint ? 1 : 0);
         Pnt(F.PointOnS1());
         Pnt(F.PointOnS2());
         End();
-        if (!F.IsTangencyPoint())
+        if (!F.IsTangencyPoint)
         {
             Tag("tangents");
             Vec(F.TangentOnS1());
@@ -501,21 +506,21 @@ internal sealed partial class BlendRecorder
         Vec(aNmL);
         End();
         RecApp(F);
-        Blend_Point aP;
-        if (F.IsTangencyPoint())
+        BlendPoint aP;
+        if (F.IsTangencyPoint)
         {
-            aP = new Blend_Point(F.PointOnS1(), F.PointOnS2(), C.W, Sol[1], Sol[2], Sol[3], Sol[4]);
+            aP = new BlendPoint(F.PointOnS1(), F.PointOnS2(), C.W, Sol[1], Sol[2], Sol[3], Sol[4]);
         }
         else
         {
-            aP = new Blend_Point(F.PointOnS1(), F.PointOnS2(), C.W, Sol[1], Sol[2], Sol[3], Sol[4], F.TangentOnS1(),
+            aP = new BlendPoint(F.PointOnS1(), F.PointOnS2(), C.W, Sol[1], Sol[2], Sol[3], Sol[4], F.TangentOnS1(),
                                  F.TangentOnS2(), F.Tangent2dOnS1(), F.Tangent2dOnS2());
         }
 
         RecSections(F, aP, 2);
     }
 
-    private void RecInv(Blend_FuncInv F, math_Vector X0)
+    private void RecInv(FuncInv F, math_Vector X0)
     {
         math_Vector Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4), Sol = new(1, 4);
         RecValues(F, X0);
@@ -545,7 +550,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecCS(Blend_CSFunction F, double theW, math_Vector X0)
+    private void RecCS(CSFunction F, double theW, math_Vector X0)
     {
         int m = F.NbVariables();
         math_Vector Tol = new(1, m), Inf = new(1, m), Sup = new(1, m), Sol = new(1, m);
@@ -564,13 +569,13 @@ internal sealed partial class BlendRecorder
         bool isSol = F.IsSolution(Sol, 1.0e-6);
         Tag("issolution");
         Int(isSol ? 1 : 0);
-        Int(F.IsTangencyPoint() ? 1 : 0);
+        Int(F.IsTangencyPoint ? 1 : 0);
         Pnt(F.PointOnS());
         Pnt(F.PointOnC());
         Pnt2d(F.Pnt2d());
         Hex(F.ParameterOnC());
         End();
-        if (!F.IsTangencyPoint())
+        if (!F.IsTangencyPoint)
         {
             Tag("tangents");
             Vec(F.TangentOnS());
@@ -586,14 +591,14 @@ internal sealed partial class BlendRecorder
         End();
         RecApp(F);
         double aW = (m == 3) ? Sol[3] : F.ParameterOnC();
-        Blend_Point aP;
-        if (F.IsTangencyPoint())
+        BlendPoint aP;
+        if (F.IsTangencyPoint)
         {
-            aP = new Blend_Point(F.PointOnS(), F.PointOnC(), theW, Sol[1], Sol[2], aW);
+            aP = new BlendPoint(F.PointOnS(), F.PointOnC(), theW, Sol[1], Sol[2], aW);
         }
         else
         {
-            aP = new Blend_Point(F.PointOnS(), F.PointOnC(), theW, Sol[1], Sol[2], aW, F.TangentOnS(), F.TangentOnC(),
+            aP = new BlendPoint(F.PointOnS(), F.PointOnC(), theW, Sol[1], Sol[2], aW, F.TangentOnS(), F.TangentOnC(),
                                  F.Tangent2d());
         }
 
@@ -610,7 +615,7 @@ internal sealed partial class BlendRecorder
             for (int choix = 1; choix <= 8; choix++)
             {
                 Line($"case constrad {ip} {choix}");
-                BlendFunc_ConstRad aConstRad = new(S1, S2, G);
+                ConstRad aConstRad = new(S1, S2, G);
                 aConstRad.Set(1.0, choix);
                 aConstRad.Set(G.FirstParameter(), G.LastParameter());
                 RecFunction(aConstRad, C);
@@ -631,11 +636,11 @@ internal sealed partial class BlendRecorder
                 End();
 
                 Line($"case evolrad {ip} {choix}");
-                Law_Linear aLaw = new();
+                Linear aLaw = new();
                 aLaw.Set(G.FirstParameter(), 0.8, G.LastParameter(), 1.4);
-                Law_Composite aComp = new(G.FirstParameter(), G.LastParameter(), 1.0e-9);
+                Composite aComp = new(G.FirstParameter(), G.LastParameter(), 1.0e-9);
                 aComp.ChangeLaws().Append(aLaw);
-                BlendFunc_EvolRad anEvolRad = new(S1, S2, G, aComp);
+                EvolRad anEvolRad = new(S1, S2, G, aComp);
                 anEvolRad.Set(choix);
                 anEvolRad.Set(G.FirstParameter(), G.LastParameter());
                 RecFunction(anEvolRad, C);
@@ -644,28 +649,28 @@ internal sealed partial class BlendRecorder
             for (int choix = 1; choix <= 2; choix++)
             {
                 Line($"case chamfer {ip} {choix}");
-                BlendFunc_Chamfer aChamfer = new(S1, S2, G);
+                Chamfer aChamfer = new(S1, S2, G);
                 aChamfer.Set(1.0, 1.5, choix);
                 RecFunction(aChamfer, C);
 
                 Line($"case constthroat {ip} {choix}");
-                BlendFunc_ConstThroat aThroat = new(S1, S2, G);
+                ConstThroat aThroat = new(S1, S2, G);
                 aThroat.Set(0.7, 0.0, choix);
                 RecFunction(aThroat, C);
 
                 Line($"case constthroatpen {ip} {choix}");
-                BlendFunc_ConstThroatWithPenetration aPen = new(S1, S2, G);
+                ConstThroatWithPenetration aPen = new(S1, S2, G);
                 aPen.Set(1.0, 0.0, choix);
                 RecFunction(aPen, C);
 
                 Line($"case chasym {ip} {choix}");
-                BlendFunc_ChAsym aChAsym = new(S1, S2, G);
+                ChAsym aChAsym = new(S1, S2, G);
                 aChAsym.Set(1.0, Math.PI / 3.0, choix);
                 aChAsym.Set(G.FirstParameter(), G.LastParameter());
                 RecFunction(aChAsym, C);
 
                 Line($"case ruled {ip} {choix}");
-                BlendFunc_Ruled aRuled = new(S1, S2, G);
+                Ruled aRuled = new(S1, S2, G);
                 RecFunction(aRuled, C);
                 var aTabP = new NCollection_Array1<Point3D>(1, 5);
                 var aTabV = new NCollection_Array1<Vector3D>(1, 5);
@@ -716,46 +721,46 @@ internal sealed partial class BlendRecorder
             for (int choix = 1; choix <= 8; choix += 3)
             {
                 Line($"case constradinv {ii} {choix}");
-                BlendFunc_ConstRadInv aConstRad = new(S1, S2, G);
+                ConstRadInv aConstRad = new(S1, S2, G);
                 aConstRad.Set(1.0, choix);
                 aConstRad.Set(I.OnFirst, R);
                 RecInv(aConstRad, X0);
 
                 Line($"case evolradinv {ii} {choix}");
-                Law_Linear aLaw = new();
+                Linear aLaw = new();
                 aLaw.Set(G.FirstParameter(), 0.8, G.LastParameter(), 1.4);
-                BlendFunc_EvolRadInv anEvolRad = new(S1, S2, G, aLaw);
+                EvolRadInv anEvolRad = new(S1, S2, G, aLaw);
                 anEvolRad.Set(choix);
                 anEvolRad.Set(I.OnFirst, R);
                 RecInv(anEvolRad, X0);
 
                 Line($"case chamfinv {ii} {choix}");
-                BlendFunc_ChamfInv aChamf = new(S1, S2, G);
+                ChamfInv aChamf = new(S1, S2, G);
                 aChamf.Set(1.0, 1.5, choix);
                 aChamf.Set(I.OnFirst, R);
                 RecInv(aChamf, X0);
 
                 Line($"case constthroatinv {ii} {choix}");
-                BlendFunc_ConstThroatInv aThroat = new(S1, S2, G);
+                ConstThroatInv aThroat = new(S1, S2, G);
                 aThroat.Set(0.7, 0.0, choix);
                 aThroat.Set(I.OnFirst, R);
                 RecInv(aThroat, X0);
                 RecInv(aThroat, X0); // again: Derivatives reads the previous call's points
 
                 Line($"case constthroatpeninv {ii} {choix}");
-                BlendFunc_ConstThroatWithPenetrationInv aPen = new(S1, S2, G);
+                ConstThroatWithPenetrationInv aPen = new(S1, S2, G);
                 aPen.Set(1.0, 0.0, choix);
                 aPen.Set(I.OnFirst, R);
                 RecInv(aPen, X0);
 
                 Line($"case chasyminv {ii} {choix}");
-                BlendFunc_ChAsymInv aChAsym = new(S1, S2, G);
+                ChAsymInv aChAsym = new(S1, S2, G);
                 aChAsym.Set(1.0, Math.PI / 3.0, choix);
                 aChAsym.Set(I.OnFirst, R);
                 RecInv(aChAsym, X0);
 
                 Line($"case ruledinv {ii} {choix}");
-                BlendFunc_RuledInv aRuled = new(S1, S2, G);
+                RuledInv aRuled = new(S1, S2, G);
                 aRuled.Set(I.OnFirst, R);
                 RecInv(aRuled, X0);
             }
@@ -775,7 +780,7 @@ internal sealed partial class BlendRecorder
             for (int choix = 1; choix <= 8; choix++)
             {
                 Line($"case csconstrad {choix}");
-                BlendFunc_CSConstRad aCS = new(S, C, G);
+                CSConstRad aCS = new(S, C, G);
                 aCS.Set(1.0, choix);
                 RecCS(aCS, 3.0, X3);
                 var aTabP = new NCollection_Array1<Point3D>(1, 5);
@@ -804,9 +809,9 @@ internal sealed partial class BlendRecorder
                 End();
 
                 Line($"case cscircular {choix}");
-                Law_Linear aLaw = new();
+                Linear aLaw = new();
                 aLaw.Set(0.0, 0.0, 10.0, 10.0);
-                BlendFunc_CSCircular aCirc2 = new(S, C, G, aLaw);
+                CSCircular aCirc2 = new(S, C, G, aLaw);
                 aCirc2.Set(1.0, choix);
                 RecCS(aCirc2, 3.0, X2);
             }
@@ -816,7 +821,7 @@ internal sealed partial class BlendRecorder
     // -----------------------------------------------------------------------------------------------------------------
     // Spines
 
-    private void RecSpineEval(ChFiDS_Spine Sp, double theFrom, double theTo)
+    private void RecSpineEval(Spine Sp, double theFrom, double theTo)
     {
         for (int k = 0; k <= 12; k++)
         {
@@ -847,16 +852,16 @@ internal sealed partial class BlendRecorder
         }
     }
 
-    private void RecSpine(ChFiDS_Spine Sp)
+    private void RecSpine(Spine Sp)
     {
         Sp.Load();
-        int n = Sp.NbEdges();
+        int n = Sp.EdgeCount;
         Tag("spine");
         Int(n);
         Hex(Sp.FirstParameter());
         Hex(Sp.LastParameter());
-        Int(Sp.IsClosed() ? 1 : 0);
-        Int(Sp.IsPeriodic() ? 1 : 0);
+        Int(Sp.IsClosed ? 1 : 0);
+        Int(Sp.IsPeriodic ? 1 : 0);
         Hex(Sp.GetTolesp());
         Pnt(Tool.Pnt(Sp.FirstVertex()));
         Pnt(Tool.Pnt(Sp.LastVertex()));
@@ -912,14 +917,14 @@ internal sealed partial class BlendRecorder
 
     internal static Face BoxFace()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        Shape aBox = new MakeBox(10.0, 20.0, 30.0).Shape();
         Explorer anExpF = new(aBox, ShapeType.Face);
         return ShapeCasts.Face(anExpF.Current());
     }
 
     internal static Face CylinderTopFace()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(5.0, 10.0).Shape();
         Explorer anExpF2 = new(aCyl, ShapeType.Face);
         anExpF2.Next();
         return ShapeCasts.Face(anExpF2.Current());
@@ -931,11 +936,11 @@ internal sealed partial class BlendRecorder
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
         aBS.SetPole(2, new Point3D(aBS.Pole(2).X() * 1.3, aBS.Pole(2).Y() * 0.8, 0.0));
         double f = aBS.FirstParameter(), l = aBS.LastParameter(), m = 0.4 * f + 0.6 * l;
-        BRepBuilderAPI_MakeWire aW = new();
-        aW.Add(new BRepBuilderAPI_MakeEdge(aBS, f, m).Edge());
-        aW.Add(new BRepBuilderAPI_MakeEdge(aBS, m, l).Edge());
-        Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), true).Face();
-        Shape aPrism = new BRepPrimAPI_MakePrism(aF, new Vector3D(0, 0, 5)).Shape();
+        MakeWire aW = new();
+        aW.Add(new MakeEdge(aBS, f, m).Edge());
+        aW.Add(new MakeEdge(aBS, m, l).Edge());
+        Face aF = new MakeFace(aW.Wire(), true).Face();
+        Shape aPrism = new ApiMakePrism(aF, new Vector3D(0, 0, 5)).Shape();
         Explorer anExpF3 = new(aPrism, ShapeType.Face);
         for (; anExpF3.More(); anExpF3.Next())
         {
@@ -954,17 +959,17 @@ internal sealed partial class BlendRecorder
         Face aFace = BoxFace();
         {
             Line("case spine-box");
-            ChFiDS_Spine Sp = new(1.0e-7);
+            Spine Sp = new(1.0e-7);
             for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
-            Sp.SetFirstStatus(ChFiDS_Closed);
-            Sp.SetLastStatus(ChFiDS_Closed);
+            Sp.SetFirstStatus(State.Closed);
+            Sp.SetLastStatus(State.Closed);
             Tag("periodic");
-            Int(Sp.IsPeriodic() ? 1 : 0);
+            Int(Sp.IsPeriodic ? 1 : 0);
             Hex(Sp.Period());
             End();
             RecSpineEval(Sp, -15.0, 75.0);
@@ -972,7 +977,7 @@ internal sealed partial class BlendRecorder
 
         {
             Line("case spine-box-ext");
-            ChFiDS_Spine Sp = new();
+            Spine Sp = new();
             Explorer anExp = new(aFace, ShapeType.Edge);
             Edge E1 = ShapeCasts.Edge(anExp.Current());
             anExp.Next();
@@ -988,8 +993,8 @@ internal sealed partial class BlendRecorder
             Tag("ext");
             Hex(Sp.FirstParameter());
             Hex(Sp.LastParameter());
-            Int(Sp.HasFirstTgt() ? 1 : 0);
-            Int(Sp.HasLastTgt() ? 1 : 0);
+            Int(Sp.HasFirstTgt ? 1 : 0);
+            Int(Sp.HasLastTgt ? 1 : 0);
             End();
             RecSpineEval(Sp, -3.0, L + 4.0);
             Sp.SetReference(1);
@@ -1006,16 +1011,16 @@ internal sealed partial class BlendRecorder
 
         {
             Line("case spine-cylinder");
-            ChFiDS_Spine Sp = new(1.0e-7);
+            Spine Sp = new(1.0e-7);
             for (Explorer anExp = new(CylinderTopFace(), ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
-            Sp.SetFirstStatus(ChFiDS_Closed);
+            Sp.SetFirstStatus(State.Closed);
             Tag("periodic");
-            Int(Sp.IsPeriodic() ? 1 : 0);
+            Int(Sp.IsPeriodic ? 1 : 0);
             Hex(Sp.Period());
             End();
             RecSpineEval(Sp, -10.0, 40.0);
@@ -1024,22 +1029,22 @@ internal sealed partial class BlendRecorder
         {
             Line("case spine-bspline");
             Face aBSFace = BSplineSolidFace(out BSplineCurve3D aBS);
-            ChFiDS_FilSpine Sp = new(1.0e-7);
+            FilSpine Sp = new(1.0e-7);
             for (Explorer anExp = new(aBSFace, ShapeType.Edge); anExp.More(); anExp.Next())
             {
                 Sp.SetEdges(ShapeCasts.Edge(anExp.Current()));
             }
 
             RecSpine(Sp);
-            Sp.SetFirstStatus(ChFiDS_Closed);
+            Sp.SetFirstStatus(State.Closed);
             Tag("periodic");
-            Int(Sp.IsPeriodic() ? 1 : 0);
+            Int(Sp.IsPeriodic ? 1 : 0);
             Hex(Sp.Period());
             End();
             RecSpineEval(Sp, -5.0, 35.0);
 
             // The radii and laws.
-            Sp.SetFirstStatus(ChFiDS_OnSame);
+            Sp.SetFirstStatus(State.OnSame);
             Sp.SetRadius(2.0);
             Tag("radius");
             Int(Sp.IsConstant() ? 1 : 0);
@@ -1053,12 +1058,12 @@ internal sealed partial class BlendRecorder
             Hex(Sp.Radius(2));
             Hex(Sp.MaxRadFromSeqAndLaws());
             End();
-            ChFiDS_ElSpine anEls = new();
+            ElSpine anEls = new();
             anEls.FirstParameter(Sp.FirstParameter());
             anEls.LastParameter(Sp.LastParameter());
             anEls.SetCurve(aBS);
             Sp.AppendElSpine(anEls);
-            Law_Composite aLaw = Sp.Law(anEls)!;
+            Composite aLaw = Sp.Law(anEls)!;
             Tag("law");
             for (int k = 0; k <= 10; k++)
             {
@@ -1075,7 +1080,7 @@ internal sealed partial class BlendRecorder
             BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
                 new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
             aBS.SetPeriodic();
-            ChFiDS_ElSpine anEls = new();
+            ElSpine anEls = new();
             anEls.SetCurve(aBS);
             anEls.FirstParameter(aBS.FirstParameter());
             anEls.LastParameter(aBS.LastParameter());
@@ -1089,7 +1094,7 @@ internal sealed partial class BlendRecorder
             Int((int)anEls.Continuity());
             Int(anEls.NbIntervals(C2));
             Int((int)anEls.GetType());
-            Int(anEls.NbVertices());
+            Int(anEls.VertexCount);
             Hex(anEls.Resolution(1.0e-3));
             End();
             CurveAdaptorBase aCopy = anEls.ShallowCopy();

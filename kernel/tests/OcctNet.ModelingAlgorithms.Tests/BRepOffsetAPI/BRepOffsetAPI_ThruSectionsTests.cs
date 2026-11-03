@@ -3,7 +3,10 @@
 // checks of frozen inputs, the history, BRepFill_Generator and BRepProj_Projection added.
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -14,7 +17,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Schematiq.Collections;
-using static Occt.BRepFill_ThruSectionErrorStatus;
+using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -34,7 +37,7 @@ public class BRepOffsetAPI_ThruSectionsTests
 
     private static Wire Polygon(params Point3D[] thePoints)
     {
-        BRepBuilderAPI_MakePolygon aPolygon = new();
+        MakePolygon aPolygon = new();
         foreach (Point3D aP in thePoints)
         {
             aPolygon.Add(aP);
@@ -48,19 +51,19 @@ public class BRepOffsetAPI_ThruSectionsTests
                 new Point3D(-theHalf, theHalf, theZ));
 
     private static Wire Circle(double theZ, double theRadius) =>
-        new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius)).Edge()).Wire();
+        new MakeWire(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius)).Edge()).Wire();
 
     private static double Area(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     private static double Volume(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -86,7 +89,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         double[] aTopPoints2 = [0, 0, 250, 100, 0, 250, 100, -100, 250, 0, -100, 250];
 
         // Create polygons
-        BRepBuilderAPI_MakePolygon aBottomPolygon1 = new(), aTopPolygon1 = new(), aBottomPolygon2 = new(), aTopPolygon2 = new();
+        MakePolygon aBottomPolygon1 = new(), aTopPolygon1 = new(), aBottomPolygon2 = new(), aTopPolygon2 = new();
         for (int i = 0; i < 4; i++)
         {
             aBottomPolygon1.Add(new Point3D(aBottomPoints1[3 * i], aBottomPoints1[3 * i + 1], aBottomPoints1[3 * i + 2]));
@@ -102,13 +105,13 @@ public class BRepOffsetAPI_ThruSectionsTests
         aTopPolygon2.Close();
 
         // Create first loft (ThruSections)
-        BRepOffsetAPI_ThruSections aLoft1 = new(true, true);
+        ThruSections aLoft1 = new(true, true);
         aLoft1.AddWire(aBottomPolygon1.Wire());
         aLoft1.AddWire(aTopPolygon1.Wire());
         aLoft1.Build();
 
         // Create second loft (ThruSections)
-        BRepOffsetAPI_ThruSections aLoft2 = new(true, true);
+        ThruSections aLoft2 = new(true, true);
         aLoft2.AddWire(aBottomPolygon2.Wire());
         aLoft2.AddWire(aTopPolygon2.Wire());
         aLoft2.Build();
@@ -118,7 +121,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.False(aLoft2.Shape().IsNull);
 
         // Perform Boolean fusion of the two lofted shapes
-        BRepAlgoAPI_Fuse aFusion = new(aLoft1.Shape(), aLoft2.Shape());
+        Fuse aFusion = new(aLoft1.Shape(), aLoft2.Shape());
 
         // Verify that fusion operation succeeded
         Assert.False(aFusion.Shape().IsNull);
@@ -310,17 +313,17 @@ public class BRepOffsetAPI_ThruSectionsTests
     {
         (double[], double[])[] aSections = [(aPoles1, aKnots1), (aPoles2, aKnots2), (aPoles3, aKnots3), (aPoles4, aKnots4), (aPoles5, aKnots5)];
 
-        BRepOffsetAPI_ThruSections aThruSections = new(true, false, 1.0e-06);
+        ThruSections aThruSections = new(true, false, 1.0e-06);
 
         foreach ((double[] aP, double[] aK) in aSections)
         {
             BSplineCurve3D aCurve = createBSplineCurve(aP, aK);
 
-            BRepBuilderAPI_MakeEdge aMakeEdge = new(aCurve);
-            Assert.True(aMakeEdge.IsDone()); // Failed to create edge from B-spline curve
+            MakeEdge aMakeEdge = new(aCurve);
+            Assert.True(aMakeEdge.IsDone); // Failed to create edge from B-spline curve
 
-            BRepBuilderAPI_MakeWire aMakeWire = new(aMakeEdge.Edge());
-            Assert.True(aMakeWire.IsDone()); // Failed to create wire from edge
+            MakeWire aMakeWire = new(aMakeEdge.Edge());
+            Assert.True(aMakeWire.IsDone); // Failed to create wire from edge
 
             aThruSections.AddWire(aMakeWire.Wire());
         }
@@ -329,7 +332,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         aThruSections.Build();
 
         // Verify the result
-        Assert.True(aThruSections.IsDone());
+        Assert.True(aThruSections.IsDone);
         Assert.False(aThruSections.Shape().IsNull);
     }
 
@@ -350,10 +353,10 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.True(aMakeArc1.IsDone);
         TrimmedCurve3D aArc1 = aMakeArc1.Value();
 
-        BRepBuilderAPI_MakeEdge aMakeEdge1 = new(aArc1, aArc1.StartPoint(), aArc1.EndPoint());
-        Assert.True(aMakeEdge1.IsDone());
-        BRepBuilderAPI_MakeWire aMakeWire1 = new(aMakeEdge1.Edge());
-        Assert.True(aMakeWire1.IsDone());
+        MakeEdge aMakeEdge1 = new(aArc1, aArc1.StartPoint(), aArc1.EndPoint());
+        Assert.True(aMakeEdge1.IsDone);
+        MakeWire aMakeWire1 = new(aMakeEdge1.Edge());
+        Assert.True(aMakeWire1.IsDone);
         Wire aWire1 = aMakeWire1.Wire();
 
         // Wire 2: arc from a circle at a different center with fixed axis
@@ -366,19 +369,19 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.True(aMakeArc2.IsDone);
         TrimmedCurve3D aArc2 = aMakeArc2.Value();
 
-        BRepBuilderAPI_MakeEdge aMakeEdge2 = new(aArc2, aArc2.StartPoint(), aArc2.EndPoint());
-        Assert.True(aMakeEdge2.IsDone());
-        BRepBuilderAPI_MakeWire aMakeWire2 = new(aMakeEdge2.Edge());
-        Assert.True(aMakeWire2.IsDone());
+        MakeEdge aMakeEdge2 = new(aArc2, aArc2.StartPoint(), aArc2.EndPoint());
+        Assert.True(aMakeEdge2.IsDone);
+        MakeWire aMakeWire2 = new(aMakeEdge2.Edge());
+        Assert.True(aMakeWire2.IsDone);
         Wire aWire2 = aMakeWire2.Wire();
 
         // Build ThruSections shell with order=0: wire2 first, then wire1
-        BRepOffsetAPI_ThruSections aThruSect = new(false, true);
+        ThruSections aThruSect = new(false, true);
         aThruSect.AddWire(aWire2);
         aThruSect.AddWire(aWire1);
         aThruSect.Build();
 
-        Assert.True(aThruSect.IsDone());
+        Assert.True(aThruSect.IsDone);
         Assert.False(aThruSect.Shape().IsNull);
 
         // Verify surface area is approximately 18.1614 (reference value from DRAW test)
@@ -396,14 +399,14 @@ public class BRepOffsetAPI_ThruSectionsTests
     {
         Wire[] aWires = [Square(0, 2), Circle(5, 1.5), Square(10, 1)];
         string[] aTexts = [.. aWires.Select(w => Text(w))];
-        BRepOffsetAPI_ThruSections aLoft = new(theSolid, theRuled);
+        ThruSections aLoft = new(theSolid, theRuled);
         foreach (Wire aW in aWires)
         {
             Assert.True(aW.TShape()!.IsFrozen);
             aLoft.AddWire(aW);
         }
         aLoft.Build();
-        Assert.True(aLoft.IsDone());
+        Assert.True(aLoft.IsDone);
         Shape aResult = aLoft.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(theSolid ? ShapeType.Solid : ShapeType.Shell, aResult.ShapeType());
@@ -445,17 +448,17 @@ public class BRepOffsetAPI_ThruSectionsTests
     [Fact]
     public void Point_sections_and_their_history()
     {
-        Vertex aV1 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, -4)).Vertex();
-        Vertex aV2 = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 4)).Vertex();
+        Vertex aV1 = new MakeVertex(new Point3D(0, 0, -4)).Vertex();
+        Vertex aV2 = new MakeVertex(new Point3D(0, 0, 4)).Vertex();
         foreach (bool aRuled in new[] { true, false })
         {
-            BRepOffsetAPI_ThruSections aLoft = new(true, aRuled);
+            ThruSections aLoft = new(true, aRuled);
             aLoft.AddVertex(aV1);
             aLoft.AddWire(Square(0, 2));
             aLoft.AddVertex(aV2);
             aLoft.Build();
-            Assert.True(aLoft.IsDone());
-            Assert.Equal(BRepFill_ThruSectionErrorStatus_Done, aLoft.GetStatus());
+            Assert.True(aLoft.IsDone);
+            Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_Done, aLoft.GetStatus());
             Assert.True(Volume(aLoft.Shape()) > 0);
             Assert.Equal(aRuled ? 8 : 4, aLoft.Generated(aV1).Count); // ruled: the chain of lateral edges through the square
             Assert.Equal(3, aLoft.Wires().Count);
@@ -465,29 +468,29 @@ public class BRepOffsetAPI_ThruSectionsTests
     [Fact]
     public void A_point_between_sections_is_wrong_usage()
     {
-        BRepOffsetAPI_ThruSections aLoft = new();
+        ThruSections aLoft = new();
         aLoft.AddWire(Square(0, 1));
-        aLoft.AddVertex(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 1)).Vertex());
+        aLoft.AddVertex(new MakeVertex(new Point3D(0, 0, 1)).Vertex());
         aLoft.AddWire(Square(2, 1));
         aLoft.Build();
-        Assert.False(aLoft.IsDone());
-        Assert.Equal(BRepFill_ThruSectionErrorStatus_WrongUsage, aLoft.GetStatus());
+        Assert.False(aLoft.IsDone);
+        Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_WrongUsage, aLoft.GetStatus());
         Assert.Throws<NotDoneException>(() => aLoft.Shape());
     }
 
     [Fact]
     public void Options_keep_OCCTs_defaults()
     {
-        BRepOffsetAPI_ThruSections aLoft = new();
+        ThruSections aLoft = new();
         Assert.Equal(8, aLoft.MaxDegree());
         Assert.Equal(Continuity.C2, aLoft.Continuity());
         Assert.Equal(ParametrizationType.ChordLength, aLoft.ParType());
         Assert.False(aLoft.UseSmoothing());
-        Assert.True(aLoft.IsMutableInput());
+        Assert.True(aLoft.IsMutableInput);
         aLoft.CriteriumWeight(out double aW1, out double aW2, out double aW3);
         Assert.Equal((0.4, 0.2, 0.4), (aW1, aW2, aW3));
         aLoft.SetCriteriumWeight(-1, 0, 0);
-        Assert.Equal(BRepFill_ThruSectionErrorStatus_Failed, aLoft.GetStatus());
+        Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_Failed, aLoft.GetStatus());
         aLoft.Init();
         Assert.Equal(6, aLoft.MaxDegree()); // OCCT: Init sets 6
     }
@@ -497,11 +500,11 @@ public class BRepOffsetAPI_ThruSectionsTests
     {
         Wire aW1 = Square(0, 1), aW2 = Square(2, 2);
         string aT1 = Text(aW1), aT2 = Text(aW2);
-        BRepFill_Generator aGen = new();
+        Generator aGen = new();
         aGen.AddWire(aW1);
         aGen.AddWire(aW2);
         aGen.Perform();
-        Assert.Equal(BRepFill_ThruSectionErrorStatus_Done, aGen.GetStatus());
+        Assert.Equal(ThruSectionErrorStatus.ThruSectionErrorStatus_Done, aGen.GetStatus());
         Shell aShell = aGen.Shell();
         Assert.True(aShell.TShape()!.IsFrozen);
         Assert.Equal(4, Count(aShell, ShapeType.Face));
@@ -522,12 +525,12 @@ public class BRepOffsetAPI_ThruSectionsTests
     [Fact]
     public void Projection_along_a_direction_and_from_a_point()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 0), 10, 10, 2).Shape();
+        Shape aBox = new MakeBox(new Point3D(-5, -5, 0), 10, 10, 2).Shape();
         Wire aCircle = Circle(10, 2);
         string aText = Text(aCircle);
 
-        BRepProj_Projection aCyl = new(aCircle, aBox, new Direction3D(0, 0, -1));
-        Assert.True(aCyl.IsDone());
+        Projection aCyl = new(aCircle, aBox, new Direction3D(0, 0, -1));
+        Assert.True(aCyl.IsDone);
         int aNb = 0;
         for (aCyl.Init(); aCyl.More(); aCyl.Next())
         {
@@ -537,22 +540,22 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.Equal(2, aNb); // on the top and bottom faces
         Assert.True(aCyl.Shape().TShape()!.IsFrozen);
 
-        BRepProj_Projection aCone = new(aCircle, aBox, new Point3D(0, 0, 20));
-        Assert.True(aCone.IsDone());
+        Projection aCone = new(aCircle, aBox, new Point3D(0, 0, 20));
+        Assert.True(aCone.IsDone);
         Assert.Equal(aText, Text(aCircle));
     }
 
     [Fact]
     public void Projection_checks_its_input()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(1, 1, 1)).Vertex();
-        Assert.Throws<NullObjectException>(() => new BRepProj_Projection(new Shape(), aBox, new Direction3D(0, 0, 1)));
-        Assert.Throws<ConstructionErrorException>(() => new BRepProj_Projection(aV, aBox, new Direction3D(0, 0, 1)));
+        Shape aBox = new MakeBox(10, 10, 10).Shape();
+        Vertex aV = new MakeVertex(new Point3D(1, 1, 1)).Vertex();
+        Assert.Throws<NullObjectException>(() => new Projection(new Shape(), aBox, new Direction3D(0, 0, 1)));
+        Assert.Throws<ConstructionErrorException>(() => new Projection(aV, aBox, new Direction3D(0, 0, 1)));
         Wire aSquare = Square(20, 1);
         Explorer anExp = new(aSquare, ShapeType.Vertex);
         Point3D aFirst = Tool.Pnt(ShapeCasts.Vertex(anExp.Current()));
-        Assert.Throws<ConstructionErrorException>(() => new BRepProj_Projection(aSquare, aBox, aFirst));
-        Assert.Throws<ConstructionErrorException>(() => new BRepProj_Projection(aSquare, aV, new Direction3D(0, 0, 1)));
+        Assert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aBox, aFirst));
+        Assert.Throws<ConstructionErrorException>(() => new Projection(aSquare, aV, new Direction3D(0, 0, 1)));
     }
 }

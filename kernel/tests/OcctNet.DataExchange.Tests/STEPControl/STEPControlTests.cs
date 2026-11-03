@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology.Brep;
@@ -80,7 +81,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
 
     private static Shape Box()
     {
-        return new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+        return new MakeBox(10.0, 20.0, 30.0).Shape();
     }
 
     private static string WriteToString(STEPControl_Writer theWriter)
@@ -115,7 +116,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         Shape aRead = aReader.OneShape();
         Assert.Equal(ShapeType.Solid, aRead.ShapeType());
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aRead, aProps);
+        MassPropertiesBuilder.VolumeProperties(aRead, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 6);
     }
 
@@ -143,7 +144,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         Shape aRead = aReader.OneShape();
         Assert.Equal(ShapeType.Compound, aRead.ShapeType());
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(aRead, aProps);
+        MassPropertiesBuilder.VolumeProperties(aRead, aProps);
         Assert.Equal(12000.0, aProps.Mass(), 6);
     }
 

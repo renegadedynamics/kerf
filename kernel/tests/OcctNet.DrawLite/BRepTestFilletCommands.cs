@@ -1,12 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.ChFi3d_FilletShape;
+using static Kerf.Engine.Fillets.FilletShape;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.ShapeType;
 
@@ -35,8 +39,8 @@ internal static partial class BRepTestFilletCommands
         public double fl = 1.0e-3;
         public double tapp_angle = 1.0e-2;
         public Continuity blend_cont = C1;
-        public BRepFilletAPI_MakeFillet? Rakk;
-        public BRepFilletAPI_MakeFillet? Rake;
+        public MakeFillet? Rakk;
+        public MakeFillet? Rake;
         public string name = "";
     }
 
@@ -156,19 +160,19 @@ internal static partial class BRepTestFilletCommands
         {
             return 1;
         }
-        ChFi3d_FilletShape FSh = ChFi3d_Rational;
+        FilletShape FSh = FilletShape.Rational;
         if (narg % 2 == 0)
         {
             if (EqualsNoCase(a[narg - 1], "Q"))
             {
-                FSh = ChFi3d_QuasiAngular;
+                FSh = FilletShape.QuasiAngular;
             }
             else if (EqualsNoCase(a[narg - 1], "P"))
             {
-                FSh = ChFi3d_Polynomial;
+                FSh = FilletShape.Polynomial;
             }
         }
-        BRepFilletAPI_MakeFillet Rakk = new(V, FSh);
+        MakeFillet Rakk = new(V, FSh);
         s.Rakk = Rakk;
         Rakk.SetParams(s.ta, s.tesp, s.t2d, s.t3d, s.t2d, s.fl);
         Rakk.SetContinuity(s.blend_cont, s.tapp_angle);
@@ -189,7 +193,7 @@ internal static partial class BRepTestFilletCommands
             return 1;
         }
         Rakk.Build();
-        if (!Rakk.IsDone())
+        if (!Rakk.IsDone)
         {
             return 1;
         }
@@ -235,18 +239,18 @@ internal static partial class BRepTestFilletCommands
 
     private static int CheckHist(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        BRepFilletAPI_MakeFillet? Rakk = State(theDI).Rakk;
+        MakeFillet? Rakk = State(theDI).Rakk;
         if (Rakk is null)
         {
             di.Append("No active Builder\n");
             return 1;
         }
-        if (!Rakk.IsDone())
+        if (!Rakk.IsDone)
         {
             di.Append("Active Builder Not Done\n");
             return 1;
         }
-        int nbc = Rakk.NbContours();
+        int nbc = Rakk.ContourCount;
         int nbgen = 0;
         for (int i = 1; i <= nbc; i++)
         {
@@ -276,20 +280,20 @@ internal static partial class BRepTestFilletCommands
             return 1;
         }
         Shape V = theDI.GetShape(a[2]);
-        BRepFilletAPI_MakeFillet Rake = new(V);
+        MakeFillet Rake = new(V);
         s.Rake = Rake;
         Rake.SetParams(s.ta, s.tesp, s.t2d, s.t3d, s.t2d, s.fl);
         Rake.SetContinuity(s.blend_cont, s.tapp_angle);
         if (narg == 4)
         {
-            ChFi3d_FilletShape FSh = ChFi3d_Rational;
+            FilletShape FSh = FilletShape.Rational;
             if (EqualsNoCase(a[3], "Q"))
             {
-                FSh = ChFi3d_QuasiAngular;
+                FSh = FilletShape.QuasiAngular;
             }
             else if (EqualsNoCase(a[3], "P"))
             {
-                FSh = ChFi3d_Polynomial;
+                FSh = FilletShape.Polynomial;
             }
             Rake.SetFilletShape(FSh);
         }
@@ -299,7 +303,7 @@ internal static partial class BRepTestFilletCommands
 
     private static int UPDATEVOL(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
-        BRepFilletAPI_MakeFillet? Rake = State(theDI).Rake;
+        MakeFillet? Rake = State(theDI).Rake;
         if (Rake is null)
         {
             di.Append("MakeFillet not initialized\n");
@@ -326,7 +330,7 @@ internal static partial class BRepTestFilletCommands
     private static int BUILDEVOL(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         FilletState s = State(theDI);
-        BRepFilletAPI_MakeFillet? Rake = s.Rake;
+        MakeFillet? Rake = s.Rake;
         if (Rake is null)
         {
             di.Append("MakeFillet not initialized\n");
@@ -335,7 +339,7 @@ internal static partial class BRepTestFilletCommands
         // OCCT deletes Rake after Build, done or not (an exception of Build leaves it)
         Rake.Build();
         s.Rake = null;
-        if (Rake.IsDone())
+        if (Rake.IsDone)
         {
             Shape result = Rake.Shape();
             theDI.SetShape(s.name, result);
@@ -371,26 +375,26 @@ internal static partial class BRepTestFilletCommands
         double Rad = theDI.Atof(a[4]);
         bool isDebug = narg == 6 && a[5] == "-d";
 
-        BOPAlgo_PaveFiller theDSFiller = new();
+        PaveFiller theDSFiller = new();
         NCollection_List<Shape> aLS = new();
         aLS.Append(S1);
         aLS.Append(S2);
         theDSFiller.SetArguments(aLS);
         // the Draw_ProgressIndicator left out
         theDSFiller.Perform();
-        if (theDSFiller.HasErrors())
+        if (theDSFiller.HasErrors)
         {
             theDI.Output.WriteLine("Check types of the arguments, please");
             return 1;
         }
 
-        BRepAlgoAPI_BooleanOperation pBuilder = fuse
-            ? new BRepAlgoAPI_Fuse(S1, S2, theDSFiller)
-            : new BRepAlgoAPI_Cut(S1, S2, theDSFiller, true);
+        BooleanOperation pBuilder = fuse
+            ? new Fuse(S1, S2, theDSFiller)
+            : new Cut(S1, S2, theDSFiller, true);
 
-        if (!pBuilder.IsDone())
+        if (!pBuilder.IsDone)
         {
-            theDI.Output.WriteLine("boolean operation not done HasErrors()=" + (pBuilder.HasErrors() ? 1 : 0));
+            theDI.Output.WriteLine("boolean operation not done HasErrors()=" + (pBuilder.HasErrors ? 1 : 0));
             return 1;
         }
 
@@ -403,7 +407,7 @@ internal static partial class BRepTestFilletCommands
             di.Append("Intermediate result of BOP-operation is saved to \"").Append(aBuff).Append("\" variable\n");
         }
 
-        BRepAlgoAPI_Section aSection = new(S1, S2, theDSFiller);
+        SectionOperation aSection = new(S1, S2, theDSFiller);
         Shape theSection = aSection.Shape();
 
         if (isDebug)
@@ -422,7 +426,7 @@ internal static partial class BRepTestFilletCommands
         {
             Shape aSolid = Explo.Current();
 
-            BRepFilletAPI_MakeFillet Blender = new(aSolid);
+            MakeFillet Blender = new(aSolid);
             Blender.SetParams(s.ta, s.tesp, s.t2d, s.t3d, s.t2d, s.fl);
             Blender.SetContinuity(s.blend_cont, s.tapp_angle);
 
@@ -434,7 +438,7 @@ internal static partial class BRepTestFilletCommands
             }
 
             Blender.Build();
-            if (Blender.IsDone())
+            if (Blender.IsDone)
             {
                 BB.Add(result, Blender.Shape());
             }

@@ -9,24 +9,26 @@ using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Library;
 using Kerf.Engine.Geometry.Splines;
 
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>
 /// GeomFill_GordonUtilities.pxx (OCCT's namespace <c>GordonUtilities</c>): the preparation of a Gordon curve network
-/// for <see cref="GeomFill_Gordon"/>: conversion to unit-domain non-periodic B-splines, profile/guide contacts, network
+/// for <see cref="Gordon"/>: conversion to unit-domain non-periodic B-splines, profile/guide contacts, network
 /// ordering and orientation, closed-seam detection and the exact (or sampled) reparametrisation of every curve to
 /// shared intersection parameters.
 /// </summary>
 /// <remarks>
 /// OCCT's anonymous-namespace functions are internal static methods. Its views without copying are kept where they
-/// are written through (<see cref="toMatrix"/> shares the parameter table, as OCCT's math_Matrix over
+/// are written through (<see cref="ToMatrix"/> shares the parameter table, as OCCT's math_Matrix over
 /// <c>&amp;ChangeFirst()</c>); OCCT's read-only Array1 views over a linear vector are copies (the same values). Every
 /// <c>std::sort</c> goes through <see cref="Sorting"/>, so that ties keep MSVC's order (decision 491).
 /// </remarks>
@@ -44,12 +46,12 @@ internal static class GordonUtilities
         {
         }
 
-        public Contact(bool theIsValid, double theProfileParam, double theGuideParam, double theGap)
+        public Contact(bool isValid, double profileParam, double guideParam, double gap)
         {
-            IsValid = theIsValid;
-            ProfileParam = theProfileParam;
-            GuideParam = theGuideParam;
-            Gap = theGap;
+            IsValid = isValid;
+            ProfileParam = profileParam;
+            GuideParam = guideParam;
+            Gap = gap;
         }
     }
 
@@ -61,110 +63,110 @@ internal static class GordonUtilities
 
     private readonly struct DoubleLess : Heap.ILess<double>
     {
-        public bool Less(double theLeft, double theRight) => theLeft < theRight;
+        public bool Less(double left, double right) => left < right;
     }
 
     private readonly struct ContactLess : Heap.ILess<Contact>
     {
-        public bool Less(Contact theLeft, Contact theRight)
+        public bool Less(Contact left, Contact right)
         {
-            if (theLeft.Gap != theRight.Gap)
+            if (left.Gap != right.Gap)
             {
-                return theLeft.Gap < theRight.Gap;
+                return left.Gap < right.Gap;
             }
-            if (theLeft.ProfileParam != theRight.ProfileParam)
+            if (left.ProfileParam != right.ProfileParam)
             {
-                return theLeft.ProfileParam < theRight.ProfileParam;
+                return left.ProfileParam < right.ProfileParam;
             }
-            return theLeft.GuideParam < theRight.GuideParam;
+            return left.GuideParam < right.GuideParam;
         }
     }
 
     private readonly struct OrderedCurveLess : Heap.ILess<OrderedCurve>
     {
-        public bool Less(OrderedCurve theLeft, OrderedCurve theRight) => theLeft.Rank < theRight.Rank;
+        public bool Less(OrderedCurve left, OrderedCurve right) => left.Rank < right.Rank;
     }
 
     // std::clamp
-    private static double clamp(double theValue, double theLow, double theHigh)
-        => theValue < theLow ? theLow : (theHigh < theValue ? theHigh : theValue);
+    private static double Clamp(double value, double low, double high)
+        => value < low ? low : (high < value ? high : value);
 
     /// <summary>Returns a stable cubic degree when the OCCT degree limit allows it.</summary>
-    internal static int interpolationDegree()
+    internal static int InterpolationDegree()
     {
         return Min(3, BSplineCurve3D.MaxDegree());
     }
 
     /// <summary>Returns a parameter comparison tolerance scaled by the interval length.</summary>
-    internal static double parameterResolution(double theFirst, double theLast)
+    internal static double ParameterResolution(double first, double last)
     {
-        return global::Kerf.Engine.Foundation.Precision.PIntersection(Max(Math.Abs(theLast - theFirst), 1.0));
+        return global::Kerf.Engine.Foundation.Precision.PIntersection(Max(Math.Abs(last - first), 1.0));
     }
 
     /// <summary>Returns a network tolerance converted to the given parameter range.</summary>
-    internal static double boundaryParameterResolution(double theFirst, double theLast, double theTolerance)
+    internal static double BoundaryParameterResolution(double first, double last, double tolerance)
     {
-        double aRange = Max(Math.Abs(theLast - theFirst), 1.0);
-        return global::Kerf.Engine.Foundation.Precision.Parametric(Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Approximation())) * aRange;
+        double range = Max(Math.Abs(last - first), 1.0);
+        return global::Kerf.Engine.Foundation.Precision.Parametric(Max(tolerance, global::Kerf.Engine.Foundation.Precision.Approximation())) * range;
     }
 
     /// <summary>Appends a clamped parameter candidate.</summary>
-    internal static void appendUnitParameter(NCollection_LinearVector<double> theParameters, double theParameter)
+    internal static void AppendUnitParameter(NCollection_LinearVector<double> parameters, double parameter)
     {
-        theParameters.Append(Max(0.0, Min(1.0, theParameter)));
+        parameters.Append(Max(0.0, Min(1.0, parameter)));
     }
 
     /// <summary>Sorts and removes duplicate parameters in-place.</summary>
-    internal static void compactParameters(NCollection_LinearVector<double> theParameters)
+    internal static void CompactParameters(NCollection_LinearVector<double> parameters)
     {
-        if (theParameters.IsEmpty())
+        if (parameters.IsEmpty())
         {
             return;
         }
 
-        Sorting.Sort(theParameters.AsSpan(), new DoubleLess());
-        double aTol = parameterResolution(0.0, 1.0);
-        int aWriteIdx = 0;
-        for (int aReadIdx = 1; aReadIdx < theParameters.Size(); ++aReadIdx)
+        Sorting.Sort(parameters.AsSpan(), new DoubleLess());
+        double tol = ParameterResolution(0.0, 1.0);
+        int writeIdx = 0;
+        for (int readIdx = 1; readIdx < parameters.Size(); ++readIdx)
         {
-            if (Math.Abs(theParameters.Value(aReadIdx) - theParameters.Value(aWriteIdx)) > aTol)
+            if (Math.Abs(parameters.Value(readIdx) - parameters.Value(writeIdx)) > tol)
             {
-                ++aWriteIdx;
-                theParameters.ChangeValue(aWriteIdx) = theParameters.Value(aReadIdx);
+                ++writeIdx;
+                parameters.ChangeValue(writeIdx) = parameters.Value(readIdx);
             }
         }
 
-        while (theParameters.Size() > aWriteIdx + 1)
+        while (parameters.Size() > writeIdx + 1)
         {
-            theParameters.EraseLast();
+            parameters.EraseLast();
         }
     }
 
     /// <summary>Adds midpoint samples in the widest intervals until the requested count is reached.</summary>
-    internal static void addIntervalMidpoints(NCollection_LinearVector<double> theParameters, int theMinSize)
+    internal static void AddIntervalMidpoints(NCollection_LinearVector<double> parameters, int minSize)
     {
-        compactParameters(theParameters);
-        while (theParameters.Size() < theMinSize && theParameters.Size() > 1)
+        CompactParameters(parameters);
+        while (parameters.Size() < minSize && parameters.Size() > 1)
         {
-            int aSplitIdx = 0;
-            double aMaxGap = -1.0;
-            for (int aParamIdx = 1; aParamIdx < theParameters.Size(); ++aParamIdx)
+            int splitIdx = 0;
+            double maxGap = -1.0;
+            for (int paramIdx = 1; paramIdx < parameters.Size(); ++paramIdx)
             {
-                double aGap = theParameters.Value(aParamIdx) - theParameters.Value(aParamIdx - 1);
-                if (aGap > aMaxGap)
+                double gap = parameters.Value(paramIdx) - parameters.Value(paramIdx - 1);
+                if (gap > maxGap)
                 {
-                    aSplitIdx = aParamIdx;
-                    aMaxGap = aGap;
+                    splitIdx = paramIdx;
+                    maxGap = gap;
                 }
             }
-            if (aMaxGap <= parameterResolution(0.0, 1.0))
+            if (maxGap <= ParameterResolution(0.0, 1.0))
             {
                 return;
             }
 
-            appendUnitParameter(theParameters,
-                                0.5 * (theParameters.Value(aSplitIdx - 1) + theParameters.Value(aSplitIdx)));
-            compactParameters(theParameters);
+            AppendUnitParameter(parameters,
+                                0.5 * (parameters.Value(splitIdx - 1) + parameters.Value(splitIdx)));
+            CompactParameters(parameters);
         }
     }
 
@@ -172,63 +174,63 @@ internal static class GordonUtilities
     /// A 1-based Array1 of a linear vector's values. OCCT wraps the vector's storage without copying; every use is
     /// read-only, so a copy gives the same values.
     /// </summary>
-    internal static NCollection_Array1<T> toOneBasedArrayView<T>(NCollection_LinearVector<T> theValues)
+    internal static NCollection_Array1<T> ToOneBasedArrayView<T>(NCollection_LinearVector<T> values)
     {
-        return NCollection_Array1<T>.From(theValues.AsSpan(), 1);
+        return NCollection_Array1<T>.From(values.AsSpan(), 1);
     }
 
     /// <summary>Wraps a parameter table into a math matrix without copying its storage: writes go to the table.</summary>
-    internal static Matrix toMatrix(NCollection_Array2<double> theParams)
+    internal static Matrix ToMatrix(NCollection_Array2<double> theParams)
     {
-        (double[] aData, int anOffset) = theParams.Storage();
-        NCollection_Array1<double> aView = new(aData, anOffset, 1, theParams.Size());
-        return new Matrix(aView, 1, 1, theParams.ColLength(), 1, theParams.RowLength());
+        (double[] data, int offset) = theParams.Storage();
+        NCollection_Array1<double> view = new(data, offset, 1, theParams.Size());
+        return new Matrix(view, 1, 1, theParams.ColLength(), 1, theParams.RowLength());
     }
 
     /// <summary>Expands a periodic B-spline period into explicit non-periodic storage.</summary>
-    internal static bool exposePeriod(BSplineCurve3D theCurve)
+    internal static bool ExposePeriod(BSplineCurve3D curve)
     {
-        if (!theCurve.IsPeriodic)
+        if (!curve.IsPeriodic)
         {
             return true;
         }
 
         try
         {
-            double aFirst = theCurve.FirstParameter();
-            double aLast = theCurve.LastParameter();
-            if (aLast <= aFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
+            double first = curve.FirstParameter();
+            double last = curve.LastParameter();
+            if (last <= first + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
             }
 
-            theCurve.Segment(aFirst, aLast, global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if (theCurve.IsPeriodic)
+            curve.Segment(first, last, global::Kerf.Engine.Foundation.Precision.PConfusion());
+            if (curve.IsPeriodic)
             {
-                theCurve.SetNotPeriodic();
+                curve.SetNotPeriodic();
             }
         }
         catch (FailureException)
         {
             return false;
         }
-        return !theCurve.IsPeriodic;
+        return !curve.IsPeriodic;
     }
 
     /// <summary>Normalizes an input curve family to explicit non-periodic B-splines on [0, 1].</summary>
-    internal static bool makeUnitCurves(NCollection_Array1<BSplineCurve3D?> theCurves)
+    internal static bool MakeUnitCurves(NCollection_Array1<BSplineCurve3D?> curves)
     {
-        for (int aCurveIdx = 0; aCurveIdx < theCurves.Size(); ++aCurveIdx)
+        for (int curveIdx = 0; curveIdx < curves.Size(); ++curveIdx)
         {
-            BSplineCurve3D? aCurve = theCurves.At(aCurveIdx);
-            if (aCurve is null || !exposePeriod(aCurve))
+            BSplineCurve3D? curve = curves.At(curveIdx);
+            if (curve is null || !ExposePeriod(curve))
             {
                 return false;
             }
 
-            NCollection_Array1<double> aKnots = new(aCurve.InternalKnots());
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, aKnots);
-            aCurve.SetKnots(aKnots);
+            NCollection_Array1<double> knots = new(curve.InternalKnots());
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, knots);
+            curve.SetKnots(knots);
         }
         return true;
     }
@@ -239,440 +241,440 @@ internal static class GordonUtilities
         public int Index;
         public double Rank;
 
-        public OrderedCurve(int theIndex, double theRank)
+        public OrderedCurve(int index, double rank)
         {
-            Index = theIndex;
-            Rank = theRank;
+            Index = index;
+            Rank = rank;
         }
     }
 
     /// <summary>Returns average values of matrix columns.</summary>
-    internal static math_Vector columnMeans(Matrix theParams)
+    internal static math_Vector ColumnMeans(Matrix theParams)
     {
-        math_Vector aOnes = new(theParams.LowerRow(), theParams.UpperRow(), 1.0);
-        math_Vector aSums = theParams.Transposed().Multiplied(aOnes);
-        aSums /= (double)theParams.RowNumber();
-        return aSums;
+        math_Vector ones = new(theParams.LowerRow(), theParams.UpperRow(), 1.0);
+        math_Vector sums = theParams.Transposed().Multiplied(ones);
+        sums /= (double)theParams.RowNumber();
+        return sums;
     }
 
     /// <summary>Returns average values of matrix rows.</summary>
-    internal static math_Vector rowMeans(Matrix theParams)
+    internal static math_Vector RowMeans(Matrix theParams)
     {
-        math_Vector aOnes = new(theParams.LowerCol(), theParams.UpperCol(), 1.0);
-        math_Vector aSums = theParams.Multiplied(aOnes);
-        aSums /= (double)theParams.ColNumber();
-        return aSums;
+        math_Vector ones = new(theParams.LowerCol(), theParams.UpperCol(), 1.0);
+        math_Vector sums = theParams.Multiplied(ones);
+        sums /= (double)theParams.ColNumber();
+        return sums;
     }
 
     /// <summary>Appends a unique contact candidate if the corresponding curve points match.</summary>
-    internal static void appendContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide, double theProfileParam,
-                                       double theGuideParam, double theTolerance, ContactSet theContacts)
+    internal static void AppendContact(BSplineCurve3D profile, BSplineCurve3D guide, double profileParam,
+                                       double guideParam, double tolerance, ContactSet contacts)
     {
-        CurveAdaptor aProfileAdaptor = new(theProfile);
-        CurveAdaptor aGuideAdaptor = new(theGuide);
-        Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParam);
-        Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParam);
-        double aGap = aProfilePoint.Distance(aGuidePoint);
-        if (aGap > theTolerance)
+        CurveAdaptor profileAdaptor = new(profile);
+        CurveAdaptor guideAdaptor = new(guide);
+        Point3D profilePoint = profileAdaptor.EvalD0(profileParam);
+        Point3D guidePoint = guideAdaptor.EvalD0(guideParam);
+        double gap = profilePoint.Distance(guidePoint);
+        if (gap > tolerance)
         {
             return;
         }
 
-        double aProfileTol = parameterResolution(theProfile.FirstParameter(), theProfile.LastParameter());
-        double aGuideTol = parameterResolution(theGuide.FirstParameter(), theGuide.LastParameter());
-        for (int aContactIdx = 0; aContactIdx < theContacts.Candidates.Size(); ++aContactIdx)
+        double profileTol = ParameterResolution(profile.FirstParameter(), profile.LastParameter());
+        double guideTol = ParameterResolution(guide.FirstParameter(), guide.LastParameter());
+        for (int contactIdx = 0; contactIdx < contacts.Candidates.Size(); ++contactIdx)
         {
-            Contact aContact = theContacts.Candidates.Value(aContactIdx);
-            if (Math.Abs(aContact.ProfileParam - theProfileParam) <= aProfileTol
-                && Math.Abs(aContact.GuideParam - theGuideParam) <= aGuideTol)
+            Contact contact = contacts.Candidates.Value(contactIdx);
+            if (Math.Abs(contact.ProfileParam - profileParam) <= profileTol
+                && Math.Abs(contact.GuideParam - guideParam) <= guideTol)
             {
                 return;
             }
         }
 
-        theContacts.Candidates.Append(new Contact(true, theProfileParam, theGuideParam, aGap));
+        contacts.Candidates.Append(new Contact(true, profileParam, guideParam, gap));
     }
 
     /// <summary>Converts two close extrema points to an exact curve-parameter contact.</summary>
-    internal static void appendExtremaContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
-                                              in Point3D theProfilePoint, in Point3D theGuidePoint, double theTolerance,
-                                              ContactSet theContacts)
+    internal static void AppendExtremaContact(BSplineCurve3D profile, BSplineCurve3D guide,
+                                              in Point3D profilePoint, in Point3D guidePoint, double tolerance,
+                                              ContactSet contacts)
     {
-        if (theProfilePoint.Distance(theGuidePoint) > theTolerance)
+        if (profilePoint.Distance(guidePoint) > tolerance)
         {
             return;
         }
 
-        Point3D aSharedPoint = new((theProfilePoint.XYZ() + theGuidePoint.XYZ()) * 0.5);
+        Point3D sharedPoint = new((profilePoint.XYZ() + guidePoint.XYZ()) * 0.5);
 
-        double aProfileParam;
-        double aGuideParam = 0.0;
-        if (GeometryLibraryTool.Parameter(theProfile, aSharedPoint, theTolerance, out aProfileParam)
-            && GeometryLibraryTool.Parameter(theGuide, aSharedPoint, theTolerance, out aGuideParam))
+        double profileParam;
+        double guideParam = 0.0;
+        if (GeometryLibraryTool.Parameter(profile, sharedPoint, tolerance, out profileParam)
+            && GeometryLibraryTool.Parameter(guide, sharedPoint, tolerance, out guideParam))
         {
-            appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
+            AppendContact(profile, guide, profileParam, guideParam, tolerance, contacts);
         }
     }
 
     /// <summary>Adds endpoint contacts; these are important for opening closed seams.</summary>
-    internal static void appendBoundaryContacts(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
-                                                double theTolerance, ContactSet theContacts)
+    internal static void AppendBoundaryContacts(BSplineCurve3D profile, BSplineCurve3D guide,
+                                                double tolerance, ContactSet contacts)
     {
-        ReadOnlySpan<double> aProfileBounds = [theProfile.FirstParameter(), theProfile.LastParameter()];
-        ReadOnlySpan<double> aGuideBounds = [theGuide.FirstParameter(), theGuide.LastParameter()];
-        CurveAdaptor aProfileAdaptor = new(theProfile);
-        CurveAdaptor aGuideAdaptor = new(theGuide);
-        foreach (double aProfileParam in aProfileBounds)
+        ReadOnlySpan<double> profileBounds = [profile.FirstParameter(), profile.LastParameter()];
+        ReadOnlySpan<double> guideBounds = [guide.FirstParameter(), guide.LastParameter()];
+        CurveAdaptor profileAdaptor = new(profile);
+        CurveAdaptor guideAdaptor = new(guide);
+        foreach (double profileParam in profileBounds)
         {
-            if (GeometryLibraryTool.Parameter(theGuide, aProfileAdaptor.EvalD0(aProfileParam), theTolerance,
-                                       out double aGuideParam))
+            if (GeometryLibraryTool.Parameter(guide, profileAdaptor.EvalD0(profileParam), tolerance,
+                                       out double guideParam))
             {
-                appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
+                AppendContact(profile, guide, profileParam, guideParam, tolerance, contacts);
             }
         }
-        foreach (double aGuideParam in aGuideBounds)
+        foreach (double guideParam in guideBounds)
         {
-            if (GeometryLibraryTool.Parameter(theProfile, aGuideAdaptor.EvalD0(aGuideParam), theTolerance,
-                                       out double aProfileParam))
+            if (GeometryLibraryTool.Parameter(profile, guideAdaptor.EvalD0(guideParam), tolerance,
+                                       out double profileParam))
             {
-                appendContact(theProfile, theGuide, aProfileParam, aGuideParam, theTolerance, theContacts);
+                AppendContact(profile, guide, profileParam, guideParam, tolerance, contacts);
             }
         }
     }
 
-    internal static bool appendLinearSegmentContact(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
-                                                    double theTolerance, ContactSet theContacts)
+    internal static bool AppendLinearSegmentContact(BSplineCurve3D profile, BSplineCurve3D guide,
+                                                    double tolerance, ContactSet contacts)
     {
-        if (theProfile.Degree() != 1 || theGuide.Degree() != 1 || theProfile.PoleCount != 2
-            || theGuide.PoleCount != 2)
+        if (profile.Degree() != 1 || guide.Degree() != 1 || profile.PoleCount != 2
+            || guide.PoleCount != 2)
         {
             return false;
         }
 
-        double aProfileFirst = theProfile.FirstParameter();
-        double aProfileLast = theProfile.LastParameter();
-        double aGuideFirst = theGuide.FirstParameter();
-        double aGuideLast = theGuide.LastParameter();
-        if (aProfileLast <= aProfileFirst + global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || aGuideLast <= aGuideFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
+        double profileFirst = profile.FirstParameter();
+        double profileLast = profile.LastParameter();
+        double guideFirst = guide.FirstParameter();
+        double guideLast = guide.LastParameter();
+        if (profileLast <= profileFirst + global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || guideLast <= guideFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return true;
         }
 
-        CurveAdaptor aProfileAdaptor = new(theProfile);
-        CurveAdaptor aGuideAdaptor = new(theGuide);
-        Point3D aP0 = aProfileAdaptor.EvalD0(aProfileFirst);
-        Point3D aP1 = aProfileAdaptor.EvalD0(aProfileLast);
-        Point3D aQ0 = aGuideAdaptor.EvalD0(aGuideFirst);
-        Point3D aQ1 = aGuideAdaptor.EvalD0(aGuideLast);
+        CurveAdaptor profileAdaptor = new(profile);
+        CurveAdaptor guideAdaptor = new(guide);
+        Point3D p0 = profileAdaptor.EvalD0(profileFirst);
+        Point3D p1 = profileAdaptor.EvalD0(profileLast);
+        Point3D q0 = guideAdaptor.EvalD0(guideFirst);
+        Point3D q1 = guideAdaptor.EvalD0(guideLast);
 
-        Xyz aU = aP1.XYZ() - aP0.XYZ();
-        Xyz aV = aQ1.XYZ() - aQ0.XYZ();
-        Xyz aW = aP0.XYZ() - aQ0.XYZ();
-        double aA = aU.SquareModulus();
-        double aB = aU.Dot(aV);
-        double aC = aV.SquareModulus();
-        double aD = aU.Dot(aW);
-        double aE = aV.Dot(aW);
-        if (aA <= Constants.Resolution() || aC <= Constants.Resolution())
+        Xyz u = p1.XYZ() - p0.XYZ();
+        Xyz v = q1.XYZ() - q0.XYZ();
+        Xyz w = p0.XYZ() - q0.XYZ();
+        double a = u.SquareModulus();
+        double b = u.Dot(v);
+        double c = v.SquareModulus();
+        double d = u.Dot(w);
+        double e = v.Dot(w);
+        if (a <= Constants.Resolution() || c <= Constants.Resolution())
         {
             return true;
         }
 
-        double aDenom = aA * aC - aB * aB;
-        if (Math.Abs(aDenom) <= Constants.Resolution())
+        double denom = a * c - b * b;
+        if (Math.Abs(denom) <= Constants.Resolution())
         {
             return false;
         }
 
-        double aS;
-        double aT;
-        aS = clamp((aB * aE - aC * aD) / aDenom, 0.0, 1.0);
-        aT = (aB * aS + aE) / aC;
-        if (aT < 0.0)
+        double s;
+        double t;
+        s = Clamp((b * e - c * d) / denom, 0.0, 1.0);
+        t = (b * s + e) / c;
+        if (t < 0.0)
         {
-            aT = 0.0;
-            aS = clamp(-aD / aA, 0.0, 1.0);
+            t = 0.0;
+            s = Clamp(-d / a, 0.0, 1.0);
         }
-        else if (aT > 1.0)
+        else if (t > 1.0)
         {
-            aT = 1.0;
-            aS = clamp((aB - aD) / aA, 0.0, 1.0);
+            t = 1.0;
+            s = Clamp((b - d) / a, 0.0, 1.0);
         }
 
-        appendContact(theProfile, theGuide, aProfileFirst + aS * (aProfileLast - aProfileFirst),
-                      aGuideFirst + aT * (aGuideLast - aGuideFirst), theTolerance, theContacts);
+        AppendContact(profile, guide, profileFirst + s * (profileLast - profileFirst),
+                      guideFirst + t * (guideLast - guideFirst), tolerance, contacts);
         return true;
     }
 
     /// <summary>Returns all close contacts detected for one profile/guide pair.</summary>
-    internal static ContactSet collectContacts(BSplineCurve3D theProfile, BSplineCurve3D theGuide,
-                                               double theTolerance)
+    internal static ContactSet CollectContacts(BSplineCurve3D profile, BSplineCurve3D guide,
+                                               double tolerance)
     {
-        ContactSet aContacts = new();
-        if (appendLinearSegmentContact(theProfile, theGuide, theTolerance, aContacts))
+        ContactSet contacts = new();
+        if (AppendLinearSegmentContact(profile, guide, tolerance, contacts))
         {
-            return aContacts;
+            return contacts;
         }
 
-        GeomAPI_ExtremaCurveCurve anExtrema = new(theProfile, theGuide);
-        for (int anExtIdx = 1; anExtIdx <= anExtrema.NbExtrema(); ++anExtIdx)
+        ExtremaCurveCurve extrema = new(profile, guide);
+        for (int extIdx = 1; extIdx <= extrema.NbExtrema(); ++extIdx)
         {
-            anExtrema.Points(anExtIdx, out Point3D aProfilePoint, out Point3D aGuidePoint);
-            appendExtremaContact(theProfile, theGuide, aProfilePoint, aGuidePoint, theTolerance, aContacts);
+            extrema.Points(extIdx, out Point3D profilePoint, out Point3D guidePoint);
+            AppendExtremaContact(profile, guide, profilePoint, guidePoint, tolerance, contacts);
         }
 
         {
-            Point3D aProfilePoint = new();
-            Point3D aGuidePoint = new();
-            if (anExtrema.TotalNearestPoints(ref aProfilePoint, ref aGuidePoint))
+            Point3D profilePoint = new();
+            Point3D guidePoint = new();
+            if (extrema.TotalNearestPoints(ref profilePoint, ref guidePoint))
             {
-                appendExtremaContact(theProfile, theGuide, aProfilePoint, aGuidePoint, theTolerance, aContacts);
+                AppendExtremaContact(profile, guide, profilePoint, guidePoint, tolerance, contacts);
             }
         }
 
-        appendBoundaryContacts(theProfile, theGuide, theTolerance, aContacts);
-        Sorting.Sort(aContacts.Candidates.AsSpan(), new ContactLess());
-        return aContacts;
+        AppendBoundaryContacts(profile, guide, tolerance, contacts);
+        Sorting.Sort(contacts.Candidates.AsSpan(), new ContactLess());
+        return contacts;
     }
 
     /// <summary>Returns the flat index of a profile/guide pair.</summary>
-    internal static int contactIndex(int theProfileIdx, int theGuideIdx, int theNbGuides)
+    internal static int ContactIndex(int profileIdx, int guideIdx, int nbGuides)
     {
-        return theProfileIdx * theNbGuides + theGuideIdx;
+        return profileIdx * nbGuides + guideIdx;
     }
 
     /// <summary>Stores the lowest-gap contact for the initial ordering estimate.</summary>
-    internal static bool chooseNearestContacts(NCollection_LinearVector<ContactSet> theContacts, int theNbProfiles,
-                                               int theNbGuides, NCollection_Array2<double> theProfileParams,
-                                               NCollection_Array2<double> theGuideParams)
+    internal static bool ChooseNearestContacts(NCollection_LinearVector<ContactSet> contacts, int nbProfiles,
+                                               int nbGuides, NCollection_Array2<double> profileParams,
+                                               NCollection_Array2<double> guideParams)
     {
-        for (int aProfileIdx = 0; aProfileIdx < theNbProfiles; ++aProfileIdx)
+        for (int profileIdx = 0; profileIdx < nbProfiles; ++profileIdx)
         {
-            for (int aGuideIdx = 0; aGuideIdx < theNbGuides; ++aGuideIdx)
+            for (int guideIdx = 0; guideIdx < nbGuides; ++guideIdx)
             {
-                ContactSet aSet = theContacts.Value(contactIndex(aProfileIdx, aGuideIdx, theNbGuides));
-                if (aSet.Candidates.IsEmpty())
+                ContactSet set = contacts.Value(ContactIndex(profileIdx, guideIdx, nbGuides));
+                if (set.Candidates.IsEmpty())
                 {
                     return false;
                 }
-                Contact aContact = aSet.Candidates.First();
-                theProfileParams.ChangeAt(aProfileIdx, aGuideIdx) = aContact.ProfileParam;
-                theGuideParams.ChangeAt(aProfileIdx, aGuideIdx) = aContact.GuideParam;
+                Contact contact = set.Candidates.First();
+                profileParams.ChangeAt(profileIdx, guideIdx) = contact.ProfileParam;
+                guideParams.ChangeAt(profileIdx, guideIdx) = contact.GuideParam;
             }
         }
         return true;
     }
 
     /// <summary>Returns the largest best-contact gap in a complete contact table.</summary>
-    internal static double maxNearestContactGap(NCollection_LinearVector<ContactSet> theContacts)
+    internal static double MaxNearestContactGap(NCollection_LinearVector<ContactSet> contacts)
     {
-        double aMaxGap = 0.0;
-        for (int aSetIdx = 0; aSetIdx < theContacts.Size(); ++aSetIdx)
+        double maxGap = 0.0;
+        for (int setIdx = 0; setIdx < contacts.Size(); ++setIdx)
         {
-            ContactSet aSet = theContacts.Value(aSetIdx);
-            if (!aSet.Candidates.IsEmpty())
+            ContactSet set = contacts.Value(setIdx);
+            if (!set.Candidates.IsEmpty())
             {
-                aMaxGap = Max(aMaxGap, aSet.Candidates.First().Gap);
+                maxGap = Max(maxGap, set.Candidates.First().Gap);
             }
         }
-        return aMaxGap;
+        return maxGap;
     }
 
     /// <summary>
     /// Builds all profile/guide contacts. The pairs are independent, each writes only its own set, so a parallel run
     /// gives the serial result (decision 490).
     /// </summary>
-    internal static bool fillContactTable(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                          NCollection_Array1<BSplineCurve3D?> theGuides,
-                                          NCollection_Array2<double> theProfileParams,
-                                          NCollection_Array2<double> theGuideParams,
-                                          NCollection_LinearVector<ContactSet> theContactSets, double theTolerance,
-                                          bool theToUseParallel)
+    internal static bool FillContactTable(NCollection_Array1<BSplineCurve3D?> profiles,
+                                          NCollection_Array1<BSplineCurve3D?> guides,
+                                          NCollection_Array2<double> profileParams,
+                                          NCollection_Array2<double> guideParams,
+                                          NCollection_LinearVector<ContactSet> contactSets, double tolerance,
+                                          bool toUseParallel)
     {
-        int aNbProfiles = theProfiles.Length();
-        int aNbGuides = theGuides.Length();
-        int aNbPairs = aNbProfiles * aNbGuides;
+        int nbProfiles = profiles.Length();
+        int nbGuides = guides.Length();
+        int nbPairs = nbProfiles * nbGuides;
 
-        theContactSets.Clear();
-        for (int aPairIdx = 0; aPairIdx < aNbPairs; ++aPairIdx)
+        contactSets.Clear();
+        for (int aPairIdx = 0; aPairIdx < nbPairs; ++aPairIdx)
         {
-            theContactSets.Append(new ContactSet());
+            contactSets.Append(new ContactSet());
         }
 
         int isDone = 1; // std::atomic<bool>
-        OsdParallel.For(0, aNbPairs, thePairIdx =>
+        OsdParallel.For(0, nbPairs, pairIdx =>
         {
             if (Volatile.Read(ref isDone) == 0)
             {
                 return;
             }
 
-            int aProfileIdx = thePairIdx / aNbGuides;
-            int aGuideIdx = thePairIdx % aNbGuides;
-            ref ContactSet aContactSet = ref theContactSets.ChangeValue(contactIndex(aProfileIdx, aGuideIdx, aNbGuides));
-            aContactSet = collectContacts(theProfiles.At(aProfileIdx)!, theGuides.At(aGuideIdx)!, theTolerance);
-            if (aContactSet.Candidates.IsEmpty())
+            int profileIdx = pairIdx / nbGuides;
+            int guideIdx = pairIdx % nbGuides;
+            ref ContactSet contactSet = ref contactSets.ChangeValue(ContactIndex(profileIdx, guideIdx, nbGuides));
+            contactSet = CollectContacts(profiles.At(profileIdx)!, guides.At(guideIdx)!, tolerance);
+            if (contactSet.Candidates.IsEmpty())
             {
                 Volatile.Write(ref isDone, 0);
             }
-        }, !theToUseParallel);
+        }, !toUseParallel);
 
         return Volatile.Read(ref isDone) != 0
-               && chooseNearestContacts(theContactSets, aNbProfiles, aNbGuides, theProfileParams, theGuideParams);
+               && ChooseNearestContacts(contactSets, nbProfiles, nbGuides, profileParams, guideParams);
     }
 
     /// <summary>Snaps one parameter value to the curve boundary when it is close enough.</summary>
-    internal static double snappedParameter(BSplineCurve3D theCurve, double theParameter, double theTolerance)
+    internal static double SnappedParameter(BSplineCurve3D curve, double parameter, double tolerance)
     {
-        double aFirst = theCurve.FirstParameter();
-        double aLast = theCurve.LastParameter();
-        double aTol = boundaryParameterResolution(aFirst, aLast, theTolerance);
-        if (Math.Abs(theParameter - aFirst) < aTol)
+        double first = curve.FirstParameter();
+        double last = curve.LastParameter();
+        double tol = BoundaryParameterResolution(first, last, tolerance);
+        if (Math.Abs(parameter - first) < tol)
         {
-            return aFirst;
+            return first;
         }
-        if (Math.Abs(theParameter - aLast) < aTol)
+        if (Math.Abs(parameter - last) < tol)
         {
-            return aLast;
+            return last;
         }
-        return theParameter;
+        return parameter;
     }
 
     /// <summary>Normalizes intersections after ordering and returns detected closed directions.</summary>
-    internal static bool normalizeContactTable(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                               NCollection_Array1<BSplineCurve3D?> theGuides,
-                                               NCollection_Array2<double> theProfileParams,
-                                               NCollection_Array2<double> theGuideParams, double theTolerance,
-                                               ref bool theIsUClosed, ref bool theIsVClosed)
+    internal static bool NormalizeContactTable(NCollection_Array1<BSplineCurve3D?> profiles,
+                                               NCollection_Array1<BSplineCurve3D?> guides,
+                                               NCollection_Array2<double> profileParams,
+                                               NCollection_Array2<double> guideParams, double tolerance,
+                                               ref bool isUClosed, ref bool isVClosed)
     {
-        double aTol = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double tol = Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Boundary snaps are done before validation so closed seams use exact end parameters.
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+            for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                theProfileParams.ChangeAt(aProfileIdx, aGuideIdx) =
-                  snappedParameter(theProfiles.At(aProfileIdx)!, theProfileParams.At(aProfileIdx, aGuideIdx),
-                                   theTolerance);
-                theGuideParams.ChangeAt(aProfileIdx, aGuideIdx) =
-                  snappedParameter(theGuides.At(aGuideIdx)!, theGuideParams.At(aProfileIdx, aGuideIdx), theTolerance);
+                profileParams.ChangeAt(profileIdx, guideIdx) =
+                  SnappedParameter(profiles.At(profileIdx)!, profileParams.At(profileIdx, guideIdx),
+                                   tolerance);
+                guideParams.ChangeAt(profileIdx, guideIdx) =
+                  SnappedParameter(guides.At(guideIdx)!, guideParams.At(profileIdx, guideIdx), tolerance);
             }
         }
 
-        double aUGap = 0.0;
-        double aVGap = 0.0;
-        int aLastProfile = theProfiles.Size() - 1;
-        int aLastGuide = theGuides.Size() - 1;
+        double uGap = 0.0;
+        double vGap = 0.0;
+        int lastProfile = profiles.Size() - 1;
+        int lastGuide = guides.Size() - 1;
 
         // One pass validates all contacts and measures only the two possible seam gaps.
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
-            for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+            CurveAdaptor profileAdaptor = new(profiles.At(profileIdx)!);
+            for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                CurveAdaptor aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
-                Point3D aProfilePoint = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aGuideIdx));
-                Point3D aGuidePoint = aGuideAdaptor.EvalD0(theGuideParams.At(aProfileIdx, aGuideIdx));
-                if (aProfilePoint.Distance(aGuidePoint) > aTol)
+                CurveAdaptor guideAdaptor = new(guides.At(guideIdx)!);
+                Point3D profilePoint = profileAdaptor.EvalD0(profileParams.At(profileIdx, guideIdx));
+                Point3D guidePoint = guideAdaptor.EvalD0(guideParams.At(profileIdx, guideIdx));
+                if (profilePoint.Distance(guidePoint) > tol)
                 {
                     return false;
                 }
-                if (aGuideIdx == 0 || aGuideIdx == aLastGuide)
+                if (guideIdx == 0 || guideIdx == lastGuide)
                 {
-                    Point3D aOppositePoint =
-                      aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide - aGuideIdx));
-                    aUGap = Max(aUGap, aProfilePoint.Distance(aOppositePoint));
+                    Point3D oppositePoint =
+                      profileAdaptor.EvalD0(profileParams.At(profileIdx, lastGuide - guideIdx));
+                    uGap = Max(uGap, profilePoint.Distance(oppositePoint));
                 }
-                if (aProfileIdx == 0 || aProfileIdx == aLastProfile)
+                if (profileIdx == 0 || profileIdx == lastProfile)
                 {
-                    Point3D aOppositePoint =
-                      aGuideAdaptor.EvalD0(theGuideParams.At(aLastProfile - aProfileIdx, aGuideIdx));
-                    aVGap = Max(aVGap, aGuidePoint.Distance(aOppositePoint));
+                    Point3D oppositePoint =
+                      guideAdaptor.EvalD0(guideParams.At(lastProfile - profileIdx, guideIdx));
+                    vGap = Max(vGap, guidePoint.Distance(oppositePoint));
                 }
             }
         }
 
-        theIsUClosed = aUGap <= aTol;
-        theIsVClosed = aVGap <= aTol;
-        if (theIsUClosed)
+        isUClosed = uGap <= tol;
+        isVClosed = vGap <= tol;
+        if (isUClosed)
         {
-            for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+            for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
             {
-                theProfileParams.ChangeAt(aProfileIdx, 0) = theProfiles.At(aProfileIdx)!.FirstParameter();
-                theProfileParams.ChangeAt(aProfileIdx, aLastGuide) = theProfiles.At(aProfileIdx)!.LastParameter();
+                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter();
+                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter();
             }
         }
-        if (theIsVClosed)
+        if (isVClosed)
         {
-            for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+            for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                theGuideParams.ChangeAt(0, aGuideIdx) = theGuides.At(aGuideIdx)!.FirstParameter();
-                theGuideParams.ChangeAt(aLastProfile, aGuideIdx) = theGuides.At(aGuideIdx)!.LastParameter();
+                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter();
+                guideParams.ChangeAt(lastProfile, guideIdx) = guides.At(guideIdx)!.LastParameter();
             }
         }
         return true;
     }
 
     /// <summary>Orders curves by their mean position in the opposite parameter family.</summary>
-    internal static NCollection_LinearVector<OrderedCurve> orderedCurves(math_Vector theRanks)
+    internal static NCollection_LinearVector<OrderedCurve> OrderedCurves(math_Vector ranks)
     {
-        NCollection_LinearVector<OrderedCurve> anOrder = new();
-        for (int aRankIdx = theRanks.Lower(); aRankIdx <= theRanks.Upper(); ++aRankIdx)
+        NCollection_LinearVector<OrderedCurve> order = new();
+        for (int rankIdx = ranks.Lower(); rankIdx <= ranks.Upper(); ++rankIdx)
         {
-            anOrder.Append(new OrderedCurve(aRankIdx - theRanks.Lower(), theRanks[aRankIdx]));
+            order.Append(new OrderedCurve(rankIdx - ranks.Lower(), ranks[rankIdx]));
         }
 
-        Sorting.Sort(anOrder.AsSpan(), new OrderedCurveLess());
-        double aTol = parameterResolution(0.0, 1.0);
-        if (anOrder.Size() > 2 && Math.Abs(anOrder.Value(0).Rank - anOrder.Value(1).Rank) <= aTol)
+        Sorting.Sort(order.AsSpan(), new OrderedCurveLess());
+        double tol = ParameterResolution(0.0, 1.0);
+        if (order.Size() > 2 && Math.Abs(order.Value(0).Rank - order.Value(1).Rank) <= tol)
         {
-            NCollection_LinearVector<OrderedCurve> anOpenedOrder = new();
-            anOpenedOrder.Append(anOrder.Value(0));
-            for (int anOrderIdx = 2; anOrderIdx < anOrder.Size(); ++anOrderIdx)
+            NCollection_LinearVector<OrderedCurve> openedOrder = new();
+            openedOrder.Append(order.Value(0));
+            for (int orderIdx = 2; orderIdx < order.Size(); ++orderIdx)
             {
-                anOpenedOrder.Append(anOrder.Value(anOrderIdx));
+                openedOrder.Append(order.Value(orderIdx));
             }
-            anOpenedOrder.Append(anOrder.Value(1));
-            return anOpenedOrder;
+            openedOrder.Append(order.Value(1));
+            return openedOrder;
         }
-        if (anOrder.Size() > 2 && Math.Abs(anOrder.Last().Rank - anOrder.Value(anOrder.Size() - 2).Rank) <= aTol)
+        if (order.Size() > 2 && Math.Abs(order.Last().Rank - order.Value(order.Size() - 2).Rank) <= tol)
         {
-            NCollection_LinearVector<OrderedCurve> anOpenedOrder = new();
-            anOpenedOrder.Append(anOrder.Value(anOrder.Size() - 2));
-            for (int anOrderIdx = 0; anOrderIdx + 2 < anOrder.Size(); ++anOrderIdx)
+            NCollection_LinearVector<OrderedCurve> openedOrder = new();
+            openedOrder.Append(order.Value(order.Size() - 2));
+            for (int orderIdx = 0; orderIdx + 2 < order.Size(); ++orderIdx)
             {
-                anOpenedOrder.Append(anOrder.Value(anOrderIdx));
+                openedOrder.Append(order.Value(orderIdx));
             }
-            anOpenedOrder.Append(anOrder.Last());
-            return anOpenedOrder;
+            openedOrder.Append(order.Last());
+            return openedOrder;
         }
-        return anOrder;
+        return order;
     }
 
     /// <summary>Checks that every row and column advances in its own curve parameter direction.</summary>
-    internal static bool isMonotoneLayout(Matrix theProfileParams, Matrix theGuideParams)
+    internal static bool IsMonotoneLayout(Matrix profileParams, Matrix guideParams)
     {
-        double aTol = parameterResolution(0.0, 1.0);
+        double tol = ParameterResolution(0.0, 1.0);
 
         // Ambiguous or folded grids are rejected instead of being repaired heuristically.
-        for (int aRow = theProfileParams.LowerRow(); aRow <= theProfileParams.UpperRow(); ++aRow)
+        for (int row = profileParams.LowerRow(); row <= profileParams.UpperRow(); ++row)
         {
-            for (int aCol = theProfileParams.LowerCol() + 1; aCol <= theProfileParams.UpperCol(); ++aCol)
+            for (int col = profileParams.LowerCol() + 1; col <= profileParams.UpperCol(); ++col)
             {
-                if (theProfileParams[aRow, aCol] <= theProfileParams[aRow, aCol - 1] + aTol)
+                if (profileParams[row, col] <= profileParams[row, col - 1] + tol)
                 {
                     return false;
                 }
             }
         }
 
-        for (int aCol = theGuideParams.LowerCol(); aCol <= theGuideParams.UpperCol(); ++aCol)
+        for (int col = guideParams.LowerCol(); col <= guideParams.UpperCol(); ++col)
         {
-            for (int aRow = theGuideParams.LowerRow() + 1; aRow <= theGuideParams.UpperRow(); ++aRow)
+            for (int row = guideParams.LowerRow() + 1; row <= guideParams.UpperRow(); ++row)
             {
-                if (theGuideParams[aRow, aCol] <= theGuideParams[aRow - 1, aCol] + aTol)
+                if (guideParams[row, col] <= guideParams[row - 1, col] + tol)
                 {
                     return false;
                 }
@@ -682,21 +684,21 @@ internal static class GordonUtilities
     }
 
     /// <summary>Opens duplicated seam contacts to exact boundary parameters before monotone validation.</summary>
-    internal static void openClosedBoundaryCandidates(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                                      NCollection_Array1<BSplineCurve3D?> theGuides,
-                                                      NCollection_Array2<double> theProfileParams,
-                                                      NCollection_Array2<double> theGuideParams, double theTolerance)
+    internal static void OpenClosedBoundaryCandidates(NCollection_Array1<BSplineCurve3D?> profiles,
+                                                      NCollection_Array1<BSplineCurve3D?> guides,
+                                                      NCollection_Array2<double> profileParams,
+                                                      NCollection_Array2<double> guideParams, double tolerance)
     {
-        double aTol = Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
-        int aLastGuide = theGuides.Size() - 1;
-        int aLastProf = theProfiles.Size() - 1;
+        double tol = Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion());
+        int lastGuide = guides.Size() - 1;
+        int lastProf = profiles.Size() - 1;
         bool isURepeated = true;
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
-            Point3D aFirst = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, 0));
-            Point3D aLast = aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aLastGuide));
-            if (aFirst.Distance(aLast) > aTol)
+            CurveAdaptor profileAdaptor = new(profiles.At(profileIdx)!);
+            Point3D first = profileAdaptor.EvalD0(profileParams.At(profileIdx, 0));
+            Point3D last = profileAdaptor.EvalD0(profileParams.At(profileIdx, lastGuide));
+            if (first.Distance(last) > tol)
             {
                 isURepeated = false;
                 break;
@@ -704,20 +706,20 @@ internal static class GordonUtilities
         }
         if (isURepeated)
         {
-            for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+            for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
             {
-                theProfileParams.ChangeAt(aProfileIdx, 0) = theProfiles.At(aProfileIdx)!.FirstParameter();
-                theProfileParams.ChangeAt(aProfileIdx, aLastGuide) = theProfiles.At(aProfileIdx)!.LastParameter();
+                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter();
+                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter();
             }
         }
 
         bool isVRepeated = true;
-        for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+        for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
         {
-            CurveAdaptor aGuideAdaptor = new(theGuides.At(aGuideIdx)!);
-            Point3D aFirst = aGuideAdaptor.EvalD0(theGuideParams.At(0, aGuideIdx));
-            Point3D aLast = aGuideAdaptor.EvalD0(theGuideParams.At(aLastProf, aGuideIdx));
-            if (aFirst.Distance(aLast) > aTol)
+            CurveAdaptor guideAdaptor = new(guides.At(guideIdx)!);
+            Point3D first = guideAdaptor.EvalD0(guideParams.At(0, guideIdx));
+            Point3D last = guideAdaptor.EvalD0(guideParams.At(lastProf, guideIdx));
+            if (first.Distance(last) > tol)
             {
                 isVRepeated = false;
                 break;
@@ -725,19 +727,19 @@ internal static class GordonUtilities
         }
         if (isVRepeated)
         {
-            for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+            for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                theGuideParams.ChangeAt(0, aGuideIdx) = theGuides.At(aGuideIdx)!.FirstParameter();
-                theGuideParams.ChangeAt(aLastProf, aGuideIdx) = theGuides.At(aGuideIdx)!.LastParameter();
+                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter();
+                guideParams.ChangeAt(lastProf, guideIdx) = guides.At(guideIdx)!.LastParameter();
             }
         }
     }
 
     /// <summary>Returns a curve handle oriented as requested (always a copy).</summary>
-    internal static BSplineCurve3D orientedCurve(BSplineCurve3D theCurve, bool theIsForward)
+    internal static BSplineCurve3D OrientedCurve(BSplineCurve3D curve, bool isForward)
     {
-        BSplineCurve3D aCurve = (BSplineCurve3D)theCurve.Copy();
-        if (!theIsForward)
+        BSplineCurve3D aCurve = (BSplineCurve3D)curve.Copy();
+        if (!isForward)
         {
             aCurve.Reverse();
         }
@@ -745,701 +747,701 @@ internal static class GordonUtilities
     }
 
     /// <summary>Returns a parameter in the destination curve orientation.</summary>
-    internal static double orientedParameter(BSplineCurve3D theCurve, double theParameter, bool theIsForward)
+    internal static double OrientedParameter(BSplineCurve3D curve, double parameter, bool isForward)
     {
-        return theIsForward ? theParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theParameter;
+        return isForward ? parameter : curve.FirstParameter() + curve.LastParameter() - parameter;
     }
 
     /// <summary>Scores an oriented contact against the expected grid position.</summary>
-    internal static double orderedContactScore(in Contact theContact, double theProfileParam, double theGuideParam,
-                                               double theProfileTarget, double theGuideTarget,
-                                               double thePreviousProfileParam, double thePreviousGuideParam,
-                                               double thePreviousProfileTarget, double thePreviousGuideTarget,
-                                               bool theHasPreviousProfile, bool theHasPreviousGuide,
-                                               double theTolerance)
+    internal static double OrderedContactScore(in Contact contact, double profileParam, double guideParam,
+                                               double profileTarget, double guideTarget,
+                                               double previousProfileParam, double previousGuideParam,
+                                               double previousProfileTarget, double previousGuideTarget,
+                                               bool hasPreviousProfile, bool hasPreviousGuide,
+                                               double tolerance)
     {
-        double aScore = theContact.Gap / Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion())
-                        + Math.Abs(theProfileParam - theProfileTarget)
-                        + Math.Abs(theGuideParam - theGuideTarget);
-        if (theHasPreviousProfile)
+        double score = contact.Gap / Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion())
+                        + Math.Abs(profileParam - profileTarget)
+                        + Math.Abs(guideParam - guideTarget);
+        if (hasPreviousProfile)
         {
             // Favor branches with a smooth advance along the current profile.
-            aScore += Math.Abs((theProfileParam - thePreviousProfileParam)
-                               - (theProfileTarget - thePreviousProfileTarget));
+            score += Math.Abs((profileParam - previousProfileParam)
+                               - (profileTarget - previousProfileTarget));
         }
-        if (theHasPreviousGuide)
+        if (hasPreviousGuide)
         {
             // Favor branches with a smooth advance along the current guide.
-            aScore += Math.Abs((theGuideParam - thePreviousGuideParam) - (theGuideTarget - thePreviousGuideTarget));
+            score += Math.Abs((guideParam - previousGuideParam) - (guideTarget - previousGuideTarget));
         }
-        return aScore;
+        return score;
     }
 
     /// <summary>Returns the tangent mismatch between two parameters in the requested curve orientation.</summary>
-    internal static bool seamTangentMismatch(BSplineCurve3D theCurve, double theFirstParameter,
-                                             double theLastParameter, bool theIsForward, double theTolerance,
-                                             ref double theMismatch)
+    internal static bool SeamTangentMismatch(BSplineCurve3D curve, double firstParameter,
+                                             double lastParameter, bool isForward, double tolerance,
+                                             ref double mismatch)
     {
-        double aFirstRawParameter =
-          theIsForward ? theFirstParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theFirstParameter;
-        double aLastRawParameter =
-          theIsForward ? theLastParameter : theCurve.FirstParameter() + theCurve.LastParameter() - theLastParameter;
-        Curve3D.ResD1 aFirstD1 = theCurve.EvalD1(aFirstRawParameter);
-        Curve3D.ResD1 aLastD1 = theCurve.EvalD1(aLastRawParameter);
-        if (aFirstD1.Point.Distance(aLastD1.Point) > Max(theTolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
+        double firstRawParameter =
+          isForward ? firstParameter : curve.FirstParameter() + curve.LastParameter() - firstParameter;
+        double lastRawParameter =
+          isForward ? lastParameter : curve.FirstParameter() + curve.LastParameter() - lastParameter;
+        Curve3D.ResD1 firstD1 = curve.EvalD1(firstRawParameter);
+        Curve3D.ResD1 lastD1 = curve.EvalD1(lastRawParameter);
+        if (firstD1.Point.Distance(lastD1.Point) > Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return false;
         }
 
-        Vector3D aFirstTangent = aFirstD1.D1;
-        Vector3D aLastTangent = aLastD1.D1;
-        if (!theIsForward)
+        Vector3D firstTangent = firstD1.D1;
+        Vector3D lastTangent = lastD1.D1;
+        if (!isForward)
         {
-            aFirstTangent.Reverse();
-            aLastTangent.Reverse();
+            firstTangent.Reverse();
+            lastTangent.Reverse();
         }
-        double aFirstMagnitude = aFirstTangent.Magnitude();
-        double aLastMagnitude = aLastTangent.Magnitude();
-        if (aFirstMagnitude <= Constants.Resolution() || aLastMagnitude <= Constants.Resolution())
+        double firstMagnitude = firstTangent.Magnitude();
+        double lastMagnitude = lastTangent.Magnitude();
+        if (firstMagnitude <= Constants.Resolution() || lastMagnitude <= Constants.Resolution())
         {
             return false;
         }
 
-        theMismatch = 1.0 - clamp(aFirstTangent.Dot(aLastTangent) / (aFirstMagnitude * aLastMagnitude), -1.0, 1.0);
+        mismatch = 1.0 - Clamp(firstTangent.Dot(lastTangent) / (firstMagnitude * lastMagnitude), -1.0, 1.0);
         return true;
     }
 
     /// <summary>Selects one contact compatible with already selected row/column predecessors.</summary>
-    internal static bool chooseOrderedContact(ContactSet theContacts, BSplineCurve3D theProfile,
-                                              BSplineCurve3D theGuide, bool theProfileForward,
-                                              bool theGuideForward, double theProfileTarget, double theGuideTarget,
-                                              double thePreviousProfileParam, double thePreviousGuideParam,
-                                              bool theHasPreviousProfile, bool theHasPreviousGuide,
-                                              double thePreviousProfileTarget, double thePreviousGuideTarget,
-                                              double theFirstProfileParam, double theFirstGuideParam,
-                                              bool theIsProfileSeam, bool theIsGuideSeam, double theTolerance,
-                                              ref Contact theSelected)
+    internal static bool ChooseOrderedContact(ContactSet contacts, BSplineCurve3D profile,
+                                              BSplineCurve3D guide, bool profileForward,
+                                              bool guideForward, double profileTarget, double guideTarget,
+                                              double previousProfileParam, double previousGuideParam,
+                                              bool hasPreviousProfile, bool hasPreviousGuide,
+                                              double previousProfileTarget, double previousGuideTarget,
+                                              double firstProfileParam, double firstGuideParam,
+                                              bool isProfileSeam, bool isGuideSeam, double tolerance,
+                                              ref Contact selected)
     {
-        double aParamTol = parameterResolution(0.0, 1.0);
-        double aBestTangentMismatch = RealLast();
-        double aBest = RealLast();
-        for (int aCandidateIdx = 0; aCandidateIdx < theContacts.Candidates.Size(); ++aCandidateIdx)
+        double paramTol = ParameterResolution(0.0, 1.0);
+        double bestTangentMismatch = RealLast();
+        double best = RealLast();
+        for (int candidateIdx = 0; candidateIdx < contacts.Candidates.Size(); ++candidateIdx)
         {
-            Contact aCandidate = theContacts.Candidates.Value(aCandidateIdx);
-            double aProfileParam = orientedParameter(theProfile, aCandidate.ProfileParam, theProfileForward);
-            double aGuideParam = orientedParameter(theGuide, aCandidate.GuideParam, theGuideForward);
-            if ((theHasPreviousProfile && aProfileParam <= thePreviousProfileParam + aParamTol)
-                || (theHasPreviousGuide && aGuideParam <= thePreviousGuideParam + aParamTol))
+            Contact candidate = contacts.Candidates.Value(candidateIdx);
+            double profileParam = OrientedParameter(profile, candidate.ProfileParam, profileForward);
+            double guideParam = OrientedParameter(guide, candidate.GuideParam, guideForward);
+            if ((hasPreviousProfile && profileParam <= previousProfileParam + paramTol)
+                || (hasPreviousGuide && guideParam <= previousGuideParam + paramTol))
             {
                 continue;
             }
 
-            double aScore = orderedContactScore(aCandidate, aProfileParam, aGuideParam, theProfileTarget,
-                                                theGuideTarget, thePreviousProfileParam, thePreviousGuideParam,
-                                                thePreviousProfileTarget, thePreviousGuideTarget,
-                                                theHasPreviousProfile, theHasPreviousGuide, theTolerance);
-            double aTangentMismatch = 0.0;
+            double score = OrderedContactScore(candidate, profileParam, guideParam, profileTarget,
+                                                guideTarget, previousProfileParam, previousGuideParam,
+                                                previousProfileTarget, previousGuideTarget,
+                                                hasPreviousProfile, hasPreviousGuide, tolerance);
+            double tangentMismatch = 0.0;
             bool hasTangentMatch = false;
-            if (theIsProfileSeam)
+            if (isProfileSeam)
             {
-                double aProfileMismatch = 0.0;
-                if (seamTangentMismatch(theProfile, theFirstProfileParam, aProfileParam, theProfileForward,
-                                        theTolerance, ref aProfileMismatch))
+                double profileMismatch = 0.0;
+                if (SeamTangentMismatch(profile, firstProfileParam, profileParam, profileForward,
+                                        tolerance, ref profileMismatch))
                 {
-                    aTangentMismatch += aProfileMismatch;
+                    tangentMismatch += profileMismatch;
                     hasTangentMatch = true;
                 }
             }
-            if (theIsGuideSeam)
+            if (isGuideSeam)
             {
-                double aGuideMismatch = 0.0;
-                if (seamTangentMismatch(theGuide, theFirstGuideParam, aGuideParam, theGuideForward, theTolerance,
-                                        ref aGuideMismatch))
+                double guideMismatch = 0.0;
+                if (SeamTangentMismatch(guide, firstGuideParam, guideParam, guideForward, tolerance,
+                                        ref guideMismatch))
                 {
-                    aTangentMismatch += aGuideMismatch;
+                    tangentMismatch += guideMismatch;
                     hasTangentMatch = true;
                 }
             }
 
             if ((hasTangentMatch
-                 && (aTangentMismatch < aBestTangentMismatch - global::Kerf.Engine.Foundation.Precision.Angular()
-                     || (Math.Abs(aTangentMismatch - aBestTangentMismatch) <= global::Kerf.Engine.Foundation.Precision.Angular() && aScore < aBest)))
-                || (!hasTangentMatch && aBestTangentMismatch == RealLast() && aScore < aBest))
+                 && (tangentMismatch < bestTangentMismatch - global::Kerf.Engine.Foundation.Precision.Angular()
+                     || (Math.Abs(tangentMismatch - bestTangentMismatch) <= global::Kerf.Engine.Foundation.Precision.Angular() && score < best)))
+                || (!hasTangentMatch && bestTangentMismatch == RealLast() && score < best))
             {
-                aBestTangentMismatch = hasTangentMatch ? aTangentMismatch : RealLast();
-                aBest = aScore;
-                theSelected = aCandidate;
-                theSelected.ProfileParam = aProfileParam;
-                theSelected.GuideParam = aGuideParam;
+                bestTangentMismatch = hasTangentMatch ? tangentMismatch : RealLast();
+                best = score;
+                selected = candidate;
+                selected.ProfileParam = profileParam;
+                selected.GuideParam = guideParam;
             }
         }
-        return theSelected.IsValid;
+        return selected.IsValid;
     }
 
     /// <summary>Reorders curves and contact matrices into a consistent network layout.</summary>
-    internal static bool reorderNetwork(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                        NCollection_Array1<BSplineCurve3D?> theGuides,
-                                        NCollection_Array2<double> theProfileParams,
-                                        NCollection_Array2<double> theGuideParams,
-                                        NCollection_LinearVector<ContactSet> theContactSets, double theTolerance)
+    internal static bool ReorderNetwork(NCollection_Array1<BSplineCurve3D?> profiles,
+                                        NCollection_Array1<BSplineCurve3D?> guides,
+                                        NCollection_Array2<double> profileParams,
+                                        NCollection_Array2<double> guideParams,
+                                        NCollection_LinearVector<ContactSet> contactSets, double tolerance)
     {
-        if (theProfiles.Size() < 2 || theGuides.Size() < 2)
+        if (profiles.Size() < 2 || guides.Size() < 2)
         {
             return false;
         }
 
-        Matrix aProfileParamMatrix = toMatrix(theProfileParams);
-        Matrix aGuideParamMatrix = toMatrix(theGuideParams);
+        Matrix profileParamMatrix = ToMatrix(profileParams);
+        Matrix guideParamMatrix = ToMatrix(guideParams);
 
-        NCollection_LinearVector<OrderedCurve> aProfileOrder = orderedCurves(rowMeans(aGuideParamMatrix));
-        NCollection_LinearVector<OrderedCurve> aGuideOrder = orderedCurves(columnMeans(aProfileParamMatrix));
+        NCollection_LinearVector<OrderedCurve> profileOrder = OrderedCurves(RowMeans(guideParamMatrix));
+        NCollection_LinearVector<OrderedCurve> guideOrder = OrderedCurves(ColumnMeans(profileParamMatrix));
 
-        NCollection_Array1<BSplineCurve3D?> aProfiles = new(1, theProfiles.Size());
-        NCollection_Array1<BSplineCurve3D?> aGuides = new(1, theGuides.Size());
-        NCollection_Array2<double> aProfileParams = new(theProfileParams.LowerRow(), theProfileParams.UpperRow(),
-                                                        theProfileParams.LowerCol(), theProfileParams.UpperCol());
-        NCollection_Array2<double> aGuideParams = new(theGuideParams.LowerRow(), theGuideParams.UpperRow(),
-                                                      theGuideParams.LowerCol(), theGuideParams.UpperCol());
-        Matrix aProfileParamResult = toMatrix(aProfileParams);
-        Matrix aGuideParamResult = toMatrix(aGuideParams);
+        NCollection_Array1<BSplineCurve3D?> aProfiles = new(1, profiles.Size());
+        NCollection_Array1<BSplineCurve3D?> aGuides = new(1, guides.Size());
+        NCollection_Array2<double> aProfileParams = new(profileParams.LowerRow(), profileParams.UpperRow(),
+                                                        profileParams.LowerCol(), profileParams.UpperCol());
+        NCollection_Array2<double> aGuideParams = new(guideParams.LowerRow(), guideParams.UpperRow(),
+                                                      guideParams.LowerCol(), guideParams.UpperCol());
+        Matrix profileParamResult = ToMatrix(aProfileParams);
+        Matrix guideParamResult = ToMatrix(aGuideParams);
 
-        NCollection_LinearVector<bool> aProfileForward = new();
-        for (int aProfileIdx = 0; aProfileIdx < aProfileOrder.Size(); ++aProfileIdx)
+        NCollection_LinearVector<bool> profileForward = new();
+        for (int profileIdx = 0; profileIdx < profileOrder.Size(); ++profileIdx)
         {
-            int aSrcProfileIdx = aProfileOrder.Value(aProfileIdx).Index;
-            bool isForward = aProfileParamMatrix[aSrcProfileIdx + 1, aGuideOrder.First().Index + 1]
-                             <= aProfileParamMatrix[aSrcProfileIdx + 1, aGuideOrder.Last().Index + 1];
-            aProfiles.ChangeAt(aProfileIdx) = orientedCurve(theProfiles.At(aSrcProfileIdx)!, isForward);
-            aProfileForward.Append(isForward);
+            int srcProfileIdx = profileOrder.Value(profileIdx).Index;
+            bool isForward = profileParamMatrix[srcProfileIdx + 1, guideOrder.First().Index + 1]
+                             <= profileParamMatrix[srcProfileIdx + 1, guideOrder.Last().Index + 1];
+            aProfiles.ChangeAt(profileIdx) = OrientedCurve(profiles.At(srcProfileIdx)!, isForward);
+            profileForward.Append(isForward);
         }
 
-        NCollection_LinearVector<bool> aGuideForward = new();
-        for (int aGuideIdx = 0; aGuideIdx < aGuideOrder.Size(); ++aGuideIdx)
+        NCollection_LinearVector<bool> guideForward = new();
+        for (int guideIdx = 0; guideIdx < guideOrder.Size(); ++guideIdx)
         {
-            int aSrcGuideIdx = aGuideOrder.Value(aGuideIdx).Index;
-            bool isForward = aGuideParamMatrix[aProfileOrder.First().Index + 1, aSrcGuideIdx + 1]
-                             <= aGuideParamMatrix[aProfileOrder.Last().Index + 1, aSrcGuideIdx + 1];
-            aGuides.ChangeAt(aGuideIdx) = orientedCurve(theGuides.At(aSrcGuideIdx)!, isForward);
-            aGuideForward.Append(isForward);
+            int srcGuideIdx = guideOrder.Value(guideIdx).Index;
+            bool isForward = guideParamMatrix[profileOrder.First().Index + 1, srcGuideIdx + 1]
+                             <= guideParamMatrix[profileOrder.Last().Index + 1, srcGuideIdx + 1];
+            aGuides.ChangeAt(guideIdx) = OrientedCurve(guides.At(srcGuideIdx)!, isForward);
+            guideForward.Append(isForward);
         }
 
-        for (int aProfileIdx = 0; aProfileIdx < aProfileOrder.Size(); ++aProfileIdx)
+        for (int profileIdx = 0; profileIdx < profileOrder.Size(); ++profileIdx)
         {
-            int aSrcProfileIdx = aProfileOrder.Value(aProfileIdx).Index;
-            for (int aGuideIdx = 0; aGuideIdx < aGuideOrder.Size(); ++aGuideIdx)
+            int srcProfileIdx = profileOrder.Value(profileIdx).Index;
+            for (int guideIdx = 0; guideIdx < guideOrder.Size(); ++guideIdx)
             {
-                int aSrcGuideIdx = aGuideOrder.Value(aGuideIdx).Index;
-                double aProfileTarget = aGuideOrder.Size() == 1 ? 0.0 : (double)aGuideIdx / (aGuideOrder.Size() - 1);
-                double aGuideTarget =
-                  aProfileOrder.Size() == 1 ? 0.0 : (double)aProfileIdx / (aProfileOrder.Size() - 1);
-                double aPreviousProfileParam = aGuideIdx == 0 ? 0.0 : aProfileParamResult[aProfileIdx + 1, aGuideIdx];
-                double aPreviousGuideParam = aProfileIdx == 0 ? 0.0 : aGuideParamResult[aProfileIdx, aGuideIdx + 1];
-                double aPreviousProfileTarget =
-                  aGuideIdx < 2 ? 0.0 : (double)(aGuideIdx - 1) / (aGuideOrder.Size() - 1);
-                double aPreviousGuideTarget =
-                  aProfileIdx < 2 ? 0.0 : (double)(aProfileIdx - 1) / (aProfileOrder.Size() - 1);
-                bool isProfileSeam = aGuideIdx + 1 == aGuideOrder.Size();
-                bool isGuideSeam = aProfileIdx + 1 == aProfileOrder.Size();
-                double aFirstProfileParam = isProfileSeam ? aProfileParamResult[aProfileIdx + 1, 1] : 0.0;
-                double aFirstGuideParam = isGuideSeam ? aGuideParamResult[1, aGuideIdx + 1] : 0.0;
+                int srcGuideIdx = guideOrder.Value(guideIdx).Index;
+                double profileTarget = guideOrder.Size() == 1 ? 0.0 : (double)guideIdx / (guideOrder.Size() - 1);
+                double guideTarget =
+                  profileOrder.Size() == 1 ? 0.0 : (double)profileIdx / (profileOrder.Size() - 1);
+                double previousProfileParam = guideIdx == 0 ? 0.0 : profileParamResult[profileIdx + 1, guideIdx];
+                double previousGuideParam = profileIdx == 0 ? 0.0 : guideParamResult[profileIdx, guideIdx + 1];
+                double previousProfileTarget =
+                  guideIdx < 2 ? 0.0 : (double)(guideIdx - 1) / (guideOrder.Size() - 1);
+                double previousGuideTarget =
+                  profileIdx < 2 ? 0.0 : (double)(profileIdx - 1) / (profileOrder.Size() - 1);
+                bool isProfileSeam = guideIdx + 1 == guideOrder.Size();
+                bool isGuideSeam = profileIdx + 1 == profileOrder.Size();
+                double firstProfileParam = isProfileSeam ? profileParamResult[profileIdx + 1, 1] : 0.0;
+                double firstGuideParam = isGuideSeam ? guideParamResult[1, guideIdx + 1] : 0.0;
 
-                Contact aContact = new();
-                if (!chooseOrderedContact(theContactSets.Value(contactIndex(aSrcProfileIdx, aSrcGuideIdx, theGuides.Size())),
-                                          theProfiles.At(aSrcProfileIdx)!, theGuides.At(aSrcGuideIdx)!,
-                                          aProfileForward.Value(aProfileIdx), aGuideForward.Value(aGuideIdx),
-                                          aProfileTarget, aGuideTarget, aPreviousProfileParam, aPreviousGuideParam,
-                                          aGuideIdx != 0, aProfileIdx != 0, aPreviousProfileTarget,
-                                          aPreviousGuideTarget, aFirstProfileParam, aFirstGuideParam, isProfileSeam,
-                                          isGuideSeam, theTolerance, ref aContact))
+                Contact contact = new();
+                if (!ChooseOrderedContact(contactSets.Value(ContactIndex(srcProfileIdx, srcGuideIdx, guides.Size())),
+                                          profiles.At(srcProfileIdx)!, guides.At(srcGuideIdx)!,
+                                          profileForward.Value(profileIdx), guideForward.Value(guideIdx),
+                                          profileTarget, guideTarget, previousProfileParam, previousGuideParam,
+                                          guideIdx != 0, profileIdx != 0, previousProfileTarget,
+                                          previousGuideTarget, firstProfileParam, firstGuideParam, isProfileSeam,
+                                          isGuideSeam, tolerance, ref contact))
                 {
                     return false;
                 }
 
-                aProfileParamResult[aProfileIdx + 1, aGuideIdx + 1] = aContact.ProfileParam;
-                aGuideParamResult[aProfileIdx + 1, aGuideIdx + 1] = aContact.GuideParam;
+                profileParamResult[profileIdx + 1, guideIdx + 1] = contact.ProfileParam;
+                guideParamResult[profileIdx + 1, guideIdx + 1] = contact.GuideParam;
             }
         }
 
-        openClosedBoundaryCandidates(aProfiles, aGuides, aProfileParams, aGuideParams, theTolerance);
+        OpenClosedBoundaryCandidates(aProfiles, aGuides, aProfileParams, aGuideParams, tolerance);
 
-        if (!isMonotoneLayout(aProfileParamResult, aGuideParamResult))
+        if (!IsMonotoneLayout(profileParamResult, guideParamResult))
         {
             return false;
         }
 
-        theProfiles.Assign(aProfiles);
-        theGuides.Assign(aGuides);
-        theProfileParams.Assign(aProfileParams);
-        theGuideParams.Assign(aGuideParams);
+        profiles.Assign(aProfiles);
+        guides.Assign(aGuides);
+        profileParams.Assign(aProfileParams);
+        guideParams.Assign(aGuideParams);
         return true;
     }
 
     /// <summary>Monotone scalar map converting target parameters back to the source curve.</summary>
     internal sealed class ScalarLaw : EvaluatorFunction
     {
-        private readonly NCollection_LinearVector<double> mySource = new();
-        private readonly NCollection_LinearVector<double> myTarget = new();
+        private readonly NCollection_LinearVector<double> _source = new();
+        private readonly NCollection_LinearVector<double> _target = new();
 
         /// <summary>Stores a strictly increasing piecewise-linear parameter map.</summary>
-        public bool Init(math_Vector theSource, math_Vector theTarget, int theNbValues)
+        public bool Init(math_Vector source, math_Vector target, int nbValues)
         {
-            if (theNbValues < 2)
+            if (nbValues < 2)
             {
                 return false;
             }
 
-            mySource.Clear();
-            myTarget.Clear();
-            for (int aParamIdx = 1; aParamIdx <= theNbValues; ++aParamIdx)
+            _source.Clear();
+            _target.Clear();
+            for (int paramIdx = 1; paramIdx <= nbValues; ++paramIdx)
             {
-                if (!mySource.IsEmpty()
-                    && (theSource[aParamIdx] <= mySource.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()
-                        || theTarget[aParamIdx] <= myTarget.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                if (!_source.IsEmpty()
+                    && (source[paramIdx] <= _source.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || target[paramIdx] <= _target.Last() + global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     return false;
                 }
-                mySource.Append(theSource[aParamIdx]);
-                myTarget.Append(theTarget[aParamIdx]);
+                _source.Append(source[paramIdx]);
+                _target.Append(target[paramIdx]);
             }
             return true;
         }
 
         /// <summary>Evaluates the map by linear interpolation and clamps to source bounds.</summary>
-        public double Value(double theTargetParameter)
+        public double Value(double targetParameter)
         {
-            if (mySource.IsEmpty())
+            if (_source.IsEmpty())
             {
                 return 0.0;
             }
-            if (theTargetParameter <= myTarget.First())
+            if (targetParameter <= _target.First())
             {
-                return mySource.First();
+                return _source.First();
             }
-            if (theTargetParameter >= myTarget.Last())
+            if (targetParameter >= _target.Last())
             {
-                return mySource.Last();
+                return _source.Last();
             }
 
-            for (int aParamIdx = 1; aParamIdx < myTarget.Size(); ++aParamIdx)
+            for (int paramIdx = 1; paramIdx < _target.Size(); ++paramIdx)
             {
-                if (theTargetParameter <= myTarget.Value(aParamIdx))
+                if (targetParameter <= _target.Value(paramIdx))
                 {
-                    double aT0 = myTarget.Value(aParamIdx - 1);
-                    double aT1 = myTarget.Value(aParamIdx);
-                    double aWeight = (theTargetParameter - aT0) / (aT1 - aT0);
-                    return mySource.Value(aParamIdx - 1)
-                           + aWeight * (mySource.Value(aParamIdx) - mySource.Value(aParamIdx - 1));
+                    double t0 = _target.Value(paramIdx - 1);
+                    double t1 = _target.Value(paramIdx);
+                    double weight = (targetParameter - t0) / (t1 - t0);
+                    return _source.Value(paramIdx - 1)
+                           + weight * (_source.Value(paramIdx) - _source.Value(paramIdx - 1));
                 }
             }
-            return mySource.Last();
+            return _source.Last();
         }
 
-        public override void Evaluate(int theDerivativeRequest, ReadOnlySpan<double> theStartEnd,
-                                      double theTargetParameter, out double theResult, out int theErrorCode)
+        public override void Evaluate(int derivativeRequest, ReadOnlySpan<double> startEnd,
+                                      double targetParameter, out double result, out int errorCode)
         {
-            theErrorCode = 0;
-            if (theDerivativeRequest == 0)
+            errorCode = 0;
+            if (derivativeRequest == 0)
             {
-                theResult = Value(theTargetParameter);
+                result = Value(targetParameter);
                 return;
             }
-            if (theDerivativeRequest != 1)
+            if (derivativeRequest != 1)
             {
-                theResult = 0.0;
+                result = 0.0;
                 return;
             }
 
-            for (int aParamIdx = 1; aParamIdx < myTarget.Size(); ++aParamIdx)
+            for (int paramIdx = 1; paramIdx < _target.Size(); ++paramIdx)
             {
-                if (theTargetParameter <= myTarget.Value(aParamIdx))
+                if (targetParameter <= _target.Value(paramIdx))
                 {
-                    theResult = (mySource.Value(aParamIdx) - mySource.Value(aParamIdx - 1))
-                                / (myTarget.Value(aParamIdx) - myTarget.Value(aParamIdx - 1));
+                    result = (_source.Value(paramIdx) - _source.Value(paramIdx - 1))
+                                / (_target.Value(paramIdx) - _target.Value(paramIdx - 1));
                     return;
                 }
             }
-            theResult = (mySource.Last() - mySource.Value(mySource.Size() - 2))
-                        / (myTarget.Last() - myTarget.Value(myTarget.Size() - 2));
+            result = (_source.Last() - _source.Value(_source.Size() - 2))
+                        / (_target.Last() - _target.Value(_target.Size() - 2));
         }
     }
 
     /// <summary>Reparametrizes a polynomial B-spline exactly using a piecewise-linear parameter law.</summary>
-    internal static bool reparametrizeExactly(BSplineCurve3D theCurve, math_Vector theSourceParams,
-                                              math_Vector theTargetParams, int theNbConstraints, ScalarLaw theLaw,
-                                              ref BSplineCurve3D? theResult)
+    internal static bool ReparametrizeExactly(BSplineCurve3D curve, math_Vector sourceParams,
+                                              math_Vector targetParams, int nbConstraints, ScalarLaw law,
+                                              ref BSplineCurve3D? result)
     {
-        if (theNbConstraints < 2)
+        if (nbConstraints < 2)
         {
             return false;
         }
 
-        int aDegree = theCurve.Degree();
-        NCollection_LinearVector<double> aNewKnotValues = new();
-        NCollection_LinearVector<int> aNewKnotMults = new();
-        int aConstraintIdx = 1;
-        NCollection_Array1<double> aCurveKnots = theCurve.InternalKnots();
-        NCollection_Array1<int> aCurveMults = theCurve.InternalMultiplicities();
-        for (int aKnotIdx = 0; aKnotIdx < aCurveKnots.Size(); ++aKnotIdx)
+        int degree = curve.Degree();
+        NCollection_LinearVector<double> newKnotValues = new();
+        NCollection_LinearVector<int> newKnotMults = new();
+        int constraintIdx = 1;
+        NCollection_Array1<double> curveKnots = curve.InternalKnots();
+        NCollection_Array1<int> curveMults = curve.InternalMultiplicities();
+        for (int knotIdx = 0; knotIdx < curveKnots.Size(); ++knotIdx)
         {
-            double aSourceKnot = aCurveKnots.At(aKnotIdx);
-            while (aConstraintIdx <= theNbConstraints
-                   && theSourceParams[aConstraintIdx] < aSourceKnot - global::Kerf.Engine.Foundation.Precision.PConfusion())
+            double sourceKnot = curveKnots.At(knotIdx);
+            while (constraintIdx <= nbConstraints
+                   && sourceParams[constraintIdx] < sourceKnot - global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                aNewKnotValues.Append(theTargetParams[aConstraintIdx]);
-                aNewKnotMults.Append(aDegree);
-                ++aConstraintIdx;
+                newKnotValues.Append(targetParams[constraintIdx]);
+                newKnotMults.Append(degree);
+                ++constraintIdx;
             }
 
-            double aTargetKnot = theTargetParams[theNbConstraints];
-            for (int aParamIdx = 1; aParamIdx < theNbConstraints; ++aParamIdx)
+            double targetKnot = targetParams[nbConstraints];
+            for (int paramIdx = 1; paramIdx < nbConstraints; ++paramIdx)
             {
-                if (aSourceKnot <= theSourceParams[aParamIdx + 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (sourceKnot <= sourceParams[paramIdx + 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    double aSourceFirst = theSourceParams[aParamIdx];
-                    double aSourceLast = theSourceParams[aParamIdx + 1];
-                    double aTargetFirst = theTargetParams[aParamIdx];
-                    double aTargetLast = theTargetParams[aParamIdx + 1];
-                    aTargetKnot = aTargetFirst
-                                  + (aSourceKnot - aSourceFirst) * (aTargetLast - aTargetFirst)
-                                    / (aSourceLast - aSourceFirst);
+                    double sourceFirst = sourceParams[paramIdx];
+                    double sourceLast = sourceParams[paramIdx + 1];
+                    double targetFirst = targetParams[paramIdx];
+                    double targetLast = targetParams[paramIdx + 1];
+                    targetKnot = targetFirst
+                                  + (sourceKnot - sourceFirst) * (targetLast - targetFirst)
+                                    / (sourceLast - sourceFirst);
                     break;
                 }
             }
 
-            int aMultiplicity = aCurveMults.At(aKnotIdx);
-            if (aConstraintIdx <= theNbConstraints
-                && Math.Abs(theSourceParams[aConstraintIdx] - aSourceKnot) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+            int multiplicity = curveMults.At(knotIdx);
+            if (constraintIdx <= nbConstraints
+                && Math.Abs(sourceParams[constraintIdx] - sourceKnot) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                if (aConstraintIdx > 1 && aConstraintIdx < theNbConstraints)
+                if (constraintIdx > 1 && constraintIdx < nbConstraints)
                 {
-                    aMultiplicity = Max(aMultiplicity, aDegree);
+                    multiplicity = Max(multiplicity, degree);
                 }
-                ++aConstraintIdx;
+                ++constraintIdx;
             }
-            aNewKnotValues.Append(aTargetKnot);
-            aNewKnotMults.Append(aMultiplicity);
+            newKnotValues.Append(targetKnot);
+            newKnotMults.Append(multiplicity);
         }
 
-        NCollection_Array1<double> aNewKnots = toOneBasedArrayView(aNewKnotValues);
-        NCollection_Array1<int> aNewMults = toOneBasedArrayView(aNewKnotMults);
-        int aNbNewPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aDegree, false, aNewMults);
-        NCollection_Array1<double> aSourceFlatKnots = new(1, theCurve.PoleCount + aDegree + 1);
-        NCollection_Array1<double> aTargetFlatKnots = new(1, aNbNewPoles + aDegree + 1);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aCurveKnots, aCurveMults, aSourceFlatKnots);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(aNewKnots, aNewMults, aTargetFlatKnots);
+        NCollection_Array1<double> newKnots = ToOneBasedArrayView(newKnotValues);
+        NCollection_Array1<int> newMults = ToOneBasedArrayView(newKnotMults);
+        int nbNewPoles = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(degree, false, newMults);
+        NCollection_Array1<double> sourceFlatKnots = new(1, curve.PoleCount + degree + 1);
+        NCollection_Array1<double> targetFlatKnots = new(1, nbNewPoles + degree + 1);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(curveKnots, curveMults, sourceFlatKnots);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(newKnots, newMults, targetFlatKnots);
 
-        int aStatus;
-        if (!theCurve.IsRational)
+        int status;
+        if (!curve.IsRational)
         {
-            NCollection_Array1<Point3D> aNewPoles = new(1, aNbNewPoles);
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, theCurve.InternalPoles(),
-                                            aTargetFlatKnots, aDegree, aNewPoles, out aStatus);
-            if (aStatus != 0)
+            NCollection_Array1<Point3D> newPoles = new(1, nbNewPoles);
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(law, degree, sourceFlatKnots, curve.InternalPoles(),
+                                            targetFlatKnots, degree, newPoles, out status);
+            if (status != 0)
             {
                 return false;
             }
-            theResult = new BSplineCurve3D(aNewPoles, aNewKnots, aNewMults, aDegree);
-            return theResult is not null;
+            result = new BSplineCurve3D(newPoles, newKnots, newMults, degree);
+            return result is not null;
         }
 
-        NCollection_Array1<Point3D> aCurvePoles = theCurve.InternalPoles();
-        NCollection_Array1<double> aCurveWeights = theCurve.InternalWeightsArray();
-        NCollection_Array1<double> aHomogeneousPoles = new(1, 4 * theCurve.PoleCount);
-        for (int aPoleIdx = 0; aPoleIdx < aCurvePoles.Size(); ++aPoleIdx)
+        NCollection_Array1<Point3D> curvePoles = curve.InternalPoles();
+        NCollection_Array1<double> curveWeights = curve.InternalWeightsArray();
+        NCollection_Array1<double> homogeneousPoles = new(1, 4 * curve.PoleCount);
+        for (int poleIdx = 0; poleIdx < curvePoles.Size(); ++poleIdx)
         {
-            Point3D aPole = aCurvePoles.At(aPoleIdx);
-            double aWeight = aCurveWeights.At(aPoleIdx);
-            int aHomogeneousIdx = 4 * aPoleIdx;
-            aHomogeneousPoles.ChangeAt(aHomogeneousIdx) = aPole.X() * aWeight;
-            aHomogeneousPoles.ChangeAt(aHomogeneousIdx + 1) = aPole.Y() * aWeight;
-            aHomogeneousPoles.ChangeAt(aHomogeneousIdx + 2) = aPole.Z() * aWeight;
-            aHomogeneousPoles.ChangeAt(aHomogeneousIdx + 3) = aWeight;
+            Point3D pole = curvePoles.At(poleIdx);
+            double weight = curveWeights.At(poleIdx);
+            int homogeneousIdx = 4 * poleIdx;
+            homogeneousPoles.ChangeAt(homogeneousIdx) = pole.X() * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx + 1) = pole.Y() * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx + 2) = pole.Z() * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx + 3) = weight;
         }
 
-        NCollection_Array1<double> aNewHomogeneousPoles = new(1, 4 * aNbNewPoles);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(theLaw, aDegree, aSourceFlatKnots, 4, aHomogeneousPoles.AsSpan(),
-                                        aTargetFlatKnots, aDegree, aNewHomogeneousPoles.AsSpan(), out aStatus);
-        if (aStatus != 0)
+        NCollection_Array1<double> newHomogeneousPoles = new(1, 4 * nbNewPoles);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(law, degree, sourceFlatKnots, 4, homogeneousPoles.AsSpan(),
+                                        targetFlatKnots, degree, newHomogeneousPoles.AsSpan(), out status);
+        if (status != 0)
         {
             return false;
         }
 
-        NCollection_Array1<Point3D> aNewPoles2 = new(1, aNbNewPoles);
-        NCollection_Array1<double> aNewWeights = new(1, aNbNewPoles);
-        for (int aPoleIdx = 0; aPoleIdx < aNewPoles2.Size(); ++aPoleIdx)
+        NCollection_Array1<Point3D> newPoles2 = new(1, nbNewPoles);
+        NCollection_Array1<double> newWeights = new(1, nbNewPoles);
+        for (int poleIdx = 0; poleIdx < newPoles2.Size(); ++poleIdx)
         {
-            int aHomogeneousIdx = 4 * aPoleIdx;
-            double aWeight = aNewHomogeneousPoles.At(aHomogeneousIdx + 3);
-            if (aWeight <= Constants.Resolution())
+            int homogeneousIdx = 4 * poleIdx;
+            double weight = newHomogeneousPoles.At(homogeneousIdx + 3);
+            if (weight <= Constants.Resolution())
             {
                 return false;
             }
-            aNewPoles2.ChangeAt(aPoleIdx).SetCoord(aNewHomogeneousPoles.At(aHomogeneousIdx) / aWeight,
-                                                   aNewHomogeneousPoles.At(aHomogeneousIdx + 1) / aWeight,
-                                                   aNewHomogeneousPoles.At(aHomogeneousIdx + 2) / aWeight);
-            aNewWeights.ChangeAt(aPoleIdx) = aWeight;
+            newPoles2.ChangeAt(poleIdx).SetCoord(newHomogeneousPoles.At(homogeneousIdx) / weight,
+                                                   newHomogeneousPoles.At(homogeneousIdx + 1) / weight,
+                                                   newHomogeneousPoles.At(homogeneousIdx + 2) / weight);
+            newWeights.ChangeAt(poleIdx) = weight;
         }
 
-        theResult = new BSplineCurve3D(aNewPoles2, aNewWeights, aNewKnots, aNewMults, aDegree);
-        return theResult is not null;
+        result = new BSplineCurve3D(newPoles2, newWeights, newKnots, newMults, degree);
+        return result is not null;
     }
 
     /// <summary>Appends a monotone source/target pair.</summary>
-    internal static void pushConstraint(math_Vector theSource, math_Vector theTarget, ref int theNbConstraints,
-                                        double theSourceParam, double theTargetParam, double theSourceTol,
-                                        double theTargetTol)
+    internal static void PushConstraint(math_Vector source, math_Vector target, ref int nbConstraints,
+                                        double sourceParam, double targetParam, double sourceTol,
+                                        double targetTol)
     {
-        if (theNbConstraints > 0
-            && (Math.Abs(theSourceParam - theSource[theNbConstraints]) <= theSourceTol
-                || Math.Abs(theTargetParam - theTarget[theNbConstraints]) <= theTargetTol))
+        if (nbConstraints > 0
+            && (Math.Abs(sourceParam - source[nbConstraints]) <= sourceTol
+                || Math.Abs(targetParam - target[nbConstraints]) <= targetTol))
         {
             return;
         }
 
-        ++theNbConstraints;
-        theSource[theNbConstraints] = theSourceParam;
-        theTarget[theNbConstraints] = Max(0.0, Min(1.0, theTargetParam));
+        ++nbConstraints;
+        source[nbConstraints] = sourceParam;
+        target[nbConstraints] = Max(0.0, Min(1.0, targetParam));
     }
 
     /// <summary>Builds target-space samples from constraints and deterministic interval subdivision.</summary>
-    internal static NCollection_LinearVector<double> samplingParameters(math_Vector theTargets, int theNbSourcePoles)
+    internal static NCollection_LinearVector<double> SamplingParameters(math_Vector targets, int nbSourcePoles)
     {
-        NCollection_LinearVector<double> aSamples = new();
-        appendUnitParameter(aSamples, 0.0);
-        appendUnitParameter(aSamples, 1.0);
-        for (int aParamIdx = theTargets.Lower(); aParamIdx <= theTargets.Upper(); ++aParamIdx)
+        NCollection_LinearVector<double> samples = new();
+        AppendUnitParameter(samples, 0.0);
+        AppendUnitParameter(samples, 1.0);
+        for (int paramIdx = targets.Lower(); paramIdx <= targets.Upper(); ++paramIdx)
         {
-            appendUnitParameter(aSamples, theTargets[aParamIdx]);
+            AppendUnitParameter(samples, targets[paramIdx]);
         }
 
-        compactParameters(aSamples);
+        CompactParameters(samples);
 
         // The rebuilt curve is parameter-driven; extra samples are deterministic.
-        addIntervalMidpoints(aSamples,
-                             Max(interpolationDegree() + 1, Max(theNbSourcePoles * 2, theTargets.Length() + 2)));
-        return aSamples;
+        AddIntervalMidpoints(samples,
+                             Max(InterpolationDegree() + 1, Max(nbSourcePoles * 2, targets.Length() + 2)));
+        return samples;
     }
 
     /// <summary>Rebuilds one curve through target-parameter samples.</summary>
-    internal static bool rebuildCurve(ref BSplineCurve3D? theCurve, math_Vector theSourceParams,
-                                      math_Vector theTargetParams, bool theAllowApproximateRational,
-                                      ref bool theDidApproximate, ref double theMaxDeviation)
+    internal static bool RebuildCurve(ref BSplineCurve3D? curve, math_Vector sourceParams,
+                                      math_Vector targetParams, bool allowApproximateRational,
+                                      ref bool didApproximate, ref double maxDeviation)
     {
-        BSplineCurve3D aCurve = theCurve!;
-        math_Vector aSource = new(1, theSourceParams.Length() + 2);
-        math_Vector aTarget = new(1, theTargetParams.Length() + 2);
-        int aNbConstraints = 0;
-        double aSourceTol = parameterResolution(aCurve.FirstParameter(), aCurve.LastParameter());
-        double aTargetTol = parameterResolution(0.0, 1.0);
+        BSplineCurve3D aCurve = curve!;
+        math_Vector source = new(1, sourceParams.Length() + 2);
+        math_Vector target = new(1, targetParams.Length() + 2);
+        int nbConstraints = 0;
+        double sourceTol = ParameterResolution(aCurve.FirstParameter(), aCurve.LastParameter());
+        double targetTol = ParameterResolution(0.0, 1.0);
 
-        pushConstraint(aSource, aTarget, ref aNbConstraints, aCurve.FirstParameter(), 0.0, aSourceTol, aTargetTol);
-        for (int aParamIdx = theSourceParams.Lower(); aParamIdx <= theSourceParams.Upper(); ++aParamIdx)
+        PushConstraint(source, target, ref nbConstraints, aCurve.FirstParameter(), 0.0, sourceTol, targetTol);
+        for (int paramIdx = sourceParams.Lower(); paramIdx <= sourceParams.Upper(); ++paramIdx)
         {
-            double aSourceParam = theSourceParams[aParamIdx];
-            double aTargetParam = theTargetParams[aParamIdx];
-            if (Math.Abs(aSourceParam - aCurve.FirstParameter()) <= aSourceTol
-                || Math.Abs(aSourceParam - aCurve.LastParameter()) <= aSourceTol
-                || Math.Abs(aTargetParam) <= aTargetTol || Math.Abs(aTargetParam - 1.0) <= aTargetTol)
+            double sourceParam = sourceParams[paramIdx];
+            double targetParam = targetParams[paramIdx];
+            if (Math.Abs(sourceParam - aCurve.FirstParameter()) <= sourceTol
+                || Math.Abs(sourceParam - aCurve.LastParameter()) <= sourceTol
+                || Math.Abs(targetParam) <= targetTol || Math.Abs(targetParam - 1.0) <= targetTol)
             {
                 continue;
             }
-            pushConstraint(aSource, aTarget, ref aNbConstraints, aSourceParam, aTargetParam, aSourceTol, aTargetTol);
+            PushConstraint(source, target, ref nbConstraints, sourceParam, targetParam, sourceTol, targetTol);
         }
-        pushConstraint(aSource, aTarget, ref aNbConstraints, aCurve.LastParameter(), 1.0, aSourceTol, aTargetTol);
+        PushConstraint(source, target, ref nbConstraints, aCurve.LastParameter(), 1.0, sourceTol, targetTol);
 
-        ScalarLaw aLaw = new();
-        if (!aLaw.Init(aSource, aTarget, aNbConstraints))
+        ScalarLaw law = new();
+        if (!law.Init(source, target, nbConstraints))
         {
             return false;
         }
 
-        BSplineCurve3D? anExactCurve = null;
-        math_Vector aExactSource = new(1, aNbConstraints);
-        math_Vector aExactTarget = new(1, aNbConstraints);
-        for (int aConstraintIdx = 1; aConstraintIdx <= aNbConstraints; ++aConstraintIdx)
+        BSplineCurve3D? exactCurve = null;
+        math_Vector exactSource = new(1, nbConstraints);
+        math_Vector exactTarget = new(1, nbConstraints);
+        for (int constraintIdx = 1; constraintIdx <= nbConstraints; ++constraintIdx)
         {
-            aExactSource[aConstraintIdx] = aSource[aConstraintIdx];
-            aExactTarget[aConstraintIdx] = aTarget[aConstraintIdx];
+            exactSource[constraintIdx] = source[constraintIdx];
+            exactTarget[constraintIdx] = target[constraintIdx];
         }
-        if (reparametrizeExactly(aCurve, aExactSource, aExactTarget, aNbConstraints, aLaw, ref anExactCurve))
+        if (ReparametrizeExactly(aCurve, exactSource, exactTarget, nbConstraints, law, ref exactCurve))
         {
-            theCurve = anExactCurve;
+            curve = exactCurve;
             return true;
         }
 
         if (aCurve.IsRational)
         {
-            if (!theAllowApproximateRational)
+            if (!allowApproximateRational)
             {
                 return false;
             }
-            theDidApproximate = true;
+            didApproximate = true;
         }
 
-        CurveAdaptor aCurveAdaptor = new(aCurve);
-        NCollection_LinearVector<double> aSamples = samplingParameters(theTargetParams, aCurve.PoleCount);
-        NCollection_LinearVector<Point3D> aPoints = new();
-        NCollection_LinearVector<double> aParameters = new();
-        for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
+        CurveAdaptor curveAdaptor = new(aCurve);
+        NCollection_LinearVector<double> samples = SamplingParameters(targetParams, aCurve.PoleCount);
+        NCollection_LinearVector<Point3D> points = new();
+        NCollection_LinearVector<double> parameters = new();
+        for (int sampleIdx = 0; sampleIdx < samples.Size(); ++sampleIdx)
         {
-            double aTargetParam = aSamples.Value(aSampleIdx);
-            Point3D aPoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
-            if (!aPoints.IsEmpty() && aPoint.Distance(aPoints.Last()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+            double targetParam = samples.Value(sampleIdx);
+            Point3D point = curveAdaptor.EvalD0(law.Value(targetParam));
+            if (!points.IsEmpty() && point.Distance(points.Last()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
 
-            aPoints.Append(aPoint);
-            aParameters.Append(aTargetParam);
+            points.Append(point);
+            parameters.Append(targetParam);
         }
 
-        int aNbPoints = aPoints.Size();
-        if (aNbPoints < interpolationDegree())
+        int nbPoints = points.Size();
+        if (nbPoints < InterpolationDegree())
         {
             return false;
         }
 
-        NCollection_Array1<Point3D> aPointArray = toOneBasedArrayView(aPoints);
-        NCollection_Array1<double> aParamArray = toOneBasedArrayView(aParameters);
+        NCollection_Array1<Point3D> pointArray = ToOneBasedArrayView(points);
+        NCollection_Array1<double> paramArray = ToOneBasedArrayView(parameters);
 
-        Interpolate anInterpolator = new(interpolationDegree(), aNbPoints, aPointArray, aParamArray);
-        if (!anInterpolator.IsDone)
+        Interpolate interpolator = new(InterpolationDegree(), nbPoints, pointArray, paramArray);
+        if (!interpolator.IsDone)
         {
             return false;
         }
 
         // GeomLib_Interpolate freezes the curve it hands out; the prepared network only reads it afterwards.
-        theCurve = anInterpolator.Curve();
-        if (theCurve is null)
+        curve = interpolator.Curve();
+        if (curve is null)
         {
             return false;
         }
 
-        CurveAdaptor aNewCurveAdaptor = new(theCurve);
-        for (int aSampleIdx = 0; aSampleIdx < aSamples.Size(); ++aSampleIdx)
+        CurveAdaptor newCurveAdaptor = new(curve);
+        for (int sampleIdx = 0; sampleIdx < samples.Size(); ++sampleIdx)
         {
-            double aTargetParam = aSamples.Value(aSampleIdx);
-            Point3D aSourcePoint = aCurveAdaptor.EvalD0(aLaw.Value(aTargetParam));
-            Point3D aNewPoint = aNewCurveAdaptor.EvalD0(aTargetParam);
-            theMaxDeviation = Max(theMaxDeviation, aSourcePoint.Distance(aNewPoint));
+            double targetParam = samples.Value(sampleIdx);
+            Point3D sourcePoint = curveAdaptor.EvalD0(law.Value(targetParam));
+            Point3D newPoint = newCurveAdaptor.EvalD0(targetParam);
+            maxDeviation = Max(maxDeviation, sourcePoint.Distance(newPoint));
         }
-        return theCurve is not null;
+        return curve is not null;
     }
 
     /// <summary>Reconstructs curves so all intersections share averaged parameters.</summary>
-    internal static bool equalizeParameters(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                            NCollection_Array1<BSplineCurve3D?> theGuides,
-                                            NCollection_Array2<double> theProfileParams,
-                                            NCollection_Array2<double> theGuideParams,
-                                            bool theAllowApproximateRational, ref bool theDidApproximate,
-                                            ref double theMaxDeviation)
+    internal static bool EqualizeParameters(NCollection_Array1<BSplineCurve3D?> profiles,
+                                            NCollection_Array1<BSplineCurve3D?> guides,
+                                            NCollection_Array2<double> profileParams,
+                                            NCollection_Array2<double> guideParams,
+                                            bool allowApproximateRational, ref bool didApproximate,
+                                            ref double maxDeviation)
     {
-        Matrix aProfileParams = toMatrix(theProfileParams);
-        Matrix aGuideParams = toMatrix(theGuideParams);
+        Matrix aProfileParams = ToMatrix(profileParams);
+        Matrix aGuideParams = ToMatrix(guideParams);
 
-        math_Vector aProfileTargets = columnMeans(aProfileParams);
-        math_Vector aGuideTargets = rowMeans(aGuideParams);
+        math_Vector profileTargets = ColumnMeans(aProfileParams);
+        math_Vector guideTargets = RowMeans(aGuideParams);
 
-        math_Vector anOldProfileParams = new(1, theGuides.Size());
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        math_Vector oldProfileParams = new(1, guides.Size());
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            int aProfileRow = aProfileIdx + 1;
+            int profileRow = profileIdx + 1;
             bool isAlreadyTarget = true;
-            for (int aCol = anOldProfileParams.Lower(); aCol <= anOldProfileParams.Upper(); ++aCol)
+            for (int col = oldProfileParams.Lower(); col <= oldProfileParams.Upper(); ++col)
             {
-                anOldProfileParams[aCol] = aProfileParams[aProfileRow, aCol];
+                oldProfileParams[col] = aProfileParams[profileRow, col];
                 isAlreadyTarget = isAlreadyTarget
-                                  && Math.Abs(anOldProfileParams[aCol] - aProfileTargets[aCol]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
+                                  && Math.Abs(oldProfileParams[col] - profileTargets[col]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
             if (isAlreadyTarget)
             {
                 continue;
             }
-            if (!rebuildCurve(ref theProfiles.ChangeAt(aProfileIdx), anOldProfileParams, aProfileTargets,
-                              theAllowApproximateRational, ref theDidApproximate, ref theMaxDeviation))
+            if (!RebuildCurve(ref profiles.ChangeAt(profileIdx), oldProfileParams, profileTargets,
+                              allowApproximateRational, ref didApproximate, ref maxDeviation))
             {
                 return false;
             }
-            for (int aCol = aProfileTargets.Lower(); aCol <= aProfileTargets.Upper(); ++aCol)
+            for (int col = profileTargets.Lower(); col <= profileTargets.Upper(); ++col)
             {
-                aProfileParams[aProfileRow, aCol] = aProfileTargets[aCol];
+                aProfileParams[profileRow, col] = profileTargets[col];
             }
         }
 
-        math_Vector anOldGuideParams = new(1, theProfiles.Size());
-        for (int aGuideIdx = 0; aGuideIdx < theGuides.Size(); ++aGuideIdx)
+        math_Vector oldGuideParams = new(1, profiles.Size());
+        for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
         {
-            int aGuideCol = aGuideIdx + 1;
+            int guideCol = guideIdx + 1;
             bool isAlreadyTarget = true;
-            for (int aRow = anOldGuideParams.Lower(); aRow <= anOldGuideParams.Upper(); ++aRow)
+            for (int row = oldGuideParams.Lower(); row <= oldGuideParams.Upper(); ++row)
             {
-                anOldGuideParams[aRow] = aGuideParams[aRow, aGuideCol];
+                oldGuideParams[row] = aGuideParams[row, guideCol];
                 isAlreadyTarget = isAlreadyTarget
-                                  && Math.Abs(anOldGuideParams[aRow] - aGuideTargets[aRow]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
+                                  && Math.Abs(oldGuideParams[row] - guideTargets[row]) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
             }
             if (isAlreadyTarget)
             {
                 continue;
             }
-            if (!rebuildCurve(ref theGuides.ChangeAt(aGuideIdx), anOldGuideParams, aGuideTargets,
-                              theAllowApproximateRational, ref theDidApproximate, ref theMaxDeviation))
+            if (!RebuildCurve(ref guides.ChangeAt(guideIdx), oldGuideParams, guideTargets,
+                              allowApproximateRational, ref didApproximate, ref maxDeviation))
             {
                 return false;
             }
-            for (int aRow = aGuideTargets.Lower(); aRow <= aGuideTargets.Upper(); ++aRow)
+            for (int row = guideTargets.Lower(); row <= guideTargets.Upper(); ++row)
             {
-                aGuideParams[aRow, aGuideCol] = aGuideTargets[aRow];
+                aGuideParams[row, guideCol] = guideTargets[row];
             }
         }
         return true;
     }
 
     /// <summary>Evaluates the validated profile parameters into a guide/profile point grid.</summary>
-    internal static NCollection_Array2<Point3D> contactPointGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                                                NCollection_Array2<double> theProfileParams)
+    internal static NCollection_Array2<Point3D> ContactPointGrid(NCollection_Array1<BSplineCurve3D?> profiles,
+                                                                NCollection_Array2<double> profileParams)
     {
-        NCollection_Array2<Point3D> aPoints = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        NCollection_Array2<Point3D> points = new(1, profileParams.RowLength(), 1, profileParams.ColLength());
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            CurveAdaptor aProfileAdaptor = new(theProfiles.At(aProfileIdx)!);
-            for (int aGuideIdx = 0; aGuideIdx < theProfileParams.RowLength(); ++aGuideIdx)
+            CurveAdaptor profileAdaptor = new(profiles.At(profileIdx)!);
+            for (int guideIdx = 0; guideIdx < profileParams.RowLength(); ++guideIdx)
             {
-                aPoints.ChangeAt(aGuideIdx, aProfileIdx) =
-                  aProfileAdaptor.EvalD0(theProfileParams.At(aProfileIdx, aGuideIdx));
+                points.ChangeAt(guideIdx, profileIdx) =
+                  profileAdaptor.EvalD0(profileParams.At(profileIdx, guideIdx));
             }
         }
-        return aPoints;
+        return points;
     }
 
     /// <summary>Evaluates the denominator of a rational B-spline curve at a contact parameter.</summary>
-    internal static double curveWeightAt(BSplineCurve3D theCurve, double theParameter)
+    internal static double CurveWeightAt(BSplineCurve3D curve, double parameter)
     {
-        if (!theCurve.IsRational)
+        if (!curve.IsRational)
         {
             return 1.0;
         }
 
-        ReadOnlySpan<int> anExtrapMode = [theCurve.Degree(), theCurve.Degree()];
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(theParameter, theCurve.IsPeriodic, false, anExtrapMode, theCurve.Degree(),
-                      theCurve.InternalKnotSequence(), theCurve.InternalPoles(), theCurve.InternalWeightsArray(),
-                      out Point3D _, out double aWeight);
-        return aWeight;
+        ReadOnlySpan<int> extrapMode = [curve.Degree(), curve.Degree()];
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(parameter, curve.IsPeriodic, false, extrapMode, curve.Degree(),
+                      curve.InternalKnotSequence(), curve.InternalPoles(), curve.InternalWeightsArray(),
+                      out Point3D _, out double weight);
+        return weight;
     }
 
     /// <summary>Evaluates rational contact weights in guide/profile grid order.</summary>
-    internal static NCollection_Array2<double> contactWeightGrid(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                                                 NCollection_Array2<double> theProfileParams)
+    internal static NCollection_Array2<double> ContactWeightGrid(NCollection_Array1<BSplineCurve3D?> profiles,
+                                                                 NCollection_Array2<double> profileParams)
     {
-        NCollection_Array2<double> aWeights = new(1, theProfileParams.RowLength(), 1, theProfileParams.ColLength());
-        for (int aProfileIdx = 0; aProfileIdx < theProfiles.Size(); ++aProfileIdx)
+        NCollection_Array2<double> weights = new(1, profileParams.RowLength(), 1, profileParams.ColLength());
+        for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
-            for (int aGuideIdx = 0; aGuideIdx < theProfileParams.RowLength(); ++aGuideIdx)
+            for (int guideIdx = 0; guideIdx < profileParams.RowLength(); ++guideIdx)
             {
-                aWeights.ChangeAt(aGuideIdx, aProfileIdx) =
-                  curveWeightAt(theProfiles.At(aProfileIdx)!, theProfileParams.At(aProfileIdx, aGuideIdx));
+                weights.ChangeAt(guideIdx, profileIdx) =
+                  CurveWeightAt(profiles.At(profileIdx)!, profileParams.At(profileIdx, guideIdx));
             }
         }
-        return aWeights;
+        return weights;
     }
 
     /// <summary>
@@ -1448,80 +1450,80 @@ internal static class GordonUtilities
     /// </summary>
     internal sealed class NetworkPreparation
     {
-        private readonly NCollection_Array1<BSplineCurve3D?> myProfiles;
-        private readonly NCollection_Array1<BSplineCurve3D?> myGuides;
-        private readonly NCollection_Array2<double> myProfileParams;
-        private readonly NCollection_Array2<double> myGuideParams;
-        private readonly NCollection_LinearVector<ContactSet> myContactSets = new();
-        private readonly double myTolerance;
-        private double myMaxContactGap = 0.0;
-        private double myMaxReparametrizationDeviation = 0.0;
-        private readonly bool myToUseParallel;
+        private readonly NCollection_Array1<BSplineCurve3D?> _profiles;
+        private readonly NCollection_Array1<BSplineCurve3D?> _guides;
+        private readonly NCollection_Array2<double> _profileParams;
+        private readonly NCollection_Array2<double> _guideParams;
+        private readonly NCollection_LinearVector<ContactSet> _contactSets = new();
+        private readonly double _tolerance;
+        private double _maxContactGap = 0.0;
+        private double _maxReparametrizationDeviation = 0.0;
+        private readonly bool _toUseParallel;
 
-        public NetworkPreparation(NCollection_Array1<BSplineCurve3D?> theProfiles,
-                                  NCollection_Array1<BSplineCurve3D?> theGuides,
-                                  NCollection_Array2<double> theProfileParams,
-                                  NCollection_Array2<double> theGuideParams, double theTolerance,
-                                  bool theToUseParallel)
+        public NetworkPreparation(NCollection_Array1<BSplineCurve3D?> profiles,
+                                  NCollection_Array1<BSplineCurve3D?> guides,
+                                  NCollection_Array2<double> profileParams,
+                                  NCollection_Array2<double> guideParams, double tolerance,
+                                  bool toUseParallel)
         {
-            myProfiles = theProfiles;
-            myGuides = theGuides;
-            myProfileParams = theProfileParams;
-            myGuideParams = theGuideParams;
-            myTolerance = theTolerance;
-            myToUseParallel = theToUseParallel;
+            _profiles = profiles;
+            _guides = guides;
+            _profileParams = profileParams;
+            _guideParams = guideParams;
+            _tolerance = tolerance;
+            _toUseParallel = toUseParallel;
         }
 
         /// <summary>Converts all curves to explicit unit-domain B-splines.</summary>
         public bool ConvertCurvesToUnitInterval()
         {
-            return makeUnitCurves(myProfiles) && makeUnitCurves(myGuides);
+            return MakeUnitCurves(_profiles) && MakeUnitCurves(_guides);
         }
 
         /// <summary>Computes the profile/guide intersection parameter tables.</summary>
         public bool FillIntersectionParameters()
         {
-            bool isDone = fillContactTable(myProfiles, myGuides, myProfileParams, myGuideParams, myContactSets,
-                                           myTolerance, myToUseParallel);
-            myMaxContactGap = isDone ? maxNearestContactGap(myContactSets) : 0.0;
+            bool isDone = FillContactTable(_profiles, _guides, _profileParams, _guideParams, _contactSets,
+                                           _tolerance, _toUseParallel);
+            _maxContactGap = isDone ? MaxNearestContactGap(_contactSets) : 0.0;
             return isDone;
         }
 
         /// <summary>Reorders and orients the curve network.</summary>
         public bool ReorderNetwork()
         {
-            return reorderNetwork(myProfiles, myGuides, myProfileParams, myGuideParams, myContactSets, myTolerance);
+            return global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ReorderNetwork(_profiles, _guides, _profileParams, _guideParams, _contactSets, _tolerance);
         }
 
         /// <summary>Snaps, validates, and detects closed directions in the intersection table.</summary>
-        public bool NormalizeIntersectionParameters(ref bool theIsUClosed, ref bool theIsVClosed)
+        public bool NormalizeIntersectionParameters(ref bool isUClosed, ref bool isVClosed)
         {
-            return normalizeContactTable(myProfiles, myGuides, myProfileParams, myGuideParams, myTolerance,
-                                         ref theIsUClosed, ref theIsVClosed);
+            return NormalizeContactTable(_profiles, _guides, _profileParams, _guideParams, _tolerance,
+                                         ref isUClosed, ref isVClosed);
         }
 
         /// <summary>
         /// Rebuilds curves to shared averaged network parameters. Rational curves are rebuilt only when approximate
         /// fallback is allowed.
         /// </summary>
-        public bool EqualizeIntersectionParameters(bool theAllowApproximateRational, ref bool theDidApproximate)
+        public bool EqualizeIntersectionParameters(bool allowApproximateRational, ref bool didApproximate)
         {
-            myMaxReparametrizationDeviation = 0.0;
-            return equalizeParameters(myProfiles, myGuides, myProfileParams, myGuideParams,
-                                      theAllowApproximateRational, ref theDidApproximate,
-                                      ref myMaxReparametrizationDeviation);
+            _maxReparametrizationDeviation = 0.0;
+            return EqualizeParameters(_profiles, _guides, _profileParams, _guideParams,
+                                      allowApproximateRational, ref didApproximate,
+                                      ref _maxReparametrizationDeviation);
         }
 
         /// <summary>Returns the largest best-contact gap found during contact discovery.</summary>
-        public double MaxContactGap() => myMaxContactGap;
+        public double MaxContactGap() => _maxContactGap;
 
         /// <summary>Returns the largest measured curve rebuild deviation.</summary>
-        public double MaxReparametrizationDeviation() => myMaxReparametrizationDeviation;
+        public double MaxReparametrizationDeviation() => _maxReparametrizationDeviation;
 
         /// <summary>Returns the validated contact points in guide/profile grid order.</summary>
-        public NCollection_Array2<Point3D> IntersectionPoints() => contactPointGrid(myProfiles, myProfileParams);
+        public NCollection_Array2<Point3D> IntersectionPoints() => ContactPointGrid(_profiles, _profileParams);
 
         /// <summary>Returns rational contact weights in guide/profile grid order.</summary>
-        public NCollection_Array2<double> IntersectionWeights() => contactWeightGrid(myProfiles, myProfileParams);
+        public NCollection_Array2<double> IntersectionWeights() => ContactWeightGrid(_profiles, _profileParams);
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using System.Globalization;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
@@ -88,7 +89,7 @@ public class Build123dBooleanOracleTests(ITestOutputHelper output)
                 Kind.Section => Op.Section,
                 _ => Op.Splitter,
             },
-            theCall.Fuzzy, theCall.Glue ? BOPAlgo_GlueEnum.BOPAlgo_GlueShift : BOPAlgo_GlueEnum.BOPAlgo_GlueOff, Api: true);
+            theCall.Fuzzy, theCall.Glue ? GlueMode.GlueShift : GlueMode.GlueOff, Api: true);
 
     // One Boolean: compared by the 6F/6P harness, then sorted; native's (serial) result for the clean
     private N.TopoDS_Shape? CompareBoolean(ShapeFixOracleRun theRun, BooleanOracleTests theHarness, Tally theTally, Call theCall)

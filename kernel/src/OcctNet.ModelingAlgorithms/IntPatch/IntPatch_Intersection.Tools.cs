@@ -4,11 +4,13 @@
 
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Patches;
 
 /////////////////////////////////////////////////////////////////////////////
 //  These several support functions provide methods which can help basic   //
@@ -19,33 +21,33 @@ namespace Occt;
 //  c.) OffsetSurface.                                                     //
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
-public partial class IntPatch_Intersection
+public partial class PatchIntersection
 {
     //===============================================================
     // function: FUN_GetMinMaxXYZPnt
     //===============================================================
-    private static void FUN_GetMinMaxXYZPnt(SurfaceAdaptorBase S, out Point3D pMin, out Point3D pMax)
+    private static void FUN_GetMinMaxXYZPnt(SurfaceAdaptorBase s, out Point3D pMin, out Point3D pMax)
     {
-        double DU = 0.25 * Math.Abs(S.LastUParameter() - S.FirstUParameter());
-        double DV = 0.25 * Math.Abs(S.LastVParameter() - S.FirstVParameter());
+        double du = 0.25 * Math.Abs(s.LastUParameter() - s.FirstUParameter());
+        double dv = 0.25 * Math.Abs(s.LastVParameter() - s.FirstVParameter());
         double tMinXYZ = RealLast();
         double tMaxXYZ = -tMinXYZ;
         Point3D ptMax = new(), ptMin = new();
-        for (double U = S.FirstUParameter(); U <= S.LastUParameter(); U += DU)
+        for (double u = s.FirstUParameter(); u <= s.LastUParameter(); u += du)
         {
-            for (double V = S.FirstVParameter(); V <= S.LastVParameter(); V += DV)
+            for (double v = s.FirstVParameter(); v <= s.LastVParameter(); v += dv)
             {
-                S.D0(U, V, out Point3D PUV);
-                double cXYZ = PUV.XYZ().Modulus();
+                s.D0(u, v, out Point3D puv);
+                double cXYZ = puv.XYZ().Modulus();
                 if (cXYZ > tMaxXYZ)
                 {
                     tMaxXYZ = cXYZ;
-                    ptMax = PUV;
+                    ptMax = puv;
                 }
                 if (cXYZ < tMinXYZ)
                 {
                     tMinXYZ = cXYZ;
-                    ptMin = PUV;
+                    ptMin = puv;
                 }
             }
         }
@@ -57,134 +59,134 @@ public partial class IntPatch_Intersection
     // function: FUN_TrimInfSurf
     //==========================================================================
     // TrimS stays null where OCCT leaves the caller's null handle unassigned (no infinite parameter to trim).
-    private static void FUN_TrimInfSurf(in Point3D Pmin, in Point3D Pmax, SurfaceAdaptorBase InfSurf,
-                                        double AlternativeTrimPrm, out SurfaceAdaptorBase? TrimS)
+    private static void FUN_TrimInfSurf(in Point3D pmin, in Point3D pmax, SurfaceAdaptorBase infSurf,
+                                        double alternativeTrimPrm, out SurfaceAdaptorBase? trimS)
     {
-        TrimS = null;
-        double TP = AlternativeTrimPrm;
-        ExtPS anExtPS = new();
-        anExtPS.Initialize(InfSurf, InfSurf.FirstUParameter(), InfSurf.LastUParameter(), InfSurf.FirstVParameter(),
-                           InfSurf.LastVParameter(), 1.0e-7, 1.0e-7);
+        trimS = null;
+        double TP = alternativeTrimPrm;
+        ExtPS extPS = new();
+        extPS.Initialize(infSurf, infSurf.FirstUParameter(), infSurf.LastUParameter(), infSurf.FirstVParameter(),
+                           infSurf.LastVParameter(), 1.0e-7, 1.0e-7);
 
         // Process Pmin
-        anExtPS.Perform(Pmin);
-        bool isDone1 = anExtPS.IsDone;
-        double Umax = -1.0e+100, Umin = 1.0e+100, Vmax = -1.0e+100, Vmin = 1.0e+100;
+        extPS.Perform(pmin);
+        bool isDone1 = extPS.IsDone;
+        double umax = -1.0e+100, umin = 1.0e+100, vmax = -1.0e+100, vmin = 1.0e+100;
         if (isDone1)
         {
-            for (int i = 1; i <= anExtPS.ExtCount; i++)
+            for (int i = 1; i <= extPS.ExtCount; i++)
             {
-                POnSurf pons = anExtPS.Point(i);
+                POnSurf pons = extPS.Point(i);
                 pons.Parameter(out double cU, out double cV);
-                if (cU > Umax)
+                if (cU > umax)
                 {
-                    Umax = cU;
+                    umax = cU;
                 }
-                if (cU < Umin)
+                if (cU < umin)
                 {
-                    Umin = cU;
+                    umin = cU;
                 }
-                if (cV > Vmax)
+                if (cV > vmax)
                 {
-                    Vmax = cV;
+                    vmax = cV;
                 }
-                if (cV < Vmin)
+                if (cV < vmin)
                 {
-                    Vmin = cV;
+                    vmin = cV;
                 }
             }
         }
 
         // Process Pmax
-        anExtPS.Perform(Pmax);
-        bool isDone2 = anExtPS.IsDone;
+        extPS.Perform(pmax);
+        bool isDone2 = extPS.IsDone;
         if (isDone2)
         {
-            for (int i = 1; i <= anExtPS.ExtCount; i++)
+            for (int i = 1; i <= extPS.ExtCount; i++)
             {
-                POnSurf pons = anExtPS.Point(i);
+                POnSurf pons = extPS.Point(i);
                 pons.Parameter(out double cU, out double cV);
-                if (cU > Umax)
+                if (cU > umax)
                 {
-                    Umax = cU;
+                    umax = cU;
                 }
-                if (cU < Umin)
+                if (cU < umin)
                 {
-                    Umin = cU;
+                    umin = cU;
                 }
-                if (cV > Vmax)
+                if (cV > vmax)
                 {
-                    Vmax = cV;
+                    vmax = cV;
                 }
-                if (cV < Vmin)
+                if (cV < vmin)
                 {
-                    Vmin = cV;
+                    vmin = cV;
                 }
             }
         }
 
         if (isDone1 || isDone2)
         {
-            TP = Max(Math.Abs(Umin), Max(Math.Abs(Umax), Max(Math.Abs(Vmin), Math.Abs(Vmax))));
+            TP = Max(Math.Abs(umin), Max(Math.Abs(umax), Max(Math.Abs(vmin), Math.Abs(vmax))));
         }
         if (TP == 0.0)
         {
-            TrimS = InfSurf;
+            trimS = infSurf;
             return;
         }
         else
         {
-            bool Uinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(InfSurf.FirstUParameter());
-            bool Usup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(InfSurf.LastUParameter());
-            bool Vinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(InfSurf.FirstVParameter());
-            bool Vsup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(InfSurf.LastVParameter());
-            SurfaceAdaptorBase TmpSS;
-            int IsTrimed = 0;
+            bool uinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(infSurf.FirstUParameter());
+            bool usup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(infSurf.LastUParameter());
+            bool vinf = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(infSurf.FirstVParameter());
+            bool vsup = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(infSurf.LastVParameter());
+            SurfaceAdaptorBase tmpSS;
+            int isTrimed = 0;
             double tp = 1000.0 * TP;
-            if (Vinf && Vsup)
+            if (vinf && vsup)
             {
-                TrimS = InfSurf.VTrim(-tp, tp, 1.0e-7);
-                IsTrimed = 1;
+                trimS = infSurf.VTrim(-tp, tp, 1.0e-7);
+                isTrimed = 1;
             }
-            if (Vinf && !Vsup)
+            if (vinf && !vsup)
             {
-                TrimS = InfSurf.VTrim(-tp, InfSurf.LastVParameter(), 1.0e-7);
-                IsTrimed = 1;
+                trimS = infSurf.VTrim(-tp, infSurf.LastVParameter(), 1.0e-7);
+                isTrimed = 1;
             }
-            if (!Vinf && Vsup)
+            if (!vinf && vsup)
             {
-                TrimS = InfSurf.VTrim(InfSurf.FirstVParameter(), tp, 1.0e-7);
-                IsTrimed = 1;
+                trimS = infSurf.VTrim(infSurf.FirstVParameter(), tp, 1.0e-7);
+                isTrimed = 1;
             }
-            if (IsTrimed != 0)
+            if (isTrimed != 0)
             {
-                TmpSS = TrimS!;
-                if (Uinf && Usup)
+                tmpSS = trimS!;
+                if (uinf && usup)
                 {
-                    TrimS = TmpSS.UTrim(-tp, tp, 1.0e-7);
+                    trimS = tmpSS.UTrim(-tp, tp, 1.0e-7);
                 }
-                if (Uinf && !Usup)
+                if (uinf && !usup)
                 {
-                    TrimS = TmpSS.UTrim(-tp, InfSurf.LastUParameter(), 1.0e-7);
+                    trimS = tmpSS.UTrim(-tp, infSurf.LastUParameter(), 1.0e-7);
                 }
-                if (!Uinf && Usup)
+                if (!uinf && usup)
                 {
-                    TrimS = TmpSS.UTrim(InfSurf.FirstUParameter(), tp, 1.0e-7);
+                    trimS = tmpSS.UTrim(infSurf.FirstUParameter(), tp, 1.0e-7);
                 }
             }
             else
             {
-                if (Uinf && Usup)
+                if (uinf && usup)
                 {
-                    TrimS = InfSurf.UTrim(-tp, tp, 1.0e-7);
+                    trimS = infSurf.UTrim(-tp, tp, 1.0e-7);
                 }
-                if (Uinf && !Usup)
+                if (uinf && !usup)
                 {
-                    TrimS = InfSurf.UTrim(-tp, InfSurf.LastUParameter(), 1.0e-7);
+                    trimS = infSurf.UTrim(-tp, infSurf.LastUParameter(), 1.0e-7);
                 }
-                if (!Uinf && Usup)
+                if (!uinf && usup)
                 {
-                    TrimS = InfSurf.UTrim(InfSurf.FirstUParameter(), tp, 1.0e-7);
+                    trimS = infSurf.UTrim(infSurf.FirstUParameter(), tp, 1.0e-7);
                 }
             }
         }
@@ -193,97 +195,97 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_GetUiso
     //================================================================================
-    private static void FUN_GetUiso(Surface GS, SurfaceKind T, double FirstV, double LastV, bool IsVC,
-                                    bool IsVP, double U, ref Curve3D? I)
+    private static void FUN_GetUiso(Surface gs, SurfaceKind t, double firstV, double lastV, bool isVC,
+                                    bool isVP, double u, ref Curve3D? i)
     {
-        if (T != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+        if (t != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
         {
-            Curve3D gc = GS.UIso(U);
-            if (IsVP && (FirstV == 0.0 && LastV == (2.0 * M_PI)))
+            Curve3D gc = gs.UIso(u);
+            if (isVP && (firstV == 0.0 && lastV == (2.0 * M_PI)))
             {
-                I = gc;
+                i = gc;
             }
             else
             {
-                TrimmedCurve3D gtc = new(gc, FirstV, LastV);
+                TrimmedCurve3D gtc = new(gc, firstV, lastV);
                 // szv:I = occ::down_cast<Geom_Curve>(gtc);
-                I = gtc;
+                i = gtc;
             }
         }
         else // OffsetSurface
         {
-            global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)GS;
+            global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs;
             Surface bs = gos.BasisSurface();
-            Curve3D gcbs = bs.UIso(U);
+            Curve3D gcbs = bs.UIso(u);
             CurveAdaptor gac = new(gcbs);
-            CurveKind GACT = gac.GetType();
-            if (IsVP || IsVC || GACT == BSplineCurve || GACT == BezierCurve
-                || Math.Abs(LastV - FirstV) < 1.0e+5)
+            CurveKind gact = gac.GetType();
+            if (isVP || isVC || gact == BSplineCurve || gact == BezierCurve
+                || Math.Abs(lastV - firstV) < 1.0e+5)
             {
-                Curve3D gc = gos.UIso(U);
-                if (IsVP && (FirstV == 0.0 && LastV == (2 * M_PI)))
+                Curve3D gc = gos.UIso(u);
+                if (isVP && (firstV == 0.0 && lastV == (2 * M_PI)))
                 {
-                    I = gc;
+                    i = gc;
                 }
                 else
                 {
-                    TrimmedCurve3D gtc = new(gc, FirstV, LastV);
+                    TrimmedCurve3D gtc = new(gc, firstV, lastV);
                     // szv:I = occ::down_cast<Geom_Curve>(gtc);
-                    I = gtc;
+                    i = gtc;
                 }
             }
             else // Offset Line, Parab, Hyperb
             {
-                double VmTr, VMTr;
-                if (GACT != Hyperbola)
+                double VmTr, vmTr;
+                if (gact != Hyperbola)
                 {
-                    if (FirstV >= 0.0 && LastV >= 0.0)
+                    if (firstV >= 0.0 && lastV >= 0.0)
                     {
-                        VmTr = FirstV;
-                        VMTr = ((LastV - FirstV) > 1.0e+4) ? (FirstV + 1.0e+4) : LastV;
+                        VmTr = firstV;
+                        vmTr = ((lastV - firstV) > 1.0e+4) ? (firstV + 1.0e+4) : lastV;
                     }
-                    else if (FirstV < 0.0 && LastV < 0.0)
+                    else if (firstV < 0.0 && lastV < 0.0)
                     {
-                        VMTr = LastV;
-                        VmTr = ((FirstV - LastV) < -1.0e+4) ? (LastV - 1.0e+4) : FirstV;
+                        vmTr = lastV;
+                        VmTr = ((firstV - lastV) < -1.0e+4) ? (lastV - 1.0e+4) : firstV;
                     }
                     else
                     {
-                        VmTr = (FirstV < -1.0e+4) ? -1.0e+4 : FirstV;
-                        VMTr = (LastV > 1.0e+4) ? 1.0e+4 : LastV;
+                        VmTr = (firstV < -1.0e+4) ? -1.0e+4 : firstV;
+                        vmTr = (lastV > 1.0e+4) ? 1.0e+4 : lastV;
                     }
                 }
                 else // Hyperbola
                 {
-                    if (FirstV >= 0.0 && LastV >= 0.0)
+                    if (firstV >= 0.0 && lastV >= 0.0)
                     {
-                        if (FirstV > 4.0)
+                        if (firstV > 4.0)
                         {
                             return;
                         }
-                        VmTr = FirstV;
-                        VMTr = (LastV > 4.0) ? 4.0 : LastV;
+                        VmTr = firstV;
+                        vmTr = (lastV > 4.0) ? 4.0 : lastV;
                     }
-                    else if (FirstV < 0.0 && LastV < 0.0)
+                    else if (firstV < 0.0 && lastV < 0.0)
                     {
-                        if (LastV < -4.0)
+                        if (lastV < -4.0)
                         {
                             return;
                         }
-                        VMTr = LastV;
-                        VmTr = (FirstV < -4.0) ? -4.0 : FirstV;
+                        vmTr = lastV;
+                        VmTr = (firstV < -4.0) ? -4.0 : firstV;
                     }
                     else
                     {
-                        VmTr = (FirstV < -4.0) ? -4.0 : FirstV;
-                        VMTr = (LastV > 4.0) ? 4.0 : LastV;
+                        VmTr = (firstV < -4.0) ? -4.0 : firstV;
+                        vmTr = (lastV > 4.0) ? 4.0 : lastV;
                     }
                 }
                 // Make trimmed surface
                 // OCCT: the V range is given as a U trim (UTrim true), so the U iso keeps its infinite V range;
                 // ported as written.
-                TrimmedSurface rts = new(gos, VmTr, VMTr, true);
-                I = rts.UIso(U);
+                TrimmedSurface rts = new(gos, VmTr, vmTr, true);
+                i = rts.UIso(u);
             }
         }
     }
@@ -291,95 +293,95 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_GetViso
     //================================================================================
-    private static void FUN_GetViso(Surface GS, SurfaceKind T, double FirstU, double LastU, bool IsUC,
-                                    bool IsUP, double V, ref Curve3D? I)
+    private static void FUN_GetViso(Surface gs, SurfaceKind t, double firstU, double lastU, bool isUC,
+                                    bool isUP, double v, ref Curve3D? i)
     {
-        if (T != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+        if (t != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
         {
-            Curve3D gc = GS.VIso(V);
-            if (IsUP && (FirstU == 0.0 && LastU == (2 * M_PI)))
+            Curve3D gc = gs.VIso(v);
+            if (isUP && (firstU == 0.0 && lastU == (2 * M_PI)))
             {
-                I = gc;
+                i = gc;
             }
             else
             {
-                TrimmedCurve3D gtc = new(gc, FirstU, LastU);
+                TrimmedCurve3D gtc = new(gc, firstU, lastU);
                 // szv:I = occ::down_cast<Geom_Curve>(gtc);
-                I = gtc;
+                i = gtc;
             }
         }
         else // OffsetSurface
         {
-            global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)GS;
+            global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs;
             Surface bs = gos.BasisSurface();
-            Curve3D gcbs = bs.VIso(V);
+            Curve3D gcbs = bs.VIso(v);
             CurveAdaptor gac = new(gcbs);
-            CurveKind GACT = gac.GetType();
-            if (IsUP || IsUC || GACT == BSplineCurve || GACT == BezierCurve
-                || Math.Abs(LastU - FirstU) < 1.0e+5)
+            CurveKind gact = gac.GetType();
+            if (isUP || isUC || gact == BSplineCurve || gact == BezierCurve
+                || Math.Abs(lastU - firstU) < 1.0e+5)
             {
-                Curve3D gc = gos.VIso(V);
-                if (IsUP && (FirstU == 0.0 && LastU == (2 * M_PI)))
+                Curve3D gc = gos.VIso(v);
+                if (isUP && (firstU == 0.0 && lastU == (2 * M_PI)))
                 {
-                    I = gc;
+                    i = gc;
                 }
                 else
                 {
-                    TrimmedCurve3D gtc = new(gc, FirstU, LastU);
+                    TrimmedCurve3D gtc = new(gc, firstU, lastU);
                     // szv:I = occ::down_cast<Geom_Curve>(gtc);
-                    I = gtc;
+                    i = gtc;
                 }
             }
             else // Offset Line, Parab, Hyperb
             {
-                double UmTr, UMTr;
-                if (GACT != Hyperbola)
+                double UmTr, umTr;
+                if (gact != Hyperbola)
                 {
-                    if (FirstU >= 0.0 && LastU >= 0.0)
+                    if (firstU >= 0.0 && lastU >= 0.0)
                     {
-                        UmTr = FirstU;
-                        UMTr = ((LastU - FirstU) > 1.0e+4) ? (FirstU + 1.0e+4) : LastU;
+                        UmTr = firstU;
+                        umTr = ((lastU - firstU) > 1.0e+4) ? (firstU + 1.0e+4) : lastU;
                     }
-                    else if (FirstU < 0.0 && LastU < 0.0)
+                    else if (firstU < 0.0 && lastU < 0.0)
                     {
-                        UMTr = LastU;
-                        UmTr = ((FirstU - LastU) < -1.0e+4) ? (LastU - 1.0e+4) : FirstU;
+                        umTr = lastU;
+                        UmTr = ((firstU - lastU) < -1.0e+4) ? (lastU - 1.0e+4) : firstU;
                     }
                     else
                     {
-                        UmTr = (FirstU < -1.0e+4) ? -1.0e+4 : FirstU;
-                        UMTr = (LastU > 1.0e+4) ? 1.0e+4 : LastU;
+                        UmTr = (firstU < -1.0e+4) ? -1.0e+4 : firstU;
+                        umTr = (lastU > 1.0e+4) ? 1.0e+4 : lastU;
                     }
                 }
                 else // Hyperbola
                 {
-                    if (FirstU >= 0.0 && LastU >= 0.0)
+                    if (firstU >= 0.0 && lastU >= 0.0)
                     {
-                        if (FirstU > 4.0)
+                        if (firstU > 4.0)
                         {
                             return;
                         }
-                        UmTr = FirstU;
-                        UMTr = (LastU > 4.0) ? 4.0 : LastU;
+                        UmTr = firstU;
+                        umTr = (lastU > 4.0) ? 4.0 : lastU;
                     }
-                    else if (FirstU < 0.0 && LastU < 0.0)
+                    else if (firstU < 0.0 && lastU < 0.0)
                     {
-                        if (LastU < -4.0)
+                        if (lastU < -4.0)
                         {
                             return;
                         }
-                        UMTr = LastU;
-                        UmTr = (FirstU < -4.0) ? -4.0 : FirstU;
+                        umTr = lastU;
+                        UmTr = (firstU < -4.0) ? -4.0 : firstU;
                     }
                     else
                     {
-                        UmTr = (FirstU < -4.0) ? -4.0 : FirstU;
-                        UMTr = (LastU > 4.0) ? 4.0 : LastU;
+                        UmTr = (firstU < -4.0) ? -4.0 : firstU;
+                        umTr = (lastU > 4.0) ? 4.0 : lastU;
                     }
                 }
                 // Make trimmed surface
-                TrimmedSurface rts = new(gos, UmTr, UMTr, true);
-                I = rts.VIso(V);
+                TrimmedSurface rts = new(gos, UmTr, umTr, true);
+                i = rts.VIso(v);
             }
         }
     }
@@ -387,182 +389,182 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_PL_Intersection
     //================================================================================
-    private static void FUN_PL_Intersection(SurfaceAdaptorBase S1, SurfaceKind T1, SurfaceAdaptorBase S2,
-                                            SurfaceKind T2, out bool IsOk, NCollection_Sequence<Point3D> SP,
-                                            out Vector3D DV)
+    private static void FUN_PL_Intersection(SurfaceAdaptorBase s1, SurfaceKind t1, SurfaceAdaptorBase s2,
+                                            SurfaceKind t2, out bool isOk, NCollection_Sequence<Point3D> sp,
+                                            out Vector3D dv)
     {
-        IsOk = false;
+        isOk = false;
         // 1. Check: both surfaces have U(V)isos - lines.
-        DV = new Vector3D(0.0, 0.0, 1.0);
+        dv = new Vector3D(0.0, 0.0, 1.0);
         Span<bool> isoS1isLine = [false, false];
         Span<bool> isoS2isLine = [false, false];
-        Curve3D? C1 = null, C2 = null;
+        Curve3D? c1 = null, c2 = null;
         // OCCT casts the adaptors to GeomAdaptor_Surface without a check (its callers pass them); the C# cast
         // throws where OCCT's would read another object.
-        SurfaceAdaptor gas1 = (SurfaceAdaptor)S1;
-        SurfaceAdaptor gas2 = (SurfaceAdaptor)S2;
+        SurfaceAdaptor gas1 = (SurfaceAdaptor)s1;
+        SurfaceAdaptor gas2 = (SurfaceAdaptor)s2;
         Surface gs1 = gas1.Surface()!;
         Surface gs2 = gas2.Surface()!;
-        Span<double> MS1 = stackalloc double[2], MS2 = stackalloc double[2];
-        MS1[0] = 0.5 * (S1.LastUParameter() + S1.FirstUParameter());
-        MS1[1] = 0.5 * (S1.LastVParameter() + S1.FirstVParameter());
-        MS2[0] = 0.5 * (S2.LastUParameter() + S2.FirstUParameter());
-        MS2[1] = 0.5 * (S2.LastVParameter() + S2.FirstVParameter());
-        if (T1 == SurfaceOfExtrusion)
+        Span<double> ms1 = stackalloc double[2], ms2 = stackalloc double[2];
+        ms1[0] = 0.5 * (s1.LastUParameter() + s1.FirstUParameter());
+        ms1[1] = 0.5 * (s1.LastVParameter() + s1.FirstVParameter());
+        ms2[0] = 0.5 * (s2.LastUParameter() + s2.FirstUParameter());
+        ms2[1] = 0.5 * (s2.LastVParameter() + s2.FirstVParameter());
+        if (t1 == SurfaceOfExtrusion)
         {
             isoS1isLine[0] = true;
         }
-        else if (!S1.IsVPeriodic && !S1.IsVClosed)
+        else if (!s1.IsVPeriodic && !s1.IsVClosed)
         {
-            if (T1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+            if (t1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
             {
-                C1 = gs1.UIso(MS1[0]);
+                c1 = gs1.UIso(ms1[0]);
             }
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
                 Surface bs = gos.BasisSurface();
-                C1 = bs.UIso(MS1[0]);
+                c1 = bs.UIso(ms1[0]);
             }
-            CurveAdaptor gac = new(C1);
+            CurveAdaptor gac = new(c1);
             if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS1isLine[0] = true;
             }
         }
-        if (!S1.IsUPeriodic && !S1.IsUClosed)
+        if (!s1.IsUPeriodic && !s1.IsUClosed)
         {
-            if (T1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+            if (t1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
             {
-                C1 = gs1.VIso(MS1[1]);
+                c1 = gs1.VIso(ms1[1]);
             }
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
                 Surface bs = gos.BasisSurface();
-                C1 = bs.VIso(MS1[1]);
+                c1 = bs.VIso(ms1[1]);
             }
-            CurveAdaptor gac = new(C1);
+            CurveAdaptor gac = new(c1);
             if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS1isLine[1] = true;
             }
         }
-        if (T2 == SurfaceOfExtrusion)
+        if (t2 == SurfaceOfExtrusion)
         {
             isoS2isLine[0] = true;
         }
-        else if (!S2.IsVPeriodic && !S2.IsVClosed)
+        else if (!s2.IsVPeriodic && !s2.IsVClosed)
         {
-            if (T2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+            if (t2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
             {
-                C2 = gs2.UIso(MS2[0]);
+                c2 = gs2.UIso(ms2[0]);
             }
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
                 Surface bs = gos.BasisSurface();
-                C2 = bs.UIso(MS2[0]);
+                c2 = bs.UIso(ms2[0]);
             }
-            CurveAdaptor gac = new(C2);
+            CurveAdaptor gac = new(c2);
             if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS2isLine[0] = true;
             }
         }
-        if (!S2.IsUPeriodic && !S2.IsUClosed)
+        if (!s2.IsUPeriodic && !s2.IsUClosed)
         {
-            if (T2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+            if (t2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
             {
-                C2 = gs2.VIso(MS2[1]);
+                c2 = gs2.VIso(ms2[1]);
             }
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
                 Surface bs = gos.BasisSurface();
-                C2 = bs.VIso(MS2[1]);
+                c2 = bs.VIso(ms2[1]);
             }
-            CurveAdaptor gac = new(C2);
+            CurveAdaptor gac = new(c2);
             if (gac.GetType() == global::Kerf.Geometry.CurveKind.Line)
             {
                 isoS2isLine[1] = true;
             }
         }
-        bool IsBothLines = ((isoS1isLine[0] || isoS1isLine[1]) && (isoS2isLine[0] || isoS2isLine[1]));
-        if (!IsBothLines)
+        bool isBothLines = ((isoS1isLine[0] || isoS1isLine[1]) && (isoS2isLine[0] || isoS2isLine[1]));
+        if (!isBothLines)
         {
             return;
         }
         // 2. Check: Uiso lines of both surfaces are collinear.
-        S1.D1(MS1[0], MS1[1], out Point3D puvS1, out Vector3D derS10, out Vector3D derS11);
-        S2.D1(MS2[0], MS2[1], out Point3D puvS2, out Vector3D derS20, out Vector3D derS21);
+        s1.D1(ms1[0], ms1[1], out Point3D puvS1, out Vector3D derS10, out Vector3D derS11);
+        s2.D1(ms2[0], ms2[1], out Point3D puvS2, out Vector3D derS20, out Vector3D derS21);
         Span<Vector3D> derS1 = [derS10, derS11];
         Span<Vector3D> derS2 = [derS20, derS21];
         _ = puvS2;
-        C1 = null;
-        C2 = null;
+        c1 = null;
+        c2 = null;
         int iso = 0;
         if (isoS1isLine[0] && isoS2isLine[0] && derS1[1].IsParallel(derS2[1], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 1;
-            FUN_GetViso(gs1, T1, S1.FirstUParameter(), S1.LastUParameter(), S1.IsUClosed, S1.IsUPeriodic, MS1[1],
-                        ref C1);
-            FUN_GetViso(gs2, T2, S2.FirstUParameter(), S2.LastUParameter(), S2.IsUClosed, S2.IsUPeriodic, MS2[1],
-                        ref C2);
+            FUN_GetViso(gs1, t1, s1.FirstUParameter(), s1.LastUParameter(), s1.IsUClosed, s1.IsUPeriodic, ms1[1],
+                        ref c1);
+            FUN_GetViso(gs2, t2, s2.FirstUParameter(), s2.LastUParameter(), s2.IsUClosed, s2.IsUPeriodic, ms2[1],
+                        ref c2);
         }
         else if (isoS1isLine[0] && isoS2isLine[1] && derS1[1].IsParallel(derS2[0], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 1;
-            FUN_GetViso(gs1, T1, S1.FirstUParameter(), S1.LastUParameter(), S1.IsUClosed, S1.IsUPeriodic, MS1[1],
-                        ref C1);
-            FUN_GetUiso(gs2, T2, S2.FirstVParameter(), S2.LastVParameter(), S2.IsVClosed, S2.IsVPeriodic, MS2[0],
-                        ref C2);
+            FUN_GetViso(gs1, t1, s1.FirstUParameter(), s1.LastUParameter(), s1.IsUClosed, s1.IsUPeriodic, ms1[1],
+                        ref c1);
+            FUN_GetUiso(gs2, t2, s2.FirstVParameter(), s2.LastVParameter(), s2.IsVClosed, s2.IsVPeriodic, ms2[0],
+                        ref c2);
         }
         else if (isoS1isLine[1] && isoS2isLine[0] && derS1[0].IsParallel(derS2[1], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 0;
-            FUN_GetUiso(gs1, T1, S1.FirstVParameter(), S1.LastVParameter(), S1.IsVClosed, S1.IsVPeriodic, MS1[0],
-                        ref C1);
-            FUN_GetViso(gs2, T2, S2.FirstUParameter(), S2.LastUParameter(), S2.IsUClosed, S2.IsUPeriodic, MS2[1],
-                        ref C2);
+            FUN_GetUiso(gs1, t1, s1.FirstVParameter(), s1.LastVParameter(), s1.IsVClosed, s1.IsVPeriodic, ms1[0],
+                        ref c1);
+            FUN_GetViso(gs2, t2, s2.FirstUParameter(), s2.LastUParameter(), s2.IsUClosed, s2.IsUPeriodic, ms2[1],
+                        ref c2);
         }
         else if (isoS1isLine[1] && isoS2isLine[1] && derS1[0].IsParallel(derS2[0], global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             iso = 0;
-            FUN_GetUiso(gs1, T1, S1.FirstVParameter(), S1.LastVParameter(), S1.IsVClosed, S1.IsVPeriodic, MS1[0],
-                        ref C1);
-            FUN_GetUiso(gs2, T2, S2.FirstVParameter(), S2.LastVParameter(), S2.IsVClosed, S2.IsVPeriodic, MS2[0],
-                        ref C2);
+            FUN_GetUiso(gs1, t1, s1.FirstVParameter(), s1.LastVParameter(), s1.IsVClosed, s1.IsVPeriodic, ms1[0],
+                        ref c1);
+            FUN_GetUiso(gs2, t2, s2.FirstVParameter(), s2.LastVParameter(), s2.IsVClosed, s2.IsVPeriodic, ms2[0],
+                        ref c2);
         }
         else
         {
-            IsOk = false;
+            isOk = false;
             return;
         }
-        IsOk = true;
+        isOk = true;
         // 3. Make intersections of V(U)isos
-        if (C1 is null || C2 is null)
+        if (c1 is null || c2 is null)
         {
             return;
         }
-        DV = derS1[iso];
-        PlaneSurface GPln = new(new Plane3D(puvS1, new Direction3D(DV)));
-        Curve3D? C1Prj = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(C1, GPln, new Direction3D(DV), true);
-        Curve3D? C2Prj = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(C2, GPln, new Direction3D(DV), true);
-        if (C1Prj is null || C2Prj is null)
+        dv = derS1[iso];
+        PlaneSurface gPln = new(new Plane3D(puvS1, new Direction3D(dv)));
+        Curve3D? c1Prj = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(c1, gPln, new Direction3D(dv), true);
+        Curve3D? c2Prj = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(c2, gPln, new Direction3D(dv), true);
+        if (c1Prj is null || c2Prj is null)
         {
             return;
         }
-        Curve2D? C1Prj2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C1Prj, GPln);
-        Curve2D? C2Prj2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(C2Prj, GPln);
-        Geom2dAPI_InterCurveCurve ICC = new(C1Prj2d!, C2Prj2d!, 1.0e-7);
-        if (ICC.NbPoints() > 0)
+        Curve2D? c1Prj2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c1Prj, gPln);
+        Curve2D? c2Prj2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c2Prj, gPln);
+        CurveCurveIntersection2D icc = new(c1Prj2d!, c2Prj2d!, 1.0e-7);
+        if (icc.NbPoints() > 0)
         {
-            for (int ip = 1; ip <= ICC.NbPoints(); ip++)
+            for (int ip = 1; ip <= icc.NbPoints(); ip++)
             {
-                Point2D P = ICC.Point(ip);
-                Point3D P3d = global::Kerf.Engine.Geometry.ElCLib.To3d(new Frame3D(puvS1, new Direction3D(DV)), P);
-                SP.Append(P3d);
+                Point2D p = icc.Point(ip);
+                Point3D p3d = global::Kerf.Engine.Geometry.ElCLib.To3d(new Frame3D(puvS1, new Direction3D(dv)), p);
+                sp.Append(p3d);
             }
         }
     }
@@ -570,68 +572,68 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_NewFirstLast
     //================================================================================
-    private static void FUN_NewFirstLast(CurveKind ga_ct, double Fst, double Lst, double TrVal,
-                                         out double NewFst, out double NewLst, out bool NeedTr)
+    private static void FUN_NewFirstLast(CurveKind ga_ct, double fst, double lst, double trVal,
+                                         out double newFst, out double newLst, out bool needTr)
     {
-        NewFst = Fst;
-        NewLst = Lst;
-        NeedTr = false;
+        newFst = fst;
+        newLst = lst;
+        needTr = false;
         switch (ga_ct)
         {
             case global::Kerf.Geometry.CurveKind.Line:
             case Parabola:
             {
-                if (Math.Abs(Lst - Fst) > TrVal)
+                if (Math.Abs(lst - fst) > trVal)
                 {
                     // OCCT: the second test is not an "else if", so a range on the positive side is then
                     // overwritten by the last branch; ported as written.
-                    if (Fst >= 0.0 && Lst >= 0.0)
+                    if (fst >= 0.0 && lst >= 0.0)
                     {
-                        NewFst = Fst;
-                        NewLst = ((Fst + TrVal) < Lst) ? (Fst + TrVal) : Lst;
+                        newFst = fst;
+                        newLst = ((fst + trVal) < lst) ? (fst + trVal) : lst;
                     }
-                    if (Fst < 0.0 && Lst < 0.0)
+                    if (fst < 0.0 && lst < 0.0)
                     {
-                        NewLst = Lst;
-                        NewFst = ((Lst - TrVal) > Fst) ? (Lst - TrVal) : Fst;
+                        newLst = lst;
+                        newFst = ((lst - trVal) > fst) ? (lst - trVal) : fst;
                     }
                     else
                     {
-                        NewFst = (Fst < -TrVal) ? -TrVal : Fst;
-                        NewLst = (Lst > TrVal) ? TrVal : Lst;
+                        newFst = (fst < -trVal) ? -trVal : fst;
+                        newLst = (lst > trVal) ? trVal : lst;
                     }
-                    NeedTr = true;
+                    needTr = true;
                 }
                 break;
             }
             case Hyperbola:
             {
-                if (Math.Abs(Lst - Fst) > 10.0)
+                if (Math.Abs(lst - fst) > 10.0)
                 {
-                    if (Fst >= 0.0 && Lst >= 0.0)
+                    if (fst >= 0.0 && lst >= 0.0)
                     {
-                        if (Fst > 4.0)
+                        if (fst > 4.0)
                         {
                             return;
                         }
-                        NewFst = Fst;
-                        NewLst = (Lst > 4.0) ? 4.0 : Lst;
+                        newFst = fst;
+                        newLst = (lst > 4.0) ? 4.0 : lst;
                     }
-                    if (Fst < 0.0 && Lst < 0.0)
+                    if (fst < 0.0 && lst < 0.0)
                     {
-                        if (Lst < -4.0)
+                        if (lst < -4.0)
                         {
                             return;
                         }
-                        NewLst = Lst;
-                        NewFst = (Fst < -4.0) ? -4.0 : Fst;
+                        newLst = lst;
+                        newFst = (fst < -4.0) ? -4.0 : fst;
                     }
                     else
                     {
-                        NewFst = (Fst < -4.0) ? -4.0 : Fst;
-                        NewLst = (Lst > 4.0) ? 4.0 : Lst;
+                        newFst = (fst < -4.0) ? -4.0 : fst;
+                        newLst = (lst > 4.0) ? 4.0 : lst;
                     }
-                    NeedTr = true;
+                    needTr = true;
                 }
                 break;
             }
@@ -643,47 +645,47 @@ public partial class IntPatch_Intersection
     //================================================================================
     // function: FUN_TrimBothSurf
     //================================================================================
-    private static void FUN_TrimBothSurf(SurfaceAdaptorBase S1, SurfaceKind T1, SurfaceAdaptorBase S2,
-                                         SurfaceKind T2, double TV, ref SurfaceAdaptorBase NS1,
-                                         ref SurfaceAdaptorBase NS2)
+    private static void FUN_TrimBothSurf(SurfaceAdaptorBase s1, SurfaceKind t1, SurfaceAdaptorBase s2,
+                                         SurfaceKind t2, double tv, ref SurfaceAdaptorBase ns1,
+                                         ref SurfaceAdaptorBase ns2)
     {
-        SurfaceAdaptor gas1 = (SurfaceAdaptor)S1;
-        SurfaceAdaptor gas2 = (SurfaceAdaptor)S2;
+        SurfaceAdaptor gas1 = (SurfaceAdaptor)s1;
+        SurfaceAdaptor gas2 = (SurfaceAdaptor)s2;
         Surface gs1 = gas1.Surface()!;
         Surface gs2 = gas2.Surface()!;
-        double UM1 = 0.5 * (S1.LastUParameter() + S1.FirstUParameter());
-        double UM2 = 0.5 * (S2.LastUParameter() + S2.FirstUParameter());
-        double VM1 = 0.5 * (S1.LastVParameter() + S1.FirstVParameter());
-        double VM2 = 0.5 * (S2.LastVParameter() + S2.FirstVParameter());
+        double um1 = 0.5 * (s1.LastUParameter() + s1.FirstUParameter());
+        double um2 = 0.5 * (s2.LastUParameter() + s2.FirstUParameter());
+        double vm1 = 0.5 * (s1.LastVParameter() + s1.FirstVParameter());
+        double vm2 = 0.5 * (s2.LastVParameter() + s2.FirstVParameter());
         Curve3D? visoS1, visoS2, uisoS1, uisoS2;
-        if (T1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+        if (t1 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
         {
-            visoS1 = gs1.VIso(VM1);
-            uisoS1 = gs1.UIso(UM1);
+            visoS1 = gs1.VIso(vm1);
+            uisoS1 = gs1.UIso(um1);
         }
         else
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
             Surface bs = gos.BasisSurface();
-            visoS1 = bs.VIso(VM1);
-            uisoS1 = bs.UIso(UM1);
+            visoS1 = bs.VIso(vm1);
+            uisoS1 = bs.UIso(um1);
         }
-        if (T2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
+        if (t2 != global::Kerf.Geometry.SurfaceKind.OffsetSurface)
         {
-            visoS2 = gs2.VIso(VM2);
-            uisoS2 = gs2.UIso(UM2);
+            visoS2 = gs2.VIso(vm2);
+            uisoS2 = gs2.UIso(um2);
         }
         else
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
             Surface bs = gos.BasisSurface();
-            visoS2 = bs.VIso(VM2);
-            uisoS2 = bs.UIso(UM2);
+            visoS2 = bs.VIso(vm2);
+            uisoS2 = bs.UIso(um2);
         }
         if (uisoS1 is null || uisoS2 is null || visoS1 is null || visoS2 is null)
         {
-            NS1 = S1;
-            NS2 = S2;
+            ns1 = s1;
+            ns2 = s2;
             return;
         }
         CurveAdaptor gau1 = new(uisoS1);
@@ -694,44 +696,44 @@ public partial class IntPatch_Intersection
         CurveKind GA_V1 = gav1.GetType();
         CurveKind GA_U2 = gau2.GetType();
         CurveKind GA_V2 = gav2.GetType();
-        FUN_NewFirstLast(GA_U1, S1.FirstVParameter(), S1.LastVParameter(), TV, out double V1S1, out double V2S1,
-                         out bool TrmV1);
-        FUN_NewFirstLast(GA_V1, S1.FirstUParameter(), S1.LastUParameter(), TV, out double U1S1, out double U2S1,
-                         out bool TrmU1);
-        FUN_NewFirstLast(GA_U2, S2.FirstVParameter(), S2.LastVParameter(), TV, out double V1S2, out double V2S2,
-                         out bool TrmV2);
-        FUN_NewFirstLast(GA_V2, S2.FirstUParameter(), S2.LastUParameter(), TV, out double U1S2, out double U2S2,
-                         out bool TrmU2);
-        if (TrmV1)
+        FUN_NewFirstLast(GA_U1, s1.FirstVParameter(), s1.LastVParameter(), tv, out double v1S1, out double v2S1,
+                         out bool trmV1);
+        FUN_NewFirstLast(GA_V1, s1.FirstUParameter(), s1.LastUParameter(), tv, out double u1S1, out double u2S1,
+                         out bool trmU1);
+        FUN_NewFirstLast(GA_U2, s2.FirstVParameter(), s2.LastVParameter(), tv, out double v1S2, out double v2S2,
+                         out bool trmV2);
+        FUN_NewFirstLast(GA_V2, s2.FirstUParameter(), s2.LastUParameter(), tv, out double u1S2, out double u2S2,
+                         out bool trmU2);
+        if (trmV1)
         {
-            NS1 = S1.VTrim(V1S1, V2S1, 1.0e-7);
+            ns1 = s1.VTrim(v1S1, v2S1, 1.0e-7);
         }
-        if (TrmV2)
+        if (trmV2)
         {
-            NS2 = S2.VTrim(V1S2, V2S2, 1.0e-7);
+            ns2 = s2.VTrim(v1S2, v2S2, 1.0e-7);
         }
-        if (TrmU1)
+        if (trmU1)
         {
-            if (TrmV1)
+            if (trmV1)
             {
-                SurfaceAdaptorBase TS = NS1;
-                NS1 = TS.UTrim(U1S1, U2S1, 1.0e-7);
+                SurfaceAdaptorBase ts = ns1;
+                ns1 = ts.UTrim(u1S1, u2S1, 1.0e-7);
             }
             else
             {
-                NS1 = S1.UTrim(U1S1, U2S1, 1.0e-7);
+                ns1 = s1.UTrim(u1S1, u2S1, 1.0e-7);
             }
         }
-        if (TrmU2)
+        if (trmU2)
         {
-            if (TrmV2)
+            if (trmV2)
             {
-                SurfaceAdaptorBase TS = NS2;
-                NS2 = TS.UTrim(U1S2, U2S2, 1.0e-7);
+                SurfaceAdaptorBase ts = ns2;
+                ns2 = ts.UTrim(u1S2, u2S2, 1.0e-7);
             }
             else
             {
-                NS2 = S2.UTrim(U1S2, U2S2, 1.0e-7);
+                ns2 = s2.UTrim(u1S2, u2S2, 1.0e-7);
             }
         }
     }

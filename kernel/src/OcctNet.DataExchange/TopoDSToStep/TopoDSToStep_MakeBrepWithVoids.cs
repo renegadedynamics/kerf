@@ -40,7 +40,7 @@ public sealed class TopoDSToStep_MakeBrepWithVoids : TopoDSToStep_Root
         try
         {
             // BRepClass3d::OuterShell requires geometry when the solid has voids
-            aOutShell = BRepClass3d.OuterShell(aSolid);
+            aOutShell = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(aSolid);
         }
         catch (Exception anException) when (anException is not OutOfMemoryException and not OperationCanceledException)
         {

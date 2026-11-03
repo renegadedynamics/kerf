@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -8,7 +11,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepExtrema_SupportType;
+using static Kerf.Engine.Measurement.Distance.SupportType;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -24,14 +27,14 @@ public class BRepExtremaTests
 {
     private const double Tol = 1.0e-9;
 
-    private static Vertex V(double x, double y, double z) => new BRepBuilderAPI_MakeVertex(new Point3D(x, y, z)).Vertex();
+    private static Vertex V(double x, double y, double z) => new MakeVertex(new Point3D(x, y, z)).Vertex();
 
     private static Edge E(double x1, double y1, double z1, double x2, double y2, double z2)
-        => new BRepBuilderAPI_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
+        => new MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     // A square [x0, x0 + s] x [y0, y0 + s] in the plane z = z0, normal +Z.
     private static Face Square(double x0, double y0, double z0, double s)
-        => new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(x0, y0, z0), new Direction3D(0, 0, 1)), 0, s, 0, s).Face();
+        => new MakeFace(new Plane3D(new Point3D(x0, y0, z0), new Direction3D(0, 0, 1)), 0, s, 0, s).Face();
 
     private static void AssertPnt(in Point3D theExpected, in Point3D theActual, double theTol = Tol)
     {
@@ -46,39 +49,39 @@ public class BRepExtremaTests
     public void VertexVertex()
     {
         Vertex a = V(0, 0, 0), b = V(3, 4, 0);
-        var aD = new BRepExtrema_DistShapeShape(a, b);
-        Assert.True(aD.IsDone());
-        Assert.Equal(1, aD.NbSolution());
+        var aD = new DistanceShapeShape(a, b);
+        Assert.True(aD.IsDone);
+        Assert.Equal(1, aD.SolutionCount);
         Assert.Equal(5.0, aD.Value());
         Assert.False(aD.InnerSolution());
-        Assert.Equal(BRepExtrema_IsVertex, aD.SupportTypeShape1(1));
-        Assert.Equal(BRepExtrema_IsVertex, aD.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsVertex, aD.SupportTypeShape1(1));
+        Assert.Equal(SupportType.IsVertex, aD.SupportTypeShape2(1));
         Assert.True(aD.SupportOnShape1(1).IsSame(a));
         Assert.True(aD.SupportOnShape2(1).IsSame(b));
         AssertPnt(new Point3D(3, 4, 0), aD.PointOnShape2(1));
-        Assert.ThrowsAny<BRepExtrema_UnCompatibleShape>(() => aD.ParOnEdgeS1(1, out _));
-        Assert.ThrowsAny<BRepExtrema_UnCompatibleShape>(() => aD.ParOnFaceS2(1, out _, out _));
+        Assert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnEdgeS1(1, out _));
+        Assert.ThrowsAny<IncompatibleShapeException>(() => aD.ParOnFaceS2(1, out _, out _));
     }
 
     [Fact]
     public void VertexEdge_FootInside_AndBeyondTheEnd()
     {
         Edge anEdge = E(0, 0, 0, 10, 0, 0);
-        var aD = new BRepExtrema_DistShapeShape(V(4, 3, 0), anEdge);
-        Assert.True(aD.IsDone());
-        Assert.Equal(1, aD.NbSolution());
+        var aD = new DistanceShapeShape(V(4, 3, 0), anEdge);
+        Assert.True(aD.IsDone);
+        Assert.Equal(1, aD.SolutionCount);
         Assert.Equal(3.0, aD.Value(), Tol);
-        Assert.Equal(BRepExtrema_IsVertex, aD.SupportTypeShape1(1));
-        Assert.Equal(BRepExtrema_IsOnEdge, aD.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsVertex, aD.SupportTypeShape1(1));
+        Assert.Equal(SupportType.IsOnEdge, aD.SupportTypeShape2(1));
         Assert.True(aD.SupportOnShape2(1).IsSame(anEdge));
         aD.ParOnEdgeS2(1, out double t);
         Assert.Equal(4.0, t, Tol);
         AssertPnt(new Point3D(4, 0, 0), aD.PointOnShape2(1));
 
         // beyond the end: the nearest point is the edge's vertex
-        var aD2 = new BRepExtrema_DistShapeShape(anEdge, V(13, 4, 0));
+        var aD2 = new DistanceShapeShape(anEdge, V(13, 4, 0));
         Assert.Equal(5.0, aD2.Value(), Tol);
-        Assert.Equal(BRepExtrema_IsVertex, aD2.SupportTypeShape1(1));
+        Assert.Equal(SupportType.IsVertex, aD2.SupportTypeShape1(1));
         AssertPnt(new Point3D(10, 0, 0), aD2.PointOnShape1(1));
     }
 
@@ -86,11 +89,11 @@ public class BRepExtremaTests
     public void VertexFace_InFace()
     {
         Face aF = Square(0, 0, 0, 10);
-        var aD = new BRepExtrema_DistShapeShape(aF, V(2, 3, 7));
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(aF, V(2, 3, 7));
+        Assert.True(aD.IsDone);
         Assert.Equal(7.0, aD.Value(), Tol);
-        Assert.Equal(1, aD.NbSolution());
-        Assert.Equal(BRepExtrema_IsInFace, aD.SupportTypeShape1(1));
+        Assert.Equal(1, aD.SolutionCount);
+        Assert.Equal(SupportType.IsInFace, aD.SupportTypeShape1(1));
         Assert.True(aD.SupportOnShape1(1).IsSame(aF));
         aD.ParOnFaceS1(1, out double u, out double v);
         Assert.Equal(2.0, u, Tol);
@@ -102,12 +105,12 @@ public class BRepExtremaTests
     public void EdgeEdge_Skew()
     {
         Edge e1 = E(-5, 0, 0, 5, 0, 0), e2 = E(1, -5, 2, 1, 5, 2);
-        var aD = new BRepExtrema_DistShapeShape(e1, e2);
-        Assert.True(aD.IsDone());
-        Assert.Equal(1, aD.NbSolution());
+        var aD = new DistanceShapeShape(e1, e2);
+        Assert.True(aD.IsDone);
+        Assert.Equal(1, aD.SolutionCount);
         Assert.Equal(2.0, aD.Value(), Tol);
-        Assert.Equal(BRepExtrema_IsOnEdge, aD.SupportTypeShape1(1));
-        Assert.Equal(BRepExtrema_IsOnEdge, aD.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsOnEdge, aD.SupportTypeShape1(1));
+        Assert.Equal(SupportType.IsOnEdge, aD.SupportTypeShape2(1));
         aD.ParOnEdgeS1(1, out double t1);
         aD.ParOnEdgeS2(1, out double t2);
         Assert.Equal(6.0, t1, Tol);
@@ -120,11 +123,11 @@ public class BRepExtremaTests
     public void EdgeEdge_Parallel_GivesSeveralSolutions()
     {
         Edge e1 = E(0, 0, 0, 1, 0, 0), e2 = E(0, 1, 0, 1, 1, 0);
-        var aD = new BRepExtrema_DistShapeShape(e1, e2);
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(e1, e2);
+        Assert.True(aD.IsDone);
         Assert.Equal(1.0, aD.Value(), Tol);
-        Assert.True(aD.NbSolution() >= 2);
-        for (int i = 1; i <= aD.NbSolution(); i++)
+        Assert.True(aD.SolutionCount >= 2);
+        for (int i = 1; i <= aD.SolutionCount; i++)
         {
             Assert.Equal(1.0, aD.PointOnShape1(i).Distance(aD.PointOnShape2(i)), Tol);
         }
@@ -134,12 +137,12 @@ public class BRepExtremaTests
     public void EquidistantEdges_TwoSolutions()
     {
         Compound aC = Builder.MakeCompound(E(-1, -5, -2, -1, 5, -2), E(1, -5, 2, 1, 5, 2));
-        var aD = new BRepExtrema_DistShapeShape(V(0, 0, 0), aC);
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(V(0, 0, 0), aC);
+        Assert.True(aD.IsDone);
         Assert.Equal(Math.Sqrt(5.0), aD.Value(), Tol);
-        Assert.Equal(2, aD.NbSolution());
-        Assert.Equal(BRepExtrema_IsOnEdge, aD.SupportTypeShape2(1));
-        Assert.Equal(BRepExtrema_IsOnEdge, aD.SupportTypeShape2(2));
+        Assert.Equal(2, aD.SolutionCount);
+        Assert.Equal(SupportType.IsOnEdge, aD.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsOnEdge, aD.SupportTypeShape2(2));
         Assert.False(aD.SupportOnShape2(1).IsSame(aD.SupportOnShape2(2)));
     }
 
@@ -148,17 +151,17 @@ public class BRepExtremaTests
     {
         Face aF = Square(0, 0, 0, 10);
         // a segment slanting above the face: its lower end is the nearest point (a vertex)
-        var aD = new BRepExtrema_DistShapeShape(E(2, 2, 1, 5, 5, 4), aF);
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(E(2, 2, 1, 5, 5, 4), aF);
+        Assert.True(aD.IsDone);
         Assert.Equal(1.0, aD.Value(), Tol);
         AssertPnt(new Point3D(2, 2, 0), aD.PointOnShape2(1));
 
         // a segment through the face: distance 0, on the edge and in the face
-        var aD2 = new BRepExtrema_DistShapeShape(E(3, 4, -1, 3, 4, 1), aF);
-        Assert.True(aD2.IsDone());
+        var aD2 = new DistanceShapeShape(E(3, 4, -1, 3, 4, 1), aF);
+        Assert.True(aD2.IsDone);
         Assert.Equal(0.0, aD2.Value(), Tol);
-        Assert.Equal(BRepExtrema_IsOnEdge, aD2.SupportTypeShape1(1));
-        Assert.Equal(BRepExtrema_IsInFace, aD2.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsOnEdge, aD2.SupportTypeShape1(1));
+        Assert.Equal(SupportType.IsInFace, aD2.SupportTypeShape2(1));
         aD2.ParOnFaceS2(1, out double u, out double v);
         Assert.Equal(3.0, u, 1e-7);
         Assert.Equal(4.0, v, 1e-7);
@@ -167,11 +170,11 @@ public class BRepExtremaTests
     [Fact]
     public void FaceFace_Parallel()
     {
-        var aD = new BRepExtrema_DistShapeShape(Square(0, 0, 0, 1), Square(0.25, 0.25, 2, 0.5));
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(Square(0, 0, 0, 1), Square(0.25, 0.25, 2, 0.5));
+        Assert.True(aD.IsDone);
         Assert.Equal(2.0, aD.Value(), Tol);
-        Assert.True(aD.NbSolution() >= 1);
-        for (int i = 1; i <= aD.NbSolution(); i++)
+        Assert.True(aD.SolutionCount >= 1);
+        for (int i = 1; i <= aD.SolutionCount; i++)
         {
             Assert.Equal(2.0, aD.PointOnShape1(i).Distance(aD.PointOnShape2(i)), Tol);
         }
@@ -184,19 +187,19 @@ public class BRepExtremaTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(10, 10, 10));
         Vertex anInside = V(5, 5, 5);
-        var aD = new BRepExtrema_DistShapeShape(aBox, anInside);
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(aBox, anInside);
+        Assert.True(aD.IsDone);
         Assert.True(aD.InnerSolution());
         Assert.Equal(0.0, aD.Value());
-        Assert.Equal(1, aD.NbSolution());
+        Assert.Equal(1, aD.SolutionCount);
         Assert.True(aD.SupportOnShape1(1).IsSame(anInside));
         Assert.True(aD.SupportOnShape2(1).IsSame(anInside));
 
-        var aOut = new BRepExtrema_DistShapeShape(V(5, 5, 12), aBox);
-        Assert.True(aOut.IsDone());
+        var aOut = new DistanceShapeShape(V(5, 5, 12), aBox);
+        Assert.True(aOut.IsDone);
         Assert.False(aOut.InnerSolution());
         Assert.Equal(2.0, aOut.Value(), Tol);
-        Assert.Equal(BRepExtrema_IsInFace, aOut.SupportTypeShape2(1));
+        Assert.Equal(SupportType.IsInFace, aOut.SupportTypeShape2(1));
     }
 
     [Fact]
@@ -208,18 +211,18 @@ public class BRepExtremaTests
         var aSnap1 = ShapeSnapshot.Of(aBox1);
         var aSnap2 = ShapeSnapshot.Of(aBox2);
 
-        var aSingle = new BRepExtrema_DistShapeShape(aBox1, aBox2);
-        var aMulti = new BRepExtrema_DistShapeShape();
+        var aSingle = new DistanceShapeShape(aBox1, aBox2);
+        var aMulti = new DistanceShapeShape();
         aMulti.SetMultiThread(true);
-        Assert.True(aMulti.IsMultiThread());
+        Assert.True(aMulti.IsMultiThread);
         aMulti.LoadS1(aBox1);
         aMulti.LoadS2(aBox2);
         Assert.True(aMulti.Perform());
 
         Assert.Equal(2.0, aSingle.Value(), Tol);
         Assert.Equal(aSingle.Value(), aMulti.Value());
-        Assert.Equal(aSingle.NbSolution(), aMulti.NbSolution());
-        for (int i = 1; i <= aSingle.NbSolution(); i++)
+        Assert.Equal(aSingle.SolutionCount, aMulti.SolutionCount);
+        for (int i = 1; i <= aSingle.SolutionCount; i++)
         {
             Assert.Equal(aSingle.PointOnShape1(i), aMulti.PointOnShape1(i));
             Assert.Equal(aSingle.PointOnShape2(i), aMulti.PointOnShape2(i));
@@ -245,8 +248,8 @@ public class BRepExtremaTests
         Shape aCompound = Builder.MakeCompound(aBox2, aBox3);
         foreach ((Shape aS1, Shape aS2) in new[] { (aBox1, aBox2), (aBox1, aCompound), (aCompound, aBox1) })
         {
-            var aSingle = new BRepExtrema_DistShapeShape(aS1, aS2);
-            var aFallback = new BRepExtrema_DistShapeShape();
+            var aSingle = new DistanceShapeShape(aS1, aS2);
+            var aFallback = new DistanceShapeShape();
             aFallback.SetMultiThread(true);
             aFallback.LoadS1(aS1);
             aFallback.LoadS2(aS2);
@@ -256,8 +259,8 @@ public class BRepExtremaTests
             }
 
             Assert.Equal(aSingle.Value(), aFallback.Value());
-            Assert.Equal(aSingle.NbSolution(), aFallback.NbSolution());
-            for (int i = 1; i <= aSingle.NbSolution(); i++)
+            Assert.Equal(aSingle.SolutionCount, aFallback.SolutionCount);
+            for (int i = 1; i <= aSingle.SolutionCount; i++)
             {
                 Assert.Equal(aSingle.PointOnShape1(i), aFallback.PointOnShape1(i));
                 Assert.Equal(aSingle.PointOnShape2(i), aFallback.PointOnShape2(i));
@@ -272,7 +275,7 @@ public class BRepExtremaTests
     {
         var aT = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 2);
         Shape anEdge = E(0, 0, 0, 10, 0, 0).Moved(new Placement(aT)); // now along +Y
-        var aD = new BRepExtrema_DistShapeShape(anEdge, V(3, 4, 0));
+        var aD = new DistanceShapeShape(anEdge, V(3, 4, 0));
         Assert.Equal(3.0, aD.Value(), Tol);
         AssertPnt(new Point3D(0, 4, 0), aD.PointOnShape1(1));
         aD.ParOnEdgeS1(1, out double t);
@@ -285,10 +288,10 @@ public class BRepExtremaTests
     {
         // two vertices at distances 1 and 1.05 from the origin
         Compound aC = Builder.MakeCompound(V(1, 0, 0), V(0, 1.05, 0));
-        var aTight = new BRepExtrema_DistShapeShape(V(0, 0, 0), aC);
-        Assert.Equal(1, aTight.NbSolution());
-        var aLoose = new BRepExtrema_DistShapeShape(V(0, 0, 0), aC, 0.1);
-        Assert.Equal(2, aLoose.NbSolution());
+        var aTight = new DistanceShapeShape(V(0, 0, 0), aC);
+        Assert.Equal(1, aTight.SolutionCount);
+        var aLoose = new DistanceShapeShape(V(0, 0, 0), aC, 0.1);
+        Assert.Equal(2, aLoose.SolutionCount);
         Assert.Equal(1.0, aLoose.Value());
     }
 
@@ -296,10 +299,10 @@ public class BRepExtremaTests
     public void InfiniteEdge_IsTrimmed_AndTheSupportIsFrozen()
     {
         var aLine = new LineCurve3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0));
-        Edge anInfinite = new BRepBuilderAPI_MakeEdge(aLine).Edge();
+        Edge anInfinite = new MakeEdge(aLine).Edge();
         Edge aFinite = E(3, -1, 0, 3, 1, 0);
-        var aD = new BRepExtrema_DistShapeShape(anInfinite, aFinite);
-        Assert.True(aD.IsDone());
+        var aD = new DistanceShapeShape(anInfinite, aFinite);
+        Assert.True(aD.IsDone);
         Assert.Equal(5.0, aD.Value(), Tol);
         AssertPnt(new Point3D(3, 0, 5), aD.PointOnShape1(1));
         Shape aSupport = aD.SupportOnShape1(1);
@@ -310,12 +313,12 @@ public class BRepExtremaTests
     [Fact]
     public void Errors()
     {
-        var anEmpty = new BRepExtrema_DistShapeShape();
+        var anEmpty = new DistanceShapeShape();
         Assert.False(anEmpty.Perform());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.Value());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => anEmpty.SupportOnShape1(1));
 
-        var aD = new BRepExtrema_DistShapeShape(V(0, 0, 0), V(1, 0, 0));
+        var aD = new DistanceShapeShape(V(0, 0, 0), V(1, 0, 0));
         var aText = new StringWriter();
         aD.Dump(aText);
         Assert.StartsWith("the distance  value is :  1\nthe number of solutions is :1\n", aText.ToString());
@@ -326,32 +329,32 @@ public class BRepExtremaTests
     [Fact]
     public void ExtTools()
     {
-        var aPC = new BRepExtrema_ExtPC(V(5, 1, 0), E(0, 0, 0, 10, 0, 0));
-        Assert.True(aPC.IsDone());
-        Assert.Equal(1, aPC.NbExt());
+        var aPC = new ExtPC(V(5, 1, 0), E(0, 0, 0, 10, 0, 0));
+        Assert.True(aPC.IsDone);
+        Assert.Equal(1, aPC.ExtCount);
         Assert.Equal(1.0, aPC.SquareDistance(1), Tol);
         Assert.Equal(5.0, aPC.Parameter(1), Tol);
         Assert.True(aPC.IsMin(1));
 
-        var aPF = new BRepExtrema_ExtPF(V(1, 2, 3), Square(0, 0, 0, 5));
-        Assert.True(aPF.IsDone());
+        var aPF = new ExtPF(V(1, 2, 3), Square(0, 0, 0, 5));
+        Assert.True(aPF.IsDone);
         Assert.Equal(9.0, aPF.SquareDistance(1), Tol);
         aPF.Parameter(1, out double u, out double v);
         Assert.Equal(1.0, u, Tol);
         Assert.Equal(2.0, v, Tol);
 
-        var aCC = new BRepExtrema_ExtCC(E(0, 0, 0, 1, 0, 0), E(0, 1, 0, 1, 1, 0));
-        Assert.True(aCC.IsDone());
-        Assert.True(aCC.IsParallel());
+        var aCC = new DistanceExtCC(E(0, 0, 0, 1, 0, 0), E(0, 1, 0, 1, 1, 0));
+        Assert.True(aCC.IsDone);
+        Assert.True(aCC.IsParallel);
 
-        var aCF = new BRepExtrema_ExtCF(E(1, 1, -1, 1, 1, 1), Square(0, 0, 0, 5));
-        Assert.True(aCF.IsDone());
-        Assert.Equal(1, aCF.NbExt());
+        var aCF = new ExtCF(E(1, 1, -1, 1, 1, 1), Square(0, 0, 0, 5));
+        Assert.True(aCF.IsDone);
+        Assert.Equal(1, aCF.ExtCount);
         Assert.Equal(0.0, aCF.SquareDistance(1), Tol);
 
-        var aFF = new BRepExtrema_ExtFF(Square(0, 0, 0, 1), Square(0, 0, 1, 1));
-        Assert.True(aFF.IsDone());
-        Assert.True(aFF.IsParallel());
+        var aFF = new ExtFF(Square(0, 0, 0, 1), Square(0, 0, 1, 1));
+        Assert.True(aFF.IsDone);
+        Assert.True(aFF.IsParallel);
         Assert.Equal(1.0, aFF.SquareDistance(1), Tol);
     }
 
@@ -361,15 +364,15 @@ public class BRepExtremaTests
         Vertex a = V(0, 0, 0), b = V(3, 0, 0);
         var aBox1 = new Box();
         var aBox2 = new Box();
-        BRepBndLib.Add(a, ref aBox1);
-        BRepBndLib.Add(b, ref aBox2);
-        var aFar = new BRepExtrema_DistanceSS(a, b, aBox1, aBox2, 1.0);
-        Assert.False(aFar.IsDone());
-        var aNear = new BRepExtrema_DistanceSS(a, b, aBox1, aBox2, 10.0);
-        Assert.True(aNear.IsDone());
+        Bounds.Add(a, ref aBox1);
+        Bounds.Add(b, ref aBox2);
+        var aFar = new DistanceSS(a, b, aBox1, aBox2, 1.0);
+        Assert.False(aFar.IsDone);
+        var aNear = new DistanceSS(a, b, aBox1, aBox2, 10.0);
+        Assert.True(aNear.IsDone);
         Assert.Equal(3.0, aNear.DistValue());
         Assert.Single(aNear.Seq1Value());
-        Assert.Equal(BRepExtrema_IsVertex, aNear.Seq2Value()[0].SupportKind());
+        Assert.Equal(SupportType.IsVertex, aNear.Seq2Value()[0].SupportKind());
     }
 
     // ------------------------------------------------------------------ mesh tools
@@ -387,7 +390,7 @@ public class BRepExtremaTests
         aShapes.Append(MeshSquare(0));
         aShapes.Append(MeshSquare(1));
         aShapes.Append(TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(0, 0, 2), new Point3D(1, 0, 2), new Point3D(2, 0, 2))));
-        var aSet = new BRepExtrema_TriangleSet(aShapes);
+        var aSet = new TriangleSet(aShapes);
         Assert.Equal(6, aSet.Size()); // 2 + 2 triangles, 2 segments
         Assert.Equal(11, aSet.GetVertices().Size());
         Assert.Equal(1, aSet.GetShapeIDOfVtx(4));
@@ -408,23 +411,23 @@ public class BRepExtremaTests
     public void ShapeProximity_Overlap()
     {
         Face a = MeshSquare(0), b = MeshSquare(0.3);
-        var aNear = new BRepExtrema_ShapeProximity(a, b, 0.5);
+        var aNear = new ShapeProximity(a, b, 0.5);
         aNear.Perform();
-        Assert.True(aNear.IsDone());
+        Assert.True(aNear.IsDone);
         Assert.True(aNear.OverlapSubShapes1().IsBound(0));
         Assert.True(aNear.OverlapSubShapes1().Find(0).Contains(0));
         Assert.True(aNear.OverlapSubShapes2().Find(0).Contains(0));
         Assert.True(aNear.GetSubShape1(0).IsSame(a));
 
-        var aFar = new BRepExtrema_ShapeProximity(a, b, 0.2);
+        var aFar = new ShapeProximity(a, b, 0.2);
         aFar.Perform();
-        Assert.False(aFar.IsDone());
+        Assert.False(aFar.IsDone);
         Assert.Equal(0, aFar.OverlapSubShapes1().Extent());
 
         // tolerance zero: crossing triangles
         Face aVertical = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
             [new Point3D(0.5, -1, -1), new Point3D(0.5, 2, -1), new Point3D(0.5, 0.5, 1)], (1, 2, 3)));
-        var aCross = new BRepExtrema_ShapeProximity(a, aVertical, 0.0);
+        var aCross = new ShapeProximity(a, aVertical, 0.0);
         aCross.Perform();
         Assert.True(aCross.OverlapSubShapes1().IsBound(0));
     }
@@ -439,9 +442,9 @@ public class BRepExtremaTests
         Face aTop = TopFace(aBox1);
         Face aTop2 = ShapeCasts.Face(aTop.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(0, 0, 1)))));
 
-        var aProx = new BRepExtrema_ShapeProximity(aTop, aTop2);
+        var aProx = new ShapeProximity(aTop, aTop2);
         aProx.Perform();
-        Assert.True(aProx.IsDone());
+        Assert.True(aProx.IsDone);
         Assert.Equal(1.0, aProx.Proximity(), Tol);
         Assert.Equal(1.0, aProx.ProximityPoint1().Distance(aProx.ProximityPoint2()), Tol);
     }
@@ -451,7 +454,7 @@ public class BRepExtremaTests
         foreach (Face aF in BRepGPropTestShapes.Faces(theBox))
         {
             var aBox = new Box();
-            BRepBndLib.Add(aF, ref aBox);
+            Bounds.Add(aF, ref aBox);
             aBox.Get(out _, out _, out double aZmin, out _, out _, out _);
             if (aZmin > 0.5)
             {
@@ -467,14 +470,14 @@ public class BRepExtremaTests
         Face a = MeshSquare(0);
         Face aVertical = TestShapes.Frozen(BRepGPropTestShapes.MeshFace(
             [new Point3D(0.5, -1, -1), new Point3D(0.5, 2, -1), new Point3D(0.5, 0.5, 1)], (1, 2, 3)));
-        var aSelf = new BRepExtrema_SelfIntersection(Builder.MakeCompound(a, aVertical));
+        var aSelf = new SelfIntersection(Builder.MakeCompound(a, aVertical));
         aSelf.Perform();
-        Assert.True(aSelf.IsDone());
+        Assert.True(aSelf.IsDone);
         Assert.True(aSelf.OverlapElements().IsBound(0) || aSelf.OverlapElements().IsBound(1));
         Assert.True(aSelf.GetSubShape(1).IsSame(aVertical));
 
         // two squares side by side, sharing an edge: regular, no self-intersection
-        var aClean = new BRepExtrema_SelfIntersection(Builder.MakeCompound(MeshSquare(0), MeshSquare(0, 1)));
+        var aClean = new SelfIntersection(Builder.MakeCompound(MeshSquare(0), MeshSquare(0, 1)));
         aClean.Perform();
         Assert.Equal(0, aClean.OverlapElements().Extent());
     }
@@ -483,18 +486,18 @@ public class BRepExtremaTests
     public void Poly_Distance()
     {
         Point3D p1 = new(), p2 = new();
-        Assert.True(BRepExtrema_Poly.Distance(MeshSquare(0), MeshSquare(2, 3), ref p1, ref p2, out double aDist));
+        Assert.True(DistancePoly.Distance(MeshSquare(0), MeshSquare(2, 3), ref p1, ref p2, out double aDist));
         Assert.Equal(Math.Sqrt(8.0), aDist, Tol);
         AssertPnt(new Point3D(1, 0, 0), p1);
         AssertPnt(new Point3D(3, 0, 2), p2);
-        Assert.False(BRepExtrema_Poly.Distance(Square(0, 0, 0, 1), MeshSquare(2), ref p1, ref p2, out _));
+        Assert.False(DistancePoly.Distance(Square(0, 0, 0, 1), MeshSquare(2), ref p1, ref p2, out _));
     }
 
     [Fact]
     public void Orientations_DoNotMatter()
     {
         Face aF = Square(0, 0, 0, 10);
-        var aD = new BRepExtrema_DistShapeShape(aF.Reversed(), V(2, 3, -7));
+        var aD = new DistanceShapeShape(aF.Reversed(), V(2, 3, -7));
         Assert.Equal(7.0, aD.Value(), Tol);
         Assert.Equal(Reversed, aD.SupportOnShape1(1).Orientation());
         Assert.Equal(ShapeType.Face, aD.SupportOnShape1(1).ShapeType());
@@ -503,7 +506,7 @@ public class BRepExtremaTests
     // A segment edge with a 3D polygon of the given number of evenly spaced nodes.
     private static Edge PolygonSegment(in Point3D theP1, in Point3D theP2, int theNbNodes)
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(theP1, theP2).InternalEdge();
+        Edge anEdge = new MakeEdge(theP1, theP2).InternalEdge();
         var aNodes = new NCollection_Array1<Point3D>(1, theNbNodes);
         for (int i = 1; i <= theNbNodes; i++)
         {
@@ -517,7 +520,7 @@ public class BRepExtremaTests
     // A unit square face at height z (plane surface) with an n x n grid triangulation.
     private static Face GridSquare(double z, int n)
     {
-        Face aF = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, z), new Direction3D(0, 0, 1)), 0, 1, 0, 1).InternalFace();
+        Face aF = new MakeFace(new Plane3D(new Point3D(0, 0, z), new Direction3D(0, 0, 1)), 0, 1, 0, 1).InternalFace();
         var aTri = new Triangulation((n + 1) * (n + 1), 2 * n * n, false);
         for (int j = 0; j <= n; j++)
         {
@@ -546,19 +549,19 @@ public class BRepExtremaTests
         // the second edge's polygon is coarser: it is refined to the first's step
         Edge e1 = PolygonSegment(new Point3D(0, 0, 0), new Point3D(10, 0, 0), 11);
         Edge e2 = PolygonSegment(new Point3D(0, 1, 0), new Point3D(10, 1, 0), 3);
-        var aProx = new BRepExtrema_ShapeProximity(e1, e2);
+        var aProx = new ShapeProximity(e1, e2);
         aProx.Perform();
-        Assert.True(aProx.IsDone());
+        Assert.True(aProx.IsDone);
         Assert.Equal(1.0, aProx.Proximity(), Tol);
         Assert.Equal(1.0, aProx.ProximityPoint1().Distance(aProx.ProximityPoint2()), Tol);
-        Assert.NotEqual(BRepExtrema_ProximityDistTool.ProxPnt_Status.ProxPnt_Status_UNKNOWN, aProx.ProxPntStatus1());
+        Assert.NotEqual(ProximityDistTool.ProxPnt_Status.ProxPnt_Status_UNKNOWN, aProx.ProxPntStatus1());
 
         // more samples than nodes on both
-        var aSampled = new BRepExtrema_ShapeProximity(e1, e2);
+        var aSampled = new ShapeProximity(e1, e2);
         aSampled.SetNbSamples1(40);
         aSampled.SetNbSamples2(40);
         aSampled.Perform();
-        Assert.True(aSampled.IsDone());
+        Assert.True(aSampled.IsDone);
         Assert.Equal(1.0, aSampled.Proximity(), Tol);
     }
 
@@ -566,21 +569,21 @@ public class BRepExtremaTests
     public void ProximityValue_FacesWithRefinement()
     {
         Face aCoarse = GridSquare(0, 1), aFine = GridSquare(0.5, 4);
-        var aProx = new BRepExtrema_ShapeProximity(aCoarse, aFine);
+        var aProx = new ShapeProximity(aCoarse, aFine);
         aProx.Perform();
-        Assert.True(aProx.IsDone());
+        Assert.True(aProx.IsDone);
         Assert.Equal(0.5, aProx.Proximity(), Tol);
 
-        var aTool = new BRepExtrema_ProximityValueTool();
+        var aTool = new ProximityValueTool();
         var aList1 = new NCollection_DynamicArray<Shape>();
         aList1.Append(aCoarse);
         var aList2 = new NCollection_DynamicArray<Shape>();
         aList2.Append(aFine);
-        aTool.LoadTriangleSets(new BRepExtrema_TriangleSet(aList1), new BRepExtrema_TriangleSet(aList2));
+        aTool.LoadTriangleSets(new TriangleSet(aList1), new TriangleSet(aList2));
         aTool.LoadShapeLists(aList1, aList2);
         double aTol = 0;
         aTool.Perform(ref aTol);
-        Assert.True(aTool.IsDone());
+        Assert.True(aTool.IsDone);
         Assert.Equal(aTool.Distance(), aTol);
         Assert.Equal(0.5, aTol, Tol);
         aTool.ProximityPoints(out Point3D p1, out Point3D p2);
@@ -592,13 +595,13 @@ public class BRepExtremaTests
     {
         // two parallel squares 0.1 apart: no intersection, but closer than the tolerance
         Compound aC = Builder.MakeCompound(MeshSquare(0), MeshSquare(0.1));
-        var anExact = new BRepExtrema_SelfIntersection(aC);
+        var anExact = new SelfIntersection(aC);
         anExact.Perform();
         Assert.Equal(0, anExact.OverlapElements().Extent());
-        var aTolerant = new BRepExtrema_SelfIntersection(aC, 0.2);
+        var aTolerant = new SelfIntersection(aC, 0.2);
         Assert.Equal(0.2, aTolerant.Tolerance());
         aTolerant.Perform();
-        Assert.True(aTolerant.IsDone());
+        Assert.True(aTolerant.IsDone);
         Assert.True(aTolerant.OverlapElements().IsBound(0) || aTolerant.OverlapElements().IsBound(1));
         Assert.NotNull(aTolerant.ElementSet());
     }
@@ -614,7 +617,7 @@ public class BRepExtremaTests
         var aFirst = new NCollection_DynamicArray<Shape>();
         aFirst.Append(MeshTriangle(0)); // 3 nodes
         aFirst.Append(MeshSquare(1)); // 4 nodes
-        var aSet = new BRepExtrema_TriangleSet(aFirst);
+        var aSet = new TriangleSet(aFirst);
         Assert.Equal(1, aSet.GetShapeIDOfVtx(3));
 
         var aSecond = new NCollection_DynamicArray<Shape>();
@@ -632,7 +635,7 @@ public class BRepExtremaTests
         var aShapes = new NCollection_DynamicArray<Shape>();
         aShapes.Append(Square(0, 0, 0, 1)); // no triangulation
         aShapes.Append(MeshSquare(1));
-        var aSet = new BRepExtrema_TriangleSet();
+        var aSet = new TriangleSet();
         Assert.True(aSet.Init(aShapes));
         Assert.Equal(0, aSet.Size()); // stopped at the first shape
     }
@@ -641,12 +644,12 @@ public class BRepExtremaTests
     public void OcctIssue_OverlapTool_KeepsOldPairs()
     {
         Face a = MeshSquare(0), b = MeshSquare(0.3);
-        var aProx = new BRepExtrema_ShapeProximity(a, b, 0.5);
+        var aProx = new ShapeProximity(a, b, 0.5);
         aProx.Perform();
-        Assert.True(aProx.IsDone());
+        Assert.True(aProx.IsDone);
         Assert.True(aProx.LoadShape2(MeshSquare(5)));
         aProx.Perform();
-        Assert.False(aProx.IsDone());
+        Assert.False(aProx.IsDone);
         Assert.True(aProx.OverlapSubShapes1().IsBound(0)); // the first Perform's pair is still there
     }
 
@@ -654,7 +657,7 @@ public class BRepExtremaTests
     public void OcctIssue_ShapeProximity_ValueBecomesTheTolerance()
     {
         Face aCoarse = GridSquare(0, 1), aFine = GridSquare(0.5, 2);
-        var aProx = new BRepExtrema_ShapeProximity(aCoarse, aFine);
+        var aProx = new ShapeProximity(aCoarse, aFine);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aProx.Tolerance());
         aProx.Perform();
         Assert.Equal(0.5, aProx.Tolerance(), Tol);

@@ -32,27 +32,27 @@ internal static class RWStepGeom_RWBSplineSurfaceForm
     {
         switch (theSourceEnum)
         {
-            case StepGeom_bssfSurfOfLinearExtrusion:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfSurfOfLinearExtrusion:
                 return bssfSurfOfLinearExtrusion;
-            case StepGeom_bssfPlaneSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfPlaneSurf:
                 return bssfPlaneSurf;
-            case StepGeom_bssfGeneralisedCone:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfGeneralisedCone:
                 return bssfGeneralisedCone;
-            case StepGeom_bssfToroidalSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfToroidalSurf:
                 return bssfToroidalSurf;
-            case StepGeom_bssfConicalSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfConicalSurf:
                 return bssfConicalSurf;
-            case StepGeom_bssfSphericalSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfSphericalSurf:
                 return bssfSphericalSurf;
-            case StepGeom_bssfUnspecified:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfUnspecified:
                 return bssfUnspecified;
-            case StepGeom_bssfRuledSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfRuledSurf:
                 return bssfRuledSurf;
-            case StepGeom_bssfSurfOfRevolution:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfSurfOfRevolution:
                 return bssfSurfOfRevolution;
-            case StepGeom_bssfCylindricalSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfCylindricalSurf:
                 return bssfCylindricalSurf;
-            case StepGeom_bssfQuadricSurf:
+            case StepGeom_BSplineSurfaceForm.StepGeom_bssfQuadricSurf:
                 return bssfQuadricSurf;
         }
         return null;
@@ -68,47 +68,47 @@ internal static class RWStepGeom_RWBSplineSurfaceForm
     {
         if (theFormString == bssfSurfOfLinearExtrusion)
         {
-            theResultEnum = StepGeom_bssfSurfOfLinearExtrusion;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfSurfOfLinearExtrusion;
         }
         else if (theFormString == bssfPlaneSurf)
         {
-            theResultEnum = StepGeom_bssfPlaneSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfPlaneSurf;
         }
         else if (theFormString == bssfGeneralisedCone)
         {
-            theResultEnum = StepGeom_bssfGeneralisedCone;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfGeneralisedCone;
         }
         else if (theFormString == bssfToroidalSurf)
         {
-            theResultEnum = StepGeom_bssfToroidalSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfToroidalSurf;
         }
         else if (theFormString == bssfConicalSurf)
         {
-            theResultEnum = StepGeom_bssfConicalSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfConicalSurf;
         }
         else if (theFormString == bssfSphericalSurf)
         {
-            theResultEnum = StepGeom_bssfSphericalSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfSphericalSurf;
         }
         else if (theFormString == bssfUnspecified)
         {
-            theResultEnum = StepGeom_bssfUnspecified;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfUnspecified;
         }
         else if (theFormString == bssfRuledSurf)
         {
-            theResultEnum = StepGeom_bssfRuledSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfRuledSurf;
         }
         else if (theFormString == bssfSurfOfRevolution)
         {
-            theResultEnum = StepGeom_bssfSurfOfRevolution;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfSurfOfRevolution;
         }
         else if (theFormString == bssfCylindricalSurf)
         {
-            theResultEnum = StepGeom_bssfCylindricalSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfCylindricalSurf;
         }
         else if (theFormString == bssfQuadricSurf)
         {
-            theResultEnum = StepGeom_bssfQuadricSurf;
+            theResultEnum = StepGeom_BSplineSurfaceForm.StepGeom_bssfQuadricSurf;
         }
         else
         {

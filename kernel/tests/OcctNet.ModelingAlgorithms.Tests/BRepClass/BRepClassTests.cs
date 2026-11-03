@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.IntRes2d_Position;
+using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 
@@ -34,14 +36,14 @@ public class BRepClassTests
         Face aFace = Holed();
         foreach (bool aUseBox in new[] { false, true })
         {
-            var aClassifier = new BRepClass_FaceClassifier(aFace, new Point2D(u, v), 1e-7, aUseBox);
+            var aClassifier = new FaceClassifier(aFace, new Point2D(u, v), 1e-7, aUseBox);
             Assert.Equal(theExpected, aClassifier.State());
             Assert.False(aClassifier.Rejected());
             Assert.False(aClassifier.NoWires());
         }
 
         // the orientation of the face doesn't change the classification
-        var aReversed = new BRepClass_FaceClassifier(ShapeCasts.Face(aFace.Reversed()), new Point2D(u, v), 1e-7);
+        var aReversed = new FaceClassifier(ShapeCasts.Face(aFace.Reversed()), new Point2D(u, v), 1e-7);
         Assert.Equal(theExpected, aReversed.State());
     }
 
@@ -49,10 +51,10 @@ public class BRepClassTests
     public void FaceClassifier_tolerance_widens_the_boundary()
     {
         Face aFace = Holed();
-        Assert.Equal(In, new BRepClass_FaceClassifier(aFace, new Point2D(1e-3, 5), 1e-7).State());
-        Assert.Equal(On, new BRepClass_FaceClassifier(aFace, new Point2D(1e-3, 5), 1e-2).State());
-        Assert.Equal(Out, new BRepClass_FaceClassifier(aFace, new Point2D(-1e-3, 5), 1e-7).State());
-        Assert.Equal(On, new BRepClass_FaceClassifier(aFace, new Point2D(-1e-3, 5), 1e-2).State());
+        Assert.Equal(In, new FaceClassifier(aFace, new Point2D(1e-3, 5), 1e-7).State());
+        Assert.Equal(On, new FaceClassifier(aFace, new Point2D(1e-3, 5), 1e-2).State());
+        Assert.Equal(Out, new FaceClassifier(aFace, new Point2D(-1e-3, 5), 1e-7).State());
+        Assert.Equal(On, new FaceClassifier(aFace, new Point2D(-1e-3, 5), 1e-2).State());
     }
 
     [Fact]
@@ -60,10 +62,10 @@ public class BRepClassTests
     {
         Face aFace = Holed();
 
-        var aMiddle = new BRepClass_FaceClassifier(aFace, new Point2D(0.0, 5.0), 1e-7);
+        var aMiddle = new FaceClassifier(aFace, new Point2D(0.0, 5.0), 1e-7);
         Assert.Equal(On, aMiddle.State());
-        Assert.Equal(IntRes2d_Middle, aMiddle.Position());
-        BRepClass_Edge anEdge = aMiddle.Edge();
+        Assert.Equal(Position2D.Middle, aMiddle.Position());
+        ClassifierEdge anEdge = aMiddle.Edge();
         Assert.True(anEdge.Face().IsSame(aFace));
         // the edge from (0, 10) to (0, 0): the point is half way along it
         Exploration.Vertices(anEdge.Edge(), out Vertex aV1, out Vertex aV2);
@@ -71,9 +73,9 @@ public class BRepClassTests
         Assert.Equal(0.0, Tool.Pnt(aV2).X(), 1e-12);
         Assert.Equal(5.0, aMiddle.EdgeParameter(), 1e-9);
 
-        var aCorner = new BRepClass_FaceClassifier(aFace, new Point2D(10.0, 0.0), 1e-7);
+        var aCorner = new FaceClassifier(aFace, new Point2D(10.0, 0.0), 1e-7);
         Assert.Equal(On, aCorner.State());
-        Assert.True(aCorner.Position() == IntRes2d_Head || aCorner.Position() == IntRes2d_End);
+        Assert.True(aCorner.Position() == Position2D.Head || aCorner.Position() == Position2D.End);
     }
 
     [Theory]
@@ -83,7 +85,7 @@ public class BRepClassTests
     [InlineData(0.0, 7.0, 2.0, On)] // above the boundary
     public void FaceClassifier_3d_point_classifies_its_projection(double x, double y, double z, Containment theExpected)
     {
-        var aClassifier = new BRepClass_FaceClassifier(Holed(), new Point3D(x, y, z), 1e-7);
+        var aClassifier = new FaceClassifier(Holed(), new Point3D(x, y, z), 1e-7);
         Assert.Equal(theExpected, aClassifier.State());
     }
 
@@ -92,9 +94,9 @@ public class BRepClassTests
     {
         // the location moves the face in 3D; 2D points keep their meaning, 3D points move with it
         Face aFace = ShapeCasts.Face(ClassificationTestShapes.Translated(Holed(), new Vector3D(0, 0, 100)));
-        Assert.Equal(In, new BRepClass_FaceClassifier(aFace, new Point2D(2, 2), 1e-7).State());
-        Assert.Equal(In, new BRepClass_FaceClassifier(aFace, new Point3D(2, 2, 100), 1e-7).State());
-        Assert.Equal(Out, new BRepClass_FaceClassifier(aFace, new Point3D(5, 5, 100), 1e-7).State());
+        Assert.Equal(In, new FaceClassifier(aFace, new Point2D(2, 2), 1e-7).State());
+        Assert.Equal(In, new FaceClassifier(aFace, new Point3D(2, 2, 100), 1e-7).State());
+        Assert.Equal(Out, new FaceClassifier(aFace, new Point3D(5, 5, 100), 1e-7).State());
     }
 
     [Fact]
@@ -102,7 +104,7 @@ public class BRepClassTests
     {
         Face aFace = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(
             new SphericalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2.0)));
-        var aClassifier = new BRepClass_FaceClassifier(aFace, new Point2D(1.0, 0.5), 1e-7);
+        var aClassifier = new FaceClassifier(aFace, new Point2D(1.0, 0.5), 1e-7);
         Assert.True(aClassifier.NoWires());
         Assert.Equal(In, aClassifier.State());
     }
@@ -111,8 +113,8 @@ public class BRepClassTests
     public void FaceClassifier_with_an_explorer_matches_the_face_constructor()
     {
         Face aFace = Holed();
-        var anExplorer = new BRepClass_FaceExplorer(aFace);
-        var aClassifier = new BRepClass_FaceClassifier(anExplorer, new Point2D(2, 2), 1e-7);
+        var anExplorer = new FaceExplorer(aFace);
+        var aClassifier = new FaceClassifier(anExplorer, new Point2D(2, 2), 1e-7);
         Assert.Equal(In, aClassifier.State());
         aClassifier.Perform(anExplorer, new Point2D(5, 5), 1e-7);
         Assert.Equal(Out, aClassifier.State());
@@ -121,7 +123,7 @@ public class BRepClassTests
     [Fact]
     public void FaceExplorer_segments_aim_at_the_edges()
     {
-        var anExplorer = new BRepClass_FaceExplorer(Holed());
+        var anExplorer = new FaceExplorer(Holed());
         var aP = new Point2D(2, 2);
         Assert.True(anExplorer.Segment(aP, out Line2D aL, out double aPar));
         Assert.True(aPar > 0);
@@ -147,9 +149,9 @@ public class BRepClassTests
     [Fact]
     public void FaceExplorer_explores_wires_and_edges()
     {
-        var anExplorer = new BRepClass_FaceExplorer(Holed());
+        var anExplorer = new FaceExplorer(Holed());
         int aWires = 0, anEdges = 0;
-        var anEdge = new BRepClass_Edge();
+        var anEdge = new ClassifierEdge();
         for (anExplorer.InitWires(); anExplorer.MoreWires(); anExplorer.NextWire())
         {
             aWires++;
@@ -170,18 +172,18 @@ public class BRepClassTests
     [Fact]
     public void Edge_value_and_twins()
     {
-        var anEdge = new BRepClass_Edge();
+        var anEdge = new ClassifierEdge();
         Assert.True(anEdge.Edge().IsNull);
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(anEdge.MaxTolerance()));
         Assert.False(anEdge.UseBndBox());
 
-        BRepClass_Edge aChanged = anEdge.WithMaxTolerance(0.5).WithUseBndBox(true);
+        ClassifierEdge aChanged = anEdge.WithMaxTolerance(0.5).WithUseBndBox(true);
         Assert.Equal(0.5, aChanged.MaxTolerance());
         Assert.True(aChanged.UseBndBox());
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(anEdge.MaxTolerance())); // the original is unchanged
 
         // default(T) is zeros (a zero maximum tolerance)
-        Assert.Equal(0.0, default(BRepClass_Edge).MaxTolerance());
+        Assert.Equal(0.0, default(ClassifierEdge).MaxTolerance());
     }
 
     [Fact]
@@ -190,25 +192,25 @@ public class BRepClassTests
         Face aFace = Holed();
         var anExp = new Explorer(aFace, ShapeType.Edge);
         Edge aFirst = ShapeCasts.Edge(anExp.Current()); // (0, 0) -> (10, 0)
-        var anEdge = new BRepClass_Edge(aFirst, aFace);
-        var anInter = new BRepClass_Intersector();
+        var anEdge = new ClassifierEdge(aFirst, aFace);
+        var anInter = new Intersector();
 
         // from (3, -2) upwards: crosses the edge at (3, 0), 2 along the line, 3 along the edge
         anInter.Perform(new Line2D(new Point2D(3, -2), new Direction2D(0, 1)), 10.0, 1e-7, anEdge);
-        Assert.True(anInter.IsDone());
-        Assert.Equal(1, anInter.NbPoints());
+        Assert.True(anInter.IsDone);
+        Assert.Equal(1, anInter.PointCount);
         Assert.Equal(2.0, anInter.Point(1).ParamOnFirst(), 1e-9);
         Assert.Equal(3.0, anInter.Point(1).ParamOnSecond(), 1e-9);
 
         // too short a segment
         anInter.Perform(new Line2D(new Point2D(3, -2), new Direction2D(0, 1)), 1.0, 1e-7, anEdge);
-        Assert.Equal(0, anInter.NbPoints());
+        Assert.Equal(0, anInter.PointCount);
 
         // the origin on the edge: one ON point at parameter 0 on the line
         anInter.Perform(new Line2D(new Point2D(3, 0), new Direction2D(0, 1)), 10.0, 1e-7, anEdge);
-        Assert.Equal(1, anInter.NbPoints());
+        Assert.Equal(1, anInter.PointCount);
         Assert.Equal(0.0, anInter.Point(1).ParamOnFirst());
-        Assert.Equal(IntRes2d_Head, anInter.Point(1).TransitionOfFirst().PositionOnCurve());
+        Assert.Equal(Position2D.Head, anInter.Point(1).TransitionOfFirst().PositionOnCurve());
 
         // the local geometry of a line: its direction, no curvature
         anInter.LocalGeometry(anEdge, 3.0, out Direction2D aT, out Direction2D aN, out double aC);
@@ -221,13 +223,13 @@ public class BRepClassTests
     public void FacePassiveClassifier_compares_edges_given_one_by_one()
     {
         Face aFace = Holed();
-        var aClassifier = new BRepClass_FacePassiveClassifier();
+        var aClassifier = new FacePassiveClassifier();
         // from (2, 2) towards +X: the first edge met is x = 10, going out
         aClassifier.Reset(new Line2D(new Point2D(2, 2), new Direction2D(1, 0)), RealLast(), 1e-7);
         for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge anE = ShapeCasts.Edge(anExp.Current());
-            aClassifier.Compare(new BRepClass_Edge(anE, aFace), anE.Orientation());
+            aClassifier.Compare(new ClassifierEdge(anE, aFace), anE.Orientation());
         }
 
         Assert.Equal(In, aClassifier.State());

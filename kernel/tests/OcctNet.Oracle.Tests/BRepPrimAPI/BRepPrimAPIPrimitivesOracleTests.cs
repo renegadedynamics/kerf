@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -216,7 +217,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         }
     }
 
-    private void OneAxisShapes(string theKind, N.BRepPrimAPI_MakeOneAxis theN, BRepPrimAPI_MakeOneAxis theP)
+    private void OneAxisShapes(string theKind, N.BRepPrimAPI_MakeOneAxis theN, MakeOneAxis theP)
     {
         Shapes(theKind + " Shape", theN.Shape, () => theP.Shape());
         Shapes(theKind + " Face", () => theN.Face(), () => theP.Face());
@@ -305,10 +306,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeBox(dx, dy, dz),
-                 1 => new BRepPrimAPI_MakeBox(aP, dx, dy, dz),
-                 2 => new BRepPrimAPI_MakeBox(aP, aP2),
-                 _ => new BRepPrimAPI_MakeBox(anAx, dx, dy, dz),
+                 0 => new MakeBox(dx, dy, dz),
+                 1 => new MakeBox(aP, dx, dy, dz),
+                 2 => new MakeBox(aP, aP2),
+                 _ => new MakeBox(anAx, dx, dy, dz),
              },
              (aN, aPM) =>
              {
@@ -360,10 +361,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeWedge(dx, dy, dz, ltx),
-                 1 => new BRepPrimAPI_MakeWedge(anAx, dx, dy, dz, ltx),
-                 2 => new BRepPrimAPI_MakeWedge(dx, dy, dz, xmin, zmin, xmax, zmax),
-                 _ => new BRepPrimAPI_MakeWedge(anAx, dx, dy, dz, xmin, zmin, xmax, zmax),
+                 0 => new MakeWedge(dx, dy, dz, ltx),
+                 1 => new MakeWedge(anAx, dx, dy, dz, ltx),
+                 2 => new MakeWedge(dx, dy, dz, xmin, zmin, xmax, zmax),
+                 _ => new MakeWedge(anAx, dx, dy, dz, xmin, zmin, xmax, zmax),
              },
              (aN, aPM) =>
              {
@@ -392,10 +393,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeCylinder(R, H),
-                 1 => new BRepPrimAPI_MakeCylinder(R, H, anAngle),
-                 2 => new BRepPrimAPI_MakeCylinder(anAx, R, H),
-                 _ => new BRepPrimAPI_MakeCylinder(anAx, R, H, anAngle),
+                 0 => new ApiMakeCylinder(R, H),
+                 1 => new ApiMakeCylinder(R, H, anAngle),
+                 2 => new ApiMakeCylinder(anAx, R, H),
+                 _ => new ApiMakeCylinder(anAx, R, H, anAngle),
              },
              (aN, aPM) => OneAxisShapes("cylinder", aN, aPM));
     }
@@ -422,10 +423,10 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeCone(R1, R2, H),
-                 1 => new BRepPrimAPI_MakeCone(R1, R2, H, anAngle),
-                 2 => new BRepPrimAPI_MakeCone(anAx, R1, R2, H),
-                 _ => new BRepPrimAPI_MakeCone(anAx, R1, R2, H, anAngle),
+                 0 => new ApiMakeCone(R1, R2, H),
+                 1 => new ApiMakeCone(R1, R2, H, anAngle),
+                 2 => new ApiMakeCone(anAx, R1, R2, H),
+                 _ => new ApiMakeCone(anAx, R1, R2, H, anAngle),
              },
              (aN, aPM) => OneAxisShapes("cone", aN, aPM));
     }
@@ -463,18 +464,18 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeSphere(R),
-                 1 => new BRepPrimAPI_MakeSphere(R, anAngle),
-                 2 => new BRepPrimAPI_MakeSphere(R, a1, a2),
-                 3 => new BRepPrimAPI_MakeSphere(R, a1, a2, anAngle),
-                 4 => new BRepPrimAPI_MakeSphere(aC, R),
-                 5 => new BRepPrimAPI_MakeSphere(aC, R, anAngle),
-                 6 => new BRepPrimAPI_MakeSphere(aC, R, a1, a2),
-                 7 => new BRepPrimAPI_MakeSphere(aC, R, a1, a2, anAngle),
-                 8 => new BRepPrimAPI_MakeSphere(anAx, R),
-                 9 => new BRepPrimAPI_MakeSphere(anAx, R, anAngle),
-                 10 => new BRepPrimAPI_MakeSphere(anAx, R, a1, a2),
-                 _ => new BRepPrimAPI_MakeSphere(anAx, R, a1, a2, anAngle),
+                 0 => new MakeSphere(R),
+                 1 => new MakeSphere(R, anAngle),
+                 2 => new MakeSphere(R, a1, a2),
+                 3 => new MakeSphere(R, a1, a2, anAngle),
+                 4 => new MakeSphere(aC, R),
+                 5 => new MakeSphere(aC, R, anAngle),
+                 6 => new MakeSphere(aC, R, a1, a2),
+                 7 => new MakeSphere(aC, R, a1, a2, anAngle),
+                 8 => new MakeSphere(anAx, R),
+                 9 => new MakeSphere(anAx, R, anAngle),
+                 10 => new MakeSphere(anAx, R, a1, a2),
+                 _ => new MakeSphere(anAx, R, a1, a2, anAngle),
              },
              (aN, aPM) => OneAxisShapes("sphere", aN, aPM));
     }
@@ -523,14 +524,14 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
              },
              () => aForm switch
              {
-                 0 => new BRepPrimAPI_MakeTorus(R1, R2),
-                 1 => new BRepPrimAPI_MakeTorus(R1, R2, anAngle),
-                 2 => new BRepPrimAPI_MakeTorus(R1, R2, a1, a2),
-                 3 => new BRepPrimAPI_MakeTorus(R1, R2, a1, a2, anAngle),
-                 4 => new BRepPrimAPI_MakeTorus(anAx, R1, R2),
-                 5 => new BRepPrimAPI_MakeTorus(anAx, R1, R2, anAngle),
-                 6 => new BRepPrimAPI_MakeTorus(anAx, R1, R2, a1, a2),
-                 _ => new BRepPrimAPI_MakeTorus(anAx, R1, R2, a1, a2, anAngle),
+                 0 => new MakeTorus(R1, R2),
+                 1 => new MakeTorus(R1, R2, anAngle),
+                 2 => new MakeTorus(R1, R2, a1, a2),
+                 3 => new MakeTorus(R1, R2, a1, a2, anAngle),
+                 4 => new MakeTorus(anAx, R1, R2),
+                 5 => new MakeTorus(anAx, R1, R2, anAngle),
+                 6 => new MakeTorus(anAx, R1, R2, a1, a2),
+                 _ => new MakeTorus(anAx, R1, R2, a1, a2, anAngle),
              },
              (aN, aPM) => OneAxisShapes("torus", aN, aPM));
     }
@@ -554,11 +555,11 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
             1 => new N.BRepPrimAPI_MakeCylinder(aNAx, a, b),
             _ => new N.BRepPrimAPI_MakeSphere(aNAx, a),
         };
-        BRepBuilderAPI_MakeShape aPBase = aBase switch
+        MakeShape aPBase = aBase switch
         {
-            0 => new BRepPrimAPI_MakeBox(anAx, a, b, c),
-            1 => new BRepPrimAPI_MakeCylinder(anAx, a, b),
-            _ => new BRepPrimAPI_MakeSphere(anAx, a),
+            0 => new MakeBox(anAx, a, b, c),
+            1 => new ApiMakeCylinder(anAx, a, b),
+            _ => new MakeSphere(anAx, a),
         };
         using N.TopoDS_Shape aNSolid = aNBase.Shape();
         Shape aPSolid = aPBase.Shape();
@@ -595,11 +596,11 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
                      ? new N.BRepPrimAPI_MakeHalfSpace(N.TopoDS.Shell(aNBound), aNRef)
                      : new N.BRepPrimAPI_MakeHalfSpace(N.TopoDS.Face(aNBound), aNRef),
                  () => isShell
-                     ? new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(aPBound), aRef)
-                     : new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(aPBound), aRef),
+                     ? new MakeHalfSpace(ShapeCasts.Shell(aPBound), aRef)
+                     : new MakeHalfSpace(ShapeCasts.Face(aPBound), aRef),
                  (aN, aPM) =>
                  {
-                     Assert.Equal(aN.IsDone(), aPM.IsDone());
+                     Assert.Equal(aN.IsDone(), aPM.IsDone);
                      if (aN.IsDone())
                      {
                          Shapes(aKind + " Solid", () => aN.Solid(), () => aPM.Solid());

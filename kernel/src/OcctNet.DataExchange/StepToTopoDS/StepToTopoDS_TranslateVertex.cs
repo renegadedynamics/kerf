@@ -26,7 +26,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
 
     public StepToTopoDS_TranslateVertex()
     {
-        myError = StepToTopoDS_TranslateVertexOther;
+        myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexOther;
         done = false;
     }
 
@@ -44,7 +44,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
     {
         if (aVertex is null)
         {
-            myError = StepToTopoDS_TranslateVertexOther;
+            myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexOther;
             done = false;
             return;
         }
@@ -55,7 +55,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
             if (NMTool.IsActive() && NMTool.IsBound(aVertex))
             {
                 myResult = NMTool.Find(aVertex);
-                myError = StepToTopoDS_TranslateVertexDone;
+                myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexDone;
                 done = true;
                 return;
             }
@@ -67,7 +67,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
                 && NMTool.IsBound(aVName.String()))
             {
                 myResult = NMTool.Find(aVName.String());
-                myError = StepToTopoDS_TranslateVertexDone;
+                myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexDone;
                 done = true;
                 return;
             }
@@ -78,7 +78,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
             StepGeom_Point P = VP.VertexGeometry();
             if (P is null)
             {
-                myError = StepToTopoDS_TranslateVertexOther;
+                myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexOther;
                 done = false;
                 return;
             }
@@ -106,7 +106,7 @@ public sealed class StepToTopoDS_TranslateVertex : StepToTopoDS_Root
             myResult = ShapeCasts.Vertex(aTool.Find(aVertex));
         }
 
-        myError = StepToTopoDS_TranslateVertexDone;
+        myError = StepToTopoDS_TranslateVertexError.StepToTopoDS_TranslateVertexDone;
         done = true;
     }
 

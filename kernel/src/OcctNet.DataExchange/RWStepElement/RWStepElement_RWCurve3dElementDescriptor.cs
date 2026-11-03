@@ -36,21 +36,21 @@ internal class RWStepElement_RWCurve3dElementDescriptor
 
         // Inherited fields of ElementDescriptor
 
-        StepElement_ElementOrder aElementDescriptor_TopologyOrder = StepElement_Linear;
-        if (data.ParamType(num, 1) == Interface_ParamEnum)
+        StepElement_ElementOrder aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Linear;
+        if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
             if (string.CompareOrdinal(text, ".LINEAR.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Linear;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Linear;
             }
             else if (string.CompareOrdinal(text, ".QUADRATIC.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Quadratic;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Quadratic;
             }
             else if (string.CompareOrdinal(text, ".CUBIC.") == 0)
             {
-                aElementDescriptor_TopologyOrder = StepElement_Cubic;
+                aElementDescriptor_TopologyOrder = StepElement_ElementOrder.StepElement_Cubic;
             }
             else
             {
@@ -107,13 +107,13 @@ internal class RWStepElement_RWCurve3dElementDescriptor
 
         switch (ent.TopologyOrder())
         {
-            case StepElement_Linear:
+            case StepElement_ElementOrder.StepElement_Linear:
                 SW.SendEnum(".LINEAR.");
                 break;
-            case StepElement_Quadratic:
+            case StepElement_ElementOrder.StepElement_Quadratic:
                 SW.SendEnum(".QUADRATIC.");
                 break;
-            case StepElement_Cubic:
+            case StepElement_ElementOrder.StepElement_Cubic:
                 SW.SendEnum(".CUBIC.");
                 break;
         }

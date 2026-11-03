@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Numerics;
 
 using Kerf.Geometry;
@@ -36,7 +37,7 @@ public class GeomFill_GordonTests
         {
             aParams.Append(aValue);
         }
-        GordonUtilities.compactParameters(aParams);
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.CompactParameters(aParams);
         Assert.Equal([0.0, 0.1, 0.5, 0.9], aParams.AsSpan().ToArray());
     }
 
@@ -46,7 +47,7 @@ public class GeomFill_GordonTests
         NCollection_LinearVector<double> aParams = new();
         aParams.Append(0.0);
         aParams.Append(1.0);
-        GordonUtilities.addIntervalMidpoints(aParams, 5);
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.AddIntervalMidpoints(aParams, 5);
         Assert.Equal([0.0, 0.25, 0.5, 0.75, 1.0], aParams.AsSpan().ToArray());
     }
 
@@ -54,7 +55,7 @@ public class GeomFill_GordonTests
     public void ToMatrix_shares_the_table_storage()
     {
         NCollection_Array2<double> aTable = new(1, 2, 1, 3);
-        Matrix aMatrix = GordonUtilities.toMatrix(aTable);
+        Matrix aMatrix = global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ToMatrix(aTable);
         aMatrix[2, 3] = 7.0;
         aTable[1, 2] = 5.0;
         Assert.Equal(7.0, aTable[2, 3]);
@@ -62,8 +63,8 @@ public class GeomFill_GordonTests
         Assert.Equal(2, aMatrix.RowNumber());
         Assert.Equal(3, aMatrix.ColNumber());
 
-        math_Vector aColumns = GordonUtilities.columnMeans(aMatrix);
-        math_Vector aRows = GordonUtilities.rowMeans(aMatrix);
+        math_Vector aColumns = global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ColumnMeans(aMatrix);
+        math_Vector aRows = global::Kerf.Engine.Construction.Surfaces.GordonUtilities.RowMeans(aMatrix);
         Assert.Equal(2.5, aColumns[2]);
         Assert.Equal(3.5, aColumns[3]);
         Assert.Equal(5.0 / 3.0, aRows[1], 1.0e-15);
@@ -75,7 +76,7 @@ public class GeomFill_GordonTests
     {
         BSplineCurve3D aProfile = Line(new Point3D(0, 0.25, 0), new Point3D(1, 0.25, 0));
         BSplineCurve3D aGuide = Line(new Point3D(0.75, 0, 0), new Point3D(0.75, 1, 0));
-        GordonUtilities.ContactSet aSet = GordonUtilities.collectContacts(aProfile, aGuide, global::Kerf.Engine.Foundation.Precision.Confusion());
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ContactSet aSet = global::Kerf.Engine.Construction.Surfaces.GordonUtilities.CollectContacts(aProfile, aGuide, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1, aSet.Candidates.Size());
         Assert.True(aSet.Candidates.First().IsValid);
         Assert.Equal(0.75, aSet.Candidates.First().ProfileParam, 1.0e-12);
@@ -85,7 +86,7 @@ public class GeomFill_GordonTests
         BSplineCurve3D aCurved = GeomFill_Gordon_Test.makeQuadraticBSpline(new Point3D(0, 0, 0), new Point3D(0.5, 0.5, 0),
                                                                               new Point3D(1, 0, 0));
         BSplineCurve3D aCross = Line(new Point3D(0.5, -1, 0), new Point3D(0.5, 1, 0));
-        GordonUtilities.ContactSet aCurvedSet = GordonUtilities.collectContacts(aCurved, aCross, 1.0e-6);
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ContactSet aCurvedSet = global::Kerf.Engine.Construction.Surfaces.GordonUtilities.CollectContacts(aCurved, aCross, 1.0e-6);
         Assert.NotEqual(0, aCurvedSet.Candidates.Size());
         Assert.Equal(0.5, aCurvedSet.Candidates.First().ProfileParam, 1.0e-6);
         for (int i = 1; i < aCurvedSet.Candidates.Size(); ++i)
@@ -95,7 +96,7 @@ public class GeomFill_GordonTests
 
         // disjoint: nothing
         BSplineCurve3D aFar = Line(new Point3D(3, 0, 0), new Point3D(3, 1, 0));
-        Assert.Equal(0, GordonUtilities.collectContacts(aProfile, aFar, global::Kerf.Engine.Foundation.Precision.Confusion()).Candidates.Size());
+        Assert.Equal(0, global::Kerf.Engine.Construction.Surfaces.GordonUtilities.CollectContacts(aProfile, aFar, global::Kerf.Engine.Foundation.Precision.Confusion()).Candidates.Size());
     }
 
     [Fact]
@@ -109,7 +110,7 @@ public class GeomFill_GordonTests
           BSplines(Line(new Point3D(1, 0, 0), new Point3D(1, 1, 0)), Line(new Point3D(0, 0, 0), new Point3D(0, 1, 0)));
         NCollection_Array2<double> aProfileParams = new(1, 3, 1, 2);
         NCollection_Array2<double> aGuideParams = new(1, 3, 1, 2);
-        GordonUtilities.NetworkPreparation aNetwork = new(aProfiles, aGuides, aProfileParams, aGuideParams,
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.NetworkPreparation aNetwork = new(aProfiles, aGuides, aProfileParams, aGuideParams,
                                                           global::Kerf.Engine.Foundation.Precision.Confusion(), false);
         Assert.True(aNetwork.ConvertCurvesToUnitInterval());
         Assert.True(aNetwork.FillIntersectionParameters());
@@ -149,7 +150,7 @@ public class GeomFill_GordonTests
     [Fact]
     public void ScalarLaw_is_a_monotone_piecewise_linear_map()
     {
-        GordonUtilities.ScalarLaw aLaw = new();
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ScalarLaw aLaw = new();
         math_Vector aSource = new(1, 3);
         math_Vector aTarget = new(1, 3);
         aSource[1] = 0.0; aSource[2] = 0.2; aSource[3] = 1.0;
@@ -166,8 +167,8 @@ public class GeomFill_GordonTests
         Assert.Equal(1.6, aDerivative, 1.0e-15);
 
         aTarget[2] = 0.0; // not increasing
-        Assert.False(new GordonUtilities.ScalarLaw().Init(aSource, aTarget, 3));
-        Assert.False(new GordonUtilities.ScalarLaw().Init(aSource, aTarget, 1));
+        Assert.False(new global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ScalarLaw().Init(aSource, aTarget, 3));
+        Assert.False(new global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ScalarLaw().Init(aSource, aTarget, 1));
     }
 
     [Fact]
@@ -179,10 +180,10 @@ public class GeomFill_GordonTests
         math_Vector aTarget = new(1, 3);
         aSource[1] = 0.0; aSource[2] = 0.3; aSource[3] = 1.0;
         aTarget[1] = 0.0; aTarget[2] = 0.6; aTarget[3] = 1.0;
-        GordonUtilities.ScalarLaw aLaw = new();
+        global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ScalarLaw aLaw = new();
         Assert.True(aLaw.Init(aSource, aTarget, 3));
         BSplineCurve3D? aResult = null;
-        Assert.True(GordonUtilities.reparametrizeExactly(aCurve, aSource, aTarget, 3, aLaw, ref aResult));
+        Assert.True(global::Kerf.Engine.Construction.Surfaces.GordonUtilities.ReparametrizeExactly(aCurve, aSource, aTarget, 3, aLaw, ref aResult));
         Assert.NotNull(aResult);
         for (int i = 0; i <= 20; ++i)
         {
@@ -220,10 +221,10 @@ public class GeomFill_GordonTests
             aBefore.Add(Snapshot(aGuideCurves[i]));
         }
 
-        GeomFill_Gordon aGordon = new();
+        global::Kerf.Engine.Construction.Surfaces.Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
         aGordon.Perform();
-        Assert.True(aGordon.IsDone(), aGordon.Status().ToString());
+        Assert.True(aGordon.IsDone, aGordon.Status().ToString());
         BSplineSurface aSurface = aGordon.Surface();
         Assert.True(aSurface.IsFrozen);
         Assert.Same(aSurface, aGordon.Surface());
@@ -262,7 +263,7 @@ public class GeomFill_GordonTests
                 aPoints.SetValue(i + 1, aProfileCurves[i].Value(aU[j + 1]));
                 aParams.SetValue(i + 1, aV[i + 1]);
             }
-            GeomAPI_Interpolate anInterpolator = new(aPoints, aParams, false, global::Kerf.Engine.Foundation.Precision.Confusion());
+            ApiInterpolate anInterpolator = new(aPoints, aParams, false, global::Kerf.Engine.Foundation.Precision.Confusion());
             anInterpolator.Perform();
             aGuideCurves[j] = anInterpolator.Curve(); // frozen
         }
@@ -284,10 +285,10 @@ public class GeomFill_GordonTests
         }
         List<string> aBefore = [.. aProfileCurves.Select(Snapshot), .. aGuideCurves.Select(Snapshot)];
 
-        GeomFill_NetworkSurface aNetwork = new();
+        global::Kerf.Engine.Construction.Surfaces.NetworkSurface aNetwork = new();
         aNetwork.Init(aProfiles, aGuides, aV, aU, aGrid, aWeights, global::Kerf.Engine.Foundation.Precision.Confusion(), false, false);
         aNetwork.Perform();
-        Assert.True(aNetwork.IsDone(), aNetwork.Status().ToString());
+        Assert.True(aNetwork.IsDone, aNetwork.Status().ToString());
         BSplineSurface aSurface = aNetwork.Surface();
         Assert.True(aSurface.IsFrozen);
 
@@ -309,10 +310,10 @@ public class GeomFill_GordonTests
     [Fact]
     public void Gordon_report_is_a_value()
     {
-        GeomFill_Gordon.BuildReport aReport = new();
-        Assert.Equal(GeomFill_Gordon.ResultStatus.NotStarted, aReport.Status);
-        Assert.Equal(aReport, new GeomFill_Gordon.BuildReport());
-        GeomFill_Gordon.BuildReport aChanged = aReport;
+        global::Kerf.Engine.Construction.Surfaces.Gordon.BuildReport aReport = new();
+        Assert.Equal(global::Kerf.Engine.Construction.Surfaces.Gordon.ResultStatus.NotStarted, aReport.Status);
+        Assert.Equal(aReport, new global::Kerf.Engine.Construction.Surfaces.Gordon.BuildReport());
+        global::Kerf.Engine.Construction.Surfaces.Gordon.BuildReport aChanged = aReport;
         aChanged.MaxContactGap = 1.0;
         Assert.NotEqual(aReport, aChanged);
         Assert.Equal(0.0, aReport.MaxContactGap);

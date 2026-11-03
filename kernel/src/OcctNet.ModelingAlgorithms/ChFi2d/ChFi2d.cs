@@ -5,81 +5,82 @@
 
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using static Occt.ChFi2d_ConstructionError;
+using Occt;
+using static Kerf.Engine.Fillets.Planar.ConstructionError;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets.Planar;
 
 /// <summary>Utilities of the 2D fillet and chamfer algorithms.</summary>
 public static class ChFi2d
 {
     /// <summary>
-    /// True if the edges <paramref name="E1"/> and <paramref name="E2"/> share a vertex, returned in
-    /// <paramref name="V"/> (the first vertex of <paramref name="E1"/> if it is shared, else its last). <paramref name="V"/>
+    /// True if the edges <paramref name="e1"/> and <paramref name="e2"/> share a vertex, returned in
+    /// <paramref name="v"/> (the first vertex of <paramref name="e1"/> if it is shared, else its last). <paramref name="v"/>
     /// is unchanged when they share none.
     /// </summary>
-    public static bool CommonVertex(in Edge E1, in Edge E2, ref Vertex V)
+    public static bool CommonVertex(in Edge e1, in Edge e2, ref Vertex v)
     {
-        Exploration.Vertices(E1, out Vertex firstVertex1, out Vertex lastVertex1);
-        Exploration.Vertices(E2, out Vertex firstVertex2, out Vertex lastVertex2);
+        Exploration.Vertices(e1, out Vertex firstVertex1, out Vertex lastVertex1);
+        Exploration.Vertices(e2, out Vertex firstVertex2, out Vertex lastVertex2);
 
         if (firstVertex1.IsSame(firstVertex2) || firstVertex1.IsSame(lastVertex2))
         {
-            V = firstVertex1;
+            v = firstVertex1;
             return true;
         }
         if (lastVertex1.IsSame(firstVertex2) || lastVertex1.IsSame(lastVertex2))
         {
-            V = lastVertex1;
+            v = lastVertex1;
             return true;
         }
         return false;
     } // CommonVertex
 
     /// <summary>
-    /// Finds the two edges of the face <paramref name="F"/> connected to the vertex <paramref name="V"/>:
-    /// <see cref="ChFi2d_IsDone"/>, or <see cref="ChFi2d_ConnexionError"/> if <paramref name="V"/> is not on the face
-    /// or doesn't connect exactly two edges (<paramref name="E1"/> and <paramref name="E2"/> are then written as far as
+    /// Finds the two edges of the face <paramref name="f"/> connected to the vertex <paramref name="v"/>:
+    /// <see cref="IsDone"/>, or <see cref="ConnexionError"/> if <paramref name="v"/> is not on the face
+    /// or doesn't connect exactly two edges (<paramref name="e1"/> and <paramref name="e2"/> are then written as far as
     /// they were found, as OCCT does).
     /// </summary>
-    public static ChFi2d_ConstructionError FindConnectedEdges(in Face F,
-                                                              in Vertex V,
-                                                              ref Edge E1,
-                                                              ref Edge E2)
+    public static ConstructionError FindConnectedEdges(in Face f,
+                                                              in Vertex v,
+                                                              ref Edge e1,
+                                                              ref Edge e2)
     {
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexMap = new(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(F, ShapeType.Vertex, ShapeType.Edge, vertexMap);
+        Exploration.MapShapesAndAncestors(f, ShapeType.Vertex, ShapeType.Edge, vertexMap);
 
-        if (vertexMap.Contains(V))
+        if (vertexMap.Contains(v))
         {
-            NCollection_List<Shape>.Iterator iterator = new(vertexMap.FindFromKey(V));
+            NCollection_List<Shape>.Iterator iterator = new(vertexMap.FindFromKey(v));
             if (iterator.More())
             {
-                E1 = ShapeCasts.Edge(iterator.Value());
+                e1 = ShapeCasts.Edge(iterator.Value());
                 iterator.Next();
             } // if ...
             else
             {
-                return ChFi2d_ConnexionError;
+                return ConstructionError.ConnexionError;
             }
             if (iterator.More())
             {
-                E2 = ShapeCasts.Edge(iterator.Value());
+                e2 = ShapeCasts.Edge(iterator.Value());
                 iterator.Next();
             } // if ...
             else
             {
-                return ChFi2d_ConnexionError;
+                return ConstructionError.ConnexionError;
             }
 
             if (iterator.More())
             {
-                return ChFi2d_ConnexionError;
+                return ConstructionError.ConnexionError;
             }
         } // if (isFind)
         else
         {
-            return ChFi2d_ConnexionError;
+            return ConstructionError.ConnexionError;
         }
-        return ChFi2d_IsDone;
+        return ConstructionError.IsDone;
     } // FindConnectedEdges
 }

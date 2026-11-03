@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -242,7 +244,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
 
         string? aNError = null, aPError = null;
         using var aN = new N.BRepOffsetAPI_ThruSections(theO.Solid, theO.Ruled, theO.Pres3d);
-        BRepOffsetAPI_ThruSections aP = new(theO.Solid, theO.Ruled, theO.Pres3d);
+        ThruSections aP = new(theO.Solid, theO.Ruled, theO.Pres3d);
         try
         {
             if (theO.Init)
@@ -383,9 +385,9 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
 
         string aStatus = aP.GetStatus().ToString();
         myStatuses[aStatus] = myStatuses.GetValueOrDefault(aStatus) + 1;
-        if ((int)aN.GetStatus() != (int)aP.GetStatus() || aN.IsDone() != aP.IsDone())
+        if ((int)aN.GetStatus() != (int)aP.GetStatus() || aN.IsDone() != aP.IsDone)
         {
-            myDifferences.Add($"{aWhat}: status native {aN.GetStatus()}/{aN.IsDone()}, port {aP.GetStatus()}/{aP.IsDone()}");
+            myDifferences.Add($"{aWhat}: status native {aN.GetStatus()}/{aN.IsDone()}, port {aP.GetStatus()}/{aP.IsDone}");
             return;
         }
         if (!aN.IsDone())
@@ -533,7 +535,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
 
     private static Wire Wire(params Edge[] theEdges)
     {
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         foreach (Edge anE in theEdges)
         {
             aMW.Add(anE);
@@ -546,7 +548,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
 
     private static Wire Polyline(bool theClosed, params Point3D[] thePoints)
     {
-        BRepBuilderAPI_MakePolygon aP = new();
+        MakePolygon aP = new();
         foreach (Point3D aQ in thePoints)
         {
             aP.Add(aQ);
@@ -578,41 +580,41 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 return (Polyline(true, aPts), $"polygon{aNb}");
             }
             case 1:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(theAx, r)).Edge()), "circle");
+                return (Wire(new MakeEdge(new Circle3D(theAx, r)).Edge()), "circle");
             case 2:
             {
                 int aNb = theOracle.Int(2, 4);
                 Circle3D aC = new(theAx, r);
                 double aStart = theOracle.Real(0, 1);
                 var anEdges = new Edge[aNb];
-                BRepBuilderAPI_MakeWire aMW = new();
+                MakeWire aMW = new();
                 for (int i = 0; i < aNb; i++)
                 {
                     double a1 = aStart + 2 * Math.PI * i / aNb, a2 = aStart + 2 * Math.PI * (i + 1) / aNb;
-                    aMW.Add(new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(aC, a1, a2, true).Value()).Edge());
+                    aMW.Add(new MakeEdge(new MakeArcOfCircle(aC, a1, a2, true).Value()).Edge());
                 }
                 return (aMW.Wire(), $"arcs{aNb}");
             }
             case 3:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new Ellipse3D(theAx, r * 1.4, r * 0.8)).Edge()), "ellipse");
+                return (Wire(new MakeEdge(new Ellipse3D(theAx, r * 1.4, r * 0.8)).Edge()), "ellipse");
             case 4:
             {
                 // rounded rectangle: four lines and four quarter circles
                 double w = r * theOracle.Real(0.6, 1.2), h = r * theOracle.Real(0.4, 0.9), c = Math.Min(w, h) * 0.3;
-                BRepBuilderAPI_MakeWire aMW = new();
+                MakeWire aMW = new();
                 (double, double, double)[] aCorners = [(w - c, h - c, 0), (-w + c, h - c, 0.5 * Math.PI), (-w + c, -h + c, Math.PI), (w - c, -h + c, 1.5 * Math.PI)];
                 for (int i = 0; i < 4; i++)
                 {
                     (double x, double y, double a) = aCorners[i];
                     Frame3D aCAx = new(OnPlane(theAx, x, y), theAx.Direction(), theAx.XDirection());
                     TrimmedCurve3D anArc = new MakeArcOfCircle(new Circle3D(aCAx, c), a, a + 0.5 * Math.PI, true).Value();
-                    aMW.Add(new BRepBuilderAPI_MakeEdge(anArc).Edge());
+                    aMW.Add(new MakeEdge(anArc).Edge());
                     (double nx, double ny, double na) = aCorners[(i + 1) % 4];
                     Point3D aFrom = anArc.EndPoint();
                     Frame3D aNAx = new(OnPlane(theAx, nx, ny), theAx.Direction(), theAx.XDirection());
                     Point3D aTo = new Circle3D(aNAx, c).Position().Location().Translated(
                         new Vector3D(aNAx.XDirection()) * (c * Math.Cos(na)) + new Vector3D(aNAx.YDirection()) * (c * Math.Sin(na)));
-                    aMW.Add(new BRepBuilderAPI_MakeEdge(aFrom, aTo).Edge());
+                    aMW.Add(new MakeEdge(aFrom, aTo).Edge());
                 }
                 return (aMW.Wire(), "rounded");
             }
@@ -626,17 +628,17 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                     double aR = r * theOracle.Real(0.7, 1.3);
                     aPts.SetValue(i, OnPlane(theAx, aR * Math.Cos(a), aR * Math.Sin(a)));
                 }
-                GeomAPI_Interpolate anI = new(aPts, true, 1.0e-7);
+                ApiInterpolate anI = new(aPts, true, 1.0e-7);
                 anI.Perform();
-                return (Wire(new BRepBuilderAPI_MakeEdge(anI.Curve()).Edge()), "periodic bspline");
+                return (Wire(new MakeEdge(anI.Curve()).Edge()), "periodic bspline");
             }
             case 6:
             {
                 // a closed wire of a polyline and an arc (mixed curve kinds)
                 Point3D a = OnPlane(theAx, -r, 0), b = OnPlane(theAx, 0, -r), c = OnPlane(theAx, r, 0), d = OnPlane(theAx, 0, r);
                 TrimmedCurve3D anArc = new MakeArcOfCircle(c, d, a).Value();
-                return (Wire(new BRepBuilderAPI_MakeEdge(a, b).Edge(), new BRepBuilderAPI_MakeEdge(b, c).Edge(),
-                             new BRepBuilderAPI_MakeEdge(anArc).Edge()), "polyline+arc");
+                return (Wire(new MakeEdge(a, b).Edge(), new MakeEdge(b, c).Edge(),
+                             new MakeEdge(anArc).Edge()), "polyline+arc");
             }
             case 7:
             {
@@ -651,7 +653,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             case 8:
             {
                 TrimmedCurve3D anArc = new MakeArcOfCircle(OnPlane(theAx, -r, 0), OnPlane(theAx, 0, r * theOracle.Real(0.3, 1)), OnPlane(theAx, r, 0)).Value();
-                return (Wire(new BRepBuilderAPI_MakeEdge(anArc).Edge()), "open arc");
+                return (Wire(new MakeEdge(anArc).Edge()), "open arc");
             }
             default:
             {
@@ -660,9 +662,9 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 {
                     aPts.SetValue(i, OnPlane(theAx, -r + 2 * r * (i - 1) / 3, theOracle.Real(-0.5, 0.5) * r));
                 }
-                GeomAPI_Interpolate anI = new(aPts, false, 1.0e-7);
+                ApiInterpolate anI = new(aPts, false, 1.0e-7);
                 anI.Perform();
-                return (Wire(new BRepBuilderAPI_MakeEdge(anI.Curve()).Edge()), "open bspline");
+                return (Wire(new MakeEdge(anI.Curve()).Edge()), "open bspline");
             }
         }
     }
@@ -745,7 +747,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 if ((i == 0 && aStartVertex) || (i == aNbSect - 1 && anEndVertex))
                 {
                     Point3D aP = new(anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5), 3.0 * i + (i == 0 ? -1 : 1));
-                    anInputs.Add(new BRepBuilderAPI_MakeVertex(aP).Vertex());
+                    anInputs.Add(new MakeVertex(aP).Vertex());
                     aKinds.Add("vertex");
                     continue;
                 }
@@ -851,7 +853,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             {
                 if (aVertices && (i == 0 || i == aNb - 1))
                 {
-                    anInputs.Add(new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 3.0 * i + (i == 0 ? -2 : 2))).Vertex());
+                    anInputs.Add(new MakeVertex(new Point3D(0, 0, 3.0 * i + (i == 0 ? -2 : 2))).Vertex());
                     continue;
                 }
                 // build123d's sketches: rectangles, circles, polygons, rounded rectangles

@@ -34,7 +34,7 @@ namespace OcctNet.WasmDemo
             }
         }
 
-        private static MeshBuffers Last => theLast?.Buffers ?? throw new InvalidOperationException("Nothing meshed yet.");
+        private static global::Kerf.Engine.Meshing.MeshBuffers Last => theLast?.Buffers ?? throw new InvalidOperationException("Nothing meshed yet.");
 
         [JSExport]
         public static byte[] Positions() => MemoryMarshal.AsBytes(Last.Positions.AsSpan()).ToArray();
@@ -46,7 +46,7 @@ namespace OcctNet.WasmDemo
         [JSExport]
         public static int[] Triangles()
         {
-            MeshBuffers aBuffers = Last;
+            global::Kerf.Engine.Meshing.MeshBuffers aBuffers = Last;
             var anIndices = new int[aBuffers.Triangles.Length];
             for (int f = 0; f < aBuffers.FaceTypes.Length; f++)
             {

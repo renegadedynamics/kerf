@@ -1,11 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -43,10 +47,10 @@ public class ShapeFix_EdgeTests
     {
         Face aF = TestShapes.CylinderFace(R, H);
         Edge anE = Circle(H);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixAddPCurve(anE, aF, false));
-        Assert.True(sfe.Status(ShapeExtend_DONE1));
-        Assert.False(sfe.Status(ShapeExtend_FAIL));
+        Assert.True(sfe.Status(ExtendStatus.DONE1));
+        Assert.False(sfe.Status(ExtendStatus.Fail));
         Curve2D? aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l);
         Assert.NotNull(aPC);
         Point2D aP = aPC!.Value((f + l) / 2);
@@ -60,7 +64,7 @@ public class ShapeFix_EdgeTests
     public void FixAddPCurve_OnPlane_IsNotComputed()
     {
         Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         // on a plane the pcurve is computed on the fly, so HasPCurve is already true; a plane is never projected
         Assert.False(sfe.FixAddPCurve(anE, XOY(), new Placement(), false));
     }
@@ -70,7 +74,7 @@ public class ShapeFix_EdgeTests
     {
         Face aF = TestShapes.CylinderFace(R, H);
         Edge aSeam = TestShapes.Edge(new LineCurve3D(new Point3D(R, 0, 0), new Direction3D(0, 0, 1)), 0.0, H);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixAddPCurve(aSeam, aF, true));
         Assert.True(Tool.IsClosed(aSeam, aF));
         Curve2D aC1 = Tool.CurveOnSurface(aSeam, aF, out double f, out _)!;
@@ -86,7 +90,7 @@ public class ShapeFix_EdgeTests
         var aB = new BrepBuilder();
         // a pcurve at the bottom of the cylinder: its ends are far from the edge's vertex at the top
         aB.UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixRemovePCurve(anE, aF));
         Assert.Null(Tool.CurveOnSurface(anE, aF, out _, out _));
     }
@@ -101,16 +105,16 @@ public class ShapeFix_EdgeTests
         aB.Add(anE, TestShapes.Vertex(new Point3D(0, 0, 0)).Oriented(Forward));
         aB.Add(anE, TestShapes.Vertex(new Point3D(10, 0, 0)).Oriented(Reversed));
         aB.Range(anE, 0, 10);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixRemoveCurve3d(anE));
-        Assert.False(new ShapeAnalysis_Edge().HasCurve3d(anE));
+        Assert.False(new EdgeAnalysis().HasCurve3d(anE));
 
         // a pcurve on the plane: the 3D curve is built from it
         Face aF = PlaneFace();
         aB.UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         aB.Range(anE, aF, 0, 10);
         Assert.True(sfe.FixAddCurve3d(anE));
-        Assert.True(sfe.Status(ShapeExtend_DONE1));
+        Assert.True(sfe.Status(ExtendStatus.DONE1));
         Curve3D? aC = Tool.Curve(anE, out double f, out double l);
         Assert.NotNull(aC);
         Assert.True(aC!.Value(l).Distance(new Point3D(10, 0, 0)) < 1e-7);
@@ -127,7 +131,7 @@ public class ShapeFix_EdgeTests
         aB.Range(anE, aF, 10, 20);
         aB.SameRange(anE, false);
         aB.SameParameter(anE, false);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         sfe.FixSameParameter(anE, aF);
         Assert.True(Tool.SameRange(anE));
         Assert.True(Tool.SameParameter(anE));
@@ -148,7 +152,7 @@ public class ShapeFix_EdgeTests
         aB.Add(anE, aV.Oriented(Reversed));
         aB.Degenerated(anE, true);
         aB.SameParameter(anE, false);
-        Assert.False(new ShapeFix_Edge().FixSameParameter(anE));
+        Assert.False(new EdgeFixer().FixSameParameter(anE));
         Assert.True(Tool.SameParameter(anE));
     }
 
@@ -168,9 +172,9 @@ public class ShapeFix_EdgeTests
     public void FixVertexTolerance_InPlace_RaisesTheVertex()
     {
         Edge anE = OffVertexEdge();
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixVertexTolerance(anE));
-        Assert.True(sfe.Status(ShapeExtend_DONE));
+        Assert.True(sfe.Status(ExtendStatus.Done));
         Assert.True(Tool.Tolerance(Exploration.FirstVertex(anE)) >= 0.01);
         Assert.Equal(Conf, Tool.Tolerance(Exploration.LastVertex(anE)), 1e-12);
     }
@@ -180,7 +184,7 @@ public class ShapeFix_EdgeTests
     {
         Edge anE = TestShapes.Frozen(OffVertexEdge());
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Edge aRes = sfe.VertexToleranceFixed(anE, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
@@ -195,8 +199,8 @@ public class ShapeFix_EdgeTests
     public void VertexToleranceFixed_WithContext_LeavesTheEdgeAndRecordsTheVertex()
     {
         Edge anE = TestShapes.Frozen(OffVertexEdge());
-        var aContext = new ShapeBuild_ReShape();
-        var sfe = new ShapeFix_Edge();
+        var aContext = new ReShapeBuilder();
+        var sfe = new EdgeFixer();
         sfe.SetContext(aContext);
         Edge aRes = sfe.VertexToleranceFixed(anE, out bool isDone);
         Assert.True(isDone);
@@ -222,7 +226,7 @@ public class ShapeFix_EdgeTests
     public void FixReversed2d_ReversesThePCurve()
     {
         (Edge anE, Face aF) = ReversedPCurveEdge();
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.True(sfe.FixReversed2d(anE, aF));
         Curve2D aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
         Assert.True(aPC.Value(f).Distance(new Point2D(0, H)) < 1e-9);
@@ -237,7 +241,7 @@ public class ShapeFix_EdgeTests
         anE = TestShapes.Frozen(anE);
         Curve2D aOldPC = Tool.CurveOnSurface(anE, aF, out _, out _)!;
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        Edge aRes = new ShapeFix_Edge().Reversed2dFixed(anE, aF, out bool isDone);
+        Edge aRes = new EdgeFixer().Reversed2dFixed(anE, aF, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
         Assert.True(aOldPC.Value(0).Distance(new Point2D(Math.PI, H)) < 1e-12);
@@ -252,7 +256,7 @@ public class ShapeFix_EdgeTests
         Face aF = TestShapes.Frozen(TestShapes.CylinderFace(R, H));
         Edge anE = TestShapes.Frozen(Circle(H));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Edge aRes = sfe.AddPCurveFixed(anE, aF, false, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
@@ -272,7 +276,7 @@ public class ShapeFix_EdgeTests
     {
         // an edge already SameParameter: nothing changes
         Edge anE = TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)));
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Edge aRes = sfe.SameParameterFixed(anE, out _);
         Assert.Same(anE.TShape(), aRes.TShape());
 
@@ -295,7 +299,7 @@ public class ShapeFix_EdgeTests
         new BrepBuilder().UpdateEdge(anE, new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), aF, Conf);
         anE = TestShapes.Frozen(anE);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anE);
-        Edge aRes = new ShapeFix_Edge().RemovePCurveFixed(anE, aF, out bool isDone);
+        Edge aRes = new EdgeFixer().RemovePCurveFixed(anE, aF, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
         Assert.NotNull(Tool.CurveOnSurface(anE, aF, out _, out _));
@@ -305,10 +309,10 @@ public class ShapeFix_EdgeTests
     [Fact]
     public void Projector_IsTheToolsOwn()
     {
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         Assert.Same(sfe.Projector(), sfe.Projector());
         Assert.Null(sfe.Context());
-        Assert.True(sfe.Status(ShapeExtend_OK));
+        Assert.True(sfe.Status(ExtendStatus.OK));
     }
 
     [Fact]
@@ -316,12 +320,12 @@ public class ShapeFix_EdgeTests
     {
         Face aF = TestShapes.CylinderFace(R, H);
         Edge anE = Circle(H);
-        var sfe = new ShapeFix_Edge();
+        var sfe = new EdgeFixer();
         sfe.FixAddPCurve(anE, aF, false);
-        var aux = new ShapeFix_EdgeProjAux(aF, anE);
+        var aux = new EdgeProjAuxFixer(aF, anE);
         aux.Compute(1e-7);
-        Assert.True(aux.IsFirstDone());
-        Assert.True(aux.IsLastDone());
+        Assert.True(aux.IsFirstDone);
+        Assert.True(aux.IsLastDone);
         Assert.True(aux.FirstParam() < aux.LastParam());
         Assert.Equal(2.0 * Math.PI, aux.LastParam() - aux.FirstParam(), 1e-6);
         Assert.False(aux.IsIso(null));

@@ -563,8 +563,8 @@ internal static class XSDRAWDECommands
 
             IFSelect_ReturnStatus aReadStat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
                                                   ? aReader.ChangeReader().ReadStream(thePath, myStep, new MemoryStream(aBytes))
-                                                  : IFSelect_RetError;
-            if (aReadStat != IFSelect_RetDone)
+                                                  : IFSelect_ReturnStatus.IFSelect_RetError;
+            if (aReadStat != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon");
             }
@@ -585,8 +585,8 @@ internal static class XSDRAWDECommands
             aReader.SetShapeFixParameters(myStepShapeFix);
             IFSelect_ReturnStatus aReadstat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
                                                   ? aReader.ReadStream(thePath, myStep, new MemoryStream(aBytes))
-                                                  : IFSelect_RetError;
-            if (aReadstat != IFSelect_RetDone)
+                                                  : IFSelect_ReturnStatus.IFSelect_RetError;
+            if (aReadstat != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon, no model loaded");
             }
@@ -634,8 +634,8 @@ internal static class XSDRAWDECommands
             IFSelect_ReturnStatus aStatus = XSDRAWSTEPDocCommands.Write(theDI, aWriter, thePath);
             return aStatus switch
             {
-                IFSelect_RetVoid => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: No file written"),
-                IFSelect_RetDone => true,
+                IFSelect_ReturnStatus.IFSelect_RetVoid => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: No file written"),
+                IFSelect_ReturnStatus.IFSelect_RetDone => true,
                 _ => fail(theDI, "Error in the DESTEP_Provider during writing the file " + thePath + "\t: Error on writing file"),
             };
         }
@@ -661,12 +661,12 @@ internal static class XSDRAWDECommands
                 aModel.SetWriteLengthUnit(myLengthUnit);
             }
             aWriter.SetShapeFixParameters(myStepShapeFix);
-            if (aWriter.Transfer(theShape, myStep.WriteModelType, aParams, true) != IFSelect_RetDone)
+            if (aWriter.Transfer(theShape, myStep.WriteModelType, aParams, true) != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 return fail(theDI, "Error in the DESTEP_Provider during reading the file " + thePath + "\t: abandon, no model loaded");
             }
             // CleanDuplicateEntities: StepTidy isn't ported (decision 1271)
-            if (XSDRAWSTEPCommands.Write(theDI, aWriter, thePath) != IFSelect_RetDone)
+            if (XSDRAWSTEPCommands.Write(theDI, aWriter, thePath) != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 return fail(theDI, "DESTEP_Provider: Error on writing file");
             }

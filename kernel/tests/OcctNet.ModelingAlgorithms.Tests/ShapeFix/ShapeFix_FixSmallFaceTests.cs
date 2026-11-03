@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -35,9 +37,9 @@ public class ShapeFix_FixSmallFaceTests
     [Fact]
     public void Perform_NothingSmall_GivesTheInputItself()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aFix = new ShapeFix_FixSmallFace();
+        var aFix = new FixSmallFaceFixer();
         aFix.Init(aBox);
         aFix.SetPrecision(1e-4);
         aFix.Perform();
@@ -54,11 +56,11 @@ public class ShapeFix_FixSmallFaceTests
     public void FixSpotFace_RemovesATinyFace()
     {
         // a lone face of 1e-6 x 1e-6: a spot at precision 1e-4
-        Face aTiny = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 1e-6, 0, 1e-6).Face();
+        Face aTiny = new MakeFace(new Plane3D(), 0, 1e-6, 0, 1e-6).Face();
         Compound aShape = Compound(aTiny);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
-        var aFix = new ShapeFix_FixSmallFace();
+        var aFix = new FixSmallFaceFixer();
         aFix.SetPrecision(1e-4);
         aFix.Init(aShape);
         aFix.FixSpotFace();
@@ -74,10 +76,10 @@ public class ShapeFix_FixSmallFaceTests
     [Fact]
     public void FixStripFace_ThinBox_RemovesTheStrips()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 1e-5).Shape();
+        Shape aBox = new MakeBox(10, 10, 1e-5).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
-        var aFix = new ShapeFix_FixSmallFace();
+        var aFix = new FixSmallFaceFixer();
         aFix.SetPrecision(1e-4);
         aFix.Init(aBox);
         aFix.Perform();
@@ -92,12 +94,12 @@ public class ShapeFix_FixSmallFaceTests
     [Fact]
     public void FixSpotFace_TinyFaceBesideABox_TheBoxFacesFixed()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
-        Face aTiny = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), 0, 1e-6, 0, 1e-6).Face();
+        Shape aBox = new MakeBox(1, 1, 1).Shape();
+        Face aTiny = new MakeFace(new Plane3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), 0, 1e-6, 0, 1e-6).Face();
         Compound aShape = Compound(aBox, aTiny);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
 
-        var aFix = new ShapeFix_FixSmallFace();
+        var aFix = new FixSmallFaceFixer();
         aFix.SetPrecision(1e-4);
         aFix.Init(aShape);
         aFix.Perform();

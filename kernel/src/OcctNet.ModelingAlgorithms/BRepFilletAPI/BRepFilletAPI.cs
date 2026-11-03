@@ -3,8 +3,9 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets.Api;
 
 /// <summary>
 /// The functional twins of the fillet and chamfer makers (plan 2.8, decision 1139): one call from a shape, its edges
@@ -12,7 +13,7 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each twin runs OCCT's maker (<see cref="BRepFilletAPI_MakeFillet"/>, <see cref="BRepFilletAPI_MakeChamfer"/>) with
+/// Each twin runs OCCT's maker (<see cref="MakeFillet"/>, <see cref="MakeChamfer"/>) with
 /// the options, as the Boolean twins do (decision 579). The shape is never written (the makers copy it at entry) and
 /// the result shares its unchanged sub-shapes. The history is OCCT's <c>BRepTools_History(shapes, maker)</c> over the
 /// shape: the faces modified and generated, and, as OCCT's makers answer <c>IsDeleted</c> from the result's faces, every
@@ -23,61 +24,61 @@ namespace Occt;
 /// (the faulty contours and their statuses) are the maker's to read.
 /// </para>
 /// </remarks>
-public static class BRepFilletAPI
+public static class BRepFilletApi
 {
-    /// <summary>The fillet of radius <paramref name="theRadius"/> on the edges <paramref name="theEdges"/> of <paramref name="theShape"/>.</summary>
+    /// <summary>The fillet of radius <paramref name="radius"/> on the edges <paramref name="edges"/> of <paramref name="shape"/>.</summary>
     /// <exception cref="NotDoneException">The fillet could not be built.</exception>
-    public static Shape Fillet(in Shape theShape, IReadOnlyList<Edge> theEdges, double theRadius,
-                                      in BRepFilletAPI_FilletOptions theOptions, out History theHistory)
+    public static Shape Fillet(in Shape shape, IReadOnlyList<Edge> edges, double radius,
+                                      in FilletOptions options, out History history)
     {
-        BRepFilletAPI_MakeFillet aMaker = new(theShape, theOptions.FShape);
-        aMaker.SetParams(theOptions.Tang, theOptions.Tesp, theOptions.T2d, theOptions.TApp3d, theOptions.TolApp2d,
-                         theOptions.Fleche);
-        aMaker.SetContinuity(theOptions.InternalContinuity, theOptions.AngularTolerance);
-        for (int i = 0; i < theEdges.Count; i++)
+        MakeFillet maker = new(shape, options.FShape);
+        maker.SetParams(options.Tang, options.Tesp, options.T2d, options.TApp3d, options.TolApp2d,
+                         options.Fleche);
+        maker.SetContinuity(options.InternalContinuity, options.AngularTolerance);
+        for (int i = 0; i < edges.Count; i++)
         {
-            aMaker.Add(theRadius, theEdges[i]);
+            maker.Add(radius, edges[i]);
         }
-        return Run(aMaker, theShape, out theHistory);
+        return Run(maker, shape, out history);
     }
 
-    /// <inheritdoc cref="Fillet(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_FilletOptions, out History)"/>
-    public static Shape Fillet(in Shape theShape, IReadOnlyList<Edge> theEdges, double theRadius,
-                                      in BRepFilletAPI_FilletOptions theOptions) =>
-        Fillet(theShape, theEdges, theRadius, theOptions, out _);
+    /// <inheritdoc cref="Fillet(in Shape, IReadOnlyList{Edge}, double, in FilletOptions, out History)"/>
+    public static Shape Fillet(in Shape shape, IReadOnlyList<Edge> edges, double radius,
+                                      in FilletOptions options) =>
+        Fillet(shape, edges, radius, options, out _);
 
-    /// <summary>The symmetric chamfer of distance <paramref name="theDistance"/> on the edges <paramref name="theEdges"/>.</summary>
+    /// <summary>The symmetric chamfer of distance <paramref name="distance"/> on the edges <paramref name="edges"/>.</summary>
     /// <exception cref="NotDoneException">The chamfer could not be built.</exception>
-    public static Shape Chamfer(in Shape theShape, IReadOnlyList<Edge> theEdges, double theDistance,
-                                       in BRepFilletAPI_ChamferOptions theOptions, out History theHistory)
+    public static Shape Chamfer(in Shape shape, IReadOnlyList<Edge> edges, double distance,
+                                       in ChamferOptions options, out History history)
     {
-        BRepFilletAPI_MakeChamfer aMaker = new(theShape);
-        aMaker.SetMode(theOptions.Mode);
-        for (int i = 0; i < theEdges.Count; i++)
+        MakeChamfer maker = new(shape);
+        maker.SetMode(options.Mode);
+        for (int i = 0; i < edges.Count; i++)
         {
-            aMaker.Add(theDistance, theEdges[i]);
+            maker.Add(distance, edges[i]);
         }
-        return Run(aMaker, theShape, out theHistory);
+        return Run(maker, shape, out history);
     }
 
-    /// <inheritdoc cref="Chamfer(in Shape, IReadOnlyList{Edge}, double, in BRepFilletAPI_ChamferOptions, out History)"/>
-    public static Shape Chamfer(in Shape theShape, IReadOnlyList<Edge> theEdges, double theDistance,
-                                       in BRepFilletAPI_ChamferOptions theOptions) =>
-        Chamfer(theShape, theEdges, theDistance, theOptions, out _);
+    /// <inheritdoc cref="Chamfer(in Shape, IReadOnlyList{Edge}, double, in ChamferOptions, out History)"/>
+    public static Shape Chamfer(in Shape shape, IReadOnlyList<Edge> edges, double distance,
+                                       in ChamferOptions options) =>
+        Chamfer(shape, edges, distance, options, out _);
 
     // Build, the frozen result (Shape() throws StdFail_NotDone when not done) and OCCT's history over the shape.
-    private static Shape Run(BRepFilletAPI_LocalOperation theMaker, in Shape theShape,
-                                    out History theHistory)
+    private static Shape Run(LocalOperation maker, in Shape shape,
+                                    out History history)
     {
-        theMaker.Build();
-        if (!theMaker.IsDone())
+        maker.Build();
+        if (!maker.IsDone)
         {
             throw new NotDoneException("BRep_API: command not done");
         }
-        Shape aResult = theMaker.Shape();
+        Shape result = maker.Shape();
         NCollection_List<Shape> anArgs = new();
-        anArgs.Append(theShape);
-        theHistory = new History(anArgs, theMaker);
-        return aResult;
+        anArgs.Append(shape);
+        history = new History(anArgs, maker);
+        return result;
     }
 }

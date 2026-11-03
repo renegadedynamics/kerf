@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -132,13 +134,13 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         try
         {
-            var anInter = new GeomAPI_IntSS(theS1, theS2, Tol);
-            if (!anInter.IsDone())
+            var anInter = new SurfaceSurfaceIntersection(theS1, theS2, Tol);
+            if (!anInter.IsDone)
             {
                 return new("not done", []);
             }
             List<Curve3D> aLines = [];
-            for (int i = 1; i <= anInter.NbLines(); i++)
+            for (int i = 1; i <= anInter.LineCount; i++)
             {
                 aLines.Add(anInter.Line(i));
             }
@@ -162,7 +164,7 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         foreach (Curve3D aLine in theOutcome.Lines)
         {
             string aFile = NewFile();
-            Assert.True(BrepTools.Write(new BRepBuilderAPI_MakeEdge(aLine).Edge(), aFile));
+            Assert.True(BrepTools.Write(new MakeEdge(aLine).Edge(), aFile));
             aText.Append(File.ReadAllText(aFile, Encoding.Latin1));
         }
         return aText.ToString();

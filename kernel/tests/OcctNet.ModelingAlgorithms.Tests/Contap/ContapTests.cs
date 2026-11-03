@@ -1,10 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.HiddenLines.Contours;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.Contap_IType;
+using static Kerf.Engine.HiddenLines.Contours.ContourLineType;
 using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -16,36 +19,36 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ContapTests
 {
-    private static Contap_Contour Contour(Face theFace, Func<Contap_Contour> theMake)
+    private static Contour Contour(Face theFace, Func<Contour> theMake)
     {
         Face aF = ShapeCasts.Face(theFace.Oriented(Forward));
-        BRepTopAdaptor_Tool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
-        Contap_Contour C = theMake();
+        AdaptorTool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Contour C = theMake();
         C.Perform(aTool.GetSurface()!, aTool.GetTopolTool());
-        Assert.True(C.IsDone());
+        Assert.True(C.IsDone);
         return C;
     }
 
     // The points of a line: the walking points, or samples of a line or a circle between its vertices.
-    private static IEnumerable<Point3D> Points(Contap_Line L)
+    private static IEnumerable<Point3D> Points(ContourLine L)
     {
         switch (L.TypeContour())
         {
-            case Contap_Walking:
-                for (int i = 1; i <= L.NbPnts(); i++)
+            case ContourLineType.Walking:
+                for (int i = 1; i <= L.PntCount; i++)
                 {
                     yield return L.Point(i).Value();
                 }
                 break;
-            case Contap_Lin:
-            case Contap_Circle:
-                if (L.NbVertex() >= 2)
+            case ContourLineType.Lin:
+            case ContourLineType.Circle:
+                if (L.VertexCount >= 2)
                 {
-                    double a = L.Vertex(1).ParameterOnLine(), b = L.Vertex(L.NbVertex()).ParameterOnLine();
+                    double a = L.Vertex(1).ParameterOnLine(), b = L.Vertex(L.VertexCount).ParameterOnLine();
                     for (int i = 0; i <= 10; i++)
                     {
                         double t = a + (b - a) * i / 10.0;
-                        yield return L.TypeContour() == Contap_Lin ? global::Kerf.Engine.Geometry.ElCLib.Value(t, L.Line()) : global::Kerf.Engine.Geometry.ElCLib.Value(t, L.Circle());
+                        yield return L.TypeContour() == ContourLineType.Lin ? global::Kerf.Engine.Geometry.ElCLib.Value(t, L.Line()) : global::Kerf.Engine.Geometry.ElCLib.Value(t, L.Circle());
                     }
                 }
                 break;
@@ -55,7 +58,7 @@ public class ContapTests
     private static Vector3D Normal(Face theFace, Point3D P)
     {
         Surface aS = Tool.Surface(theFace)!;
-        GeomAPI_ProjectPointOnSurf aProj = new(P, aS);
+        ProjectPointOnSurface aProj = new(P, aS);
         aProj.LowerDistanceParameters(out double u, out double v);
         aS.D1(u, v, out _, out Vector3D du, out Vector3D dv);
         return du.Crossed(dv).Normalized();
@@ -69,10 +72,10 @@ public class ContapTests
     {
         Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
         Vector3D aDir = theName == "bspline" ? new Vector3D(1, 0, 0) : new Vector3D(0.3, -0.4, 0.8);
-        Contap_Contour C = Contour(aFace, () => new Contap_Contour(aDir));
-        Assert.True(C.NbLines() > 0);
+        Contour C = Contour(aFace, () => new Contour(aDir));
+        Assert.True(C.LineCount > 0);
         int aChecked = 0;
-        for (int l = 1; l <= C.NbLines(); l++)
+        for (int l = 1; l <= C.LineCount; l++)
         {
             foreach (Point3D P in Points(C.Line(l)))
             {
@@ -90,9 +93,9 @@ public class ContapTests
     {
         Face aFace = HlrRecorder.Faces().First(f => f.Name == theName).Face;
         Point3D aEye = new(40, -25, 30);
-        Contap_Contour C = Contour(aFace, () => new Contap_Contour(aEye));
+        Contour C = Contour(aFace, () => new Contour(aEye));
         int aChecked = 0;
-        for (int l = 1; l <= C.NbLines(); l++)
+        for (int l = 1; l <= C.LineCount; l++)
         {
             foreach (Point3D P in Points(C.Line(l)))
             {
@@ -108,11 +111,11 @@ public class ContapTests
     public void Contour_OfASphere_IsAGreatCircle()
     {
         Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
-        Contap_Contour C = Contour(aFace, () => new Contap_Contour(new Vector3D(0, 0, 1)));
-        for (int l = 1; l <= C.NbLines(); l++)
+        Contour C = Contour(aFace, () => new Contour(new Vector3D(0, 0, 1)));
+        for (int l = 1; l <= C.LineCount; l++)
         {
-            Contap_Line L = C.Line(l);
-            Assert.Equal(Contap_Circle, L.TypeContour());
+            ContourLine L = C.Line(l);
+            Assert.Equal(ContourLineType.Circle, L.TypeContour());
             Assert.Equal(10.0, L.Circle().Radius(), 1e-12);
             Assert.True(L.Circle().Location().IsEqual(new Point3D(1, 2, 3), 1e-12));
             Assert.True(L.Circle().Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-12));
@@ -122,11 +125,11 @@ public class ContapTests
     [Fact]
     public void Contour_BeforePerform_Throws()
     {
-        Contap_Contour C = new();
-        Assert.False(C.IsDone());
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => C.NbLines());
+        Contour C = new();
+        Assert.False(C.IsDone);
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NotDoneException>(() => C.LineCount);
         Face aFace = HlrRecorder.Faces().First(f => f.Name == "sphere").Face;
-        BRepTopAdaptor_Tool aTool = new(aFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        AdaptorTool aTool = new(aFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => C.Perform(aTool.GetSurface()!, aTool.GetTopolTool()));
     }
 
@@ -154,14 +157,14 @@ public class ContapTests
     [Fact]
     public void ContAna_Cylinder_TwoGeneratrices()
     {
-        Contap_ContAna C = new();
+        ContAna C = new();
         Cylinder aCyl = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 3.0);
         C.Perform(aCyl, new Direction3D(1, 0, 0));
-        Assert.Equal(2, C.NbContours());
+        Assert.Equal(2, C.ContourCount);
         Assert.Equal(CurveKind.Line, C.TypeContour());
         Assert.True(C.Line(1).Location().IsEqual(new Point3D(0, 3, 0), 1e-12) || C.Line(1).Location().IsEqual(new Point3D(0, -3, 0), 1e-12));
         C.Perform(aCyl, new Direction3D(0, 0, 1));
-        Assert.Equal(0, C.NbContours());
+        Assert.Equal(0, C.ContourCount);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => C.TypeContour());
     }
 }

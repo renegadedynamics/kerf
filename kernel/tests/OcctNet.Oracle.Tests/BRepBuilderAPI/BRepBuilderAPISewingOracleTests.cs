@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -248,7 +249,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
     private string PortSewedText(string theF1, bool theChildren, double theTolerance, double theMinTol)
     {
         Shape aShape = PortRead(theF1);
-        var aP = new BRepBuilderAPI_Sewing();
+        var aP = new Sewing();
         aP.Init(theTolerance, true, true, true, false);
         aP.SetMinTolerance(theMinTol);
         aP.SetMaxTolerance(global::Kerf.Engine.Foundation.Precision.Infinite());
@@ -345,7 +346,7 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
 
         aWatch.Restart();
-        var aP = new BRepBuilderAPI_Sewing();
+        var aP = new Sewing();
         string? aPError = null;
         try
         {
@@ -396,11 +397,11 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
 
         bool isIdentical = true;
-        CompareValue(theTally, aCase, "NbFreeEdges", aN.NbFreeEdges(), aP.NbFreeEdges());
-        CompareValue(theTally, aCase, "NbMultipleEdges", aN.NbMultipleEdges(), aP.NbMultipleEdges());
-        CompareValue(theTally, aCase, "NbContigousEdges", aN.NbContigousEdges(), aP.NbContigousEdges());
-        CompareValue(theTally, aCase, "NbDegeneratedShapes", aN.NbDegeneratedShapes(), aP.NbDegeneratedShapes());
-        CompareValue(theTally, aCase, "NbDeletedFaces", aN.NbDeletedFaces(), aP.NbDeletedFaces());
+        CompareValue(theTally, aCase, "NbFreeEdges", aN.NbFreeEdges(), aP.FreeEdgeCount);
+        CompareValue(theTally, aCase, "NbMultipleEdges", aN.NbMultipleEdges(), aP.MultipleEdgeCount);
+        CompareValue(theTally, aCase, "NbContigousEdges", aN.NbContigousEdges(), aP.ContigousEdgeCount);
+        CompareValue(theTally, aCase, "NbDegeneratedShapes", aN.NbDegeneratedShapes(), aP.DegeneratedShapeCount);
+        CompareValue(theTally, aCase, "NbDeletedFaces", aN.NbDeletedFaces(), aP.DeletedFaceCount);
 
         string aNSewed = NativeText(aN.SewedShape()), aPSewed = PortText(aP.SewedShape());
         if (MaskFree(aNSewed) != MaskFree(aPSewed))
@@ -432,23 +433,23 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         }
         isIdentical &= CompareText(theTally, aCase, "SewedShape", aNSewed, aPSewed);
 
-        if (aN.NbFreeEdges() == aP.NbFreeEdges())
+        if (aN.NbFreeEdges() == aP.FreeEdgeCount)
         {
             isIdentical &= CompareText(theTally, aCase, "free edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbFreeEdges()).Select(i => (N.TopoDS_Shape)aN.FreeEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbFreeEdges()).Select(i => (Shape)aP.FreeEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.FreeEdgeCount).Select(i => (Shape)aP.FreeEdge(i)))));
         }
-        if (aN.NbMultipleEdges() == aP.NbMultipleEdges() && aN.NbMultipleEdges() > 0)
+        if (aN.NbMultipleEdges() == aP.MultipleEdgeCount && aN.NbMultipleEdges() > 0)
         {
             isIdentical &= CompareText(theTally, aCase, "multiple edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbMultipleEdges()).Select(i => (N.TopoDS_Shape)aN.MultipleEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbMultipleEdges()).Select(i => (Shape)aP.MultipleEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.MultipleEdgeCount).Select(i => (Shape)aP.MultipleEdge(i)))));
         }
-        if (aN.NbContigousEdges() == aP.NbContigousEdges())
+        if (aN.NbContigousEdges() == aP.ContigousEdgeCount)
         {
             isIdentical &= CompareText(theTally, aCase, "contiguous edges",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbContigousEdges()).Select(i => (N.TopoDS_Shape)aN.ContigousEdge(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbContigousEdges()).Select(i => (Shape)aP.ContigousEdge(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.ContigousEdgeCount).Select(i => (Shape)aP.ContigousEdge(i)))));
             int aNBound = 0, aPBound = 0;
             for (int i = 1; i <= aN.NbContigousEdges(); i++)
             {
@@ -457,17 +458,17 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
             }
             CompareValue(theTally, aCase, "bound sections", aNBound, aPBound);
         }
-        if (aN.NbDegeneratedShapes() == aP.NbDegeneratedShapes() && aN.NbDegeneratedShapes() > 0)
+        if (aN.NbDegeneratedShapes() == aP.DegeneratedShapeCount && aN.NbDegeneratedShapes() > 0)
         {
             isIdentical &= CompareText(theTally, aCase, "degenerated shapes",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbDegeneratedShapes()).Select(i => aN.DegeneratedShape(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbDegeneratedShapes()).Select(i => aP.DegeneratedShape(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.DegeneratedShapeCount).Select(i => aP.DegeneratedShape(i)))));
         }
-        if (aN.NbDeletedFaces() == aP.NbDeletedFaces() && aN.NbDeletedFaces() > 0)
+        if (aN.NbDeletedFaces() == aP.DeletedFaceCount && aN.NbDeletedFaces() > 0)
         {
             isIdentical &= CompareText(theTally, aCase, "deleted faces",
                                        NativeText(NativeCompound(Enumerable.Range(1, aN.NbDeletedFaces()).Select(i => (N.TopoDS_Shape)aN.DeletedFace(i)))),
-                                       PortText(PortCompound(Enumerable.Range(1, aP.NbDeletedFaces()).Select(i => (Shape)aP.DeletedFace(i)))));
+                                       PortText(PortCompound(Enumerable.Range(1, aP.DeletedFaceCount).Select(i => (Shape)aP.DeletedFace(i)))));
         }
 
         // Modified of every input, with IsModified.

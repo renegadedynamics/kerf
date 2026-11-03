@@ -66,7 +66,7 @@ public class StepDataTests
         double x = 0, y = 0, z = 0, r = 0;
         int i = 0, e = 0;
         bool b = false;
-        StepData_Logical l = StepData_LFalse;
+        StepData_Logical l = StepData_Logical.StepData_LFalse;
         TCollection_HAsciiString? s = null;
         Transient? ent = null;
 
@@ -84,7 +84,7 @@ public class StepDataTests
         Assert.True(aData.ReadBoolean(aNum, 5, "b", ach, ref b));
         Assert.True(b);
         Assert.True(aData.ReadLogical(aNum, 6, "l", ach, ref l));
-        Assert.Equal(StepData_LUnknown, l);
+        Assert.Equal(StepData_Logical.StepData_LUnknown, l);
         Assert.True(aData.ReadEnum(aNum, 7, "e", ach, new StepData_EnumTool(".GREEN.", ".RED."), ref e));
         Assert.Equal(1, e);
         Assert.True(aData.CheckDerived(aNum, 8, "d", ach));
@@ -168,7 +168,7 @@ public class StepDataTests
         aWriter.Send("été π");
         aWriter.Send(new string('x', 100));
         aWriter.SendEnum("RED");
-        aWriter.SendLogical(StepData_LUnknown);
+        aWriter.SendLogical(StepData_Logical.StepData_LUnknown);
         aWriter.Send(1.5);
         aWriter.EndEntity();
         string[] aLines = Enumerable.Range(1, aWriter.NbLines()).Select(n => aWriter.Line(n).ToCString()).ToArray();
@@ -226,8 +226,8 @@ public class StepDataTests
         Assert.Throws<TypeMismatchException>(() => aSelect.SetInteger(3, "HSV"));
 
         // OCCT stores every logical as 0 (occt-issues.md, 8B)
-        aMember.SetLogical(StepData_LTrue);
-        Assert.Equal(StepData_LFalse, aMember.Logical());
+        aMember.SetLogical(StepData_Logical.StepData_LTrue);
+        Assert.Equal(StepData_Logical.StepData_LFalse, aMember.Logical());
         Assert.Equal(Interface_ParamType.Interface_ParamLogical, aMember.ParamType());
     }
 
@@ -304,12 +304,12 @@ public class StepDataTests
     [Fact]
     public void Units_convert_as_OCCT()
     {
-        Assert.Equal(UnitsMethods_LengthUnit_Inch, UnitsMethods.GetLengthUnitByFactorValue(25.4));
-        Assert.Equal(UnitsMethods_LengthUnit_Meter, UnitsMethods.GetLengthUnitByFactorValue(1.0, UnitsMethods_LengthUnit_Meter));
+        Assert.Equal(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Inch, UnitsMethods.GetLengthUnitByFactorValue(25.4));
+        Assert.Equal(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter, UnitsMethods.GetLengthUnitByFactorValue(1.0, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter));
         Assert.Equal("stat.mile", UnitsMethods.DumpLengthUnit(1609344.0));
-        Assert.Equal(UnitsMethods_LengthUnit_Centimeter, UnitsMethods.LengthUnitFromString("CM", false));
-        Assert.Equal(UnitsMethods_LengthUnit_Undefined, UnitsMethods.LengthUnitFromString("CM", true));
-        Assert.Equal(0.001, UnitsMethods.GetLengthUnitScale(UnitsMethods_LengthUnit_Millimeter, UnitsMethods_LengthUnit_Meter));
+        Assert.Equal(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Centimeter, UnitsMethods.LengthUnitFromString("CM", false));
+        Assert.Equal(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Undefined, UnitsMethods.LengthUnitFromString("CM", true));
+        Assert.Equal(0.001, UnitsMethods.GetLengthUnitScale(UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter));
         Assert.Equal(1.0, UnitsMethods.GetCasCadeLengthUnit(null));
         var aStatics = new Interface_StaticSet();
         aStatics.Init("XSTEP", "xstep.cascade.unit", 'e', "");
@@ -318,7 +318,7 @@ public class StepDataTests
         aStatics.Init("XSTEP", "xstep.cascade.unit", '&', "eval MM");
         aStatics.SetIVal("xstep.cascade.unit", 1);
         Assert.Equal(25.4, UnitsMethods.GetCasCadeLengthUnit(aStatics));
-        Assert.Equal(0.0254, UnitsMethods.GetCasCadeLengthUnit(aStatics, UnitsMethods_LengthUnit_Meter), 15);
+        Assert.Equal(0.0254, UnitsMethods.GetCasCadeLengthUnit(aStatics, UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter), 15);
 
         StepData_Factors aFactors = new StepData_Factors().InitializedFactors(2.0, 0.5, 1.0).WithCascadeUnit(10.0);
         Assert.Equal((2.0, 0.5, 2.0, 0.5, 10.0), (aFactors.LengthFactor(), aFactors.PlaneAngleFactor(), aFactors.FactorRadianDegree(),

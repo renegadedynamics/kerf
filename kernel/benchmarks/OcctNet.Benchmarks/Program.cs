@@ -16,6 +16,7 @@
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
 // Pass the same -p:OcctSourceDir as for the tests.
 
+using Kerf.Engine.Meshing;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
@@ -133,9 +134,9 @@ namespace OcctNet.Benchmarks
                     {
                         long aBytes = GC.GetTotalAllocatedBytes(true);
                         long t0 = Stopwatch.GetTimestamp();
-                        Shape aMeshed = new BRepMesh_IncrementalMesh(aPortInput, aCase.Deflection, false, Cases.Angle, isParallel).Shape();
+                        Shape aMeshed = new IncrementalMesh(aPortInput, aCase.Deflection, false, Cases.Angle, isParallel).Shape();
                         long t1 = Stopwatch.GetTimestamp();
-                        MeshExtraction.Extract(aMeshed, aCase.Deflection, Cases.Angle);
+                        global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aCase.Deflection, Cases.Angle);
                         long t2 = Stopwatch.GetTimestamp();
                         anAllocated = GC.GetTotalAllocatedBytes(true) - aBytes;
                         return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0)];

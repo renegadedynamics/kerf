@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints;
 using System.Globalization;
 using System.Text;
 using Xunit.Abstractions;
@@ -48,12 +49,12 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
         {
             return false;
         }
-        GccEnt_Position q1 = (GccEnt_Position)(int)theCase.Inputs[4];
-        GccEnt_Position q2 = (GccEnt_Position)(int)theCase.Inputs[9];
-        GccEnt_Position q3 = (GccEnt_Position)(int)theCase.Inputs[14];
-        return q3 == GccEnt_Position.GccEnt_unqualified
-               && ((q1 == GccEnt_Position.GccEnt_enclosed && q2 == GccEnt_Position.GccEnt_unqualified)
-                   || (q1 == GccEnt_Position.GccEnt_unqualified && q2 == GccEnt_Position.GccEnt_enclosed));
+        Qualifier q1 = (Qualifier)(int)theCase.Inputs[4];
+        Qualifier q2 = (Qualifier)(int)theCase.Inputs[9];
+        Qualifier q3 = (Qualifier)(int)theCase.Inputs[14];
+        return q3 == Qualifier.Unqualified
+               && ((q1 == Qualifier.Enclosed && q2 == Qualifier.Unqualified)
+                   || (q1 == Qualifier.Unqualified && q2 == Qualifier.Enclosed));
     }
 
     private static bool SameValue(string theA, string theB)

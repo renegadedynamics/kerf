@@ -284,34 +284,34 @@ public class StepData_StepModel : Interface_InterfaceModel
             myWriteUnitIsInitialized = true;
             switch (InternalParameters.WriteUnit)
             {
-                case UnitsMethods_LengthUnit_Inch:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Inch:
                     myWriteUnit = 25.4;
                     break;
-                case UnitsMethods_LengthUnit_Millimeter:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Millimeter:
                     myWriteUnit = 1.0;
                     break;
-                case UnitsMethods_LengthUnit_Foot:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Foot:
                     myWriteUnit = 304.8;
                     break;
-                case UnitsMethods_LengthUnit_Mile:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mile:
                     myWriteUnit = 1609344.0;
                     break;
-                case UnitsMethods_LengthUnit_Meter:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Meter:
                     myWriteUnit = 1000.0;
                     break;
-                case UnitsMethods_LengthUnit_Kilometer:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Kilometer:
                     myWriteUnit = 1000000.0;
                     break;
-                case UnitsMethods_LengthUnit_Mil:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Mil:
                     myWriteUnit = 0.0254;
                     break;
-                case UnitsMethods_LengthUnit_Micron:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Micron:
                     myWriteUnit = 0.001;
                     break;
-                case UnitsMethods_LengthUnit_Centimeter:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Centimeter:
                     myWriteUnit = 10.0;
                     break;
-                case UnitsMethods_LengthUnit_Microinch:
+                case UnitsMethods_LengthUnit.UnitsMethods_LengthUnit_Microinch:
                     myWriteUnit = 0.0000254;
                     break;
                 default:

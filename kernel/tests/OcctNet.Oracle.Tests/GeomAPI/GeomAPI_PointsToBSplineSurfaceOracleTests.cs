@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Kerf.Engine.Approximation.ParametrizationType;
@@ -149,7 +150,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output, 20261205);
         int aDone = 0, aNotDone = 0, aThrown = 0;
         int[] aByMethod = new int[7];
-        GeomAPI_PointsToBSplineSurface aPortReused = new();
+        PointsToBSplineSurface aPortReused = new();
         using N.GeomAPI_PointsToBSplineSurface aNativeReused = new();
         for (int c = 0; c < Cases; c++)
         {
@@ -166,7 +167,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
 
             N.GeomAPI_PointsToBSplineSurface? aNFresh = null;
             N.GeomAPI_PointsToBSplineSurface aN = aNativeReused;
-            GeomAPI_PointsToBSplineSurface aPort = aPortReused;
+            PointsToBSplineSurface aPort = aPortReused;
             string aW;
             double aTolerance = aTol3D <= 1.0e-3 ? 1.0e-9 : 1.0e-6;
             bool aOk;
@@ -205,7 +206,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                         : Both(anOracle,
                                () => aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNPoints!, aNParType, aDegMin, aDegMax,
                                                                                     aNCont, aTol3D),
-                               () => aPort = new GeomAPI_PointsToBSplineSurface(aPoints!, aParType, aDegMin, aDegMax,
+                               () => aPort = new PointsToBSplineSurface(aPoints!, aParType, aDegMin, aDegMax,
                                                                                 aCont, aTol3D), aW);
                     break;
                 case 1: // chord length, default arguments past the degrees
@@ -217,7 +218,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                                () => aPort.Init(aPoints!, aDegMin, aDegMax, aCont), aW)
                         : Both(anOracle,
                                () => aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNPoints!, aDegMin, aDegMax, aNCont),
-                               () => aPort = new GeomAPI_PointsToBSplineSurface(aPoints!, aDegMin, aDegMax, aCont), aW);
+                               () => aPort = new PointsToBSplineSurface(aPoints!, aDegMin, aDegMax, aCont), aW);
                     break;
                 case 2: // variational
                 {
@@ -256,7 +257,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                                        aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNPoints!, W1, W2, W3, aDeg, aNVCont, aTol3D);
                                    }
                                },
-                               () => aPort = new GeomAPI_PointsToBSplineSurface(aPoints!, W1, W2, W3, aDeg, aVCont,
+                               () => aPort = new PointsToBSplineSurface(aPoints!, W1, W2, W3, aDeg, aVCont,
                                                                                 aTol3D), aW);
                     break;
                 }
@@ -291,7 +292,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                         : Both(anOracle,
                                () => aNFresh = new N.GeomAPI_PointsToBSplineSurface(aNZ!, X0, dX, Y0, dY, aDegMin, aDegMax,
                                                                                     aNCont, aTol3D),
-                               () => aPort = new GeomAPI_PointsToBSplineSurface(aZ!, X0, dX, Y0, dY, aDegMin, aDegMax,
+                               () => aPort = new PointsToBSplineSurface(aZ!, X0, dX, Y0, dY, aDegMin, aDegMax,
                                                                                 aCont, aTol3D), aW);
                     break;
                 default: // Z grid, interpolated
@@ -311,8 +312,8 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                     continue;
                 }
                 N.GeomAPI_PointsToBSplineSurface aNUsed = aNFresh ?? aN;
-                anOracle.Same(aNUsed.IsDone(), aPort.IsDone(), $"{aW} IsDone");
-                if (!aPort.IsDone())
+                anOracle.Same(aNUsed.IsDone(), aPort.IsDone, $"{aW} IsDone");
+                if (!aPort.IsDone)
                 {
                     aNotDone++;
                     continue;

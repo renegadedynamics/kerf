@@ -3,7 +3,7 @@
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
-using static Occt.GeomFill_FillingStyle;
+using static Kerf.Engine.Construction.Surfaces.FillingStyle;
 
 namespace OcctNet.DrawLite;
 
@@ -43,7 +43,7 @@ internal static class GeometryTestSurfaceCommands
             return 1;
         }
 
-        Surface? S = GeomFill.Surface(C1, C2);
+        Surface? S = global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(C1, C2);
         if (S is null)
         {
             return 1;
@@ -61,7 +61,7 @@ internal static class GeometryTestSurfaceCommands
             return 1;
         }
 
-        GeomFill_SectionGenerator Section = new();
+        global::Kerf.Engine.Construction.Surfaces.SectionGenerator Section = new();
         int i;
         Curve3D? C;
         for (i = 2; i < n; i++)
@@ -76,13 +76,13 @@ internal static class GeometryTestSurfaceCommands
 
         Section.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-        GeomFill_Line Line = new(n - 2);
+        global::Kerf.Engine.Construction.Surfaces.SurfaceLine Line = new(n - 2);
         int NbIt = 0;
-        GeomFill_AppSurf App = new(3, 8, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(), NbIt);
+        global::Kerf.Engine.Construction.Surfaces.SurfaceAppSurf App = new(3, 8, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.PConfusion(), NbIt);
 
         App.Perform(Line, Section);
 
-        if (!App.IsDone())
+        if (!App.IsDone)
         {
             di.Append("    Approximation aux fraises \n");
         }
@@ -118,7 +118,7 @@ internal static class GeometryTestSurfaceCommands
         }
 
         int ist = 2;
-        GeomFill_FillingStyle Style = GeomFill_CoonsStyle;
+        global::Kerf.Engine.Construction.Surfaces.FillingStyle Style = global::Kerf.Engine.Construction.Surfaces.FillingStyle.CoonsStyle;
         if (n > 6)
         {
             ist = theDI.Atoi(a[6]);
@@ -126,18 +126,18 @@ internal static class GeometryTestSurfaceCommands
 
         if (ist == 1)
         {
-            Style = GeomFill_StretchStyle;
+            Style = global::Kerf.Engine.Construction.Surfaces.FillingStyle.StretchStyle;
         }
         if (ist == 2)
         {
-            Style = GeomFill_CoonsStyle;
+            Style = global::Kerf.Engine.Construction.Surfaces.FillingStyle.CoonsStyle;
         }
         if (ist == 3)
         {
-            Style = GeomFill_CurvedStyle;
+            Style = global::Kerf.Engine.Construction.Surfaces.FillingStyle.CurvedStyle;
         }
 
-        GeomFill_BSplineCurves aFilling = new(C[0], C[1], C[2], C[3], Style);
+        global::Kerf.Engine.Construction.Surfaces.BSplineCurves aFilling = new(C[0], C[1], C[2], C[3], Style);
 
         BSplineSurface? GBS = aFilling.Surface();
         DrawTrSurf.Set(theDI, a[1], GBS);

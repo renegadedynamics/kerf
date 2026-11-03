@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -65,7 +66,7 @@ internal sealed class IntersectionComparison : IDisposable
     public void CompareLine(N.Geom_Curve theNative, Curve3D thePort, string theWhat)
     {
         string aNText = NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge());
-        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort).Edge());
+        string aPText = PortText(new MakeEdge(thePort).Edge());
         if (CompareRecords(Section(aNText, "Curves"), Section(aPText, "Curves"), theWhat))
         {
             return;
@@ -83,7 +84,7 @@ internal sealed class IntersectionComparison : IDisposable
     public bool SameRecord(N.Geom_Curve theNative, Curve3D thePort)
     {
         string aNText = Section(NativeText(new N.BRepBuilderAPI_MakeEdge(theNative).Edge()), "Curves");
-        string aPText = Section(PortText(new BRepBuilderAPI_MakeEdge(thePort).Edge()), "Curves");
+        string aPText = Section(PortText(new MakeEdge(thePort).Edge()), "Curves");
         return Tokens(aNText).SequenceEqual(Tokens(aPText));
     }
 
@@ -92,7 +93,7 @@ internal sealed class IntersectionComparison : IDisposable
     {
         using var aNPlane = new N.Geom_Plane(new N.gp_Pln());
         string aNText = NativeText(new N.BRepBuilderAPI_MakeEdge(theNative, aNPlane).Edge());
-        string aPText = PortText(new BRepBuilderAPI_MakeEdge(thePort, new PlaneSurface(new Plane3D())).Edge());
+        string aPText = PortText(new MakeEdge(thePort, new PlaneSurface(new Plane3D())).Edge());
         if (CompareRecords(Section(aNText, "Curve2ds"), Section(aPText, "Curve2ds"), theWhat))
         {
             return;

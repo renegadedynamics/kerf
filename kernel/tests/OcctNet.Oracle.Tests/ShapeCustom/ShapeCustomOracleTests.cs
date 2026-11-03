@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Custom;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Diagnostics;
@@ -41,8 +42,8 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                    return N.ShapeCustom.BSplineRestriction(s, theTol3d, theTol2d, theMaxDegree, theMaxNbSegment, NC(theCont3d),
                                                            NC(theCont2d), theDegree, theRational, aParameters);
                },
-               s => ShapeCustom.BSplineRestriction(s, theTol3d, theTol2d, theMaxDegree, theMaxNbSegment, theCont3d, theCont2d,
-                                                   theDegree, theRational, new ShapeCustom_RestrictionParameters()));
+               s => Customize.BSplineRestriction(s, theTol3d, theTol2d, theMaxDegree, theMaxNbSegment, theCont3d, theCont2d,
+                                                   theDegree, theRational, new RestrictionParameters()));
 
     // Draw's bsplres defaults (SWDRAW_ShapeCustom): the modification's own defaults
     private static readonly Op s_bsplres = BSplineRestriction("bsplres", 0.01, 1e-6, 9, 10000, Continuity.C1,
@@ -50,15 +51,15 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
 
     internal static readonly Op[] s_modifications =
     [
-        new("DirectFaces", N.ShapeCustom.DirectFaces, s => ShapeCustom.DirectFaces(s)),
-        new("ScaleShape(2.5)", s => N.ShapeCustom.ScaleShape(s, 2.5), s => ShapeCustom.ScaleShape(s, 2.5)),
-        new("ScaleShape(0.001)", s => N.ShapeCustom.ScaleShape(s, 0.001), s => ShapeCustom.ScaleShape(s, 0.001)),
-        new("ConvertToRevolution", N.ShapeCustom.ConvertToRevolution, s => ShapeCustom.ConvertToRevolution(s)),
-        new("SweptToElementary", N.ShapeCustom.SweptToElementary, s => ShapeCustom.SweptToElementary(s)),
+        new("DirectFaces", N.ShapeCustom.DirectFaces, s => Customize.DirectFaces(s)),
+        new("ScaleShape(2.5)", s => N.ShapeCustom.ScaleShape(s, 2.5), s => Customize.ScaleShape(s, 2.5)),
+        new("ScaleShape(0.001)", s => N.ShapeCustom.ScaleShape(s, 0.001), s => Customize.ScaleShape(s, 0.001)),
+        new("ConvertToRevolution", N.ShapeCustom.ConvertToRevolution, s => Customize.ConvertToRevolution(s)),
+        new("SweptToElementary", N.ShapeCustom.SweptToElementary, s => Customize.SweptToElementary(s)),
         new("ConvertToBSpline", s => N.ShapeCustom.ConvertToBSpline(s, true, true, true, false),
-            s => ShapeCustom.ConvertToBSpline(s, true, true, true, false)),
+            s => Customize.ConvertToBSpline(s, true, true, true, false)),
         new("ConvertToBSpline(planes, no offsets)", s => N.ShapeCustom.ConvertToBSpline(s, true, true, false, true),
-            s => ShapeCustom.ConvertToBSpline(s, true, true, false, true)),
+            s => Customize.ConvertToBSpline(s, true, true, false, true)),
     ];
 
     private static (Shape?, string?) RunPort(Op theOp, Shape theShape)

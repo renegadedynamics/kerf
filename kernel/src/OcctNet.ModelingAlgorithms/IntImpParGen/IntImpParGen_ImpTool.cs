@@ -3,31 +3,32 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Implicit;
 
 /// <summary>
 /// An implicit curve, as the generic intersector
-/// <see cref="IntImpParGen_Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/> sees it
+/// <see cref="Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/> sees it
 /// (OCCT's template class IntImpParGen_ImpTool; implemented by IntCurve_IConicTool).
 /// </summary>
-public interface IIntImpParGen_ImpTool
+public interface IImpTool
 {
-    Point2D Value(double U);
+    Point2D Value(double u);
 
-    void D1(double U, out Point2D P, out Vector2D T);
+    void D1(double u, out Point2D p, out Vector2D t);
 
-    void D2(double U, out Point2D P, out Vector2D T, out Vector2D N);
+    void D2(double u, out Point2D p, out Vector2D t, out Vector2D n);
 
-    /// <summary>The signed distance between the point <paramref name="P"/> and the implicit curve.</summary>
-    double Distance(in Point2D P);
+    /// <summary>The signed distance between the point <paramref name="p"/> and the implicit curve.</summary>
+    double Distance(in Point2D p);
 
-    /// <summary>The gradient of the signed distance between a point and the implicit curve, at the point <paramref name="P"/>.</summary>
-    Vector2D GradDistance(in Point2D P);
+    /// <summary>The gradient of the signed distance between a point and the implicit curve, at the point <paramref name="p"/>.</summary>
+    Vector2D GradDistance(in Point2D p);
 
     /// <summary>
-    /// The parameter of the point of the implicit curve corresponding to <paramref name="P"/>, consistently with
+    /// The parameter of the point of the implicit curve corresponding to <paramref name="p"/>, consistently with
     /// the way the signed distance is computed.
     /// </summary>
-    double FindParameter(in Point2D P);
+    double FindParameter(in Point2D p);
 }

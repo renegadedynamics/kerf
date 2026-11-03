@@ -1,4 +1,7 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Custom;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Geometry;
 using Occt;
 
@@ -29,7 +32,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var builder = new BRepBuilderAPI_Transform(_wrapped, transformation, true);
+        var builder = new Transform(_wrapped, transformation, true);
         var transformed = builder.Shape();
         var copy = Rewrapped(transformed);
         if (History is not null)
@@ -48,7 +51,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = matrix.GTrsf.Trsf();
-        var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
+        var builder = new Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }
 
@@ -56,7 +59,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var upgrader = new ShapeUpgrade_UnifySameDomain(_wrapped, true, true, true);
+        var upgrader = new UnifySameDomain(_wrapped, true, true, true);
         upgrader.AllowInternalEdges(false);
         // Cleaning is best effort: on failure the uncleaned shape is still usable
         try
@@ -147,7 +150,7 @@ public abstract partial class Shape
         if (matrix.GTrsf.Form() == TransformForm.Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
-            var builder = new BRepBuilderAPI_GTransform(_wrapped, matrix.GTrsf, true);
+            var builder = new GTransform(_wrapped, matrix.GTrsf, true);
             result = builder.Shape();
         }
         else
@@ -155,7 +158,7 @@ public abstract partial class Shape
             // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
             // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
             var trsf = matrix.GTrsf.Trsf();
-            var builder = new BRepBuilderAPI_Transform(_wrapped, trsf, true);
+            var builder = new Transform(_wrapped, trsf, true);
             result = builder.Shape();
         }
         return Rewrapped(result);
@@ -166,7 +169,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var trsf = matrix.GTrsf.Trsf();
-        var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
+        var builder = new Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }
 
@@ -198,8 +201,8 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot approximate an empty shape");
-        var parameters = new ShapeCustom_RestrictionParameters();
-        var result = ShapeCustom.BSplineRestriction(_wrapped, tolerance, tolerance, degree, 1,
+        var parameters = new RestrictionParameters();
+        var result = Customize.BSplineRestriction(_wrapped, tolerance, tolerance, degree, 1,
                                                     Continuity.C0, Continuity.C0,
                                                     true, !nurbs, parameters);
         return CastLike(result);

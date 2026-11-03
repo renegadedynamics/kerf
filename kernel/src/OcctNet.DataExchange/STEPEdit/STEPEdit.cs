@@ -102,14 +102,14 @@ public class STEPEdit_EditContext : IFSelect_Editor
     /// <summary>Creates an EditContext</summary>
     public STEPEdit_EditContext() : base(5)
     {
-        Interface_TypedValue ac_val = new Interface_TypedValue("Application Context", Interface_ParamIdent);
-        SetValue(1, ac_val, "AC", IFSelect_EditRead);
+        Interface_TypedValue ac_val = new Interface_TypedValue("Application Context", Interface_ParamType.Interface_ParamIdent);
+        SetValue(1, ac_val, "AC", IFSelect_EditValue.IFSelect_EditRead);
 
         Interface_TypedValue ac_status = new Interface_TypedValue("AppliContext_Status");
         SetValue(2, ac_status, "AC_Status");
         Interface_TypedValue ac_sche = new Interface_TypedValue("AppliContext_Schema");
         SetValue(3, ac_sche, "AC_Schema");
-        Interface_TypedValue ac_year = new Interface_TypedValue("AppliContext_Year", Interface_ParamInteger);
+        Interface_TypedValue ac_year = new Interface_TypedValue("AppliContext_Year", Interface_ParamType.Interface_ParamInteger);
         SetValue(4, ac_year, "AC_Year");
         Interface_TypedValue ac_name = new Interface_TypedValue("AppliContext_Name");
         SetValue(5, ac_name, "AC_Name");

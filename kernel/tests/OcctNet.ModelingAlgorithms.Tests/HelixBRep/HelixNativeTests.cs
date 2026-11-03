@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Helix;
+using Kerf.Engine.Construction.Helix.Geometry;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Tools;
@@ -126,7 +128,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
         public readonly List<double> D = [], H = [], P = [];
     }
 
-    private static void SetParameters(HelixBRep_BuilderHelix theB, string theCmd, in CoordinateSystem theAxis, int theNb, double[] theV,
+    private static void SetParameters(BuilderHelix theB, string theCmd, in CoordinateSystem theAxis, int theNb, double[] theV,
                                       Parts theParts)
     {
         if (theCmd == "comphelix")
@@ -194,7 +196,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
     {
         try
         {
-            var aB = new HelixBRep_BuilderHelix();
+            var aB = new BuilderHelix();
             SetParameters(aB, theCmd, theAxis, theNb, theV, theParts);
             if (theSet == 1)
             {
@@ -234,7 +236,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             theOut.Add($"GEOM {i + 1} {Hex(0.0)} {Hex(aT2)} {Hex(theParts.P[i])} {Hex(aR)} {Hex(aTaper)} {(aCW ? 1 : 0)}");
             try
             {
-                var aBH = new HelixGeom_BuilderHelix();
+                var aBH = new GeometryBuilderHelix();
                 aBH.SetPosition(theAxis.Ax2());
                 aBH.SetCurveParameters(0.0, aT2, theParts.P[i], aR, aTaper, aCW);
                 aBH.SetTolerance(1.0e-4);
@@ -254,7 +256,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             double aT2c = aT2 < aTwoPI ? aT2 : aTwoPI;
             try
             {
-                var aBC = new HelixGeom_BuilderHelixCoil();
+                var aBC = new BuilderHelixCoil();
                 aBC.SetCurveParameters(0.0, aT2c, theParts.P[i], aR, aTaper, aCW);
                 aBC.Perform();
                 var aCurves = aBC.Curves();
@@ -272,7 +274,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             {
                 BSplineCurve3D? aBS = null;
                 double aMaxErr = -1.0;
-                int iErr = HelixGeom_Tools.ApprHelix(0.0, aT2c, theParts.P[i], aR, aTaper, aCW, 1.0e-4, ref aBS, ref aMaxErr);
+                int iErr = GeometryTools.ApprHelix(0.0, aT2c, theParts.P[i], aR, aTaper, aCW, 1.0e-4, ref aBS, ref aMaxErr);
                 theOut.Add($"APPR {iErr} {Hex(aMaxErr)} {(aBS is null ? 0 : 1)}");
                 if (aBS is not null)
                 {

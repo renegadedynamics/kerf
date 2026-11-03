@@ -26,8 +26,8 @@ public abstract class Transfer_Binder : Transient
     /// <summary>Sets fields at initial values.</summary>
     protected Transfer_Binder()
     {
-        thestatus = Transfer_StatusVoid;
-        theexecst = Transfer_StatusInitial;
+        thestatus = Transfer_StatusResult.Transfer_StatusVoid;
+        theexecst = Transfer_StatusExec.Transfer_StatusInitial;
         thecheck = new Interface_Check();
     }
 
@@ -154,26 +154,26 @@ public abstract class Transfer_Binder : Transient
     /// <exception cref="Transfer_TransferFailure">The result is already set and used.</exception>
     protected void SetResultPresent()
     {
-        if (thestatus == Transfer_StatusUsed)
+        if (thestatus == Transfer_StatusResult.Transfer_StatusUsed)
         {
             throw new Transfer_TransferFailure("Binder : SetResult, Result is Already Set and Used");
         }
-        theexecst = Transfer_StatusDone;
-        thestatus = Transfer_StatusDefined;
+        theexecst = Transfer_StatusExec.Transfer_StatusDone;
+        thestatus = Transfer_StatusResult.Transfer_StatusDefined;
     }
 
     /// <summary>Returns True if a Result is available (StatusResult = Defined).</summary>
     public bool HasResult()
     {
-        return thestatus != Transfer_StatusVoid;
+        return thestatus != Transfer_StatusResult.Transfer_StatusVoid;
     }
 
     /// <summary>Declares that result is now used by another one, it means that it cannot be modified (by Rebind).</summary>
     public void SetAlreadyUsed()
     {
-        if (thestatus != Transfer_StatusVoid)
+        if (thestatus != Transfer_StatusResult.Transfer_StatusVoid)
         {
-            thestatus = Transfer_StatusUsed;
+            thestatus = Transfer_StatusResult.Transfer_StatusUsed;
         }
     }
 
@@ -206,7 +206,7 @@ public abstract class Transfer_Binder : Transient
     /// </summary>
     public void AddFail(string mess, string orig = "")
     {
-        theexecst = Transfer_StatusError;
+        theexecst = Transfer_StatusExec.Transfer_StatusError;
         thecheck.AddFail(mess, orig);
     }
 

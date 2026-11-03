@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using System.Diagnostics;
@@ -25,7 +27,7 @@ internal static class BOPTestPartitionCommands
     }
 
     /// <summary>BOPTest::GetOperationType: the operation named by a number 0 to 4 or a word.</summary>
-    internal static BOPAlgo_Operation GetOperationType(string theOp)
+    internal static Operation GetOperationType(string theOp)
     {
         string anOp = theOp.ToLowerInvariant();
 
@@ -34,20 +36,20 @@ internal static class BOPTestPartitionCommands
             // Check if the given value satisfies the enumeration.
             if (iOp >= 0 && iOp <= 4)
             {
-                return (BOPAlgo_Operation)iOp;
+                return (Operation)iOp;
             }
-            return BOPAlgo_Operation.BOPAlgo_UNKNOWN;
+            return Operation.Unknown;
         }
 
         // Check for the meaningful symbolic operation parameter
         return anOp switch
         {
-            "common" => BOPAlgo_Operation.BOPAlgo_COMMON,
-            "fuse" => BOPAlgo_Operation.BOPAlgo_FUSE,
-            "cut" => BOPAlgo_Operation.BOPAlgo_CUT,
-            "tuc" or "cut21" => BOPAlgo_Operation.BOPAlgo_CUT21,
-            "section" => BOPAlgo_Operation.BOPAlgo_SECTION,
-            _ => BOPAlgo_Operation.BOPAlgo_UNKNOWN,
+            "common" => Operation.Common,
+            "fuse" => Operation.Fuse,
+            "cut" => Operation.Cut,
+            "tuc" or "cut21" => Operation.CUT21,
+            "section" => Operation.Section,
+            _ => Operation.Unknown,
         };
     }
 
@@ -96,16 +98,16 @@ internal static class BOPTestPartitionCommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPDS_DS? pDS = aSession.PDS();
+        DS? pDS = aSession.PDS();
         if (pDS is null)
         {
             di.Append("Prepare PaveFiller first\n");
             return 0;
         }
 
-        BOPAlgo_PaveFiller aPF = aSession.PaveFiller();
+        PaveFiller aPF = aSession.PaveFiller();
         aSession.SetBuilderDefault();
-        BOPAlgo_Builder aBuilder = aSession.Builder();
+        BooleanBuilder aBuilder = aSession.Builder();
         aBuilder.Clear();
         foreach (Shape aS in aSession.Shapes)
         {
@@ -140,7 +142,7 @@ internal static class BOPTestPartitionCommands
             BRepTestHistoryCommands.SetHistory(theDI, aPF.Arguments(), new BOPTestBuilderHistory(aBuilder));
         }
 
-        if (aBuilder.HasErrors())
+        if (aBuilder.HasErrors)
         {
             return 0;
         }
@@ -168,14 +170,14 @@ internal static class BOPTestPartitionCommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPDS_DS? pDS = aSession.PDS();
+        DS? pDS = aSession.PDS();
         if (pDS is null)
         {
             di.Append("Prepare PaveFiller first\n");
             return 0;
         }
-        BOPAlgo_Operation anOp = GetOperationType(a[2]);
-        if (anOp == BOPAlgo_Operation.BOPAlgo_UNKNOWN)
+        Operation anOp = GetOperationType(a[2]);
+        if (anOp == Operation.Unknown)
         {
             di.Append("Invalid operation type\n");
             return 0;
@@ -194,10 +196,10 @@ internal static class BOPTestPartitionCommands
                 di.Append("Warning: invalid key\n");
             }
         }
-        BOPAlgo_PaveFiller aPF = aSession.PaveFiller();
-        BOPAlgo_Builder pBuilder;
+        PaveFiller aPF = aSession.PaveFiller();
+        BooleanBuilder pBuilder;
 
-        if (anOp != BOPAlgo_Operation.BOPAlgo_SECTION)
+        if (anOp != Operation.Section)
         {
             pBuilder = aSession.BOP();
         }
@@ -210,9 +212,9 @@ internal static class BOPTestPartitionCommands
         {
             pBuilder.AddArgument(aS);
         }
-        if (anOp != BOPAlgo_Operation.BOPAlgo_SECTION)
+        if (anOp != Operation.Section)
         {
-            BOPAlgo_BOP pBOP = (BOPAlgo_BOP)pBuilder;
+            Bop pBOP = (Bop)pBuilder;
             foreach (Shape aS in aSession.Tools)
             {
                 pBOP.AddTool(aS);
@@ -238,7 +240,7 @@ internal static class BOPTestPartitionCommands
             BRepTestHistoryCommands.SetHistory(theDI, aPF.Arguments(), new BOPTestBuilderHistory(pBuilder));
         }
 
-        if (pBuilder.HasErrors())
+        if (pBuilder.HasErrors)
         {
             return 0;
         }
@@ -267,14 +269,14 @@ internal static class BOPTestPartitionCommands
             return 1;
         }
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPDS_DS? pDS = aSession.PDS();
+        DS? pDS = aSession.PDS();
         if (pDS is null)
         {
             di.Append("Prepare PaveFiller first\n");
             return 0;
         }
-        BOPAlgo_PaveFiller aPF = aSession.PaveFiller();
-        BOPAlgo_Splitter pSplitter = aSession.Splitter();
+        PaveFiller aPF = aSession.PaveFiller();
+        Splitter pSplitter = aSession.Splitter();
         pSplitter.Clear();
         pSplitter.SetArguments(aSession.Shapes);
         pSplitter.SetTools(aSession.Tools);
@@ -293,7 +295,7 @@ internal static class BOPTestPartitionCommands
             BRepTestHistoryCommands.SetHistory(theDI, aPF.Arguments(), new BOPTestBuilderHistory(pSplitter));
         }
 
-        if (pSplitter.HasErrors())
+        if (pSplitter.HasErrors)
         {
             return 0;
         }
@@ -332,15 +334,15 @@ internal static class BOPTestPartitionCommands
         }
 
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPDS_DS? pDS = aSession.PDS();
+        DS? pDS = aSession.PDS();
         if (pDS is null)
         {
             di.Append("Error: perform intersection of arguments first");
             return 1;
         }
 
-        BOPAlgo_Builder pBuilder = aSession.Builder();
-        if (pBuilder.HasErrors())
+        BooleanBuilder pBuilder = aSession.Builder();
+        if (pBuilder.HasErrors)
         {
             di.Append("Error: there were problems during GF");
             return 0;
@@ -353,7 +355,7 @@ internal static class BOPTestPartitionCommands
         }
 
         NCollection_List<Shape> aLObjects = new(), aLTools = new();
-        BOPAlgo_Operation anOp = BOPAlgo_Operation.BOPAlgo_UNKNOWN;
+        Operation anOp = Operation.Unknown;
 
         for (int i = 2; i < n; ++i)
         {
@@ -411,19 +413,19 @@ internal static class BOPTestPartitionCommands
                 ++i;
                 if (string.Equals(a[i], "common", StringComparison.OrdinalIgnoreCase))
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_COMMON;
+                    anOp = Operation.Common;
                 }
                 else if (string.Equals(a[i], "fuse", StringComparison.OrdinalIgnoreCase))
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_FUSE;
+                    anOp = Operation.Fuse;
                 }
                 else if (string.Equals(a[i], "cut", StringComparison.OrdinalIgnoreCase))
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_CUT;
+                    anOp = Operation.Cut;
                 }
                 else if (string.Equals(a[i], "tuc", StringComparison.OrdinalIgnoreCase))
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_CUT21;
+                    anOp = Operation.CUT21;
                 }
                 else
                 {
@@ -438,7 +440,7 @@ internal static class BOPTestPartitionCommands
             }
         }
 
-        if (anOp == BOPAlgo_Operation.BOPAlgo_UNKNOWN)
+        if (anOp == Operation.Unknown)
         {
             di.Append("Error: operation has not been specified");
             return 1;

@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Meshing;
@@ -132,12 +133,12 @@ public class BRepMesh_DelaunTest
         Point3D aP3 = new(5.0, 5.0, 0.0);
         Point3D aP4 = new(-5.0, 5.0, 0.0);
 
-        BRepBuilderAPI_MakeWire anOuterWireMaker = new();
-        anOuterWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
-        anOuterWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP2, aP3).Edge());
-        anOuterWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP3, aP4).Edge());
-        anOuterWireMaker.Add(new BRepBuilderAPI_MakeEdge(aP4, aP1).Edge());
-        Assert.True(anOuterWireMaker.IsDone());
+        MakeWire anOuterWireMaker = new();
+        anOuterWireMaker.Add(new MakeEdge(aP1, aP2).Edge());
+        anOuterWireMaker.Add(new MakeEdge(aP2, aP3).Edge());
+        anOuterWireMaker.Add(new MakeEdge(aP3, aP4).Edge());
+        anOuterWireMaker.Add(new MakeEdge(aP4, aP1).Edge());
+        Assert.True(anOuterWireMaker.IsDone);
 
         // Inner wire (hole): smaller square 2x2 centered at origin
         Point3D aH1 = new(-1.0, -1.0, 0.0);
@@ -145,24 +146,24 @@ public class BRepMesh_DelaunTest
         Point3D aH3 = new(1.0, 1.0, 0.0);
         Point3D aH4 = new(-1.0, 1.0, 0.0);
 
-        BRepBuilderAPI_MakeWire anInnerWireMaker = new();
-        anInnerWireMaker.Add(new BRepBuilderAPI_MakeEdge(aH1, aH2).Edge());
-        anInnerWireMaker.Add(new BRepBuilderAPI_MakeEdge(aH2, aH3).Edge());
-        anInnerWireMaker.Add(new BRepBuilderAPI_MakeEdge(aH3, aH4).Edge());
-        anInnerWireMaker.Add(new BRepBuilderAPI_MakeEdge(aH4, aH1).Edge());
-        Assert.True(anInnerWireMaker.IsDone());
+        MakeWire anInnerWireMaker = new();
+        anInnerWireMaker.Add(new MakeEdge(aH1, aH2).Edge());
+        anInnerWireMaker.Add(new MakeEdge(aH2, aH3).Edge());
+        anInnerWireMaker.Add(new MakeEdge(aH3, aH4).Edge());
+        anInnerWireMaker.Add(new MakeEdge(aH4, aH1).Edge());
+        Assert.True(anInnerWireMaker.IsDone);
 
         // Create face with hole
         PlaneSurface aPlane = new(new Plane3D(Constants.Origin(), Constants.DZ()));
-        BRepBuilderAPI_MakeFace aFaceMaker = new(aPlane, anOuterWireMaker.Wire());
+        MakeFace aFaceMaker = new(aPlane, anOuterWireMaker.Wire());
         aFaceMaker.Add(anInnerWireMaker.Wire());
-        Assert.True(aFaceMaker.IsDone());
+        Assert.True(aFaceMaker.IsDone);
 
         Face aFace = aFaceMaker.Face();
 
         // Mesh the face
-        BRepMesh_IncrementalMesh aMesher = new(aFace, 0.1);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aFace, 0.1);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
 
         // Verify triangulation exists
         Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(aMesher.Shape()), out Placement _);
@@ -175,10 +176,10 @@ public class BRepMesh_DelaunTest
     public void MeshBoxAllFaces()
     {
         // Create and mesh a box - tests triangulation on faces with different orientations
-        Shape aBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(10.0, 10.0, 10.0).Shape();
 
-        BRepMesh_IncrementalMesh aMesher = new(aBox, 0.5);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aBox, 0.5);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
 
         // Verify all faces are triangulated
         int aFaceCount = 0;
@@ -199,10 +200,10 @@ public class BRepMesh_DelaunTest
     public void MeshCylinderCurvedFaces()
     {
         // Create and mesh a cylinder - curved faces may have different polygon orientations
-        Shape aCylinder = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aCylinder = new ApiMakeCylinder(5.0, 10.0).Shape();
 
-        BRepMesh_IncrementalMesh aMesher = new(aCylinder, 0.5);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aCylinder, 0.5);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
 
         // Verify faces are triangulated
         int aTotalTriangles = 0;

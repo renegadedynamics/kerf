@@ -3,6 +3,7 @@
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -201,7 +202,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     {
         var anOracle = new Oracle(output, 42011);
         var aNSAC = new N.ShapeAnalysis_Curve();
-        var aSAC = new ShapeAnalysis_Curve();
+        var aSAC = new CurveAnalysis();
         double[] aPrecis = [1e-7, 1e-4, 1e-2];
         for (int i = 0; i < 270; i++)
         {
@@ -307,15 +308,15 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 double aPreci = anOracle.Bool() ? 0 : 1e-3;
                 Xyz aNormal = aGiven ? new Xyz(0, 0, 1) : new Xyz();
                 using var aNNormal = new N.gp_XYZ(aNormal.X(), aNormal.Y(), aNormal.Z());
-                anOracle.Same(N.ShapeAnalysis_Curve.IsPlanar(aNC, aNNormal, aPreci), ShapeAnalysis_Curve.IsPlanar(aPC, ref aNormal, aPreci),
+                anOracle.Same(N.ShapeAnalysis_Curve.IsPlanar(aNC, aNNormal, aPreci), CurveAnalysis.IsPlanar(aPC, ref aNormal, aPreci),
                               $"{aCase}, IsPlanar");
                 anOracle.Same(new Xyz(aNNormal.X(), aNNormal.Y(), aNNormal.Z()), aNormal, $"{aCase}, IsPlanar normal");
             }
 
             double aClosedPreci = anOracle.Bool() ? -1 : anOracle.Real(1e-7, 10);
-            anOracle.Same(N.ShapeAnalysis_Curve.IsClosed(aNC, aClosedPreci), ShapeAnalysis_Curve.IsClosed(aPC, aClosedPreci),
+            anOracle.Same(N.ShapeAnalysis_Curve.IsClosed(aNC, aClosedPreci), CurveAnalysis.IsClosed(aPC, aClosedPreci),
                           $"{aCase}, IsClosed");
-            anOracle.Same(N.ShapeAnalysis_Curve.IsPeriodic(aNC), ShapeAnalysis_Curve.IsPeriodic(aPC), $"{aCase}, IsPeriodic");
+            anOracle.Same(N.ShapeAnalysis_Curve.IsPeriodic(aNC), CurveAnalysis.IsPeriodic(aPC), $"{aCase}, IsPeriodic");
             aNC.Dispose();
         }
 
@@ -327,7 +328,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     {
         var anOracle = new Oracle(output, 42012);
         var aNSAC = new N.ShapeAnalysis_Curve();
-        var aSAC = new ShapeAnalysis_Curve();
+        var aSAC = new CurveAnalysis();
         for (int i = 0; i < 500; i++)
         {
             (N.Geom2d_Curve N, Curve2D P) Make()
@@ -583,7 +584,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
     {
         theCounts.Surfaces++;
         using var aNSAS = new N.ShapeAnalysis_Surface(theN);
-        var aSAS = new ShapeAnalysis_Surface(theP);
+        var aSAS = new SurfaceAnalysis(theP);
         double[] aPrecis = [1e-7, 1e-4, 1e-2];
 
         // singularities

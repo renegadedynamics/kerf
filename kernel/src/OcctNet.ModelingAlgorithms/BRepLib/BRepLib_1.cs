@@ -8,11 +8,12 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Library;
 
-public static partial class BRepLib
+public static partial class BrepLibrary
 {
     //=======================================================================
     // function: findNearestValidPoint
@@ -20,26 +21,26 @@ public static partial class BRepLib
     //           point on the curve that is an intersection with the sphere with
     //           center theVertPnt and radius theTol.
     //=======================================================================
-    private static bool findNearestValidPoint(CurveAdaptorBase theCurve,
-                                              double theFirst,
-                                              double theLast,
+    private static bool FindNearestValidPoint(CurveAdaptorBase curve,
+                                              double first,
+                                              double last,
                                               bool isFirst,
-                                              in Point3D theVertPnt,
-                                              double theTol,
-                                              double theEps,
-                                              ref double thePar)
+                                              in Point3D vertPnt,
+                                              double tol,
+                                              double eps,
+                                              ref double par)
     {
         // 1. Check that the needed end is inside the sphere
 
-        double aStartU = theFirst;
-        double anEndU = theLast;
+        double startU = first;
+        double endU = last;
         if (!isFirst)
         {
-            (aStartU, anEndU) = (anEndU, aStartU);
+            (startU, endU) = (endU, startU);
         }
-        Point3D aP = theCurve.Value(aStartU);
-        double aSqTol = theTol * theTol;
-        if (aP.SquareDistance(theVertPnt) > aSqTol)
+        Point3D p = curve.Value(startU);
+        double sqTol = tol * tol;
+        if (p.SquareDistance(vertPnt) > sqTol)
         {
             // the vertex does not cover the corresponding to this vertex end of the curve
             return false;
@@ -50,74 +51,74 @@ public static partial class BRepLib
         // stepping along the curve by theTol till go out
         //
         // the general step is computed using general curve resolution
-        double aStep = theCurve.Resolution(theTol) * 1.01;
-        if (aStep < theEps)
+        double step = curve.Resolution(tol) * 1.01;
+        if (step < eps)
         {
-            aStep = theEps;
+            step = eps;
         }
         // aD1Mag is a threshold to consider local derivative magnitude too small
         // and to accelerate going out of sphere
         // (inverse of resolution is the maximal derivative);
         // this is actual for bezier and b-spline types only
-        double aD1Mag = 0.0;
-        CurveKind aType = theCurve.GetType();
-        if (aType == OffsetCurve)
+        double d1Mag = 0.0;
+        CurveKind type = curve.GetType();
+        if (type == OffsetCurve)
         {
-            OffsetCurve3D anOffsetCurve = theCurve.OffsetCurve();
-            Curve3D aBaseCurve = anOffsetCurve.BasisCurve();
-            aType = new CurveAdaptor(aBaseCurve).GetType();
+            OffsetCurve3D offsetCurve = curve.OffsetCurve();
+            Curve3D baseCurve = offsetCurve.BasisCurve();
+            type = new CurveAdaptor(baseCurve).GetType();
         }
-        if (aType == BezierCurve || aType == BSplineCurve)
+        if (type == BezierCurve || type == BSplineCurve)
         {
-            aD1Mag = 1.0 / theCurve.Resolution(1.0) * 0.01;
-            aD1Mag *= aD1Mag;
+            d1Mag = 1.0 / curve.Resolution(1.0) * 0.01;
+            d1Mag *= d1Mag;
         }
         if (!isFirst)
         {
-            aStep = -aStep;
+            step = -step;
         }
         bool isOut = false;
-        double anUIn = aStartU;
-        double anUOut = anUIn;
+        double uIn = startU;
+        double uOut = uIn;
         while (!isOut)
         {
-            anUIn = anUOut;
-            anUOut += aStep;
-            if ((isFirst && anUOut > anEndU) || (!isFirst && anUOut < anEndU))
+            uIn = uOut;
+            uOut += step;
+            if ((isFirst && uOut > endU) || (!isFirst && uOut < endU))
             {
                 // step is too big and we go out of bounds,
                 // check if the opposite bound is outside
-                aP = theCurve.Value(anEndU);
-                isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
+                p = curve.Value(endU);
+                isOut = (p.SquareDistance(vertPnt) > sqTol);
                 if (!isOut)
                 {
                     // all range is inside sphere
                     return false;
                 }
-                anUOut = anEndU;
+                uOut = endU;
                 break;
             }
-            if (aD1Mag > 0.0)
+            if (d1Mag > 0.0)
             {
-                double aStepLocal = aStep;
+                double stepLocal = step;
                 for (;;)
                 {
                     // cycle to go out of local singularity
-                    theCurve.D1(anUOut, out aP, out Vector3D aD1);
-                    isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
-                    if (!isOut && aD1.SquareMagnitude() < aD1Mag)
+                    curve.D1(uOut, out p, out Vector3D d1);
+                    isOut = (p.SquareDistance(vertPnt) > sqTol);
+                    if (!isOut && d1.SquareMagnitude() < d1Mag)
                     {
-                        aStepLocal *= 2.0;
-                        anUOut += aStepLocal;
-                        if ((isFirst && anUOut < anEndU) || (!isFirst && anUOut > anEndU))
+                        stepLocal *= 2.0;
+                        uOut += stepLocal;
+                        if ((isFirst && uOut < endU) || (!isFirst && uOut > endU))
                         {
                             // still in range
                             continue;
                         }
                         // went out of range, so check if the end point has out state
-                        anUOut = anEndU;
-                        aP = theCurve.Value(anUOut);
-                        isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
+                        uOut = endU;
+                        p = curve.Value(uOut);
+                        isOut = (p.SquareDistance(vertPnt) > sqTol);
                         if (!isOut)
                         {
                             // all range is inside sphere
@@ -129,83 +130,83 @@ public static partial class BRepLib
             }
             else
             {
-                aP = theCurve.Value(anUOut);
+                p = curve.Value(uOut);
             }
             if (!isOut)
             {
-                isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
+                isOut = (p.SquareDistance(vertPnt) > sqTol);
             }
         }
 
         // 3. Precise solution with binary search
 
-        double aDelta = Math.Abs(anUOut - anUIn);
-        while (aDelta > theEps)
+        double delta = Math.Abs(uOut - uIn);
+        while (delta > eps)
         {
-            double aMidU = (anUIn + anUOut) * 0.5;
-            aP = theCurve.Value(aMidU);
-            isOut = (aP.SquareDistance(theVertPnt) > aSqTol);
+            double midU = (uIn + uOut) * 0.5;
+            p = curve.Value(midU);
+            isOut = (p.SquareDistance(vertPnt) > sqTol);
             if (isOut)
             {
-                anUOut = aMidU;
+                uOut = midU;
             }
             else
             {
-                anUIn = aMidU;
+                uIn = midU;
             }
-            aDelta = Math.Abs(anUOut - anUIn);
+            delta = Math.Abs(uOut - uIn);
         }
-        thePar = (anUIn + anUOut) * 0.5;
+        par = (uIn + uOut) * 0.5;
         return true;
     }
 
     /// <summary>
     /// For an edge given by a 3D curve and a tolerance, and its vertices by points, parameters and tolerances, finds
     /// the range of the curve between the vertices that their tolerances don't cover. Returns false if there is none;
-    /// otherwise sets <paramref name="theFirst"/> and <paramref name="theLast"/> (which may be written before a false
+    /// otherwise sets <paramref name="first"/> and <paramref name="last"/> (which may be written before a false
     /// return, as in OCCT).
     /// </summary>
-    public static bool FindValidRange(CurveAdaptorBase theCurve,
-                                      double theTolE,
-                                      double theParV1,
-                                      in Point3D thePntV1,
-                                      double theTolV1,
-                                      double theParV2,
-                                      in Point3D thePntV2,
-                                      double theTolV2,
-                                      ref double theFirst,
-                                      ref double theLast)
+    public static bool FindValidRange(CurveAdaptorBase curve,
+                                      double tolE,
+                                      double parV1,
+                                      in Point3D pntV1,
+                                      double tolV1,
+                                      double parV2,
+                                      in Point3D pntV2,
+                                      double tolV2,
+                                      ref double first,
+                                      ref double last)
     {
-        if (theParV2 - theParV1 < Kerf.Engine.Foundation.Precision.PConfusion())
+        if (parV2 - parV1 < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
 
-        bool isInfParV1 = Kerf.Engine.Foundation.Precision.IsInfinite(theParV1), isInfParV2 = Kerf.Engine.Foundation.Precision.IsInfinite(theParV2);
+        bool isInfParV1 = Kerf.Engine.Foundation.Precision.IsInfinite(parV1), isInfParV2 = Kerf.Engine.Foundation.Precision.IsInfinite(parV2);
 
-        double aMaxPar = 0.0;
+        double maxPar = 0.0;
         if (!isInfParV1)
         {
-            aMaxPar = Math.Abs(theParV1);
+            maxPar = Math.Abs(parV1);
         }
         if (!isInfParV2)
         {
-            aMaxPar = Max(aMaxPar, Math.Abs(theParV2));
+            maxPar = Max(maxPar, Math.Abs(parV2));
         }
 
-        double anEps = Max(Max(theCurve.Resolution(theTolE) * 0.1, Epsilon(aMaxPar)), Kerf.Engine.Foundation.Precision.PConfusion());
+        double eps = Max(Max(curve.Resolution(tolE) * 0.1, Epsilon(maxPar)), Kerf.Engine.Foundation.Precision.PConfusion());
 
         if (isInfParV1)
         {
-            theFirst = theParV1;
+            first = parV1;
         }
         else
         {
-            if (!findNearestValidPoint(theCurve, theParV1, theParV2, true, thePntV1, theTolV1, anEps, ref theFirst))
+            if (!FindNearestValidPoint(curve, parV1, parV2, true, pntV1, tolV1, eps, ref first))
             {
                 return false;
             }
-            if (theParV2 - theFirst < anEps)
+            if (parV2 - first < eps)
             {
                 return false;
             }
@@ -213,22 +214,22 @@ public static partial class BRepLib
 
         if (isInfParV2)
         {
-            theLast = theParV2;
+            last = parV2;
         }
         else
         {
-            if (!findNearestValidPoint(theCurve, theParV1, theParV2, false, thePntV2, theTolV2, anEps, ref theLast))
+            if (!FindNearestValidPoint(curve, parV1, parV2, false, pntV2, tolV2, eps, ref last))
             {
                 return false;
             }
-            if (theLast - theParV1 < anEps)
+            if (last - parV1 < eps)
             {
                 return false;
             }
         }
 
         // check found parameters
-        if (theFirst > theLast)
+        if (first > last)
         {
             // overlapping, not valid range
             return false;
@@ -241,42 +242,42 @@ public static partial class BRepLib
     /// The range of the edge's 3D curve that its vertices' tolerances (increased by the confusion precision) don't
     /// cover. Returns false if there is none.
     /// </summary>
-    public static bool FindValidRange(in Edge theEdge, ref double theFirst, ref double theLast)
+    public static bool FindValidRange(in Edge edge, ref double first, ref double last)
     {
-        if (Tool.Curve(theEdge, out _, out _, out _) is null)
+        if (Tool.Curve(edge, out _, out _, out _) is null)
         {
             return false;
         }
-        var anAC = new EdgeCurveAdaptor(theEdge);
-        Span<double> aParV = [anAC.FirstParameter(), anAC.LastParameter()];
-        if (aParV[1] - aParV[0] < Kerf.Engine.Foundation.Precision.PConfusion())
+        var ac = new EdgeCurveAdaptor(edge);
+        Span<double> parV = [ac.FirstParameter(), ac.LastParameter()];
+        if (parV[1] - parV[0] < Kerf.Engine.Foundation.Precision.PConfusion())
         {
             return false;
         }
 
         // get vertices
-        var aV = new Vertex[2];
-        Exploration.Vertices(theEdge, out aV[0], out aV[1]);
+        var v = new Vertex[2];
+        Exploration.Vertices(edge, out v[0], out v[1]);
 
-        double aTolE = Tool.Tolerance(theEdge);
+        double tolE = Tool.Tolerance(edge);
         // to have correspondence with intersection precision
         // the tolerances of vertices are increased on Precision::Confusion()
-        Span<double> aTolV = [Kerf.Engine.Foundation.Precision.Confusion(), Kerf.Engine.Foundation.Precision.Confusion()];
-        var aPntV = new Point3D[] { new(), new() };
+        Span<double> tolV = [Kerf.Engine.Foundation.Precision.Confusion(), Kerf.Engine.Foundation.Precision.Confusion()];
+        var pntV = new Point3D[] { new(), new() };
         for (int i = 0; i < 2; i++)
         {
-            if (!aV[i].IsNull)
+            if (!v[i].IsNull)
             {
-                aTolV[i] += Tool.Tolerance(aV[i]);
-                aPntV[i] = Tool.Pnt(aV[i]);
+                tolV[i] += Tool.Tolerance(v[i]);
+                pntV[i] = Tool.Pnt(v[i]);
             }
-            else if (!Kerf.Engine.Foundation.Precision.IsInfinite(aParV[i]))
+            else if (!Kerf.Engine.Foundation.Precision.IsInfinite(parV[i]))
             {
-                aTolV[i] += aTolE;
-                aPntV[i] = anAC.Value(aParV[i]);
+                tolV[i] += tolE;
+                pntV[i] = ac.Value(parV[i]);
             }
         }
-        return FindValidRange(anAC, aTolE, aParV[0], aPntV[0], aTolV[0], aParV[1], aPntV[1], aTolV[1], ref theFirst, ref theLast);
+        return FindValidRange(ac, tolE, parV[0], pntV[0], tolV[0], parV[1], pntV[1], tolV[1], ref first, ref last);
     }
 
     /// <summary>
@@ -286,14 +287,14 @@ public static partial class BRepLib
     internal static void BuildPCurveForEdgeOnPlane(in Edge aE, in Face aF)
     {
         bool bToUpdate;
-        double aTolE;
-        var aBB = new BrepBuilder();
+        double tolE;
+        var bb = new BrepBuilder();
         //
-        BuildPCurveForEdgeOnPlane(aE, aF, out Curve2D? aC2D, out bToUpdate);
+        BuildPCurveForEdgeOnPlane(aE, aF, out Curve2D? c2D, out bToUpdate);
         if (bToUpdate)
         {
-            aTolE = Tool.Tolerance(aE);
-            aBB.UpdateEdge(aE, aC2D, aF, aTolE);
+            tolE = Tool.Tolerance(aE);
+            bb.UpdateEdge(aE, c2D, aF, tolE);
         }
     }
 
@@ -307,15 +308,15 @@ public static partial class BRepLib
         bToUpdate = !isStored && aC2D is not null;
     }
 
-    /// <summary>Builds the pcurves of the edges of <paramref name="theLE"/> on the face if it is a plane (in place: internal).</summary>
-    internal static void BuildPCurveForEdgesOnPlane(IEnumerable<Shape> theLE, in Face theF)
+    /// <summary>Builds the pcurves of the edges of <paramref name="le"/> on the face if it is a plane (in place: internal).</summary>
+    internal static void BuildPCurveForEdgesOnPlane(IEnumerable<Shape> le, in Face f)
     {
-        foreach (Shape aS in theLE)
+        foreach (Shape s in le)
         {
-            Edge aE = ShapeCasts.Edge(aS);
-            if (!aE.IsNull)
+            Edge e = ShapeCasts.Edge(s);
+            if (!e.IsNull)
             {
-                BuildPCurveForEdgeOnPlane(aE, theF);
+                BuildPCurveForEdgeOnPlane(e, f);
             }
         }
     }

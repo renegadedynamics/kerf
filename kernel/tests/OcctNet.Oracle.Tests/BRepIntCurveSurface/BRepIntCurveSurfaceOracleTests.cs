@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -50,7 +51,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
                 var aL = new Line3D(aP, new Direction3D(aD.X(), aD.Y(), aD.Z()));
                 using var aNI = new N.BRepIntCurveSurface_Inter();
                 aNI.Init(aShape.N, aNL, aTol);
-                var aPI = new BRepIntCurveSurface_Inter();
+                var aPI = new CurveShapeIntersector();
                 aPI.Init(aShape.P, aL, aTol);
                 aNbPoints += Compare(anOracle, aNI, aPI, aFaces, $"{aWhat}, line {i}");
                 aNbCurves++;
@@ -59,7 +60,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
             // curves, with Load once and Init(curve)
             using var aNI2 = new N.BRepIntCurveSurface_Inter();
             aNI2.Load(aShape.N, aTol);
-            var aPI2 = new BRepIntCurveSurface_Inter();
+            var aPI2 = new CurveShapeIntersector();
             aPI2.Load(aShape.P, aTol);
             for (int i = 0; i < 6; i++)
             {
@@ -156,7 +157,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Iterates both and compares every point; returns their number.</summary>
-    private static int Compare(Oracle theOracle, N.BRepIntCurveSurface_Inter theN, BRepIntCurveSurface_Inter theP,
+    private static int Compare(Oracle theOracle, N.BRepIntCurveSurface_Inter theN, CurveShapeIntersector theP,
                                List<Twin<N.TopoDS_Shape, Shape>> theFaces, string theWhat)
     {
         int aCount = 0;

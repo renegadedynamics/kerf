@@ -12,55 +12,56 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Classification;
 
 /// <summary>
 /// Selects, in the tree of the boxes of a solid's edges and vertices, a shape whose tolerance contains a point (and
 /// stops at the first one).
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BRepClass3d_BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
+public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 {
-    private readonly NCollection_IndexedMap<Shape> myMapOfShape; // shapes (vertices + edges)
-    private Point3D myP = new();
+    private readonly NCollection_IndexedMap<Shape> _mapOfShape; // shapes (vertices + edges)
+    private Point3D _p = new();
 
-    /// <summary>A selector over the shapes of <paramref name="theMapOfShape"/> (the tree's objects are their indices).</summary>
-    public BRepClass3d_BndBoxTreeSelectorPoint(NCollection_IndexedMap<Shape> theMapOfShape)
+    /// <summary>A selector over the shapes of <paramref name="mapOfShape"/> (the tree's objects are their indices).</summary>
+    public BndBoxTreeSelectorPoint(NCollection_IndexedMap<Shape> mapOfShape)
     {
-        myMapOfShape = theMapOfShape;
+        _mapOfShape = mapOfShape;
     }
 
     /// <summary>True if the box doesn't contain the point.</summary>
-    public override bool Reject(in Box theBox) => (theBox.IsOut(myP));
+    public override bool Reject(in Box box) => (box.IsOut(_p));
 
     /// <summary>True (and stops) if the point is within the tolerance of the edge or vertex.</summary>
-    public override bool Accept(in int theObj)
+    public override bool Accept(in int obj)
     {
         // Box-point collision.
-        if (theObj > myMapOfShape.Extent())
+        if (obj > _mapOfShape.Extent())
         {
             return false;
         }
 
-        Shape shp = myMapOfShape[theObj];
+        Shape shp = _mapOfShape[obj];
         ShapeType sht = shp.ShapeType();
         if (sht == ShapeType.Edge)
         {
-            Edge E = ShapeCasts.Edge(shp);
-            double EdgeTSq = Tool.Tolerance(E);
-            EdgeTSq *= EdgeTSq;
-            var C = new EdgeCurveAdaptor(E);
-            Tool.Range(E, out double f, out double l);
+            Edge e = ShapeCasts.Edge(shp);
+            double edgeTSq = Tool.Tolerance(e);
+            edgeTSq *= edgeTSq;
+            var c = new EdgeCurveAdaptor(e);
+            Tool.Range(e, out double f, out double l);
 
             // Edge-Point interference.
-            var ExtPC = new CurvePointExtrema(myP, C, f, l);
-            if (ExtPC.IsDone && ExtPC.ExtCount > 0)
+            var extPC = new CurvePointExtrema(_p, c, f, l);
+            if (extPC.IsDone && extPC.ExtCount > 0)
             {
-                for (int i = 1; i <= ExtPC.ExtCount; i++)
+                for (int i = 1; i <= extPC.ExtCount; i++)
                 {
-                    if (ExtPC.SquareDistance(i) < EdgeTSq)
+                    if (extPC.SquareDistance(i) < edgeTSq)
                     {
                         _stop = true; // exit from selector
                         return true;
@@ -70,12 +71,12 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : SpatialTree<int, Box>.
         }
         else if (sht == ShapeType.Vertex)
         {
-            Vertex V = ShapeCasts.Vertex(shp);
-            Point3D VPnt = Tool.Pnt(V);
-            double VertTSq = Tool.Tolerance(V);
-            VertTSq *= VertTSq;
+            Vertex v = ShapeCasts.Vertex(shp);
+            Point3D vPnt = Tool.Pnt(v);
+            double vertTSq = Tool.Tolerance(v);
+            vertTSq *= vertTSq;
             // Vertex-Point interference.
-            if (VPnt.SquareDistance(myP) < VertTSq)
+            if (vPnt.SquareDistance(_p) < vertTSq)
             {
                 _stop = true;
                 return true;
@@ -86,7 +87,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : SpatialTree<int, Box>.
     }
 
     /// <summary>Sets the point.</summary>
-    public void SetCurrentPoint(in Point3D theP) => myP = theP;
+    public void SetCurrentPoint(in Point3D p) => _p = p;
 }
 
 /// <summary>
@@ -94,7 +95,7 @@ public sealed class BRepClass3d_BndBoxTreeSelectorPoint : SpatialTree<int, Box>.
 /// tolerance of, with the parameters of the nearest points.
 /// </summary>
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
-public sealed class BRepClass3d_BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
+public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
 {
     /// <summary>An edge met by the line: the parameters on the edge and on the line.</summary>
     public readonly record struct EdgeParam(Edge myE, double myParam, double myLParam);
@@ -102,69 +103,69 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : SpatialTree<int, Box>.S
     /// <summary>A vertex met by the line: the parameter on the line.</summary>
     public readonly record struct VertParam(Vertex myV, double myLParam);
 
-    private readonly NCollection_IndexedMap<Shape> myMapOfShape; // shapes (vertices + edges)
-    private Line3D myL = new();
-    private readonly NCollection_Sequence<EdgeParam> myEP = new(); // output result (edge vs line)
-    private readonly NCollection_Sequence<VertParam> myVP = new(); // output result (vertex vs line)
-    private readonly CurveAdaptor myLC = new();
-    private bool myIsValid;
+    private readonly NCollection_IndexedMap<Shape> _mapOfShape; // shapes (vertices + edges)
+    private Line3D _l = new();
+    private readonly NCollection_Sequence<EdgeParam> _ep = new(); // output result (edge vs line)
+    private readonly NCollection_Sequence<VertParam> _vp = new(); // output result (vertex vs line)
+    private readonly CurveAdaptor _lc = new();
+    private bool _isValid;
 
-    /// <summary>A selector over the shapes of <paramref name="theMapOfShape"/> (the tree's objects are their indices).</summary>
-    public BRepClass3d_BndBoxTreeSelectorLine(NCollection_IndexedMap<Shape> theMapOfShape)
+    /// <summary>A selector over the shapes of <paramref name="mapOfShape"/> (the tree's objects are their indices).</summary>
+    public BndBoxTreeSelectorLine(NCollection_IndexedMap<Shape> mapOfShape)
     {
-        myMapOfShape = theMapOfShape;
-        myIsValid = true;
+        _mapOfShape = mapOfShape;
+        _isValid = true;
     }
 
     /// <summary>True if the box doesn't meet the line.</summary>
-    public override bool Reject(in Box theBox) => (theBox.IsOut(myL));
+    public override bool Reject(in Box box) => (box.IsOut(_l));
 
     /// <summary>True if the segment passes within the tolerance of the edge or vertex (recording the parameters).</summary>
-    public override bool Accept(in int theObj)
+    public override bool Accept(in int obj)
     {
         // box-line collision
-        if (theObj > myMapOfShape.Extent())
+        if (obj > _mapOfShape.Extent())
         {
             return false;
         }
 
-        Shape shp = myMapOfShape[theObj];
+        Shape shp = _mapOfShape[obj];
         ShapeType sht = shp.ShapeType();
         if (sht == ShapeType.Edge)
         {
-            Edge E = ShapeCasts.Edge(shp);
-            double EdgeTSq = Tool.Tolerance(E);
-            EdgeTSq *= EdgeTSq;
-            var C = new EdgeCurveAdaptor(E);
-            Tool.Range(E, out double f, out double l);
+            Edge e = ShapeCasts.Edge(shp);
+            double edgeTSq = Tool.Tolerance(e);
+            edgeTSq *= edgeTSq;
+            var c = new EdgeCurveAdaptor(e);
+            Tool.Range(e, out double f, out double l);
 
             // Edge-Line interference.
-            var ExtCC = new ExtCC(C, myLC, f, l, myLC.FirstParameter(), myLC.LastParameter());
-            if (ExtCC.IsDone)
+            var extCC = new ExtCC(c, _lc, f, l, _lc.FirstParameter(), _lc.LastParameter());
+            if (extCC.IsDone)
             {
-                if (ExtCC.IsParallel)
+                if (extCC.IsParallel)
                 {
                     // Tangent case is invalid for classification
-                    myIsValid = false;
+                    _isValid = false;
                 }
-                else if (ExtCC.ExtCount > 0)
+                else if (extCC.ExtCount > 0)
                 {
-                    bool IsInside = false;
-                    for (int i = 1; i <= ExtCC.ExtCount; i++)
+                    bool isInside = false;
+                    for (int i = 1; i <= extCC.ExtCount; i++)
                     {
-                        if (ExtCC.SquareDistance(i) < EdgeTSq)
+                        if (extCC.SquareDistance(i) < edgeTSq)
                         {
-                            ExtCC.Points(i, out POnCurv P1, out POnCurv P2);
+                            extCC.Points(i, out POnCurv p1, out POnCurv p2);
 
                             // Original curve is the first parameter, the line the second.
-                            var EP = new EdgeParam(E, P1.Parameter(), P2.Parameter());
-                            myEP.Append(EP);
+                            var ep = new EdgeParam(e, p1.Parameter(), p2.Parameter());
+                            _ep.Append(ep);
 
-                            IsInside = true;
+                            isInside = true;
                         }
                     }
 
-                    if (IsInside)
+                    if (isInside)
                     {
                         return true;
                     }
@@ -173,25 +174,25 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : SpatialTree<int, Box>.S
         }
         else if (sht == ShapeType.Vertex)
         {
-            Vertex V = ShapeCasts.Vertex(shp);
-            double VertTSq = Tool.Tolerance(V);
-            VertTSq *= VertTSq;
+            Vertex v = ShapeCasts.Vertex(shp);
+            double vertTSq = Tool.Tolerance(v);
+            vertTSq *= vertTSq;
             // Vertex-Line interference.
-            var ExtPL = new ExtPElC(Tool.Pnt(V),
-                                            myL,
+            var extPL = new ExtPElC(Tool.Pnt(v),
+                                            _l,
                                             global::Kerf.Engine.Foundation.Precision.Confusion(),
                                             -global::Kerf.Engine.Foundation.Precision.Infinite(),
                                             global::Kerf.Engine.Foundation.Precision.Infinite());
-            if (ExtPL.IsDone && ExtPL.ExtCount > 0)
+            if (extPL.IsDone && extPL.ExtCount > 0)
             {
-                if (ExtPL.SquareDistance(1) < VertTSq)
+                if (extPL.SquareDistance(1) < vertTSq)
                 {
-                    POnCurv PP;
+                    POnCurv pp;
                     double paramL;
-                    PP = ExtPL.Point(1);
-                    paramL = PP.Parameter();
-                    var VP = new VertParam(V, paramL);
-                    myVP.Append(VP);
+                    pp = extPL.Point(1);
+                    paramL = pp.Parameter();
+                    var vp = new VertParam(v, paramL);
+                    _vp.Append(vp);
                     return true;
                 }
             }
@@ -200,44 +201,44 @@ public sealed class BRepClass3d_BndBoxTreeSelectorLine : SpatialTree<int, Box>.S
         return false;
     }
 
-    /// <summary>Sets the line, and the segment of it from -PConfusion to <paramref name="theMaxParam"/> tested against the edges.</summary>
-    public void SetCurrentLine(in Line3D theL, double theMaxParam)
+    /// <summary>Sets the line, and the segment of it from -PConfusion to <paramref name="maxParam"/> tested against the edges.</summary>
+    public void SetCurrentLine(in Line3D l, double maxParam)
     {
-        myL = theL;
-        myLC.Load(new LineCurve3D(theL), -global::Kerf.Engine.Foundation.Precision.PConfusion(), theMaxParam);
+        _l = l;
+        _lc.Load(new LineCurve3D(l), -global::Kerf.Engine.Foundation.Precision.PConfusion(), maxParam);
     }
 
     /// <summary>The <paramref name="i"/>-th edge met, with the parameters on it and on the line.</summary>
-    public void GetEdgeParam(int i, out Edge theOutE, out double theOutParam, out double outLParam)
+    public void GetEdgeParam(int i, out Edge outE, out double outParam, out double outLParam)
     {
-        EdgeParam EP = myEP.Value(i);
-        theOutE = EP.myE;
-        theOutParam = EP.myParam;
-        outLParam = EP.myLParam;
+        EdgeParam ep = _ep.Value(i);
+        outE = ep.myE;
+        outParam = ep.myParam;
+        outLParam = ep.myLParam;
     }
 
     /// <summary>The <paramref name="i"/>-th vertex met, with the parameter on the line.</summary>
-    public void GetVertParam(int i, out Vertex theOutV, out double outLParam)
+    public void GetVertParam(int i, out Vertex outV, out double outLParam)
     {
-        VertParam VP = myVP.Value(i);
-        theOutV = VP.myV;
-        outLParam = VP.myLParam;
+        VertParam vp = _vp.Value(i);
+        outV = vp.myV;
+        outLParam = vp.myLParam;
     }
 
     /// <summary>The number of edges met.</summary>
-    public int GetNbEdgeParam() => myEP.Length();
+    public int GetNbEdgeParam() => _ep.Length();
 
     /// <summary>The number of vertices met.</summary>
-    public int GetNbVertParam() => myVP.Length();
+    public int GetNbVertParam() => _vp.Length();
 
     /// <summary>Forgets the edges and vertices met.</summary>
     public void ClearResults()
     {
-        myEP.Clear();
-        myVP.Clear();
-        myIsValid = true;
+        _ep.Clear();
+        _vp.Clear();
+        _isValid = true;
     }
 
     /// <summary>True if a correct classification is possible (no edge was parallel to the line).</summary>
-    public bool IsCorrect() => myIsValid;
+    public bool IsCorrect => _isValid;
 }

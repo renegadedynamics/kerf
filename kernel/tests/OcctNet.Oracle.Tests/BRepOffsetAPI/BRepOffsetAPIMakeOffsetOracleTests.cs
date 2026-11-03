@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -91,10 +94,10 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
         => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
 
-    private static Edge Segment(in Point3D theA, in Point3D theB) => new BRepBuilderAPI_MakeEdge(theA, theB).Edge();
+    private static Edge Segment(in Point3D theA, in Point3D theB) => new MakeEdge(theA, theB).Edge();
 
     private static Edge Arc(in Point3D theA, in Point3D theM, in Point3D theB)
-        => new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(theA, theM, theB).Value()).Edge();
+        => new MakeEdge(new MakeArcOfCircle(theA, theM, theB).Value()).Edge();
 
     // An arc through a point beside the middle of the chord (theBulge: the offset, relative to the chord's length)
     private static Edge Bulge(in Frame3D theAx, in Point3D theA, in Point3D theB, double theBulge)
@@ -115,7 +118,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             double r = theRadius * theOracle.Real(0.6, 1.4);
             aPoints[i] = OnPlane(theAx, theU + r * Math.Cos(anAngle), theV + r * Math.Sin(anAngle));
         }
-        var aWire = new BRepBuilderAPI_MakeWire();
+        var aWire = new MakeWire();
         for (int i = 0; i < aNb; i++)
         {
             Point3D a = aPoints[i], b = aPoints[(i + 1) % aNb];
@@ -128,7 +131,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private static Wire OpenProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theArcs)
     {
         int aNb = theOracle.Int(1, 5);
-        var aWire = new BRepBuilderAPI_MakeWire();
+        var aWire = new MakeWire();
         double u = 0, v = 0, anAngle = theOracle.Angle();
         Point3D a = OnPlane(theAx, u, v);
         for (int i = 0; i < aNb; i++)
@@ -165,7 +168,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
 
         // the makers, as the case builds them
         using var aN = new N.BRepOffsetAPI_MakeOffset();
-        var aP = new BRepOffsetAPI_MakeOffset();
+        var aP = new MakeWireOffset();
         if (theSpine.IsFace)
         {
             aN.Init(N.TopoDS.Face(aNIn), ToNative(theSpine.Join), theSpine.IsOpenResult);
@@ -204,9 +207,9 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 return;
             }
             bool isDone = aN.IsDone();
-            if (isDone != aP.IsDone())
+            if (isDone != aP.IsDone)
             {
-                myDifferences.Add($"{aWhat}: IsDone native {isDone}, port {aP.IsDone()}");
+                myDifferences.Add($"{aWhat}: IsDone native {isDone}, port {aP.IsDone}");
                 return;
             }
             if (!isDone)
@@ -329,7 +332,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 Wire anOuter = ClosedProfile(anOracle, anAx, aSize, 0, 0, isArcs);
                 if (isFace)
                 {
-                    var aMaker = new BRepBuilderAPI_MakeFace(anOuter, true);
+                    var aMaker = new MakeFace(anOuter, true);
                     if (isHole)
                     {
                         Wire aHole = ClosedProfile(anOracle, anAx, aSize * 0.2, 0, 0, isArcs);
@@ -378,9 +381,9 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
             // a single segment has no plane: give it one, as build123d.NET does
             Shape aPlane = new();
-            if (!isArcs && new BRepBuilderAPI_MakeFace(aWire, true).Error() != BRepBuilderAPI_FaceError.BRepBuilderAPI_FaceDone)
+            if (!isArcs && new MakeFace(aWire, true).Error() != FaceError.FaceDone)
             {
-                aPlane = new BRepBuilderAPI_MakeFace(new Plane3D(anAx.Location(), anAx.Direction())).Face();
+                aPlane = new MakeFace(new Plane3D(anAx.Location(), anAx.Direction())).Face();
             }
             JoinKind aJoin = Join(anOracle);
             bool isOpen = anOracle.Bool();
@@ -420,7 +423,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 aL = new CircleCurve2D(new Axis2D(new Point2D(px, py), new Direction2D(ex, ey)), r2);
                 aNL = new N.Geom2d_Circle(new N.gp_Ax2d(new N.gp_Pnt2d(px, py), new N.gp_Dir2d(ex, ey)), r2);
             }
-            var aP = new Geom2dAPI_InterCurveCurve(aC, aL, 1e-7);
+            var aP = new CurveCurveIntersection2D(aC, aL, 1e-7);
             var aN = new N.Geom2dAPI_InterCurveCurve(aNC, aNL, 1e-7);
             string sp = "", sn = "";
             for (int k = 1; k <= aP.NbPoints(); k++)
@@ -454,7 +457,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
             double r = anOracle.Real(5, 20), a0 = anOracle.Angle(), a1 = a0 + anOracle.Real(0.3, 3.0);
             Point3D P(double t) => new(r * Math.Cos(t), r * Math.Sin(t), 0);
-            Wire aW = new BRepBuilderAPI_MakeWire(Arc(P(a0), P((a0 + a1) / 2), P(a1))).Wire();
+            Wire aW = new MakeWire(Arc(P(a0), P((a0 + a1) / 2), P(a1))).Wire();
             Compare(new Spine(aW, false, global::Kerf.Geometry.JoinKind.Arc, i % 2 == 0, false, false, new Shape()), [anOracle.Real(0.5, 3)], 0.0, $"single arc #{i} {(i % 2 == 0 ? "open" : "closed")}");
         }
         Report();
@@ -476,7 +479,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 case 0:
                 {
                     // SlotCenterToCenter: two collinear segments (the centre one) offset by h / 2
-                    var aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(-c / 2, 0, 0), new Point3D(0, 0, 0)),
+                    var aW = new MakeWire(Segment(new Point3D(-c / 2, 0, 0), new Point3D(0, 0, 0)),
                                                          Segment(new Point3D(0, 0, 0), new Point3D(c / 2, 0, 0))).Wire();
                     Compare(new Spine(aW, false, aJoin, false, false, true, new Shape()), [h / 2], 0.0, $"SlotCenterToCenter #{i} {c} {h}");
                     break;
@@ -490,7 +493,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     Wire aW;
                     try
                     {
-                        aW = new BRepBuilderAPI_MakeWire(Arc(P(a0), P((a0 + am) / 2), P(am)), Arc(P(am), P((am + a1) / 2), P(a1))).Wire();
+                        aW = new MakeWire(Arc(P(a0), P((a0 + am) / 2), P(am)), Arc(P(am), P((am + a1) / 2), P(a1))).Wire();
                     }
                     catch (FailureException)
                     {
@@ -511,15 +514,15 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 case 3:
                 {
                     // a straight line: a plane through it
-                    Wire aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(c, anOracle.Real(-5, 5), 0))).Wire();
-                    Shape aPlane = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).Face();
+                    Wire aW = new MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(c, anOracle.Real(-5, 5), 0))).Wire();
+                    Shape aPlane = new MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1))).Face();
                     Compare(new Spine(aW, false, aJoin, false, false, true, aPlane), [h / 2, -h / 3], 0.0, $"line #{i}");
                     break;
                 }
                 case 4:
                 {
                     // a rectangle, as Offset2D's (Kind.Intersection keeps the corners)
-                    var aW = new BRepBuilderAPI_MakePolygon(new Point3D(-c / 2, -h / 2, 0), new Point3D(c / 2, -h / 2, 0), new Point3D(c / 2, h / 2, 0),
+                    var aW = new MakePolygon(new Point3D(-c / 2, -h / 2, 0), new Point3D(c / 2, -h / 2, 0), new Point3D(c / 2, h / 2, 0),
                                                             new Point3D(-c / 2, h / 2, 0), true).Wire();
                     double d = Math.Min(c, h) * anOracle.Real(0.05, 0.45) * (anOracle.Bool() ? 1 : -1);
                     Compare(new Spine(aW, false, aJoin, false, false, true, new Shape()), [d], 0.0, $"rectangle #{i} {c}x{h}");
@@ -529,7 +532,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 {
                     // SlotOverall: as the centre-to-centre slot, from the overall width
                     double w = c + h;
-                    var aW = new BRepBuilderAPI_MakeWire(Segment(new Point3D(-(w / 2 - h / 2), 0, 0), new Point3D(0, 0, 0)),
+                    var aW = new MakeWire(Segment(new Point3D(-(w / 2 - h / 2), 0, 0), new Point3D(0, 0, 0)),
                                                          Segment(new Point3D(0, 0, 0), new Point3D(w / 2 - h / 2, 0, 0))).Wire();
                     Compare(new Spine(aW, false, aJoin, false, false, true, new Shape()), [h / 2], 0.0, $"SlotOverall #{i} {w} {h}");
                     break;
@@ -553,7 +556,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             {
                 double a = anOracle.Real(5, 30), b = a * anOracle.Real(0.3, 0.95);
                 var anEllipse = new EllipseCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), a, b);
-                aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anEllipse).Edge()).Wire();
+                aW = new MakeWire(new MakeEdge(anEllipse).Edge()).Wire();
             }
             else
             {
@@ -564,12 +567,12 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     double t = 2 * Math.PI * (k - 1) / aNb, r = anOracle.Real(10, 20);
                     aPoints[k] = new Point3D(r * Math.Cos(t), r * Math.Sin(t), 0);
                 }
-                var anInterp = new GeomAPI_Interpolate(aPoints, true, 1.0e-7);
+                var anInterp = new ApiInterpolate(aPoints, true, 1.0e-7);
                 anInterp.Perform();
-                aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anInterp.Curve()).Edge()).Wire();
+                aW = new MakeWire(new MakeEdge(anInterp.Curve()).Edge()).Wire();
             }
             bool isFace = i % 4 < 2;
-            Shape aShape = isFace ? new BRepBuilderAPI_MakeFace(aW, true).Face() : aW;
+            Shape aShape = isFace ? new MakeFace(aW, true).Face() : aW;
             Compare(new Spine(aShape, isFace, i % 3 == 0 ? Intersection : global::Kerf.Geometry.JoinKind.Arc, false, true, false, new Shape()),
                     [anOracle.Real(-3, 3)], 0.0, $"approx #{i} {(i % 2 == 0 ? "ellipse" : "B-spline")} {(isFace ? "face" : "wire")}");
 
@@ -577,7 +580,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             {
                 (N.TopoDS_Shape aNF, Shape aPF) = Both(aShape);
                 string aNT = NativeText(N.BRepOffsetAPI_MakeOffset.ConvertFace(N.TopoDS.Face(aNF), 0.1));
-                string aPT = PortText(BRepOffsetAPI_MakeOffset.ConvertFace(ShapeCasts.Face(aPF), 0.1));
+                string aPT = PortText(MakeWireOffset.ConvertFace(ShapeCasts.Face(aPF), 0.1));
                 BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
                 if (aDiff.IsIdentical || aDiff.IsIdenticalMaskingFree)
                 {

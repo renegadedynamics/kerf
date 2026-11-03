@@ -75,29 +75,29 @@ public class StepData_SelectMember : Transient
         int kind = Kind();
         if (kind == 0)
         {
-            return Interface_ParamVoid;
+            return Interface_ParamType.Interface_ParamVoid;
         }
         if (kind == 1)
         {
-            return Interface_ParamInteger;
+            return Interface_ParamType.Interface_ParamInteger;
         }
         if (kind == 2 || kind == 3)
         {
-            return Interface_ParamLogical;
+            return Interface_ParamType.Interface_ParamLogical;
         }
         if (kind == 4)
         {
-            return Interface_ParamEnum;
+            return Interface_ParamType.Interface_ParamEnum;
         }
         if (kind == 5)
         {
-            return Interface_ParamReal;
+            return Interface_ParamType.Interface_ParamReal;
         }
         if (kind == 6)
         {
-            return Interface_ParamText;
+            return Interface_ParamType.Interface_ParamText;
         }
-        return Interface_ParamMisc;
+        return Interface_ParamType.Interface_ParamMisc;
     }
 
     /// <summary>This internal method gives access to a value implemented by an Integer (to read it).</summary>
@@ -139,28 +139,28 @@ public class StepData_SelectMember : Transient
         int ival = Int();
         if (ival == 0)
         {
-            return StepData_LFalse;
+            return StepData_Logical.StepData_LFalse;
         }
         if (ival == 1)
         {
-            return StepData_LTrue;
+            return StepData_Logical.StepData_LTrue;
         }
-        return StepData_LUnknown;
+        return StepData_Logical.StepData_LUnknown;
     }
 
     public void SetLogical(StepData_Logical val)
     {
         SetKind(KindLogical);
         // OCCT: every value is stored as 0, so a logical member always reads back as False (occt-issues.md, 8B)
-        if (val == StepData_LFalse)
+        if (val == StepData_Logical.StepData_LFalse)
         {
             SetInt(0);
         }
-        if (val == StepData_LTrue)
+        if (val == StepData_Logical.StepData_LTrue)
         {
             SetInt(0);
         }
-        if (val == StepData_LUnknown)
+        if (val == StepData_Logical.StepData_LUnknown)
         {
             SetInt(0);
         }

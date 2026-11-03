@@ -24,11 +24,11 @@ internal static class RWStepShape_RWBooleanOperator
     {
         switch (theSourceEnum)
         {
-            case StepShape_boDifference:
+            case StepShape_BooleanOperator.StepShape_boDifference:
                 return boDifference;
-            case StepShape_boIntersection:
+            case StepShape_BooleanOperator.StepShape_boIntersection:
                 return boIntersection;
-            case StepShape_boUnion:
+            case StepShape_BooleanOperator.StepShape_boUnion:
                 return boUnion;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepShape_RWBooleanOperator
     {
         if (theOperatorStr == boDifference)
         {
-            theResultEnum = StepShape_boDifference;
+            theResultEnum = StepShape_BooleanOperator.StepShape_boDifference;
         }
         else if (theOperatorStr == boIntersection)
         {
-            theResultEnum = StepShape_boIntersection;
+            theResultEnum = StepShape_BooleanOperator.StepShape_boIntersection;
         }
         else if (theOperatorStr == boUnion)
         {
-            theResultEnum = StepShape_boUnion;
+            theResultEnum = StepShape_BooleanOperator.StepShape_boUnion;
         }
         else
         {

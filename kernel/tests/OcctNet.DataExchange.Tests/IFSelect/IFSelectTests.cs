@@ -32,7 +32,7 @@ public class IFSelectTests
         WS.SetLibrary(new ToyLibrary());
         WS.SetProtocol(ToyNorm.Protocol);
         using var aStream = new MemoryStream(Encoding.UTF8.GetBytes(theText));
-        Assert.Equal(IFSelect_RetDone, WS.ReadStream("toy.txt", aStream));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.ReadStream("toy.txt", aStream));
         return WS;
     }
 
@@ -41,9 +41,9 @@ public class IFSelectTests
     {
         var WS = new IFSelect_WorkSession();
         using var aStream = new MemoryStream(Encoding.UTF8.GetBytes(ToyFile));
-        Assert.Equal(IFSelect_RetVoid, WS.ReadStream("x", aStream)); // no library
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetVoid, WS.ReadStream("x", aStream)); // no library
         WS.SetLibrary(new ToyLibrary());
-        Assert.Equal(IFSelect_RetVoid, WS.ReadStream("x", aStream)); // no protocol
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetVoid, WS.ReadStream("x", aStream)); // no protocol
         WS = Session();
         Assert.Equal("toy.txt", WS.LoadedFile());
         Assert.True(WS.HasModel());
@@ -58,7 +58,7 @@ public class IFSelectTests
         Assert.Equal("A", WS.EntityName(WS.StartingEntity(1))!.ToCString());
         Assert.Equal("#A", WS.EntityLabel(WS.StartingEntity(1))!.ToCString());
         // a missing file: the library's status -1 is RetError
-        Assert.Equal(IFSelect_RetError, WS.ReadFile(Path.Combine(Path.GetTempPath(), "no-such-toy-file.txt")));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetError, WS.ReadFile(Path.Combine(Path.GetTempPath(), "no-such-toy-file.txt")));
     }
 
     [Fact]
@@ -312,7 +312,7 @@ public class IFSelectTests
         Assert.Equal("warns: H", one.CCheck(7)!.CWarning(1));
         Assert.True(WS.CheckOne(WS.StartingEntity(1)).IsEmpty(false));
         var aText = new StringWriter();
-        WS.PrintCheckList(aText, chl, false, IFSelect_CountByItem);
+        WS.PrintCheckList(aText, chl, false, IFSelect_PrintCount.IFSelect_CountByItem);
         Assert.Contains("warns: H", aText.ToString());
         // the last entity's messages only: B's fail is cleared by C's (empty) check, kept when B is last
         IFSelect_WorkSession WS1 = Session("A B\n!B\nC\n");
@@ -409,7 +409,7 @@ public class IFSelectTests
     {
         IFSelect_WorkSession WS = Session("A B\nB\nC\n");
         var aStream = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, WS.SendAll("out.toy", false, aStream));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.SendAll("out.toy", false, aStream));
         Assert.Equal("A\nB\nC\n", Encoding.UTF8.GetString(aStream.ToArray()));
         Assert.True(WS.LastRunCheckList().IsEmpty(true)); // (SendAll asks for its global check: not empty)
         // a model modifier on the roots, a file modifier on all, applied by the share-out
@@ -426,7 +426,7 @@ public class IFSelectTests
         Assert.Equal(1, WS.NbFinalModifiers(true));
         Assert.Equal(1, WS.NbFinalModifiers(false));
         aStream = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, WS.SendAll("out.toy", false, aStream));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.SendAll("out.toy", false, aStream));
         // SendAll works on the session's own model: the modifier renames its roots (A, C)
         Assert.Equal("mod: FileMod (all)\nA*\nB\nC*\n", Encoding.UTF8.GetString(aStream.ToArray()));
         Assert.Equal("A*", WS.StartingEntity(1)!.ToString());
@@ -436,13 +436,13 @@ public class IFSelectTests
         WS.AddNamedItem("pointed", pointed);
         Assert.True(WS.ResetAppliedModifier(rename));
         aStream = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, WS.SendSelected("sel.toy", pointed, false, aStream));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.SendSelected("sel.toy", pointed, false, aStream));
         Assert.Equal("mod: FileMod (all)\nB\n", Encoding.UTF8.GetString(aStream.ToArray()));
         // nothing selected: void
         pointed.Clear();
-        Assert.Equal(IFSelect_RetVoid, WS.SendSelected("sel.toy", pointed, false, new MemoryStream()));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetVoid, WS.SendSelected("sel.toy", pointed, false, new MemoryStream()));
         // a library failure: RetStop (and, as OCCT, the last run's check list is not updated)
-        Assert.Equal(IFSelect_RetStop, WS.SendAll(""));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetStop, WS.SendAll(""));
         // ClearFinalModifiers removes them as items
         WS.ClearFinalModifiers();
         Assert.Equal(0, WS.NbFinalModifiers(false));
@@ -464,7 +464,7 @@ public class IFSelectTests
         Assert.Equal(1, ed.NameNumber("read.precision.mode"));
         Assert.Equal(2, ed.NameNumber("2"));
         Assert.Equal(0, ed.NameNumber("x"));
-        Assert.Equal(IFSelect_Editable, ed.EditMode(1));
+        Assert.Equal(IFSelect_EditValue.IFSelect_Editable, ed.EditMode(1));
         IFSelect_EditForm form = ed.Form(false)!;
         Assert.True(form.LoadData());
         Assert.Equal(statics.CVal("write.precision.val"), form.OriginalValue(2)!.ToCString());
@@ -487,7 +487,7 @@ public class IFSelectTests
         // a constant text
         ed.AddConstantText("v", "const");
         Assert.Equal(3, ed.NbValues());
-        Assert.Equal(IFSelect_EditRead, ed.EditMode(3));
+        Assert.Equal(IFSelect_EditValue.IFSelect_EditRead, ed.EditMode(3));
         // the STEP header's editor recognizes no time stamp (OCCT: its separators fall through, occt-issues.md, 8A3)
         var header = new APIHeaderSection_EditHeader();
         Assert.Equal(10, header.NbValues());

@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -50,7 +51,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                 using (aNB)
                 {
                     N.BRepBndLib.Add(aShape.N, aNB, aUseTri);
-                    BRepBndLib.Add(aShape.P, ref aPB, aUseTri);
+                    Bounds.Add(aShape.P, ref aPB, aUseTri);
                     SameBox(anOracle, aNB, aPB, $"{aWhat} Add({aUseTri})");
                     aCalls++;
                 }
@@ -61,7 +62,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                 using (aNB)
                 {
                     N.BRepBndLib.AddClose(aShape.N, aNB);
-                    BRepBndLib.AddClose(aShape.P, ref aPB);
+                    Bounds.AddClose(aShape.P, ref aPB);
                     SameBox(anOracle, aNB, aPB, $"{aWhat} AddClose");
                     aCalls++;
                 }
@@ -75,7 +76,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                     using (aNB)
                     {
                         N.BRepBndLib.AddOptimal(aShape.N, aNB, aUseTri, aUseTol);
-                        BRepBndLib.AddOptimal(aShape.P, ref aPB, aUseTri, aUseTol);
+                        Bounds.AddOptimal(aShape.P, ref aPB, aUseTri, aUseTol);
                         SameBox(anOracle, aNB, aPB, $"{aWhat} AddOptimal({aUseTri}, {aUseTol})");
                         aCalls++;
                     }
@@ -108,7 +109,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                         using (aNO)
                         {
                             N.BRepBndLib.AddOBB(aShape.N, aNO, aUseTri, anOptimal, aUseTol);
-                            BRepBndLib.AddOBB(aShape.P, ref aPO, aUseTri, anOptimal, aUseTol);
+                            Bounds.AddOBB(aShape.P, ref aPO, aUseTri, anOptimal, aUseTol);
                             SameOBB(anOracle, aNO, aPO, $"{aWhat} AddOBB({aUseTri}, {anOptimal}, {aUseTol})");
                             aCalls++;
                         }
@@ -120,10 +121,10 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
             {
                 using var aNB = new N.Bnd_Box();
                 N.BRepBndLib.Add(aShape.N, aNB);
-                SameBox(anOracle, aNB, BRepBndLib.Box(aShape.P), $"{aWhat} Box");
+                SameBox(anOracle, aNB, Bounds.Box(aShape.P), $"{aWhat} Box");
                 using var aNO = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aShape.N, aNO);
-                SameOBB(anOracle, aNO, BRepBndLib.OBB(aShape.P), $"{aWhat} OBB");
+                SameOBB(anOracle, aNO, Bounds.OBB(aShape.P), $"{aWhat} OBB");
             }
         }
 

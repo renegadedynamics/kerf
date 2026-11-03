@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -9,7 +12,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using System.Reflection;
 using Xunit.Abstractions;
-using static Occt.IMeshData_Status;
+using static Kerf.Engine.Meshing.Model.StatusModel;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Engine.Exchange.Brep.FormatVersion;
@@ -112,23 +115,23 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     }
 
     /// <summary>The parameters as BRepMesh_IncrementalMesh::initParameters completes the five arguments.</summary>
-    private static IMeshTools_Parameters Params(double theDeflection, bool isRelative, double theAngle)
+    private static ToolParameters Params(double theDeflection, bool isRelative, double theAngle)
     {
-        var aParams = new IMeshTools_Parameters { Deflection = theDeflection, Angle = theAngle, Relative = isRelative };
+        var aParams = new ToolParameters { Deflection = theDeflection, Angle = theAngle, Relative = isRelative };
         aParams.DeflectionInterior = theDeflection;
-        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aParams.MinSize = Math.Max(ToolParameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
         aParams.AngleInterior = 2.0 * theAngle;
         return aParams;
     }
 
     /// <summary>The port's model of the shape, as BRepMesh_Context's tools leave it before the faces are meshed.</summary>
-    private static IMeshData_Model PortModel(in Shape theShape, in IMeshTools_Parameters theParameters)
+    private static ModelModel PortModel(in Shape theShape, in ToolParameters theParameters)
     {
-        var aContext = new IMeshTools_Context();
-        aContext.SetModelBuilder(new BRepMesh_ModelBuilder());
-        aContext.SetEdgeDiscret(new BRepMesh_EdgeDiscret());
-        aContext.SetModelHealer(new BRepMesh_ModelHealer());
-        aContext.SetPreProcessor(new BRepMesh_ModelPreProcessor());
+        var aContext = new ToolContext();
+        aContext.SetModelBuilder(new MeshModelBuilder());
+        aContext.SetEdgeDiscret(new EdgeDiscret());
+        aContext.SetModelHealer(new ModelHealer());
+        aContext.SetPreProcessor(new ModelPreProcessor());
         aContext.SetShape(theShape);
         aContext.ChangeParameters() = theParameters;
         Assert.True(aContext.BuildModel() && aContext.DiscretizeEdges() && aContext.HealModel() && aContext.PreProcessModel());
@@ -181,7 +184,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     /// meshed file meshed anew, the polygon; for each free edge, the 3D polygon. With <paramref name="theOld"/> (the
     /// file meshed before), a face the port reuses must keep its polygons.
     /// </summary>
-    private void Compare(Oracle theO, Tally theTally, string theName, IMeshData_Model theModel, in Shape theF1,
+    private void Compare(Oracle theO, Tally theTally, string theName, ModelModel theModel, in Shape theF1,
                          in Shape theMeshed, N.Poly_Triangulation?[] theNativeTriangulations, in Shape? theOld)
     {
         NCollection_IndexedMap<Shape> anEdges1 = Map(theF1, ShapeType.Edge), aFaces1 = Map(theF1, ShapeType.Face);
@@ -196,19 +199,19 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
         theTally.Shapes++;
         for (int i = 0; i < theModel.EdgesNb(); i++)
         {
-            IMeshData_Edge aDEdge = theModel.GetEdge(i);
+            EdgeModel aDEdge = theModel.GetEdge(i);
             theTally.Edges++;
             int anEdgeIndex = IndexOf(anEdges1, aDEdge.GetEdge());
             Edge anEdge2 = ShapeCasts.Edge(anEdges2.FindKey(anEdgeIndex));
-            IMeshData_Curve aCurve = aDEdge.GetCurve();
+            CurveModel aCurve = aDEdge.GetCurve();
             string aWhat = $"{theName} edge {anEdgeIndex}";
 
-            if (aDEdge.IsFree())
+            if (aDEdge.IsFree)
             {
                 // The model takes a free edge without its location: its points, and the polygon, are in the edge's
                 // own frame.
                 Polygon3D? aPoly3D = Tool.Polygon3D(ShapeCasts.Edge(anEdge2.Located(new Placement())), out _);
-                if (aDEdge.IsSet(IMeshData_Reused) || aPoly3D is null || aCurve.ParametersNb() == 0)
+                if (aDEdge.IsSet(StatusModel.Reused) || aPoly3D is null || aCurve.ParametersNb() == 0)
                 {
                     continue;
                 }
@@ -231,12 +234,12 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
 
             // The pcurves on each face, in the model's order: OCCT stores the first as the polygon of the forward
             // edge, the last as the reversed edge's (ModelPostProcessor's PolygonCommitter).
-            var aByFace = new Dictionary<IMeshData_Face, List<IMeshData_PCurve>>(ReferenceEqualityComparer.Instance);
-            var aFaceOrder = new List<IMeshData_Face>();
+            var aByFace = new Dictionary<FaceModel, List<PCurveModel>>(ReferenceEqualityComparer.Instance);
+            var aFaceOrder = new List<FaceModel>();
             for (int p = 0; p < aDEdge.PCurvesNb(); p++)
             {
-                IMeshData_PCurve aPCurve = aDEdge.GetPCurve(p);
-                if (!aByFace.TryGetValue(aPCurve.GetFace(), out List<IMeshData_PCurve>? aList))
+                PCurveModel aPCurve = aDEdge.GetPCurve(p);
+                if (!aByFace.TryGetValue(aPCurve.GetFace(), out List<PCurveModel>? aList))
                 {
                     aByFace.Add(aPCurve.GetFace(), aList = []);
                     aFaceOrder.Add(aPCurve.GetFace());
@@ -244,7 +247,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 aList.Add(aPCurve);
             }
 
-            foreach (IMeshData_Face aDFace in aFaceOrder)
+            foreach (FaceModel aDFace in aFaceOrder)
             {
                 int aFaceIndex = IndexOf(aFaces1, aDFace.GetFace());
                 Face aFace2 = ShapeCasts.Face(aFaces2.FindKey(aFaceIndex));
@@ -255,8 +258,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                     continue;
                 }
 
-                List<IMeshData_PCurve> aPCurves = aByFace[aDFace];
-                if (aDFace.IsSet(IMeshData_Reused))
+                List<PCurveModel> aPCurves = aByFace[aDFace];
+                if (aDFace.IsSet(StatusModel.Reused))
                 {
                     // Reused by the port: native kept the face's mesh and the edge's polygon on it.
                     theTally.Reused++;
@@ -276,7 +279,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
 
                 for (int aSide = 0; aSide < aPCurves.Count; aSide++)
                 {
-                    IMeshData_PCurve aPCurve = aPCurves[aSide == 0 ? 0 : aPCurves.Count - 1];
+                    PCurveModel aPCurve = aPCurves[aSide == 0 ? 0 : aPCurves.Count - 1];
                     Edge anOriented = ShapeCasts.Edge(anEdge2.Oriented(aSide == 0 ? Forward : Reversed));
                     PolygonOnTriangulation? aPoly = Tool.PolygonOnTriangulation(anOriented, aTri, aLoc);
                     if (aPoly is null)
@@ -325,18 +328,18 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     {
         Shape aPortF1 = PortRead(theF1);
         var aBox = new Box();
-        BRepBndLib.Add(aPortF1, ref aBox, false);
+        Bounds.Add(aPortF1, ref aBox, false);
         if (aBox.IsVoid)
         {
             return;
         }
         double aSize = 0.0;
-        BRepMesh_ShapeTool.BoxMaxDimension(aBox, ref aSize);
+        ShapeTool.BoxMaxDimension(aBox, ref aSize);
 
         foreach ((double aDeflection, bool isRelative, double anAngle) in new[] { (0.05, true, 0.5), (0.004 * aSize, false, 0.3) })
         {
             string aF2 = NativeMesh(theF1, aDeflection, isRelative, anAngle, out N.Poly_Triangulation?[] aNativeTris);
-            IMeshData_Model aModel = PortModel(aPortF1, Params(aDeflection, isRelative, anAngle));
+            ModelModel aModel = PortModel(aPortF1, Params(aDeflection, isRelative, anAngle));
             Compare(theO, theTally, $"{theName} ({aDeflection:G3}{(isRelative ? " rel" : "")})", aModel, aPortF1, PortRead(aF2),
                     aNativeTris, null);
             Dispose(aNativeTris);
@@ -422,7 +425,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 string aF3 = NativeMesh(aF2, aDeflection, true, anAngle, out N.Poly_Triangulation?[] aNativeTris);
                 Shape aPortF2 = PortRead(aF2);
                 Shape aCopy = BrepTools.ExactCopyForWrite(aPortF2, out _);
-                IMeshData_Model aModel = PortModel(aCopy, Params(aDeflection, true, anAngle));
+                ModelModel aModel = PortModel(aCopy, Params(aDeflection, true, anAngle));
                 Compare(anOracle, aTally, $"{aName} again at {aDeflection} {anAngle}", aModel, aCopy, PortRead(aF3), aNativeTris,
                         aPortF2);
                 Dispose(aNativeTris);

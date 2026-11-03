@@ -1,6 +1,11 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -75,7 +80,7 @@ public abstract partial class Shape1D : Shape
         get
         {
             var props = new Properties();
-            BRepGProp.LinearProperties(TopoShape, props);
+            MassPropertiesBuilder.LinearProperties(TopoShape, props);
             return props.Mass();
         }
     }
@@ -274,7 +279,7 @@ public abstract partial class Shape1D : Shape
             case CenterOf.Mass:
             {
                 var props = new Properties();
-                BRepGProp.LinearProperties(TopoShape, props);
+                MassPropertiesBuilder.LinearProperties(TopoShape, props);
                 var c = props.CentreOfMass();
                 return new Vector(c);
             }
@@ -345,11 +350,11 @@ public abstract partial class Shape1D : Shape
         }
     }
 
-    private static GeomFill_TrihedronLaw MakeLaw(FrameMethod method) =>
-        method == FrameMethod.Frenet ? new GeomFill_Frenet() : new GeomFill_CorrectedFrenet();
+    private static TrihedronLaw MakeLaw(FrameMethod method) =>
+        method == FrameMethod.Frenet ? new Frenet() : new CorrectedFrenet();
 
     /// <summary>The Location at a curve parameter, framed by a trihedron law on that curve.</summary>
-    private Location FrameLocation(CurveAdaptorBase curve, double param, GeomFill_TrihedronLaw law, Vector? xDir)
+    private Location FrameLocation(CurveAdaptorBase curve, double param, TrihedronLaw law, Vector? xDir)
     {
         var tangent = new Vector3D();
         var normal = new Vector3D();
@@ -498,7 +503,7 @@ public abstract partial class Shape1D : Shape
             }
             default:
             {
-                var finder = new BRepLib_FindSurface(TopoShape, -1, true);
+                var finder = new FindSurface(TopoShape, -1, true);
                 var surface = finder.Surface();
                 var plane = (surface as PlaneSurface) ?? throw new InvalidOperationException("Normal not defined");
                 var pln = plane.Pln();
@@ -569,12 +574,12 @@ public abstract partial class Shape1D : Shape
         if (IsEmpty || face.IsEmpty)
             throw new InvalidOperationException("Can't project an empty Edge or Wire onto empty Face");
         var dir = direction.ToGpDir();
-        var projection = new BRepProj_Projection(TopoShape, face.TopoShape, dir);
+        var projection = new Projection(TopoShape, face.TopoShape, dir);
         var shapes = projection.Shape();
         var pieces = TopoUtil.TopLevelShapes(shapes);
         if (!closest)
             return new ShapeList<Shape1D>(pieces.Select(p => (Shape1D)Cast(p)));
-        var calc = new BRepExtrema_DistShapeShape();
+        var calc = new DistanceShapeShape();
         calc.LoadS1(TopoShape);
         Shape1D? best = null;
         double minDist = double.PositiveInfinity;
@@ -619,16 +624,16 @@ public abstract partial class Shape1D : Shape
             {
                 // 1D + plane: a section with the plane's face
                 var face = Face.FromTopoFace(MakePlaneFace(plane));
-                var op = new BRepAlgoAPI_Section();
+                var op = new SectionOperation();
                 results.AddRange(BoolOpList([this], [face], op).Expand());
                 break;
             }
             case Shape1D line:
             {
                 // 1D + 1D: the common part (collinear overlap) and the section (crossings)
-                var common = new BRepAlgoAPI_Common();
+                var common = new Common();
                 results.AddRange(BoolOpList([this], [line], common).Expand());
-                var section = new BRepAlgoAPI_Section();
+                var section = new SectionOperation();
                 results.AddRange(BoolOpList([this], [line], section).OfType<Vertex>().Where(v => !v.IsEmpty));
                 break;
             }

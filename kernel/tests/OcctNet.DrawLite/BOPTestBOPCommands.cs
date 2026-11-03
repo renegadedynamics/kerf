@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -22,15 +26,15 @@ internal static class BOPTestBOPCommands
     public static void Register(DrawInterpreter theInterpreter)
     {
         DrawCxx.Add(theInterpreter, "bop", Bop);
-        DrawCxx.Add(theInterpreter, "bopcommon", (i, di, a) => BopSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_COMMON));
-        DrawCxx.Add(theInterpreter, "bopfuse", (i, di, a) => BopSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_FUSE));
-        DrawCxx.Add(theInterpreter, "bopcut", (i, di, a) => BopSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_CUT));
-        DrawCxx.Add(theInterpreter, "boptuc", (i, di, a) => BopSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_CUT21));
+        DrawCxx.Add(theInterpreter, "bopcommon", (i, di, a) => BopSmt(i, di, a, Operation.Common));
+        DrawCxx.Add(theInterpreter, "bopfuse", (i, di, a) => BopSmt(i, di, a, Operation.Fuse));
+        DrawCxx.Add(theInterpreter, "bopcut", (i, di, a) => BopSmt(i, di, a, Operation.Cut));
+        DrawCxx.Add(theInterpreter, "boptuc", (i, di, a) => BopSmt(i, di, a, Operation.CUT21));
         DrawCxx.Add(theInterpreter, "bopsection", BopSection);
-        DrawCxx.Add(theInterpreter, "bcommon", (i, di, a) => BSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_COMMON));
-        DrawCxx.Add(theInterpreter, "bfuse", (i, di, a) => BSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_FUSE));
-        DrawCxx.Add(theInterpreter, "bcut", (i, di, a) => BSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_CUT));
-        DrawCxx.Add(theInterpreter, "btuc", (i, di, a) => BSmt(i, di, a, BOPAlgo_Operation.BOPAlgo_CUT21));
+        DrawCxx.Add(theInterpreter, "bcommon", (i, di, a) => BSmt(i, di, a, Operation.Common));
+        DrawCxx.Add(theInterpreter, "bfuse", (i, di, a) => BSmt(i, di, a, Operation.Fuse));
+        DrawCxx.Add(theInterpreter, "bcut", (i, di, a) => BSmt(i, di, a, Operation.Cut));
+        DrawCxx.Add(theInterpreter, "btuc", (i, di, a) => BSmt(i, di, a, Operation.CUT21));
         DrawCxx.Add(theInterpreter, "bsection", BSection);
         DrawCxx.Add(theInterpreter, "bopcurves", BopCurves);
         DrawCxx.Add(theInterpreter, "mkvolume", MkVolume);
@@ -57,11 +61,11 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        BOPAlgo_GlueEnum aGlue = aSession.Glue;
+        GlueMode aGlue = aSession.Glue;
         aLC.Append(aS1);
         aLC.Append(aS2);
         aSession.BopPaveFiller = null;
-        BOPAlgo_PaveFiller pPF = new();
+        PaveFiller pPF = new();
         aSession.BopPaveFiller = pPF;
         pPF.SetArguments(aLC);
         pPF.SetFuzzyValue(aTol);
@@ -75,7 +79,7 @@ internal static class BOPTestBOPCommands
     }
 
     /// <summary><c>bopcommon r</c> and the others: a Boolean of <c>bop</c>'s two shapes on its pave filler (bopsmt).</summary>
-    private static int BopSmt(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, BOPAlgo_Operation aOp)
+    private static int BopSmt(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, Operation aOp)
     {
         int n = a.Count;
         if (n < 2)
@@ -83,18 +87,18 @@ internal static class BOPTestBOPCommands
             di.Append(" use bopsmt r\n");
             return 0;
         }
-        BOPAlgo_PaveFiller? pPF = BOPTestObjects.Of(theDI).BopPaveFiller;
+        PaveFiller? pPF = BOPTestObjects.Of(theDI).BopPaveFiller;
         if (pPF is null)
         {
             di.Append(" prepare PaveFiller first\n");
             return 0;
         }
-        if (pPF.HasErrors())
+        if (pPF.HasErrors)
         {
             di.Append(" PaveFiller has not been done\n");
             return 0;
         }
-        BOPAlgo_BOP aBOP = new();
+        Bop aBOP = new();
         NCollection_List<Shape> aLC = pPF.Arguments();
         int aNb = aLC.Extent();
         if (aNb != 2)
@@ -119,7 +123,7 @@ internal static class BOPTestBOPCommands
             BRepTestHistoryCommands.SetHistory(theDI, aBOP.History());
         }
 
-        if (aBOP.HasErrors())
+        if (aBOP.HasErrors)
         {
             return 0;
         }
@@ -142,18 +146,18 @@ internal static class BOPTestBOPCommands
             di.Append(" use bopsection r\n");
             return 0;
         }
-        BOPAlgo_PaveFiller? pPF = BOPTestObjects.Of(theDI).BopPaveFiller;
+        PaveFiller? pPF = BOPTestObjects.Of(theDI).BopPaveFiller;
         if (pPF is null)
         {
             di.Append(" prepare PaveFiller first\n");
             return 0;
         }
-        if (pPF.HasErrors())
+        if (pPF.HasErrors)
         {
             di.Append(" PaveFiller has not been done\n");
             return 0;
         }
-        BOPAlgo_Section aBOP = new();
+        Section aBOP = new();
         NCollection_List<Shape> aLC = pPF.Arguments();
         int aNb = aLC.Extent();
         if (aNb != 2)
@@ -177,7 +181,7 @@ internal static class BOPTestBOPCommands
             BRepTestHistoryCommands.SetHistory(theDI, aBOP.History());
         }
 
-        if (aBOP.HasErrors())
+        if (aBOP.HasErrors)
         {
             return 0;
         }
@@ -214,7 +218,7 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        BOPAlgo_GlueEnum aGlue = aSession.Glue;
+        GlueMode aGlue = aSession.Glue;
         for (int i = 4; i < n; ++i)
         {
             if (a[i] == "-n2d")
@@ -235,7 +239,7 @@ internal static class BOPTestBOPCommands
                 bApp = false;
             }
         }
-        BRepAlgoAPI_Section aSec = new(aS1, aS2, false);
+        SectionOperation aSec = new(aS1, aS2, false);
         aSec.Approximation(bApp);
         aSec.ComputePCurveOn1(bPC1);
         aSec.ComputePCurveOn2(bPC2);
@@ -250,13 +254,13 @@ internal static class BOPTestBOPCommands
             BRepTestHistoryCommands.SetHistory(theDI, aSec.History());
         }
 
-        if (aSec.HasWarnings())
+        if (aSec.HasWarnings)
         {
             StringWriter aSStream = new();
             aSec.DumpWarnings(aSStream);
             di.Append(aSStream.ToString());
         }
-        if (!aSec.IsDone())
+        if (!aSec.IsDone)
         {
             StringWriter aSStream = new();
             aSec.DumpErrors(aSStream);
@@ -274,7 +278,7 @@ internal static class BOPTestBOPCommands
     }
 
     /// <summary><c>bcommon r s1 s2</c> and the others: a Boolean of two shapes (bsmt, BOPAlgo_BOP).</summary>
-    private static int BSmt(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, BOPAlgo_Operation aOp)
+    private static int BSmt(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, Operation aOp)
     {
         int n = a.Count;
         NCollection_List<Shape> aLC = new();
@@ -293,7 +297,7 @@ internal static class BOPTestBOPCommands
         aLC.Append(aS1);
         aLC.Append(aS2);
         BOPTestObjects aSession = BOPTestObjects.Of(theDI);
-        BOPAlgo_BOP aBOP = new();
+        Bop aBOP = new();
         aBOP.AddArgument(aS1);
         aBOP.AddTool(aS2);
         aBOP.SetOperation(aOp);
@@ -312,7 +316,7 @@ internal static class BOPTestBOPCommands
             BRepTestHistoryCommands.SetHistory(theDI, aBOP.PDS()!.Arguments(), new BOPTestBuilderHistory(aBOP));
         }
 
-        if (aBOP.HasErrors())
+        if (aBOP.HasErrors)
         {
             return 0;
         }
@@ -360,7 +364,7 @@ internal static class BOPTestBOPCommands
         }
         Face aF1 = ShapeCasts.Face(S1);
         Face aF2 = ShapeCasts.Face(S2);
-        NCollection_List<IntSurf_PntOn2S> aListOfPnts = new();
+        NCollection_List<PntOn2S> aListOfPnts = new();
         string aNm = "c_", aNp = "p_";
         double anAppTol = 0.0000001;
         bool aToApproxC3d = true;
@@ -385,7 +389,7 @@ internal static class BOPTestBOPCommands
             }
             else if (string.Equals(a[i], "-p", StringComparison.OrdinalIgnoreCase))
             {
-                IntSurf_PntOn2S aPt = new();
+                PntOn2S aPt = new();
                 double aU1 = theDI.Atof(a[++i]);
                 double aV1 = theDI.Atof(a[++i]);
                 double aU2 = theDI.Atof(a[++i]);
@@ -407,20 +411,20 @@ internal static class BOPTestBOPCommands
                 return 1;
             }
         }
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         aFF.SetParameters(aToApproxC3d, aToApproxC2dOnS1, aToApproxC2dOnS2, anAppTol);
         aFF.SetList(aListOfPnts);
         aFF.SetFuzzyValue(BOPTestObjects.Of(theDI).FuzzyValue);
         aFF.Perform(aF1, aF2, BOPTestObjects.Of(theDI).RunParallel);
-        bool anIsDone = aFF.IsDone();
+        bool anIsDone = aFF.IsDone;
         if (!anIsDone)
         {
             di.Append("Error: Intersection failed\n");
             return 0;
         }
         aFF.PrepareLines3D(false);
-        NCollection_Sequence<IntTools_Curve> aSCs = aFF.Lines();
-        NCollection_Sequence<IntTools_PntOn2Faces> aSPs = aFF.Points();
+        NCollection_Sequence<IntersectionCurve> aSCs = aFF.Lines();
+        NCollection_Sequence<PntOn2Faces> aSPs = aFF.Points();
         int aNbCurves = aSCs.Length();
         int aNbPoints = aSPs.Length();
         if (aNbCurves == 0 && aNbPoints == 0)
@@ -436,7 +440,7 @@ internal static class BOPTestBOPCommands
             {
                 for (int i = 1; i <= aNbCurves; i++)
                 {
-                    IntTools_Curve anIC = aSCs[i];
+                    IntersectionCurve anIC = aSCs[i];
                     if (aTolR < anIC.Tolerance())
                     {
                         aTolR = anIC.Tolerance();
@@ -447,7 +451,7 @@ internal static class BOPTestBOPCommands
             di.Append(aNbCurves).Append(" curve(s) found.\n");
             for (int i = 1; i <= aNbCurves; i++)
             {
-                IntTools_Curve anIC = aSCs[i];
+                IntersectionCurve anIC = aSCs[i];
 
                 Curve3D? aC3D = anIC.Curve();
 
@@ -502,7 +506,7 @@ internal static class BOPTestBOPCommands
             di.Append(aNbPoints).Append(" point(s) found.\n");
             for (int i = 1; i <= aNbPoints; i++)
             {
-                IntTools_PntOn2Faces aPi = aSPs[i];
+                PntOn2Faces aPi = aSPs[i];
                 Point3D aP = aPi.P1().Pnt();
                 string nameP = aNp + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 DrawTrSurf.Set(theDI, nameP, aP);
@@ -534,7 +538,7 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        BOPAlgo_GlueEnum aGlue = aSession.Glue;
+        GlueMode aGlue = aSession.Glue;
         //
         bool bToIntersect = true;
         bool bCompounds = false;
@@ -588,7 +592,7 @@ internal static class BOPTestBOPCommands
             aLS.Assign(aLSx);
         }
         //
-        BOPAlgo_MakerVolume aMV = new();
+        MakerVolume aMV = new();
         aMV.SetArguments(aLS);
         aMV.SetIntersect(bToIntersect);
         aMV.SetRunParallel(bRunParallel);
@@ -608,7 +612,7 @@ internal static class BOPTestBOPCommands
             BRepTestHistoryCommands.SetHistory(theDI, aLS, new BOPTestBuilderHistory(aMV));
         }
 
-        if (aMV.HasErrors())
+        if (aMV.HasErrors)
         {
             return 0;
         }
@@ -622,7 +626,7 @@ internal static class BOPTestBOPCommands
 /// The standard history methods of a BOPAlgo builder, for BRepTest_Objects::SetHistory(arguments, algorithm) (OCCT's
 /// template over any algorithm with IsDeleted, Modified and Generated).
 /// </summary>
-internal sealed class BOPTestBuilderHistory(BOPAlgo_BuilderShape theAlgo) : History.IAlgorithm
+internal sealed class BOPTestBuilderHistory(BuilderShape theAlgo) : History.IAlgorithm
 {
     public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 

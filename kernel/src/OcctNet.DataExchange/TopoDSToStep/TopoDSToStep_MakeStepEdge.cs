@@ -7,6 +7,7 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -35,7 +36,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
 
     public TopoDSToStep_MakeStepEdge()
     {
-        myError = TopoDSToStep_EdgeOther;
+        myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeOther;
         done = false;
     }
 
@@ -66,7 +67,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             if (FP.FindTypedTransient(aSTEPMapper, typeof(StepShape_EdgeCurve), ref anEC))
             {
                 // Non-manifold topology detected
-                myError = TopoDSToStep_EdgeDone;
+                myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeDone;
                 myResult = anEC;
                 done = true;
                 return;
@@ -76,7 +77,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
 
         if (aTool.IsBound(aEdge))
         {
-            myError = TopoDSToStep_EdgeDone;
+            myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeDone;
             done = true;
             myResult = aTool.Find(aEdge);
             return;
@@ -116,7 +117,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         {
             var errShape = new TransferBRep_ShapeMapper(aEdge);
             FP.AddWarning(errShape, " Edge(internal/external) from Non Manifold Topology");
-            myError = TopoDSToStep_NonManifoldEdge;
+            myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_NonManifoldEdge;
             done = false;
             return;
         }
@@ -138,7 +139,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         {
             var errShape = new TransferBRep_ShapeMapper(aEdge);
             FP.AddWarning(errShape, " First Vertex of Edge not mapped");
-            myError = TopoDSToStep_EdgeOther;
+            myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeOther;
             done = false;
             return;
         }
@@ -152,7 +153,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         {
             var errShape = new TransferBRep_ShapeMapper(aEdge);
             FP.AddWarning(errShape, " Last Vertex of Edge not mapped");
-            myError = TopoDSToStep_EdgeOther;
+            myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeOther;
             done = false;
             return;
         }
@@ -188,7 +189,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
                 // (see test de step_5 A1)
                 Point3D aP1 = Tool.Pnt(Vfirst);
                 Point3D aP2 = Tool.Pnt(Vlast);
-                var sac = new ShapeAnalysis_Curve();
+                var sac = new CurveAnalysis();
                 sac.Project(C, aP1, Tolerance(), out Point3D pproj, out U1, false);
                 sac.Project(C, aP2, Tolerance(), out pproj, out U2, false);
                 double dU = U2 - U1;
@@ -296,13 +297,13 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
             if (!isSeam)
             {
                 var SurfaceCurve = new StepGeom_SurfaceCurve();
-                SurfaceCurve.Init(aName, Gpms, aGeom, StepGeom_pscrPcurveS1);
+                SurfaceCurve.Init(aName, Gpms, aGeom, StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS1);
                 Gpms = SurfaceCurve;
             }
             else
             {
                 var SeamCurve = new StepGeom_SeamCurve();
-                SeamCurve.Init(aName, Gpms, aGeom, StepGeom_pscrPcurveS1);
+                SeamCurve.Init(aName, Gpms, aGeom, StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS1);
                 Gpms = SeamCurve;
             }
         }
@@ -313,7 +314,7 @@ public sealed class TopoDSToStep_MakeStepEdge : TopoDSToStep_Root
         Epms.Init(aName1, V1, V2, Gpms, true);
 
         aTool.Bind(aEdge, Epms);
-        myError = TopoDSToStep_EdgeDone;
+        myError = TopoDSToStep_MakeEdgeError.TopoDSToStep_EdgeDone;
         myResult = Epms;
         done = true;
     }

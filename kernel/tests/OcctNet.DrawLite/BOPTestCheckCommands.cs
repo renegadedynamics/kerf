@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
 using System.Diagnostics;
@@ -75,7 +80,7 @@ internal static class BOPTestCheckCommands
             return 1;
         }
         //
-        int aNbInterfTypes = BOPDS_DS.NbInterfTypes();
+        int aNbInterfTypes = DS.InterfTypeCount;
         int aLevel = aNbInterfTypes - 1;
         //
         if (n > 2)
@@ -107,7 +112,7 @@ internal static class BOPTestCheckCommands
         //
         string[] aInterfTypes = ["V/V", "V/E", "E/E", "V/F", "E/F", "F/F", "V/Z", "E/Z", "F/Z", "Z/Z"];
         //
-        BOPAlgo_CheckerSI aChecker = new();
+        CheckerSI aChecker = new();
         NCollection_List<Shape> aLS = new();
         //
         if (aLevel < (aNbInterfTypes - 1))
@@ -137,13 +142,13 @@ internal static class BOPTestCheckCommands
         //
         BOPTestObjects.ReportAlerts(theDI, di, aChecker.GetReport());
         //
-        bool iErr = aChecker.HasErrors();
+        bool iErr = aChecker.HasErrors;
         //
-        BOPDS_DS aDS = aChecker.PDS()!;
+        DS aDS = aChecker.PDS()!;
         //
         List<BOPTestInterf> aVec = [];
         //
-        for (BOPDS_MapOfPair.Iterator aItMPK = new(aDS.Interferences()); aItMPK.More(); aItMPK.Next())
+        for (MapOfPair.Iterator aItMPK = new(aDS.Interferences()); aItMPK.More(); aItMPK.Next())
         {
             aItMPK.Value().Indices(out int n1, out int n2);
             if (aDS.IsNewShape(n1) || aDS.IsNewShape(n2))
@@ -154,7 +159,7 @@ internal static class BOPTestCheckCommands
             ShapeType aType1 = aDS.ShapeInfo(n1).ShapeType();
             ShapeType aType2 = aDS.ShapeInfo(n2).ShapeType();
             //
-            int iT = BOPDS_Tools.TypeToInteger(aType1, aType2);
+            int iT = DataTools.TypeToInteger(aType1, aType2);
             aVec.Add(new BOPTestInterf(n1, n2, iT));
         }
         //
@@ -324,7 +329,7 @@ internal static class BOPTestCheckCommands
         static char At(string theWord, int theIndex) => theIndex < theWord.Length ? theWord[theIndex] : '\0';
 
         // init checker
-        BOPAlgo_ArgumentAnalyzer aChecker = new();
+        ArgumentAnalyzer aChecker = new();
         aChecker.SetRunParallel(bRunParallel);
         aChecker.SetFuzzyValue(aTolerance);
         aChecker.SetShape1(aS1);
@@ -340,7 +345,7 @@ internal static class BOPTestCheckCommands
         // test & set options and operation for two shapes
         if (!aS22.IsNull)
         {
-            aS2 = new BRepBuilderAPI_Copy(aS22).Shape();
+            aS2 = new Copy(aS22).Shape();
             aChecker.SetShape2(aS2);
             // set operation (default - Section)
             if (isBO)
@@ -348,27 +353,27 @@ internal static class BOPTestCheckCommands
                 char aC = At(a[indxBO], 1);
                 if (aC == 'F' || aC == 'f')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_FUSE;
+                    aChecker.OperationType() = Operation.Fuse;
                 }
                 else if (aC == 'O' || aC == 'o')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_COMMON;
+                    aChecker.OperationType() = Operation.Common;
                 }
                 else if (aC == 'C' || aC == 'c')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_CUT;
+                    aChecker.OperationType() = Operation.Cut;
                 }
                 else if (aC == 'T' || aC == 't')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_CUT21;
+                    aChecker.OperationType() = Operation.CUT21;
                 }
                 else if (aC == 'S' || aC == 's')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_SECTION;
+                    aChecker.OperationType() = Operation.Section;
                 }
                 else if (aC == 'U' || aC == 'u')
                 {
-                    aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_UNKNOWN;
+                    aChecker.OperationType() = Operation.Unknown;
                 }
                 else
                 {
@@ -379,7 +384,7 @@ internal static class BOPTestCheckCommands
             }
             else
             {
-                aChecker.OperationType() = BOPAlgo_Operation.BOPAlgo_SECTION;
+                aChecker.OperationType() = Operation.Section;
             }
 
             aChecker.TangentMode() = true;
@@ -465,7 +470,7 @@ internal static class BOPTestCheckCommands
         // run checker
         aChecker.Perform();
         // process result of checking
-        if (!aChecker.HasFaulty())
+        if (!aChecker.HasFaulty)
         {
             di.Append("Shape(s) seem(s) to be valid for BOP.").Append("\n");
         }
@@ -485,7 +490,7 @@ internal static class BOPTestCheckCommands
     }
 
     // bopargcheck's full output (#F)
-    private static void FullOutput(DrawInterpreter theDI, DrawResult di, BOPAlgo_ArgumentAnalyzer aChecker)
+    private static void FullOutput(DrawInterpreter theDI, DrawResult di, ArgumentAnalyzer aChecker)
     {
         int S1_BadType = 0, S1_SelfInt = 0, S1_SmalE = 0, S1_BadF = 0, S1_BadV = 0, S1_BadE = 0;
         int S1_SelfIntAll = 0, S1_SmalEAll = 0, S1_BadFAll = 0, S1_BadVAll = 0, S1_BadEAll = 0;
@@ -496,7 +501,7 @@ internal static class BOPTestCheckCommands
         int S1_COnS = 0, S2_COnS = 0, S1_COnSAll = 0, S2_COnSAll = 0;
         bool hasUnknown = false;
 
-        foreach (BOPAlgo_CheckResult aResult in aChecker.InternalGetCheckResult())
+        foreach (CheckResult aResult in aChecker.InternalGetCheckResult())
         {
             Shape aSS1 = aResult.InternalGetShape1();
             Shape aSS2 = aResult.InternalGetShape2();
@@ -530,7 +535,7 @@ internal static class BOPTestCheckCommands
 
             switch (aResult.GetCheckStatus())
             {
-                case BOPAlgo_CheckStatus.BOPAlgo_BadType:
+                case CheckStatus.BadType:
                 {
                     if (!aSS1.IsNull)
                     {
@@ -542,33 +547,33 @@ internal static class BOPTestCheckCommands
                     }
                 }
                 break;
-                case BOPAlgo_CheckStatus.BOPAlgo_SelfIntersect:
+                case CheckStatus.SelfIntersect:
                     Count(ref S1_SelfInt, ref S1_SelfIntAll, ref S2_SelfInt, ref S2_SelfIntAll, "s1si_", "s2si_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_TooSmallEdge:
+                case CheckStatus.TooSmallEdge:
                     Count(ref S1_SmalE, ref S1_SmalEAll, ref S2_SmalE, ref S2_SmalEAll, "s1se_", "s2se_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_NonRecoverableFace:
+                case CheckStatus.NonRecoverableFace:
                     Count(ref S1_BadF, ref S1_BadFAll, ref S2_BadF, ref S2_BadFAll, "s1bf_", "s2bf_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_IncompatibilityOfVertex:
+                case CheckStatus.IncompatibilityOfVertex:
                     Count(ref S1_BadV, ref S1_BadVAll, ref S2_BadV, ref S2_BadVAll, "s1bv_", "s2bv_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_IncompatibilityOfEdge:
+                case CheckStatus.IncompatibilityOfEdge:
                     Count(ref S1_BadE, ref S1_BadEAll, ref S2_BadE, ref S2_BadEAll, "s1be_", "s2be_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_IncompatibilityOfFace:
+                case CheckStatus.IncompatibilityOfFace:
                 {
                     // not yet implemented
                 }
                 break;
-                case BOPAlgo_CheckStatus.BOPAlgo_GeomAbs_C0:
+                case CheckStatus.GeomAbs_C0:
                     Count(ref S1_C0, ref S1_C0All, ref S2_C0, ref S2_C0All, "s1C0_", "s2C0_");
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_InvalidCurveOnSurface:
+                case CheckStatus.InvalidCurveOnSurface:
                     Count(ref S1_COnS, ref S1_COnSAll, ref S2_COnS, ref S2_COnSAll, "s1COnS_", "s2COnS_", true);
                     break;
-                case BOPAlgo_CheckStatus.BOPAlgo_OperationAborted:
+                case CheckStatus.OperationAborted:
                 {
                     if (!aSS1.IsNull)
                     {
@@ -694,7 +699,7 @@ internal static class BOPTestCheckCommands
             aS2 = theDI.GetShape(a[2]);
         }
 
-        BOPAlgo_Operation anOp = BOPAlgo_Operation.BOPAlgo_UNKNOWN;
+        Operation anOp = Operation.Unknown;
         bool bTestSE = true;
         bool bTestSI = true;
 
@@ -708,23 +713,23 @@ internal static class BOPTestCheckCommands
                 string anOpName = i < n ? a[i] : "";
                 if (anOpName == "common")
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_COMMON;
+                    anOp = Operation.Common;
                 }
                 else if (anOpName == "fuse")
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_FUSE;
+                    anOp = Operation.Fuse;
                 }
                 else if (anOpName == "cut")
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_CUT;
+                    anOp = Operation.Cut;
                 }
                 else if (anOpName == "tuc")
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_CUT21;
+                    anOp = Operation.CUT21;
                 }
                 else if (anOpName == "section")
                 {
-                    anOp = BOPAlgo_Operation.BOPAlgo_SECTION;
+                    anOp = Operation.Section;
                 }
             }
             else if (a[i] == "-se")
@@ -741,8 +746,8 @@ internal static class BOPTestCheckCommands
             }
         }
 
-        BRepAlgoAPI_Check aChecker = new(aS1, aS2, anOp, bTestSE, bTestSI);
-        if (aChecker.IsValid())
+        Check aChecker = new(aS1, aS2, anOp, bTestSE, bTestSI);
+        if (aChecker.IsValid)
         {
             if (aS2.IsNull)
             {
@@ -760,9 +765,9 @@ internal static class BOPTestCheckCommands
 
         bool isInv1 = false, isInv2 = false;
         bool isBadOp = false;
-        foreach (BOPAlgo_CheckResult aFaulty in aChecker.InternalResult())
+        foreach (CheckResult aFaulty in aChecker.InternalResult())
         {
-            if (aFaulty.GetCheckStatus() == BOPAlgo_CheckStatus.BOPAlgo_BadType)
+            if (aFaulty.GetCheckStatus() == CheckStatus.BadType)
             {
                 isBadOp = true;
             }
@@ -839,7 +844,7 @@ internal static class BOPTestCheckCommands
         Edge anEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(aS1);
         Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aS2);
         //
-        if (!BOPTools_AlgoTools.ComputeTolerance(aFace, anEdge, out double aMaxDist, out double aMaxPar))
+        if (!AlgoTools.ComputeTolerance(aFace, anEdge, out double aMaxDist, out double aMaxPar))
         {
             di.Append("Tolerance cannot be computed\n");
             return 1;
@@ -887,7 +892,7 @@ internal static class BOPTestCheckCommands
             {
                 Edge aE = global::Kerf.Engine.Topology.ShapeCasts.Edge(aExpE.Current());
                 //
-                if (!BOPTools_AlgoTools.ComputeTolerance(aF, aE, out aDMax, out aT))
+                if (!AlgoTools.ComputeTolerance(aF, aE, out aDMax, out aT))
                 {
                     continue;
                 }

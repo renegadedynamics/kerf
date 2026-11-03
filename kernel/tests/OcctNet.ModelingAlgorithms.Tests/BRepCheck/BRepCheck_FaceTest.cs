@@ -2,12 +2,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.Orientation;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -73,9 +74,9 @@ public class BRepCheck_FaceTest
         return true;
     }
 
-    private static BRepCheck_Status classifyWires(in Face theFace)
+    private static StatusCheck classifyWires(in Face theFace)
     {
-        var aChecker = new BRepCheck_Face(theFace);
+        var aChecker = new FaceCheck(theFace);
         return aChecker.ClassifyWires();
     }
 
@@ -95,8 +96,8 @@ public class BRepCheck_FaceTest
         }
 
         aFace = TestShapes.Frozen(aFace);
-        Assert.Equal(BRepCheck_NoError, classifyWires(aFace));
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
+        Assert.Equal(StatusCheck.NoError, classifyWires(aFace));
+        Assert.True(new Analyzer(aFace).IsValid());
     }
 
     [Fact]
@@ -119,7 +120,7 @@ public class BRepCheck_FaceTest
         new BrepBuilder().Add(aFace, aHole);
 
         aFace = TestShapes.Frozen(aFace);
-        Assert.Equal(BRepCheck_NoError, classifyWires(aFace));
+        Assert.Equal(StatusCheck.NoError, classifyWires(aFace));
     }
 
     [Fact]
@@ -132,9 +133,9 @@ public class BRepCheck_FaceTest
         new BrepBuilder().Add(aFace, MakeWire(anEdge));
 
         aFace = TestShapes.Frozen(aFace);
-        BRepCheck_Status aForwardStatus = classifyWires(aFace);
+        StatusCheck aForwardStatus = classifyWires(aFace);
         Face aReversedFace = ShapeCasts.Face(aFace.Reversed());
-        Assert.Equal(BRepCheck_NoError, aForwardStatus);
+        Assert.Equal(StatusCheck.NoError, aForwardStatus);
         Assert.Equal(aForwardStatus, classifyWires(aReversedFace));
     }
 
@@ -153,9 +154,9 @@ public class BRepCheck_FaceTest
         aB.Add(aFace, MakeWire(anEdge));
 
         aFace = TestShapes.Frozen(aFace);
-        BRepCheck_Status aForwardStatus = classifyWires(aFace);
+        StatusCheck aForwardStatus = classifyWires(aFace);
         Face aReversedFace = ShapeCasts.Face(aFace.Reversed());
-        Assert.Equal(BRepCheck_NoError, aForwardStatus);
+        Assert.Equal(StatusCheck.NoError, aForwardStatus);
         Assert.Equal(aForwardStatus, classifyWires(aReversedFace));
         Assert.Equal(Reversed, aReversedFace.Orientation());
     }

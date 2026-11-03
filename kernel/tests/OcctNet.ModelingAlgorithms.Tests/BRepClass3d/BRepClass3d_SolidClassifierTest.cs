@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Topology.Containment;
@@ -13,14 +15,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepClass3d_SolidClassifierTest
 {
-    private static Shape Box10() => new BRepPrimAPI_MakeBox(new Point3D(0.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
+    private static Shape Box10() => new MakeBox(new Point3D(0.0, 0.0, 0.0), 10.0, 10.0, 10.0).Shape();
 
     [Fact]
     public void PointInside_Box()
     {
         Shape aBox = Box10();
 
-        var aClassifier = new BRepClass3d_SolidClassifier(aBox);
+        var aClassifier = new SolidClassifier(aBox);
         aClassifier.Perform(new Point3D(5.0, 5.0, 5.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(In, aClassifier.State()); // Point (5,5,5) should be inside the box
@@ -31,7 +33,7 @@ public class BRepClass3d_SolidClassifierTest
     {
         Shape aBox = Box10();
 
-        var aClassifier = new BRepClass3d_SolidClassifier(aBox);
+        var aClassifier = new SolidClassifier(aBox);
         aClassifier.Perform(new Point3D(20.0, 20.0, 20.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(Out, aClassifier.State()); // Point (20,20,20) should be outside the box
@@ -42,7 +44,7 @@ public class BRepClass3d_SolidClassifierTest
     {
         Shape aBox = Box10();
 
-        var aClassifier = new BRepClass3d_SolidClassifier(aBox);
+        var aClassifier = new SolidClassifier(aBox);
         aClassifier.Perform(new Point3D(5.0, 5.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(On, aClassifier.State()); // Point (5,5,0) should be on the bottom face of the box
@@ -51,9 +53,9 @@ public class BRepClass3d_SolidClassifierTest
     [Fact]
     public void PointInside_Sphere()
     {
-        Shape aSphere = new BRepPrimAPI_MakeSphere(10.0).Shape();
+        Shape aSphere = new MakeSphere(10.0).Shape();
 
-        var aClassifier = new BRepClass3d_SolidClassifier(aSphere);
+        var aClassifier = new SolidClassifier(aSphere);
         aClassifier.Perform(new Point3D(0.0, 0.0, 0.0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(In, aClassifier.State()); // Origin should be inside the sphere
@@ -64,7 +66,7 @@ public class BRepClass3d_SolidClassifierTest
     {
         Shape aBox = Box10();
 
-        var aClassifier = new BRepClass3d_SolidClassifier(aBox);
+        var aClassifier = new SolidClassifier(aBox);
         aClassifier.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Assert.Equal(Out, aClassifier.State()); // Infinite point should be outside the box

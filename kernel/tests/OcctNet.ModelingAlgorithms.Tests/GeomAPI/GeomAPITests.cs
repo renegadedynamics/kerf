@@ -3,6 +3,7 @@
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -22,7 +23,7 @@ public class GeomAPITests
     {
         Plane3D aPln = new(new CoordinateSystem(new Point3D(0, 0, 2), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         LineCurve2D aL2d = new(new Point2D(1, 2), new Direction2D(0, 1));
-        Curve3D aC = GeomAPI.To3d(aL2d, aPln);
+        Curve3D aC = Projections.To3d(aL2d, aPln);
         LineCurve3D aLine = Assert.IsType<LineCurve3D>(aC);
         Assert.True(aLine.Value(0.0).IsEqual(new Point3D(1, 2, 2), Tol));
         Assert.True(aLine.Lin().Direction().IsEqual(new Direction3D(0, 1, 0), Tol));
@@ -32,7 +33,7 @@ public class GeomAPITests
     public void To2d_ProjectsALineOnThePlane()
     {
         // a line above the XOY plane projects to the 2D line along u through the origin
-        Curve2D? aC = GeomAPI.To2d(Line(0, 0, 3, 1, 0, 0), new Plane3D());
+        Curve2D? aC = Projections.To2d(Line(0, 0, 3, 1, 0, 0), new Plane3D());
         LineCurve2D aLine = Assert.IsType<LineCurve2D>(aC);
         Assert.True(aLine.Value(0.0).IsEqual(new Point2D(0, 0), Tol));
         Assert.True(aLine.Lin2d().Direction().IsEqual(new Direction2D(1, 0), Tol));
@@ -41,7 +42,7 @@ public class GeomAPITests
     [Fact]
     public void ProjectPointOnCurve_Circle()
     {
-        GeomAPI_ProjectPointOnCurve aProj = new(new Point3D(10, 0, 3), Circle(5));
+        ProjectPointOnCurve aProj = new(new Point3D(10, 0, 3), Circle(5));
         Assert.Equal(2, aProj.NbPoints());
         Assert.Equal(2, (int)aProj);
         Assert.Equal(Math.Sqrt(34.0), aProj.LowerDistance(), Tol);
@@ -58,19 +59,19 @@ public class GeomAPITests
     public void ProjectPointOnCurve_LineAndRange()
     {
         LineCurve3D aLine = Line(0, 0, 0, 0, 0, 1);
-        GeomAPI_ProjectPointOnCurve aProj = new(new Point3D(1, 2, 3), aLine);
+        ProjectPointOnCurve aProj = new(new Point3D(1, 2, 3), aLine);
         Assert.Equal(1, aProj.NbPoints());
         aProj.Parameter(1, out double aU);
         Assert.Equal(3.0, aU, Tol);
         Assert.Equal(Math.Sqrt(5.0), aProj.Distance(1), Tol);
 
         // The point projects outside [5, 6]: no extremum inside the range
-        GeomAPI_ProjectPointOnCurve aRanged = new(new Point3D(1, 2, 3), aLine, 5.0, 6.0);
+        ProjectPointOnCurve aRanged = new(new Point3D(1, 2, 3), aLine, 5.0, 6.0);
         Assert.Equal(0, aRanged.NbPoints());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aRanged.LowerDistance());
 
         // Init on a range, then several points
-        GeomAPI_ProjectPointOnCurve aReused = new();
+        ProjectPointOnCurve aReused = new();
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aReused.NearestPoint());
         aReused.Init(aLine, -10.0, 10.0);
         Assert.Equal(0, aReused.NbPoints());
@@ -85,15 +86,15 @@ public class GeomAPITests
     public void ProjectPointOnSurf_SphereAndPlane()
     {
         SphericalSurface aSphere = new(new CoordinateSystem(Constants.XOY()), 2.0);
-        GeomAPI_ProjectPointOnSurf aProj = new(new Point3D(0, 0, 5), aSphere);
-        Assert.True(aProj.IsDone());
+        ProjectPointOnSurface aProj = new(new Point3D(0, 0, 5), aSphere);
+        Assert.True(aProj.IsDone);
         Assert.Equal(3.0, aProj.LowerDistance(), Tol);
         Assert.True(aProj.NearestPoint().IsEqual(new Point3D(0, 0, 2), Tol));
         aProj.LowerDistanceParameters(out _, out double aV);
         Assert.Equal(Math.PI / 2, aV, Tol);
 
         PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
-        GeomAPI_ProjectPointOnSurf aOnPlane = new(new Point3D(1, 2, 3), aPlane);
+        ProjectPointOnSurface aOnPlane = new(new Point3D(1, 2, 3), aPlane);
         Assert.Equal(1, aOnPlane.NbPoints());
         aOnPlane.Parameters(1, out double aU1, out double aV1);
         Assert.Equal(1.0, aU1, Tol);
@@ -101,10 +102,10 @@ public class GeomAPITests
         Assert.Equal(3.0, (double)aOnPlane, Tol);
 
         // Init on a range, then several points; the minimum flag is kept across Init
-        GeomAPI_ProjectPointOnSurf aReused = new();
+        ProjectPointOnSurface aReused = new();
         aReused.SetExtremaFlag(ExtFlag.ExtFlag_MIN);
         aReused.Init(aSphere, 0.0, 2 * Math.PI, -Math.PI / 2, Math.PI / 2);
-        Assert.False(aReused.IsDone());
+        Assert.False(aReused.IsDone);
         aReused.Perform(new Point3D(5, 0, 0));
         Assert.True(aReused.NbPoints() >= 1); // the minimum, found at U = 0 and on the seam at U = 2 pi
         Assert.Equal(3.0, aReused.LowerDistance(), Tol);
@@ -116,8 +117,8 @@ public class GeomAPITests
     [Fact]
     public void ExtremaCurveCurve_SkewAndParallelLines()
     {
-        GeomAPI_ExtremaCurveCurve aSkew = new(Line(0, 0, 0, 1, 0, 0), Line(3, 0, 1, 0, 1, 0));
-        Assert.False(aSkew.IsParallel());
+        ExtremaCurveCurve aSkew = new(Line(0, 0, 0, 1, 0, 0), Line(3, 0, 1, 0, 1, 0));
+        Assert.False(aSkew.IsParallel);
         Assert.Equal(1, aSkew.NbExtrema());
         Assert.Equal(1.0, aSkew.LowerDistance(), Tol);
         aSkew.NearestPoints(out Point3D aP1, out Point3D aP2);
@@ -128,8 +129,8 @@ public class GeomAPITests
         Assert.Equal(0.0, aU2, Tol);
         Assert.Equal(1.0, aSkew.TotalLowerDistance(), Tol);
 
-        GeomAPI_ExtremaCurveCurve aParallel = new(Line(0, 0, 0, 1, 0, 0), Line(0, 2, 0, 1, 0, 0));
-        Assert.True(aParallel.IsParallel());
+        ExtremaCurveCurve aParallel = new(Line(0, 0, 0, 1, 0, 0), Line(0, 2, 0, 1, 0, 0));
+        Assert.True(aParallel.IsParallel);
         Assert.Equal(2.0, aParallel.LowerDistance(), Tol);
         Assert.Equal(2.0, aParallel.TotalLowerDistance(), Tol);
         Point3D aT1 = new(), aT2 = new();
@@ -143,7 +144,7 @@ public class GeomAPITests
         // end points, (1, 0, 0) and (0, 1, 0) at sqrt(2)
         TrimmedCurve3D aC1 = new(Line(0, 0, 0, 1, 0, 0), 1.0, 2.0);
         TrimmedCurve3D aC2 = new(Line(0, 0, 0, 0, 1, 0), 1.0, 2.0);
-        GeomAPI_ExtremaCurveCurve anExt = new(aC1, aC2);
+        ExtremaCurveCurve anExt = new(aC1, aC2);
         Assert.Equal(0, anExt.NbExtrema());
         // OCCT (occt-issues.md): TotalPerform compares each end pair with the first total distance (RealLast here),
         // never updated, so the last pair, (2, 0, 0) and (0, 2, 0), wins; the end points project outside the other
@@ -168,7 +169,7 @@ public class GeomAPITests
         // (0, 1, 0); OCCT gives 1, between (1, 0, 0) and the origin (outside the second range), at parameters (0, 0).
         TrimmedCurve3D aC1 = new(Line(0, 0, 0, 1, 0, 0), 0.0, 3.0);
         TrimmedCurve3D aC2 = new(Line(0, 0, 0, 0, 1, 0), 0.0, 3.0);
-        GeomAPI_ExtremaCurveCurve anExt = new(aC1, aC2, 1.0, 2.0, 1.0, 2.0);
+        ExtremaCurveCurve anExt = new(aC1, aC2, 1.0, 2.0, 1.0, 2.0);
         Assert.Equal(0, anExt.NbExtrema());
         Assert.Equal(1.0, anExt.TotalLowerDistance(), Tol);
         double aU1 = -1, aU2 = -1;
@@ -185,7 +186,7 @@ public class GeomAPITests
     public void ExtremaCurveSurface_LineAndSphere()
     {
         SphericalSurface aSphere = new(new CoordinateSystem(Constants.XOY()), 2.0);
-        GeomAPI_ExtremaCurveSurface anExt = new(Line(0, 0, 5, 1, 0, 0), aSphere);
+        ExtremaCurveSurface anExt = new(Line(0, 0, 5, 1, 0, 0), aSphere);
         Assert.True(anExt.NbExtrema() > 0);
         Assert.Equal(3.0, anExt.LowerDistance(), Tol);
         anExt.NearestPoints(out Point3D aPC, out Point3D aPS);
@@ -200,8 +201,8 @@ public class GeomAPITests
     public void ExtremaCurveSurface_ParallelLineAndPlane()
     {
         PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
-        GeomAPI_ExtremaCurveSurface anExt = new(Line(0, 0, 4, 1, 1, 0), aPlane);
-        Assert.True(anExt.IsParallel());
+        ExtremaCurveSurface anExt = new(Line(0, 0, 4, 1, 1, 0), aPlane);
+        Assert.True(anExt.IsParallel);
         Assert.Equal(4.0, anExt.LowerDistance(), Tol);
         Assert.Equal(4.0, (double)anExt, Tol);
     }
@@ -211,9 +212,9 @@ public class GeomAPITests
     {
         SphericalSurface aSphere = new(new CoordinateSystem(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 1.0);
         PlaneSurface aPlane = new(new CoordinateSystem(Constants.XOY()));
-        GeomAPI_ExtremaSurfaceSurface anExt = new(aSphere, aPlane, 0.0, 2 * Math.PI, -Math.PI / 2, Math.PI / 2,
+        ExtremaSurfaceSurface anExt = new(aSphere, aPlane, 0.0, 2 * Math.PI, -Math.PI / 2, Math.PI / 2,
                                                   -10.0, 10.0, -10.0, 10.0);
-        Assert.False(anExt.IsParallel());
+        Assert.False(anExt.IsParallel);
         Assert.True(anExt.NbExtrema() > 0);
         Assert.Equal(4.0, anExt.LowerDistance(), Tol);
         anExt.NearestPoints(out Point3D aP1, out Point3D aP2);
@@ -222,8 +223,8 @@ public class GeomAPITests
         Assert.True(aP2.IsEqual(new Point3D(0, 0, 0), 1.0e-6));
 
         PlaneSurface aPlane2 = new(new CoordinateSystem(new Point3D(0, 0, 3), new Direction3D(0, 0, 1)));
-        GeomAPI_ExtremaSurfaceSurface aParallel = new(aPlane, aPlane2);
-        Assert.True(aParallel.IsParallel());
+        ExtremaSurfaceSurface aParallel = new(aPlane, aPlane2);
+        Assert.True(aParallel.IsParallel);
         Assert.Equal(3.0, aParallel.LowerDistance(), Tol);
     }
 
@@ -240,9 +241,9 @@ public class GeomAPITests
                     double t = 2 * Math.PI * (i - 1) / aNb;
                     aPnts.SetValue(i, new Point3D(Math.Cos(t), Math.Sin(t), 0.1 * i));
                 }
-                GeomAPI_Interpolate anInterp = new(aPnts, aPeriodic, global::Kerf.Engine.Foundation.Precision.Confusion());
+                ApiInterpolate anInterp = new(aPnts, aPeriodic, global::Kerf.Engine.Foundation.Precision.Confusion());
                 anInterp.Perform();
-                Assert.True(anInterp.IsDone());
+                Assert.True(anInterp.IsDone);
                 BSplineCurve3D aCurve = anInterp.Curve();
                 Assert.True(aCurve.IsFrozen);
                 Assert.Equal(aPeriodic, aCurve.IsPeriodic);
@@ -274,7 +275,7 @@ public class GeomAPITests
             aParams.SetValue(i, i);
         }
 
-        GeomAPI_Interpolate anInterp = new(aPnts, aParams, false, global::Kerf.Engine.Foundation.Precision.Confusion());
+        ApiInterpolate anInterp = new(aPnts, aParams, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         NCollection_Array1<Vector3D> aTangents = new(1, 4);
         NCollection_HArray1<bool> aFlags = new(1, 4);
         aFlags.Init(false);
@@ -282,7 +283,7 @@ public class GeomAPITests
         aFlags[2] = true;
         anInterp.Load(aTangents, aFlags, false);
         anInterp.Perform();
-        Assert.True(anInterp.IsDone());
+        Assert.True(anInterp.IsDone);
         BSplineCurve3D aCurve = anInterp.Curve();
         aCurve.D1(2.0, out Point3D aP, out Vector3D aD1);
         Assert.True(aP.IsEqual(aPnts[2], 1.0e-9));
@@ -293,11 +294,11 @@ public class GeomAPITests
 
         // Coincident points, unordered parameters, a periodic interpolation without the closing parameter
         NCollection_HArray1<Point3D> aSame = new(1, 2);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomAPI_Interpolate(aSame, false, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aSame, false, global::Kerf.Engine.Foundation.Precision.Confusion()));
         aParams.SetValue(3, 1.5);
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomAPI_Interpolate(aPnts, aParams, false, 1.0e-7));
-        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new GeomAPI_Interpolate(aPnts, aParams, true, 1.0e-7));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new GeomAPI_Interpolate(aPnts, false, 1.0e-7).Curve());
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, false, 1.0e-7));
+        Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new ApiInterpolate(aPnts, aParams, true, 1.0e-7));
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new ApiInterpolate(aPnts, false, 1.0e-7).Curve());
     }
 
     [Fact]
@@ -309,14 +310,14 @@ public class GeomAPITests
             double t = (i - 1) / 19.0;
             aPoints[i] = new Point3D(t, t * t, Math.Sin(3 * t));
         }
-        GeomAPI_PointsToBSpline anApprox = new(aPoints);
-        Assert.True(anApprox.IsDone());
+        PointsToBSpline anApprox = new(aPoints);
+        Assert.True(anApprox.IsDone);
         BSplineCurve3D aCurve = anApprox.Curve();
         Assert.True(aCurve.IsFrozen);
         Assert.Same(aCurve, (BSplineCurve3D?)anApprox);
         foreach (Point3D aP in aPoints)
         {
-            GeomAPI_ProjectPointOnCurve aProj = new(aP, aCurve);
+            ProjectPointOnCurve aProj = new(aP, aCurve);
             Assert.True(aProj.LowerDistance() < 1.0e-3);
         }
 
@@ -326,14 +327,14 @@ public class GeomAPITests
             aParams[i] = 10.0 + i;
         }
         anApprox.Init(aPoints, aParams);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.Equal(11.0, anApprox.Curve().FirstParameter(), Tol);
         Assert.Equal(30.0, anApprox.Curve().LastParameter(), Tol);
 
         anApprox.Init(aPoints, 1.0, 0.0, 0.0);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
 
         Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anApprox.Init(aPoints, new NCollection_Array1<double>(1, 3)));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new GeomAPI_PointsToBSpline().Curve());
+        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => new PointsToBSpline().Curve());
     }
 }

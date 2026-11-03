@@ -1,4 +1,9 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -83,7 +88,7 @@ internal static partial class TopoUtil
     /// </summary>
     internal static global::Kerf.Topology.Shape PrivateCopy(global::Kerf.Topology.Shape shape, bool copyGeometry = false)
     {
-        var copier = new BRepBuilderAPI_Copy(shape, copyGeometry, false);
+        var copier = new Copy(shape, copyGeometry, false);
         return copier.Shape();
     }
 
@@ -91,7 +96,7 @@ internal static partial class TopoUtil
     internal static global::Kerf.Topology.Shape Fix(global::Kerf.Topology.Shape obj)
     {
         // ShapeFix edits the shape it's given, pcurves and parameters included, so it gets its own geometry too
-        var shapeFix = new ShapeFix_Shape(PrivateCopy(obj, copyGeometry: true));
+        var shapeFix = new ShapeFixer(PrivateCopy(obj, copyGeometry: true));
         shapeFix.Perform();
         return Downcast(shapeFix.Shape());
     }
@@ -191,14 +196,14 @@ internal static partial class TopoUtil
     internal static double Area(global::Kerf.Topology.Shape shape)
     {
         var props = new Properties();
-        BRepGProp.SurfaceProperties(shape, props);
+        MassPropertiesBuilder.SurfaceProperties(shape, props);
         return props.Mass();
     }
 
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
     internal static global::Kerf.Topology.Shape SewFaces(IEnumerable<global::Kerf.Topology.Shape> faces, double tolerance = Constants.Tolerance)
     {
-        var builder = new BRepBuilderAPI_Sewing(tolerance);
+        var builder = new Sewing(tolerance);
         foreach (var face in faces)
             builder.Add(face);
         builder.Perform();
@@ -214,7 +219,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>A boolean (or split) of raw shapes, with any compound around a single result removed.</summary>
-    internal static global::Kerf.Topology.Shape BoolOp(IEnumerable<global::Kerf.Topology.Shape> args, IEnumerable<global::Kerf.Topology.Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
+    internal static global::Kerf.Topology.Shape BoolOp(IEnumerable<global::Kerf.Topology.Shape> args, IEnumerable<global::Kerf.Topology.Shape> tools, BuilderAlgo operation)
     {
         var arg = ListOf(args);
         var tool = ListOf(tools);
@@ -230,13 +235,13 @@ internal static partial class TopoUtil
     }
 
     /// <summary>What a boolean is called in an error message.</summary>
-    internal static string BooleanName(BRepAlgoAPI_BuilderAlgo operation) => operation switch
+    internal static string BooleanName(BuilderAlgo operation) => operation switch
     {
-        BRepAlgoAPI_Cut => "cut",
-        BRepAlgoAPI_Fuse => "fuse",
-        BRepAlgoAPI_Common => "intersect",
-        BRepAlgoAPI_Section => "section",
-        BRepAlgoAPI_Splitter => "split",
+        Cut => "cut",
+        Fuse => "fuse",
+        Common => "intersect",
+        SectionOperation => "section",
+        SplitterOperation => "split",
         _ => "boolean",
     };
 
@@ -244,18 +249,18 @@ internal static partial class TopoUtil
     /// Throws if a built boolean failed, naming OCCT's reasons ("BOPAlgo_AlertSelfInterferingShape", say) where a bare
     /// <c>Shape()</c> would say only StdFail_NotDone.
     /// </summary>
-    internal static void ThrowIfFailed(BRepAlgoAPI_Algo operation)
+    internal static void ThrowIfFailed(Algo operation)
     {
-        if (operation.HasErrors())
+        if (operation.HasErrors)
             throw new NotDoneException(Extras.AlgoErrors(operation) ?? "");
     }
 
-    internal static void SetTools(BRepAlgoAPI_BuilderAlgo operation, NCollection_List<global::Kerf.Topology.Shape> tools)
+    internal static void SetTools(BuilderAlgo operation, NCollection_List<global::Kerf.Topology.Shape> tools)
     {
         switch (operation)
         {
-            case BRepAlgoAPI_BooleanOperation b: b.SetTools(tools); break;
-            case BRepAlgoAPI_Splitter s: s.SetTools(tools); break;
+            case BooleanOperation b: b.SetTools(tools); break;
+            case SplitterOperation s: s.SetTools(tools); break;
             default: throw new ArgumentException($"{operation.GetType().Name} takes no tools");
         }
     }
@@ -264,12 +269,12 @@ internal static partial class TopoUtil
     internal static Vector FaceNormalAt(global::Kerf.Topology.Face face, Point3D surfacePoint)
     {
         var surface = Tool.Surface(face);
-        var projector = new GeomAPI_ProjectPointOnSurf(surfacePoint, surface!);
+        var projector = new ProjectPointOnSurface(surfacePoint, surface!);
         double u = 0, v = 0;
         projector.LowerDistanceParameters(out u, out v);
         var pnt = new Point3D();
         var normal = new Vector3D();
-        var props = new BRepGProp_Face(face);
+        var props = new FaceIntegrand(face);
         props.Normal(u, v, out pnt, out normal);
         return new Vector(normal).Normalized();
     }

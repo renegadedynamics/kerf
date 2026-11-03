@@ -4,13 +4,15 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.SurfaceKind;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Patches;
 
 // ExtendTwoWLines and its helpers.
-public static partial class IntPatch_WLineTool
+public static partial class WLineTool
 {
     // Bit-mask is used for information about the operation made in ExtendTwoWLines(...).
     private const uint IntPatchWT_EnAll = 0x00;
@@ -35,260 +37,260 @@ public static partial class IntPatch_WLineTool
     /// </summary>
     private sealed class PntRef
     {
-        internal readonly IntSurf_LineOn2S Line;
-        internal int Index;
+        internal readonly LineOn2S _line;
+        internal int _index;
 
-        internal PntRef(IntSurf_LineOn2S theLine, int theIndex)
+        internal PntRef(LineOn2S line, int index)
         {
-            Line = theLine;
-            Index = theIndex;
+            _line = line;
+            _index = index;
         }
 
-        internal IntSurf_PntOn2S Value() => Line.Value(Index);
+        internal PntOn2S Value() => _line.Value(_index);
     }
 
     // theLine->InsertBefore(theIndex, P), keeping OCCT's node references (PntRef) on their nodes.
-    private static void InsertBefore(IntSurf_LineOn2S theLine, int theIndex, in IntSurf_PntOn2S P,
-                                     List<PntRef> theRefs)
+    private static void InsertBefore(LineOn2S line, int index, in PntOn2S p,
+                                     List<PntRef> refs)
     {
-        theLine.InsertBefore(theIndex, P);
-        foreach (PntRef aRef in theRefs)
+        line.InsertBefore(index, p);
+        foreach (PntRef aRef in refs)
         {
-            if (ReferenceEquals(aRef.Line, theLine) && aRef.Index >= theIndex)
+            if (ReferenceEquals(aRef._line, line) && aRef._index >= index)
             {
-                aRef.Index++;
+                aRef._index++;
             }
         }
     }
 
     // Returns True if thePmid is intersection point between theS1 and theS2 with given tolerance. In this case,
     // parameters of thePmid on every quadric will be recomputed and returned.
-    private static bool IsIntersectionPoint(in Point3D thePmid, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
-                                            in IntSurf_PntOn2S theRefPt, double theTol,
-                                            ReadOnlySpan<double> theArrPeriods, ref IntSurf_PntOn2S theNewPt)
+    private static bool IsIntersectionPoint(in Point3D pmid, SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
+                                            in PntOn2S refPt, double tol,
+                                            ReadOnlySpan<double> arrPeriods, ref PntOn2S newPt)
     {
-        double aU1 = 0.0, aV1 = 0.0, aU2 = 0.0, aV2 = 0.0;
+        double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
 
-        switch (theS1.GetType())
+        switch (s1.GetType())
         {
             case Plane:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Plane(), thePmid, out aU1, out aV1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s1.Plane(), pmid, out u1, out v1);
                 break;
 
             case SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Cylinder(), thePmid, out aU1, out aV1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s1.Cylinder(), pmid, out u1, out v1);
                 break;
 
             case SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Sphere(), thePmid, out aU1, out aV1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s1.Sphere(), pmid, out u1, out v1);
                 break;
 
             case SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Cone(), thePmid, out aU1, out aV1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s1.Cone(), pmid, out u1, out v1);
                 break;
 
             case SurfaceKind.Torus:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS1.Torus(), thePmid, out aU1, out aV1);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s1.Torus(), pmid, out u1, out v1);
                 break;
 
             default:
                 return false;
         }
 
-        switch (theS2.GetType())
+        switch (s2.GetType())
         {
             case Plane:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Plane(), thePmid, out aU2, out aV2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s2.Plane(), pmid, out u2, out v2);
                 break;
 
             case SurfaceKind.Cylinder:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Cylinder(), thePmid, out aU2, out aV2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s2.Cylinder(), pmid, out u2, out v2);
                 break;
 
             case SurfaceKind.Sphere:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Sphere(), thePmid, out aU2, out aV2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s2.Sphere(), pmid, out u2, out v2);
                 break;
 
             case SurfaceKind.Cone:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Cone(), thePmid, out aU2, out aV2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s2.Cone(), pmid, out u2, out v2);
                 break;
 
             case SurfaceKind.Torus:
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(theS2.Torus(), thePmid, out aU2, out aV2);
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(s2.Torus(), pmid, out u2, out v2);
                 break;
 
             default:
                 return false;
         }
 
-        theNewPt.SetValue(thePmid, aU1, aV1, aU2, aV2);
+        newPt.SetValue(pmid, u1, v1, u2, v2);
 
-        IntPatch_SpecialPoints.AdjustPointAndVertex(theRefPt, theArrPeriods, ref theNewPt);
+        SpecialPoints.AdjustPointAndVertex(refPt, arrPeriods, ref newPt);
 
-        Point3D aP1 = theS1.Value(aU1, aV1);
-        Point3D aP2 = theS2.Value(aU2, aV2);
+        Point3D p1 = s1.Value(u1, v1);
+        Point3D p2 = s2.Value(u2, v2);
 
-        return (aP1.SquareDistance(aP2) <= theTol * theTol);
+        return (p1.SquareDistance(p2) <= tol * tol);
     }
 
     // Adds thePOn2S to the begin of theWline.
-    private static void ExtendFirst(IntPatch_WLine theWline, in IntSurf_PntOn2S theAddedPt, List<PntRef> theRefs)
+    private static void ExtendFirst(WLine wline, in PntOn2S addedPt, List<PntRef> refs)
     {
-        theAddedPt.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
+        addedPt.Parameters(out double u1, out double v1, out double u2, out double v2);
 
-        if (theAddedPt.IsSame(theWline.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion()))
+        if (addedPt.IsSame(wline.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            theWline.Curve().Value(1, theAddedPt);
-            for (int i = 1; i <= theWline.NbVertex(); i++)
+            wline.Curve().Value(1, addedPt);
+            for (int i = 1; i <= wline.VertexCount; i++)
             {
-                ref IntPatch_Point aVert = ref theWline.ChangeVertex(i);
-                if (aVert.ParameterOnLine() != 1)
+                ref PatchPoint vert = ref wline.ChangeVertex(i);
+                if (vert.ParameterOnLine() != 1)
                 {
                     break;
                 }
 
-                aVert.SetParameters(aU1, aV1, aU2, aV2);
-                aVert.SetValue(theAddedPt.Value());
+                vert.SetParameters(u1, v1, u2, v2);
+                vert.SetValue(addedPt.Value());
             }
 
             return;
         }
 
-        InsertBefore(theWline.Curve(), 1, theAddedPt, theRefs);
+        InsertBefore(wline.Curve(), 1, addedPt, refs);
 
-        for (int i = 1; i <= theWline.NbVertex(); i++)
+        for (int i = 1; i <= wline.VertexCount; i++)
         {
-            ref IntPatch_Point aVert = ref theWline.ChangeVertex(i);
+            ref PatchPoint vert = ref wline.ChangeVertex(i);
 
-            if (aVert.ParameterOnLine() == 1)
+            if (vert.ParameterOnLine() == 1)
             {
-                aVert.SetParameters(aU1, aV1, aU2, aV2);
-                aVert.SetValue(theAddedPt.Value());
+                vert.SetParameters(u1, v1, u2, v2);
+                vert.SetValue(addedPt.Value());
             }
             else
             {
-                aVert.SetParameter(aVert.ParameterOnLine() + 1);
+                vert.SetParameter(vert.ParameterOnLine() + 1);
             }
         }
     }
 
     // Adds thePOn2S to the end of theWline.
-    private static void ExtendLast(IntPatch_WLine theWline, in IntSurf_PntOn2S theAddedPt)
+    private static void ExtendLast(WLine wline, in PntOn2S addedPt)
     {
-        theAddedPt.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
+        addedPt.Parameters(out double u1, out double v1, out double u2, out double v2);
 
-        int aNbPnts = theWline.NbPnts();
-        if (theAddedPt.IsSame(theWline.Point(aNbPnts), global::Kerf.Engine.Foundation.Precision.Confusion()))
+        int nbPnts = wline.NbPnts();
+        if (addedPt.IsSame(wline.Point(nbPnts), global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            theWline.Curve().Value(aNbPnts, theAddedPt);
+            wline.Curve().Value(nbPnts, addedPt);
         }
         else
         {
-            theWline.Curve().Add(theAddedPt);
+            wline.Curve().Add(addedPt);
         }
 
-        for (int i = theWline.NbVertex(); i >= 1; i--)
+        for (int i = wline.VertexCount; i >= 1; i--)
         {
-            ref IntPatch_Point aVert = ref theWline.ChangeVertex(i);
-            if (aVert.ParameterOnLine() != aNbPnts)
+            ref PatchPoint vert = ref wline.ChangeVertex(i);
+            if (vert.ParameterOnLine() != nbPnts)
             {
                 break;
             }
 
-            aVert.SetParameters(aU1, aV1, aU2, aV2);
-            aVert.SetValue(theAddedPt.Value());
-            aVert.SetParameter(theWline.NbPnts());
+            vert.SetParameters(u1, v1, u2, v2);
+            vert.SetValue(addedPt.Value());
+            vert.SetParameter(wline.NbPnts());
         }
     }
 
     // Checks, if 2D-representation of thePOn2S is in surfaces domain, defined by bounding-boxes theBoxS1 and theBoxS2.
-    private static bool IsOutOfDomain(in Box2d theBoxS1, in Box2d theBoxS2, in IntSurf_PntOn2S thePOn2S,
-                                      ReadOnlySpan<double> theArrPeriods)
+    private static bool IsOutOfDomain(in Box2d boxS1, in Box2d boxS2, in PntOn2S pOn2S,
+                                      ReadOnlySpan<double> arrPeriods)
     {
-        thePOn2S.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
+        pOn2S.Parameters(out double u1, out double v1, out double u2, out double v2);
 
-        theBoxS1.Get(out double aU1min, out double aV1min, out double aU1max, out double aV1max);
-        theBoxS2.Get(out double aU2min, out double aV2min, out double aU2max, out double aV2max);
+        boxS1.Get(out double u1min, out double v1min, out double u1max, out double v1max);
+        boxS2.Get(out double u2min, out double v2min, out double u2max, out double v2max);
 
-        aU1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU1, aU1min, aU1min + theArrPeriods[0]);
-        aV1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV1, aV1min, aV1min + theArrPeriods[1]);
-        aU2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aU2, aU2min, aU2min + theArrPeriods[2]);
-        aV2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(aV2, aV2min, aV2min + theArrPeriods[3]);
+        u1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u1, u1min, u1min + arrPeriods[0]);
+        v1 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v1, v1min, v1min + arrPeriods[1]);
+        u2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u2, u2min, u2min + arrPeriods[2]);
+        v2 = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v2, v2min, v2min + arrPeriods[3]);
 
-        return (theBoxS1.IsOut(new Point2D(aU1, aV1)) || theBoxS2.IsOut(new Point2D(aU2, aV2)));
+        return (boxS1.IsOut(new Point2D(u1, v1)) || boxS2.IsOut(new Point2D(u2, v2)));
     }
 
     // Check if extending is possible (see ExtendTwoWLines).
     private static IntPatchWT_WLsConnectionType CheckArgumentsToExtend(
-        SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2, in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-        ref IntSurf_PntOn2S theNewPoint, in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
-        in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D, ReadOnlySpan<double> theArrPeriods)
+        SurfaceAdaptorBase s1, SurfaceAdaptorBase s2, in PntOn2S ptWL1, in PntOn2S ptWL2,
+        ref PntOn2S newPoint, in Vector3D vec1, in Vector3D vec2, in Vector3D vec3,
+        in Box2d boxS1, in Box2d boxS2, double toler3D, ReadOnlySpan<double> arrPeriods)
     {
-        double aSqToler = theToler3D * theToler3D;
-        IntPatchWT_WLsConnectionType aRetVal = IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
-        if (theVec3.SquareMagnitude() <= aSqToler)
+        double sqToler = toler3D * toler3D;
+        IntPatchWT_WLsConnectionType retVal = IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
+        if (vec3.SquareMagnitude() <= sqToler)
         {
-            if ((theVec1.Angle(theVec2) > myMaxConcatAngle))
+            if ((vec1.Angle(vec2) > myMaxConcatAngle))
             {
-                return aRetVal;
+                return retVal;
             }
             else
             {
-                aRetVal = IntPatchWT_WLsConnectionType.IntPatchWT_Common;
+                retVal = IntPatchWT_WLsConnectionType.IntPatchWT_Common;
             }
         }
-        else if ((theVec1.Angle(theVec2) > myMaxConcatAngle) || (theVec1.Angle(theVec3) > myMaxConcatAngle)
-                 || (theVec2.Angle(theVec3) > myMaxConcatAngle))
+        else if ((vec1.Angle(vec2) > myMaxConcatAngle) || (vec1.Angle(vec3) > myMaxConcatAngle)
+                 || (vec2.Angle(vec3) > myMaxConcatAngle))
         {
-            return aRetVal;
+            return retVal;
         }
 
-        Point3D aPmid = new Point3D(0.5 * (thePtWL1.Value().XYZ() + thePtWL2.Value().XYZ()));
+        Point3D pmid = new Point3D(0.5 * (ptWL1.Value().XYZ() + ptWL2.Value().XYZ()));
 
-        Span<double> aNewPar = stackalloc double[4];
+        Span<double> newPar = stackalloc double[4];
 
         // Left-bottom corner (OCCT writes the boxes' upper bounds into aNewPar[0], overwritten below)
-        Span<double> aParLBC = stackalloc double[4];
-        theBoxS1.Get(out aParLBC[0], out aParLBC[1], out _, out _);
-        theBoxS2.Get(out aParLBC[2], out aParLBC[3], out _, out _);
+        Span<double> parLBC = stackalloc double[4];
+        boxS1.Get(out parLBC[0], out parLBC[1], out _, out _);
+        boxS2.Get(out parLBC[2], out parLBC[3], out _, out _);
 
-        if (!IsIntersectionPoint(aPmid, theS1, theS2, thePtWL1, theToler3D, theArrPeriods, ref theNewPoint))
+        if (!IsIntersectionPoint(pmid, s1, s2, ptWL1, toler3D, arrPeriods, ref newPoint))
         {
             return IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
         }
 
-        if (IsOutOfDomain(theBoxS1, theBoxS2, theNewPoint, theArrPeriods))
+        if (IsOutOfDomain(boxS1, boxS2, newPoint, arrPeriods))
         {
             return IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
         }
 
-        Span<double> aParWL1 = stackalloc double[4], aParWL2 = stackalloc double[4];
+        Span<double> parWL1 = stackalloc double[4], parWL2 = stackalloc double[4];
 
-        thePtWL1.Parameters(out aParWL1[0], out aParWL1[1], out aParWL1[2], out aParWL1[3]);
-        thePtWL2.Parameters(out aParWL2[0], out aParWL2[1], out aParWL2[2], out aParWL2[3]);
-        theNewPoint.Parameters(out aNewPar[0], out aNewPar[1], out aNewPar[2], out aNewPar[3]);
+        ptWL1.Parameters(out parWL1[0], out parWL1[1], out parWL1[2], out parWL1[3]);
+        ptWL2.Parameters(out parWL2[0], out parWL2[1], out parWL2[2], out parWL2[3]);
+        newPoint.Parameters(out newPar[0], out newPar[1], out newPar[2], out newPar[3]);
 
-        BoundRange aR1 = new BoundRange(), aR2 = new BoundRange();
+        BoundRange r1 = new BoundRange(), r2 = new BoundRange();
 
         bool isOnBoundary = false;
         for (int i = 0; i < 4; i++)
         {
-            if (theArrPeriods[i] == 0.0)
+            if (arrPeriods[i] == 0.0)
             {
                 // Strictly equal
                 continue;
             }
 
-            aR1.SetVoid();
-            aR1.Add(aParWL1[i]);
-            aR1.Add(aParWL2[i]);
+            r1.SetVoid();
+            r1.Add(parWL1[i]);
+            r1.Add(parWL2[i]);
 
-            if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
+            if (r1.IsIntersected(parLBC[i], arrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
             {
                 // Check, if we intersect surface boundary when we will extend Wline1 or Wline2
                 // to theNewPoint
-                MinMax(ref aParWL1[i], ref aParWL2[i]);
-                if (aNewPar[i] > aParWL2[i])
+                MinMax(ref parWL1[i], ref parWL2[i]);
+                if (newPar[i] > parWL2[i])
                 {
                     // Source situation:
                     //
@@ -304,11 +306,11 @@ public static partial class IntPatch_WLineTool
                     // aNewPar[i] to make them close to each other.
                     // However, it is necessary to add check if we
                     // intersect boundary.
-                    double aPar = aParWL1[i] + theArrPeriods[i] * Math.Ceiling((aNewPar[i] - aParWL1[i]) / theArrPeriods[i]);
-                    aParWL1[i] = aParWL2[i];
-                    aParWL2[i] = aPar;
+                    double par = parWL1[i] + arrPeriods[i] * Math.Ceiling((newPar[i] - parWL1[i]) / arrPeriods[i]);
+                    parWL1[i] = parWL2[i];
+                    parWL2[i] = par;
                 }
-                else if (aNewPar[i] < aParWL1[i])
+                else if (newPar[i] < parWL1[i])
                 {
                     // See comments to main "if".
                     // Source situation:
@@ -321,20 +323,20 @@ public static partial class IntPatch_WLineTool
                     //---*---------------*------------*-----
                     //  aParWL1[i]   aNewPar[i]    aParWL2[i]
 
-                    double aPar = aParWL2[i] - theArrPeriods[i] * Math.Ceiling((aParWL2[i] - aNewPar[i]) / theArrPeriods[i]);
-                    aParWL2[i] = aParWL1[i];
-                    aParWL1[i] = aPar;
+                    double par = parWL2[i] - arrPeriods[i] * Math.Ceiling((parWL2[i] - newPar[i]) / arrPeriods[i]);
+                    parWL2[i] = parWL1[i];
+                    parWL1[i] = par;
                 }
 
-                aR1.SetVoid();
-                aR2.SetVoid();
-                aR1.Add(aParWL1[i]);
-                aR1.Add(aNewPar[i]);
-                aR2.Add(aNewPar[i]);
-                aR2.Add(aParWL2[i]);
+                r1.SetVoid();
+                r2.SetVoid();
+                r1.Add(parWL1[i]);
+                r1.Add(newPar[i]);
+                r2.Add(newPar[i]);
+                r2.Add(parWL2[i]);
 
-                if (aR1.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out
-                    || aR2.IsIntersected(aParLBC[i], theArrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
+                if (r1.IsIntersected(parLBC[i], arrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out
+                    || r2.IsIntersected(parLBC[i], arrPeriods[i]) != BoundRange.IntersectStatus.IntersectStatus_Out)
                 {
                     return IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
                 }
@@ -350,7 +352,7 @@ public static partial class IntPatch_WLineTool
             return IntPatchWT_WLsConnectionType.IntPatchWT_Singular;
         }
 
-        if (aRetVal == IntPatchWT_WLsConnectionType.IntPatchWT_Common)
+        if (retVal == IntPatchWT_WLsConnectionType.IntPatchWT_Common)
         {
             return IntPatchWT_WLsConnectionType.IntPatchWT_Common;
         }
@@ -359,284 +361,284 @@ public static partial class IntPatch_WLineTool
     }
 
     // Performs extending theWLine1 and theWLine2 through their respecting start point.
-    private static void ExtendTwoWLFirstFirst(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
-                                              IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
-                                              in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                              in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
-                                              in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
-                                              ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
-                                              ref bool theHasBeenJoined, List<PntRef> theRefs)
+    private static void ExtendTwoWLFirstFirst(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
+                                              WLine wLine1, WLine wLine2,
+                                              in PntOn2S ptWL1, in PntOn2S ptWL2,
+                                              in Vector3D vec1, in Vector3D vec2, in Vector3D vec3,
+                                              in Box2d boxS1, in Box2d boxS2, double toler3D,
+                                              ReadOnlySpan<double> arrPeriods, ref uint checkResult,
+                                              ref bool hasBeenJoined, List<PntRef> refs)
     {
-        IntSurf_PntOn2S aPOn2S = new IntSurf_PntOn2S();
-        IntPatchWT_WLsConnectionType aCheckRes = CheckArgumentsToExtend(theS1, theS2, thePtWL1, thePtWL2, ref aPOn2S,
-                                                                        theVec1, theVec2, theVec3, theBoxS1, theBoxS2,
-                                                                        theToler3D, theArrPeriods);
+        PntOn2S pOn2S = new PntOn2S();
+        IntPatchWT_WLsConnectionType checkRes = CheckArgumentsToExtend(s1, s2, ptWL1, ptWL2, ref pOn2S,
+                                                                        vec1, vec2, vec3, boxS1, boxS2,
+                                                                        toler3D, arrPeriods);
 
-        if (aCheckRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
+        if (checkRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
         {
-            theCheckResult |= (IntPatchWT_DisFirstLast | IntPatchWT_DisLastFirst);
+            checkResult |= (IntPatchWT_DisFirstLast | IntPatchWT_DisLastFirst);
         }
         else
         {
             return;
         }
 
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL1, theArrPeriods, ref aPOn2S);
-        ExtendFirst(theWLine1, aPOn2S, theRefs);
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL2, theArrPeriods, ref aPOn2S);
-        ExtendFirst(theWLine2, aPOn2S, theRefs);
+        SpecialPoints.AdjustPointAndVertex(ptWL1, arrPeriods, ref pOn2S);
+        ExtendFirst(wLine1, pOn2S, refs);
+        SpecialPoints.AdjustPointAndVertex(ptWL2, arrPeriods, ref pOn2S);
+        ExtendFirst(wLine2, pOn2S, refs);
 
-        if (theHasBeenJoined || (aCheckRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
+        if (hasBeenJoined || (checkRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
         {
             return;
         }
 
-        double aPrm = theWLine1.Vertex(1).ParameterOnLine();
-        while (theWLine1.Vertex(1).ParameterOnLine() == aPrm)
+        double prm = wLine1.Vertex(1).ParameterOnLine();
+        while (wLine1.Vertex(1).ParameterOnLine() == prm)
         {
-            theWLine1.RemoveVertex(1);
+            wLine1.RemoveVertex(1);
         }
 
-        aPrm = theWLine2.Vertex(1).ParameterOnLine();
-        while (theWLine2.Vertex(1).ParameterOnLine() == aPrm)
+        prm = wLine2.Vertex(1).ParameterOnLine();
+        while (wLine2.Vertex(1).ParameterOnLine() == prm)
         {
-            theWLine2.RemoveVertex(1);
+            wLine2.RemoveVertex(1);
         }
 
-        int aNbPts = theWLine2.NbPnts();
-        for (int aNPt = 2; aNPt <= aNbPts; aNPt++)
+        int nbPts = wLine2.NbPnts();
+        for (int nPt = 2; nPt <= nbPts; nPt++)
         {
-            IntSurf_PntOn2S aPt = theWLine2.Point(aNPt);
-            InsertBefore(theWLine1.Curve(), 1, aPt, theRefs);
+            PntOn2S pt = wLine2.Point(nPt);
+            InsertBefore(wLine1.Curve(), 1, pt, refs);
         }
 
-        for (int aNVtx = 1; aNVtx <= theWLine1.NbVertex(); aNVtx++)
+        for (int nVtx = 1; nVtx <= wLine1.VertexCount; nVtx++)
         {
-            ref IntPatch_Point aVert = ref theWLine1.ChangeVertex(aNVtx);
-            double aCurParam = aVert.ParameterOnLine();
-            aVert.SetParameter(aNbPts + aCurParam - 1);
+            ref PatchPoint vert = ref wLine1.ChangeVertex(nVtx);
+            double curParam = vert.ParameterOnLine();
+            vert.SetParameter(nbPts + curParam - 1);
         }
 
-        for (int aNVtx = 1; aNVtx <= theWLine2.NbVertex(); aNVtx++)
+        for (int nVtx = 1; nVtx <= wLine2.VertexCount; nVtx++)
         {
-            ref IntPatch_Point aVert = ref theWLine2.ChangeVertex(aNVtx);
-            double aCurParam = aVert.ParameterOnLine();
-            aVert.SetParameter(aNbPts - aCurParam + 1);
-            theWLine1.AddVertex(aVert, true);
+            ref PatchPoint vert = ref wLine2.ChangeVertex(nVtx);
+            double curParam = vert.ParameterOnLine();
+            vert.SetParameter(nbPts - curParam + 1);
+            wLine1.AddVertex(vert, true);
         }
 
-        theHasBeenJoined = true;
+        hasBeenJoined = true;
     }
 
     // Performs extending theWLine1 through its start point and theWLine2 through its end point.
-    private static void ExtendTwoWLFirstLast(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
-                                             IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
-                                             in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                             in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
-                                             in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
-                                             ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
-                                             ref bool theHasBeenJoined, List<PntRef> theRefs)
+    private static void ExtendTwoWLFirstLast(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
+                                             WLine wLine1, WLine wLine2,
+                                             in PntOn2S ptWL1, in PntOn2S ptWL2,
+                                             in Vector3D vec1, in Vector3D vec2, in Vector3D vec3,
+                                             in Box2d boxS1, in Box2d boxS2, double toler3D,
+                                             ReadOnlySpan<double> arrPeriods, ref uint checkResult,
+                                             ref bool hasBeenJoined, List<PntRef> refs)
     {
-        IntSurf_PntOn2S aPOn2S = new IntSurf_PntOn2S();
-        IntPatchWT_WLsConnectionType aCheckRes = CheckArgumentsToExtend(theS1, theS2, thePtWL1, thePtWL2, ref aPOn2S,
-                                                                        theVec1, theVec2, theVec3, theBoxS1, theBoxS2,
-                                                                        theToler3D, theArrPeriods);
+        PntOn2S pOn2S = new PntOn2S();
+        IntPatchWT_WLsConnectionType checkRes = CheckArgumentsToExtend(s1, s2, ptWL1, ptWL2, ref pOn2S,
+                                                                        vec1, vec2, vec3, boxS1, boxS2,
+                                                                        toler3D, arrPeriods);
 
-        if (aCheckRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
+        if (checkRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
         {
-            theCheckResult |= IntPatchWT_DisLastLast;
+            checkResult |= IntPatchWT_DisLastLast;
         }
         else
         {
             return;
         }
 
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL1, theArrPeriods, ref aPOn2S);
-        ExtendFirst(theWLine1, aPOn2S, theRefs);
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL2, theArrPeriods, ref aPOn2S);
-        ExtendLast(theWLine2, aPOn2S);
+        SpecialPoints.AdjustPointAndVertex(ptWL1, arrPeriods, ref pOn2S);
+        ExtendFirst(wLine1, pOn2S, refs);
+        SpecialPoints.AdjustPointAndVertex(ptWL2, arrPeriods, ref pOn2S);
+        ExtendLast(wLine2, pOn2S);
 
-        if (theHasBeenJoined || (aCheckRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
+        if (hasBeenJoined || (checkRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
         {
             return;
         }
 
-        double aPrm = theWLine1.Vertex(1).ParameterOnLine();
-        while (theWLine1.Vertex(1).ParameterOnLine() == aPrm)
+        double prm = wLine1.Vertex(1).ParameterOnLine();
+        while (wLine1.Vertex(1).ParameterOnLine() == prm)
         {
-            theWLine1.RemoveVertex(1);
+            wLine1.RemoveVertex(1);
         }
 
-        aPrm = theWLine2.Vertex(theWLine2.NbVertex()).ParameterOnLine();
-        while (theWLine2.Vertex(theWLine2.NbVertex()).ParameterOnLine() == aPrm)
+        prm = wLine2.Vertex(wLine2.VertexCount).ParameterOnLine();
+        while (wLine2.Vertex(wLine2.VertexCount).ParameterOnLine() == prm)
         {
-            theWLine2.RemoveVertex(theWLine2.NbVertex());
+            wLine2.RemoveVertex(wLine2.VertexCount);
         }
 
-        int aNbPts = theWLine2.NbPnts();
-        for (int aNPt = aNbPts - 1; aNPt >= 1; aNPt--)
+        int nbPts = wLine2.NbPnts();
+        for (int nPt = nbPts - 1; nPt >= 1; nPt--)
         {
-            IntSurf_PntOn2S aPt = theWLine2.Point(aNPt);
-            InsertBefore(theWLine1.Curve(), 1, aPt, theRefs);
+            PntOn2S pt = wLine2.Point(nPt);
+            InsertBefore(wLine1.Curve(), 1, pt, refs);
         }
 
-        for (int aNVtx = 1; aNVtx <= theWLine1.NbVertex(); aNVtx++)
+        for (int nVtx = 1; nVtx <= wLine1.VertexCount; nVtx++)
         {
-            ref IntPatch_Point aVert = ref theWLine1.ChangeVertex(aNVtx);
-            double aCurParam = aVert.ParameterOnLine();
-            aVert.SetParameter(aNbPts + aCurParam - 1);
+            ref PatchPoint vert = ref wLine1.ChangeVertex(nVtx);
+            double curParam = vert.ParameterOnLine();
+            vert.SetParameter(nbPts + curParam - 1);
         }
 
-        for (int aNVtx = theWLine2.NbVertex(); aNVtx >= 1; aNVtx--)
+        for (int nVtx = wLine2.VertexCount; nVtx >= 1; nVtx--)
         {
-            IntPatch_Point aVert = theWLine2.Vertex(aNVtx);
-            theWLine1.AddVertex(aVert, true);
+            PatchPoint vert = wLine2.Vertex(nVtx);
+            wLine1.AddVertex(vert, true);
         }
 
-        theHasBeenJoined = true;
+        hasBeenJoined = true;
     }
 
     // Performs extending theWLine1 through its end point and theWLine2 through its start point.
-    private static void ExtendTwoWLLastFirst(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
-                                             IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
-                                             in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                             in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
-                                             in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
-                                             ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
-                                             ref bool theHasBeenJoined, List<PntRef> theRefs)
+    private static void ExtendTwoWLLastFirst(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
+                                             WLine wLine1, WLine wLine2,
+                                             in PntOn2S ptWL1, in PntOn2S ptWL2,
+                                             in Vector3D vec1, in Vector3D vec2, in Vector3D vec3,
+                                             in Box2d boxS1, in Box2d boxS2, double toler3D,
+                                             ReadOnlySpan<double> arrPeriods, ref uint checkResult,
+                                             ref bool hasBeenJoined, List<PntRef> refs)
     {
-        IntSurf_PntOn2S aPOn2S = new IntSurf_PntOn2S();
-        IntPatchWT_WLsConnectionType aCheckRes = CheckArgumentsToExtend(theS1, theS2, thePtWL1, thePtWL2, ref aPOn2S,
-                                                                        theVec1, theVec2, theVec3, theBoxS1, theBoxS2,
-                                                                        theToler3D, theArrPeriods);
+        PntOn2S pOn2S = new PntOn2S();
+        IntPatchWT_WLsConnectionType checkRes = CheckArgumentsToExtend(s1, s2, ptWL1, ptWL2, ref pOn2S,
+                                                                        vec1, vec2, vec3, boxS1, boxS2,
+                                                                        toler3D, arrPeriods);
 
-        if (aCheckRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
+        if (checkRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
         {
-            theCheckResult |= IntPatchWT_DisLastLast;
+            checkResult |= IntPatchWT_DisLastLast;
         }
         else
         {
             return;
         }
 
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL1, theArrPeriods, ref aPOn2S);
-        ExtendLast(theWLine1, aPOn2S);
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL2, theArrPeriods, ref aPOn2S);
-        ExtendFirst(theWLine2, aPOn2S, theRefs);
+        SpecialPoints.AdjustPointAndVertex(ptWL1, arrPeriods, ref pOn2S);
+        ExtendLast(wLine1, pOn2S);
+        SpecialPoints.AdjustPointAndVertex(ptWL2, arrPeriods, ref pOn2S);
+        ExtendFirst(wLine2, pOn2S, refs);
 
-        if (theHasBeenJoined || (aCheckRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
+        if (hasBeenJoined || (checkRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
         {
             return;
         }
 
-        double aPrm = theWLine1.Vertex(theWLine1.NbVertex()).ParameterOnLine();
-        while (theWLine1.Vertex(theWLine1.NbVertex()).ParameterOnLine() == aPrm)
+        double prm = wLine1.Vertex(wLine1.VertexCount).ParameterOnLine();
+        while (wLine1.Vertex(wLine1.VertexCount).ParameterOnLine() == prm)
         {
-            theWLine1.RemoveVertex(theWLine1.NbVertex());
+            wLine1.RemoveVertex(wLine1.VertexCount);
         }
 
-        aPrm = theWLine2.Vertex(1).ParameterOnLine();
-        while (theWLine2.Vertex(1).ParameterOnLine() == aPrm)
+        prm = wLine2.Vertex(1).ParameterOnLine();
+        while (wLine2.Vertex(1).ParameterOnLine() == prm)
         {
-            theWLine2.RemoveVertex(1);
+            wLine2.RemoveVertex(1);
         }
 
-        int aNbPts = theWLine1.NbPnts();
-        for (int aNPt = 2; aNPt <= theWLine2.NbPnts(); aNPt++)
+        int nbPts = wLine1.NbPnts();
+        for (int nPt = 2; nPt <= wLine2.NbPnts(); nPt++)
         {
-            IntSurf_PntOn2S aPt = theWLine2.Point(aNPt);
-            theWLine1.Curve().Add(aPt);
+            PntOn2S pt = wLine2.Point(nPt);
+            wLine1.Curve().Add(pt);
         }
 
-        for (int aNVtx = 1; aNVtx <= theWLine2.NbVertex(); aNVtx++)
+        for (int nVtx = 1; nVtx <= wLine2.VertexCount; nVtx++)
         {
-            ref IntPatch_Point aVert = ref theWLine2.ChangeVertex(aNVtx);
-            double aCurParam = aVert.ParameterOnLine();
-            aVert.SetParameter(aNbPts + aCurParam - 1);
-            theWLine1.AddVertex(aVert, false);
+            ref PatchPoint vert = ref wLine2.ChangeVertex(nVtx);
+            double curParam = vert.ParameterOnLine();
+            vert.SetParameter(nbPts + curParam - 1);
+            wLine1.AddVertex(vert, false);
         }
 
-        theHasBeenJoined = true;
+        hasBeenJoined = true;
     }
 
     // Performs extending theWLine1 and theWLine2 through their end points.
-    private static void ExtendTwoWLLastLast(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
-                                            IntPatch_WLine theWLine1, IntPatch_WLine theWLine2,
-                                            in IntSurf_PntOn2S thePtWL1, in IntSurf_PntOn2S thePtWL2,
-                                            in Vector3D theVec1, in Vector3D theVec2, in Vector3D theVec3,
-                                            in Box2d theBoxS1, in Box2d theBoxS2, double theToler3D,
-                                            ReadOnlySpan<double> theArrPeriods, ref uint theCheckResult,
-                                            ref bool theHasBeenJoined)
+    private static void ExtendTwoWLLastLast(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2,
+                                            WLine wLine1, WLine wLine2,
+                                            in PntOn2S ptWL1, in PntOn2S ptWL2,
+                                            in Vector3D vec1, in Vector3D vec2, in Vector3D vec3,
+                                            in Box2d boxS1, in Box2d boxS2, double toler3D,
+                                            ReadOnlySpan<double> arrPeriods, ref uint checkResult,
+                                            ref bool hasBeenJoined)
     {
-        IntSurf_PntOn2S aPOn2S = new IntSurf_PntOn2S();
-        IntPatchWT_WLsConnectionType aCheckRes = CheckArgumentsToExtend(theS1, theS2, thePtWL1, thePtWL2, ref aPOn2S,
-                                                                        theVec1, theVec2, theVec3, theBoxS1, theBoxS2,
-                                                                        theToler3D, theArrPeriods);
+        PntOn2S pOn2S = new PntOn2S();
+        IntPatchWT_WLsConnectionType checkRes = CheckArgumentsToExtend(s1, s2, ptWL1, ptWL2, ref pOn2S,
+                                                                        vec1, vec2, vec3, boxS1, boxS2,
+                                                                        toler3D, arrPeriods);
 
-        if (aCheckRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
+        if (checkRes != IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected)
         {
-            theCheckResult |= IntPatchWT_DisLastLast;
+            checkResult |= IntPatchWT_DisLastLast;
         }
         else
         {
             return;
         }
 
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL1, theArrPeriods, ref aPOn2S);
-        ExtendLast(theWLine1, aPOn2S);
-        IntPatch_SpecialPoints.AdjustPointAndVertex(thePtWL2, theArrPeriods, ref aPOn2S);
-        ExtendLast(theWLine2, aPOn2S);
+        SpecialPoints.AdjustPointAndVertex(ptWL1, arrPeriods, ref pOn2S);
+        ExtendLast(wLine1, pOn2S);
+        SpecialPoints.AdjustPointAndVertex(ptWL2, arrPeriods, ref pOn2S);
+        ExtendLast(wLine2, pOn2S);
 
-        if (theHasBeenJoined || (aCheckRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
+        if (hasBeenJoined || (checkRes == IntPatchWT_WLsConnectionType.IntPatchWT_Singular))
         {
             return;
         }
 
-        double aPrm = theWLine1.Vertex(theWLine1.NbVertex()).ParameterOnLine();
-        while (theWLine1.Vertex(theWLine1.NbVertex()).ParameterOnLine() == aPrm)
+        double prm = wLine1.Vertex(wLine1.VertexCount).ParameterOnLine();
+        while (wLine1.Vertex(wLine1.VertexCount).ParameterOnLine() == prm)
         {
-            theWLine1.RemoveVertex(theWLine1.NbVertex());
+            wLine1.RemoveVertex(wLine1.VertexCount);
         }
 
-        aPrm = theWLine2.Vertex(theWLine2.NbVertex()).ParameterOnLine();
-        while (theWLine2.Vertex(theWLine2.NbVertex()).ParameterOnLine() == aPrm)
+        prm = wLine2.Vertex(wLine2.VertexCount).ParameterOnLine();
+        while (wLine2.Vertex(wLine2.VertexCount).ParameterOnLine() == prm)
         {
-            theWLine2.RemoveVertex(theWLine2.NbVertex());
+            wLine2.RemoveVertex(wLine2.VertexCount);
         }
 
-        int aNbPts = theWLine1.NbPnts() + theWLine2.NbPnts();
-        for (int aNPt = theWLine2.NbPnts() - 1; aNPt >= 1; aNPt--)
+        int nbPts = wLine1.NbPnts() + wLine2.NbPnts();
+        for (int nPt = wLine2.NbPnts() - 1; nPt >= 1; nPt--)
         {
-            IntSurf_PntOn2S aPt = theWLine2.Point(aNPt);
-            theWLine1.Curve().Add(aPt);
+            PntOn2S pt = wLine2.Point(nPt);
+            wLine1.Curve().Add(pt);
         }
 
-        for (int aNVtx = theWLine2.NbVertex(); aNVtx >= 1; aNVtx--)
+        for (int nVtx = wLine2.VertexCount; nVtx >= 1; nVtx--)
         {
-            ref IntPatch_Point aVert = ref theWLine2.ChangeVertex(aNVtx);
-            double aCurParam = aVert.ParameterOnLine();
-            aVert.SetParameter(aNbPts - aCurParam);
-            theWLine1.AddVertex(aVert, false);
+            ref PatchPoint vert = ref wLine2.ChangeVertex(nVtx);
+            double curParam = vert.ParameterOnLine();
+            vert.SetParameter(nbPts - curParam);
+            wLine1.AddVertex(vert, false);
         }
 
-        theHasBeenJoined = true;
+        hasBeenJoined = true;
     }
 
-    private static bool IsNeedSkipWL(IntPatch_WLine theWL, in Box2d theBoxS1, in Box2d theBoxS2,
-                                     ReadOnlySpan<double> theArrPeriods)
+    private static bool IsNeedSkipWL(WLine wl, in Box2d boxS1, in Box2d boxS2,
+                                     ReadOnlySpan<double> arrPeriods)
     {
-        double aFirstp, aLastp;
-        int aNbVtx = theWL.NbVertex();
+        double firstp, lastp;
+        int nbVtx = wl.VertexCount;
 
-        for (int i = 1; i < aNbVtx; i++)
+        for (int i = 1; i < nbVtx; i++)
         {
-            aFirstp = theWL.Vertex(i).ParameterOnLine();
-            aLastp = theWL.Vertex(i + 1).ParameterOnLine();
+            firstp = wl.Vertex(i).ParameterOnLine();
+            lastp = wl.Vertex(i + 1).ParameterOnLine();
 
-            int pmid = (int)((aFirstp + aLastp) / 2);
-            IntSurf_PntOn2S aPmid = theWL.Point(pmid);
+            int pmid = (int)((firstp + lastp) / 2);
+            PntOn2S aPmid = wl.Point(pmid);
 
-            if (IsOutOfDomain(theBoxS1, theBoxS2, aPmid, theArrPeriods))
+            if (IsOutOfDomain(boxS1, boxS2, aPmid, arrPeriods))
             {
                 return true;
             }
@@ -646,69 +648,69 @@ public static partial class IntPatch_WLineTool
     }
 
     /// <summary>
-    /// Extends the walking lines of <paramref name="theSlin"/> whose ends are close (within the angle
+    /// Extends the walking lines of <paramref name="slin"/> whose ends are close (within the angle
     /// <see cref="myMaxConcatAngle"/>) to their common intersection point, joining them where the point isn't on a
-    /// surface boundary. <paramref name="theArrPeriods"/> holds the surfaces' periods (U1, V1, U2, V2; 0 if not
+    /// surface boundary. <paramref name="arrPeriods"/> holds the surfaces' periods (U1, V1, U2, V2; 0 if not
     /// periodic); the boxes are the surfaces' parametric domains. Lines ending at one of
-    /// <paramref name="theListOfCriticalPoints"/> aren't extended there. The surfaces must be quadrics.
+    /// <paramref name="listOfCriticalPoints"/> aren't extended there. The surfaces must be quadrics.
     /// </summary>
-    public static void ExtendTwoWLines(NCollection_Sequence<IntPatch_Line> theSlin, SurfaceAdaptorBase theS1,
-                                       SurfaceAdaptorBase theS2, double theToler3D, ReadOnlySpan<double> theArrPeriods,
-                                       in Box2d theBoxS1, in Box2d theBoxS2,
-                                       NCollection_List<Point3D> theListOfCriticalPoints)
+    public static void ExtendTwoWLines(NCollection_Sequence<PatchLine> slin, SurfaceAdaptorBase s1,
+                                       SurfaceAdaptorBase s2, double toler3D, ReadOnlySpan<double> arrPeriods,
+                                       in Box2d boxS1, in Box2d boxS2,
+                                       NCollection_List<Point3D> listOfCriticalPoints)
     {
-        if (theSlin.Length() < 2)
+        if (slin.Length() < 2)
         {
             return;
         }
 
-        Vector3D aVec1 = new Vector3D(), aVec2 = new Vector3D(), aVec3 = new Vector3D();
+        Vector3D vec1 = new Vector3D(), vec2 = new Vector3D(), vec3 = new Vector3D();
 
         uint hasBeenJoinedCounter = 0;
 
-        List<PntRef> aRefs = new List<PntRef>(8);
+        List<PntRef> refs = new List<PntRef>(8);
 
-        for (int aNumOfLine1 = 1; aNumOfLine1 <= theSlin.Length(); aNumOfLine1++)
+        for (int numOfLine1 = 1; numOfLine1 <= slin.Length(); numOfLine1++)
         {
             if (hasBeenJoinedCounter > 0)
             {
-                aNumOfLine1--;
+                numOfLine1--;
             }
 
             hasBeenJoinedCounter = 0;
 
-            IntPatch_WLine? aWLine1 = theSlin.Value(aNumOfLine1) as IntPatch_WLine;
+            WLine? wLine1 = slin.Value(numOfLine1) as WLine;
 
-            if (aWLine1 is null)
+            if (wLine1 is null)
             { // We must have failed to join not-point-lines
                 continue;
             }
 
-            int aNbPntsWL1 = aWLine1.NbPnts();
+            int nbPntsWL1 = wLine1.NbPnts();
 
-            if (aWLine1.Vertex(1).ParameterOnLine() != 1)
+            if (wLine1.Vertex(1).ParameterOnLine() != 1)
             {
                 continue;
             }
 
-            if (aWLine1.Vertex(aWLine1.NbVertex()).ParameterOnLine() != aWLine1.NbPnts())
+            if (wLine1.Vertex(wLine1.VertexCount).ParameterOnLine() != wLine1.NbPnts())
             {
                 continue;
             }
 
             // OCCT's references to the line's nodes (PntRef).
-            aRefs.Clear();
-            PntRef aPntFWL1 = new PntRef(aWLine1.Curve(), 1);
-            PntRef aPntFp1WL1 = new PntRef(aWLine1.Curve(), 2);
+            refs.Clear();
+            PntRef pntFWL1 = new PntRef(wLine1.Curve(), 1);
+            PntRef pntFp1WL1 = new PntRef(wLine1.Curve(), 2);
 
-            PntRef aPntLWL1 = new PntRef(aWLine1.Curve(), aNbPntsWL1);
-            PntRef aPntLm1WL1 = new PntRef(aWLine1.Curve(), aNbPntsWL1 - 1);
-            aRefs.Add(aPntFWL1);
-            aRefs.Add(aPntFp1WL1);
-            aRefs.Add(aPntLWL1);
-            aRefs.Add(aPntLm1WL1);
+            PntRef pntLWL1 = new PntRef(wLine1.Curve(), nbPntsWL1);
+            PntRef pntLm1WL1 = new PntRef(wLine1.Curve(), nbPntsWL1 - 1);
+            refs.Add(pntFWL1);
+            refs.Add(pntFp1WL1);
+            refs.Add(pntLWL1);
+            refs.Add(pntLm1WL1);
 
-            if (IsNeedSkipWL(aWLine1, theBoxS1, theBoxS2, theArrPeriods))
+            if (IsNeedSkipWL(wLine1, boxS1, boxS2, arrPeriods))
             {
                 continue;
             }
@@ -717,176 +719,176 @@ public static partial class IntPatch_WLineTool
             // E.g. if 1st point of aWLine1 matches with
             // 1st point of aWLine2 then we do not need in check
             // 1st point of aWLine1 and last point of aWLine2 etc.
-            uint aCheckResult = IntPatchWT_EnAll;
+            uint checkResult = IntPatchWT_EnAll;
 
             // If aWLine1 is already connected with another Wline then
             // there is no point in extending.
-            for (int aNumOfLine2 = aNumOfLine1 + 1; aNumOfLine2 <= theSlin.Length(); aNumOfLine2++)
+            for (int numOfLine2 = numOfLine1 + 1; numOfLine2 <= slin.Length(); numOfLine2++)
             {
-                IntPatch_WLine? aWLine2 = theSlin.Value(aNumOfLine2) as IntPatch_WLine;
+                WLine? wLine2 = slin.Value(numOfLine2) as WLine;
 
-                if (aWLine2 is null)
+                if (wLine2 is null)
                 {
                     continue;
                 }
 
-                IntSurf_PntOn2S aPntFWL2 = aWLine2.Point(1);
-                IntSurf_PntOn2S aPntLWL2 = aWLine2.Point(aWLine2.NbPnts());
+                PntOn2S pntFWL2 = wLine2.Point(1);
+                PntOn2S pntLWL2 = wLine2.Point(wLine2.NbPnts());
 
-                if (!(aPntFWL1.Value().IsSame(aPntFWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
-                    && !(aPntFWL1.Value().IsSame(aPntLWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
+                if (!(pntFWL1.Value().IsSame(pntFWL2, toler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    && !(pntFWL1.Value().IsSame(pntLWL2, toler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
-                    if (aPntFWL1.Value().IsSame(aPntFWL2, theToler3D) || aPntFWL1.Value().IsSame(aPntLWL2, theToler3D))
+                    if (pntFWL1.Value().IsSame(pntFWL2, toler3D) || pntFWL1.Value().IsSame(pntLWL2, toler3D))
                     {
-                        aCheckResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
+                        checkResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
                     }
                 }
 
-                if (!(aPntLWL1.Value().IsSame(aPntFWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
-                    && !(aPntLWL1.Value().IsSame(aPntLWL2, theToler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
+                if (!(pntLWL1.Value().IsSame(pntFWL2, toler3D, global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                    && !(pntLWL1.Value().IsSame(pntLWL2, toler3D, global::Kerf.Engine.Foundation.Precision.PConfusion())))
                 {
-                    if (aPntLWL1.Value().IsSame(aPntFWL2, theToler3D) || aPntLWL1.Value().IsSame(aPntLWL2, theToler3D))
+                    if (pntLWL1.Value().IsSame(pntFWL2, toler3D) || pntLWL1.Value().IsSame(pntLWL2, toler3D))
                     {
-                        aCheckResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
+                        checkResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
                     }
                 }
 
-                if (!theListOfCriticalPoints.IsEmpty())
+                if (!listOfCriticalPoints.IsEmpty())
                 {
-                    for (NCollection_List<Point3D>.Iterator anItr = new(theListOfCriticalPoints); anItr.More();
-                         anItr.Next())
+                    for (NCollection_List<Point3D>.Iterator itr = new(listOfCriticalPoints); itr.More();
+                         itr.Next())
                     {
-                        Point3D aPt = anItr.Value();
-                        if ((aCheckResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast)) == 0)
+                        Point3D pt = itr.Value();
+                        if ((checkResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntFWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistance(pntFWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                aCheckResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
+                                checkResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
                             }
                         }
 
-                        if ((aCheckResult & (IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast)) == 0)
+                        if ((checkResult & (IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntLWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistance(pntLWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                aCheckResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
+                                checkResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
                             }
                         }
 
-                        if ((aCheckResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst)) == 0)
+                        if ((checkResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntFWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistance(pntFWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                aCheckResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst;
+                                checkResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst;
                             }
                         }
 
-                        if ((aCheckResult & (IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast)) == 0)
+                        if ((checkResult & (IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (aPt.SquareDistance(aPntLWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistance(pntLWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                aCheckResult |= IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast;
+                                checkResult |= IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast;
                             }
                         }
                     }
                 }
             }
 
-            if (aCheckResult
+            if (checkResult
                 == (IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast | IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast))
             {
                 continue;
             }
 
-            for (int aNumOfLine2 = aNumOfLine1 + 1; aNumOfLine2 <= theSlin.Length(); aNumOfLine2++)
+            for (int numOfLine2 = numOfLine1 + 1; numOfLine2 <= slin.Length(); numOfLine2++)
             {
-                IntPatch_WLine? aWLine2 = theSlin.Value(aNumOfLine2) as IntPatch_WLine;
+                WLine? wLine2 = slin.Value(numOfLine2) as WLine;
 
-                if (aWLine2 is null)
+                if (wLine2 is null)
                 {
                     continue;
                 }
 
-                if (aWLine2.Vertex(1).ParameterOnLine() != 1)
+                if (wLine2.Vertex(1).ParameterOnLine() != 1)
                 {
                     continue;
                 }
 
-                if (aWLine2.Vertex(aWLine2.NbVertex()).ParameterOnLine() != aWLine2.NbPnts())
+                if (wLine2.Vertex(wLine2.VertexCount).ParameterOnLine() != wLine2.NbPnts())
                 {
                     continue;
                 }
 
                 bool hasBeenJoined = false;
 
-                int aNbPntsWL2 = aWLine2.NbPnts();
+                int nbPntsWL2 = wLine2.NbPnts();
 
                 // OCCT's references to this line's nodes, kept with aWLine1's for this iteration.
-                aRefs.RemoveRange(4, aRefs.Count - 4);
-                PntRef aPntFWL2 = new PntRef(aWLine2.Curve(), 1);
-                PntRef aPntFp1WL2 = new PntRef(aWLine2.Curve(), 2);
+                refs.RemoveRange(4, refs.Count - 4);
+                PntRef pntFWL2 = new PntRef(wLine2.Curve(), 1);
+                PntRef pntFp1WL2 = new PntRef(wLine2.Curve(), 2);
 
-                PntRef aPntLWL2 = new PntRef(aWLine2.Curve(), aNbPntsWL2);
-                PntRef aPntLm1WL2 = new PntRef(aWLine2.Curve(), aNbPntsWL2 - 1);
-                aRefs.Add(aPntFWL2);
-                aRefs.Add(aPntFp1WL2);
-                aRefs.Add(aPntLWL2);
-                aRefs.Add(aPntLm1WL2);
+                PntRef pntLWL2 = new PntRef(wLine2.Curve(), nbPntsWL2);
+                PntRef pntLm1WL2 = new PntRef(wLine2.Curve(), nbPntsWL2 - 1);
+                refs.Add(pntFWL2);
+                refs.Add(pntFp1WL2);
+                refs.Add(pntLWL2);
+                refs.Add(pntLm1WL2);
 
-                if (IsNeedSkipWL(aWLine2, theBoxS1, theBoxS2, theArrPeriods))
+                if (IsNeedSkipWL(wLine2, boxS1, boxS2, arrPeriods))
                 {
                     continue;
                 }
 
-                if ((aCheckResult & IntPatchWT_DisFirstFirst) == 0)
+                if ((checkResult & IntPatchWT_DisFirstFirst) == 0)
                 { // First/First
-                    aVec1.SetXYZ(aPntFp1WL1.Value().Value().XYZ() - aPntFWL1.Value().Value().XYZ());
-                    aVec2.SetXYZ(aPntFWL2.Value().Value().XYZ() - aPntFp1WL2.Value().Value().XYZ());
-                    aVec3.SetXYZ(aPntFWL1.Value().Value().XYZ() - aPntFWL2.Value().Value().XYZ());
+                    vec1.SetXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
+                    vec2.SetXYZ(pntFWL2.Value().Value().XYZ() - pntFp1WL2.Value().Value().XYZ());
+                    vec3.SetXYZ(pntFWL1.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
 
-                    ExtendTwoWLFirstFirst(theS1, theS2, aWLine1, aWLine2, aPntFWL1.Value(), aPntFWL2.Value(), aVec1,
-                                          aVec2, aVec3, theBoxS1, theBoxS2, theToler3D, theArrPeriods,
-                                          ref aCheckResult, ref hasBeenJoined, aRefs);
+                    ExtendTwoWLFirstFirst(s1, s2, wLine1, wLine2, pntFWL1.Value(), pntFWL2.Value(), vec1,
+                                          vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
+                                          ref checkResult, ref hasBeenJoined, refs);
                 }
 
-                if ((aCheckResult & IntPatchWT_DisFirstLast) == 0)
+                if ((checkResult & IntPatchWT_DisFirstLast) == 0)
                 { // First/Last
-                    aVec1.SetXYZ(aPntFp1WL1.Value().Value().XYZ() - aPntFWL1.Value().Value().XYZ());
-                    aVec2.SetXYZ(aPntLWL2.Value().Value().XYZ() - aPntLm1WL2.Value().Value().XYZ());
-                    aVec3.SetXYZ(aPntFWL1.Value().Value().XYZ() - aPntLWL2.Value().Value().XYZ());
+                    vec1.SetXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
+                    vec2.SetXYZ(pntLWL2.Value().Value().XYZ() - pntLm1WL2.Value().Value().XYZ());
+                    vec3.SetXYZ(pntFWL1.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
 
-                    ExtendTwoWLFirstLast(theS1, theS2, aWLine1, aWLine2, aPntFWL1.Value(), aPntLWL2.Value(), aVec1,
-                                         aVec2, aVec3, theBoxS1, theBoxS2, theToler3D, theArrPeriods,
-                                         ref aCheckResult, ref hasBeenJoined, aRefs);
+                    ExtendTwoWLFirstLast(s1, s2, wLine1, wLine2, pntFWL1.Value(), pntLWL2.Value(), vec1,
+                                         vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
+                                         ref checkResult, ref hasBeenJoined, refs);
                 }
 
-                if ((aCheckResult & IntPatchWT_DisLastFirst) == 0)
+                if ((checkResult & IntPatchWT_DisLastFirst) == 0)
                 { // Last/First
-                    aVec1.SetXYZ(aPntLWL1.Value().Value().XYZ() - aPntLm1WL1.Value().Value().XYZ());
-                    aVec2.SetXYZ(aPntFp1WL2.Value().Value().XYZ() - aPntFWL2.Value().Value().XYZ());
-                    aVec3.SetXYZ(aPntFWL2.Value().Value().XYZ() - aPntLWL1.Value().Value().XYZ());
+                    vec1.SetXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
+                    vec2.SetXYZ(pntFp1WL2.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
+                    vec3.SetXYZ(pntFWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
 
-                    ExtendTwoWLLastFirst(theS1, theS2, aWLine1, aWLine2, aPntLWL1.Value(), aPntFWL2.Value(), aVec1,
-                                         aVec2, aVec3, theBoxS1, theBoxS2, theToler3D, theArrPeriods,
-                                         ref aCheckResult, ref hasBeenJoined, aRefs);
+                    ExtendTwoWLLastFirst(s1, s2, wLine1, wLine2, pntLWL1.Value(), pntFWL2.Value(), vec1,
+                                         vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
+                                         ref checkResult, ref hasBeenJoined, refs);
                 }
 
-                if ((aCheckResult & IntPatchWT_DisLastLast) == 0)
+                if ((checkResult & IntPatchWT_DisLastLast) == 0)
                 { // Last/Last
-                    aVec1.SetXYZ(aPntLWL1.Value().Value().XYZ() - aPntLm1WL1.Value().Value().XYZ());
-                    aVec2.SetXYZ(aPntLm1WL2.Value().Value().XYZ() - aPntLWL2.Value().Value().XYZ());
-                    aVec3.SetXYZ(aPntLWL2.Value().Value().XYZ() - aPntLWL1.Value().Value().XYZ());
+                    vec1.SetXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
+                    vec2.SetXYZ(pntLm1WL2.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
+                    vec3.SetXYZ(pntLWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
 
-                    ExtendTwoWLLastLast(theS1, theS2, aWLine1, aWLine2, aPntLWL1.Value(), aPntLWL2.Value(), aVec1,
-                                        aVec2, aVec3, theBoxS1, theBoxS2, theToler3D, theArrPeriods,
-                                        ref aCheckResult, ref hasBeenJoined);
+                    ExtendTwoWLLastLast(s1, s2, wLine1, wLine2, pntLWL1.Value(), pntLWL2.Value(), vec1,
+                                        vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
+                                        ref checkResult, ref hasBeenJoined);
                 }
 
                 if (hasBeenJoined)
                 {
                     hasBeenJoinedCounter++;
-                    theSlin.Remove(aNumOfLine2);
-                    aNumOfLine2--;
+                    slin.Remove(numOfLine2);
+                    numOfLine2--;
                 }
             }
         }

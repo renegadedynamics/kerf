@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using System.Globalization;
@@ -59,7 +62,7 @@ internal static partial class Build123dPhase7Capture
 
     private static bool PValid(Shape theShape)
     {
-        var aCheck = new BRepCheck_Analyzer(PUnwrap(theShape));
+        var aCheck = new Analyzer(PUnwrap(theShape));
         aCheck.SetParallel(true);
         return aCheck.IsValid();
     }
@@ -144,7 +147,7 @@ internal static partial class Build123dPhase7Capture
         return aSb.ToString();
     }
 
-    private static string BlendHistory(in Shape theOp, in Shape theResult, BRepBuilderAPI_MakeShape theMaker)
+    private static string BlendHistory(in Shape theOp, in Shape theResult, MakeShape theMaker)
     {
         var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theOp, anIn);
@@ -229,7 +232,7 @@ internal static partial class Build123dPhase7Capture
     {
         var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
-        var aB = new BRepFilletAPI_MakeFillet(theShape);
+        var aB = new MakeFillet(theShape);
         foreach (int k in theEdges)
         {
             aB.Add(theRadius, PEdge(anEdges, k));
@@ -245,12 +248,12 @@ internal static partial class Build123dPhase7Capture
             anError = ErrorOf(e);
         }
         var aFaulty = new List<(string, HashSet<int>)>();
-        var aStatus = new StringBuilder($"done={aB.IsDone()} contours={aB.NbContours()} faulty={aB.NbFaultyContours()}:");
-        for (int i = 1; i <= aB.NbFaultyContours(); i++)
+        var aStatus = new StringBuilder($"done={aB.IsDone} contours={aB.ContourCount} faulty={aB.FaultyContourCount}:");
+        for (int i = 1; i <= aB.FaultyContourCount; i++)
         {
             int aContour = aB.FaultyContour(i);
             aStatus.Append(' ').Append(aContour);
-            if (aContour < 1 || aContour > aB.NbContours())
+            if (aContour < 1 || aContour > aB.ContourCount)
             {
                 continue;
             }
@@ -385,7 +388,7 @@ internal static partial class Build123dPhase7Capture
                     Exploration.MapShapes(aShape, ShapeType.Face, aFaces);
                     var anEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                     Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, anEF);
-                    var aB = new BRepFilletAPI_MakeChamfer(aShape);
+                    var aB = new MakeChamfer(aShape);
                     var aChosen = new List<int>();
                     for (int i = 0; i < a.Edges!.Length; i++)
                     {
@@ -404,7 +407,7 @@ internal static partial class Build123dPhase7Capture
                     {
                         anError = ErrorOf(e);
                     }
-                    string aStatus = $"done={aB.IsDone()} contours={aB.NbContours()} faces={string.Join(',', aChosen)}";
+                    string aStatus = $"done={aB.IsDone} contours={aB.ContourCount} faces={string.Join(',', aChosen)}";
                     return new P7Port(anError, aStatus, aRes, theHistory && aRes is Shape r ? BlendHistory(aShape, r, aB) : "");
                 }
                 default:

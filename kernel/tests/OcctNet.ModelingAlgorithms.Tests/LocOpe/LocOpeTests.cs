@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -8,7 +10,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.LocOpe_Operation;
+using static Kerf.Engine.Features.Local.FeatureOperation;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -53,18 +55,18 @@ public class LocOpeTests
     internal static double Area(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     internal static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    internal static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    internal static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
     // The face of the box at z = 30 (its 6th face)
     internal static Face Face(in Shape theShape, int theIndex)
@@ -79,7 +81,7 @@ public class LocOpeTests
         for (var anExp = new Explorer(theBox, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
             {
                 return ShapeCasts.Face(anExp.Current());
@@ -88,7 +90,7 @@ public class LocOpeTests
         throw new InvalidOperationException("no top face");
     }
 
-    internal static Edge Segment(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    internal static Edge Segment(in Point3D theP1, in Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
     [Fact]
     public void Closed_TgtFaces_SampleEdges()
@@ -96,17 +98,17 @@ public class LocOpeTests
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
         Wire aWire = BrepTools.OuterWire(aTop);
-        Assert.True(LocOpe.Closed(aWire, aTop));
+        Assert.True(global::Kerf.Engine.Features.Local.LocOpe.Closed(aWire, aTop));
         var anEdges = new Explorer(aTop, ShapeType.Edge);
-        Assert.False(LocOpe.Closed(ShapeCasts.Edge(anEdges.Current()), aTop));
+        Assert.False(global::Kerf.Engine.Features.Local.LocOpe.Closed(ShapeCasts.Edge(anEdges.Current()), aTop));
 
         // two faces of a box meet at a right angle
         var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, aMap);
-        Assert.False(LocOpe.TgtFaces(ShapeCasts.Edge(aMap.FindKey(1)), ShapeCasts.Face(aMap[1].First()), ShapeCasts.Face(aMap[1].Last())));
+        Assert.False(global::Kerf.Engine.Features.Local.LocOpe.TgtFaces(ShapeCasts.Edge(aMap.FindKey(1)), ShapeCasts.Face(aMap[1].First()), ShapeCasts.Face(aMap[1].Last())));
 
         var aPoints = new NCollection_Sequence<Point3D>();
-        LocOpe.SampleEdges(aBox, aPoints);
+        global::Kerf.Engine.Features.Local.LocOpe.SampleEdges(aBox, aPoints);
         Assert.Equal(12 * 9 + 8, aPoints.Length());
     }
 
@@ -119,10 +121,10 @@ public class LocOpeTests
         Edge anEdge = ShapeCasts.Edge(new Explorer(aTop, ShapeType.Edge).Current());
         Tool.Range(anEdge, out double f, out double l);
         Curve3D aC = Tool.Curve(anEdge, out _, out _)!;
-        Vertex aV = new BRepBuilderAPI_MakeVertex(aC.Value((f + l) / 2)).Vertex();
+        Vertex aV = new MakeVertex(aC.Value((f + l) / 2)).Vertex();
 
         ShapeSnapshot aVSnap = ShapeSnapshot.Of(aV);
-        var aSplit = new LocOpe_SplitShape(aBox);
+        var aSplit = new global::Kerf.Engine.Features.Local.LocalSplitShape(aBox);
         Assert.True(aSplit.CanSplit(anEdge));
         aSplit.Add(aV, (f + l) / 2, anEdge);
         NCollection_List<Shape> anEdges = aSplit.DescendantShapes(anEdge);
@@ -144,7 +146,7 @@ public class LocOpeTests
         }
         Assert.Equal(4, aShared);
         Assert.Equal(Area(aBox), Area(aRes), 9);
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
     }
 
     [Fact]
@@ -156,8 +158,8 @@ public class LocOpeTests
         Assert.False(aBox.TShape()!.IsFrozen);
         Edge anEdge = ShapeCasts.Edge(new Explorer(TopFace(aBox), ShapeType.Edge).Current());
         Tool.Range(anEdge, out double f, out double l);
-        Vertex aV = new BRepBuilderAPI_MakeVertex(Tool.Curve(anEdge, out _, out _)!.Value((f + l) / 2)).Vertex();
-        var aSplit = new LocOpe_SplitShape(aBox);
+        Vertex aV = new MakeVertex(Tool.Curve(anEdge, out _, out _)!.Value((f + l) / 2)).Vertex();
+        var aSplit = new global::Kerf.Engine.Features.Local.LocalSplitShape(aBox);
         aSplit.Add(aV, (f + l) / 2, anEdge);
         Shape aRes = aSplit.DescendantShapes(aBox).First();
         Assert.Equal(13, Count(aRes, ShapeType.Edge));
@@ -170,7 +172,7 @@ public class LocOpeTests
     {
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
-        var aWork = new LocOpe_WorkingShapes();
+        var aWork = new global::Kerf.Engine.Features.Local.WorkingShapes();
         Shape aCopy = aWork.Working(aBox);
         Assert.False(aCopy.IsSame(aBox));
         Shape aTopCopy = aWork.Working(aTop); // a face of the box: its copy within the box's
@@ -178,7 +180,7 @@ public class LocOpeTests
         Assert.True(Shares(aCopy, aTopCopy));
         Assert.True(aWork.Original(aTopCopy).IsSame(aTop));
         Shape anOther = aWork.Working(MidEdge()); // another frozen shape: copied too
-        Assert.True(aWork.IsCopied());
+        Assert.True(aWork.IsCopied);
         aWork.Finish([aCopy, anOther]);
         // nothing was written: everything comes back
         Assert.True(aWork.Final(aCopy).IsSame(aBox));
@@ -186,10 +188,10 @@ public class LocOpeTests
     }
 
     // Splits the top face of the box by a segment between the middles of two opposite edges
-    private static (LocOpe_SplitShape Split, Wire Wire) SplitTop(in Shape theBox)
+    private static (global::Kerf.Engine.Features.Local.LocalSplitShape Split, Wire Wire) SplitTop(in Shape theBox)
     {
         Face aTop = TopFace(theBox);
-        var aSplit = new LocOpe_SplitShape(theBox);
+        var aSplit = new global::Kerf.Engine.Features.Local.LocalSplitShape(theBox);
         var anEnds = new List<(Edge, double, Point3D)>();
         for (var anExp = new Explorer(aTop, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -202,11 +204,11 @@ public class LocOpeTests
             }
         }
         Assert.Equal(2, anEnds.Count);
-        Vertex aV1 = new BRepBuilderAPI_MakeVertex(anEnds[0].Item3).Vertex();
-        Vertex aV2 = new BRepBuilderAPI_MakeVertex(anEnds[1].Item3).Vertex();
+        Vertex aV1 = new MakeVertex(anEnds[0].Item3).Vertex();
+        Vertex aV2 = new MakeVertex(anEnds[1].Item3).Vertex();
         aSplit.Add(aV1, anEnds[0].Item2, anEnds[0].Item1);
         aSplit.Add(aV2, anEnds[1].Item2, anEnds[1].Item1);
-        Wire aWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge()).Wire();
+        Wire aWire = new MakeWire(new MakeEdge(aV1, aV2).Edge()).Wire();
         Assert.True(aSplit.Add(aWire, aTop));
         return (aSplit, aWire);
     }
@@ -216,7 +218,7 @@ public class LocOpeTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        (LocOpe_SplitShape aSplit, Wire aWire) = SplitTop(aBox);
+        (global::Kerf.Engine.Features.Local.LocalSplitShape aSplit, Wire aWire) = SplitTop(aBox);
         ShapeSnapshot aWireSnap = ShapeSnapshot.Of(aWire);
         Face aTop = TopFace(aBox);
 
@@ -241,8 +243,8 @@ public class LocOpeTests
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
         var aCirc = new Circle3D(new Frame3D(new Point3D(5, 10, 30), new Direction3D(0, 0, 1)), 2);
-        Wire aWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
-        var aSplit = new LocOpe_SplitShape(aBox);
+        Wire aWire = new MakeWire(new MakeEdge(aCirc).Edge()).Wire();
+        var aSplit = new global::Kerf.Engine.Features.Local.LocalSplitShape(aBox);
         Assert.True(aSplit.Add(aWire, aTop));
         Assert.Equal(2, aSplit.DescendantShapes(aTop).Extent());
         Shape aRes = aSplit.DescendantShapes(aBox).First();
@@ -262,11 +264,11 @@ public class LocOpeTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         ShapeSnapshot anEdgeSnap = ShapeSnapshot.Of(anEdge);
 
-        var aWOnS = new LocOpe_WiresOnShape(aBox);
+        var aWOnS = new global::Kerf.Engine.Features.Local.WiresOnShape(aBox);
         aWOnS.Bind(anEdge, aTop);
-        var aSpliter = new LocOpe_Spliter(aBox);
+        var aSpliter = new global::Kerf.Engine.Features.Local.Spliter(aBox);
         aSpliter.Perform(aWOnS);
-        Assert.True(aSpliter.IsDone());
+        Assert.True(aSpliter.IsDone);
         Shape aRes = aSpliter.ResultingShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -282,7 +284,7 @@ public class LocOpeTests
         // the faces that weren't split nor touched are the caller's
         Assert.True(Shares(aRes, Face(aBox, 1)) || Shares(aRes, Face(aBox, 2)));
         Assert.Equal(Area(aBox), Area(aRes), 9);
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
 
         // the wires-on-shape answers with the caller's shapes
         aWOnS.InitEdgeIterator();
@@ -295,13 +297,13 @@ public class LocOpeTests
     public void WiresOnShape_Add_BindsTheEdgesToTheFaces()
     {
         Shape aBox = Box();
-        var aWOnS = new LocOpe_WiresOnShape(aBox);
+        var aWOnS = new global::Kerf.Engine.Features.Local.WiresOnShape(aBox);
         var anEdges = new NCollection_Sequence<Shape>();
         anEdges.Append(MidEdge());
         Assert.True(aWOnS.Add(anEdges));
-        var aSpliter = new LocOpe_Spliter(aBox);
+        var aSpliter = new global::Kerf.Engine.Features.Local.Spliter(aBox);
         aSpliter.Perform(aWOnS);
-        Assert.True(aSpliter.IsDone());
+        Assert.True(aSpliter.IsDone);
         Assert.Equal(7, Count(aSpliter.ResultingShape(), global::Kerf.Topology.ShapeType.Face));
     }
 
@@ -309,16 +311,16 @@ public class LocOpeTests
     public void BuildWires_ChainsEdges()
     {
         Shape aBox = Box();
-        var aWOnS = new LocOpe_WiresOnShape(aBox);
+        var aWOnS = new global::Kerf.Engine.Features.Local.WiresOnShape(aBox);
         var anEdges = new NCollection_List<Shape>();
         var aP = new[] { new Point3D(1, 1, 30), new Point3D(2, 1, 30), new Point3D(2, 2, 30) };
-        Vertex aV0 = new BRepBuilderAPI_MakeVertex(aP[0]).Vertex();
-        Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP[1]).Vertex();
-        Vertex aV2 = new BRepBuilderAPI_MakeVertex(aP[2]).Vertex();
-        anEdges.Append(new BRepBuilderAPI_MakeEdge(aV0, aV1).Edge());
-        anEdges.Append(new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge());
-        var aBuild = new LocOpe_BuildWires(anEdges, aWOnS);
-        Assert.True(aBuild.IsDone());
+        Vertex aV0 = new MakeVertex(aP[0]).Vertex();
+        Vertex aV1 = new MakeVertex(aP[1]).Vertex();
+        Vertex aV2 = new MakeVertex(aP[2]).Vertex();
+        anEdges.Append(new MakeEdge(aV0, aV1).Edge());
+        anEdges.Append(new MakeEdge(aV1, aV2).Edge());
+        var aBuild = new global::Kerf.Engine.Features.Local.BuildWires(anEdges, aWOnS);
+        Assert.True(aBuild.IsDone);
         Assert.Equal(1, aBuild.Result().Extent());
         Assert.Equal(2, Count(aBuild.Result().First(), ShapeType.Edge));
     }
@@ -332,7 +334,7 @@ public class LocOpeTests
         {
             aFaces.Append(anExp.Current());
         }
-        var aBuild = new LocOpe_BuildShape(aFaces);
+        var aBuild = new global::Kerf.Engine.Features.Local.BuildShape(aFaces);
         Shape aRes = aBuild.Shape();
         Assert.Equal(ShapeType.Solid, aRes.ShapeType());
         Assert.Equal(6000, Volume(aRes), 6);
@@ -344,7 +346,7 @@ public class LocOpeTests
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aPrism = new LocOpe_Prism(aTop, new Vector3D(0, 0, 5));
+        var aPrism = new global::Kerf.Engine.Features.Local.LocalPrism(aTop, new Vector3D(0, 0, 5));
         Shape aRes = aPrism.Shape();
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aRes));
@@ -362,7 +364,7 @@ public class LocOpeTests
         Assert.Equal(4 * 9 + 4, aCurves.Length());
         Assert.NotNull(aPrism.BarycCurve());
 
-        var aTrans = new LocOpe_Prism(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 1));
+        var aTrans = new global::Kerf.Engine.Features.Local.LocalPrism(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 1));
         Assert.Equal(1000, Math.Abs(Volume(aTrans.Shape())), 6);
         Assert.Equal(1, aTrans.Shapes(new Explorer(aTop, ShapeType.Edge).Current()).Extent());
     }
@@ -370,7 +372,7 @@ public class LocOpeTests
     [Fact]
     public void Prism_OfACylinderFace_CopiesTheEdgesItWritesInto()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+        Shape aCyl = new ApiMakeCylinder(5, 10).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         Face aLateral = new();
         for (var anExp = new Explorer(aCyl, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
@@ -380,7 +382,7 @@ public class LocOpeTests
                 aLateral = ShapeCasts.Face(anExp.Current());
             }
         }
-        var aPrism = new LocOpe_Prism(aLateral, new Vector3D(1, 0, 0));
+        var aPrism = new global::Kerf.Engine.Features.Local.LocalPrism(aLateral, new Vector3D(1, 0, 0));
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aPrism.Shape()));
         Assert.True(Count(aPrism.Shape(), global::Kerf.Topology.ShapeType.Face) > 3);
@@ -393,7 +395,7 @@ public class LocOpeTests
         Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var anAxis = new Axis3D(new Point3D(-10, 0, 0), new Direction3D(0, 1, 0));
-        var aRevol = new LocOpe_Revol();
+        var aRevol = new global::Kerf.Engine.Features.Local.LocalRevol();
         aRevol.Perform(aTop, anAxis, Math.PI / 6);
         Shape aRes = aRevol.Shape();
         aSnap.AssertUnchanged(aBox);
@@ -404,12 +406,12 @@ public class LocOpeTests
         Assert.Equal(4 * 9 + 4, aCurves.Length());
         Assert.NotNull(aRevol.BarycCurve());
 
-        var aRevol2 = new LocOpe_Revol();
+        var aRevol2 = new global::Kerf.Engine.Features.Local.LocalRevol();
         aRevol2.Perform(aTop, anAxis, Math.PI / 6, Math.PI / 12);
         Assert.Equal(6, Count(aRevol2.Shape(), global::Kerf.Topology.ShapeType.Face));
         Assert.Equal(1, aRevol2.Shapes(new Explorer(aTop, ShapeType.Edge).Current()).Extent());
 
-        var aForm = new LocOpe_RevolutionForm();
+        var aForm = new global::Kerf.Engine.Features.Local.RevolutionForm();
         aForm.Perform(aTop, anAxis, Math.PI / 6);
         Assert.Equal(6, Count(aForm.Shape(), global::Kerf.Topology.ShapeType.Face));
         aSnap.AssertUnchanged(aBox);
@@ -421,9 +423,9 @@ public class LocOpeTests
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aForm = new LocOpe_LinearForm(aTop, new Vector3D(0, 0, 5), new Point3D(), new Point3D(1, 0, 0));
+        var aForm = new global::Kerf.Engine.Features.Local.LinearForm(aTop, new Vector3D(0, 0, 5), new Point3D(), new Point3D(1, 0, 0));
         Assert.Equal(1000, Math.Abs(Volume(aForm.Shape())), 6);
-        var aForm2 = new LocOpe_LinearForm(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 2), new Point3D(), new Point3D(1, 0, 0));
+        var aForm2 = new global::Kerf.Engine.Features.Local.LinearForm(aTop, new Vector3D(0, 0, 5), new Vector3D(0, 0, 2), new Point3D(), new Point3D(1, 0, 0));
         Assert.Equal(1000, Math.Abs(Volume(aForm2.Shape())), 6);
         aSnap.AssertUnchanged(aBox);
         Assert.True(AllFrozen(aForm.Shape()));
@@ -432,10 +434,10 @@ public class LocOpeTests
     [Fact]
     public void DPrism_OfAFrozenRectangle()
     {
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(), 0, 10, 0, 20).Face();
+        Face aFace = new MakeFace(new Plane3D(), 0, 10, 0, 20).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
-        var aDPrism = new LocOpe_DPrism(aFace, 5, 5 * Math.PI / 180);
-        Assert.True(aDPrism.IsDone());
+        var aDPrism = new global::Kerf.Engine.Features.Local.DPrism(aFace, 5, 5 * Math.PI / 180);
+        Assert.True(aDPrism.IsDone);
         Shape aRes = aDPrism.Shape();
         aSnap.AssertUnchanged(aFace);
         Assert.True(AllFrozen(aRes));
@@ -450,8 +452,8 @@ public class LocOpeTests
             Assert.Equal(1, aDPrism.Shapes(anExp.Current()).Extent());
         }
 
-        var aDPrism2 = new LocOpe_DPrism(aFace, 5, 2, 5 * Math.PI / 180);
-        Assert.True(aDPrism2.IsDone());
+        var aDPrism2 = new global::Kerf.Engine.Features.Local.DPrism(aFace, 5, 2, 5 * Math.PI / 180);
+        Assert.True(aDPrism2.IsDone);
         Assert.Equal(10, Count(aDPrism2.Shape(), global::Kerf.Topology.ShapeType.Face)); // the arcs at the corners below the plane (PRIM_BOX DPRISM2)
     }
 
@@ -459,7 +461,7 @@ public class LocOpeTests
     public void Gluer_GluesABoxOnABox_TheInputsAreUnchanged()
     {
         Shape aBase = Box();
-        Shape aNew = new BRepPrimAPI_MakeBox(new Point3D(2, 2, 30), 4, 4, 5).Shape();
+        Shape aNew = new MakeBox(new Point3D(2, 2, 30), 4, 4, 5).Shape();
         ShapeSnapshot aSnapBase = ShapeSnapshot.Of(aBase);
         ShapeSnapshot aSnapNew = ShapeSnapshot.Of(aNew);
         Face aTop = TopFace(aBase);
@@ -467,18 +469,18 @@ public class LocOpeTests
         for (var anExp = new Explorer(aNew, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
             {
                 aBottom = ShapeCasts.Face(anExp.Current());
             }
         }
 
-        var aGluer = new LocOpe_Gluer(aBase, aNew);
+        var aGluer = new global::Kerf.Engine.Features.Local.LocalGluer(aBase, aNew);
         aGluer.Bind(aBottom, aTop);
-        Assert.Equal(LocOpe_FUSE, aGluer.OpeType());
+        Assert.Equal(global::Kerf.Engine.Features.Local.FeatureOperation.Fuse, aGluer.OpeType());
         aGluer.Perform();
-        Assert.True(aGluer.IsDone());
+        Assert.True(aGluer.IsDone);
         Shape aRes = aGluer.ResultingShape();
         aSnapBase.AssertUnchanged(aBase);
         aSnapNew.AssertUnchanged(aNew);
@@ -488,22 +490,22 @@ public class LocOpeTests
         Assert.Equal(1, aGluer.DescendantFaces(aTop).Extent()); // the top face with the new box's footprint
         Assert.Equal(0, aGluer.DescendantFaces(aBottom).Extent()); // glued
         Assert.Equal(4, aGluer.Edges().Extent());
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
     }
 
     [Fact]
     public void Generator_OnAGluedShape()
     {
         Shape aBase = Box();
-        Shape aNew = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 30), 10, 20, 5).Shape();
+        Shape aNew = new MakeBox(new Point3D(0, 0, 30), 10, 20, 5).Shape();
         // glue the new box by its bottom face, whose edges are the base's top edges in shape (not shared): the
         // generator's own test is through the gluer; here the generated shape is glued on itself
-        var aGlued = new LocOpe_GluedShape(aNew);
+        var aGlued = new global::Kerf.Engine.Features.Local.GluedShape(aNew);
         Face aBottom = new();
         for (var anExp = new Explorer(aNew, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
             {
                 aBottom = ShapeCasts.Face(anExp.Current());
@@ -520,7 +522,7 @@ public class LocOpeTests
     {
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
-        var aFind = new LocOpe_FindEdges(aTop, aBox);
+        var aFind = new global::Kerf.Engine.Features.Local.FindEdges(aTop, aBox);
         int aNb = 0;
         for (aFind.InitIterator(); aFind.More(); aFind.Next())
         {
@@ -529,7 +531,7 @@ public class LocOpeTests
         }
         Assert.Equal(4, aNb);
 
-        var aFindIn = new LocOpe_FindEdgesInFace(aBox, aTop);
+        var aFindIn = new global::Kerf.Engine.Features.Local.FindEdgesInFace(aBox, aTop);
         int aNbIn = 0;
         for (aFindIn.Init(); aFindIn.More(); aFindIn.Next())
         {
@@ -544,9 +546,9 @@ public class LocOpeTests
         Shape aBox = Box();
         var aLines = new NCollection_Sequence<Line3D>();
         aLines.Append(new Line3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)));
-        var anInt = new LocOpe_CSIntersector(aBox);
+        var anInt = new global::Kerf.Engine.Features.Local.CSIntersector(aBox);
         anInt.Perform(aLines);
-        Assert.True(anInt.IsDone());
+        Assert.True(anInt.IsDone);
         Assert.Equal(2, anInt.NbPoints(1));
         Assert.Equal(10, anInt.Point(1, 1).Parameter(), 9);
         Assert.Equal(40, anInt.Point(1, 2).Parameter(), 9);
@@ -556,9 +558,9 @@ public class LocOpeTests
         Assert.Equal(1, aFrom);
         Assert.Equal(1, aTo);
 
-        var aCurve = new LocOpe_CurveShapeIntersector(new Axis3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)), aBox);
-        Assert.True(aCurve.IsDone());
-        Assert.Equal(2, aCurve.NbPoints());
+        var aCurve = new global::Kerf.Engine.Features.Local.LocalCurveShapeIntersector(new Axis3D(new Point3D(5, 10, -10), new Direction3D(0, 0, 1)), aBox);
+        Assert.True(aCurve.IsDone);
+        Assert.Equal(2, aCurve.PointCount);
         Assert.True(aCurve.LocalizeAfter(0.0, ref anOr, ref aFrom, ref aTo));
         Assert.Equal(Forward, anOr);
         Assert.True(aCurve.LocalizeBefore(100.0, ref anOr, ref aFrom, ref aTo));
@@ -573,10 +575,10 @@ public class LocOpeTests
     [Fact]
     public void Pipe_OfAFrozenFace()
     {
-        Face aFace = new BRepBuilderAPI_MakeFace(new Plane3D(new Point3D(), new Direction3D(0, 0, 1)), -1, 1, -1, 1).Face();
-        Wire aSpine = new BRepBuilderAPI_MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(0, 0, 10))).Wire();
+        Face aFace = new MakeFace(new Plane3D(new Point3D(), new Direction3D(0, 0, 1)), -1, 1, -1, 1).Face();
+        Wire aSpine = new MakeWire(Segment(new Point3D(0, 0, 0), new Point3D(0, 0, 10))).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
-        var aPipe = new LocOpe_Pipe(aSpine, aFace);
+        var aPipe = new global::Kerf.Engine.Features.Local.LocalPipe(aSpine, aFace);
         Shape aRes = aPipe.Shape();
         aSnap.AssertUnchanged(aFace);
         Assert.True(AllFrozen(aRes));
@@ -601,7 +603,7 @@ public class LocOpeTests
         for (var anExp = new Explorer(aBox, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
             {
                 aSide = ShapeCasts.Face(anExp.Current());
@@ -609,16 +611,16 @@ public class LocOpeTests
         }
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         // the side x = 10 split by a vertical segment, drafted by 5 degrees on its left part from the plane z = 0
-        Wire aWire = new BRepBuilderAPI_MakeWire(Segment(new Point3D(10, 10, 0), new Point3D(10, 10, 30))).Wire();
+        Wire aWire = new MakeWire(Segment(new Point3D(10, 10, 0), new Point3D(10, 10, 30))).Wire();
         ShapeSnapshot aWireSnap = ShapeSnapshot.Of(aWire);
-        var aDrafts = new LocOpe_SplitDrafts(aBox);
+        var aDrafts = new global::Kerf.Engine.Features.Local.SplitDrafts(aBox);
         // as natively (tools/locoperec's DRAFT records, occt-issues.md): the drafted planes meet along a line, and
         // GeomFill_Pipe can't convert the infinite line to a B-spline
         Assert.Throws<DomainErrorException>(() => aDrafts.Perform(aSide, aWire, new Direction3D(0, 0, 1),
                                                                    new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5 * Math.PI / 180));
         aSnap.AssertUnchanged(aBox);
         aWireSnap.AssertUnchanged(aWire);
-        Assert.False(aDrafts.IsDone());
+        Assert.False(aDrafts.IsDone);
         Assert.True(aDrafts.OriginalShape().IsSame(aBox));
     }
 }

@@ -126,19 +126,19 @@ public class STEPControl_Writer
         int mws = -1;
         switch (mode)
         {
-            case STEPControl_AsIs:
+            case STEPControl_StepModelType.STEPControl_AsIs:
                 mws = 0;
                 break;
-            case STEPControl_FacetedBrep:
+            case STEPControl_StepModelType.STEPControl_FacetedBrep:
                 mws = 1;
                 break;
-            case STEPControl_ShellBasedSurfaceModel:
+            case STEPControl_StepModelType.STEPControl_ShellBasedSurfaceModel:
                 mws = 2;
                 break;
-            case STEPControl_ManifoldSolidBrep:
+            case STEPControl_StepModelType.STEPControl_ManifoldSolidBrep:
                 mws = 3;
                 break;
-            case STEPControl_GeometricCurveSet:
+            case STEPControl_StepModelType.STEPControl_GeometricCurveSet:
                 mws = 4;
                 break;
             default:
@@ -146,7 +146,7 @@ public class STEPControl_Writer
         }
         if (mws < 0)
         {
-            return IFSelect_RetError; // cas non reconnu
+            return IFSelect_ReturnStatus.IFSelect_RetError; // cas non reconnu
         }
         thesession.TransferWriter().SetTransferMode(mws);
         if (!Model().IsInitializedUnit())
@@ -170,7 +170,7 @@ public class STEPControl_Writer
         StepData_StepModel aModel = Model();
         if (aModel is null)
         {
-            return IFSelect_RetFail;
+            return IFSelect_ReturnStatus.IFSelect_RetFail;
         }
         APIHeaderSection_MakeHeader aHeaderMaker = new APIHeaderSection_MakeHeader();
         aHeaderMaker.Apply(aModel);
@@ -184,20 +184,20 @@ public class STEPControl_Writer
         StepData_StepModel aModel = Model();
         if (aModel is null)
         {
-            return IFSelect_RetFail;
+            return IFSelect_ReturnStatus.IFSelect_RetFail;
         }
 
         StepData_Protocol aProtocol = aModel.Protocol() as StepData_Protocol;
         if (aProtocol is null)
         {
-            return IFSelect_RetFail;
+            return IFSelect_ReturnStatus.IFSelect_RetFail;
         }
 
         StepData_StepWriter aWriter = new StepData_StepWriter(aModel);
         aWriter.SendModel(aProtocol);
         APIHeaderSection_MakeHeader aHeaderMaker = new APIHeaderSection_MakeHeader();
         aHeaderMaker.Apply(aModel);
-        return aWriter.Print(theOStream) ? IFSelect_RetDone : IFSelect_RetFail;
+        return aWriter.Print(theOStream) ? IFSelect_ReturnStatus.IFSelect_RetDone : IFSelect_ReturnStatus.IFSelect_RetFail;
     }
 
     /// <summary>
@@ -262,7 +262,7 @@ public class STEPControl_Writer
     }
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
-    public void SetShapeProcessFlags(ShapeProcess.OperationsFlags theFlags)
+    public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags)
     {
         Transfer_ActorOfFinderProcess anActor = GetActor();
         if (anActor is not null)
@@ -272,10 +272,10 @@ public class STEPControl_Writer
     }
 
     /// <summary>Returns flags defining operations to be performed on shapes.</summary>
-    public (ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
+    public (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
     {
         Transfer_ActorOfFinderProcess anActor = GetActor();
-        return anActor is null ? (new ShapeProcess.OperationsFlags(), false) : anActor.GetShapeProcessFlags();
+        return anActor is null ? (new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(), false) : anActor.GetShapeProcessFlags();
     }
 
     /// <summary>Returns the Actor for the Transfer of an Entity. @return the Actor for the Transfer of an Entity. May be nullptr.</summary>
@@ -308,8 +308,8 @@ public class STEPControl_Writer
         }
         if (!GetShapeProcessFlags().Item2)
         {
-            ShapeProcess.OperationsFlags aFlags = new ShapeProcess.OperationsFlags(ShapeProcess.Operation.SplitCommonVertex,
-                                                                                  ShapeProcess.Operation.DirectFaces);
+            global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex,
+                                                                                  global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
             SetShapeProcessFlags(aFlags);
         }
     }

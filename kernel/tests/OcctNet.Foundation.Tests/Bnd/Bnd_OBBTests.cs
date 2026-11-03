@@ -172,12 +172,12 @@ public class Bnd_OBB_PortTest
     public void Bnd_Tools_Bnd2BVH()
     {
         Box aBox = new(new Point3D(-1, -2, -3), new Point3D(1, 2, 3));
-        Box<double, NCollection_Vec3<double>> aBVH = Tools.Bnd2BVH(aBox);
+        Box<double, NCollection_Vec3<double>> aBVH = global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(aBox);
         Assert.Equal(new NCollection_Vec3<double>(-1, -2, -3), aBVH.CornerMin());
         Assert.Equal(new NCollection_Vec3<double>(1, 2, 3), aBVH.CornerMax());
 
         Box2d aBox2d = Box2d.FromPoint(new Point2D(1, 2)).Added(new Point2D(3, 4));
-        Box<double, NCollection_Vec2<double>> aBVH2d = Tools.Bnd2BVH(aBox2d);
+        Box<double, NCollection_Vec2<double>> aBVH2d = global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(aBox2d);
         Assert.Equal(new NCollection_Vec2<double>(1, 2), aBVH2d.CornerMin());
         Assert.Equal(new NCollection_Vec2<double>(3, 4), aBVH2d.CornerMax());
     }

@@ -1,6 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -108,7 +114,7 @@ internal static class SWDRAWShapeFixCommands
             aDistDomain = theDI.Atof(a[k++]);
         }
 
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         if (sae.CheckOverlapping(e1, e2, ref aTol, aDistDomain))
         {
             if (aDistDomain == 0.0)
@@ -145,7 +151,7 @@ internal static class SWDRAWShapeFixCommands
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         InPlace(theDI, Shape, aWork =>
         {
-            isDone = ShapeFix.SameParameter(aWork, argc > 2 && arg2!.Length > 0 && arg2[0] == 'f', BRepBuilderAPI.Precision());
+            isDone = ShapeFixFixer.SameParameter(aWork, argc > 2 && arg2!.Length > 0 && arg2[0] == 'f', BRepBuilderApi.Precision());
             return aWork;
         });
         if (!isDone)
@@ -245,7 +251,7 @@ internal static class SWDRAWShapeFixCommands
         {
             di.Append("Tolerance Limited between ").Append(tmin).Append(" and ").Append(tmax).Append("\n");
         }
-        var sat = new ShapeFix_ShapeTolerance();
+        var sat = new ShapeToleranceFixer();
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         InPlace(theDI, Shape, aWork =>
         {
@@ -274,7 +280,7 @@ internal static class SWDRAWShapeFixCommands
 
         bool rebuild = false;
 
-        var STF = new ShapeFix_Face();
+        var STF = new FaceFixer();
         //  Options ?
         for (int i = 3; i < argc; i++)
         {
@@ -315,7 +321,7 @@ internal static class SWDRAWShapeFixCommands
             }
         }
 
-        var resh = new ShapeBuild_ReShape();
+        var resh = new ReShapeBuilder();
 
         int nbfc = 0;
         for (var EF = new Explorer(Shape, ShapeType.Face); EF.More(); EF.Next())
@@ -325,7 +331,7 @@ internal static class SWDRAWShapeFixCommands
             STF.Init(F); // qui fait tout
             STF.Perform();
             Face face = STF.Face();
-            bool newface = STF.Status(ShapeExtend_Status.ShapeExtend_DONE) || rebuild;
+            bool newface = STF.Status(ExtendStatus.Done) || rebuild;
             if (newface)
             {
                 nbfc++;
@@ -348,8 +354,8 @@ internal static class SWDRAWShapeFixCommands
     private static int FixShape(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> argv)
     {
         int argc = argv.Count;
-        var msg = new ShapeExtend_MsgRegistrator();
-        var sfs = new ShapeFix_Shape();
+        var msg = new MsgRegistrator();
+        var sfs = new ShapeFixer();
         sfs.SetMsgRegistrator(msg);
 
         string? res = null;
@@ -562,7 +568,7 @@ internal static class SWDRAWShapeFixCommands
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape aResult = InPlace(theDI, S, aWork =>
         {
-            var SFWF = new ShapeFix_Wireframe(aWork);
+            var SFWF = new WireframeFixer(aWork);
             SFWF.SetPrecision(prec);
             isFixed = SFWF.FixWireGaps();
             return SFWF.InternalShape();
@@ -596,7 +602,7 @@ internal static class SWDRAWShapeFixCommands
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape aResult = InPlace(theDI, S, aWork =>
         {
-            var SFWF = new ShapeFix_Wireframe(aWork);
+            var SFWF = new WireframeFixer(aWork);
             SFWF.SetPrecision(prec);
             isFixed = SFWF.FixSmallEdges();
             return SFWF.InternalShape();
@@ -645,8 +651,8 @@ internal static class SWDRAWShapeFixCommands
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape resShape = InPlace(theDI, Sh, aWork =>
         {
-            var aSfwr = new ShapeFix_Wireframe();
-            var aReShape = new ShapeBuild_ReShape();
+            var aSfwr = new WireframeFixer();
+            var aReShape = new ReShapeBuilder();
             aSfwr.SetContext(aReShape);
             aSfwr.Load(aWork);
             aSfwr.SetPrecision(tol);
@@ -685,7 +691,7 @@ internal static class SWDRAWShapeFixCommands
         // OCCT works on the shape itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape aResult = InPlace(theDI, aShape, aWork =>
         {
-            var aFixSmallFaces = new ShapeFix_FixSmallFace();
+            var aFixSmallFaces = new FixSmallFaceFixer();
             aFixSmallFaces.Init(aWork);
             aFixSmallFaces.SetPrecision(aPrec);
             aFixSmallFaces.Perform();
@@ -728,7 +734,7 @@ internal static class SWDRAWShapeFixCommands
 
         Face aFace = ShapeCasts.Face(Sh1);
         var p2d = new Point2D(ucoord, vcoord);
-        var f2d = new BRepTopAdaptor_FClass2d(aFace, tol);
+        var f2d = new FClass2d(aFace, tol);
         Containment stat = f2d.Perform(p2d);
         if (stat == Containment.Out)
         {
@@ -783,7 +789,7 @@ internal static class SWDRAWShapeFixCommands
             aMapEdges.Add(aExpE.Current());
         }
 
-        NCollection_HSequence<Shape> aSeqWires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(aSeqEdges, aTol, shared);
+        NCollection_HSequence<Shape> aSeqWires = FreeBounds.ConnectEdgesToWires(aSeqEdges, aTol, shared);
         var aB = new BrepBuilder();
         var aComp = new Compound();
         aB.MakeCompound(ref aComp);

@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -192,7 +194,7 @@ internal static class BRepTestBoundingCommands
         if (isOBB)
         {
             var anOBB = new OrientedBox();
-            BRepBndLib.AddOBB(aShape, ref anOBB, isTriangulationReq, isOptimal, isTolerUsed);
+            Bounds.AddOBB(aShape, ref anOBB, isTriangulationReq, isOptimal, isTolerUsed);
 
             if (anOBB.IsVoid)
             {
@@ -229,11 +231,11 @@ internal static class BRepTestBoundingCommands
                 anAABB = Box.Void();
                 if (isOptimal)
                 {
-                    BRepBndLib.AddOptimal(aShape, ref anAABB, isTriangulationReq, isTolerUsed);
+                    Bounds.AddOptimal(aShape, ref anAABB, isTriangulationReq, isTolerUsed);
                 }
                 else
                 {
-                    BRepBndLib.Add(aShape, ref anAABB, isTriangulationReq);
+                    Bounds.Add(aShape, ref anAABB, isTriangulationReq);
                 }
             }
 
@@ -320,7 +322,7 @@ internal static class BRepTestBoundingCommands
 
         Frame3D anAxes = new(aBaryCenter, new Direction3D(aZDir), new Direction3D(aXDir));
         anAxes.SetLocation(new Point3D(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
-        Solid aBox = new BRepPrimAPI_MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
+        Solid aBox = new MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
         theDI.SetShape(theName, aBox);
         return 0;
     }
@@ -349,15 +351,15 @@ internal static class BRepTestBoundingCommands
         if (isOBB)
         {
             OrientedBox anOBB1 = new(), anOBB2 = new();
-            BRepBndLib.AddOBB(aShape1, ref anOBB1);
-            BRepBndLib.AddOBB(aShape2, ref anOBB2);
+            Bounds.AddOBB(aShape1, ref anOBB1);
+            Bounds.AddOBB(aShape2, ref anOBB2);
             theResult.Append(anOBB1.IsOut(anOBB2) ? "The shapes are NOT interfered by OBB.\n" : "The shapes are interfered by OBB.\n");
         }
         else
         {
             Box anAABB1 = new(), anAABB2 = new();
-            BRepBndLib.Add(aShape1, ref anAABB1);
-            BRepBndLib.Add(aShape2, ref anAABB2);
+            Bounds.Add(aShape1, ref anAABB1);
+            Bounds.Add(aShape2, ref anAABB2);
             theResult.Append(anAABB1.IsOut(anAABB2) ? "The shapes are NOT interfered by AABB.\n" : "The shapes are interfered by AABB.\n");
         }
 

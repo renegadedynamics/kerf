@@ -79,7 +79,7 @@ public sealed class TopoDSToStep_MakeFacetedBrep : TopoDSToStep_Root
     {
         done = false;
         // Looking for the Outer Shell
-        Shell aOuterShell = BRepClass3d.OuterShell(aSolid);
+        Shell aOuterShell = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(aSolid);
 
         if (!aOuterShell.IsNull)
         {

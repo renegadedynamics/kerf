@@ -24,11 +24,11 @@ internal static class RWStepGeom_RWPreferredSurfaceCurveRepresentation
     {
         switch (theSourceEnum)
         {
-            case StepGeom_pscrPcurveS2:
+            case StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS2:
                 return pscrPcurveS2;
-            case StepGeom_pscrPcurveS1:
+            case StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS1:
                 return pscrPcurveS1;
-            case StepGeom_pscrCurve3d:
+            case StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrCurve3d:
                 return pscrCurve3d;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepGeom_RWPreferredSurfaceCurveRepresentation
     {
         if (theRepresentationStr == pscrPcurveS2)
         {
-            theResultEnum = StepGeom_pscrPcurveS2;
+            theResultEnum = StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS2;
         }
         else if (theRepresentationStr == pscrPcurveS1)
         {
-            theResultEnum = StepGeom_pscrPcurveS1;
+            theResultEnum = StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrPcurveS1;
         }
         else if (theRepresentationStr == pscrCurve3d)
         {
-            theResultEnum = StepGeom_pscrCurve3d;
+            theResultEnum = StepGeom_PreferredSurfaceCurveRepresentation.StepGeom_pscrCurve3d;
         }
         else
         {

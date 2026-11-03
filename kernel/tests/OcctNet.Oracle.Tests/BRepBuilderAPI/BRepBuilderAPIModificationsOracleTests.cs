@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -83,7 +84,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             using (aNT)
             {
                 using var aNTransform = new N.BRepBuilderAPI_Transform(aNT);
-                var aTransform = new BRepBuilderAPI_Transform(aT);
+                var aTransform = new Transform(aT);
                 // two shapes through one framework
                 for (int aRound = 0; aRound < 2; aRound++)
                 {
@@ -91,7 +92,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                     bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
                     aNTransform.Perform(aShape.N, aCopyGeom, aCopyMesh);
                     aTransform.Perform(aShape.P, aCopyGeom, aCopyMesh);
-                    anOracle.Same(aNTransform.IsDone(), aTransform.IsDone(), "IsDone");
+                    anOracle.Same(aNTransform.IsDone(), aTransform.IsDone, "IsDone");
                     Shape aResult = aTransform.InternalShape();
                     if (aResult.IsPartner(aShape.P))
                     {
@@ -121,7 +122,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             Twin<N.TopoDS_Shape, Shape> aShape = BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene);
             bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
             using var aNCopy = new N.BRepBuilderAPI_Copy();
-            var aCopy = new BRepBuilderAPI_Copy();
+            var aCopy = new Copy();
             // the same shape twice through one framework (OCCT's second copy keeps the first one's shapes but makes
             // new vertices), then another shape
             Twin<N.TopoDS_Shape, Shape>[] aShapes = [aShape, aShape, BRepToolsModifierOracleTests.MeshedScene(anOracle, aScene + 1)];
@@ -129,7 +130,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             {
                 aNCopy.Perform(anInput.N, aCopyGeom, aCopyMesh);
                 aCopy.Perform(anInput.P, aCopyGeom, aCopyMesh);
-                anOracle.Same(aNCopy.IsDone(), aCopy.IsDone(), "IsDone");
+                anOracle.Same(aNCopy.IsDone(), aCopy.IsDone, "IsDone");
                 BRepToolsModifierOracleTests.CompareResult(anOracle, anInput, aNCopy.Shape(), aCopy.InternalShape(), aCopy.Shape,
                                                            aNCopy.ModifiedShape, s => aCopy.ModifiedShape(s), aCounts);
                 CompareModified(anOracle, anInput, aNCopy.Shape(), aCopy.Shape(),
@@ -170,8 +171,8 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
             using (aNG)
             {
                 using var aNGTransform = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);
-                var aGTransform = new BRepBuilderAPI_GTransform(aShape.P, aG);
-                anOracle.Same(aNGTransform.IsDone(), aGTransform.IsDone(), "IsDone");
+                var aGTransform = new GTransform(aShape.P, aG);
+                anOracle.Same(aNGTransform.IsDone(), aGTransform.IsDone, "IsDone");
                 BRepToolsModifierOracleTests.CompareResult(anOracle, aShape, aNGTransform.Shape(), aGTransform.InternalShape(),
                                                            aGTransform.Shape, aNGTransform.ModifiedShape,
                                                            s => aGTransform.ModifiedShape(s), aCounts);
@@ -208,7 +209,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                     {
                         bool aCopyMesh = anOracle.Bool();
                         using var aN = new N.BRepBuilderAPI_Transform(aShape.N, aNT, true, aCopyMesh);
-                        var aP = new BRepBuilderAPI_Transform(aShape.P, aT, true, aCopyMesh);
+                        var aP = new Transform(aShape.P, aT, true, aCopyMesh);
                         BRepToolsModifierOracleTests.CompareResult(anOracle, aShape, aN.Shape(), aP.InternalShape(), aP.Shape,
                                                                    aN.ModifiedShape, s => aP.ModifiedShape(s), aCounts);
                     }
@@ -220,7 +221,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                     // edges again (fillets, sweeps), which the port skips on its published, frozen edges
                     bool aCopyGeom = anOracle.Bool(), aCopyMesh = anOracle.Bool();
                     using var aN = new N.BRepBuilderAPI_Copy();
-                    var aP = new BRepBuilderAPI_Copy();
+                    var aP = new Copy();
                     for (int aRound = 0; aRound < 2; aRound++)
                     {
                         aN.Perform(aShape.N, aCopyGeom, aCopyMesh);
@@ -236,7 +237,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                     using (aNG)
                     {
                         using var aN = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);
-                        var aP = new BRepBuilderAPI_GTransform(aShape.P, aG);
+                        var aP = new GTransform(aShape.P, aG);
                         // OCCT: a meshed face on a B-spline or Bezier surface comes out of the NURBS conversion without
                         // its surface (occt-issues.md), on both sides; native BRepTools::UVBounds can't read such a face
                         bool aGeometry = true;

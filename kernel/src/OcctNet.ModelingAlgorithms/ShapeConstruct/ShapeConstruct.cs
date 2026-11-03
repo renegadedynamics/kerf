@@ -4,17 +4,20 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Construct;
 
 /// <summary>
 /// Constructions of geometry and topology for shape healing: conversion of curves and surfaces to B-splines, and
@@ -34,150 +37,150 @@ namespace Occt;
 public static partial class ShapeConstruct
 {
     /// <summary>
-    /// The 3D curve on [<paramref name="First"/>, <paramref name="Last"/>] as a B-spline (frozen): a B-spline is
+    /// The 3D curve on [<paramref name="first"/>, <paramref name="last"/>] as a B-spline (frozen): a B-spline is
     /// returned as it is, other curves are approximated (GeomConvert_ApproxCurve; degree at most 6 for conics), or
     /// converted by GeomConvert if the approximation fails.
     /// </summary>
-    public static BSplineCurve3D? ConvertCurveToBSpline(Curve3D C3D, double First, double Last, double Tol3d,
-                                                           Continuity Continuity, int MaxSegments, int MaxDegree)
+    public static BSplineCurve3D? ConvertCurveToBSpline(Curve3D c3D, double first, double last, double tol3d,
+                                                           Continuity continuity, int maxSegments, int maxDegree)
     {
-        BSplineCurve3D? aResult = InternalConvertCurveToBSpline(C3D, First, Last, Tol3d, Continuity, MaxSegments, MaxDegree);
-        aResult?.Freeze();
-        return aResult;
+        BSplineCurve3D? result = InternalConvertCurveToBSpline(c3D, first, last, tol3d, continuity, maxSegments, maxDegree);
+        result?.Freeze();
+        return result;
     }
 
     /// <summary>The 3D <see cref="ConvertCurveToBSpline(Curve3D, double, double, double, Continuity, int, int)"/> without freezing (ported code).</summary>
-    internal static BSplineCurve3D? InternalConvertCurveToBSpline(Curve3D C3D, double First, double Last, double Tol3d,
-                                                                     Continuity Continuity, int MaxSegments, int MaxDegree)
+    internal static BSplineCurve3D? InternalConvertCurveToBSpline(Curve3D c3D, double first, double last, double tol3d,
+                                                                     Continuity continuity, int maxSegments, int maxDegree)
     {
-        int MaxDeg = MaxDegree;
-        BSplineCurve3D? aBSpline;
-        if (C3D is BSplineCurve3D aBSplineC3D)
+        int maxDeg = maxDegree;
+        BSplineCurve3D? bSpline;
+        if (c3D is BSplineCurve3D bSplineC3D)
         {
-            aBSpline = aBSplineC3D;
+            bSpline = bSplineC3D;
         }
         else
         {
-            if (C3D is ConicCurve3D)
+            if (c3D is ConicCurve3D)
             {
-                MaxDeg = Min(MaxDeg, 6);
+                maxDeg = Min(maxDeg, 6);
             }
 
-            Curve3D tcurve = new TrimmedCurve3D(C3D, First, Last); //protection against parabols ets
+            Curve3D tcurve = new TrimmedCurve3D(c3D, first, last); //protection against parabols ets
             try
             {
-                ApproxCurve approx = new(tcurve, Tol3d, Continuity, MaxSegments, MaxDeg);
+                ApproxCurve approx = new(tcurve, tol3d, continuity, maxSegments, maxDeg);
                 if (approx.HasResult)
                 {
-                    aBSpline = approx.InternalCurve();
+                    bSpline = approx.InternalCurve();
                 }
                 else
                 {
-                    aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C3D, QuasiAngular);
+                    bSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c3D, QuasiAngular);
                 }
             }
             catch (FailureException)
             {
-                aBSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(C3D, QuasiAngular);
+                bSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c3D, QuasiAngular);
             }
         }
-        return aBSpline;
+        return bSpline;
     }
 
     /// <summary>
-    /// The 2D curve as a B-spline (frozen): a conic on [<paramref name="First"/>, <paramref name="Last"/>] is
+    /// The 2D curve as a B-spline (frozen): a conic on [<paramref name="first"/>, <paramref name="last"/>] is
     /// approximated (Geom2dConvert_ApproxCurve, or converted if that fails), other curves converted whole
     /// (Geom2dConvert), a B-spline returned as it is.
     /// </summary>
-    public static BSplineCurve2D? ConvertCurveToBSpline(Curve2D C2D, double First, double Last, double Tol2d,
-                                                             Continuity Continuity, int MaxSegments, int MaxDegree)
+    public static BSplineCurve2D? ConvertCurveToBSpline(Curve2D c2D, double first, double last, double tol2d,
+                                                             Continuity continuity, int maxSegments, int maxDegree)
     {
-        BSplineCurve2D? aResult = InternalConvertCurveToBSpline(C2D, First, Last, Tol2d, Continuity, MaxSegments, MaxDegree);
-        aResult?.Freeze();
-        return aResult;
+        BSplineCurve2D? result = InternalConvertCurveToBSpline(c2D, first, last, tol2d, continuity, maxSegments, maxDegree);
+        result?.Freeze();
+        return result;
     }
 
     /// <summary>The 2D <c>ConvertCurveToBSpline</c> without freezing (ported code).</summary>
-    internal static BSplineCurve2D? InternalConvertCurveToBSpline(Curve2D C2D, double First, double Last,
-                                                                       double Tol2d, Continuity Continuity,
-                                                                       int MaxSegments, int MaxDegree)
+    internal static BSplineCurve2D? InternalConvertCurveToBSpline(Curve2D c2D, double first, double last,
+                                                                       double tol2d, Continuity continuity,
+                                                                       int maxSegments, int maxDegree)
     {
-        BSplineCurve2D? aBSpline2d;
-        if (C2D is ConicCurve2D)
+        BSplineCurve2D? bSpline2d;
+        if (c2D is ConicCurve2D)
         {
-            Curve2D tcurve = new TrimmedCurve2D(C2D, First, Last); //protection against parabols ets
-            ApproxCurve2D approx = new(tcurve, Tol2d, Continuity, MaxSegments, MaxDegree);
+            Curve2D tcurve = new TrimmedCurve2D(c2D, first, last); //protection against parabols ets
+            ApproxCurve2D approx = new(tcurve, tol2d, continuity, maxSegments, maxDegree);
             if (approx.HasResult)
             {
-                aBSpline2d = approx.InternalCurve();
+                bSpline2d = approx.InternalCurve();
             }
             else
             {
-                aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
+                bSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
             }
         }
-        else if (C2D is not BSplineCurve2D)
+        else if (c2D is not BSplineCurve2D)
         {
-            aBSpline2d = Geom2dConvert2D.CurveToBSplineCurve(C2D, QuasiAngular);
+            bSpline2d = Geom2dConvert2D.CurveToBSplineCurve(c2D, QuasiAngular);
         }
         else
         {
-            aBSpline2d = (BSplineCurve2D)C2D;
+            bSpline2d = (BSplineCurve2D)c2D;
         }
 
-        return aBSpline2d;
+        return bSpline2d;
     }
 
     /// <summary>
     /// The surface on [UF, UL] x [VF, VL] as a B-spline surface (frozen): elementary surfaces converted exactly
     /// (GeomConvert), extrusions built from their converted basis curve, other surfaces approximated
     /// (GeomConvert_ApproxSurface, lowering the continuity on failure; a revolution of an offset curve has its basis
-    /// converted first). Null if no approximation within <paramref name="Tol3d"/> is found; then the last
+    /// converted first). Null if no approximation within <paramref name="tol3d"/> is found; then the last
     /// approximation found, if any.
     /// </summary>
     /// <remarks>
     /// This has the purpose of GeomConvert::SurfaceToBSplineSurface, but treats offset surfaces more correctly and
     /// takes the UV limits and degree as arguments.
     /// </remarks>
-    public static BSplineSurface? ConvertSurfaceToBSpline(Surface surf, double UF, double UL, double VF, double VL,
-                                                               double Tol3d, Continuity Continuity, int MaxSegments,
-                                                               int MaxDegree)
+    public static BSplineSurface? ConvertSurfaceToBSpline(Surface surf, double uf, double ul, double vf, double vl,
+                                                               double tol3d, Continuity continuity, int maxSegments,
+                                                               int maxDegree)
     {
-        BSplineSurface? aResult = InternalConvertSurfaceToBSpline(surf, UF, UL, VF, VL, Tol3d, Continuity, MaxSegments,
-                                                                       MaxDegree);
-        aResult?.Freeze();
-        return aResult;
+        BSplineSurface? result = InternalConvertSurfaceToBSpline(surf, uf, ul, vf, vl, tol3d, continuity, maxSegments,
+                                                                       maxDegree);
+        result?.Freeze();
+        return result;
     }
 
     /// <summary><see cref="ConvertSurfaceToBSpline"/> without freezing (ported code).</summary>
-    internal static BSplineSurface? InternalConvertSurfaceToBSpline(Surface surf, double UF, double UL, double VF,
-                                                                         double VL, double Tol3d, Continuity Continuity,
-                                                                         int MaxSegments, int MaxDegree)
+    internal static BSplineSurface? InternalConvertSurfaceToBSpline(Surface surf, double uf, double ul, double vf,
+                                                                         double vl, double tol3d, Continuity continuity,
+                                                                         int maxSegments, int maxDegree)
     {
-        Surface S = surf;
+        Surface s = surf;
         if (surf is TrimmedSurface RTS)
         {
-            S = RTS.BasisSurface();
+            s = RTS.BasisSurface();
         }
 
         // use GeomConvert for direct conversion of analytic surfaces
-        if (S is ElementarySurface)
+        if (s is ElementarySurface)
         {
-            TrimmedSurface aRTS = new(S, UF, UL, VF, VL);
-            return global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aRTS);
+            TrimmedSurface rts = new(s, uf, ul, vf, vl);
+            return global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(rts);
         }
 
-        if (S is ExtrusionSurface extr)
+        if (s is ExtrusionSurface extr)
         {
             Curve3D basis = extr.BasisCurve();
             // gp_Dir direction = extr->Direction(); // direction not used (skl)
 
-            Continuity cnt = (Continuity > C2 ? C2 : Continuity);
-            BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, UF, UL, Tol3d, cnt, MaxSegments, MaxDegree)!;
+            Continuity cnt = (continuity > C2 ? C2 : continuity);
+            BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, uf, ul, tol3d, cnt, maxSegments, maxDegree)!;
 
             Transform3D shiftF = new(), shiftL = new();
-            shiftF.SetTranslation(extr.Value(UF, 0), extr.Value(UF, VF));
-            shiftL.SetTranslation(extr.Value(UF, 0), extr.Value(UF, VL));
+            shiftF.SetTranslation(extr.Value(uf, 0), extr.Value(uf, vf));
+            shiftL.SetTranslation(extr.Value(uf, 0), extr.Value(uf, vl));
 
             int nbPoles = bspl.PoleCount;
             NCollection_Array1<Point3D> poles = bspl.InternalPoles();
@@ -197,8 +200,8 @@ public static partial class ShapeConstruct
 
             NCollection_Array1<double> vknots = new(1, 2);
             NCollection_Array1<int> vmults = new(1, 2);
-            vknots[1] = VF;
-            vknots[2] = VL;
+            vknots[1] = vf;
+            vknots[2] = vl;
             vmults[1] = vmults[2] = 2;
 
             BSplineSurface bspline = new(resPoles, resWeigth, knots, vknots, mults, vmults, bspl.Degree(), 1,
@@ -206,38 +209,38 @@ public static partial class ShapeConstruct
             return bspline;
         }
 
-        if (S is RevolutionSurface revol)
+        if (s is RevolutionSurface revol)
         {
             Curve3D basis = revol.BasisCurve();
             if (basis is OffsetCurve3D)
             {
                 Continuity cnt = basis.Continuity();
                 cnt = (cnt > C2 ? C2 : cnt);
-                BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, VF, VL, Tol3d, cnt, MaxSegments, MaxDegree)!;
+                BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, vf, vl, tol3d, cnt, maxSegments, maxDegree)!;
                 Axis3D axis = revol.Axis();
                 RevolutionSurface newRevol = new(bspl, axis);
-                S = newRevol;
+                s = newRevol;
             }
         }
 
-        Surface aSurface = new TrimmedSurface(S, UF, UL, VF, VL);
+        Surface surface = new TrimmedSurface(s, uf, ul, vf, vl);
         BSplineSurface? errSpl = null;
-        for (int cnt = (int)(Continuity > C3 ? C3 : Continuity); cnt >= 0;)
+        for (int cnt = (int)(continuity > C3 ? C3 : continuity); cnt >= 0;)
         {
             try
             {
-                Continuity aCont = (Continuity)cnt;
-                ApproxSurface anApprox = new(aSurface, Tol3d / 2, aCont, aCont, MaxDegree, MaxDegree, MaxSegments, 0);
-                bool Done = anApprox.IsDone;
-                if (anApprox.MaxError() <= Tol3d && Done)
+                Continuity cont = (Continuity)cnt;
+                ApproxSurface approx = new(surface, tol3d / 2, cont, cont, maxDegree, maxDegree, maxSegments, 0);
+                bool done = approx.IsDone;
+                if (approx.MaxError() <= tol3d && done)
                 {
-                    return anApprox.Surface();
+                    return approx.Surface();
                 }
                 else
                 {
-                    if (anApprox.HasResult)
+                    if (approx.HasResult)
                     {
-                        errSpl = anApprox.Surface();
+                        errSpl = approx.Surface();
                     }
                     break;
                 }
@@ -257,32 +260,32 @@ public static partial class ShapeConstruct
     }
 
     /// <summary>
-    /// Joins the pcurves on <paramref name="theFace"/> of the edges <paramref name="edges"/> (in order, all seams or
-    /// none) into the pcurve of <paramref name="theEdge"/> on that face, which is updated in place (its range on the
+    /// Joins the pcurves on <paramref name="face"/> of the edges <paramref name="edges"/> (in order, all seams or
+    /// none) into the pcurve of <paramref name="edge"/> on that face, which is updated in place (its range on the
     /// face set, SameRange and SameParameter cleared). As OCCT, true on a plane (nothing written) and when a pcurve
     /// could not be joined, false when all were (occt-issues.md).
     /// Internal: it throws on a frozen edge; the public form is <see cref="PCurvesJoined"/>.
     /// </summary>
-    internal static bool JoinPCurves(NCollection_HSequence<Shape> edges, in Face theFace, in Edge theEdge)
+    internal static bool JoinPCurves(NCollection_HSequence<Shape> edges, in Face face, in Edge edge)
     {
-        ShapeAnalysis_Edge sae = new();
-        BrepBuilder B = new();
+        EdgeAnalysis sae = new();
+        BrepBuilder b = new();
 
         try
         {
             // check if current face is plane.
-            Surface? aGeomSurf = Tool.Surface(theFace);
-            while (aGeomSurf is TrimmedSurface aTrimmed)
+            Surface? geomSurf = Tool.Surface(face);
+            while (geomSurf is TrimmedSurface trimmed)
             {
-                aGeomSurf = aTrimmed.BasisSurface();
+                geomSurf = trimmed.BasisSurface();
             }
-            if (aGeomSurf is PlaneSurface)
+            if (geomSurf is PlaneSurface)
             {
                 return true;
             }
 
-            bool IsEdgeSeam = false;
-            Curve2D? aCrvRes1 = null, aCrvRes2 = null;
+            bool isEdgeSeam = false;
+            Curve2D? crvRes1 = null, crvRes2 = null;
             Orientation resOrient;
             double newf = 0.0, newl = 0.0;
             // iterates on edges
@@ -292,13 +295,13 @@ public static partial class ShapeConstruct
                 Edge Edge = ShapeCasts.Edge(edges.Value(i));
                 if (i == 1)
                 {
-                    IsEdgeSeam = sae.IsSeam(Edge, theFace);
+                    isEdgeSeam = sae.IsSeam(Edge, face);
                 }
-                else if (IsEdgeSeam && (!sae.IsSeam(Edge, theFace)))
+                else if (isEdgeSeam && (!sae.IsSeam(Edge, face)))
                 {
                     break; // different cases
                 }
-                else if (!IsEdgeSeam && (sae.IsSeam(Edge, theFace)))
+                else if (!isEdgeSeam && (sae.IsSeam(Edge, face)))
                 {
                     break; // different cases
                 }
@@ -306,23 +309,23 @@ public static partial class ShapeConstruct
                 resOrient = Forward;
                 Curve2D? c2d2 = null;
                 double first2 = 0.0, last2 = 0.0;
-                if (!sae.PCurve(Edge, theFace, out Curve2D? c2d, out double first, out double last, false))
+                if (!sae.PCurve(Edge, face, out Curve2D? c2d, out double first, out double last, false))
                 {
                     break;
                 }
 
-                if (IsEdgeSeam)
+                if (isEdgeSeam)
                 {
                     Edge tmpE1 = ShapeCasts.Edge(Edge.Reversed());
-                    sae.PCurve(tmpE1, theFace, out c2d2, out first2, out last2, false);
+                    sae.PCurve(tmpE1, face, out c2d2, out first2, out last2, false);
                 }
 
                 if (i == 1)
                 {
-                    aCrvRes1 = c2d;
-                    if (IsEdgeSeam)
+                    crvRes1 = c2d;
+                    if (isEdgeSeam)
                     {
-                        aCrvRes2 = c2d2;
+                        crvRes2 = c2d2;
                     }
                     newf = first;
                     newl = last;
@@ -330,24 +333,24 @@ public static partial class ShapeConstruct
                 }
                 else
                 {
-                    if (!InternalJoinCurves(aCrvRes1!, c2d!, resOrient, Edge.Orientation(), ref newf, ref newl, ref first,
+                    if (!InternalJoinCurves(crvRes1!, c2d!, resOrient, Edge.Orientation(), ref newf, ref newl, ref first,
                                             ref last, out Curve2D? newCrv, out _, out _))
                     {
                         break;
                     }
 
-                    if (IsEdgeSeam)
+                    if (isEdgeSeam)
                     {
                         double newf2 = newf, newl2 = newl;
 
-                        if (!InternalJoinCurves(aCrvRes2!, c2d2!, resOrient, Edge.Orientation(), ref newf2, ref newl2,
+                        if (!InternalJoinCurves(crvRes2!, c2d2!, resOrient, Edge.Orientation(), ref newf2, ref newl2,
                                                 ref first2, ref last2, out Curve2D? newCrv2, out _, out _))
                         {
                             break;
                         }
-                        aCrvRes2 = newCrv2;
+                        crvRes2 = newCrv2;
                     }
-                    aCrvRes1 = newCrv;
+                    crvRes1 = newCrv;
                     double fp2d = newCrv!.FirstParameter();
                     double lp2d = newCrv.LastParameter();
                     newl += (last - first);
@@ -361,22 +364,22 @@ public static partial class ShapeConstruct
                     }
                 }
             }
-            if (IsEdgeSeam)
+            if (isEdgeSeam)
             {
-                B.UpdateEdge(theEdge, aCrvRes1, aCrvRes2, theFace, 0);
+                b.UpdateEdge(edge, crvRes1, crvRes2, face, 0);
             }
             else
             {
-                B.UpdateEdge(theEdge, aCrvRes1, theFace, 0);
+                b.UpdateEdge(edge, crvRes1, face, 0);
             }
-            B.Range(theEdge, theFace, newf, newl);
-            B.SameRange(theEdge, false);
-            B.SameParameter(theEdge, false);
+            b.Range(edge, face, newf, newl);
+            b.SameRange(edge, false);
+            b.SameParameter(edge, false);
             // OCCT: true only when a pcurve could not be joined (the loop broke early); all joined gives false, against
             // the documentation. No caller in OCCT reads it.
             return (i <= edges.Length());
         }
-        catch (FailureException) when (!theEdge.IsNull && !theEdge.TShape()!.IsFrozen)
+        catch (FailureException) when (!edge.IsNull && !edge.TShape()!.IsFrozen)
         {
             // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
         }
@@ -460,13 +463,13 @@ public static partial class ShapeConstruct
         isRev2 = false;
         // gka protection against crossing seem on second face
 
-        double Dmin1 = Min(d11, d21);
-        double Dmin2 = Min(d12, d22);
-        if (Math.Abs(Dmin1 - Dmin2) <= global::Kerf.Engine.Foundation.Precision.Confusion() || Dmin2 > Dmin1)
+        double dmin1 = Min(d11, d21);
+        double dmin2 = Min(d12, d22);
+        if (Math.Abs(dmin1 - dmin2) <= global::Kerf.Engine.Foundation.Precision.Confusion() || dmin2 > dmin1)
         {
             isRev1 = (d11 < d21);
         }
-        else if (Dmin2 < Dmin1)
+        else if (dmin2 < dmin1)
         {
             isRev1 = (d12 < d22);
             isRev2 = true;
@@ -479,19 +482,19 @@ public static partial class ShapeConstruct
     /// false). <paramref name="isRev1"/> and <paramref name="isRev2"/> tell which curve had to be reversed. True if
     /// the curves were joined.
     /// </summary>
-    public static bool JoinCurves(Curve3D c3d1, Curve3D ac3d2, Orientation Orient1, Orientation Orient2,
+    public static bool JoinCurves(Curve3D c3d1, Curve3D ac3d2, Orientation orient1, Orientation orient2,
                                   ref double first1, ref double last1, ref double first2, ref double last2,
                                   out Curve3D? c3dOut, out bool isRev1, out bool isRev2)
     {
-        bool aResult = InternalJoinCurves(c3d1, ac3d2, Orient1, Orient2, ref first1, ref last1, ref first2, ref last2,
+        bool result = InternalJoinCurves(c3d1, ac3d2, orient1, orient2, ref first1, ref last1, ref first2, ref last2,
                                           out c3dOut, out isRev1, out isRev2);
         c3dOut?.Freeze();
-        return aResult;
+        return result;
     }
 
     /// <summary>The 3D <c>JoinCurves</c> without freezing the joined curve (ported code).</summary>
-    internal static bool InternalJoinCurves(Curve3D ac3d1, Curve3D ac3d2, Orientation Orient1,
-                                            Orientation Orient2, ref double first1, ref double last1,
+    internal static bool InternalJoinCurves(Curve3D ac3d1, Curve3D ac3d2, Orientation orient1,
+                                            Orientation orient2, ref double first1, ref double last1,
                                             ref double first2, ref double last2, out Curve3D? c3dOut, out bool isRev1,
                                             out bool isRev2)
     {
@@ -502,10 +505,10 @@ public static partial class ShapeConstruct
 
         Curve3D c3d1, c3d2;
 
-        c3d1 = GetCurveCopy(ac3d1, ref first1, ref last1, Orient1);
-        c3d2 = GetCurveCopy(ac3d2, ref first2, ref last2, Orient2);
-        ShapeConstruct_Curve scc = new();
-        bool After = true;
+        c3d1 = GetCurveCopy(ac3d1, ref first1, ref last1, orient1);
+        c3d2 = GetCurveCopy(ac3d2, ref first2, ref last2, orient2);
+        ConstructCurve scc = new();
+        bool after = true;
         // the copies (or new curves) are unfrozen, so the segmenting and pole moves below edit only them
         BSplineCurve3D? bsplc1 = scc.InternalConvertToBSpline(c3d1, first1, last1, global::Kerf.Engine.Foundation.Precision.Confusion());
         BSplineCurve3D? bsplc2 = scc.InternalConvertToBSpline(c3d2, first2, last2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -542,7 +545,7 @@ public static partial class ShapeConstruct
         bsplc1.SetPole(bsplc1.PoleCount, pmid);
         bsplc2.SetPole(1, pmid);
         CompCurveToBSplineCurve connect3d = new(bsplc1);
-        if (!connect3d.Add(bsplc2, global::Kerf.Engine.Foundation.Precision.Confusion(), After, false))
+        if (!connect3d.Add(bsplc2, global::Kerf.Engine.Foundation.Precision.Confusion(), after, false))
         {
             return false;
         }
@@ -556,33 +559,33 @@ public static partial class ShapeConstruct
     /// refuses a join that the topology makes suspicious (one edge with one vertex). The result is frozen (null when
     /// false).
     /// </summary>
-    public static bool JoinCurves(Curve2D aC2d1, Curve2D aC2d2, Orientation Orient1,
-                                  Orientation Orient2, ref double first1, ref double last1, ref double first2,
-                                  ref double last2, out Curve2D? C2dOut, out bool isRev1, out bool isRev2,
+    public static bool JoinCurves(Curve2D aC2d1, Curve2D aC2d2, Orientation orient1,
+                                  Orientation orient2, ref double first1, ref double last1, ref double first2,
+                                  ref double last2, out Curve2D? c2dOut, out bool isRev1, out bool isRev2,
                                   bool isError = false)
     {
-        bool aResult = InternalJoinCurves(aC2d1, aC2d2, Orient1, Orient2, ref first1, ref last1, ref first2, ref last2,
-                                          out C2dOut, out isRev1, out isRev2, isError);
-        C2dOut?.Freeze();
-        return aResult;
+        bool result = InternalJoinCurves(aC2d1, aC2d2, orient1, orient2, ref first1, ref last1, ref first2, ref last2,
+                                          out c2dOut, out isRev1, out isRev2, isError);
+        c2dOut?.Freeze();
+        return result;
     }
 
     /// <summary>The 2D <c>JoinCurves</c> without freezing the joined curve (ported code).</summary>
-    internal static bool InternalJoinCurves(Curve2D aC2d1, Curve2D aC2d2, Orientation Orient1,
-                                            Orientation Orient2, ref double first1, ref double last1,
-                                            ref double first2, ref double last2, out Curve2D? C2dOut,
+    internal static bool InternalJoinCurves(Curve2D aC2d1, Curve2D aC2d2, Orientation orient1,
+                                            Orientation orient2, ref double first1, ref double last1,
+                                            ref double first2, ref double last2, out Curve2D? c2dOut,
                                             out bool isRev1, out bool isRev2, bool isError = false)
     {
         // OCCT leaves the outputs unchanged when it returns false early; the port gives null and false
-        C2dOut = null;
+        c2dOut = null;
         isRev1 = false;
         isRev2 = false;
 
         Curve2D c2d1, c2d2;
-        c2d1 = GetCurveCopy(aC2d1, ref first1, ref last1, Orient1);
-        c2d2 = GetCurveCopy(aC2d2, ref first2, ref last2, Orient2);
-        ShapeConstruct_Curve scc = new();
-        bool After = true;
+        c2d1 = GetCurveCopy(aC2d1, ref first1, ref last1, orient1);
+        c2d2 = GetCurveCopy(aC2d2, ref first2, ref last2, orient2);
+        ConstructCurve scc = new();
+        bool after = true;
 
         BSplineCurve2D? bsplc12d = scc.InternalConvertToBSpline(c2d1, first1, last1, global::Kerf.Engine.Foundation.Precision.Confusion());
         BSplineCurve2D? bsplc22d = scc.InternalConvertToBSpline(c2d2, first2, last2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -642,14 +645,14 @@ public static partial class ShapeConstruct
         Point3D vPnt = new(0, 0, 0);
         Vector3D vDir = new(0, 0, 1);
         Plane3D vPln = new(vPnt, new Direction3D(vDir));
-        BSplineCurve3D? bspl1 = GeomAPI.To3d(bsplc12d, vPln) as BSplineCurve3D;
-        BSplineCurve3D? bspl2 = GeomAPI.To3d(bsplc22d, vPln) as BSplineCurve3D;
+        BSplineCurve3D? bspl1 = Projections.To3d(bsplc12d, vPln) as BSplineCurve3D;
+        BSplineCurve3D? bspl2 = Projections.To3d(bsplc22d, vPln) as BSplineCurve3D;
         CompCurveToBSplineCurve connect2d = new(bspl1!);
-        if (!connect2d.Add(bspl2!, global::Kerf.Engine.Foundation.Precision.PConfusion(), After, false))
+        if (!connect2d.Add(bspl2!, global::Kerf.Engine.Foundation.Precision.PConfusion(), after, false))
         {
             return false;
         }
-        C2dOut = GeomAPI.To2d(connect2d.InternalBSplineCurve()!, vPln);
+        c2dOut = Projections.To2d(connect2d.InternalBSplineCurve()!, vPln);
 
         return true;
     }
@@ -659,24 +662,24 @@ public static partial class ShapeConstruct
     //=================================================================================================
 
     /// <summary>
-    /// The functional twin of <c>JoinPCurves</c>: <paramref name="theEdge"/> with the pcurves of
-    /// <paramref name="theEdges"/> on <paramref name="theFace"/> joined into its pcurve on that face, run on an exact
+    /// The functional twin of <c>JoinPCurves</c>: <paramref name="edge"/> with the pcurves of
+    /// <paramref name="edges"/> on <paramref name="face"/> joined into its pcurve on that face, run on an exact
     /// copy for write (decision 420's pattern): the result is frozen and is the edge itself when nothing was written
     /// (a plane). <paramref name="isDone"/> is JoinPCurves' result, inverted as in OCCT (false when all were joined).
     /// </summary>
-    public static Edge PCurvesJoined(NCollection_HSequence<Shape> theEdges, in Face theFace,
-                                            in Edge theEdge, out bool isDone)
+    public static Edge PCurvesJoined(NCollection_HSequence<Shape> edges, in Face face,
+                                            in Edge edge, out bool isDone)
     {
-        if (theEdge.IsNull)
+        if (edge.IsNull)
         {
             isDone = false;
-            return theEdge;
+            return edge;
         }
 
-        Edge aCopy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(theEdge, out _));
-        isDone = JoinPCurves(theEdges, theFace, aCopy);
-        Shape aResult = BrepTools.KeepUnchanged(theEdge, aCopy, out _);
-        aResult.TShape()!.FreezeGraph();
-        return ShapeCasts.Edge(aResult);
+        Edge copy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(edge, out _));
+        isDone = JoinPCurves(edges, face, copy);
+        Shape result = BrepTools.KeepUnchanged(edge, copy, out _);
+        result.TShape()!.FreezeGraph();
+        return ShapeCasts.Edge(result);
     }
 }

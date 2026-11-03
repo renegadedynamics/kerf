@@ -8,10 +8,11 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.BRepOffset_Status;
+using Occt;
+using static Kerf.Engine.Offsets.OffsetStatus;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Offsets;
 
 /// <summary>Auxiliary tools for the offset algorithms.</summary>
 public static class BRepOffset
@@ -19,162 +20,162 @@ public static class BRepOffset
     //=================================================================================================
 
     /// <summary>
-    /// The surface offset from <paramref name="Surface"/> by <paramref name="Offset"/>: of its own type where possible
+    /// The surface offset from <paramref name="surface"/> by <paramref name="offset"/>: of its own type where possible
     /// (the offset of a plane is a plane), otherwise a Geom_OffsetSurface, made with <paramref name="allowC0"/>.
     /// </summary>
-    public static Surface Surface(Surface Surface, double Offset, out BRepOffset_Status theStatus,
+    public static Surface Surface(Surface surface, double offset, out OffsetStatus status,
                                        bool allowC0 = false)
     {
-        double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        theStatus = BRepOffset_Good;
-        Surface? Result = null;
+        status = OffsetStatus.Good;
+        Surface? result = null;
 
-        Type TheType = Surface.GetType();
+        Type theType = surface.GetType();
 
-        if (TheType == typeof(PlaneSurface))
+        if (theType == typeof(PlaneSurface))
         {
-            PlaneSurface P = (PlaneSurface)Surface;
-            Vector3D T = new(P.Position().XDirection() ^ P.Position().YDirection());
-            T *= Offset;
-            Result = P.Translated(T) as PlaneSurface;
+            PlaneSurface p = (PlaneSurface)surface;
+            Vector3D t = new(p.Position().XDirection() ^ p.Position().YDirection());
+            t *= offset;
+            result = p.Translated(t) as PlaneSurface;
         }
-        else if (TheType == typeof(CylindricalSurface))
+        else if (theType == typeof(CylindricalSurface))
         {
-            CylindricalSurface C = (CylindricalSurface)Surface;
-            double Radius = C.Radius();
-            CoordinateSystem Axis = C.Position();
-            if (Axis.Direct())
+            CylindricalSurface c = (CylindricalSurface)surface;
+            double radius = c.Radius();
+            CoordinateSystem axis = c.Position();
+            if (axis.Direct())
             {
-                Radius += Offset;
+                radius += offset;
             }
             else
             {
-                Radius -= Offset;
+                radius -= offset;
             }
-            if (Radius >= Tol)
+            if (radius >= tol)
             {
-                Result = new CylindricalSurface(Axis, Radius);
+                result = new CylindricalSurface(axis, radius);
             }
-            else if (Radius <= -Tol)
+            else if (radius <= -tol)
             {
-                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
-                Result = new CylindricalSurface(Axis, Math.Abs(Radius));
-                theStatus = BRepOffset_Reversed;
-            }
-            else
-            {
-                theStatus = BRepOffset_Degenerated;
-            }
-        }
-        else if (TheType == typeof(ConicalSurface))
-        {
-            ConicalSurface C = (ConicalSurface)Surface;
-            double Alpha = C.SemiAngle();
-            double Radius = C.RefRadius() + Offset * Math.Cos(Alpha);
-            CoordinateSystem Axis = C.Position();
-            if (Radius >= 0.0)
-            {
-                Vector3D Z = new(Axis.Direction());
-                Z *= -Offset * Math.Sin(Alpha);
-                Axis.Translate(Z);
+                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                result = new CylindricalSurface(axis, Math.Abs(radius));
+                status = OffsetStatus.Reversed;
             }
             else
             {
-                Radius = -Radius;
-                Vector3D Z = new(Axis.Direction());
-                Z *= -Offset * Math.Sin(Alpha);
-                Axis.Translate(Z);
-                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
-                Alpha = -Alpha;
-            }
-            Result = new ConicalSurface(Axis, Alpha, Radius);
-        }
-        else if (TheType == typeof(SphericalSurface))
-        {
-            SphericalSurface S = (SphericalSurface)Surface;
-            double Radius = S.Radius();
-            CoordinateSystem Axis = S.Position();
-            if (Axis.Direct())
-            {
-                Radius += Offset;
-            }
-            else
-            {
-                Radius -= Offset;
-            }
-            if (Radius >= Tol)
-            {
-                Result = new SphericalSurface(Axis, Radius);
-            }
-            else if (Radius <= -Tol)
-            {
-                Axis.Rotate(new Axis3D(Axis.Location(), Axis.Direction()), M_PI);
-                Axis.ZReverse();
-                Result = new SphericalSurface(Axis, -Radius);
-                theStatus = BRepOffset_Reversed;
-            }
-            else
-            {
-                theStatus = BRepOffset_Degenerated;
+                status = OffsetStatus.Degenerated;
             }
         }
-        else if (TheType == typeof(ToroidalSurface))
+        else if (theType == typeof(ConicalSurface))
         {
-            ToroidalSurface S = (ToroidalSurface)Surface;
-            double MajorRadius = S.MajorRadius();
-            double MinorRadius = S.MinorRadius();
-            CoordinateSystem Axis = S.Position();
-            if (MinorRadius < MajorRadius)
+            ConicalSurface c = (ConicalSurface)surface;
+            double alpha = c.SemiAngle();
+            double radius = c.RefRadius() + offset * Math.Cos(alpha);
+            CoordinateSystem axis = c.Position();
+            if (radius >= 0.0)
+            {
+                Vector3D z = new(axis.Direction());
+                z *= -offset * Math.Sin(alpha);
+                axis.Translate(z);
+            }
+            else
+            {
+                radius = -radius;
+                Vector3D z = new(axis.Direction());
+                z *= -offset * Math.Sin(alpha);
+                axis.Translate(z);
+                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                alpha = -alpha;
+            }
+            result = new ConicalSurface(axis, alpha, radius);
+        }
+        else if (theType == typeof(SphericalSurface))
+        {
+            SphericalSurface s = (SphericalSurface)surface;
+            double radius = s.Radius();
+            CoordinateSystem axis = s.Position();
+            if (axis.Direct())
+            {
+                radius += offset;
+            }
+            else
+            {
+                radius -= offset;
+            }
+            if (radius >= tol)
+            {
+                result = new SphericalSurface(axis, radius);
+            }
+            else if (radius <= -tol)
+            {
+                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis.ZReverse();
+                result = new SphericalSurface(axis, -radius);
+                status = OffsetStatus.Reversed;
+            }
+            else
+            {
+                status = OffsetStatus.Degenerated;
+            }
+        }
+        else if (theType == typeof(ToroidalSurface))
+        {
+            ToroidalSurface s = (ToroidalSurface)surface;
+            double majorRadius = s.MajorRadius();
+            double minorRadius = s.MinorRadius();
+            CoordinateSystem axis = s.Position();
+            if (minorRadius < majorRadius)
             { // A FINIR
-                if (Axis.Direct())
+                if (axis.Direct())
                 {
-                    MinorRadius += Offset;
+                    minorRadius += offset;
                 }
                 else
                 {
-                    MinorRadius -= Offset;
+                    minorRadius -= offset;
                 }
-                if (MinorRadius >= Tol)
+                if (minorRadius >= tol)
                 {
-                    Result = new ToroidalSurface(Axis, MajorRadius, MinorRadius);
+                    result = new ToroidalSurface(axis, majorRadius, minorRadius);
                 }
-                else if (MinorRadius <= -Tol)
+                else if (minorRadius <= -tol)
                 {
-                    theStatus = BRepOffset_Reversed;
+                    status = OffsetStatus.Reversed;
                 }
                 else
                 {
-                    theStatus = BRepOffset_Degenerated;
+                    status = OffsetStatus.Degenerated;
                 }
             }
         }
-        else if (TheType == typeof(RevolutionSurface))
+        else if (theType == typeof(RevolutionSurface))
         {
         }
-        else if (TheType == typeof(ExtrusionSurface))
+        else if (theType == typeof(ExtrusionSurface))
         {
         }
-        else if (TheType == typeof(BSplineSurface))
+        else if (theType == typeof(BSplineSurface))
         {
         }
-        else if (TheType == typeof(TrimmedSurface))
+        else if (theType == typeof(TrimmedSurface))
         {
-            TrimmedSurface S = (TrimmedSurface)Surface;
-            S.Bounds(out double U1, out double U2, out double V1, out double V2);
-            Surface Off = BRepOffset.Surface(S.BasisSurface(), Offset, out theStatus, allowC0);
-            Result = new TrimmedSurface(Off, U1, U2, V1, V2);
+            TrimmedSurface s = (TrimmedSurface)surface;
+            s.Bounds(out double u1, out double u2, out double v1, out double v2);
+            Surface off = global::Kerf.Engine.Offsets.BRepOffset.Surface(s.BasisSurface(), offset, out status, allowC0);
+            result = new TrimmedSurface(off, u1, u2, v1, v2);
         }
-        else if (TheType == typeof(OffsetSurface))
+        else if (theType == typeof(OffsetSurface))
         {
         }
 
-        if (Result is null)
+        if (result is null)
         {
-            Result = new OffsetSurface(Surface, Offset, allowC0);
+            result = new OffsetSurface(surface, offset, allowC0);
         }
 
-        return Result;
+        return result;
     }
 
     //=================================================================================================
@@ -183,96 +184,96 @@ public static class BRepOffset
     /// Preprocesses a surface to be offset (a B-spline; OCCT plans Béziers and revolutions of them) by collapsing each
     /// singular side to a single point, so that the normal doesn't flip at the singularity. A side is singular if the
     /// face has a degenerated edge whose vertex holds (by its tolerance) every pole of that side, or if all its poles
-    /// fit in a sphere of radius <paramref name="thePrecision"/>. Returns the surface itself or a modified copy.
+    /// fit in a sphere of radius <paramref name="precision"/>. Returns the surface itself or a modified copy.
     /// </summary>
-    public static Surface CollapseSingularities(Surface theSurface, in Face theFace,
-                                                     double thePrecision)
+    public static Surface CollapseSingularities(Surface surface, in Face face,
+                                                     double precision)
     {
         // check surface type to see if it can be processed
-        Type aType = theSurface.GetType();
-        if (aType != typeof(BSplineSurface))
+        Type type = surface.GetType();
+        if (type != typeof(BSplineSurface))
         {
             // for the moment, only bspline surfaces are treated;
             // in the future, bezier surfaces and surfaces of revolution can be also handled
-            return theSurface;
+            return surface;
         }
 
         // find singularities (vertices of degenerated edges)
-        NCollection_List<Point3D> aDegenPnt = new();
-        NCollection_List<double> aDegenTol = new();
-        for (Explorer anExp = new(theFace, ShapeType.Edge); anExp.More(); anExp.Next())
+        NCollection_List<Point3D> degenPnt = new();
+        NCollection_List<double> degenTol = new();
+        for (Explorer exp = new(face, ShapeType.Edge); exp.More(); exp.Next())
         {
-            Edge anEdge = ShapeCasts.Edge(anExp.Current());
-            if (!Tool.Degenerated(anEdge))
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            if (!Tool.Degenerated(edge))
             {
                 continue;
             }
-            Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
-            if (!aV1.IsSame(aV2))
+            Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
+            if (!v1.IsSame(v2))
             {
                 continue;
             }
 
-            aDegenPnt.Append(Tool.Pnt(aV1));
-            aDegenTol.Append(Tool.Tolerance(aV1));
+            degenPnt.Append(Tool.Pnt(v1));
+            degenTol.Append(Tool.Tolerance(v1));
         }
 
         // iterate by sides of the surface
-        if (aType == typeof(BSplineSurface))
+        if (type == typeof(BSplineSurface))
         {
-            BSplineSurface aBSpline = (BSplineSurface)theSurface;
-            NCollection_Array2<Point3D> aPoles = aBSpline.InternalPoles();
+            BSplineSurface bSpline = (BSplineSurface)surface;
+            NCollection_Array2<Point3D> poles = bSpline.InternalPoles();
 
-            BSplineSurface? aCopy = null;
+            BSplineSurface? copy = null;
 
             // iterate by sides: {U=0; V=0; U=1; V=1}
-            int[] RowStart = [aPoles.LowerRow(), aPoles.LowerRow(), aPoles.UpperRow(), aPoles.LowerRow()];
-            int[] ColStart = [aPoles.LowerCol(), aPoles.LowerCol(), aPoles.LowerCol(), aPoles.UpperCol()];
-            int[] RowStep = [0, 1, 0, 1];
-            int[] ColStep = [1, 0, 1, 0];
-            int[] NbSteps = [aPoles.RowLength(), aPoles.ColLength(), aPoles.RowLength(), aPoles.ColLength()];
+            int[] rowStart = [poles.LowerRow(), poles.LowerRow(), poles.UpperRow(), poles.LowerRow()];
+            int[] colStart = [poles.LowerCol(), poles.LowerCol(), poles.LowerCol(), poles.UpperCol()];
+            int[] rowStep = [0, 1, 0, 1];
+            int[] colStep = [1, 0, 1, 0];
+            int[] nbSteps = [poles.RowLength(), poles.ColLength(), poles.RowLength(), poles.ColLength()];
             for (int iSide = 0; iSide < 4; iSide++)
             {
                 // compute center of gravity of side poles
-                Xyz aSum = new();
-                for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
+                Xyz sum = new();
+                for (int iPole = 0; iPole < nbSteps[iSide]; iPole++)
                 {
-                    aSum += aPoles[RowStart[iSide] + iPole * RowStep[iSide], ColStart[iSide] + iPole * ColStep[iSide]]
+                    sum += poles[rowStart[iSide] + iPole * rowStep[iSide], colStart[iSide] + iPole * colStep[iSide]]
                         .XYZ();
                 }
-                Point3D aCenter = new(aSum / NbSteps[iSide]);
+                Point3D center = new(sum / nbSteps[iSide]);
 
                 // determine if all poles of the side fit into:
                 bool isCollapsed = true; // aCenter precisely (with gp::Resolution())
                 bool isSingular = true;  // aCenter with thePrecision
-                bool[] isDegenerated = new bool[aDegenPnt.Extent()]; // degenerated vertex
+                bool[] isDegenerated = new bool[degenPnt.Extent()]; // degenerated vertex
                 for (int iDegen = 0; iDegen < isDegenerated.Length; ++iDegen)
                 {
                     isDegenerated[iDegen] = true;
                 }
-                for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
+                for (int iPole = 0; iPole < nbSteps[iSide]; iPole++)
                 {
-                    Point3D aPole = aPoles[RowStart[iSide] + iPole * RowStep[iSide],
-                                          ColStart[iSide] + iPole * ColStep[iSide]];
+                    Point3D pole = poles[rowStart[iSide] + iPole * rowStep[iSide],
+                                          colStart[iSide] + iPole * colStep[iSide]];
 
                     // distance from CG
-                    double aDistCG = aCenter.Distance(aPole);
-                    if (aDistCG > Constants.Resolution())
+                    double distCG = center.Distance(pole);
+                    if (distCG > Constants.Resolution())
                     {
                         isCollapsed = false;
                     }
-                    if (aDistCG > thePrecision)
+                    if (distCG > precision)
                     {
                         isSingular = false;
                     }
 
                     // distances from degenerated points
-                    NCollection_List<Point3D>.Iterator aDegPntIt = new(aDegenPnt);
-                    NCollection_List<double>.Iterator aDegTolIt = new(aDegenTol);
+                    NCollection_List<Point3D>.Iterator degPntIt = new(degenPnt);
+                    NCollection_List<double>.Iterator degTolIt = new(degenTol);
                     for (int iDegen = 0; iDegen < isDegenerated.Length;
-                         aDegPntIt.Next(), aDegTolIt.Next(), ++iDegen)
+                         degPntIt.Next(), degTolIt.Next(), ++iDegen)
                     {
-                        if (isDegenerated[iDegen] && aDegPntIt.Value().Distance(aPole) >= aDegTolIt.Value())
+                        if (isDegenerated[iDegen] && degPntIt.Value().Distance(pole) >= degTolIt.Value())
                         {
                             isDegenerated[iDegen] = false;
                         }
@@ -287,53 +288,53 @@ public static class BRepOffset
                 // or if it fits into one (and only one) degenerated point
                 if (!isSingular)
                 {
-                    int aNbFit = 0;
-                    NCollection_List<Point3D>.Iterator aDegPntIt = new(aDegenPnt);
-                    NCollection_List<double>.Iterator aDegTolIt = new(aDegenTol);
+                    int nbFit = 0;
+                    NCollection_List<Point3D>.Iterator degPntIt = new(degenPnt);
+                    NCollection_List<double>.Iterator degTolIt = new(degenTol);
                     for (int iDegen = 0; iDegen < isDegenerated.Length; ++iDegen)
                     {
                         if (isDegenerated[iDegen])
                         {
                             // remove degenerated point as soon as it fits at least one side, to prevent total
                             // collapse
-                            aDegenPnt.Remove(aDegPntIt);
-                            aDegenTol.Remove(aDegTolIt);
-                            aNbFit++;
+                            degenPnt.Remove(degPntIt);
+                            degenTol.Remove(degTolIt);
+                            nbFit++;
                         }
                         else
                         {
-                            aDegPntIt.Next();
-                            aDegTolIt.Next();
+                            degPntIt.Next();
+                            degTolIt.Next();
                         }
                     }
 
                     // if side fits more than one degenerated vertex, do not collapse it
                     // to be on the safe side
-                    isSingular = (aNbFit == 1);
+                    isSingular = (nbFit == 1);
                 }
 
                 // do collapse
                 if (isSingular)
                 {
-                    if (aCopy is null)
+                    if (copy is null)
                     {
-                        aCopy = (BSplineSurface)theSurface.Copy();
+                        copy = (BSplineSurface)surface.Copy();
                     }
-                    for (int iPole = 0; iPole < NbSteps[iSide]; iPole++)
+                    for (int iPole = 0; iPole < nbSteps[iSide]; iPole++)
                     {
-                        aCopy.SetPole(RowStart[iSide] + iPole * RowStep[iSide],
-                                      ColStart[iSide] + iPole * ColStep[iSide],
-                                      aCenter);
+                        copy.SetPole(rowStart[iSide] + iPole * rowStep[iSide],
+                                      colStart[iSide] + iPole * colStep[iSide],
+                                      center);
                     }
                 }
             }
 
-            if (aCopy is not null)
+            if (copy is not null)
             {
-                return aCopy;
+                return copy;
             }
         }
 
-        return theSurface;
+        return surface;
     }
 }

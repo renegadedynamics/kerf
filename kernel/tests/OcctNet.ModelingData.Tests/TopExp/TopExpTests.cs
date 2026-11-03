@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopExp_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -15,7 +16,7 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopExpTests
 {
-    private static Shape MakeBox() => new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape();
+    private static Shape MakeBox() => new MakeBox(10.0, 20.0, 30.0).Shape();
 
     [Fact]
     public void MapShapes_Faces()

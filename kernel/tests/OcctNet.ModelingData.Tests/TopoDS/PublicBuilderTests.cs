@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -43,9 +44,9 @@ public class PublicBuilderTests
         var aBuilder = new Builder();
         Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         aBuilder.Add(aCompound, aBox);
-        aBuilder.Add(aCompound, new BRepPrimAPI_MakeBox(4, 5, 6).Shape());
+        aBuilder.Add(aCompound, new MakeBox(4, 5, 6).Shape());
         aBuilder.Remove(aCompound, aBox);
         Assert.False(aCompound.TShape()!.IsFrozen);
 

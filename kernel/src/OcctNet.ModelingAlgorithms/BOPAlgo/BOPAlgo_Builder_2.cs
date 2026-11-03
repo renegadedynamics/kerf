@@ -2,219 +2,224 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>The same-domain check of a pair of faces, in the builder's parallel loop.</summary>
-internal sealed class BOPAlgo_PairOfShapeBoolean : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class PairOfShapeBoolean : ParallelAlgo, BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private bool myFlag;
-    private Shape myShape1 = new();
-    private Shape myShape2 = new();
-    private IntTools_Context? myContext;
+    private bool _flag;
+    private Shape _shape1 = new();
+    private Shape _shape2 = new();
+    private IntersectionContext? _context;
 
-    public BOPAlgo_PairOfShapeBoolean()
+    public PairOfShapeBoolean()
     {
-        myFlag = false;
+        _flag = false;
     }
 
     //
-    public ref Shape Shape1() => ref myShape1;
+    public ref Shape Shape1() => ref _shape1;
 
     //
-    public ref Shape Shape2() => ref myShape2;
+    public ref Shape Shape2() => ref _shape2;
 
     //
-    public ref bool Flag() => ref myFlag;
+    public ref bool Flag() => ref _flag;
 
     //
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
     //
-    public IntTools_Context? Context() => myContext;
+    public IntersectionContext? Context() => _context;
 
     //
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (UserBreak(ps))
         {
             return;
         }
 
-        Face aFj = ShapeCasts.Face(myShape1);
-        Face aFk = ShapeCasts.Face(myShape2);
-        myFlag = BOPTools_AlgoTools.AreFacesSameDomain(aFj, aFk, myContext!, myFuzzyValue);
+        Face fj = ShapeCasts.Face(_shape1);
+        Face fk = ShapeCasts.Face(_shape2);
+        _flag = AlgoTools.AreFacesSameDomain(fj, fk, _context!, _fuzzyValue);
     }
 }
 
 /// <summary>Extends BOPAlgo_BuilderFace with its own progress range, for the builder's parallel loop.</summary>
-internal sealed class BOPAlgo_SplitFace : BOPAlgo_BuilderFace, BOPTools_Parallel.ISolver
+internal sealed class SplitFace : BuilderFace, BooleanParallel.ISolver
 {
-    private ProgressRange myRange;
+    private ProgressRange _range;
 
     //! Sets progress range
-    public void SetProgressRange(ProgressRange theRange) => myRange = theRange;
+    public void SetProgressRange(ProgressRange range) => _range = range;
 
     // New perform method, using own progress range
     public void Perform()
     {
-        using var aPS = new ProgressScope(myRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_range, null, 1);
+        if (!ps.More())
         {
             return;
         }
-        base.Perform(aPS.Next());
+        base.Perform(ps.Next());
     }
 
     //! Disables the range enabled method (private in OCCT; C# can't narrow an override)
-    public override void Perform(ProgressRange theRange = default)
+    public override void Perform(ProgressRange range = default)
     {
     }
 }
 
 /// <summary>The classification of a vertex relatively a face, in the builder's parallel loop.</summary>
-internal sealed class BOPAlgo_VFI : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class VFI : ParallelAlgo, BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private bool myIsInternal;
-    private Vertex myV = new();
-    private Face myF = new();
-    private IntTools_Context? myContext;
+    private bool _isInternal;
+    private Vertex _v = new();
+    private Face _f = new();
+    private IntersectionContext? _context;
 
-    public BOPAlgo_VFI()
+    public VFI()
     {
-        myIsInternal = false;
+        _isInternal = false;
     }
 
     //
-    public void SetVertex(in Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => _v = aV;
 
     //
-    public ref Vertex Vertex() => ref myV;
+    public ref Vertex Vertex() => ref _v;
 
     //
-    public void SetFace(in Face aF) => myF = aF;
+    public void SetFace(in Face aF) => _f = aF;
 
     //
-    public ref Face Face() => ref myF;
+    public ref Face Face() => ref _f;
 
     //
-    public bool IsInternal() => myIsInternal;
+    public bool IsInternal => _isInternal;
 
     //
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
     //
-    public IntTools_Context? Context() => myContext;
+    public IntersectionContext? Context() => _context;
 
     //
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (UserBreak(ps))
         {
             return;
         }
 
-        double aT1 = 0, aT2 = 0, dummy = 0;
+        double t1 = 0, t2 = 0, dummy = 0;
         //
-        int iFlag = myContext!.ComputeVF(myV, myF, ref aT1, ref aT2, ref dummy, myFuzzyValue);
-        myIsInternal = iFlag == 0;
+        int iFlag = _context!.ComputeVF(_v, _f, ref t1, ref t2, ref dummy, _fuzzyValue);
+        _isInternal = iFlag == 0;
     }
 }
 
-public partial class BOPAlgo_Builder
+public partial class BooleanBuilder
 {
     /// <summary>Fills the images of the faces: the split faces, the same-domain faces and the internal vertices.</summary>
-    protected void FillImagesFaces(ProgressRange theRange)
+    protected void FillImagesFaces(ProgressRange range)
     {
-        using var aPS = new ProgressScope(theRange, "Filling splits of faces", 10);
-        BuildSplitFaces(aPS.Next(9));
-        if (HasErrors())
+        using var ps = new ProgressScope(range, "Filling splits of faces", 10);
+        BuildSplitFaces(ps.Next(9));
+        if (HasErrors)
         {
             return;
         }
-        FillSameDomainFaces(aPS.Next(0.5));
-        if (HasErrors())
+        FillSameDomainFaces(ps.Next(0.5));
+        if (HasErrors)
         {
             return;
         }
-        FillInternalVertices(aPS.Next(0.5));
+        FillInternalVertices(ps.Next(0.5));
     }
 
     /// <summary>Builds the split faces of the faces having IN, ON or section pave blocks, or alone vertices.</summary>
-    protected virtual void BuildSplitFaces(ProgressRange theRange)
+    protected virtual void BuildSplitFaces(ProgressRange range)
     {
         bool bHasFaceInfo, bIsClosed, bIsDegenerated, bToReverse;
-        int i, j, k, aNbS, aNbPBIn, aNbPBOn, aNbPBSc, aNbAV, nSp;
-        Face aFF;
-        Edge aSp, aEE;
-        Orientation anOriF, anOriE;
-        Explorer aExp = new();
-        NCollection_List<Shape>.Iterator aIt = new();
-        NCollection_List<int> aLIAV = new();
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
-        NCollection_DynamicArray<BOPAlgo_SplitFace> aVBF = new();
+        int i, j, k, nbS, nbPBIn, nbPBOn, nbPBSc, nbAV, nSp;
+        Face ff;
+        Edge sp, ee;
+        Orientation oriF, oriE;
+        Explorer exp = new();
+        NCollection_List<Shape>.Iterator it = new();
+        NCollection_List<int> liav = new();
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        NCollection_DynamicArray<SplitFace> vbf = new();
         //
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~scope f
-        NCollection_List<Shape> aLE = new();
+        NCollection_List<Shape> le = new();
         // (OCCT's unused map aMDE is left out)
         //
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
+        using var psOuter = new ProgressScope(range, null, 10);
         // Build temporary map of faces images to avoid rebuilding
         // of the faces without any IN or section edges
-        NCollection_IndexedDataMap<int, NCollection_List<Shape>> aFacesIm = new();
+        NCollection_IndexedDataMap<int, NCollection_List<Shape>> facesIm = new();
         //
-        aNbS = myDS!.NbSourceShapes();
+        nbS = _ds!.SourceShapeCount;
         //
-        for (i = 0; i < aNbS; ++i)
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Face)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
             //
-            Face aF = ShapeCasts.Face(aSI.Shape());
+            Face f = ShapeCasts.Face(si.Shape());
             bool isUClosed = false, isVClosed = false, isChecked = false;
             //
-            bHasFaceInfo = myDS.HasFaceInfo(i);
+            bHasFaceInfo = _ds.HasFaceInfo(i);
             if (!bHasFaceInfo)
             {
                 continue;
             }
             //
-            BOPDS_FaceInfo aFI = myDS.FaceInfo(i);
+            FaceInfo fi = _ds.FaceInfo(i);
             //
-            NCollection_IndexedMap<BOPDS_PaveBlock> aMPBIn = aFI.PaveBlocksIn();
-            NCollection_IndexedMap<BOPDS_PaveBlock> aMPBOn = aFI.PaveBlocksOn();
-            NCollection_IndexedMap<BOPDS_PaveBlock> aMPBSc = aFI.PaveBlocksSc();
-            aLIAV.Clear();
-            myDS.AloneVertices(i, aLIAV);
+            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            NCollection_IndexedMap<PaveBlock> mpbOn = fi.PaveBlocksOn();
+            NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+            liav.Clear();
+            _ds.AloneVertices(i, liav);
 
-            aNbPBIn = aMPBIn.Extent();
-            aNbPBOn = aMPBOn.Extent();
-            aNbPBSc = aMPBSc.Extent();
-            aNbAV = aLIAV.Extent();
-            if (aNbPBIn == 0 && aNbPBOn == 0 && aNbPBSc == 0 && aNbAV == 0)
+            nbPBIn = mpbIn.Extent();
+            nbPBOn = mpbOn.Extent();
+            nbPBSc = mpbSc.Extent();
+            nbAV = liav.Extent();
+            if (nbPBIn == 0 && nbPBOn == 0 && nbPBSc == 0 && nbAV == 0)
             { // not compete
                 continue;
             }
 
-            if (aNbPBIn == 0 && aNbPBSc == 0)
+            if (nbPBIn == 0 && nbPBSc == 0)
             {
                 // If there are any alone vertices to be put in the face,
                 // the new face has to be created even if the wires of the
@@ -226,24 +231,24 @@ public partial class BOPAlgo_Builder
                 // In case of alone vertices the check for internals will be performed
                 // in the BuildDraftFace method.
                 bool hasInternals = false;
-                if (aNbAV == 0)
+                if (nbAV == 0)
                 {
                     // Check if any wires of the face have been modified.
                     // If no modified and internal wires present in the face
                     // there is no need to create the new face.
                     bool hasModified = false;
 
-                    Iterator aItW = new(aF);
-                    for (; aItW.More(); aItW.Next())
+                    Iterator itW = new(f);
+                    for (; itW.More(); itW.Next())
                     {
-                        Iterator itE = new(aItW.Value());
+                        Iterator itE = new(itW.Value());
                         hasInternals = itE.More() && (itE.Value().Orientation() == Internal);
                         if (hasInternals)
                         {
                             break;
                         }
 
-                        hasModified |= myImages.IsBound(aItW.Value());
+                        hasModified |= _images.IsBound(itW.Value());
                     }
 
                     if (!hasInternals && !hasModified)
@@ -260,44 +265,44 @@ public partial class BOPAlgo_Builder
                     // the draft face will be null, as such sub-shapes may split the face on parts
                     // (as in the case "bugs modalg_5 bug25245_1").
                     // The BuilderFace algorithm will be called in this case.
-                    Face aFD = BuildDraftFace(aF, myImages, myContext!, myReport);
-                    if (!aFD.IsNull)
+                    Face fd = BuildDraftFace(f, _images, _context!, _report);
+                    if (!fd.IsNull)
                     {
-                        aFacesIm[aFacesIm.Add(i, new NCollection_List<Shape>())].Append(aFD);
+                        facesIm[facesIm.Add(i, new NCollection_List<Shape>())].Append(fd);
                         continue;
                     }
                 }
             }
 
-            aMFence.Clear();
+            mFence.Clear();
             //
-            anOriF = aF.Orientation();
-            aFF = aF;
-            aFF.Orientation(Forward);
+            oriF = f.Orientation();
+            ff = f;
+            ff.Orientation(Forward);
             //
             // 1. Fill the edges set for the face aFF -> LE
-            aLE.Clear();
+            le.Clear();
 
             // 1.1 Bounding edges
-            aExp.Init(aFF, ShapeType.Edge);
-            for (; aExp.More(); aExp.Next())
+            exp.Init(ff, ShapeType.Edge);
+            for (; exp.More(); exp.Next())
             {
-                Edge aE = ShapeCasts.Edge(aExp.Current());
-                anOriE = aE.Orientation();
+                Edge e = ShapeCasts.Edge(exp.Current());
+                oriE = e.Orientation();
                 //
-                if (!myImages.IsBound(aE))
+                if (!_images.IsBound(e))
                 {
-                    if (anOriE == Internal)
+                    if (oriE == Internal)
                     {
-                        aEE = aE;
-                        aEE.Orientation(Forward);
-                        aLE.Append(aEE);
-                        aEE.Orientation(Reversed);
-                        aLE.Append(aEE);
+                        ee = e;
+                        ee.Orientation(Forward);
+                        le.Append(ee);
+                        ee.Orientation(Reversed);
+                        le.Append(ee);
                     }
                     else
                     {
-                        aLE.Append(aE);
+                        le.Append(e);
                     }
 
                     continue;
@@ -305,170 +310,170 @@ public partial class BOPAlgo_Builder
 
                 if (!isChecked)
                 {
-                    Surface aSurf = Tool.Surface(aF)!;
-                    global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(aSurf, Tool.Tolerance(aE), out isUClosed, out isVClosed);
+                    Surface surf = Tool.Surface(f)!;
+                    global::Kerf.Engine.Geometry.Library.GeomLib.IsClosed(surf, Tool.Tolerance(e), out isUClosed, out isVClosed);
 
                     isChecked = true;
                 }
 
                 bIsClosed = false;
 
-                if ((isUClosed || isVClosed) && Tool.IsClosed(aE, aF))
+                if ((isUClosed || isVClosed) && Tool.IsClosed(e, f))
                 {
-                    BOPTools_AlgoTools2D.IsEdgeIsoline(aE, aF, out bool isUIso, out bool isVIso);
+                    AlgoTools2D.IsEdgeIsoline(e, f, out bool isUIso, out bool isVIso);
 
                     bIsClosed = (isUClosed && isUIso) || (isVClosed && isVIso);
                 }
 
-                bIsDegenerated = Tool.Degenerated(aE);
+                bIsDegenerated = Tool.Degenerated(e);
 
-                NCollection_List<Shape> aLIE = myImages.Find(aE);
-                aIt.Initialize(aLIE);
-                for (; aIt.More(); aIt.Next())
+                NCollection_List<Shape> lie = _images.Find(e);
+                it.Initialize(lie);
+                for (; it.More(); it.Next())
                 {
-                    aSp = ShapeCasts.Edge(aIt.Value());
+                    sp = ShapeCasts.Edge(it.Value());
                     if (bIsDegenerated)
                     {
-                        aSp.Orientation(anOriE);
-                        aLE.Append(aSp);
+                        sp.Orientation(oriE);
+                        le.Append(sp);
                         continue;
                     }
                     //
-                    if (anOriE == Internal)
+                    if (oriE == Internal)
                     {
-                        aSp.Orientation(Forward);
-                        aLE.Append(aSp);
-                        aSp.Orientation(Reversed);
-                        aLE.Append(aSp);
+                        sp.Orientation(Forward);
+                        le.Append(sp);
+                        sp.Orientation(Reversed);
+                        le.Append(sp);
                         continue;
                     }
                     //
                     if (bIsClosed)
                     {
-                        if (aMFence.Add(aSp))
+                        if (mFence.Add(sp))
                         {
-                            if (!Tool.IsClosed(aSp, aF))
+                            if (!Tool.IsClosed(sp, f))
                             {
-                                if (!BOPTools_AlgoTools3D.DoSplitSEAMOnFace(aSp, aF))
+                                if (!AlgoTools3D.DoSplitSEAMOnFace(sp, f))
                                 {
                                     // try different approach
-                                    if (!BOPTools_AlgoTools3D.DoSplitSEAMOnFace(aE, aSp, aF))
+                                    if (!AlgoTools3D.DoSplitSEAMOnFace(e, sp, f))
                                     {
-                                        Compound aWS = new();
-                                        new BrepBuilder().MakeCompound(ref aWS);
-                                        new BrepBuilder().Add(aWS, aF);
-                                        new BrepBuilder().Add(aWS, aSp);
-                                        AddWarning(new BOPAlgo_AlertUnableToMakeClosedEdgeOnFace(aWS));
+                                        Compound ws = new();
+                                        new BrepBuilder().MakeCompound(ref ws);
+                                        new BrepBuilder().Add(ws, f);
+                                        new BrepBuilder().Add(ws, sp);
+                                        AddWarning(new AlertUnableToMakeClosedEdgeOnFace(ws));
                                     }
                                 }
                             }
                             //
-                            aSp.Orientation(Forward);
-                            aLE.Append(aSp);
-                            aSp.Orientation(Reversed);
-                            aLE.Append(aSp);
+                            sp.Orientation(Forward);
+                            le.Append(sp);
+                            sp.Orientation(Reversed);
+                            le.Append(sp);
                         } // if (aMFence.Add(aSp))
                         continue;
                     } // if (bIsClosed){
                     //
-                    aSp.Orientation(anOriE);
-                    bToReverse = BOPTools_AlgoTools.IsSplitToReverseWithWarn(aSp, aE, myContext, myReport);
+                    sp.Orientation(oriE);
+                    bToReverse = AlgoTools.IsSplitToReverseWithWarn(sp, e, _context, _report);
                     if (bToReverse)
                     {
-                        aSp.Reverse();
+                        sp.Reverse();
                     }
-                    aLE.Append(aSp);
+                    le.Append(sp);
                 } // for (; aIt.More(); aIt.Next()) {
             } // for (; aExp.More(); aExp.Next()) {
             //
             //
             // 1.2 In edges
-            for (j = 1; j <= aNbPBIn; ++j)
+            for (j = 1; j <= nbPBIn; ++j)
             {
-                BOPDS_PaveBlock aPB = aMPBIn[j];
-                nSp = aPB.Edge();
+                PaveBlock pb = mpbIn[j];
+                nSp = pb.Edge();
                 if (nSp < 0)
                 {
                     // Standard_ASSERT: "Face information is not up to date" (a debug report in OCCT)
                     continue;
                 }
-                aSp = ShapeCasts.Edge(myDS.Shape(nSp));
+                sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
-                aSp.Orientation(Forward);
-                aLE.Append(aSp);
-                aSp.Orientation(Reversed);
-                aLE.Append(aSp);
+                sp.Orientation(Forward);
+                le.Append(sp);
+                sp.Orientation(Reversed);
+                le.Append(sp);
             }
             //
             //
             // 1.3 Section edges
-            for (j = 1; j <= aNbPBSc; ++j)
+            for (j = 1; j <= nbPBSc; ++j)
             {
-                BOPDS_PaveBlock aPB = aMPBSc[j];
-                nSp = aPB.Edge();
-                aSp = ShapeCasts.Edge(myDS.Shape(nSp));
+                PaveBlock pb = mpbSc[j];
+                nSp = pb.Edge();
+                sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
-                aSp.Orientation(Forward);
-                aLE.Append(aSp);
-                aSp.Orientation(Reversed);
-                aLE.Append(aSp);
+                sp.Orientation(Forward);
+                le.Append(sp);
+                sp.Orientation(Reversed);
+                le.Append(sp);
             }
             //
-            if (!myPaveFiller!.NonDestructive())
+            if (!_paveFiller!.NonDestructive())
             {
                 // speed up for planar faces
-                BRepLib.BuildPCurveForEdgesOnPlane(aLE, aFF);
+                BrepLibrary.BuildPCurveForEdgesOnPlane(le, ff);
             }
             // 3 Build split faces
-            BOPAlgo_SplitFace aBF = aVBF.Append(new BOPAlgo_SplitFace());
-            aBF.SetFace(aF);
-            aBF.SetShapes(aLE);
-            aBF.SetRunParallel(myRunParallel);
+            SplitFace bf = vbf.Append(new SplitFace());
+            bf.SetFace(f);
+            bf.SetShapes(le);
+            bf.SetRunParallel(_runParallel);
             //
         } // for (i=0; i<aNbS; ++i) {
 
         // close preparation task
-        aPSOuter.Next();
+        psOuter.Next();
         //
-        int aNbBF = aVBF.Length();
+        int nbBF = vbf.Length();
         // Set progress range for each task to be run in parallel
-        using var aPSParallel = new ProgressScope(aPSOuter.Next(9), "Splitting faces", aNbBF);
-        for (int iF = 0; iF < aNbBF; iF++)
+        using var psParallel = new ProgressScope(psOuter.Next(9), "Splitting faces", nbBF);
+        for (int iF = 0; iF < nbBF; iF++)
         {
-            BOPAlgo_SplitFace aBF = aVBF.ChangeValue(iF);
-            aBF.SetProgressRange(aPSParallel.Next());
+            SplitFace bf = vbf.ChangeValue(iF);
+            bf.SetProgressRange(psParallel.Next());
         }
         //===================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVBF);
+        BooleanParallel.Perform(_runParallel, vbf);
         //===================================================
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
-        for (k = 0; k < aNbBF; ++k)
+        for (k = 0; k < nbBF; ++k)
         {
-            BOPAlgo_BuilderFace aBF = aVBF[k];
-            aFacesIm.Add(myDS.Index(aBF.Face()), new NCollection_List<Shape>(aBF.Areas()));
-            myReport.Merge(aBF.GetReport());
+            BuilderFace bf = vbf[k];
+            facesIm.Add(_ds.Index(bf.Face()), new NCollection_List<Shape>(bf.Areas()));
+            _report.Merge(bf.GetReport());
         }
 
-        aNbBF = aFacesIm.Extent();
-        for (k = 1; k <= aNbBF; ++k)
+        nbBF = facesIm.Extent();
+        for (k = 1; k <= nbBF; ++k)
         {
-            Face aF = ShapeCasts.Face(myDS.Shape(aFacesIm.FindKey(k)));
-            anOriF = aF.Orientation();
-            NCollection_List<Shape> aLFR = aFacesIm[k];
+            Face f = ShapeCasts.Face(_ds.Shape(facesIm.FindKey(k)));
+            oriF = f.Orientation();
+            NCollection_List<Shape> lfr = facesIm[k];
             //
-            NCollection_List<Shape> pLFIm = myImages.Bound(aF, new NCollection_List<Shape>());
-            aIt.Initialize(aLFR);
-            for (; aIt.More(); aIt.Next())
+            NCollection_List<Shape> pLFIm = _images.Bound(f, new NCollection_List<Shape>());
+            it.Initialize(lfr);
+            for (; it.More(); it.Next())
             {
-                ref Shape aFR = ref aIt.ChangeValue();
-                if (anOriF == Reversed)
+                ref Shape fr = ref it.ChangeValue();
+                if (oriF == Reversed)
                 {
-                    aFR.Orientation(Reversed);
+                    fr.Orientation(Reversed);
                 }
-                pLFIm.Append(aFR);
+                pLFIm.Append(fr);
             }
         }
         //
@@ -476,270 +481,270 @@ public partial class BOPAlgo_Builder
     }
 
     // Adds the set of the edges of the shape to the map, keeping the connection to the shape.
-    private static void AddEdgeSet(in Shape theS, NCollection_IndexedDataMap<BOPTools_Set, NCollection_List<Shape>> theMap)
+    private static void AddEdgeSet(in Shape s, NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> map)
     {
         // Make set
-        BOPTools_Set aSE = new();
-        aSE.Add(theS, ShapeType.Edge);
+        ToolSet se = new();
+        se.Add(s, ShapeType.Edge);
         // Add set to the map, keeping connection to the shape
-        int anIndex = theMap.FindIndex(aSE);
-        NCollection_List<Shape> pLF = anIndex > 0
-                                                 ? theMap[anIndex]
-                                                 : theMap[theMap.Add(aSE, new NCollection_List<Shape>())];
-        pLF.Append(theS);
+        int index = map.FindIndex(se);
+        NCollection_List<Shape> pLF = index > 0
+                                                 ? map[index]
+                                                 : map[map.Add(se, new NCollection_List<Shape>())];
+        pLF.Append(s);
     }
 
     /// <summary>Finds the same-domain faces among the faces having interfered, and makes one represent each group.</summary>
-    protected void FillSameDomainFaces(ProgressRange theRange)
+    protected void FillSameDomainFaces(ProgressRange range)
     {
         // It is necessary to analyze all Face/Face intersections
         // and find all faces with equal sets of edges
-        NCollection_DynamicArray<BOPDS_InterfFF> aFFs = myDS!.InterfFF();
-        int aNbFFs = aFFs.Length();
-        if (aNbFFs == 0)
+        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
+        int nbFFs = fFs.Length();
+        if (nbFFs == 0)
         {
             return;
         }
 
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
+        using var psOuter = new ProgressScope(range, null, 10);
 
         // Two distinct faces of one solid cannot be Same-Domain: that would
         // imply a zero-thickness interior in a single operand.
-        NCollection_DataMap<Shape, Shape> aFaceToParent = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, Shape> faceToParent = new(ShapeHasher.Instance);
         {
-            int aNbSrc = myDS.NbSourceShapes();
-            for (int iSrc = 0; iSrc < aNbSrc; ++iSrc)
+            int nbSrc = _ds.SourceShapeCount;
+            for (int iSrc = 0; iSrc < nbSrc; ++iSrc)
             {
-                BOPDS_ShapeInfo aSI = myDS.ShapeInfo(iSrc);
-                if (aSI.ShapeType() != ShapeType.Solid)
+                ShapeInfo si = _ds.ShapeInfo(iSrc);
+                if (si.ShapeType() != ShapeType.Solid)
                 {
                     continue;
                 }
-                Shape aSolid = aSI.Shape();
-                for (Explorer anExpF = new(aSolid, ShapeType.Face); anExpF.More(); anExpF.Next())
+                Shape solid = si.Shape();
+                for (Explorer expF = new(solid, ShapeType.Face); expF.More(); expF.Next())
                 {
-                    Shape aF = anExpF.Current();
-                    if (!aFaceToParent.IsBound(aF))
+                    Shape f = expF.Current();
+                    if (!faceToParent.IsBound(f))
                     {
-                        aFaceToParent.Bind(aF, aSolid);
+                        faceToParent.Bind(f, solid);
                     }
                 }
             }
-            NCollection_DataMap<Shape, Shape> aPropagation = new(ShapeHasher.Instance);
+            NCollection_DataMap<Shape, Shape> propagation = new(ShapeHasher.Instance);
             // OCCT iterates the images map, a shape-keyed map, in address order (the port: insertion order); a split
             // face belongs to one face's images, so the order isn't observable here
-            foreach (KeyValuePair<Shape, NCollection_List<Shape>> anItIm in myImages)
+            foreach (KeyValuePair<Shape, NCollection_List<Shape>> itIm in _images)
             {
-                if (!aFaceToParent.Find(anItIm.Key, out Shape pParent))
+                if (!faceToParent.Find(itIm.Key, out Shape pParent))
                 {
                     continue;
                 }
-                for (NCollection_List<Shape>.Iterator anItPiece = new(anItIm.Value); anItPiece.More(); anItPiece.Next())
+                for (NCollection_List<Shape>.Iterator itPiece = new(itIm.Value); itPiece.More(); itPiece.Next())
                 {
-                    if (!aFaceToParent.IsBound(anItPiece.Value()))
+                    if (!faceToParent.IsBound(itPiece.Value()))
                     {
-                        aPropagation.Bind(anItPiece.Value(), pParent);
+                        propagation.Bind(itPiece.Value(), pParent);
                     }
                 }
             }
-            foreach (KeyValuePair<Shape, Shape> anItProp in aPropagation)
+            foreach (KeyValuePair<Shape, Shape> itProp in propagation)
             {
-                aFaceToParent.Bind(anItProp.Key, anItProp.Value);
+                faceToParent.Bind(itProp.Key, itProp.Value);
             }
         }
 
         // Vector to store the indices of faces for future sorting
         // for making the SD face for the group from the face with
         // smallest index in Data structure
-        NCollection_DynamicArray<int> aFIVec = new(256);
+        NCollection_DynamicArray<int> fiVec = new(256);
         // Fence map to avoid repeated checks of the same face.
-        NCollection_IntMap aMFence = new(1);
+        NCollection_IntMap mFence = new(1);
 
         // Fill the vector with indices of faces
         Span<int> nF2 = stackalloc int[2]; // OCCT's nF[2], renamed: C# can't redeclare nF below
-        for (int i = 0; i < aNbFFs; ++i)
+        for (int i = 0; i < nbFFs; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPDS_InterfFF aFF = aFFs[i];
+            InterfFF ff = fFs[i];
             // get indices
-            aFF.Indices(out nF2[0], out nF2[1]);
+            ff.Indices(out nF2[0], out nF2[1]);
             // store indices to the vector
             for (int j = 0; j < 2; ++j)
             {
-                if (!myDS.HasFaceInfo(nF2[j]))
+                if (!_ds.HasFaceInfo(nF2[j]))
                 {
                     continue;
                 }
 
-                if (!aMFence.Add(nF2[j]))
+                if (!mFence.Add(nF2[j]))
                 {
                     continue;
                 }
 
-                aFIVec.Append(nF2[j]);
+                fiVec.Append(nF2[j]);
             }
         }
 
         // Sort the indices (distinct, so any sort gives std::sort's order)
-        int[] aFIArr = [.. aFIVec];
-        Array.Sort(aFIArr);
-        for (int i = 0; i < aFIArr.Length; ++i)
+        int[] fiArr = [.. fiVec];
+        Array.Sort(fiArr);
+        for (int i = 0; i < fiArr.Length; ++i)
         {
-            aFIVec[i] = aFIArr[i];
+            fiVec[i] = fiArr[i];
         }
 
         // Data map of set of edges with all faces having this set
-        NCollection_IndexedDataMap<BOPTools_Set, NCollection_List<Shape>> anESetFaces = new();
+        NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
         // Map of planar bounded faces. If such faces have the same Edge set
         // they are considered Same domain, without additional check.
-        NCollection_Map<Shape> aMFPlanar = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> mfPlanar = new(ShapeHasher.Instance);
 
-        int aNbF = aFIVec.Length();
-        for (int i = 0; i < aNbF; ++i)
+        int nbF = fiVec.Length();
+        for (int i = 0; i < nbF; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            int nF = aFIVec[i];
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(nF);
-            Shape aF = aSI.Shape();
+            int nF = fiVec[i];
+            ShapeInfo si = _ds.ShapeInfo(nF);
+            Shape f = si.Shape();
 
             bool bCheckPlanar = false;
             {
                 // At this stage, context should contain adaptor for all intersected faces,
                 // so getting a type of the underlying surface should be done at no cost.
-                if (myContext!.SurfaceAdaptor(ShapeCasts.Face(aF)).GetType() == Plane)
+                if (_context!.SurfaceAdaptor(ShapeCasts.Face(f)).GetType() == Plane)
                 {
                     // Check bounding box of the face - it should not be open in any side
-                    Box aBox = aSI.Box();
-                    bCheckPlanar = !(aBox.IsOpenXmin || aBox.IsOpenXmax || aBox.IsOpenYmin
-                                     || aBox.IsOpenYmax || aBox.IsOpenZmin || aBox.IsOpenZmax);
+                    Box box = si.Box();
+                    bCheckPlanar = !(box.IsOpenXmin || box.IsOpenXmax || box.IsOpenYmin
+                                     || box.IsOpenYmax || box.IsOpenZmin || box.IsOpenZmax);
                 }
             }
 
-            if (myImages.Find(aF, out NCollection_List<Shape> pLFSp))
+            if (_images.Find(f, out NCollection_List<Shape> pLFSp))
             {
-                NCollection_List<Shape>.Iterator aItLF = new(pLFSp);
-                for (; aItLF.More(); aItLF.Next())
+                NCollection_List<Shape>.Iterator itLF = new(pLFSp);
+                for (; itLF.More(); itLF.Next())
                 {
-                    AddEdgeSet(aItLF.Value(), anESetFaces);
+                    AddEdgeSet(itLF.Value(), eSetFaces);
                     if (bCheckPlanar)
                     {
-                        aMFPlanar.Add(aItLF.Value());
+                        mfPlanar.Add(itLF.Value());
                     }
                 }
             }
             else
             {
-                AddEdgeSet(aF, anESetFaces);
+                AddEdgeSet(f, eSetFaces);
                 if (bCheckPlanar)
                 {
-                    aMFPlanar.Add(aF);
+                    mfPlanar.Add(f);
                 }
             }
         }
 
         // Store pairs of faces with equal set of edges to check if they are really Same Domain
-        NCollection_DynamicArray<BOPAlgo_PairOfShapeBoolean> aVPSB = new();
+        NCollection_DynamicArray<PairOfShapeBoolean> vpsb = new();
 
         // Back and forth map of SD faces to make the blocks
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMSLS = new(ShapeHasher.Instance);
+        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
 
-        int aNbSets = anESetFaces.Extent();
-        for (int i = 1; i <= aNbSets; ++i)
+        int nbSets = eSetFaces.Extent();
+        for (int i = 1; i <= nbSets; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<Shape> aLF = anESetFaces[i];
-            if (aLF.Extent() < 2)
+            NCollection_List<Shape> lf = eSetFaces[i];
+            if (lf.Extent() < 2)
             {
                 continue;
             }
 
             // All possible pairs from <aLF> should be checked
-            NCollection_List<Shape>.Iterator aIt1 = new(aLF);
-            for (; aIt1.More(); aIt1.Next())
+            NCollection_List<Shape>.Iterator it1 = new(lf);
+            for (; it1.More(); it1.Next())
             {
-                Shape aF1 = aIt1.Value();
-                bool bCheckPlanar = aMFPlanar.Contains(aF1);
-                bool hasParent1 = aFaceToParent.Find(aF1, out Shape pParent1);
+                Shape f1 = it1.Value();
+                bool bCheckPlanar = mfPlanar.Contains(f1);
+                bool hasParent1 = faceToParent.Find(f1, out Shape pParent1);
 
-                NCollection_List<Shape>.Iterator aIt2 = new();
-                aIt2.Reset(aLF, aIt1.Index); // aIt2 = aIt1
-                for (aIt2.Next(); aIt2.More(); aIt2.Next())
+                NCollection_List<Shape>.Iterator it2 = new();
+                it2.Reset(lf, it1.Index); // aIt2 = aIt1
+                for (it2.Next(); it2.More(); it2.Next())
                 {
-                    Shape aF2 = aIt2.Value();
-                    bool hasParent2 = aFaceToParent.Find(aF2, out Shape pParent2);
+                    Shape f2 = it2.Value();
+                    bool hasParent2 = faceToParent.Find(f2, out Shape pParent2);
                     if (hasParent1 && hasParent2 && pParent1.IsSame(pParent2))
                     {
                         continue;
                     }
-                    if (bCheckPlanar && aMFPlanar.Contains(aF2))
+                    if (bCheckPlanar && mfPlanar.Contains(f2))
                     {
                         // Consider planar bounded faces as Same Domain without additional check
-                        BOPAlgo_Tools.FillMap(aF1, aF2, aDMSLS);
+                        BuilderTools.FillMap(f1, f2, dmsls);
                         continue;
                     }
                     // Add pair for analysis
-                    BOPAlgo_PairOfShapeBoolean aPSB = aVPSB.Append(new BOPAlgo_PairOfShapeBoolean());
-                    aPSB.Shape1() = aF1;
-                    aPSB.Shape2() = aF2;
-                    aPSB.SetFuzzyValue(myFuzzyValue);
+                    PairOfShapeBoolean psb = vpsb.Append(new PairOfShapeBoolean());
+                    psb.Shape1() = f1;
+                    psb.Shape2() = f2;
+                    psb.SetFuzzyValue(_fuzzyValue);
                 }
             }
         }
 
-        aPSOuter.Next();
+        psOuter.Next();
 
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new ProgressScope(aPSOuter.Next(6), "Checking SD faces", aVPSB.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(6), "Checking SD faces", vpsb.Length()))
         {
-            for (int iPSB = 0; iPSB < aVPSB.Length(); ++iPSB)
+            for (int iPSB = 0; iPSB < vpsb.Length(); ++iPSB)
             {
-                aVPSB.ChangeValue(iPSB).SetProgressRange(aPSParallel.Next());
+                vpsb.ChangeValue(iPSB).SetProgressRange(psParallel.Next());
             }
             //================================================================
             // Perform analysis
-            BOPTools_Parallel.Perform(myRunParallel, aVPSB, myContext!);
+            BooleanParallel.Perform(_runParallel, vpsb, _context!);
             //================================================================
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
 
-        NCollection_List<NCollection_List<Shape>> aMBlocks = new();
+        NCollection_List<NCollection_List<Shape>> mBlocks = new();
         // Fill map with SD faces to make the blocks
-        int aNbPairs = aVPSB.Length();
-        for (int i = 0; i < aNbPairs; ++i)
+        int nbPairs = vpsb.Length();
+        for (int i = 0; i < nbPairs; ++i)
         {
-            BOPAlgo_PairOfShapeBoolean aPSB = aVPSB[i];
-            if (aPSB.Flag())
+            PairOfShapeBoolean psb = vpsb[i];
+            if (psb.Flag())
             {
-                BOPAlgo_Tools.FillMap(aPSB.Shape1(), aPSB.Shape2(), aDMSLS);
+                BuilderTools.FillMap(psb.Shape1(), psb.Shape2(), dmsls);
             }
         }
-        aVPSB.Clear();
+        vpsb.Clear();
 
         // Make blocks of SD faces using the back and forth map
-        BOPAlgo_Tools.MakeBlocks(aDMSLS, aMBlocks, ShapeHasher.Instance);
+        BuilderTools.MakeBlocks(dmsls, mBlocks, ShapeHasher.Instance);
 
-        using var aPS = new ProgressScope(aPSOuter.Next(3), "Filling same domain faces map", aMBlocks.Extent());
+        using var ps = new ProgressScope(psOuter.Next(3), "Filling same domain faces map", mBlocks.Extent());
         // Fill same domain faces map
-        NCollection_List<NCollection_List<Shape>>.Iterator aItB = new(aMBlocks);
-        for (; aItB.More(); aItB.Next(), aPS.Next())
+        NCollection_List<NCollection_List<Shape>>.Iterator itB = new(mBlocks);
+        for (; itB.More(); itB.Next(), ps.Next())
         {
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            NCollection_List<Shape> aLSD = aItB.Value();
+            NCollection_List<Shape> lsd = itB.Value();
             // If the group contains some original faces, the one with minimal
             // index in the DS will be chosen as the SD for the whole group.
             // If there are no original faces in the group, the first face from
@@ -747,12 +752,12 @@ public partial class BOPAlgo_Builder
             // Such SD face will be representative of the whole group in the result.
             Shape? pFSD = null;
             int nFMin = IntegerLast();
-            NCollection_List<Shape>.Iterator aItLF = new(aLSD);
-            for (; aItLF.More(); aItLF.Next())
+            NCollection_List<Shape>.Iterator itLF = new(lsd);
+            for (; itLF.More(); itLF.Next())
             {
-                Shape aF = aItLF.Value();
+                Shape f = itLF.Value();
                 // Check the index of the face in DS
-                int nF = myDS.Index(aF);
+                int nF = _ds.Index(f);
                 if (nF >= 0)
                 {
                     // The fact that the face is found in the DS, means that
@@ -760,13 +765,13 @@ public partial class BOPAlgo_Builder
                     //
                     // Such face does not have any splits, but have an SD face.
                     // Consider it being split.
-                    myImages.Bound(aF, new NCollection_List<Shape>()).Append(aF);
+                    _images.Bound(f, new NCollection_List<Shape>()).Append(f);
 
                     // For the SD face chose the one with minimal index
                     if (nF < nFMin)
                     {
                         nFMin = nF;
-                        pFSD = aF;
+                        pFSD = f;
                     }
                 }
             }
@@ -774,162 +779,162 @@ public partial class BOPAlgo_Builder
             if (pFSD is null)
             {
                 // No original faces in the group, take the first one
-                pFSD = aLSD.First();
+                pFSD = lsd.First();
             }
 
             // Save all SD connections
-            aItLF.Initialize(aLSD);
-            for (; aItLF.More(); aItLF.Next())
+            itLF.Initialize(lsd);
+            for (; itLF.More(); itLF.Next())
             {
-                Shape aF = aItLF.Value();
-                myShapesSD.Bind(aF, pFSD.Value);
+                Shape f = itLF.Value();
+                _shapesSD.Bind(f, pFSD.Value);
             }
         }
 
         // Update the map of images with SD faces and
         // fill the map of origins.
-        int aNbS = myDS.NbSourceShapes();
-        for (int i = 0; i < aNbS; ++i)
+        int nbS = _ds.SourceShapeCount;
+        for (int i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Face)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
 
-            Shape aF = aSI.Shape();
-            if (!myImages.Find(aF, out NCollection_List<Shape> pLFIm))
+            Shape f = si.Shape();
+            if (!_images.Find(f, out NCollection_List<Shape> pLFIm))
             {
                 continue;
             }
 
-            NCollection_List<Shape>.Iterator aItLFIm = new(pLFIm);
-            for (; aItLFIm.More(); aItLFIm.Next())
+            NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
+            for (; itLFIm.More(); itLFIm.Next())
             {
-                ref Shape aFIm = ref aItLFIm.ChangeValue();
-                if (myShapesSD.Find(aFIm, out Shape pFSD))
+                ref Shape fIm = ref itLFIm.ChangeValue();
+                if (_shapesSD.Find(fIm, out Shape pFSD))
                 {
                     // Update image with SD face
-                    aFIm = pFSD;
+                    fIm = pFSD;
                 }
 
                 // Fill the map of origins
-                if (!myOrigins.Find(aFIm, out NCollection_List<Shape> pLFOr))
+                if (!_origins.Find(fIm, out NCollection_List<Shape> pLFOr))
                 {
-                    pLFOr = myOrigins.Bound(aFIm, new NCollection_List<Shape>());
+                    pLFOr = _origins.Bound(fIm, new NCollection_List<Shape>());
                 }
-                pLFOr.Append(aF);
+                pLFOr.Append(f);
             }
         }
 
-        aMBlocks.Clear();
-        aDMSLS.Clear();
+        mBlocks.Clear();
+        dmsls.Clear();
     }
 
     /// <summary>Adds the alone vertices of the faces into their splits as internal vertices.</summary>
-    protected void FillInternalVertices(ProgressRange theRange)
+    protected void FillInternalVertices(ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
+        using var psOuter = new ProgressScope(range, null, 1);
 
         // Vector of pairs of Vertex/Face for classification of the vertices
         // relatively faces, and adding them as internal into the faces
-        NCollection_DynamicArray<BOPAlgo_VFI> aVVFI = new();
+        NCollection_DynamicArray<VFI> vvfi = new();
 
-        int aNbS = myDS!.NbSourceShapes();
-        for (int i = 0; i < aNbS; ++i)
+        int nbS = _ds!.SourceShapeCount;
+        for (int i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Face)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Face)
             {
                 continue;
             }
 
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
 
-            Shape aF = aSI.Shape();
-            if (!myImages.Find(aF, out NCollection_List<Shape> pLFIm))
+            Shape f = si.Shape();
+            if (!_images.Find(f, out NCollection_List<Shape> pLFIm))
             {
                 continue;
             }
 
             // Find vertices to add as internal into the splits
-            NCollection_List<int> aLIAV = new();
-            myDS.AloneVertices(i, aLIAV);
+            NCollection_List<int> liav = new();
+            _ds.AloneVertices(i, liav);
 
             // Add vertices and faces for classification
-            NCollection_List<int>.Iterator aItLV = new(aLIAV);
-            for (; aItLV.More(); aItLV.Next())
+            NCollection_List<int>.Iterator itLV = new(liav);
+            for (; itLV.More(); itLV.Next())
             {
-                Vertex aV = ShapeCasts.Vertex(myDS.Shape(aItLV.Value()));
-                aV.Orientation(Internal);
+                Vertex v = ShapeCasts.Vertex(_ds.Shape(itLV.Value()));
+                v.Orientation(Internal);
 
-                NCollection_List<Shape>.Iterator aItLFIm = new(pLFIm);
-                for (; aItLFIm.More(); aItLFIm.Next())
+                NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
+                for (; itLFIm.More(); itLFIm.Next())
                 {
-                    Face aFIm = ShapeCasts.Face(aItLFIm.Value());
+                    Face fIm = ShapeCasts.Face(itLFIm.Value());
                     // Make the pair
-                    BOPAlgo_VFI aVFI = aVVFI.Append(new BOPAlgo_VFI());
-                    aVFI.SetVertex(aV);
-                    aVFI.SetFace(aFIm);
-                    aVFI.SetFuzzyValue(myFuzzyValue);
+                    VFI vfi = vvfi.Append(new VFI());
+                    vfi.SetVertex(v);
+                    vfi.SetFace(fIm);
+                    vfi.SetFuzzyValue(_fuzzyValue);
                 }
             }
         }
 
         // Set progress range for each task to be run in parallel
-        using (var aPSParallel = new ProgressScope(aPSOuter.Next(), "Looking for internal shapes", aVVFI.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(), "Looking for internal shapes", vvfi.Length()))
         {
-            for (int iVFI = 0; iVFI < aVVFI.Length(); ++iVFI)
+            for (int iVFI = 0; iVFI < vvfi.Length(); ++iVFI)
             {
-                aVVFI.ChangeValue(iVFI).SetProgressRange(aPSParallel.Next());
+                vvfi.ChangeValue(iVFI).SetProgressRange(psParallel.Next());
             }
             // Perform classification
             //================================================================
-            BOPTools_Parallel.Perform(myRunParallel, aVVFI, myContext!);
+            BooleanParallel.Perform(_runParallel, vvfi, _context!);
             //================================================================
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
 
-        int aNbVFI = aVVFI.Length();
-        for (int i = 0; i < aNbVFI; ++i)
+        int nbVFI = vvfi.Length();
+        for (int i = 0; i < nbVFI; ++i)
         {
-            BOPAlgo_VFI aVFI = aVVFI[i];
-            if (aVFI.IsInternal())
+            VFI vfi = vvfi[i];
+            if (vfi.IsInternal)
             {
-                Vertex aV = aVFI.Vertex();
-                Face aF = aVFI.Face();
+                Vertex v = vfi.Vertex();
+                Face f = vfi.Face();
                 // OCCT adds the vertex into the split face, which may be an argument's face kept as the
                 // same-domain face of a group (a frozen argument face then throws, unit 6F)
-                new BrepBuilder().Add(aF, aV);
+                new BrepBuilder().Add(f, v);
             }
         }
     }
 
     // Checks if the edge has multi-connected vertices.
-    private static bool HasMultiConnected(in Edge theEdge, NCollection_DataMap<Shape, NCollection_List<Shape>> theMap)
+    private static bool HasMultiConnected(in Edge edge, NCollection_DataMap<Shape, NCollection_List<Shape>> map)
     {
-        Iterator itV = new(theEdge);
+        Iterator itV = new(edge);
         for (; itV.More(); itV.Next())
         {
-            Shape aV = itV.Value();
-            if (!theMap.Find(aV, out NCollection_List<Shape> pList))
+            Shape v = itV.Value();
+            if (!map.Find(v, out NCollection_List<Shape> pList))
             {
-                pList = theMap.Bound(aV, new NCollection_List<Shape>());
-                pList.Append(theEdge);
+                pList = map.Bound(v, new NCollection_List<Shape>());
+                pList.Append(edge);
             }
             else
             {
                 // The list is expected to be 1-2 elements long,
                 // thus using "Contains" is safe.
-                if (!pList.Contains(theEdge))
+                if (!pList.Contains(edge))
                 {
-                    pList.Append(theEdge);
+                    pList.Append(edge);
                 }
 
                 if (pList.Extent() > 2)
@@ -942,56 +947,56 @@ public partial class BOPAlgo_Builder
     }
 
     // Builds the draft face, updating the bounding edges according to the information stored into the images map.
-    private static Face BuildDraftFace(in Face theFace,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> theImages,
-                                             IntTools_Context theCtx,
-                                             Report theReport)
+    private static Face BuildDraftFace(in Face face,
+                                             NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                             IntersectionContext ctx,
+                                             Report report)
     {
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
         // Take the information from the original face
-        Surface? aS = Tool.Surface(theFace, out Placement aLoc);
-        double aTol = Tool.Tolerance(theFace);
+        Surface? s = Tool.Surface(face, out Placement loc);
+        double tol = Tool.Tolerance(face);
         // Make the new face, without any wires
-        Face aDraftFace = new();
-        aBB.MakeFace(ref aDraftFace, aS, aLoc, aTol);
+        Face draftFace = new();
+        bb.MakeFace(ref draftFace, s, loc, tol);
 
         // Check if the thin face can be split by a vertex - in this case
         // this vertex will be contained in more than two edges. Thus, count
         // the vertices appearance, and if the multi-connexity is met return
         // the null face to use the BuilderFace algorithm for checking the
         // possibility of split.
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aVerticesCounter = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> verticesCounter = new(ShapeHasher.Instance);
 
         // Check that the edges of the initial face have not been unified during intersection.
         // Otherwise, it will be necessary to check validity of the new wires.
-        NCollection_Map<Shape> aMEdges = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> mEdges = new(ShapeHasher.Instance);
 
         // Update wires of the original face and add them to draft face
-        Iterator aItW = new(theFace.Oriented(Forward));
-        for (; aItW.More(); aItW.Next())
+        Iterator itW = new(face.Oriented(Forward));
+        for (; itW.More(); itW.Next())
         {
-            Shape aW = aItW.Value();
-            if (aW.ShapeType() != ShapeType.Wire)
+            Shape w = itW.Value();
+            if (w.ShapeType() != ShapeType.Wire)
             {
                 continue;
             }
 
             // Rebuild wire using images of edges
-            Iterator aItE = new(aW.Oriented(Forward));
-            if (!aItE.More())
+            Iterator itE = new(w.Oriented(Forward));
+            if (!itE.More())
             {
                 continue;
             }
 
-            Wire aNewWire = new();
-            aBB.MakeWire(ref aNewWire);
+            Wire newWire = new();
+            bb.MakeWire(ref newWire);
 
-            for (; aItE.More(); aItE.Next())
+            for (; itE.More(); itE.Next())
             {
-                Edge aE = ShapeCasts.Edge(aItE.Value());
+                Edge e = ShapeCasts.Edge(itE.Value());
 
-                Orientation anOriE = aE.Orientation();
-                if (anOriE == Internal)
+                Orientation oriE = e.Orientation();
+                if (oriE == Internal)
                 {
                     // The internal edges could split the original face on halves.
                     // Thus, use the BuilderFace algorithm to build the new face.
@@ -999,82 +1004,82 @@ public partial class BOPAlgo_Builder
                 }
 
                 // Check if the original edge is degenerated
-                bool bIsDegenerated = Tool.Degenerated(aE);
+                bool bIsDegenerated = Tool.Degenerated(e);
                 // Check if the original edge is closed on the face
-                bool bIsClosed = Tool.IsClosed(aE, theFace);
+                bool bIsClosed = Tool.IsClosed(e, face);
 
                 // Check for the splits of the edge
-                if (!theImages.Find(aE, out NCollection_List<Shape> pLEIm))
+                if (!images.Find(e, out NCollection_List<Shape> pLEIm))
                 {
                     // Check if the edge has multi-connected vertices
-                    if (!bIsDegenerated && HasMultiConnected(aE, aVerticesCounter))
+                    if (!bIsDegenerated && HasMultiConnected(e, verticesCounter))
                     {
                         return new Face();
                     }
 
                     // Check edges unification
-                    if (!bIsClosed && !aMEdges.Add(aE))
+                    if (!bIsClosed && !mEdges.Add(e))
                     {
                         return new Face();
                     }
 
-                    aBB.Add(aNewWire, aE);
+                    bb.Add(newWire, e);
                     continue;
                 }
 
-                NCollection_List<Shape>.Iterator aItLEIm = new(pLEIm);
-                for (; aItLEIm.More(); aItLEIm.Next())
+                NCollection_List<Shape>.Iterator itLEIm = new(pLEIm);
+                for (; itLEIm.More(); itLEIm.Next())
                 {
                     // OCCT changes the orientation of the split in the images map itself (ChangeValue through the
                     // map's const reference); kept
-                    ref Shape aSp = ref aItLEIm.ChangeValue();
+                    ref Shape sp = ref itLEIm.ChangeValue();
 
                     // Check if the split has multi-connected vertices
-                    if (!bIsDegenerated && HasMultiConnected(ShapeCasts.Edge(aSp), aVerticesCounter))
+                    if (!bIsDegenerated && HasMultiConnected(ShapeCasts.Edge(sp), verticesCounter))
                     {
                         return new Face();
                     }
 
                     // Check edges unification
-                    if (!bIsClosed && !aMEdges.Add(aSp))
+                    if (!bIsClosed && !mEdges.Add(sp))
                     {
                         return new Face();
                     }
 
-                    aSp.Orientation(anOriE);
+                    sp.Orientation(oriE);
                     if (bIsDegenerated)
                     {
-                        aBB.Add(aNewWire, aSp);
+                        bb.Add(newWire, sp);
                         continue;
                     }
 
                     // If the original edge is closed on the face check closeness
                     // of the split edge and if it is not closed make the second PCurve
-                    if (bIsClosed && !Tool.IsClosed(ShapeCasts.Edge(aSp), theFace))
+                    if (bIsClosed && !Tool.IsClosed(ShapeCasts.Edge(sp), face))
                     {
-                        BOPTools_AlgoTools3D.DoSplitSEAMOnFace(ShapeCasts.Edge(aSp), theFace);
+                        AlgoTools3D.DoSplitSEAMOnFace(ShapeCasts.Edge(sp), face);
                     }
 
                     // Check if the split should be reversed
-                    if (BOPTools_AlgoTools.IsSplitToReverseWithWarn(aSp, aE, theCtx, theReport))
+                    if (AlgoTools.IsSplitToReverseWithWarn(sp, e, ctx, report))
                     {
-                        aSp.Reverse();
+                        sp.Reverse();
                     }
 
-                    aBB.Add(aNewWire, aSp);
+                    bb.Add(newWire, sp);
                 }
             }
 
-            aNewWire.Orientation(aW.Orientation());
-            aNewWire.Closed(Tool.IsClosed(aNewWire));
-            aBB.Add(aDraftFace, aNewWire);
+            newWire.Orientation(w.Orientation());
+            newWire.Closed(Tool.IsClosed(newWire));
+            bb.Add(draftFace, newWire);
         }
 
-        if (theFace.Orientation() == Reversed)
+        if (face.Orientation() == Reversed)
         {
-            aDraftFace.Reverse();
+            draftFace.Reverse();
         }
 
-        return aDraftFace;
+        return draftFace;
     }
 }

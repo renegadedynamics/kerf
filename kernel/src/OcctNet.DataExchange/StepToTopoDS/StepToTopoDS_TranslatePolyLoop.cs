@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -25,7 +26,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
 
     public StepToTopoDS_TranslatePolyLoop()
     {
-        myError = StepToTopoDS_TranslatePolyLoopOther;
+        myError = StepToTopoDS_TranslatePolyLoopError.StepToTopoDS_TranslatePolyLoopOther;
         done = false;
     }
 
@@ -67,7 +68,7 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
                 TP.AddFail(PL, "Surface not planar in a FacetedBRep !");
             }
 
-            var STSU = new ShapeAnalysis_Surface(GeomSurf);
+            var STSU = new SurfaceAnalysis(GeomSurf);
             int Nb = PL.NbPolygon();
             var Poly = new NCollection_HArray1<StepGeom_CartesianPoint>(1, Nb + 1);
 
@@ -175,13 +176,13 @@ public sealed class StepToTopoDS_TranslatePolyLoop : StepToTopoDS_Root
             W.Closed(Tool.IsClosed(W));
             aTool.Bind(PL, W);
             myResult = W;
-            myError = StepToTopoDS_TranslatePolyLoopDone;
+            myError = StepToTopoDS_TranslatePolyLoopError.StepToTopoDS_TranslatePolyLoopDone;
             done = true;
         }
         else
         {
             myResult = ShapeCasts.Wire(aTool.Find(PL));
-            myError = StepToTopoDS_TranslatePolyLoopDone;
+            myError = StepToTopoDS_TranslatePolyLoopError.StepToTopoDS_TranslatePolyLoopDone;
             done = true;
         }
     }

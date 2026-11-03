@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -85,9 +89,9 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 Assert.True(aPExp.More());
                 Solid aPS = ShapeCasts.Solid(aPExp.Current());
                 using var aNC = new N.BRepClass3d_SolidClassifier(aNExp.Current());
-                var aCtx = new IntTools_Context();
+                var aCtx = new IntersectionContext();
                 Box aBox = new();
-                BRepBndLib.Add(aPS, ref aBox);
+                Bounds.Add(aPS, ref aBox);
                 if (aBox.IsVoid)
                 {
                     continue;
@@ -112,7 +116,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 foreach (Point3D aP in aPnts)
                 {
                     double aTol = aRnd.Next(2) == 0 ? 1e-7 : 1e-4;
-                    Containment aState = BOPTools_AlgoTools.ComputeState(aP, aPS, aTol, aCtx);
+                    Containment aState = AlgoTools.ComputeState(aP, aPS, aTol, aCtx);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNC.Perform(aNP, aTol);
                     aStates[(int)aState]++;
@@ -142,7 +146,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 continue;
             }
             string aName = Path.GetFileName(aFile);
-            var aCtx = new IntTools_Context();
+            var aCtx = new IntersectionContext();
             // faces: ProjPS
             var aNExp = new N.TopExp_Explorer(aShapes.N, N.TopAbs_ShapeEnum.TopAbs_FACE);
             var aPExp = new Explorer(aShapes.P, ShapeType.Face);
@@ -159,7 +163,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 aNProj.Init(N.BRep_Tool.Surface(aNF), aNBAS.FirstUParameter(), aNBAS.LastUParameter(),
                             aNBAS.FirstVParameter(), aNBAS.LastVParameter(), 1.0e-12);
                 aNProj.SetExtremaFlag(N.Extrema_ExtFlag.Extrema_ExtFlag_MIN);
-                GeomAPI_ProjectPointOnSurf aPProj = aCtx.ProjPS(aPF);
+                ProjectPointOnSurface aPProj = aCtx.ProjPS(aPF);
                 aFaces++;
                 BrepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
                 Surface aS = Tool.Surface(aPF)!;
@@ -174,9 +178,9 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                     aPProj.Perform(aP);
                     aPoints++;
                     string aWhat = $"{aName} face {iF} point {i}";
-                    Same(aNProj.IsDone() ? 1 : 0, aPProj.IsDone() ? 1 : 0, $"{aWhat} IsDone");
+                    Same(aNProj.IsDone() ? 1 : 0, aPProj.IsDone ? 1 : 0, $"{aWhat} IsDone");
                     Same(aNProj.NbPoints(), aPProj.NbPoints(), $"{aWhat} NbPoints");
-                    if (aNProj.IsDone() && aPProj.IsDone() && aNProj.NbPoints() > 0 && aPProj.NbPoints() > 0)
+                    if (aNProj.IsDone() && aPProj.IsDone && aNProj.NbPoints() > 0 && aPProj.NbPoints() > 0)
                     {
                         Same(aNProj.LowerDistance(), aPProj.LowerDistance(), $"{aWhat} LowerDistance");
                         double nu = 0, nv = 0;
@@ -203,7 +207,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 N.Geom_Curve? aNC = N.BRep_Tool.Curve(aNE, ref nf, ref nl);
                 using var aNProj = new N.GeomAPI_ProjectPointOnCurve();
                 aNProj.Init(aNC, nf, nl);
-                GeomAPI_ProjectPointOnCurve aPProj = aCtx.ProjPC(aPE);
+                ProjectPointOnCurve aPProj = aCtx.ProjPC(aPE);
                 aEdges++;
                 for (int i = 0; i < PointsPerFace; i++)
                 {

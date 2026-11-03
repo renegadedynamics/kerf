@@ -125,7 +125,7 @@ public class PlaneWithShapesTests
             var p = new Plane(faces[i]);
             var props = new Properties();
             var face = faces[i].Wrapped;
-            BRepGProp.SurfaceProperties(face, props);
+            MassPropertiesBuilder.SurfaceProperties(face, props);
             var centre = props.CentreOfMass();
             Check.AlmostEqual(new Vector(centre), p.Origin, 6);
             Check.AlmostEqual(expected[i].X, p.XDir, 6);

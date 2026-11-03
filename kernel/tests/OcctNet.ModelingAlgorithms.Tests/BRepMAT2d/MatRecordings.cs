@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Offsets.Bisectors;
+using Kerf.Engine.Offsets.MedialAxis;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -11,7 +14,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 
-using static Occt.MAT_Side;
+using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -95,7 +98,7 @@ internal static class MatRecordings
             double cx = theR.D(), cy = theR.D(), r = theR.D();
             Circle3D aC = new(new Frame3D(new Point3D(cx, cy, 0.0), Constants.DZ()), r);
             theClosed = true;
-            return new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aC).Edge()).Wire();
+            return new MakeWire(new MakeEdge(aC).Edge()).Wire();
         }
         theClosed = theR.I() != 0;
         int aNb = theR.I();
@@ -127,9 +130,9 @@ internal static class MatRecordings
                 aMids.Add(new Point3D());
                 aMids2.Add(new Point3D());
             }
-            aVerts.Add(new BRepBuilderAPI_MakeVertex(aPnts[^1]).Vertex());
+            aVerts.Add(new MakeVertex(aPnts[^1]).Vertex());
         }
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         int aNbEdges = theClosed ? aNb : aNb - 1;
         for (int i = 0; i < aNbEdges; i++)
         {
@@ -137,7 +140,7 @@ internal static class MatRecordings
             if (aKinds[i] == "A")
             {
                 TrimmedCurve3D anArc = new MakeArcOfCircle(aPnts[i], aMids[i], aPnts[j]).Value();
-                aMW.Add(new BRepBuilderAPI_MakeEdge(anArc, aVerts[i], aVerts[j]).Edge());
+                aMW.Add(new MakeEdge(anArc, aVerts[i], aVerts[j]).Edge());
             }
             else if (aKinds[i] == "S")
             {
@@ -147,11 +150,11 @@ internal static class MatRecordings
                 aPoles[3] = aMids2[i];
                 aPoles[4] = aPnts[j];
                 BezierCurve3D aB = new(aPoles);
-                aMW.Add(new BRepBuilderAPI_MakeEdge(aB, aVerts[i], aVerts[j]).Edge());
+                aMW.Add(new MakeEdge(aB, aVerts[i], aVerts[j]).Edge());
             }
             else
             {
-                aMW.Add(new BRepBuilderAPI_MakeEdge(aVerts[i], aVerts[j]).Edge());
+                aMW.Add(new MakeEdge(aVerts[i], aVerts[j]).Edge());
             }
         }
         return aMW.Wire();
@@ -169,16 +172,16 @@ internal static class MatRecordings
             {
                 if (isClosed)
                 {
-                    aFace = new BRepBuilderAPI_MakeFace(aPln, aW, true).Face();
+                    aFace = new MakeFace(aPln, aW, true).Face();
                 }
                 else
                 {
-                    aFace = new BRepBuilderAPI_MakeFace(new BRepBuilderAPI_MakeFace(aPln).Face(), aW).Face();
+                    aFace = new MakeFace(new MakeFace(aPln).Face(), aW).Face();
                 }
             }
             else
             {
-                aFace = new BRepBuilderAPI_MakeFace(aFace, aW).Face();
+                aFace = new MakeFace(aFace, aW).Face();
             }
         }
         return aFace;
@@ -241,7 +244,7 @@ internal static class MatRecordings
         return aName;
     }
 
-    private static void Bisec(List<string> theOut, string thePre, Bisector_Bisec theB)
+    private static void Bisec(List<string> theOut, string thePre, Bisec theB)
     {
         TrimmedCurve2D? aC = theB.Value();
         if (aC is null)
@@ -251,7 +254,7 @@ internal static class MatRecordings
         }
         Curve2D aBasis = aC.ChangeBasisCurve();
         string aKind = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType());
-        if (aBasis is Bisector_BisecAna anAna)
+        if (aBasis is BisecAna anAna)
         {
             Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
@@ -299,7 +302,7 @@ internal static class MatRecordings
         Exploration.MapShapes(aFace, ShapeType.Vertex, aVerts);
         anOut.Add("nE:" + I(anEdges.Extent()));
 
-        BRepMAT2d_Explorer anExplo = new();
+        MedialAxisExplorer anExplo = new();
         aFail = Fail(() => anExplo.Perform(aFace));
         if (aFail.Length != 0)
         {
@@ -313,16 +316,16 @@ internal static class MatRecordings
         }
         anOut.Add("mod:" + (anExplo.IsModified(aFace) ? "1" : "0"));
 
-        BRepMAT2d_BisectingLocus aLocus = new();
-        aFail = Fail(() => aLocus.Compute(anExplo, 1, aSide == "L" ? MAT_Left : MAT_Right, (JoinKind)aJoin,
+        BisectingLocus aLocus = new();
+        aFail = Fail(() => aLocus.Compute(anExplo, 1, aSide == "L" ? MedialSide.Left : MedialSide.Right, (JoinKind)aJoin,
                                           anOpen != 0));
         if (aFail.Length != 0)
         {
             anOut.Add("compute:" + aFail);
             return anOut;
         }
-        anOut.Add("done:" + (aLocus.IsDone() ? "1" : "0"));
-        if (!aLocus.IsDone())
+        anOut.Add("done:" + (aLocus.IsDone ? "1" : "0"));
+        if (!aLocus.IsDone)
         {
             return anOut;
         }
@@ -343,7 +346,7 @@ internal static class MatRecordings
                 return aS.ToString();
             });
         }
-        MAT_Graph aG = aLocus.Graph();
+        MedialGraph aG = aLocus.Graph();
         anOut.Add("g:" + I(aG.NumberOfArcs()) + "," + I(aG.NumberOfNodes()) + "," + I(aG.NumberOfBasicElts()) + ","
                   + I(aG.NumberOfInfiniteNodes()));
         for (int i = 1; i <= aG.NumberOfArcs(); i++)
@@ -351,14 +354,14 @@ internal static class MatRecordings
             string aPre = "a" + I(i);
             Tok(anOut, aPre, () =>
             {
-                MAT_Arc anArc = aG.Arc(i);
+                MedialArc anArc = aG.Arc(i);
                 return I(anArc.Index()) + "," + I(anArc.GeomIndex()) + "," + I(anArc.FirstElement().Index()) + ","
                        + I(anArc.SecondElement().Index()) + "," + I(anArc.FirstNode().Index()) + ","
                        + I(anArc.SecondNode().Index());
             });
             aFail = Fail(() =>
             {
-                Bisector_Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aRev);
+                Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aRev);
                 anOut.Add(aPre + "rev:" + (aRev ? "1" : "0"));
                 Bisec(anOut, aPre, aB);
             });
@@ -372,14 +375,14 @@ internal static class MatRecordings
             string aPre = "n" + I(i);
             Tok(anOut, aPre, () =>
             {
-                MAT_Node aN = aG.Node(i);
+                MedialNode aN = aG.Node(i);
                 return I(aN.Index()) + "," + I(aN.GeomIndex()) + "," + Hex(aN.Distance()) + ","
                        + (aN.Infinite() ? "1" : "0") + (aN.OnBasicElt() ? "1" : "0") + (aN.PendingNode() ? "1" : "0");
             });
             Tok(anOut, aPre + "p", () => Hex(aLocus.GeomElt(aG.Node(i))));
             Tok(anOut, aPre + "l", () =>
             {
-                NCollection_Sequence<MAT_Arc> aS = new();
+                NCollection_Sequence<MedialArc> aS = new();
                 aG.Node(i).LinkedArcs(aS);
                 StringBuilder aRes = new();
                 for (int k = 1; k <= aS.Length(); k++)
@@ -394,7 +397,7 @@ internal static class MatRecordings
             string aPre = "b" + I(i);
             Tok(anOut, aPre, () =>
             {
-                MAT_BasicElt aBE = aG.BasicElt(i);
+                MedialBasicElt aBE = aG.BasicElt(i);
                 return I(aBE.Index()) + "," + I(aBE.GeomIndex()) + ","
                        + (aBE.StartArc() is null ? "0" : I(aBE.StartArc()!.Index())) + ","
                        + (aBE.EndArc() is null ? "0" : I(aBE.EndArc()!.Index()));
@@ -402,7 +405,7 @@ internal static class MatRecordings
             Tok(anOut, aPre + "g", () => GeomName(aLocus.GeomElt(aG.BasicElt(i))));
         }
 
-        BRepMAT2d_LinkTopoBilo aLink = new();
+        LinkTopoBilo aLink = new();
         aFail = Fail(() => aLink.Perform(anExplo, aLocus));
         if (aFail.Length != 0)
         {

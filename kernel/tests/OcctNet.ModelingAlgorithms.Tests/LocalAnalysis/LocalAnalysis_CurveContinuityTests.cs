@@ -3,7 +3,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using static Kerf.Geometry.Continuity;
-using static Occt.LocalAnalysis_StatusErrorType;
+using static Kerf.Engine.Measurement.StatusErrorType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -19,12 +19,12 @@ public class LocalAnalysis_CurveContinuityTests
     public void C0_IsTheDistanceOfThePoints()
     {
         var aLine = new LineCurve3D(new Point3D(1, 0.5, 0), new Direction3D(0, 1, 0));
-        var c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, C0);
-        Assert.True(c.IsDone());
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, aLine, 0.0, C0);
+        Assert.True(c.IsDone);
         Assert.Equal(C0, c.ContinuityStatus());
         Assert.Equal(0.5, c.C0Value(), 1e-15);
         Assert.False(c.IsC0());
-        c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, C0);
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, C0);
         Assert.Equal(0.0, c.C0Value(), 1e-15);
         Assert.True(c.IsC0());
     }
@@ -32,8 +32,8 @@ public class LocalAnalysis_CurveContinuityTests
     [Fact]
     public void C1_AndC2_CompareTheDerivatives()
     {
-        var c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, C2);
-        Assert.True(c.IsDone());
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, C2);
+        Assert.True(c.IsDone);
         Assert.Equal(0.0, c.C1Angle(), 1e-15);
         Assert.Equal(0.5, c.C1Ratio(), 1e-15); // |D1| = 1 and 2
         Assert.Equal(0.0, c.C2Angle(), 1e-15);
@@ -43,14 +43,14 @@ public class LocalAnalysis_CurveContinuityTests
 
         // opposite directions: the angle is folded into [0, PI/2]
         var aReversed = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0)), 1.0);
-        c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aReversed, 0.0, C1);
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, aReversed, 0.0, C1);
         Assert.Equal(0.0, c.C1Angle(), 1e-15);
         Assert.Equal(1.0, c.C1Ratio());
         Assert.True(c.IsC1());
 
         // a line at 30 degrees to the circle's tangent
         var aLine = new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(Math.Sin(Math.PI / 6), Math.Cos(Math.PI / 6), 0));
-        c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, C1);
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, aLine, 0.0, C1);
         Assert.Equal(Math.PI / 6, c.C1Angle(), 1e-14);
         Assert.False(c.IsC1());
         Assert.True(c.IsC0());
@@ -59,7 +59,7 @@ public class LocalAnalysis_CurveContinuityTests
     [Fact]
     public void C2_OfTheSameCircle_IsC2()
     {
-        var c = new LocalAnalysis_CurveContinuity(s_c1, 0.3, s_c1, 0.3, C2);
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.3, s_c1, 0.3, C2);
         Assert.True(c.IsC2());
         Assert.Equal(1.0, c.C1Ratio());
         Assert.Equal(1.0, c.C2Ratio());
@@ -68,18 +68,18 @@ public class LocalAnalysis_CurveContinuityTests
     [Fact]
     public void G1_AndG2_CompareTangentsNormalsAndCurvatures()
     {
-        var c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2);
-        Assert.True(c.IsDone());
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2);
+        Assert.True(c.IsDone);
         Assert.Equal(0.0, c.G1Angle(), 1e-15);
         Assert.Equal(0.0, c.G2Angle(), 1e-15);
         // |k1 - k2| / sqrt(k1 k2) with curvatures 1 and 0.5
         Assert.Equal(0.5 / Math.Sqrt(0.5), c.G2CurvatureVariation(), 1e-14);
         Assert.True(c.IsG1());
         Assert.False(c.IsG2());
-        Assert.True(new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2, Percent: 0.8).IsG2());
+        Assert.True(new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2, percent: 0.8).IsG2());
 
         var aLine = new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, -1, 0));
-        c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, G1);
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, aLine, 0.0, G1);
         Assert.Equal(0.0, c.G1Angle(), 1e-15);
         Assert.True(c.IsG1());
     }
@@ -89,9 +89,9 @@ public class LocalAnalysis_CurveContinuityTests
     {
         var aL1 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         var aL2 = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        var c = new LocalAnalysis_CurveContinuity(aL1, 0.0, aL2, 0.0, G2);
-        Assert.False(c.IsDone());
-        Assert.Equal(LocalAnalysis_NormalNotDefined, c.StatusError());
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(aL1, 0.0, aL2, 0.0, G2);
+        Assert.False(c.IsDone);
+        Assert.Equal(global::Kerf.Engine.Measurement.StatusErrorType.NormalNotDefined, c.StatusError());
         Assert.Throws<NotDoneException>(() => c.C0Value());
         Assert.Throws<NotDoneException>(() => c.IsC0());
         Assert.Throws<NotDoneException>(() => c.ContinuityStatus());
@@ -109,19 +109,19 @@ public class LocalAnalysis_CurveContinuityTests
         var aBez = new BezierCurve3D(aPoles);
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
-        var c = new LocalAnalysis_CurveContinuity(aBez, 0.0, aLine, 0.0, C1);
-        Assert.False(c.IsDone());
-        Assert.Equal(LocalAnalysis_NullFirstDerivative, c.StatusError());
+        var c = new global::Kerf.Engine.Measurement.CurveContinuity(aBez, 0.0, aLine, 0.0, C1);
+        Assert.False(c.IsDone);
+        Assert.Equal(global::Kerf.Engine.Measurement.StatusErrorType.NullFirstDerivative, c.StatusError());
 
         // a line's second derivative is null
-        c = new LocalAnalysis_CurveContinuity(s_c1, 0.0, aLine, 0.0, C2);
-        Assert.False(c.IsDone());
-        Assert.Equal(LocalAnalysis_NullSecondDerivative, c.StatusError());
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, aLine, 0.0, C2);
+        Assert.False(c.IsDone);
+        Assert.Equal(global::Kerf.Engine.Measurement.StatusErrorType.NullSecondDerivative, c.StatusError());
 
         // the tangent at the double pole is still defined (CLProps computes the second derivative on demand), so G1 is
         // computed
-        c = new LocalAnalysis_CurveContinuity(aBez, 0.0, aLine, 0.0, G1);
-        Assert.True(c.IsDone());
+        c = new global::Kerf.Engine.Measurement.CurveContinuity(aBez, 0.0, aLine, 0.0, G1);
+        Assert.True(c.IsDone);
         Assert.Equal(Math.PI / 4, c.G1Angle(), 1e-14);
         Assert.False(c.IsG1());
     }
@@ -130,17 +130,17 @@ public class LocalAnalysis_CurveContinuityTests
     public void Dump_WritesOcctsText()
     {
         var w = new StringWriter();
-        LocalAnalysis.Dump(new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, C1), w);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, C1), w);
         Assert.Equal(" Continuity Status : C1 \n C0Value = 0\n C1Angle = 0\n C1Ratio = 0.5\n", w.ToString());
 
         w = new StringWriter();
-        LocalAnalysis.Dump(new LocalAnalysis_CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2), w);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(new global::Kerf.Engine.Measurement.CurveContinuity(s_c1, 0.0, s_c2, 0.0, G2), w);
         Assert.Equal(" Continuity Status : G1 \n G0Value = 0\n G1Angle = 0\n G2Angle = 0\n Relative curvature variation = 0.707107\n",
                      w.ToString());
 
         w = new StringWriter();
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
-        LocalAnalysis.Dump(new LocalAnalysis_CurveContinuity(aLine, 0.0, aLine, 0.0, G2), w);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(new global::Kerf.Engine.Measurement.CurveContinuity(aLine, 0.0, aLine, 0.0, G2), w);
         Assert.Equal("Problem in the computation \none (or both) normal is undefined\n", w.ToString());
     }
 }

@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -13,7 +15,7 @@ using System.Text;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
 using static Kerf.Geometry.Continuity;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -112,14 +114,14 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
                              $"{theTool} {theStatus:x5} {Hash(aText):x16} {Count(theRes, ShapeType.Face)} {Count(theRes, ShapeType.Edge)} {Count(theRes, ShapeType.Vertex)}");
     }
 
-    private static readonly ShapeExtend_Status[] s_flags =
+    private static readonly ExtendStatus[] s_flags =
     [
-        ShapeExtend_DONE1, ShapeExtend_DONE2, ShapeExtend_DONE3, ShapeExtend_DONE4, ShapeExtend_DONE5, ShapeExtend_DONE6,
-        ShapeExtend_DONE7, ShapeExtend_DONE8, ShapeExtend_FAIL1, ShapeExtend_FAIL2, ShapeExtend_FAIL3, ShapeExtend_FAIL4,
-        ShapeExtend_FAIL5, ShapeExtend_FAIL6, ShapeExtend_FAIL7, ShapeExtend_FAIL8,
+        ExtendStatus.DONE1, ExtendStatus.DONE2, ExtendStatus.DONE3, ExtendStatus.DONE4, ExtendStatus.DONE5, ExtendStatus.DONE6,
+        ExtendStatus.DONE7, ExtendStatus.DONE8, ExtendStatus.FAIL1, ExtendStatus.FAIL2, ExtendStatus.FAIL3, ExtendStatus.FAIL4,
+        ExtendStatus.FAIL5, ExtendStatus.FAIL6, ExtendStatus.FAIL7, ExtendStatus.FAIL8,
     ];
 
-    private static int Status(Func<ShapeExtend_Status, bool> theStatus, bool theResult)
+    private static int Status(Func<ExtendStatus, bool> theStatus, bool theResult)
     {
         int aStatus = 0;
         for (int i = 0; i < 16; i++)
@@ -163,7 +165,7 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         }
     }
 
-    private static string Divide(string theTool, ShapeUpgrade_ShapeDivide theDivider) =>
+    private static string Divide(string theTool, ShapeDivide theDivider) =>
         Run(theTool, () =>
         {
             bool isDone = theDivider.Perform();
@@ -176,16 +178,16 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         Shape aShape = theShape;
         var aRecords = new List<string>
         {
-            Divide("ANGLE", new ShapeUpgrade_ShapeDivideAngle(95 * Math.PI / 180, aShape)),
-            Divide("CLOSED", new ShapeUpgrade_ShapeDivideClosed(aShape)),
-            Divide("CLEDGES", new ShapeUpgrade_ShapeDivideClosedEdges(aShape)),
+            Divide("ANGLE", new ShapeDivideAngle(95 * Math.PI / 180, aShape)),
+            Divide("CLOSED", new ShapeDivideClosed(aShape)),
+            Divide("CLEDGES", new ShapeDivideClosedEdges(aShape)),
         };
 
-        var aCont = new ShapeUpgrade_ShapeDivideContinuity(aShape);
+        var aCont = new ShapeDivideContinuity(aShape);
         aCont.SetTolerance(0.01);
         aRecords.Add(Divide("CONT", aCont));
-        aRecords.Add(Divide("CONTD", new ShapeUpgrade_ShapeDivideContinuity(aShape)));
-        var aCont2 = new ShapeUpgrade_ShapeDivideContinuity(aShape);
+        aRecords.Add(Divide("CONTD", new ShapeDivideContinuity(aShape)));
+        var aCont2 = new ShapeDivideContinuity(aShape);
         aCont2.SetBoundaryCriterion(C2);
         aCont2.SetPCurveCriterion(C2);
         aCont2.SetSurfaceCriterion(C2);
@@ -193,21 +195,21 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         aCont2.SetTolerance2d(1e-5);
         aRecords.Add(Divide("CONT2", aCont2));
 
-        var aNum4 = new ShapeUpgrade_ShapeDivideArea(aShape);
+        var aNum4 = new ShapeDivideArea(aShape);
         aNum4.SetSplittingByNumber(true);
         aNum4.NbParts() = 4;
         aRecords.Add(Divide("NUM4", aNum4));
-        var aNum23 = new ShapeUpgrade_ShapeDivideArea(aShape);
+        var aNum23 = new ShapeDivideArea(aShape);
         aNum23.SetSplittingByNumber(true);
         aNum23.SetNumbersUVSplits(2, 3);
         aRecords.Add(Divide("NUM23", aNum23));
 
-        var aBez = new ShapeUpgrade_ShapeConvertToBezier(aShape);
+        var aBez = new ShapeConvertToBezier(aShape);
         aBez.SetSurfaceConversion(true);
         aBez.Set2dConversion(true);
         aBez.Set3dConversion(true);
         aRecords.Add(Divide("BEZ", aBez));
-        var aBezC = new ShapeUpgrade_ShapeConvertToBezier(aShape);
+        var aBezC = new ShapeConvertToBezier(aShape);
         aBezC.Set2dConversion(true);
         aBezC.Set3dConversion(true);
         aBezC.Set3dLineConversion(false);
@@ -216,12 +218,12 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
 
         aRecords.Add(Run("RIW", () =>
         {
-            var aTool = new ShapeUpgrade_RemoveInternalWires(aShape);
+            var aTool = new RemoveInternalWires(aShape);
             aTool.MinArea() = 10;
             bool isDone = aTool.Perform();
             return Record("RIW", aTool.GetResult(), Status(aTool.Status, isDone));
         }));
-        aRecords.Add(Run("SEW", () => Record("SEW", new ShapeUpgrade_ShellSewing().ApplySewing(aShape), 0)));
+        aRecords.Add(Run("SEW", () => Record("SEW", new ShellSewing().ApplySewing(aShape), 0)));
         return aRecords;
     }
 

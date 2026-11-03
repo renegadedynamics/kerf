@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -117,7 +118,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return aKeys;
     }
 
-    private static string Messages(ShapeExtend_MsgRegistrator? theMessages, out int theNb)
+    private static string Messages(MsgRegistrator? theMessages, out int theNb)
     {
         var aTexts = new List<string>();
         if (theMessages is not null)
@@ -181,7 +182,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     }
 
     private static string Record(string theRun, in Shape theInput, in Shape theResult,
-                                 ShapeProcess_ShapeContext? theContext, ulong theMerge)
+                                 global::Kerf.Engine.Healing.Process.ShapeContext? theContext, ulong theMerge)
     {
         if (!theResult.IsNull && !theResult.IsSame(theInput) && !theResult.TShape()!.IsFrozen)
         {
@@ -207,10 +208,10 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         }
     }
 
-    private static string FlagsText(ShapeProcess.OperationsFlags theFlags)
+    private static string FlagsText(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags)
     {
         var aText = new StringBuilder();
-        for (ShapeProcess.Operation i = ShapeProcess.Operation.First; i <= ShapeProcess.Operation.Last; i++)
+        for (global::Kerf.Engine.Healing.Process.ShapeProcess.Operation i = global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.First; i <= global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.Last; i++)
         {
             aText.Append(theFlags.Test(i) ? '1' : '0');
         }
@@ -239,10 +240,10 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     private sealed class Setup
     {
         public readonly Interface_StaticSet Statics = StepStatics();
-        public readonly (NCollection_DataMap<string, string>, ShapeProcess.OperationsFlags) Read, ToStep;
+        public readonly (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
         public readonly NCollection_DataMap<string, string> WriteParams = new();
-        public readonly ShapeProcess.OperationsFlags WriteFlags =
-            new(ShapeProcess.Operation.SplitCommonVertex, ShapeProcess.Operation.DirectFaces);
+        public readonly global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags WriteFlags =
+            new(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex, global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
 
         public Setup()
         {
@@ -262,7 +263,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     }
 
     private static string Processor(in Shape theInput, string theRun, NCollection_DataMap<string, string> theParams,
-                                    ShapeProcess.OperationsFlags theFlags, bool theToFinder)
+                                    global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags, bool theToFinder)
     {
         Shape anInput = theInput;
         return Run(theRun, () =>
@@ -285,7 +286,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
             Shape aResult = Occt.XSAlgo.AlgoContainer().ProcessShape(anInput, 1.0e-3, 1.0, "read.step.resource.name",
                                                                            theSeq, ref anInfo, theStatics);
             ulong aMerge = MergeTP(Keys(anInput), theTP => Occt.XSAlgo.AlgoContainer().MergeTransferInfo(theTP, anInfo, 1));
-            return Record(theRun, anInput, aResult, anInfo as ShapeProcess_ShapeContext, aMerge);
+            return Record(theRun, anInput, aResult, anInfo as global::Kerf.Engine.Healing.Process.ShapeContext, aMerge);
         });
     }
 

@@ -21,7 +21,7 @@ public abstract class IFSelect_Editor : Transient
     /// <summary>
     /// Sets a Typed Value for a given ident and short name, with an Edit Mode
     /// </summary>
-    public void SetValue(int num, Interface_TypedValue? typval, string shortname = "", IFSelect_EditValue editmode = IFSelect_Editable)
+    public void SetValue(int num, Interface_TypedValue? typval, string shortname = "", IFSelect_EditValue editmode = IFSelect_EditValue.IFSelect_Editable)
     {
         if (num < 1 || num > thenbval)
         {
@@ -134,7 +134,7 @@ public abstract class IFSelect_Editor : Transient
     {
         if (num < 1 || num > thenbval)
         {
-            return IFSelect_EditDynamic;
+            return IFSelect_EditValue.IFSelect_EditDynamic;
         }
         int edm = themodes.Value(num);
         return (IFSelect_EditValue)edm;
@@ -283,22 +283,22 @@ public abstract class IFSelect_Editor : Transient
             IFSelect_EditValue edm = EditMode(i);
             switch (edm)
             {
-                case IFSelect_Optional:
+                case IFSelect_EditValue.IFSelect_Optional:
                     S.Write("Optional ");
                     break;
-                case IFSelect_Editable:
+                case IFSelect_EditValue.IFSelect_Editable:
                     S.Write("Editable ");
                     break;
-                case IFSelect_EditProtected:
+                case IFSelect_EditValue.IFSelect_EditProtected:
                     S.Write("Protected");
                     break;
-                case IFSelect_EditComputed:
+                case IFSelect_EditValue.IFSelect_EditComputed:
                     S.Write("Computed ");
                     break;
-                case IFSelect_EditRead:
+                case IFSelect_EditValue.IFSelect_EditRead:
                     S.Write("ReadOnly ");
                     break;
-                case IFSelect_EditDynamic:
+                case IFSelect_EditValue.IFSelect_EditDynamic:
                     S.Write("Dynamic  ");
                     break;
                 default:

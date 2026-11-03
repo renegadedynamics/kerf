@@ -1,6 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Construction.Surfaces;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -243,11 +249,11 @@ internal static class BRepFillRecordingCases
         return new BSplineCurve3D(aPoles, aK, aM, 3);
     }
 
-    private static Vertex Vertex(Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static Vertex Vertex(Point3D theP) => new MakeVertex(theP).Vertex();
 
     private static Wire MakeWire(Rng r, int theKind, double theScale)
     {
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         if (theKind == 2)
         {
             int aNb = r.I(5, 8);
@@ -285,7 +291,7 @@ internal static class BRepFillRecordingCases
             }
             for (int i = 0; i < aNE2; i++)
             {
-                Edge anE = new BRepBuilderAPI_MakeEdge(aC, aV2[i], aV2[i + 1], aT[i], aT[i + 1]).Edge();
+                Edge anE = new MakeEdge(aC, aV2[i], aV2[i + 1], aT[i], aT[i + 1]).Edge();
                 aMW.Add(anE);
             }
             return aMW.Wire();
@@ -328,11 +334,11 @@ internal static class BRepFillRecordingCases
             Edge anE;
             if (aC is null)
             {
-                anE = new BRepBuilderAPI_MakeEdge(aV[a], aV[b]).Edge();
+                anE = new MakeEdge(aV[a], aV[b]).Edge();
             }
             else
             {
-                anE = new BRepBuilderAPI_MakeEdge(aC, aV[a], aV[b]).Edge();
+                anE = new MakeEdge(aC, aV[a], aV[b]).Edge();
             }
             if (aRev)
             {
@@ -355,46 +361,46 @@ internal static class BRepFillRecordingCases
         double dx = r.R(1, 3);
         double dy = r.R(1, 3);
         double dz = r.R(1, 3);
-        return new BRepPrimAPI_MakeBox(dx, dy, dz).Shape();
+        return new MakeBox(dx, dy, dz).Shape();
     }
 
     private static Shape Cylinder(Rng r)
     {
         double aR = r.R(1, 3);
         double aH = r.R(1, 3);
-        return new BRepPrimAPI_MakeCylinder(aR, aH).Shape();
+        return new ApiMakeCylinder(aR, aH).Shape();
     }
 
-    private static GeomFill_LocationLaw MakeTrihedron(Rng r, int theKind)
+    private static SurfaceLocationLaw MakeTrihedron(Rng r, int theKind)
     {
-        GeomFill_TrihedronLaw aT;
+        TrihedronLaw aT;
         switch (theKind)
         {
             case 0:
-                aT = new GeomFill_Frenet();
+                aT = new Frenet();
                 break;
             case 1:
-                aT = new GeomFill_CorrectedFrenet();
+                aT = new CorrectedFrenet();
                 break;
             case 2:
                 {
                     Direction3D aD = Dir(r);
                     Direction3D aN = new CoordinateSystem(new Point3D(0, 0, 0), aD).XDirection();
-                    aT = new GeomFill_Fixed(new Vector3D(aD), new Vector3D(aN));
+                    aT = new Fixed(new Vector3D(aD), new Vector3D(aN));
                     break;
                 }
             default:
-                aT = new GeomFill_ConstantBiNormal(Dir(r));
+                aT = new ConstantBiNormal(Dir(r));
                 break;
         }
-        return new GeomFill_CurveAndTrihedron(aT);
+        return new CurveAndTrihedron(aT);
     }
 
     // ----------------------------------------------------------------------------------------------- outputs
 
-    private static void DumpLocationLaw(Rng r, BRepFill_LocationLaw theLaw)
+    private static void DumpLocationLaw(Rng r, LocationLaw theLaw)
     {
-        int N = theLaw.NbLaw();
+        int N = theLaw.LawCount;
         Line("LAW " + Int(N) + " " + Int(theLaw.IsClosed()) + " " + Int((int)theLaw.GetStatus()));
         // the abscissa before the lengths are known (OCCT's bug)
         Guard(() =>
@@ -484,19 +490,19 @@ internal static class BRepFillRecordingCases
         Line("HOLES2 " + Int(theLaw.NbHoles(1.0e-4)));
     }
 
-    private static void DumpSectionLaw(BRepFill_SectionLaw theLaw, Wire theWire)
+    private static void DumpSectionLaw(SectionLaw theLaw, Wire theWire)
     {
-        Line("SEC " + Int(theLaw.NbLaw()) + " " + Int(theLaw.IsUClosed()) + " " + Int(theLaw.IsVClosed()) + " "
-             + Int(theLaw.IsConstant()) + " " + Int(theLaw.IsVertex()) + " " + Int(theLaw.IsDone()));
-        if (!theLaw.IsDone())
+        Line("SEC " + Int(theLaw.LawCount) + " " + Int(theLaw.IsUClosed) + " " + Int(theLaw.IsVClosed) + " "
+             + Int(theLaw.IsConstant) + " " + Int(theLaw.IsVertex) + " " + Int(theLaw.IsDone));
+        if (!theLaw.IsDone)
         {
             return;
         }
-        int N = theLaw.NbLaw();
+        int N = theLaw.LawCount;
         double VF = 0, VL = 1;
         for (int i = 1; i <= N; i++)
         {
-            GeomFill_SectionLaw? aL = theLaw.Law(i);
+            SurfaceSectionLaw? aL = theLaw.Law(i);
             if (aL is null)
             {
                 Line("NULLLAW");
@@ -504,8 +510,8 @@ internal static class BRepFillRecordingCases
             }
             aL.GetDomain(out VF, out VL);
             aL.SectionShape(out int NbP, out int NbK, out int Deg);
-            Line("SS " + Int(NbP) + " " + Int(NbK) + " " + Int(Deg) + " " + Int(aL.IsRational()) + " "
-                 + Int(aL.IsUPeriodic()) + " " + Hex(VF) + " " + Hex(VL));
+            Line("SS " + Int(NbP) + " " + Int(NbK) + " " + Int(Deg) + " " + Int(aL.IsRational) + " "
+                 + Int(aL.IsUPeriodic) + " " + Hex(VF) + " " + Hex(VL));
             NCollection_Array1<double> aK = new(1, NbK);
             aL.Knots(aK);
             NCollection_Array1<int> aM = new(1, NbK);
@@ -530,7 +536,7 @@ internal static class BRepFillRecordingCases
             }
         }
         double aMid = 0.5 * (VF + VL);
-        if (!theLaw.IsVertex())
+        if (!theLaw.IsVertex)
         {
             for (int i = 0; i <= N; i++)
             {
@@ -549,7 +555,7 @@ internal static class BRepFillRecordingCases
         }
         Guard(() =>
         {
-            GeomFill_SectionLaw? aC = theLaw.ConcatenedLaw();
+            SurfaceSectionLaw? aC = theLaw.ConcatenedLaw();
             if (aC is null)
             {
                 Line("CONCAT null");
@@ -582,10 +588,10 @@ internal static class BRepFillRecordingCases
         Wire aW = RandomWire(r, 2, 1, 5);
         int aKind = r.I(0, 3);
         Line("TRI " + Int(aKind));
-        GeomFill_LocationLaw aL = MakeTrihedron(r, aKind);
+        SurfaceLocationLaw aL = MakeTrihedron(r, aKind);
         Guard(() =>
         {
-            BRepFill_LocationLaw aLaw = new BRepFill_Edge3DLaw(aW, aL);
+            LocationLaw aLaw = new Edge3DLaw(aW, aL);
             DumpLocationLaw(r, aLaw);
         });
     }
@@ -598,22 +604,22 @@ internal static class BRepFillRecordingCases
         double ty = r.R(2, 4);
         double tz = r.R(-1, 1);
         aT.SetTranslation(new Vector3D(tx, ty, tz));
-        Wire aG = ShapeCasts.Wire(new BRepBuilderAPI_Transform(aW, aT, true).Shape());
+        Wire aG = ShapeCasts.Wire(new Transform(aW, aT, true).Shape());
         Guard(() =>
         {
             WireCurveAdaptor aGuide = new(aG);
-            BRepFill_LocationLaw aLaw;
+            LocationLaw aLaw;
             if (theACR)
             {
-                GeomFill_GuideTrihedronAC aTLaw = new(aGuide);
-                GeomFill_LocationGuide aLoc = new(aTLaw);
-                aLaw = new BRepFill_ACRLaw(aW, aLoc);
+                GuideTrihedronAC aTLaw = new(aGuide);
+                LocationGuide aLoc = new(aTLaw);
+                aLaw = new AcrLaw(aW, aLoc);
             }
             else
             {
-                GeomFill_GuideTrihedronPlan aTLaw = new(aGuide);
-                GeomFill_LocationGuide aLoc = new(aTLaw);
-                aLaw = new BRepFill_Edge3DLaw(aW, aLoc);
+                GuideTrihedronPlan aTLaw = new(aGuide);
+                LocationGuide aLoc = new(aTLaw);
+                aLaw = new Edge3DLaw(aW, aLoc);
             }
             DumpLocationLaw(r, aLaw);
         });
@@ -659,7 +665,7 @@ internal static class BRepFillRecordingCases
             aM[2] = 4;
             aS = new BSplineSurface(aP, aK, aK, aM, aM, 3, 3);
         }
-        Face aF = new BRepBuilderAPI_MakeFace(aS, u0, u1, v0, v1, 1.0e-7).Face();
+        Face aF = new MakeFace(aS, u0, u1, v0, v1, 1.0e-7).Face();
         int aNE = r.I(1, 4);
         List<Point2D> aUV = [];
         for (int i = 0; i <= aNE; i++)
@@ -677,7 +683,7 @@ internal static class BRepFillRecordingCases
             B.MakeVertex(ref aVx, aS.Value(aQ.X(), aQ.Y()), global::Kerf.Engine.Foundation.Precision.Confusion());
             aV.Add(aVx);
         }
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         bool aOff = r.I(0, 4) == 0;
         for (int i = 0; i < aNE; i++)
         {
@@ -686,21 +692,21 @@ internal static class BRepFillRecordingCases
             Edge anE;
             if (aOff && i == aNE - 1)
             {
-                anE = new BRepBuilderAPI_MakeEdge(aV[i], aV[i + 1]).InternalEdge();
+                anE = new MakeEdge(aV[i], aV[i + 1]).InternalEdge();
             }
             else
             {
-                anE = new BRepBuilderAPI_MakeEdge(aL, aS, aV[i], aV[i + 1], 0, aD.Magnitude()).InternalEdge();
-                BRepLib.BuildCurves3d(anE);
+                anE = new MakeEdge(aL, aS, aV[i], aV[i + 1], 0, aD.Magnitude()).InternalEdge();
+                BrepLibrary.BuildCurves3d(anE);
             }
             aMW.Add(anE);
         }
         Wire aW = aMW.Wire();
         Guard(() =>
         {
-            BRepFill_EdgeOnSurfLaw aLaw = new(aW, aF);
-            Line("HAS " + Int(aLaw.HasResult()));
-            if (aLaw.HasResult())
+            EdgeOnSurfLaw aLaw = new(aW, aF);
+            Line("HAS " + Int(aLaw.HasResult));
+            if (aLaw.HasResult)
             {
                 DumpLocationLaw(r, aLaw);
             }
@@ -714,21 +720,21 @@ internal static class BRepFillRecordingCases
         if (aKind == 0)
         {
             Vertex aV = Vertex(Pnt(r, 5));
-            Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aV), new Wire()));
+            Guard(() => DumpSectionLaw(new ShapeLaw(aV), new Wire()));
             return;
         }
         Wire aW = RandomWire(r, 2, 0.5, 2);
         if (aKind == 1)
         {
-            Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aW), aW));
+            Guard(() => DumpSectionLaw(new ShapeLaw(aW), aW));
         }
         else
         {
-            Law_Linear aL = new();
+            Linear aL = new();
             double a = r.R(0.5, 2);
             double b = r.R(0.5, 2);
             aL.Set(0, a, 1, b);
-            Guard(() => DumpSectionLaw(new BRepFill_ShapeLaw(aW, aL), aW));
+            Guard(() => DumpSectionLaw(new ShapeLaw(aW, aL), aW));
         }
     }
 
@@ -780,7 +786,7 @@ internal static class BRepFillRecordingCases
             }
             else
             {
-                aS.Append(new BRepBuilderAPI_Transform(aW0, aTr, true).Shape());
+                aS.Append(new Transform(aW0, aTr, true).Shape());
             }
             aT.Append(aTr);
             aP.Append(aPar);
@@ -790,12 +796,12 @@ internal static class BRepFillRecordingCases
         if (r.I(0, 1) == 0)
         {
             Line("NS1");
-            Guard(() => DumpSectionLaw(new BRepFill_NSections(aS), aRef));
+            Guard(() => DumpSectionLaw(new NSections(aS), aRef));
         }
         else
         {
             Line("NS2");
-            Guard(() => DumpSectionLaw(new BRepFill_NSections(aS, aT, aP, aP[1], aP[aNb]), aRef));
+            Guard(() => DumpSectionLaw(new NSections(aS, aT, aP, aP[1], aP[aNb]), aRef));
         }
     }
 
@@ -832,7 +838,7 @@ internal static class BRepFillRecordingCases
         Line("LEVEL " + Int(aLevel));
         Guard(() =>
         {
-            ShapeUpgrade_RemoveLocations aRL = new();
+            RemoveLocations aRL = new();
             aRL.SetRemoveLevel(aL);
             Line("REMOVE " + Int(aRL.Remove(aShape)) + " " + Int((int)aRL.RemoveLevel()) + " "
                  + Int(aRL.GetModifiedShapesMap().Extent()));
@@ -857,8 +863,8 @@ internal static class BRepFillRecordingCases
         {
             bool aContact = r.I(0, 1) == 1;
             bool aCorrection = r.I(0, 1) == 1;
-            BRepFill_Section aSec = new(aProfile, aV, aContact, aCorrection);
-            Line("SECT " + Int(aSec.IsPunctual()) + " " + Int(aSec.WithContact()) + " " + Int(aSec.WithCorrection()));
+            FillingSection aSec = new(aProfile, aV, aContact, aCorrection);
+            Line("SECT " + Int(aSec.IsPunctual) + " " + Int(aSec.WithContact()) + " " + Int(aSec.WithCorrection()));
             Text("WIRE", aSec.Wire());
             NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aSec.Wire(), aMap);
@@ -878,7 +884,7 @@ internal static class BRepFillRecordingCases
     {
         Wire aW = RandomWire(r, 2, 1, 5);
         int aKind = r.I(0, 1);
-        GeomFill_LocationLaw aL = MakeTrihedron(r, aKind);
+        SurfaceLocationLaw aL = MakeTrihedron(r, aKind);
         int aSecKind = r.I(0, 1);
         // a section near a point of the spine
         WireCurveAdaptor aC = new(aW);
@@ -897,7 +903,7 @@ internal static class BRepFillRecordingCases
         {
             Transform3D aT = new();
             aT.SetTranslation(new Vector3D(aO.XYZ()));
-            aSec = new BRepBuilderAPI_Transform(RandomWire(r, 1, 0.3, 0.3), aT, true).Shape();
+            aSec = new Transform(RandomWire(r, 1, 0.3, 0.3), aT, true).Shape();
         }
         bool aContact = r.I(0, 1) == 1;
         bool aCorrection = r.I(0, 1) == 1;
@@ -905,18 +911,18 @@ internal static class BRepFillRecordingCases
         Line("PL " + Int(aKind) + " " + Int(aSecKind) + " " + Int(aContact) + " " + Int(aCorrection) + " " + Int(aOnVertex));
         Guard(() =>
         {
-            BRepFill_LocationLaw aLaw = new BRepFill_Edge3DLaw(aW, aL);
+            LocationLaw aLaw = new Edge3DLaw(aW, aL);
             if (aOnVertex == 0)
             {
-                BRepFill_SectionPlacement aP = new(aLaw, aSec, aContact, aCorrection);
+                SectionPlacement aP = new(aLaw, aSec, aContact, aCorrection);
                 Line("TRSF " + Hex(aP.Transformation()));
                 Line("ABSC " + Hex(aP.AbscissaOnPath()));
             }
             else
             {
-                int anIdx = r.I(1, aLaw.NbLaw() + 1);
+                int anIdx = r.I(1, aLaw.LawCount + 1);
                 Vertex aV = aLaw.Vertex(anIdx);
-                BRepFill_SectionPlacement aP = new(aLaw, aSec, aV, aContact, aCorrection);
+                SectionPlacement aP = new(aLaw, aSec, aV, aContact, aCorrection);
                 Line("TRSF " + Hex(aP.Transformation()));
                 Line("ABSC " + Hex(aP.AbscissaOnPath()));
             }

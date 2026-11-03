@@ -33,18 +33,18 @@ public abstract class XSControl_Controller : Transient
     {
         if (theActor is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         if (theModel is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         theActor.ModeTrans() = theModeTrans;
         theFP.SetModel(theModel);
         theFP.SetActor(theActor);
         theFP.Transfer(theMapper, theProgress);
 
-        IFSelect_ReturnStatus stat = IFSelect_RetFail;
+        IFSelect_ReturnStatus stat = IFSelect_ReturnStatus.IFSelect_RetFail;
         Transfer_Binder binder = theFP.Find(theMapper);
         Transfer_SimpleBinderOfTransient bindtr = null;
         while (binder is not null)
@@ -55,7 +55,7 @@ public abstract class XSControl_Controller : Transient
                 Transient ent = bindtr.Result();
                 if (ent is not null)
                 {
-                    stat = IFSelect_RetDone;
+                    stat = IFSelect_ReturnStatus.IFSelect_RetDone;
                     theModel.AddWithRefs(ent);
                 }
             }
@@ -300,7 +300,7 @@ public abstract class XSControl_Controller : Transient
     {
         if (theObj is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         return TransferFinder(myAdaptorWrite,
                                                     new Transfer_TransientMapper(theObj),
@@ -332,7 +332,7 @@ public abstract class XSControl_Controller : Transient
     {
         if (shape.IsNull)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         IFSelect_ReturnStatus theReturnStat = TransferFinder(myAdaptorWrite,

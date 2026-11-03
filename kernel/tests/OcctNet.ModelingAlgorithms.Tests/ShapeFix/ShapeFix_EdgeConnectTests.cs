@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -40,11 +42,11 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Built_TwoFrozenEdgesWithAGap_ShareAVertexAtTheMiddle()
     {
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         Compound anInput = Compound(e1, e2);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anInput);
-        var aConnect = new ShapeFix_EdgeConnect();
+        var aConnect = new EdgeConnectFixer();
         aConnect.Add(e1, e2);
 
         Shape aResult = aConnect.Built(anInput);
@@ -67,15 +69,15 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Build_InPlace_OnUnfrozenEdges_AndThrowsOnFrozenOnes()
     {
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).InternalEdge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).InternalEdge();
-        var aConnect = new ShapeFix_EdgeConnect();
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).InternalEdge();
+        Edge e2 = new MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).InternalEdge();
+        var aConnect = new EdgeConnectFixer();
         aConnect.Add(e1, e2);
         aConnect.Build();
         Assert.True(Exploration.LastVertex(e1).IsSame(Exploration.FirstVertex(e2)));
 
-        Edge f1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge f2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
+        Edge f1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge f2 = new MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         aConnect.Add(f1, f2);
         Assert.ThrowsAny<Exception>(() => aConnect.Build());
     }
@@ -84,9 +86,9 @@ public class ShapeFix_EdgeConnectTests
     public void Built_ClosedWireOfSeparateEdges_ConnectsEveryJoint()
     {
         // a triangle of three edges with their own vertices, in a closed wire
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1, 0, 0), new Point3D(0, 1, 0)).Edge();
-        Edge e3 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 1, 0), new Point3D(0, 0, 0)).Edge();
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new MakeEdge(new Point3D(1, 0, 0), new Point3D(0, 1, 0)).Edge();
+        Edge e3 = new MakeEdge(new Point3D(0, 1, 0), new Point3D(0, 0, 0)).Edge();
         var aWire = new Wire();
         var aB = new BrepBuilder();
         aB.MakeWire(ref aWire);
@@ -96,7 +98,7 @@ public class ShapeFix_EdgeConnectTests
         aWire.Closed(true);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
 
-        var aConnect = new ShapeFix_EdgeConnect();
+        var aConnect = new EdgeConnectFixer();
         aConnect.Add(aWire);
         Shape aResult = aConnect.Built(aWire);
 
@@ -110,10 +112,10 @@ public class ShapeFix_EdgeConnectTests
     [Fact]
     public void Clear_ForgetsTheConnections()
     {
-        Edge e1 = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
-        Edge e2 = new BRepBuilderAPI_MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
+        Edge e1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge e2 = new MakeEdge(new Point3D(1.0002, 0, 0), new Point3D(2, 0, 0)).Edge();
         Compound anInput = Compound(e1, e2);
-        var aConnect = new ShapeFix_EdgeConnect();
+        var aConnect = new EdgeConnectFixer();
         aConnect.Add(e1, e2);
         aConnect.Clear();
         Shape aResult = aConnect.Built(anInput);

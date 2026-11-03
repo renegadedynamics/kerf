@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -39,7 +40,7 @@ public class XSControlTests
     {
         XSControl_WorkSession WS = Session();
         using var aStream = new MemoryStream(Encoding.UTF8.GetBytes(theText));
-        Assert.Equal(IFSelect_RetDone, WS.ReadStream("toy.txt", aStream));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.ReadStream("toy.txt", aStream));
         WS.InitTransferReader(4);
         return WS;
     }
@@ -146,7 +147,7 @@ public class XSControlTests
         // checks: H warns
         Assert.True(TR.HasChecks(WS.StartingEntity(7), false));
         Assert.False(TR.HasChecks(WS.StartingEntity(7), true));
-        Assert.Equal("H", Names(TR.CheckedList(WS.Model(), Interface_CheckWarning, true)));
+        Assert.Equal("H", Names(TR.CheckedList(WS.Model(), Interface_CheckStatus.Interface_CheckWarning, true)));
         Interface_CheckIterator chl = TR.CheckList(WS.Model());
         Assert.Equal("XSControl : CheckList complete Model", chl.Name());
         Assert.False(chl.IsEmpty(false));
@@ -195,7 +196,7 @@ public class XSControlTests
         var reader = new XSControl_Reader("toy");
         using (var aStream = new MemoryStream(Encoding.UTF8.GetBytes(ToyFile)))
         {
-            Assert.Equal(IFSelect_RetDone, reader.ReadStream("toy.txt", aStream));
+            Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, reader.ReadStream("toy.txt", aStream));
         }
         Assert.Equal(7, reader.Model()!.NbEntities());
         Assert.Equal(3, reader.NbRootsForTransfer()); // A, F, H: the roots the actor recognizes
@@ -215,7 +216,7 @@ public class XSControlTests
         reader.GetStatsTransfer(null, out int nbMapped, out int nbWithResult, out int nbWithFail);
         Assert.Equal((5, 5, 0), (nbMapped, nbWithResult, nbWithFail)); // A F H, B, C
         var aText = new StringWriter();
-        reader.PrintCheckTransfer(aText, false, IFSelect_ItemsByEntity);
+        reader.PrintCheckTransfer(aText, false, IFSelect_PrintCount.IFSelect_ItemsByEntity);
         Assert.Contains("warns H", aText.ToString());
         // the shape fix parameters go to the actor
         Assert.True(reader.GetShapeFixParameters().IsEmpty() == false); // set from the defaults at the first transfer
@@ -226,17 +227,17 @@ public class XSControlTests
         XSControl_WorkSession WS = writer.WS()!;
         Assert.Equal(0, writer.Model()!.NbEntities());
         Assert.True(WS.TransferWriter()!.RecognizeTransient(new TCollection_HAsciiString("x")));
-        Assert.Equal(IFSelect_RetDone, WS.TransferWriter()!.TransferWriteTransient(writer.Model(), new TCollection_HAsciiString("x")));
-        Assert.Equal(IFSelect_RetVoid, WS.TransferWriter()!.TransferWriteTransient(null, new TCollection_HAsciiString("y")));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, WS.TransferWriter()!.TransferWriteTransient(writer.Model(), new TCollection_HAsciiString("x")));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetVoid, WS.TransferWriter()!.TransferWriteTransient(null, new TCollection_HAsciiString("y")));
         Assert.Equal(1, writer.Model()!.NbEntities());
         Assert.Equal("X", writer.Model()!.Value(1)!.ToString());
         WS.ComputeGraph(true);
         var anOut = new MemoryStream();
-        Assert.Equal(IFSelect_RetDone, writer.WriteStream(anOut));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetDone, writer.WriteStream(anOut));
         Assert.Equal("X\n", Encoding.UTF8.GetString(anOut.ToArray()));
         Assert.True(WS.TransferWriteCheckList().IsEmpty(false));
         // a null shape: void
-        Assert.Equal(IFSelect_RetVoid, writer.TransferShape(new Shape()));
+        Assert.Equal(IFSelect_ReturnStatus.IFSelect_RetVoid, writer.TransferShape(new Shape()));
         // a new model clears the transfers
         Assert.NotNull(WS.NewModel());
         Assert.Equal(0, WS.TransferWriter()!.FinderProcess()!.NbMapped());
@@ -254,7 +255,7 @@ public class XSControlTests
         Assert.True(vars.GetPoint("p", ref p));
         Assert.Equal(2.0, p.Y());
         Assert.False(vars.GetPoint("a", ref p));
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         vars.SetShape("s", aBox);
         Assert.True(vars.GetShape("s").IsSame(aBox));
         Assert.True(vars.GetShape("a").IsNull);

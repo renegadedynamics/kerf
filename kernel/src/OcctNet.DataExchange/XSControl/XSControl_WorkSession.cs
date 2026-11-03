@@ -657,18 +657,18 @@ public class XSControl_WorkSession : IFSelect_WorkSession
         IFSelect_ReturnStatus status;
         if (myController is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         Interface_InterfaceModel model = Model();
         if (model is null || shape.IsNull)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         status = myTransferWriter.TransferWriteShape(model, shape, theProgress);
         if (theProgress.UserBreak())
         {
-            return IFSelect_RetStop;
+            return IFSelect_ReturnStatus.IFSelect_RetStop;
         }
         //  which takes care of everything, try/catch included
 

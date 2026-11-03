@@ -466,7 +466,7 @@ public class STEPCAFControl_Reader
 
     public bool Perform(string filename, XdeDoc_Document doc, ProgressRange theProgress = default)
     {
-        if (ReadFile(filename) != IFSelect_RetDone)
+        if (ReadFile(filename) != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return false;
         }
@@ -476,7 +476,7 @@ public class STEPCAFControl_Reader
     public bool Perform(string filename, XdeDoc_Document doc, in DESTEP_Parameters theParams,
                         ProgressRange theProgress = default)
     {
-        if (ReadFile(filename, theParams) != IFSelect_RetDone)
+        if (ReadFile(filename, theParams) != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return false;
         }
@@ -758,7 +758,7 @@ public class STEPCAFControl_Reader
                         TP.AddWarning(ExtRefs.DocFile(i) ?? (Transient)PD, aRefusal);
                         STEPCAFControl_ExternFile anUnread = new STEPCAFControl_ExternFile();
                         anUnread.SetName(new TCollection_HAsciiString(filename));
-                        anUnread.SetLoadStatus(IFSelect_RetError);
+                        anUnread.SetLoadStatus(IFSelect_ReturnStatus.IFSelect_RetError);
                         PDFileMap.Bind(PD, anUnread);
                         aRange.Close();
                         continue;
@@ -1008,7 +1008,7 @@ public class STEPCAFControl_Reader
         EF.SetLoadStatus(readExternStream(sr, file, fullname, theReferencingName, aPS.Next()));
 
         // transfer in single-result mode
-        if (EF.GetLoadStatus() == IFSelect_RetDone)
+        if (EF.GetLoadStatus() == IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             NCollection_Sequence<XdeDoc_Label> labels = new NCollection_Sequence<XdeDoc_Label>();
             myExternStack.Add(fullname);
@@ -1039,12 +1039,12 @@ public class STEPCAFControl_Reader
         STEPCAFControl_ExternFileResolver aResolver = effectiveResolver();
         if (aResolver is null || theProgress.UserBreak())
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         Stream aStream = callResolver(aResolver, file, theReferencingName);
         if (aStream is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         myExternCount++;
         using (aStream)
@@ -1085,7 +1085,7 @@ public class STEPCAFControl_Reader
         }
     }
 
-    private static readonly XdeDoc_ColorType[] theColorTypes = [XdeDoc_ColorGen, XdeDoc_ColorSurf, XdeDoc_ColorCurv];
+    private static readonly XdeDoc_ColorType[] theColorTypes = [XdeDoc_ColorType.XdeDoc_ColorGen, XdeDoc_ColorType.XdeDoc_ColorSurf, XdeDoc_ColorType.XdeDoc_ColorCurv];
 
     //=======================================================================
     // function : propagateColorToParts
@@ -1261,15 +1261,15 @@ public class STEPCAFControl_Reader
 
             if (aSurfCol is not null || aRenderProps.IsDefined())
             {
-                theCTool.SetInstanceColor(aShape, XdeDoc_ColorSurf, aFullSCol);
+                theCTool.SetInstanceColor(aShape, XdeDoc_ColorType.XdeDoc_ColorSurf, aFullSCol);
             }
             if (aBoundCol is not null)
             {
-                theCTool.SetInstanceColor(aShape, XdeDoc_ColorCurv, aBCol);
+                theCTool.SetInstanceColor(aShape, XdeDoc_ColorType.XdeDoc_ColorCurv, aBCol);
             }
             if (aCurveCol is not null)
             {
-                theCTool.SetInstanceColor(aShape, XdeDoc_ColorCurv, aCCol);
+                theCTool.SetInstanceColor(aShape, XdeDoc_ColorType.XdeDoc_ColorCurv, aCCol);
             }
         }
     }
@@ -1419,15 +1419,15 @@ public class STEPCAFControl_Reader
                     {
                         if (aSurfCol is not null || aRenderProps.IsDefined())
                         {
-                            theSTool.SetColor(aL, aFullSCol, XdeDoc_ColorSurf);
+                            theSTool.SetColor(aL, aFullSCol, XdeDoc_ColorType.XdeDoc_ColorSurf);
                         }
                         if (aBoundCol is not null)
                         {
-                            theSTool.SetColor(aL, aBCol, XdeDoc_ColorCurv);
+                            theSTool.SetColor(aL, aBCol, XdeDoc_ColorType.XdeDoc_ColorCurv);
                         }
                         if (aCurveCol is not null)
                         {
-                            theSTool.SetColor(aL, aCCol, XdeDoc_ColorCurv);
+                            theSTool.SetColor(aL, aCCol, XdeDoc_ColorType.XdeDoc_ColorCurv);
                         }
                     }
                     else
@@ -1438,15 +1438,15 @@ public class STEPCAFControl_Reader
                             {
                                 if (aSurfCol is not null || aRenderProps.IsDefined())
                                 {
-                                    theSTool.SetColor(aL1, aFullSCol, XdeDoc_ColorSurf);
+                                    theSTool.SetColor(aL1, aFullSCol, XdeDoc_ColorType.XdeDoc_ColorSurf);
                                 }
                                 if (aBoundCol is not null)
                                 {
-                                    theSTool.SetColor(aL1, aBCol, XdeDoc_ColorCurv);
+                                    theSTool.SetColor(aL1, aBCol, XdeDoc_ColorType.XdeDoc_ColorCurv);
                                 }
                                 if (aCurveCol is not null)
                                 {
-                                    theSTool.SetColor(aL1, aCCol, XdeDoc_ColorCurv);
+                                    theSTool.SetColor(aL1, aCCol, XdeDoc_ColorType.XdeDoc_ColorCurv);
                                 }
                             }
                         }
@@ -2483,13 +2483,13 @@ public class STEPCAFControl_Reader
     }
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
-    public void SetShapeProcessFlags(ShapeProcess.OperationsFlags theFlags)
+    public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags)
     {
         myReader.SetShapeProcessFlags(theFlags);
     }
 
     /// <summary>Returns flags defining operations to be performed on shapes.</summary>
-    public (ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
+    public (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
     {
         return myReader.GetShapeProcessFlags();
     }

@@ -3,16 +3,18 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
-using static Occt.IntRes2d_Position;
-using static Occt.IntRes2d_Situation;
-using static Occt.IntRes2d_TypeTrans;
+using Occt;
+using static Kerf.Engine.Intersection.TwoD.Position2D;
+using static Kerf.Engine.Intersection.TwoD.Situation;
+using static Kerf.Engine.Intersection.TwoD.TypeTrans;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Implicit;
 
 /// <summary>
 /// Tools of the generic algorithm intersecting implicit curves with bounded parametric curves
-/// (<see cref="IntImpParGen_Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/>), also used
+/// (<see cref="Intersector{ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpParTool}"/>), also used
 /// by the package IntCurve.
 /// </summary>
 public static class IntImpParGen
@@ -22,42 +24,42 @@ public static class IntImpParGen
 
     /// <summary>
     /// The transitions at an intersection point, from the tangents and normals of both curves. A tangent of
-    /// (nearly) zero length is replaced by the normal, which <paramref name="Tan1"/> and <paramref name="Tan2"/>
+    /// (nearly) zero length is replaced by the normal, which <paramref name="tan1"/> and <paramref name="tan2"/>
     /// then return. The tolerance is not used.
     /// </summary>
-    public static void DetermineTransition(IntRes2d_Position Pos1,
-                                           ref Vector2D Tan1,
-                                           in Vector2D Norm1,
-                                           ref IntRes2d_Transition T1,
-                                           IntRes2d_Position Pos2,
-                                           ref Vector2D Tan2,
-                                           in Vector2D Norm2,
-                                           ref IntRes2d_Transition T2,
-                                           double Tol)
+    public static void DetermineTransition(Position2D pos1,
+                                           ref Vector2D tan1,
+                                           in Vector2D norm1,
+                                           ref Transition t1,
+                                           Position2D pos2,
+                                           ref Vector2D tan2,
+                                           in Vector2D norm2,
+                                           ref Transition t2,
+                                           double tol)
     {
-        _ = Tol;
+        _ = tol;
         bool courbure1 = true;
         bool courbure2 = true;
         bool decide = true;
 
-        T1.SetPosition(Pos1);
-        T2.SetPosition(Pos2);
+        t1.SetPosition(pos1);
+        t2.SetPosition(pos2);
 
-        if (Tan1.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+        if (tan1.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
         {
-            Tan1 = Norm1;
+            tan1 = norm1;
             courbure1 = false;
-            if (Tan1.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+            if (tan1.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
             { // transition undecided
                 decide = false;
             }
         }
 
-        if (Tan2.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+        if (tan2.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
         {
-            Tan2 = Norm2;
+            tan2 = norm2;
             courbure2 = false;
-            if (Tan2.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+            if (tan2.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
             { // transition undecided
                 decide = false;
             }
@@ -65,86 +67,86 @@ public static class IntImpParGen
 
         if (!decide)
         {
-            T1.SetValue(Pos1);
-            T2.SetValue(Pos2);
+            t1.SetValue(pos1);
+            t2.SetValue(pos2);
         }
         else
         {
-            double sgn = Tan1.Crossed(Tan2);
-            double norm = Tan1.Magnitude() * Tan2.Magnitude();
+            double sgn = tan1.Crossed(tan2);
+            double norm = tan1.Magnitude() * tan2.Magnitude();
 
             if (Math.Abs(sgn) <= TOLERANCE_ANGULAIRE * norm)
             { // Transition TOUCH #########
-                bool opos = (Tan1.Dot(Tan2)) < 0;
+                bool opos = (tan1.Dot(tan2)) < 0;
                 if (!(courbure1 || courbure2))
                 {
-                    T1.SetValue(true, Pos1, IntRes2d_Unknown, opos);
-                    T2.SetValue(true, Pos2, IntRes2d_Unknown, opos);
+                    t1.SetValue(true, pos1, Situation.Unknown, opos);
+                    t2.SetValue(true, pos2, Situation.Unknown, opos);
                 }
                 else
                 {
                     Vector2D Norm = new();
-                    Norm.SetCoord(-Tan1.Y(), Tan1.X());
+                    Norm.SetCoord(-tan1.Y(), tan1.X());
 
-                    double Val1, Val2;
+                    double val1, val2;
                     if (!courbure1)
                     {
-                        Val1 = 0.0;
+                        val1 = 0.0;
                     }
                     else
                     {
-                        Val1 = Norm.Dot(Norm1);
+                        val1 = Norm.Dot(norm1);
                     }
 
                     if (!courbure2)
                     {
-                        Val2 = 0.0;
+                        val2 = 0.0;
                     }
                     else
                     {
-                        Val2 = Norm.Dot(Norm2);
+                        val2 = Norm.Dot(norm2);
                     }
 
-                    if (Math.Abs(Val1 - Val2) <= TOLERANCE_ANGULAIRE)
+                    if (Math.Abs(val1 - val2) <= TOLERANCE_ANGULAIRE)
                     {
-                        T1.SetValue(true, Pos1, IntRes2d_Unknown, opos);
-                        T2.SetValue(true, Pos2, IntRes2d_Unknown, opos);
+                        t1.SetValue(true, pos1, Situation.Unknown, opos);
+                        t2.SetValue(true, pos2, Situation.Unknown, opos);
                     }
-                    else if (Val2 > Val1)
+                    else if (val2 > val1)
                     {
-                        T2.SetValue(true, Pos2, IntRes2d_Inside, opos);
+                        t2.SetValue(true, pos2, Situation.Inside, opos);
                         if (opos)
                         {
-                            T1.SetValue(true, Pos1, IntRes2d_Inside, opos);
+                            t1.SetValue(true, pos1, Situation.Inside, opos);
                         }
                         else
                         {
-                            T1.SetValue(true, Pos1, IntRes2d_Outside, opos);
+                            t1.SetValue(true, pos1, Situation.Outside, opos);
                         }
                     }
                     else
                     { // Val1 > Val2
-                        T2.SetValue(true, Pos2, IntRes2d_Outside, opos);
+                        t2.SetValue(true, pos2, Situation.Outside, opos);
                         if (opos)
                         {
-                            T1.SetValue(true, Pos1, IntRes2d_Outside, opos);
+                            t1.SetValue(true, pos1, Situation.Outside, opos);
                         }
                         else
                         {
-                            T1.SetValue(true, Pos1, IntRes2d_Inside, opos);
+                            t1.SetValue(true, pos1, Situation.Inside, opos);
                         }
                     }
                 }
             }
             else if (sgn < 0)
             {
-                T1.SetValue(false, Pos1, IntRes2d_In);
-                T2.SetValue(false, Pos2, IntRes2d_Out);
+                t1.SetValue(false, pos1, TypeTrans.In);
+                t2.SetValue(false, pos2, TypeTrans.Out);
             }
             else
             { // sgn>0
-                T1.SetValue(false, Pos1, IntRes2d_Out);
-                T2.SetValue(false, Pos2, IntRes2d_In);
+                t1.SetValue(false, pos1, TypeTrans.Out);
+                t2.SetValue(false, pos2, TypeTrans.In);
             }
         }
     }
@@ -153,32 +155,32 @@ public static class IntImpParGen
     /// The transitions at an intersection point from the tangents only. Returns false, setting only the positions,
     /// when a tangent is (nearly) zero or the curves are tangent. The tolerance is not used.
     /// </summary>
-    public static bool DetermineTransition(IntRes2d_Position Pos1,
-                                           ref Vector2D Tan1,
-                                           ref IntRes2d_Transition T1,
-                                           IntRes2d_Position Pos2,
-                                           ref Vector2D Tan2,
-                                           ref IntRes2d_Transition T2,
-                                           double Tol)
+    public static bool DetermineTransition(Position2D pos1,
+                                           ref Vector2D tan1,
+                                           ref Transition t1,
+                                           Position2D pos2,
+                                           ref Vector2D tan2,
+                                           ref Transition t2,
+                                           double tol)
     {
-        _ = Tol;
-        T1.SetPosition(Pos1);
-        T2.SetPosition(Pos2);
+        _ = tol;
+        t1.SetPosition(pos1);
+        t2.SetPosition(pos2);
 
-        double Tan1Magnitude = Tan1.Magnitude();
-        if (Tan1Magnitude <= DERIVEE_PREMIERE_NULLE)
+        double tan1Magnitude = tan1.Magnitude();
+        if (tan1Magnitude <= DERIVEE_PREMIERE_NULLE)
         {
             return (false);
         }
 
-        double Tan2Magnitude = Tan2.Magnitude();
-        if (Tan2Magnitude <= DERIVEE_PREMIERE_NULLE)
+        double tan2Magnitude = tan2.Magnitude();
+        if (tan2Magnitude <= DERIVEE_PREMIERE_NULLE)
         {
             return (false);
         }
 
-        double sgn = Tan1.Crossed(Tan2);
-        double norm = Tan1Magnitude * Tan2Magnitude;
+        double sgn = tan1.Crossed(tan2);
+        double norm = tan1Magnitude * tan2Magnitude;
 
         if (Math.Abs(sgn) <= TOLERANCE_ANGULAIRE * norm)
         { // Transition TOUCH #########
@@ -186,76 +188,76 @@ public static class IntImpParGen
         }
         else if (sgn < 0)
         {
-            T1.SetValue(false, Pos1, IntRes2d_In);
-            T2.SetValue(false, Pos2, IntRes2d_Out);
+            t1.SetValue(false, pos1, TypeTrans.In);
+            t2.SetValue(false, pos2, TypeTrans.Out);
         }
         else
         { // sgn>0
-            T1.SetValue(false, Pos1, IntRes2d_Out);
-            T2.SetValue(false, Pos2, IntRes2d_In);
+            t1.SetValue(false, pos1, TypeTrans.Out);
+            t2.SetValue(false, pos2, TypeTrans.In);
         }
 
         return (true);
     }
 
     /// <summary>
-    /// The position (Head, Middle or End) on the domain of the point <paramref name="Pnt1"/> of parameter
-    /// <paramref name="Param1"/>: Head or End when it is within the bound's tolerance (the closer bound in
+    /// The position (Head, Middle or End) on the domain of the point <paramref name="pnt1"/> of parameter
+    /// <paramref name="param1"/>: Head or End when it is within the bound's tolerance (the closer bound in
     /// parameter when it is within both).
     /// </summary>
-    public static void DeterminePosition(out IntRes2d_Position Pos1, in IntRes2d_Domain TheDomain, in Point2D Pnt1,
-                                         double Param1)
+    public static void DeterminePosition(out Position2D pos1, in TwoDDomain theDomain, in Point2D pnt1,
+                                         double param1)
     {
-        Pos1 = IntRes2d_Middle;
+        pos1 = Position2D.Middle;
 
-        if (TheDomain.HasFirstPoint())
+        if (theDomain.HasFirstPoint)
         {
-            if (Pnt1.Distance(TheDomain.FirstPoint()) <= TheDomain.FirstTolerance())
+            if (pnt1.Distance(theDomain.FirstPoint()) <= theDomain.FirstTolerance())
             {
-                Pos1 = IntRes2d_Head;
+                pos1 = Position2D.Head;
             }
         }
 
-        if (TheDomain.HasLastPoint())
+        if (theDomain.HasLastPoint)
         {
-            if (Pnt1.Distance(TheDomain.LastPoint()) <= TheDomain.LastTolerance())
+            if (pnt1.Distance(theDomain.LastPoint()) <= theDomain.LastTolerance())
             {
-                if (Pos1 == IntRes2d_Head)
+                if (pos1 == Position2D.Head)
                 {
-                    if (Math.Abs(Param1 - TheDomain.LastParameter())
-                        < Math.Abs(Param1 - TheDomain.FirstParameter()))
+                    if (Math.Abs(param1 - theDomain.LastParameter())
+                        < Math.Abs(param1 - theDomain.FirstParameter()))
                     {
-                        Pos1 = IntRes2d_End;
+                        pos1 = Position2D.End;
                     }
                 }
                 else
                 {
-                    Pos1 = IntRes2d_End;
+                    pos1 = Position2D.End;
                 }
             }
         }
     }
 
     /// <summary>
-    /// On a closed domain, <paramref name="Param"/> shifted by periods towards the domain; otherwise
-    /// <paramref name="Param"/> unchanged.
+    /// On a closed domain, <paramref name="param"/> shifted by periods towards the domain; otherwise
+    /// <paramref name="param"/> unchanged.
     /// </summary>
-    public static double NormalizeOnDomain(double Param, in IntRes2d_Domain TheDomain)
+    public static double NormalizeOnDomain(double param, in TwoDDomain theDomain)
     {
-        double modParam = Param;
-        if (TheDomain.IsClosed())
+        double modParam = param;
+        if (theDomain.IsClosed)
         {
-            double Periode, t;
-            TheDomain.EquivalentParameters(out t, out Periode);
-            Periode -= t;
-            while (modParam < TheDomain.FirstParameter() && modParam + Periode < TheDomain.LastParameter())
+            double periode, t;
+            theDomain.EquivalentParameters(out t, out periode);
+            periode -= t;
+            while (modParam < theDomain.FirstParameter() && modParam + periode < theDomain.LastParameter())
             {
-                modParam += Periode;
+                modParam += periode;
             }
 
-            while (modParam > TheDomain.LastParameter() && modParam - Periode > TheDomain.FirstParameter())
+            while (modParam > theDomain.LastParameter() && modParam - periode > theDomain.FirstParameter())
             {
-                modParam -= Periode;
+                modParam -= periode;
             }
         }
 

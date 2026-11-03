@@ -527,7 +527,7 @@ internal static class DBRepCommands
             Point3D GPoint;
             if (aS.ShapeType() != ShapeType.Vertex)
             {
-                BRepGProp.LinearProperties(aS, GPr);
+                MassPropertiesBuilder.LinearProperties(aS, GPr);
                 GPoint = GPr.CentreOfMass();
             }
             else

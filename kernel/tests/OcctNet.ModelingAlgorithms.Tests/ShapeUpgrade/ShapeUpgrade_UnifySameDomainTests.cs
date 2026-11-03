@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -35,7 +37,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         {
             B.MakeVertex(ref aV[i], aP[i], global::Kerf.Engine.Foundation.Precision.Confusion());
         }
-        Edge E(int i, int j) => new BRepBuilderAPI_MakeEdge(aV[i], aV[j]).InternalEdge();
+        Edge E(int i, int j) => new MakeEdge(aV[i], aV[j]).InternalEdge();
         Edge e01 = E(0, 1), e12 = E(1, 2), e23 = E(2, 3), e34 = E(3, 4), e45 = E(4, 5), e50 = E(5, 0), e14 = E(1, 4);
 
         Face F(params Edge[] theEdges)
@@ -47,7 +49,7 @@ public class ShapeUpgrade_UnifySameDomainTests
                 B.Add(aW, anEdge);
             }
             aW.Closed(true);
-            return new BRepBuilderAPI_MakeFace(new Plane3D(new CoordinateSystem(Constants.XOY())), aW).InternalFace();
+            return new MakeFace(new Plane3D(new CoordinateSystem(Constants.XOY())), aW).InternalFace();
         }
         Face aLeft = F(e01, e14, e45, e50);
         Face aRight = F(e12, e23, e34, ShapeCasts.Edge(e14.Reversed()));
@@ -94,7 +96,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         Shell aShell = TwoCoplanarFaces(true, out Edge aShared);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell, true, true, true);
+        var aUnifier = new UnifySameDomain(aShell, true, true, true);
         aUnifier.AllowInternalEdges(false);
         aUnifier.Build();
         Shape aResult = aUnifier.Shape();
@@ -117,7 +119,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         Assert.True(aHistory.IsRemoved(aShared));
 
         // faces only: the six boundary edges are the caller's own
-        var aFacesOnly = new ShapeUpgrade_UnifySameDomain(aShell, false, true);
+        var aFacesOnly = new UnifySameDomain(aShell, false, true);
         aFacesOnly.Build();
         Shape aResult2 = aFacesOnly.Shape();
         aSnap.AssertUnchanged(aShell);
@@ -128,8 +130,8 @@ public class ShapeUpgrade_UnifySameDomainTests
     [Fact]
     public void NothingToUnify_GivesBackTheInputItself()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aBox, true, true, true);
+        Shape aBox = new MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10)).Shape();
+        var aUnifier = new UnifySameDomain(aBox, true, true, true);
         aUnifier.Build();
         Shape aResult = aUnifier.Shape();
         Assert.Same(aBox.TShape(), aResult.TShape());
@@ -144,7 +146,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         Shell aShell = TwoCoplanarFaces(true, out _);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
+        var aUnifier = new UnifySameDomain(aShell);
         aUnifier.SetSafeInputMode(false);
         aUnifier.Build();
         Shape aResult = aUnifier.Shape();
@@ -160,7 +162,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         Shell aShell = TwoCoplanarFaces(false, out _);
         HashSet<TShape> anEdges = TShapes(aShell, ShapeType.Edge);
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell, false, true);
+        var aUnifier = new UnifySameDomain(aShell, false, true);
         aUnifier.Build();
         Shape anInternal = aUnifier.InternalShape();
         Assert.False(anInternal.TShape()!.IsFrozen);
@@ -174,7 +176,7 @@ public class ShapeUpgrade_UnifySameDomainTests
     public void KeepShape_TheCallersEdge_ForbidsTheMerge()
     {
         Shell aShell = TwoCoplanarFaces(true, out Edge aShared);
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
+        var aUnifier = new UnifySameDomain(aShell);
         aUnifier.KeepShape(aShared);
         aUnifier.Build();
         Shape aResult = aUnifier.Shape();
@@ -184,7 +186,7 @@ public class ShapeUpgrade_UnifySameDomainTests
         // a kept vertex forbids the merge of the edges through it
         var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Vertex, aMap);
-        var aUnifier2 = new ShapeUpgrade_UnifySameDomain(aShell);
+        var aUnifier2 = new UnifySameDomain(aShell);
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             aUnifier2.KeepShape(aMap[i]);
@@ -199,7 +201,7 @@ public class ShapeUpgrade_UnifySameDomainTests
     public void NullHistory_CollectsNone_AndInitializeReuses()
     {
         Shell aShell = TwoCoplanarFaces(true, out _);
-        var aUnifier = new ShapeUpgrade_UnifySameDomain();
+        var aUnifier = new UnifySameDomain();
         aUnifier.Initialize(aShell);
         aUnifier.History(null);
         aUnifier.Build();
@@ -238,7 +240,7 @@ public class ShapeUpgrade_UnifySameDomainTests
             }
         }
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShape, true, true, true);
+        var aUnifier = new UnifySameDomain(aShape, true, true, true);
         aUnifier.Build();
         Shape aResult = aUnifier.Shape();
 

@@ -3,6 +3,7 @@
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -53,12 +54,12 @@ public class IntWalkPWalkingTests
         return aPar;
     }
 
-    private static void AssertOnSurfaces(IntWalk_PWalking theWalk, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
+    private static void AssertOnSurfaces(PWalking theWalk, SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                          double theTol)
     {
-        for (int i = 1; i <= theWalk.NbPoints(); i++)
+        for (int i = 1; i <= theWalk.PointCount; i++)
         {
-            IntSurf_PntOn2S aP = theWalk.Value(i);
+            PntOn2S aP = theWalk.Value(i);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
             Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"point {i} off surface 1");
             Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"point {i} off surface 2");
@@ -69,14 +70,14 @@ public class IntWalkPWalkingTests
     public void TwoPlanesGiveTheirStraightLine()
     {
         SurfaceAdaptorBase aS1 = PlaneXY(), aS2 = PlaneYZ();
-        IntWalk_PWalking aWalk = new(aS1, aS2, TolTangency, Epsilon, Deflection, Increment);
+        PWalking aWalk = new(aS1, aS2, TolTangency, Epsilon, Deflection, Increment);
         aWalk.Perform(Origin());
 
-        Assert.True(aWalk.IsDone());
-        Assert.True(aWalk.NbPoints() >= 2);
-        Assert.False(aWalk.IsClosed());
+        Assert.True(aWalk.IsDone);
+        Assert.True(aWalk.PointCount >= 2);
+        Assert.False(aWalk.IsClosed);
         AssertOnSurfaces(aWalk, aS1, aS2, 1.0e-7);
-        for (int i = 1; i <= aWalk.NbPoints(); i++)
+        for (int i = 1; i <= aWalk.PointCount; i++)
         {
             Point3D aP = aWalk.Value(i).Value();
             Assert.True(Math.Abs(aP.X()) < 1.0e-7 && Math.Abs(aP.Z()) < 1.0e-7, $"point {i} off the Y axis");
@@ -84,7 +85,7 @@ public class IntWalkPWalkingTests
 
         // The line runs along Y in both directions from the origin, to the planes' borders at |y| = 10
         double aYmin = double.MaxValue, aYmax = double.MinValue;
-        for (int i = 1; i <= aWalk.NbPoints(); i++)
+        for (int i = 1; i <= aWalk.PointCount; i++)
         {
             double y = aWalk.Value(i).Value().Y();
             aYmin = Math.Min(aYmin, y);
@@ -97,16 +98,16 @@ public class IntWalkPWalkingTests
     public void PlaneAndCylinderReachTheBoundary()
     {
         (SurfaceAdaptorBase aPlane, SurfaceAdaptorBase aCyl) = PlaneAndCylinder();
-        IntWalk_PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
+        PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
         aWalk.Perform(StartOnPlaneAndCylinder());
 
-        Assert.True(aWalk.IsDone());
-        Assert.True(aWalk.NbPoints() >= 2);
+        Assert.True(aWalk.IsDone);
+        Assert.True(aWalk.PointCount >= 2);
         AssertOnSurfaces(aWalk, aPlane, aCyl, 1.0e-6);
 
         // The line is the generator x = 2, y = sqrt(21): it ends near the cylinder's limits z = -10 and z = 10
         double aZmin = double.MaxValue, aZmax = double.MinValue;
-        for (int i = 1; i <= aWalk.NbPoints(); i++)
+        for (int i = 1; i <= aWalk.PointCount; i++)
         {
             Point3D aP = aWalk.Value(i).Value();
             Assert.True(Math.Abs(aP.X() - 2.0) < 1.0e-6 && Math.Abs(aP.Y() - Math.Sqrt(21.0)) < 1.0e-6,
@@ -125,25 +126,25 @@ public class IntWalkPWalkingTests
     public void StepTraceSeesEveryTestedStep()
     {
         (SurfaceAdaptorBase aPlane, SurfaceAdaptorBase aCyl) = PlaneAndCylinder();
-        IntWalk_PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
-        List<(IntWalk_StatusDeflection Status, IntSurf_PntOn2S Point)> aSteps = [];
-        aWalk.StepTrace = (s, p) => aSteps.Add((s, p));
+        PWalking aWalk = new(aPlane, aCyl, TolTangency, Epsilon, Deflection, Increment);
+        List<(StatusDeflection Status, PntOn2S Point)> aSteps = [];
+        aWalk._stepTrace = (s, p) => aSteps.Add((s, p));
         aWalk.Perform(StartOnPlaneAndCylinder());
 
         Assert.NotEmpty(aSteps);
         // Every point of the line but the first was accepted after a deflection test
-        Assert.True(aSteps.Count >= aWalk.NbPoints() - 1);
+        Assert.True(aSteps.Count >= aWalk.PointCount - 1);
     }
 
     private static List<double> Signature(SurfaceAdaptorBase theS1, SurfaceAdaptorBase theS2,
                                           NCollection_Array1<double> theStart)
     {
-        IntWalk_PWalking aWalk = new(theS1, theS2, TolTangency, Epsilon, Deflection, Increment);
+        PWalking aWalk = new(theS1, theS2, TolTangency, Epsilon, Deflection, Increment);
         aWalk.Perform(theStart);
-        List<double> aSig = [aWalk.NbPoints()];
-        for (int i = 1; i <= aWalk.NbPoints(); i++)
+        List<double> aSig = [aWalk.PointCount];
+        for (int i = 1; i <= aWalk.PointCount; i++)
         {
-            IntSurf_PntOn2S aP = aWalk.Value(i);
+            PntOn2S aP = aWalk.Value(i);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
             aSig.AddRange([aP.Value().X(), aP.Value().Y(), aP.Value().Z(), u1, v1, u2, v2]);
         }
@@ -180,11 +181,11 @@ public class IntWalkPWalkingTests
     [Fact]
     public void AccessorsThrowBeforeDone()
     {
-        IntWalk_PWalking aWalk = new(PlaneXY(), PlaneXY(), TolTangency, Epsilon, Deflection, Increment);
+        PWalking aWalk = new(PlaneXY(), PlaneXY(), TolTangency, Epsilon, Deflection, Increment);
         // Coincident planes: tangent everywhere, the walking stops before marching and is not done
         aWalk.Perform(Origin());
-        Assert.False(aWalk.IsDone());
-        Assert.Throws<NotDoneException>(() => aWalk.NbPoints());
+        Assert.False(aWalk.IsDone);
+        Assert.Throws<NotDoneException>(() => aWalk.PointCount);
         Assert.Equal(aWalk.MaxStep(0), aWalk.MaxStep(0));
         Assert.ThrowsAny<OutOfRangeException>(() => aWalk.MaxStep(4));
     }

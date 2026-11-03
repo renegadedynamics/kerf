@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static OcctNet.Oracle.Tests.AdaptorOracleInputs;
@@ -64,7 +65,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
             theStats.Cases++;
 
             using var aN = new N.GeomAPI_IntCS();
-            var aP = new GeomAPI_IntCS();
+            var aP = new CurveSurfaceIntersection();
             Exception? aNErr = Catch(() => aN.Perform(aNC, aNS));
             Exception? aPErr = Catch(() => aP.Perform(aPC, aPS));
             SameOutcome(aNErr, aPErr, $"{aW} Perform");
@@ -73,15 +74,15 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                 return;
             }
 
-            theO.Same(aN.IsDone(), aP.IsDone(), $"{aW} IsDone");
-            if (!aP.IsDone())
+            theO.Same(aN.IsDone(), aP.IsDone, $"{aW} IsDone");
+            if (!aP.IsDone)
             {
                 return;
             }
             theStats.Compared++;
-            int aNb = aP.NbPoints();
+            int aNb = aP.PointCount;
             theO.Same(aN.NbPoints(), aNb, $"{aW} NbPoints");
-            theO.Same(aN.NbSegments(), aP.NbSegments(), $"{aW} NbSegments");
+            theO.Same(aN.NbSegments(), aP.SegmentCount, $"{aW} NbSegments");
             for (int i = 1; i <= aNb; i++)
             {
                 double aNU = 0, aNV = 0, aNW = 0;
@@ -181,7 +182,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                         aCases++;
 
                         using var aN = new N.GeomAPI_IntCS();
-                        var aPI = new GeomAPI_IntCS();
+                        var aPI = new CurveSurfaceIntersection();
                         Exception? aNErr = Catch(() => aN.Perform(aNL, aNS));
                         Exception? aPErr = Catch(() => aPI.Perform(aPL, aPS));
                         SameOutcome(aNErr, aPErr, $"{aW} Perform");
@@ -198,7 +199,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                             using N.gp_Pnt aNP = aN.Point(i);
                             aNTouch |= Oracle.FromNative(aNP).Distance(aP) <= aNear;
                         }
-                        for (int i = 1; i <= aPI.NbPoints(); i++)
+                        for (int i = 1; i <= aPI.PointCount; i++)
                         {
                             aPTouch |= aPI.Point(i).Distance(aP) <= aNear;
                         }
@@ -211,7 +212,7 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                         }
                         aTouching += aPTouch ? 1 : 0;
 
-                        int aNb = aPI.NbPoints();
+                        int aNb = aPI.PointCount;
                         if (aN.NbPoints() != aNb)
                         {
                             continue;

@@ -46,14 +46,14 @@ public class DrawPrimitiveCommandsTests
     private static double Volume(DrawInterpreter theDI, string theName)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theDI.GetShape(theName), aProps);
+        MassPropertiesBuilder.VolumeProperties(theDI.GetShape(theName), aProps);
         return aProps.Mass();
     }
 
     private static double Area(DrawInterpreter theDI, string theName)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theDI.GetShape(theName), aProps);
+        MassPropertiesBuilder.SurfaceProperties(theDI.GetShape(theName), aProps);
         return aProps.Mass();
     }
 
@@ -268,7 +268,7 @@ public class DrawPrimitiveCommandsTests
         {
             // the edge x = -1, z = 0 along Y, through the X axis
             var aBox = Box.Void();
-            BRepBndLib.Add(anExp.Current(), ref aBox, false);
+            Bounds.Add(anExp.Current(), ref aBox, false);
             aBox.Get(out _, out double y0, out _, out double x1, out double y1, out double z1);
             if (x1 < -0.5 && z1 < 0.5 && y1 - y0 > 1)
             {

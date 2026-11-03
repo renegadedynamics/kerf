@@ -1,5 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -7,7 +12,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -74,11 +79,11 @@ public class ShapeFix_WireTests
 
     private static void AssertConnected(in Wire theWire)
     {
-        var sawo = new ShapeAnalysis_WireOrder();
-        var saw = new ShapeAnalysis_Wire(theWire, new Face(), Conf);
+        var sawo = new WireOrderAnalysis();
+        var saw = new WireAnalysis(theWire, new Face(), Conf);
         saw.CheckOrder(sawo, true, true);
-        Assert.False(saw.StatusOrder(ShapeExtend_DONE));
-        Assert.True(saw.CheckConnected() == false || !saw.StatusConnected(ShapeExtend_FAIL));
+        Assert.False(saw.StatusOrder(ExtendStatus.Done));
+        Assert.True(saw.CheckConnected() == false || !saw.StatusConnected(ExtendStatus.Fail));
     }
 
     [Fact]
@@ -88,9 +93,9 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(anE[2], anE[0], anE[3], anE[1]));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         Assert.True(sfw.FixReorder());
-        Assert.True(sfw.StatusReorder(ShapeExtend_DONE1));
+        Assert.True(sfw.StatusReorder(ExtendStatus.DONE1));
         Wire aRes = sfw.Wire();
 
         aSnap.AssertUnchanged(aW);
@@ -116,10 +121,10 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(anE[0], aTiny, aSide, anE[2], anE[3]));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), 1e-7);
+        var sfw = new WireFixer(aW, PlaneFace(), 1e-7);
         sfw.ModifyTopologyMode() = true;
         Assert.True(sfw.FixSmall(false, 1e-6) > 0);
-        Assert.True(sfw.StatusSmall(ShapeExtend_DONE));
+        Assert.True(sfw.StatusSmall(ExtendStatus.Done));
         Assert.Equal(4, sfw.NbEdges());
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
@@ -141,13 +146,13 @@ public class ShapeFix_WireTests
         var aSnap = ShapeSnapshot.Of(aW);
         Vertex aCallersV = Exploration.LastVertex(anEdges[0], true);
 
-        var aContext = new ShapeBuild_ReShape();
-        var sfw = new ShapeFix_Wire();
+        var aContext = new ReShapeBuilder();
+        var sfw = new WireFixer();
         sfw.Load(aW);
         sfw.SetContext(aContext); // after the load, as ShapeFix_Shape does
         sfw.SetPrecision(1e-4);
         Assert.True(sfw.FixConnected());
-        Assert.True(sfw.StatusConnected(ShapeExtend_DONE));
+        Assert.True(sfw.StatusConnected(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
 
         aSnap.AssertUnchanged(aW);
@@ -178,9 +183,9 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(aBottom, aSeam, ShapeCasts.Edge(aTop.Reversed()), ShapeCasts.Edge(aSeam.Reversed())));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, aF, Conf);
+        var sfw = new WireFixer(aW, aF, Conf);
         Assert.True(sfw.FixEdgeCurves());
-        Assert.True(sfw.StatusEdgeCurves(ShapeExtend_DONE));
+        Assert.True(sfw.StatusEdgeCurves(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         foreach (Edge anE in Edges(aRes))
@@ -196,7 +201,7 @@ public class ShapeFix_WireTests
     [Fact]
     public void FixDegenerated_AddsTheApexEdgeOfACone()
     {
-        Shape aCone = new BRepPrimAPI_MakeCone(0.0, 5.0, 10.0).Shape();
+        Shape aCone = new ApiMakeCone(0.0, 5.0, 10.0).Shape();
         Face aLateral = new();
         for (var anExp = new Explorer(aCone, ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -209,7 +214,7 @@ public class ShapeFix_WireTests
         // the lateral face's wire without its degenerated edge
         var aKept = new List<Edge>();
         int aNbDegenerated = 0;
-        for (var anIt = new WireExplorer(ShapeAnalysis.OuterWire(aLateral), aLateral); anIt.More(); anIt.Next())
+        for (var anIt = new WireExplorer(ShapeAnalysisAnalysis.OuterWire(aLateral), aLateral); anIt.More(); anIt.Next())
         {
             if (Tool.Degenerated(anIt.Current()))
             {
@@ -224,9 +229,9 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire([.. aKept]));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, aLateral, Conf);
+        var sfw = new WireFixer(aW, aLateral, Conf);
         Assert.True(sfw.FixDegenerated());
-        Assert.True(sfw.StatusDegenerated(ShapeExtend_DONE));
+        Assert.True(sfw.StatusDegenerated(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(aKept.Count + 1, Edges(aRes).Count);
@@ -249,11 +254,11 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(anEdges));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var aContext = new ShapeBuild_ReShape();
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var aContext = new ReShapeBuilder();
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         sfw.SetContext(aContext);
         Assert.True(sfw.FixSelfIntersection());
-        Assert.True(sfw.StatusSelfIntersection(ShapeExtend_DONE5));
+        Assert.True(sfw.StatusSelfIntersection(ExtendStatus.DONE5));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(6, Edges(aRes).Count);
@@ -277,10 +282,10 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV3), TestShapes.Edge(aV3, aV0)));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         sfw.ModifyTopologyMode() = true;
         Assert.True(sfw.FixLacking(true));
-        Assert.True(sfw.StatusLacking(ShapeExtend_DONE));
+        Assert.True(sfw.StatusLacking(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         Assert.Equal(5, Edges(aRes).Count);
@@ -302,9 +307,9 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(aE0, aE1, TestShapes.Edge(aV2, aV0)));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, new Face(), 1e-5);
+        var sfw = new WireFixer(aW, new Face(), 1e-5);
         Assert.True(sfw.FixGaps3d());
-        Assert.True(sfw.StatusGaps3d(ShapeExtend_DONE));
+        Assert.True(sfw.StatusGaps3d(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         List<Edge> aResEdges = Edges(aRes);
@@ -340,9 +345,9 @@ public class ShapeFix_WireTests
         Wire aW = TestShapes.Frozen(MakeWire(anE));
         var aSnap = ShapeSnapshot.Of(aW);
 
-        var sfw = new ShapeFix_Wire(aW, aF, 1e-5);
+        var sfw = new WireFixer(aW, aF, 1e-5);
         Assert.True(sfw.FixGaps2d());
-        Assert.True(sfw.StatusGaps2d(ShapeExtend_DONE));
+        Assert.True(sfw.StatusGaps2d(ExtendStatus.Done));
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aW);
         List<Edge> aResEdges = Edges(aRes);
@@ -356,7 +361,7 @@ public class ShapeFix_WireTests
     {
         const double R = 5.0, H = 10.0;
         Face aF = TestShapes.CylinderFace(R, H);
-        Wire anOuter = ShapeAnalysis.OuterWire(aF);
+        Wire anOuter = ShapeAnalysisAnalysis.OuterWire(aF);
         // the wire's edges copied, the pcurve of the top circle moved by 2 pi
         var aEdges = new List<Edge>();
         var aB = new BrepBuilder();
@@ -385,7 +390,7 @@ public class ShapeFix_WireTests
         Wire aShiftedWire = TestShapes.Frozen(ShapeCasts.Wire(aCopy));
         var aSnap = ShapeSnapshot.Of(aShiftedWire);
 
-        var sfw = new ShapeFix_Wire(aShiftedWire, TestShapes.Frozen(aF), Conf);
+        var sfw = new WireFixer(aShiftedWire, TestShapes.Frozen(aF), Conf);
         Assert.True(sfw.FixShifted());
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aShiftedWire);
@@ -410,7 +415,7 @@ public class ShapeFix_WireTests
         }
         Wire aW = TestShapes.Frozen(MakeWire(anEdges));
         var aSnap = ShapeSnapshot.Of(aW);
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         sfw.SetMaxTailAngle(10 * Math.PI / 180);
         sfw.SetMaxTailWidth(0.7);
         sfw.FixTailMode() = 1;
@@ -422,7 +427,7 @@ public class ShapeFix_WireTests
         foreach (Edge anE in Edges(aRes))
         {
             var aProps = new Properties();
-            BRepGProp.LinearProperties(anE, aProps);
+            MassPropertiesBuilder.LinearProperties(anE, aProps);
             aLength += aProps.Mass();
         }
         Assert.Equal(3, Edges(aRes).Count);
@@ -434,7 +439,7 @@ public class ShapeFix_WireTests
     {
         Edge[] anE = Square(out _);
         Wire aW = TestShapes.Frozen(MakeWire(anE[1], anE[0], anE[2], anE[3]));
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         Assert.True(sfw.Perform());
         Wire aFirst = sfw.Wire();
         Assert.True(aFirst.TShape()!.IsFrozen);
@@ -452,7 +457,7 @@ public class ShapeFix_WireTests
     {
         Edge[] anE = Square(out _);
         Wire aW = MakeWire(anE[1], anE[0], anE[2], anE[3]);
-        var sfw = new ShapeFix_Wire(aW, PlaneFace(), Conf);
+        var sfw = new WireFixer(aW, PlaneFace(), Conf);
         Assert.True(sfw.Perform());
         Wire aRes = sfw.InternalWire();
         Assert.False(aRes.TShape()!.IsFrozen);
@@ -467,12 +472,12 @@ public class ShapeFix_WireTests
         {
             TestShapes.Frozen(e);
         }
-        var sbwd = new ShapeExtend_WireData();
+        var sbwd = new ExtendWireData();
         sbwd.Add(anE[0]);
         sbwd.Add(anE[2]);
         sbwd.Add(anE[1]);
         sbwd.Add(anE[3]);
-        var sfw = new ShapeFix_Wire();
+        var sfw = new WireFixer();
         sfw.Load(sbwd);
         sfw.SetFace(PlaneFace());
         Assert.True(sfw.Perform());

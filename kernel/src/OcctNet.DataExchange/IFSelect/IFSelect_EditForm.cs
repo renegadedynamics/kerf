@@ -498,11 +498,11 @@ public class IFSelect_EditForm : Transient
             return false;
         }
         IFSelect_EditValue acc = theeditor.EditMode(num);
-        if (newval is null && acc != IFSelect_Optional)
+        if (newval is null && acc != IFSelect_EditValue.IFSelect_Optional)
         {
             return false;
         }
-        if (!enforce && (acc == IFSelect_EditProtected || acc == IFSelect_EditComputed))
+        if (!enforce && (acc == IFSelect_EditValue.IFSelect_EditProtected || acc == IFSelect_EditValue.IFSelect_EditComputed))
         {
             return false;
         }
@@ -514,7 +514,7 @@ public class IFSelect_EditForm : Transient
             return false;
         }
         Interface_ParamType pty = typval.Type();
-        if (pty == Interface_ParamIdent && newval is not null)
+        if (pty == Interface_ParamType.Interface_ParamIdent && newval is not null)
         {
             if (themodel is null)
             {

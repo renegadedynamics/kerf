@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -189,47 +192,47 @@ public static class Booleans
         return (anObjects, aTools);
     }
 
-    private static BRepAlgoAPI_BuilderAlgo PortOperation(BooleanCase theCase, List<Shape> theObjects, List<Shape> theTools,
+    private static BuilderAlgo PortOperation(BooleanCase theCase, List<Shape> theObjects, List<Shape> theTools,
                                                          bool theParallel)
     {
-        BRepAlgoAPI_BuilderAlgo anOp = theCase.Op switch
+        BuilderAlgo anOp = theCase.Op switch
         {
-            "Fuse" => new BRepAlgoAPI_Fuse(),
-            "Cut" => new BRepAlgoAPI_Cut(),
-            "Common" => new BRepAlgoAPI_Common(),
-            "Section" => new BRepAlgoAPI_Section(),
-            _ => new BRepAlgoAPI_Splitter(),
+            "Fuse" => new Fuse(),
+            "Cut" => new Cut(),
+            "Common" => new Common(),
+            "Section" => new SectionOperation(),
+            _ => new SplitterOperation(),
         };
         var anArgs = new NCollection_List<Shape>();
         var aTools = new NCollection_List<Shape>();
         theObjects.ForEach(s => anArgs.Append(s));
         theTools.ForEach(s => aTools.Append(s));
         anOp.SetArguments(anArgs);
-        if (anOp is BRepAlgoAPI_BooleanOperation aBop)
+        if (anOp is BooleanOperation aBop)
         {
             aBop.SetTools(aTools);
         }
         else
         {
-            ((BRepAlgoAPI_Splitter)anOp).SetTools(aTools);
+            ((SplitterOperation)anOp).SetTools(aTools);
         }
         anOp.SetRunParallel(theParallel);
         anOp.SetNonDestructive(true);
         anOp.SetFuzzyValue(theCase.Fuzzy);
-        anOp.SetGlue(theCase.Glue ? BOPAlgo_GlueEnum.BOPAlgo_GlueShift : BOPAlgo_GlueEnum.BOPAlgo_GlueOff);
+        anOp.SetGlue(theCase.Glue ? GlueMode.GlueShift : GlueMode.GlueOff);
         return anOp;
     }
 
     private static Shape PortRun(BooleanCase theCase, List<Shape> theObjects, List<Shape> theTools, bool theParallel)
     {
-        BRepAlgoAPI_BuilderAlgo anOp = PortOperation(theCase, theObjects, theTools, theParallel);
+        BuilderAlgo anOp = PortOperation(theCase, theObjects, theTools, theParallel);
         anOp.Build();
-        return anOp.HasErrors() ? new Shape() : anOp.Shape();
+        return anOp.HasErrors ? new Shape() : anOp.Shape();
     }
 
     private static Shape PortClean(in Shape theShape)
     {
-        var aU = new ShapeUpgrade_UnifySameDomain(theShape, true, true, true);
+        var aU = new UnifySameDomain(theShape, true, true, true);
         aU.AllowInternalEdges(false);
         aU.Build();
         return aU.Shape();
@@ -362,22 +365,22 @@ public static class Booleans
             double aTotal = Measure(() =>
             {
                 long t0 = Stopwatch.GetTimestamp();
-                var aPF = new BOPAlgo_PaveFiller();
+                var aPF = new PaveFiller();
                 aPF.SetArguments(anAll);
                 aPF.SetNonDestructive(true);
                 aPF.SetFuzzyValue(aCase.Fuzzy);
-                aPF.SetGlue(aCase.Glue ? BOPAlgo_GlueEnum.BOPAlgo_GlueShift : BOPAlgo_GlueEnum.BOPAlgo_GlueOff);
+                aPF.SetGlue(aCase.Glue ? GlueMode.GlueShift : GlueMode.GlueOff);
                 aPF.Perform();
                 long t1 = Stopwatch.GetTimestamp();
-                var aBOP = new BOPAlgo_BOP();
+                var aBOP = new Bop();
                 aPObjects.ForEach(s => aBOP.AddArgument(s));
                 aPTools.ForEach(s => aBOP.AddTool(s));
                 aBOP.SetOperation(aCase.Op switch
                 {
-                    "Fuse" => BOPAlgo_Operation.BOPAlgo_FUSE,
-                    "Cut" => BOPAlgo_Operation.BOPAlgo_CUT,
-                    "Common" => BOPAlgo_Operation.BOPAlgo_COMMON,
-                    _ => BOPAlgo_Operation.BOPAlgo_SECTION,
+                    "Fuse" => Operation.Fuse,
+                    "Cut" => Operation.Cut,
+                    "Common" => Operation.Common,
+                    _ => Operation.Section,
                 });
                 aBOP.PerformWithFiller(aPF);
                 long t2 = Stopwatch.GetTimestamp();

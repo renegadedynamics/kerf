@@ -177,10 +177,10 @@ internal static class GeometryTestContinuityCommands
                 return Fail(theDI, $"Error: invalid value of parameter 1 ({a[1]}): should be 0, 1, or 2");
         }
 
-        var RES = new LocalAnalysis_SurfaceContinuity(surf1, U1, V1, surf2, U2, V2, TypeCont, epsnl, epsC0, epsC1, epsC2,
+        var RES = new global::Kerf.Engine.Measurement.SurfaceContinuity(surf1, U1, V1, surf2, U2, V2, TypeCont, epsnl, epsC0, epsC1, epsC2,
                                                       epsG1, perce, maxlen);
         var aSStream = new StringWriter { NewLine = "\n" };
-        LocalAnalysis.Dump(RES, aSStream);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(RES, aSStream);
         di.Append(aSStream.ToString());
         return 0;
     }
@@ -283,10 +283,10 @@ internal static class GeometryTestContinuityCommands
                 return Fail(theDI, $"Error: invalid value of parameter 1 ({a[1]}): should be 1 or 2");
         }
 
-        var RES = new LocalAnalysis_SurfaceContinuity(surf1, U1, V1, surf2, U2, V2, TypeCont, epsnl, epsC0, epsC1, epsC2,
+        var RES = new global::Kerf.Engine.Measurement.SurfaceContinuity(surf1, U1, V1, surf2, U2, V2, TypeCont, epsnl, epsC0, epsC1, epsC2,
                                                       epsG1, perce, maxlen);
         var aSStream = new StringWriter { NewLine = "\n" };
-        LocalAnalysis.Dump(RES, aSStream);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(RES, aSStream);
         di.Append(aSStream.ToString());
         return 0;
     }
@@ -388,10 +388,10 @@ internal static class GeometryTestContinuityCommands
                 return Fail(theDI, $"Error: invalid value of parameter 1 ({a[1]}): should be 1 or 2");
         }
 
-        var RES = new LocalAnalysis_CurveContinuity(curv1, U1, curv2, U2, TypeCont, epsnl, epsC0, epsC1, epsC2, epsG1,
+        var RES = new global::Kerf.Engine.Measurement.CurveContinuity(curv1, U1, curv2, U2, TypeCont, epsnl, epsC0, epsC1, epsC2, epsG1,
                                                     epsG2, percent, maxlen);
         var aSStream = new StringWriter { NewLine = "\n" };
-        LocalAnalysis.Dump(RES, aSStream);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(RES, aSStream);
         di.Append(aSStream.ToString());
         return 0;
     }
@@ -504,10 +504,10 @@ internal static class GeometryTestContinuityCommands
                 return Fail(theDI, $"Error: invalid value of parameter 1 ({a[1]}): should be 0, 1, or 2");
         }
 
-        var RES = new LocalAnalysis_CurveContinuity(curv1, U1, curv2, U2, TypeCont, epsnl, epsC0, epsC1, epsC2, epsG1,
+        var RES = new global::Kerf.Engine.Measurement.CurveContinuity(curv1, U1, curv2, U2, TypeCont, epsnl, epsC0, epsC1, epsC2, epsG1,
                                                     epsG2, percent, maxlen);
         var aSStream = new StringWriter { NewLine = "\n" };
-        LocalAnalysis.Dump(RES, aSStream);
+        global::Kerf.Engine.Measurement.LocalAnalysis.Dump(RES, aSStream);
         di.Append(aSStream.ToString());
         return 0;
     }

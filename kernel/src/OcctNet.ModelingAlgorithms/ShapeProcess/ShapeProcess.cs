@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Occt;
 using static Kerf.Engine.Foundation.Gravity;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Process;
 
 /// <summary>
 /// Shape processing: the process-wide registry of operators, and the performer that runs a sequence of operators,
@@ -19,7 +20,7 @@ namespace Occt;
 /// take one, so that registering while another thread performs can't corrupt it.
 /// </para>
 /// <para>
-/// A <see cref="ShapeProcess_ShapeContext"/> whose shape holds frozen shapes runs the whole sequence on an exact copy
+/// A <see cref="ShapeContext"/> whose shape holds frozen shapes runs the whole sequence on an exact copy
 /// and gives back the caller's own sub-shapes where nothing changed (decision 1022): the operators write into the
 /// shape they work on, as OCCT's do.
 /// </para>
@@ -57,67 +58,67 @@ public static class ShapeProcess
     /// </summary>
     public readonly record struct OperationsFlags
     {
-        private readonly uint myBits;
+        private readonly uint _bits;
 
-        private OperationsFlags(uint theBits) => myBits = theBits;
+        private OperationsFlags(uint bits) => _bits = bits;
 
         /// <summary>The set of the given operations.</summary>
-        public OperationsFlags(params Operation[] theOperations)
+        public OperationsFlags(params Operation[] operations)
         {
-            foreach (Operation anOperation in theOperations)
+            foreach (Operation operation in operations)
             {
-                myBits |= 1u << (int)anOperation;
+                _bits |= 1u << (int)operation;
             }
         }
 
-        /// <summary>The set with <paramref name="theOperation"/> added (bitset's <c>set</c>).</summary>
-        public OperationsFlags With(Operation theOperation) => new(myBits | (1u << (int)theOperation));
+        /// <summary>The set with <paramref name="operation"/> added (bitset's <c>set</c>).</summary>
+        public OperationsFlags With(Operation operation) => new(_bits | (1u << (int)operation));
 
         /// <summary>True if the set holds the operation (bitset's <c>test</c>).</summary>
-        public bool Test(Operation theOperation) => (myBits & (1u << (int)theOperation)) != 0;
+        public bool Test(Operation operation) => (_bits & (1u << (int)operation)) != 0;
 
         /// <summary>The number of operations in the set (bitset's <c>count</c>).</summary>
-        public int Count() => System.Numerics.BitOperations.PopCount(myBits);
+        public int Count() => System.Numerics.BitOperations.PopCount(_bits);
     }
 
-    private static readonly Dictionary<string, ShapeProcess_Operator> aMapOfOperators = new(StringComparer.Ordinal);
-    private static readonly Lock aMapOfOperatorsLock = new();
+    private static readonly Dictionary<string, Operator> AMapOfOperators = new(StringComparer.Ordinal);
+    private static readonly Lock AMapOfOperatorsLock = new();
 
     // Simple RAII class to lock the scope of the current operation (OCCT's ScopeLock).
     private readonly struct ScopeLock : IDisposable
     {
-        private readonly ShapeProcess_Context myContext;
+        private readonly ProcessContext _context;
 
-        public ScopeLock(ShapeProcess_Context theContext, string theScopeName)
+        public ScopeLock(ProcessContext context, string scopeName)
         {
-            myContext = theContext;
-            myContext.SetScope(theScopeName);
+            _context = context;
+            _context.SetScope(scopeName);
         }
 
-        public void Dispose() => myContext.UnSetScope();
+        public void Dispose() => _context.UnSetScope();
     }
 
     /// <summary>Registers an operator to make it visible for the performer; false if the name is taken.</summary>
-    public static bool RegisterOperator(string name, ShapeProcess_Operator op)
+    public static bool RegisterOperator(string name, Operator op)
     {
-        lock (aMapOfOperatorsLock)
+        lock (AMapOfOperatorsLock)
         {
-            if (aMapOfOperators.ContainsKey(name))
+            if (AMapOfOperators.ContainsKey(name))
             {
                 // OCCT_DEBUG: a warning that the operator is already registered, left out
                 return false;
             }
-            aMapOfOperators.Add(name, op);
+            AMapOfOperators.Add(name, op);
             return true;
         }
     }
 
     /// <summary>Finds an operator by its name.</summary>
-    public static bool FindOperator(string name, out ShapeProcess_Operator? op)
+    public static bool FindOperator(string name, out Operator? op)
     {
-        lock (aMapOfOperatorsLock)
+        lock (AMapOfOperatorsLock)
         {
-            if (!aMapOfOperators.TryGetValue(name, out op))
+            if (!AMapOfOperators.TryGetValue(name, out op))
             {
                 // OCCT_DEBUG: an error that no operator has the name, left out
                 return false;
@@ -131,9 +132,9 @@ public static class ShapeProcess
     /// must be loaded already, including the description of the sequence (<c>seq.exec.op</c>). True if an operator
     /// succeeded.
     /// </summary>
-    public static bool Perform(ShapeProcess_Context context, string seq, ProgressRange theProgress = default)
+    public static bool Perform(ProcessContext context, string seq, ProgressRange progress = default)
     {
-        using var aSequenceScope = new ScopeLock(context, seq);
+        using var sequenceScope = new ScopeLock(context, seq);
 
         // get description of the sequence
         string sequence = "";
@@ -142,8 +143,8 @@ public static class ShapeProcess
             // OCCT_DEBUG: an error message to std::cout, left out
             if (context.TraceLevel() > 0)
             {
-                var SMSG3 = new Msg("SP.Sequence.Warn.NoSeq"); // Sequence %s not found
-                context.Messenger().Send(SMSG3.Arg(seq).Get(), Warning);
+                var smsg3 = new Msg("SP.Sequence.Warn.NoSeq"); // Sequence %s not found
+                context.Messenger().Send(smsg3.Arg(seq).Get(), Warning);
             }
             return false;
         }
@@ -163,7 +164,7 @@ public static class ShapeProcess
         // put a message
         if (context.TraceLevel() >= 2)
         {
-            var SMSG0 = new Msg("SP.Sequence.Info.Seq"); // Sequence of operators: %s
+            var smsg0 = new Msg("SP.Sequence.Info.Seq"); // Sequence of operators: %s
             string Seq = "";
             for (int i1 = 1; i1 <= sequenceOfOperators.Length(); i1++)
             {
@@ -173,167 +174,167 @@ public static class ShapeProcess
                 }
                 Seq += sequenceOfOperators.Value(i1);
             }
-            SMSG0.Arg(Seq);
-            context.Messenger().Send(SMSG0.Get(), Info);
+            smsg0.Arg(Seq);
+            context.Messenger().Send(smsg0.Get(), Info);
         }
 
         // iterate on operators in the sequence
         bool isDone = false;
-        var aShapeContext = context as ShapeProcess_ShapeContext;
-        aShapeContext?.InternalBeginWrite();
+        var shapeContext = context as ShapeContext;
+        shapeContext?.InternalBeginWrite();
         try
         {
-            using var aPS = new ProgressScope(theProgress, null, sequenceOfOperators.Length());
-            for (i = 1; i <= sequenceOfOperators.Length() && aPS.More(); i++)
+            using var ps = new ProgressScope(progress, null, sequenceOfOperators.Length());
+            for (i = 1; i <= sequenceOfOperators.Length() && ps.More(); i++)
             {
                 oper = sequenceOfOperators.Value(i);
-                ProgressRange aRange = aPS.Next();
+                ProgressRange range = ps.Next();
 
                 if (context.TraceLevel() >= 2)
                 {
-                    var SMSG5 = new Msg("SP.Sequence.Info.Operator"); // Operator %d/%d: %s
-                    SMSG5.Arg(i).Arg(sequenceOfOperators.Length()).Arg(oper);
-                    context.Messenger().Send(SMSG5.Get(), Alarm);
+                    var smsg5 = new Msg("SP.Sequence.Info.Operator"); // Operator %d/%d: %s
+                    smsg5.Arg(i).Arg(sequenceOfOperators.Length()).Arg(oper);
+                    context.Messenger().Send(smsg5.Get(), Alarm);
                 }
 
-                if (!FindOperator(oper, out ShapeProcess_Operator? op))
+                if (!FindOperator(oper, out Operator? op))
                 {
                     if (context.TraceLevel() > 0)
                     {
-                        var SMSG1 = new Msg("SP.Sequence.Error.NoOp"); // Operator %s not found
-                        context.Messenger().Send(SMSG1.Arg(oper).Get(), Alarm);
+                        var smsg1 = new Msg("SP.Sequence.Error.NoOp"); // Operator %s not found
+                        context.Messenger().Send(smsg1.Arg(oper).Get(), Alarm);
                     }
                     continue;
                 }
 
-                using var anOperationScope = new ScopeLock(context, oper);
+                using var operationScope = new ScopeLock(context, oper);
                 try
                 {
-                    if (op!.Perform(context, aRange))
+                    if (op!.Perform(context, range))
                     {
                         isDone = true;
                     }
                 }
-                catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
+                catch (Exception exception) when (global::Kerf.Engine.Healing.Upgrade.ShapeUpgrade.IsCaughtFailure(exception))
                 {
-                    var SMSG2 = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
-                    SMSG2.Arg(oper).Arg(What(anException));
-                    context.Messenger().Send(SMSG2.Get(), Alarm);
+                    var smsg2 = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
+                    smsg2.Arg(oper).Arg(What(exception));
+                    context.Messenger().Send(smsg2.Get(), Alarm);
                 }
             }
         }
         finally
         {
-            aShapeContext?.InternalEndWrite();
+            shapeContext?.InternalEndWrite();
         }
 
         return isDone;
     }
 
     /// <summary>
-    /// Performs the operations <paramref name="theOperations"/> on the context, in the order of
+    /// Performs the operations <paramref name="operations"/> on the context, in the order of
     /// <see cref="Operation"/>. Their parameters are read in the operation's scope ("FixShape.Tolerance3d", not
     /// "FromSTEP.FixShape.Tolerance3d"); unset parameters take their defaults. True if at least one operation was
     /// performed.
     /// </summary>
-    public static bool Perform(ShapeProcess_Context? theContext, OperationsFlags theOperations,
-                               ProgressRange theProgress = default)
+    public static bool Perform(ProcessContext? context, OperationsFlags operations,
+                               ProgressRange progress = default)
     {
-        if (theContext is null)
+        if (context is null)
         {
             return false;
         }
 
-        List<(string, ShapeProcess_Operator)> anOperators = getOperators(theOperations);
-        if (anOperators.Count == 0)
+        List<(string, Operator)> operators = GetOperators(operations);
+        if (operators.Count == 0)
         {
             return false;
         }
 
-        bool anIsAnySuccess = false;
-        var aShapeContext = theContext as ShapeProcess_ShapeContext;
-        aShapeContext?.InternalBeginWrite();
+        bool isAnySuccess = false;
+        var shapeContext = context as ShapeContext;
+        shapeContext?.InternalBeginWrite();
         try
         {
-            using var aProgressScope = new ProgressScope(theProgress, null, anOperators.Count);
-            foreach ((string anOperationName, ShapeProcess_Operator anOperation) in anOperators)
+            using var progressScope = new ProgressScope(progress, null, operators.Count);
+            foreach ((string operationName, Operator operation) in operators)
             {
-                ProgressRange aProgressRange = aProgressScope.Next();
-                using var anOperationScope = new ScopeLock(theContext, anOperationName); // Set operation scope.
+                ProgressRange progressRange = progressScope.Next();
+                using var operationScope = new ScopeLock(context, operationName); // Set operation scope.
                 try
                 {
-                    anIsAnySuccess |= anOperation.Perform(theContext, aProgressRange);
+                    isAnySuccess |= operation.Perform(context, progressRange);
                 }
-                catch (Exception anException) when (ShapeUpgrade.IsCaughtFailure(anException))
+                catch (Exception exception) when (global::Kerf.Engine.Healing.Upgrade.ShapeUpgrade.IsCaughtFailure(exception))
                 {
-                    var aMessage = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
-                    aMessage.Arg(anOperationName).Arg(What(anException));
-                    theContext.Messenger().Send(aMessage.Get(), Alarm);
+                    var message = new Msg("SP.Sequence.Error.Except"); // Operator %s failed with exception %s
+                    message.Arg(operationName).Arg(What(exception));
+                    context.Messenger().Send(message.Get(), Alarm);
                 }
             }
         }
         finally
         {
-            aShapeContext?.InternalEndWrite();
+            shapeContext?.InternalEndWrite();
         }
-        return anIsAnySuccess;
+        return isAnySuccess;
     }
 
     // OCCT's Standard_Failure::what(): the message, empty when there is none. A NullReferenceException is natively an
     // access violation, which OCC_CATCH_SIGNALS turns into OSD_Exception_ACCESS_VIOLATION with Windows' text for a read
     // at address 0 (decisions 977, 1024)
-    private static string What(Exception theException)
+    private static string What(Exception exception)
     {
-        if (theException is NullReferenceException)
+        if (exception is NullReferenceException)
         {
             return "ACCESS VIOLATION at address 0x0000000000000000 during 'READ' operation";
         }
-        string aMessage = theException.Message;
-        return aMessage == $"Exception of type '{theException.GetType().FullName}' was thrown." ? "" : aMessage;
+        string message = exception.Message;
+        return message == $"Exception of type '{exception.GetType().FullName}' was thrown." ? "" : message;
     }
 
-    /// <summary>The operation named <paramref name="theName"/>, and true; (First, false) if no operation has the name.</summary>
-    public static (Operation, bool) ToOperationFlag(string? theName)
+    /// <summary>The operation named <paramref name="name"/>, and true; (First, false) if no operation has the name.</summary>
+    public static (Operation, bool) ToOperationFlag(string? name)
     {
-        if (theName is null)
+        if (name is null)
         {
             return (Operation.First, false);
         }
 
-        for (Operation anOperation = Operation.First; anOperation <= Operation.Last; ++anOperation)
+        for (Operation operation = Operation.First; operation <= Operation.Last; ++operation)
         {
-            string? anOperationName = toOperationName(anOperation);
-            if (anOperationName is not null && theName == anOperationName)
+            string? operationName = ToOperationName(operation);
+            if (operationName is not null && name == operationName)
             {
-                return (anOperation, true);
+                return (operation, true);
             }
         }
         return (Operation.First, false);
     }
 
     // The registered operators of the flags, with their names, in the order of Operation.
-    private static List<(string, ShapeProcess_Operator)> getOperators(OperationsFlags theFlags)
+    private static List<(string, Operator)> GetOperators(OperationsFlags flags)
     {
-        var aResult = new List<(string, ShapeProcess_Operator)>();
-        for (Operation anOperation = Operation.First; anOperation <= Operation.Last; ++anOperation)
+        var result = new List<(string, Operator)>();
+        for (Operation operation = Operation.First; operation <= Operation.Last; ++operation)
         {
-            if (theFlags.Test(anOperation))
+            if (flags.Test(operation))
             {
-                string? anOperationName = toOperationName(anOperation);
-                if (anOperationName is null)
+                string? operationName = ToOperationName(operation);
+                if (operationName is null)
                 {
                     continue;
                 }
-                if (FindOperator(anOperationName, out ShapeProcess_Operator? anOperator))
+                if (FindOperator(operationName, out Operator? anOperator))
                 {
-                    aResult.Add((anOperationName, anOperator!));
+                    result.Add((operationName, anOperator!));
                 }
             }
         }
-        return aResult;
+        return result;
     }
 
-    private static string? toOperationName(Operation theOperation) => theOperation switch
+    private static string? ToOperationName(Operation operation) => operation switch
     {
         Operation.DirectFaces => "DirectFaces",
         Operation.SameParameter => "SameParameter",

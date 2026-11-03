@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Occt;
 using Xunit;
@@ -14,7 +15,7 @@ public class Geom2dAPI_ProjectionTests
     public void ProjectPointOnCircle()
     {
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
-        Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(4, 1), aCircle);
+        ProjectPointOnCurve2D aProj = new(new Point2D(4, 1), aCircle);
         Assert.Equal(2, aProj.NbPoints());
         Assert.Equal(1.0, aProj.LowerDistance(), 1e-12);
         Assert.Equal(0.0, aProj.LowerDistanceParameter(), 1e-10);
@@ -30,7 +31,7 @@ public class Geom2dAPI_ProjectionTests
     public void ProjectPointOnLine_WithRange()
     {
         LineCurve2D aLine = new(new Point2D(0, 0), new Direction2D(1, 0));
-        Geom2dAPI_ProjectPointOnCurve aProj = new(new Point2D(3, 2), aLine, -10, 10);
+        ProjectPointOnCurve2D aProj = new(new Point2D(3, 2), aLine, -10, 10);
         Assert.Equal(1, aProj.NbPoints());
         Assert.Equal(3.0, aProj.Parameter(1), 1e-12);
         aProj.Parameter(1, out double aU);
@@ -54,7 +55,7 @@ public class Geom2dAPI_ProjectionTests
         aPoles[4] = new Point2D(4, 0);
         BezierCurve2D aBez = new(aPoles);
         Point2D aP = new(2, 3);
-        Geom2dAPI_ProjectPointOnCurve aProj = new(aP, aBez);
+        ProjectPointOnCurve2D aProj = new(aP, aBez);
         Assert.True(aProj.NbPoints() >= 1);
         double aU = aProj.LowerDistanceParameter();
         // The symmetric curve's apex (t = 1/2) is the nearest point: (2, 1.5).
@@ -66,7 +67,7 @@ public class Geom2dAPI_ProjectionTests
     [Fact]
     public void ProjectPoint_Empty()
     {
-        Geom2dAPI_ProjectPointOnCurve aProj = new();
+        ProjectPointOnCurve2D aProj = new();
         Assert.Equal(0, aProj.NbPoints());
         Assert.ThrowsAny<NotDoneException>(() => aProj.LowerDistance());
     }
@@ -76,7 +77,7 @@ public class Geom2dAPI_ProjectionTests
     {
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         LineCurve2D aLine = new(new Point2D(-10, 3), new Direction2D(1, 0));
-        Geom2dAPI_ExtremaCurveCurve anExt = new(aCircle, aLine, 0, 2 * Math.PI, -20, 20);
+        ExtremaCurveCurve2D anExt = new(aCircle, aLine, 0, 2 * Math.PI, -20, 20);
         Assert.True(anExt.NbExtrema() >= 1);
         Assert.Equal(2.0, anExt.LowerDistance(), 1e-12);
         anExt.NearestPoints(out Point2D aP1, out Point2D aP2);
@@ -104,7 +105,7 @@ public class Geom2dAPI_ProjectionTests
         aPoles2[3] = new Point2D(2, 3);
         BezierCurve2D aC1 = new(aPoles1);
         BezierCurve2D aC2 = new(aPoles2);
-        Geom2dAPI_ExtremaCurveCurve anExt = new(aC1, aC2, 0, 1, 0, 1);
+        ExtremaCurveCurve2D anExt = new(aC1, aC2, 0, 1, 0, 1);
         Assert.True(anExt.NbExtrema() >= 1);
         // Apexes at (1, 0.5) and (1, 2.5).
         Assert.Equal(2.0, anExt.LowerDistance(), 1e-9);

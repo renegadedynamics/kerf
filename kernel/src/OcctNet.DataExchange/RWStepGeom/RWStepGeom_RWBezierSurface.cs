@@ -76,8 +76,8 @@ internal class RWStepGeom_RWBezierSurface
 
         // --- inherited field : surfaceForm ---
 
-        StepGeom_BSplineSurfaceForm aSurfaceForm = StepGeom_bssfPlaneSurf;
-        if (data.ParamType(num, 5) == Interface_ParamEnum)
+        StepGeom_BSplineSurfaceForm aSurfaceForm = StepGeom_BSplineSurfaceForm.StepGeom_bssfPlaneSurf;
+        if (data.ParamType(num, 5) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 5);
 

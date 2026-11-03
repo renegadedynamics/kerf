@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRepAdaptor_CompCurve_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -49,10 +50,10 @@ public class BRepAdaptor_CompCurveTests
     public void OCC5696_EdgeMethod()
     {
         // Create a simple edge from two points
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
 
         // Create a wire from the edge
-        Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
+        Wire aWire = new MakeWire(anEdge).Wire();
 
         // Create a composite curve adaptor
         var aCurve = new WireCurveAdaptor(aWire);
@@ -92,8 +93,8 @@ public class BRepAdaptor_CompCurveTests
             r45,
             r225,
             true);
-        var edgeMaker = new BRepBuilderAPI_MakeEdge(arcMaker.Value());
-        var wireMaker = new BRepBuilderAPI_MakeWire(edgeMaker.Edge());
+        var edgeMaker = new MakeEdge(arcMaker.Value());
+        var wireMaker = new MakeWire(edgeMaker.Edge());
         Wire aWire = wireMaker.Wire();
 
         var aCurve = new WireCurveAdaptor(aWire);
@@ -138,11 +139,11 @@ public class BRepAdaptor_CompCurveTests
         double t2 = 3.0 * Math.PI / 2.0;
 
         var aTrimmed = new TrimmedCurve3D(aCircle, t1, t2);
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(aTrimmed).Edge();
+        Edge anEdge = new MakeEdge(aTrimmed).Edge();
 
         // Reverse the edge, then wrap it in a wire
         anEdge = ShapeCasts.Edge(anEdge.Oriented(Reversed));
-        Wire aWire = new BRepBuilderAPI_MakeWire(anEdge).Wire();
+        Wire aWire = new MakeWire(anEdge).Wire();
 
         var aBACC = new WireCurveAdaptor(aWire);
         double aFirst = aBACC.FirstParameter();

@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Construction.Plate;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology;
@@ -81,7 +85,7 @@ internal static class BRepTestFillingCommands
         var NbPtsCur = new NCollection_HArray1<int>(1, NbCurFront);
         var B = new BrepBuilder();
 
-        var Henri = new GeomPlate_BuildPlateSurface(3, 15, 2);
+        var Henri = new BuildPlateSurface(3, 15, 2);
 
         int i;
         for (i = 1; i <= NbCurFront; i++)
@@ -107,7 +111,7 @@ internal static class BRepTestFillingCommands
             C.Initialize(E, F);
             var HConS = new CurveOnSurface(C, S);
             Fronts.SetValue(i, HConS);
-            GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
+            CurveConstraint Cont = new FillingCurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
             Henri.Add(Cont);
         }
         Henri.Perform();
@@ -115,30 +119,30 @@ internal static class BRepTestFillingCommands
         double ErrG0 = 1.1 * Henri.G0Error();
         di.Append(" dist. max = ").Append(Henri.G0Error()).Append(" ; angle max = ").Append(Henri.G1Error()).Append("\n");
 
-        var MW = new BRepBuilderAPI_MakeWire();
+        var MW = new MakeWire();
         for (i = 1; i <= NbCurFront; i++)
         {
             int iInOrder = Henri.Order().Value(i);
             Edge E;
             if (Henri.Sense().Value(iInOrder) == 1)
             {
-                var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, Henri.Surface()!,
+                var ME = new MakeEdge(Henri.Curves2d().Value(iInOrder)!, Henri.Surface()!,
                                                      Fronts.Value(iInOrder).LastParameter(), Fronts.Value(iInOrder).FirstParameter());
                 E = ME.InternalEdge();
             }
             else
             {
-                var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, Henri.Surface()!,
+                var ME = new MakeEdge(Henri.Curves2d().Value(iInOrder)!, Henri.Surface()!,
                                                      Fronts.Value(iInOrder).FirstParameter(), Fronts.Value(iInOrder).LastParameter());
                 E = ME.InternalEdge();
             }
             B.UpdateVertex(Exploration.FirstVertex(E), ErrG0);
             B.UpdateVertex(Exploration.LastVertex(E), ErrG0);
-            BRepLib.BuildCurve3d(E);
+            BrepLibrary.BuildCurve3d(E);
             string name = $"Edge_{i}";
             theDI.SetShape(name, E);
             MW.Add(E);
-            if (!MW.IsDone())
+            if (!MW.IsDone)
             {
                 throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
@@ -149,7 +153,7 @@ internal static class BRepTestFillingCommands
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
-        var MF = new BRepBuilderAPI_MakeFace(Henri.Surface()!, W, true);
+        var MF = new MakeFace(Henri.Surface()!, W, true);
         theDI.SetShape(a[1], MF.Face());
         return 0;
     }
@@ -164,7 +168,7 @@ internal static class BRepTestFillingCommands
         }
         int NbCurFront = theDI.Atoi(a[2]), NbPointConstraint = theDI.Atoi(a[3]);
 
-        var Henri = new GeomPlate_BuildPlateSurface(3, 15, 2);
+        var Henri = new BuildPlateSurface(3, 15, 2);
 
         int i;
         int Conti;
@@ -196,7 +200,7 @@ internal static class BRepTestFillingCommands
                 var C = new EdgeCurveAdaptor();
                 C.Initialize(E);
                 CurveAdaptorBase aC = C; // to avoid ambiguity
-                GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(aC, Conti);
+                CurveConstraint Cont = new FillingCurveConstraint(aC, Conti);
                 Henri.Add(Cont);
             }
             else
@@ -212,7 +216,7 @@ internal static class BRepTestFillingCommands
                 var C = new EdgeCurve2DAdaptor();
                 C.Initialize(E, F);
                 var HConS = new CurveOnSurface(C, S);
-                GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Conti);
+                CurveConstraint Cont = new FillingCurveConstraint(HConS, Conti);
                 Henri.Add(Cont);
             }
         }
@@ -224,7 +228,7 @@ internal static class BRepTestFillingCommands
             if (DrawTrSurf.GetPoint(theDI, At(a, Indice), ref P1))
             {
                 Conti = 0;
-                var PCont = new GeomPlate_PointConstraint(P1, 0);
+                var PCont = new PointConstraint(P1, 0);
                 Henri.Add(PCont);
                 Indice++;
             }
@@ -241,7 +245,7 @@ internal static class BRepTestFillingCommands
                 }
                 var HF = new FaceSurfaceAdaptor();
                 HF.Initialize(F);
-                var PCont = new GeomPlate_PointConstraint(u, v, Tool.Surface(HF.Face())!, Conti, 0.001, 0.001, 0.001);
+                var PCont = new PointConstraint(u, v, Tool.Surface(HF.Face())!, Conti, 0.001, 0.001, 0.001);
                 Henri.Add(PCont);
             }
         }
@@ -250,7 +254,7 @@ internal static class BRepTestFillingCommands
         int degmax = 8;
         double seuil;
 
-        GeomPlate_Surface gpPlate = Henri.Surface()!;
+        PlateSurface gpPlate = Henri.Surface()!;
         var S2d = new NCollection_Sequence<Xy>();
         var S3d = new NCollection_Sequence<Xyz>();
         S2d.Clear();
@@ -258,13 +262,13 @@ internal static class BRepTestFillingCommands
         Henri.Disc2dContour(4, S2d);
         Henri.Disc3dContour(4, 0, S3d);
         seuil = Math.Max(0.0001, 10 * Henri.G0Error());
-        var critere = new GeomPlate_PlateG0Criterion(S2d, S3d, seuil);
-        var Mapp = new GeomPlate_MakeApprox(gpPlate, critere, 0.0001, nbcarreau, degmax);
+        var critere = new PlateG0Criterion(S2d, S3d, seuil);
+        var Mapp = new MakeApprox(gpPlate, critere, 0.0001, nbcarreau, degmax);
         Surface Surf = Mapp.Surface()!;
 
         Henri.Surface()!.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
-        var MF = new BRepBuilderAPI_MakeFace(Surf, Umin, Umax, Vmin, Vmax, global::Kerf.Engine.Foundation.Precision.Confusion());
+        var MF = new MakeFace(Surf, Umin, Umax, Vmin, Vmax, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         theDI.SetShape(a[1], MF.Face());
         return 0;
@@ -284,7 +288,7 @@ internal static class BRepTestFillingCommands
         var Tang = new NCollection_HArray1<int>(1, NbCurFront);
         var NbPtsCur = new NCollection_HArray1<int>(1, NbCurFront);
 
-        var Henri = new GeomPlate_BuildPlateSurface(3, 15, 2);
+        var Henri = new BuildPlateSurface(3, 15, 2);
 
         int i;
         for (i = 1; i <= NbCurFront; i++)
@@ -310,7 +314,7 @@ internal static class BRepTestFillingCommands
             C.Initialize(E, F);
             var HConS = new CurveOnSurface(C, S);
             Fronts.SetValue(i, HConS);
-            GeomPlate_CurveConstraint Cont = new BRepFill_CurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
+            CurveConstraint Cont = new FillingCurveConstraint(HConS, Tang.Value(i), NbPtsCur.Value(i));
             Henri.Add(Cont);
         }
 
@@ -323,12 +327,12 @@ internal static class BRepTestFillingCommands
         int Nbmax = theDI.Atoi(At(a, 3 * NbCurFront + 5));
         int degmax = theDI.Atoi(At(a, 3 * NbCurFront + 6));
         int CritOrder = theDI.Atoi(At(a, 3 * NbCurFront + 7));
-        GeomPlate_Surface surf = Henri.Surface()!;
+        PlateSurface surf = Henri.Surface()!;
         BSplineSurface? support = null;
 
         if (CritOrder == -1)
         {
-            var MApp = new GeomPlate_MakeApprox(surf, Tol3d, Nbmax, degmax, dmax, -1);
+            var MApp = new MakeApprox(surf, Tol3d, Nbmax, degmax, dmax, -1);
             support = MApp.Surface();
         }
         else if (CritOrder >= 0)
@@ -343,8 +347,8 @@ internal static class BRepTestFillingCommands
                 Henri.Disc2dContour(4, S2d);
                 Henri.Disc3dContour(4, 0, S3d);
                 seuil = Math.Max(Tol3d, dmax * 10);
-                var Crit0 = new GeomPlate_PlateG0Criterion(S2d, S3d, seuil);
-                var MApp = new GeomPlate_MakeApprox(surf, Crit0, Tol3d, Nbmax, degmax);
+                var Crit0 = new PlateG0Criterion(S2d, S3d, seuil);
+                var MApp = new MakeApprox(surf, Crit0, Tol3d, Nbmax, degmax);
                 support = MApp.Surface();
             }
             else if (CritOrder == 1)
@@ -352,13 +356,13 @@ internal static class BRepTestFillingCommands
                 Henri.Disc2dContour(4, S2d);
                 Henri.Disc3dContour(4, 1, S3d);
                 seuil = Math.Max(Tol3d, anmax * 10);
-                var Crit1 = new GeomPlate_PlateG1Criterion(S2d, S3d, seuil);
-                var MApp = new GeomPlate_MakeApprox(surf, Crit1, Tol3d, Nbmax, degmax);
+                var Crit1 = new PlateG1Criterion(S2d, S3d, seuil);
+                var MApp = new MakeApprox(surf, Crit1, Tol3d, Nbmax, degmax);
                 support = MApp.Surface();
             }
         }
 
-        var MW = new BRepBuilderAPI_MakeWire();
+        var MW = new MakeWire();
         var B = new BrepBuilder();
         for (i = 1; i <= NbCurFront; i++)
         {
@@ -366,21 +370,21 @@ internal static class BRepTestFillingCommands
             Edge E;
             if (Henri.Sense().Value(iInOrder) == 1)
             {
-                var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, support!,
+                var ME = new MakeEdge(Henri.Curves2d().Value(iInOrder)!, support!,
                                                      Fronts.Value(iInOrder).LastParameter(), Fronts.Value(iInOrder).FirstParameter());
                 E = ME.InternalEdge();
             }
             else
             {
-                var ME = new BRepBuilderAPI_MakeEdge(Henri.Curves2d().Value(iInOrder)!, support!,
+                var ME = new MakeEdge(Henri.Curves2d().Value(iInOrder)!, support!,
                                                      Fronts.Value(iInOrder).FirstParameter(), Fronts.Value(iInOrder).LastParameter());
                 E = ME.InternalEdge();
             }
             B.UpdateVertex(Exploration.FirstVertex(E), dmax);
             B.UpdateVertex(Exploration.LastVertex(E), dmax);
-            BRepLib.BuildCurve3d(E);
+            BrepLibrary.BuildCurve3d(E);
             MW.Add(E);
-            if (!MW.IsDone())
+            if (!MW.IsDone)
             {
                 throw new global::Kerf.Engine.Foundation.FailureException("mkWire is over ");
             }
@@ -391,7 +395,7 @@ internal static class BRepTestFillingCommands
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
-        var MF = new BRepBuilderAPI_MakeFace(support!, W, true);
+        var MF = new MakeFace(support!, W, true);
         theDI.SetShape(a[1], MF.Face());
 
         return 0;
@@ -411,7 +415,7 @@ internal static class BRepTestFillingCommands
         int NbConstraints = theDI.Atoi(a[3]);
         int NbPoints = theDI.Atoi(a[4]);
 
-        var MakeFilling = new BRepOffsetAPI_MakeFilling(p.Degree, p.NbPtsOnCur, p.NbIter, p.Anisotropie, p.Tol2d, p.Tol3d,
+        var MakeFilling = new MakeFilling(p.Degree, p.NbPtsOnCur, p.NbIter, p.Anisotropie, p.Tol2d, p.Tol3d,
                                                         p.TolAng, p.TolCurv, p.MaxDeg, p.MaxSegments);
         Face InitFace = ShapeCasts.Face(theDI.GetShape(a[5], ShapeType.Face));
         if (!InitFace.IsNull)
@@ -508,7 +512,7 @@ internal static class BRepTestFillingCommands
         }
 
         MakeFilling.Build();
-        if (!MakeFilling.IsDone())
+        if (!MakeFilling.IsDone)
         {
             di.Append("filling failed\n");
             return 0;

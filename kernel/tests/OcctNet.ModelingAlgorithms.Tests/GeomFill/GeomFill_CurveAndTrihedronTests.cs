@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
@@ -9,14 +10,14 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 
 public class GeomFill_CurveAndTrihedronTests
 {
-    private static GeomFill_CurveAndTrihedron Law(Curve3D theCurve, GeomFill_TrihedronLaw? theTrihedron = null)
+    private static CurveAndTrihedron Law(Curve3D theCurve, TrihedronLaw? theTrihedron = null)
     {
-        var aLaw = new GeomFill_CurveAndTrihedron(theTrihedron ?? new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
+        var aLaw = new CurveAndTrihedron(theTrihedron ?? new DraftTrihedron(new Vector3D(0, 0, 1), 0.2));
         Assert.True(aLaw.SetCurve(new CurveAdaptor(theCurve)));
         return aLaw;
     }
 
-    private static (Matrix3x3 M, Vector3D V) D0(GeomFill_LocationLaw theLaw, double theU)
+    private static (Matrix3x3 M, Vector3D V) D0(SurfaceLocationLaw theLaw, double theU)
     {
         Matrix3x3 M = new();
         Vector3D V = new();
@@ -28,8 +29,8 @@ public class GeomFill_CurveAndTrihedronTests
     public void D0_ColumnsAreNormalBinormalTangent()
     {
         BSplineCurve3D aCurve = WavyCurve();
-        var aTri = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2);
-        GeomFill_CurveAndTrihedron aLaw = Law(aCurve, aTri);
+        var aTri = new DraftTrihedron(new Vector3D(0, 0, 1), 0.2);
+        CurveAndTrihedron aLaw = Law(aCurve, aTri);
         Assert.Same(aLaw.GetCurve(), aLaw.GetCurve());
         (Matrix3x3 M, Vector3D V) = D0(aLaw, 0.3);
         Vector3D T = new(), N = new(), B = new();
@@ -50,7 +51,7 @@ public class GeomFill_CurveAndTrihedronTests
     [Fact]
     public void D1_D2_MatchFiniteDifferences()
     {
-        GeomFill_CurveAndTrihedron aLaw = Law(WavyCurve());
+        CurveAndTrihedron aLaw = Law(WavyCurve());
         var P = new NCollection_Array1<Point2D>(1, 1);
         var DP = new NCollection_Array1<Vector2D>(1, 1);
         var D2P = new NCollection_Array1<Vector2D>(1, 1);
@@ -77,7 +78,7 @@ public class GeomFill_CurveAndTrihedronTests
     [Fact]
     public void SetTrsf_MultipliesOnTheRight()
     {
-        GeomFill_CurveAndTrihedron aLaw = Law(WavyCurve());
+        CurveAndTrihedron aLaw = Law(WavyCurve());
         (Matrix3x3 M0, Vector3D V0) = D0(aLaw, 0.4);
         Matrix3x3 aTrsf = new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         aLaw.SetTrsf(aTrsf);
@@ -96,7 +97,7 @@ public class GeomFill_CurveAndTrihedronTests
     public void Intervals_FuseTheCurveAndTheTrihedron()
     {
         // the curve has C2 intervals [0, 0.5, 1] at C3; the draft trihedron asks for the curve's CN
-        GeomFill_CurveAndTrihedron aLaw = Law(WavyCurve());
+        CurveAndTrihedron aLaw = Law(WavyCurve());
         int aNb = aLaw.NbIntervals(Continuity.C1);
         Assert.Equal(2, aNb);
         var T = new NCollection_Array1<double>(1, aNb + 1);
@@ -114,13 +115,13 @@ public class GeomFill_CurveAndTrihedronTests
     public void IsTranslation_IsRotation()
     {
         double anError = -1;
-        GeomFill_CurveAndTrihedron aLine = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5));
+        CurveAndTrihedron aLine = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 5));
         // a trimmed line is adapted as a line
         Assert.True(aLine.IsTranslation(ref anError));
         Assert.Equal(0.0, anError);
         Assert.False(aLine.IsRotation(ref anError));
 
-        GeomFill_CurveAndTrihedron aCircle = Law(new CircleCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
+        CurveAndTrihedron aCircle = Law(new CircleCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2));
         Assert.False(aCircle.IsTranslation(ref anError));
         Assert.True(aCircle.IsRotation(ref anError));
         Point3D aCentre = new();
@@ -132,7 +133,7 @@ public class GeomFill_CurveAndTrihedronTests
     public void GetAverageLaw_KeepsOcctColumnOrder()
     {
         var aTri = new TestFixedTrihedron(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0));
-        GeomFill_CurveAndTrihedron aLaw = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10), aTri);
+        CurveAndTrihedron aLaw = Law(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10), aTri);
         Matrix3x3 AM = new();
         Vector3D AV = new();
         aLaw.GetAverageLaw(ref AM, ref AV);
@@ -146,11 +147,11 @@ public class GeomFill_CurveAndTrihedronTests
     [Fact]
     public void Copy_HasItsOwnTrihedronAndTransformation()
     {
-        var aTri = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), 0.2);
-        GeomFill_CurveAndTrihedron aLaw = Law(WavyCurve(), aTri);
+        var aTri = new DraftTrihedron(new Vector3D(0, 0, 1), 0.2);
+        CurveAndTrihedron aLaw = Law(WavyCurve(), aTri);
         Matrix3x3 aTrsf = new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         aLaw.SetTrsf(aTrsf);
-        var aCopy = (GeomFill_CurveAndTrihedron)aLaw.Copy();
+        var aCopy = (CurveAndTrihedron)aLaw.Copy();
         (Matrix3x3 M, Vector3D V) = D0(aLaw, 0.6);
         (Matrix3x3 Mc, Vector3D Vc) = D0(aCopy, 0.6);
         AssertEqual(M, Mc, "copy");

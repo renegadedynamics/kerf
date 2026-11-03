@@ -72,7 +72,7 @@ public class STEPConstruct_Part
                 break;
             case 3:
                 PDF = new StepBasic_ProductDefinitionFormationWithSpecifiedSource();
-                (PDF as StepBasic_ProductDefinitionFormationWithSpecifiedSource).SetMakeOrBuy(StepBasic_sNotKnown);
+                (PDF as StepBasic_ProductDefinitionFormationWithSpecifiedSource).SetMakeOrBuy(StepBasic_Source.StepBasic_sNotKnown);
                 break;
         }
         TCollection_HAsciiString PDFName = new TCollection_HAsciiString("");

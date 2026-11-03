@@ -5,11 +5,12 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class GccAna_Circ2dTanOnRad
+public sealed partial class AnalyticCirc2dTanOnRad
 {
     //=========================================================================
     //    typedef of handled objects :                                      +
@@ -31,137 +32,137 @@ public sealed partial class GccAna_Circ2dTanOnRad
 
     /// <summary>Circles of radius Radius passing through a point, centred on a line.</summary>
     /// <exception cref="NegativeValueException">Radius is negative.</exception>
-    public GccAna_Circ2dTanOnRad(in Point2D Point1, in Line2D OnLine, double Radius, double Tolerance)
+    public AnalyticCirc2dTanOnRad(in Point2D point1, in Line2D onLine, double radius, double tolerance)
     {
-        cirsol = new(1, 2);
-        qualifier1 = new(1, 2);
-        TheSame1 = new(1, 2);
-        pnttg1sol = new(1, 2);
-        pntcen3 = new(1, 2);
-        par1sol = new(1, 2);
-        pararg1 = new(1, 2);
-        parcen3 = new(1, 2);
+        _cirsol = new(1, 2);
+        _qualifier1 = new(1, 2);
+        _theSame1 = new(1, 2);
+        _pnttg1sol = new(1, 2);
+        _pntcen3 = new(1, 2);
+        _par1sol = new(1, 2);
+        _pararg1 = new(1, 2);
+        _parcen3 = new(1, 2);
 
 
         Direction2D dirx = new(Direction2D.D.X);
-        double   Tol  = Math.Abs(Tolerance);
-        WellDone      = false;
-        NbrSol        = 0;
-        double dp1lin = OnLine.Distance(Point1);
+        double   tol  = Math.Abs(tolerance);
+        _wellDone      = false;
+        _nbrSol        = 0;
+        double dp1lin = onLine.Distance(point1);
 
-        if (Radius < 0.0)
+        if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
         else
         {
             // OCCT: WellDone stays false when the point is on OnLine (dp1lin < Tol), which still finds 2 solutions
-            if (dp1lin > Radius + Tol)
+            if (dp1lin > radius + tol)
             {
-                WellDone = true;
+                _wellDone = true;
             }
             double xc;
             double yc;
-            double x1    = Point1.X();
-            double y1    = Point1.Y();
+            double x1    = point1.X();
+            double y1    = point1.Y();
             double xbid  = 0;
-            double xdir  = (OnLine.Direction()).X();
-            double ydir  = (OnLine.Direction()).Y();
-            double lxloc = (OnLine.Location()).X();
-            double lyloc = (OnLine.Location()).Y();
-            if (Math.Abs(dp1lin - Radius) < Tol)
+            double xdir  = (onLine.Direction()).X();
+            double ydir  = (onLine.Direction()).Y();
+            double lxloc = (onLine.Location()).X();
+            double lyloc = (onLine.Location()).Y();
+            if (Math.Abs(dp1lin - radius) < tol)
             {
-                WellDone = true;
-                NbrSol   = 1;
+                _wellDone = true;
+                _nbrSol   = 1;
                 if (-ydir * (x1 - lxloc) + xdir * (y1 - lyloc) < 0.0)
                 {
                     Axis2D axe = new(new Point2D(x1 - ydir * dp1lin, y1 + xdir * dp1lin), dirx);
-                    cirsol[NbrSol] = new Circle2D(axe, Radius);
+                    _cirsol[_nbrSol] = new Circle2D(axe, radius);
                     //       ======================================
-                    qualifier1[NbrSol] = GccEnt_noqualifier;
+                    _qualifier1[_nbrSol] = Qualifier.Noqualifier;
                 }
                 else
                 {
                     Axis2D axe = new(new Point2D(x1 + ydir * dp1lin, y1 - xdir * dp1lin), dirx);
-                    cirsol[NbrSol] = new Circle2D(axe, Radius);
+                    _cirsol[_nbrSol] = new Circle2D(axe, radius);
                     //       ======================================
-                    qualifier1[NbrSol] = GccEnt_noqualifier;
+                    _qualifier1[_nbrSol] = Qualifier.Noqualifier;
                 }
-                TheSame1[NbrSol]  = 0;
-                pnttg1sol[NbrSol] = Point1;
-                pntcen3[NbrSol]   = cirsol[NbrSol].Location();
-                pararg1[NbrSol]   = 0.0;
-                par1sol[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                parcen3[NbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                _theSame1[_nbrSol]  = 0;
+                _pnttg1sol[_nbrSol] = point1;
+                _pntcen3[_nbrSol]   = _cirsol[_nbrSol].Location();
+                _pararg1[_nbrSol]   = 0.0;
+                _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+                _parcen3[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[_nbrSol]);
             }
-            else if (dp1lin < Tol)
+            else if (dp1lin < tol)
             {
                 // OCCT: qualifier1 is not set on this path (uninitialised in OCCT, GccEnt_unqualified here)
-                pntcen3[1] = new Point2D(Point1.X() + Radius * xdir, Point1.Y() + Radius * ydir);
-                pntcen3[2] = new Point2D(Point1.X() - Radius * xdir, Point1.Y() - Radius * ydir);
-                pntcen3[1] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[1]), OnLine);
-                pntcen3[2] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[2]), OnLine);
-                Axis2D axe = new(pntcen3[1], OnLine.Direction());
-                cirsol[1]    = new Circle2D(axe, Radius);
-                axe          = new Axis2D(pntcen3[2], OnLine.Direction());
-                cirsol[2]    = new Circle2D(axe, Radius);
-                TheSame1[1]  = 0;
-                pnttg1sol[1] = Point1;
-                pararg1[1]   = 0.0;
-                par1sol[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[1], pnttg1sol[1]);
-                parcen3[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[1]);
-                TheSame1[2]  = 0;
-                pnttg1sol[2] = Point1;
-                pararg1[2]   = 0.0;
-                par1sol[2]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[2], pnttg1sol[2]);
-                parcen3[2]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[2]);
-                NbrSol       = 2;
+                _pntcen3[1] = new Point2D(point1.X() + radius * xdir, point1.Y() + radius * ydir);
+                _pntcen3[2] = new Point2D(point1.X() - radius * xdir, point1.Y() - radius * ydir);
+                _pntcen3[1] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[1]), onLine);
+                _pntcen3[2] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[2]), onLine);
+                Axis2D axe = new(_pntcen3[1], onLine.Direction());
+                _cirsol[1]    = new Circle2D(axe, radius);
+                axe          = new Axis2D(_pntcen3[2], onLine.Direction());
+                _cirsol[2]    = new Circle2D(axe, radius);
+                _theSame1[1]  = 0;
+                _pnttg1sol[1] = point1;
+                _pararg1[1]   = 0.0;
+                _par1sol[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
+                _parcen3[1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[1]);
+                _theSame1[2]  = 0;
+                _pnttg1sol[2] = point1;
+                _pararg1[2]   = 0.0;
+                _par1sol[2]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[2], _pnttg1sol[2]);
+                _parcen3[2]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[2]);
+                _nbrSol       = 2;
             }
             else
             {
-                double A, B, C;
-                OnLine.Coefficients(out A, out B, out C);
-                double D = A;
-                if (A == 0.0)
+                double a, b, c;
+                onLine.Coefficients(out a, out b, out c);
+                double d = a;
+                if (a == 0.0)
                 {
-                    A    = B;
-                    B    = D;
+                    a    = b;
+                    b    = d;
                     xbid = x1;
                     x1   = y1;
                     y1   = xbid;
                 }
-                if (A != 0.0)
+                if (a != 0.0)
                 {
-                    DirectPolynomialRoots Sol = new((B * B + A * A) / (A * A),
-                                        2.0 * (B * C / (A * A) + (B / A) * x1 - y1),
-                                        x1 * x1 + y1 * y1 + C * C / (A * A) - Radius * Radius + 2.0 * C * x1 / A);
-                    if (Sol.IsDone)
+                    DirectPolynomialRoots sol = new((b * b + a * a) / (a * a),
+                                        2.0 * (b * c / (a * a) + (b / a) * x1 - y1),
+                                        x1 * x1 + y1 * y1 + c * c / (a * a) - radius * radius + 2.0 * c * x1 / a);
+                    if (sol.IsDone)
                     {
-                        for (int i = 1; i <= Sol.SolutionCount; i++)
+                        for (int i = 1; i <= sol.SolutionCount; i++)
                         {
-                            if (D != 0.0)
+                            if (d != 0.0)
                             {
-                                yc = Sol.Value(i);
-                                xc = -(B / A) * yc - C / A;
+                                yc = sol.Value(i);
+                                xc = -(b / a) * yc - c / a;
                             }
                             else
                             {
-                                xc = Sol.Value(i);
-                                yc = -(B / A) * xc - C / A;
+                                xc = sol.Value(i);
+                                yc = -(b / a) * xc - c / a;
                             }
-                            NbrSol++;
-                            Point2D Center = new(xc, yc);
-                            cirsol[NbrSol] = new Circle2D(new Axis2D(Center, dirx), Radius);
+                            _nbrSol++;
+                            Point2D center = new(xc, yc);
+                            _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                             //           =======================================================
-                            qualifier1[NbrSol] = GccEnt_noqualifier;
-                            TheSame1[NbrSol]   = 0;
-                            pnttg1sol[NbrSol]  = Point1;
-                            pntcen3[NbrSol]    = cirsol[NbrSol].Location();
-                            pararg1[NbrSol]    = 0.0;
-                            par1sol[NbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(cirsol[NbrSol], pnttg1sol[NbrSol]);
-                            parcen3[NbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(OnLine, pntcen3[NbrSol]);
+                            _qualifier1[_nbrSol] = Qualifier.Noqualifier;
+                            _theSame1[_nbrSol]   = 0;
+                            _pnttg1sol[_nbrSol]  = point1;
+                            _pntcen3[_nbrSol]    = _cirsol[_nbrSol].Location();
+                            _pararg1[_nbrSol]    = 0.0;
+                            _par1sol[_nbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
+                            _parcen3[_nbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[_nbrSol]);
                         }
-                        WellDone = true;
+                        _wellDone = true;
                     }
                 }
             }

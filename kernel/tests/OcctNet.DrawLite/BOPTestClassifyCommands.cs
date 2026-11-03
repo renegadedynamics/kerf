@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -97,7 +98,7 @@ internal static class BOPTestClassifyCommands
         double aTol = theArgNb >= 4 ? theDI.Atof(theArgVec[3]) : Tool.Tolerance(aF);
         bool anUseBox = theArgNb >= 5 && theDI.Atof(theArgVec[4]) == 1;
         double aGapCheckTol = theArgNb == 6 ? theDI.Atof(theArgVec[5]) : 0.1;
-        var aClassifier = new BRepClass_FaceClassifier();
+        var aClassifier = new FaceClassifier();
         aClassifier.Perform(aF, aP, aTol, anUseBox, aGapCheckTol);
         PrintState(theResult, aClassifier.State());
         return 0;
@@ -128,7 +129,7 @@ internal static class BOPTestClassifyCommands
         GetPoint(theDI, theArgVec[2], ref aP);
         double aTol = theArgNb == 4 ? theDI.Atof(theArgVec[3]) : 1.0e-7;
 
-        var aSC = new BRepClass3d_SolidClassifier(aS);
+        var aSC = new SolidClassifier(aS);
         aSC.Perform(aP, aTol);
 
         PrintState(theResult, aSC.State());

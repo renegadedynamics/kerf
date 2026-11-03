@@ -185,12 +185,12 @@ public class StepData_StepReaderData : Interface_FileReaderData
             return;
         }
         StringBuilder aResString = new StringBuilder();
-        bool toConversion = mySourceCodePage != Resource_FormatType_NoConversion;
+        bool toConversion = mySourceCodePage != Resource_FormatType.Resource_FormatType_NoConversion;
         Resource_Unicode.ConvertFormatToUnicode(mySourceCodePage, theVal.ToCString().Substring(1), aResString);
         int aResStringSize = aResString.Length - 1; // skip the last apostrophe
         StringBuilder aTempExtString = new StringBuilder(); // string for characters within control directives
         int aSetCharInd = 1; // index to set value to result string
-        Resource_FormatType aLocalFormatType = Resource_FormatType_iso8859_1; // a code page for a "\S\" control directive
+        Resource_FormatType aLocalFormatType = Resource_FormatType.Resource_FormatType_iso8859_1; // a code page for a "\S\" control directive
         for (int aStringInd = 1; aStringInd <= aResStringSize; ++aStringInd)
         {
             char aChar = ExtValue(aResString, aStringInd);
@@ -215,7 +215,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     }
                     if (aPageId >= 'A' && aPageId <= 'I')
                     {
-                        aLocalFormatType = (Resource_FormatType)((int)Resource_FormatType_iso8859_1 + (aPageId - 'A'));
+                        aLocalFormatType = (Resource_FormatType)((int)Resource_FormatType.Resource_FormatType_iso8859_1 + (aPageId - 'A'));
                     }
                     else
                     {
@@ -405,7 +405,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// Creates StepReaderData correctly dimensioned (necessary at creation time, because it contains arrays):
     /// nbheader is nb of records for Header, nbtotal for Header+Data and nbpar gives the total count of parameters.
     /// </summary>
-    public StepData_StepReaderData(int nbheader, int nbtotal, int nbpar, Resource_FormatType theSourceCodePage = Resource_FormatType_UTF8)
+    public StepData_StepReaderData(int nbheader, int nbtotal, int nbpar, Resource_FormatType theSourceCodePage = Resource_FormatType.Resource_FormatType_UTF8)
         : base(nbtotal, nbpar)
     {
         theidents = new NCollection_Array1<int>(1, nbtotal);
@@ -508,7 +508,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
     /// <summary>Fills the fields of a parameter of a record. This is a variant of AddParam, adapted to STEP (optimized for specific values).</summary>
     public void AddStepParam(int num, string aval, Interface_ParamType atype, int nument = 0)
     {
-        if (atype == Interface_ParamSub)
+        if (atype == Interface_ParamType.Interface_ParamSub)
         {
             int numid = 0;
             if (global::Kerf.Engine.Foundation.Standard.CStringChar(aval, 2) != '\0')
@@ -522,7 +522,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 AddParam(num, aval, atype, numid);
             }
         }
-        else if (atype == Interface_ParamIdent)
+        else if (atype == Interface_ParamType.Interface_ParamIdent)
         {
             int numid = global::Kerf.Engine.Foundation.Standard.Atoi(aval.Substring(1));
             AddParam(num, aval, atype, numid);
@@ -565,7 +565,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             return 0;
         }
         Interface_FileParameter FP = Param(num, nump);
-        if (FP.ParamType() != Interface_ParamSub)
+        if (FP.ParamType() != Interface_ParamType.Interface_ParamSub)
         {
             return 0;
         }
@@ -740,7 +740,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         }
         //  Si optionel indefini, on passe l eponge
         numsub = 0;
-        bool isvoid = (Param(num, nump).ParamType() == Interface_ParamVoid);
+        bool isvoid = (Param(num, nump).ParamType() == Interface_ParamType.Interface_ParamVoid);
         if (isvoid && optional)
         {
             return false;
@@ -796,34 +796,34 @@ public class StepData_StepReaderData : Interface_FileReaderData
         int kod = 0;
         switch (FT0)
         {
-            case Interface_ParamMisc:
+            case Interface_ParamType.Interface_ParamMisc:
                 return -1;
-            case Interface_ParamInteger:
+            case Interface_ParamType.Interface_ParamInteger:
                 kod = 1;
                 break;
-            case Interface_ParamReal:
+            case Interface_ParamType.Interface_ParamReal:
                 kod = 5;
                 break;
-            case Interface_ParamIdent:
+            case Interface_ParamType.Interface_ParamIdent:
                 kod = 7;
                 break;
-            case Interface_ParamVoid:
+            case Interface_ParamType.Interface_ParamVoid:
                 kod = 0;
                 break;
-            case Interface_ParamText:
+            case Interface_ParamType.Interface_ParamText:
                 kod = 6;
                 break;
-            case Interface_ParamEnum:
+            case Interface_ParamType.Interface_ParamEnum:
                 kod = 4;
                 break; // a confirmer(logical)
-            case Interface_ParamLogical:
+            case Interface_ParamType.Interface_ParamLogical:
                 return -1;
-            case Interface_ParamSub:
+            case Interface_ParamType.Interface_ParamSub:
                 kod = 0;
                 break;
-            case Interface_ParamHexa:
+            case Interface_ParamType.Interface_ParamHexa:
                 return -1;
-            case Interface_ParamBinary:
+            case Interface_ParamType.Interface_ParamBinary:
                 return -1;
             default:
                 return -1;
@@ -858,7 +858,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             {
                 case 1:
                 {
-                    if (FT != Interface_ParamInteger)
+                    if (FT != Interface_ParamType.Interface_ParamInteger)
                     {
                         kod = 0;
                         break;
@@ -869,7 +869,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 case 2:
                 case 3:
                 {
-                    if (FT != Interface_ParamEnum)
+                    if (FT != Interface_ParamType.Interface_ParamEnum)
                     {
                         kod = 0;
                         break;
@@ -894,7 +894,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 }
                 case 4:
                 {
-                    if (FT != Interface_ParamEnum)
+                    if (FT != Interface_ParamType.Interface_ParamEnum)
                     {
                         kod = 0;
                         break;
@@ -906,7 +906,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 }
                 case 5:
                 {
-                    if (FT != Interface_ParamReal)
+                    if (FT != Interface_ParamType.Interface_ParamReal)
                     {
                         kod = 0;
                         break;
@@ -916,7 +916,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 }
                 case 6:
                 {
-                    if (FT != Interface_ParamText)
+                    if (FT != Interface_ParamType.Interface_ParamText)
                     {
                         kod = 0;
                         break;
@@ -976,50 +976,50 @@ public class StepData_StepReaderData : Interface_FileReaderData
             //    What follows strongly resembles ReadAny ...
             switch (FT)
             {
-                case Interface_ParamMisc:
+                case Interface_ParamType.Interface_ParamMisc:
                     break;
-                case Interface_ParamInteger:
+                case Interface_ParamType.Interface_ParamInteger:
                 {
                     StepData_SelectInt sin = new StepData_SelectInt();
                     sin.SetInteger(global::Kerf.Engine.Foundation.Standard.Atoi(str));
                     htr.SetValue(ip, sin);
                     break;
                 }
-                case Interface_ParamReal:
+                case Interface_ParamType.Interface_ParamReal:
                 {
                     StepData_SelectReal sre = new StepData_SelectReal();
                     sre.SetReal(Fastof(str));
                     break;
                     // htr->SetValue (ip,sre); break; svv #2: unreachable
                 }
-                case Interface_ParamIdent:
+                case Interface_ParamType.Interface_ParamIdent:
                     htr.SetValue(ip, BoundEntity(FP.EntityNumber()));
                     break;
-                case Interface_ParamVoid:
+                case Interface_ParamType.Interface_ParamVoid:
                     break;
-                case Interface_ParamEnum:
+                case Interface_ParamType.Interface_ParamEnum:
                 {
                     StepData_SelectInt sin;
                     StepData_SelectNamed sna;
                     int logic = -1;
                     // PTV 16.09.2000
                     // set the default value of StepData_Logical
-                    StepData_Logical slog = StepData_LUnknown;
+                    StepData_Logical slog = StepData_Logical.StepData_LUnknown;
                     if (global::Kerf.Engine.Foundation.Standard.CStringChar(str, 0) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 2) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 3) == '\0')
                     {
                         if (str[1] == 'F')
                         {
-                            slog = StepData_LFalse;
+                            slog = StepData_Logical.StepData_LFalse;
                             logic = 0;
                         }
                         else if (str[1] == 'T')
                         {
-                            slog = StepData_LTrue;
+                            slog = StepData_Logical.StepData_LTrue;
                             logic = 1;
                         }
                         else if (str[1] == 'U')
                         {
-                            slog = StepData_LUnknown;
+                            slog = StepData_Logical.StepData_LUnknown;
                             logic = 2;
                         }
                     }
@@ -1037,16 +1037,16 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     }
                     break;
                 }
-                case Interface_ParamLogical:
+                case Interface_ParamType.Interface_ParamLogical:
                     break;
-                case Interface_ParamText:
+                case Interface_ParamType.Interface_ParamText:
                 {
                     TCollection_HAsciiString txt = new TCollection_HAsciiString(str);
                     cleanText(txt);
                     htr.SetValue(ip, txt);
                     break;
                 }
-                case Interface_ParamSub:
+                case Interface_ParamType.Interface_ParamSub:
                 {
                     object sub = null;
                     int nent = FP.EntityNumber();
@@ -1060,9 +1060,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     htr.SetValue(ip, sub as Transient);
                     break;
                 }
-                case Interface_ParamHexa:
+                case Interface_ParamType.Interface_ParamHexa:
                     break;
-                case Interface_ParamBinary:
+                case Interface_ParamType.Interface_ParamBinary:
                     break;
                 default:
                     break;
@@ -1120,53 +1120,53 @@ public class StepData_StepReaderData : Interface_FileReaderData
         Interface_ParamType FT = FP.ParamType();
         switch (FT)
         {
-            case Interface_ParamMisc:
+            case Interface_ParamType.Interface_ParamMisc:
                 OK = false;
                 break;
-            case Interface_ParamInteger:
+            case Interface_ParamType.Interface_ParamInteger:
                 fild.SetInteger(global::Kerf.Engine.Foundation.Standard.Atoi(str));
                 break;
-            case Interface_ParamReal:
+            case Interface_ParamType.Interface_ParamReal:
                 fild.SetReal(Fastof(str));
                 break;
-            case Interface_ParamIdent:
+            case Interface_ParamType.Interface_ParamIdent:
                 nent = FP.EntityNumber();
                 if (nent > 0)
                 {
                     fild.SetEntity(BoundEntity(nent));
                 }
                 break;
-            case Interface_ParamVoid:
+            case Interface_ParamType.Interface_ParamVoid:
                 break;
-            case Interface_ParamText:
+            case Interface_ParamType.Interface_ParamText:
             {
                 TCollection_HAsciiString txt = new TCollection_HAsciiString(str);
                 cleanText(txt);
                 fild.Set(txt);
                 break;
             }
-            case Interface_ParamEnum:
+            case Interface_ParamType.Interface_ParamEnum:
                 if (str == ".T.")
                 {
-                    fild.SetLogical(StepData_LTrue);
+                    fild.SetLogical(StepData_Logical.StepData_LTrue);
                 }
                 else if (str == ".F.")
                 {
-                    fild.SetLogical(StepData_LFalse);
+                    fild.SetLogical(StepData_Logical.StepData_LFalse);
                 }
                 else if (str == ".U.")
                 {
-                    fild.SetLogical(StepData_LUnknown);
+                    fild.SetLogical(StepData_Logical.StepData_LUnknown);
                 }
                 else
                 {
                     fild.SetEnum(-1, str);
                 }
                 break;
-            case Interface_ParamLogical:
+            case Interface_ParamType.Interface_ParamLogical:
                 OK = false;
                 break;
-            case Interface_ParamSub:
+            case Interface_ParamType.Interface_ParamSub:
                 nent = FP.EntityNumber();
                 kind = ReadSub(nent, mess, ach, descr, ref sub);
                 if (kind < 0)
@@ -1176,10 +1176,10 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 fild.Clear(kind);
                 fild.Set(sub);
                 break;
-            case Interface_ParamHexa:
+            case Interface_ParamType.Interface_ParamHexa:
                 OK = false;
                 break;
-            case Interface_ParamBinary:
+            case Interface_ParamType.Interface_ParamBinary:
                 OK = false;
                 break;
             default:
@@ -1230,9 +1230,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
         //    Now, let's go: read the field and put it in place
         switch (FT)
         {
-            case Interface_ParamMisc:
+            case Interface_ParamType.Interface_ParamMisc:
                 break;
-            case Interface_ParamInteger:
+            case Interface_ParamType.Interface_ParamInteger:
             {
                 if (val is not null)
                 {
@@ -1245,7 +1245,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 val = sin;
                 return true;
             }
-            case Interface_ParamReal:
+            case Interface_ParamType.Interface_ParamReal:
             {
                 if (val is not null)
                 {
@@ -1258,7 +1258,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 val = sre;
                 return true;
             }
-            case Interface_ParamIdent:
+            case Interface_ParamType.Interface_ParamIdent:
             {
                 int nent = FP.EntityNumber();
                 if (nent > 0)
@@ -1267,9 +1267,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 }
                 return (val is not null);
             }
-            case Interface_ParamVoid:
+            case Interface_ParamType.Interface_ParamVoid:
                 break;
-            case Interface_ParamEnum:
+            case Interface_ParamType.Interface_ParamEnum:
             {
                 StepData_SelectMember sm = null;
                 if (val is not null)
@@ -1281,22 +1281,22 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 int logic = -1;
                 // PTV 16.09.2000
                 // set the default value of StepData_Logical
-                StepData_Logical slog = StepData_LUnknown;
+                StepData_Logical slog = StepData_Logical.StepData_LUnknown;
                 if (global::Kerf.Engine.Foundation.Standard.CStringChar(str, 0) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 2) == '.' && global::Kerf.Engine.Foundation.Standard.CStringChar(str, 3) == '\0')
                 {
                     if (str[1] == 'F')
                     {
-                        slog = StepData_LFalse;
+                        slog = StepData_Logical.StepData_LFalse;
                         logic = 0;
                     }
                     else if (str[1] == 'T')
                     {
-                        slog = StepData_LTrue;
+                        slog = StepData_Logical.StepData_LTrue;
                         logic = 1;
                     }
                     else if (str[1] == 'U')
                     {
-                        slog = StepData_LUnknown;
+                        slog = StepData_Logical.StepData_LUnknown;
                         logic = 2;
                     }
                 }
@@ -1328,9 +1328,9 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 } // -> Select general
                 return true;
             }
-            case Interface_ParamLogical:
+            case Interface_ParamType.Interface_ParamLogical:
                 break;
-            case Interface_ParamText:
+            case Interface_ParamType.Interface_ParamText:
             {
                 TCollection_HAsciiString txt = new TCollection_HAsciiString(str);
                 cleanText(txt);
@@ -1344,7 +1344,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 val = txt;
                 return true;
             }
-            case Interface_ParamSub:
+            case Interface_ParamType.Interface_ParamSub:
             {
                 int numsub = SubListNumber(num, nump, false);
                 int nbp = NbParams(numsub);
@@ -1363,7 +1363,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                         int nbp2 = NbParams(numsub2);
                         if (nbp2 > 1)
                         {
-                            if (Param(numsub2, 1).ParamType() == Interface_ParamReal)
+                            if (Param(numsub2, 1).ParamType() == Interface_ParamType.Interface_ParamReal)
                             {
                                 if (!sma.SetName(rectyp))
                                 {
@@ -1372,7 +1372,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                                 NCollection_HSequence<double> aSeq = new NCollection_HSequence<double>();
                                 for (int i = 1; i <= nbp2; i++)
                                 {
-                                    if (Param(numsub2, i).ParamType() != Interface_ParamReal)
+                                    if (Param(numsub2, i).ParamType() != Interface_ParamType.Interface_ParamReal)
                                     {
                                         continue;
                                     }
@@ -1432,7 +1432,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             if (NbParams(numsub) == 2)
             {
                 Interface_FileParameter FPX = Param(numsub, 1);
-                if (FPX.ParamType() == Interface_ParamReal)
+                if (FPX.ParamType() == Interface_ParamType.Interface_ParamReal)
                 {
                     X = Fastof(FPX.CValue());
                 }
@@ -1441,7 +1441,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     errmess = "Parameter n0.%d (%s) : (X,Y) X not a Real";
                 }
                 Interface_FileParameter FPY = Param(numsub, 2);
-                if (FPY.ParamType() == Interface_ParamReal)
+                if (FPY.ParamType() == Interface_ParamType.Interface_ParamReal)
                 {
                     Y = Fastof(FPY.CValue());
                 }
@@ -1472,7 +1472,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
             if (NbParams(numsub) == 3)
             {
                 Interface_FileParameter FPX = Param(numsub, 1);
-                if (FPX.ParamType() == Interface_ParamReal)
+                if (FPX.ParamType() == Interface_ParamType.Interface_ParamReal)
                 {
                     X = Fastof(FPX.CValue());
                 }
@@ -1481,7 +1481,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     errmess = "Parameter n0.%d (%s) : (X,Y,Z) X not a Real";
                 }
                 Interface_FileParameter FPY = Param(numsub, 2);
-                if (FPY.ParamType() == Interface_ParamReal)
+                if (FPY.ParamType() == Interface_ParamType.Interface_ParamReal)
                 {
                     Y = Fastof(FPY.CValue());
                 }
@@ -1490,7 +1490,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     errmess = "Parameter n0.%d (%s) : (X,Y,Z) Y not a Real";
                 }
                 Interface_FileParameter FPZ = Param(numsub, 3);
-                if (FPZ.ParamType() == Interface_ParamReal)
+                if (FPZ.ParamType() == Interface_ParamType.Interface_ParamReal)
                 {
                     Z = Fastof(FPZ.CValue());
                 }
@@ -1530,7 +1530,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamReal || FP.ParamType() == Interface_ParamInteger)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamReal || FP.ParamType() == Interface_ParamType.Interface_ParamInteger)
             {
                 val = Fastof(FP.CValue());
             }
@@ -1561,7 +1561,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             Interface_FileParameter FP = Param(num, nump);
             int nent = FP.EntityNumber();
-            if (FP.ParamType() == Interface_ParamIdent)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamIdent)
             {
                 if (nent > 0)
                 {
@@ -1611,7 +1611,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         {
             Interface_FileParameter FP = Param(num, nump);
             int nent = FP.EntityNumber();
-            if (FP.ParamType() == Interface_ParamIdent)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamIdent)
             {
                 if (nent > 0)
                 {
@@ -1635,7 +1635,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     errmess = "Parameter n0.%d (%s) : Unresolved reference";
                 }
             }
-            else if (FP.ParamType() == Interface_ParamVoid)
+            else if (FP.ParamType() == Interface_ParamType.Interface_ParamVoid)
             {
                 errmess = "Parameter n0.%d (%s) not an Entity";
             }
@@ -1674,16 +1674,16 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamInteger)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamInteger)
             {
                 val = global::Kerf.Engine.Foundation.Standard.Atoi(FP.CValue());
             }
-            else if (FP.ParamType() == Interface_ParamReal)
+            else if (FP.ParamType() == Interface_ParamType.Interface_ParamReal)
             {
                 val = RoundToInt(Fastof(FP.CValue()));
                 errmess = "Parameter n0.%d (%s) was rounded";
             }
-            if (FP.ParamType() != Interface_ParamInteger && FP.ParamType() != Interface_ParamReal)
+            if (FP.ParamType() != Interface_ParamType.Interface_ParamInteger && FP.ParamType() != Interface_ParamType.Interface_ParamReal)
             {
                 errmess = "Parameter n0.%d (%s) not an Integer";
             }
@@ -1713,7 +1713,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamEnum)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamEnum)
             {
                 string txt = FP.CValue();
                 if (txt == ".T.")
@@ -1751,20 +1751,20 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamEnum)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamEnum)
             {
                 string txt = FP.CValue();
                 if (txt == ".T.")
                 {
-                    flag = StepData_LTrue;
+                    flag = StepData_Logical.StepData_LTrue;
                 }
                 else if (txt == ".F.")
                 {
-                    flag = StepData_LFalse;
+                    flag = StepData_Logical.StepData_LFalse;
                 }
                 else if (txt == ".U.")
                 {
-                    flag = StepData_LUnknown;
+                    flag = StepData_Logical.StepData_LUnknown;
                 }
                 else
                 {
@@ -1793,7 +1793,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamText)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamText)
             {
                 val = new TCollection_HAsciiString(FP.CValue());
                 cleanText(val);
@@ -1817,11 +1817,11 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamEnum)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamEnum)
             {
                 text = FP.CValue();
             }
-            else if (FP.ParamType() == Interface_ParamVoid)
+            else if (FP.ParamType() == Interface_ParamType.Interface_ParamVoid)
             {
                 errmess = "Parameter n0.%d (%s) : Undefined Enumeration not allowed";
             }
@@ -1857,7 +1857,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() == Interface_ParamEnum)
+            if (FP.ParamType() == Interface_ParamType.Interface_ParamEnum)
             {
                 val = enumtool.Value(FP.CValue());
                 if (val >= 0)
@@ -1869,7 +1869,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     errmess = "Parameter n0.%d (%s) : Incorrect Enumeration Value";
                 }
             }
-            else if (FP.ParamType() == Interface_ParamVoid)
+            else if (FP.ParamType() == Interface_ParamType.Interface_ParamVoid)
             {
                 val = enumtool.NullValue();
                 if (val < 0)
@@ -1902,7 +1902,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         if (nump > 0 && nump <= NbParams(num))
         {
             Interface_FileParameter FP = Param(num, nump);
-            if (FP.ParamType() != Interface_ParamSub)
+            if (FP.ParamType() != Interface_ParamType.Interface_ParamSub)
             {
                 //    Not a sub-list: OK if allowed
                 numr = num;
@@ -2023,7 +2023,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
         for (int i = 1; i <= nb; i++)
         {
             Interface_FileParameter FP = Param(num, i);
-            if (FP.ParamType() != Interface_ParamIdent)
+            if (FP.ParamType() != Interface_ParamType.Interface_ParamIdent)
             {
                 continue;
             }
@@ -2117,7 +2117,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 //    We process: sub-lists (except subn), idents (if Map says OK ...)
                 Interface_FileParameter FP = ChangeParameter(nda + na);
                 Interface_ParamType letype = FP.ParamType();
-                if (letype == Interface_ParamSub)
+                if (letype == Interface_ParamType.Interface_ParamSub)
                 {
                     int numsub = FP.EntityNumber();
                     if (numsub > thelastn)
@@ -2130,7 +2130,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                     }
                     FP.SetEntityNumber(subn[numsub]);
                 }
-                else if (letype == Interface_ParamIdent)
+                else if (letype == Interface_ParamType.Interface_ParamIdent)
                 {
                     int id = FP.EntityNumber();
                     int indmap = imap.FindIndex(id);
@@ -2318,7 +2318,7 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 for (int na = 1; na <= nba; na++)
                 {
                     Interface_FileParameter FP = ChangeParam(num, na);
-                    if (FP.ParamType() != Interface_ParamIdent)
+                    if (FP.ParamType() != Interface_ParamType.Interface_ParamIdent)
                     {
                         continue;
                     }
@@ -2386,13 +2386,13 @@ public class StepData_StepReaderData : Interface_FileReaderData
                 //  This is critical for maintaining referential integrity in complex STEP structures
                 Interface_FileParameter FP = ChangeParam(num, na);
                 Interface_ParamType letype = FP.ParamType();
-                if (letype == Interface_ParamSub)
+                if (letype == Interface_ParamType.Interface_ParamSub)
                 {
                     //  sub-list type parameter: sub-list number read by unstacking
                     FP.SetEntityNumber(subpile.Value(nbsubpil));
                     nbsubpil--; //	subpile->Remove(nbsubpil);
                 }
-                else if (letype == Interface_ParamIdent)
+                else if (letype == Interface_ParamType.Interface_ParamIdent)
                 {
                     //  ident type parameter (references an entity): search for requested ident
                     int id = -FP.EntityNumber();

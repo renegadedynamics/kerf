@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -15,7 +16,7 @@ namespace OcctNet.DataExchange.Tests.TransferBRep;
 [Collection(ProcessWideMessages.Name)]
 public class TransferBRepTests
 {
-    private readonly Shape myBox = new BRepPrimAPI_MakeBox(1.0, 2.0, 3.0).Shape();
+    private readonly Shape myBox = new MakeBox(1.0, 2.0, 3.0).Shape();
     private readonly List<Shape> myFaces = [];
 
     public TransferBRepTests()
@@ -239,7 +240,7 @@ public class TransferBRepTests
                 TP!.AddFail(anEnt, "no shape for " + anEnt.Name);
                 return null;
             }
-            return new TransferBRep_ShapeBinder(new BRepPrimAPI_MakeBox(1.0, 1.0, anEnt.Name.Length).Shape());
+            return new TransferBRep_ShapeBinder(new MakeBox(1.0, 1.0, anEnt.Name.Length).Shape());
         }
     }
 

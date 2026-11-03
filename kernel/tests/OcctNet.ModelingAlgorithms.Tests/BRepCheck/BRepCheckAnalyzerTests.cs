@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -7,7 +8,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using System.Text;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -24,7 +25,7 @@ public class BRepCheckAnalyzerTests
 {
     private const double Tol = 1.0e-7;
 
-    private static List<BRepCheck_Status> L(NCollection_List<BRepCheck_Status> theList) => [.. theList];
+    private static List<StatusCheck> L(NCollection_List<StatusCheck> theList) => [.. theList];
 
     // ---------------------------------------------------------------------------------------------------------------
     // Shapes
@@ -143,14 +144,14 @@ public class BRepCheckAnalyzerTests
     // Analysis in both modes
 
     /// <summary>Every status of every sub-shape (by MapShapes index), on its own and in each context, as text.</summary>
-    private static string Dump(BRepCheck_Analyzer theA, in Shape theShape)
+    private static string Dump(Analyzer theA, in Shape theShape)
     {
         var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         var aText = new StringBuilder();
         for (int i = 1; i <= aMap.Extent(); i++)
         {
-            BRepCheck_Result? aR = theA.Result(aMap[i]);
+            ResultCheck? aR = theA.Result(aMap[i]);
             aText.Append($"{i} {aMap[i].ShapeType()} valid={theA.IsValid(aMap[i])}");
             if (aR is null)
             {
@@ -177,25 +178,25 @@ public class BRepCheckAnalyzerTests
     }
 
     /// <summary>The serial analysis, checked against the parallel one and its serial fallback, status by status.</summary>
-    private static BRepCheck_Analyzer Analyze(in Shape theShape, bool theGeomControls = true, bool theIsExact = false,
+    private static Analyzer Analyze(in Shape theShape, bool theGeomControls = true, bool theIsExact = false,
                                               bool theMayFail = false)
     {
-        var aSerial = new BRepCheck_Analyzer(theShape, theGeomControls, false, theIsExact);
-        var aParallel = new BRepCheck_Analyzer(theShape, theGeomControls, true, theIsExact);
-        Assert.False(aSerial.IsParallel());
-        Assert.True(aParallel.IsParallel());
+        var aSerial = new Analyzer(theShape, theGeomControls, false, theIsExact);
+        var aParallel = new Analyzer(theShape, theGeomControls, true, theIsExact);
+        Assert.False(aSerial.IsParallel);
+        Assert.True(aParallel.IsParallel);
         string aDump = Dump(aSerial, theShape);
         Assert.Equal(aDump, Dump(aParallel, theShape));
         Assert.Equal(aSerial.IsValid(), aParallel.IsValid());
         // and the parallel analysis run by OSD_Parallel's serial fallback (no threads, as in WebAssembly)
         using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
         {
-            var aFallback = new BRepCheck_Analyzer(theShape, theGeomControls, true, theIsExact);
+            var aFallback = new Analyzer(theShape, theGeomControls, true, theIsExact);
             Assert.Equal(aDump, Dump(aFallback, theShape));
         }
         if (!theMayFail)
         {
-            Assert.DoesNotContain(nameof(BRepCheck_CheckFail), aDump);
+            Assert.DoesNotContain(nameof(StatusCheck.CheckFail), aDump);
         }
 
         return aSerial;
@@ -205,16 +206,16 @@ public class BRepCheckAnalyzerTests
 
     // The analyzer keeps a result per orientation met (OCCT's map compares with IsEqual); the statuses on the shape
     // itself are the same for all of them
-    private static List<BRepCheck_Status> StatusOf(BRepCheck_Analyzer theA, Shape theSub)
+    private static List<StatusCheck> StatusOf(Analyzer theA, Shape theSub)
         => L(theOrientations.Select(o => TryResult(theA, theSub.Oriented(o))).First(r => r is not null)!.Status());
 
     // ... and the contexts are on the orientation met first
-    private static List<BRepCheck_Status> StatusIn(BRepCheck_Analyzer theA, Shape theSub, Shape theContext)
+    private static List<StatusCheck> StatusIn(Analyzer theA, Shape theSub, Shape theContext)
         => L(theOrientations.Select(o => TryResult(theA, theSub.Oriented(o)))
                             .First(r => r is not null && r.IsStatusOnShape(theContext))!
                             .StatusOnShape(theContext));
 
-    private static BRepCheck_Result? TryResult(BRepCheck_Analyzer theA, in Shape theSub)
+    private static ResultCheck? TryResult(Analyzer theA, in Shape theSub)
     {
         try
         {
@@ -233,23 +234,23 @@ public class BRepCheckAnalyzerTests
     public void A_box_is_valid_with_every_sub_shape()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
-        BRepCheck_Analyzer anA = Analyze(aBox);
+        Analyzer anA = Analyze(aBox);
         Assert.True(anA.IsValid());
-        Assert.IsType<BRepCheck_Solid>(anA.Result(aBox));
-        Assert.IsType<BRepCheck_Shell>(anA.Result(FirstShell(aBox)));
+        Assert.IsType<SolidCheck>(anA.Result(aBox));
+        Assert.IsType<ShellCheck>(anA.Result(FirstShell(aBox)));
         for (var anExp = new Explorer(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(anA.IsValid(anExp.Current()));
-            Assert.Equal([BRepCheck_NoError], StatusOf(anA, anExp.Current()));
+            Assert.Equal([StatusCheck.NoError], StatusOf(anA, anExp.Current()));
         }
 
-        Assert.False(anA.IsExactMethod());
+        Assert.False(anA.IsExactMethod);
         Assert.True(Analyze(aBox, false).IsValid());
         Assert.True(Analyze(aBox, true, true).IsValid());
         // located, reversed and in a compound
         Shape aPlaced = ClassificationTestShapes.RotatedZ(aBox, 0.7).Reversed();
         Compound aC = Builder.MakeCompound(aBox, aPlaced);
-        BRepCheck_Analyzer aCA = Analyze(aC);
+        Analyzer aCA = Analyze(aC);
         Assert.True(aCA.IsValid());
         Assert.Null(aCA.Result(aC));
     }
@@ -262,23 +263,23 @@ public class BRepCheckAnalyzerTests
         Assert.True(Analyze(aCyl).IsValid());
         Assert.True(Analyze(aCyl.Reversed()).IsValid());
         Solid aVoid = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
-        BRepCheck_Analyzer anA = Analyze(aVoid);
+        Analyzer anA = Analyze(aVoid);
         Assert.True(anA.IsValid());
-        Assert.Equal([BRepCheck_NoError], StatusOf(anA, aVoid));
+        Assert.Equal([StatusCheck.NoError], StatusOf(anA, aVoid));
     }
 
     [Fact]
     public void The_analyzer_checks_a_null_shape_never()
     {
-        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepCheck_Analyzer(new Shape()));
+        Assert.Throws<global::Kerf.Engine.Foundation.NullObjectException>(() => new Analyzer(new Shape()));
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        var anA = new BRepCheck_Analyzer(aBox);
+        var anA = new Analyzer(aBox);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => anA.Result(TestShapes.Frozen(TestShapes.Box(1, 1, 1))));
         anA.SetParallel(true);
         anA.SetExactMethod(true);
         anA.Init(aBox, false);
-        Assert.True(anA.IsParallel());
-        Assert.True(anA.IsExactMethod());
+        Assert.True(anA.IsParallel);
+        Assert.True(anA.IsExactMethod);
         Assert.True(anA.IsValid());
     }
 
@@ -293,12 +294,12 @@ public class BRepCheckAnalyzerTests
         Vertex aV1 = TestShapes.Vertex(new Point3D());
         Vertex aV2 = TestShapes.Vertex(new Point3D(10, 0, 0.1));
         Edge anE = TestShapes.Frozen(TestShapes.Edge(aLine, 0, 10, aV1, aV2));
-        BRepCheck_Analyzer anA = Analyze(anE);
+        Analyzer anA = Analyze(anE);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_NoError], StatusOf(anA, anE));
-        Assert.Equal([BRepCheck_InvalidPointOnCurve], StatusIn(anA, aV2, anE));
-        Assert.Equal([BRepCheck_NoError], StatusIn(anA, aV1, anE));
-        var aCheck = (BRepCheck_Vertex)TryResult(anA, aV2.Oriented(Reversed))!;
+        Assert.Equal([StatusCheck.NoError], StatusOf(anA, anE));
+        Assert.Equal([StatusCheck.InvalidPointOnCurve], StatusIn(anA, aV2, anE));
+        Assert.Equal([StatusCheck.NoError], StatusIn(anA, aV1, anE));
+        var aCheck = (VertexCheck)TryResult(anA, aV2.Oriented(Reversed))!;
         // a vertex without point representations: its own tolerance, with OCCT's 5% margin on the square
         Assert.Equal(Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion() * 1.05), aCheck.Tolerance(), 1e-20);
 
@@ -320,9 +321,9 @@ public class BRepCheckAnalyzerTests
         Edge aRange = TestShapes.Edge(aLine, 0, 10);
         aB.Range(aRange, 5, 1);
         aRange = TestShapes.Frozen(aRange);
-        BRepCheck_Analyzer anA = Analyze(aRange);
+        Analyzer anA = Analyze(aRange);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_InvalidRange], StatusOf(anA, aRange));
+        Assert.Equal([StatusCheck.InvalidRange], StatusOf(anA, aRange));
 
         // degenerated with a 3D curve
         // (BRep_Builder.Degenerated removes the 3D curve: put it back after)
@@ -331,16 +332,16 @@ public class BRepCheckAnalyzerTests
         Edge aDegNoCurve = TestShapes.Edge(aLine, 0, 10);
         aB.Degenerated(aDegNoCurve, true);
         aDegNoCurve = TestShapes.Frozen(aDegNoCurve);
-        Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(aDegNoCurve), aDegNoCurve));
+        Assert.Equal([StatusCheck.NoError], StatusOf(Analyze(aDegNoCurve), aDegNoCurve));
         aB.UpdateEdge(aDeg, aLine, Tol);
         aDeg = TestShapes.Frozen(aDeg);
-        Assert.Equal([BRepCheck_InvalidDegeneratedFlag], StatusOf(Analyze(aDeg), aDeg));
+        Assert.Equal([StatusCheck.InvalidDegeneratedFlag], StatusOf(Analyze(aDeg), aDeg));
 
         // same parameter without same range
         Edge aFlags = TestShapes.Edge(aLine, 0, 10);
         aB.SameRange(aFlags, false);
         aFlags = TestShapes.Frozen(aFlags);
-        Assert.Equal([BRepCheck_InvalidSameParameterFlag], StatusOf(Analyze(aFlags), aFlags));
+        Assert.Equal([StatusCheck.InvalidSameParameterFlag], StatusOf(Analyze(aFlags), aFlags));
 
         // a range beyond a bounded curve; a trimmed curve is measured against its basis curve, as OCCT does
         var aPoles = new NCollection_Array1<Point3D>(1, 2);
@@ -349,11 +350,11 @@ public class BRepCheckAnalyzerTests
         Edge aBeyond = TestShapes.Edge(new BezierCurve3D(aPoles), 0, 1);
         aB.Range(aBeyond, -1, 1);
         aBeyond = TestShapes.Frozen(aBeyond);
-        Assert.Equal([BRepCheck_InvalidRange], StatusOf(Analyze(aBeyond), aBeyond));
+        Assert.Equal([StatusCheck.InvalidRange], StatusOf(Analyze(aBeyond), aBeyond));
         Edge aTrim = TestShapes.Edge(new TrimmedCurve3D(aLine, 0, 10), 0, 10);
         aB.Range(aTrim, -1, 10);
         aTrim = TestShapes.Frozen(aTrim);
-        Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(aTrim), aTrim));
+        Assert.Equal([StatusCheck.NoError], StatusOf(Analyze(aTrim), aTrim));
 
         // no 3D curve: only a pcurve on a face
         (Face aFace, Edge aNo3D) = SquareWithEdge((f, v1, v2) =>
@@ -369,13 +370,13 @@ public class BRepCheckAnalyzerTests
         });
         anA = Analyze(aFace, theMayFail: true);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_No3DCurve, BRepCheck_CheckFail], StatusOf(anA, aNo3D));
+        Assert.Equal([StatusCheck.No3DCurve, StatusCheck.CheckFail], StatusOf(anA, aNo3D));
         // the pcurve is the reference; with no other pcurve on the plane, OCCT projects the reference's 3D curve, which
         // it doesn't have: it dereferences a null handle, and the analyzer records a failure
-        Assert.Equal([BRepCheck_CheckFail], StatusIn(anA, aNo3D, aFace));
-        Assert.Contains(BRepCheck_CheckFail, StatusOf(anA, aFace));
+        Assert.Equal([StatusCheck.CheckFail], StatusIn(anA, aNo3D, aFace));
+        Assert.Contains(StatusCheck.CheckFail, StatusOf(anA, aFace));
         // without geometric controls there is no projection
-        Assert.Equal([BRepCheck_NoError], StatusIn(Analyze(aFace, false), aNo3D, aFace));
+        Assert.Equal([StatusCheck.NoError], StatusIn(Analyze(aFace, false), aNo3D, aFace));
     }
 
     [Fact]
@@ -389,10 +390,10 @@ public class BRepCheckAnalyzerTests
             aB.SameParameter(anE, false);
             return anE;
         });
-        BRepCheck_Analyzer anA = Analyze(aF1);
+        Analyzer anA = Analyze(aF1);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_NoError], StatusOf(anA, aE1));
-        Assert.Equal([BRepCheck_InvalidSameParameterFlag], StatusIn(anA, aE1, aF1));
+        Assert.Equal([StatusCheck.NoError], StatusOf(anA, aE1));
+        Assert.Equal([StatusCheck.InvalidSameParameterFlag], StatusIn(anA, aE1, aF1));
         Assert.True(anA.IsValid(aE1));
         Assert.False(anA.IsValid(aF1));
 
@@ -400,15 +401,15 @@ public class BRepCheckAnalyzerTests
         (Face aF2, Edge aE2) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5));
         anA = Analyze(aF2);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_InvalidCurveOnSurface, BRepCheck_InvalidSameParameterFlag], StatusIn(anA, aE2, aF2));
-        Assert.Equal([BRepCheck_UnorientableShape], StatusOf(anA, aF2));
-        Assert.Equal(0.5 * 1.05, ((BRepCheck_Edge)anA.Result(aE2)!).Tolerance(), 1e-9);
+        Assert.Equal([StatusCheck.InvalidCurveOnSurface, StatusCheck.InvalidSameParameterFlag], StatusIn(anA, aE2, aF2));
+        Assert.Equal([StatusCheck.UnorientableShape], StatusOf(anA, aF2));
+        Assert.Equal(0.5 * 1.05, ((EdgeCheck)anA.Result(aE2)!).Tolerance(), 1e-9);
         // the exact method finds it too; without geometric controls only the topology is checked
-        Assert.Equal([BRepCheck_InvalidCurveOnSurface, BRepCheck_InvalidSameParameterFlag],
+        Assert.Equal([StatusCheck.InvalidCurveOnSurface, StatusCheck.InvalidSameParameterFlag],
                      StatusIn(Analyze(aF2, true, true), aE2, aF2));
-        BRepCheck_Analyzer aTopo = Analyze(aF2, false);
+        Analyzer aTopo = Analyze(aF2, false);
         Assert.True(aTopo.IsValid());
-        Assert.False(((BRepCheck_Edge)aTopo.Result(aE2)!).GeometricControls());
+        Assert.False(((EdgeCheck)aTopo.Result(aE2)!).GeometricControls());
 
         // a pcurve just inside the edge's tolerance
         (Face aF3, _) = SquareWithEdge((f, v1, v2) => Seg(f, v1, v2, 0.5e-7));
@@ -444,11 +445,11 @@ public class BRepCheckAnalyzerTests
         aB.Add(aF, aW);
         aF = TestShapes.Frozen(aF);
 
-        BRepCheck_Analyzer anA = Analyze(aF);
+        Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_NoCurveOnSurface], StatusIn(anA, aTop, aF));
-        Assert.Equal([BRepCheck_NoError], StatusIn(anA, aSeam, aF));
-        Assert.Equal([BRepCheck_UnorientableShape], StatusOf(anA, aF));
+        Assert.Equal([StatusCheck.NoCurveOnSurface], StatusIn(anA, aTop, aF));
+        Assert.Equal([StatusCheck.NoError], StatusIn(anA, aSeam, aF));
+        Assert.Equal([StatusCheck.UnorientableShape], StatusOf(anA, aF));
     }
 
     [Fact]
@@ -459,21 +460,21 @@ public class BRepCheckAnalyzerTests
         Solid anOpen = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
         var anExp = new Explorer(aFaces[0], ShapeType.Edge);
         Edge aFree = ShapeCasts.Edge(anExp.Current());
-        var aCheck = new BRepCheck_Edge(aFree);
+        var aCheck = new EdgeCheck(aFree);
         aCheck.InContext(aBox);
-        Assert.Equal([BRepCheck_NoError], L(aCheck.StatusOnShape(aBox)));
+        Assert.Equal([StatusCheck.NoError], L(aCheck.StatusOnShape(aBox)));
         aCheck.InContext(anOpen);
-        Assert.Equal([BRepCheck_FreeEdge], L(aCheck.StatusOnShape(anOpen)));
+        Assert.Equal([StatusCheck.FreeEdge], L(aCheck.StatusOnShape(anOpen)));
         Solid aRepeated = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Append(aFaces[0]), true)));
         aCheck.InContext(aRepeated);
-        Assert.Equal([BRepCheck_InvalidMultiConnexity], L(aCheck.StatusOnShape(aRepeated)));
+        Assert.Equal([StatusCheck.InvalidMultiConnexity], L(aCheck.StatusOnShape(aRepeated)));
         Edge anOther = TestShapes.Frozen(TestShapes.Edge(new Point3D(), new Point3D(1, 1, 1)));
         aCheck.InContext(anOther);
-        Assert.Equal([BRepCheck_SubshapeNotInShape], L(aCheck.StatusOnShape(anOther)));
-        Assert.Equal(BRepCheck_NoError, aCheck.CheckPolygonOnTriangulation(aFree));
+        Assert.Equal([StatusCheck.SubshapeNotInShape], L(aCheck.StatusOnShape(anOther)));
+        Assert.Equal(StatusCheck.NoError, aCheck.CheckPolygonOnTriangulation(aFree));
         aCheck.Blind();
-        Assert.True(aCheck.IsBlind());
-        Assert.True(aCheck.IsMinimum());
+        Assert.True(aCheck.IsBlind);
+        Assert.True(aCheck.IsMinimum);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -487,10 +488,10 @@ public class BRepCheckAnalyzerTests
         new BrepBuilder().Add(aF, aW);
         aF = TestShapes.Frozen(aF);
         aW = ShapeCasts.Wire(new Iterator(aF).Value());
-        BRepCheck_Analyzer anA = Analyze(aF);
+        Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_NotClosed], StatusIn(anA, aW, aF));
-        Assert.Equal([BRepCheck_UnorientableShape], StatusOf(anA, aF));
+        Assert.Equal([StatusCheck.NotClosed], StatusIn(anA, aW, aF));
+        Assert.Equal([StatusCheck.UnorientableShape], StatusOf(anA, aF));
     }
 
     [Fact]
@@ -501,13 +502,13 @@ public class BRepCheckAnalyzerTests
         new BrepBuilder().Add(aF, aW);
         aF = TestShapes.Frozen(aF);
         aW = ShapeCasts.Wire(new Iterator(aF).Value());
-        BRepCheck_Analyzer anA = Analyze(aF);
+        Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_SelfIntersectingWire], StatusIn(anA, aW, aF));
-        Assert.Equal([BRepCheck_UnorientableShape], StatusOf(anA, aF));
+        Assert.Equal([StatusCheck.SelfIntersectingWire], StatusIn(anA, aW, aF));
+        Assert.Equal([StatusCheck.UnorientableShape], StatusOf(anA, aF));
         // without geometric controls the wire is closed and well oriented
-        BRepCheck_Analyzer aTopo = Analyze(aF, false);
-        Assert.Equal([BRepCheck_NoError], StatusIn(aTopo, aW, aF));
+        Analyzer aTopo = Analyze(aF, false);
+        Assert.Equal([StatusCheck.NoError], StatusIn(aTopo, aW, aF));
     }
 
     [Fact]
@@ -516,14 +517,14 @@ public class BRepCheckAnalyzerTests
         Face aF = PlaneFace();
         Wire aHole = Polygon(aF, true, (4, 4), (6, 4), (6, 6), (4, 6));
         aF = TestShapes.Frozen(Square(aHole));
-        BRepCheck_Analyzer anA = Analyze(aF);
+        Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusOf(anA, aF));
-        var aCheck = (BRepCheck_Face)anA.Result(aF)!;
+        Assert.Equal([StatusCheck.BadOrientationOfSubshape], StatusOf(anA, aF));
+        var aCheck = (FaceCheck)anA.Result(aF)!;
         Assert.True(aCheck.IsUnorientable());
-        Assert.Equal(BRepCheck_NoError, aCheck.IntersectWires());
-        Assert.Equal(BRepCheck_NoError, aCheck.ClassifyWires());
-        Assert.Equal(BRepCheck_BadOrientationOfSubshape, aCheck.OrientationOfWires());
+        Assert.Equal(StatusCheck.NoError, aCheck.IntersectWires());
+        Assert.Equal(StatusCheck.NoError, aCheck.ClassifyWires());
+        Assert.Equal(StatusCheck.BadOrientationOfSubshape, aCheck.OrientationOfWires());
 
         // the same face with the hole clockwise
         Face aGood = PlaneFace();
@@ -538,21 +539,21 @@ public class BRepCheckAnalyzerTests
         Face aF = PlaneFace();
         // a hole across the outer boundary
         Face aCrossing = TestShapes.Frozen(Square(Polygon(aF, true, (8, 4), (8, 6), (12, 6), (12, 4))));
-        BRepCheck_Analyzer anA = Analyze(aCrossing);
+        Analyzer anA = Analyze(aCrossing);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_IntersectingWires], StatusOf(anA, aCrossing));
+        Assert.Equal([StatusCheck.IntersectingWires], StatusOf(anA, aCrossing));
 
         // two outer wires
         Face aTwo = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (30, 0), (30, 10), (20, 10))));
         anA = Analyze(aTwo);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_InvalidImbricationOfWires], StatusOf(anA, aTwo));
+        Assert.Equal([StatusCheck.InvalidImbricationOfWires], StatusOf(anA, aTwo));
 
         // a hole outside the face
         Face anOutside = TestShapes.Frozen(Square(Polygon(aF, true, (20, 0), (20, 10), (30, 10), (30, 0))));
         anA = Analyze(anOutside);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_InvalidImbricationOfWires], StatusOf(anA, anOutside));
+        Assert.Equal([StatusCheck.InvalidImbricationOfWires], StatusOf(anA, anOutside));
 
         // the same wire twice
         Wire anOuter = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
@@ -561,7 +562,7 @@ public class BRepCheckAnalyzerTests
         aB.Add(aTwice, anOuter);
         aB.Add(aTwice, anOuter);
         aTwice = TestShapes.Frozen(aTwice);
-        Assert.Equal(BRepCheck_RedundantWire, new BRepCheck_Face(aTwice).IntersectWires());
+        Assert.Equal(StatusCheck.RedundantWire, new FaceCheck(aTwice).IntersectWires());
     }
 
     [Fact]
@@ -571,14 +572,14 @@ public class BRepCheckAnalyzerTests
         Face aF = new();
         aB.MakeFace(ref aF);
         aF = TestShapes.Frozen(aF);
-        BRepCheck_Analyzer anA = Analyze(aF);
+        Analyzer anA = Analyze(aF);
         Assert.False(anA.IsValid());
         // OrientationOfWires(true) finds no wire and records NoError, which BRepCheck.Add appends after NoSurface
-        Assert.Equal([BRepCheck_NoSurface, BRepCheck_NoError], StatusOf(anA, aF));
-        var aCheck = new BRepCheck_Face(aF);
+        Assert.Equal([StatusCheck.NoSurface, StatusCheck.NoError], StatusOf(anA, aF));
+        var aCheck = new FaceCheck(aF);
         Assert.True(aCheck.GeometricControls());
         aCheck.SetUnorientable();
-        Assert.Equal([BRepCheck_NoSurface, BRepCheck_UnorientableShape], L(aCheck.Status()));
+        Assert.Equal([StatusCheck.NoSurface, StatusCheck.UnorientableShape], L(aCheck.Status()));
         aCheck.InContext(TestShapes.Frozen(TestShapes.Box(1, 1, 1)));
     }
 
@@ -594,19 +595,19 @@ public class BRepCheckAnalyzerTests
         List<Shape> aReversed = [.. aFaces];
         aReversed[2] = aReversed[2].Reversed();
         Solid aS1 = TestShapes.Frozen(SolidOf(ShellOf(aReversed, true)));
-        BRepCheck_Analyzer anA = Analyze(aS1);
+        Analyzer anA = Analyze(aS1);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusIn(anA, FirstShell(aS1), aS1));
+        Assert.Equal([StatusCheck.BadOrientationOfSubshape], StatusIn(anA, FirstShell(aS1), aS1));
         Assert.True(anA.IsValid(FirstShell(aS1)));
 
         Solid aS2 = TestShapes.Frozen(SolidOf(ShellOf(aFaces.Skip(1), false)));
         anA = Analyze(aS2);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_NotClosed], StatusIn(anA, FirstShell(aS2), aS2));
+        Assert.Equal([StatusCheck.NotClosed], StatusIn(anA, FirstShell(aS2), aS2));
 
         // the whole shell reversed: an inside-out solid, valid for the shell check
         Solid aS3 = TestShapes.Frozen(SolidOf(FirstShell(aBox).Reversed()));
-        Assert.Equal([BRepCheck_NoError], StatusIn(Analyze(aS3), FirstShell(aS3), aS3));
+        Assert.Equal([StatusCheck.NoError], StatusIn(Analyze(aS3), FirstShell(aS3), aS3));
     }
 
     [Fact]
@@ -618,31 +619,31 @@ public class BRepCheckAnalyzerTests
 
         // two disjoint closed shells: two growths, and one outside the other
         Solid aTwo = TestShapes.Frozen(SolidOf(aShell, aFar));
-        BRepCheck_Analyzer anA = Analyze(aTwo);
+        Analyzer anA = Analyze(aTwo);
         Assert.False(anA.IsValid());
-        Assert.Equal([BRepCheck_EnclosedRegion, BRepCheck_SubshapeNotInShape], StatusOf(anA, aTwo));
+        Assert.Equal([StatusCheck.EnclosedRegion, StatusCheck.SubshapeNotInShape], StatusOf(anA, aTwo));
 
         // a shell sharing faces with another
         Solid aShared = TestShapes.Frozen(SolidOf(aShell, ShellOf(Faces(aBox).Take(2), false)));
-        Assert.Equal([BRepCheck_InvalidImbricationOfShells], StatusOf(Analyze(aShared), aShared));
+        Assert.Equal([StatusCheck.InvalidImbricationOfShells], StatusOf(Analyze(aShared), aShared));
 
         // a stray vertex, internal or not
         Vertex aV = TestShapes.Vertex(new Point3D(0.5, 0.5, 0.5));
         Solid aStray = TestShapes.Frozen(SolidOf(aShell, aV));
-        Assert.Equal([BRepCheck_BadOrientationOfSubshape], StatusOf(Analyze(aStray), aStray));
+        Assert.Equal([StatusCheck.BadOrientationOfSubshape], StatusOf(Analyze(aStray), aStray));
         Solid anInternal = TestShapes.Frozen(SolidOf(aShell, aV.Oriented(Internal)));
-        Assert.Equal([BRepCheck_NoError], StatusOf(Analyze(anInternal), anInternal));
+        Assert.Equal([StatusCheck.NoError], StatusOf(Analyze(anInternal), anInternal));
 
         // only internal shells
         List<Shape> anInternalFaces = [.. Faces(aBox).Select(f => f.Oriented(Internal))];
         Solid anOnlyInternal = TestShapes.Frozen(SolidOf(ShellOf(anInternalFaces, true)));
-        Assert.Contains(BRepCheck_BadOrientationOfSubshape, StatusOf(Analyze(anOnlyInternal), anOnlyInternal));
+        Assert.Contains(StatusCheck.BadOrientationOfSubshape, StatusOf(Analyze(anOnlyInternal), anOnlyInternal));
 
         // a box with a void is valid; a void outside is not in the shape
         Shape aFarVoid = ClassificationTestShapes.Translated(aShell, new Vector3D(5, 0, 0)).Reversed();
         Solid aVoidOutside = TestShapes.Frozen(SolidOf(aShell, aFarVoid));
-        Assert.Equal([BRepCheck_SubshapeNotInShape], StatusOf(Analyze(aVoidOutside), aVoidOutside));
-        var aSolidCheck = new BRepCheck_Solid(aVoidOutside);
+        Assert.Equal([StatusCheck.SubshapeNotInShape], StatusOf(Analyze(aVoidOutside), aVoidOutside));
+        var aSolidCheck = new SolidCheck(aVoidOutside);
         aSolidCheck.InContext(aBox);
         aSolidCheck.Blind();
         Assert.False(aSolidCheck.IsStatusOnShape(aBox));
@@ -655,7 +656,7 @@ public class BRepCheckAnalyzerTests
         Solid aBox = TestShapes.Frozen(ClassificationTestShapes.BoxWithVoid(out _, out _));
         var aBefore = new StringWriter();
         BrepTools.Write(aBox, aBefore);
-        BRepCheck_Analyzer anA = Analyze(aBox);
+        Analyzer anA = Analyze(aBox);
         Assert.True(anA.IsValid());
         var anAfter = new StringWriter();
         BrepTools.Write(aBox, anAfter);

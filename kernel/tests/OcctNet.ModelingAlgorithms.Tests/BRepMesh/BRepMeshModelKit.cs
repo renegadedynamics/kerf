@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -37,10 +39,10 @@ internal static class BRepMeshModelKit
     }
 
     /// <summary>The parameters as BRepMesh_IncrementalMesh completes them (initParameters).</summary>
-    public static IMeshTools_Parameters Params(double theDeflection, double theAngle = 0.5, bool isRelative = false,
+    public static ToolParameters Params(double theDeflection, double theAngle = 0.5, bool isRelative = false,
                                                bool isInParallel = false)
     {
-        var aParams = new IMeshTools_Parameters
+        var aParams = new ToolParameters
         {
             Deflection = theDeflection,
             Angle = theAngle,
@@ -48,32 +50,32 @@ internal static class BRepMeshModelKit
             InParallel = isInParallel,
         };
         aParams.DeflectionInterior = theDeflection;
-        aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
+        aParams.MinSize = Math.Max(ToolParameters.RelMinSize() * theDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
         aParams.AngleInterior = 2.0 * theAngle;
         return aParams;
     }
 
     /// <summary>A context with unit 4C's tools (and the given face mesher), as BRepMesh_Context sets them.</summary>
-    public static IMeshTools_Context Context(in Shape theShape, in IMeshTools_Parameters theParameters,
-                                             IMeshTools_ModelAlgo? theFaceDiscret = null)
+    public static ToolContext Context(in Shape theShape, in ToolParameters theParameters,
+                                             ModelAlgo? theFaceDiscret = null)
     {
-        var aContext = new IMeshTools_Context();
-        aContext.SetModelBuilder(new BRepMesh_ModelBuilder());
-        aContext.SetEdgeDiscret(new BRepMesh_EdgeDiscret());
-        aContext.SetModelHealer(new BRepMesh_ModelHealer());
-        aContext.SetPreProcessor(new BRepMesh_ModelPreProcessor());
+        var aContext = new ToolContext();
+        aContext.SetModelBuilder(new MeshModelBuilder());
+        aContext.SetEdgeDiscret(new EdgeDiscret());
+        aContext.SetModelHealer(new ModelHealer());
+        aContext.SetPreProcessor(new ModelPreProcessor());
         aContext.SetFaceDiscret(theFaceDiscret);
-        aContext.SetPostProcessor(new BRepMesh_ModelPostProcessor());
+        aContext.SetPostProcessor(new ModelPostProcessor());
         aContext.SetShape(theShape);
         aContext.ChangeParameters() = theParameters;
         return aContext;
     }
 
     /// <summary>The discrete model of the shape, up to the stage.</summary>
-    public static IMeshData_Model Model(in Shape theShape, in IMeshTools_Parameters theParameters,
+    public static ModelModel Model(in Shape theShape, in ToolParameters theParameters,
                                         Stage theStage = Stage.PreProcessed)
     {
-        IMeshTools_Context aContext = Context(theShape, theParameters);
+        ToolContext aContext = Context(theShape, theParameters);
         Assert.True(aContext.BuildModel());
         if (theStage >= Stage.EdgesDiscretized)
         {
@@ -95,17 +97,17 @@ internal static class BRepMeshModelKit
     /// numbered in wire order), registering the nodes in the pcurves and attaching the triangulation through
     /// BRepMesh_ShapeTool, as unit 4D's algorithms do.
     /// </summary>
-    public sealed class FanFaceDiscret : IMeshTools_ModelAlgo
+    public sealed class FanFaceDiscret : ModelAlgo
     {
         public int Meshed;
 
-        protected override bool performInternal(IMeshData_Model? theModel, in IMeshTools_Parameters theParameters,
+        protected override bool PerformInternal(ModelModel? theModel, in ToolParameters theParameters,
                                                 global::Kerf.Engine.Foundation.ProgressRange theRange)
         {
             for (int i = 0; i < theModel!.FacesNb(); i++)
             {
-                IMeshData_Face aDFace = theModel.GetFace(i);
-                if (aDFace.IsSet(IMeshData_Status.IMeshData_Reused) || aDFace.IsSet(IMeshData_Status.IMeshData_Failure))
+                FaceModel aDFace = theModel.GetFace(i);
+                if (aDFace.IsSet(StatusModel.Reused) || aDFace.IsSet(StatusModel.Failure))
                 {
                     continue;
                 }
@@ -114,11 +116,11 @@ internal static class BRepMeshModelKit
                 var aUV = new List<Point2D>();
                 for (int w = 0; w < aDFace.WiresNb(); w++)
                 {
-                    IMeshData_Wire aDWire = aDFace.GetWire(w);
+                    WireModel aDWire = aDFace.GetWire(w);
                     for (int e = 0; e < aDWire.EdgesNb(); e++)
                     {
-                        IMeshData_Edge aDEdge = aDWire.GetEdge(e);
-                        IMeshData_PCurve aPCurve = aDEdge.GetPCurve(aDFace, aDWire.GetEdgeOrientation(e));
+                        EdgeModel aDEdge = aDWire.GetEdge(e);
+                        PCurveModel aPCurve = aDEdge.GetPCurve(aDFace, aDWire.GetEdgeOrientation(e));
                         for (int k = 0; k < aPCurve.ParametersNb(); k++)
                         {
                             aNodes.Add(aDEdge.GetCurve().GetPoint(k));
@@ -143,7 +145,7 @@ internal static class BRepMeshModelKit
                 {
                     aTri.SetTriangle(k, new Triangle1(1, k + 1, k + 2));
                 }
-                BRepMesh_ShapeTool.AddInFace(aDFace.GetFace(), aTri);
+                ShapeTool.AddInFace(aDFace.GetFace(), aTri);
                 Meshed++;
             }
             return true;
@@ -155,11 +157,11 @@ internal static class BRepMeshModelKit
     /// orientations), each edge's flags, 3D points and parameters, and each pcurve's face, orientation, points,
     /// parameters and indices.
     /// </summary>
-    public static string Dump(IMeshData_Model theModel)
+    public static string Dump(ModelModel theModel)
     {
         var aText = new StringBuilder();
-        var anEdgeIndex = new Dictionary<IMeshData_Edge, int>(ReferenceEqualityComparer.Instance);
-        var aFaceIndex = new Dictionary<IMeshData_Face, int>(ReferenceEqualityComparer.Instance);
+        var anEdgeIndex = new Dictionary<EdgeModel, int>(ReferenceEqualityComparer.Instance);
+        var aFaceIndex = new Dictionary<FaceModel, int>(ReferenceEqualityComparer.Instance);
         for (int i = 0; i < theModel.EdgesNb(); i++)
         {
             anEdgeIndex.Add(theModel.GetEdge(i), i);
@@ -172,11 +174,11 @@ internal static class BRepMeshModelKit
         aText.Append(CultureInfo.InvariantCulture, $"maxsize {B(theModel.GetMaxSize())}\n");
         for (int i = 0; i < theModel.FacesNb(); i++)
         {
-            IMeshData_Face aF = theModel.GetFace(i);
+            FaceModel aF = theModel.GetFace(i);
             aText.Append(CultureInfo.InvariantCulture, $"F{i} s{aF.GetStatusMask():X} d{B(aF.GetDeflection())}\n");
             for (int w = 0; w < aF.WiresNb(); w++)
             {
-                IMeshData_Wire aW = aF.GetWire(w);
+                WireModel aW = aF.GetWire(w);
                 aText.Append(CultureInfo.InvariantCulture, $" W s{aW.GetStatusMask():X} d{B(aW.GetDeflection())}:");
                 for (int e = 0; e < aW.EdgesNb(); e++)
                 {
@@ -188,11 +190,11 @@ internal static class BRepMeshModelKit
 
         for (int i = 0; i < theModel.EdgesNb(); i++)
         {
-            IMeshData_Edge anE = theModel.GetEdge(i);
+            EdgeModel anE = theModel.GetEdge(i);
             aText.Append(CultureInfo.InvariantCulture,
                          $"E{i} s{anE.GetStatusMask():X} d{B(anE.GetDeflection())} a{B(anE.GetAngularDeflection())} "
                          + $"sp{anE.GetSameParam()} sr{anE.GetSameRange()} dg{anE.GetDegenerated()}\n C");
-            IMeshData_Curve aC = anE.GetCurve();
+            CurveModel aC = anE.GetCurve();
             for (int k = 0; k < aC.ParametersNb(); k++)
             {
                 Point3D aP = aC.GetPoint(k);
@@ -201,7 +203,7 @@ internal static class BRepMeshModelKit
             aText.Append('\n');
             for (int p = 0; p < anE.PCurvesNb(); p++)
             {
-                IMeshData_PCurve aPC = anE.GetPCurve(p);
+                PCurveModel aPC = anE.GetPCurve(p);
                 aText.Append(CultureInfo.InvariantCulture, $" P F{aFaceIndex[aPC.GetFace()]} {aPC.GetOrientation()}");
                 for (int k = 0; k < aPC.ParametersNb(); k++)
                 {

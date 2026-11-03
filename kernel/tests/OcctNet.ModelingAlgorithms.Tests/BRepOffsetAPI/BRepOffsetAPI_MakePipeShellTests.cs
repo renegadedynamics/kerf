@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKOffset/GTests/BRepOffsetAPI_MakePipeShell_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -18,7 +21,7 @@ public class BRepOffsetAPI_MakePipeShellTests
     private static double wireLength(in Wire theWire)
     {
         Properties aProps = new();
-        BRepGProp.LinearProperties(theWire, aProps);
+        MassPropertiesBuilder.LinearProperties(theWire, aProps);
         return aProps.Mass();
     }
 
@@ -57,51 +60,51 @@ public class BRepOffsetAPI_MakePipeShellTests
         Frame3D aSpineAxis = new(aCircCenter, anOrigin.YDirection(), anOrigin.XDirection().Reversed());
         Circle3D aSpineCircle = new(aSpineAxis, theMajorRadius);
 
-        Wire aWire1 = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aFaceCircle).Edge()).Wire();
-        Wire anOutWire = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(anOutFaceCircle).Edge()).Wire();
+        Wire aWire1 = new MakeWire(new MakeEdge(aFaceCircle).Edge()).Wire();
+        Wire anOutWire = new MakeWire(new MakeEdge(anOutFaceCircle).Edge()).Wire();
 
         Curve3D aSpineCurve = new MakeArcOfCircle(aSpineCircle, 0.0, aBendAngle, true).Value();
 
-        Law_Linear aLaw1 = new();
-        Law_Linear aLaw2 = new();
+        Linear aLaw1 = new();
+        Linear aLaw2 = new();
         aLaw1.Set(aSpineCurve.FirstParameter(), 1.0, aSpineCurve.LastParameter(), aRadiusR / aRadiusL);
         aLaw2.Set(aSpineCurve.FirstParameter(),
                   1.0,
                   aSpineCurve.LastParameter(),
                   (aRadiusR + theWallThickness) / (aRadiusL + theWallThickness));
 
-        BRepBuilderAPI_MakeEdge aMkEdge = new(aSpineCurve);
-        if (!aMkEdge.IsDone())
+        MakeEdge aMkEdge = new(aSpineCurve);
+        if (!aMkEdge.IsDone)
         {
             return false;
         }
-        Wire aSpineWire = new BRepBuilderAPI_MakeWire(aMkEdge.Edge()).Wire();
+        Wire aSpineWire = new MakeWire(aMkEdge.Edge()).Wire();
 
-        BRepOffsetAPI_MakePipeShell aMkPipe1 = new(aSpineWire);
+        MakePipeShell aMkPipe1 = new(aSpineWire);
         aMkPipe1.SetTolerance(1.0e-8, 1.0e-8, 1.0e-6);
         aMkPipe1.SetLaw(aWire1, aLaw1, false, false);
         aMkPipe1.Build();
-        if (!aMkPipe1.IsDone())
+        if (!aMkPipe1.IsDone)
         {
             return false;
         }
 
-        BRepOffsetAPI_MakePipeShell aMkPipe2 = new(aSpineWire);
+        MakePipeShell aMkPipe2 = new(aSpineWire);
         aMkPipe2.SetTolerance(1.0e-8, 1.0e-8, 1.0e-6);
         aMkPipe2.SetLaw(anOutWire, aLaw2, false, false);
         aMkPipe2.Build();
-        if (!aMkPipe2.IsDone())
+        if (!aMkPipe2.IsDone)
         {
             return false;
         }
 
         // Build opening face at start of bend (annular ring)
-        BRepBuilderAPI_MakeFace aMkFace = new();
+        MakeFace aMkFace = new();
         PlaneSurface aPlane1 = new(aCirc1Plane);
         aMkFace.Init(aPlane1, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMkFace.Add(ShapeCasts.Wire(aMkPipe2.FirstShape()));
         aMkFace.Add(ShapeCasts.Wire(aMkPipe1.FirstShape().Reversed()));
-        if (!aMkFace.IsDone())
+        if (!aMkFace.IsDone)
         {
             return false;
         }
@@ -112,7 +115,7 @@ public class BRepOffsetAPI_MakePipeShellTests
         aMkFace.Init(aPlane2, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         aMkFace.Add(ShapeCasts.Wire(aMkPipe2.LastShape()));
         aMkFace.Add(ShapeCasts.Wire(aMkPipe1.LastShape().Reversed()));
-        if (!aMkFace.IsDone())
+        if (!aMkFace.IsDone)
         {
             return false;
         }
@@ -165,8 +168,8 @@ public class BRepOffsetAPI_MakePipeShellTests
         Assert.True(aBuilt, "buildBentTube construction failed");
 
         // Validate both solids
-        Assert.True(new BRepCheck_Analyzer(aWallSolid).IsValid(), "wallSolid is not valid");
-        Assert.True(new BRepCheck_Analyzer(aGasSolid).IsValid(), "gasSolid is not valid");
+        Assert.True(new Analyzer(aWallSolid).IsValid(), "wallSolid is not valid");
+        Assert.True(new Analyzer(aGasSolid).IsValid(), "gasSolid is not valid");
 
         // Collect all wire lengths in wallSolid
         List<double> aWireLengths = [];

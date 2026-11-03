@@ -69,7 +69,7 @@ public class StaticAndReaderTests
     [Fact]
     public void Typed_values_check_interpret_and_hold_objects()
     {
-        var anInt = new MoniTool_TypedValue("count", MoniTool_ValueInteger, "3");
+        var anInt = new MoniTool_TypedValue("count", MoniTool_ValueType.MoniTool_ValueInteger, "3");
         Assert.True(anInt.IsSetValue());
         Assert.Equal(3, anInt.IntegerValue());
         anInt.SetIntegerLimit(false, 1);
@@ -98,16 +98,16 @@ public class StaticAndReaderTests
         Assert.NotSame(MoniTool_TypedValue.Lib("Logical"), MoniTool_TypedValue.FromLib("Logical"));
         Assert.Equal(["Integer", "Real", "Text", "Transient", "Boolean", "Logical"], MoniTool_TypedValue.LibList().ToList());
 
-        var anObj = new MoniTool_TypedValue("obj", MoniTool_ValueIdent);
+        var anObj = new MoniTool_TypedValue("obj", MoniTool_ValueType.MoniTool_ValueIdent);
         anObj.SetObjectType(typeof(ToyEntity));
         Assert.False(anObj.SetObjectValue(new ToyUnknown()));
         Assert.True(anObj.SetObjectValue(new ToyEntity("o")));
         Assert.Equal("ToyEntity", anObj.ObjectTypeName());
-        Assert.Throws<ConstructionErrorException>(() => new MoniTool_TypedValue("bad", MoniTool_ValueHexa));
+        Assert.Throws<ConstructionErrorException>(() => new MoniTool_TypedValue("bad", MoniTool_ValueType.MoniTool_ValueHexa));
         Assert.Throws<ConstructionErrorException>(() => anObj.SetIntegerLimit(true, 1));
 
-        var aStatic = new Interface_Static("fam", "copy.of.logical", Interface_ParamEnum);
-        Assert.Equal(Interface_ParamEnum, aStatic.Type());
+        var aStatic = new Interface_Static("fam", "copy.of.logical", Interface_ParamType.Interface_ParamEnum);
+        Assert.Equal(Interface_ParamType.Interface_ParamEnum, aStatic.Type());
         Assert.Equal("fam", aStatic.Family());
     }
 
@@ -123,8 +123,8 @@ public class StaticAndReaderTests
         Assert.True(aList.GetRealAttribute("r", out double aReal));
         Assert.Equal(2.5, aReal);
         Assert.Equal("text", aList.StringAttribute("s"));
-        Assert.Equal(MoniTool_ValueIdent, aList.AttributeType("e"));
-        Assert.Equal(MoniTool_ValueVoid, aList.AttributeType("none"));
+        Assert.Equal(MoniTool_ValueType.MoniTool_ValueIdent, aList.AttributeType("e"));
+        Assert.Equal(MoniTool_ValueType.MoniTool_ValueVoid, aList.AttributeType("none"));
         Assert.False(aList.GetAttribute("e", typeof(ToyUnknown), out _));
         var aCopy = new MoniTool_AttrList();
         aCopy.GetAttributes(aList, "", true);
@@ -157,11 +157,11 @@ public class StaticAndReaderTests
                 {
                     if (aWord.StartsWith('#'))
                     {
-                        AddParam(i, aWord, Interface_ParamIdent, int.Parse(aWord[1..], System.Globalization.CultureInfo.InvariantCulture));
+                        AddParam(i, aWord, Interface_ParamType.Interface_ParamIdent, int.Parse(aWord[1..], System.Globalization.CultureInfo.InvariantCulture));
                     }
                     else
                     {
-                        AddParam(i, aWord, Interface_ParamText);
+                        AddParam(i, aWord, Interface_ParamType.Interface_ParamText);
                     }
                 }
                 InitParams(i); // the count of parameters at the end of record i
@@ -241,7 +241,7 @@ public class StaticAndReaderTests
         Assert.Equal(3, aData.NbParams(1));
         Assert.Equal("#2", aData.ParamCValue(1, 2));
         Assert.Equal(2, aData.ParamNumber(1, 2));
-        Assert.Equal(Interface_ParamIdent, aData.ParamType(1, 2));
+        Assert.Equal(Interface_ParamType.Interface_ParamIdent, aData.ParamType(1, 2));
 
         var aTool = new ToyReaderTool(aData);
         aTool.SetEntities();

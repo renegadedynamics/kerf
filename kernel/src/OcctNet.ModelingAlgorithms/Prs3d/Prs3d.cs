@@ -5,8 +5,9 @@
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Bounds;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.HiddenLines.Presentation;
 
 /// <summary>
 /// The presentation services of TKV3d that meshing for display needs: the absolute deflection a relative deviation
@@ -19,42 +20,42 @@ namespace Occt;
 public static class Prs3d
 {
     /// <summary>
-    /// The absolute deflection for the relative deflection <paramref name="theDeviationCoefficient"/> (from
-    /// <see cref="Prs3d_Drawer.DeviationCoefficient"/>): the largest extent of the box times the coefficient times 4,
+    /// The absolute deflection for the relative deflection <paramref name="deviationCoefficient"/> (from
+    /// <see cref="Drawer.DeviationCoefficient"/>): the largest extent of the box times the coefficient times 4,
     /// at least the confusion tolerance.
     /// </summary>
-    public static double GetDeflection(in Xyz theBndMin, in Xyz theBndMax, double theDeviationCoefficient)
+    public static double GetDeflection(in Xyz bndMin, in Xyz bndMax, double deviationCoefficient)
     {
-        Xyz aDiag = theBndMax - theBndMin;
+        Xyz diag = bndMax - bndMin;
         // NCollection_Vec3::maxComp
-        double aMaxComp = Math.Max(Math.Max(aDiag.X(), aDiag.Y()), aDiag.Z());
-        return Math.Max(aMaxComp * theDeviationCoefficient * 4.0, global::Kerf.Engine.Foundation.Precision.Confusion());
+        double maxComp = Math.Max(Math.Max(diag.X(), diag.Y()), diag.Z());
+        return Math.Max(maxComp * deviationCoefficient * 4.0, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     /// <summary>
-    /// The absolute deflection for the relative deflection <paramref name="theDeviationCoefficient"/> on the box, or
-    /// <paramref name="theMaximalChordialDeviation"/> (from <see cref="Prs3d_Drawer.MaximalChordialDeviation"/>) if the
+    /// The absolute deflection for the relative deflection <paramref name="deviationCoefficient"/> on the box, or
+    /// <paramref name="maximalChordialDeviation"/> (from <see cref="Drawer.MaximalChordialDeviation"/>) if the
     /// box is void or infinite.
     /// </summary>
-    public static double GetDeflection(in Box theBndBox, double theDeviationCoefficient, double theMaximalChordialDeviation)
+    public static double GetDeflection(in Box bndBox, double deviationCoefficient, double maximalChordialDeviation)
     {
-        if (theBndBox.IsVoid)
+        if (bndBox.IsVoid)
         {
-            return theMaximalChordialDeviation;
+            return maximalChordialDeviation;
         }
 
-        Box aBndBox = theBndBox;
-        if (theBndBox.IsOpen)
+        Box aBndBox = bndBox;
+        if (bndBox.IsOpen)
         {
-            if (!theBndBox.HasFinitePart)
+            if (!bndBox.HasFinitePart)
             {
-                return theMaximalChordialDeviation;
+                return maximalChordialDeviation;
             }
 
-            aBndBox = theBndBox.FinitePart();
+            aBndBox = bndBox.FinitePart();
         }
 
-        aBndBox.Get(out double aXMin, out double aYMin, out double aZMin, out double aXMax, out double aYMax, out double aZMax);
-        return GetDeflection(new Xyz(aXMin, aYMin, aZMin), new Xyz(aXMax, aYMax, aZMax), theDeviationCoefficient);
+        aBndBox.Get(out double xMin, out double yMin, out double zMin, out double xMax, out double yMax, out double zMax);
+        return GetDeflection(new Xyz(xMin, yMin, zMin), new Xyz(xMax, yMax, zMax), deviationCoefficient);
     }
 }

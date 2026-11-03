@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -60,7 +62,7 @@ public static class BOPTest_Utilities
             return 0.0;
         }
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -72,7 +74,7 @@ public static class BOPTest_Utilities
             return 0.0;
         }
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -81,32 +83,32 @@ public static class BOPTest_Utilities
         GetSurfaceArea(theShape) <= theTolerance;
 
     /// <summary>Create unit box at origin (1x1x1).</summary>
-    public static Shape CreateUnitBox() => new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Shape();
+    public static Shape CreateUnitBox() => new MakeBox(1.0, 1.0, 1.0).Shape();
 
     /// <summary>Create box at specific location.</summary>
     public static Shape CreateBox(in Point3D theCorner, double theX, double theY, double theZ) =>
-        new BRepPrimAPI_MakeBox(theCorner, theX, theY, theZ).Shape();
+        new MakeBox(theCorner, theX, theY, theZ).Shape();
 
     /// <summary>Create unit sphere (radius = 1.0).</summary>
-    public static Shape CreateUnitSphere() => new BRepPrimAPI_MakeSphere(1.0).Shape();
+    public static Shape CreateUnitSphere() => new MakeSphere(1.0).Shape();
 
     /// <summary>Create sphere at location with radius.</summary>
     public static Shape CreateSphere(in Point3D theCenter, double theRadius) =>
-        new BRepPrimAPI_MakeSphere(theCenter, theRadius).Shape();
+        new MakeSphere(theCenter, theRadius).Shape();
 
     /// <summary>Create cylinder.</summary>
     public static Shape CreateCylinder(double theRadius, double theHeight) =>
-        new BRepPrimAPI_MakeCylinder(theRadius, theHeight).Shape();
+        new ApiMakeCylinder(theRadius, theHeight).Shape();
 
     /// <summary>Create cone.</summary>
     public static Shape CreateCone(double theR1, double theR2, double theHeight) =>
-        new BRepPrimAPI_MakeCone(theR1, theR2, theHeight).Shape();
+        new ApiMakeCone(theR1, theR2, theHeight).Shape();
 
     /// <summary>Convert shape to NURBS.</summary>
     public static Shape ConvertToNurbs(in Shape theShape)
     {
-        BRepBuilderAPI_NurbsConvert aNurbsConverter = new(theShape);
-        if (!aNurbsConverter.IsDone())
+        NurbsConvert aNurbsConverter = new(theShape);
+        if (!aNurbsConverter.IsDone)
         {
             return new Shape(); // Return null shape on failure
         }
@@ -116,19 +118,19 @@ public static class BOPTest_Utilities
     /// <summary>Create rectangular polygon face.</summary>
     public static Shape CreatePolygonFace(in Point3D theP1, in Point3D theP2, in Point3D theP3, in Point3D theP4)
     {
-        BRepBuilderAPI_MakePolygon aPolygonMaker = new();
+        MakePolygon aPolygonMaker = new();
         aPolygonMaker.Add(theP1);
         aPolygonMaker.Add(theP2);
         aPolygonMaker.Add(theP3);
         aPolygonMaker.Add(theP4);
         aPolygonMaker.Close();
 
-        if (!aPolygonMaker.IsDone())
+        if (!aPolygonMaker.IsDone)
         {
             return new Shape();
         }
 
-        BRepBuilderAPI_MakeFace aFaceMaker = new(aPolygonMaker.Wire());
+        MakeFace aFaceMaker = new(aPolygonMaker.Wire());
         return aFaceMaker.Shape();
     }
 
@@ -137,7 +139,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aTrsf = new();
         aTrsf.SetRotation(theAxis, theAngle);
-        BRepBuilderAPI_Transform aTransformer = new(theShape, aTrsf);
+        Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
 
@@ -146,20 +148,20 @@ public static class BOPTest_Utilities
     {
         Transform3D aTrsf = new();
         aTrsf.SetTranslation(theVector);
-        BRepBuilderAPI_Transform aTransformer = new(theShape, aTrsf);
+        Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
 
     /// <summary>Create vertex from point.</summary>
-    public static Vertex CreateVertex(in Point3D thePoint) => new BRepBuilderAPI_MakeVertex(thePoint).Vertex();
+    public static Vertex CreateVertex(in Point3D thePoint) => new MakeVertex(thePoint).Vertex();
 
     /// <summary>Create edge between two points.</summary>
-    public static Edge CreateEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    public static Edge CreateEdge(in Point3D theP1, in Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
     /// <summary>Create wire from list of points (closed polygon).</summary>
     public static Wire CreatePolygonWire(IReadOnlyList<Point3D> thePoints, bool theClose = true)
     {
-        BRepBuilderAPI_MakePolygon aPolygonMaker = new();
+        MakePolygon aPolygonMaker = new();
         foreach (Point3D aPt in thePoints)
         {
             aPolygonMaker.Add(aPt);
@@ -224,7 +226,7 @@ public static class BOPTest_Utilities
     /// </summary>
     public static Shape CreateProfile(in Plane3D thePlane, IReadOnlyList<ProfileOperation> theOperations)
     {
-        BRepBuilderAPI_MakeWire aMakeWire = new();
+        MakeWire aMakeWire = new();
 
         Point2D aCurrentPt = new(0, 0);  // Current point in 2D
         Vector2D aCurrentDir = new(1, 0); // Current direction in 2D
@@ -295,7 +297,7 @@ public static class BOPTest_Utilities
                         // Add line segment
                         Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
                         Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X(), aNewPt.Y(), aWorkingPlane);
-                        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(aPt1, aPt2).Edge());
+                        aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
                         aCurrentPt = aNewPt;
                         aCurrentDir = new Vector2D(op.@params[0] > 0 ? 1 : -1, 0);
                     }
@@ -316,7 +318,7 @@ public static class BOPTest_Utilities
                         // Add line segment
                         Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
                         Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X(), aNewPt.Y(), aWorkingPlane);
-                        aMakeWire.Add(new BRepBuilderAPI_MakeEdge(aPt1, aPt2).Edge());
+                        aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
                         aCurrentPt = aNewPt;
                         aCurrentDir = new Vector2D(0, op.@params[0] > 0 ? 1 : -1);
                     }
@@ -338,7 +340,7 @@ public static class BOPTest_Utilities
 
                             // Create full circle
                             Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis().Direction()), aRadius);
-                            aMakeWire.Add(new BRepBuilderAPI_MakeEdge(aCirc).Edge());
+                            aMakeWire.Add(new MakeEdge(aCirc).Edge());
 
                             // Set current point to a point on the circle
                             aCurrentPt = new Point2D(aCenter2D.X() + aRadius, aCenter2D.Y());
@@ -371,7 +373,7 @@ public static class BOPTest_Utilities
                             Point3D aCenter3D = global::Kerf.Engine.Geometry.ElSLib.Value(aCenter.X(), aCenter.Y(), aWorkingPlane);
 
                             Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis().Direction()), aRadius);
-                            aMakeWire.Add(new BRepBuilderAPI_MakeEdge(aCirc, aPt1, aPt2).Edge());
+                            aMakeWire.Add(new MakeEdge(aCirc, aPt1, aPt2).Edge());
 
                             aCurrentPt = aEndPt;
                             aCurrentDir = new Vector2D(Math.Cos(aEndAngle + M_PI / 2), Math.Sin(aEndAngle + M_PI / 2));
@@ -403,15 +405,15 @@ public static class BOPTest_Utilities
             // Add closing edge back to start
             Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
             Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aFirstPt.X(), aFirstPt.Y(), aWorkingPlane);
-            aMakeWire.Add(new BRepBuilderAPI_MakeEdge(aPt1, aPt2).Edge());
+            aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
         }
 
-        Assert.True(aMakeWire.IsDone(), "Profile wire creation failed");
+        Assert.True(aMakeWire.IsDone, "Profile wire creation failed");
         Wire aWire = aMakeWire.Wire();
 
         // Create face from wire
-        BRepBuilderAPI_MakeFace aFaceMaker = new(aWire);
-        Assert.True(aFaceMaker.IsDone(), "Profile face creation failed");
+        MakeFace aFaceMaker = new(aWire);
+        Assert.True(aFaceMaker.IsDone, "Profile face creation failed");
         return aFaceMaker.Face();
     }
 
@@ -439,8 +441,8 @@ public static class BOPTest_Utilities
     /// <summary>Create face from wire.</summary>
     public static Shape CreateFaceFromWire(in Wire theWire)
     {
-        BRepBuilderAPI_MakeFace aFaceMaker = new(theWire);
-        if (!aFaceMaker.IsDone())
+        MakeFace aFaceMaker = new(theWire);
+        if (!aFaceMaker.IsDone)
         {
             return new Shape();
         }
@@ -450,8 +452,8 @@ public static class BOPTest_Utilities
     /// <summary>Create prism by extruding shape along vector.</summary>
     public static Shape CreatePrism(in Shape theProfile, in Vector3D theDirection)
     {
-        BRepPrimAPI_MakePrism aPrismMaker = new(theProfile, theDirection);
-        if (!aPrismMaker.IsDone())
+        ApiMakePrism aPrismMaker = new(theProfile, theDirection);
+        if (!aPrismMaker.IsDone)
         {
             return new Shape();
         }
@@ -469,8 +471,8 @@ public static class BOPTest_Utilities
     /// <summary>Create revolution of a profile around an axis.</summary>
     public static Shape CreateRevolution(in Shape theProfile, in Axis3D theAxis, double theAngle)
     {
-        BRepPrimAPI_MakeRevol aRevolMaker = new(theProfile, theAxis, theAngle);
-        Assert.True(aRevolMaker.IsDone(), "Revolution operation failed");
+        ApiMakeRevol aRevolMaker = new(theProfile, theAxis, theAngle);
+        Assert.True(aRevolMaker.IsDone, "Revolution operation failed");
         return aRevolMaker.Shape();
     }
 
@@ -497,7 +499,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
-        BRepBuilderAPI_Transform aTransform = new(theShape, aRotation);
+        Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
 
@@ -506,7 +508,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
-        BRepBuilderAPI_Transform aTransform = new(theShape, aRotation);
+        Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
 
@@ -515,7 +517,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
-        BRepBuilderAPI_Transform aTransform = new(theShape, aRotation);
+        Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
 
@@ -531,7 +533,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aTranslation = new();
         aTranslation.SetTranslation(new Vector3D(theDx, theDy, theDz));
-        BRepBuilderAPI_Transform aTransform = new(theShape, aTranslation);
+        Transform aTransform = new(theShape, aTranslation);
         return aTransform.Shape();
     }
 
@@ -540,7 +542,7 @@ public static class BOPTest_Utilities
     {
         Transform3D aRotation = new();
         aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
-        BRepBuilderAPI_Transform aTransform = new(theShape, aRotation);
+        Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
 
@@ -580,10 +582,10 @@ public static class BOPTest_Utilities
         // S = BRepPrimAPI_MakeCylinder(P->Pln().Position().Ax2(), radius, height);
         Frame3D anAx2 = thePlane.Position().Ax2();
 
-        BRepPrimAPI_MakeCylinder aCylinderMaker = new(anAx2, theRadius, theHeight);
+        ApiMakeCylinder aCylinderMaker = new(anAx2, theRadius, theHeight);
         aCylinderMaker.Build();
 
-        if (!aCylinderMaker.IsDone())
+        if (!aCylinderMaker.IsDone)
         {
             return new Shape();
         }
@@ -600,24 +602,24 @@ public abstract class BRepAlgoAPI_TestBase
     /// <summary>Perform BRepAlgoAPI Cut operation.</summary>
     protected static Shape PerformCut(in Shape theObject, in Shape theTool)
     {
-        BRepAlgoAPI_Cut aCutter = new(theObject, theTool);
-        Assert.True(aCutter.IsDone(), "BRepAlgoAPI_Cut operation failed");
+        Cut aCutter = new(theObject, theTool);
+        Assert.True(aCutter.IsDone, "BRepAlgoAPI_Cut operation failed");
         return aCutter.Shape();
     }
 
     /// <summary>Perform BRepAlgoAPI Fuse operation.</summary>
     protected static Shape PerformFuse(in Shape theShape1, in Shape theShape2)
     {
-        BRepAlgoAPI_Fuse aFuser = new(theShape1, theShape2);
-        Assert.True(aFuser.IsDone(), "BRepAlgoAPI_Fuse operation failed");
+        Fuse aFuser = new(theShape1, theShape2);
+        Assert.True(aFuser.IsDone, "BRepAlgoAPI_Fuse operation failed");
         return aFuser.Shape();
     }
 
     /// <summary>Perform BRepAlgoAPI Common operation.</summary>
     protected static Shape PerformCommon(in Shape theShape1, in Shape theShape2)
     {
-        BRepAlgoAPI_Common aCommoner = new(theShape1, theShape2);
-        Assert.True(aCommoner.IsDone(), "BRepAlgoAPI_Common operation failed");
+        Common aCommoner = new(theShape1, theShape2);
+        Assert.True(aCommoner.IsDone, "BRepAlgoAPI_Common operation failed");
         return aCommoner.Shape();
     }
 

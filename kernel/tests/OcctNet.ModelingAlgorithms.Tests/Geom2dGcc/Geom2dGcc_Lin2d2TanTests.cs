@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -30,15 +32,15 @@ public class Geom2dGcc_Lin2d2TanTests
         Plane3D       aPln   = aPlane.Pln();
 
         // Project ellipse onto the plane and build 2D qualified curve
-        Curve2D             aCurve2d = GeomAPI.To2d(anEll, aPln)!;
+        Curve2D             aCurve2d = Projections.To2d(anEll, aPln)!;
         CurveAdaptor2D      anAdapt  = new(aCurve2d);
-        Geom2dGcc_QualifiedCurve aQCurve  = new(anAdapt, GccEnt_outside);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQCurve  = new(anAdapt, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside);
 
         // Query tangent line from 2D point to the projected ellipse
         Point2D            aPnt2d  = new(200.0, 200.0);
-        Geom2dGcc_Lin2d2Tan aLinTan = new(aQCurve, aPnt2d, 0.1);
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLinTan = new(aQCurve, aPnt2d, 0.1);
 
-        Assert.True(aLinTan.NbSolutions() > 0, "Expected at least one tangent line solution");
+        Assert.True(aLinTan.SolutionCount > 0, "Expected at least one tangent line solution");
     }
 
     // Test OCC814: Geom2dGcc_Lin2d2Tan - tangent line between a 2D circle and a 2D ellipse.
@@ -55,16 +57,16 @@ public class Geom2dGcc_Lin2d2TanTests
         Plane3D        aPln   = aPlane.Pln();
 
         // Project both curves onto the plane and build qualified curves
-        Curve2D             aCurve2d     = GeomAPI.To2d(anEll, aPln)!;
-        Curve2D             aFromCurve2d = GeomAPI.To2d(aCir, aPln)!;
+        Curve2D             aCurve2d     = Projections.To2d(anEll, aPln)!;
+        Curve2D             aFromCurve2d = Projections.To2d(aCir, aPln)!;
         CurveAdaptor2D      anAdaptEll   = new(aCurve2d);
         CurveAdaptor2D      anAdaptCir   = new(aFromCurve2d);
-        Geom2dGcc_QualifiedCurve aQEll        = new(anAdaptEll, GccEnt_outside);
-        Geom2dGcc_QualifiedCurve aQCir        = new(anAdaptCir, GccEnt_outside);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQEll        = new(anAdaptEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQCir        = new(anAdaptCir, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside);
 
-        Geom2dGcc_Lin2d2Tan aLinTan = new(aQEll, aQCir, 0.1);
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLinTan = new(aQEll, aQCir, 0.1);
 
-        Assert.True(aLinTan.NbSolutions() > 0, "Expected at least one tangent line solution");
+        Assert.True(aLinTan.SolutionCount > 0, "Expected at least one tangent line solution");
     }
 
     [Fact]
@@ -72,13 +74,13 @@ public class Geom2dGcc_Lin2d2TanTests
     {
         Circle2D c1 = new(new Axis2D(new Point2D(0, 0), DX), 1);
         Circle2D c2 = new(new Axis2D(new Point2D(5, 1), DX), 2);
-        Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
-                                       Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1e-9);
-        GccAna_Lin2d2Tan anAna = new(GccEnt.Unqualified(c1), GccEnt.Unqualified(c2), 1e-9);
-        Assert.True(aLin.IsDone());
-        Assert.Equal(anAna.NbSolutions(), aLin.NbSolutions());
-        Assert.Equal(4, aLin.NbSolutions());
-        for (int i = 1; i <= aLin.NbSolutions(); i++)
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLin = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                       global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1e-9);
+        AnalyticLin2d2Tan anAna = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c2), 1e-9);
+        Assert.True(aLin.IsDone);
+        Assert.Equal(anAna.SolutionCount, aLin.SolutionCount);
+        Assert.Equal(4, aLin.SolutionCount);
+        for (int i = 1; i <= aLin.SolutionCount; i++)
         {
             Assert.Equal(anAna.ThisSolution(i), aLin.ThisSolution(i));
             aLin.Tangency1(i, out double p1, out double a1, out Point2D t1);
@@ -87,8 +89,8 @@ public class Geom2dGcc_Lin2d2TanTests
             aLin.Tangency2(i, out double p2, out double a2, out Point2D t2);
             anAna.Tangency2(i, out double q2, out double b2, out Point2D u2);
             Assert.Equal((q2, b2, u2), (p2, a2, t2));
-            aLin.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            anAna.WhichQualifier(i, out GccEnt_Position aR1, out GccEnt_Position aR2);
+            aLin.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            anAna.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aR1, out global::Kerf.Engine.Construction.Constraints.Qualifier aR2);
             Assert.Equal((aR1, aR2), (aQ1, aQ2));
         }
     }
@@ -120,10 +122,10 @@ public class Geom2dGcc_Lin2d2TanTests
         aMults[2] = 4;
         CurveAdaptor2D aBS = new(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
 
-        Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(anEll), Geom2dGcc.Unqualified(aBS), 1e-6);
-        Assert.True(aLin.IsDone());
-        Assert.InRange(aLin.NbSolutions(), 1, 4);
-        for (int i = 1; i <= aLin.NbSolutions(); i++)
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLin = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(aBS), 1e-6);
+        Assert.True(aLin.IsDone);
+        Assert.InRange(aLin.SolutionCount, 1, 4);
+        for (int i = 1; i <= aLin.SolutionCount; i++)
         {
             Line2D aSol = aLin.ThisSolution(i);
             aLin.Tangency1(i, out _, out double a1, out Point2D t1);
@@ -133,16 +135,16 @@ public class Geom2dGcc_Lin2d2TanTests
         }
 
         // Through a point
-        Geom2dGcc_Lin2d2Tan aThrough = new(Geom2dGcc.Unqualified(anEll), new Point2D(0, 5), 1e-6);
-        Assert.Equal(2, aThrough.NbSolutions());
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aThrough = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new Point2D(0, 5), 1e-6);
+        Assert.Equal(2, aThrough.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = aThrough.ThisSolution(i);
             aThrough.Tangency1(i, out _, out double a1, out Point2D t1);
             CheckTangent(aSol, anEll, a1, t1, 1e-6);
             Assert.True(aSol.Distance(new Point2D(0, 5)) < 1e-9);
-            aThrough.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            Assert.Equal((GccEnt_unqualified, GccEnt_noqualifier), (aQ1, aQ2));
+            aThrough.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal((global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), (aQ1, aQ2));
         }
     }
 
@@ -151,16 +153,16 @@ public class Geom2dGcc_Lin2d2TanTests
     {
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         // A point inside the ellipse: no tangent line
-        Geom2dGcc_Lin2d2Tan aNone = new(Geom2dGcc.Unqualified(anEll), new Point2D(0.5, 0), 1e-6);
-        Assert.False(aNone.IsDone());
-        Assert.Equal(0, aNone.NbSolutions());
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aNone = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new Point2D(0.5, 0), 1e-6);
+        Assert.False(aNone.IsDone);
+        Assert.Equal(0, aNone.SolutionCount);
         Assert.Throws<NotDoneException>(() => aNone.Tangency1(1, out _, out _, out _));
         Assert.Throws<OutOfRangeException>(() => aNone.ThisSolution(1));
 
-        Geom2dGcc_Lin2d2Tan aLin = new(Geom2dGcc.Unqualified(anEll), new Point2D(0, 5), 1e-6);
+        global::Kerf.Engine.Construction.Constraints.Lin2d2Tan aLin = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new Point2D(0, 5), 1e-6);
         Assert.Throws<OutOfRangeException>(() => aLin.ThisSolution(0));
         Assert.Throws<OutOfRangeException>(() => aLin.Tangency2(3, out _, out _, out _));
-        Assert.Throws<GccEnt_BadQualifier>(
-            () => new Geom2dGcc_Lin2d2Tan(new Geom2dGcc_QualifiedCurve(anEll, GccEnt_noqualifier), new Point2D(0, 5), 1e-6));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+            () => new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), new Point2D(0, 5), 1e-6));
     }
 }

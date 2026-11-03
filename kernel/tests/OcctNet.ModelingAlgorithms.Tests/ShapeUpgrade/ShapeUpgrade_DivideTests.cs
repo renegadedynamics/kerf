@@ -1,5 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -7,7 +13,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
 using static Kerf.Geometry.Continuity;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -44,11 +50,11 @@ public class ShapeUpgrade_DivideTests
     private static double Area(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
-    private static Shape Cylinder() => new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+    private static Shape Cylinder() => new ApiMakeCylinder(5, 10).Shape();
 
     private static Face FirstFace(in Shape theShape) =>
         ShapeCasts.Face(new Explorer(theShape, ShapeType.Face).Current());
@@ -59,17 +65,17 @@ public class ShapeUpgrade_DivideTests
         Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
-        var aTool = new ShapeUpgrade_ShapeDivideAngle(95 * Math.PI / 180, aCyl);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideAngle(95 * Math.PI / 180, aCyl);
         Assert.True(aTool.Perform());
         Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(aCyl);
         Assert.True(AllFrozen(aRes));
-        Assert.True(aTool.Status(ShapeExtend_DONE2));
+        Assert.True(aTool.Status(ExtendStatus.DONE2));
         Assert.Equal(6, Count(aRes, ShapeType.Face));
         Assert.Equal(Area(aCyl), Area(aRes), 6);
         Assert.Equal(95 * Math.PI / 180, aTool.MaxAngle());
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
     }
 
     [Fact]
@@ -78,7 +84,7 @@ public class ShapeUpgrade_DivideTests
         Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
-        var aTool = new ShapeUpgrade_ShapeDivideClosed(aCyl);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideClosed(aCyl);
         Assert.True(aTool.Perform());
         Shape aRes = aTool.Result();
 
@@ -86,7 +92,7 @@ public class ShapeUpgrade_DivideTests
         Assert.True(AllFrozen(aRes));
         Assert.Equal(4, Count(aRes, ShapeType.Face));
         Assert.Equal(Area(aCyl), Area(aRes), 6);
-        Assert.True(new BRepCheck_Analyzer(aRes).IsValid());
+        Assert.True(new Analyzer(aRes).IsValid());
     }
 
     [Theory]
@@ -94,12 +100,12 @@ public class ShapeUpgrade_DivideTests
     [InlineData(3, 5, 15)]
     public void ShapeDivideArea_ByNumber_SplitsTheSphericalFace(int theNumber1, int theNumber2, int theNbFaces)
     {
-        Shape aSphere = new BRepPrimAPI_MakeSphere(10, 0, Math.PI / 2).Shape();
+        Shape aSphere = new MakeSphere(10, 0, Math.PI / 2).Shape();
         Face aFace = ShapeCasts.Face(FirstFace(aSphere));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
 
         // DT_SplitByNumber result a_1 n1 [n2] (heal/split_number, heal/split_two_numbers)
-        var aTool = new ShapeUpgrade_ShapeDivideArea(aFace);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideArea(aFace);
         aTool.SetSplittingByNumber(true);
         if (theNumber2 == 0)
         {
@@ -121,10 +127,10 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeDivideArea_ByMaximalArea_LeavesNoFaceLarger()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+        Shape aBox = new MakeBox(10, 20, 30).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
-        var aTool = new ShapeUpgrade_ShapeDivideArea(aBox);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideArea(aBox);
         aTool.MaxArea() = 150;
         Assert.True(aTool.Perform());
         Shape aRes = aTool.Result();
@@ -161,16 +167,16 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeDivideContinuity_OnAFreeC0Edge_SplitsItAtTheKink()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(KinkedCurve()).Edge();
+        Edge anEdge = new MakeEdge(KinkedCurve()).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anEdge);
 
-        var aTool = new ShapeUpgrade_ShapeDivideContinuity(anEdge);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideContinuity(anEdge);
         Assert.True(aTool.Perform());
         Shape aRes = aTool.Result();
 
         aSnap.AssertUnchanged(anEdge);
         Assert.True(AllFrozen(aRes));
-        Assert.True(aTool.Status(ShapeExtend_DONE1));
+        Assert.True(aTool.Status(ExtendStatus.DONE1));
         Assert.Equal(ShapeType.Wire, aRes.ShapeType());
         Assert.Equal(2, Count(aRes, ShapeType.Edge));
         for (var anExp = new Explorer(aRes, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -182,8 +188,8 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeDivideContinuity_OnASmoothShape_ReturnsTheCallersShape()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        var aTool = new ShapeUpgrade_ShapeDivideContinuity(aBox);
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeDivideContinuity(aBox);
         Assert.False(aTool.Perform());
         Assert.True(aTool.Result().IsEqual(aBox));
     }
@@ -194,7 +200,7 @@ public class ShapeUpgrade_DivideTests
         Shape aCyl = Cylinder();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
 
-        var aTool = new ShapeUpgrade_ShapeConvertToBezier(aCyl);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeConvertToBezier(aCyl);
         aTool.SetSurfaceConversion(true);
         aTool.Set2dConversion(true);
         aTool.Set3dConversion(true);
@@ -225,10 +231,10 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShapeConvertToBezier_WithNothingToConvert_ReturnsTheCallersShape()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
-        var aTool = new ShapeUpgrade_ShapeConvertToBezier(aBox);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeConvertToBezier(aBox);
         aTool.Set3dConversion(true);
         aTool.Set3dLineConversion(false);
         aTool.Perform();
@@ -242,7 +248,7 @@ public class ShapeUpgrade_DivideTests
     public void ShapeConvertToBezier_TwiceOnItsOwnFrozenResult_GivesBezierEdgesWithRangeZeroOne()
     {
         Shape aCyl = Cylinder();
-        var aTool = new ShapeUpgrade_ShapeConvertToBezier(aCyl);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ShapeConvertToBezier(aCyl);
         aTool.SetSurfaceConversion(true);
         aTool.Set2dConversion(true);
         aTool.Set3dConversion(true);
@@ -251,7 +257,7 @@ public class ShapeUpgrade_DivideTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
 
         // the second run changes the frozen Bezier curves OCCT changes in place (decision 998)
-        var aTool2 = new ShapeUpgrade_ShapeConvertToBezier(aFirst);
+        var aTool2 = new global::Kerf.Engine.Healing.Upgrade.ShapeConvertToBezier(aFirst);
         aTool2.SetSurfaceConversion(true);
         aTool2.Set2dConversion(true);
         aTool2.Set3dConversion(true);
@@ -274,21 +280,21 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void RemoveInternalWires_RemovesTheHolesAndTheFaceInside()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 1, 12).Shape();
-        Shape aHoled = new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
+        Shape aBox = new MakeBox(10, 10, 10).Shape();
+        Shape aCyl = new ApiMakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 1, 12).Shape();
+        Shape aHoled = new Cut(aBox, aCyl).Shape();
         Assert.Equal(7, Count(aHoled, ShapeType.Face));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aHoled);
 
-        var aTool = new ShapeUpgrade_RemoveInternalWires(aHoled);
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.RemoveInternalWires(aHoled);
         aTool.MinArea() = 10;
         Assert.True(aTool.Perform());
         Shape aRes = aTool.GetResult();
 
         aSnap.AssertUnchanged(aHoled);
         Assert.True(AllFrozen(aRes));
-        Assert.True(aTool.Status(ShapeExtend_DONE1));
-        Assert.True(aTool.Status(ShapeExtend_DONE2));
+        Assert.True(aTool.Status(ExtendStatus.DONE1));
+        Assert.True(aTool.Status(ExtendStatus.DONE2));
         Assert.Equal(2, aTool.RemovedWires().Length());
         Assert.Equal(1, aTool.RemovedFaces().Length());
         Assert.Equal(6, Count(aRes, ShapeType.Face));
@@ -298,19 +304,19 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShellSewing_SewsAShellOfSeparateFaces()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 10, 10).Shape();
+        Shape aBox = new MakeBox(10, 10, 10).Shape();
         var B = new BrepBuilder();
         var aShell = new Shell();
         B.MakeShell(ref aShell);
         for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            B.Add(aShell, new BRepBuilderAPI_Copy(anExp.Current()).Shape());
+            B.Add(aShell, new Copy(anExp.Current()).Shape());
         }
         aShell.TShape()!.FreezeGraph();
         Assert.Equal(24, Count(aShell, ShapeType.Edge));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
 
-        Shape aRes = new ShapeUpgrade_ShellSewing().ApplySewing(aShell, 1e-6);
+        Shape aRes = new global::Kerf.Engine.Healing.Upgrade.ShellSewing().ApplySewing(aShell, 1e-6);
 
         aSnap.AssertUnchanged(aShell);
         Assert.False(aRes.IsNull);
@@ -322,8 +328,8 @@ public class ShapeUpgrade_DivideTests
     [Fact]
     public void ShellSewing_WithoutShells_ReturnsANullShape()
     {
-        Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
-        Assert.True(new ShapeUpgrade_ShellSewing().ApplySewing(anEdge).IsNull);
+        Shape anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Shape();
+        Assert.True(new global::Kerf.Engine.Healing.Upgrade.ShellSewing().ApplySewing(anEdge).IsNull);
     }
 
     [Fact]
@@ -333,7 +339,7 @@ public class ShapeUpgrade_DivideTests
         aCurve.Freeze();
         NCollection_HSequence<BoundedCurve3D>? aSeq = null;
 
-        Assert.True(ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(aCurve, ref aSeq));
+        Assert.True(global::Kerf.Engine.Healing.Upgrade.ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve(aCurve, ref aSeq));
 
         Assert.Equal(2, aSeq!.Length());
         Assert.Equal(3, aCurve.KnotCount);
@@ -342,7 +348,7 @@ public class ShapeUpgrade_DivideTests
 
         // a C1 curve: false, the sequence untouched
         NCollection_HSequence<BoundedCurve3D>? aNone = null;
-        Assert.False(ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve((BSplineCurve3D)aSeq.Value(1), ref aNone));
+        Assert.False(global::Kerf.Engine.Healing.Upgrade.ShapeUpgrade.C0BSplineToSequenceOfC1BSplineCurve((BSplineCurve3D)aSeq.Value(1), ref aNone));
         Assert.Null(aNone);
     }
 
@@ -351,7 +357,7 @@ public class ShapeUpgrade_DivideTests
     {
         BSplineCurve3D aCurve = KinkedCurve();
         aCurve.Freeze();
-        var aTool = new ShapeUpgrade_SplitCurve3d();
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.SplitCurve3d();
         aTool.Init(aCurve, 0, 2);
         var aValues = new NCollection_HSequence<double>();
         aValues.Append(0.5);
@@ -360,8 +366,8 @@ public class ShapeUpgrade_DivideTests
         aTool.SetSplitValues(aValues);
         aTool.Build(true);
 
-        Assert.True(aTool.Status(ShapeExtend_DONE1));
-        Assert.True(aTool.Status(ShapeExtend_DONE3));
+        Assert.True(aTool.Status(ExtendStatus.DONE1));
+        Assert.True(aTool.Status(ExtendStatus.DONE3));
         Assert.Equal(4, aTool.SplitValues()!.Length());
         Assert.Equal(3, aTool.GetCurves()!.Length());
         Assert.Equal(0.5, aTool.GetCurves()!.Value(1).LastParameter(), 12);
@@ -372,11 +378,11 @@ public class ShapeUpgrade_DivideTests
     public void ConvertCurve3dToBezier_OnACircle_GivesBezierArcs()
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
-        var aTool = new ShapeUpgrade_ConvertCurve3dToBezier();
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.ConvertCurve3dToBezier();
         aTool.Init(aCircle, 0, 2 * Math.PI);
         aTool.Perform(true);
 
-        Assert.True(aTool.Status(ShapeExtend_DONE1));
+        Assert.True(aTool.Status(ExtendStatus.DONE1));
         NCollection_HArray1<Curve3D> aCurves = aTool.GetCurves()!;
         Assert.True(aCurves.Length() > 1);
         for (int i = 1; i <= aCurves.Length(); i++)
@@ -406,12 +412,12 @@ public class ShapeUpgrade_DivideTests
         var aCurve = new BSplineCurve2D(aPoles, aKnots, aMults, 2);
         aCurve.Freeze();
 
-        var aTool = new ShapeUpgrade_SplitCurve2dContinuity();
+        var aTool = new global::Kerf.Engine.Healing.Upgrade.SplitCurve2dContinuity();
         aTool.SetCriterion(C1);
         aTool.Init(aCurve, 0, 2);
         aTool.Compute();
 
-        Assert.True(aTool.Status(ShapeExtend_DONE3));
+        Assert.True(aTool.Status(ExtendStatus.DONE3));
         Assert.Equal(2, aTool.SplitValues()!.Length());
         Assert.Equal(2, aCurve.Multiplicity(2));
     }
@@ -424,41 +430,41 @@ public class ShapeAlgoTests
     [Fact]
     public void Init_CreatesTheDefaultContainer_SetAlgoContainerReplacesIt()
     {
-        ShapeAlgo.Init();
-        ShapeAlgo_AlgoContainer? aDefault = ShapeAlgo.AlgoContainer();
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
+        global::Kerf.Engine.Healing.AlgoContainer? aDefault = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer();
         Assert.NotNull(aDefault);
         Assert.NotNull(aDefault.ToolContainer());
         try
         {
-            var aMine = new ShapeAlgo_AlgoContainer();
-            ShapeAlgo.SetAlgoContainer(aMine);
-            Assert.Same(aMine, ShapeAlgo.AlgoContainer());
-            ShapeAlgo.Init(); // once per process: doesn't replace it
-            Assert.Same(aMine, ShapeAlgo.AlgoContainer());
+            var aMine = new global::Kerf.Engine.Healing.AlgoContainer();
+            global::Kerf.Engine.Healing.ShapeAlgo.SetAlgoContainer(aMine);
+            Assert.Same(aMine, global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer());
+            global::Kerf.Engine.Healing.ShapeAlgo.Init(); // once per process: doesn't replace it
+            Assert.Same(aMine, global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer());
         }
         finally
         {
-            ShapeAlgo.SetAlgoContainer(aDefault);
+            global::Kerf.Engine.Healing.ShapeAlgo.SetAlgoContainer(aDefault);
         }
     }
 
     [Fact]
     public void AlgoContainer_OuterWireAndC0ShapeToC1Shape()
     {
-        var aContainer = new ShapeAlgo_AlgoContainer();
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        var aContainer = new global::Kerf.Engine.Healing.AlgoContainer();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         Face aFace = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
-        Assert.True(aContainer.OuterWire(aFace).IsSame(ShapeAnalysis.OuterWire(aFace)));
+        Assert.True(aContainer.OuterWire(aFace).IsSame(ShapeAnalysisAnalysis.OuterWire(aFace)));
         Assert.True(aContainer.C0ShapeToC1Shape(aBox, 1e-3).IsEqual(aBox));
-        Assert.IsType<ShapeFix_Shape>(aContainer.ToolContainer()!.FixShape());
+        Assert.IsType<ShapeFixer>(aContainer.ToolContainer()!.FixShape());
     }
 
     [Fact]
     public void HomoWires_GivesWiresWithTheSameNumberOfEdges()
     {
-        var aContainer = new ShapeAlgo_AlgoContainer();
-        Wire aW1 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire();
-        Wire aW2 = new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 1), new Point3D(2, 0, 1), new Point3D(2, 2, 1),
+        var aContainer = new global::Kerf.Engine.Healing.AlgoContainer();
+        Wire aW1 = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire();
+        Wire aW2 = new MakePolygon(new Point3D(0, 0, 1), new Point3D(2, 0, 1), new Point3D(2, 2, 1),
                                                          new Point3D(0, 2, 1), true).Wire();
         Assert.True(aContainer.HomoWires(aW1, aW2, out Wire aOut1, out Wire aOut2, false));
         int n1 = 0, n2 = 0;

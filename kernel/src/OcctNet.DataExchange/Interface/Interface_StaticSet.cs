@@ -101,7 +101,7 @@ public sealed class Interface_StaticSet
             return false;
         }
         Interface_Static item;
-        if (type == Interface_ParamMisc)
+        if (type == Interface_ParamType.Interface_ParamMisc)
         {
             Interface_Static? other = Static(init);
             if (other is null)
@@ -132,25 +132,25 @@ public sealed class Interface_StaticSet
         switch (type)
         {
             case 'e':
-                epyt = Interface_ParamEnum;
+                epyt = Interface_ParamType.Interface_ParamEnum;
                 break;
             case 'i':
-                epyt = Interface_ParamInteger;
+                epyt = Interface_ParamType.Interface_ParamInteger;
                 break;
             case 'o':
-                epyt = Interface_ParamIdent;
+                epyt = Interface_ParamType.Interface_ParamIdent;
                 break;
             case 'p':
-                epyt = Interface_ParamText;
+                epyt = Interface_ParamType.Interface_ParamText;
                 break;
             case 'r':
-                epyt = Interface_ParamReal;
+                epyt = Interface_ParamType.Interface_ParamReal;
                 break;
             case 't':
-                epyt = Interface_ParamText;
+                epyt = Interface_ParamType.Interface_ParamText;
                 break;
             case '=':
-                epyt = Interface_ParamMisc;
+                epyt = Interface_ParamType.Interface_ParamMisc;
                 break;
             case '&':
             {
@@ -271,19 +271,19 @@ public sealed class Interface_StaticSet
         if (CStringChar(part, 0) == 't' && CStringChar(part, 1) == 'y')
         {
             Interface_ParamType typ = stat.Type();
-            if (typ == Interface_ParamInteger)
+            if (typ == Interface_ParamType.Interface_ParamInteger)
             {
                 return "integer";
             }
-            if (typ == Interface_ParamReal)
+            if (typ == Interface_ParamType.Interface_ParamReal)
             {
                 return "real";
             }
-            if (typ == Interface_ParamText)
+            if (typ == Interface_ParamType.Interface_ParamText)
             {
                 return "text";
             }
-            if (typ == Interface_ParamEnum)
+            if (typ == Interface_ParamType.Interface_ParamEnum)
             {
                 return "enum";
             }

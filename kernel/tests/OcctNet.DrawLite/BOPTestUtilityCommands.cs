@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
@@ -77,12 +81,12 @@ internal static class BOPTestUtilityCommands
         Face aFace = ShapeCasts.Face(aShFace);
 
         // Try to copy PCurve from old edge to the new one.
-        IntTools_Context aCtx = new();
+        IntersectionContext aCtx = new();
         int iRet = 0;
         // OCCT writes into the new edge itself: Draw-lite into an unfrozen copy, rebound afterwards (see the class)
         SWDRAWShapeFixCommands.InPlace(theDI, aShENew, aWork =>
         {
-            iRet = BOPTools_AlgoTools2D.AttachExistingPCurve(aEOld, ShapeCasts.Edge(aWork), aFace, aCtx);
+            iRet = AlgoTools2D.AttachExistingPCurve(aEOld, ShapeCasts.Edge(aWork), aFace, aCtx);
             return aWork;
         });
 
@@ -114,7 +118,7 @@ internal static class BOPTestUtilityCommands
             return 1;
         }
         //
-        BOPTools_AlgoTools.OrientEdgesOnWire(ref anEdges);
+        AlgoTools.OrientEdgesOnWire(ref anEdges);
         theDI.SetShape(theArgVal[1], anEdges);
         return 0;
     }
@@ -155,7 +159,7 @@ internal static class BOPTestUtilityCommands
         }
         //
         Shape aWires = new();
-        int iErr = BOPAlgo_Tools.EdgesToWires(anEdges, ref aWires, bShared, anAngTol);
+        int iErr = BuilderTools.EdgesToWires(anEdges, ref aWires, bShared, anAngTol);
         if (iErr != 0)
         {
             theResult.Append("Unable to build wires from given edges\n");
@@ -163,7 +167,7 @@ internal static class BOPTestUtilityCommands
         }
         //
         Shape aFaces = new();
-        bool bDone = BOPAlgo_Tools.WiresToFaces(aWires, ref aFaces, anAngTol);
+        bool bDone = BuilderTools.WiresToFaces(aWires, ref aFaces, anAngTol);
         if (!bDone)
         {
             theResult.Append("Unable to build faces from wires\n");
@@ -206,7 +210,7 @@ internal static class BOPTestUtilityCommands
                     {
                         aLE.Append(exp1.Current());
                     }
-                    BRepLib.BuildPCurveForEdgesOnPlane(aLE, aF);
+                    BrepLibrary.BuildPCurveForEdgesOnPlane(aLE, aF);
                 }
             }
             return aWork;

@@ -23,9 +23,9 @@ internal static class RWStepVisual_RWCentralOrParallel
     {
         switch (theSourceEnum)
         {
-            case StepVisual_copCentral:
+            case StepVisual_CentralOrParallel.StepVisual_copCentral:
                 return copCentral;
-            case StepVisual_copParallel:
+            case StepVisual_CentralOrParallel.StepVisual_copParallel:
                 return copParallel;
         }
         return null;
@@ -41,11 +41,11 @@ internal static class RWStepVisual_RWCentralOrParallel
     {
         if (theCentralOrParallelStr == copCentral)
         {
-            theResultEnum = StepVisual_copCentral;
+            theResultEnum = StepVisual_CentralOrParallel.StepVisual_copCentral;
         }
         else if (theCentralOrParallelStr == copParallel)
         {
-            theResultEnum = StepVisual_copParallel;
+            theResultEnum = StepVisual_CentralOrParallel.StepVisual_copParallel;
         }
         else
         {

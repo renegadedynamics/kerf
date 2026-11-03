@@ -55,7 +55,7 @@ internal class RWStepDimTol_RWDatumReferenceElement
         StepDimTol_DatumOrCommonDatum aBase = new StepDimTol_DatumOrCommonDatum();
         StepDimTol_Datum aDatum = null;
         Interface_ParamType aType = data.ParamType(num, 5);
-        if (aType == Interface_ParamIdent)
+        if (aType == Interface_ParamType.Interface_ParamIdent)
         {
             data.ReadEntity(num, 5, "general_datum_reference.base", ach, typeof(StepDimTol_Datum), ref aDatum);
             aBase.SetValue(aDatum);
@@ -68,7 +68,7 @@ internal class RWStepDimTol_RWDatumReferenceElement
             if (data.ReadSubList(num, 5, "general_datum_reference.base", ach, ref nbSub1))
             {
                 aType = data.ParamType(nbSub1, 1);
-                if (aType == Interface_ParamSub)
+                if (aType == Interface_ParamType.Interface_ParamSub)
                 {
                     int aNewNbSub = 0;
                     if (data.ReadSubList(nbSub1, 1, "general_datum_reference.base", ach, ref aNewNbSub))
@@ -100,7 +100,7 @@ internal class RWStepDimTol_RWDatumReferenceElement
             for (int i = 1; i <= nbElements; i++)
             {
                 aType = data.ParamType(nbSub, i);
-                if (aType == Interface_ParamIdent)
+                if (aType == Interface_ParamType.Interface_ParamIdent)
                 {
                     StepDimTol_DatumReferenceModifierWithValue aDRMWV = null;
                     data.ReadEntity(nbSub, i, "datum_reference_modifier_with_value", ach, typeof(StepDimTol_DatumReferenceModifierWithValue), ref aDRMWV);

@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Fillets;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -14,7 +19,7 @@ using static Kerf.Topology.Containment;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Runs the reconstruction (<see cref="ChFi3d_BOPReconstruction"/>) on native's data structure as
+/// Runs the reconstruction (<see cref="BOPReconstruction"/>) on native's data structure as
 /// <c>ChFi3d_Builder::Compute</c> does after <c>CompleteDS</c> (ChFi3d_Builder.cxx:471–574), and compares its result
 /// and history with native's geometrically (decision 992): volume and area, counts of faces, edges and vertices,
 /// validity, bounding box, and the history as sets of (surface type, area).
@@ -22,7 +27,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 internal static class ReconComparison
 {
     /// <summary>What the reconstruction gave for a case.</summary>
-    internal sealed record Run(Shape Input, TopOpeBRepDS_HDataStructure HDS, ChFi3d_BOPReconstruction Builder,
+    internal sealed record Run(Shape Input, DsHDataStructure HDS, BOPReconstruction Builder,
                                Shape Result);
 
     /// <summary>Compute from <c>myCoup->Perform</c> to the result and the same-parameter (not SetRegul).</summary>
@@ -43,9 +48,9 @@ internal static class ReconComparison
             // the fillet builder's working copy (decision 1087): Compute's steps after MergeSolid write into it
             anInput = BrepTools.ExactCopyForWrite(anInput, out History _);
         }
-        TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(theCase.DsText, anInput);
-        TopOpeBRepDS_DataStructure aDS = aHDS.DS();
-        ChFi3d_BOPReconstruction aCoup = new(new TopOpeBRepDS_BuildTool());
+        DsHDataStructure aHDS = TextDump.Read(theCase.DsText, anInput);
+        DsDataStructure aDS = aHDS.DS();
+        BOPReconstruction aCoup = new(new DsBuildTool());
         aCoup.Perform(aHDS);
 
         // the stripes' solids (MapIndSo): the solids, or shells, of the data structure with surfaces
@@ -118,8 +123,8 @@ internal static class ReconComparison
         {
             foreach (Shape aF in aCoup.NewFaces(iF))
             {
-                BRepLib.SameParameter(aF, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
-                ShapeFix.SameParameter(aF, false, global::Kerf.Engine.Foundation.Precision.Confusion());
+                BrepLibrary.SameParameter(aF, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
+                ShapeFixFixer.SameParameter(aF, false, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
         return new Run(anInput, aHDS, aCoup, aResult);
@@ -128,14 +133,14 @@ internal static class ReconComparison
     internal static double Volume(in Shape S)
     {
         Properties p = new();
-        BRepGProp.VolumeProperties(S, p);
+        MassPropertiesBuilder.VolumeProperties(S, p);
         return p.Mass();
     }
 
     internal static double Area(in Shape S)
     {
         Properties p = new();
-        BRepGProp.SurfaceProperties(S, p);
+        MassPropertiesBuilder.SurfaceProperties(S, p);
         return p.Mass();
     }
 
@@ -170,18 +175,18 @@ internal static class ReconComparison
     /// <summary>The faults BRepCheck finds, by sub-shape type.</summary>
     internal static string Faults(in Shape S)
     {
-        BRepCheck_Analyzer an = new(S);
+        Analyzer an = new(S);
         SortedSet<string> aFaults = [];
         ShapeType[] aTypes = [ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex];
         foreach (ShapeType T in aTypes)
         {
             for (Explorer exp = new(S, T); exp.More(); exp.Next())
             {
-                if (an.Result(exp.Current()) is BRepCheck_Result r)
+                if (an.Result(exp.Current()) is ResultCheck r)
                 {
-                    foreach (BRepCheck_Status st in r.Status())
+                    foreach (StatusCheck st in r.Status())
                     {
-                        if (st != BRepCheck_Status.BRepCheck_NoError)
+                        if (st != StatusCheck.NoError)
                         {
                             aFaults.Add(Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "") + ":"
                                         + Kerf.Engine.Foundation.OcctTypeNames.Of(st).Replace("BRepCheck_", ""));
@@ -219,15 +224,15 @@ internal static class ReconComparison
                 d.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(T)} {n1} | {n2}");
             }
         }
-        bool ok1 = new BRepCheck_Analyzer(aNative).IsValid(), ok2 = new BRepCheck_Analyzer(aMine).IsValid();
+        bool ok1 = new Analyzer(aNative).IsValid(), ok2 = new Analyzer(aMine).IsValid();
         if (ok1 != ok2)
         {
             d.Add($"valid {ok1} | {ok2}" + (ok2 ? "" : " " + Faults(aMine))
                   + (ok1 ? "" : " native " + Faults(aNative)));
         }
         Box b1 = new(), b2 = new();
-        BRepBndLib.AddOptimal(aNative, ref b1, false, false);
-        BRepBndLib.AddOptimal(aMine, ref b2, false, false);
+        Bounds.AddOptimal(aNative, ref b1, false, false);
+        Bounds.AddOptimal(aMine, ref b2, false, false);
         if (!b1.IsVoid && !b2.IsVoid)
         {
             b1.Get(out double x1, out double y1, out double z1, out double X1, out double Y1, out double Z1);

@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using static Occt.IFSelect_ReturnStatus;
 using static Occt.IFSelect_PrintCount;
 using static Occt.Interface_ParamType;
@@ -309,43 +310,43 @@ public class IFSelect_WorkSession : Transient
     {
         if (thelibrary is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         if (theprotocol is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         Interface_InterfaceModel model = null;
-        IFSelect_ReturnStatus status = IFSelect_RetVoid;
+        IFSelect_ReturnStatus status = IFSelect_ReturnStatus.IFSelect_RetVoid;
         try
         {
             int stat = thelibrary.ReadFile(filename, ref model, theprotocol, theProgress);
             if (stat == 0)
             {
-                status = IFSelect_RetDone;
+                status = IFSelect_ReturnStatus.IFSelect_RetDone;
             }
             else if (stat < 0)
             {
-                status = IFSelect_RetError;
+                status = IFSelect_ReturnStatus.IFSelect_RetError;
             }
             else
             {
-                status = IFSelect_RetFail;
+                status = IFSelect_ReturnStatus.IFSelect_RetFail;
             }
         }
-        catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+        catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
         {
             using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    ReadFile Interruption by Exception :   ****\n").Append(Transfer_ProcessForTransient.What(anException)).Append("\n    Abandon").Append('\n');
-            status = IFSelect_RetFail;
+            status = IFSelect_ReturnStatus.IFSelect_RetFail;
         }
-        if (status != IFSelect_RetDone)
+        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return status;
         }
         if (model is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         SetModel(model);
         SetLoadedFile(filename);
@@ -365,43 +366,43 @@ public class IFSelect_WorkSession : Transient
     {
         if (thelibrary is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         if (theprotocol is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         Interface_InterfaceModel model = null;
-        IFSelect_ReturnStatus status = IFSelect_RetVoid;
+        IFSelect_ReturnStatus status = IFSelect_ReturnStatus.IFSelect_RetVoid;
         try
         {
             int stat = thelibrary.ReadStream(theName, theIStream, ref model, theprotocol, theProgress);
             if (stat == 0)
             {
-                status = IFSelect_RetDone;
+                status = IFSelect_ReturnStatus.IFSelect_RetDone;
             }
             else if (stat < 0)
             {
-                status = IFSelect_RetError;
+                status = IFSelect_ReturnStatus.IFSelect_RetError;
             }
             else
             {
-                status = IFSelect_RetFail;
+                status = IFSelect_ReturnStatus.IFSelect_RetFail;
             }
         }
-        catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+        catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
         {
             using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
             sout.Append("    ****    ReadFile Interruption by Exception :   ****\n").Append(Transfer_ProcessForTransient.What(anException)).Append("\n    Abandon").Append('\n');
-            status = IFSelect_RetFail;
+            status = IFSelect_ReturnStatus.IFSelect_RetFail;
         }
-        if (status != IFSelect_RetDone)
+        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return status;
         }
         if (model is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         SetModel(model);
         SetLoadedFile(theName);
@@ -1472,7 +1473,7 @@ public class IFSelect_WorkSession : Transient
         {
             return param;
         }
-        if (stat.Type() == Interface_ParamInteger)
+        if (stat.Type() == Interface_ParamType.Interface_ParamInteger)
         {
             IFSelect_IntParam intpar = new IFSelect_IntParam();
             intpar.SetStaticName(statname, thestatics);
@@ -1647,7 +1648,7 @@ public class IFSelect_WorkSession : Transient
             {
                 iter = EvalSelection(sel); // normal call (therefore, code not duplicated)
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    EvalSelection Interrupted by Exception :   ****\n");
@@ -1692,7 +1693,7 @@ public class IFSelect_WorkSession : Transient
             {
                 res = SelectionResult(sel); // appel normal (.code unique)
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SelectionResult Interrupted by Exception :   ****\n");
@@ -2364,13 +2365,13 @@ public class IFSelect_WorkSession : Transient
         Interface_CheckIterator checks = new Interface_CheckIterator();
         if (!IsLoaded())
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         if (thelibrary is null)
         {
             checks.CCheck(0).AddFail("WorkLibrary undefined");
             thecheckrun = checks;
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
 
         if (myErrHand)
@@ -2381,7 +2382,7 @@ public class IFSelect_WorkSession : Transient
                 ComputeGraph(computegraph);
                 checks = thecopier.SendAll(filename, thegraph.Graph(), thelibrary, theprotocol, theStream);
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SendAll Interrupted by Exception :   ****\n");
@@ -2391,7 +2392,7 @@ public class IFSelect_WorkSession : Transient
                 myErrHand = theerrhand;
                 checks.CCheck(0).AddFail("Exception Raised -> Abandon");
                 thecheckrun = checks;
-                return IFSelect_RetFail;
+                return IFSelect_ReturnStatus.IFSelect_RetFail;
             }
         }
         else
@@ -2401,7 +2402,7 @@ public class IFSelect_WorkSession : Transient
         Interface_Check aMainFail = checks.CCheck(0);
         if (aMainFail is not null && aMainFail.HasFailed())
         {
-            return IFSelect_RetStop;
+            return IFSelect_ReturnStatus.IFSelect_RetStop;
         }
         if (theloaded.Length == 0)
         {
@@ -2410,9 +2411,9 @@ public class IFSelect_WorkSession : Transient
         thecheckrun = checks;
         if (checks.IsEmpty(true))
         {
-            return IFSelect_RetDone;
+            return IFSelect_ReturnStatus.IFSelect_RetDone;
         }
-        return IFSelect_RetError;
+        return IFSelect_ReturnStatus.IFSelect_RetError;
     }
 
     /// <summary>
@@ -2431,14 +2432,14 @@ public class IFSelect_WorkSession : Transient
         ////...
         if (!IsLoaded())
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         Interface_CheckIterator checks = new Interface_CheckIterator();
         if (thelibrary is null)
         {
             checks.CCheck(0).AddFail("WorkLibrary undefined");
             thecheckrun = checks;
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         if (myErrHand)
@@ -2449,7 +2450,7 @@ public class IFSelect_WorkSession : Transient
                 ComputeGraph(computegraph);
                 return SendSelected(filename, sel, false, theStream); // normal call
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    SendSelected Interrupted by Exception :   ****\n");
@@ -2459,14 +2460,14 @@ public class IFSelect_WorkSession : Transient
                 checks.CCheck(0).AddFail("Exception Raised -> Abandon");
                 myErrHand = theerrhand;
                 thecheckrun = checks;
-                return IFSelect_RetFail;
+                return IFSelect_ReturnStatus.IFSelect_RetFail;
             }
         }
         //  if (ItemIdent(sel) == 0) return 3;
         Interface_EntityIterator iter = sel.UniqueResult(thegraph.Graph());
         if (iter.NbEntities() == 0)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         checks = thecopier.SendSelected(filename, thegraph.Graph(), thelibrary, theprotocol, iter, theStream);
@@ -2474,9 +2475,9 @@ public class IFSelect_WorkSession : Transient
         thecheckrun = checks;
         if (checks.IsEmpty(true))
         {
-            return IFSelect_RetDone;
+            return IFSelect_ReturnStatus.IFSelect_RetDone;
         }
-        return IFSelect_RetError;
+        return IFSelect_ReturnStatus.IFSelect_RetError;
     }
 
     /// <summary>
@@ -2488,12 +2489,12 @@ public class IFSelect_WorkSession : Transient
     {
         if (WorkLibrary() is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         ComputeGraph(true);
         if (!IsLoaded())
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         return SendAll(filename);
     }
@@ -2508,12 +2509,12 @@ public class IFSelect_WorkSession : Transient
     {
         if (WorkLibrary() is null || sel is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         ComputeGraph(true);
         if (!IsLoaded())
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         return SendSelected(filename, sel);
     }
@@ -3518,18 +3519,18 @@ public class IFSelect_WorkSession : Transient
         }
         else if (level > 2)
         {
-            IFSelect_PrintCount mode = IFSelect_ItemsByEntity;
+            IFSelect_PrintCount mode = IFSelect_PrintCount.IFSelect_ItemsByEntity;
             if (level == 5 || level == 8)
             {
-                mode = IFSelect_CountByItem;
+                mode = IFSelect_PrintCount.IFSelect_CountByItem;
             }
             if (level == 6 || level == 9)
             {
-                mode = IFSelect_ListByItem;
+                mode = IFSelect_PrintCount.IFSelect_ListByItem;
             }
             if (level == 7 || level == 10)
             {
-                mode = IFSelect_EntitiesByItem;
+                mode = IFSelect_PrintCount.IFSelect_EntitiesByItem;
             }
             PrintCheckList(S, ModelCheckList(), false, mode);
         }
@@ -3560,7 +3561,7 @@ public class IFSelect_WorkSession : Transient
                         C = CT.CompleteCheckList();
                     }
                 }
-                catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+                catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
                 {
                     using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                     sout.Append("    ****    DumpModel (Check) Interrupted by Exception    ****\n");
@@ -3583,7 +3584,7 @@ public class IFSelect_WorkSession : Transient
             {
                 C.Print(S, myModel, (level == 3));
             }
-            catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+            catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
             {
                 using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendInfo();
                 sout.Append("    ****    DumpModel Interrupted by Exception :   ****\n");
@@ -3772,7 +3773,7 @@ public class IFSelect_WorkSession : Transient
     public void PrintCheckList(TextWriter S, Interface_CheckIterator checklist, bool failsonly, IFSelect_PrintCount mode)
     {
         //  mode : 0  comptage   1 n0s entites   2 n0s+id ents
-        if (mode == IFSelect_ItemsByEntity)
+        if (mode == IFSelect_PrintCount.IFSelect_ItemsByEntity)
         {
             checklist.Print(S, myModel, failsonly);
         }
@@ -3780,7 +3781,7 @@ public class IFSelect_WorkSession : Transient
         {
             Interface_CheckIterator chks = checklist;
             IFSelect_CheckCounter counter =
-                new IFSelect_CheckCounter((int)mode > 1 && mode != IFSelect_CountSummary);
+                new IFSelect_CheckCounter((int)mode > 1 && mode != IFSelect_PrintCount.IFSelect_CountSummary);
             counter.Analyse(chks, myModel, true, failsonly);
             counter.PrintList(S, myModel, mode);
         }
@@ -3940,7 +3941,7 @@ public class IFSelect_WorkSession : Transient
                 sout.Write('\n');
             }
         }
-        catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+        catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
         {
             sout.Write("    ****    ListEntities Interrupted by Exception :   ****\n");
             sout.Write(Transfer_ProcessForTransient.What(anException));

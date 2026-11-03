@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using System.Globalization;
 using Occt;
@@ -61,7 +62,7 @@ internal static class GeometryTestProjCommands
         double dT = (aT2 - aT1) / (aNbP - 1);
         double aMaxParam = 0.0;
         double aMaxDist = 0.0;
-        var aPPS = new GeomAPI_ProjectPointOnSurf();
+        var aPPS = new ProjectPointOnSurface();
         for (int i = 0; i < aNbP; ++i)
         {
             double aT = aT1 + i * dT;
@@ -72,7 +73,7 @@ internal static class GeometryTestProjCommands
 
             aC.D0(aT, out Point3D aP);
             aPPS.Init(aP, aS, aTol);
-            if (!aPPS.IsDone())
+            if (!aPPS.IsDone)
             {
                 di.Append("Error: GeomAPI_ProjectPointOnSurf failed\n");
                 return 0;

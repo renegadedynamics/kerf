@@ -6,26 +6,27 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Build;
 
-public sealed partial class ShapeBuild_Edge
+public sealed partial class BuildEdgeBuilder
 {
     // The twin of an in-place method: the operation on an exact copy for write of the edge, whose sub-shapes it left
     // unchanged are the input's own again (the input itself if nothing changed), frozen.
-    private static Edge onCopy(in Edge theEdge, Action<Edge> theOperation, out History theHistory)
+    private static Edge OnCopy(in Edge edge, Action<Edge> operation, out History history)
     {
-        if (theEdge.IsNull)
+        if (edge.IsNull)
         {
-            theHistory = new History();
-            return theEdge;
+            history = new History();
+            return edge;
         }
 
-        Edge aCopy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(theEdge, out _));
-        theOperation(aCopy);
-        Shape aResult = BrepTools.KeepUnchanged(theEdge, aCopy, out theHistory);
-        aResult.TShape()!.FreezeGraph();
-        return ShapeCasts.Edge(aResult);
+        Edge copy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(edge, out _));
+        operation(copy);
+        Shape result = BrepTools.KeepUnchanged(edge, copy, out history);
+        result.TShape()!.FreezeGraph();
+        return ShapeCasts.Edge(result);
     }
 
     /// <summary>
@@ -36,16 +37,16 @@ public sealed partial class ShapeBuild_Edge
         => RangesCopied(toedge, fromedge, out _, alpha, beta);
 
     /// <summary>The functional twin of CopyRanges, with the history from the edge to the result.</summary>
-    public Edge RangesCopied(in Edge toedge, in Edge fromedge, out History theHistory, double alpha = 0,
+    public Edge RangesCopied(in Edge toedge, in Edge fromedge, out History history, double alpha = 0,
                                     double beta = 1)
     {
         Edge aFrom = fromedge;
-        return onCopy(toedge, aCopy => CopyRanges(aCopy, aFrom, alpha, beta), out theHistory);
+        return OnCopy(toedge, aCopy => CopyRanges(aCopy, aFrom, alpha, beta), out history);
     }
 
     /// <summary>The functional twin of <see cref="SetRange3d"/>: the edge with the range of its 3D curve set.</summary>
     public Edge WithRange3d(in Edge edge, double first, double last)
-        => onCopy(edge, aCopy => SetRange3d(aCopy, first, last), out _);
+        => OnCopy(edge, aCopy => SetRange3d(aCopy, first, last), out _);
 
     /// <summary>
     /// The functional twin of <see cref="CopyPCurves"/>: <paramref name="toedge"/> holding copies of
@@ -54,25 +55,25 @@ public sealed partial class ShapeBuild_Edge
     public Edge PCurvesCopied(in Edge toedge, in Edge fromedge)
     {
         Edge aFrom = fromedge;
-        return onCopy(toedge, aCopy => CopyPCurves(aCopy, aFrom), out _);
+        return OnCopy(toedge, aCopy => CopyPCurves(aCopy, aFrom), out _);
     }
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, in Face)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, in Face face)
     {
         Face aFace = face;
-        return onCopy(edge, aCopy => RemovePCurve(aCopy, aFace), out _);
+        return OnCopy(edge, aCopy => RemovePCurve(aCopy, aFace), out _);
     }
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, Surface)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, Surface? surf)
-        => onCopy(edge, aCopy => RemovePCurve(aCopy, surf), out _);
+        => OnCopy(edge, aCopy => RemovePCurve(aCopy, surf), out _);
 
     /// <summary>The functional twin of <see cref="RemovePCurve(in Edge, Surface, in Placement)"/>.</summary>
     public Edge PCurveRemoved(in Edge edge, Surface? surf, in Placement loc)
     {
         Placement aLoc = loc;
-        return onCopy(edge, aCopy => RemovePCurve(aCopy, surf, aLoc), out _);
+        return OnCopy(edge, aCopy => RemovePCurve(aCopy, surf, aLoc), out _);
     }
 
     /// <summary>
@@ -82,7 +83,7 @@ public sealed partial class ShapeBuild_Edge
     public Edge PCurveReplaced(in Edge edge, Curve2D? pcurve, in Face face)
     {
         Face aFace = face;
-        return onCopy(edge, aCopy => ReplacePCurve(aCopy, pcurve, aFace), out _);
+        return OnCopy(edge, aCopy => ReplacePCurve(aCopy, pcurve, aFace), out _);
     }
 
     /// <summary>
@@ -93,13 +94,13 @@ public sealed partial class ShapeBuild_Edge
     {
         Face anOld = old, aSub = sub;
         bool isDone = false;
-        Edge aResult = onCopy(edge, aCopy => isDone = ReassignPCurve(aCopy, anOld, aSub), out _);
+        Edge result = OnCopy(edge, aCopy => isDone = ReassignPCurve(aCopy, anOld, aSub), out _);
         theIsDone = isDone;
-        return aResult;
+        return result;
     }
 
     /// <summary>The functional twin of <see cref="RemoveCurve3d"/>: the edge without its 3D curve.</summary>
-    public Edge Curve3dRemoved(in Edge edge) => onCopy(edge, aCopy => RemoveCurve3d(aCopy), out _);
+    public Edge Curve3dRemoved(in Edge edge) => OnCopy(edge, aCopy => RemoveCurve3d(aCopy), out _);
 
     /// <summary>
     /// The functional twin of <see cref="BuildCurve3d"/>: the edge with a 3D curve computed from its pcurve;
@@ -108,8 +109,8 @@ public sealed partial class ShapeBuild_Edge
     public Edge Curve3dBuilt(in Edge edge, out bool theIsDone)
     {
         bool isDone = false;
-        Edge aResult = onCopy(edge, aCopy => isDone = BuildCurve3d(aCopy), out _);
+        Edge result = OnCopy(edge, aCopy => isDone = BuildCurve3d(aCopy), out _);
         theIsDone = isDone;
-        return aResult;
+        return result;
     }
 }

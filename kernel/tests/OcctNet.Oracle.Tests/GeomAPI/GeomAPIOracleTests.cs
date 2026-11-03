@@ -3,6 +3,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
 using static Kerf.Engine.Approximation.ParametrizationType;
@@ -82,7 +83,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                     aPC.LastParameter(), aPC.IsPeriodic);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
                 using var aN = new N.GeomAPI_ProjectPointOnCurve();
-                var aPort = new GeomAPI_ProjectPointOnCurve();
+                var aPort = new ProjectPointOnCurve();
                 if (!Both(anOracle, () => aN.Init(aNC, aFirst, aLast), () => aPort.Init(aPC, aFirst, aLast), aW))
                 {
                     continue;
@@ -159,7 +160,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 string aW = $"{AdaptorOracleInputs.SurfaceKinds[aKind]} #{c} ({anAlgo}, {aFlag}, {(aWithTol ? aTol.ToString("R") : "default tol")})";
 
                 using var aN = new N.GeomAPI_ProjectPointOnSurf();
-                var aPort = new GeomAPI_ProjectPointOnSurf();
+                var aPort = new ProjectPointOnSurface();
                 aN.SetExtremaFlag((N.Extrema_ExtFlag)(int)aFlag);
                 aPort.SetExtremaFlag(aFlag);
                 var aNAlgo = (N.Extrema_ExtAlgo)(int)anAlgo;
@@ -189,7 +190,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 {
                     continue;
                 }
-                anOracle.Same(aN.IsDone(), aPort.IsDone(), $"{aW} IsDone after Init");
+                anOracle.Same(aN.IsDone(), aPort.IsDone, $"{aW} IsDone after Init");
                 for (int k = 0; k < 3; k++)
                 {
                     Point3D aP = k == 0 ? new Point3D(anOracle.Real(-30, 30), anOracle.Real(-30, 30), anOracle.Real(-30, 30))
@@ -201,7 +202,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                     {
                         break;
                     }
-                    anOracle.Same(aN.IsDone(), aPort.IsDone(), $"{aWP} IsDone");
+                    anOracle.Same(aN.IsDone(), aPort.IsDone, $"{aWP} IsDone");
                     int aNb = aN.NbPoints();
                     anOracle.Same(aNb, aPort.NbPoints(), $"{aWP} NbPoints");
                     for (int i = 1; i <= aNb; i++)
@@ -298,12 +299,12 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             }
 
             N.GeomAPI_Interpolate? aN = null;
-            GeomAPI_Interpolate? aPort = null;
+            ApiInterpolate? aPort = null;
             if (!Both(anOracle,
                     () => aN = aWithParams ? new N.GeomAPI_Interpolate(aNPnts, aNParams, aPeriodic, aTol)
                                            : new N.GeomAPI_Interpolate(aNPnts, aPeriodic, aTol),
-                    () => aPort = aWithParams ? new GeomAPI_Interpolate(aPnts, aParams, aPeriodic, aTol)
-                                              : new GeomAPI_Interpolate(aPnts, aPeriodic, aTol),
+                    () => aPort = aWithParams ? new ApiInterpolate(aPnts, aParams, aPeriodic, aTol)
+                                              : new ApiInterpolate(aPnts, aPeriodic, aTol),
                     aW))
             {
                 aN?.Dispose();
@@ -346,8 +347,8 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 {
                     continue;
                 }
-                anOracle.Same(aN!.IsDone(), aPort!.IsDone(), $"{aW} IsDone");
-                if (!aPort.IsDone())
+                anOracle.Same(aN!.IsDone(), aPort!.IsDone, $"{aW} IsDone");
+                if (!aPort.IsDone)
                 {
                     continue;
                 }
@@ -376,7 +377,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             int aMethod = c % 3;
             using N.TColgp_Array1OfPnt aNPoints = Oracle.ToNative(aPoints);
             N.GeomAPI_PointsToBSpline? aN = null;
-            GeomAPI_PointsToBSpline? aPort = null;
+            PointsToBSpline? aPort = null;
             string aW;
             double aTolerance;
             if (aMethod == 0)
@@ -397,7 +398,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 if (!Both(anOracle,
                         () => aN = new N.GeomAPI_PointsToBSpline(aNPoints, (N.Approx_ParametrizationType)(int)aParType,
                                                                  aDegMin, aDegMax, (N.GeomAbs_Shape)(int)aCont, aTol3D),
-                        () => aPort = new GeomAPI_PointsToBSpline(aPoints, aParType, aDegMin, aDegMax, aCont, aTol3D), aW))
+                        () => aPort = new PointsToBSpline(aPoints, aParType, aDegMin, aDegMax, aCont, aTol3D), aW))
                 {
                     aN?.Dispose();
                     continue;
@@ -423,7 +424,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                 if (!Both(anOracle,
                         () => aN = new N.GeomAPI_PointsToBSpline(aNPoints, aNParams, aDegMin, aDegMax,
                                                                  (N.GeomAbs_Shape)(int)aCont, aTol3D),
-                        () => aPort = new GeomAPI_PointsToBSpline(aPoints, aParams, aDegMin, aDegMax, aCont, aTol3D), aW))
+                        () => aPort = new PointsToBSpline(aPoints, aParams, aDegMin, aDegMax, aCont, aTol3D), aW))
                 {
                     aN?.Dispose();
                     continue;
@@ -454,7 +455,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
                                 aN = new N.GeomAPI_PointsToBSpline(aNPoints, W1, W2, W3, aDegMax, (N.GeomAbs_Shape)(int)aCont, aTol3D);
                             }
                         },
-                        () => aPort = new GeomAPI_PointsToBSpline(aPoints, W1, W2, W3, aDegMax, aCont, aTol3D), aW))
+                        () => aPort = new PointsToBSpline(aPoints, W1, W2, W3, aDegMax, aCont, aTol3D), aW))
                 {
                     aN?.Dispose();
                     continue;
@@ -462,8 +463,8 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             }
             using (aN)
             {
-                anOracle.Same(aN!.IsDone(), aPort!.IsDone(), $"{aW} IsDone");
-                if (!aPort.IsDone())
+                anOracle.Same(aN!.IsDone(), aPort!.IsDone, $"{aW} IsDone");
+                if (!aPort.IsDone)
                 {
                     continue;
                 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
@@ -16,12 +17,12 @@ public class GeomFill_SectionsTests
     public void UniformSection_OfACircle()
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 2);
-        var aLaw = new GeomFill_UniformSection(aCircle, 0, 10);
+        var aLaw = new UniformSection(aCircle, 0, 10);
         aLaw.SectionShape(out int aNbPoles, out int aNbKnots, out int aDeg);
         BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCircle, ParameterisationType.QuasiAngular);
-        Assert.Equal(aBS.IsPeriodic, aLaw.IsUPeriodic());
-        Assert.True(aLaw.IsRational());
-        Assert.True(aLaw.IsVPeriodic());
+        Assert.Equal(aBS.IsPeriodic, aLaw.IsUPeriodic);
+        Assert.True(aLaw.IsRational);
+        Assert.True(aLaw.IsVPeriodic);
         Assert.Equal(aDeg, aBS.Degree());
 
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -31,7 +32,7 @@ public class GeomFill_SectionsTests
         var aMults = new NCollection_Array1<int>(1, aNbKnots);
         aLaw.Knots(aKnots);
         aLaw.Mults(aMults);
-        var aRebuilt = new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, aLaw.IsUPeriodic());
+        var aRebuilt = new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, aLaw.IsUPeriodic);
         for (double u = 0; u < 2 * M_PI; u += 0.4)
         {
             Assert.True(aRebuilt.Value(u).Distance(aBS.Value(u)) < 1e-12);
@@ -72,22 +73,22 @@ public class GeomFill_SectionsTests
     public void UniformSection_BSplineSurfaceIsTheExtrusionInV()
     {
         BSplineCurve3D aCurve = WavyCurve();
-        var aLaw = new GeomFill_UniformSection(aCurve, 2, 5);
+        var aLaw = new UniformSection(aCurve, 2, 5);
         BSplineSurface? aSurf = aLaw.BSplineSurface();
         Assert.NotNull(aSurf);
         Assert.False(aSurf!.IsFrozen);
         Assert.Equal(1, aSurf.VDegree());
         Assert.Equal(aCurve.Value(0.3), aSurf.Value(0.3, 4));
         Assert.False(aCurve.IsFrozen); // the caller's B-spline is only read
-        Assert.False(aLaw.IsRational());
+        Assert.False(aLaw.IsRational);
         Point3D aBary = aLaw.BarycentreOfSurf();
         Assert.True(aBary.X() > 0 && aBary.X() < 4);
     }
 
-    private static GeomFill_CurveAndTrihedron XLaw(double theFirst, double theLast)
+    private static CurveAndTrihedron XLaw(double theFirst, double theLast)
     {
         // the path: the X axis from x = -2, a fixed frame (T = X, N = Y)
-        var aLaw = new GeomFill_CurveAndTrihedron(new TestFixedTrihedron(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0)));
+        var aLaw = new CurveAndTrihedron(new TestFixedTrihedron(new Vector3D(1, 0, 0), new Vector3D(0, 1, 0)));
         aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(-2, 0, 0), new Direction3D(1, 0, 0)), theFirst, theLast));
         return aLaw;
     }
@@ -97,10 +98,10 @@ public class GeomFill_SectionsTests
     {
         // a circle of radius 1 about the origin, in the plane x = 0: the path crosses its plane at parameter 2
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1);
-        var aPlace = new GeomFill_SectionPlacement(XLaw(0, 10), aCircle);
-        Assert.False(aPlace.IsDone());
+        var aPlace = new SurfaceSectionPlacement(XLaw(0, 10), aCircle);
+        Assert.False(aPlace.IsDone);
         aPlace.Perform(1e-7);
-        Assert.True(aPlace.IsDone());
+        Assert.True(aPlace.IsDone);
         Assert.Equal(2.0, aPlace.ParameterOnPath(), 1e-12);
         Assert.Equal(M_PI / 2, aPlace.Angle(), 1e-12);
         Assert.Equal(Math.Sqrt(5.0), aPlace.Distance(), 1e-12); // from the path's start point to the circle
@@ -120,8 +121,8 @@ public class GeomFill_SectionsTests
     public void SectionPlacement_TransformationMapsTheSectionPointOntoThePath()
     {
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 3, 0), new Direction3D(1, 0, 0)), 1);
-        GeomFill_CurveAndTrihedron aLaw = XLaw(0, 10);
-        var aPlace = new GeomFill_SectionPlacement(aLaw, aCircle);
+        CurveAndTrihedron aLaw = XLaw(0, 10);
+        var aPlace = new SurfaceSectionPlacement(aLaw, aCircle);
         aPlace.Perform(4.0, 1e-7);
         Assert.Equal(4.0, aPlace.ParameterOnPath());
         // with the translation, the section's point lands on the path once the law's M and V are applied
@@ -144,29 +145,29 @@ public class GeomFill_SectionsTests
         // a B-spline section near the path's end (its mean plane is used)
         BSplineCurve3D aCurve = WavyCurve();
         var aMoved = (BSplineCurve3D)aCurve.Translated(new Vector3D(8, 1, 0));
-        var aPlace = new GeomFill_SectionPlacement(XLaw(0, 10), aMoved);
+        var aPlace = new SurfaceSectionPlacement(XLaw(0, 10), aMoved);
         aPlace.Perform(1e-7);
-        Assert.True(aPlace.IsDone());
+        Assert.True(aPlace.IsDone);
         Assert.InRange(aPlace.ParameterOnPath(), 0.0, 10.0);
         Assert.False(aMoved.IsFrozen);
         Assert.NotSame(aMoved, aPlace.Section(true));
 
         // a line has no plane: the corrected transformation is refused
-        var aLine = new GeomFill_SectionPlacement(XLaw(0, 10), new TrimmedCurve3D(new LineCurve3D(new Point3D(3, 1, 1), new Direction3D(0, 1, 1)), 0, 2));
+        var aLine = new SurfaceSectionPlacement(XLaw(0, 10), new TrimmedCurve3D(new LineCurve3D(new Point3D(3, 1, 1), new Direction3D(0, 1, 1)), 0, 2));
         aLine.Perform(1e-7);
-        Assert.True(aLine.IsDone());
+        Assert.True(aLine.IsDone);
         Assert.Throws<FailureException>(() => aLine.Transformation(false, true));
     }
 
     [Fact]
     public void SectionPlacement_Point()
     {
-        var aPlace = new GeomFill_SectionPlacement(XLaw(0, 10), new CartesianPoint(3, 4, 0));
+        var aPlace = new SurfaceSectionPlacement(XLaw(0, 10), new CartesianPoint(3, 4, 0));
         aPlace.Perform(1e-7);
         Assert.Equal(5.0, aPlace.ParameterOnPath(), 1e-12);
         Assert.Equal(4.0, aPlace.Distance(), 1e-12);
         Assert.Equal(M_PI / 2, aPlace.Angle());
-        GeomFill_CurveAndTrihedron aLaw = XLaw(0, 10);
+        CurveAndTrihedron aLaw = XLaw(0, 10);
         Matrix3x3 M = new();
         Vector3D V = new();
         aLaw.D0(5.0, ref M, ref V);

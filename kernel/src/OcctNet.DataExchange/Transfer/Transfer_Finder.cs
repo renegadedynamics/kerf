@@ -114,21 +114,21 @@ public abstract class Transfer_Finder : Transient
         Transient? atr = Attribute(name);
         if (atr is null)
         {
-            return Interface_ParamVoid;
+            return Interface_ParamType.Interface_ParamVoid;
         }
         if (atr.DynamicType() == typeof(Interface_IntVal))
         {
-            return Interface_ParamInteger;
+            return Interface_ParamType.Interface_ParamInteger;
         }
         if (atr.DynamicType() == typeof(CartesianPoint2))
         {
-            return Interface_ParamReal;
+            return Interface_ParamType.Interface_ParamReal;
         }
         if (atr.DynamicType() == typeof(TCollection_HAsciiString))
         {
-            return Interface_ParamText;
+            return Interface_ParamType.Interface_ParamText;
         }
-        return Interface_ParamIdent;
+        return Interface_ParamType.Interface_ParamIdent;
     }
 
     /// <summary>Adds an integer value for an attribute.</summary>

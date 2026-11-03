@@ -2,98 +2,102 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>The shrunk range of a pave block, as a parallel solver of the pave filler.</summary>
-internal sealed class BOPAlgo_ShrunkRange : IntTools_ShrunkRange, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class ShrunkRange : EdgeShrunkRange, BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private BOPDS_PaveBlock? myPB;
+    private PaveBlock? _pb;
 
-    public void SetPaveBlock(BOPDS_PaveBlock aPB) => myPB = aPB;
+    public void SetPaveBlock(PaveBlock aPB) => _pb = aPB;
 
-    public BOPDS_PaveBlock PaveBlock() => myPB!;
+    public PaveBlock PaveBlock() => _pb!;
 
-    void BOPTools_Parallel.IContextSolver<IntTools_Context>.SetContext(IntTools_Context theContext) => SetContext(theContext);
+    void BooleanParallel.IContextSolver<IntersectionContext>.SetContext(IntersectionContext context) => SetContext(context);
 }
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     protected void FillShrunkData(ShapeType aType1, ShapeType aType2)
     {
-        myIterator!.Initialize(aType1, aType2);
-        int iSize = myIterator.ExpectedLength();
+        _iterator!.Initialize(aType1, aType2);
+        int iSize = _iterator.ExpectedLength();
         if (iSize == 0)
         {
             return;
         }
         //
-        int i, nE, nV1, nV2, aNbVSD, k;
-        double aT1, aT2;
+        int i, nE, nV1, nV2, nbVSD, k;
+        double t1, t2;
         Span<int> nS = stackalloc int[2];
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        NCollection_IntMap aMI = new();
-        NCollection_DynamicArray<BOPAlgo_ShrunkRange> aVSD = new();
-        Span<ShapeType> aType = [aType1, aType2];
+        NCollection_List<PaveBlock>.Iterator itLPB = new();
+        NCollection_IntMap mi = new();
+        NCollection_DynamicArray<ShrunkRange> vsd = new();
+        Span<ShapeType> type = [aType1, aType2];
         //
-        for (; myIterator.More(); myIterator.Next())
+        for (; _iterator.More(); _iterator.Next())
         {
-            myIterator.Value(out nS[0], out nS[1]);
+            _iterator.Value(out nS[0], out nS[1]);
             //
             for (i = 0; i < 2; ++i)
             {
                 nE = nS[i];
-                if (aType[i] != ShapeType.Edge || !aMI.Add(nE))
+                if (type[i] != ShapeType.Edge || !mi.Add(nE))
                 {
                     continue;
                 }
                 //
-                BOPDS_ShapeInfo aSIE = myDS!.ShapeInfo(nE);
-                if (aSIE.HasFlag())
+                ShapeInfo sie = _ds!.ShapeInfo(nE);
+                if (sie.HasFlag())
                 {
                     continue;
                 }
                 //
-                NCollection_List<BOPDS_PaveBlock> aLPB = myDS.ChangePaveBlocks(nE);
-                aItLPB.Initialize(aLPB);
-                for (; aItLPB.More(); aItLPB.Next())
+                NCollection_List<PaveBlock> lpb = _ds.ChangePaveBlocks(nE);
+                itLPB.Initialize(lpb);
+                for (; itLPB.More(); itLPB.Next())
                 {
-                    BOPDS_PaveBlock aPB = aItLPB.Value();
-                    if (aPB.HasShrunkData() && myDS.IsValidShrunkData(aPB))
+                    PaveBlock pb = itLPB.Value();
+                    if (pb.HasShrunkData && _ds.IsValidShrunkData(pb))
                     {
                         continue;
                     }
                     //
                     // FillShrunkData(aPB);
-                    aPB.Indices(out nV1, out nV2);
-                    aPB.Range(out aT1, out aT2);
+                    pb.Indices(out nV1, out nV2);
+                    pb.Range(out t1, out t2);
                     //
-                    Edge aE = ShapeCasts.Edge(aSIE.Shape());
+                    Edge e = ShapeCasts.Edge(sie.Shape());
                     //
-                    Vertex aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
+                    Vertex v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
                     //
-                    Vertex aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
+                    Vertex v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
                     //
-                    BOPAlgo_ShrunkRange aSD = aVSD.Append(new BOPAlgo_ShrunkRange());
+                    ShrunkRange sd = vsd.Append(new ShrunkRange());
                     //
-                    aSD.SetPaveBlock(aPB);
-                    aSD.SetData(aE, aT1, aT2, aV1, aV2);
+                    sd.SetPaveBlock(pb);
+                    sd.SetData(e, t1, t2, v1, v2);
                 }
             }
         }
         //
-        aNbVSD = aVSD.Length();
+        nbVSD = vsd.Length();
         //=============================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVSD, myContext!);
+        BooleanParallel.Perform(_runParallel, vsd, _context!);
         //=============================================================
         //
-        for (k = 0; k < aNbVSD; ++k)
+        for (k = 0; k < nbVSD; ++k)
         {
-            BOPAlgo_ShrunkRange aSD = aVSD[k];
-            AnalyzeShrunkData(aSD.PaveBlock(), aSD);
+            ShrunkRange sd = vsd[k];
+            AnalyzeShrunkData(sd.PaveBlock(), sd);
         }
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Reflection;
@@ -28,52 +29,52 @@ public static class BRepAlgoAPI_BuilderAlgoTests
     public class BRepAlgoAPI_BuilderAlgoTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_BuilderAlgo)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BuilderAlgo)));
 
         [Fact]
-        public void NotCopyAssignable() => Assert.False(IsCopyAssignable(typeof(BRepAlgoAPI_BuilderAlgo)));
+        public void NotCopyAssignable() => Assert.False(IsCopyAssignable(typeof(BuilderAlgo)));
 
         [Fact]
-        public void NotMoveConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_BuilderAlgo)));
+        public void NotMoveConstructible() => Assert.False(IsCopyConstructible(typeof(BuilderAlgo)));
 
         [Fact]
-        public void NotMoveAssignable() => Assert.False(IsCopyAssignable(typeof(BRepAlgoAPI_BuilderAlgo)));
+        public void NotMoveAssignable() => Assert.False(IsCopyAssignable(typeof(BuilderAlgo)));
     }
 
     public class BRepAlgoAPI_BooleanOperationTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_BooleanOperation)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BooleanOperation)));
     }
 
     public class BRepAlgoAPI_CutTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_Cut)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(Cut)));
     }
 
     public class BRepAlgoAPI_FuseTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_Fuse)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(Fuse)));
     }
 
     public class BRepAlgoAPI_CommonTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_Common)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(Common)));
     }
 
     public class BRepAlgoAPI_SectionTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_Section)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(SectionOperation)));
     }
 
     public class BRepAlgoAPI_SplitterTest
     {
         [Fact]
-        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(BRepAlgoAPI_Splitter)));
+        public void NotCopyConstructible() => Assert.False(IsCopyConstructible(typeof(SplitterOperation)));
     }
 
     /// <summary>BOPCommon Simple Tests - migrating from /tests/boolean/bopcommon_simple/ (BRepAlgoAPI_Common_Test.cxx).</summary>

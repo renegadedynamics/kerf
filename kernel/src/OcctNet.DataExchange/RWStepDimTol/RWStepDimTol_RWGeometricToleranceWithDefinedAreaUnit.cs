@@ -55,21 +55,21 @@ internal class RWStepDimTol_RWGeometricToleranceWithDefinedAreaUnit
         data.ReadEntity(num, 5, "geometric_tolerance_with_defined_unit.unit_size", ach, typeof(StepBasic_LengthMeasureWithUnit), ref anUnitSize);
 
         // own fields of GeometricToleranceWithDefinedAreaUnit
-        StepDimTol_AreaUnitType aType = StepDimTol_Circular;
-        if (data.ParamType(num, 6) == Interface_ParamEnum)
+        StepDimTol_AreaUnitType aType = StepDimTol_AreaUnitType.StepDimTol_Circular;
+        if (data.ParamType(num, 6) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 6);
             if (string.CompareOrdinal(text, ".CIRCULAR.") == 0)
             {
-                aType = StepDimTol_Circular;
+                aType = StepDimTol_AreaUnitType.StepDimTol_Circular;
             }
             else if (string.CompareOrdinal(text, ".RECTANGULAR.") == 0)
             {
-                aType = StepDimTol_Rectangular;
+                aType = StepDimTol_AreaUnitType.StepDimTol_Rectangular;
             }
             else if (string.CompareOrdinal(text, ".SQUARE.") == 0)
             {
-                aType = StepDimTol_Square;
+                aType = StepDimTol_AreaUnitType.StepDimTol_Square;
             }
             else
             {
@@ -115,13 +115,13 @@ internal class RWStepDimTol_RWGeometricToleranceWithDefinedAreaUnit
 
         switch (ent.AreaType())
         {
-            case StepDimTol_Circular:
+            case StepDimTol_AreaUnitType.StepDimTol_Circular:
                 SW.SendEnum(".CIRCULAR.");
                 break;
-            case StepDimTol_Rectangular:
+            case StepDimTol_AreaUnitType.StepDimTol_Rectangular:
                 SW.SendEnum(".RECTANGULAR.");
                 break;
-            case StepDimTol_Square:
+            case StepDimTol_AreaUnitType.StepDimTol_Square:
                 SW.SendEnum(".SQUARE.");
                 break;
         }

@@ -86,11 +86,11 @@ public class TransferTests
         var b2 = new Transfer_SimpleBinderOfTransient();
         var b3 = new Transfer_VoidBinder();
         Assert.False(b1.HasResult());
-        Assert.Equal(Transfer_StatusVoid, b1.Status());
+        Assert.Equal(Transfer_StatusResult.Transfer_StatusVoid, b1.Status());
         Assert.Equal("(void)", b1.ResultTypeName());
         Assert.Equal(typeof(Transient), b1.ResultType());
         b1.SetResult(new TCollection_HAsciiString("x"));
-        Assert.Equal(Transfer_StatusDone, b1.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusDone, b1.StatusExec());
         Assert.Equal("TCollection_HAsciiString", b1.ResultTypeName());
 
         b1.AddResult(b2);
@@ -105,18 +105,18 @@ public class TransferTests
 
         // a used result can't change
         b1.SetAlreadyUsed();
-        Assert.Equal(Transfer_StatusUsed, b1.Status());
+        Assert.Equal(Transfer_StatusResult.Transfer_StatusUsed, b1.Status());
         Assert.Throws<Transfer_TransferFailure>(() => b1.SetResult(null));
 
         // fails and warnings, and Merge
         var b4 = new Transfer_VoidBinder();
         b4.AddWarning("w");
-        Assert.Equal(Transfer_StatusInitial, b4.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusInitial, b4.StatusExec());
         b4.AddFail("f", "orig");
-        Assert.Equal(Transfer_StatusError, b4.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusError, b4.StatusExec());
         var b5 = new Transfer_SimpleBinderOfTransient();
         b5.Merge(b4);
-        Assert.Equal(Transfer_StatusError, b5.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusError, b5.StatusExec());
         Assert.Equal(1, b5.Check().NbFails());
         Assert.Equal(1, b5.Check().NbWarnings());
         Assert.Equal(typeof(Transfer_VoidBinder), b4.ResultType());
@@ -247,7 +247,7 @@ public class TransferTests
         Assert.Contains("Entity #B", aText); // PrintTrace with the model: the label
         Assert.Contains("    --> Fail : bad [from: orig]", aText);
         Assert.Contains("    --> Warning : soso", aText);
-        Assert.Equal(Transfer_StatusError, TP.Find(B)!.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusError, TP.Find(B)!.StatusExec());
 
         // Mend prefixes the fails (OCCT's Interface_Check::Mend adds them back as fails)
         TP.Mend(B, "M");
@@ -290,7 +290,7 @@ public class TransferTests
 
         // a second request uses the result
         Assert.Same(aBinder, TP.Transferring(A));
-        Assert.Equal(Transfer_StatusUsed, aBinder!.Status());
+        Assert.Equal(Transfer_StatusResult.Transfer_StatusUsed, aBinder!.Status());
 
         // RootResult and CompleteResult
         Transfer_IteratorOfProcessForTransient aRoots = TP.RootResult(true);
@@ -326,9 +326,9 @@ public class TransferTests
         // a transfer met while it runs is marked looping, and gives no result
         var aRunning = new Transfer_VoidBinder();
         TP.Bind(D, aRunning);
-        aRunning.SetStatusExec(Transfer_StatusRun);
+        aRunning.SetStatusExec(Transfer_StatusExec.Transfer_StatusRun);
         Assert.Same(aRunning, TP.Transferring(D));
-        Assert.Equal(Transfer_StatusLoop, aRunning.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusLoop, aRunning.StatusExec());
         Assert.Equal(1, TP.AbnormalResult().Number());
         Interface_CheckIterator aList = TP.CheckList(true);
         aList.Start();
@@ -347,8 +347,8 @@ public class TransferTests
         var TP2 = new Transfer_TransientProcess();
         TP2.SetActor(new ToyActor { Nested = true });
         Assert.Equal("d", Res(TP2.Transferring(D)));
-        Assert.Equal(Transfer_StatusDone, TP2.Find(D)!.StatusExec());
-        Assert.Equal(Transfer_StatusDone, TP2.Find(E)!.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusDone, TP2.Find(D)!.StatusExec());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusDone, TP2.Find(E)!.StatusExec());
     }
 
     [Fact]
@@ -431,7 +431,7 @@ public class TransferTests
                       "Transfer_MultipleBinder:FalseFalseFalse"], aTypes);
         anIter.Start();
         Assert.Equal("x", ((TCollection_HAsciiString)anIter.TransientResult()!).ToCString());
-        Assert.Equal(Transfer_StatusDone, anIter.Status());
+        Assert.Equal(Transfer_StatusExec.Transfer_StatusDone, anIter.Status());
         Assert.False(anIter.HasFails());
         Assert.False(anIter.HasWarnings());
 
@@ -582,16 +582,16 @@ public class TransferTests
     public void Finder_attributes()
     {
         var m = new Transfer_TransientMapper(A);
-        Assert.Equal(Interface_ParamVoid, m.AttributeType("i"));
+        Assert.Equal(Interface_ParamType.Interface_ParamVoid, m.AttributeType("i"));
         Assert.False(m.RemoveAttribute("i"));
         m.SetIntegerAttribute("i", 4);
         m.SetRealAttribute("r", 2.5);
         m.SetStringAttribute("s", "text");
         m.SetAttribute("t", B);
-        Assert.Equal(Interface_ParamInteger, m.AttributeType("i"));
-        Assert.Equal(Interface_ParamReal, m.AttributeType("r"));
-        Assert.Equal(Interface_ParamText, m.AttributeType("s"));
-        Assert.Equal(Interface_ParamIdent, m.AttributeType("t"));
+        Assert.Equal(Interface_ParamType.Interface_ParamInteger, m.AttributeType("i"));
+        Assert.Equal(Interface_ParamType.Interface_ParamReal, m.AttributeType("r"));
+        Assert.Equal(Interface_ParamType.Interface_ParamText, m.AttributeType("s"));
+        Assert.Equal(Interface_ParamType.Interface_ParamIdent, m.AttributeType("t"));
         Assert.True(m.GetIntegerAttribute("i", out int i) && i == 4);
         Assert.False(m.GetIntegerAttribute("r", out i));
         Assert.Equal(0, i);
@@ -751,14 +751,14 @@ public class TransferTests
         Assert.Equal(3, aRes.Results(1).Length()); // OCCT: the main result twice
         Assert.Equal(1, aRes.Results(0).Length());
         Assert.Equal("B", Names(new Interface_EntityIterator(aRes.TransferredList())));
-        Assert.Equal("C", Names(new Interface_EntityIterator(aRes.CheckedList(Interface_CheckFail, false))));
-        Assert.Equal("", Names(new Interface_EntityIterator(aRes.CheckedList(Interface_CheckFail, true))));
+        Assert.Equal("C", Names(new Interface_EntityIterator(aRes.CheckedList(Interface_CheckStatus.Interface_CheckFail, false))));
+        Assert.Equal("", Names(new Interface_EntityIterator(aRes.CheckedList(Interface_CheckStatus.Interface_CheckFail, true))));
         Interface_CheckIterator aList = aRes.CheckList(false);
-        Assert.Equal(Interface_CheckFail, aList.Status());
-        Assert.Equal(Interface_CheckOK, aRes.CheckList(true, 0).Status()); // B's warning only
-        Assert.Equal(Interface_CheckFail, aRes.CheckStatus());
-        Assert.Equal(Interface_CheckFail, aRes.ComputeCheckStatus(false));
-        Assert.Equal(Interface_CheckOK, new Transfer_ResultFromTransient().CheckStatus());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aList.Status());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, aRes.CheckList(true, 0).Status()); // B's warning only
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aRes.CheckStatus());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aRes.ComputeCheckStatus(false));
+        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, new Transfer_ResultFromTransient().CheckStatus());
         Assert.Equal(0, new Transfer_ResultFromTransient().Check().NbFails());
 
         // Strip 10 keeps the status and the label, drops the model and the subs
@@ -767,7 +767,7 @@ public class TransferTests
         Assert.Equal(0, aRes.MainResult()!.NbSubResults());
         Assert.Null(aRes.MainResult()!.Start());
         Assert.Equal("#B", aRes.MainLabel());
-        Assert.Equal(Interface_CheckFail, aRes.CheckStatus());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aRes.CheckStatus());
         aRes.Strip(11);
         Assert.Null(aRes.MainResult());
     }

@@ -69,9 +69,9 @@ public class STEPConstruct_AP203Context
             int shift = -(int)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
             int shifth = Math.Abs(shift) / 3600;
             int shiftm = (Math.Abs(shift) - shifth * 3600) / 60;
-            StepBasic_AheadOrBehind sense = (shift > 0 ? StepBasic_aobBehind
-                                             : shift < 0 ? StepBasic_aobAhead
-                                                         : StepBasic_aobExact);
+            StepBasic_AheadOrBehind sense = (shift > 0 ? StepBasic_AheadOrBehind.StepBasic_aobBehind
+                                             : shift < 0 ? StepBasic_AheadOrBehind.StepBasic_aobAhead
+                                                         : StepBasic_AheadOrBehind.StepBasic_aobExact);
             zone.Init(shifth, (shiftm != 0), shiftm, sense);
 
             StepBasic_LocalTime aTime = new StepBasic_LocalTime();

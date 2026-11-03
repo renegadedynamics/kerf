@@ -3,84 +3,86 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.IntImp_ConstIsoparametric;
-using static Occt.IntWalk_StatusDeflection;
+using static Kerf.Engine.Intersection.Implicit.ConstIsoparametric;
+using static Kerf.Engine.Intersection.Walking.StatusDeflection;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Walking;
 
-public partial class IntWalk_PWalking
+public partial class PWalking
 {
     /// <summary>
     /// Extends the line inside a tangent zone in the direction given by theChoixIso. True if the line was extended
     /// through the zone and the last point computed is outside it (that point is not put into the line).
     /// </summary>
-    internal bool ExtendLineInCommonZone(IntImp_ConstIsoparametric theChoixIso, bool theDirectionFlag)
+    internal bool ExtendLineInCommonZone(ConstIsoparametric choixIso, bool directionFlag)
     {
         // Caro1 and Caro2
-        SurfaceAdaptorBase Caro1 = myIntersectionOn2S.Function().AuxillarSurface1();
-        SurfaceAdaptorBase Caro2 = myIntersectionOn2S.Function().AuxillarSurface2();
+        SurfaceAdaptorBase caro1 = _intersectionOn2S.Function().AuxillarSurface1();
+        SurfaceAdaptorBase caro2 = _intersectionOn2S.Function().AuxillarSurface2();
         //
-        double UFirst1 = HSurfaceTool.FirstUParameter(Caro1);
-        double VFirst1 = HSurfaceTool.FirstVParameter(Caro1);
-        double ULast1 = HSurfaceTool.LastUParameter(Caro1);
-        double VLast1 = HSurfaceTool.LastVParameter(Caro1);
+        double uFirst1 = HSurfaceTool.FirstUParameter(caro1);
+        double vFirst1 = HSurfaceTool.FirstVParameter(caro1);
+        double uLast1 = HSurfaceTool.LastUParameter(caro1);
+        double vLast1 = HSurfaceTool.LastVParameter(caro1);
 
-        double UFirst2 = HSurfaceTool.FirstUParameter(Caro2);
-        double VFirst2 = HSurfaceTool.FirstVParameter(Caro2);
-        double ULast2 = HSurfaceTool.LastUParameter(Caro2);
-        double VLast2 = HSurfaceTool.LastVParameter(Caro2);
+        double uFirst2 = HSurfaceTool.FirstUParameter(caro2);
+        double vFirst2 = HSurfaceTool.FirstVParameter(caro2);
+        double uLast2 = HSurfaceTool.LastUParameter(caro2);
+        double vLast2 = HSurfaceTool.LastVParameter(caro2);
 
         bool bOutOfTangentZone = false;
-        bool bStop = !myIntersectionOn2S.IsTangent();
+        bool bStop = !_intersectionOn2S.IsTangent;
         int dIncKey = 1;
-        NCollection_Array1<double> Param = new(1, 4);
-        IntWalk_StatusDeflection aStatus = IntWalk_OK;
+        NCollection_Array1<double> param = new(1, 4);
+        StatusDeflection status = StatusDeflection.OK;
         int nbIterWithoutAppend = 0;
         int nbEqualPoints = 0;
         int parit = 0;
         int uvit = 0;
-        NCollection_Sequence<IntSurf_PntOn2S> aSeqOfNewPoint = new();
+        NCollection_Sequence<PntOn2S> seqOfNewPoint = new();
 
-        SetParameters(Param, previousPoint);
+        SetParameters(param, _previousPoint);
 
-        if (Param[1] - UFirst1 < ResoU1)
+        if (param[1] - uFirst1 < _resoU1)
         {
             return bOutOfTangentZone;
         }
-        else if (Param[2] - VFirst1 < ResoV1)
+        else if (param[2] - vFirst1 < _resoV1)
         {
             return bOutOfTangentZone;
         }
-        else if (Param[3] - UFirst2 < ResoU2)
+        else if (param[3] - uFirst2 < _resoU2)
         {
             return bOutOfTangentZone;
         }
-        else if (Param[4] - VFirst2 < ResoV2)
-        {
-            return bOutOfTangentZone;
-        }
-
-        if (Param[1] - ULast1 > -ResoU1)
-        {
-            return bOutOfTangentZone;
-        }
-        else if (Param[2] - VLast1 > -ResoV1)
-        {
-            return bOutOfTangentZone;
-        }
-        else if (Param[3] - ULast2 > -ResoU2)
-        {
-            return bOutOfTangentZone;
-        }
-        else if (Param[4] - VLast2 > -ResoV2)
+        else if (param[4] - vFirst2 < _resoV2)
         {
             return bOutOfTangentZone;
         }
 
-        Span<double> SvParam = stackalloc double[4];
+        if (param[1] - uLast1 > -_resoU1)
+        {
+            return bOutOfTangentZone;
+        }
+        else if (param[2] - vLast1 > -_resoV1)
+        {
+            return bOutOfTangentZone;
+        }
+        else if (param[3] - uLast2 > -_resoU2)
+        {
+            return bOutOfTangentZone;
+        }
+        else if (param[4] - vLast2 > -_resoV2)
+        {
+            return bOutOfTangentZone;
+        }
+
+        Span<double> svParam = stackalloc double[4];
         while (!bStop)
         {
             nbIterWithoutAppend++;
@@ -92,19 +94,19 @@ public partial class IntWalk_PWalking
             }
             double f = 0.0;
 
-            switch (theChoixIso)
+            switch (choixIso)
             {
-                case IntImp_UIsoparametricOnCaro1:
-                    f = Math.Abs(previousd1.X());
+                case ConstIsoparametric.UIsoparametricOnCaro1:
+                    f = Math.Abs(_previousd1.X());
                     break;
-                case IntImp_VIsoparametricOnCaro1:
-                    f = Math.Abs(previousd1.Y());
+                case ConstIsoparametric.VIsoparametricOnCaro1:
+                    f = Math.Abs(_previousd1.Y());
                     break;
-                case IntImp_UIsoparametricOnCaro2:
-                    f = Math.Abs(previousd2.X());
+                case ConstIsoparametric.UIsoparametricOnCaro2:
+                    f = Math.Abs(_previousd2.X());
                     break;
-                case IntImp_VIsoparametricOnCaro2:
-                    f = Math.Abs(previousd2.Y());
+                case ConstIsoparametric.VIsoparametricOnCaro2:
+                    f = Math.Abs(_previousd2.Y());
                     break;
             }
 
@@ -113,88 +115,88 @@ public partial class IntWalk_PWalking
                 f = 0.1;
             }
 
-            SetParameters(Param, previousPoint);
+            SetParameters(param, _previousPoint);
 
-            double dP1 = sensCheminement * pasuv[0] * previousd1.X() / f;
-            double dP2 = sensCheminement * pasuv[1] * previousd1.Y() / f;
-            double dP3 = sensCheminement * pasuv[2] * previousd2.X() / f;
-            double dP4 = sensCheminement * pasuv[3] * previousd2.Y() / f;
+            double dP1 = _sensCheminement * _pasuv[0] * _previousd1.X() / f;
+            double dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y() / f;
+            double dP3 = _sensCheminement * _pasuv[2] * _previousd2.X() / f;
+            double dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y() / f;
 
-            if (theChoixIso == IntImp_UIsoparametricOnCaro1 && Math.Abs(dP1) < 1.0e-7)
+            if (choixIso == ConstIsoparametric.UIsoparametricOnCaro1 && Math.Abs(dP1) < 1.0e-7)
             {
                 dP1 *= (5.0 * (double)dIncKey);
             }
-            if (theChoixIso == IntImp_VIsoparametricOnCaro1 && Math.Abs(dP2) < 1.0e-7)
+            if (choixIso == ConstIsoparametric.VIsoparametricOnCaro1 && Math.Abs(dP2) < 1.0e-7)
             {
                 dP2 *= (5.0 * (double)dIncKey);
             }
-            if (theChoixIso == IntImp_UIsoparametricOnCaro2 && Math.Abs(dP3) < 1.0e-7)
+            if (choixIso == ConstIsoparametric.UIsoparametricOnCaro2 && Math.Abs(dP3) < 1.0e-7)
             {
                 dP3 *= (5.0 * (double)dIncKey);
             }
-            if (theChoixIso == IntImp_VIsoparametricOnCaro2 && Math.Abs(dP4) < 1.0e-7)
+            if (choixIso == ConstIsoparametric.VIsoparametricOnCaro2 && Math.Abs(dP4) < 1.0e-7)
             {
                 dP4 *= (5.0 * (double)dIncKey);
             }
 
-            Param[1] += dP1;
-            Param[2] += dP2;
-            Param[3] += dP3;
-            Param[4] += dP4;
-            IntImp_ConstIsoparametric ChoixIso = theChoixIso;
+            param[1] += dP1;
+            param[2] += dP2;
+            param[3] += dP3;
+            param[4] += dP4;
+            ConstIsoparametric ChoixIso = choixIso;
 
             for (parit = 0; parit < 4; parit++)
             {
-                SvParam[parit] = Param[parit + 1];
+                svParam[parit] = param[parit + 1];
             }
-            FunctionSetRoot Rsnld = new(myIntersectionOn2S.Function());
-            ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, theChoixIso);
+            FunctionSetRoot rsnld = new(_intersectionOn2S.Function());
+            ChoixIso = _intersectionOn2S.Perform(param, rsnld, choixIso);
 
-            if (!myIntersectionOn2S.IsDone())
+            if (!_intersectionOn2S.IsDone)
             {
                 return bOutOfTangentZone;
             }
             else
             {
-                if (myIntersectionOn2S.IsEmpty())
+                if (_intersectionOn2S.IsEmpty)
                 {
                     return bOutOfTangentZone;
                 }
 
-                aStatus = TestDeflection(ChoixIso, aStatus);
+                status = TestDeflection(ChoixIso, status);
 
-                if (aStatus == IntWalk_OK)
+                if (status == StatusDeflection.OK)
                 {
                     for (uvit = 0; uvit < 4; uvit++)
                     {
-                        if (pasuv[uvit] < pasInit[uvit])
+                        if (_pasuv[uvit] < _pasInit[uvit])
                         {
-                            pasuv[uvit] = pasInit[uvit];
+                            _pasuv[uvit] = _pasInit[uvit];
                         }
                     }
                 }
 
-                switch (aStatus)
+                switch (status)
                 {
-                    case IntWalk_ArretSurPointPrecedent:
+                    case StatusDeflection.ArretSurPointPrecedent:
                     {
                         bStop = true;
-                        bOutOfTangentZone = !myIntersectionOn2S.IsTangent();
+                        bOutOfTangentZone = !_intersectionOn2S.IsTangent;
                         break;
                     }
-                    case IntWalk_PasTropGrand:
+                    case StatusDeflection.PasTropGrand:
                     {
                         for (parit = 0; parit < 4; parit++)
                         {
-                            Param[parit + 1] = SvParam[parit];
+                            param[parit + 1] = svParam[parit];
                         }
                         bool bDecrease = false;
 
                         for (uvit = 0; uvit < 4; uvit++)
                         {
-                            if (pasSav[uvit] < pasInit[uvit])
+                            if (_pasSav[uvit] < _pasInit[uvit])
                             {
-                                pasInit[uvit] -= (pasInit[uvit] - pasSav[uvit]) * 0.1;
+                                _pasInit[uvit] -= (_pasInit[uvit] - _pasSav[uvit]) * 0.1;
                                 bDecrease = true;
                             }
                         }
@@ -205,33 +207,33 @@ public partial class IntWalk_PWalking
                         }
                         break;
                     }
-                    case IntWalk_PointConfondu:
+                    case StatusDeflection.PointConfondu:
                     {
                         for (uvit = 0; uvit < 4; uvit++)
                         {
-                            if (pasuv[uvit] < pasInit[uvit])
+                            if (_pasuv[uvit] < _pasInit[uvit])
                             {
-                                pasuv[uvit] += (pasInit[uvit] - pasuv[uvit]) * 0.1;
+                                _pasuv[uvit] += (_pasInit[uvit] - _pasuv[uvit]) * 0.1;
                             }
                         }
                         break;
                     }
-                    case IntWalk_OK:
-                    case IntWalk_ArretSurPoint:
+                    case StatusDeflection.OK:
+                    case StatusDeflection.ArretSurPoint:
                     {
                         //
-                        bStop = TestArret(theDirectionFlag, Param, ref ChoixIso);
+                        bStop = TestArret(directionFlag, param, ref ChoixIso);
                         //
 
                         //
                         if (!bStop)
                         {
-                            myIntersectionOn2S.Point().Parameters(out double u11, out double v11, out double u12,
+                            _intersectionOn2S.Point().Parameters(out double u11, out double v11, out double u12,
                                                                   out double v12);
-                            previousPoint.Parameters(out double u21, out double v21, out double u22, out double v22);
+                            _previousPoint.Parameters(out double u21, out double v21, out double u22, out double v22);
 
-                            if (((Math.Abs(u11 - u21) < ResoU1) && (Math.Abs(v11 - v21) < ResoV1))
-                                || ((Math.Abs(u12 - u22) < ResoU2) && (Math.Abs(v12 - v22) < ResoV2)))
+                            if (((Math.Abs(u11 - u21) < _resoU1) && (Math.Abs(v11 - v21) < _resoV1))
+                                || ((Math.Abs(u12 - u22) < _resoU2) && (Math.Abs(v12 - v22) < _resoV2)))
                             {
                                 nbEqualPoints++;
                             }
@@ -242,38 +244,38 @@ public partial class IntWalk_PWalking
                         }
                         //
 
-                        bStop = bStop || !myIntersectionOn2S.IsTangent();
-                        bOutOfTangentZone = !myIntersectionOn2S.IsTangent();
+                        bStop = bStop || !_intersectionOn2S.IsTangent;
+                        bOutOfTangentZone = !_intersectionOn2S.IsTangent;
 
                         if (!bStop)
                         {
                             bool pointisvalid = false;
-                            myIntersectionOn2S.Point().Parameters(out double u1, out double v1, out double u2,
+                            _intersectionOn2S.Point().Parameters(out double u1, out double v1, out double u2,
                                                                   out double v2);
 
-                            if (u1 <= UM1 && u2 <= UM2 && v1 <= VM1 && v2 <= VM2 && u1 >= Um1 && u2 >= Um2
-                                && v1 >= Vm1 && v2 >= Vm2)
+                            if (u1 <= _uMax1 && u2 <= _uMax2 && v1 <= _vMax1 && v2 <= _vMax2 && u1 >= _uMin1 && u2 >= _uMin2
+                                && v1 >= _vMin1 && v2 >= _vMin2)
                             {
                                 pointisvalid = true;
                             }
 
                             if (pointisvalid)
                             {
-                                previousPoint = myIntersectionOn2S.Point();
-                                previoustg = myIntersectionOn2S.IsTangent();
+                                _previousPoint = _intersectionOn2S.Point();
+                                _previoustg = _intersectionOn2S.IsTangent;
 
-                                if (!previoustg)
+                                if (!_previoustg)
                                 {
-                                    previousd = myIntersectionOn2S.Direction();
-                                    previousd1 = myIntersectionOn2S.DirectionOnS1();
-                                    previousd2 = myIntersectionOn2S.DirectionOnS2();
+                                    _previousd = _intersectionOn2S.Direction();
+                                    _previousd1 = _intersectionOn2S.DirectionOnS1();
+                                    _previousd2 = _intersectionOn2S.DirectionOnS2();
                                 }
                                 bool bAddPoint = true;
 
-                                if (line.NbPoints() >= 1)
+                                if (_line.PointCount >= 1)
                                 {
-                                    Point3D pf = line.Value(1).Value();
-                                    Point3D pl = previousPoint.Value();
+                                    Point3D pf = _line.Value(1).Value();
+                                    Point3D pl = _previousPoint.Value();
 
                                     if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                     {
@@ -291,16 +293,16 @@ public partial class IntWalk_PWalking
 
                                 if (bAddPoint)
                                 {
-                                    aSeqOfNewPoint.Append(previousPoint);
+                                    seqOfNewPoint.Append(_previousPoint);
                                     nbIterWithoutAppend = 0;
                                 }
                             }
 
-                            if (line.NbPoints() == 2)
+                            if (_line.PointCount == 2)
                             {
                                 for (uvit = 0; uvit < 4; uvit++)
                                 {
-                                    pasSav[uvit] = pasuv[uvit];
+                                    _pasSav[uvit] = _pasuv[uvit];
                                 }
                             }
 
@@ -309,42 +311,42 @@ public partial class IntWalk_PWalking
                                 // decrease step if out of bounds
                                 // otherwise the same calculations will be
                                 // repeated several times
-                                if ((u1 > UM1) || (u1 < Um1))
+                                if ((u1 > _uMax1) || (u1 < _uMin1))
                                 {
-                                    pasuv[0] *= 0.5;
+                                    _pasuv[0] *= 0.5;
                                 }
 
-                                if ((v1 > VM1) || (v1 < Vm1))
+                                if ((v1 > _vMax1) || (v1 < _vMin1))
                                 {
-                                    pasuv[1] *= 0.5;
+                                    _pasuv[1] *= 0.5;
                                 }
 
-                                if ((u2 > UM2) || (u2 < Um2))
+                                if ((u2 > _uMax2) || (u2 < _uMin2))
                                 {
-                                    pasuv[2] *= 0.5;
+                                    _pasuv[2] *= 0.5;
                                 }
 
-                                if ((v2 > VM2) || (v2 < Vm2))
+                                if ((v2 > _vMax2) || (v2 < _vMin2))
                                 {
-                                    pasuv[3] *= 0.5;
+                                    _pasuv[3] *= 0.5;
                                 }
                             }
                         } // end if(!bStop)
                         else
                         { // if(bStop)
-                            if (close && (line.NbPoints() >= 1))
+                            if (_close && (_line.PointCount >= 1))
                             {
                                 if (!bOutOfTangentZone)
                                 {
-                                    aSeqOfNewPoint.Append(line.Value(1)); // line end
+                                    seqOfNewPoint.Append(_line.Value(1)); // line end
                                 }
                                 nbIterWithoutAppend = 0;
                             }
                             else
                             {
-                                ChoixIso = myIntersectionOn2S.Perform(Param, Rsnld, theChoixIso);
+                                ChoixIso = _intersectionOn2S.Perform(param, rsnld, choixIso);
 
-                                if (myIntersectionOn2S.IsEmpty())
+                                if (_intersectionOn2S.IsEmpty)
                                 {
                                     bStop = true; // !myIntersectionOn2S.IsTangent();
                                     bOutOfTangentZone = false; // !myIntersectionOn2S.IsTangent();
@@ -354,22 +356,22 @@ public partial class IntWalk_PWalking
                                     bool bAddPoint = true;
                                     bool pointisvalid = false;
 
-                                    previousPoint = myIntersectionOn2S.Point();
-                                    previousPoint.Parameters(out double u1, out double v1, out double u2,
+                                    _previousPoint = _intersectionOn2S.Point();
+                                    _previousPoint.Parameters(out double u1, out double v1, out double u2,
                                                              out double v2);
 
-                                    if (u1 <= UM1 && u2 <= UM2 && v1 <= VM1 && v2 <= VM2 && u1 >= Um1 && u2 >= Um2
-                                        && v1 >= Vm1 && v2 >= Vm2)
+                                    if (u1 <= _uMax1 && u2 <= _uMax2 && v1 <= _vMax1 && v2 <= _vMax2 && u1 >= _uMin1 && u2 >= _uMin2
+                                        && v1 >= _vMin1 && v2 >= _vMin2)
                                     {
                                         pointisvalid = true;
                                     }
 
                                     if (pointisvalid)
                                     {
-                                        if (line.NbPoints() >= 1)
+                                        if (_line.PointCount >= 1)
                                         {
-                                            Point3D pf = line.Value(1).Value();
-                                            Point3D pl = previousPoint.Value();
+                                            Point3D pf = _line.Value(1).Value();
+                                            Point3D pl = _previousPoint.Value();
 
                                             if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                             {
@@ -387,7 +389,7 @@ public partial class IntWalk_PWalking
 
                                         if (bAddPoint && !bOutOfTangentZone)
                                         {
-                                            aSeqOfNewPoint.Append(previousPoint);
+                                            seqOfNewPoint.Append(_previousPoint);
                                             nbIterWithoutAppend = 0;
                                         }
                                     }
@@ -412,13 +414,13 @@ public partial class IntWalk_PWalking
         {
             if (pit == 0)
             {
-                previousPoint.Parameters(out eu1, out ev1, out eu2, out ev2);
+                _previousPoint.Parameters(out eu1, out ev1, out eu2, out ev2);
             }
             else
             {
-                if (aSeqOfNewPoint.Length() > 0)
+                if (seqOfNewPoint.Length() > 0)
                 {
-                    aSeqOfNewPoint.Value(aSeqOfNewPoint.Length()).Parameters(out eu1, out ev1, out eu2, out ev2);
+                    seqOfNewPoint.Value(seqOfNewPoint.Length()).Parameters(out eu1, out ev1, out eu2, out ev2);
                 }
                 else
                 {
@@ -426,9 +428,9 @@ public partial class IntWalk_PWalking
                 }
             }
 
-            if (((eu1 - Um1) < ResoU1) || ((UM1 - eu1) < ResoU1) || ((eu2 - Um2) < ResoU2)
-                || ((UM2 - eu2) < ResoU2) || ((ev1 - Vm1) < ResoV1) || ((VM1 - ev1) < ResoV1)
-                || ((ev2 - Vm2) < ResoV2) || ((VM2 - ev2) < ResoV2))
+            if (((eu1 - _uMin1) < _resoU1) || ((_uMax1 - eu1) < _resoU1) || ((eu2 - _uMin2) < _resoU2)
+                || ((_uMax2 - eu2) < _resoU2) || ((ev1 - _vMin1) < _resoV1) || ((_vMax1 - ev1) < _resoV1)
+                || ((ev2 - _vMin2) < _resoV2) || ((_vMax2 - ev2) < _resoV2))
             {
                 bExtendLine = true;
             }
@@ -437,58 +439,58 @@ public partial class IntWalk_PWalking
         if (!bExtendLine)
         {
             //    if(aStatus == IntWalk_OK || aStatus == IntWalk_ArretSurPoint) {
-            if (aStatus == IntWalk_OK)
+            if (status == StatusDeflection.OK)
             {
                 bExtendLine = true;
 
-                if (aSeqOfNewPoint.Length() > 1)
+                if (seqOfNewPoint.Length() > 1)
                 {
-                    NCollection_Array1<double> FirstParams = new(0, 3), LastParams = new(0, 3), Resolutions = new(0, 3);
-                    Resolutions[0] = ResoU1;
-                    Resolutions[1] = ResoV1;
-                    Resolutions[2] = ResoU2;
-                    Resolutions[3] = ResoV2;
+                    NCollection_Array1<double> firstParams = new(0, 3), lastParams = new(0, 3), resolutions = new(0, 3);
+                    resolutions[0] = _resoU1;
+                    resolutions[1] = _resoV1;
+                    resolutions[2] = _resoU2;
+                    resolutions[3] = _resoV2;
 
-                    aSeqOfNewPoint.Value(1).Parameters(out FirstParams[0], out FirstParams[1], out FirstParams[2],
-                                                       out FirstParams[3]);
-                    aSeqOfNewPoint.Value(aSeqOfNewPoint.Length()).Parameters(out LastParams[0], out LastParams[1],
-                                                                             out LastParams[2], out LastParams[3]);
+                    seqOfNewPoint.Value(1).Parameters(out firstParams[0], out firstParams[1], out firstParams[2],
+                                                       out firstParams[3]);
+                    seqOfNewPoint.Value(seqOfNewPoint.Length()).Parameters(out lastParams[0], out lastParams[1],
+                                                                             out lastParams[2], out lastParams[3]);
                     int indexofiso = 0;
 
-                    if (theChoixIso == IntImp_UIsoparametricOnCaro1)
+                    if (choixIso == ConstIsoparametric.UIsoparametricOnCaro1)
                     {
                         indexofiso = 0;
                     }
-                    if (theChoixIso == IntImp_VIsoparametricOnCaro1)
+                    if (choixIso == ConstIsoparametric.VIsoparametricOnCaro1)
                     {
                         indexofiso = 1;
                     }
-                    if (theChoixIso == IntImp_UIsoparametricOnCaro2)
+                    if (choixIso == ConstIsoparametric.UIsoparametricOnCaro2)
                     {
                         indexofiso = 2;
                     }
-                    if (theChoixIso == IntImp_VIsoparametricOnCaro2)
+                    if (choixIso == ConstIsoparametric.VIsoparametricOnCaro2)
                     {
                         indexofiso = 3;
                     }
 
                     int afirstindex = (indexofiso < 2) ? 0 : 2;
-                    Vector2D aTangentZoneDir = new(
-                        new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                        new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                    Vector2D tangentZoneDir = new(
+                        new Point2D(firstParams.Value(afirstindex), firstParams.Value(afirstindex + 1)),
+                        new Point2D(lastParams.Value(afirstindex), lastParams.Value(afirstindex + 1)));
 
-                    Direction2D anIsoDir = new(Direction2D.D.Y);
+                    Direction2D isoDir = new(Direction2D.D.Y);
 
                     if ((indexofiso == 1) || (indexofiso == 3))
                     {
-                        anIsoDir = new Direction2D(Direction2D.D.X);
+                        isoDir = new Direction2D(Direction2D.D.X);
                     }
 
-                    if (aTangentZoneDir.SquareMagnitude() > Constants.Resolution())
+                    if (tangentZoneDir.SquareMagnitude() > Constants.Resolution())
                     {
                         double piquota = M_PI * 0.25;
 
-                        if (Math.Abs(aTangentZoneDir.Angle(new Vector2D(anIsoDir))) > piquota)
+                        if (Math.Abs(tangentZoneDir.Angle(new Vector2D(isoDir))) > piquota)
                         {
                             int ii = 1, nextii = 2;
                             Vector2D d1 = new(0, 0);
@@ -497,34 +499,34 @@ public partial class IntWalk_PWalking
 
                             do
                             {
-                                aSeqOfNewPoint.Value(ii).Parameters(out FirstParams[0], out FirstParams[1],
-                                                                    out FirstParams[2], out FirstParams[3]);
-                                aSeqOfNewPoint.Value(ii + 1).Parameters(out LastParams[0], out LastParams[1],
-                                                                        out LastParams[2], out LastParams[3]);
+                                seqOfNewPoint.Value(ii).Parameters(out firstParams[0], out firstParams[1],
+                                                                    out firstParams[2], out firstParams[3]);
+                                seqOfNewPoint.Value(ii + 1).Parameters(out lastParams[0], out lastParams[1],
+                                                                        out lastParams[2], out lastParams[3]);
                                 d1 = new Vector2D(
-                                    new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                                    new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                                    new Point2D(firstParams.Value(afirstindex), firstParams.Value(afirstindex + 1)),
+                                    new Point2D(lastParams.Value(afirstindex), lastParams.Value(afirstindex + 1)));
                                 ii++;
-                            } while ((d1.SquareMagnitude() < asqresol) && (ii < aSeqOfNewPoint.Length()));
+                            } while ((d1.SquareMagnitude() < asqresol) && (ii < seqOfNewPoint.Length()));
 
                             nextii = ii;
 
-                            while (nextii < aSeqOfNewPoint.Length())
+                            while (nextii < seqOfNewPoint.Length())
                             {
                                 Vector2D nextd1 = new(0, 0);
                                 int jj = nextii;
 
                                 do
                                 {
-                                    aSeqOfNewPoint.Value(jj).Parameters(out FirstParams[0], out FirstParams[1],
-                                                                        out FirstParams[2], out FirstParams[3]);
-                                    aSeqOfNewPoint.Value(jj + 1).Parameters(out LastParams[0], out LastParams[1],
-                                                                            out LastParams[2], out LastParams[3]);
+                                    seqOfNewPoint.Value(jj).Parameters(out firstParams[0], out firstParams[1],
+                                                                        out firstParams[2], out firstParams[3]);
+                                    seqOfNewPoint.Value(jj + 1).Parameters(out lastParams[0], out lastParams[1],
+                                                                            out lastParams[2], out lastParams[3]);
                                     nextd1 = new Vector2D(
-                                        new Point2D(FirstParams.Value(afirstindex), FirstParams.Value(afirstindex + 1)),
-                                        new Point2D(LastParams.Value(afirstindex), LastParams.Value(afirstindex + 1)));
+                                        new Point2D(firstParams.Value(afirstindex), firstParams.Value(afirstindex + 1)),
+                                        new Point2D(lastParams.Value(afirstindex), lastParams.Value(afirstindex + 1)));
                                     jj++;
-                                } while ((nextd1.SquareMagnitude() < asqresol) && (jj < aSeqOfNewPoint.Length()));
+                                } while ((nextd1.SquareMagnitude() < asqresol) && (jj < seqOfNewPoint.Length()));
                                 nextii = jj;
 
                                 if (Math.Abs(d1.Angle(nextd1)) > piquota)
@@ -547,9 +549,9 @@ public partial class IntWalk_PWalking
         }
         int i = 0;
 
-        for (i = 1; i <= aSeqOfNewPoint.Length(); i++)
+        for (i = 1; i <= seqOfNewPoint.Length(); i++)
         {
-            AddAPoint(aSeqOfNewPoint.Value(i));
+            AddAPoint(seqOfNewPoint.Value(i));
         }
 
         return bOutOfTangentZone;
@@ -560,268 +562,268 @@ public partial class IntWalk_PWalking
     /// the surfaces' points (B-spline and Bézier surfaces only; true at once for others). True if the distance falls
     /// below 1e-7.
     /// </summary>
-    internal bool DistanceMinimizeByGradient(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2,
-                                             NCollection_Array1<double> theInit, double[]? theStep0 = null)
+    internal bool DistanceMinimizeByGradient(SurfaceAdaptorBase aSurf1, SurfaceAdaptorBase aSurf2,
+                                             NCollection_Array1<double> init, double[]? step0 = null)
     {
-        const int aNbIterMAX = 60;
-        const double aTol = 1.0e-14;
-        double aTolNul = 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite();
+        const int nbIterMAX = 60;
+        const double tol = 1.0e-14;
+        double tolNul = 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite();
 
         // I.e. if theU1 = 0.0 then Epsilon(theU1) = DBL_MIN (~1.0e-308).
         // Work with this number is impossible: there is a dangerous to
         // obtain Floating-point-overflow. Therefore, we limit this value.
-        double aMinAddValU1 = Math.Max(Epsilon(theInit[1]), aTolNul);
-        double aMinAddValV1 = Math.Max(Epsilon(theInit[2]), aTolNul);
-        double aMinAddValU2 = Math.Max(Epsilon(theInit[3]), aTolNul);
-        double aMinAddValV2 = Math.Max(Epsilon(theInit[4]), aTolNul);
+        double minAddValU1 = Math.Max(Epsilon(init[1]), tolNul);
+        double minAddValV1 = Math.Max(Epsilon(init[2]), tolNul);
+        double minAddValU2 = Math.Max(Epsilon(init[3]), tolNul);
+        double minAddValV2 = Math.Max(Epsilon(init[4]), tolNul);
 
-        if (theASurf1.GetType() != SurfaceKind.BezierSurface && theASurf1.GetType() != SurfaceKind.BSplineSurface)
+        if (aSurf1.GetType() != SurfaceKind.BezierSurface && aSurf1.GetType() != SurfaceKind.BSplineSurface)
         {
             return true;
         }
-        if (theASurf2.GetType() != SurfaceKind.BezierSurface && theASurf2.GetType() != SurfaceKind.BSplineSurface)
+        if (aSurf2.GetType() != SurfaceKind.BezierSurface && aSurf2.GetType() != SurfaceKind.BSplineSurface)
         {
             return true;
         }
 
-        bool aStatus = false;
+        bool status = false;
 
-        theASurf1.D1(theInit[1], theInit[2], out Point3D aP1, out Vector3D aD1u, out Vector3D aD1v);
-        theASurf2.D1(theInit[3], theInit[4], out Point3D aP2, out Vector3D aD2U, out Vector3D aD2V);
+        aSurf1.D1(init[1], init[2], out Point3D p1, out Vector3D d1u, out Vector3D d1v);
+        aSurf2.D1(init[3], init[4], out Point3D p2, out Vector3D d2U, out Vector3D d2V);
 
-        double aSQDistPrev = aP1.SquareDistance(aP2);
+        double sqDistPrev = p1.SquareDistance(p2);
 
-        Vector3D aP12 = new(aP1, aP2);
+        Vector3D p12 = new(p1, p2);
 
-        double aGradFu = -aP12.Dot(aD1u);
-        double aGradFv = -aP12.Dot(aD1v);
-        double aGradFU = aP12.Dot(aD2U);
-        double aGradFV = aP12.Dot(aD2V);
+        double gradFu = -p12.Dot(d1u);
+        double gradFv = -p12.Dot(d1v);
+        double gradFU = p12.Dot(d2U);
+        double gradFV = p12.Dot(d2V);
 
-        double aStepU1 = 1.0e-6, aStepV1 = 1.0e-6, aStepU2 = 1.0e-6, aStepV2 = 1.0e-6;
+        double stepU1 = 1.0e-6, stepV1 = 1.0e-6, stepU2 = 1.0e-6, stepV2 = 1.0e-6;
 
-        if (theStep0 != null)
+        if (step0 != null)
         {
-            aStepU1 = theStep0[0];
-            aStepV1 = theStep0[1];
-            aStepU2 = theStep0[2];
-            aStepV2 = theStep0[3];
+            stepU1 = step0[0];
+            stepV1 = step0[1];
+            stepU2 = step0[2];
+            stepV2 = step0[3];
         }
 
         bool flRepeat = true;
-        int aNbIter = aNbIterMAX;
+        int nbIter = nbIterMAX;
 
         while (flRepeat)
         {
-            double anAdd = aGradFu * aStepU1;
-            double aPARu = theInit[1] - Math.CopySign(Math.Max(Math.Abs(anAdd), aMinAddValU1), anAdd);
+            double add = gradFu * stepU1;
+            double paRu = init[1] - Math.CopySign(Math.Max(Math.Abs(add), minAddValU1), add);
 
-            anAdd = aGradFv * aStepV1;
-            double aPARv = theInit[2] - Math.CopySign(Math.Max(Math.Abs(anAdd), aMinAddValV1), anAdd);
+            add = gradFv * stepV1;
+            double paRv = init[2] - Math.CopySign(Math.Max(Math.Abs(add), minAddValV1), add);
 
-            anAdd = aGradFU * aStepU2;
-            double aParU = theInit[3] - Math.CopySign(Math.Max(Math.Abs(anAdd), aMinAddValU2), anAdd);
+            add = gradFU * stepU2;
+            double parU = init[3] - Math.CopySign(Math.Max(Math.Abs(add), minAddValU2), add);
 
-            anAdd = aGradFV * aStepV2;
-            double aParV = theInit[4] - Math.CopySign(Math.Max(Math.Abs(anAdd), aMinAddValV2), anAdd);
+            add = gradFV * stepV2;
+            double parV = init[4] - Math.CopySign(Math.Max(Math.Abs(add), minAddValV2), add);
 
-            theASurf1.D1(aPARu, aPARv, out Point3D aPt1, out aD1u, out aD1v);
-            theASurf2.D1(aParU, aParV, out Point3D aPt2, out aD2U, out aD2V);
+            aSurf1.D1(paRu, paRv, out Point3D pt1, out d1u, out d1v);
+            aSurf2.D1(parU, parV, out Point3D pt2, out d2U, out d2V);
 
-            double aSQDist = aPt1.SquareDistance(aPt2);
+            double sqDist = pt1.SquareDistance(pt2);
 
-            if (aSQDist < aSQDistPrev)
+            if (sqDist < sqDistPrev)
             {
-                aSQDistPrev = aSQDist;
-                theInit[1] = aPARu;
-                theInit[2] = aPARv;
-                theInit[3] = aParU;
-                theInit[4] = aParV;
+                sqDistPrev = sqDist;
+                init[1] = paRu;
+                init[2] = paRv;
+                init[3] = parU;
+                init[4] = parV;
 
-                aStatus = aSQDistPrev < aTol;
-                aStepU1 *= 1.2;
-                aStepV1 *= 1.2;
-                aStepU2 *= 1.2;
-                aStepV2 *= 1.2;
+                status = sqDistPrev < tol;
+                stepU1 *= 1.2;
+                stepV1 *= 1.2;
+                stepU2 *= 1.2;
+                stepV2 *= 1.2;
             }
             else
             {
-                if (--aNbIter < 0)
+                if (--nbIter < 0)
                 {
                     flRepeat = false;
                 }
                 else
                 {
-                    theASurf1.D1(theInit[1], theInit[2], out aPt1, out aD1u, out aD1v);
-                    theASurf2.D1(theInit[3], theInit[4], out aPt2, out aD2U, out aD2V);
+                    aSurf1.D1(init[1], init[2], out pt1, out d1u, out d1v);
+                    aSurf2.D1(init[3], init[4], out pt2, out d2U, out d2V);
 
-                    Vector3D aPt12 = new(aPt1, aPt2);
-                    aGradFu = -aPt12.Dot(aD1u);
-                    aGradFv = -aPt12.Dot(aD1v);
-                    aGradFU = aPt12.Dot(aD2U);
-                    aGradFV = aPt12.Dot(aD2V);
+                    Vector3D pt12 = new(pt1, pt2);
+                    gradFu = -pt12.Dot(d1u);
+                    gradFv = -pt12.Dot(d1v);
+                    gradFU = pt12.Dot(d2U);
+                    gradFV = pt12.Dot(d2V);
 
-                    if (theStep0 != null)
+                    if (step0 != null)
                     {
-                        aStepU1 = theStep0[0];
-                        aStepV1 = theStep0[1];
-                        aStepU2 = theStep0[2];
-                        aStepV2 = theStep0[3];
+                        stepU1 = step0[0];
+                        stepV1 = step0[1];
+                        stepU2 = step0[2];
+                        stepV2 = step0[3];
                     }
                     else
                     {
-                        aStepU1 = aStepV1 = aStepU2 = aStepV2 = 1.0e-6;
+                        stepU1 = stepV1 = stepU2 = stepV2 = 1.0e-6;
                     }
                 }
             }
         }
 
-        return aStatus;
+        return status;
     }
 
     /// <summary>
     /// Newton's iterations for the projection of theP0 on theASurf from (theU0, theV0) (initialised by the caller).
     /// True if the square distance falls below 1e-14.
     /// </summary>
-    internal bool DistanceMinimizeByExtrema(SurfaceAdaptorBase theASurf, in Point3D theP0, ref double theU0,
-                                            ref double theV0, double[]? theStep0 = null)
+    internal bool DistanceMinimizeByExtrema(SurfaceAdaptorBase aSurf, in Point3D p0, ref double u0,
+                                            ref double v0, double[]? step0 = null)
     {
-        const double aTol = 1.0e-14;
-        double aSQDistPrev = RealLast();
-        double aU = theU0, aV = theV0;
+        const double tol = 1.0e-14;
+        double sqDistPrev = RealLast();
+        double u = u0, v = v0;
 
-        ReadOnlySpan<double> aStep0 = [theStep0 != null ? theStep0[0] : 1.0, theStep0 != null ? theStep0[1] : 1.0];
+        ReadOnlySpan<double> aStep0 = [step0 != null ? step0[0] : 1.0, step0 != null ? step0[1] : 1.0];
 
-        int aNbIter = 10;
+        int nbIter = 10;
         do
         {
-            theASurf.D2(aU, aV, out Point3D aPS, out Vector3D aD1Su, out Vector3D aD1Sv, out Vector3D aD2Su, out Vector3D aD2Sv,
+            aSurf.D2(u, v, out Point3D ps, out Vector3D d1Su, out Vector3D d1Sv, out Vector3D d2Su, out Vector3D d2Sv,
                         out Vector3D _);
 
-            Vector3D aVec = new(theP0, aPS);
+            Vector3D vec = new(p0, ps);
 
-            double aSQDist = aVec.SquareMagnitude();
+            double sqDist = vec.SquareMagnitude();
 
-            if (aSQDist >= aSQDistPrev)
+            if (sqDist >= sqDistPrev)
             {
                 break;
             }
 
-            aSQDistPrev = aSQDist;
-            theU0 = aU;
-            theV0 = aV;
-            aNbIter--;
+            sqDistPrev = sqDist;
+            u0 = u;
+            v0 = v;
+            nbIter--;
 
-            if (aSQDistPrev < aTol)
+            if (sqDistPrev < tol)
             {
                 break;
             }
 
             // Functions
-            double aF1 = aD1Su.Dot(aVec), aF2 = aD1Sv.Dot(aVec);
+            double f1 = d1Su.Dot(vec), f2 = d1Sv.Dot(vec);
 
             // Derivatives
-            double aDf1u = aD2Su.Dot(aVec) + aD1Su.Dot(aD1Su), aDf1v = aD2Su.Dot(aD1Sv), aDf2u = aDf1v,
-                   aDf2v = aD2Sv.Dot(aVec) + aD1Sv.Dot(aD1Sv);
+            double df1u = d2Su.Dot(vec) + d1Su.Dot(d1Su), df1v = d2Su.Dot(d1Sv), df2u = df1v,
+                   df2v = d2Sv.Dot(vec) + d1Sv.Dot(d1Sv);
 
-            double aDet = aDf1u * aDf2v - aDf1v * aDf2u;
-            aU -= aStep0[0] * (aDf2v * aF1 - aDf1v * aF2) / aDet;
-            aV += aStep0[1] * (aDf2u * aF1 - aDf1u * aF2) / aDet;
-        } while (aNbIter > 0);
+            double det = df1u * df2v - df1v * df2u;
+            u -= aStep0[0] * (df2v * f1 - df1v * f2) / det;
+            v += aStep0[1] * (df2u * f1 - df1u * f2) / det;
+        } while (nbIter > 0);
 
-        return (aSQDistPrev < aTol);
+        return (sqDistPrev < tol);
     }
 
     /// <summary>
     /// Snaps thePnt (u1, v1, u2, v2) on a boundary: an intersection point with a parameter locked on the boundary it
     /// is near, then its other parameters onto boundaries within the3DTol. True if the point found is in the domain.
     /// </summary>
-    internal bool HandleSingleSingularPoint(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2,
-                                            double the3DTol, NCollection_Array1<double> thePnt)
+    internal bool HandleSingleSingularPoint(SurfaceAdaptorBase aSurf1, SurfaceAdaptorBase aSurf2,
+                                            double the3DTol, NCollection_Array1<double> pnt)
     {
         // u1, v1, u2, v2 order is used.
-        ReadOnlySpan<double> aLowBorder = [theASurf1.FirstUParameter(), theASurf1.FirstVParameter(),
-                                           theASurf2.FirstUParameter(), theASurf2.FirstVParameter()];
-        ReadOnlySpan<double> aUppBorder = [theASurf1.LastUParameter(), theASurf1.LastVParameter(),
-                                           theASurf2.LastUParameter(), theASurf2.LastVParameter()];
-        ReadOnlySpan<IntImp_ConstIsoparametric> aLockedDir = [IntImp_UIsoparametricOnCaro1,
-                                                              IntImp_VIsoparametricOnCaro1,
-                                                              IntImp_UIsoparametricOnCaro2,
-                                                              IntImp_VIsoparametricOnCaro2];
+        ReadOnlySpan<double> lowBorder = [aSurf1.FirstUParameter(), aSurf1.FirstVParameter(),
+                                           aSurf2.FirstUParameter(), aSurf2.FirstVParameter()];
+        ReadOnlySpan<double> uppBorder = [aSurf1.LastUParameter(), aSurf1.LastVParameter(),
+                                           aSurf2.LastUParameter(), aSurf2.LastVParameter()];
+        ReadOnlySpan<ConstIsoparametric> lockedDir = [ConstIsoparametric.UIsoparametricOnCaro1,
+                                                              ConstIsoparametric.VIsoparametricOnCaro1,
+                                                              ConstIsoparametric.UIsoparametricOnCaro2,
+                                                              ConstIsoparametric.VIsoparametricOnCaro2];
 
         // Create new intersector with new tolerance.
-        IntWalk_TheInt2S anInt = new(theASurf1, theASurf2, the3DTol);
-        FunctionSetRoot aRsnld = new(anInt.Function());
+        TheInt2S anInt = new(aSurf1, aSurf2, the3DTol);
+        FunctionSetRoot rsnld = new(anInt.Function());
 
-        Span<double> aPars = stackalloc double[4];
+        Span<double> pars = stackalloc double[4];
         for (int i = 1; i <= 4; ++i)
         {
-            if (Math.Abs(thePnt[i] - aLowBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(thePnt[i] - aUppBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(pnt[i] - lowBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(pnt[i] - uppBorder[i - 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                anInt.Perform(thePnt, aRsnld, aLockedDir[i - 1]);
+                anInt.Perform(pnt, rsnld, lockedDir[i - 1]);
 
-                if (!anInt.IsDone())
+                if (!anInt.IsDone)
                 {
                     continue;
                 }
 
-                if (anInt.IsEmpty())
+                if (anInt.IsEmpty)
                 {
                     continue;
                 }
 
-                anInt.Point().Parameters(out aPars[0], out aPars[1], out aPars[2], out aPars[3]);
-                SurfaceAdaptorBase[] aSurfs = [theASurf1, theASurf2];
+                anInt.Point().Parameters(out pars[0], out pars[1], out pars[2], out pars[3]);
+                SurfaceAdaptorBase[] surfs = [aSurf1, aSurf2];
                 // Local resolutions
-                double aTol2 = the3DTol * the3DTol;
-                Point3D aP;
+                double tol2 = the3DTol * the3DTol;
+                Point3D p;
                 int k;
                 for (k = 0; k < 2; ++k)
                 {
                     int iu, iv;
                     iu = 2 * k;
                     iv = iu + 1;
-                    aSurfs[k].D1(aPars[iu], aPars[iv], out Point3D aPInt, out Vector3D aDU, out Vector3D aDV);
-                    double aMod = aDU.Magnitude();
-                    if (aMod > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    surfs[k].D1(pars[iu], pars[iv], out Point3D pInt, out Vector3D du, out Vector3D dv);
+                    double mod = du.Magnitude();
+                    if (mod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        double aTolU = the3DTol / aMod;
-                        if (Math.Abs(aLowBorder[iu] - aPars[iu]) < aTolU)
+                        double tolU = the3DTol / mod;
+                        if (Math.Abs(lowBorder[iu] - pars[iu]) < tolU)
                         {
-                            aP = aSurfs[k].Value(aLowBorder[iu], aPars[iv]);
-                            if (aPInt.SquareDistance(aP) < aTol2)
+                            p = surfs[k].Value(lowBorder[iu], pars[iv]);
+                            if (pInt.SquareDistance(p) < tol2)
                             {
-                                aPars[iu] = aLowBorder[iu];
+                                pars[iu] = lowBorder[iu];
                             }
                         }
-                        else if (Math.Abs(aUppBorder[iu] - aPars[iu]) < aTolU)
+                        else if (Math.Abs(uppBorder[iu] - pars[iu]) < tolU)
                         {
-                            aP = aSurfs[k].Value(aUppBorder[iu], aPars[iv]);
-                            if (aPInt.SquareDistance(aP) < aTol2)
+                            p = surfs[k].Value(uppBorder[iu], pars[iv]);
+                            if (pInt.SquareDistance(p) < tol2)
                             {
-                                aPars[iu] = aUppBorder[iu];
+                                pars[iu] = uppBorder[iu];
                             }
                         }
                     }
-                    aMod = aDV.Magnitude();
-                    if (aMod > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    mod = dv.Magnitude();
+                    if (mod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        double aTolV = the3DTol / aMod;
-                        if (Math.Abs(aLowBorder[iv] - aPars[iv]) < aTolV)
+                        double tolV = the3DTol / mod;
+                        if (Math.Abs(lowBorder[iv] - pars[iv]) < tolV)
                         {
-                            aP = aSurfs[k].Value(aPars[iu], aLowBorder[iv]);
-                            if (aPInt.SquareDistance(aP) < aTol2)
+                            p = surfs[k].Value(pars[iu], lowBorder[iv]);
+                            if (pInt.SquareDistance(p) < tol2)
                             {
-                                aPars[iv] = aLowBorder[iv];
+                                pars[iv] = lowBorder[iv];
                             }
                         }
-                        else if (Math.Abs(aUppBorder[iv] - aPars[iv]) < aTolV)
+                        else if (Math.Abs(uppBorder[iv] - pars[iv]) < tolV)
                         {
-                            aP = aSurfs[k].Value(aPars[iu], aUppBorder[iv]);
-                            if (aPInt.SquareDistance(aP) < aTol2)
+                            p = surfs[k].Value(pars[iu], uppBorder[iv]);
+                            if (pInt.SquareDistance(p) < tol2)
                             {
-                                aPars[iv] = aUppBorder[iv];
+                                pars[iv] = uppBorder[iv];
                             }
                         }
                     }
@@ -831,13 +833,13 @@ public partial class IntWalk_PWalking
                 int j;
                 for (j = 1; j <= 4; ++j)
                 {
-                    thePnt[j] = aPars[j - 1];
+                    pnt[j] = pars[j - 1];
                 }
                 bool isInDomain = true;
                 for (j = 1; isInDomain && (j <= 4); ++j)
                 {
-                    if ((thePnt[j] - aLowBorder[j - 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
-                            * (thePnt[j] - aUppBorder[j - 1] - global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    if ((pnt[j] - lowBorder[j - 1] + global::Kerf.Engine.Foundation.Precision.PConfusion())
+                            * (pnt[j] - uppBorder[j - 1] - global::Kerf.Engine.Foundation.Precision.PConfusion())
                         > 0.0)
                     {
                         isInDomain = false;
@@ -858,82 +860,82 @@ public partial class IntWalk_PWalking
     /// Searches the intersection point on the boundary near (theU1, theV1, theU2, theV2) and puts it at the start
     /// (isTheFirst) or the end of the line, removing the points that would make a hairpin bend. True if added.
     /// </summary>
-    internal bool SeekPointOnBoundary(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2, double theU1,
-                                      double theV1, double theU2, double theV2, bool isTheFirst)
+    internal bool SeekPointOnBoundary(SurfaceAdaptorBase aSurf1, SurfaceAdaptorBase aSurf2, double u1,
+                                      double v1, double u2, double v2, bool isTheFirst)
     {
         bool isOK = false;
 
         // u1, v1, u2, v2 order is used.
-        double[] aLowBorder = [theASurf1.FirstUParameter(), theASurf1.FirstVParameter(),
-                               theASurf2.FirstUParameter(), theASurf2.FirstVParameter()];
-        double[] aUppBorder = [theASurf1.LastUParameter(), theASurf1.LastVParameter(),
-                               theASurf2.LastUParameter(), theASurf2.LastVParameter()];
+        double[] lowBorder = [aSurf1.FirstUParameter(), aSurf1.FirstVParameter(),
+                               aSurf2.FirstUParameter(), aSurf2.FirstVParameter()];
+        double[] uppBorder = [aSurf1.LastUParameter(), aSurf1.LastVParameter(),
+                               aSurf2.LastUParameter(), aSurf2.LastVParameter()];
 
         // Tune solution tolerance according with object size.
-        double aRes1 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf1.UResolution(1.0),
-                                global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf1.VResolution(1.0));
-        double aRes2 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf2.UResolution(1.0),
-                                global::Kerf.Engine.Foundation.Precision.PConfusion() / theASurf2.VResolution(1.0));
-        double a3DTol = Math.Max(aRes1, aRes2);
-        double aTol = Math.Max(global::Kerf.Engine.Foundation.Precision.Confusion(), a3DTol);
+        double res1 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / aSurf1.UResolution(1.0),
+                                global::Kerf.Engine.Foundation.Precision.PConfusion() / aSurf1.VResolution(1.0));
+        double res2 = Math.Max(global::Kerf.Engine.Foundation.Precision.PConfusion() / aSurf2.UResolution(1.0),
+                                global::Kerf.Engine.Foundation.Precision.PConfusion() / aSurf2.VResolution(1.0));
+        double a3DTol = Math.Max(res1, res2);
+        double tol = Math.Max(global::Kerf.Engine.Foundation.Precision.Confusion(), a3DTol);
 
         // u1, v1, u2, v2 order is used.
-        NCollection_Array1<double> aPnt = new(1, 4);
-        aPnt[1] = theU1;
-        aPnt[2] = theV1;
-        aPnt[3] = theU2;
-        aPnt[4] = theV2;
-        NCollection_Array1<double> aSingularPnt = new(aPnt);
+        NCollection_Array1<double> pnt = new(1, 4);
+        pnt[1] = u1;
+        pnt[2] = v1;
+        pnt[3] = u2;
+        pnt[4] = v2;
+        NCollection_Array1<double> singularPnt = new(pnt);
 
-        int aNbIter = 20;
-        bool aStatus = false;
+        int nbIter = 20;
+        bool status = false;
         do
         {
-            aNbIter--;
-            aStatus = DistanceMinimizeByGradient(theASurf1, theASurf2, aPnt);
-            if (aStatus && !AdjustToDomain(4, aPnt, 1, aLowBorder, aUppBorder, 0))
+            nbIter--;
+            status = DistanceMinimizeByGradient(aSurf1, aSurf2, pnt);
+            if (status && !AdjustToDomain(4, pnt, 1, lowBorder, uppBorder, 0))
             {
                 break;
             }
 
-            aStatus = DistanceMinimizeByExtrema(theASurf1, theASurf2.Value(aPnt[3], aPnt[4]), ref aPnt[1], ref aPnt[2]);
-            if (aStatus && !AdjustToDomain(2, aPnt, 1, aLowBorder, aUppBorder, 0))
+            status = DistanceMinimizeByExtrema(aSurf1, aSurf2.Value(pnt[3], pnt[4]), ref pnt[1], ref pnt[2]);
+            if (status && !AdjustToDomain(2, pnt, 1, lowBorder, uppBorder, 0))
             {
                 break;
             }
 
-            aStatus = DistanceMinimizeByExtrema(theASurf2, theASurf1.Value(aPnt[1], aPnt[2]), ref aPnt[3], ref aPnt[4]);
-            if (aStatus && !AdjustToDomain(2, aPnt, 3, aLowBorder, aUppBorder, 2))
+            status = DistanceMinimizeByExtrema(aSurf2, aSurf1.Value(pnt[1], pnt[2]), ref pnt[3], ref pnt[4]);
+            if (status && !AdjustToDomain(2, pnt, 3, lowBorder, uppBorder, 2))
             {
                 break;
             }
-        } while (!aStatus && (aNbIter > 0));
+        } while (!status && (nbIter > 0));
 
         // Handle singular points.
-        bool aSingularStatus = HandleSingleSingularPoint(theASurf1, theASurf2, aTol, aSingularPnt);
-        if (aSingularStatus)
+        bool singularStatus = HandleSingleSingularPoint(aSurf1, aSurf2, tol, singularPnt);
+        if (singularStatus)
         {
-            aPnt.Assign(aSingularPnt);
+            pnt.Assign(singularPnt);
         }
 
-        if (!aStatus && !aSingularStatus)
+        if (!status && !singularStatus)
         {
             return isOK;
         }
 
-        Point3D aP1 = theASurf1.Value(aPnt[1], aPnt[2]);
-        Point3D aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
-        Point3D aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
+        Point3D p1 = aSurf1.Value(pnt[1], pnt[2]);
+        Point3D p2 = aSurf2.Value(pnt[3], pnt[4]);
+        Point3D pInt = new(0.5 * (p1.XYZ() + p2.XYZ()));
 
-        double aSQDist = aPInt.SquareDistance(aP1);
-        if (aSQDist > aTol * aTol)
+        double sqDist = pInt.SquareDistance(p1);
+        if (sqDist > tol * tol)
         {
             return isOK;
         }
 
         // Found point is true intersection point
-        IntSurf_PntOn2S anIP = new();
-        anIP.SetValue(aPInt, aPnt[1], aPnt[2], aPnt[3], aPnt[4]);
+        PntOn2S ip = new();
+        ip.SetValue(pInt, pnt[1], pnt[2], pnt[3], pnt[4]);
 
         // The main idea of checks below is to define if insertion of
         // addition point (on the boundary) does not lead to invalid
@@ -962,38 +964,38 @@ public partial class IntWalk_PWalking
 
         if (isTheFirst)
         {
-            while (line.NbPoints() > 1)
+            while (_line.PointCount > 1)
             {
-                int aNbPnts = line.NbPoints();
+                int nbPnts = _line.PointCount;
 
-                int aPInd = 1;
-                for (; aPInd <= aNbPnts; aPInd++)
+                int pInd = 1;
+                for (; pInd <= nbPnts; pInd++)
                 {
-                    aP1.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aP1.SquareDistance(aPInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    p1.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    if (p1.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
                 }
 
-                for (++aPInd; aPInd <= aNbPnts; aPInd++)
+                for (++pInd; pInd <= nbPnts; pInd++)
                 {
-                    aP2.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aP1.SquareDistance(aP2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    p2.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    if (p1.SquareDistance(p2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
                 }
 
-                if (aPInd > aNbPnts)
+                if (pInd > nbPnts)
                 {
                     return isOK;
                 }
 
-                Xyz aDir01 = aP1.XYZ() - aPInt.XYZ();
-                Xyz aDir12 = aP2.XYZ() - aP1.XYZ();
+                Xyz dir01 = p1.XYZ() - pInt.XYZ();
+                Xyz dir12 = p2.XYZ() - p1.XYZ();
 
-                if (aDir01.Dot(aDir12) > 0.0)
+                if (dir01.Dot(dir12) > 0.0)
                 {
                     break;
                 }
@@ -1001,64 +1003,64 @@ public partial class IntWalk_PWalking
                 RemoveAPoint(1);
             }
 
-            aP1.SetXYZ(line.Value(1).Value().XYZ());
-            if (aP1.SquareDistance(aPInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            p1.SetXYZ(_line.Value(1).Value().XYZ());
+            if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(1);
             }
 
-            line.InsertBefore(1, anIP);
+            _line.InsertBefore(1, ip);
             isOK = true;
         }
         else
         {
-            while (line.NbPoints() > 1)
+            while (_line.PointCount > 1)
             {
-                int aNbPnts = line.NbPoints();
+                int nbPnts = _line.PointCount;
 
-                Point3D aPPrev = new(), aPCurr = new();
-                int aPInd = aNbPnts;
-                for (; aPInd > 0; aPInd--)
+                Point3D pPrev = new(), pCurr = new();
+                int pInd = nbPnts;
+                for (; pInd > 0; pInd--)
                 {
-                    aPCurr.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aPCurr.SquareDistance(aPInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    pCurr.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    if (pCurr.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
                 }
 
-                for (--aPInd; aPInd > 0; aPInd--)
+                for (--pInd; pInd > 0; pInd--)
                 {
-                    aPPrev.SetXYZ(line.Value(aPInd).Value().XYZ());
-                    if (aPCurr.SquareDistance(aPPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    pPrev.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    if (pCurr.SquareDistance(pPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
                 }
 
-                if (aPInd < 1)
+                if (pInd < 1)
                 {
                     return isOK;
                 }
 
-                Xyz aDirPC = aPCurr.XYZ() - aPPrev.XYZ();
-                Xyz aDirCN = aPInt.XYZ() - aPCurr.XYZ();
+                Xyz dirPC = pCurr.XYZ() - pPrev.XYZ();
+                Xyz dirCN = pInt.XYZ() - pCurr.XYZ();
 
-                if (aDirPC.Dot(aDirCN) > 0.0)
+                if (dirPC.Dot(dirCN) > 0.0)
                 {
                     break;
                 }
 
-                RemoveAPoint(aNbPnts);
+                RemoveAPoint(nbPnts);
             }
 
-            int aNbPntsL = line.NbPoints();
-            aP1.SetXYZ(line.Value(aNbPntsL).Value().XYZ());
-            if (aP1.SquareDistance(aPInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            int nbPntsL = _line.PointCount;
+            p1.SetXYZ(_line.Value(nbPntsL).Value().XYZ());
+            if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
-                RemoveAPoint(aNbPntsL);
+                RemoveAPoint(nbPntsL);
             }
-            line.Add(anIP);
+            _line.Add(ip);
 
             isOK = true;
         }
@@ -1070,53 +1072,53 @@ public partial class IntWalk_PWalking
     /// Puts the ends of the line on the surfaces' boundaries when they are near them (closer than 1e-3 of the
     /// smallest range). True if a point was added.
     /// </summary>
-    public bool PutToBoundary(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2)
+    public bool PutToBoundary(SurfaceAdaptorBase aSurf1, SurfaceAdaptorBase aSurf2)
     {
-        double aTolMin = global::Kerf.Engine.Foundation.Precision.Confusion();
+        double tolMin = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         bool hasBeenAdded = false;
 
-        double aU1bFirst = theASurf1.FirstUParameter();
-        double aU1bLast = theASurf1.LastUParameter();
-        double aU2bFirst = theASurf2.FirstUParameter();
-        double aU2bLast = theASurf2.LastUParameter();
-        double aV1bFirst = theASurf1.FirstVParameter();
-        double aV1bLast = theASurf1.LastVParameter();
-        double aV2bFirst = theASurf2.FirstVParameter();
-        double aV2bLast = theASurf2.LastVParameter();
+        double u1bFirst = aSurf1.FirstUParameter();
+        double u1bLast = aSurf1.LastUParameter();
+        double u2bFirst = aSurf2.FirstUParameter();
+        double u2bLast = aSurf2.LastUParameter();
+        double v1bFirst = aSurf1.FirstVParameter();
+        double v1bLast = aSurf1.LastVParameter();
+        double v2bFirst = aSurf2.FirstVParameter();
+        double v2bLast = aSurf2.LastVParameter();
 
-        double aTol = 1.0;
-        aTol = Math.Min(aTol, aU1bLast - aU1bFirst);
-        aTol = Math.Min(aTol, aU2bLast - aU2bFirst);
-        aTol = Math.Min(aTol, aV1bLast - aV1bFirst);
-        aTol = Math.Min(aTol, aV2bLast - aV2bFirst) * 1.0e-3;
+        double tol = 1.0;
+        tol = Math.Min(tol, u1bLast - u1bFirst);
+        tol = Math.Min(tol, u2bLast - u2bFirst);
+        tol = Math.Min(tol, v1bLast - v1bFirst);
+        tol = Math.Min(tol, v2bLast - v2bFirst) * 1.0e-3;
 
-        if (aTol <= 2.0 * aTolMin)
+        if (tol <= 2.0 * tolMin)
         {
             return hasBeenAdded;
         }
 
         bool isNeedAdding = false;
-        IsParallel(line, true, aTol, out bool isU1parallel, out bool isV1parallel);
-        IsParallel(line, false, aTol, out bool isU2parallel, out bool isV2parallel);
+        IsParallel(_line, true, tol, out bool isU1parallel, out bool isV1parallel);
+        IsParallel(_line, false, tol, out bool isU2parallel, out bool isV2parallel);
 
-        line.Value(1).Parameters(out double u1, out double v1, out double u2, out double v2);
-        double aDelta = 0.0;
+        _line.Value(1).Parameters(out double u1, out double v1, out double u2, out double v2);
+        double delta = 0.0;
 
         if (!isV1parallel)
         {
-            aDelta = u1 - aU1bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = u1 - u1bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                u1 = aU1bFirst;
+                u1 = u1bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aU1bLast - u1;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = u1bLast - u1;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    u1 = aU1bLast;
+                    u1 = u1bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1124,18 +1126,18 @@ public partial class IntWalk_PWalking
 
         if (!isV2parallel)
         {
-            aDelta = u2 - aU2bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = u2 - u2bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                u2 = aU2bFirst;
+                u2 = u2bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aU2bLast - u2;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = u2bLast - u2;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    u2 = aU2bLast;
+                    u2 = u2bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1143,18 +1145,18 @@ public partial class IntWalk_PWalking
 
         if (!isU1parallel)
         {
-            aDelta = v1 - aV1bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = v1 - v1bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                v1 = aV1bFirst;
+                v1 = v1bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aV1bLast - v1;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = v1bLast - v1;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    v1 = aV1bLast;
+                    v1 = v1bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1162,18 +1164,18 @@ public partial class IntWalk_PWalking
 
         if (!isU2parallel)
         {
-            aDelta = v2 - aV2bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = v2 - v2bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                v2 = aV2bFirst;
+                v2 = v2bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aV2bLast - v2;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = v2bLast - v2;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    v2 = aV2bLast;
+                    v2 = v2bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1181,27 +1183,27 @@ public partial class IntWalk_PWalking
 
         if (isNeedAdding)
         {
-            hasBeenAdded = SeekPointOnBoundary(theASurf1, theASurf2, u1, v1, u2, v2, true);
+            hasBeenAdded = SeekPointOnBoundary(aSurf1, aSurf2, u1, v1, u2, v2, true);
         }
 
-        int aNbPnts = line.NbPoints();
+        int nbPnts = _line.PointCount;
         isNeedAdding = false;
-        line.Value(aNbPnts).Parameters(out u1, out v1, out u2, out v2);
+        _line.Value(nbPnts).Parameters(out u1, out v1, out u2, out v2);
 
         if (!isV1parallel)
         {
-            aDelta = u1 - aU1bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = u1 - u1bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                u1 = aU1bFirst;
+                u1 = u1bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aU1bLast - u1;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = u1bLast - u1;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    u1 = aU1bLast;
+                    u1 = u1bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1209,18 +1211,18 @@ public partial class IntWalk_PWalking
 
         if (!isV2parallel)
         {
-            aDelta = u2 - aU2bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = u2 - u2bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                u2 = aU2bFirst;
+                u2 = u2bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aU2bLast - u2;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = u2bLast - u2;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    u2 = aU2bLast;
+                    u2 = u2bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1228,18 +1230,18 @@ public partial class IntWalk_PWalking
 
         if (!isU1parallel)
         {
-            aDelta = v1 - aV1bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = v1 - v1bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                v1 = aV1bFirst;
+                v1 = v1bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aV1bLast - v1;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = v1bLast - v1;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    v1 = aV1bLast;
+                    v1 = v1bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1247,18 +1249,18 @@ public partial class IntWalk_PWalking
 
         if (!isU2parallel)
         {
-            aDelta = v2 - aV2bFirst;
-            if ((aTolMin < aDelta) && (aDelta < aTol))
+            delta = v2 - v2bFirst;
+            if ((tolMin < delta) && (delta < tol))
             {
-                v2 = aV2bFirst;
+                v2 = v2bFirst;
                 isNeedAdding = true;
             }
             else
             {
-                aDelta = aV2bLast - v2;
-                if ((aTolMin < aDelta) && (aDelta < aTol))
+                delta = v2bLast - v2;
+                if ((tolMin < delta) && (delta < tol))
                 {
-                    v2 = aV2bLast;
+                    v2 = v2bLast;
                     isNeedAdding = true;
                 }
             }
@@ -1266,7 +1268,7 @@ public partial class IntWalk_PWalking
 
         if (isNeedAdding)
         {
-            hasBeenAdded = SeekPointOnBoundary(theASurf1, theASurf2, u1, v1, u2, v2, false);
+            hasBeenAdded = SeekPointOnBoundary(aSurf1, aSurf2, u1, v1, u2, v2, false);
         }
 
         return hasBeenAdded;
@@ -1276,121 +1278,121 @@ public partial class IntWalk_PWalking
     /// Inserts exact intersection points in the middle of the segments of the line until it has theMinNbPoints
     /// points (or no more can be found). True if a point was inserted.
     /// </summary>
-    public bool SeekAdditionalPoints(SurfaceAdaptorBase theASurf1, SurfaceAdaptorBase theASurf2, int theMinNbPoints)
+    public bool SeekAdditionalPoints(SurfaceAdaptorBase aSurf1, SurfaceAdaptorBase aSurf2, int minNbPoints)
     {
-        const double aTol = 1.0e-14;
-        int aNbPoints = line.NbPoints();
-        if (aNbPoints > theMinNbPoints)
+        const double tol = 1.0e-14;
+        int nbPoints = _line.PointCount;
+        if (nbPoints > minNbPoints)
         {
             return true;
         }
 
-        double aU1bFirst = theASurf1.FirstUParameter();
-        double aU1bLast = theASurf1.LastUParameter();
-        double aU2bFirst = theASurf2.FirstUParameter();
-        double aU2bLast = theASurf2.LastUParameter();
-        double aV1bFirst = theASurf1.FirstVParameter();
-        double aV1bLast = theASurf1.LastVParameter();
-        double aV2bFirst = theASurf2.FirstVParameter();
-        double aV2bLast = theASurf2.LastVParameter();
+        double u1bFirst = aSurf1.FirstUParameter();
+        double u1bLast = aSurf1.LastUParameter();
+        double u2bFirst = aSurf2.FirstUParameter();
+        double u2bLast = aSurf2.LastUParameter();
+        double v1bFirst = aSurf1.FirstVParameter();
+        double v1bLast = aSurf1.LastVParameter();
+        double v2bFirst = aSurf2.FirstVParameter();
+        double v2bLast = aSurf2.LastVParameter();
 
         bool isPrecise = false;
 
-        NCollection_Array1<double> aPnt = new(1, 4);
-        aPnt.Init(0.0);
+        NCollection_Array1<double> pnt = new(1, 4);
+        pnt.Init(0.0);
 
-        int aNbPointsPrev = 0;
-        while (aNbPoints < theMinNbPoints && (aNbPoints != aNbPointsPrev))
+        int nbPointsPrev = 0;
+        while (nbPoints < minNbPoints && (nbPoints != nbPointsPrev))
         {
-            aNbPointsPrev = aNbPoints;
-            for (int fp = 1, lp = 2; fp < aNbPoints; fp = lp + 1)
+            nbPointsPrev = nbPoints;
+            for (int fp = 1, lp = 2; fp < nbPoints; fp = lp + 1)
             {
                 // first and last points in 1st and 2nd surafaces
                 lp = fp + 1;
-                line.Value(fp).Parameters(out double U1f, out double V1f, out double U2f, out double V2f);
-                line.Value(lp).Parameters(out double U1l, out double V1l, out double U2l, out double V2l);
+                _line.Value(fp).Parameters(out double u1f, out double v1f, out double u2f, out double v2f);
+                _line.Value(lp).Parameters(out double u1l, out double v1l, out double u2l, out double v2l);
 
-                aPnt[1] = 0.5 * (U1f + U1l);
-                if (aPnt[1] < aU1bFirst)
+                pnt[1] = 0.5 * (u1f + u1l);
+                if (pnt[1] < u1bFirst)
                 {
-                    aPnt[1] = aU1bFirst;
+                    pnt[1] = u1bFirst;
                 }
-                if (aPnt[1] > aU1bLast)
+                if (pnt[1] > u1bLast)
                 {
-                    aPnt[1] = aU1bLast;
-                }
-
-                aPnt[2] = 0.5 * (V1f + V1l);
-                if (aPnt[2] < aV1bFirst)
-                {
-                    aPnt[2] = aV1bFirst;
-                }
-                if (aPnt[2] > aV1bLast)
-                {
-                    aPnt[2] = aV1bLast;
+                    pnt[1] = u1bLast;
                 }
 
-                aPnt[3] = 0.5 * (U2f + U2l);
-                if (aPnt[3] < aU2bFirst)
+                pnt[2] = 0.5 * (v1f + v1l);
+                if (pnt[2] < v1bFirst)
                 {
-                    aPnt[3] = aU2bFirst;
+                    pnt[2] = v1bFirst;
                 }
-                if (aPnt[3] > aU2bLast)
+                if (pnt[2] > v1bLast)
                 {
-                    aPnt[3] = aU2bLast;
-                }
-
-                aPnt[4] = 0.5 * (V2f + V2l);
-                if (aPnt[4] < aV2bFirst)
-                {
-                    aPnt[4] = aV2bFirst;
-                }
-                if (aPnt[4] > aV2bLast)
-                {
-                    aPnt[4] = aV2bLast;
+                    pnt[2] = v1bLast;
                 }
 
-                bool aStatus = false;
-                int aNbIter = 5;
+                pnt[3] = 0.5 * (u2f + u2l);
+                if (pnt[3] < u2bFirst)
+                {
+                    pnt[3] = u2bFirst;
+                }
+                if (pnt[3] > u2bLast)
+                {
+                    pnt[3] = u2bLast;
+                }
+
+                pnt[4] = 0.5 * (v2f + v2l);
+                if (pnt[4] < v2bFirst)
+                {
+                    pnt[4] = v2bFirst;
+                }
+                if (pnt[4] > v2bLast)
+                {
+                    pnt[4] = v2bLast;
+                }
+
+                bool status = false;
+                int nbIter = 5;
                 do
                 {
-                    aStatus = DistanceMinimizeByGradient(theASurf1, theASurf2, aPnt);
-                    if (aStatus)
+                    status = DistanceMinimizeByGradient(aSurf1, aSurf2, pnt);
+                    if (status)
                     {
                         break;
                     }
 
-                    aStatus = DistanceMinimizeByExtrema(theASurf1, theASurf2.Value(aPnt[3], aPnt[4]), ref aPnt[1],
-                                                        ref aPnt[2]);
-                    if (aStatus)
+                    status = DistanceMinimizeByExtrema(aSurf1, aSurf2.Value(pnt[3], pnt[4]), ref pnt[1],
+                                                        ref pnt[2]);
+                    if (status)
                     {
                         break;
                     }
 
-                    aStatus = DistanceMinimizeByExtrema(theASurf2, theASurf1.Value(aPnt[1], aPnt[2]), ref aPnt[3],
-                                                        ref aPnt[4]);
-                    if (aStatus)
+                    status = DistanceMinimizeByExtrema(aSurf2, aSurf1.Value(pnt[1], pnt[2]), ref pnt[3],
+                                                        ref pnt[4]);
+                    if (status)
                     {
                         break;
                     }
-                } while (!aStatus && (--aNbIter > 0));
+                } while (!status && (--nbIter > 0));
 
-                if (aStatus)
+                if (status)
                 {
-                    Point3D aP1 = theASurf1.Value(aPnt[1], aPnt[2]), aP2 = theASurf2.Value(aPnt[3], aPnt[4]);
-                    Point3D aPInt = new(0.5 * (aP1.XYZ() + aP2.XYZ()));
+                    Point3D p1 = aSurf1.Value(pnt[1], pnt[2]), p2 = aSurf2.Value(pnt[3], pnt[4]);
+                    Point3D pInt = new(0.5 * (p1.XYZ() + p2.XYZ()));
 
-                    double aSQDist1 = aPInt.SquareDistance(aP1), aSQDist2 = aPInt.SquareDistance(aP2);
+                    double sqDist1 = pInt.SquareDistance(p1), sqDist2 = pInt.SquareDistance(p2);
 
-                    if ((aSQDist1 < aTol) && (aSQDist2 < aTol))
+                    if ((sqDist1 < tol) && (sqDist2 < tol))
                     {
-                        IntSurf_PntOn2S anIP = new();
-                        anIP.SetValue(aPInt, aPnt[1], aPnt[2], aPnt[3], aPnt[4]);
-                        line.InsertBefore(lp, anIP);
+                        PntOn2S ip = new();
+                        ip.SetValue(pInt, pnt[1], pnt[2], pnt[3], pnt[4]);
+                        _line.InsertBefore(lp, ip);
 
                         isPrecise = true;
 
-                        if (++aNbPoints >= theMinNbPoints)
+                        if (++nbPoints >= minNbPoints)
                         {
                             break;
                         }

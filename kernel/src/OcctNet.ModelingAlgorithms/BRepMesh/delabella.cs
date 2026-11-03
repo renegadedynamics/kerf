@@ -32,10 +32,11 @@ SOFTWARE.
 */
 
 using Kerf.Engine.Foundation;
+using Occt;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace Occt;
+namespace Kerf.Engine.Meshing.Delaunay;
 
 // Left out: the float overload of Triangulate, the deprecated C function DelaBella(points, xy, abc, errlog) and the
 // extern "C" wrappers (DelaBella_Create, ...): OCCT calls none of them.
@@ -46,7 +47,7 @@ namespace Occt;
 
 /// <summary>A vertex of Delabella's output: the input point's index and its coordinates.</summary>
 /// <remarks>A working object of the triangulator, valid until its next <c>Triangulate</c> or <c>Destroy</c>.</remarks>
-public class DelaBella_Vertex
+public class DelaunayVertex
 {
     /// <summary>Index of the original point.</summary>
     public int i;
@@ -55,30 +56,30 @@ public class DelaBella_Vertex
     public double x, y;
 
     /// <summary>Next silhouette vertex.</summary>
-    public DelaBella_Vertex? next;
+    public DelaunayVertex? next;
 }
 
 /// <summary>A triangle of Delabella's output.</summary>
 /// <remarks>A working object of the triangulator, valid until its next <c>Triangulate</c> or <c>Destroy</c>.</remarks>
-public class DelaBella_Triangle
+public class DelaunayTriangle
 {
     /// <summary>The 3 vertices spanning this triangle.</summary>
-    public readonly DelaBella_Vertex?[] v = new DelaBella_Vertex?[3];
+    public readonly DelaunayVertex?[] v = new DelaunayVertex?[3];
 
     /// <summary>The 3 adjacent faces: f[i] is at the edge opposite to vertex v[i].</summary>
-    public readonly DelaBella_Triangle?[] f = new DelaBella_Triangle?[3];
+    public readonly DelaunayTriangle?[] f = new DelaunayTriangle?[3];
 
     /// <summary>Next triangle (of the Delaunay set or of the hull set).</summary>
-    public DelaBella_Triangle? next;
+    public DelaunayTriangle? next;
 }
 
 /// <summary>Delabella, the Delaunay triangulator OCCT's <c>BRepMesh_DelabellaBaseMeshAlgo</c> uses.</summary>
 public abstract class IDelaBella
 {
     /// <summary>A new triangulator.</summary>
-    public static IDelaBella Create()
+    public static global::Kerf.Engine.Meshing.Delaunay.IDelaBella Create()
     {
-        CDelaBella db = new();
+        DelaBella db = new();
 
         db.vert_alloc = null;
         db.face_alloc = null;
@@ -129,19 +130,19 @@ public abstract class IDelaBella
     public abstract int GetNumOutputVerts();
 
     /// <summary>The first Delaunay triangle; valid only if Triangulate() > 0.</summary>
-    public abstract DelaBella_Triangle? GetFirstDelaunayTriangle();
+    public abstract DelaunayTriangle? GetFirstDelaunayTriangle();
 
     /// <summary>The first hull triangle; valid only if Triangulate() > 0.</summary>
-    public abstract DelaBella_Triangle? GetFirstHullTriangle();
+    public abstract DelaunayTriangle? GetFirstHullTriangle();
 
     /// <summary>The first hull vertex: if Triangulate() &lt; 0 a list, otherwise a closed contour.</summary>
-    public abstract DelaBella_Vertex? GetFirstHullVertex();
+    public abstract DelaunayVertex? GetFirstHullVertex();
 }
 
-internal sealed class CDelaBella : IDelaBella
+internal sealed class DelaBella : global::Kerf.Engine.Meshing.Delaunay.IDelaBella
 {
     // Unsigned28 s14sqr(const Signed14& s)
-    private static double s14sqr(double s)
+    private static double S14sqr(double s)
     {
         return s * s;
     }
@@ -158,7 +159,7 @@ internal sealed class CDelaBella : IDelaBella
         public double x, y; // Signed15
         public double z;    // Signed29
 
-        public readonly Norm cross(in Vect v) // cross prod
+        public readonly Norm Cross(in Vect v) // cross prod
         {
             Norm n;
             n.x = y * v.z - z * v.y;
@@ -168,7 +169,7 @@ internal sealed class CDelaBella : IDelaBella
         }
     }
 
-    internal sealed class Vert : DelaBella_Vertex
+    internal sealed class Vert : DelaunayVertex
     {
         public double z; // Unsigned28
         public Face? sew;
@@ -182,9 +183,9 @@ internal sealed class CDelaBella : IDelaBella
             return d;
         }
 
-        public static bool overlap(Vert v1, Vert v2) { return v1.x == v2.x && v1.y == v2.y; }
+        public static bool Overlap(Vert v1, Vert v2) { return v1.x == v2.x && v1.y == v2.y; }
 
-        public static int u28cmp(Vert va, Vert vb)
+        public static int U28cmp(Vert va, Vert vb)
         {
             if (va.z < vb.z)
             {
@@ -222,18 +223,18 @@ internal sealed class CDelaBella : IDelaBella
         }
 
         // The C++ copies Vert structs by value (vert_alloc[w++] = vert_alloc[r++]).
-        public void Assign(Vert theOther)
+        public void Assign(Vert other)
         {
-            i = theOther.i;
-            x = theOther.x;
-            y = theOther.y;
-            next = theOther.next;
-            z = theOther.z;
-            sew = theOther.sew;
+            i = other.i;
+            x = other.x;
+            y = other.y;
+            next = other.next;
+            z = other.z;
+            sew = other.sew;
         }
     }
 
-    internal sealed class Face : DelaBella_Triangle
+    internal sealed class Face : DelaunayTriangle
     {
         public Norm n;
 
@@ -275,15 +276,15 @@ internal sealed class CDelaBella : IDelaBella
             return null;
         }
 
-        public double dot(Vert p) // dot
+        public double Dot(Vert p) // dot
         {
             Vect d = p - (Vert)v[0]!;
             return n.x * d.x + n.y * d.y + n.z * d.z;
         }
 
-        public Norm cross() // cross of diffs
+        public Norm Cross() // cross of diffs
         {
-            return ((Vert)v[1]! - (Vert)v[0]!).cross((Vert)v[2]! - (Vert)v[0]!);
+            return ((Vert)v[1]! - (Vert)v[0]!).Cross((Vert)v[2]! - (Vert)v[0]!);
         }
     }
 
@@ -300,9 +301,9 @@ internal sealed class CDelaBella : IDelaBella
     }
 
     // ab: given face adjacency [index][], it provides [][2] vertex indices on shared edge (CCW order)
-    private static readonly int[,] ab = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
+    private static readonly int[,] Ab = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
 
-    private static readonly Comparer<Vert> theVertLess = Comparer<Vert>.Create(Vert.u28cmp);
+    private static readonly Comparer<Vert> VertLess = Comparer<Vert>.Create(Vert.U28cmp);
 
     internal Vert[]? vert_alloc;
     internal Face[]? face_alloc;
@@ -319,9 +320,9 @@ internal sealed class CDelaBella : IDelaBella
     internal Func<object?, string, int>? errlog_proc;
     internal object? errlog_file;
 
-    private void errlog(string theMessage)
+    private void Errlog(string message)
     {
-        errlog_proc!(errlog_file, theMessage);
+        errlog_proc!(errlog_file, message);
     }
 
     private int Triangulate()
@@ -332,14 +333,14 @@ internal sealed class CDelaBella : IDelaBella
         // where the C++ order isn't a strict weak order either.
         if (points > 0) // std::sort of an empty range touches nothing, even a null vert_alloc
         {
-            Array.Sort(vert_alloc!, 0, points, theVertLess);
+            Array.Sort(vert_alloc!, 0, points, VertLess);
         }
         Vert[] verts = vert_alloc!; // OCCT: vert_alloc is null on a first call with 0 points (below)
 
         // remove dups
         {
             int w = 0, r = 1; // skip initial no-dups block
-            while (r < points && !Vert.overlap(verts[r], verts[w]))
+            while (r < points && !Vert.Overlap(verts[r], verts[w]))
             {
                 w++;
                 r++;
@@ -352,13 +353,13 @@ internal sealed class CDelaBella : IDelaBella
                 r++;
 
                 // skip dups
-                while (r < points && Vert.overlap(verts[r], verts[r - 1]))
+                while (r < points && Vert.Overlap(verts[r], verts[r - 1]))
                 {
                     r++;
                 }
 
                 // copy next no-dups block
-                while (r < points && !Vert.overlap(verts[r], verts[r - 1]))
+                while (r < points && !Vert.Overlap(verts[r], verts[r - 1]))
                 {
                     verts[w++].Assign(verts[r++]);
                 }
@@ -370,7 +371,7 @@ internal sealed class CDelaBella : IDelaBella
             {
                 if (errlog_proc is not null)
                 {
-                    errlog(string.Format(CultureInfo.InvariantCulture, "[WRN] detected {0} dups in xy array!\n", points - w));
+                    Errlog(string.Format(CultureInfo.InvariantCulture, "[WRN] detected {0} dups in xy array!\n", points - w));
                 }
                 points = w;
             }
@@ -382,7 +383,7 @@ internal sealed class CDelaBella : IDelaBella
             {
                 if (errlog_proc is not null)
                 {
-                    errlog("[WRN] all input points are colinear, returning single segment!\n");
+                    Errlog("[WRN] all input points are colinear, returning single segment!\n");
                 }
                 first_hull_vert = verts[0];
                 verts[0].next = verts[1];
@@ -392,7 +393,7 @@ internal sealed class CDelaBella : IDelaBella
             {
                 if (errlog_proc is not null)
                 {
-                    errlog("[WRN] all input points are identical, returning single point!\n");
+                    Errlog("[WRN] all input points are identical, returning single point!\n");
                 }
                 first_hull_vert = verts[0];
                 verts[0].next = null;
@@ -432,7 +433,7 @@ internal sealed class CDelaBella : IDelaBella
         f.v[0] = verts[0];
         f.v[1] = verts[1];
         f.v[2] = verts[2];
-        f.n = f.cross();
+        f.n = f.Cross();
 
         bool colinear = f.n.z == 0;
         int i = 3;
@@ -458,7 +459,7 @@ internal sealed class CDelaBella : IDelaBella
         tail.next = last;
         last.next = head;
 
-        while (i < points && f.dot(verts[i]) == 0)
+        while (i < points && f.Dot(verts[i]) == 0)
         {
             Vert v = verts[i];
 
@@ -469,15 +470,15 @@ internal sealed class CDelaBella : IDelaBella
             // why not testing sign of dot prod of 2 normals?
             // that way we'd fall into precision problems
 
-            Norm LvH = (v - last).cross(head - last);
-            bool lvh = (f.n.x > 0 && LvH.x > 0) || (f.n.x < 0 && LvH.x < 0) || (f.n.y > 0 && LvH.y > 0)
-                       || (f.n.y < 0 && LvH.y < 0) || (f.n.z > 0 && LvH.z > 0)
-                       || (f.n.z < 0 && LvH.z < 0);
+            Norm lvH = (v - last).Cross(head - last);
+            bool lvh = (f.n.x > 0 && lvH.x > 0) || (f.n.x < 0 && lvH.x < 0) || (f.n.y > 0 && lvH.y > 0)
+                       || (f.n.y < 0 && lvH.y < 0) || (f.n.z > 0 && lvH.z > 0)
+                       || (f.n.z < 0 && lvH.z < 0);
 
-            Norm TvL = (v - tail).cross(last - tail);
-            bool tvl = (f.n.x > 0 && TvL.x > 0) || (f.n.x < 0 && TvL.x < 0) || (f.n.y > 0 && TvL.y > 0)
-                       || (f.n.y < 0 && TvL.y < 0) || (f.n.z > 0 && TvL.z > 0)
-                       || (f.n.z < 0 && TvL.z < 0);
+            Norm tvL = (v - tail).Cross(last - tail);
+            bool tvl = (f.n.x > 0 && tvL.x > 0) || (f.n.x < 0 && tvL.x < 0) || (f.n.y > 0 && tvL.y > 0)
+                       || (f.n.y < 0 && tvL.y < 0) || (f.n.z > 0 && tvL.z > 0)
+                       || (f.n.z < 0 && tvL.z < 0);
 
             if (lvh && !tvl) // insert new f on top of e(2,0) = (last,head)
             {
@@ -516,7 +517,7 @@ internal sealed class CDelaBella : IDelaBella
             {
                 if (errlog_proc is not null)
                 {
-                    errlog("[WRN] all input points are colinear, returning segment list!\n");
+                    Errlog("[WRN] all input points are colinear, returning segment list!\n");
                 }
                 first_hull_vert = head;
                 last.next = null; // break contour, make it a list
@@ -528,14 +529,14 @@ internal sealed class CDelaBella : IDelaBella
                 {
                     if (errlog_proc is not null)
                     {
-                        errlog("[NFO] all input points are cocircular.\n");
+                        Errlog("[NFO] all input points are cocircular.\n");
                     }
                 }
                 else
                 {
                     if (errlog_proc is not null)
                     {
-                        errlog("[NFO] trivial case of 3 points, thank you.\n");
+                        Errlog("[NFO] trivial case of 3 points, thank you.\n");
                     }
 
                     first_dela_face = Face.Alloc(ref cache);
@@ -576,8 +577,8 @@ internal sealed class CDelaBella : IDelaBella
                         first_hull_vert = head;
                     }
 
-                    first_dela_face.n = first_dela_face.cross();
-                    first_hull_face.n = first_hull_face.cross();
+                    first_dela_face.n = first_dela_face.Cross();
+                    first_hull_face.n = first_hull_face.Cross();
 
                     return 3;
                 }
@@ -598,7 +599,7 @@ internal sealed class CDelaBella : IDelaBella
 
         Vert q = verts[i];
 
-        if (f.dot(q) > 0)
+        if (f.Dot(q) > 0)
         {
             Vert p = last;
             Vert n = (Vert)p.next!;
@@ -607,7 +608,7 @@ internal sealed class CDelaBella : IDelaBella
             first_side.v[0] = p;
             first_side.v[1] = n;
             first_side.v[2] = q;
-            first_side.n = first_side.cross();
+            first_side.n = first_side.Cross();
             hull = first_side;
 
             p = n;
@@ -623,13 +624,13 @@ internal sealed class CDelaBella : IDelaBella
                 @base.v[0] = n;
                 @base.v[1] = p;
                 @base.v[2] = last;
-                @base.n = @base.cross();
+                @base.n = @base.Cross();
 
                 Face side = Face.Alloc(ref cache);
                 side.v[0] = p;
                 side.v[1] = n;
                 side.v[2] = q;
-                side.n = side.cross();
+                side.n = side.Cross();
 
                 side.f[2] = @base;
                 @base.f[2] = side;
@@ -658,7 +659,7 @@ internal sealed class CDelaBella : IDelaBella
             last_side.v[0] = p;
             last_side.v[1] = n;
             last_side.v[2] = q;
-            last_side.n = last_side.cross();
+            last_side.n = last_side.Cross();
 
             last_side.f[1] = prev_side;
             prev_side.f[0] = last_side;
@@ -683,7 +684,7 @@ internal sealed class CDelaBella : IDelaBella
             first_side.v[0] = n;
             first_side.v[1] = p;
             first_side.v[2] = q;
-            first_side.n = first_side.cross();
+            first_side.n = first_side.Cross();
             hull = first_side;
 
             p = n;
@@ -699,13 +700,13 @@ internal sealed class CDelaBella : IDelaBella
                 @base.v[0] = p;
                 @base.v[1] = n;
                 @base.v[2] = last;
-                @base.n = @base.cross();
+                @base.n = @base.Cross();
 
                 Face side = Face.Alloc(ref cache);
                 side.v[0] = n;
                 side.v[1] = p;
                 side.v[2] = q;
-                side.n = side.cross();
+                side.n = side.Cross();
 
                 side.f[2] = @base;
                 @base.f[2] = side;
@@ -734,7 +735,7 @@ internal sealed class CDelaBella : IDelaBella
             last_side.v[0] = n;
             last_side.v[1] = p;
             last_side.v[2] = q;
-            last_side.n = last_side.cross();
+            last_side.n = last_side.Cross();
 
             last_side.f[0] = prev_side;
             prev_side.f[1] = last_side;
@@ -764,7 +765,7 @@ internal sealed class CDelaBella : IDelaBella
 
             // 1. FIND FIRST VISIBLE FACE
             //    simply iterate around last vertex using last added triangle adjecency info
-            while (_f.dot(_q) <= 0)
+            while (_f.Dot(_q) <= 0)
             {
                 _f = _f.Next(_p)!;
                 if (_f == hull)
@@ -773,7 +774,7 @@ internal sealed class CDelaBella : IDelaBella
                     // let's run through all faces (approximately last to first),
                     // yes this is emergency fallback and should not ever happen.
                     _f = faces[2 * i - 4 - 1];
-                    while (_f.dot(_q) <= 0)
+                    while (_f.Dot(_q) <= 0)
                     {
                         // OCCT: assert(_f != face_alloc), a no-op in release builds, where _f then runs below
                         // face_alloc; the port throws IndexOutOfRangeException there.
@@ -818,19 +819,19 @@ internal sealed class CDelaBella : IDelaBella
                     Face? n = ff[e];
                     if (n is not null && n.next is null) // ensure neighbor is not processed yet & isn't on stack
                     {
-                        if (n.dot(_q) <= 0) // if neighbor is not visible we have slihouette edge
+                        if (n.Dot(_q) <= 0) // if neighbor is not visible we have slihouette edge
                         {
                             // build face
 
-                            Vert a = fv[ab[e, 0]]!;
-                            Vert b = fv[ab[e, 1]]!;
+                            Vert a = fv[Ab[e, 0]]!;
+                            Vert b = fv[Ab[e, 1]]!;
 
                             Face s = Face.Alloc(ref cache);
                             s.v[0] = a;
                             s.v[1] = b;
                             s.v[2] = _q;
 
-                            s.n = s.cross();
+                            s.n = s.Cross();
                             s.f[2] = n;
 
                             // change neighbour's adjacency from old visible face to cone side
@@ -1046,14 +1047,14 @@ internal sealed class CDelaBella : IDelaBella
             return 0;
         }
 
-        int anAdvance = advance_bytes / sizeof(double);
+        int advance = advance_bytes / sizeof(double);
         for (int i = 0; i < points; i++)
         {
             Vert v = vert_alloc![i];
             v.i = i;
-            v.x = x[i * anAdvance];
-            v.y = y[i * anAdvance];
-            v.z = s14sqr(v.x) + s14sqr(v.y);
+            v.x = x[i * advance];
+            v.y = y[i * advance];
+            v.z = S14sqr(v.x) + S14sqr(v.y);
         }
 
         out_verts = Triangulate();
@@ -1075,11 +1076,11 @@ internal sealed class CDelaBella : IDelaBella
 
     public override int GetNumOutputVerts() { return out_verts; }
 
-    public override DelaBella_Triangle? GetFirstDelaunayTriangle() { return first_dela_face; }
+    public override DelaunayTriangle? GetFirstDelaunayTriangle() { return first_dela_face; }
 
-    public override DelaBella_Triangle? GetFirstHullTriangle() { return first_hull_face; }
+    public override DelaunayTriangle? GetFirstHullTriangle() { return first_hull_face; }
 
-    public override DelaBella_Vertex? GetFirstHullVertex() { return first_hull_vert; }
+    public override DelaunayVertex? GetFirstHullVertex() { return first_hull_vert; }
 
     public override void SetErrLog(Func<object?, string, int>? proc, object? stream)
     {

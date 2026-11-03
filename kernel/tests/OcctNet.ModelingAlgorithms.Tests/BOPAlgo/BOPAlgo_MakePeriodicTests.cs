@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -25,21 +27,21 @@ public class BOPAlgo_MakePeriodicTests
     internal static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     internal static double Area(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     // The box of the corpus's periodicity/A1, trimmed to 5 x 8 x 12 (only 10 in Z: the box is shorter)
-    private static BOPAlgo_MakePeriodic TrimmedBox(Shape theBox, bool theParallel = false)
+    private static MakePeriodicAlgorithm TrimmedBox(Shape theBox, bool theParallel = false)
     {
-        BOPAlgo_MakePeriodic aMaker = new();
+        MakePeriodicAlgorithm aMaker = new();
         aMaker.SetShape(theBox);
         aMaker.MakePeriodic(0, true, 5);
         aMaker.SetTrimmed(0, false, 2);
@@ -57,7 +59,7 @@ public class BOPAlgo_MakePeriodicTests
         for (Explorer anExp = new(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
             {
                 return anExp.Current();
@@ -67,13 +69,13 @@ public class BOPAlgo_MakePeriodicTests
     }
 
     private static Shape Box(double theDX = 10.0, double theDY = 10.0, double theDZ = 10.0)
-        => new BRepPrimAPI_MakeBox(theDX, theDY, theDZ).Shape();
+        => new MakeBox(theDX, theDY, theDZ).Shape();
 
     [Fact]
     public void A_box_is_trimmed_to_the_periods_and_repeated()
     {
-        BOPAlgo_MakePeriodic aMaker = TrimmedBox(Box());
-        Assert.False(aMaker.HasErrors());
+        MakePeriodicAlgorithm aMaker = TrimmedBox(Box());
+        Assert.False(aMaker.HasErrors);
         Shape aP = aMaker.Shape();
         Assert.Equal(1, Count(aP, ShapeType.Solid));
         Assert.Equal(6, Count(aP, ShapeType.Face));
@@ -84,7 +86,7 @@ public class BOPAlgo_MakePeriodicTests
         Assert.Equal(6, Count(aMaker.RepeatedShape(), ShapeType.Solid));
         aMaker.RepeatShape(1, 5);
         aMaker.RepeatShape(2, 5);
-        Assert.False(aMaker.HasWarnings());
+        Assert.False(aMaker.HasWarnings);
         Shape aR = aMaker.RepeatedShape();
         Assert.Equal(216, Count(aR, ShapeType.Solid));
         Assert.Equal(936, Count(aR, ShapeType.Face));
@@ -105,12 +107,12 @@ public class BOPAlgo_MakePeriodicTests
     public void The_faces_of_the_trimmed_box_have_their_twins_in_X_and_Y()
     {
         // The box is 10 high and the Z period 12: its Z faces don't touch their copies and have no twins
-        BOPAlgo_MakePeriodic aMaker = TrimmedBox(Box());
+        MakePeriodicAlgorithm aMaker = TrimmedBox(Box());
         Shape aP = aMaker.Shape();
         for (Explorer anExp = new(aP, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(anExp.Current(), aProps);
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             Point3D aC = aProps.CentreOfMass();
             bool anIsZ = Math.Abs(aC.Z()) < 1e-9 || Math.Abs(aC.Z() - 10.0) < 1e-9;
             Assert.Equal(anIsZ ? 0 : 1, aMaker.GetTwins(anExp.Current()).Count);
@@ -121,20 +123,20 @@ public class BOPAlgo_MakePeriodicTests
     public void Repetitions_with_and_without_publishing_in_between_give_the_same_solids()
     {
         // Unpublished, the repetitions glue unfrozen shapes; published (frozen), non-destructively
-        BOPAlgo_MakePeriodic aMaker = TrimmedBox(Box());
+        MakePeriodicAlgorithm aMaker = TrimmedBox(Box());
         aMaker.InternalRepeatShape(0, 2);
         aMaker.InternalRepeatShape(1, -2);
         aMaker.InternalRepeatShape(2, 1);
-        Assert.False(aMaker.HasWarnings());
+        Assert.False(aMaker.HasWarnings);
         Assert.Equal(18, Count(aMaker.RepeatedShape(), ShapeType.Solid));
 
         // the periodic shape published first: its frozen sub-shapes are shared by the shape to repeat
-        BOPAlgo_MakePeriodic aMaker2 = TrimmedBox(Box());
+        MakePeriodicAlgorithm aMaker2 = TrimmedBox(Box());
         aMaker2.Shape();
         aMaker2.InternalRepeatShape(0, 2);
         aMaker2.InternalRepeatShape(1, -2);
         aMaker2.InternalRepeatShape(2, 1);
-        Assert.False(aMaker2.HasWarnings());
+        Assert.False(aMaker2.HasWarnings);
         // the gluing of frozen sub-shapes is non-destructive: the same solids, built differently
         Assert.Equal(18, Count(aMaker2.RepeatedShape(), ShapeType.Solid));
         Assert.Equal(Volume(aMaker.RepeatedShape()), Volume(aMaker2.RepeatedShape()), 1e-9);
@@ -145,12 +147,12 @@ public class BOPAlgo_MakePeriodicTests
     public void Opposite_sides_are_twins()
     {
         // A box made periodic along X with its own length: its ends are associated
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 4.0, 3.0, 2.0).Shape();
-        BOPAlgo_MakePeriodic aMaker = new();
+        Shape aBox = new MakeBox(new Point3D(0, 0, 0), 4.0, 3.0, 2.0).Shape();
+        MakePeriodicAlgorithm aMaker = new();
         aMaker.SetShape(aBox);
         aMaker.MakeXPeriodic(true, 4.0);
         aMaker.Perform();
-        Assert.False(aMaker.HasErrors());
+        Assert.False(aMaker.HasErrors);
         Shape aP = aMaker.Shape();
         Shape aXMin = FaceAt(aP, 0.0), aXMax = FaceAt(aP, 4.0);
         Assert.True(aMaker.GetTwins(aXMin).Single().IsSame(aXMax));
@@ -173,7 +175,7 @@ public class BOPAlgo_MakePeriodicTests
     {
         Shape aBox = Box();
         string aText = BRepTextComparison.Write(aBox);
-        BOPAlgo_MakePeriodic aMaker = TrimmedBox(aBox);
+        MakePeriodicAlgorithm aMaker = TrimmedBox(aBox);
         History aHistory = aMaker.History()!;
         Assert.Equal(aText, BRepTextComparison.Write(aBox));
         // the box is trimmed in all directions: its solid is modified, and the result is frozen
@@ -195,12 +197,12 @@ public class BOPAlgo_MakePeriodicTests
         // Untrimmed, the input itself is split by its translated copies (non-destructively, as OCCT does)
         Shape aBox = Box(5.0, 8.0, 3.0);
         string aText = BRepTextComparison.Write(aBox);
-        BOPAlgo_MakePeriodic aMaker = new();
+        MakePeriodicAlgorithm aMaker = new();
         aMaker.SetShape(aBox);
         aMaker.MakeXPeriodic(true, 5.0);
         aMaker.MakeYPeriodic(true, 8.0);
         aMaker.Perform();
-        Assert.False(aMaker.HasErrors());
+        Assert.False(aMaker.HasErrors);
         Assert.Equal(aText, BRepTextComparison.Write(aBox));
         Assert.Equal(120.0, Volume(aMaker.Shape()), 1e-9);
     }
@@ -208,24 +210,24 @@ public class BOPAlgo_MakePeriodicTests
     [Fact]
     public void No_periodicity_is_an_error()
     {
-        BOPAlgo_MakePeriodic aMaker = new();
+        MakePeriodicAlgorithm aMaker = new();
         aMaker.SetShape(Box());
         aMaker.MakeXPeriodic(true, 0.0);
         aMaker.MakeYPeriodic(false, 3.0);
         aMaker.Perform();
-        Assert.True(aMaker.HasError(typeof(BOPAlgo_AlertNoPeriodicityRequired)));
+        Assert.True(aMaker.HasError(typeof(AlertNoPeriodicityRequired)));
         Assert.Null(aMaker.History());
     }
 
     [Fact]
     public void The_parameters_and_their_accessors_are_OCCT_s()
     {
-        BOPAlgo_MakePeriodic aMaker = new();
-        Assert.True(aMaker.IsInputXTrimmed());
+        MakePeriodicAlgorithm aMaker = new();
+        Assert.True(aMaker.IsInputXTrimmed);
         aMaker.SetTrimmed(1, false, 3.0); // not periodic in Y: ignored
-        Assert.True(aMaker.IsInputYTrimmed());
+        Assert.True(aMaker.IsInputYTrimmed);
         aMaker.MakePeriodic(4, true, 2.5); // 4 % 3 = Y
-        Assert.True(aMaker.IsYPeriodic());
+        Assert.True(aMaker.IsYPeriodic);
         Assert.Equal(2.5, aMaker.YPeriod());
         aMaker.SetTrimmed(-1, false, 3.0); // |-1 % 3| = Y
         Assert.Equal(3.0, aMaker.YPeriodFirst());
@@ -235,26 +237,26 @@ public class BOPAlgo_MakePeriodicTests
         aMaker.MakeYPeriodic(false, 2.5);
         Assert.Equal(0.0, aMaker.YPeriod());
 
-        var aParams = new BOPAlgo_MakePeriodic.PeriodicityParams();
+        var aParams = new MakePeriodicAlgorithm.PeriodicityParams();
         Assert.True(aParams.myIsTrimmed[2]);
-        Assert.Equal(new BOPAlgo_MakePeriodic.PeriodicityParams(), aParams);
+        Assert.Equal(new MakePeriodicAlgorithm.PeriodicityParams(), aParams);
         aParams.myPeriodic[0] = true;
         aParams.myPeriod[0] = 2.0;
-        Assert.NotEqual(new BOPAlgo_MakePeriodic.PeriodicityParams(), aParams);
+        Assert.NotEqual(new MakePeriodicAlgorithm.PeriodicityParams(), aParams);
         aMaker.SetPeriodicityParameters(aParams);
         Assert.Equal(aParams, aMaker.PeriodicityParameters());
         Assert.Equal(2.0, aMaker.XPeriod());
         aMaker.Clear();
-        Assert.False(aMaker.IsXPeriodic());
+        Assert.False(aMaker.IsXPeriodic);
     }
 
     [Fact]
     public void Serial_equals_parallel()
     {
-        Shape aCylinder = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 1, -1), new Direction3D(0, 0, 1)), 2.0, 5.0).Shape();
+        Shape aCylinder = new ApiMakeCylinder(new Frame3D(new Point3D(1, 1, -1), new Direction3D(0, 0, 1)), 2.0, 5.0).Shape();
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
-            BOPAlgo_MakePeriodic aMaker = new();
+            MakePeriodicAlgorithm aMaker = new();
             aMaker.SetShape(aCylinder);
             aMaker.MakeXPeriodic(true, 3.0);
             aMaker.SetXTrimmed(false);

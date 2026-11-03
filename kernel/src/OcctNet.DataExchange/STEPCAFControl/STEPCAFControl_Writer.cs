@@ -118,7 +118,7 @@ public class STEPCAFControl_Writer
         }
 
         IFSelect_ReturnStatus aStatus = myWriter.Write(theFileName);
-        if (aStatus != IFSelect_RetDone)
+        if (aStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return aStatus;
         }
@@ -129,7 +129,7 @@ public class STEPCAFControl_Writer
         foreach (KeyValuePair<string, STEPCAFControl_ExternFile> anExtFileIter in myFiles)
         {
             STEPCAFControl_ExternFile anExtFile = anExtFileIter.Value;
-            if (anExtFile.GetWriteStatus() != IFSelect_RetVoid)
+            if (anExtFile.GetWriteStatus() != IFSelect_ReturnStatus.IFSelect_RetVoid)
             {
                 continue;
             }
@@ -144,7 +144,7 @@ public class STEPCAFControl_Writer
 
             IFSelect_ReturnStatus anExtStatus = anExtFile.GetWS().SendAll(aFileName);
             anExtFile.SetWriteStatus(anExtStatus);
-            if (anExtStatus != IFSelect_RetDone)
+            if (anExtStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 aStatus = anExtStatus;
             }
@@ -159,7 +159,7 @@ public class STEPCAFControl_Writer
         if (!myFiles.IsEmpty())
         {
             // writing external files is unsupported via stream interface
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
 
         return myWriter.WriteStream(theStream);
@@ -177,14 +177,14 @@ public class STEPCAFControl_Writer
     {
         ArgumentNullException.ThrowIfNull(theExternStreams);
         IFSelect_ReturnStatus aStatus = myWriter.WriteStream(theStream);
-        if (aStatus != IFSelect_RetDone)
+        if (aStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return aStatus;
         }
         foreach (KeyValuePair<string, STEPCAFControl_ExternFile> anExtFileIter in myFiles)
         {
             STEPCAFControl_ExternFile anExtFile = anExtFileIter.Value;
-            if (anExtFile.GetWriteStatus() != IFSelect_RetVoid)
+            if (anExtFile.GetWriteStatus() != IFSelect_ReturnStatus.IFSelect_RetVoid)
             {
                 continue;
             }
@@ -194,7 +194,7 @@ public class STEPCAFControl_Writer
             if (anExtStream is null || !anExtStream.CanWrite)
             {
                 anExtStream?.Dispose();
-                anExtStatus = IFSelect_RetError;
+                anExtStatus = IFSelect_ReturnStatus.IFSelect_RetError;
             }
             else
             {
@@ -204,7 +204,7 @@ public class STEPCAFControl_Writer
                 }
             }
             anExtFile.SetWriteStatus(anExtStatus);
-            if (anExtStatus != IFSelect_RetDone)
+            if (anExtStatus != IFSelect_ReturnStatus.IFSelect_RetDone)
             {
                 aStatus = anExtStatus;
             }
@@ -234,7 +234,7 @@ public class STEPCAFControl_Writer
     /// not null pointer, it switches to multifile mode (with external refs), and string pointed by &lt;multi&gt;
     /// gives prefix for names of extern files (can be empty string) Returns True if translation is OK
     /// </summary>
-    public bool Transfer(XdeDoc_Document theDoc, STEPControl_StepModelType theMode = STEPControl_AsIs,
+    public bool Transfer(XdeDoc_Document theDoc, STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs,
                          string? theMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
@@ -244,7 +244,7 @@ public class STEPCAFControl_Writer
     }
 
     /// <summary>Transfers a document (or single label) to a STEP model with the given parameters</summary>
-    public bool Transfer(XdeDoc_Document theDoc, in DESTEP_Parameters theParams, STEPControl_StepModelType theMode = STEPControl_AsIs,
+    public bool Transfer(XdeDoc_Document theDoc, in DESTEP_Parameters theParams, STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs,
                          string? theMulti = null, ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
@@ -257,7 +257,7 @@ public class STEPCAFControl_Writer
     }
 
     /// <summary>Method to transfer part of the document specified by label</summary>
-    public bool Transfer(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode = STEPControl_AsIs,
+    public bool Transfer(in XdeDoc_Label theLabel, STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs,
                          string? theIsMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
@@ -267,7 +267,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to transfer part of the document specified by label with the given parameters</summary>
     public bool Transfer(in XdeDoc_Label theLabel, in DESTEP_Parameters theParams,
-                         STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
+                         STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs, string? theIsMulti = null,
                          ProgressRange theProgress = default)
     {
         if (theLabel.IsNull())
@@ -284,7 +284,7 @@ public class STEPCAFControl_Writer
     }
 
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
-    public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, STEPControl_StepModelType theMode = STEPControl_AsIs,
+    public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs,
                          string? theIsMulti = null, ProgressRange theProgress = default)
     {
         StepData_StepModel aModel = myWriter.WS().Model() as StepData_StepModel;
@@ -294,7 +294,7 @@ public class STEPCAFControl_Writer
 
     /// <summary>Method to writing sequence of root assemblies or part of the file specified by use by one label</summary>
     public bool Transfer(NCollection_Sequence<XdeDoc_Label> theLabels, in DESTEP_Parameters theParams,
-                         STEPControl_StepModelType theMode = STEPControl_AsIs, string? theIsMulti = null,
+                         STEPControl_StepModelType theMode = STEPControl_StepModelType.STEPControl_AsIs, string? theIsMulti = null,
                          ProgressRange theProgress = default)
     {
         myRootLabels.Clear();
@@ -312,21 +312,21 @@ public class STEPCAFControl_Writer
 
     public bool Perform(XdeDoc_Document theDoc, string theFileName, ProgressRange theProgress = default)
     {
-        if (!Transfer(theDoc, STEPControl_AsIs, null, theProgress))
+        if (!Transfer(theDoc, STEPControl_StepModelType.STEPControl_AsIs, null, theProgress))
         {
             return false;
         }
-        return Write(theFileName) == IFSelect_RetDone;
+        return Write(theFileName) == IFSelect_ReturnStatus.IFSelect_RetDone;
     }
 
     public bool Perform(XdeDoc_Document theDoc, string theFileName, in DESTEP_Parameters theParams,
                         ProgressRange theProgress = default)
     {
-        if (!Transfer(theDoc, theParams, STEPControl_AsIs, null, theProgress))
+        if (!Transfer(theDoc, theParams, STEPControl_StepModelType.STEPControl_AsIs, null, theProgress))
         {
             return false;
         }
-        return Write(theFileName) == IFSelect_RetDone;
+        return Write(theFileName) == IFSelect_ReturnStatus.IFSelect_RetDone;
     }
 
     /// <summary>Returns data on external files Returns Null handle if no external files are read</summary>
@@ -429,10 +429,10 @@ public class STEPCAFControl_Writer
     public NCollection_DataMap<string, string> GetShapeFixParameters() => myWriter.GetShapeFixParameters();
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
-    public void SetShapeProcessFlags(ShapeProcess.OperationsFlags theFlags) => myWriter.SetShapeProcessFlags(theFlags);
+    public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags) => myWriter.SetShapeProcessFlags(theFlags);
 
     /// <summary>Returns flags defining operations to be performed on shapes.</summary>
-    public (ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags() => myWriter.GetShapeProcessFlags();
+    public (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags() => myWriter.GetShapeProcessFlags();
 
     /// <summary>
     /// Transfers labels to a STEP model Returns True if translation is OK isExternFile setting from transferExternFiles
@@ -570,7 +570,7 @@ public class STEPCAFControl_Writer
 
                 DESTEP_Parameters.WriteMode_Assembly assemblymode = aModel.InternalParameters.WriteAssembly;
                 aModel.InternalParameters.WriteAssembly = DESTEP_Parameters.WriteMode_Assembly.WriteMode_Assembly_On;
-                theWriter.Transfer(aSass, STEPControl_AsIs, aModel.InternalParameters, true, aPS1.Next());
+                theWriter.Transfer(aSass, STEPControl_StepModelType.STEPControl_AsIs, aModel.InternalParameters, true, aPS1.Next());
                 aModel.InternalParameters.WriteAssembly = assemblymode;
             }
         }
@@ -1245,16 +1245,16 @@ public class STEPCAFControl_Writer
                         aStyle.IsVisible = false;
                     }
                 }
-                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorGen, out ColorWithAlpha aColor))
+                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorType.XdeDoc_ColorGen, out ColorWithAlpha aColor))
                 {
                     aStyle.ColorCurv = aColor.GetRGB();
                     aStyle.ColorSurf = aColor;
                 }
-                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorSurf, out aColor))
+                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorType.XdeDoc_ColorSurf, out aColor))
                 {
                     aStyle.ColorSurf = aColor;
                 }
-                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorCurv, out aColor))
+                if (aSTool.GetColor(aSeqValue, XdeDoc_ColorType.XdeDoc_ColorCurv, out aColor))
                 {
                     aStyle.ColorCurv = aColor.GetRGB();
                 }

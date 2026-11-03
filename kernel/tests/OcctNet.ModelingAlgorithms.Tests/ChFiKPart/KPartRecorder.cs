@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Construction.Surfaces;
+using Kerf.Engine.Fillets.Analytic;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology;
@@ -10,8 +14,8 @@ using Kerf.Topology;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using static Occt.ChFiDS_ChamfMode;
-using static Occt.ChFi3d_Builder_0;
+using static Kerf.Engine.Fillets.Data.ChamfMode;
+using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
@@ -103,27 +107,27 @@ internal static class KPartRecorder
             global::Kerf.Engine.Exchange.Brep.GeomTools.Write(C, OS);
         }
 
-        internal void Cp(string theTag, in ChFiDS_CommonPoint P)
+        internal void Cp(string theTag, in CommonPoint P)
         {
-            L(theTag + " vertex " + (P.IsVertex() ? 1 : 0) + " arc " + (P.IsOnArc() ? 1 : 0) + " tol "
+            L(theTag + " vertex " + (P.IsVertex ? 1 : 0) + " arc " + (P.IsOnArc ? 1 : 0) + " tol "
               + R(P.Tolerance()) + " param " + R(P.Parameter()));
             P3("  point", P.Point());
-            if (P.HasVector())
+            if (P.HasVector)
             {
                 V3("  vector", P.Vector());
             }
-            if (P.IsOnArc())
+            if (P.IsOnArc)
             {
                 L("  onarc " + R(P.ParameterOnArc()) + " " + theOri[(int)P.TransitionOnArc()]);
             }
         }
 
-        internal void SurfData(ChFiDS_SurfData D)
+        internal void SurfData(SurfData D)
         {
             L("surf " + D.Surf() + " " + theOri[(int)D.Orientation()]);
             for (int i = 1; i <= 2; i++)
             {
-                ChFiDS_FaceInterference F = D.Interference(i);
+                FaceInterference F = D.Interference(i);
                 L("fi" + i + " line " + F.LineIndex() + " " + theOri[(int)F.Transition()] + " " + R(F.FirstParameter())
                   + " " + R(F.LastParameter()));
                 C2("pcface", F.PCurveOnFace());
@@ -140,9 +144,9 @@ internal static class KPartRecorder
             P2("p2d", d);
         }
 
-        internal void DS(TopOpeBRepDS_DataStructure DStr)
+        internal void DS(DsDataStructure DStr)
         {
-            string s = TopOpeBRepDS_TextDump.Write(DStr, new Shape());
+            string s = TextDump.Write(DStr, new Shape());
             L("ds " + s.Count(c => c == '\n'));
             OS.Write(s);
         }
@@ -166,7 +170,7 @@ internal static class KPartRecorder
 
     private static void FacesOf(in Shape S, in Edge E, out Face F1, out Face F2)
     {
-        ChFiDS_Map M = new();
+        Map M = new();
         M.Fill(S, ShapeType.Edge, ShapeType.Face);
         ChFi3d_conexfaces(E, out F1, out F2, M);
     }
@@ -184,42 +188,42 @@ internal static class KPartRecorder
         bool aSwap = aBase != theName;
         switch (aBase)
         {
-            case "fil_pln_pln": KPart(o, S, 5, 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_cyl_line": KPart(o, S, CylQLines(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_cyl_circle": KPart(o, S, CylQCircles(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_cyl_full": KPart(o, S, Circles(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_cyl_sphere": KPart(o, S, Circles(S)[0], 0, 50, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_con_bottom": KPart(o, S, Circles(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "fil_pln_con_top": KPart(o, S, Circles(S)[1], 0, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_pln": KPart(o, S, 5, 1, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_pln_two": KPart(o, S, 5, 2, 10, 20, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_pln_angle": KPart(o, S, 5, 3, 10, 0.6, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_pln_throat": KPart(o, S, 5, 1, 10, 0, ChFiDS_ConstThroatChamfer, aSwap); break;
+            case "fil_pln_pln": KPart(o, S, 5, 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_cyl_line": KPart(o, S, CylQLines(S)[0], 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_cyl_circle": KPart(o, S, CylQCircles(S)[0], 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_cyl_full": KPart(o, S, Circles(S)[0], 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_cyl_sphere": KPart(o, S, Circles(S)[0], 0, 50, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_con_bottom": KPart(o, S, Circles(S)[0], 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "fil_pln_con_top": KPart(o, S, Circles(S)[1], 0, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_pln": KPart(o, S, 5, 1, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_pln_two": KPart(o, S, 5, 2, 10, 20, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_pln_angle": KPart(o, S, 5, 3, 10, 0.6, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_pln_throat": KPart(o, S, 5, 1, 10, 0, ChamfMode.ConstThroatChamfer, aSwap); break;
             case "ch_pln_pln_penetration":
-                KPart(o, S, 5, 2, 10, 15, ChFiDS_ConstThroatWithPenetrationChamfer, aSwap);
+                KPart(o, S, 5, 2, 10, 15, ChamfMode.ConstThroatWithPenetrationChamfer, aSwap);
                 break;
-            case "ch_pln_cyl_line": KPart(o, S, CylQLines(S)[0], 1, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_cyl_line_two": KPart(o, S, CylQLines(S)[0], 2, 10, 20, ChFiDS_ClassicChamfer, aSwap); break;
+            case "ch_pln_cyl_line": KPart(o, S, CylQLines(S)[0], 1, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_cyl_line_two": KPart(o, S, CylQLines(S)[0], 2, 10, 20, ChamfMode.ClassicChamfer, aSwap); break;
             case "ch_pln_cyl_line_angle":
-                KPart(o, S, CylQLines(S)[0], 3, 10, 0.6, ChFiDS_ClassicChamfer, aSwap);
+                KPart(o, S, CylQLines(S)[0], 3, 10, 0.6, ChamfMode.ClassicChamfer, aSwap);
                 break;
-            case "ch_pln_cyl_circle": KPart(o, S, Circles(S)[0], 1, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_cyl_circle_two": KPart(o, S, Circles(S)[0], 2, 10, 20, ChFiDS_ClassicChamfer, aSwap); break;
+            case "ch_pln_cyl_circle": KPart(o, S, Circles(S)[0], 1, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_cyl_circle_two": KPart(o, S, Circles(S)[0], 2, 10, 20, ChamfMode.ClassicChamfer, aSwap); break;
             case "ch_pln_cyl_circle_angle":
-                KPart(o, S, Circles(S)[0], 3, 10, 0.6, ChFiDS_ClassicChamfer, aSwap);
+                KPart(o, S, Circles(S)[0], 3, 10, 0.6, ChamfMode.ClassicChamfer, aSwap);
                 break;
             case "ch_pln_cyl_circle_throat":
-                KPart(o, S, Circles(S)[0], 1, 10, 0, ChFiDS_ConstThroatChamfer, aSwap);
+                KPart(o, S, Circles(S)[0], 1, 10, 0, ChamfMode.ConstThroatChamfer, aSwap);
                 break;
             case "ch_pln_cyl_circle_penetration":
-                KPart(o, S, Circles(S)[0], 2, 10, 15, ChFiDS_ConstThroatWithPenetrationChamfer, aSwap);
+                KPart(o, S, Circles(S)[0], 2, 10, 15, ChamfMode.ConstThroatWithPenetrationChamfer, aSwap);
                 break;
-            case "ch_pln_con": KPart(o, S, Circles(S)[0], 1, 10, 0, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_con_two": KPart(o, S, Circles(S)[1], 2, 10, 20, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_con_angle": KPart(o, S, Circles(S)[0], 3, 10, 0.6, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_con_angle_top": KPart(o, S, Circles(S)[1], 3, 10, 0.6, ChFiDS_ClassicChamfer, aSwap); break;
-            case "ch_pln_con_throat": KPart(o, S, Circles(S)[0], 1, 10, 0, ChFiDS_ConstThroatChamfer, aSwap); break;
-            case "fil_cyl_cyl_not_implemented": KPart(o, S, Lines(S)[0], 0, 10, 0, ChFiDS_ClassicChamfer, false); break;
+            case "ch_pln_con": KPart(o, S, Circles(S)[0], 1, 10, 0, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_con_two": KPart(o, S, Circles(S)[1], 2, 10, 20, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_con_angle": KPart(o, S, Circles(S)[0], 3, 10, 0.6, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_con_angle_top": KPart(o, S, Circles(S)[1], 3, 10, 0.6, ChamfMode.ClassicChamfer, aSwap); break;
+            case "ch_pln_con_throat": KPart(o, S, Circles(S)[0], 1, 10, 0, ChamfMode.ConstThroatChamfer, aSwap); break;
+            case "fil_cyl_cyl_not_implemented": KPart(o, S, Lines(S)[0], 0, 10, 0, ChamfMode.ClassicChamfer, false); break;
             case "corner_torus_cylinder":
                 CornerTorus(o, new CylindricalSurface(new CoordinateSystem(), 20.0));
                 break;
@@ -293,7 +297,7 @@ internal static class KPartRecorder
     }
 
     private static void KPart(Out o, in Shape S, int k, int theKind, double a, double b,
-                              ChFiDS_ChamfMode theMode, bool theSwap)
+                              ChamfMode theMode, bool theSwap)
     {
         try
         {
@@ -305,12 +309,12 @@ internal static class KPartRecorder
             }
             FaceSurfaceAdaptor HS1 = new(F1);
             FaceSurfaceAdaptor HS2 = new(F2);
-            int aChoix = ChFi3d.ConcaveSide(HS1, HS2, E, out Orientation Or1, out Orientation Or2);
+            int aChoix = global::Kerf.Engine.Fillets.ChFi3d.ConcaveSide(HS1, HS2, E, out Orientation Or1, out Orientation Or2);
             o.L("concave " + aChoix + " " + theOri[(int)Or1] + " " + theOri[(int)Or2]);
-            ChFiDS_Spine Sp;
+            Spine Sp;
             if (theKind == 0)
             {
-                ChFiDS_FilSpine fs = new();
+                FilSpine fs = new();
                 fs.SetEdges(E);
                 fs.Load();
                 fs.SetRadius(a);
@@ -318,7 +322,7 @@ internal static class KPartRecorder
             }
             else
             {
-                ChFiDS_ChamfSpine cs = new();
+                ChamfSpine cs = new();
                 cs.SetEdges(E);
                 if (theKind == 1)
                 {
@@ -336,9 +340,9 @@ internal static class KPartRecorder
                 Sp = cs;
             }
             Sp.Load();
-            TopOpeBRepDS_DataStructure DStr = new();
-            ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.Compute(DStr, Data, HS1, HS2, Or1, Or2, Sp, 1);
+            DsDataStructure DStr = new();
+            SurfData Data = new();
+            bool ok = ComputeData.Compute(DStr, Data, HS1, HS2, Or1, Or2, Sp, 1);
             o.L("ok " + (ok ? 1 : 0));
             o.SurfData(Data);
             o.DS(DStr);
@@ -355,9 +359,9 @@ internal static class KPartRecorder
         {
             SurfaceAdaptor HS1 = new(new PlaneSurface(new Plane3D()));
             SurfaceAdaptor HS2 = new(S2);
-            TopOpeBRepDS_DataStructure DStr = new();
-            ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward,
+            DsDataStructure DStr = new();
+            SurfData Data = new();
+            bool ok = ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward,
                                                           Forward, Reversed, 5.0, 20.0,
                                                           new Point2D(15, 0), new Point2D(0, 15), new Point2D(0, 0),
                                                           new Point2D(Math.PI / 2, 0));
@@ -377,9 +381,9 @@ internal static class KPartRecorder
         {
             SurfaceAdaptor HS1 = new(new PlaneSurface(new Plane3D()));
             SurfaceAdaptor HS2 = new(new CylindricalSurface(new CoordinateSystem(), 10.0));
-            TopOpeBRepDS_DataStructure DStr = new();
-            ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward, Or1,
+            DsDataStructure DStr = new();
+            SurfData Data = new();
+            bool ok = ComputeData.ComputeCorner(DStr, Data, HS1, HS2, Forward, Forward, Or1,
                                                           Forward, theRad, new Point2D(0.0, 0.0),
                                                           new Point2D(0.0, 10.0), new Point2D(Math.PI / 2, 10.0));
             o.L("ok " + (ok ? 1 : 0));
@@ -401,9 +405,9 @@ internal static class KPartRecorder
             FaceSurfaceAdaptor HS = new(F);
             FaceSurfaceAdaptor H1 = new(FaceOf(S, f1));
             FaceSurfaceAdaptor H2 = new(FaceOf(S, f2));
-            TopOpeBRepDS_DataStructure DStr = new();
-            ChFiDS_SurfData Data = new();
-            bool ok = ChFiKPart_ComputeData.ComputeCorner(DStr, Data, HS, H1, H2, F.Orientation(), OS, OS1, OS2, 10.0);
+            DsDataStructure DStr = new();
+            SurfData Data = new();
+            bool ok = ComputeData.ComputeCorner(DStr, Data, HS, H1, H2, F.Orientation(), OS, OS1, OS2, 10.0);
             o.L("ok " + (ok ? 1 : 0));
             o.SurfData(Data);
             o.DS(DStr);
@@ -448,7 +452,7 @@ internal static class KPartRecorder
                                           new Vector2D(0.2, 1), true));
         o.C2("bezier", ChFi3d_BuildPCurve(aCyl, new Point2D(0.2, 0), new Vector3D(0, 1, 0.5), new Point2D(1.5, 2),
                                           new Vector3D(-1, 0, 1), true));
-        GeomFill_Boundary aB = ChFi3d_mkbound(aCyl, out Curve2D aCurv, new Point2D(0.2, 0), new Point2D(1.5, 2),
+        Boundary aB = ChFi3d_mkbound(aCyl, out Curve2D aCurv, new Point2D(0.2, 0), new Point2D(1.5, 2),
                                               1.0e-4, 1.0e-2);
         o.C2("mkbound", aCurv);
         for (int i = 0; i <= 4; i++)
@@ -460,7 +464,7 @@ internal static class KPartRecorder
     private static void ComputeArete(Out o)
     {
         Surface aCyl = new CylindricalSurface(new CoordinateSystem(), 3.0);
-        ChFiDS_CommonPoint P1 = new(), P2 = new();
+        CommonPoint P1 = new(), P2 = new();
         Point2D[,] aUV = { { new(1, 0.5), new(1, 4) }, { new(2, 1), new(0.5, 1) }, { new(0.5, 0.5), new(2, 3) } };
         for (int i = 0; i < 3; i++)
         {
@@ -637,7 +641,7 @@ internal static class KPartRecorder
 
     private static void Topology(Out o, in Shape S)
     {
-        ChFiDS_Map EF = new(), VE = new(), VF = new();
+        Map EF = new(), VE = new(), VF = new();
         EF.Fill(S, ShapeType.Edge, ShapeType.Face);
         VE.Fill(S, ShapeType.Vertex, ShapeType.Edge);
         VF.Fill(S, ShapeType.Vertex, ShapeType.Face);
@@ -686,12 +690,12 @@ internal static class KPartRecorder
     {
         try
         {
-            ChFiDS_FilSpine fs = new();
+            FilSpine fs = new();
             fs.SetEdges(EdgeOf(S, k));
             fs.Load();
             fs.SetRadius(1.0);
-            ChFiDS_Spine Sp = fs;
-            ChFiDS_ElSpine HES = new();
+            Spine Sp = fs;
+            ElSpine HES = new();
             HES.FirstParameter(WF);
             HES.LastParameter(WL);
             Sp.D1(WF, out Point3D P, out Vector3D V);

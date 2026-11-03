@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -16,7 +18,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ShapeFix_ShapeToleranceTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+    private static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
     private static List<Shape> Subs(Shape theShape, ShapeType theType)
     {
@@ -32,7 +34,7 @@ public class ShapeFix_ShapeToleranceTests
     public void LimitTolerance_InPlace_RaisesAndLowers()
     {
         Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _);
-        var aTool = new ShapeFix_ShapeTolerance();
+        var aTool = new ShapeToleranceFixer();
         Assert.True(aTool.LimitTolerance(aBox, 1e-3));
         Assert.All(Subs(aBox, ShapeType.Edge), e => Assert.Equal(1e-3, Tool.Tolerance(ShapeCasts.Edge(e))));
         Assert.All(Subs(aBox, ShapeType.Face), f => Assert.Equal(1e-3, Tool.Tolerance(ShapeCasts.Face(f))));
@@ -47,8 +49,8 @@ public class ShapeFix_ShapeToleranceTests
     {
         // OCCT: in WIRE mode only the vertices' changes make the result true
         Shape aW = BrepTools.ExactCopyForWrite(
-            new BRepBuilderAPI_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire(), out _);
-        var aTool = new ShapeFix_ShapeTolerance();
+            new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire(), out _);
+        var aTool = new ShapeToleranceFixer();
         aTool.SetTolerance(aW, 1e-3, ShapeType.Vertex);
         Assert.False(aTool.LimitTolerance(aW, 1e-4, 1e-2, ShapeType.Wire)); // edges raised from 1e-7, not counted
         Assert.All(Subs(aW, ShapeType.Edge), e => Assert.Equal(1e-4, Tool.Tolerance(ShapeCasts.Edge(e))));
@@ -58,7 +60,7 @@ public class ShapeFix_ShapeToleranceTests
     public void SetTolerance_InPlace_ByType()
     {
         Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _);
-        var aTool = new ShapeFix_ShapeTolerance();
+        var aTool = new ShapeToleranceFixer();
         aTool.SetTolerance(aBox, 0.5, ShapeType.Wire);
         Assert.All(Subs(aBox, ShapeType.Vertex), v => Assert.Equal(0.5, Tool.Tolerance(ShapeCasts.Vertex(v))));
         Assert.All(Subs(aBox, ShapeType.Edge), e => Assert.Equal(0.5, Tool.Tolerance(ShapeCasts.Edge(e))));
@@ -72,7 +74,7 @@ public class ShapeFix_ShapeToleranceTests
     {
         Shape aBox = Box();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        var aTool = new ShapeFix_ShapeTolerance();
+        var aTool = new ShapeToleranceFixer();
 
         Shape aRes = aTool.WithTolerance(aBox, 0.5, ShapeType.Face);
         aSnap.AssertUnchanged(aBox);

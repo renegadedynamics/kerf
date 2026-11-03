@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -62,7 +66,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
         Face F = ShapeCasts.Face(Shape);
         Surface thesurf = Tool.Surface(F)!; // pas locface
-        var aClassifier = new BRepTopAdaptor_FClass2d(F, global::Kerf.Engine.Foundation.Precision.Confusion());
+        var aClassifier = new FClass2d(F, global::Kerf.Engine.Foundation.Precision.Confusion());
         //  On y va
         double X, Y, Z, U, V;
         X = U = theDI.Atof(argv[2]);
@@ -93,7 +97,7 @@ internal static class SWDRAWShapeAnalysisCommands
             double du = Math.Abs(ul - uf) / 10;
             double dv = Math.Abs(vl - vf) / 10;
 
-            var proj = new GeomAPI_ProjectPointOnSurf(P3D, thesurf, uf - du, ul + du, vf - dv, vl + dv);
+            var proj = new ProjectPointOnSurface(P3D, thesurf, uf - du, ul + du, vf - dv, vl + dv);
             int sol, nPSurf = proj.NbPoints();
             int anIndSol = 0, anIndMin = 0;
             double aMinDist = global::Kerf.Engine.Foundation.Standard.RealLast();
@@ -201,11 +205,11 @@ internal static class SWDRAWShapeAnalysisCommands
         X = theDI.Atof(argv[2 + i0]);
         Y = theDI.Atof(argv[3 + i0]);
         Z = theDI.Atof(argv[4 + i0]);
-        di.Append("Precision (BRepBuilderAPI) : ").Append(BRepBuilderAPI.Precision()).Append("  Projection : ").Append(X)
+        di.Append("Precision (BRepBuilderAPI) : ").Append(BRepBuilderApi.Precision()).Append("  Projection : ").Append(X)
           .Append("  ").Append(Y).Append("  ").Append(Z).Append("\n");
 
         var P3D = new Point3D(X, Y, Z);
-        double dist = new ShapeAnalysis_Curve().Project(C!, P3D, BRepBuilderAPI.Precision(), out Point3D res, out double param, cf, cl);
+        double dist = new CurveAnalysis().Project(C!, P3D, BRepBuilderApi.Precision(), out Point3D res, out double param, cf, cl);
         res.Coord(out X, out Y, out Z);
         di.Append("Result : ").Append(X).Append("  ").Append(Y).Append("  ").Append(Z).Append("\nParam = ").Append(param)
           .Append("  Gap = ").Append(dist).Append("\n");
@@ -255,7 +259,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
         Point3D aPnt;
         double aParam;
-        var aTool = new ShapeAnalysis_Curve();
+        var aTool = new CurveAnalysis();
         double aDist;
         if (IsStartPoint)
         {
@@ -298,7 +302,7 @@ internal static class SWDRAWShapeAnalysisCommands
             return 1 /* Error */;
         }
 
-        var analyzer = new ShapeAnalysis_ShapeContents();
+        var analyzer = new ShapeContentsAnalysis();
         if (arg3 is not null)
         {
             // strstr("bigspl", arg3): the option is a part of the keyword
@@ -320,33 +324,33 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         di.Append("Count    Item\n-----    ----\n");
-        Line(analyzer.NbEdges(), "\t EDGE (Oriented)\n");
-        Line(analyzer.NbSharedEdges(), "\t EDGE (Shared)\n");
-        Line(analyzer.NbFreeEdges(), "\t EDGE (Free)\n");
-        Line(analyzer.NbFaces(), "\t FACE\n");
-        Line(analyzer.NbFreeFaces(), "\t FACE (Free)\n");
-        Line(analyzer.NbFreeWires(), "\t WIRE (Free)\n");
-        Line(analyzer.NbShells(), "\t SHELL\n");
-        Line(analyzer.NbSolids(), "\t SOLID\n");
-        Line(analyzer.NbVertices(), "\t VERTEX (Oriented)\n");
-        Line(analyzer.NbSharedVertices(), "\t VERTEX (Shared)\n");
-        Line(analyzer.NbWires(), "\t WIRE\n");
-        Line(analyzer.NbFaceWithSevWires(), "\tFace with more than one wire\n");
-        Line(analyzer.NbNoPCurve(), "\tNo pcurve\n");
-        Line(analyzer.NbSolidsWithVoids(), "\tSOLID with voids\n");
-        Line(analyzer.NbWireWitnSeam(), "\tWire(s) with one seam edge\n");
-        Line(analyzer.NbWireWithSevSeams(), "\tWire(s) with several seam edges\n");
-        Line(analyzer.NbBigSplines(), "\tbigspl : BSpline > 8192 poles\n");
-        Line(analyzer.NbBezierSurf(), "\tbezsur : BezierSurface\n");
-        Line(analyzer.NbBSplibeSurf(), "\tbspsur : BSplineSurface\n");
-        Line(analyzer.NbC0Curves(), "\tc0curv : Curve Only C0\n");
-        Line(analyzer.NbC0Surfaces(), "\tc0surf : Surface Only C0\n");
-        Line(analyzer.NbIndirectSurf(), "\tindsur : Indirect Surface\n");
-        Line(analyzer.NbOffsetCurves(), "\tofcur  : Offset Curve(s)\n");
-        Line(analyzer.NbOffsetSurf(), "\tofsur  : Offset Surface\n");
-        Line(analyzer.NbTrimmedCurve2d(), "\ttrc2d  : Trimmed Curve2d\n");
-        Line(analyzer.NbTrimmedCurve3d(), "\ttrc3d  : Trimmed Curve3d\n");
-        Line(analyzer.NbTrimSurf(), "\ttrimsu : RectangularTrimmedSurface\n");
+        Line(analyzer.EdgeCount, "\t EDGE (Oriented)\n");
+        Line(analyzer.SharedEdgeCount, "\t EDGE (Shared)\n");
+        Line(analyzer.FreeEdgeCount, "\t EDGE (Free)\n");
+        Line(analyzer.FaceCount, "\t FACE\n");
+        Line(analyzer.FreeFaceCount, "\t FACE (Free)\n");
+        Line(analyzer.FreeWireCount, "\t WIRE (Free)\n");
+        Line(analyzer.ShellCount, "\t SHELL\n");
+        Line(analyzer.SolidCount, "\t SOLID\n");
+        Line(analyzer.VertexCount, "\t VERTEX (Oriented)\n");
+        Line(analyzer.SharedVertexCount, "\t VERTEX (Shared)\n");
+        Line(analyzer.WireCount, "\t WIRE\n");
+        Line(analyzer.FaceWithSevWireCount, "\tFace with more than one wire\n");
+        Line(analyzer.NoPCurveCount, "\tNo pcurve\n");
+        Line(analyzer.SolidsWithVoidCount, "\tSOLID with voids\n");
+        Line(analyzer.WireWitnSeamCount, "\tWire(s) with one seam edge\n");
+        Line(analyzer.WireWithSevSeamCount, "\tWire(s) with several seam edges\n");
+        Line(analyzer.BigSplineCount, "\tbigspl : BSpline > 8192 poles\n");
+        Line(analyzer.BezierSurfCount, "\tbezsur : BezierSurface\n");
+        Line(analyzer.BSplibeSurfCount, "\tbspsur : BSplineSurface\n");
+        Line(analyzer.C0CurveCount, "\tc0curv : Curve Only C0\n");
+        Line(analyzer.C0SurfaceCount, "\tc0surf : Surface Only C0\n");
+        Line(analyzer.IndirectSurfCount, "\tindsur : Indirect Surface\n");
+        Line(analyzer.OffsetCurveCount, "\tofcur  : Offset Curve(s)\n");
+        Line(analyzer.OffsetSurfCount, "\tofsur  : Offset Surface\n");
+        Line(analyzer.TrimmedCurve2dCount, "\ttrc2d  : Trimmed Curve2d\n");
+        Line(analyzer.TrimmedCurve3dCount, "\ttrc3d  : Trimmed Curve3d\n");
+        Line(analyzer.TrimSurfCount, "\ttrimsu : RectangularTrimmedSurface\n");
 
         if (arg3 is null)
         {
@@ -421,7 +425,7 @@ internal static class SWDRAWShapeAnalysisCommands
         int num = 0;
         double max = 0, min = 0, ave = 0.0;
         double relmax = 0, relmin = 0, relave = 0.0;
-        var sae = new ShapeAnalysis_Edge();
+        var sae = new EdgeAnalysis();
         Edge edmax = new(), edmaxrel = new();
         for (var exp = new Explorer(shape, ShapeType.Edge); exp.More(); exp.Next())
         {
@@ -547,14 +551,14 @@ internal static class SWDRAWShapeAnalysisCommands
             splitopen = theDI.Atoi(a[4]) != 0;
         }
 
-        ShapeAnalysis_FreeBounds F;
+        FreeBounds F;
         if (toler <= 0)
         {
-            F = new ShapeAnalysis_FreeBounds(shape, splitclosed, splitopen);
+            F = new FreeBounds(shape, splitclosed, splitopen);
         }
         else
         {
-            F = new ShapeAnalysis_FreeBounds(shape, toler, splitclosed, splitopen);
+            F = new FreeBounds(shape, toler, splitclosed, splitopen);
         }
 
         Shape wires = F.GetClosedWires();
@@ -569,13 +573,13 @@ internal static class SWDRAWShapeAnalysisCommands
         return 0;
     }
 
-    private static void PrintProps(int i, ShapeAnalysis_FreeBoundData fbd, DrawResult di)
+    private static void PrintProps(int i, FreeBoundDataAnalysis fbd, DrawResult di)
     {
         double area = fbd.Area();
         double perimeter = fbd.Perimeter();
         double ratio = fbd.Ratio();
         double width = fbd.Width();
-        int notch = fbd.NbNotches();
+        int notch = fbd.NotchCount;
         // Sprintf(" %d\t%12.5f\t%12.5f\t%12.5f\t%12.5f\t%d")
         di.Append(" ").Append(i).Append("\t").Append(Fixed(area)).Append("\t").Append(Fixed(perimeter)).Append("\t")
           .Append(Fixed(ratio)).Append("\t").Append(Fixed(width)).Append("\t").Append(notch).Append("\n");
@@ -614,7 +618,7 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             splitopen = theDI.Atoi(a[4]) != 0;
         }
-        var analyzer = new ShapeAnalysis_FreeBoundsProperties();
+        var analyzer = new FreeBoundsPropertiesAnalysis();
         if (toler > 0)
         {
             analyzer.Init(source, toler, splitclosed, splitopen);
@@ -626,7 +630,7 @@ internal static class SWDRAWShapeAnalysisCommands
         analyzer.Perform();
         var B = new BrepBuilder();
 
-        int nb = analyzer.NbClosedFreeBounds();
+        int nb = analyzer.ClosedFreeBoundCount;
         di.Append("\n");
         di.Append(" \tArea mm2\tLength mm\tRatio L/W\tWidth mm\tNb notch\n");
         var closed = new Compound();
@@ -636,13 +640,13 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("Closed bounds properties\n");
             for (int i = 1; i <= nb; i++)
             {
-                ShapeAnalysis_FreeBoundData fbd = analyzer.ClosedFreeBound(i);
+                FreeBoundDataAnalysis fbd = analyzer.ClosedFreeBound(i);
                 PrintProps(i, fbd, di);
                 B.Add(closed, fbd.FreeBound());
             }
         }
 
-        nb = analyzer.NbOpenFreeBounds();
+        nb = analyzer.OpenFreeBoundCount;
         var open = new Compound();
         B.MakeCompound(ref open);
         if (nb != 0)
@@ -650,7 +654,7 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("Open bounds properties\n");
             for (int i = 1; i <= nb; i++)
             {
-                ShapeAnalysis_FreeBoundData fbd = analyzer.OpenFreeBound(i);
+                FreeBoundDataAnalysis fbd = analyzer.OpenFreeBound(i);
                 PrintProps(i, fbd, di);
                 B.Add(open, fbd.FreeBound());
             }
@@ -688,14 +692,14 @@ internal static class SWDRAWShapeAnalysisCommands
             splitopen = theDI.Atoi(a[4]) != 0; // OCCT reads a[4], not a[5]
         }
 
-        ShapeFix_FreeBounds F;
+        FreeBoundsFixer F;
         if (sewtoler <= 0)
         {
-            F = new ShapeFix_FreeBounds(shape, closetoler, splitclosed, splitopen);
+            F = new FreeBoundsFixer(shape, closetoler, splitclosed, splitopen);
         }
         else
         {
-            F = new ShapeFix_FreeBounds(shape, sewtoler, closetoler, splitclosed, splitopen);
+            F = new FreeBoundsFixer(shape, sewtoler, closetoler, splitclosed, splitopen);
         }
 
         Shape wires = F.GetClosedWires();
@@ -727,7 +731,7 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("invalid type of argument\n");
             return 1;
         }
-        double anArea = ShapeAnalysis.ContourArea(ShapeCasts.Wire(shape));
+        double anArea = ShapeAnalysisAnalysis.ContourArea(ShapeCasts.Wire(shape));
         di.Append("Area = ").Append(anArea).Append("\n");
         return 0;
     }
@@ -764,8 +768,8 @@ internal static class SWDRAWShapeAnalysisCommands
         // If the face is null, make a plane inside the wire.
         if (face.IsNull)
         {
-            var mkFace = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(wire), true);
-            if (mkFace.IsDone())
+            var mkFace = new MakeFace(ShapeCasts.Wire(wire), true);
+            if (mkFace.IsDone)
             {
                 face = mkFace.Face();
             }
@@ -776,7 +780,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
         }
 
-        var analyser = new ShapeAnalysis_Wire(ShapeCasts.Wire(wire), ShapeCasts.Face(face), global::Kerf.Engine.Foundation.Precision.Confusion());
+        var analyser = new WireAnalysis(ShapeCasts.Wire(wire), ShapeCasts.Face(face), global::Kerf.Engine.Foundation.Precision.Confusion());
         bool result = analyser.CheckSelfIntersection();
 
         if (result)
@@ -820,7 +824,7 @@ internal static class SWDRAWShapeAnalysisCommands
         }
 
         // Analysis of the edge.
-        var analyser = new ShapeAnalysis_Edge();
+        var analyser = new EdgeAnalysis();
         bool isOk = true;
 
         // Curve 3D.
@@ -940,7 +944,7 @@ internal static class SWDRAWShapeAnalysisCommands
             }
         }
 
-        var aCanonRec = new ShapeAnalysis_CanonicalRecognition(sh);
+        var aCanonRec = new CanonicalRecognitionAnalysis(sh);
         Surface? aRes = null;
         switch (aTargets[isurf])
         {
@@ -1056,7 +1060,7 @@ internal static class SWDRAWShapeAnalysisCommands
             tol = theDI.Atof(a[4]);
         }
 
-        var aCanonRec = new ShapeAnalysis_CanonicalRecognition(sh);
+        var aCanonRec = new CanonicalRecognitionAnalysis(sh);
         Curve3D? aRes = null;
         switch (aTargets[icurv])
         {

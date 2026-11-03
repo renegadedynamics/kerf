@@ -2,202 +2,204 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>
     /// Checks for the self-interferences acquired by the arguments during the operation: shared vertices, common
     /// blocks and section shapes connecting several sub-shapes of one argument
-    /// (<see cref="BOPAlgo_AlertAcquiredSelfIntersection"/> warnings).
+    /// (<see cref="AlertAcquiredSelfIntersection"/> warnings).
     /// </summary>
     protected void CheckSelfInterference()
     {
-        if (myArguments.Extent() == 1)
+        if (_arguments.Extent() == 1)
         {
             // Self-interference mode
             return;
         }
         //
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
         Span<int> nVs = stackalloc int[2];
         //
-        int i, aNbR = myDS!.NbRanges();
-        for (i = 0; i < aNbR; ++i)
+        int i, nbR = _ds!.RangeCount;
+        for (i = 0; i < nbR; ++i)
         {
-            BOPDS_IndexRange aR = myDS.Range(i);
+            IndexRange r = _ds.Range(i);
             //
             // Map of connections of interfering shapes
-            NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> aMCSI =
+            NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> mcsi =
                 new(ShapeHasher.Instance);
-            NCollection_Map<BOPDS_CommonBlock> aMCBFence = new();
+            NCollection_Map<CommonBlock> mcbFence = new();
             //
-            int j = aR.First(), aRLast = aR.Last();
-            for (; j <= aRLast; ++j)
+            int j = r.First(), rLast = r.Last();
+            for (; j <= rLast; ++j)
             {
-                BOPDS_ShapeInfo aSI = myDS.ShapeInfo(j);
-                if (!aSI.HasReference())
+                ShapeInfo si = _ds.ShapeInfo(j);
+                if (!si.HasReference)
                 {
                     // No pave blocks and no face info
                     continue;
                 }
                 //
-                Shape aS = aSI.Shape();
+                Shape s = si.Shape();
                 //
-                if (aSI.ShapeType() == ShapeType.Edge)
+                if (si.ShapeType() == ShapeType.Edge)
                 {
-                    if (aSI.HasFlag())
+                    if (si.HasFlag())
                     {
                         continue;
                     }
                     //
                     // Analyze the shared vertices and common blocks
                     //
-                    NCollection_IntMap aMSubS = new();
-                    NCollection_List<int>.Iterator aItLI = new(aSI.SubShapes());
-                    for (; aItLI.More(); aItLI.Next())
+                    NCollection_IntMap mSubS = new();
+                    NCollection_List<int>.Iterator itLI = new(si.SubShapes());
+                    for (; itLI.More(); itLI.Next())
                     {
-                        int nV = aItLI.Value();
-                        myDS.HasShapeSD(nV, ref nV);
-                        aMSubS.Add(nV);
+                        int nV = itLI.Value();
+                        _ds.HasShapeSD(nV, ref nV);
+                        mSubS.Add(nV);
                     }
                     //
-                    NCollection_List<BOPDS_PaveBlock> aLPB = myDS.PaveBlocks(j);
-                    bool bAnalyzeV = aLPB.Extent() > 1;
+                    NCollection_List<PaveBlock> lpb = _ds.PaveBlocks(j);
+                    bool bAnalyzeV = lpb.Extent() > 1;
                     //
-                    NCollection_List<BOPDS_PaveBlock>.Iterator aIt = new(aLPB);
-                    for (; aIt.More(); aIt.Next())
+                    NCollection_List<PaveBlock>.Iterator it = new(lpb);
+                    for (; it.More(); it.Next())
                     {
-                        BOPDS_PaveBlock aPB = aIt.Value();
+                        PaveBlock pb = it.Value();
                         //
                         // Check the vertices
                         if (bAnalyzeV)
                         {
-                            aPB.Indices(out nVs[0], out nVs[1]);
+                            pb.Indices(out nVs[0], out nVs[1]);
                             for (int k = 0; k < 2; ++k)
                             {
-                                if (!aR.Contains(nVs[k]) && !aMSubS.Contains(nVs[k]))
+                                if (!r.Contains(nVs[k]) && !mSubS.Contains(nVs[k]))
                                 {
                                     // Add connection
-                                    Shape aV = myDS.Shape(nVs[k]);
-                                    AddConnection(aMCSI, aV, aS);
+                                    Shape v = _ds.Shape(nVs[k]);
+                                    AddConnection(mcsi, v, s);
                                 }
                             }
                         }
                         //
                         // Check common blocks
-                        if (myDS.IsCommonBlock(aPB))
+                        if (_ds.IsCommonBlock(pb))
                         {
-                            BOPDS_CommonBlock aCB = myDS.CommonBlock(aPB)!;
-                            if (aMCBFence.Add(aCB))
+                            CommonBlock cb = _ds.CommonBlock(pb)!;
+                            if (mcbFence.Add(cb))
                             {
-                                NCollection_List<BOPDS_PaveBlock> aLPBCB = aCB.PaveBlocks();
+                                NCollection_List<PaveBlock> lpbcb = cb.PaveBlocks();
                                 //
-                                NCollection_List<int> aLE = new();
-                                NCollection_List<BOPDS_PaveBlock>.Iterator aItCB = new(aLPBCB);
-                                for (; aItCB.More(); aItCB.Next())
+                                NCollection_List<int> le = new();
+                                NCollection_List<PaveBlock>.Iterator itCB = new(lpbcb);
+                                for (; itCB.More(); itCB.Next())
                                 {
-                                    BOPDS_PaveBlock aPBCB = aItCB.Value();
-                                    int nEOr = aPBCB.OriginalEdge();
-                                    if (aR.Contains(nEOr))
+                                    PaveBlock pbcb = itCB.Value();
+                                    int nEOr = pbcb.OriginalEdge();
+                                    if (r.Contains(nEOr))
                                     {
-                                        aLE.Append(nEOr);
+                                        le.Append(nEOr);
                                     }
                                 }
                                 //
-                                if (aLE.Extent() > 1)
+                                if (le.Extent() > 1)
                                 {
                                     // Add the acquired self-interference warning:
                                     // The same common block contains several edges from one argument
-                                    Compound aWC = new();
-                                    aBB.MakeCompound(ref aWC);
+                                    Compound wc = new();
+                                    bb.MakeCompound(ref wc);
                                     //
-                                    NCollection_List<int>.Iterator aItLE = new(aLE);
-                                    for (; aItLE.More(); aItLE.Next())
+                                    NCollection_List<int>.Iterator itLE = new(le);
+                                    for (; itLE.More(); itLE.Next())
                                     {
-                                        Shape aE1 = myDS.Shape(aItLE.Value());
-                                        aBB.Add(aWC, aE1);
+                                        Shape e1 = _ds.Shape(itLE.Value());
+                                        bb.Add(wc, e1);
                                     }
                                     //
-                                    AddWarning(new BOPAlgo_AlertAcquiredSelfIntersection(aWC));
+                                    AddWarning(new AlertAcquiredSelfIntersection(wc));
                                 }
                             }
                         }
                     }
                 }
-                else if (aSI.ShapeType() == ShapeType.Face)
+                else if (si.ShapeType() == ShapeType.Face)
                 {
                     // Analyze IN and Section vertices and edges of the faces
-                    BOPDS_FaceInfo aFI = myDS.FaceInfo(j);
+                    FaceInfo fi = _ds.FaceInfo(j);
                     //
                     for (int k = 0; k < 2; ++k)
                     {
-                        NCollection_IntMap aMVF = k == 0 ? aFI.VerticesIn() : aFI.VerticesSc();
-                        foreach (int aVIndex in aMVF)
+                        NCollection_IntMap mvf = k == 0 ? fi.VerticesIn() : fi.VerticesSc();
+                        foreach (int vIndex in mvf)
                         {
-                            Shape aV = myDS.Shape(aVIndex);
+                            Shape v = _ds.Shape(vIndex);
                             // add connection
-                            AddConnection(aMCSI, aV, aS);
+                            AddConnection(mcsi, v, s);
                         }
                     }
                     //
                     for (int k = 0; k < 2; ++k)
                     {
-                        NCollection_IndexedMap<BOPDS_PaveBlock> aMPBF = k == 0 ? aFI.PaveBlocksIn() : aFI.PaveBlocksSc();
-                        int iPB, aNbPB = aMPBF.Extent();
-                        for (iPB = 1; iPB <= aNbPB; ++iPB)
+                        NCollection_IndexedMap<PaveBlock> mpbf = k == 0 ? fi.PaveBlocksIn() : fi.PaveBlocksSc();
+                        int iPB, nbPB = mpbf.Extent();
+                        for (iPB = 1; iPB <= nbPB; ++iPB)
                         {
-                            BOPDS_PaveBlock aPB = aMPBF[iPB];
+                            PaveBlock pb = mpbf[iPB];
                             // OCCT's Standard_ASSERT(aPB->HasEdge(), ..., continue): in release builds it only continues.
-                            if (!aPB.HasEdge())
+                            if (!pb.HasEdge())
                             {
                                 continue;
                             }
-                            Shape aE = myDS.Shape(aPB.Edge());
+                            Shape e = _ds.Shape(pb.Edge());
                             // add connection
-                            AddConnection(aMCSI, aE, aS);
+                            AddConnection(mcsi, e, s);
                         }
                     }
                 }
             }
             //
             // Analyze connections
-            int aNbC = aMCSI.Extent();
-            for (j = 1; j <= aNbC; ++j)
+            int nbC = mcsi.Extent();
+            for (j = 1; j <= nbC; ++j)
             {
-                NCollection_IndexedMap<Shape> aMCS = aMCSI[j];
-                if (aMCS.Extent() > 1)
+                NCollection_IndexedMap<Shape> mcs = mcsi[j];
+                if (mcs.Extent() > 1)
                 {
                     // Add acquired self-interference warning:
                     // Several faces from one argument contain the same vertex or edge
-                    Compound aWC = new();
-                    aBB.MakeCompound(ref aWC);
+                    Compound wc = new();
+                    bb.MakeCompound(ref wc);
                     //
-                    int iS, aNbS = aMCS.Extent();
-                    for (iS = 1; iS <= aNbS; ++iS)
+                    int iS, nbS = mcs.Extent();
+                    for (iS = 1; iS <= nbS; ++iS)
                     {
-                        Shape aSx = aMCS[iS];
-                        aBB.Add(aWC, aSx);
+                        Shape sx = mcs[iS];
+                        bb.Add(wc, sx);
                     }
-                    AddWarning(new BOPAlgo_AlertAcquiredSelfIntersection(aWC));
+                    AddWarning(new AlertAcquiredSelfIntersection(wc));
                 }
             }
         }
     }
 
     // OCCT's ChangeSeek-or-Add of the connection map, written once.
-    private static void AddConnection(NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> theMCSI,
-                                      in Shape theKey, in Shape theShape)
+    private static void AddConnection(NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> mcsi,
+                                      in Shape key, in Shape shape)
     {
-        int anIndex = theMCSI.FindIndex(theKey);
-        NCollection_IndexedMap<Shape> pMSOr = anIndex > 0
-            ? theMCSI[anIndex]
-            : theMCSI[theMCSI.Add(theKey, new NCollection_IndexedMap<Shape>(ShapeHasher.Instance))];
-        pMSOr.Add(theShape);
+        int index = mcsi.FindIndex(key);
+        NCollection_IndexedMap<Shape> pMSOr = index > 0
+            ? mcsi[index]
+            : mcsi[mcsi.Add(key, new NCollection_IndexedMap<Shape>(ShapeHasher.Instance))];
+        pMSOr.Add(shape);
     }
 }

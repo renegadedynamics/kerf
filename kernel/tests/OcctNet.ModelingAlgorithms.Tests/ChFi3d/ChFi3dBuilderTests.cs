@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -15,7 +20,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class ChFi3dBuilderTests
 {
-    private static Shape Box() => new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
+    private static Shape Box() => new MakeBox(100, 100, 100).Shape();
 
     private static double[] VertexTolerances(in Shape S)
     {
@@ -33,12 +38,12 @@ public class ChFi3dBuilderTests
         // ChFi3d_Builder::Compute hands the data structure to myCoup->Perform: unit 7R's reconstruction on the
         // Boolean engine (decision 992's seam)
         Shape aBox = Box();
-        ChFi3d_FilBuilder aB = new(aBox);
-        Assert.IsType<ChFi3d_BOPReconstruction>(aB.Builder());
+        FilBuilder aB = new(aBox);
+        Assert.IsType<BOPReconstruction>(aB.Builder());
         aB.Add(10, ChFi3dBuilderNativeTests.EdgeOf(aBox, 5));
         aB.Compute();
-        Assert.True(aB.IsDone());
-        Assert.True(new BRepCheck_Analyzer(aB.Shape()).IsValid());
+        Assert.True(aB.IsDone);
+        Assert.True(new Analyzer(aB.Shape()).IsValid());
         Assert.Equal(1, ReconComparison.Count(aB.Shape(), ShapeType.Solid));
     }
 
@@ -51,13 +56,13 @@ public class ChFi3dBuilderTests
         Shape aBox = Box();
         Assert.True(BrepTools.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
-        (ChFi3d_FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
+        (FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 10)));
         Assert.Equal(1, aRec.NbPerform);
         Assert.False(aB.WorkingShape().IsSame(aBox));
         Assert.Equal(aBefore, VertexTolerances(aBox));
         // every shape of the data structure is the working copy's
-        TopOpeBRepDS_DataStructure DS = aRec.HDS!.DS();
+        DsDataStructure DS = aRec.HDS!.DS();
         NCollection_IndexedMap<Shape> aWork = new(ShapeHasher.Instance);
         Exploration.MapShapes(aB.WorkingShape(), aWork);
         NCollection_IndexedMap<Shape> anInput = new(ShapeHasher.Instance);
@@ -74,7 +79,7 @@ public class ChFi3dBuilderTests
     {
         Shape aBox = Box();
         Edge E = ChFi3dBuilderNativeTests.EdgeOf(aBox, 5);
-        ChFi3d_FilBuilder aB = new(aBox);
+        FilBuilder aB = new(aBox);
         aB.Add(10, E);
         Assert.Equal(1, aB.NbElements());
         Assert.Equal(1, aB.Contains(E));
@@ -94,7 +99,7 @@ public class ChFi3dBuilderTests
     [Fact]
     public void ANoEdgeComputeThrowsAsOcct()
     {
-        ChFi3d_FilBuilder aB = new(Box());
+        FilBuilder aB = new(Box());
         FailureException e = Assert.Throws<FailureException>(aB.Compute);
         Assert.Equal("There are no suitable edges for chamfer or fillet", e.Message);
     }
@@ -104,15 +109,15 @@ public class ChFi3dBuilderTests
     {
         // build123d.NET's "fillet too large" (MalformedInputTests): every contour faulty, ChFiDS_StartsolFailure (no start solution),
         // Perform never reached (native: tools/dsrec's b3d_fail_box_fillet_too_large)
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
-        (ChFi3d_FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
+        Shape aBox = new MakeBox(1, 1, 1).Shape();
+        (FilBuilder aB, ChFi3dBuilderNativeTests.RecordingReconstruction aRec) =
             ChFi3dBuilderNativeTests.RunFillet(aBox, Enumerable.Range(1, 12).Select(k => new ChFi3dBuilderNativeTests.CaseEdge(k, 5)));
         Assert.Equal(0, aRec.NbPerform);
-        Assert.False(aB.IsDone());
-        Assert.Equal(12, aB.NbFaultyContours());
+        Assert.False(aB.IsDone);
+        Assert.Equal(12, aB.FaultyContourCount);
         for (int ic = 1; ic <= aB.NbElements(); ic++)
         {
-            Assert.Equal(ChFiDS_ErrorStatus.ChFiDS_StartsolFailure, aB.StripeStatus(ic));
+            Assert.Equal(ErrorStatus.StartsolFailure, aB.StripeStatus(ic));
         }
         Assert.Throws<NoSuchObjectException>(() => aB.Shape());
     }

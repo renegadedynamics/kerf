@@ -7,6 +7,11 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -26,7 +31,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
     private static void RemoveSinglePCurve(in Edge aEdge, in Face aFace)
     {
-        new ShapeBuild_Edge().RemovePCurve(aEdge, aFace);
+        new BuildEdgeBuilder().RemovePCurve(aEdge, aFace);
     }
 
     private static void RemovePCurves(in Wire aWire, in Face aFace)
@@ -53,8 +58,8 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         double w1, w2, cf, cl;
         Surface mySurf = Tool.Surface(aFace);
 
-        var sbwd = new ShapeExtend_WireData(aWire);
-        for (int i = 1; i <= sbwd.NbEdges(); i++)
+        var sbwd = new ExtendWireData(aWire);
+        for (int i = 1; i <= sbwd.EdgeCount; i++)
         {
             Edge myEdge = sbwd.Edge(i);
 
@@ -64,7 +69,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             //                           w2 > LastParameter  => w2 = LastParameter
 
             Curve2D thePC;
-            var sae = new ShapeAnalysis_Edge();
+            var sae = new EdgeAnalysis();
             if (!sae.PCurve(myEdge, aFace, out thePC, out w1, out w2, false))
             {
                 continue;
@@ -109,7 +114,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
     public StepToTopoDS_TranslateEdgeLoop()
     {
-        myError = StepToTopoDS_TranslateEdgeLoopOther;
+        myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
         done = false;
     }
 
@@ -139,7 +144,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         if (aTool.IsBound(EL))
         {
             myResult = ShapeCasts.Wire(aTool.Find(EL));
-            myError = StepToTopoDS_TranslateEdgeLoopDone;
+            myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopDone;
             done = true;
             return;
         }
@@ -627,12 +632,12 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
 
                         bool ForwardEdge = (CumulO == Forward);
 
-                        int forwardPC = new ShapeAnalysis_Curve().SelectForwardSeam(C2d1, C2d2);
+                        int forwardPC = new CurveAnalysis().SelectForwardSeam(C2d1, C2d2);
                         if (forwardPC == 0)
                         {
                             TP.AddFail(EC, " Seam curve not mapped");
                             done = false;
-                            myError = StepToTopoDS_TranslateEdgeLoopOther;
+                            myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
                             continue;
                         }
                         else if (!ForwardEdge)
@@ -676,7 +681,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                     {
                         TP.AddFail(EC, " Seam curve not mapped");
                         done = false;
-                        myError = StepToTopoDS_TranslateEdgeLoopOther;
+                        myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
                         continue;
                     }
                 }
@@ -696,7 +701,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                         {
                             TP.AddFail(EC, " Edge: Trimming of 2D curve failed");
                             done = false;
-                            myError = StepToTopoDS_TranslateEdgeLoopOther;
+                            myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
                             continue;
                         }
                     }
@@ -706,14 +711,14 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
                 {
                     TP.AddFail(EC, " an Edge not mapped");
                     done = false;
-                    myError = StepToTopoDS_TranslateEdgeLoopOther;
+                    myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
                 }
             }
             else
             { // The Edge is Not mapped => switch to next wire ?
                 TP.AddFail(EC, " an Edge not mapped");
                 done = false;
-                myError = StepToTopoDS_TranslateEdgeLoopOther;
+                myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopOther;
             }
 
             if (done)
@@ -753,10 +758,10 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
             for (var EdgeIt = new Iterator(W); EdgeIt.More(); EdgeIt.Next())
             {
                 Edge edge = ShapeCasts.Edge(EdgeIt.Value());
-                ShapeFix_EdgeProjAux myEdgePro = ShapeAlgo.AlgoContainer().ToolContainer().EdgeProjAux();
+                EdgeProjAuxFixer myEdgePro = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().ToolContainer().EdgeProjAux();
                 myEdgePro.Init(Face, edge);
                 myEdgePro.Compute(preci);
-                if (myEdgePro.IsFirstDone() && myEdgePro.IsLastDone())
+                if (myEdgePro.IsFirstDone && myEdgePro.IsLastDone)
                 {
                     if (Math.Abs(myEdgePro.FirstParam() - myEdgePro.LastParam()) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
@@ -773,7 +778,7 @@ public sealed class StepToTopoDS_TranslateEdgeLoop : StepToTopoDS_Root
         }
 
         myResult = W;
-        myError = StepToTopoDS_TranslateEdgeLoopDone;
+        myError = StepToTopoDS_TranslateEdgeLoopError.StepToTopoDS_TranslateEdgeLoopDone;
         done = true;
 
         //  Check des PCurves SYSTEMATIQUE, s il n y en a que quelques unes

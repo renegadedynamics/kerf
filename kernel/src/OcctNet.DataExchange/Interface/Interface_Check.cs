@@ -366,13 +366,13 @@ public class Interface_Check : Transient
     {
         if (thefails is not null)
         {
-            return Interface_CheckFail;
+            return Interface_CheckStatus.Interface_CheckFail;
         }
         if (thewarns is not null)
         {
-            return Interface_CheckWarning;
+            return Interface_CheckStatus.Interface_CheckWarning;
         }
-        return Interface_CheckOK;
+        return Interface_CheckStatus.Interface_CheckOK;
     }
 
     /// <summary>
@@ -384,17 +384,17 @@ public class Interface_Check : Transient
         bool nof = thefails is null;
         switch (status)
         {
-            case Interface_CheckOK:
+            case Interface_CheckStatus.Interface_CheckOK:
                 return (nof && now);
-            case Interface_CheckWarning:
+            case Interface_CheckStatus.Interface_CheckWarning:
                 return (nof && !now);
-            case Interface_CheckFail:
+            case Interface_CheckStatus.Interface_CheckFail:
                 return !nof;
-            case Interface_CheckAny:
+            case Interface_CheckStatus.Interface_CheckAny:
                 return true;
-            case Interface_CheckMessage:
+            case Interface_CheckStatus.Interface_CheckMessage:
                 return (!nof || !now);
-            case Interface_CheckNoFail:
+            case Interface_CheckStatus.Interface_CheckNoFail:
                 return nof;
             default:
                 break;
@@ -416,7 +416,7 @@ public class Interface_Check : Transient
             return false;
         }
         int lng = mess.Length();
-        if (status == Interface_CheckWarning || status == Interface_CheckAny)
+        if (status == Interface_CheckStatus.Interface_CheckWarning || status == Interface_CheckStatus.Interface_CheckAny)
         {
             int i, nb = NbWarnings();
             for (i = nb; i > 0; i--)
@@ -445,7 +445,7 @@ public class Interface_Check : Transient
                 }
             }
         }
-        if (status == Interface_CheckFail || status == Interface_CheckAny)
+        if (status == Interface_CheckStatus.Interface_CheckFail || status == Interface_CheckStatus.Interface_CheckAny)
         {
             int i, nb = NbWarnings(); // OCCT: the fails branch looks at the warnings (copied from above)
             for (i = nb; i > 0; i--)
@@ -550,7 +550,7 @@ public class Interface_Check : Transient
         }
         bool res = false;
         int lng = mess.Length();
-        if (status == Interface_CheckWarning || status == Interface_CheckAny)
+        if (status == Interface_CheckStatus.Interface_CheckWarning || status == Interface_CheckStatus.Interface_CheckAny)
         {
             int i, nb = NbWarnings();
             for (i = nb; i > 0; i--)
@@ -577,7 +577,7 @@ public class Interface_Check : Transient
                 }
             }
         }
-        if (status == Interface_CheckFail || status == Interface_CheckAny)
+        if (status == Interface_CheckStatus.Interface_CheckFail || status == Interface_CheckStatus.Interface_CheckAny)
         {
             int i, nb = NbWarnings(); // OCCT: the fails branch looks at the warnings (copied from above)
             for (i = nb; i > 0; i--)

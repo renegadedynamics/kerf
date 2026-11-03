@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Fillets.Blend;
+using Kerf.Engine.Fillets.BlendFunctions;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -71,31 +74,31 @@ public class BlendFuncDerivativeTests
         return aRoot.Root();
     }
 
-    private static IEnumerable<(string Name, Blend_Function F)> Functions(PairCase C)
+    private static IEnumerable<(string Name, BlendFunction F)> Functions(PairCase C)
     {
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
-        BlendFunc_ConstRad aConstRad = new(S1, S2, G);
+        ConstRad aConstRad = new(S1, S2, G);
         aConstRad.Set(1.0, 1);
         yield return ("constrad", aConstRad);
-        Law_Linear aLaw = new();
+        Linear aLaw = new();
         aLaw.Set(G.FirstParameter(), 0.8, G.LastParameter(), 1.4);
-        BlendFunc_EvolRad anEvolRad = new(S1, S2, G, aLaw);
+        EvolRad anEvolRad = new(S1, S2, G, aLaw);
         anEvolRad.Set(1);
         yield return ("evolrad", anEvolRad);
-        BlendFunc_Chamfer aChamfer = new(S1, S2, G);
+        Chamfer aChamfer = new(S1, S2, G);
         aChamfer.Set(1.0, 1.5, 1);
         yield return ("chamfer", aChamfer);
-        BlendFunc_ConstThroat aThroat = new(S1, S2, G);
+        ConstThroat aThroat = new(S1, S2, G);
         aThroat.Set(0.7, 0.0, 1);
         yield return ("constthroat", aThroat);
-        BlendFunc_ConstThroatWithPenetration aPen = new(S1, S2, G);
+        ConstThroatWithPenetration aPen = new(S1, S2, G);
         aPen.Set(1.0, 0.0, 1);
         yield return ("constthroatpen", aPen);
-        BlendFunc_ChAsym aChAsym = new(S1, S2, G);
+        ChAsym aChAsym = new(S1, S2, G);
         aChAsym.Set(1.0, Math.PI / 3.0, 1);
         yield return ("chasym", aChAsym);
-        yield return ("ruled", new BlendFunc_Ruled(S1, S2, G));
+        yield return ("ruled", new Ruled(S1, S2, G));
     }
 
     public static TheoryData<int> Pairs() => new() { 0, 1, 2, 3, 4 };
@@ -105,7 +108,7 @@ public class BlendFuncDerivativeTests
     public void SurfaceFunctions_DerivativesMatchFiniteDifferences(int thePair)
     {
         PairCase C = THE_PAIRS[thePair];
-        foreach ((string aName, Blend_Function F) in Functions(C))
+        foreach ((string aName, BlendFunction F) in Functions(C))
         {
             F.Set(C.W);
             math_Vector X0 = new(1, 4), Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4);
@@ -135,28 +138,28 @@ public class BlendFuncDerivativeTests
         }
     }
 
-    private static IEnumerable<(string Name, Blend_FuncInv F)> InverseFunctions(PairCase C)
+    private static IEnumerable<(string Name, FuncInv F)> InverseFunctions(PairCase C)
     {
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
-        BlendFunc_ConstRadInv aConstRad = new(S1, S2, G);
+        ConstRadInv aConstRad = new(S1, S2, G);
         aConstRad.Set(1.0, 1);
         yield return ("constradinv", aConstRad);
-        Law_Linear aLaw = new();
+        Linear aLaw = new();
         aLaw.Set(G.FirstParameter(), 0.8, G.LastParameter(), 1.4);
-        BlendFunc_EvolRadInv anEvolRad = new(S1, S2, G, aLaw);
+        EvolRadInv anEvolRad = new(S1, S2, G, aLaw);
         anEvolRad.Set(1);
         yield return ("evolradinv", anEvolRad);
-        BlendFunc_ChamfInv aChamf = new(S1, S2, G);
+        ChamfInv aChamf = new(S1, S2, G);
         aChamf.Set(1.0, 1.5, 1);
         yield return ("chamfinv", aChamf);
-        BlendFunc_ConstThroatWithPenetrationInv aPen = new(S1, S2, G);
+        ConstThroatWithPenetrationInv aPen = new(S1, S2, G);
         aPen.Set(1.0, 0.0, 1);
         yield return ("constthroatpeninv", aPen);
-        BlendFunc_ChAsymInv aChAsym = new(S1, S2, G);
+        ChAsymInv aChAsym = new(S1, S2, G);
         aChAsym.Set(1.0, Math.PI / 3.0, 1);
         yield return ("chasyminv", aChAsym);
-        yield return ("ruledinv", new BlendFunc_RuledInv(S1, S2, G));
+        yield return ("ruledinv", new RuledInv(S1, S2, G));
     }
 
     [Theory]
@@ -171,7 +174,7 @@ public class BlendFuncDerivativeTests
         PairCase C = THE_PAIRS[thePair];
         Curve2DAdaptorBase R = new CurveAdaptor2D(
             new LineCurve2D(new Point2D(theX, theY), new Direction2D(theDX, theDY)), -10.0, 10.0);
-        foreach ((string aName, Blend_FuncInv F) in InverseFunctions(C))
+        foreach ((string aName, FuncInv F) in InverseFunctions(C))
         {
             F.Set(theOnFirst, R);
             math_Vector X0 = new(1, 4);
@@ -193,7 +196,7 @@ public class BlendFuncDerivativeTests
         // OCCT: Derivatives computes the derivative of the plane's normal with the plane's offset where Values has
         // -nplan.d2cur, so their second columns differ off the origin (decision 1038); the other columns agree.
         PairCase C = THE_PAIRS[0];
-        BlendFunc_ConstRadInv F = new(Surf(C.S1), Surf(C.S2), Guide(C.G));
+        ConstRadInv F = new(Surf(C.S1), Surf(C.S2), Guide(C.G));
         F.Set(1.0, 1);
         F.Set(true, new CurveAdaptor2D(new LineCurve2D(new Point2D(5, 0), new Direction2D(0, 1)), -10.0, 10.0));
         math_Vector X = new(1, 4);
@@ -219,7 +222,7 @@ public class BlendFuncDerivativeTests
     {
         SurfaceAdaptorBase S = Surf(0);
         CurveAdaptorBase C = Guide(4), G = Guide(0);
-        BlendFunc_CSConstRad aCS = new(S, C, G);
+        CSConstRad aCS = new(S, C, G);
         aCS.Set(1.0, 1);
         aCS.Set(3.0);
         math_Vector X3 = new(1, 3);
@@ -228,9 +231,9 @@ public class BlendFuncDerivativeTests
         X3[3] = 3.0;
         CheckValues(aCS, X3, "csconstrad");
 
-        Law_Linear aLaw = new();
+        Linear aLaw = new();
         aLaw.Set(0.0, 0.0, 10.0, 10.0);
-        BlendFunc_CSCircular aCirc = new(S, C, G, aLaw);
+        CSCircular aCirc = new(S, C, G, aLaw);
         aCirc.Set(1.0, 1);
         aCirc.Set(3.0);
         math_Vector X2 = new(1, 2);
@@ -247,7 +250,7 @@ public class BlendFuncDerivativeTests
         PairCase C = THE_PAIRS[1];
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
-        BlendFunc_ConstRad F = new(S1, S2, G);
+        ConstRad F = new(S1, S2, G);
         F.Set(1.0, 1);
         F.Set(G.FirstParameter(), G.LastParameter());
 
@@ -257,14 +260,14 @@ public class BlendFuncDerivativeTests
             X0[i] = C.X0[i - 1];
         }
 
-        Blend_Point PointAt(double W)
+        BlendPoint PointAt(double W)
         {
             F.Set(W);
             F.GetTolerance(Tol, 1.0e-10);
             F.GetBounds(Inf, Sup);
             math_Vector aSol = Solve(F, X0, Tol, Inf, Sup);
             Assert.True(F.IsSolution(aSol, 1.0e-9));
-            return new Blend_Point(F.PointOnS1(), F.PointOnS2(), W, aSol[1], aSol[2], aSol[3], aSol[4],
+            return new BlendPoint(F.PointOnS1(), F.PointOnS2(), W, aSol[1], aSol[2], aSol[3], aSol[4],
                                    F.TangentOnS1(), F.TangentOnS2(), F.Tangent2dOnS1(), F.Tangent2dOnS2());
         }
 

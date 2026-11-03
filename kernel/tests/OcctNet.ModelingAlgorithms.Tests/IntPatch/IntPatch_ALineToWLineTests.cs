@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -18,18 +20,18 @@ public class IntPatch_ALineToWLineTests
     private static CoordinateSystem Ax(double x, double y, double z, double dx, double dy, double dz) =>
         new(new Point3D(x, y, z), new Direction3D(dx, dy, dz));
 
-    private static (NCollection_Sequence<IntPatch_Line> Lines, int NbALines) Convert(
+    private static (NCollection_Sequence<PatchLine> Lines, int NbALines) Convert(
         SurfaceAdaptor theS1, SurfaceAdaptor theS2, int theNbPoints = 200)
     {
-        var anII = new IntPatch_ImpImpIntersection(theS1, new TopolTool(theS1), theS2,
+        var anII = new ImpImpIntersection(theS1, new TopolTool(theS1), theS2,
                                                    new TopolTool(theS2), Tol, Tol);
-        Assert.True(anII.IsDone());
-        var aConv = new IntPatch_ALineToWLine(theS1, theS2, theNbPoints);
-        var aLines = new NCollection_Sequence<IntPatch_Line>();
+        Assert.True(anII.IsDone);
+        var aConv = new ALineToWLine(theS1, theS2, theNbPoints);
+        var aLines = new NCollection_Sequence<PatchLine>();
         int aNbA = 0;
-        for (int i = 1; i <= anII.NbLines(); i++)
+        for (int i = 1; i <= anII.LineCount; i++)
         {
-            if (anII.Line(i) is IntPatch_ALine anA)
+            if (anII.Line(i) is ALine anA)
             {
                 aNbA++;
                 aConv.MakeWLine(anA, aLines);
@@ -38,27 +40,27 @@ public class IntPatch_ALineToWLineTests
         return (aLines, aNbA);
     }
 
-    private static void Check(NCollection_Sequence<IntPatch_Line> theLines, SurfaceAdaptor theS1,
+    private static void Check(NCollection_Sequence<PatchLine> theLines, SurfaceAdaptor theS1,
                               SurfaceAdaptor theS2)
     {
         Assert.True(theLines.Length() > 0);
         for (int i = 1; i <= theLines.Length(); i++)
         {
-            var aWL = Assert.IsType<IntPatch_WLine>(theLines.Value(i));
-            Assert.Equal(IntPatch_Walking, aWL.ArcType());
-            Assert.Equal(IntPatch_WLine.IntPatch_WLType.IntPatch_WLImpImp, aWL.GetCreatingWay());
-            Assert.False(aWL.IsPurgingAllowed());
+            var aWL = Assert.IsType<WLine>(theLines.Value(i));
+            Assert.Equal(PatchLineType.Walking, aWL.ArcType());
+            Assert.Equal(WLine.IntPatch_WLType.WLImpImp, aWL.GetCreatingWay());
+            Assert.False(aWL.IsPurgingAllowed);
             Assert.True(aWL.NbPnts() > 1);
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
-                IntSurf_PntOn2S aP = aWL.Point(k);
+                PntOn2S aP = aWL.Point(k);
                 aP.Parameters(out double u1, out double v1, out double u2, out double v2);
                 Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < 1.0e-6, $"line {i} point {k} off S1");
                 Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < 1.0e-6, $"line {i} point {k} off S2");
             }
-            for (int k = 1; k <= aWL.NbVertex(); k++)
+            for (int k = 1; k <= aWL.VertexCount; k++)
             {
-                IntPatch_Point aV = aWL.Vertex(k);
+                PatchPoint aV = aWL.Vertex(k);
                 double aPar = aV.ParameterOnLine();
                 Assert.InRange(aPar, 1.0, aWL.NbPnts());
                 Assert.True(aWL.Point((int)aPar).Value().Distance(aV.Value()) < 1.0e-6, $"line {i} vertex {k}");
@@ -120,7 +122,7 @@ public class IntPatch_ALineToWLineTests
             var aSb = new System.Text.StringBuilder();
             for (int i = 1; i <= aLines.Length(); i++)
             {
-                var aWL = (IntPatch_WLine)aLines.Value(i);
+                var aWL = (WLine)aLines.Value(i);
                 for (int k = 1; k <= aWL.NbPnts(); k++)
                 {
                     aWL.Point(k).Parameters(out double u1, out double v1, out double u2, out double v2);
@@ -143,7 +145,7 @@ public class IntPatch_ALineToWLineTests
     public void Tolerances()
     {
         var aCyl = new SurfaceAdaptor(new CylindricalSurface(Ax(0, 0, 0, 0, 0, 1), 1));
-        var aConv = new IntPatch_ALineToWLine(aCyl, aCyl);
+        var aConv = new ALineToWLine(aCyl, aCyl);
         Assert.Equal(1.0e-9, aConv.TolOpenDomain());
         Assert.Equal(1.0e-8, aConv.TolTransition());
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aConv.Tol3D());

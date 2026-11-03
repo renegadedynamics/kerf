@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -171,7 +173,7 @@ internal static class BRepTestCommands
         }
         else
         {
-            var trf = new BRepBuilderAPI_Transform(T);
+            var trf = new Transform(T);
             for (int i = 1; i < last; i++)
             {
                 Shape S = theDI.GetShape(a[i]);
@@ -182,7 +184,7 @@ internal static class BRepTestCommands
                 }
 
                 trf.Perform(S, isCopy, isCopyMesh);
-                if (!trf.IsDone())
+                if (!trf.IsDone)
                 {
                     return 1;
                 }
@@ -232,7 +234,7 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        var cop = new BRepBuilderAPI_Copy();
+        var cop = new Copy();
         int nbPairs = (n - iFirst) / 2;
         for (int i = 0; i < nbPairs; i++)
         {
@@ -433,30 +435,30 @@ internal static class BRepTestCommands
 
             if (aKind == 'l')
             {
-                BRepGProp.LinearProperties(S, G, SkipShared);
+                MassPropertiesBuilder.LinearProperties(S, G, SkipShared);
             }
             else if (aKind == 's')
             {
-                eps = BRepGProp.SurfaceProperties(S, G, eps, SkipShared);
+                eps = MassPropertiesBuilder.SurfaceProperties(S, G, eps, SkipShared);
             }
             else
             {
-                eps = BRepGProp.VolumeProperties(S, G, eps, onlyClosed, SkipShared);
+                eps = MassPropertiesBuilder.VolumeProperties(S, G, eps, onlyClosed, SkipShared);
             }
         }
         else
         {
             if (aKind == 'l')
             {
-                BRepGProp.LinearProperties(S, G, SkipShared, UseTriangulation);
+                MassPropertiesBuilder.LinearProperties(S, G, SkipShared, UseTriangulation);
             }
             else if (aKind == 's')
             {
-                BRepGProp.SurfaceProperties(S, G, SkipShared, UseTriangulation);
+                MassPropertiesBuilder.SurfaceProperties(S, G, SkipShared, UseTriangulation);
             }
             else
             {
-                BRepGProp.VolumeProperties(S, G, onlyClosed, SkipShared, UseTriangulation);
+                MassPropertiesBuilder.VolumeProperties(S, G, onlyClosed, SkipShared, UseTriangulation);
             }
         }
 
@@ -579,7 +581,7 @@ internal static class BRepTestCommands
         int mode = theDI.Atoi(a[5]);
         bool CGFlag = mode is 1 or 3;
         bool IFlag = mode is 2 or 3;
-        eps = BRepGProp.VolumePropertiesGK(S, G, eps, onlyClosed, isUseSpan, CGFlag, IFlag, SkipShared);
+        eps = MassPropertiesBuilder.VolumePropertiesGK(S, G, eps, onlyClosed, isUseSpan, CGFlag, IFlag, SkipShared);
 
         const int anOutWidth = 24;
         static string W(double theValue) => global::Kerf.Engine.Foundation.StreamUtilities.FormatReal(theValue, 15).PadLeft(anOutWidth);
@@ -656,7 +658,7 @@ internal static class BRepTestCommands
             return 1;
         }
 
-        var sat = new ShapeAnalysis_ShapeTolerance();
+        var sat = new ShapeToleranceAnalysis();
         if (argc == 2)
         {
             void Line(string theLabel, ShapeType theType)

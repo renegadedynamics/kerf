@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -56,8 +57,8 @@ public class ShapeAnalysis_TransferParametersProjTests
     public void Perform_ProjectsWhenNotSameParameter()
     {
         (Edge anE, Face aFace) = BezierEdge(false);
-        var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
-        Assert.False(aTool.IsSameRange());
+        var aTool = new TransferParametersProjAnalysis(anE, aFace);
+        Assert.False(aTool.IsSameRange);
         // 3d to 2d: the pcurve parameter is the point's x
         Assert.Equal(BezierX(0.5), aTool.Perform(0.5, true), 1e-7);
         Assert.Equal(BezierX(0.25), aTool.Perform(0.25, true), 1e-7);
@@ -79,7 +80,7 @@ public class ShapeAnalysis_TransferParametersProjTests
     public void Perform_IsLinearOnSameParameterEdges_UnlessForced()
     {
         (Edge anE, Face aFace) = BezierEdge(true);
-        var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
+        var aTool = new TransferParametersProjAnalysis(anE, aFace);
         // linear: [0, 1] to [0, 2]
         Assert.Equal(1.0, aTool.Perform(0.5, true), 1e-12);
         aTool.ForceProjection() = true;
@@ -93,7 +94,7 @@ public class ShapeAnalysis_TransferParametersProjTests
         (Edge anE, Face aFace) = BezierEdge(false);
         (Edge aNew, _) = BezierEdge(false, aFace);
 
-        var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
+        var aTool = new TransferParametersProjAnalysis(anE, aFace);
         aTool.TransferRange(aNew, 0.25, 0.75, false);
         Tool.Range(aNew, out double aF, out double aL);
         Assert.Equal(0.25, aF);
@@ -110,7 +111,7 @@ public class ShapeAnalysis_TransferParametersProjTests
         (Edge anE, Face aFace) = BezierEdge(false);
         (Edge aNew, _) = BezierEdge(false);
         aNew.TShape()!.FreezeGraph();
-        var aTool = new ShapeAnalysis_TransferParametersProj(anE, aFace);
+        var aTool = new TransferParametersProjAnalysis(anE, aFace);
         Assert.ThrowsAny<Exception>(() => aTool.TransferRange(aNew, 0.25, 0.75, false));
     }
 
@@ -142,7 +143,7 @@ public class ShapeAnalysis_TransferParametersProjTests
         anE.TShape()!.FreezeGraph();
         aV.TShape()!.FreezeGraph();
 
-        Vertex aCopy = ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE);
+        Vertex aCopy = TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE);
         Assert.False(aCopy.IsNull);
         Assert.False(aCopy.IsSame(aV));
         Assert.True(aCopy.TShape()!.IsFrozen);
@@ -151,10 +152,10 @@ public class ShapeAnalysis_TransferParametersProjTests
         Assert.Equal(1.0, aPar, 1e-12);
 
         // a FORWARD vertex isn't copied
-        Assert.True(ShapeAnalysis_TransferParametersProj.CopyNMVertex(aV, aTo, anE).IsNull);
+        Assert.True(TransferParametersProjAnalysis.CopyNMVertex(aV, aTo, anE).IsNull);
 
         // the target edge must be writable: BRep_Builder.UpdateVertex refuses a locked (frozen) edge, as OCCT does
         aTo.TShape()!.FreezeGraph();
-        Assert.Throws<LockedShapeException>(() => ShapeAnalysis_TransferParametersProj.CopyNMVertex(anInternal, aTo, anE));
+        Assert.Throws<LockedShapeException>(() => TransferParametersProjAnalysis.CopyNMVertex(anInternal, aTo, anE));
     }
 }

@@ -3,8 +3,10 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
-using static Occt.IntCurveSurface_TransitionOnCurve;
+using static Kerf.Engine.Intersection.CurveSurface.TransitionOnCurve;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -16,18 +18,18 @@ public class GeomAPI_IntCSTests
 {
     private static readonly CoordinateSystem XOY = new(Constants.XOY());
 
-    private static GeomAPI_IntCS Intersect(Curve3D theC, Surface theS)
+    private static CurveSurfaceIntersection Intersect(Curve3D theC, Surface theS)
     {
-        GeomAPI_IntCS anInter = new(theC, theS);
-        Assert.True(anInter.IsDone());
-        Assert.Equal(0, anInter.NbSegments());
+        CurveSurfaceIntersection anInter = new(theC, theS);
+        Assert.True(anInter.IsDone);
+        Assert.Equal(0, anInter.SegmentCount);
         return anInter;
     }
 
     /// <summary>Each point is on the curve at W and on the surface at (U, V).</summary>
-    private static void CheckPoints(GeomAPI_IntCS theInter, Curve3D theC, Surface theS, double theTol)
+    private static void CheckPoints(CurveSurfaceIntersection theInter, Curve3D theC, Surface theS, double theTol)
     {
-        for (int i = 1; i <= theInter.NbPoints(); i++)
+        for (int i = 1; i <= theInter.PointCount; i++)
         {
             theInter.Parameters(i, out double U, out double V, out double W);
             Point3D aP = theInter.Point(i);
@@ -41,9 +43,9 @@ public class GeomAPI_IntCSTests
     {
         LineCurve3D aLine = new(new Point3D(1.0, 2.0, -5.0), new Direction3D(0.0, 0.0, 1.0));
         PlaneSurface aPlane = new(new Plane3D(new Point3D(0.0, 0.0, 2.0), new Direction3D(0.0, 0.0, 1.0)));
-        GeomAPI_IntCS anInter = Intersect(aLine, aPlane);
+        CurveSurfaceIntersection anInter = Intersect(aLine, aPlane);
 
-        Assert.Equal(1, anInter.NbPoints());
+        Assert.Equal(1, anInter.PointCount);
         anInter.Parameters(1, out double U, out double V, out double W);
         Assert.Equal(7.0, W, 1e-14);
         Assert.Equal(1.0, U, 1e-14);
@@ -51,28 +53,28 @@ public class GeomAPI_IntCSTests
         Assert.True(anInter.Point(1).IsEqual(new Point3D(1.0, 2.0, 2.0), 1e-14));
 
         // The line goes along the plane's normal: out of the surface
-        IntCurveSurface_HInter aHInter = new();
+        HInter aHInter = new();
         aHInter.Perform(new CurveAdaptor(aLine), new SurfaceAdaptor(aPlane));
-        Assert.Equal(IntCurveSurface_Out, aHInter.Point(1).Transition());
-        Assert.False(aHInter.IsParallel());
+        Assert.Equal(TransitionOnCurve.Out, aHInter.Point(1).Transition());
+        Assert.False(aHInter.IsParallel);
     }
 
     [Fact]
     public void LineParallelToPlane_IsParallelWithoutPoints()
     {
         PlaneSurface aPlane = new(XOY);
-        IntCurveSurface_HInter aHInter = new();
+        HInter aHInter = new();
         aHInter.Perform(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 1), new Direction3D(1, 1, 0))),
                         new SurfaceAdaptor(aPlane));
-        Assert.True(aHInter.IsDone());
-        Assert.True(aHInter.IsParallel());
-        Assert.Equal(0, aHInter.NbPoints());
+        Assert.True(aHInter.IsDone);
+        Assert.True(aHInter.IsParallel);
+        Assert.Equal(0, aHInter.PointCount);
 
         // and a line in the plane
         aHInter.Perform(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 1, 0))),
                         new SurfaceAdaptor(aPlane));
-        Assert.True(aHInter.IsParallel());
-        Assert.Equal(0, aHInter.NbPoints());
+        Assert.True(aHInter.IsParallel);
+        Assert.Equal(0, aHInter.PointCount);
     }
 
     [Fact]
@@ -80,9 +82,9 @@ public class GeomAPI_IntCSTests
     {
         LineCurve3D aLine = new(new Point3D(-10.0, 0.5, 0.0), new Direction3D(1.0, 0.0, 0.0));
         SphericalSurface aSphere = new(XOY, 2.0);
-        GeomAPI_IntCS anInter = Intersect(aLine, aSphere);
+        CurveSurfaceIntersection anInter = Intersect(aLine, aSphere);
 
-        Assert.Equal(2, anInter.NbPoints());
+        Assert.Equal(2, anInter.PointCount);
         double x = Math.Sqrt(4.0 - 0.25);
         double[] aXs = [anInter.Point(1).X(), anInter.Point(2).X()];
         Array.Sort(aXs);
@@ -90,12 +92,12 @@ public class GeomAPI_IntCSTests
         Assert.Equal(x, aXs[1], 1e-12);
         CheckPoints(anInter, aLine, aSphere, 1e-12);
 
-        IntCurveSurface_HInter aHInter = new();
+        HInter aHInter = new();
         aHInter.Perform(new CurveAdaptor(aLine), new SurfaceAdaptor(aSphere));
         for (int i = 1; i <= 2; i++)
         {
-            IntCurveSurface_IntersectionPoint aPt = aHInter.Point(i);
-            Assert.Equal(aPt.Pnt().X() < 0 ? IntCurveSurface_In : IntCurveSurface_Out, aPt.Transition());
+            CurveSurfaceIntersectionPoint aPt = aHInter.Point(i);
+            Assert.Equal(aPt.Pnt().X() < 0 ? TransitionOnCurve.In : TransitionOnCurve.Out, aPt.Transition());
         }
     }
 
@@ -104,14 +106,14 @@ public class GeomAPI_IntCSTests
     {
         LineCurve3D aLine = new(new Point3D(-10.0, 2.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         SphericalSurface aSphere = new(XOY, 2.0);
-        IntCurveSurface_HInter aHInter = new();
+        HInter aHInter = new();
         aHInter.Perform(new CurveAdaptor(aLine), new SurfaceAdaptor(aSphere));
 
-        Assert.True(aHInter.NbPoints() >= 1);
-        for (int i = 1; i <= aHInter.NbPoints(); i++)
+        Assert.True(aHInter.PointCount >= 1);
+        for (int i = 1; i <= aHInter.PointCount; i++)
         {
             Assert.True(aHInter.Point(i).Pnt().IsEqual(new Point3D(0.0, 2.0, 0.0), 1e-6));
-            Assert.Equal(IntCurveSurface_Tangent, aHInter.Point(i).Transition());
+            Assert.Equal(TransitionOnCurve.Tangent, aHInter.Point(i).Transition());
         }
     }
 
@@ -120,9 +122,9 @@ public class GeomAPI_IntCSTests
     {
         LineCurve3D aLine = new(new Point3D(-10.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         ToroidalSurface aTorus = new(XOY, 3.0, 1.0);
-        GeomAPI_IntCS anInter = Intersect(aLine, aTorus);
+        CurveSurfaceIntersection anInter = Intersect(aLine, aTorus);
 
-        Assert.Equal(4, anInter.NbPoints());
+        Assert.Equal(4, anInter.PointCount);
         double[] aXs = new double[4];
         for (int i = 1; i <= 4; i++)
         {
@@ -142,11 +144,11 @@ public class GeomAPI_IntCSTests
         // A circle of radius 2 in the plane y = 0 centred at (1, 0, 0): it meets the cylinder x^2 + y^2 = 4 at x = 2, z = ±sqrt(3)
         CircleCurve3D aCircle = new(new Frame3D(new Point3D(1.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0)), 2.0);
         CylindricalSurface aCyl = new(XOY, 2.0);
-        GeomAPI_IntCS anInter = Intersect(aCircle, aCyl);
+        CurveSurfaceIntersection anInter = Intersect(aCircle, aCyl);
 
-        Assert.Equal(2, anInter.NbPoints());
+        Assert.Equal(2, anInter.PointCount);
         CheckPoints(anInter, aCircle, aCyl, 1e-9);
-        for (int i = 1; i <= anInter.NbPoints(); i++)
+        for (int i = 1; i <= anInter.PointCount; i++)
         {
             anInter.Parameters(i, out double U, out _, out double W);
             Assert.InRange(W, 0.0, 2 * Math.PI);
@@ -179,7 +181,7 @@ public class GeomAPI_IntCSTests
     {
         BSplineCurve3D aCurve = WaveCurve();
         PlaneSurface aPlane = new(new Plane3D(new Point3D(0, 0, 0.5), new Direction3D(0, 0, 1)));
-        GeomAPI_IntCS anInter = Intersect(aCurve, aPlane);
+        CurveSurfaceIntersection anInter = Intersect(aCurve, aPlane);
 
         // Count the sign changes of z - 0.5 along the curve
         int aChanges = 0;
@@ -194,9 +196,9 @@ public class GeomAPI_IntCSTests
             aPrev = z;
         }
         Assert.True(aChanges > 0);
-        Assert.Equal(aChanges, anInter.NbPoints());
+        Assert.Equal(aChanges, anInter.PointCount);
         CheckPoints(anInter, aCurve, aPlane, 1e-7);
-        for (int i = 1; i <= anInter.NbPoints(); i++)
+        for (int i = 1; i <= anInter.PointCount; i++)
         {
             Assert.Equal(0.5, anInter.Point(i).Z(), 1e-7);
         }
@@ -242,8 +244,8 @@ public class GeomAPI_IntCSTests
         aMults[2] = 4;
         BSplineCurve3D aLine = new(aPoles, aKnots, aMults, 3);
 
-        GeomAPI_IntCS anInter = Intersect(aLine, aSurf);
-        Assert.Equal(1, anInter.NbPoints());
+        CurveSurfaceIntersection anInter = Intersect(aLine, aSurf);
+        Assert.Equal(1, anInter.PointCount);
         Assert.True(anInter.Point(1).IsEqual(new Point3D(0.3, 0.4, 0.25), 1e-9));
         anInter.Parameters(1, out double U, out double V, out double W);
         Assert.Equal(0.65, U, 1e-9);
@@ -252,8 +254,8 @@ public class GeomAPI_IntCSTests
 
         // A curved B-spline crossing the paraboloid twice
         BSplineCurve3D aWave = WaveCurve();
-        GeomAPI_IntCS anInter2 = Intersect(aWave, aSurf);
-        Assert.True(anInter2.NbPoints() >= 2);
+        CurveSurfaceIntersection anInter2 = Intersect(aWave, aSurf);
+        Assert.True(anInter2.PointCount >= 2);
         CheckPoints(anInter2, aWave, aSurf, 1e-7);
     }
 
@@ -262,8 +264,8 @@ public class GeomAPI_IntCSTests
     {
         // A vertical line through the apex of the paraboloid: one transversal point at (0, 0, 0)
         LineCurve3D aLine = new(new Point3D(0.0, 0.0, -1.0), new Direction3D(0.0, 0.0, 1.0));
-        GeomAPI_IntCS anInter = Intersect(aLine, Paraboloid());
-        Assert.Equal(1, anInter.NbPoints());
+        CurveSurfaceIntersection anInter = Intersect(aLine, Paraboloid());
+        Assert.Equal(1, anInter.PointCount);
         Assert.True(anInter.Point(1).IsEqual(new Point3D(0.0, 0.0, 0.0), 1e-9));
     }
 
@@ -274,8 +276,8 @@ public class GeomAPI_IntCSTests
         CircleCurve3D aCircle = new(Constants.XOY(), 2.0);
         ExtrusionSurface anExtr = new(aCircle, new Direction3D(0.0, 0.0, 1.0));
         LineCurve3D aLine = new(new Point3D(-5.0, 0.5, 3.0), new Direction3D(1.0, 0.0, 0.2));
-        GeomAPI_IntCS anInter = Intersect(aLine, anExtr);
-        Assert.Equal(2, anInter.NbPoints());
+        CurveSurfaceIntersection anInter = Intersect(aLine, anExtr);
+        Assert.Equal(2, anInter.PointCount);
         CheckPoints(anInter, aLine, anExtr, 1e-7);
         for (int i = 1; i <= 2; i++)
         {
@@ -288,18 +290,18 @@ public class GeomAPI_IntCSTests
     public void NoIntersection()
     {
         LineCurve3D aLine = new(new Point3D(-10.0, 5.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        GeomAPI_IntCS anInter = Intersect(aLine, new SphericalSurface(XOY, 2.0));
-        Assert.Equal(0, anInter.NbPoints());
-        Assert.Equal(0, Intersect(aLine, Paraboloid()).NbPoints());
+        CurveSurfaceIntersection anInter = Intersect(aLine, new SphericalSurface(XOY, 2.0));
+        Assert.Equal(0, anInter.PointCount);
+        Assert.Equal(0, Intersect(aLine, Paraboloid()).PointCount);
     }
 
     [Fact]
     public void NotDoneBeforePerform()
     {
-        IntCurveSurface_HInter aHInter = new();
-        Assert.False(aHInter.IsDone());
-        Assert.ThrowsAny<NotDoneException>(() => aHInter.NbPoints());
-        GeomAPI_IntCS anInter = new();
-        Assert.False(anInter.IsDone());
+        HInter aHInter = new();
+        Assert.False(aHInter.IsDone);
+        Assert.ThrowsAny<NotDoneException>(() => aHInter.PointCount);
+        CurveSurfaceIntersection anInter = new();
+        Assert.False(anInter.IsDone);
     }
 }

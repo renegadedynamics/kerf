@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
@@ -24,14 +25,14 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
     public void RandomSpines()
     {
         TrihedronOracle.Run(output, "GeomFill_CorrectedFrenet", () => new N.GeomFill_CorrectedFrenet(),
-                            () => new GeomFill_CorrectedFrenet(), 40, 20261101, SlowKinds);
+                            () => new CorrectedFrenet(), 40, 20261101, SlowKinds);
     }
 
     [Fact]
     public void RandomSpines_ForEvaluation()
     {
         TrihedronOracle.Run(output, "GeomFill_CorrectedFrenet(true)", () => new N.GeomFill_CorrectedFrenet(true),
-                            () => new GeomFill_CorrectedFrenet(true), 20, 20261102, SlowKinds);
+                            () => new CorrectedFrenet(true), 20, 20261102, SlowKinds);
     }
 
     /// <summary>Offsets of circles (conics' offsets are B-spline-like for the adaptor, so the angle law is built).</summary>
@@ -53,7 +54,7 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
             using var aNA = new N.GeomAdaptor_Curve(aNC, aF, aL);
             var aPA = new CurveAdaptor(aPC, aF, aL);
             using var aNLaw = new N.GeomFill_CorrectedFrenet();
-            TrihedronOracle.Compare(anOracle, aNLaw, new GeomFill_CorrectedFrenet(), aNA, aPA, $"offset circle #{i}");
+            TrihedronOracle.Compare(anOracle, aNLaw, new CorrectedFrenet(), aNA, aPA, $"offset circle #{i}");
         }
         anOracle.Report("GeomFill_CorrectedFrenet on offset circles");
     }
@@ -98,7 +99,7 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
                 using var aNA = new N.GeomAdaptor_Curve(aNC);
                 var aPA = new CurveAdaptor(aPC);
                 using var aNLaw = new N.GeomFill_CorrectedFrenet(aForEval);
-                var aPLaw = new GeomFill_CorrectedFrenet(aForEval);
+                var aPLaw = new CorrectedFrenet(aForEval);
                 string aWhat = $"{(aPlanar ? "planar" : "twisted")} #{i} {(aForEval ? "evaluation" : "sweep")}";
                 TrihedronOracle.Compare(anOracle, aNLaw, aPLaw, aNA, aPA, aWhat);
 
@@ -106,13 +107,13 @@ public class GeomFill_CorrectedFrenetOracleTests(ITestOutputHelper output)
                 using var aNA2 = new N.GeomAdaptor_Curve(aNC);
                 var aPA2 = new CurveAdaptor(aPC);
                 using var aNLaw2 = new N.GeomFill_CorrectedFrenet(aForEval);
-                var aPLaw2 = new GeomFill_CorrectedFrenet(aForEval);
+                var aPLaw2 = new CorrectedFrenet(aForEval);
                 aNLaw2.SetCurve(aNA2);
                 aPLaw2.SetCurve(aPA2);
                 N.GeomFill_Trihedron aNMode = aNLaw2.EvaluateBestMode();
-                GeomFill_Trihedron aPMode = aPLaw2.EvaluateBestMode();
+                Trihedron aPMode = aPLaw2.EvaluateBestMode();
                 Assert.True((int)aNMode == (int)aPMode, $"{aWhat} EvaluateBestMode: native {aNMode}, port {aPMode}");
-                if (aPMode != GeomFill_Trihedron.GeomFill_IsFrenet)
+                if (aPMode != Trihedron.IsFrenet)
                 {
                     aNbModes++;
                 }

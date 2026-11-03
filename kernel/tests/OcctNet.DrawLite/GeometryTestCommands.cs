@@ -4,6 +4,7 @@ using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
 using System.Globalization;
@@ -75,9 +76,9 @@ internal static class GeometryTestCommands
                     global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out z);
                     Point.SetValue(i, new Point3D(x, y, z));
                 }
-                var anInterpolator = new GeomAPI_Interpolate(Point, false, 1.0e-5);
+                var anInterpolator = new ApiInterpolate(Point, false, 1.0e-5);
                 anInterpolator.Perform();
-                if (anInterpolator.IsDone())
+                if (anInterpolator.IsDone)
                 {
                     BSplineCurve3D C = anInterpolator.Curve();
                     DrawTrSurf.Set(theDI, a[1], C);
@@ -92,9 +93,9 @@ internal static class GeometryTestCommands
                     global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(iFile, out y);
                     PointPtr.SetValue(i, new Point2D(x, y));
                 }
-                var a2dInterpolator = new Geom2dAPI_Interpolate(PointPtr, false, 1.0e-5);
+                var a2dInterpolator = new Interpolate2D(PointPtr, false, 1.0e-5);
                 a2dInterpolator.Perform();
-                if (a2dInterpolator.IsDone())
+                if (a2dInterpolator.IsDone)
                 {
                     BSplineCurve2D C = a2dInterpolator.Curve();
                     DrawTrSurf.Set(theDI, a[1], C);
@@ -157,7 +158,7 @@ internal static class GeometryTestCommands
             PointsArrayPtr.SetValue(ii, a_point);
             ii += 1;
         }
-        var anInterpolator = new GeomAPI_Interpolate(PointsArrayPtr, periodic_flag, tolerance);
+        var anInterpolator = new ApiInterpolate(PointsArrayPtr, periodic_flag, tolerance);
 
         if (num_tangents > 0)
         {
@@ -187,7 +188,7 @@ internal static class GeometryTestCommands
             anInterpolator.Load(TangentsArray, TangentFlagsPtr);
         }
         anInterpolator.Perform();
-        if (anInterpolator.IsDone())
+        if (anInterpolator.IsDone)
         {
             NewCurvePtr = anInterpolator.Curve();
 
@@ -265,8 +266,8 @@ internal static class GeometryTestCommands
             {
                 GS.Bounds(out double U1, out double U2, out double V1, out double V2);
 
-                var proj = new GeomAPI_ProjectPointOnSurf(P, GS, U1, U2, V1, V2, aProjAlgo);
-                if (!proj.IsDone())
+                var proj = new ProjectPointOnSurface(P, GS, U1, U2, V1, V2, aProjAlgo);
+                if (!proj.IsDone)
                 {
                     di.Append("projection failed.");
                     return 0;
@@ -298,7 +299,7 @@ internal static class GeometryTestCommands
         }
         else
         {
-            var proj = new GeomAPI_ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
+            var proj = new ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
 
             if (proj.NbPoints() == 0)
             {
@@ -370,7 +371,7 @@ internal static class GeometryTestCommands
         List<double>[] aPrms = [[], [], [], []];
         if (GC1 is not null && GC2 is not null)
         {
-            var Ex = new GeomAPI_ExtremaCurveCurve(GC1, GC2, U1f, U1l, U2f, U2l);
+            var Ex = new ExtremaCurveCurve(GC1, GC2, U1f, U1l, U2f, U2l);
             isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
@@ -391,7 +392,7 @@ internal static class GeometryTestCommands
         }
         else if (GC1 is not null && GS2 is not null)
         {
-            var Ex = new GeomAPI_ExtremaCurveSurface(GC1, GS2, U1f, U1l, U2f, U2l, V2f, V2l);
+            var Ex = new ExtremaCurveSurface(GC1, GS2, U1f, U1l, U2f, U2l, V2f, V2l);
             isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
@@ -413,7 +414,7 @@ internal static class GeometryTestCommands
         }
         else if (GS1 is not null && GC2 is not null)
         {
-            var Ex = new GeomAPI_ExtremaCurveSurface(GC2, GS1, U2f, U2l, U1f, U1l, V1f, V1l);
+            var Ex = new ExtremaCurveSurface(GC2, GS1, U2f, U2l, U1f, U1l, V1f, V1l);
             isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
@@ -435,7 +436,7 @@ internal static class GeometryTestCommands
         }
         else if (GS1 is not null && GS2 is not null)
         {
-            var Ex = new GeomAPI_ExtremaSurfaceSurface(GS1, GS2, U1f, U1l, V1f, V1l, U2f, U2l, V2f, V2l);
+            var Ex = new ExtremaSurfaceSurface(GS1, GS2, U1f, U1l, V1f, V1l, U2f, U2l, V2f, V2l);
             isInfinitySolutions = Ex.Extrema().IsParallel;
             if (isInfinitySolutions)
             {
@@ -535,14 +536,14 @@ internal static class GeometryTestCommands
         }
     }
 
-    private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d2TanRad ct3, string name)
-        => Solutions(theDI, di, ct3.IsDone(), () => ct3.NbSolutions(), ct3.ThisSolution, name, "Circ2d2TanRad Not done");
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad ct3, string name)
+        => Solutions(theDI, di, ct3.IsDone, () => ct3.SolutionCount, ct3.ThisSolution, name, "Circ2d2TanRad Not done");
 
-    private static int Solutions(DrawInterpreter theDI, DrawResult di, Geom2dGcc_Circ2d3Tan ct3, string name)
-        => Solutions(theDI, di, ct3.IsDone(), () => ct3.NbSolutions(), ct3.ThisSolution, name, "Circ2d3Tan Not done");
+    private static int Solutions(DrawInterpreter theDI, DrawResult di, global::Kerf.Engine.Construction.Constraints.Circ2d3Tan ct3, string name)
+        => Solutions(theDI, di, ct3.IsDone, () => ct3.SolutionCount, ct3.ThisSolution, name, "Circ2d3Tan Not done");
 
-    private static int Solutions(DrawInterpreter theDI, DrawResult theDIResult, Geom2dGcc_Circ2dTanCen theCt2, string theName)
-        => Solutions(theDI, theDIResult, theCt2.IsDone(), () => theCt2.NbSolutions(), theCt2.ThisSolution, theName, "Circ2dTanCen Not done");
+    private static int Solutions(DrawInterpreter theDI, DrawResult theDIResult, global::Kerf.Engine.Construction.Constraints.Circ2dTanCen theCt2, string theName)
+        => Solutions(theDI, theDIResult, theCt2.IsDone, () => theCt2.SolutionCount, theCt2.ThisSolution, theName, "Circ2dTanCen Not done");
 
     /// <summary>
     /// cirtang cname [-t Tolerance] -c curve -p point -r Radius...: circles tangent to up to three unqualified curves,
@@ -622,12 +623,12 @@ internal static class GeometryTestCommands
             }
         }
 
-        static Geom2dGcc_QualifiedCurve Unqualified(Curve2D? theC) => Geom2dGcc.Unqualified(new CurveAdaptor2D(theC!));
+        static global::Kerf.Engine.Construction.Constraints.QualifiedCurve Unqualified(Curve2D? theC) => global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(theC!));
 
         if (aNbCurves == 3)
         {
             // C-C-C
-            Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), Unqualified(aC[2]), aTol, 0, 0, 0);
+            global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), Unqualified(aC[2]), aTol, 0, 0, 0);
             theResult.Append("Solution of type C-C-C is: ");
             return Solutions(theDI, theResult, aCt3, theArgVals[1]);
         }
@@ -636,14 +637,14 @@ internal static class GeometryTestCommands
             if (aNbPnts >= 1)
             {
                 // C-C-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), new CartesianPoint2(aP[0]), aTol, 0, 0);
+                global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), new CartesianPoint2(aP[0]), aTol, 0, 0);
                 theResult.Append("Solution of type C-C-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
             else if (aRadius > 0)
             {
                 // C-C-R
-                Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), aRadius, aTol);
+                global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), Unqualified(aC[1]), aRadius, aTol);
                 theResult.Append("Solution of type C-C-R is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
@@ -656,7 +657,7 @@ internal static class GeometryTestCommands
             if (aNbPnts == 2)
             {
                 // C-P-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
+                global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
                                                 aTol, 0);
                 theResult.Append("Solution of type C-P-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
@@ -666,14 +667,14 @@ internal static class GeometryTestCommands
                 if (aRadius > 0.0)
                 {
                     // C-P-R
-                    Geom2dGcc_Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aRadius, aTol);
+                    global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCt3 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aRadius, aTol);
                     theResult.Append("Solution of type C-P-R is: ");
                     return Solutions(theDI, theResult, aCt3, theArgVals[1]);
                 }
                 else
                 {
                     // C-P
-                    Geom2dGcc_Circ2dTanCen aCt2 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aTol);
+                    global::Kerf.Engine.Construction.Constraints.Circ2dTanCen aCt2 = new(Unqualified(aC[0]), new CartesianPoint2(aP[0]), aTol);
                     theResult.Append("Solution of type C-P is: ");
                     return Solutions(theDI, theResult, aCt2, theArgVals[1]);
                 }
@@ -687,7 +688,7 @@ internal static class GeometryTestCommands
             if (aNbPnts == 3)
             {
                 // P-P-P
-                Geom2dGcc_Circ2d3Tan aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
+                global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]),
                                                 new CartesianPoint2(aP[2]), aTol);
                 theResult.Append("Solution of type P-P-P is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
@@ -695,7 +696,7 @@ internal static class GeometryTestCommands
             else if (aRadius > 0)
             {
                 // P-P-R
-                Geom2dGcc_Circ2d2TanRad aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]), aRadius, aTol);
+                global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCt3 = new(new CartesianPoint2(aP[0]), new CartesianPoint2(aP[1]), aRadius, aTol);
                 theResult.Append("Solution of type P-P-R is: ");
                 return Solutions(theDI, theResult, aCt3, theArgVals[1]);
             }
@@ -737,14 +738,14 @@ internal static class GeometryTestCommands
                 return 1;
             }
             double                ang = theDI.Atof(a[4]) * (Math.PI / 180.0);
-            Geom2dGcc_Lin2dTanObl ct3 = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
+            global::Kerf.Engine.Construction.Constraints.Lin2dTanObl ct3 = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
                                             L.Lin2d(),
                                             global::Kerf.Engine.Foundation.Precision.Angular(),
                                             (C1.FirstParameter() + C1.LastParameter()) / 2.0,
                                             ang);
-            if (ct3.IsDone())
+            if (ct3.IsDone)
             {
-                for (int i = 1; i <= ct3.NbSolutions(); i++)
+                for (int i = 1; i <= ct3.SolutionCount; i++)
                 {
                     LineCurve2D LS = new(ct3.ThisSolution(i));
                     string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);
@@ -759,14 +760,14 @@ internal static class GeometryTestCommands
         }
         else
         {
-            Geom2dGcc_Lin2d2Tan ct3 = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
-                                          Geom2dGcc.Unqualified(new CurveAdaptor2D(C2)),
+            global::Kerf.Engine.Construction.Constraints.Lin2d2Tan ct3 = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
+                                          global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C2)),
                                           global::Kerf.Engine.Foundation.Precision.Angular(),
                                           (C1.FirstParameter() + C1.LastParameter()) / 2.0,
                                           (C2.FirstParameter() + C2.LastParameter()) / 2.0);
-            if (ct3.IsDone())
+            if (ct3.IsDone)
             {
-                for (int i = 1; i <= ct3.NbSolutions(); i++)
+                for (int i = 1; i <= ct3.SolutionCount; i++)
                 {
                     LineCurve2D LS = new(ct3.ThisSolution(i));
                     string solname = a[1] + "_" + i.ToString(CultureInfo.InvariantCulture);

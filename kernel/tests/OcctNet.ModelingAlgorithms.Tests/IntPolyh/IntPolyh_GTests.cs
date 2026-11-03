@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Polyhedra;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -14,7 +15,7 @@ public class IntPolyh_PointTest
     [Fact]
     public void DefaultConstructor_AllZero()
     {
-        IntPolyh_Point aPt = new();
+        PolyhedronPoint aPt = new();
         Assert.Equal(0.0, aPt.X());
         Assert.Equal(0.0, aPt.Y());
         Assert.Equal(0.0, aPt.Z());
@@ -25,8 +26,8 @@ public class IntPolyh_PointTest
     [Fact]
     public void Divide_NormalDivisor_CorrectResult()
     {
-        IntPolyh_Point aPt = new(10.0, 20.0, 30.0, 0.5, 0.8);
-        IntPolyh_Point aRes = aPt.Divide(2.0);
+        PolyhedronPoint aPt = new(10.0, 20.0, 30.0, 0.5, 0.8);
+        PolyhedronPoint aRes = aPt.Divide(2.0);
 
         Assert.Equal(5.0, aRes.X());
         Assert.Equal(10.0, aRes.Y());
@@ -40,8 +41,8 @@ public class IntPolyh_PointTest
     [Fact]
     public void Divide_ZeroDivisor_ReturnsDefaultPoint()
     {
-        IntPolyh_Point aPt = new(10.0, 20.0, 30.0, 0.5, 0.8);
-        IntPolyh_Point aRes = aPt.Divide(0.0);
+        PolyhedronPoint aPt = new(10.0, 20.0, 30.0, 0.5, 0.8);
+        PolyhedronPoint aRes = aPt.Divide(0.0);
 
         Assert.Equal(0.0, aRes.X());
         Assert.Equal(0.0, aRes.Y());
@@ -54,8 +55,8 @@ public class IntPolyh_PointTest
     [Fact]
     public void Divide_NearZeroDivisor_ReturnsDefaultPoint()
     {
-        IntPolyh_Point aPt = new(1.0, 2.0, 3.0, 0.1, 0.2);
-        IntPolyh_Point aRes = aPt.Divide(1.0e-20);
+        PolyhedronPoint aPt = new(1.0, 2.0, 3.0, 0.1, 0.2);
+        PolyhedronPoint aRes = aPt.Divide(1.0e-20);
 
         Assert.Equal(0.0, aRes.X());
         Assert.Equal(0.0, aRes.Y());
@@ -66,8 +67,8 @@ public class IntPolyh_PointTest
     [Fact]
     public void Divide_NegativeDivisor_CorrectResult()
     {
-        IntPolyh_Point aPt = new(6.0, -9.0, 12.0, 0.3, 0.6);
-        IntPolyh_Point aRes = aPt.Divide(-3.0);
+        PolyhedronPoint aPt = new(6.0, -9.0, 12.0, 0.3, 0.6);
+        PolyhedronPoint aRes = aPt.Divide(-3.0);
 
         Assert.Equal(-2.0, aRes.X());
         Assert.Equal(3.0, aRes.Y());
@@ -77,9 +78,9 @@ public class IntPolyh_PointTest
     [Fact]
     public void Add_CorrectResult()
     {
-        IntPolyh_Point aP1 = new(1.0, 2.0, 3.0, 0.1, 0.2);
-        IntPolyh_Point aP2 = new(4.0, 5.0, 6.0, 0.3, 0.4);
-        IntPolyh_Point aRes = aP1.Add(aP2);
+        PolyhedronPoint aP1 = new(1.0, 2.0, 3.0, 0.1, 0.2);
+        PolyhedronPoint aP2 = new(4.0, 5.0, 6.0, 0.3, 0.4);
+        PolyhedronPoint aRes = aP1.Add(aP2);
 
         Assert.Equal(5.0, aRes.X());
         Assert.Equal(7.0, aRes.Y());
@@ -89,9 +90,9 @@ public class IntPolyh_PointTest
     [Fact]
     public void Sub_CorrectResult()
     {
-        IntPolyh_Point aP1 = new(5.0, 7.0, 9.0, 0.5, 0.8);
-        IntPolyh_Point aP2 = new(1.0, 2.0, 3.0, 0.1, 0.2);
-        IntPolyh_Point aRes = aP1.Sub(aP2);
+        PolyhedronPoint aP1 = new(5.0, 7.0, 9.0, 0.5, 0.8);
+        PolyhedronPoint aP2 = new(1.0, 2.0, 3.0, 0.1, 0.2);
+        PolyhedronPoint aRes = aP1.Sub(aP2);
 
         Assert.Equal(4.0, aRes.X());
         Assert.Equal(5.0, aRes.Y());
@@ -101,22 +102,22 @@ public class IntPolyh_PointTest
     [Fact]
     public void SquareModulus_CorrectResult()
     {
-        IntPolyh_Point aPt = new(1.0, 2.0, 3.0, 0.0, 0.0);
+        PolyhedronPoint aPt = new(1.0, 2.0, 3.0, 0.0, 0.0);
         Assert.Equal(14.0, aPt.SquareModulus());
     }
 
     [Fact]
     public void SquareDistance_SamePoint_Zero()
     {
-        IntPolyh_Point aPt = new(3.0, 4.0, 5.0, 0.0, 0.0);
+        PolyhedronPoint aPt = new(3.0, 4.0, 5.0, 0.0, 0.0);
         Assert.Equal(0.0, aPt.SquareDistance(aPt));
     }
 
     [Fact]
     public void Dot_OrthogonalVectors_Zero()
     {
-        IntPolyh_Point aP1 = new(1.0, 0.0, 0.0, 0.0, 0.0);
-        IntPolyh_Point aP2 = new(0.0, 1.0, 0.0, 0.0, 0.0);
+        PolyhedronPoint aP1 = new(1.0, 0.0, 0.0, 0.0, 0.0);
+        PolyhedronPoint aP2 = new(0.0, 1.0, 0.0, 0.0, 0.0);
         Assert.Equal(0.0, aP1.Dot(aP2));
     }
 }
@@ -144,11 +145,11 @@ public class IntPolyh_IntersectionTest
         PlaneSurface aPlane = new(anAxis);
         SurfaceAdaptor aSurfP = new(aPlane);
 
-        IntPolyh_Intersection anInter = new(aSurfS, aSurfP);
+        PolyhedronIntersection anInter = new(aSurfS, aSurfP);
 
-        Assert.True(anInter.IsDone());
+        Assert.True(anInter.IsDone);
 
-        int aNbLines = anInter.NbSectionLines();
+        int aNbLines = anInter.SectionLineCount;
         Assert.True(aNbLines > 0);
 
         // Verify all section-line points have valid UV coordinates on both surfaces.
@@ -179,10 +180,10 @@ public class IntPolyh_IntersectionTest
         CylindricalSurface aCyl = new(aCylAxis, 1.0);
         SurfaceAdaptor aSurfC = new(aCyl);
 
-        IntPolyh_Intersection anInter = new(aSurfS, aSurfC);
-        Assert.True(anInter.IsDone());
+        PolyhedronIntersection anInter = new(aSurfS, aSurfC);
+        Assert.True(anInter.IsDone);
 
-        int aNbLines = anInter.NbSectionLines();
+        int aNbLines = anInter.SectionLineCount;
         Assert.True(aNbLines > 0);
 
         for (int iL = 1; iL <= aNbLines; ++iL)
@@ -216,8 +217,8 @@ public class IntPolyh_IntersectionTest
         PlaneSurface aPlane2 = new(anAxis2);
         SurfaceAdaptor aSurf2 = new(aPlane2, -5.0, 5.0, -5.0, 5.0);
 
-        IntPolyh_Intersection anInter = new(aSurf1, aSurf2);
-        Assert.True(anInter.IsDone());
-        Assert.True(anInter.NbSectionLines() > 0);
+        PolyhedronIntersection anInter = new(aSurf1, aSurf2);
+        Assert.True(anInter.IsDone);
+        Assert.True(anInter.SectionLineCount > 0);
     }
 }

@@ -1,3 +1,5 @@
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -45,7 +47,7 @@ public partial class Wire
         var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
-        var transformer = new BRepBuilderAPI_Transform(baseWire, trsf, true);
+        var transformer = new Transform(baseWire, trsf, true);
         var transformed = ShapeCasts.Wire(transformer.Shape());
         record = record.Merge(ShapeHistory.FromAlgorithm(transformer, [baseWire], transformed));
         var located = ShapeCasts.Wire(transformed.Located(ownLocation));
@@ -103,7 +105,7 @@ internal static class WireFillet
 
     private static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        var splitter = new BOPAlgo_Splitter();
+        var splitter = new Splitter();
         splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
         splitter.AddArgument(edge.TopoShape);
         splitter.AddTool(splitVertex.TopoShape);
@@ -155,10 +157,10 @@ internal static class WireFillet
             var other = connected.Vertices().First(v => v != corner.Vertex);
             var filletVertex = arc.Vertices().SortByDistance(connected)[0];
             var pnt = filletVertex.ToVector().ToGpPnt();
-            var maker = new BRepBuilderAPI_MakeVertex(pnt);
+            var maker = new MakeVertex(pnt);
             var splitVertex = new Vertex(maker.Vertex());
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire
-            var copier = new BRepBuilderAPI_Copy(connected.TopoShape);
+            var copier = new Copy(connected.TopoShape);
             var pieces = SplitEdgeAtVertex(new Edge(ShapeCasts.Edge(copier.Shape())), splitVertex);
             var otherV = ShapeCasts.Vertex(other.TopoShape);
             var cornerV = ShapeCasts.Vertex(corner.Vertex.TopoShape);
@@ -210,7 +212,7 @@ internal static class WireFillet
 
         // MakeWire copies each edge so neighbours share vertices: record each as the finished wire places it
         var cornerVertex = corner.Vertex.TopoShape;
-        var builder = new BRepBuilderAPI_MakeWire();
+        var builder = new MakeWire();
         foreach (var edge in edges)
             builder.Add(edge!.Value);
         builder.Build();

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -27,7 +29,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-sae-").FullName;
     private int myFileNumber;
 
-    private static readonly ShapeExtend_Status[] theStatuses = Enum.GetValues<ShapeExtend_Status>();
+    private static readonly ExtendStatus[] theStatuses = Enum.GetValues<ExtendStatus>();
 
     public void Dispose()
     {
@@ -50,9 +52,9 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         return (aNShape, aPShape, $"scene {theIndex} ({aWhat})");
     }
 
-    private static void SameStatus(Oracle theOracle, N.ShapeAnalysis_Edge theN, ShapeAnalysis_Edge theP, string theWhat)
+    private static void SameStatus(Oracle theOracle, N.ShapeAnalysis_Edge theN, EdgeAnalysis theP, string theWhat)
     {
-        foreach (ShapeExtend_Status aS in theStatuses)
+        foreach (ExtendStatus aS in theStatuses)
         {
             theOracle.Same(theN.Status((N.ShapeExtend_Status)(int)aS) ? 1 : 0, theP.Status(aS) ? 1 : 0, $"{theWhat}, status {aS}");
         }
@@ -69,7 +71,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         {
             (N.TopoDS_Shape aNS, Shape aPS, string aWhat) = Scene(anOracle, i);
             var aNSae = new N.ShapeAnalysis_Edge();
-            var aPSae = new ShapeAnalysis_Edge();
+            var aPSae = new EdgeAnalysis();
 
             var aNFExp = new N.TopExp_Explorer(aNS, N.TopAbs_ShapeEnum.TopAbs_FACE);
             var aPFExp = new Explorer(aPS, ShapeType.Face);
@@ -124,7 +126,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         anOracle.Report("ShapeAnalysis_Edge");
     }
 
-    private static void CompareEdgeOnFace(Oracle o, N.ShapeAnalysis_Edge n, ShapeAnalysis_Edge p, N.TopoDS_Edge aNE, Edge aPE,
+    private static void CompareEdgeOnFace(Oracle o, N.ShapeAnalysis_Edge n, EdgeAnalysis p, N.TopoDS_Edge aNE, Edge aPE,
                                           N.TopoDS_Face aNF, Face aPF, N.Geom_Surface? aNSurf, Surface? aPSurf,
                                           N.TopLoc_Location aNLoc, Placement aPLoc, string w)
     {
@@ -207,7 +209,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         aPRes = p.CheckVertexTolerance(aPE, aPF, out double aPT1, out double aPT2);
         SameBool(o, aNRes, aPRes, w + ", CheckVertexTolerance(F)");
         SameStatus(o, n, p, w + ", CheckVertexTolerance(F)");
-        if (!p.Status(ShapeExtend_Status.ShapeExtend_FAIL1))
+        if (!p.Status(ExtendStatus.FAIL1))
         {
             o.Same(aNT1, aPT1, w + ", CheckVertexTolerance(F) toler1");
             o.Same(aNT2, aPT2, w + ", CheckVertexTolerance(F) toler2");
@@ -216,7 +218,7 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         aPRes = p.CheckVertexTolerance(aPE, out aPT1, out aPT2);
         SameBool(o, aNRes, aPRes, w + ", CheckVertexTolerance");
         SameStatus(o, n, p, w + ", CheckVertexTolerance");
-        if (!p.Status(ShapeExtend_Status.ShapeExtend_FAIL1))
+        if (!p.Status(ExtendStatus.FAIL1))
         {
             o.Same(aNT1, aPT1, w + ", CheckVertexTolerance toler1");
             o.Same(aNT2, aPT2, w + ", CheckVertexTolerance toler2");

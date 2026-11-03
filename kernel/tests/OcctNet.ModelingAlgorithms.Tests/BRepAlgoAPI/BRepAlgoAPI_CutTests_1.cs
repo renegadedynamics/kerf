@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -45,8 +46,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aProfile2 = BOPTest_Utilities.CreateProfile(aPlane2, aProfileOps2);
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 50 f 50 75 y 100 x 75 y -100" with prism height -3
@@ -79,8 +80,8 @@ public static class BRepAlgoAPI_CutTests_1
                 BOPTest_Utilities.CreateRectangularPrism(new Point3D(25, 25, 50), 50, 75, -30);
 
             // First cut operation
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Create second tool prism
@@ -88,8 +89,8 @@ public static class BRepAlgoAPI_CutTests_1
                 BOPTest_Utilities.CreateRectangularPrism(new Point3D(100, 150, 50), 50, 75, -30);
 
             // Second cut operation
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create third tool prism
@@ -123,8 +124,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 100 -150 y -75 x 50 y 75"
@@ -141,8 +142,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 p 0 0 -1 1 0 0 o 0 0 50 f 50 -75 x 75 y -100 x -75"
@@ -202,13 +203,13 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 p 0 0 -1 1 0 0 o 0 0 50 f 50 -75 x 75 y -100 x -75"
@@ -263,13 +264,13 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 o 0 0 50 f 50 75 x 75 y 100 x -75"
@@ -323,13 +324,13 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 o 0 0 50 f 50 75 x 75 y 100 x -75"
@@ -384,13 +385,13 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 o 0 0 50 f 50 75 x 75 y 100 x -75"
@@ -432,8 +433,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 y 100 x 75 y -100"
@@ -476,8 +477,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 x 75 y 100 x -75"
@@ -520,8 +521,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 y -100 x 75 y 100"
@@ -564,8 +565,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 x 75 y -100 x -75"
@@ -618,8 +619,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 y 100 x 75 y -100"
@@ -672,8 +673,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 -10 f 50 75 x 75 y 100 x -75"
@@ -716,8 +717,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 y -100 x 75 y 100"
@@ -760,8 +761,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 -10 f 50 -75 x 75 y -100 x -75"
@@ -804,8 +805,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate1 = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 20 f 100 -150 y -75 x 50 y 75"
@@ -822,8 +823,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism3 = BOPTest_Utilities.CreatePrism(aProfile3, new Vector3D(0, 0, -30));
 
             // Second cut operation: "bcut po2 po1 pr3"
-            BRepAlgoAPI_Cut aCutOp2 = new(aIntermediate1, aPrism3);
-            Assert.True(aCutOp2.IsDone(), "Second cut operation failed");
+            Cut aCutOp2 = new(aIntermediate1, aPrism3);
+            Assert.True(aCutOp2.IsDone, "Second cut operation failed");
             Shape aIntermediate2 = aCutOp2.Shape();
 
             // Create profile p4: "profile p4 o 0 0 25 f 50 75 x 75 y 100 x -75"
@@ -866,8 +867,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 50 -125 x 75 y -50 x -75"
@@ -910,8 +911,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 25 -125 x 50 y -50 x -50"
@@ -954,8 +955,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 p 0 0 -1 1 0 0 o 0 0 50 f 50 25 x 25 y -280 x -25"
@@ -998,8 +999,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -30));
 
             // First cut operation: "bcut po1 pr1 pr2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile p3: "profile p3 o 0 0 20 f 50 255 y -280 x 25 y 280"
@@ -1045,8 +1046,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aPrism2 = BOPTest_Utilities.CreatePrism(aProfile2, new Vector3D(0, 0, -6));
 
             // First cut operation: "bcut r1 p1 p2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aPrism1, aPrism2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aPrism1, aPrism2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile f3: "profile f3 p 0 0 -1 1 0 0 o 0 0 23 f 50 -10 c -30 360"
@@ -1078,8 +1079,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aCylinder1, aCylinder2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile f3: "profile f3 p 0 0 -1 1 0 0 o 0 0 14 f 50 -10 c -30 360"
@@ -1106,8 +1107,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aCylinder1, aCylinder2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile f3: "profile f3 o 0 0 23 f 50 10 c 30 360"
@@ -1134,8 +1135,8 @@ public static class BRepAlgoAPI_CutTests_1
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
-            BRepAlgoAPI_Cut aCutOp1 = new(aCylinder1, aCylinder2);
-            Assert.True(aCutOp1.IsDone(), "First cut operation failed");
+            Cut aCutOp1 = new(aCylinder1, aCylinder2);
+            Assert.True(aCutOp1.IsDone, "First cut operation failed");
             Shape aIntermediate = aCutOp1.Shape();
 
             // Create profile f3: "profile f3 o 0 0 14 f 50 10 c 30 360"

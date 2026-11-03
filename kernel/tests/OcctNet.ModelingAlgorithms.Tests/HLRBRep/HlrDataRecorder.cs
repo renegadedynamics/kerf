@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.HiddenLines;
+using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -62,7 +66,7 @@ internal sealed class HlrDataRecorder
         Hex(V.Y());
     }
 
-    private void MinMaxRec(in HLRAlgo_EdgesBlock.MinMaxIndices M)
+    private void MinMaxRec(in EdgesBlock.MinMaxIndices M)
     {
         for (int k = 0; k < 8; k++)
         {
@@ -121,9 +125,9 @@ internal sealed class HlrDataRecorder
         End();
     }
 
-    private void RecTopo(HLRTopoBRep_OutLiner S, Shape theWorking)
+    private void RecTopo(OutLiner S, Shape theWorking)
     {
-        HLRTopoBRep_Data DS = S.DataStructure();
+        TopologyData DS = S.DataStructure();
         NCollection_Map<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         int i = 0;
         for (global::Kerf.Engine.Topology.Explorer ex = new(theWorking, ShapeType.Face); ex.More(); ex.Next())
@@ -178,11 +182,11 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    private void RecEData(HLRBRep_Data DS)
+    private void RecEData(HiddenLineData DS)
     {
-        for (int e = 1; e <= DS.NbEdges(); e++)
+        for (int e = 1; e <= DS.EdgeCount; e++)
         {
-            HLRBRep_EdgeData ed = DS.EDataArray()[e];
+            HiddenLineEdgeData ed = DS.EDataArray()[e];
             Tag("edge");
             Int(e);
             Int(ed.Selected());
@@ -213,7 +217,7 @@ internal sealed class HlrDataRecorder
             Hex(p2);
             HexF(t2);
             End();
-            HLRBRep_Curve C = ed.Geometry();
+            HiddenLineCurve C = ed.Geometry();
             Tag("crv");
             Int((int)C.GetType());
             double f = C.FirstParameter(), l = C.LastParameter();
@@ -235,11 +239,11 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    private void RecFData(HLRBRep_Data DS)
+    private void RecFData(HiddenLineData DS)
     {
-        for (int f = 1; f <= DS.NbFaces(); f++)
+        for (int f = 1; f <= DS.FaceCount; f++)
         {
-            HLRBRep_FaceData fd = DS.FDataArray()[f];
+            HiddenLineFaceData fd = DS.FDataArray()[f];
             Tag("fdata");
             Int(f);
             Int(fd.Selected());
@@ -260,19 +264,19 @@ internal sealed class HlrDataRecorder
             Hex(fd.Size());
             HexF(fd.Tolerance());
             End();
-            HLRAlgo_WiresBlock wb = fd.Wires()!;
+            WiresBlock wb = fd.Wires()!;
             Tag("fmm");
             MinMaxRec(wb.MinMax());
             End();
-            for (int w = 1; w <= wb.NbWires(); w++)
+            for (int w = 1; w <= wb.WireCount; w++)
             {
-                HLRAlgo_EdgesBlock eb = wb.Wire(w)!;
+                EdgesBlock eb = wb.Wire(w)!;
                 Tag("wire");
-                Int(eb.NbEdges());
+                Int(eb.EdgeCount);
                 MinMaxRec(eb.MinMax());
                 End();
                 Tag("we");
-                for (int ie = 1; ie <= eb.NbEdges(); ie++)
+                for (int ie = 1; ie <= eb.EdgeCount; ie++)
                 {
                     Int(eb.Edge(ie));
                     Int((int)eb.Orientation(ie));
@@ -286,10 +290,10 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    private void InterferenceRec(string theTag, in HLRAlgo_Interference I)
+    private void InterferenceRec(string theTag, in Interference I)
     {
         Tag(theTag);
-        HLRAlgo_Intersection X = I.Intersection();
+        AlgoIntersection X = I.Intersection();
         Int((int)X.Orientation());
         Int(X.Level());
         Int(X.SegIndex());
@@ -309,20 +313,20 @@ internal sealed class HlrDataRecorder
         End();
     }
 
-    private void RecHide(HLRBRep_Data DS, NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST, int theMaxFaces)
+    private void RecHide(HiddenLineData DS, NCollection_DataMap<Shape, AdaptorTool> MST, int theMaxFaces)
     {
-        HLRAlgo_EdgesBlock.MinMaxIndices aTot = new();
+        EdgesBlock.MinMaxIndices aTot = new();
         for (int k = 0; k < 8; k++)
         {
             aTot.Min[k] = 0;
             aTot.Max[k] = 0x7fff7fff;
         }
-        DS.InitBoundSort(aTot, 1, DS.NbEdges());
-        HLRBRep_EdgeInterferenceTool EIT = new(DS);
+        DS.InitBoundSort(aTot, 1, DS.EdgeCount);
+        EdgeInterferenceTool EIT = new(DS);
         int nbFaces = 0;
-        for (int f = 1; f <= DS.NbFaces() && nbFaces < theMaxFaces; f++)
+        for (int f = 1; f <= DS.FaceCount && nbFaces < theMaxFaces; f++)
         {
-            HLRBRep_FaceData fd = DS.FDataArray()[f];
+            HiddenLineFaceData fd = DS.FDataArray()[f];
             if (!fd.Hiding())
             {
                 continue;
@@ -340,14 +344,14 @@ internal sealed class HlrDataRecorder
                 while (DS.MoreEdge())
                 {
                     int e = DS.Edge();
-                    HLRBRep_EdgeData ed = DS.EDataArray()[e];
+                    HiddenLineEdgeData ed = DS.EDataArray()[e];
                     Tag("le");
                     Int(e);
                     Int(DS.HidingTheFace() ? 1 : 0);
                     Int(DS.SimpleHidingFace() ? 1 : 0);
                     Int(DS.EdgeOfTheHidingFace(e, ed) ? 1 : 0);
                     End();
-                    NCollection_List<HLRAlgo_Interference> IL = new();
+                    NCollection_List<Interference> IL = new();
                     DS.InitInterference();
                     while (DS.MoreInterference())
                     {
@@ -359,34 +363,34 @@ internal sealed class HlrDataRecorder
                         }
                         else
                         {
-                            ref HLRAlgo_Interference I = ref DS.Interference();
+                            ref Interference I = ref DS.Interference();
                             InterferenceRec("itf", I);
-                            HLRBRep_EdgeIList.AddInterference(IL, I, EIT);
+                            EdgeIList.AddInterference(IL, I, EIT);
                         }
                         DS.NextInterference();
                     }
                     if (!IL.IsEmpty())
                     {
                         EIT.LoadEdge();
-                        HLRBRep_EdgeIList.ProcessComplex(IL, EIT);
-                        for (NCollection_List<HLRAlgo_Interference>.Iterator it = new(IL); it.More(); it.Next())
+                        EdgeIList.ProcessComplex(IL, EIT);
+                        for (NCollection_List<Interference>.Iterator it = new(IL); it.More(); it.Next())
                         {
                             InterferenceRec("cpx", it.Value());
                         }
-                        NCollection_List<HLRAlgo_Interference>.Iterator itIL = new(IL);
-                        HLRBRep_VertexList VL = new(EIT, itIL);
+                        NCollection_List<Interference>.Iterator itIL = new(IL);
+                        VertexList VL = new(EIT, itIL);
                         while (VL.More())
                         {
                             Tag("vl");
                             Hex(VL.Current().Parameter());
                             Int(VL.Current().Index());
-                            Int(VL.IsBoundary() ? 1 : 0);
-                            Int(VL.IsInterference() ? 1 : 0);
-                            if (VL.IsBoundary())
+                            Int(VL.IsBoundary ? 1 : 0);
+                            Int(VL.IsInterference ? 1 : 0);
+                            if (VL.IsBoundary)
                             {
                                 Int((int)VL.Orientation());
                             }
-                            if (VL.IsInterference())
+                            if (VL.IsInterference)
                             {
                                 Int((int)VL.Transition());
                                 Int((int)VL.BoundaryTransition());
@@ -413,19 +417,19 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    public void RecData(string theName, Shape theShape, string theView, HLRAlgo_Projector P, int nbIso,
+    public void RecData(string theName, Shape theShape, string theView, AlgorithmProjector P, int nbIso,
                         int theMaxFaces)
     {
         gOut.Append("case hlrdata ").Append(theName).Append(' ').Append(theView).Append('\n');
         try
         {
-            HLRTopoBRep_OutLiner S = new(theShape);
-            NCollection_DataMap<Shape, BRepTopAdaptor_Tool> MST = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-            HLRBRep_Data DS = HLRBRep_ShapeToHLR.Load(S, P, MST, nbIso);
+            OutLiner S = new(theShape);
+            NCollection_DataMap<Shape, AdaptorTool> MST = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            HiddenLineData DS = ShapeToHlr.Load(S, P, MST, nbIso);
             Tag("sizes");
-            Int(DS.NbVertices());
-            Int(DS.NbEdges());
-            Int(DS.NbFaces());
+            Int(DS.VertexCount);
+            Int(DS.EdgeCount);
+            Int(DS.FaceCount);
             End();
             RecTopo(S, S.InternalWorkingShape());
             DS.Update(P);
@@ -439,16 +443,16 @@ internal sealed class HlrDataRecorder
         }
     }
 
-    public static HLRAlgo_Projector View(int theView) => theView switch
+    public static AlgorithmProjector View(int theView) => theView switch
     {
-        0 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2))),
-        1 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
-        2 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))),
-        3 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))),
-        4 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(-1, 0, 0))),
-        5 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(-1, 0, 0), new Direction3D(0, -1, 0))),
-        6 => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0))),
-        _ => new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)), 400.0),
+        0 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2))),
+        1 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))),
+        2 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))),
+        3 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))),
+        4 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(-1, 0, 0))),
+        5 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(-1, 0, 0), new Direction3D(0, -1, 0))),
+        6 => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0))),
+        _ => new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1), new Direction3D(-1, 1, 2)), 400.0),
     };
 
     public static readonly string[] THE_VIEWS = ["axo", "top", "bottom", "front", "back", "left", "right", "persp"];
@@ -463,12 +467,12 @@ internal sealed class HlrDataRecorder
     /// <summary>The primitives in every view and in perspective (data.cpp's first loop).</summary>
     public void RecPrimitives()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(10.0, 30.0).Shape();
-        Shape aTorus = new BRepPrimAPI_MakeTorus(30.0, 10.0).Shape();
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
-        Shape aSph = new BRepPrimAPI_MakeSphere(new Point3D(3, 2, 1), 8.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(10.0, 30.0).Shape();
+        Shape aTorus = new MakeTorus(30.0, 10.0).Shape();
+        Shape aBox = new MakeBox(new Point3D(-5, -10, -2), 10.0, 20.0, 30.0).Shape();
+        Shape aSph = new MakeSphere(new Point3D(3, 2, 1), 8.0).Shape();
         Shape aCone =
-            new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)), 10.0, 4.0, 20.0).Shape();
+            new ApiMakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1)), 10.0, 4.0, 20.0).Shape();
         for (int v = 0; v < 8; v++)
         {
             RecData("cylinder", aCyl, THE_VIEWS[v], View(v), v == 0 ? 3 : 0, 1000);

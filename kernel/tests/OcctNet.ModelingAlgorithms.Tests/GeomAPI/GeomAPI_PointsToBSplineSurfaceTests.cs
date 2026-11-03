@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -19,10 +20,10 @@ public class GeomAPI_PointsToBSplineSurface_Test
         aValidZPoints[2, 1] = 1.0;
         aValidZPoints[2, 2] = 0.0;
 
-        GeomAPI_PointsToBSplineSurface anApprox = new();
+        PointsToBSplineSurface anApprox = new();
         Assert.Null(Record.Exception(() =>
             anApprox.Init(aValidZPoints, 0.0, 1.0, 0.0, 1.0, 3, 5, Continuity.C2, global::Kerf.Engine.Foundation.Precision.Confusion())));
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
 
         NCollection_Array2<double> aZPoints = new(1, 3, 1, 1);
         aZPoints[1, 1] = 0.0;
@@ -31,7 +32,7 @@ public class GeomAPI_PointsToBSplineSurface_Test
 
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() =>
             anApprox.Init(aZPoints, 0.0, 1.0, 0.0, 0.0, 3, 5, Continuity.C2, global::Kerf.Engine.Foundation.Precision.Confusion()));
-        Assert.False(anApprox.IsDone());
+        Assert.False(anApprox.IsDone);
     }
 }
 
@@ -58,9 +59,9 @@ public class GeomAPI_PointsToBSplineSurfaceTests
     public void Interpolate_PassesThroughThePoints()
     {
         NCollection_Array2<Point3D> aPoints = Grid(7, 5);
-        GeomAPI_PointsToBSplineSurface anApprox = new();
+        PointsToBSplineSurface anApprox = new();
         anApprox.Interpolate(aPoints);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         BSplineSurface aSurface = anApprox.Surface();
         Assert.True(aSurface.IsFrozen);
         Assert.Equal(3, aSurface.UDegree());
@@ -82,15 +83,15 @@ public class GeomAPI_PointsToBSplineSurfaceTests
                                                                   ParametrizationType.Centripetal,
                                                                   ParametrizationType.IsoParametric })
         {
-            GeomAPI_PointsToBSplineSurface anApprox = new(aPoints, aParType, 3, 8, Continuity.C2, 1.0e-3);
-            Assert.True(anApprox.IsDone());
+            PointsToBSplineSurface anApprox = new(aPoints, aParType, 3, 8, Continuity.C2, 1.0e-3);
+            Assert.True(anApprox.IsDone);
             BSplineSurface aSurface = anApprox.Surface();
             aSurface.Bounds(out double aU1, out _, out double aV1, out _);
             Assert.True(aSurface.Value(aU1, aV1).Distance(aPoints[1, 1]) < 1e-2);
         }
 
-        GeomAPI_PointsToBSplineSurface aVariational = new(aPoints, 1.0, 0.0, 0.0, 8, Continuity.C2, 1.0e-3);
-        Assert.True(aVariational.IsDone());
+        PointsToBSplineSurface aVariational = new(aPoints, 1.0, 0.0, 0.0, 8, Continuity.C2, 1.0e-3);
+        Assert.True(aVariational.IsDone);
         Assert.True(aVariational.Surface().UPoleCount >= 4);
     }
 
@@ -107,13 +108,13 @@ public class GeomAPI_PointsToBSplineSurfaceTests
                 aPoints[i, j] = new Point3D((3 + Math.Cos(a)) * 1.0, Math.Sin(a), j);
             }
         }
-        GeomAPI_PointsToBSplineSurface anApprox = new();
+        PointsToBSplineSurface anApprox = new();
         anApprox.Interpolate(aPoints, true);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.True(anApprox.Surface().IsUPeriodic);
 
         anApprox.Init(aPoints, ParametrizationType.ChordLength, 3, 8, Continuity.C2, 1.0e-3, true);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         Assert.True(anApprox.Surface().IsUPeriodic);
     }
 
@@ -128,9 +129,9 @@ public class GeomAPI_PointsToBSplineSurfaceTests
                 aZ[i, j] = Height(0.5 * (i - 1), 0.25 * (j - 1));
             }
         }
-        GeomAPI_PointsToBSplineSurface anApprox = new();
+        PointsToBSplineSurface anApprox = new();
         anApprox.Interpolate(aZ, 1.0, 0.5, -2.0, 0.25);
-        Assert.True(anApprox.IsDone());
+        Assert.True(anApprox.IsDone);
         BSplineSurface aSurface = anApprox.Surface();
         aSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(1.0, aU1, 1e-12);
@@ -142,15 +143,15 @@ public class GeomAPI_PointsToBSplineSurfaceTests
         Assert.Equal(-1.0, aCorner.Y(), 1e-9);
         Assert.Equal(aZ[6, 5], aCorner.Z(), 1e-9);
 
-        GeomAPI_PointsToBSplineSurface anApprox2 = new(aZ, 1.0, 0.5, -2.0, 0.25);
-        Assert.True(anApprox2.IsDone());
+        PointsToBSplineSurface anApprox2 = new(aZ, 1.0, 0.5, -2.0, 0.25);
+        Assert.True(anApprox2.IsDone);
     }
 
     [Fact]
     public void Surface_NotDoneThrows()
     {
-        GeomAPI_PointsToBSplineSurface anApprox = new();
-        Assert.False(anApprox.IsDone());
+        PointsToBSplineSurface anApprox = new();
+        Assert.False(anApprox.IsDone);
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => anApprox.Surface());
     }
 }

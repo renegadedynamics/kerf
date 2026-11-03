@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -49,7 +51,7 @@ public class BRepLib_FuseEdgesTests
         Face aF = SixEdgeRectangle(out Vertex[] aV, out _);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
-        var aFuse = new BRepLib_FuseEdges(aF);
+        var aFuse = new FuseEdges(aF);
         Assert.Equal(2, aFuse.NbVertices());
 
         IReadOnlyDictionary<int, ISchematiqList<Shape>> anEdges = aFuse.Edges();
@@ -95,7 +97,7 @@ public class BRepLib_FuseEdgesTests
 
         // the area is unchanged
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(aResult, aProps);
+        MassPropertiesBuilder.SurfaceProperties(aResult, aProps);
         Assert.Equal(2.0, Math.Abs(aProps.Mass()), 1e-10);
 
         aBefore.AssertUnchanged(aF);
@@ -108,7 +110,7 @@ public class BRepLib_FuseEdgesTests
         var anAvoid = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         anAvoid.Add(anEdges[(0, 1)]);
 
-        var aFuse = new BRepLib_FuseEdges(aF, true);
+        var aFuse = new FuseEdges(aF, true);
         aFuse.AvoidEdges(anAvoid);
         anAvoid.Clear(); // the algorithm keeps its own copy
         Assert.Equal(1, aFuse.NbVertices());
@@ -128,14 +130,14 @@ public class BRepLib_FuseEdgesTests
         Face aF = ShapeCasts.Face(aF0.Moved(aLoc));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
-        var aFuse = new BRepLib_FuseEdges(aF);
+        var aFuse = new FuseEdges(aF);
         Shape aResult = aFuse.Shape();
         Assert.Equal(4, Count(aResult, ShapeType.Edge));
 
         var aProps0 = new Properties();
-        BRepGProp.SurfaceProperties(aF, aProps0);
+        MassPropertiesBuilder.SurfaceProperties(aF, aProps0);
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(aResult, aProps);
+        MassPropertiesBuilder.SurfaceProperties(aResult, aProps);
         Assert.Equal(aProps0.Mass(), aProps.Mass(), 1e-10);
         Assert.True(aProps0.CentreOfMass().Distance(aProps.CentreOfMass()) < 1e-9);
 
@@ -155,7 +157,7 @@ public class BRepLib_FuseEdgesTests
     public void A_shape_without_collinear_edges_is_returned_as_is()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        var aFuse = new BRepLib_FuseEdges(aBox);
+        var aFuse = new FuseEdges(aBox);
         Assert.Equal(0, aFuse.NbVertices());
         Assert.Empty(aFuse.Edges());
         Assert.Empty(aFuse.ResultEdges());
@@ -166,7 +168,7 @@ public class BRepLib_FuseEdgesTests
     [Fact]
     public void Null_shape_throws()
     {
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new BRepLib_FuseEdges(new Shape()));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new FuseEdges(new Shape()));
     }
 
     [Fact]
@@ -205,7 +207,7 @@ public class BRepLib_FuseEdgesTests
         aF = TestShapes.Frozen(aF);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
-        var aFuse = new BRepLib_FuseEdges(aF);
+        var aFuse = new FuseEdges(aF);
         Assert.Equal(1, aFuse.NbVertices());
         Shape aResult = aFuse.Shape();
         Assert.Equal(3, Count(aResult, ShapeType.Edge));
@@ -223,9 +225,9 @@ public class BRepLib_FuseEdgesTests
         Assert.Equal(0.0, aPC.Value(pf).Y(), 1e-12);
 
         var aProps0 = new Properties();
-        BRepGProp.SurfaceProperties(aF, aProps0);
+        MassPropertiesBuilder.SurfaceProperties(aF, aProps0);
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(aResult, aProps);
+        MassPropertiesBuilder.SurfaceProperties(aResult, aProps);
         Assert.Equal(aProps0.Mass(), aProps.Mass(), 1e-9);
         aBefore.AssertUnchanged(aF);
     }
@@ -261,7 +263,7 @@ public class BRepLib_FuseEdgesTests
         Vertex aV0 = TestShapes.Vertex(aC1.Value(0)), aVm = TestShapes.Vertex(aC1.Value(1)), aV2 = TestShapes.Vertex(aC2.Value(1));
         Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
 
-        var aFuse = new BRepLib_FuseEdges(aW);
+        var aFuse = new FuseEdges(aW);
         Assert.Equal(0, aFuse.NbVertices());
         Assert.True(aFuse.Shape().IsEqual(aW));
     }
@@ -274,7 +276,7 @@ public class BRepLib_FuseEdgesTests
         Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC1, 0, 1, aV0, aVm), TestShapes.Edge(aC2, 0, 1, aVm, aV2)));
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aW);
 
-        var aFuse = new BRepLib_FuseEdges(aW);
+        var aFuse = new FuseEdges(aW);
         aFuse.SetConcatBSpl();
         Assert.Equal(1, aFuse.NbVertices());
         Shape aResult = aFuse.Shape();
@@ -287,7 +289,7 @@ public class BRepLib_FuseEdgesTests
         Assert.True(aC.Value(f).Distance(new Point3D(0, 0, 0)) < Conf);
         Assert.True(aC.Value(l).Distance(new Point3D(4, 0, 0)) < Conf);
         // the junction is on the concatenated curve
-        var anExt = new GeomAPI_ProjectPointOnCurve(new Point3D(2, 1, 0), aC);
+        var anExt = new ProjectPointOnCurve(new Point3D(2, 1, 0), aC);
         Assert.True(anExt.LowerDistance() < Conf);
         aBefore.AssertUnchanged(aW);
     }
@@ -299,7 +301,7 @@ public class BRepLib_FuseEdgesTests
         Vertex aV0 = TestShapes.Vertex(aC.Value(0)), aVm = TestShapes.Vertex(aC.Value(0.4)), aV1 = TestShapes.Vertex(aC.Value(1));
         Wire aW = TestShapes.Frozen(Wire(TestShapes.Edge(aC, 0, 0.4, aV0, aVm), TestShapes.Edge(aC, 0.4, 1, aVm, aV1)));
 
-        var aFuse = new BRepLib_FuseEdges(aW);
+        var aFuse = new FuseEdges(aW);
         Assert.Equal(1, aFuse.NbVertices());
         Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
         Assert.Same(aC, Tool.Curve(anE, out double f, out double l));
@@ -324,7 +326,7 @@ public class BRepLib_FuseEdgesTests
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aW);
         double aFirst = aC.FirstParameter();
 
-        var aFuse = new BRepLib_FuseEdges(aW);
+        var aFuse = new FuseEdges(aW);
         Assert.Equal(1, aFuse.NbVertices());
         Shape aResult = aFuse.Shape();
         Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
@@ -344,7 +346,7 @@ public class BRepLib_FuseEdgesTests
     public void Internal_forms_do_not_freeze()
     {
         Face aF = SixEdgeRectangle(out _, out _);
-        var aFuse = new BRepLib_FuseEdges(aF);
+        var aFuse = new FuseEdges(aF);
         var aResultEdges = new NCollection_DataMap<int, Shape>();
         aFuse.ResultEdges(aResultEdges);
         Assert.All(aResultEdges, anItem => Assert.False(anItem.Value.TShape()!.IsFrozen));
@@ -390,7 +392,7 @@ public class BRepLib_FuseEdgesTests
         aF = TestShapes.Frozen(aF);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aF);
 
-        var aFuse = new BRepLib_FuseEdges(aF);
+        var aFuse = new FuseEdges(aF);
         aFuse.SetConcatBSpl();
         Shape aResult = aFuse.Shape();
         Assert.Equal(2, Count(aResult, ShapeType.Edge));

@@ -1,5 +1,10 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -19,7 +24,7 @@ public static class OneD
         foreach (var edge in edges)
             if (!edge.IsEmpty)
                 edgesIn.Append(edge.TopoShape);
-        var wiresOut = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
+        var wiresOut = FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
         if (wiresOut is null)
             return [];
         return new ShapeList<Wire>(wiresOut.Select(w => new Wire(ShapeCasts.Wire(w))));
@@ -76,7 +81,7 @@ public static class OneD
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
     public static global::Kerf.Topology.Shape OffsetTopodsFace(global::Kerf.Topology.Face face, double amount)
     {
-        var offsetter = new BRepOffset_MakeOffset();
+        var offsetter = new MakeOffset();
         offsetter.Initialize(face, amount, Constants.Tolerance);
         offsetter.MakeOffsetShape();
         return offsetter.Shape();
@@ -190,8 +195,8 @@ public static class OneD
         var pcurve1 = Tool.CurveOnSurface(edge, face1, out f1, out l1)!;
         var pcurve2 = Tool.CurveOnSurface(edge, face2, out f2, out l2)!;
         bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation() == Orientation.Reversed;
-        var props1 = new BRepGProp_Face(face1);
-        var props2 = new BRepGProp_Face(face2);
+        var props1 = new FaceIntegrand(face1);
+        var props2 = new FaceIntegrand(face2);
         var kinds = new HashSet<Convexity>();
         for (int i = 0; i < samples; i++)
         {
@@ -310,7 +315,7 @@ public static class OneD
             if (!approximation.HasResult)
                 throw new InvalidOperationException("2D offset curve could not be converted to a spline");
             var spline = approximation.Curve();
-            var maker = new BRepBuilderAPI_MakeEdge(spline!);
+            var maker = new MakeEdge(spline!);
             // The curve is stored without the placement or direction of its edge
             var placed = maker.Edge().Located(edge.TopoShape.Location());
             fitted.Add(new Edge(ShapeCasts.Edge(placed.Oriented(edge.TopoShape.Orientation()))));
@@ -400,7 +405,7 @@ public abstract partial class Shape1D
         global::Kerf.Topology.Wire topoWire = lineEdges.Count == 1
             ? new Wire([lineEdges[0].Trim(0.0, 0.5), lineEdges[0].Trim(0.5, 1.0)]).TopoWire
             : line.TopoWire;
-        var builder = new BRepOffsetAPI_MakeOffset();
+        var builder = new MakeWireOffset();
         if (isStraight && normal is { } sn)
         {
             // A straight line has no plane of its own to offset within
@@ -411,7 +416,7 @@ public abstract partial class Shape1D
             builder.Init(join);
         builder.AddWire(topoWire);
         builder.Perform(signedDistance);
-        if (!builder.IsDone())
+        if (!builder.IsDone)
             throw new InvalidOperationException($"2D offset failed with distance {distance}");
         var obj = TopoUtil.Downcast(builder.Shape());
         if (obj.IsCompound())

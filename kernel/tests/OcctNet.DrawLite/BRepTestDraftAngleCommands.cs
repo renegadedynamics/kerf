@@ -1,11 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Features.Api;
+using Kerf.Engine.Features.Draft;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Occt.BRepBuilderAPI_TransitionMode;
-using static Occt.Draft_ErrorStatus;
+using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Engine.Features.Draft.DraftErrorStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
@@ -23,24 +26,24 @@ internal static class BRepTestDraftAngleCommands
         DrawCxx.Add(theInterpreter, "draft", Draft);
     }
 
-    private static void Print(DrawResult di, Draft_ErrorStatus St)
+    private static void Print(DrawResult di, DraftErrorStatus St)
     {
         di.Append("  Error Status : ");
         switch (St)
         {
-            case Draft_NoError:
+            case DraftErrorStatus.NoError:
                 di.Append("No error");
                 break;
 
-            case Draft_FaceRecomputation:
+            case DraftErrorStatus.FaceRecomputation:
                 di.Append("Impossible face recomputation");
                 break;
 
-            case Draft_EdgeRecomputation:
+            case DraftErrorStatus.EdgeRecomputation:
                 di.Append("Impossible edge recomputation");
                 break;
 
-            case Draft_VertexRecomputation:
+            case DraftErrorStatus.VertexRecomputation:
                 di.Append("Impossible vertex recomputation");
                 break;
         }
@@ -54,7 +57,7 @@ internal static class BRepTestDraftAngleCommands
             return 1;
         }
         Shape V = theDI.GetShape(a[2]);
-        BRepOffsetAPI_DraftAngle drft = new(V);
+        DraftAngle drft = new(V);
 
         Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
@@ -85,7 +88,7 @@ internal static class BRepTestDraftAngleCommands
             return 1;
         }
         drft.Build();
-        if (drft.IsDone())
+        if (drft.IsDone)
         {
             theDI.SetShape(a[1], drft.Shape());
             return 0;
@@ -111,7 +114,7 @@ internal static class BRepTestDraftAngleCommands
             return 1;
         }
 
-        BRepOffsetAPI_DraftAngle drft = new(V);
+        DraftAngle drft = new(V);
 
         Direction3D Dirextract = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
 
@@ -151,7 +154,7 @@ internal static class BRepTestDraftAngleCommands
             return 1;
         }
         drft.Build();
-        if (drft.IsDone())
+        if (drft.IsDone)
         {
             theDI.SetShape(a[1], drft.Shape());
             return 0;
@@ -183,7 +186,7 @@ internal static class BRepTestDraftAngleCommands
 
         Direction3D D = new(x, y, z);
 
-        BRepOffsetAPI_MakeDraft MkDraft = new(SInit, D, teta);
+        MakeDraft MkDraft = new(SInit, D, teta);
 
         if (n > 8)
         {
@@ -203,12 +206,12 @@ internal static class BRepTestDraftAngleCommands
             {
                 if (a[cur] == "-Ri")
                 {
-                    MkDraft.SetOptions(BRepBuilderAPI_RightCorner);
+                    MkDraft.SetOptions(TransitionMode.RightCorner);
                     cur++;
                 }
                 else if (a[cur] == "-Ro")
                 {
-                    MkDraft.SetOptions(BRepBuilderAPI_RoundCorner);
+                    MkDraft.SetOptions(TransitionMode.RoundCorner);
                     cur++;
                 }
             }

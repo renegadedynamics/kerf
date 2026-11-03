@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
 using Kerf.Topology;
 using Occt;
 
@@ -26,7 +28,7 @@ internal static class BRepTestSewingCommands
     private static int Sewing(DrawInterpreter theDI, DrawResult theDi, IReadOnlyList<string> theArgv)
     {
         int theArgc = theArgv.Count;
-        var aSewing = new BRepBuilderAPI_Sewing();
+        var aSewing = new Sewing();
         int aPar = 1;
         var aSeq = new NCollection_Sequence<Shape>();
 
@@ -201,7 +203,7 @@ internal static class BRepTestSewingCommands
             return 1;
         }
 
-        var aFS = new BRepBuilderAPI_FastSewing();
+        var aFS = new FastSewing();
 
         int aStartIndex = 2;
 

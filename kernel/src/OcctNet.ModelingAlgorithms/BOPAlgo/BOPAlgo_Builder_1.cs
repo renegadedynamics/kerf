@@ -2,97 +2,100 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_Builder
+public partial class BooleanBuilder
 {
     /// <summary>Fills the images of the vertices: each vertex to its same-domain vertex.</summary>
-    protected void FillImagesVertices(ProgressRange theRange)
+    protected void FillImagesVertices(ProgressRange range)
     {
-        using var aPS = new ProgressScope(theRange, "Filling splits of vertices", myDS!.ShapesSD().Extent());
+        using var ps = new ProgressScope(range, "Filling splits of vertices", _ds!.ShapesSD().Extent());
         // the DS's integer map iterates in OCCT's order (decision 784)
-        NCollection_IntDataMap<int>.Iterator aIt = new(myDS.ShapesSD());
-        for (; aIt.More(); aIt.Next(), aPS.Next())
+        NCollection_IntDataMap<int>.Iterator it = new(_ds.ShapesSD());
+        for (; it.More(); it.Next(), ps.Next())
         {
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
-            int nV = aIt.Key();
-            int nVSD = aIt.Value();
+            int nV = it.Key();
+            int nVSD = it.Value();
 
-            Shape aV = myDS.Shape(nV);
-            Shape aVSD = myDS.Shape(nVSD);
+            Shape v = _ds.Shape(nV);
+            Shape vsd = _ds.Shape(nVSD);
             // Add to Images map
-            myImages.Bound(aV, new NCollection_List<Shape>()).Append(aVSD);
+            _images.Bound(v, new NCollection_List<Shape>()).Append(vsd);
             // Add to SD map
-            myShapesSD.Bind(aV, aVSD);
+            _shapesSD.Bind(v, vsd);
             // Add to Origins map
-            if (!myOrigins.Find(aVSD, out NCollection_List<Shape> pLOr))
+            if (!_origins.Find(vsd, out NCollection_List<Shape> pLOr))
             {
-                pLOr = myOrigins.Bound(aVSD, new NCollection_List<Shape>());
+                pLOr = _origins.Bound(vsd, new NCollection_List<Shape>());
             }
-            pLOr.Append(aV);
+            pLOr.Append(v);
         }
     }
 
     /// <summary>Fills the images of the edges: the edges of their (real) pave blocks.</summary>
-    protected void FillImagesEdges(ProgressRange theRange)
+    protected void FillImagesEdges(ProgressRange range)
     {
-        int i, aNbS = myDS!.NbSourceShapes();
-        using var aPS = new ProgressScope(theRange, "Filling splits of edges", aNbS);
-        for (i = 0; i < aNbS; ++i, aPS.Next())
+        int i, nbS = _ds!.SourceShapeCount;
+        using var ps = new ProgressScope(range, "Filling splits of edges", nbS);
+        for (i = 0; i < nbS; ++i, ps.Next())
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() != ShapeType.Edge)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
             //
             // Check if the pave blocks for the edge have been initialized
-            if (!aSI.HasReference())
+            if (!si.HasReference)
             {
                 continue;
             }
             //
-            Shape aE = aSI.Shape();
-            NCollection_List<BOPDS_PaveBlock> aLPB = myDS.PaveBlocks(i);
+            Shape e = si.Shape();
+            NCollection_List<PaveBlock> lpb = _ds.PaveBlocks(i);
             //
             // Fill the images of the edge from the list of its pave blocks.
             // The small edges, having no pave blocks, will have the empty list
             // of images and, thus, will be avoided in the result.
-            NCollection_List<Shape> pLS = myImages.Bound(aE, new NCollection_List<Shape>());
+            NCollection_List<Shape> pLS = _images.Bound(e, new NCollection_List<Shape>());
             //
-            NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new(aLPB);
-            for (; aItPB.More(); aItPB.Next())
+            NCollection_List<PaveBlock>.Iterator itPB = new(lpb);
+            for (; itPB.More(); itPB.Next())
             {
-                BOPDS_PaveBlock aPB = aItPB.Value();
-                BOPDS_PaveBlock aPBR = myDS.RealPaveBlock(aPB);
+                PaveBlock pb = itPB.Value();
+                PaveBlock pbr = _ds.RealPaveBlock(pb);
                 //
-                int nSpR = aPBR.Edge();
-                Shape aSpR = myDS.Shape(nSpR);
-                pLS.Append(aSpR);
+                int nSpR = pbr.Edge();
+                Shape spR = _ds.Shape(nSpR);
+                pLS.Append(spR);
                 //
-                if (!myOrigins.Find(aSpR, out NCollection_List<Shape> pLOr))
+                if (!_origins.Find(spR, out NCollection_List<Shape> pLOr))
                 {
-                    pLOr = myOrigins.Bound(aSpR, new NCollection_List<Shape>());
+                    pLOr = _origins.Bound(spR, new NCollection_List<Shape>());
                 }
-                pLOr.Append(aE);
+                pLOr.Append(e);
                 //
-                if (myDS.IsCommonBlockOnEdge(aPB))
+                if (_ds.IsCommonBlockOnEdge(pb))
                 {
-                    int nSp = aPB.Edge();
-                    Shape aSp = myDS.Shape(nSp);
-                    myShapesSD.Bind(aSp, aSpR);
+                    int nSp = pb.Edge();
+                    Shape sp = _ds.Shape(nSp);
+                    _shapesSD.Bind(sp, spR);
                 }
             }
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
@@ -100,39 +103,39 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Adds the images of the arguments of the given type (or the arguments themselves) into the result.</summary>
-    protected virtual void BuildResult(ShapeType theType)
+    protected virtual void BuildResult(ShapeType type)
     {
         // Fence map
-        NCollection_Map<Shape> aMFence = new(ShapeHasher.Instance);
+        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
         // Iterate on all arguments of given type
         // and add their images into result
-        NCollection_List<Shape>.Iterator aItA = new(myArguments);
-        for (; aItA.More(); aItA.Next())
+        NCollection_List<Shape>.Iterator itA = new(_arguments);
+        for (; itA.More(); itA.Next())
         {
-            Shape aS = aItA.Value();
-            if (aS.ShapeType() != theType)
+            Shape s = itA.Value();
+            if (s.ShapeType() != type)
             {
                 continue;
             }
             // Get images
-            if (!myImages.Find(aS, out NCollection_List<Shape> pLSIm))
+            if (!_images.Find(s, out NCollection_List<Shape> pLSIm))
             {
                 // No images -> add the argument shape itself into result
-                if (aMFence.Add(aS))
+                if (mFence.Add(s))
                 {
-                    new BrepBuilder().Add(myShape, aS);
+                    new BrepBuilder().Add(_shape, s);
                 }
             }
             else
             {
                 // Add images of the argument shape into result
-                NCollection_List<Shape>.Iterator aItIm = new(pLSIm);
-                for (; aItIm.More(); aItIm.Next())
+                NCollection_List<Shape>.Iterator itIm = new(pLSIm);
+                for (; itIm.More(); itIm.Next())
                 {
-                    Shape aSIm = aItIm.Value();
-                    if (aMFence.Add(aSIm))
+                    Shape sIm = itIm.Value();
+                    if (mFence.Add(sIm))
                     {
-                        new BrepBuilder().Add(myShape, aSIm);
+                        new BrepBuilder().Add(_shape, sIm);
                     }
                 }
             }
@@ -140,21 +143,21 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Fills the images of the containers (wires, shells, compsolids) of the given type.</summary>
-    protected void FillImagesContainers(ShapeType theType, ProgressRange theRange)
+    protected void FillImagesContainers(ShapeType type, ProgressRange range)
     {
-        int i, aNbS;
+        int i, nbS;
         //
-        aNbS = myDS!.NbSourceShapes();
-        using var aPS = new ProgressScope(theRange, "Building splits of containers", 1);
-        for (i = 0; i < aNbS; ++i)
+        nbS = _ds!.SourceShapeCount;
+        using var ps = new ProgressScope(range, "Building splits of containers", 1);
+        for (i = 0; i < nbS; ++i)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == theType)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() == type)
             {
-                Shape aC = aSI.Shape();
-                FillImagesContainer(aC, theType);
+                Shape c = si.Shape();
+                FillImagesContainer(c, type);
             }
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
@@ -162,22 +165,22 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Fills the images of the compounds.</summary>
-    protected void FillImagesCompounds(ProgressRange theRange)
+    protected void FillImagesCompounds(ProgressRange range)
     {
-        int i, aNbS;
-        NCollection_Map<Shape> aMFP = new(ShapeHasher.Instance);
+        int i, nbS;
+        NCollection_Map<Shape> mfp = new(ShapeHasher.Instance);
         //
-        aNbS = myDS!.NbSourceShapes();
-        using var aPS = new ProgressScope(theRange, "Building splits of compounds", aNbS);
-        for (i = 0; i < aNbS; ++i, aPS.Next())
+        nbS = _ds!.SourceShapeCount;
+        using var ps = new ProgressScope(range, "Building splits of compounds", nbS);
+        for (i = 0; i < nbS; ++i, ps.Next())
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(i);
-            if (aSI.ShapeType() == ShapeType.Compound)
+            ShapeInfo si = _ds.ShapeInfo(i);
+            if (si.ShapeType() == ShapeType.Compound)
             {
-                Shape aC = aSI.Shape();
-                FillImagesCompound(aC, aMFP);
+                Shape c = si.Shape();
+                FillImagesCompound(c, mfp);
             }
-            if (UserBreak(aPS))
+            if (UserBreak(ps))
             {
                 return;
             }
@@ -185,86 +188,86 @@ public partial class BOPAlgo_Builder
     }
 
     /// <summary>Makes the image of the container from the splits of its sub-shapes, if any of them is split.</summary>
-    protected void FillImagesContainer(in Shape theS, ShapeType theType)
+    protected void FillImagesContainer(in Shape s, ShapeType type)
     {
         // Check if any of the sub-shapes of the container have been modified
-        Iterator aIt = new(theS);
-        for (; aIt.More(); aIt.Next())
+        Iterator it = new(s);
+        for (; it.More(); it.Next())
         {
-            Shape aSS = aIt.Value();
-            if (myImages.Find(aSS, out NCollection_List<Shape> pLFIm)
-                && ((pLFIm.Extent() != 1) || !pLFIm.First().IsSame(aSS)))
+            Shape ss = it.Value();
+            if (_images.Find(ss, out NCollection_List<Shape> pLFIm)
+                && ((pLFIm.Extent() != 1) || !pLFIm.First().IsSame(ss)))
             {
                 break;
             }
         }
 
-        if (!aIt.More())
+        if (!it.More())
         {
             // Non of the sub-shapes have been modified.
             // No need to create the new container.
             return;
         }
 
-        BrepBuilder aBB = new();
+        BrepBuilder bb = new();
         // Make the new container of the splits of its sub-shapes
-        Shape aCIm = new();
-        BOPTools_AlgoTools.MakeContainer(theType, ref aCIm);
+        Shape cIm = new();
+        AlgoTools.MakeContainer(type, ref cIm);
 
-        aIt.Initialize(theS);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(s);
+        for (; it.More(); it.Next())
         {
-            Shape aSS = aIt.Value();
+            Shape ss = it.Value();
 
-            if (!myImages.Find(aSS, out NCollection_List<Shape> pLSSIm))
+            if (!_images.Find(ss, out NCollection_List<Shape> pLSSIm))
             {
                 // No splits, add the sub-shape itself
-                aBB.Add(aCIm, aSS);
+                bb.Add(cIm, ss);
                 continue;
             }
 
             // Add the splits
-            NCollection_List<Shape>.Iterator aItIm = new(pLSSIm);
-            for (; aItIm.More(); aItIm.Next())
+            NCollection_List<Shape>.Iterator itIm = new(pLSSIm);
+            for (; itIm.More(); itIm.Next())
             {
-                Shape aSSIm = aItIm.Value();
-                if (!aSSIm.IsEqual(aSS)
-                    && BOPTools_AlgoTools.IsSplitToReverseWithWarn(aSSIm, aSS, myContext, myReport))
+                Shape ssIm = itIm.Value();
+                if (!ssIm.IsEqual(ss)
+                    && AlgoTools.IsSplitToReverseWithWarn(ssIm, ss, _context, _report))
                 {
-                    aSSIm.Reverse();
+                    ssIm.Reverse();
                 }
-                aBB.Add(aCIm, aSSIm);
+                bb.Add(cIm, ssIm);
             }
         }
 
-        aCIm.Closed(Tool.IsClosed(aCIm));
-        myImages.Bound(theS, new NCollection_List<Shape>()).Append(aCIm);
+        cIm.Closed(Tool.IsClosed(cIm));
+        _images.Bound(s, new NCollection_List<Shape>()).Append(cIm);
     }
 
     /// <summary>Makes the image of the compound (and of its sub-compounds) from the images of its components.</summary>
-    protected void FillImagesCompound(in Shape theS, NCollection_Map<Shape> theMFP)
+    protected void FillImagesCompound(in Shape s, NCollection_Map<Shape> mfp)
     {
         bool bInterferred;
-        Orientation aOrX;
-        Iterator aIt = new();
-        BrepBuilder aBB = new();
-        NCollection_List<Shape>.Iterator aItIm = new();
+        Orientation orX;
+        Iterator it = new();
+        BrepBuilder bb = new();
+        NCollection_List<Shape>.Iterator itIm = new();
         //
-        if (!theMFP.Add(theS))
+        if (!mfp.Add(s))
         {
             return;
         }
         //
         bInterferred = false;
-        aIt.Initialize(theS);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(s);
+        for (; it.More(); it.Next())
         {
-            Shape aSx = aIt.Value();
+            Shape aSx = it.Value();
             if (aSx.ShapeType() == ShapeType.Compound)
             {
-                FillImagesCompound(aSx, theMFP);
+                FillImagesCompound(aSx, mfp);
             }
-            if (myImages.IsBound(aSx))
+            if (_images.IsBound(aSx))
             {
                 bInterferred = true;
             }
@@ -274,33 +277,33 @@ public partial class BOPAlgo_Builder
             return;
         }
         //
-        Shape aCIm = new();
-        BOPTools_AlgoTools.MakeContainer(ShapeType.Compound, ref aCIm);
+        Shape cIm = new();
+        AlgoTools.MakeContainer(ShapeType.Compound, ref cIm);
         //
-        aIt.Initialize(theS);
-        for (; aIt.More(); aIt.Next())
+        it.Initialize(s);
+        for (; it.More(); it.Next())
         {
-            Shape aSX = aIt.Value();
-            aOrX = aSX.Orientation();
-            if (myImages.IsBound(aSX))
+            Shape sx = it.Value();
+            orX = sx.Orientation();
+            if (_images.IsBound(sx))
             {
-                NCollection_List<Shape> aLFIm = myImages.Find(aSX);
-                aItIm.Initialize(aLFIm);
-                for (; aItIm.More(); aItIm.Next())
+                NCollection_List<Shape> lfIm = _images.Find(sx);
+                itIm.Initialize(lfIm);
+                for (; itIm.More(); itIm.Next())
                 {
-                    Shape aSXIm = aItIm.Value();
-                    aSXIm.Orientation(aOrX);
-                    aBB.Add(aCIm, aSXIm);
+                    Shape sxIm = itIm.Value();
+                    sxIm.Orientation(orX);
+                    bb.Add(cIm, sxIm);
                 }
             }
             else
             {
-                aBB.Add(aCIm, aSX);
+                bb.Add(cIm, sx);
             }
         }
         //
-        NCollection_List<Shape> aLSIm = new();
-        aLSIm.Append(aCIm);
-        myImages.Bind(theS, aLSIm);
+        NCollection_List<Shape> lsIm = new();
+        lsIm.Append(cIm);
+        _images.Bind(s, lsIm);
     }
 }

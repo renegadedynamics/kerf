@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using System.Globalization;
@@ -158,15 +159,15 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             }
             try
             {
-                GeomFill_Gordon aGordon = new();
+                Gordon aGordon = new();
                 aGordon.SetParallelMode(isParallel);
                 if (isApprox)
                 {
-                    aGordon.SetApproximationMode(GeomFill_Gordon.ApproximationMode.AllowApproximateFallback);
+                    aGordon.SetApproximationMode(Gordon.ApproximationMode.AllowApproximateFallback);
                 }
                 aGordon.Init(aProfiles, aGuides, aTol);
                 aGordon.Perform();
-                GeomFill_Gordon.BuildReport aReport = aGordon.Report();
+                Gordon.BuildReport aReport = aGordon.Report();
                 anOut.Add("st:" + (int)aReport.Status);
                 anOut.Add("fs:" + (int)aReport.FailedStage);
                 anOut.Add("ap:" + (aReport.IsApproximate ? "1" : "0"));
@@ -175,7 +176,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                 anOut.Add("pd:" + Hex(aReport.MaxProfileDeviation));
                 anOut.Add("gd:" + Hex(aReport.MaxGuideDeviation));
                 anOut.Add("ad:" + Hex(aReport.MaxApproximationDeviation));
-                if (aGordon.IsDone())
+                if (aGordon.IsDone)
                 {
                     PutSurface(anOut, aGordon.Surface());
                 }
@@ -236,11 +237,11 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             }
             try
             {
-                GeomFill_NetworkSurface aNetwork = new();
+                NetworkSurface aNetwork = new();
                 aNetwork.Init(aProfiles, aGuides, aV, aU, aGrid, aWeights, aTol, isUClosed, isVClosed);
                 aNetwork.Perform();
                 anOut.Add("st:" + (int)aNetwork.Status());
-                if (aNetwork.IsDone())
+                if (aNetwork.IsDone)
                 {
                     PutSurface(anOut, aNetwork.Surface());
                 }

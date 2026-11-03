@@ -70,66 +70,66 @@ internal class RWStepDimTol_RWGeoTolAndGeoTolWthDatRefAndUneqDisGeoTol
         data.ComplexType(num0, aTypes);
         string aFirst = aTypes.First();
         string aLast = aTypes.Value(3);
-        StepDimTol_GeometricToleranceType aType = StepDimTol_GTTPositionTolerance;
+        StepDimTol_GeometricToleranceType aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTPositionTolerance;
         if (string.CompareOrdinal(aFirst, "ANGULARITY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTAngularityTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTAngularityTolerance;
         }
         else if (string.CompareOrdinal(aFirst, "CIRCULAR_RUNOUT_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTCircularRunoutTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTCircularRunoutTolerance;
         }
         else if (string.CompareOrdinal(aFirst, "COAXIALITY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTCoaxialityTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTCoaxialityTolerance;
         }
         else if (string.CompareOrdinal(aFirst, "CONCENTRICITY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTConcentricityTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTConcentricityTolerance;
         }
         else if (string.CompareOrdinal(aFirst, "CYLINDRICITY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTCylindricityTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTCylindricityTolerance;
         }
         else if (string.CompareOrdinal(aFirst, "FLATNESS_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTFlatnessTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTFlatnessTolerance;
         }
         else if (string.CompareOrdinal(aLast, "LINE_PROFILE_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTLineProfileTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTLineProfileTolerance;
         }
         else if (string.CompareOrdinal(aLast, "PARALLELISM_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTParallelismTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTParallelismTolerance;
         }
         else if (string.CompareOrdinal(aLast, "PERPENDICULARITY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTPerpendicularityTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTPerpendicularityTolerance;
         }
         else if (string.CompareOrdinal(aLast, "POSITION_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTPositionTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTPositionTolerance;
         }
         else if (string.CompareOrdinal(aLast, "ROUNDNESS_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTRoundnessTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTRoundnessTolerance;
         }
         else if (string.CompareOrdinal(aLast, "STRAIGHTNESS_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTStraightnessTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTStraightnessTolerance;
         }
         else if (string.CompareOrdinal(aLast, "SURFACE_PROFILE_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTSurfaceProfileTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTSurfaceProfileTolerance;
         }
         else if (string.CompareOrdinal(aLast, "SYMMETRY_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTSymmetryTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTSymmetryTolerance;
         }
         else if (string.CompareOrdinal(aLast, "TOTAL_RUNOUT_TOLERANCE") == 0)
         {
-            aType = StepDimTol_GTTTotalRunoutTolerance;
+            aType = StepDimTol_GeometricToleranceType.StepDimTol_GTTTotalRunoutTolerance;
         }
         else
         {
@@ -143,27 +143,27 @@ internal class RWStepDimTol_RWGeoTolAndGeoTolWthDatRefAndUneqDisGeoTol
     public void WriteStep(StepData_StepWriter SW, StepDimTol_GeoTolAndGeoTolWthDatRefAndUneqDisGeoTol ent)
     {
         StepDimTol_GeometricToleranceType aType = ent.GetToleranceType();
-        if (aType == StepDimTol_GTTAngularityTolerance)
+        if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTAngularityTolerance)
         {
             SW.StartEntity("ANGULARITY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTCircularRunoutTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTCircularRunoutTolerance)
         {
             SW.StartEntity("CIRCULAR_RUNOUT_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTCoaxialityTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTCoaxialityTolerance)
         {
             SW.StartEntity("COAXIALITY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTConcentricityTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTConcentricityTolerance)
         {
             SW.StartEntity("CONCENTRICITY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTCylindricityTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTCylindricityTolerance)
         {
             SW.StartEntity("CYLINDRICITY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTFlatnessTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTFlatnessTolerance)
         {
             SW.StartEntity("FLATNESS_TOLERANCE");
         }
@@ -182,39 +182,39 @@ internal class RWStepDimTol_RWGeoTolAndGeoTolWthDatRefAndUneqDisGeoTol
         }
         SW.CloseSub();
 
-        if (aType == StepDimTol_GTTLineProfileTolerance)
+        if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTLineProfileTolerance)
         {
             SW.StartEntity("LINE_PROFILE_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTParallelismTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTParallelismTolerance)
         {
             SW.StartEntity("PARALLELISM_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTPerpendicularityTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTPerpendicularityTolerance)
         {
             SW.StartEntity("PERPENDICULARITY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTPositionTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTPositionTolerance)
         {
             SW.StartEntity("POSITION_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTRoundnessTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTRoundnessTolerance)
         {
             SW.StartEntity("ROUNDNESS_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTStraightnessTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTStraightnessTolerance)
         {
             SW.StartEntity("STRAIGHTNESS_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTSurfaceProfileTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTSurfaceProfileTolerance)
         {
             SW.StartEntity("SURFACE_PROFILE_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTSymmetryTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTSymmetryTolerance)
         {
             SW.StartEntity("SYMMETRY_TOLERANCE");
         }
-        else if (aType == StepDimTol_GTTTotalRunoutTolerance)
+        else if (aType == StepDimTol_GeometricToleranceType.StepDimTol_GTTTotalRunoutTolerance)
         {
             SW.StartEntity("TOTAL_RUNOUT_TOLERANCE");
         }

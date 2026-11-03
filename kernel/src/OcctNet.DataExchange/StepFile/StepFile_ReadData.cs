@@ -47,7 +47,7 @@ public sealed class StepFile_ReadData
     {
         internal Argument? myNext; //!< Next argument in the list for this record
         internal string? myValue; //!< Character value of the argument
-        internal Interface_ParamType myType = Interface_ParamSub; //!< Type of the argument
+        internal Interface_ParamType myType = Interface_ParamType.Interface_ParamSub; //!< Type of the argument
     }
 
     /// <summary>List of records, contains all text processed by the parser.</summary>
@@ -95,7 +95,7 @@ public sealed class StepFile_ReadData
     private string? myResText; //!< Text value written by the scanner and passed to the parser to create record
     private string? myCurrType = TextValue.SubList; //!< Type of last record read
     private string? mySubArg; //!< Ident last record (possible sub-list)
-    private Interface_ParamType myTypeArg = Interface_ParamSub; //!< Type of last argument read
+    private Interface_ParamType myTypeArg = Interface_ParamType.Interface_ParamSub; //!< Type of last argument read
     private Argument? myCurrArg; //!< Current node of the arguments list
     private Record? myFirstRec; //!< First node of the records list
     private Record? myCurRec; //!< Current node of the records list
@@ -145,7 +145,7 @@ public sealed class StepFile_ReadData
     {
         myErrorArg = false; // Reset error argument mod
         AddNewRecord(myCurRec!);
-        SetTypeArg(Interface_ParamSub);
+        SetTypeArg(Interface_ParamType.Interface_ParamSub);
         mySubArg = myCurRec!.myIdent;
         myCurRec = myCurRec.myNext;
         myLastRec!.myNext = null;
@@ -228,7 +228,7 @@ public sealed class StepFile_ReadData
         Argument aNewArg = new();
         myNbPar++;
         aNewArg.myType = myTypeArg;
-        if (myTypeArg == Interface_ParamSub)
+        if (myTypeArg == Interface_ParamType.Interface_ParamSub)
         {
             aNewArg.myValue = mySubArg;
         }
@@ -237,7 +237,7 @@ public sealed class StepFile_ReadData
             GetResultText(out aNewArg.myValue);
         }
 
-        if (myTypeArg == Interface_ParamMisc)
+        if (myTypeArg == Interface_ParamType.Interface_ParamMisc)
         {
             myErrorArg = true;
         }
@@ -271,7 +271,7 @@ public sealed class StepFile_ReadData
         // If already exists - update text value
         if (!myErrorArg)
         {
-            SetTypeArg(Interface_ParamMisc);
+            SetTypeArg(Interface_ParamType.Interface_ParamMisc);
             CreateNewArg();
             myErrorArg = true;
             return;
@@ -325,7 +325,7 @@ public sealed class StepFile_ReadData
             }
 
             myCurRec = aRecord;
-            myTypeArg = Interface_ParamSub;
+            myTypeArg = Interface_ParamType.Interface_ParamSub;
             CreateNewArg();
         }
 

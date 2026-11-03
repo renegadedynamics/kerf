@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -33,19 +35,19 @@ internal static class PaveFillerDump
 
     private static string Sorted(IEnumerable<int> theValues) => string.Join(",", theValues.OrderBy(x => x));
 
-    private static string PB(BOPDS_PaveBlock thePB)
+    private static string PB(PaveBlock thePB)
     {
         thePB.Indices(out int nV1, out int nV2);
         return string.Format("[{0} {1} {2} {3} {4} {5}]", thePB.OriginalEdge(), thePB.Edge(), nV1, H(thePB.Pave1().Parameter()),
                              nV2, H(thePB.Pave2().Parameter()));
     }
 
-    private static string CP(IntTools_CommonPrt theCP)
+    private static string CP(CommonPrt theCP)
     {
         StringBuilder aB = new();
         aB.Append((int)theCP.Type());
         aB.Append(' ').Append(H(theCP.Range1().First())).Append(' ').Append(H(theCP.Range1().Last()));
-        NCollection_Sequence<IntTools_Range> aR2 = theCP.Ranges2();
+        NCollection_Sequence<ParameterRange> aR2 = theCP.Ranges2();
         aB.Append(" r2:");
         for (int i = 1; i <= aR2.Length(); ++i)
         {
@@ -55,15 +57,15 @@ internal static class PaveFillerDump
         return aB.ToString();
     }
 
-    public static string Write(BOPDS_DS theDS)
+    public static string Write(DS theDS)
     {
         StringBuilder aB = new();
-        int aNb = theDS.NbShapes(), aNbSrc = theDS.NbSourceShapes();
+        int aNb = theDS.ShapeCount, aNbSrc = theDS.SourceShapeCount;
         aB.Append("ds ").Append(aNb).Append(' ').Append(aNbSrc).Append('\n');
         List<int> aFaces = [];
         for (int i = 0; i < aNb; ++i)
         {
-            BOPDS_ShapeInfo aSI = theDS.ShapeInfo(i);
+            ShapeInfo aSI = theDS.ShapeInfo(i);
             Shape aS = aSI.Shape();
             ShapeType aType = aSI.ShapeType();
             aB.Append("s ").Append(i).Append(' ').Append((int)aType).Append(' ').Append((int)aS.Orientation());
@@ -129,24 +131,24 @@ internal static class PaveFillerDump
             }
         }
         // pave blocks and common blocks
-        Dictionary<BOPDS_CommonBlock, int> aCBs = new(ReferenceEqualityComparer.Instance);
-        List<BOPDS_CommonBlock> aCBList = [];
+        Dictionary<CommonBlock, int> aCBs = new(ReferenceEqualityComparer.Instance);
+        List<CommonBlock> aCBList = [];
         for (int i = 0; i < aNb; ++i)
         {
-            BOPDS_ShapeInfo aSI = theDS.ShapeInfo(i);
+            ShapeInfo aSI = theDS.ShapeInfo(i);
             if (aSI.ShapeType() != ShapeType.Edge || !theDS.HasPaveBlocks(i))
             {
                 continue;
             }
-            foreach (BOPDS_PaveBlock aPB in theDS.PaveBlocks(i))
+            foreach (PaveBlock aPB in theDS.PaveBlocks(i))
             {
                 aB.Append("pb ").Append(i).Append(' ').Append(PB(aPB));
-                if (aPB.HasShrunkData())
+                if (aPB.HasShrunkData)
                 {
                     aPB.ShrunkData(out double aTS1, out double aTS2, out Box _, out bool aSplittable);
                     aB.Append(" sh ").Append(H(aTS1)).Append(' ').Append(H(aTS2)).Append(' ').Append(aSplittable ? 1 : 0);
                 }
-                BOPDS_CommonBlock? aCB = theDS.CommonBlock(aPB);
+                CommonBlock? aCB = theDS.CommonBlock(aPB);
                 if (aCB is not null)
                 {
                     if (!aCBs.TryGetValue(aCB, out int anId))
@@ -162,9 +164,9 @@ internal static class PaveFillerDump
         }
         for (int k = 0; k < aCBList.Count; ++k)
         {
-            BOPDS_CommonBlock aCB = aCBList[k];
+            CommonBlock aCB = aCBList[k];
             aB.Append("cb ").Append(k).Append(' ').Append(H(aCB.Tolerance())).Append(" pbs");
-            foreach (BOPDS_PaveBlock aPB in aCB.PaveBlocks())
+            foreach (PaveBlock aPB in aCB.PaveBlocks())
             {
                 aB.Append(' ').Append(PB(aPB));
             }
@@ -177,9 +179,9 @@ internal static class PaveFillerDump
             {
                 continue;
             }
-            BOPDS_FaceInfo aFI = theDS.FaceInfo(nF);
+            FaceInfo aFI = theDS.FaceInfo(nF);
             aB.Append("fi ").Append(nF);
-            foreach ((string aTag, NCollection_IndexedMap<BOPDS_PaveBlock> aMPB) in
+            foreach ((string aTag, NCollection_IndexedMap<PaveBlock> aMPB) in
                      new[] { ("on", aFI.PaveBlocksOn()), ("in", aFI.PaveBlocksIn()), ("sc", aFI.PaveBlocksSc()) })
             {
                 aB.Append(' ').Append(aTag);
@@ -192,42 +194,42 @@ internal static class PaveFillerDump
               .Append(" vsc ").Append(Sorted(aFI.VerticesSc())).Append('\n');
         }
         // interferences
-        foreach (BOPDS_InterfVV aI in theDS.InterfVV())
+        foreach (InterfVV aI in theDS.InterfVV())
         {
             aB.Append("vv ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.IndexNew()).Append('\n');
         }
-        foreach (BOPDS_InterfVE aI in theDS.InterfVE())
+        foreach (InterfVE aI in theDS.InterfVE())
         {
             aB.Append("ve ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.IndexNew()).Append(' ')
               .Append(H(aI.Parameter())).Append('\n');
         }
-        foreach (BOPDS_InterfVF aI in theDS.InterfVF())
+        foreach (InterfVF aI in theDS.InterfVF())
         {
             aI.UV(out double aU, out double aV);
             aB.Append("vf ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.IndexNew()).Append(' ')
               .Append(H(aU)).Append(' ').Append(H(aV)).Append('\n');
         }
-        foreach (BOPDS_InterfEE aI in theDS.InterfEE())
+        foreach (InterfEE aI in theDS.InterfEE())
         {
             aB.Append("ee ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.IndexNew()).Append(' ')
               .Append(CP(aI.CommonPart())).Append('\n');
         }
-        foreach (BOPDS_InterfEF aI in theDS.InterfEF())
+        foreach (InterfEF aI in theDS.InterfEF())
         {
             aB.Append("ef ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.IndexNew()).Append(' ')
               .Append(CP(aI.CommonPart())).Append('\n');
         }
-        foreach (BOPDS_InterfFF aI in theDS.InterfFF())
+        foreach (InterfFF aI in theDS.InterfFF())
         {
-            NCollection_DynamicArray<BOPDS_Curve> aVC = aI.Curves();
-            NCollection_DynamicArray<BOPDS_Point> aVP = aI.Points();
+            NCollection_DynamicArray<SectionCurve> aVC = aI.Curves();
+            NCollection_DynamicArray<DataPoint> aVP = aI.Points();
             aB.Append("ff ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.TangentFaces() ? 1 : 0)
               .Append(' ').Append(aVC.Length()).Append(' ').Append(aVP.Length()).Append('\n');
-            foreach (BOPDS_Curve aNC in aVC)
+            foreach (SectionCurve aNC in aVC)
             {
                 aB.Append(" c ").Append(H(aNC.Tolerance())).Append(' ').Append(H(aNC.TangentialTolerance()))
                   .Append(" tv ").Append(string.Join(",", aNC.TechnoVertices()));
-                IntTools_Curve anIC = aNC.Curve();
+                IntersectionCurve anIC = aNC.Curve();
                 double aT1 = 0, aT2 = 0;
                 Point3D aP1 = new(), aP2 = new();
                 if (anIC.Bounds(ref aT1, ref aT2, ref aP1, ref aP2))
@@ -235,13 +237,13 @@ internal static class PaveFillerDump
                     aB.Append(" b ").Append(H(aT1)).Append(' ').Append(H(aT2)).Append(' ').Append(P(aP1)).Append(' ').Append(P(aP2));
                 }
                 aB.Append(" pbs");
-                foreach (BOPDS_PaveBlock aPB in aNC.PaveBlocks())
+                foreach (PaveBlock aPB in aNC.PaveBlocks())
                 {
                     aB.Append(' ').Append(PB(aPB));
                 }
                 aB.Append('\n');
             }
-            foreach (BOPDS_Point aP in aVP)
+            foreach (DataPoint aP in aVP)
             {
                 aB.Append(" p ").Append(aP.Index()).Append(' ').Append(P(aP.Pnt())).Append('\n');
             }

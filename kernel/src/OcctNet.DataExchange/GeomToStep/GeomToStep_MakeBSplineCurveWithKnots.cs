@@ -85,16 +85,16 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnots : GeomToStep_Root
         NCollection_HArray1<double> ListKnots;
         StepGeom_KnotType KnotSpec;
 
-        Form = StepGeom_bscfUnspecified;
+        Form = StepGeom_BSplineCurveForm.StepGeom_bscfUnspecified;
         if (isClosed)
         {
-            Fermeture = StepData_LTrue;
+            Fermeture = StepData_Logical.StepData_LTrue;
         }
         else
         {
-            Fermeture = StepData_LFalse;
+            Fermeture = StepData_Logical.StepData_LFalse;
         }
-        Selfinter = StepData_LFalse;
+        Selfinter = StepData_Logical.StepData_LFalse;
         Mult = new NCollection_HArray1<int>(1, Nknots);
         for (i = M.Lower(); i <= M.Upper(); i++)
         {
@@ -109,19 +109,19 @@ public sealed class GeomToStep_MakeBSplineCurveWithKnots : GeomToStep_Root
         }
         if (Distribution == NonUniform)
         {
-            KnotSpec = StepGeom_ktUnspecified;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUnspecified;
         }
         else if (Distribution == Uniform)
         {
-            KnotSpec = StepGeom_ktUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUniformKnots;
         }
         else if (Distribution == QuasiUniform)
         {
-            KnotSpec = StepGeom_ktQuasiUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktQuasiUniformKnots;
         }
         else
         {
-            KnotSpec = StepGeom_ktPiecewiseBezierKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots;
         }
         BSWK = new StepGeom_BSplineCurveWithKnots();
         TCollection_HAsciiString name = new TCollection_HAsciiString("");

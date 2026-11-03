@@ -1,15 +1,17 @@
+using Kerf.Engine.Intersection.Tools;
+
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>IntTools_MarkedRangeSet, against OCCT's semantics traced by hand.</summary>
 public class IntTools_MarkedRangeSetTests
 {
     // The ranges and flags of the set, as (first, last, flag).
-    private static (double, double, int)[] Content(IntTools_MarkedRangeSet theSet)
+    private static (double, double, int)[] Content(MarkedRangeSet theSet)
     {
         var aResult = new (double, double, int)[theSet.Length()];
         for (int i = 1; i <= theSet.Length(); ++i)
         {
-            IntTools_Range aRange = theSet.Range(i);
+            ParameterRange aRange = theSet.Range(i);
             aResult[i - 1] = (aRange.First(), aRange.Last(), theSet.Flag(i));
         }
         return aResult;
@@ -18,20 +20,20 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void Constructors()
     {
-        Assert.Equal(0, new IntTools_MarkedRangeSet().Length());
+        Assert.Equal(0, new MarkedRangeSet().Length());
 
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 3);
+        MarkedRangeSet aSet = new(0.0, 10.0, 3);
         Assert.Equal(new[] { (0.0, 10.0, 3) }, Content(aSet));
 
         NCollection_Array1<double> aValues = NCollection_Array1<double>.From([0.0, 1.0, 4.0, 9.0]);
-        IntTools_MarkedRangeSet aSorted = new(aValues, 7);
+        MarkedRangeSet aSorted = new(aValues, 7);
         Assert.Equal(new[] { (0.0, 1.0, 7), (1.0, 4.0, 7), (4.0, 9.0, 7) }, Content(aSorted));
     }
 
     [Fact]
     public void InsertRange_InsideOneRange()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
         Assert.True(aSet.InsertRange(2.0, 5.0, 1));
         Assert.Equal(new[] { (0.0, 2.0, 0), (2.0, 5.0, 1), (5.0, 10.0, 0) }, Content(aSet));
     }
@@ -39,8 +41,8 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void InsertRange_AcrossRanges()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
-        aSet.InsertRange(new IntTools_Range(2.0, 5.0), 1);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        aSet.InsertRange(new ParameterRange(2.0, 5.0), 1);
         Assert.True(aSet.InsertRange(4.0, 7.0, 2));
         Assert.Equal(new[] { (0.0, 2.0, 0), (2.0, 4.0, 1), (4.0, 5.0, 2), (5.0, 7.0, 2), (7.0, 10.0, 0) }, Content(aSet));
     }
@@ -48,7 +50,7 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void InsertRange_OutsideOrReversedFails()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
         Assert.False(aSet.InsertRange(11.0, 12.0, 1));
         Assert.False(aSet.InsertRange(-2.0, 1.0, 1));
         aSet.InsertRange(2.0, 5.0, 1);
@@ -59,13 +61,13 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void InsertRange_AtIndex()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
         Assert.True(aSet.InsertRange(2.0, 5.0, 1, 1));
         Assert.Equal(new[] { (0.0, 2.0, 0), (2.0, 5.0, 1), (5.0, 10.0, 0) }, Content(aSet));
 
         // a range starting on the range's lower boundary only re-flags it before splitting
-        IntTools_MarkedRangeSet aSet2 = new(0.0, 10.0, 0);
-        Assert.True(aSet2.InsertRange(new IntTools_Range(0.0, 5.0), 1, 1));
+        MarkedRangeSet aSet2 = new(0.0, 10.0, 0);
+        Assert.True(aSet2.InsertRange(new ParameterRange(0.0, 5.0), 1, 1));
         Assert.Equal(new[] { (0.0, 5.0, 1), (5.0, 10.0, 0) }, Content(aSet2));
 
         // a bad index fails; a range not inside the indexed one is inserted as without index
@@ -78,7 +80,7 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void GetIndexAndIndices()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
         aSet.InsertRange(2.0, 5.0, 1);
         aSet.InsertRange(4.0, 7.0, 2);
         // boundaries 0, 2, 4, 5, 7, 10
@@ -103,9 +105,9 @@ public class IntTools_MarkedRangeSetTests
     [Fact]
     public void SetFlagAndCopy()
     {
-        IntTools_MarkedRangeSet aSet = new(0.0, 10.0, 0);
+        MarkedRangeSet aSet = new(0.0, 10.0, 0);
         aSet.InsertRange(2.0, 5.0, 1);
-        IntTools_MarkedRangeSet aCopy = new(aSet);
+        MarkedRangeSet aCopy = new(aSet);
         aCopy.SetFlag(2, 9);
         aCopy.InsertRange(6.0, 8.0, 4);
         Assert.Equal(1, aSet.Flag(2));

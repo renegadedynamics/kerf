@@ -190,7 +190,7 @@ public abstract class Interface_FileReaderData : Transient
     /// </summary>
     public bool IsParamDefined(int num, int nump)
     {
-        return (Param(num, nump).ParamType() != Interface_ParamVoid);
+        return (Param(num, nump).ParamType() != Interface_ParamType.Interface_ParamVoid);
     }
 
     /// <summary>

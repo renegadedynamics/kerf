@@ -1,3 +1,5 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Occt;
 using Ops = Build123d.Operations;
@@ -49,12 +51,12 @@ public class ErrorContextTests
     public void AFailedBooleanNamesOcctsReasons()
     {
         // OCCT reports why a boolean failed as alerts, where Shape() says only StdFail_NotDone
-        var fuse = new BRepAlgoAPI_Fuse();
+        var fuse = new Fuse();
         fuse.Build();
-        Assert.True(fuse.HasErrors());
+        Assert.True(fuse.HasErrors);
         Assert.Equal("BOPAlgo_AlertTooFewArguments", Extras.AlgoErrors(fuse));
-        var box = new BRepPrimAPI_MakeBox(1, 1, 1);
-        var common = new BRepAlgoAPI_Common(box.Shape(), box.Shape());
+        var box = new MakeBox(1, 1, 1);
+        var common = new Common(box.Shape(), box.Shape());
         Assert.Null(Extras.AlgoErrors(common));
     }
 }

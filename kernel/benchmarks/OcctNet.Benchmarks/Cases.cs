@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Reflection;
@@ -52,7 +54,7 @@ public static class Cases
     public static double ViewerDeflection(in Shape theShape)
     {
         var aBox = new Box();
-        BRepBndLib.Add(theShape, ref aBox, true);
+        Bounds.Add(theShape, ref aBox, true);
         double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
         return aDiagonal > 1e-6 ? aDiagonal * 0.1 / 100 : 1e-3;
     }
@@ -74,7 +76,7 @@ public static class Cases
     private static Case Make(string theName, string theF1)
     {
         Shape aShape = PortRead(theF1);
-        return new Case(theName, theF1, ViewerDeflection(aShape), MeshExtraction.Faces(aShape).Count);
+        return new Case(theName, theF1, ViewerDeflection(aShape), global::Kerf.Engine.Meshing.MeshExtraction.Faces(aShape).Count);
     }
 
     /// <summary>The file without its meshes, written again (by native OCCT where it is available, as the oracle's F1).</summary>
@@ -87,9 +89,9 @@ public static class Cases
 
 
     /// <summary>What Bento's viewer does with the port: mesh (a copy of the frozen input) and extract.</summary>
-    public static MeshBuffers PortMeshAndExtract(in Shape theShape, double theDeflection, bool theParallel)
+    public static global::Kerf.Engine.Meshing.MeshBuffers PortMeshAndExtract(in Shape theShape, double theDeflection, bool theParallel)
     {
-        Shape aMeshed = new BRepMesh_IncrementalMesh(theShape, theDeflection, false, Angle, theParallel).Shape();
-        return MeshExtraction.Extract(aMeshed, theDeflection, Angle);
+        Shape aMeshed = new IncrementalMesh(theShape, theDeflection, false, Angle, theParallel).Shape();
+        return global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, theDeflection, Angle);
     }
 }

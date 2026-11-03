@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -22,9 +26,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </remarks>
 public class BOPAlgo_PaveFillerTests
 {
-    internal static BOPAlgo_PaveFiller Fill(bool theParallel, params Shape[] theArgs)
+    internal static PaveFiller Fill(bool theParallel, params Shape[] theArgs)
     {
-        BOPAlgo_PaveFiller aPF = new();
+        PaveFiller aPF = new();
         NCollection_List<Shape> aLS = new();
         foreach (Shape aS in theArgs)
         {
@@ -61,15 +65,15 @@ public class BOPAlgo_PaveFillerTests
     private static double GetVolume(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
     private static Wire CreateCircularWire(double theRadius, double theZ)
     {
         Circle3D aCircle = new(new Frame3D(new Point3D(0, 0, theZ), new Direction3D(0, 0, 1)), theRadius);
-        BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCircle);
-        BRepBuilderAPI_MakeWire aWireMaker = new(anEdgeMaker.Edge());
+        MakeEdge anEdgeMaker = new(aCircle);
+        MakeWire aWireMaker = new(anEdgeMaker.Edge());
         return aWireMaker.Wire();
     }
 
@@ -79,25 +83,25 @@ public class BOPAlgo_PaveFillerTests
         // Create a loft from a circular wire to a point (apex)
         // This creates a cone-like shape with a degenerated edge at the top
         Wire aBaseWire = CreateCircularWire(10.0, 0.0);
-        Vertex anApex = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 20.0)).Vertex();
+        Vertex anApex = new MakeVertex(new Point3D(0, 0, 20.0)).Vertex();
 
-        BRepOffsetAPI_ThruSections aLoftMaker = new(true, true); // solid, ruled
+        ThruSections aLoftMaker = new(true, true); // solid, ruled
         aLoftMaker.AddWire(aBaseWire);
         aLoftMaker.AddVertex(anApex);
         aLoftMaker.Build();
 
-        Assert.True(aLoftMaker.IsDone()); // Loft operation should succeed
+        Assert.True(aLoftMaker.IsDone); // Loft operation should succeed
         Shape aLoft = aLoftMaker.Shape();
         Assert.False(aLoft.IsNull);
 
         // Create a box that intersects the loft
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 5), 10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(new Point3D(-5, -5, 5), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse - this should not crash even if there are
         // degenerated edges without pcurves
-        BRepAlgoAPI_Fuse aFuser = new(aLoft, aBox);
+        Fuse aFuser = new(aLoft, aBox);
 
-        Assert.True(aFuser.IsDone()); // Boolean fuse should succeed for loft with degenerated edges
+        Assert.True(aFuser.IsDone); // Boolean fuse should succeed for loft with degenerated edges
         Assert.False(aFuser.Shape().IsNull);
 
         // Verify the result has reasonable volume (both shapes contribute)
@@ -113,15 +117,15 @@ public class BOPAlgo_PaveFillerTests
     public void FuseConeWithBox_DegeneratedEdge()
     {
         // Create a cone - has degenerated edge at apex
-        Shape aCone = new BRepPrimAPI_MakeCone(10.0, 0.0, 20.0).Shape(); // R1=10, R2=0 (apex), H=20
+        Shape aCone = new ApiMakeCone(10.0, 0.0, 20.0).Shape(); // R1=10, R2=0 (apex), H=20
         Assert.False(aCone.IsNull);
 
         // Create a box that intersects near the apex
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse
-        BRepAlgoAPI_Fuse aFuser = new(aCone, aBox);
-        Assert.True(aFuser.IsDone()); // Boolean fuse of cone and box should succeed
+        Fuse aFuser = new(aCone, aBox);
+        Assert.True(aFuser.IsDone); // Boolean fuse of cone and box should succeed
         Assert.False(aFuser.Shape().IsNull);
 
         double aResultVolume = GetVolume(aFuser.Shape());
@@ -130,10 +134,10 @@ public class BOPAlgo_PaveFillerTests
 
     private static Wire Quadrilateral(params Point3D[] thePoints)
     {
-        BRepBuilderAPI_MakeWire aWireMaker = new();
+        MakeWire aWireMaker = new();
         for (int i = 0; i < 4; i++)
         {
-            aWireMaker.Add(new BRepBuilderAPI_MakeEdge(thePoints[i], thePoints[(i + 1) % 4]).Edge());
+            aWireMaker.Add(new MakeEdge(thePoints[i], thePoints[(i + 1) % 4]).Edge());
         }
         return aWireMaker.Wire();
     }
@@ -145,26 +149,26 @@ public class BOPAlgo_PaveFillerTests
         Wire aBottom1 = Quadrilateral(new Point3D(10, -10, 0), new Point3D(100, -10, 0), new Point3D(100, -100, 0), new Point3D(10, -100, 0));
         Wire aTop1 = Quadrilateral(new Point3D(0, 0, 10), new Point3D(100, 0, 10), new Point3D(100, -100, 10), new Point3D(0, -100, 10));
 
-        BRepOffsetAPI_ThruSections aLoft1 = new(true, true);
+        ThruSections aLoft1 = new(true, true);
         aLoft1.AddWire(aBottom1);
         aLoft1.AddWire(aTop1);
         aLoft1.Build();
-        Assert.True(aLoft1.IsDone()); // First loft should succeed
+        Assert.True(aLoft1.IsDone); // First loft should succeed
 
         // Create second loft
         Wire aBottom2 = Quadrilateral(new Point3D(0, 0, 10), new Point3D(100, 0, 10), new Point3D(100, -100, 10), new Point3D(0, -100, 10));
         Wire aTop2 = Quadrilateral(new Point3D(0, 0, 250), new Point3D(100, 0, 250), new Point3D(100, -100, 250), new Point3D(0, -100, 250));
 
-        BRepOffsetAPI_ThruSections aLoft2 = new(true, true);
+        ThruSections aLoft2 = new(true, true);
         aLoft2.AddWire(aBottom2);
         aLoft2.AddWire(aTop2);
         aLoft2.Build();
-        Assert.True(aLoft2.IsDone()); // Second loft should succeed
+        Assert.True(aLoft2.IsDone); // Second loft should succeed
 
         // Fuse the two lofts - this is the operation that could crash
-        BRepAlgoAPI_Fuse aFuser = new(aLoft1.Shape(), aLoft2.Shape());
+        Fuse aFuser = new(aLoft1.Shape(), aLoft2.Shape());
 
-        Assert.True(aFuser.IsDone()); // Boolean fuse of two lofts should succeed
+        Assert.True(aFuser.IsDone); // Boolean fuse of two lofts should succeed
         Assert.False(aFuser.Shape().IsNull);
 
         double aResultVolume = GetVolume(aFuser.Shape());
@@ -175,7 +179,7 @@ public class BOPAlgo_PaveFillerTests
     public void FuseConeWithRemovedPCurve_NullPCurveHandling()
     {
         // Create a standard cone - it has a degenerated edge at the apex
-        Shape aCone = new BRepPrimAPI_MakeCone(10.0, 0.0, 20.0).Shape();
+        Shape aCone = new ApiMakeCone(10.0, 0.0, 20.0).Shape();
         Assert.False(aCone.IsNull);
 
         // Find the conical face and its degenerated edge, then rebuild without pcurve
@@ -260,12 +264,12 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(HasDegeneratedEdgesWithoutPCurves(aNewSolid));
 
         // Create a box that intersects near the apex
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+        Shape aBox = new MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
 
         // Perform Boolean fuse - this should NOT crash with the fix
         // We expect either success or graceful failure, but NOT a crash
-        BRepAlgoAPI_Fuse aFuser = new(aNewSolid, aBox);
-        _ = aFuser.IsDone();
+        Fuse aFuser = new(aNewSolid, aBox);
+        _ = aFuser.IsDone;
     }
 
     // ------------------------------------------------------------------------------------------- unit tests
@@ -273,60 +277,60 @@ public class BOPAlgo_PaveFillerTests
     [Fact]
     public void TwoBoxes_SectionEdgesAndSplits()
     {
-        Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
-        Shape b = new BRepPrimAPI_MakeBox(new Point3D(0.5, 0.25, 0.25), 1, 0.5, 0.5).Shape();
-        BOPAlgo_PaveFiller aPF = Fill(false, a, b);
-        Assert.False(aPF.HasErrors());
+        Shape a = new MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
+        Shape b = new MakeBox(new Point3D(0.5, 0.25, 0.25), 1, 0.5, 0.5).Shape();
+        PaveFiller aPF = Fill(false, a, b);
+        Assert.False(aPF.HasErrors);
         Assert.True(aPF.NonDestructive()); // the arguments are frozen, so locked
-        BOPDS_DS aDS = aPF.DS();
+        DS aDS = aPF.DS();
         // b's four edges along X cross a's face x = 1; the section of that face with b's four side faces
         Assert.Equal(4, aDS.InterfEF().Length());
         int aNbSection = 0;
-        foreach (BOPDS_InterfFF aFF in aDS.InterfFF())
+        foreach (InterfFF aFF in aDS.InterfFF())
         {
             aNbSection += aFF.Curves().Length();
         }
         Assert.Equal(4, aNbSection);
-        Assert.True(aDS.NbShapes() > aDS.NbSourceShapes());
+        Assert.True(aDS.ShapeCount > aDS.SourceShapeCount);
     }
 
     [Fact]
     public void DisjointArguments_NoInterference()
     {
-        Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
-        Shape b = new BRepPrimAPI_MakeBox(new Point3D(5, 0, 0), 1, 1, 1).Shape();
-        BOPAlgo_PaveFiller aPF = Fill(true, a, b);
-        Assert.False(aPF.HasErrors());
+        Shape a = new MakeBox(new Point3D(0, 0, 0), 1, 1, 1).Shape();
+        Shape b = new MakeBox(new Point3D(5, 0, 0), 1, 1, 1).Shape();
+        PaveFiller aPF = Fill(true, a, b);
+        Assert.False(aPF.HasErrors);
         Assert.Equal(0, aPF.DS().Interferences().Extent());
-        Assert.Equal(aPF.DS().NbSourceShapes(), aPF.DS().NbShapes());
+        Assert.Equal(aPF.DS().SourceShapeCount, aPF.DS().ShapeCount);
     }
 
     [Fact]
     public void Errors_TooFewAndNullArguments()
     {
-        BOPAlgo_PaveFiller aPF = new();
+        PaveFiller aPF = new();
         aPF.Perform();
-        Assert.True(aPF.HasError(typeof(BOPAlgo_AlertTooFewArguments)));
+        Assert.True(aPF.HasError(typeof(AlertTooFewArguments)));
 
-        aPF = new BOPAlgo_PaveFiller();
-        aPF.AddArgument(new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
+        aPF = new PaveFiller();
+        aPF.AddArgument(new MakeBox(1, 1, 1).Shape());
         aPF.AddArgument(new Shape());
         aPF.Perform();
-        Assert.True(aPF.HasError(typeof(BOPAlgo_AlertNullInputShapes)));
+        Assert.True(aPF.HasError(typeof(AlertNullInputShapes)));
     }
 
     [Fact]
     public void NonDestructive_FromLockedArguments()
     {
         // unfrozen arguments: the mode is the caller's
-        Shape a = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), 1, 1, 1).InternalShape();
-        Shape b = new BRepPrimAPI_MakeBox(new Point3D(0.5, 0.5, 0.5), 1, 1, 1).InternalShape();
-        BOPAlgo_PaveFiller aPF = Fill(false, a, b);
-        Assert.False(aPF.HasErrors());
+        Shape a = new MakeBox(new Point3D(0, 0, 0), 1, 1, 1).InternalShape();
+        Shape b = new MakeBox(new Point3D(0.5, 0.5, 0.5), 1, 1, 1).InternalShape();
+        PaveFiller aPF = Fill(false, a, b);
+        Assert.False(aPF.HasErrors);
         Assert.False(aPF.NonDestructive());
         // a frozen argument turns it on (decision 577)
-        aPF = Fill(false, new BRepPrimAPI_MakeBox(1, 1, 1).Shape(), new BRepPrimAPI_MakeSphere(0.7).Shape());
-        Assert.False(aPF.HasErrors());
+        aPF = Fill(false, new MakeBox(1, 1, 1).Shape(), new MakeSphere(0.7).Shape());
+        Assert.False(aPF.HasErrors);
         Assert.True(aPF.NonDestructive());
     }
 
@@ -335,10 +339,10 @@ public class BOPAlgo_PaveFillerTests
     {
         DeterminismHarness.AssertSerialEqualsParallel(() =>
         {
-            Shape aCone = new BRepPrimAPI_MakeCone(10.0, 0.0, 20.0).Shape();
-            Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
-            BOPAlgo_PaveFiller aPF = Fill(true, aCone, aBox);
-            Assert.False(aPF.HasErrors());
+            Shape aCone = new ApiMakeCone(10.0, 0.0, 20.0).Shape();
+            Shape aBox = new MakeBox(new Point3D(-5, -5, 15), 10.0, 10.0, 10.0).Shape();
+            PaveFiller aPF = Fill(true, aCone, aBox);
+            Assert.False(aPF.HasErrors);
             return PaveFillerDump.Write(aPF.DS());
         }, 2);
     }

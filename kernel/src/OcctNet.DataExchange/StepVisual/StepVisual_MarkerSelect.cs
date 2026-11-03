@@ -48,7 +48,7 @@ public class StepVisual_MarkerSelect : StepData_SelectType
         }
         Interface_ParamType type = ent.ParamType();
         //  Void : on admet "non defini" (en principe, on ne devrait pas)
-        if (type != Interface_ParamVoid && type != Interface_ParamEnum)
+        if (type != Interface_ParamType.Interface_ParamVoid && type != Interface_ParamType.Interface_ParamEnum)
         {
             return 0;
         }

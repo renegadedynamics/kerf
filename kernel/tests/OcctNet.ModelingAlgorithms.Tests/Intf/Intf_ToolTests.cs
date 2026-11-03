@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Intersection.Polygons;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -25,9 +26,9 @@ public class Intf_ToolTest
         return aBox;
     }
 
-    private static void CheckSegments(Intf_Tool theTool, bool theCheckFinite)
+    private static void CheckSegments(PolygonTool theTool, bool theCheckFinite)
     {
-        int aNbSeg = theTool.NbSegments();
+        int aNbSeg = theTool.SegmentCount;
         Assert.InRange(aNbSeg, 0, 6);
         for (int i = 1; i <= aNbSeg; ++i)
         {
@@ -52,7 +53,7 @@ public class Intf_ToolTest
         Box2d aDomain = Box2d(-5.0, -5.0, 5.0, 5.0);
 
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Hypr2dBox(aHypr, aDomain, ref aResult);
 
         CheckSegments(aTool, true);
@@ -67,7 +68,7 @@ public class Intf_ToolTest
         Box2d aDomain = Box2d(-5.0, -5.0, 5.0, 5.0);
 
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Parab2dBox(aParab, aDomain, ref aResult);
 
         CheckSegments(aTool, true);
@@ -81,7 +82,7 @@ public class Intf_ToolTest
         Box aDomain = Box(-5.0, -5.0, -5.0, 5.0, 5.0, 5.0);
 
         Box aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.ParabBox(aParab, aDomain, ref aResult);
 
         CheckSegments(aTool, false);
@@ -95,10 +96,10 @@ public class Intf_ToolTest
         Box aDomain = Box(-5.0, -5.0, -5.0, 5.0, 5.0, 5.0);
 
         Box aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.HyprBox(aHypr, aDomain, ref aResult);
 
-        Assert.InRange(aTool.NbSegments(), 0, 6);
+        Assert.InRange(aTool.SegmentCount, 0, 6);
     }
 
     // Small domain that doesn't intersect the curve should produce zero segments.
@@ -110,10 +111,10 @@ public class Intf_ToolTest
         Box2d aDomain = Box2d(-1.0, -1.0, 1.0, 1.0);
 
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Hypr2dBox(aHypr, aDomain, ref aResult);
 
-        Assert.Equal(0, aTool.NbSegments());
+        Assert.Equal(0, aTool.SegmentCount);
     }
 
     // Known configurations (not in OCCT's GTests)
@@ -126,10 +127,10 @@ public class Intf_ToolTest
         Line2D aLin = new(new Point2D(0, 0), new Direction2D(1, 1));
         Box2d aDomain = Box2d(-1.0, -1.0, 2.0, 2.0);
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Lin2dBox(aLin, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.Equal(-1.0 / aS, aTool.BeginParam(1), 1e-12);
         Assert.Equal(2.0 / aS, aTool.EndParam(1), 1e-12);
         aResult.Get(out double x, out double y, out double X, out double Y);
@@ -148,10 +149,10 @@ public class Intf_ToolTest
         Line2D aLin = new(new Point2D(10, 0.5), new Direction2D(-1, 0));
         Box2d aDomain = Box2d(0.0, 0.0, 3.0, 1.0);
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Lin2dBox(aLin, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.Equal(7.0, aTool.BeginParam(1), 1e-12);
         Assert.Equal(10.0, aTool.EndParam(1), 1e-12);
         aResult.Get(out double x, out double y, out double X, out double Y);
@@ -167,10 +168,10 @@ public class Intf_ToolTest
         Line2D aLin = new(new Point2D(0, 5), new Direction2D(1, 0));
         Box2d aDomain = Box2d(-1.0, -1.0, 1.0, 1.0);
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Lin2dBox(aLin, aDomain, ref aResult);
 
-        Assert.Equal(0, aTool.NbSegments());
+        Assert.Equal(0, aTool.SegmentCount);
         Assert.True(aResult.IsVoid);
     }
 
@@ -178,18 +179,18 @@ public class Intf_ToolTest
     public void Lin2dBox_WholeAndVoidDomains()
     {
         Line2D aLin = new(new Point2D(1, 2), new Direction2D(0, 1));
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
 
         Box2d aWhole = new();
         aWhole.SetWhole();
         Box2d aResult = new();
         aTool.Lin2dBox(aLin, aWhole, ref aResult);
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aTool.BeginParam(1));
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aTool.EndParam(1));
 
         aTool.Lin2dBox(aLin, new Box2d(), ref aResult);
-        Assert.Equal(0, aTool.NbSegments());
+        Assert.Equal(0, aTool.SegmentCount);
         Assert.True(aResult.IsVoid);
     }
 
@@ -200,10 +201,10 @@ public class Intf_ToolTest
         Line3D aLin = new(new Point3D(0.5, 0.5, -1.0), new Direction3D(0, 0, 1));
         Box aDomain = Box(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         Box aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.LinBox(aLin, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.Equal(1.0, aTool.BeginParam(1), 1e-12);
         Assert.Equal(2.0, aTool.EndParam(1), 1e-12);
         aResult.Get(out double x, out double y, out double z, out double X, out double Y, out double Z);
@@ -222,10 +223,10 @@ public class Intf_ToolTest
         Line3D aLin = new(new Point3D(5.0, 0.5, 0.0), new Direction3D(0, 0, 1));
         Box aDomain = Box(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         Box aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.LinBox(aLin, aDomain, ref aResult);
 
-        Assert.Equal(0, aTool.NbSegments());
+        Assert.Equal(0, aTool.SegmentCount);
         Assert.True(aResult.IsVoid);
     }
 
@@ -237,10 +238,10 @@ public class Intf_ToolTest
         Parabola2D aParab = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         Box2d aDomain = Box2d(-5.0, -5.0, 5.0, 5.0);
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Parab2dBox(aParab, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         double aBegin = aTool.BeginParam(1);
         double anEnd = aTool.EndParam(1);
         // Enters and leaves through x = 5, at y = -sqrt(20) and y = sqrt(20) (the parameter is y).
@@ -262,10 +263,10 @@ public class Intf_ToolTest
         Hyperbola2D aHypr = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0, 1.0);
         Box2d aDomain = Box2d(1.0, -1.0, 3.0, 1.0);
         Box2d aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.Hypr2dBox(aHypr, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.True(aTool.BeginParam(1) < 0.0);
         Assert.True(aTool.EndParam(1) > 0.0);
         Assert.Equal(-Math.Asinh(1.0), aTool.BeginParam(1), 1e-9);
@@ -280,10 +281,10 @@ public class Intf_ToolTest
         Parabola3D aParab = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         Box aDomain = Box(-5.0, -5.0, -5.0, 5.0, 5.0, 5.0);
         Box aResult = new();
-        var aTool = new Intf_Tool();
+        var aTool = new PolygonTool();
         aTool.ParabBox(aParab, aDomain, ref aResult);
 
-        Assert.Equal(1, aTool.NbSegments());
+        Assert.Equal(1, aTool.SegmentCount);
         Assert.Equal(-Math.Sqrt(20.0), aTool.BeginParam(1), 1e-9);
         Assert.Equal(Math.Sqrt(20.0), aTool.EndParam(1), 1e-9);
         for (int i = 0; i <= 20; i++)

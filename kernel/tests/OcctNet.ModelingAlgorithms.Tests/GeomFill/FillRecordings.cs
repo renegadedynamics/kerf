@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -7,7 +8,7 @@ using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using static Occt.GeomFill_FillingStyle;
+using static Kerf.Engine.Construction.Surfaces.FillingStyle;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -187,10 +188,10 @@ internal static class FillRecordings
         theW.Put("sd1:" + aD);
     }
 
-    private static void PutFilling(Writer theW, GeomFill_Filling theF)
+    private static void PutFilling(Writer theW, Filling theF)
     {
-        theW.Put("nb:" + Int(theF.NbUPoles()) + "," + Int(theF.NbVPoles()) + "," + (theF.isRational() ? "1" : "0"));
-        NCollection_Array2<Point3D> aP = new(1, theF.NbUPoles(), 1, theF.NbVPoles());
+        theW.Put("nb:" + Int(theF.UPoleCount) + "," + Int(theF.VPoleCount) + "," + (theF.IsRational() ? "1" : "0"));
+        NCollection_Array2<Point3D> aP = new(1, theF.UPoleCount, 1, theF.VPoleCount);
         theF.Poles(aP);
         string aS = "";
         for (int i = aP.LowerRow(); i <= aP.UpperRow(); i++)
@@ -201,9 +202,9 @@ internal static class FillRecordings
             }
         }
         theW.Put("pol:" + aS);
-        if (theF.isRational())
+        if (theF.IsRational())
         {
-            NCollection_Array2<double> aW = new(1, theF.NbUPoles(), 1, theF.NbVPoles());
+            NCollection_Array2<double> aW = new(1, theF.UPoleCount, 1, theF.VPoleCount);
             theF.Weights(aW);
             string aT = "";
             for (int i = aW.LowerRow(); i <= aW.UpperRow(); i++)
@@ -283,8 +284,8 @@ internal static class FillRecordings
         }
     }
 
-    private static readonly GeomFill_FillingStyle[] THE_STYLES =
-        [GeomFill_StretchStyle, GeomFill_CoonsStyle, GeomFill_CurvedStyle];
+    private static readonly FillingStyle[] THE_STYLES =
+        [FillingStyle.StretchStyle, FillingStyle.CoonsStyle, FillingStyle.CurvedStyle];
 
     /// <summary>Replays a case on the port; returns its tokens.</summary>
     public static List<string> Run(Case theCase)
@@ -337,12 +338,12 @@ internal static class FillRecordings
             Make();
             Make();
         }
-        GeomFill_FillingStyle aType = THE_STYLES[aStyle];
+        FillingStyle aType = THE_STYLES[aStyle];
         try
         {
             if (theBSpline)
             {
-                GeomFill_BSplineCurves aFill = new();
+                BSplineCurves aFill = new();
                 if (theNbCurves == 4)
                 {
                     aFill.Init(aBS[0], aBS[1], aBS[2], aBS[3], aType);
@@ -359,7 +360,7 @@ internal static class FillRecordings
             }
             else
             {
-                GeomFill_BezierCurves aFill = new();
+                BezierCurves aFill = new();
                 if (theNbCurves == 4)
                 {
                     aFill.Init(aBZ[0], aBZ[1], aBZ[2], aBZ[3], aType);
@@ -409,23 +410,23 @@ internal static class FillRecordings
         }
         try
         {
-            GeomFill_Filling F;
+            Filling F;
             switch (theKind)
             {
                 case "COONS":
-                    F = aRat ? new GeomFill_Coons(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
-                             : new GeomFill_Coons(P[0], P[1], P[2], P[3]);
+                    F = aRat ? new Coons(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
+                             : new Coons(P[0], P[1], P[2], P[3]);
                     break;
                 case "STRETCH":
-                    F = aRat ? new GeomFill_Stretch(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
-                             : new GeomFill_Stretch(P[0], P[1], P[2], P[3]);
+                    F = aRat ? new Stretch(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
+                             : new Stretch(P[0], P[1], P[2], P[3]);
                     break;
                 case "CURVED":
-                    F = aRat ? new GeomFill_Curved(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
-                             : new GeomFill_Curved(P[0], P[1], P[2], P[3]);
+                    F = aRat ? new Curved(P[0], P[1], P[2], P[3], Wt[0], Wt[1], Wt[2], Wt[3])
+                             : new Curved(P[0], P[1], P[2], P[3]);
                     break;
                 default:
-                    F = aRat ? new GeomFill_Curved(P[0], P[1], Wt[0], Wt[1]) : new GeomFill_Curved(P[0], P[1]);
+                    F = aRat ? new Curved(P[0], P[1], Wt[0], Wt[1]) : new Curved(P[0], P[1]);
                     break;
             }
             PutFilling(theW, F);
@@ -465,7 +466,7 @@ internal static class FillRecordings
     }
 
     // Side k of S: 0 v=0 (u 0->1), 1 u=1 (v 0->1), 2 v=1 (u 0->1), 3 u=0 (v 0->1)
-    internal static GeomFill_Boundary MakeBound(BSplineSurface theS, int theSide, int theType, double theTol3d,
+    internal static Boundary MakeBound(BSplineSurface theS, int theSide, int theType, double theTol3d,
                                                 double theTolAng)
     {
         if (theType == 0)
@@ -477,7 +478,7 @@ internal static class FillRecordings
                 2 => theS.VIso(1.0),
                 _ => theS.UIso(0.0),
             };
-            return new GeomFill_SimpleBound(new CurveAdaptor(anIso), theTol3d, theTolAng);
+            return new SimpleBound(new CurveAdaptor(anIso), theTol3d, theTolAng);
         }
         Point2D aP = theSide switch
         {
@@ -491,7 +492,7 @@ internal static class FillRecordings
         CurveAdaptor2D aC2 = new(aL, 0.0, 1.0);
         SurfaceAdaptor aSA = new(theS);
         CurveOnSurface aCoS = new(aC2, aSA);
-        return new GeomFill_BoundWithSurf(aCoS, theTol3d, theTolAng);
+        return new BoundWithSurf(aCoS, theTol3d, theTolAng);
     }
 
     private static void ConstrainedCase(Writer theW, Reader theR)
@@ -525,7 +526,7 @@ internal static class FillRecordings
         // the boundaries alone
         for (int k = 0; k < 4; k++)
         {
-            GeomFill_Boundary B = MakeBound(S, k, aType[k], aTol3d, aTolAng);
+            Boundary B = MakeBound(S, k, aType[k], aTol3d, aTolAng);
             string aK = Int(k);
             theW.Tok("b" + aK, () =>
             {
@@ -534,7 +535,7 @@ internal static class FillRecordings
                 {
                     B.D1(w, out Point3D P, out Vector3D V);
                     s = Join(s, Hex(B.Value(w)) + "," + Hex(P) + "," + Hex(V));
-                    if (B.HasNormals())
+                    if (B.HasNormals)
                     {
                         B.D1Norm(w, out Vector3D N, out Vector3D DN);
                         s += "," + Hex(B.Norm(w)) + "," + Hex(N) + "," + Hex(DN);
@@ -555,12 +556,12 @@ internal static class FillRecordings
 
         // the algorithmic patch and its tangent fields
         {
-            GeomFill_Boundary[] B = new GeomFill_Boundary[4];
+            Boundary[] B = new Boundary[4];
             for (int k = 0; k < 4; k++)
             {
                 B[k] = MakeBound(S, k, aType[k], aTol3d, aTolAng);
             }
-            GeomFill_CoonsAlgPatch K = new(B[0], B[1], B[2], B[3]);
+            CoonsAlgPatch K = new(B[0], B[1], B[2], B[3]);
             theW.Tok("pc", () => Hex(K.Corner(0)) + "," + Hex(K.Corner(1)) + "," + Hex(K.Corner(2)) + "," + Hex(K.Corner(3)));
             theW.Tok("pv", () =>
             {
@@ -576,11 +577,11 @@ internal static class FillRecordings
             });
             for (int k = 0; k < 4; k++)
             {
-                if (!B[k].HasNormals())
+                if (!B[k].HasNormals)
                 {
                     continue;
                 }
-                GeomFill_TgtOnCoons T = new(K, k);
+                TgtOnCoons T = new(K, k);
                 theW.Tok("t" + Int(k), () =>
                 {
                     string s = "";
@@ -595,12 +596,12 @@ internal static class FillRecordings
         }
 
         // the filling
-        GeomFill_Boundary[] Bs = new GeomFill_Boundary[4];
+        Boundary[] Bs = new Boundary[4];
         for (int k = 0; k < 4; k++)
         {
             Bs[k] = MakeBound(S, k, aType[k], aTol3d, aTolAng);
         }
-        List<GeomFill_Boundary> aUsed = [];
+        List<Boundary> aUsed = [];
         for (int k = 0; k < 4; k++)
         {
             if (aNbSides == 4 || aOrder[k] != 3)
@@ -608,7 +609,7 @@ internal static class FillRecordings
                 aUsed.Add(Bs[aOrder[k]]);
             }
         }
-        GeomFill_ConstrainedFilling CF = new(aMaxDeg, aMaxSeg);
+        ConstrainedFilling CF = new(aMaxDeg, aMaxSeg);
         try
         {
             if (aNbSides == 4)
@@ -631,9 +632,9 @@ internal static class FillRecordings
             string s = "";
             for (int i = 0; i < 4; i++)
             {
-                GeomFill_Boundary b = CF.Boundary(i);
+                Boundary b = CF.Boundary(i);
                 b.Bounds(out double f, out double l);
-                s = Join(s, Hex(f) + "," + Hex(l) + "," + Hex(b.Value(0.5)) + "," + (b.IsDegenerated() ? "1" : "0"));
+                s = Join(s, Hex(f) + "," + Hex(l) + "," + Hex(b.Value(0.5)) + "," + (b.IsDegenerated ? "1" : "0"));
             }
             return s;
         });
@@ -656,7 +657,7 @@ internal static class FillRecordings
         });
         if (aDomain)
         {
-            if (CF.Boundary(aDomSide) is GeomFill_BoundWithSurf aBWS)
+            if (CF.Boundary(aDomSide) is BoundWithSurf aBWS)
             {
                 theW.Tok("rebuild", () =>
                 {

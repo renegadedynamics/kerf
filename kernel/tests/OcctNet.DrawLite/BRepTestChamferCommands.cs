@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Fillets.Api;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using static Occt.ChFiDS_ChamfMode;
+using static Kerf.Engine.Fillets.Data.ChamfMode;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.DrawLite;
@@ -44,8 +46,8 @@ internal static class BRepTestChamferCommands
         int i = 3;
         const int NbArg = 4;
 
-        BRepFilletAPI_MakeChamfer aMCh = new(S);
-        aMCh.SetMode(ChFiDS_ConstThroatWithPenetrationChamfer);
+        MakeChamfer aMCh = new(S);
+        aMCh.SetMode(ChamfMode.ConstThroatWithPenetrationChamfer);
 
         while (i + NbArg <= narg)
         {
@@ -70,16 +72,16 @@ internal static class BRepTestChamferCommands
     }
 
     // compute the chamfer and display the result
-    private static int BuildAndSet(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, BRepFilletAPI_MakeChamfer aMCh)
+    private static int BuildAndSet(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a, MakeChamfer aMCh)
     {
-        if (aMCh.NbContours() == 0)
+        if (aMCh.ContourCount == 0)
         {
             di.Append("No suitable edges to chamfer\n");
             return 1;
         }
         aMCh.Build();
 
-        if (aMCh.IsDone())
+        if (aMCh.IsDone)
         {
             theDI.SetShape(a[1], aMCh.Shape());
             return 0;
@@ -109,8 +111,8 @@ internal static class BRepTestChamferCommands
 
         int i = 3;
 
-        BRepFilletAPI_MakeChamfer aMCh = new(S);
-        aMCh.SetMode(ChFiDS_ConstThroatChamfer);
+        MakeChamfer aMCh = new(S);
+        aMCh.SetMode(ChamfMode.ConstThroatChamfer);
 
         while (i + 1 < narg)
         {
@@ -161,7 +163,7 @@ internal static class BRepTestChamferCommands
 
         int i = 3;
 
-        BRepFilletAPI_MakeChamfer aMCh = new(S);
+        MakeChamfer aMCh = new(S);
 
         while (i + 1 < narg)
         {

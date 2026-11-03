@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Data;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -118,26 +120,26 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
 
             // The edge's deflection (BRepMesh_Deflection), as the mesher's parameters are completed
             // (BRepMesh_IncrementalMesh::initParameters).
-            var aParams = new IMeshTools_Parameters { Deflection = aDeflection, Angle = anAngle };
-            aParams.MinSize = Math.Max(IMeshTools_Parameters.RelMinSize() * aDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
-            var aDEdge = new BRepMeshData_Edge(anEdge);
-            BRepMesh_Deflection.ComputeDeflection(aDEdge, 0.0, aParams);
+            var aParams = new ToolParameters { Deflection = aDeflection, Angle = anAngle };
+            aParams.MinSize = Math.Max(ToolParameters.RelMinSize() * aDeflection, global::Kerf.Engine.Foundation.Precision.Confusion());
+            var aDEdge = new EdgeData(anEdge);
+            Deflection.ComputeDeflection(aDEdge, 0.0, aParams);
             anOracle.Same(aPoly.Deflection(), aDEdge.GetDeflection(), $"edge {i} deflection");
 
             // The tessellation (BRepMesh_CurveTessellator's GCPnts_TangentialDeflection) through BRepMesh_GeomTool.
             var aCurve = new EdgeCurveAdaptor(anEdge);
             double aLinDef = Math.Max(0.5 * aDEdge.GetDeflection(), global::Kerf.Engine.Foundation.Precision.Confusion());
             double anAngDef = Math.Max(0.5 * aDEdge.GetAngularDeflection(), global::Kerf.Engine.Foundation.Precision.Angular());
-            var aTool = new BRepMesh_GeomTool(aCurve, aCurve.FirstParameter(), aCurve.LastParameter(), aLinDef, anAngDef,
+            var aTool = new GeomTool(aCurve, aCurve.FirstParameter(), aCurve.LastParameter(), aLinDef, anAngDef,
                                               isConic ? 4 : 2, aParams.MinSize);
-            anOracle.Same(aPoly.NodeCount, aTool.NbPoints(), $"edge {i} points");
+            anOracle.Same(aPoly.NodeCount, aTool.PointCount, $"edge {i} points");
             NCollection_Array1<double> aParameters = aPoly.Parameters()!;
             NCollection_Array1<Point3D> aNodes = aPoly.Nodes();
-            for (int k = 1; k <= aTool.NbPoints(); k++)
+            for (int k = 1; k <= aTool.PointCount; k++)
             {
                 aTool.Value(k, 0.0, out double aParam, out Point3D aPnt, out _);
                 anOracle.Same(aParameters[k], aParam, $"edge {i} parameter {k}");
-                if (k > 1 && k < aTool.NbPoints()) // the ends are the vertices' points
+                if (k > 1 && k < aTool.PointCount) // the ends are the vertices' points
                 {
                     anOracle.Same(aNodes[k].XYZ(), aPnt.XYZ(), $"edge {i} node {k}");
                 }

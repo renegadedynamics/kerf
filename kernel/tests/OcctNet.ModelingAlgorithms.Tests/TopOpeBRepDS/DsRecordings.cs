@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.IO.Compression;
@@ -11,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// The recordings of tools/dsrec: for each case (a native fillet or chamfer on a box, cylinder, cone, sphere, torus or
 /// Boolean result), the input shape as BRep text and native OCCT's legacy data structure as
 /// <c>ChFi3d_Builder::Compute</c> hands it to <c>TopOpeBRepBuild_HBuilder::Perform</c>, in
-/// <see cref="TopOpeBRepDS_TextDump"/>'s format.
+/// <see cref="TextDump"/>'s format.
 /// </summary>
 /// <remarks>
 /// For units 7N1 and 7N2: run the port's builder on <see cref="DsCase.Input"/> with the case's edges and radii (see

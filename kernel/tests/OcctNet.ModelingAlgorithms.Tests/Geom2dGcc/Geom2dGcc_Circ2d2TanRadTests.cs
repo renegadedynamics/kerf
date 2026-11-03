@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -33,18 +34,18 @@ public class Geom2dGcc_Circ2d2TanRadTests
 
         CurveAdaptor2D      aCLine        = new(aLine);
         CurveAdaptor2D      aCCurve       = new(aCurve);
-        Geom2dGcc_QualifiedCurve aQualifCurve1 = new(aCLine, GccEnt_outside);
-        Geom2dGcc_QualifiedCurve aQualifCurve2 = new(aCCurve, GccEnt_outside);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQualifCurve1 = new(aCLine, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside);
+        global::Kerf.Engine.Construction.Constraints.QualifiedCurve aQualifCurve2 = new(aCCurve, global::Kerf.Engine.Construction.Constraints.Qualifier.Outside);
 
         const double            aRadius    = 10.0;
         const double            aTolerance = 1e-7;
-        Geom2dGcc_Circ2d2TanRad aGccCirc2d = new(aQualifCurve1, aQualifCurve2, aRadius, aTolerance);
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aGccCirc2d = new(aQualifCurve1, aQualifCurve2, aRadius, aTolerance);
 
-        Assert.True(aGccCirc2d.IsDone());
-        Assert.True(aGccCirc2d.NbSolutions() > 0);
+        Assert.True(aGccCirc2d.IsDone);
+        Assert.True(aGccCirc2d.SolutionCount > 0);
 
         const double aMaxDeltaPercent = 1.0; // 1% tolerance as used in the original Draw test
-        for (int i = 1; i <= aGccCirc2d.NbSolutions(); i++)
+        for (int i = 1; i <= aGccCirc2d.SolutionCount; i++)
         {
             Circle2D aCirc2d = aGccCirc2d.ThisSolution(i);
             Point2D  aCenter = aCirc2d.Location();
@@ -61,11 +62,11 @@ public class Geom2dGcc_Circ2d2TanRadTests
         }
     }
 
-    private static void AssertSameAsAna(Geom2dGcc_Circ2d2TanRad theCirc, GccAna_Circ2d2TanRad theAna)
+    private static void AssertSameAsAna(global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad theCirc, AnalyticCirc2d2TanRad theAna)
     {
-        Assert.True(theCirc.IsDone());
-        Assert.Equal(theAna.NbSolutions(), theCirc.NbSolutions());
-        for (int i = 1; i <= theCirc.NbSolutions(); i++)
+        Assert.True(theCirc.IsDone);
+        Assert.Equal(theAna.SolutionCount, theCirc.SolutionCount);
+        for (int i = 1; i <= theCirc.SolutionCount; i++)
         {
             Assert.Equal(theAna.ThisSolution(i), theCirc.ThisSolution(i));
             theCirc.Tangency1(i, out double p1, out double a1, out Point2D t1);
@@ -74,8 +75,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
             theCirc.Tangency2(i, out double p2, out double a2, out Point2D t2);
             theAna.Tangency2(i, out double q2, out double b2, out Point2D u2);
             Assert.Equal((q2, b2, u2), (p2, a2, t2));
-            theCirc.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            theAna.WhichQualifier(i, out GccEnt_Position aR1, out GccEnt_Position aR2);
+            theCirc.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            theAna.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aR1, out global::Kerf.Engine.Construction.Constraints.Qualifier aR2);
             Assert.Equal((aR1, aR2), (aQ1, aQ2));
         }
     }
@@ -85,10 +86,10 @@ public class Geom2dGcc_Circ2d2TanRadTests
     {
         Circle2D c1 = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D  l2 = new(new Point2D(0, -2), new Direction2D(1, 0.25));
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
-                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 1.5, 1e-9);
-        GccAna_Circ2d2TanRad anAna = new(GccEnt.Unqualified(c1), GccEnt.Unqualified(l2), 1.5, 1e-9);
-        Assert.True(aCirc.NbSolutions() > 0);
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                            global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 1.5, 1e-9);
+        AnalyticCirc2d2TanRad anAna = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l2), 1.5, 1e-9);
+        Assert.True(aCirc.SolutionCount > 0);
         AssertSameAsAna(aCirc, anAna);
     }
 
@@ -98,13 +99,13 @@ public class Geom2dGcc_Circ2d2TanRadTests
         // The line comes first: GccAna is called with (circle, line), and the accessors swap the arguments back.
         Circle2D c2 = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D  l1 = new(new Point2D(0, -2), new Direction2D(1, 0.25));
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l1))),
-                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1.5, 1e-9);
-        GccAna_Circ2d2TanRad anAna = new(GccEnt.Unqualified(c2), GccEnt.Unqualified(l1), 1.5, 1e-9);
-        Assert.True(aCirc.IsDone());
-        Assert.Equal(anAna.NbSolutions(), aCirc.NbSolutions());
-        Assert.True(aCirc.NbSolutions() > 0);
-        for (int i = 1; i <= aCirc.NbSolutions(); i++)
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l1))),
+                                            global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c2))), 1.5, 1e-9);
+        AnalyticCirc2d2TanRad anAna = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c2), global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(l1), 1.5, 1e-9);
+        Assert.True(aCirc.IsDone);
+        Assert.Equal(anAna.SolutionCount, aCirc.SolutionCount);
+        Assert.True(aCirc.SolutionCount > 0);
+        for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Assert.Equal(anAna.ThisSolution(i), aCirc.ThisSolution(i));
             aCirc.Tangency1(i, out double p1, out double a1, out Point2D t1);
@@ -113,8 +114,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
             aCirc.Tangency2(i, out double p2, out double a2, out Point2D t2);
             anAna.Tangency1(i, out double q1, out double b1, out Point2D u1);
             Assert.Equal((q1, b1, u1), (p2, a2, t2));
-            aCirc.WhichQualifier(i, out GccEnt_Position aQ1, out GccEnt_Position aQ2);
-            anAna.WhichQualifier(i, out GccEnt_Position aR1, out GccEnt_Position aR2);
+            aCirc.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            anAna.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aR1, out global::Kerf.Engine.Construction.Constraints.Qualifier aR2);
             Assert.Equal((aR2, aR1), (aQ1, aQ2));
         }
     }
@@ -123,9 +124,9 @@ public class Geom2dGcc_Circ2d2TanRadTests
     public void TwoPoints_GiveGccAnasSolutions()
     {
         Point2D p1 = new(0, 0), p2 = new(2, 1);
-        Geom2dGcc_Circ2d2TanRad aCirc = new(new CartesianPoint2(p1), new CartesianPoint2(p2), 2, 1e-9);
-        AssertSameAsAna(aCirc, new GccAna_Circ2d2TanRad(p1, p2, 2, 1e-9));
-        Assert.Equal(2, aCirc.NbSolutions());
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCirc = new(new CartesianPoint2(p1), new CartesianPoint2(p2), 2, 1e-9);
+        AssertSameAsAna(aCirc, new AnalyticCirc2d2TanRad(p1, p2, 2, 1e-9));
+        Assert.Equal(2, aCirc.SolutionCount);
     }
 
     private static void AssertTangent(Curve2DAdaptorBase theCurve, in Circle2D theCirc, double theParArg, in Point2D thePnt)
@@ -143,11 +144,11 @@ public class Geom2dGcc_Circ2d2TanRadTests
     {
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 4, 2));
         Circle2D c1 = new(new Axis2D(new Point2D(7, 0), DX), 1);
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
-                                            Geom2dGcc.Outside(anEll), 1, 1e-7);
-        Assert.True(aCirc.IsDone());
-        Assert.True(aCirc.NbSolutions() > 0);
-        for (int i = 1; i <= aCirc.NbSolutions(); i++)
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))),
+                                            global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Outside(anEll), 1, 1e-7);
+        Assert.True(aCirc.IsDone);
+        Assert.True(aCirc.SolutionCount > 0);
+        for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Circle2D aSol = aCirc.ThisSolution(i);
             Assert.Equal(1.0, aSol.Radius());
@@ -155,8 +156,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
             AssertTangent(anEll, aSol, a2, t2);
             aCirc.Tangency1(i, out _, out _, out Point2D t1);
             Assert.Equal(1.0, t1.Distance(c1.Location()), 1e-6);
-            aCirc.WhichQualifier(i, out _, out GccEnt_Position aQ2);
-            Assert.Equal(GccEnt_outside, aQ2);
+            aCirc.WhichQualifier(i, out _, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
+            Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
         }
     }
 
@@ -176,11 +177,11 @@ public class Geom2dGcc_Circ2d2TanRadTests
         aMults[2] = 4;
         CurveAdaptor2D aBS = new(new BSplineCurve2D(aPoles, aKnots, aMults, 3));
         Line2D l2 = new(new Point2D(0, 0), DX);
-        Geom2dGcc_Circ2d2TanRad aCirc = new(Geom2dGcc.Unqualified(aBS),
-                                            Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 2, 1e-7);
-        Assert.True(aCirc.IsDone());
-        Assert.True(aCirc.NbSolutions() > 0);
-        for (int i = 1; i <= aCirc.NbSolutions(); i++)
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(aBS),
+                                            global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new LineCurve2D(l2))), 2, 1e-7);
+        Assert.True(aCirc.IsDone);
+        Assert.True(aCirc.SolutionCount > 0);
+        for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Circle2D aSol = aCirc.ThisSolution(i);
             aCirc.Tangency1(i, out _, out double a1, out Point2D t1);
@@ -194,16 +195,16 @@ public class Geom2dGcc_Circ2d2TanRadTests
     [Fact]
     public void Accessors_ThrowAsOcct()
     {
-        Assert.Throws<NegativeValueException>(() => new Geom2dGcc_Circ2d2TanRad(new CartesianPoint2(0, 0),
+        Assert.Throws<NegativeValueException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(new CartesianPoint2(0, 0),
                                                                                new CartesianPoint2(1, 0), -1, 1e-9));
         CurveAdaptor2D aLine = new(new LineCurve2D(new Point2D(0, 0), DX));
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 3), DX), 4, 2));
-        Assert.Throws<GccEnt_BadQualifier>(() => new Geom2dGcc_Circ2d2TanRad(Geom2dGcc.Enclosing(aLine), Geom2dGcc.Unqualified(anEll), 1, 1e-7));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(() => new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Enclosing(aLine), global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), 1, 1e-7));
 
         // Points too far apart for the radius: done, no solution.
-        Geom2dGcc_Circ2d2TanRad aFar = new(new CartesianPoint2(0, 0), new CartesianPoint2(10, 0), 1, 1e-9);
-        Assert.True(aFar.IsDone());
-        Assert.Equal(0, aFar.NbSolutions());
+        global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad aFar = new(new CartesianPoint2(0, 0), new CartesianPoint2(10, 0), 1, 1e-9);
+        Assert.True(aFar.IsDone);
+        Assert.Equal(0, aFar.SolutionCount);
         Assert.Throws<OutOfRangeException>(() => aFar.ThisSolution(1));
         Assert.Throws<OutOfRangeException>(() => aFar.Tangency1(0, out _, out _, out _));
         Assert.Throws<OutOfRangeException>(() => aFar.WhichQualifier(1, out _, out _));

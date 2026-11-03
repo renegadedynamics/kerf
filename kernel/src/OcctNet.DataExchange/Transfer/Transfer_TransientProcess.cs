@@ -229,7 +229,7 @@ public class Transfer_TransientProcess : Transfer_ProcessForTransient
             }
             Interface_Check ach = binder.Check();
             Transfer_StatusExec stat = binder.StatusExec();
-            if (stat != Transfer_StatusInitial && stat != Transfer_StatusDone)
+            if (stat != Transfer_StatusExec.Transfer_StatusInitial && stat != Transfer_StatusExec.Transfer_StatusDone)
             {
                 nbe++;
             }

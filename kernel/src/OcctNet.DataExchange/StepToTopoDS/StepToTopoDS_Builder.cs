@@ -6,8 +6,11 @@
 #nullable disable warnings
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -47,14 +50,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         int modetol = (int)theStepModel.InternalParameters.ReadMaxPrecisionMode;
         if (modetol != 0)
         {
-            var STU = new ShapeFix_ShapeTolerance();
+            var STU = new ShapeToleranceFixer();
             STU.LimitTolerance(S, Kerf.Engine.Foundation.Precision.Confusion(), maxtol);
         }
     }
 
     public StepToTopoDS_Builder()
     {
-        myError = StepToTopoDS_BuilderOther;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
         done = false;
     }
 
@@ -97,7 +100,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!myTranShell.IsDone())
         {
             theTP.AddWarning(aShell, " OuterShell from ManifoldSolidBrep not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
@@ -109,7 +112,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
         myResult = aSolid;
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
 
         // Get Statistics :
@@ -153,7 +156,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranShell.IsDone())
         {
             theTP.AddWarning(aCShell, " OuterShell from BrepWithVoids not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
@@ -164,7 +167,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aBuilder.Add(aSolid, aShape);
 
         myResult = aSolid;
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
 
         // Voids
@@ -229,7 +232,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranShell.IsDone())
         {
             theTP.AddWarning(aCShell, " OuterShell from FacetedBrep not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
@@ -244,7 +247,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         aBuilder.MakeSolid(ref aSolid);
         aBuilder.Add(aSolid, aShape);
         myResult = aSolid;
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -275,7 +278,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         {
             theTP.AddWarning(aCShell, " OuterShell from FacetedBrepAndBrepWithVoids not mapped to TopoDS");
             done = false;
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             return;
         }
 
@@ -306,7 +309,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         }
 
         myResult = aSolid;
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -387,7 +390,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             myResult = Shl;
         }
 
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
 
         // Get Statistics :
@@ -486,7 +489,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             }
         }
 
-        myError = (myResult.IsNull ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
+        myError = (myResult.IsNull ? StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone : StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
         done = !myResult.IsNull;
 
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
@@ -578,7 +581,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             }
         }
 
-        myError = (myResult.IsNull ? StepToTopoDS_BuilderDone : StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
+        myError = (myResult.IsNull ? StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone : StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther); // OCCT: the codes are swapped
         done = !myResult.IsNull;
 
         StepData_StepModel aStepModel = TP.Model() as StepData_StepModel;
@@ -601,7 +604,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
             return res;
         }
 
-        var myMkFace = new BRepBuilderAPI_MakeFace();
+        var myMkFace = new MakeFace();
         TrimmedSurface RS = theSurf as TrimmedSurface;
 
         if (RS is not null)
@@ -706,8 +709,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
 
                     if (aGeomCrv is not null)
                     {
-                        var anEdge = new BRepBuilderAPI_MakeEdge(aGeomCrv, aGeomCrv.FirstParameter(), aGeomCrv.LastParameter());
-                        if (anEdge.IsDone())
+                        var anEdge = new MakeEdge(aGeomCrv, aGeomCrv.FirstParameter(), aGeomCrv.LastParameter());
+                        if (anEdge.IsDone)
                         {
                             res = anEdge.InternalEdge();
                         }
@@ -721,8 +724,8 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
                 CartesianPoint thePnt = StepToGeom.MakeCartesianPoint(aPnt, theLocalFactors);
                 if (thePnt is not null)
                 {
-                    var myMkVtx = new BRepBuilderAPI_MakeVertex(thePnt.Pnt());
-                    if (myMkVtx.IsDone())
+                    var myMkVtx = new MakeVertex(thePnt.Pnt());
+                    if (myMkVtx.IsDone)
                     {
                         res = myMkVtx.InternalVertex();
                     }
@@ -812,7 +815,7 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         }
 
         myResult = S;
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -838,14 +841,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranSolid.IsDone())
         {
             theTP.AddWarning(theTSo, " TessellatedSolid not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
 
         Shape aS = aTranSolid.InternalValue();
         myResult = ShapeCasts.Solid(aS);
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -870,14 +873,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranShell.IsDone())
         {
             theTP.AddWarning(theTSh, " TessellatedShell not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
 
         Shape aS = aTranShell.InternalValue();
         myResult = ShapeCasts.Shell(aS);
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -902,14 +905,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranFace.IsDone())
         {
             theTP.AddWarning(theTF, " TessellatedFace not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
 
         Shape aS = aTranFace.InternalValue();
         myResult = ShapeCasts.Face(aS);
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 
@@ -934,14 +937,14 @@ public sealed class StepToTopoDS_Builder : StepToTopoDS_Root
         if (!aTranFace.IsDone())
         {
             theTP.AddWarning(theTSS, " TessellatedSurfaceSet not mapped to TopoDS");
-            myError = StepToTopoDS_BuilderOther;
+            myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderOther;
             done = false;
             return;
         }
 
         Shape aS = aTranFace.InternalValue();
         myResult = ShapeCasts.Face(aS);
-        myError = StepToTopoDS_BuilderDone;
+        myError = StepToTopoDS_BuilderError.StepToTopoDS_BuilderDone;
         done = true;
     }
 

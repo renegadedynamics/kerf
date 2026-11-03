@@ -6,11 +6,12 @@
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Classification;
 
 /// <summary>The outer shell of a solid.</summary>
 public static class BRepClass3d
@@ -25,63 +26,63 @@ public static class BRepClass3d
     public static Shell OuterShell(in Solid aSolid)
     {
         bool bFound;
-        double aTol;
-        Solid aSDx;
-        Shell aShell = new(), aDummy = new();
-        var aIt = new Iterator();
-        var aBB = new BrepBuilder();
-        var aSC = new BRepClass3d_SolidClassifier();
+        double tol;
+        Solid sDx;
+        Shell shell = new(), dummy = new();
+        var it = new Iterator();
+        var bb = new BrepBuilder();
+        var sc = new SolidClassifier();
         //
         if (aSolid.IsNull)
         {
-            return aDummy;
+            return dummy;
         }
 
         //
-        aTol = 1.0e-7;
+        tol = 1.0e-7;
         bFound = false;
         //
         // if solid has one shell, it will return, without checking orientation
-        int aShellCounter = 0;
-        for (aIt.Initialize(aSolid); aIt.More(); aIt.Next())
+        int shellCounter = 0;
+        for (it.Initialize(aSolid); it.More(); it.Next())
         {
-            Shape aSx = aIt.Value();
-            if (aSx.ShapeType() == ShapeType.Shell)
+            Shape sx = it.Value();
+            if (sx.ShapeType() == ShapeType.Shell)
             {
-                aShell = ShapeCasts.Shell(aSx);
-                aShellCounter++;
-                if (aShellCounter >= 2)
+                shell = ShapeCasts.Shell(sx);
+                shellCounter++;
+                if (shellCounter >= 2)
                 {
                     break;
                 }
             }
         }
 
-        if (aShellCounter == 0)
+        if (shellCounter == 0)
         {
-            return aDummy;
+            return dummy;
         }
-        else if (aShellCounter == 1)
+        else if (shellCounter == 1)
         {
-            return aShell;
+            return shell;
         }
 
         //
-        for (aIt.Initialize(aSolid); aIt.More(); aIt.Next())
+        for (it.Initialize(aSolid); it.More(); it.Next())
         {
-            Shape aSx = aIt.Value();
-            if (aSx.ShapeType() == ShapeType.Shell)
+            Shape sx = it.Value();
+            if (sx.ShapeType() == ShapeType.Shell)
             {
-                aShell = ShapeCasts.Shell(aSx);
-                if (!IsInternal(aShell))
+                shell = ShapeCasts.Shell(sx);
+                if (!IsInternal(shell))
                 {
-                    aSDx = aSolid;
-                    aSDx.EmptyCopy();
-                    aBB.Add(aSDx, aShell);
+                    sDx = aSolid;
+                    sDx.EmptyCopy();
+                    bb.Add(sDx, shell);
                     //
-                    aSC.Load(aSDx);
-                    aSC.PerformInfinitePoint(aTol);
-                    if (aSC.State() == Out)
+                    sc.Load(sDx);
+                    sc.PerformInfinitePoint(tol);
+                    if (sc.State() == Out)
                     {
                         bFound = true;
                         break;
@@ -93,27 +94,27 @@ public static class BRepClass3d
         //
         if (!bFound)
         {
-            return aDummy;
+            return dummy;
         }
 
         //
-        return aShell;
+        return shell;
     }
 
     private static bool IsInternal(in Shell aSx)
     {
         bool bInternal;
-        Orientation aOr;
-        var aIt = new Iterator();
+        Orientation or;
+        var it = new Iterator();
         //
         bInternal = false;
         //
-        aIt.Initialize(aSx);
-        if (aIt.More())
+        it.Initialize(aSx);
+        if (it.More())
         {
-            Shape aSy = aIt.Value();
-            aOr = aSy.Orientation();
-            bInternal = (aOr == Internal);
+            Shape sy = it.Value();
+            or = sy.Orientation();
+            bInternal = (or == Internal);
         }
 
         //

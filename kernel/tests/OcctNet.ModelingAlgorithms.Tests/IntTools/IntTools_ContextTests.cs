@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -34,14 +38,14 @@ public class IntTools_ContextTests
     /// Queries of every kind the context caches a tool for, on random points near the shape's faces, edges and
     /// vertices; each returns its outputs as bits.
     /// </summary>
-    private static List<Func<IntTools_Context, string>> Queries(in Shape theShape, int theSeed, int theNbPerKind)
+    private static List<Func<IntersectionContext, string>> Queries(in Shape theShape, int theSeed, int theNbPerKind)
     {
         var aRandom = new Random(theSeed);
         List<Face> aFaces = Sub(theShape, ShapeType.Face, s => ShapeCasts.Face(s));
         List<Edge> anEdges = Sub(theShape, ShapeType.Edge, s => ShapeCasts.Edge(s)).Where(e => !Tool.Degenerated(e)).ToList();
         List<Vertex> aVertices = Sub(theShape, ShapeType.Vertex, s => ShapeCasts.Vertex(s));
         List<Solid> aSolids = Sub(theShape, ShapeType.Solid, s => ShapeCasts.Solid(s));
-        var aQueries = new List<Func<IntTools_Context, string>>();
+        var aQueries = new List<Func<IntersectionContext, string>>();
         double Noise(double theScale) => (aRandom.NextDouble() - 0.5) * theScale;
 
         for (int i = 0; i < theNbPerKind; i++)
@@ -59,9 +63,9 @@ public class IntTools_ContextTests
             Point3D aPCopy = aP;
             aQueries.Add(c =>
             {
-                GeomAPI_ProjectPointOnSurf aProj = c.ProjPS(aF);
+                ProjectPointOnSurface aProj = c.ProjPS(aF);
                 aProj.Perform(aPCopy);
-                if (!aProj.IsDone())
+                if (!aProj.IsDone)
                 {
                     return "P -";
                 }
@@ -94,7 +98,7 @@ public class IntTools_ContextTests
                 int r2 = c.ComputeVF(aV, aF2, ref u, ref v, ref aTolF);
                 return $"VE {r} {Bits(aT)} {Bits(aTol)} VF {r2} {Bits(u)} {Bits(v)} {Bits(aTolF)}";
             });
-            var anIC = new IntTools_Curve(aC, null, null);
+            var anIC = new IntersectionCurve(aC, null, null);
             aQueries.Add(c =>
             {
                 double aT = -1;
@@ -108,7 +112,7 @@ public class IntTools_ContextTests
                 Point3D aPS = aRandom.Next(2) == 0 ? aP : aPE;
                 aQueries.Add(c =>
                 {
-                    BRepClass3d_SolidClassifier aSC = c.SolidClassifier(aSo);
+                    SolidClassifier aSC = c.SolidClassifier(aSo);
                     aSC.Perform(aPS, 1e-7);
                     return $"SC {aSC.State()}";
                 });
@@ -120,18 +124,18 @@ public class IntTools_ContextTests
     private static void ReusedEqualsFresh(string theName, int theSeed, int theNbPerKind)
     {
         Shape aShape = BRepMeshModelKit.ReadDataOcc(theName);
-        List<Func<IntTools_Context, string>> aQueries = Queries(aShape, theSeed, theNbPerKind);
-        var aFresh = aQueries.Select(q => q(new IntTools_Context())).ToArray();
+        List<Func<IntersectionContext, string>> aQueries = Queries(aShape, theSeed, theNbPerKind);
+        var aFresh = aQueries.Select(q => q(new IntersectionContext())).ToArray();
 
         // The same context for everything, in the queries' order and in a shuffled order
-        var aContext = new IntTools_Context();
+        var aContext = new IntersectionContext();
         for (int i = 0; i < aQueries.Count; i++)
         {
             Assert.True(aFresh[i] == aQueries[i](aContext), $"{theName}, query {i}: {aFresh[i]}");
         }
         var aRandom = new Random(theSeed + 1);
         int[] anOrder = Enumerable.Range(0, aQueries.Count).OrderBy(_ => aRandom.Next()).ToArray();
-        var aShuffled = new IntTools_Context();
+        var aShuffled = new IntersectionContext();
         foreach (int i in anOrder)
         {
             Assert.True(aFresh[i] == aQueries[i](aShuffled), $"{theName}, query {i} shuffled: {aFresh[i]}");
@@ -155,7 +159,7 @@ public class IntTools_ContextTests
     public void HoledSquare_Queries()
     {
         Face aF = ClassificationTestShapes.HoledSquare();
-        var aContext = new IntTools_Context();
+        var aContext = new IntersectionContext();
         Assert.Equal(In, aContext.StatePointFace(aF, new Point2D(1, 1)));
         Assert.Equal(Out, aContext.StatePointFace(aF, new Point2D(5, 5)));
         Assert.True(aContext.IsPointInFace(aF, new Point2D(1, 1)));
@@ -175,7 +179,7 @@ public class IntTools_ContextTests
         Assert.Equal((0.0, 10.0, 0.0, 10.0), (u1, u2, v1, v2));
         Assert.False(aContext.IsInfiniteFace(aF));
         // A new projection tolerance drops the cached surface projectors
-        GeomAPI_ProjectPointOnSurf aProj = aContext.ProjPS(aF);
+        ProjectPointOnSurface aProj = aContext.ProjPS(aF);
         aContext.SetPOnSProjectionTolerance(1e-9);
         Assert.NotSame(aProj, aContext.ProjPS(aF));
     }
@@ -183,8 +187,8 @@ public class IntTools_ContextTests
     [Fact]
     public void Box_VertexEdgeFaceComputations()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(2, 3, 4).Shape();
-        var aContext = new IntTools_Context();
+        Shape aBox = new MakeBox(2, 3, 4).Shape();
+        var aContext = new IntersectionContext();
         List<Vertex> aVs = Sub(aBox, ShapeType.Vertex, s => ShapeCasts.Vertex(s));
         List<Edge> anEs = Sub(aBox, ShapeType.Edge, s => ShapeCasts.Edge(s));
         List<Face> aFs = Sub(aBox, ShapeType.Face, s => ShapeCasts.Face(s));
@@ -203,7 +207,7 @@ public class IntTools_ContextTests
         Assert.True(aContext.ComputeVE(aFar, anEs[0], ref aT, ref aTol) is 0 or -4);
         // The solid classifier
         Solid aSo = ShapeCasts.Solid(aBox);
-        BRepClass3d_SolidClassifier aSC = aContext.SolidClassifier(aSo);
+        SolidClassifier aSC = aContext.SolidClassifier(aSo);
         aSC.Perform(new Point3D(1, 1, 1), 1e-7);
         Assert.Equal(In, aSC.State());
         aSC.Perform(new Point3D(5, 1, 1), 1e-7);
@@ -211,9 +215,9 @@ public class IntTools_ContextTests
         // IsVertexOnLine on the edge's own curve
         Curve3D aC = Tool.Curve(anEs[0], out _, out _)!;
         double aTL = -1;
-        Assert.True(aContext.IsVertexOnLine(aV1, new IntTools_Curve(new TrimmedCurve3D(aC, f, l), null, null), 1e-7, ref aTL));
+        Assert.True(aContext.IsVertexOnLine(aV1, new IntersectionCurve(new TrimmedCurve3D(aC, f, l), null, null), 1e-7, ref aTL));
         // IsValidBlockForFace(s): the middle of an edge lies on its two faces
-        var anIC = new IntTools_Curve(aC, null, null);
+        var anIC = new IntersectionCurve(aC, null, null);
         int nF = 0;
         foreach (Face aF in aFs)
         {

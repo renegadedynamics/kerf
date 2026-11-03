@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
@@ -60,7 +61,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         public bool Sense = true;
         public BSplineSpec? BSpline;
         public Arg? Basis;
-        public GccEnt_Position Q;
+        public global::Kerf.Engine.Construction.Constraints.Qualifier Q;
         public string Name = "";
 
         /// <summary>True when the adaptor's type is a line or a circle, so that Geom2dGcc dispatches to GccAna.</summary>
@@ -96,10 +97,10 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         int aQ = theO.Int(0, 6);
         anA.Q = aQ switch
         {
-            0 or 1 or 2 => GccEnt_Position.GccEnt_unqualified,
-            3 => GccEnt_Position.GccEnt_enclosing,
-            4 => GccEnt_Position.GccEnt_enclosed,
-            _ => GccEnt_Position.GccEnt_outside,
+            0 or 1 or 2 => global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified,
+            3 => global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing,
+            4 => global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed,
+            _ => global::Kerf.Engine.Construction.Constraints.Qualifier.Outside,
         };
         return anA;
     }
@@ -250,8 +251,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         {
             Curve2D anOffset = BuildPort(theA);
             var aPlane = new PlaneSurface(new CoordinateSystem());
-            Face aFace = new BRepBuilderAPI_MakeFace(aPlane, -50, 50, -50, 50, 1e-7).Face();
-            Edge anEdge = new BRepBuilderAPI_MakeEdge(anOffset, Tool.Surface(aFace)!).Edge();
+            Face aFace = new MakeFace(aPlane, -50, 50, -50, 50, 1e-7).Face();
+            Edge anEdge = new MakeEdge(anOffset, Tool.Surface(aFace)!).Edge();
             string aFile = Path.Combine(myDirectory, $"c{myFileNumber++}.brep");
             Assert.True(BrepTools.Write(Builder.MakeCompound(aFace, anEdge), aFile));
             Assert.True(BrepTools.Read(out Shape aPShape, aFile));
@@ -551,16 +552,16 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return aR;
     }
 
-    private static N.Geom2dGcc_QualifiedCurve NQ(N.Geom2d_Curve theC, GccEnt_Position theQ)
+    private static N.Geom2dGcc_QualifiedCurve NQ(N.Geom2d_Curve theC, global::Kerf.Engine.Construction.Constraints.Qualifier theQ)
     {
         using var anAd = new N.Geom2dAdaptor_Curve(theC);
         return new N.Geom2dGcc_QualifiedCurve(anAd, (N.GccEnt_Position)(int)theQ);
     }
 
-    private static Geom2dGcc_QualifiedCurve PQ(Curve2D theC, GccEnt_Position theQ) => new(new CurveAdaptor2D(theC), theQ);
+    private static global::Kerf.Engine.Construction.Constraints.QualifiedCurve PQ(Curve2D theC, global::Kerf.Engine.Construction.Constraints.Qualifier theQ) => new(new CurveAdaptor2D(theC), theQ);
 
     private static string Describe(params Arg[] theArgs)
-        => string.Join(", ", theArgs.Select(a => a.Name + " " + GccEnt.PositionToString(a.Q).Replace("GccEnt_", "", StringComparison.Ordinal)));
+        => string.Join(", ", theArgs.Select(a => a.Name + " " + global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(a.Q).Replace("GccEnt_", "", StringComparison.Ordinal)));
 
     private (Arg A, N.Geom2d_Curve N, Curve2D P) Draw(Oracle theO, bool theAllowFreeForm = true)
     {
@@ -580,36 +581,36 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
     internal static NSolver NCirc2d2TanRad(N.Geom2dGcc_Circ2d2TanRad s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
-    internal static PSolver PCirc2d2TanRad(Geom2dGcc_Circ2d2TanRad s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
+    internal static PSolver PCirc2d2TanRad(global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad s)
+        => new(() => s.IsDone, () => s.SolutionCount, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2], null);
 
     internal static NSolver NCirc2d2TanOn(N.Geom2dGcc_Circ2d2TanOn s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
-    internal static PSolver PCirc2d2TanOn(Geom2dGcc_Circ2d2TanOn s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
+    internal static PSolver PCirc2d2TanOn(global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn s)
+        => new(() => s.IsDone, () => s.SolutionCount, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2], [s.IsTheSame1, s.IsTheSame2],
                s.CenterOn3);
 
     internal static NSolver NCirc2d3Tan(N.Geom2dGcc_Circ2d3Tan s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
-    internal static PSolver PCirc2d3Tan(Geom2dGcc_Circ2d3Tan s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
+    internal static PSolver PCirc2d3Tan(global::Kerf.Engine.Construction.Constraints.Circ2d3Tan s)
+        => new(() => s.IsDone, () => s.SolutionCount, PCircles(s.ThisSolution), [s.Tangency1, s.Tangency2, s.Tangency3],
                [s.IsTheSame1, s.IsTheSame2, s.IsTheSame3], null);
 
     internal static NSolver NCirc2dTanCen(N.Geom2dGcc_Circ2dTanCen s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
-    internal static PSolver PCirc2dTanCen(Geom2dGcc_Circ2dTanCen s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
+    internal static PSolver PCirc2dTanCen(global::Kerf.Engine.Construction.Constraints.Circ2dTanCen s)
+        => new(() => s.IsDone, () => s.SolutionCount, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], null);
 
     internal static NSolver NCirc2dTanOnRad(N.Geom2dGcc_Circ2dTanOnRad s)
         => new(s.IsDone, s.NbSolutions, NCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
-    internal static PSolver PCirc2dTanOnRad(Geom2dGcc_Circ2dTanOnRad s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
+    internal static PSolver PCirc2dTanOnRad(global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad s)
+        => new(() => s.IsDone, () => s.SolutionCount, PCircles(s.ThisSolution), [s.Tangency1], [s.IsTheSame1], s.CenterOn3);
 
     internal static NSolver NLin2d2Tan(N.Geom2dGcc_Lin2d2Tan s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
@@ -618,8 +619,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             r.Lin($"s.{i}", aL);
         }, [s.Tangency1, s.Tangency2], [], null);
 
-    internal static PSolver PLin2d2Tan(Geom2dGcc_Lin2d2Tan s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Tangency2], [], null);
+    internal static PSolver PLin2d2Tan(global::Kerf.Engine.Construction.Constraints.Lin2d2Tan s)
+        => new(() => s.IsDone, () => s.SolutionCount, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Tangency2], [], null);
 
     internal static NSolver NLin2dTanObl(N.Geom2dGcc_Lin2dTanObl s)
         => new(s.IsDone, s.NbSolutions, (r, i) =>
@@ -628,8 +629,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             r.Lin($"s.{i}", aL);
         }, [s.Tangency1, s.Intersection2], [], null);
 
-    internal static PSolver PLin2dTanObl(Geom2dGcc_Lin2dTanObl s)
-        => new(() => s.IsDone(), () => s.NbSolutions(), (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Intersection2], [], null);
+    internal static PSolver PLin2dTanObl(global::Kerf.Engine.Construction.Constraints.Lin2dTanObl s)
+        => new(() => s.IsDone, () => s.SolutionCount, (r, i) => r.Lin($"s.{i}", s.ThisSolution(i)), [s.Tangency1, s.Intersection2], [], null);
 
     private static bool Starts(string theName, params string[] thePrefixes) => thePrefixes.Any(p => theName.StartsWith(p, StringComparison.Ordinal));
 
@@ -647,7 +648,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d2TanRad(curve, curve)",
                 Description = Describe(a1, a2) + $", r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), NQ(n2, a2.Q), r, tol))),
-                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(PQ(p1, a1.Q), PQ(p2, a2.Q), r, tol))),
+                Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), PQ(p2, a2.Q), r, tol))),
             };
             if (a1.IsCircle && a2.IsCircle)
             {
@@ -668,7 +669,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d2TanRad(curve, point)",
                 Description = Describe(a1) + $", point ({x}, {y}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), r, tol))),
-                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
+                Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(PQ(p1, a1.Q), new CartesianPoint2(x, y), r, tol))),
             };
         });
         yield return ("Circ2d2TanRad(point, point)", o =>
@@ -681,7 +682,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d2TanRad(point, point)",
                 Description = $"({x1}, {y1}), ({x2}, {y2}), r {r}",
                 Native = () => RunNative(() => NCirc2d2TanRad(new N.Geom2dGcc_Circ2d2TanRad(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), r, tol))),
-                Port = () => RunPort(() => PCirc2d2TanRad(new Geom2dGcc_Circ2d2TanRad(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), r, tol))),
+                Port = () => RunPort(() => PCirc2d2TanRad(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanRad(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), r, tol))),
             };
         });
 
@@ -702,14 +703,14 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), NQ(n2, a2.Q), anOn, tol, u1, u2, u3));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), PQ(p2, a2.Q), new CurveAdaptor2D(p3), tol, u1, u2, u3))),
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
                 // The Iter branches never write parcen3 (CenterOn3's parameter).
                 c.Masked = n => n.StartsWith("c3.", StringComparison.Ordinal) && n.EndsWith(".pararg", StringComparison.Ordinal);
             }
-            if (a1.IsCircle && a2.IsCircle && !a3.IsAnalytic && (a1.Q == GccEnt_Position.GccEnt_unqualified || a2.Q == GccEnt_Position.GccEnt_unqualified))
+            if (a1.IsCircle && a2.IsCircle && !a3.IsAnalytic && (a1.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified || a2.Q == global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified))
             {
                 c.Attribution = "Circ2d2TanOnGeo(circle, circle, curve)'s unset Rbid(2)/RBid(2)";
             }
@@ -731,7 +732,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), anOn, tol, u1, u3));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(PQ(p1, a1.Q), new CartesianPoint2(x, y), new CurveAdaptor2D(p3), tol, u1, u3))),
             };
             if (a1.IsCircle && a3.IsLine)
             {
@@ -765,7 +766,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n3);
                     return NCirc2d2TanOn(new N.Geom2dGcc_Circ2d2TanOn(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), anOn, tol));
                 }),
-                Port = () => RunPort(() => PCirc2d2TanOn(new Geom2dGcc_Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
+                Port = () => RunPort(() => PCirc2d2TanOn(new global::Kerf.Engine.Construction.Constraints.Circ2d2TanOn(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CurveAdaptor2D(p3), tol))),
             };
         });
 
@@ -782,7 +783,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(curve, curve, curve)",
                 Description = Describe(a1, a2, a3),
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), NQ(n3, a3.Q), tol, u1, u2, u3))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), PQ(p3, a3.Q), tol, u1, u2, u3))),
+                Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), PQ(p3, a3.Q), tol, u1, u2, u3))),
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
@@ -806,7 +807,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(curve, curve, point)",
                 Description = Describe(a1, a2) + $", point ({x}, {y})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), new N.Geom2d_CartesianPoint(x, y), tol, u1, u2))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new CartesianPoint2(x, y), tol, u1, u2))),
+                Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new CartesianPoint2(x, y), tol, u1, u2))),
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic))
             {
@@ -826,7 +827,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(curve, point, point)",
                 Description = Describe(a1) + $", ({x1}, {y1}), ({x2}, {y2})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), tol, u1))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(PQ(p1, a1.Q), new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), tol, u1))),
+                Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), tol, u1))),
             };
             if (!a1.IsAnalytic)
             {
@@ -845,7 +846,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2d3Tan(point, point, point)",
                 Description = $"({x1}, {y1}), ({x2}, {y2}), ({x3}, {y3})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), new N.Geom2d_CartesianPoint(x3, y3), tol))),
-                Port = () => RunPort(() => PCirc2d3Tan(new Geom2dGcc_Circ2d3Tan(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CartesianPoint2(x3, y3), tol))),
+                Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), new CartesianPoint2(x3, y3), tol))),
             };
         });
 
@@ -860,7 +861,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Circ2dTanCen(curve, centre)",
                 Description = Describe(a1) + $", centre ({x}, {y})",
                 Native = () => RunNative(() => NCirc2dTanCen(new N.Geom2dGcc_Circ2dTanCen(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x, y), tol))),
-                Port = () => RunPort(() => PCirc2dTanCen(new Geom2dGcc_Circ2dTanCen(PQ(p1, a1.Q), new CartesianPoint2(x, y), tol))),
+                Port = () => RunPort(() => PCirc2dTanCen(new global::Kerf.Engine.Construction.Constraints.Circ2dTanCen(PQ(p1, a1.Q), new CartesianPoint2(x, y), tol))),
             };
             if (!a1.IsAnalytic)
             {
@@ -888,7 +889,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n2);
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(NQ(n1, a1.Q), anOn, r, tol));
                 }),
-                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(PQ(p1, a1.Q), new CurveAdaptor2D(p2), r, tol))),
+                Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(PQ(p1, a1.Q), new CurveAdaptor2D(p2), r, tol))),
             };
         });
         yield return ("Circ2dTanOnRad(point, on)", o =>
@@ -905,7 +906,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var anOn = new N.Geom2dAdaptor_Curve(n2);
                     return NCirc2dTanOnRad(new N.Geom2dGcc_Circ2dTanOnRad(new N.Geom2d_CartesianPoint(x, y), anOn, r, tol));
                 }),
-                Port = () => RunPort(() => PCirc2dTanOnRad(new Geom2dGcc_Circ2dTanOnRad(new CartesianPoint2(x, y), new CurveAdaptor2D(p2), r, tol))),
+                Port = () => RunPort(() => PCirc2dTanOnRad(new global::Kerf.Engine.Construction.Constraints.Circ2dTanOnRad(new CartesianPoint2(x, y), new CurveAdaptor2D(p2), r, tol))),
             };
             if (a2.IsCircle)
             {
@@ -926,7 +927,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Lin2d2Tan(curve, curve)",
                 Description = Describe(a1, a2),
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol))),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol))),
+                Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol))),
             };
         });
         yield return ("Lin2d2Tan(curve, point)", o =>
@@ -943,7 +944,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var aP = new N.gp_Pnt2d(x, y);
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol));
                 }),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol))),
+                Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol))),
             };
         });
         yield return ("Lin2d2Tan(curve, curve, params)", o =>
@@ -957,7 +958,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Ctor = "Lin2d2Tan(curve, curve, params)",
                 Description = Describe(a1, a2) + $", from {u1}, {u2}",
                 Native = () => RunNative(() => NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), tol, u1, u2))),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol, u1, u2))),
+                Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), tol, u1, u2))),
             };
         });
         yield return ("Lin2d2Tan(curve, point, param)", o =>
@@ -975,7 +976,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     using var aP = new N.gp_Pnt2d(x, y);
                     return NLin2d2Tan(new N.Geom2dGcc_Lin2d2Tan(NQ(n1, a1.Q), aP, tol, u1));
                 }),
-                Port = () => RunPort(() => PLin2d2Tan(new Geom2dGcc_Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol, u1))),
+                Port = () => RunPort(() => PLin2d2Tan(new global::Kerf.Engine.Construction.Constraints.Lin2d2Tan(PQ(p1, a1.Q), new Point2D(x, y), tol, u1))),
             };
         });
 
@@ -1006,8 +1007,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                     Port = () => RunPort(() =>
                     {
                         var aL = new Line2D(new Point2D(x, y), new Direction2D(dx, dy));
-                        return PLin2dTanObl(aWithParam ? new Geom2dGcc_Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, u1, angle)
-                                                       : new Geom2dGcc_Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, angle));
+                        return PLin2dTanObl(aWithParam ? new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, u1, angle)
+                                                       : new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(PQ(p1, a1.Q), aL, tolang, angle));
                     }),
                 };
             });

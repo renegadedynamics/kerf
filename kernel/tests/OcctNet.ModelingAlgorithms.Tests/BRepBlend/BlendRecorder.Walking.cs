@@ -1,11 +1,16 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Fillets.Blend;
+using Kerf.Engine.Fillets.BlendFunctions;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Geometry.Continuity;
-using static Occt.IntSurf_TypeTrans;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Containment;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -16,25 +21,25 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 internal sealed partial class BlendRecorder
 {
-    private void RecTrans(IntSurf_Transition T)
+    private void RecTrans(WalkingTransition T)
     {
         Int((int)T.TransitionType());
-        if (T.TransitionType() != IntSurf_Undecided)
+        if (T.TransitionType() != WalkingTypeTrans.Undecided)
         {
-            Int(T.IsTangent() ? 1 : 0);
+            Int(T.IsTangent ? 1 : 0);
         }
-        if (T.TransitionType() == IntSurf_Touch)
+        if (T.TransitionType() == WalkingTypeTrans.Touch)
         {
             Int((int)T.Situation());
-            Int(T.IsOpposite() ? 1 : 0);
+            Int(T.IsOpposite ? 1 : 0);
         }
     }
 
-    private void RecPoint(in Blend_Point P)
+    private void RecPoint(in BlendPoint P)
     {
         Tag("pt");
         Hex(P.Parameter());
-        Int(P.IsTangencyPoint() ? 1 : 0);
+        Int(P.IsTangencyPoint ? 1 : 0);
         Pnt(P.PointOnS1());
         Pnt(P.PointOnS2());
         double u, v;
@@ -74,7 +79,7 @@ internal sealed partial class BlendRecorder
         {
             Tag(" X");
         }
-        if (!P.IsTangencyPoint())
+        if (!P.IsTangencyPoint)
         {
             Vec(P.TangentOnS1());
             Vec(P.TangentOnS2());
@@ -98,7 +103,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecExt(string theTag, in BRepBlend_Extremity E)
+    private void RecExt(string theTag, in Extremity E)
     {
         Tag(theTag);
         Pnt(E.Value());
@@ -107,16 +112,16 @@ internal sealed partial class BlendRecorder
         Hex(v);
         Hex(E.ParameterOnGuide());
         Hex(E.Tolerance());
-        Int(E.HasTangent() ? 1 : 0);
-        if (E.HasTangent())
+        Int(E.HasTangent ? 1 : 0);
+        if (E.HasTangent)
         {
             Vec(E.Tangent());
         }
-        Int(E.IsVertex() ? 1 : 0);
-        Int(E.NbPointOnRst());
-        for (int i = 1; i <= E.NbPointOnRst(); i++)
+        Int(E.IsVertex ? 1 : 0);
+        Int(E.PointOnRstCount);
+        for (int i = 1; i <= E.PointOnRstCount; i++)
         {
-            BRepBlend_PointOnRst R = E.PointOnRst(i);
+            PointOnRst R = E.PointOnRst(i);
             Hex(R.ParameterOnArc());
             RecTrans(R.TransitionOnLine());
             RecTrans(R.TransitionOnArc());
@@ -124,7 +129,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecLine(BRepBlend_Line L)
+    private void RecLine(Line L)
     {
         Tag("line");
         Int(L.NbPoints());
@@ -155,7 +160,7 @@ internal sealed partial class BlendRecorder
         RecExt("end2", L.EndPointOnSecond());
     }
 
-    private void RecFuncState(Blend_AppFunction F)
+    private void RecFuncState(AppFunction F)
     {
         Tag("funcstate");
         try
@@ -170,7 +175,7 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecApprox(AppBlend_Approx A)
+    private void RecApprox(Approx A)
     {
         A.SurfShape(out int ud, out int vd, out int nup, out int nvp, out int nuk, out int nvk);
         Tag("surfshape");
@@ -207,7 +212,7 @@ internal sealed partial class BlendRecorder
             Int(A.SurfVMults()[i]);
         }
         End();
-        int aNb2d = A.NbCurves2d();
+        int aNb2d = A.Curves2dCount;
         A.Curves2dShape(out int d2, out int np2, out int nk2);
         Tag("curves2d");
         Int(aNb2d);
@@ -246,21 +251,21 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecAppSurface(BRepBlend_AppFuncRoot F, BRepBlend_Line L)
+    private void RecAppSurface(AppFuncRoot F, Line L)
     {
-        BRepBlend_AppSurface approx = new(F, L.Point(1).Parameter(), L.Point(L.NbPoints()).Parameter(), 1.0e-4, 1.0e-5,
+        AppSurface approx = new(F, L.Point(1).Parameter(), L.Point(L.NbPoints()).Parameter(), 1.0e-4, 1.0e-5,
                                           1.0e-2, C1, 20, 5000);
         Tag("appsurface");
-        Int(approx.IsDone() ? 1 : 0);
+        Int(approx.IsDone ? 1 : 0);
         End();
-        if (!approx.IsDone())
+        if (!approx.IsDone)
         {
             return;
         }
         RecApprox(approx);
         Tag("errors");
         Hex(approx.MaxErrorOnSurf());
-        for (int k = 1; k <= approx.NbCurves2d(); k++)
+        for (int k = 1; k <= approx.Curves2dCount; k++)
         {
             Hex(approx.Max2dError(k));
         }
@@ -270,22 +275,22 @@ internal sealed partial class BlendRecorder
         End();
     }
 
-    private void RecAppSurf(Blend_AppFunction F, BRepBlend_Line L)
+    private void RecAppSurf(AppFunction F, Line L)
     {
-        BRepBlend_AppSurf app = new(3, 8, 1.0e-4, 1.0e-5, 5);
+        AppSurf app = new(3, 8, 1.0e-4, 1.0e-5, 5);
         app.Perform(L, F);
         Tag("appsurf");
-        Int(app.IsDone() ? 1 : 0);
+        Int(app.IsDone ? 1 : 0);
         End();
-        if (app.IsDone())
+        if (app.IsDone)
         {
             RecApprox(app);
         }
     }
 
-    private static ChFiDS_ElSpine ElGuide(Curve3D C, double theF, double theL)
+    private static ElSpine ElGuide(Curve3D C, double theF, double theL)
     {
-        ChFiDS_ElSpine E = new();
+        ElSpine E = new();
         E.SetCurve(C);
         E.FirstParameter(theF);
         E.LastParameter(theL);
@@ -299,11 +304,11 @@ internal sealed partial class BlendRecorder
         return new SurfaceAdaptor(S.Surface()!, u1, u2, v1, v2);
     }
 
-    private static Law_Function EvolLaw(double theF, double theL)
+    private static LawsFunction EvolLaw(double theF, double theL)
     {
-        Law_Linear aLaw = new();
+        Linear aLaw = new();
         aLaw.Set(theF, 0.8, theL, 1.4);
-        Law_Composite aComp = new(theF, theL, 1.0e-9);
+        Composite aComp = new(theF, theL, 1.0e-9);
         aComp.ChangeLaws().Append(aLaw);
         return aComp;
     }
@@ -341,40 +346,40 @@ internal sealed partial class BlendRecorder
         SurfaceAdaptorBase S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
         TopolTool D1 = new(S1);
         TopolTool D2 = new(S2);
-        ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
+        ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
         math_Vector X0 = new(1, 4);
         for (int i = 1; i <= 4; i++)
         {
             X0[i] = C.X0[i - 1];
         }
-        Blend_Function F;
-        Blend_FuncInv FInv;
+        BlendFunction F;
+        FuncInv FInv;
         if (C.Evol)
         {
-            Law_Function aLaw = EvolLaw(C.GF, C.GL);
-            BlendFunc_EvolRad anEvol = new(S1, S2, G, aLaw);
+            LawsFunction aLaw = EvolLaw(C.GF, C.GL);
+            EvolRad anEvol = new(S1, S2, G, aLaw);
             anEvol.Set(choix);
-            BlendFunc_EvolRadInv anEvolInv = new(S1, S2, G, aLaw);
+            EvolRadInv anEvolInv = new(S1, S2, G, aLaw);
             anEvolInv.Set(choix);
             F = anEvol;
             FInv = anEvolInv;
         }
         else
         {
-            BlendFunc_ConstRad aConst = new(S1, S2, G);
+            ConstRad aConst = new(S1, S2, G);
             aConst.Set(C.R, choix);
-            BlendFunc_ConstRadInv aConstInv = new(S1, S2, G);
+            ConstRadInv aConstInv = new(S1, S2, G);
             aConstInv.Set(C.R, choix);
             F = aConst;
             FInv = aConstInv;
         }
-        BRepBlend_Walking W = new(S1, S2, D1, D2, G);
+        Walking W = new(S1, S2, D1, D2, G);
         W.Check2d(false);
         W.Perform(F, FInv, C.Pdep, C.Pmax, 1.0, 1.0e-4, 1.0e-5, X0, 0.01, true);
         Tag("perform");
-        Int(W.IsDone() ? 1 : 0);
+        Int(W.IsDone ? 1 : 0);
         End();
-        if (!W.IsDone())
+        if (!W.IsDone)
         {
             return;
         }
@@ -391,10 +396,10 @@ internal sealed partial class BlendRecorder
         Int(W.TwistOnS1() ? 1 : 0);
         Int(W.TwistOnS2() ? 1 : 0);
         End();
-        BRepBlend_Line aLin = W.Line();
+        Line aLin = W.Line();
         RecLine(aLin);
         RecFuncState(F);
-        BRepBlend_AppFuncRoot AF = new BRepBlend_AppFunc(aLin, F, 1.0e-4, 1.0e-5);
+        AppFuncRoot AF = new AppFunc(aLin, F, 1.0e-4, 1.0e-5);
         RecAppSurface(AF, aLin);
         RecAppSurf(F, aLin);
     }
@@ -407,13 +412,13 @@ internal sealed partial class BlendRecorder
         SurfaceAdaptorBase S2 = BSurf(C.S2, C.B2[0], C.B2[1], C.B2[2], C.B2[3]);
         TopolTool D1 = new(S1);
         TopolTool D2 = new(S2);
-        ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
-        BlendFunc_ConstRad F = new(S1, S2, G);
+        ElSpine G = ElGuide(WalkGuideCurve(C.G), C.GF, C.GL);
+        ConstRad F = new(S1, S2, G);
         F.Set(C.R, choix);
-        BlendFunc_ConstRadInv FInv = new(S1, S2, G);
+        ConstRadInv FInv = new(S1, S2, G);
         FInv.Set(C.R, choix);
 
-        BRepBlend_Walking W1 = new(S1, S2, D1, D2, G);
+        Walking W1 = new(S1, S2, D1, D2, G);
         math_Vector X0 = new(1, 4);
         X0[1] = 3.0;
         X0[2] = 1.2;
@@ -427,7 +432,7 @@ internal sealed partial class BlendRecorder
         End();
         Vector("pardep", X0);
 
-        BRepBlend_Walking W2 = new(S1, S2, D1, D2, G);
+        Walking W2 = new(S1, S2, D1, D2, G);
         W2.Check2d(false);
         X0[1] = 8.5;
         X0[2] = 1.0;
@@ -447,9 +452,9 @@ internal sealed partial class BlendRecorder
         }
         W2.Perform(F, FInv, aPsol, 0.0, 1.0, 1.0e-4, 1.0e-5, aParSol, 0.01, false);
         Tag("perform");
-        Int(W2.IsDone() ? 1 : 0);
+        Int(W2.IsDone ? 1 : 0);
         End();
-        if (W2.IsDone())
+        if (W2.IsDone)
         {
             RecLine(W2.Line());
         }
@@ -460,19 +465,19 @@ internal sealed partial class BlendRecorder
         SurfaceAdaptorBase S = BSurf(0, 0.0, 8.0, -3.0, 3.0);
         TopolTool D = new(S);
         CurveAdaptorBase C = Guide(4);
-        ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
-        BlendFunc_CSConstRad F = new(S, C, G);
+        ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
+        CSConstRad F = new(S, C, G);
         F.Set(1.0, choix);
         math_Vector X3 = new(1, 3);
         X3[1] = 3.0;
         X3[2] = -0.5;
         X3[3] = 3.0;
-        BRepBlend_CSWalking W = new(C, S, D);
+        CSWalking W = new(C, S, D);
         W.Perform(F, 3.0, 9.0, 1.0, 1.0e-4, 1.0e-5, X3, 0.01, true);
         Tag("perform");
-        Int(W.IsDone() ? 1 : 0);
+        Int(W.IsDone ? 1 : 0);
         End();
-        if (!W.IsDone())
+        if (!W.IsDone)
         {
             return;
         }
@@ -480,7 +485,7 @@ internal sealed partial class BlendRecorder
         Tag("complete");
         Int(isComplete ? 1 : 0);
         End();
-        BRepBlend_Line aLin = W.Line();
+        Line aLin = W.Line();
         RecLine(aLin);
         RecFuncState(F);
         RecAppSurf(F, aLin);
@@ -509,7 +514,7 @@ internal sealed partial class BlendRecorder
         SurfaceAdaptorBase S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
         TopolTool D1 = new(S1);
         TopolTool D2 = new(S2);
-        ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
+        ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
         Curve2DAdaptorBase Rst = new CurveAdaptor2D(new LineCurve2D(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)),
                                                         C.R2[0], C.R2[1]);
         CurveOnSurface HC = new();
@@ -519,21 +524,21 @@ internal sealed partial class BlendRecorder
         X0[2] = 1.0;
         X0[3] = 4.0;
 
-        Blend_SurfRstFunction F;
-        Blend_SurfCurvFuncInv FInvC;
-        Blend_SurfPointFuncInv FInvP;
-        Blend_FuncInv FInv;
+        SurfRstFunction F;
+        SurfCurvFuncInv FInvC;
+        SurfPointFuncInv FInvP;
+        FuncInv FInv;
         if (C.Evol)
         {
-            Law_Function aLaw = EvolLaw(0.0, 10.0);
-            BRepBlend_SurfRstEvolRad anEvol = new(S1, S2, Rst, G, aLaw);
+            LawsFunction aLaw = EvolLaw(0.0, 10.0);
+            SurfRstEvolRad anEvol = new(S1, S2, Rst, G, aLaw);
             anEvol.Set(S2, Rst);
             anEvol.Set(choix);
-            BRepBlend_SurfCurvEvolRadInv anEvolC = new(S1, HC, G, aLaw);
+            SurfCurvEvolRadInv anEvolC = new(S1, HC, G, aLaw);
             anEvolC.Set(choix);
-            BRepBlend_SurfPointEvolRadInv anEvolP = new(S1, G, aLaw);
+            SurfPointEvolRadInv anEvolP = new(S1, G, aLaw);
             anEvolP.Set(choix);
-            BlendFunc_EvolRadInv anEvolI = new(S1, S2, G, aLaw);
+            EvolRadInv anEvolI = new(S1, S2, G, aLaw);
             anEvolI.Set(false, Rst);
             anEvolI.Set(bigchoix);
             F = anEvol;
@@ -543,14 +548,14 @@ internal sealed partial class BlendRecorder
         }
         else
         {
-            BRepBlend_SurfRstConstRad aConst = new(S1, S2, Rst, G);
+            SurfRstConstRad aConst = new(S1, S2, Rst, G);
             aConst.Set(S2, Rst);
             aConst.Set(C.R, choix);
-            BRepBlend_SurfCurvConstRadInv aConstC = new(S1, HC, G);
+            SurfCurvConstRadInv aConstC = new(S1, HC, G);
             aConstC.Set(C.R, choix);
-            BRepBlend_SurfPointConstRadInv aConstP = new(S1, G);
+            SurfPointConstRadInv aConstP = new(S1, G);
             aConstP.Set(C.R, choix);
-            BlendFunc_ConstRadInv aConstI = new(S1, S2, G);
+            ConstRadInv aConstI = new(S1, S2, G);
             aConstI.Set(false, Rst);
             aConstI.Set(C.R, bigchoix);
             F = aConst;
@@ -558,12 +563,12 @@ internal sealed partial class BlendRecorder
             FInvP = aConstP;
             FInv = aConstI;
         }
-        BRepBlend_SurfRstLineBuilder W = new(S1, D1, S2, Rst, D2);
+        SurfRstLineBuilder W = new(S1, D1, S2, Rst, D2);
         W.Perform(F, FInv, FInvP, FInvC, 4.0, 9.5, 1.0, 1.0e-4, 1.0e-5, 1.0e-5, X0, 0.01, true);
         Tag("perform");
-        Int(W.IsDone() ? 1 : 0);
+        Int(W.IsDone ? 1 : 0);
         End();
-        if (!W.IsDone())
+        if (!W.IsDone)
         {
             return;
         }
@@ -573,10 +578,10 @@ internal sealed partial class BlendRecorder
         Int(W.DecrochStart() ? 1 : 0);
         Int(W.DecrochEnd() ? 1 : 0);
         End();
-        BRepBlend_Line aLin = W.Line();
+        Line aLin = W.Line();
         RecLine(aLin);
         RecFuncState(F);
-        BRepBlend_AppFuncRoot AF = new BRepBlend_AppFuncRst(aLin, F, 1.0e-4, 1.0e-5);
+        AppFuncRoot AF = new AppFuncRst(aLin, F, 1.0e-4, 1.0e-5);
         RecAppSurface(AF, aLin);
     }
 
@@ -586,7 +591,7 @@ internal sealed partial class BlendRecorder
         SurfaceAdaptorBase S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
         TopolTool D1 = new(S1);
         TopolTool D2 = new(S2);
-        ChFiDS_ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
+        ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
         Curve2DAdaptorBase Rst1 = new CurveAdaptor2D(
             new LineCurve2D(new Point2D(0.0, 1.0), new Direction2D(1.0, 0.0)), C.R1[0], C.R1[1]);
         Curve2DAdaptorBase Rst2 = new CurveAdaptor2D(
@@ -599,22 +604,22 @@ internal sealed partial class BlendRecorder
         X0[1] = 4.0;
         X0[2] = 4.0;
 
-        Blend_RstRstFunction F;
-        Blend_SurfCurvFuncInv FInv1;
-        Blend_SurfCurvFuncInv FInv2;
-        BRepBlend_CurvPointRadInv FInvP1 = new(G, HC2), FInvP2 = new(G, HC1);
+        RstRstFunction F;
+        SurfCurvFuncInv FInv1;
+        SurfCurvFuncInv FInv2;
+        CurvPointRadInv FInvP1 = new(G, HC2), FInvP2 = new(G, HC1);
         FInvP1.Set(choix);
         FInvP2.Set(choix);
         if (C.Evol)
         {
-            Law_Function aLaw = EvolLaw(0.0, 10.0);
-            BRepBlend_RstRstEvolRad anEvol = new(S1, Rst1, S2, Rst2, G, aLaw);
+            LawsFunction aLaw = EvolLaw(0.0, 10.0);
+            RstRstEvolRad anEvol = new(S1, Rst1, S2, Rst2, G, aLaw);
             anEvol.Set(S1, Rst1, S2, Rst2);
             anEvol.Set(choix);
-            BRepBlend_SurfCurvEvolRadInv anEvol1 = new(S1, HC2, G, aLaw);
+            SurfCurvEvolRadInv anEvol1 = new(S1, HC2, G, aLaw);
             anEvol1.Set(Rst1);
             anEvol1.Set(1);
-            BRepBlend_SurfCurvEvolRadInv anEvol2 = new(S2, HC1, G, aLaw);
+            SurfCurvEvolRadInv anEvol2 = new(S2, HC1, G, aLaw);
             anEvol2.Set(Rst2);
             anEvol2.Set(2);
             F = anEvol;
@@ -623,25 +628,25 @@ internal sealed partial class BlendRecorder
         }
         else
         {
-            BRepBlend_RstRstConstRad aConst = new(S1, Rst1, S2, Rst2, G);
+            RstRstConstRad aConst = new(S1, Rst1, S2, Rst2, G);
             aConst.Set(S1, Rst1, S2, Rst2);
             aConst.Set(C.R, choix);
-            BRepBlend_SurfCurvConstRadInv aConst1 = new(S1, HC2, G);
+            SurfCurvConstRadInv aConst1 = new(S1, HC2, G);
             aConst1.Set(Rst1);
             aConst1.Set(C.R, 1);
-            BRepBlend_SurfCurvConstRadInv aConst2 = new(S2, HC1, G);
+            SurfCurvConstRadInv aConst2 = new(S2, HC1, G);
             aConst2.Set(Rst2);
             aConst2.Set(C.R, 2);
             F = aConst;
             FInv1 = aConst1;
             FInv2 = aConst2;
         }
-        BRepBlend_RstRstLineBuilder W = new(S1, Rst1, D1, S2, Rst2, D2);
+        RstRstLineBuilder W = new(S1, Rst1, D1, S2, Rst2, D2);
         W.Perform(F, FInv1, FInvP1, FInv2, FInvP2, 4.0, 9.5, 1.0, 1.0e-4, 1.0e-5, X0, 0.01, true);
         Tag("perform");
-        Int(W.IsDone() ? 1 : 0);
+        Int(W.IsDone ? 1 : 0);
         End();
-        if (!W.IsDone())
+        if (!W.IsDone)
         {
             return;
         }
@@ -653,10 +658,10 @@ internal sealed partial class BlendRecorder
         Int(W.Decroch2Start() ? 1 : 0);
         Int(W.Decroch2End() ? 1 : 0);
         End();
-        BRepBlend_Line aLin = W.Line();
+        Line aLin = W.Line();
         RecLine(aLin);
         RecFuncState(F);
-        BRepBlend_AppFuncRoot AF = new BRepBlend_AppFuncRstRst(aLin, F, 1.0e-4, 1.0e-5);
+        AppFuncRoot AF = new AppFuncRstRst(aLin, F, 1.0e-4, 1.0e-5);
         RecAppSurface(AF, aLin);
     }
 

@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.HiddenLines.Presentation;
+using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -42,16 +45,16 @@ public class DrawMeshingCommandsTests
         return aWriter.ToString();
     }
 
-    private static Shape Meshed(in Shape theShape, IMeshTools_Parameters theParameters, IMeshTools_Context? theContext = null)
+    private static Shape Meshed(in Shape theShape, ToolParameters theParameters, ToolContext? theContext = null)
     {
-        var aMesher = new BRepMesh_IncrementalMesh();
+        var aMesher = new IncrementalMesh();
         aMesher.SetShape(theShape);
         aMesher.ChangeParameters() = theParameters;
-        aMesher.Perform(theContext ?? new BRepMesh_Context());
+        aMesher.Perform(theContext ?? new MeshContext());
         return aMesher.Shape();
     }
 
-    private static IMeshTools_Parameters Parameters(double theDeflection)
+    private static ToolParameters Parameters(double theDeflection)
         => new() { Deflection = theDeflection, DeflectionInterior = theDeflection };
 
     [Fact]
@@ -94,7 +97,7 @@ public class DrawMeshingCommandsTests
     {
         (DrawInterpreter i, _) = Load("CrankArm.brep");
         Shape anInput = i.GetShape("s");
-        var aCases = new (string Options, IMeshTools_Parameters Parameters, IMeshTools_Context? Context)[]
+        var aCases = new (string Options, ToolParameters Parameters, ToolContext? Context)[]
         {
             ("0.5", Parameters(0.5), null),
             ("0.5 -a 10", Parameters(0.5) with { Angle = 10 * Math.PI / 180 }, null),
@@ -112,15 +115,15 @@ public class DrawMeshingCommandsTests
             ("0.5 -force_face_def", Parameters(0.5) with { ForceFaceDeflection = true }, null),
             ("0.5 -adjust_min", Parameters(0.5) with { AdjustMinSize = true }, null),
             ("0.5 -decrease", Parameters(0.5) with { AllowQualityDecrease = true }, null),
-            ("0.5 -algo delabella", Parameters(0.5) with { MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Delabella },
-                new BRepMesh_Context(IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Delabella)),
-            ("0.5 -algo 0", Parameters(0.5) with { MeshAlgo = IMeshTools_MeshAlgoType.IMeshTools_MeshAlgoType_Watson }, null),
+            ("0.5 -algo delabella", Parameters(0.5) with { MeshAlgo = MeshAlgoType.MeshAlgoType_Delabella },
+                new MeshContext(MeshAlgoType.MeshAlgoType_Delabella)),
+            ("0.5 -algo 0", Parameters(0.5) with { MeshAlgo = MeshAlgoType.MeshAlgoType_Watson }, null),
             ("0.5 -algo default", Parameters(0.5), null),
         };
 
         string aDefault = Text(Meshed(anInput, Parameters(0.5)));
         int aDifferent = 0;
-        foreach ((string anOptions, IMeshTools_Parameters aParameters, IMeshTools_Context? aContext) in aCases)
+        foreach ((string anOptions, ToolParameters aParameters, ToolContext? aContext) in aCases)
         {
             i.Eval("tclean s");
             i.Eval("incmesh s " + anOptions);
@@ -134,8 +137,8 @@ public class DrawMeshingCommandsTests
 
         // -prs: AIS's default deflection (relative to the bounding box, 20 degrees); a deflection given is the coefficient
         i.Eval("tclean s; incmesh s -prs");
-        var aDrawer = new Prs3d_Drawer();
-        double aPrsDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(anInput, aDrawer);
+        var aDrawer = new Drawer();
+        double aPrsDeflection = PresentationToolTriangulatedShape.GetDeflection(anInput, aDrawer);
         Assert.Equal(Text(Meshed(anInput, Parameters(aPrsDeflection) with { Angle = 20 * Math.PI / 180 })), Text(i.GetShape("s")));
     }
 
@@ -230,7 +233,7 @@ public class DrawMeshingCommandsTests
         try
         {
             i.Eval("mpparallel; mpparallel 1");
-            Assert.True(BRepMesh_IncrementalMesh.IsParallelDefault());
+            Assert.True(IncrementalMesh.IsParallelDefault);
         }
         finally
         {
@@ -245,8 +248,8 @@ public class DrawMeshingCommandsTests
     {
         (DrawInterpreter i, StringWriter o) = Load("CrankArm.brep");
         Shape anInput = i.GetShape("s");
-        double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(anInput, new Prs3d_Drawer());
-        string anExpected = Text(new BRepMesh_IncrementalMesh(anInput, aDeflection, false, 20 * Math.PI / 180).Shape());
+        double aDeflection = PresentationToolTriangulatedShape.GetDeflection(anInput, new Drawer());
+        string anExpected = Text(new IncrementalMesh(anInput, aDeflection, false, 20 * Math.PI / 180).Shape());
 
         // no viewer: vdefaults fails as in DRAWEXE; vinit makes the context
         Assert.Equal("", Error(i, "vdefaults"));
@@ -281,7 +284,7 @@ public class DrawMeshingCommandsTests
 
         // an absolute deflection and another angle
         i.Eval("vclear; vdefaults -absDefl 0.5 -angDefl 10; vdisplay s");
-        Assert.Equal(Text(new BRepMesh_IncrementalMesh(anInput, 0.5, false, 10 * Math.PI / 180).Shape()), Text(i.GetShape("s")));
+        Assert.Equal(Text(new IncrementalMesh(anInput, 0.5, false, 10 * Math.PI / 180).Shape()), Text(i.GetShape("s")));
         Assert.Equal("DeflType:           absolute\nAbsoluteDeflection: 0.5\nAngularDeflection:  10\nAutoTriangulation:  on\n", i.Eval("vdefaults"));
         Assert.Equal("Syntax error: unknown argument '-FOO'\n", Error(i, "vdefaults -foo") + o.ToString()[^38..]);
 

@@ -49,8 +49,8 @@ internal class RWStepBasic_RWProductDefinitionFormationWithSpecifiedSource
 
         // --- own field : makeOrBuy ---
 
-        StepBasic_Source aMakeOrBuy = StepBasic_sNotKnown;
-        if (data.ParamType(num, 4) == Interface_ParamEnum)
+        StepBasic_Source aMakeOrBuy = StepBasic_Source.StepBasic_sNotKnown;
+        if (data.ParamType(num, 4) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 4);
             if (!RWStepBasic_RWSource.ConvertToEnum(text, ref aMakeOrBuy))

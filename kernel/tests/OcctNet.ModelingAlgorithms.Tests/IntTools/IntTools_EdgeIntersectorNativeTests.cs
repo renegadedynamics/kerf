@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
@@ -104,7 +105,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
         foreach (int k in anOrder)
         {
             EFRun aRun = aCase.EF[k];
-            aFresh[k] = RunEF(Edge(aCase, aCase.EA, aRun.I), Face(aCase, aRun.J), new IntTools_Context());
+            aFresh[k] = RunEF(Edge(aCase, aCase.EA, aRun.I), Face(aCase, aRun.J), new IntersectionContext());
             if (!Agrees(aRun.Native, aFresh[k], IsCircle(Edge(aCase, aCase.EA, aRun.I)), ref aNbNear))
             {
                 aMismatches.Add($"EF {aRun.I} {aRun.J} L{(aRun.Localized ? 1 : 0)} {new EdgeCurveAdaptor(Edge(aCase, aCase.EA, aRun.I)).GetType()} {new FaceSurfaceAdaptor(Face(aCase, aRun.J)).GetType()}\n  native {aRun.Native}\n  port   {aFresh[k]}");
@@ -120,7 +121,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
                                  : [anOrder];
         foreach (List<int> aSequence in anOrders)
         {
-            IntTools_Context aCtx = new();
+            IntersectionContext aCtx = new();
             foreach (int k in aSequence)
             {
                 EFRun aRun = aCase.EF[k];

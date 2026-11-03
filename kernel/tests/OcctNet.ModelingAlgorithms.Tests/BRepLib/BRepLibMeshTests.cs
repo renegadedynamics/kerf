@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -100,10 +101,10 @@ public class BRepLibMeshTests
     {
         Solid aBox = MeshedBox(0.3);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
-        Assert.Throws<LockedShapeException>(() => BRepLib.UpdateDeflection(aBox));
+        Assert.Throws<LockedShapeException>(() => BrepLibrary.UpdateDeflection(aBox));
 
         Shape aCopy = BrepTools.CopyForWrite(aBox, out History aH);
-        BRepLib.UpdateDeflection(aCopy);
+        BrepLibrary.UpdateDeflection(aCopy);
         foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
             Triangulation anOld = Triangulation(aF);
@@ -130,7 +131,7 @@ public class BRepLibMeshTests
     {
         Solid aBox = MeshedBox(0.3);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
-        Shape aResult = BRepLib.DeflectionUpdated(aBox, out History aH);
+        Shape aResult = BrepLibrary.DeflectionUpdated(aBox, out History aH);
         Assert.True(aResult.TShape()!.IsFrozen);
         foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
@@ -145,14 +146,14 @@ public class BRepLibMeshTests
             Assert.True(aVertices.Contains(anExp.Current()));
         }
 
-        Shape aNormals = BRepLib.NormalConsistencyEnsured(aBox, out bool isCorrected);
+        Shape aNormals = BrepLibrary.NormalConsistencyEnsured(aBox, out bool isCorrected);
         Assert.True(isCorrected);
         foreach (Face aF in BRepGPropTestShapes.Faces(aNormals))
         {
             Assert.True(Triangulation(aF).HasNormals);
         }
         // normals present: nothing to do, and the result is the input itself
-        Assert.True(BRepLib.NormalConsistencyEnsured(aNormals, out isCorrected).IsEqual(aNormals));
+        Assert.True(BrepLibrary.NormalConsistencyEnsured(aNormals, out isCorrected).IsEqual(aNormals));
         Assert.False(isCorrected);
         aBefore.AssertUnchanged(aBox);
     }
@@ -163,7 +164,7 @@ public class BRepLibMeshTests
         var aB = new BrepBuilder();
         // a cylinder face meshed with one quad: its midpoints are off the surface by 1 - cos(pi / 4) / ...
         var aCyl = new CylindricalSurface(new CoordinateSystem(), 1.0);
-        Face aF = new BRepLib_MakeFace(aCyl, 0, Math.PI / 2, 0, 1, Conf).InternalFace();
+        Face aF = new LibraryMakeFace(aCyl, 0, Math.PI / 2, 0, 1, Conf).InternalFace();
         var aTri = new Triangulation(4, 2, true);
         (double u, double v)[] aUV = [(0, 0), (Math.PI / 2, 0), (Math.PI / 2, 1), (0, 1)];
         for (int i = 0; i < 4; i++)
@@ -174,7 +175,7 @@ public class BRepLibMeshTests
         aTri.SetTriangle(1, new Triangle1(1, 2, 3));
         aTri.SetTriangle(2, new Triangle1(1, 3, 4));
         aB.UpdateFace(aF, aTri);
-        BRepLib.UpdateDeflection(aF);
+        BrepLibrary.UpdateDeflection(aF);
         // the inner link (1, 3): its midpoint (0.5, 0.5, 0.5) against the surface at (pi / 4, 0.5)
         double aLink = new Point3D(0.5, 0.5, 0.5).Distance(aCyl.Value(Math.PI / 4, 0.5));
         // the triangle midpoints: ((1 + 0 + 0) / 3, (0 + 1 + 1) / 3) against (pi / 6, 1 / 3) and the other
@@ -188,7 +189,7 @@ public class BRepLibMeshTests
         Solid aBox = MeshedBox(0.0);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aBox);
         Shape aCopy = BrepTools.CopyForWrite(aBox, out History aH);
-        Assert.True(BRepLib.EnsureNormalConsistency(aCopy));
+        Assert.True(BrepLibrary.EnsureNormalConsistency(aCopy));
         foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
             Assert.False(Triangulation(aF).HasNormals);
@@ -206,7 +207,7 @@ public class BRepLibMeshTests
             }
         }
         // normals present: nothing to do
-        Assert.False(BRepLib.EnsureNormalConsistency(aCopy));
+        Assert.False(BrepLibrary.EnsureNormalConsistency(aCopy));
         aBefore.AssertUnchanged(aBox);
     }
 
@@ -216,7 +217,7 @@ public class BRepLibMeshTests
         const double aSlope = 0.05;
         Shell aRoof = MeshedRoof(aSlope);
         Shape aCopy = BrepTools.CopyForWrite(aRoof, out _);
-        Assert.True(BRepLib.EnsureNormalConsistency(aCopy, 0.1));
+        Assert.True(BrepLibrary.EnsureNormalConsistency(aCopy, 0.1));
         List<Face> aFaces = BRepGPropTestShapes.Faces(aCopy);
         var aN1 = new global::Kerf.Engine.Geometry.Xyz(0, 0, 1);
         global::Kerf.Engine.Geometry.Xyz aN2 = new Direction3D(0, -aSlope, 1).XYZ();
@@ -232,7 +233,7 @@ public class BRepLibMeshTests
 
         // a smaller angular tolerance: the normals are only computed
         Shape aCopy2 = BrepTools.CopyForWrite(aRoof, out _);
-        Assert.True(BRepLib.EnsureNormalConsistency(aCopy2, 0.01));
+        Assert.True(BrepLibrary.EnsureNormalConsistency(aCopy2, 0.01));
         Assert.True(Triangulation(BRepGPropTestShapes.Faces(aCopy2)[0]).Normal(3).IsEqual(new Direction3D(aN1), 1e-6));
     }
 
@@ -242,9 +243,9 @@ public class BRepLibMeshTests
         Solid aBox = MeshedBox(0.0);
         Face aF = BRepGPropTestShapes.Faces(aBox)[0];
         Triangulation aT = Triangulation(aF);
-        Assert.Throws<ImmutableObjectException>(() => BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aT));
+        Assert.Throws<ImmutableObjectException>(() => ToolTriangulatedShape.ComputeNormals(aF, aT));
 
-        Triangulation aWithNormals = BRepLib_ToolTriangulatedShape.NormalsComputed(aF, aT)!;
+        Triangulation aWithNormals = ToolTriangulatedShape.NormalsComputed(aF, aT)!;
         Assert.NotSame(aT, aWithNormals);
         Assert.False(aT.HasNormals);
         Direction3D aN = ((PlaneSurface)Tool.Surface(aF)!).Pln().Axis().Direction();
@@ -252,13 +253,13 @@ public class BRepLibMeshTests
         {
             Assert.True(aWithNormals.Normal(i).IsEqual(aN, 1e-6));
         }
-        Assert.Same(aWithNormals, BRepLib_ToolTriangulatedShape.NormalsComputed(aF, aWithNormals));
-        Assert.Null(BRepLib_ToolTriangulatedShape.NormalsComputed(aF, null));
+        Assert.Same(aWithNormals, ToolTriangulatedShape.NormalsComputed(aF, aWithNormals));
+        Assert.Null(ToolTriangulatedShape.NormalsComputed(aF, null));
 
         // without UV nodes: the average of the triangles' normals
         Triangulation aCopy = aT.Copy();
         aCopy.RemoveUVNodes();
-        BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aCopy, new Connect());
+        ToolTriangulatedShape.ComputeNormals(aF, aCopy, new Connect());
         Assert.True(aCopy.HasNormals);
     }
 
@@ -277,19 +278,19 @@ public class BRepLibMeshTests
         aT.SetUVNode(2, new Point2D(0, 0));
         aT.SetUVNode(3, new Point2D(Math.PI / 2, 0));
         aT.SetTriangle(1, new Triangle1(1, 2, 3));
-        BRepLib_ToolTriangulatedShape.ComputeNormals(aF, aT);
+        ToolTriangulatedShape.ComputeNormals(aF, aT);
         global::Kerf.Engine.Geometry.Xyz v1 = aT.Node(2).Coord() - aT.Node(1).Coord();
         global::Kerf.Engine.Geometry.Xyz v2 = aT.Node(3).Coord() - aT.Node(2).Coord();
         Assert.True(aT.Normal(1).IsEqual(new Direction3D(v1 ^ v2), 1e-6));
     }
 
-    private sealed class Collector : BRepLib_PointCloudShape
+    private sealed class Collector : PointCloudShape
     {
         public readonly List<(Point3D P, Vector3D N, Point2D UV, Shape F)> Points = [];
 
         public Collector(in Shape theShape) : base(theShape) { }
 
-        protected override void addPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in Shape theFace)
+        protected override void AddPoint(in Point3D thePoint, in Vector3D theNorm, in Point2D theUV, in Shape theFace)
             => Points.Add((thePoint, theNorm, theUV, theFace));
     }
 

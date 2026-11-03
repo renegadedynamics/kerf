@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Helix;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
@@ -37,7 +38,7 @@ internal static class BRepTestHelixCommands
     }
 
     // Helper function to display helix results
-    private static void DisplayHelixResult(DrawInterpreter theDI, DrawResult di, HelixBRep_BuilderHelix theBuilder,
+    private static void DisplayHelixResult(DrawInterpreter theDI, DrawResult di, BuilderHelix theBuilder,
                                            string theName)
     {
         if (theBuilder.ErrorStatus() == 0)
@@ -108,7 +109,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + (aNb + 1) + aNb * 3)
@@ -180,7 +181,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + 1 + aNb * 3)
@@ -249,7 +250,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + 2 + aNb * 3)
@@ -317,7 +318,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + (aNb + 1) + aNb * 2)
@@ -375,7 +376,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + 1 + aNb * 2)
@@ -435,7 +436,7 @@ internal static class BRepTestHelixCommands
         }
         //
         int i, aNb, ic;
-        HelixBRep_BuilderHelix aBH = new();
+        BuilderHelix aBH = new();
         //
         aNb = theDI.Atoi(a[2]);
         if (n != 3 + 2 + aNb * 2)

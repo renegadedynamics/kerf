@@ -1083,11 +1083,11 @@ public class StepData_StepWriter
     /// <summary>Sends a Logical as .T. or .F. or .U. according its Value (it is a standard case of Enum for Step, and is built-in).</summary>
     public void SendLogical(StepData_Logical val)
     {
-        if (val == StepData_LTrue)
+        if (val == StepData_Logical.StepData_LTrue)
         {
             SendString(texttrue);
         }
-        else if (val == StepData_LFalse)
+        else if (val == StepData_Logical.StepData_LFalse)
         {
             SendString(textfalse);
         }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -154,7 +156,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             aMapOfShapes.Add(anEntry.Copied(aKeepShape));
         }
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain();
+        var aUnifier = new UnifySameDomain();
         aUnifier.Initialize(anEntry.Shape(), anUEdges, anUFaces, anConBS);
         aUnifier.KeepShapes(aMapOfShapes);
         aUnifier.SetSafeInputMode(isSafeInputMode);
@@ -243,7 +245,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         {
             return 1;
         }
-        var aRemLoc = new ShapeUpgrade_RemoveLocations();
+        var aRemLoc = new RemoveLocations();
         if (argc > 3)
         {
             aRemLoc.SetRemoveLevel((ShapeType)theDI.Atoi(argv[3]));
@@ -273,7 +275,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         double aDz = theDI.Atof(argv[5]);
         var aTrsf = new Transform3D();
         aTrsf.SetTranslation(new Vector3D(aDx, aDy, aDz));
-        var builderTransform = new BRepBuilderAPI_Transform(aTrsf);
+        var builderTransform = new Transform(aTrsf);
         builderTransform.Perform(aShape, true);
         Shape aNewShape = builderTransform.Shape();
         theDI.SetShape(argv[1], aNewShape);

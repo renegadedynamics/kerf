@@ -2,84 +2,90 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>The split of an edge by a pave block (and the tolerance of its common block), as a parallel solver.</summary>
-internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class SplitEdgeAlgorithm : ParallelAlgo, BooleanParallel.IContextSolver<IntersectionContext>
 {
     // ->
-    private Edge myE = new();
-    private Vertex myV1 = new();
-    private double myT1;
-    private Vertex myV2 = new();
-    private double myT2;
+    private Edge _e = new();
+    private Vertex _v1 = new();
+    private double _t1;
+    private Vertex _v2 = new();
+    private double _t2;
     // <->
-    private BOPDS_PaveBlock? myPB;
-    private BOPDS_CommonBlock? myCB;
+    private PaveBlock? _pb;
+    private CommonBlock? _cb;
     // <-
-    private Edge myESp = new();
-    private Box myBox = new();
-    private double myTol;
+    private Edge _eSp = new();
+    private Box _box = new();
+    private double _tol;
     //
-    private BOPDS_DS? myDS;
-    private IntTools_Context? myContext;
+    private DS? _ds;
+    private IntersectionContext? _context;
 
-    public BOPAlgo_SplitEdge()
+    public SplitEdgeAlgorithm()
     {
-        myT1 = 0.0;
-        myT2 = 0.0;
-        myTol = 0.0;
+        _t1 = 0.0;
+        _t2 = 0.0;
+        _tol = 0.0;
     }
 
     public void SetData(in Edge aE, in Vertex aV1, double aT1, in Vertex aV2, double aT2)
     {
-        myE = aE;
-        myV1 = aV1;
-        myT1 = aT1;
-        myV2 = aV2;
-        myT2 = aT2;
-        myESp = aE;
+        _e = aE;
+        _v1 = aV1;
+        _t1 = aT1;
+        _v2 = aV2;
+        _t2 = aT2;
+        _eSp = aE;
     }
 
-    public void SetPaveBlock(BOPDS_PaveBlock aPB) => myPB = aPB;
+    public void SetPaveBlock(PaveBlock aPB) => _pb = aPB;
 
-    public BOPDS_PaveBlock PaveBlock() => myPB!;
+    public PaveBlock PaveBlock() => _pb!;
 
-    public void SetCommonBlock(BOPDS_CommonBlock? aCB) => myCB = aCB;
+    public void SetCommonBlock(CommonBlock? aCB) => _cb = aCB;
 
-    public BOPDS_CommonBlock? CommonBlock() => myCB;
+    public CommonBlock? CommonBlock() => _cb;
 
-    public Edge SplitEdge() => myESp;
+    public Edge SplitEdge() => _eSp;
 
-    public Box Box() => myBox;
+    public Box Box() => _box;
 
-    public double Tolerance() => myTol;
+    public double Tolerance() => _tol;
 
-    public void SetDS(BOPDS_DS theDS) => myDS = theDS;
+    public void SetDS(DS ds) => _ds = ds;
 
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (UserBreak(ps))
         {
             return;
         }
-        myTol = BOPAlgo_Tools.ComputeToleranceOfCB(myCB, myDS!, myContext);
-        BOPTools_AlgoTools.MakeSplitEdge(myE, myV1, myT1, myV2, myT2, out myESp);
-        BRepBndLib.Add(myESp, ref myBox);
-        myBox.SetGap(myBox.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
+        _tol = BuilderTools.ComputeToleranceOfCB(_cb, _ds!, _context);
+        AlgoTools.MakeSplitEdge(_e, _v1, _t1, _v2, _t2, out _eSp);
+        Bounds.Add(_eSp, ref _box);
+        _box.SetGap(_box.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }
 
@@ -89,55 +95,55 @@ internal sealed class BOPAlgo_SplitEdge : BOPAlgo_ParallelAlgo, BOPTools_Paralle
 /// filler stores the new p-curve afterwards, serially. The vertex tolerances of section edges (<c>myFlag</c>) are
 /// updated in place by <c>UpdateVertices</c>, in parallel, as in OCCT, but each update under a lock (decision 789).
 /// </remarks>
-internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class MPC : ParallelAlgo, BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private bool myFlag;
-    private Edge myE = new();
-    private Face myF = new();
-    private Edge myEz = new();
-    private Vertex myV1 = new();
-    private double myT1;
-    private Vertex myV2 = new();
-    private double myT2;
-    private Curve2D? myNewC2d;
-    private double myNewTol;
+    private bool _flag;
+    private Edge _e = new();
+    private Face _f = new();
+    private Edge _ez = new();
+    private Vertex _v1 = new();
+    private double _t1;
+    private Vertex _v2 = new();
+    private double _t2;
+    private Curve2D? _newC2d;
+    private double _newTol;
     //
-    private IntTools_Context? myContext;
+    private IntersectionContext? _context;
 
-    public BOPAlgo_MPC()
+    public MPC()
     {
-        myFlag = false;
+        _flag = false;
     }
 
-    public void SetEdge(in Edge aE) => myE = aE;
+    public void SetEdge(in Edge aE) => _e = aE;
 
-    public Edge Edge() => myE;
+    public Edge Edge() => _e;
 
-    public void SetFace(in Face aF) => myF = aF;
+    public void SetFace(in Face aF) => _f = aF;
 
-    public Face Face() => myF;
+    public Face Face() => _f;
 
-    public void SetFlag(bool bFlag) => myFlag = bFlag;
+    public void SetFlag(bool bFlag) => _flag = bFlag;
 
-    public bool Flag() => myFlag;
+    public bool Flag() => _flag;
 
     public void SetData(in Edge aEz, in Vertex aV1, double aT1, in Vertex aV2, double aT2)
     {
-        myEz = aEz;
-        myV1 = aV1;
-        myT1 = aT1;
-        myV2 = aV2;
-        myT2 = aT2;
+        _ez = aEz;
+        _v1 = aV1;
+        _t1 = aT1;
+        _v2 = aV2;
+        _t2 = aT2;
     }
 
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
-    public IntTools_Context? Context() => myContext;
+    public IntersectionContext? Context() => _context;
 
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (UserBreak(ps))
         {
             return;
         }
@@ -145,180 +151,180 @@ internal sealed class BOPAlgo_MPC : BOPAlgo_ParallelAlgo, BOPTools_Parallel.ICon
         {
             // Check if edge has pcurve. If no then make its copy to avoid data races,
             // and use it to build pcurve.
-            Edge aCopyE = myE;
+            Edge copyE = _e;
             double f, l;
-            Curve2D? aC2d = Tool.CurveOnSurface(aCopyE, myF, out f, out l);
-            if (aC2d is null)
+            Curve2D? c2d = Tool.CurveOnSurface(copyE, _f, out f, out l);
+            if (c2d is null)
             {
-                aCopyE = BOPTools_AlgoTools.CopyEdge(aCopyE);
+                copyE = AlgoTools.CopyEdge(copyE);
 
                 int iErr = 1;
-                if (!myEz.IsNull)
+                if (!_ez.IsNull)
                 {
                     // Attach pcurve from the original edge
-                    BOPTools_AlgoTools.MakeSplitEdge(myEz, myV1, myT1, myV2, myT2, out Edge aSpz);
-                    iErr = BOPTools_AlgoTools2D.AttachExistingPCurve(aSpz, aCopyE, myF, myContext);
+                    AlgoTools.MakeSplitEdge(_ez, _v1, _t1, _v2, _t2, out Edge spz);
+                    iErr = AlgoTools2D.AttachExistingPCurve(spz, copyE, _f, _context);
                 }
                 if (iErr != 0)
                 {
-                    BOPTools_AlgoTools2D.BuildPCurveForEdgeOnFace(aCopyE, myF, myContext);
+                    AlgoTools2D.BuildPCurveForEdgeOnFace(copyE, _f, _context);
                 }
 
-                myNewC2d = Tool.CurveOnSurface(aCopyE, myF, out f, out l);
-                if (myNewC2d is null)
+                _newC2d = Tool.CurveOnSurface(copyE, _f, out f, out l);
+                if (_newC2d is null)
                 {
-                    AddError(new BOPAlgo_AlertBuildingPCurveFailed(new Shape()));
+                    AddError(new AlertBuildingPCurveFailed(new Shape()));
                     return;
                 }
                 else
                 {
-                    myNewTol = Tool.Tolerance(aCopyE);
+                    _newTol = Tool.Tolerance(copyE);
                 }
             }
             else
             {
-                FaceSurfaceAdaptor aBAS = myContext!.SurfaceAdaptor(myF);
-                if (aBAS.IsUPeriodic || aBAS.IsVPeriodic)
+                FaceSurfaceAdaptor bas = _context!.SurfaceAdaptor(_f);
+                if (bas.IsUPeriodic || bas.IsVPeriodic)
                 {
                     // The curve already exists. Adjust it for periodic cases.
-                    BOPTools_AlgoTools2D.AdjustPCurveOnSurf(myContext.SurfaceAdaptor(myF), f, l, aC2d, out myNewC2d);
-                    if (myNewC2d != aC2d)
+                    AlgoTools2D.AdjustPCurveOnSurf(_context.SurfaceAdaptor(_f), f, l, c2d, out _newC2d);
+                    if (_newC2d != c2d)
                     {
-                        myNewTol = Tool.Tolerance(aCopyE);
+                        _newTol = Tool.Tolerance(copyE);
                     }
                     else
                     {
-                        myNewC2d = null;
+                        _newC2d = null;
                     }
                 }
             }
 
-            if (myFlag)
+            if (_flag)
             {
                 // OCCT: updates the tolerances of the edge's vertices in place, from parallel solvers that may share
                 // a vertex (unsynchronised read-compare-writes: the port takes a lock, decision 789), and in
                 // non-destructive mode a section edge may have an argument vertex (see BOPAlgo_PaveFiller.UpdateVertices).
-                BOPAlgo_PaveFiller.UpdateVertices(aCopyE, myF);
+                PaveFiller.UpdateVertices(copyE, _f);
             }
         }
         catch (FailureException)
         {
-            AddError(new BOPAlgo_AlertBuildingPCurveFailed(new Shape()));
+            AddError(new AlertBuildingPCurveFailed(new Shape()));
         }
     }
 
-    public Curve2D? GetNewPCurve() => myNewC2d;
+    public Curve2D? GetNewPCurve() => _newC2d;
 
-    public double GetNewTolerance() => myNewTol;
+    public double GetNewTolerance() => _newTol;
 }
 
 /// <summary>The p-curve of an edge on a planar face (<c>BRepLib.BuildPCurveForEdgeOnPlane</c>), as a parallel solver.</summary>
-internal sealed class BOPAlgo_BPC : BOPTools_Parallel.ISolver
+internal sealed class BPC : BooleanParallel.ISolver
 {
-    private Edge myE = new();
-    private Face myF = new();
-    private Curve2D? myCurve;
-    private bool myToUpdate;
-    private ProgressRange myRange;
+    private Edge _e = new();
+    private Face _f = new();
+    private Curve2D? _curve;
+    private bool _toUpdate;
+    private ProgressRange _range;
 
-    public void SetFace(in Face aF) => myF = aF;
+    public void SetFace(in Face aF) => _f = aF;
 
-    public void SetEdge(in Edge aE) => myE = aE;
+    public void SetEdge(in Edge aE) => _e = aE;
 
-    public Edge GetEdge() => myE;
+    public Edge GetEdge() => _e;
 
-    public Face GetFace() => myF;
+    public Face GetFace() => _f;
 
-    public Curve2D? GetCurve2d() => myCurve;
+    public Curve2D? GetCurve2d() => _curve;
 
-    public bool IsToUpdate() => myToUpdate;
+    public bool IsToUpdate => _toUpdate;
 
-    public void SetRange(ProgressRange theRange) => myRange = theRange;
+    public void SetRange(ProgressRange range) => _range = range;
 
     public void Perform()
     {
-        using var aPS = new ProgressScope(myRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_range, null, 1);
+        if (!ps.More())
         {
             return;
         }
-        BRepLib.BuildPCurveForEdgeOnPlane(myE, myF, out myCurve, out myToUpdate);
+        BrepLibrary.BuildPCurveForEdgeOnPlane(_e, _f, out _curve, out _toUpdate);
     }
 }
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>Makes the split edges of the pave blocks (one per common block).</summary>
-    protected void MakeSplitEdges(ProgressRange theRange)
+    protected void MakeSplitEdges(ProgressRange range)
     {
-        NCollection_DynamicArray<NCollection_List<BOPDS_PaveBlock>> aPBP = myDS!.ChangePaveBlocksPool();
-        int aNbPBP = aPBP.Length();
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
-        if (aNbPBP == 0)
+        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Length();
+        using var psOuter = new ProgressScope(range, null, 1);
+        if (nbPBP == 0)
         {
             return;
         }
         //
-        int i, nE, nV1, nV2, nSp, aNbVBSE, k;
-        double aT1, aT2;
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItPB = new();
-        BOPDS_PaveBlock aPB;
-        NCollection_Map<BOPDS_CommonBlock> aMCB = new();
-        Vertex aV1, aV2;
-        Edge aE;
-        NCollection_DynamicArray<BOPAlgo_SplitEdge> aVBSE = new();
+        int i, nE, nV1, nV2, nSp, nbVBSE, k;
+        double t1, t2;
+        NCollection_List<PaveBlock>.Iterator itPB = new();
+        PaveBlock pb;
+        NCollection_Map<CommonBlock> mcb = new();
+        Vertex v1, v2;
+        Edge e;
+        NCollection_DynamicArray<SplitEdgeAlgorithm> vbse = new();
 
         //
         UpdateCommonBlocksWithSDVertices();
         //
-        aNbPBP = aPBP.Length();
+        nbPBP = pbp.Length();
         //
-        for (i = 0; i < aNbPBP; ++i)
+        for (i = 0; i < nbPBP; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<BOPDS_PaveBlock> aLPB = aPBP[i];
+            NCollection_List<PaveBlock> lpb = pbp[i];
             //
-            aItPB.Initialize(aLPB);
-            for (; aItPB.More(); aItPB.Next())
+            itPB.Initialize(lpb);
+            for (; itPB.More(); itPB.Next())
             {
-                aPB = aItPB.Value();
-                nE = aPB.OriginalEdge();
-                BOPDS_ShapeInfo aSIE = myDS.ShapeInfo(nE);
-                if (aSIE.HasFlag())
+                pb = itPB.Value();
+                nE = pb.OriginalEdge();
+                ShapeInfo sie = _ds.ShapeInfo(nE);
+                if (sie.HasFlag())
                 {
                     // Skip degenerated edges
                     continue;
                 }
 
-                BOPDS_CommonBlock? aCB = myDS.CommonBlock(aPB);
-                bool bCB = aCB is not null;
-                if (bCB && !aMCB.Add(aCB!))
+                CommonBlock? cb = _ds.CommonBlock(pb);
+                bool bCB = cb is not null;
+                if (bCB && !mcb.Add(cb!))
                 {
                     continue;
                 }
 
-                aPB.Indices(out nV1, out nV2);
+                pb.Indices(out nV1, out nV2);
                 // Check if it is necessary to make the split of the edge
                 {
-                    bool bV1 = myDS.IsNewShape(nV1);
-                    bool bV2 = myDS.IsNewShape(nV2);
+                    bool bV1 = _ds.IsNewShape(nV1);
+                    bool bV2 = _ds.IsNewShape(nV2);
 
                     bool bToSplit = true;
                     if (!bV1 && !bV2) // no new vertices here
                     {
-                        if (!myNonDestructive || !bCB)
+                        if (!_nonDestructive || !bCB)
                         {
                             if (bCB)
                             {
                                 // Find the edge with these vertices
-                                NCollection_List<BOPDS_PaveBlock>.Iterator it = new(aCB!.PaveBlocks());
+                                NCollection_List<PaveBlock>.Iterator it = new(cb!.PaveBlocks());
                                 for (; it.More(); it.Next())
                                 {
                                     nE = it.Value().OriginalEdge();
-                                    if (myDS.PaveBlocks(nE).Extent() == 1)
+                                    if (_ds.PaveBlocks(nE).Extent() == 1)
                                     {
                                         break;
                                     }
@@ -327,17 +333,17 @@ public partial class BOPAlgo_PaveFiller
                                 {
                                     // The pave block is found
                                     bToSplit = false;
-                                    aCB.SetRealPaveBlock(it.Value());
-                                    aCB.SetEdge(nE);
+                                    cb.SetRealPaveBlock(it.Value());
+                                    cb.SetEdge(nE);
                                     // Compute tolerance of the common block and update the edge
-                                    double aTol = BOPAlgo_Tools.ComputeToleranceOfCB(aCB, myDS, myContext);
-                                    UpdateEdgeTolerance(nE, aTol);
+                                    double tol = BuilderTools.ComputeToleranceOfCB(cb, _ds, _context);
+                                    UpdateEdgeTolerance(nE, tol);
                                 }
                             }
-                            else if (aLPB.Extent() == 1)
+                            else if (lpb.Extent() == 1)
                             {
                                 bToSplit = false;
-                                aPB.SetEdge(nE);
+                                pb.SetEdge(nE);
                             }
                             if (!bToSplit)
                             {
@@ -350,80 +356,80 @@ public partial class BOPAlgo_PaveFiller
                 // Split the edge
                 if (bCB)
                 {
-                    aPB = aCB!.PaveBlock1();
-                    nE = aPB.OriginalEdge();
-                    aPB.Indices(out nV1, out nV2);
+                    pb = cb!.PaveBlock1();
+                    nE = pb.OriginalEdge();
+                    pb.Indices(out nV1, out nV2);
                 }
-                aPB.Range(out aT1, out aT2);
+                pb.Range(out t1, out t2);
                 //
-                aE = ShapeCasts.Edge(myDS.Shape(nE));
-                aE.Orientation(Forward);
+                e = ShapeCasts.Edge(_ds.Shape(nE));
+                e.Orientation(Forward);
                 //
-                aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
-                aV1.Orientation(Forward);
+                v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
+                v1.Orientation(Forward);
                 //
-                aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
-                aV2.Orientation(Reversed);
+                v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
+                v2.Orientation(Reversed);
                 //
-                BOPAlgo_SplitEdge aBSE = aVBSE.Append(new BOPAlgo_SplitEdge());
+                SplitEdgeAlgorithm bse = vbse.Append(new SplitEdgeAlgorithm());
                 //
-                aBSE.SetData(aE, aV1, aT1, aV2, aT2);
-                aBSE.SetPaveBlock(aPB);
+                bse.SetData(e, v1, t1, v2, t2);
+                bse.SetPaveBlock(pb);
                 if (bCB)
                 {
-                    aBSE.SetCommonBlock(aCB);
+                    bse.SetCommonBlock(cb);
                 }
-                aBSE.SetDS(myDS);
+                bse.SetDS(_ds);
             } // for (; aItPB.More(); aItPB.Next()) {
         } // for (i=0; i<aNbPBP; ++i) {
         //
-        aNbVBSE = aVBSE.Length();
-        using var aPS = new ProgressScope(aPSOuter.Next(), "Splitting edges", aNbVBSE);
-        for (k = 0; k < aNbVBSE; k++)
+        nbVBSE = vbse.Length();
+        using var ps = new ProgressScope(psOuter.Next(), "Splitting edges", nbVBSE);
+        for (k = 0; k < nbVBSE; k++)
         {
-            BOPAlgo_SplitEdge aBSE = aVBSE[k];
-            aBSE.SetProgressRange(aPS.Next());
+            SplitEdgeAlgorithm bse = vbse[k];
+            bse.SetProgressRange(ps.Next());
         }
         //======================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVBSE, myContext!);
+        BooleanParallel.Perform(_runParallel, vbse, _context!);
         //======================================================
-        if (HasErrors())
+        if (HasErrors)
         {
             return;
         }
         //
-        for (k = 0; k < aNbVBSE; ++k)
+        for (k = 0; k < nbVBSE; ++k)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPAlgo_SplitEdge aBSE = aVBSE[k];
+            SplitEdgeAlgorithm bse = vbse[k];
             //
-            Edge aSp = aBSE.SplitEdge();
-            Box aBox = aBSE.Box();
+            Edge sp = bse.SplitEdge();
+            Box box = bse.Box();
             //
-            BOPDS_PaveBlock aPBk = aBSE.PaveBlock();
-            BOPDS_CommonBlock? aCBk = aBSE.CommonBlock();
+            PaveBlock pBk = bse.PaveBlock();
+            CommonBlock? cBk = bse.CommonBlock();
             //
-            BOPDS_ShapeInfo aSI = new();
-            aSI.SetShapeType(ShapeType.Edge);
-            aSI.SetShape(aSp);
-            aSI.ChangeBox() = aBox;
-            NCollection_List<int> aSubShapes = aSI.ChangeSubShapes();
-            aSubShapes.Append(aPBk.Pave1().Index());
-            aSubShapes.Append(aPBk.Pave2().Index());
+            ShapeInfo si = new();
+            si.SetShapeType(ShapeType.Edge);
+            si.SetShape(sp);
+            si.ChangeBox() = box;
+            NCollection_List<int> subShapes = si.ChangeSubShapes();
+            subShapes.Append(pBk.Pave1().Index());
+            subShapes.Append(pBk.Pave2().Index());
             //
-            nSp = myDS.Append(aSI);
+            nSp = _ds.Append(si);
             //
-            if (aCBk is not null)
+            if (cBk is not null)
             {
-                UpdateEdgeTolerance(nSp, aBSE.Tolerance());
-                aCBk.SetEdge(nSp);
+                UpdateEdgeTolerance(nSp, bse.Tolerance());
+                cBk.SetEdge(nSp);
             }
             else
             {
-                aPBk.SetEdge(nSp);
+                pBk.SetEdge(nSp);
             }
         }
     }
@@ -432,30 +438,30 @@ public partial class BOPAlgo_PaveFiller
     protected int SplitEdge(int nE, int nV1, double aT1, int nV2, double aT2)
     {
         int nSp;
-        Vertex aV1, aV2;
-        Edge aE, aSp;
-        BOPDS_ShapeInfo aSI = new();
+        Vertex v1, v2;
+        Edge e, sp;
+        ShapeInfo si = new();
         //
-        aSI.SetShapeType(ShapeType.Edge);
+        si.SetShapeType(ShapeType.Edge);
         //
-        aE = ShapeCasts.Edge(myDS!.Shape(nE));
-        aE.Orientation(Forward);
+        e = ShapeCasts.Edge(_ds!.Shape(nE));
+        e.Orientation(Forward);
         //
-        aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
-        aV1.Orientation(Forward);
+        v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
+        v1.Orientation(Forward);
         //
-        aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
-        aV2.Orientation(Reversed);
+        v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
+        v2.Orientation(Reversed);
         //
-        BOPTools_AlgoTools.MakeSplitEdge(aE, aV1, aT1, aV2, aT2, out aSp);
+        AlgoTools.MakeSplitEdge(e, v1, aT1, v2, aT2, out sp);
         //
-        aSI.SetShape(aSp);
+        si.SetShape(sp);
         //
-        ref Box aBox = ref aSI.ChangeBox();
-        BRepBndLib.Add(aSp, ref aBox);
-        aBox.SetGap(aBox.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
+        ref Box box = ref si.ChangeBox();
+        Bounds.Add(sp, ref box);
+        box.SetGap(box.GetGap() + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
-        nSp = myDS.Append(aSI);
+        nSp = _ds.Append(si);
         return nSp;
     }
 
@@ -469,173 +475,173 @@ public partial class BOPAlgo_PaveFiller
     /// missing: an argument edge in or on another argument's face is in a common block, which MakeSplitEdges then
     /// always splits (decisions 577 and 719).
     /// </remarks>
-    protected void MakePCurves(ProgressRange theRange)
+    protected void MakePCurves(ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
-        if (myAvoidBuildPCurve || (!mySectionAttribute.PCurveOnS1() && !mySectionAttribute.PCurveOnS2()))
+        using var psOuter = new ProgressScope(range, null, 1);
+        if (_avoidBuildPCurve || (!_sectionAttribute.PCurveOnS1() && !_sectionAttribute.PCurveOnS2()))
         {
             return;
         }
         bool bHasPC;
-        int i, nF1, aNbC, k, nE, aNbFF, aNbFI, nEx;
-        int j, aNbPBIn, aNbPBOn;
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        Face aF1F;
-        NCollection_DynamicArray<BOPAlgo_MPC> aVMPC = new();
+        int i, nF1, nbC, k, nE, nbFF, nbFI, nEx;
+        int j, nbPBIn, nbPBOn;
+        NCollection_List<PaveBlock>.Iterator itLPB = new();
+        Face f1F;
+        NCollection_DynamicArray<MPC> vmpc = new();
         //
         // 1. Process Common Blocks
-        NCollection_DynamicArray<BOPDS_FaceInfo> aFIP = myDS!.FaceInfoPool();
+        NCollection_DynamicArray<FaceInfo> fip = _ds!.FaceInfoPool();
         //
-        aNbFI = aFIP.Length();
-        for (i = 0; i < aNbFI; ++i)
+        nbFI = fip.Length();
+        for (i = 0; i < nbFI; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPDS_FaceInfo aFI = aFIP[i];
-            nF1 = aFI.Index();
+            FaceInfo fi = fip[i];
+            nF1 = fi.Index();
             //
-            aF1F = ShapeCasts.Face(myDS.Shape(nF1));
-            aF1F.Orientation(Forward);
+            f1F = ShapeCasts.Face(_ds.Shape(nF1));
+            f1F.Orientation(Forward);
             // In
-            NCollection_IndexedMap<BOPDS_PaveBlock> aMPBIn = aFI.PaveBlocksIn();
-            aNbPBIn = aMPBIn.Extent();
-            for (j = 1; j <= aNbPBIn; ++j)
+            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            nbPBIn = mpbIn.Extent();
+            for (j = 1; j <= nbPBIn; ++j)
             {
-                BOPDS_PaveBlock aPB = aMPBIn[j];
-                nE = aPB.Edge();
+                PaveBlock pb = mpbIn[j];
+                nE = pb.Edge();
                 // OCCT's Standard_ASSERT(nE >= 0, ..., continue): in release builds it only continues.
                 if (nE < 0)
                 {
                     continue;
                 }
-                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+                Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                 //
-                BOPAlgo_MPC aMPC = aVMPC.Append(new BOPAlgo_MPC());
-                aMPC.SetEdge(aE);
-                aMPC.SetFace(aF1F);
+                MPC mpc = vmpc.Append(new MPC());
+                mpc.SetEdge(e);
+                mpc.SetFace(f1F);
             }
             //
             // On
-            NCollection_IndexedMap<BOPDS_PaveBlock> aMPBOn = aFI.PaveBlocksOn();
-            aNbPBOn = aMPBOn.Extent();
-            for (j = 1; j <= aNbPBOn; ++j)
+            NCollection_IndexedMap<PaveBlock> mpbOn = fi.PaveBlocksOn();
+            nbPBOn = mpbOn.Extent();
+            for (j = 1; j <= nbPBOn; ++j)
             {
-                BOPDS_PaveBlock aPB = aMPBOn[j];
-                nE = aPB.Edge();
-                Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
-                bHasPC = BOPTools_AlgoTools2D.HasCurveOnSurface(aE, aF1F);
+                PaveBlock pb = mpbOn[j];
+                nE = pb.Edge();
+                Edge e = ShapeCasts.Edge(_ds.Shape(nE));
+                bHasPC = AlgoTools2D.HasCurveOnSurface(e, f1F);
                 if (bHasPC)
                 {
                     continue;
                 }
                 //
-                BOPAlgo_MPC aMPC = aVMPC.Append(new BOPAlgo_MPC());
+                MPC mpc = vmpc.Append(new MPC());
 
-                BOPDS_CommonBlock? aCB = myDS.CommonBlock(aPB);
+                CommonBlock? cb = _ds.CommonBlock(pb);
 
-                if (aCB is not null)
+                if (cb is not null)
                 {
-                    NCollection_List<BOPDS_PaveBlock> aLPB = aCB.PaveBlocks();
-                    if (aLPB.Extent() >= 2)
+                    NCollection_List<PaveBlock> lpb = cb.PaveBlocks();
+                    if (lpb.Extent() >= 2)
                     {
-                        aItLPB.Initialize(aLPB);
-                        for (; aItLPB.More(); aItLPB.Next())
+                        itLPB.Initialize(lpb);
+                        for (; itLPB.More(); itLPB.Next())
                         {
-                            BOPDS_PaveBlock aPBx = aItLPB.Value();
-                            if (aPBx == aPB)
+                            PaveBlock pBx = itLPB.Value();
+                            if (pBx == pb)
                             {
                                 continue;
                             }
                             //
-                            nEx = aPBx.OriginalEdge();
-                            Edge aEx = ShapeCasts.Edge(myDS.Shape(nEx));
-                            bHasPC = BOPTools_AlgoTools2D.HasCurveOnSurface(aEx, aF1F);
+                            nEx = pBx.OriginalEdge();
+                            Edge ex = ShapeCasts.Edge(_ds.Shape(nEx));
+                            bHasPC = AlgoTools2D.HasCurveOnSurface(ex, f1F);
                             if (!bHasPC)
                             {
                                 continue;
                             }
                             //
                             int nV1x, nV2x;
-                            double aT1x, aT2x;
-                            Vertex aV1x, aV2x;
-                            Edge aEz;
+                            double t1x, t2x;
+                            Vertex v1x, v2x;
+                            Edge ez;
                             //
-                            aEz = aEx;
-                            aEz.Orientation(Forward);
+                            ez = ex;
+                            ez.Orientation(Forward);
                             //
-                            aPBx.Indices(out nV1x, out nV2x);
-                            aPBx.Range(out aT1x, out aT2x);
+                            pBx.Indices(out nV1x, out nV2x);
+                            pBx.Range(out t1x, out t2x);
                             //
-                            aV1x = ShapeCasts.Vertex(myDS.Shape(nV1x));
-                            aV1x.Orientation(Forward);
+                            v1x = ShapeCasts.Vertex(_ds.Shape(nV1x));
+                            v1x.Orientation(Forward);
                             //
-                            aV2x = ShapeCasts.Vertex(myDS.Shape(nV2x));
-                            aV2x.Orientation(Reversed);
+                            v2x = ShapeCasts.Vertex(_ds.Shape(nV2x));
+                            v2x.Orientation(Reversed);
                             //
-                            aMPC.SetData(aEz, aV1x, aT1x, aV2x, aT2x);
+                            mpc.SetData(ez, v1x, t1x, v2x, t2x);
                             //
                             break;
                         }
                     }
                 }
 
-                aMPC.SetEdge(aE);
-                aMPC.SetFace(aF1F);
+                mpc.SetEdge(e);
+                mpc.SetFace(f1F);
             }
         } // for (i=0; i<aNbFI; ++i) {
         //
         // 2. Process section edges. P-curves on them must already be computed.
         // However, we must provide the call to UpdateVertices.
         Span<bool> bPCurveOnS = stackalloc bool[2];
-        bPCurveOnS[0] = mySectionAttribute.PCurveOnS1();
-        bPCurveOnS[1] = mySectionAttribute.PCurveOnS2();
+        bPCurveOnS[0] = _sectionAttribute.PCurveOnS1();
+        bPCurveOnS[1] = _sectionAttribute.PCurveOnS2();
         //
         if (bPCurveOnS[0] || bPCurveOnS[1])
         {
             // container to remember already added edge-face pairs
-            NCollection_Map<BOPDS_Pair> anEFPairs = new();
-            NCollection_DynamicArray<BOPDS_InterfFF> aFFs = myDS.InterfFF();
-            aNbFF = aFFs.Length();
+            NCollection_Map<Pair> efPairs = new();
+            NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
+            nbFF = fFs.Length();
             Span<int> nF = stackalloc int[2];
             Face[] aFf = new Face[2];
-            for (i = 0; i < aNbFF; ++i)
+            for (i = 0; i < nbFF; ++i)
             {
-                BOPDS_InterfFF aFF = aFFs[i];
-                NCollection_DynamicArray<BOPDS_Curve> aVNC = aFF.Curves();
-                aNbC = aVNC.Length();
-                if (aNbC == 0)
+                InterfFF ff = fFs[i];
+                NCollection_DynamicArray<SectionCurve> vnc = ff.Curves();
+                nbC = vnc.Length();
+                if (nbC == 0)
                 {
                     continue;
                 }
-                aFF.Indices(out nF[0], out nF[1]);
+                ff.Indices(out nF[0], out nF[1]);
                 //
-                aFf[0] = ShapeCasts.Face(myDS.Shape(nF[0]));
+                aFf[0] = ShapeCasts.Face(_ds.Shape(nF[0]));
                 aFf[0].Orientation(Forward);
                 //
-                aFf[1] = ShapeCasts.Face(myDS.Shape(nF[1]));
+                aFf[1] = ShapeCasts.Face(_ds.Shape(nF[1]));
                 aFf[1].Orientation(Forward);
                 //
-                for (k = 0; k < aNbC; ++k)
+                for (k = 0; k < nbC; ++k)
                 {
-                    BOPDS_Curve aNC = aVNC[k];
-                    NCollection_List<BOPDS_PaveBlock> aLPB = aNC.PaveBlocks();
-                    aItLPB.Initialize(aLPB);
-                    for (; aItLPB.More(); aItLPB.Next())
+                    SectionCurve nc = vnc[k];
+                    NCollection_List<PaveBlock> lpb = nc.PaveBlocks();
+                    itLPB.Initialize(lpb);
+                    for (; itLPB.More(); itLPB.Next())
                     {
-                        BOPDS_PaveBlock aPB = aItLPB.Value();
-                        nE = aPB.Edge();
-                        Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
+                        PaveBlock pb = itLPB.Value();
+                        nE = pb.Edge();
+                        Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                         //
                         for (int m = 0; m < 2; ++m)
                         {
-                            if (bPCurveOnS[m] && anEFPairs.Add(new BOPDS_Pair(nE, nF[m])))
+                            if (bPCurveOnS[m] && efPairs.Add(new Pair(nE, nF[m])))
                             {
-                                BOPAlgo_MPC aMPC = aVMPC.Append(new BOPAlgo_MPC());
-                                aMPC.SetEdge(aE);
-                                aMPC.SetFace(aFf[m]);
-                                aMPC.SetFlag(true);
+                                MPC mpc = vmpc.Append(new MPC());
+                                mpc.SetEdge(e);
+                                mpc.SetFace(aFf[m]);
+                                mpc.SetFlag(true);
                             }
                         }
                     }
@@ -643,51 +649,51 @@ public partial class BOPAlgo_PaveFiller
             } // for (i=0; i<aNbFF; ++i) {
         } // if (bPCurveOnS1 || bPCurveOnS2 ) {
         //
-        using var aPS = new ProgressScope(aPSOuter.Next(), "Projecting edges on faces", aVMPC.Length());
-        for (i = 0; i < aVMPC.Length(); i++)
+        using var ps = new ProgressScope(psOuter.Next(), "Projecting edges on faces", vmpc.Length());
+        for (i = 0; i < vmpc.Length(); i++)
         {
-            BOPAlgo_MPC aMPC = aVMPC[i];
-            aMPC.SetProgressRange(aPS.Next());
+            MPC mpc = vmpc[i];
+            mpc.SetProgressRange(ps.Next());
         }
         //======================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVMPC, myContext!);
+        BooleanParallel.Perform(_runParallel, vmpc, _context!);
         //======================================================
-        if (HasErrors())
+        if (HasErrors)
         {
             return;
         }
 
         // Add warnings of the failed projections and update edges with new pcurves
-        int aNb = aVMPC.Length();
-        for (i = 0; i < aNb; ++i)
+        int nb = vmpc.Length();
+        for (i = 0; i < nb; ++i)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPAlgo_MPC aMPC = aVMPC[i];
-            if (aMPC.HasErrors())
+            MPC mpc = vmpc[i];
+            if (mpc.HasErrors)
             {
-                Compound aWC = new();
-                new BrepBuilder().MakeCompound(ref aWC);
-                new BrepBuilder().Add(aWC, aMPC.Edge());
-                new BrepBuilder().Add(aWC, aMPC.Face());
-                AddWarning(new BOPAlgo_AlertBuildingPCurveFailed(aWC));
+                Compound wc = new();
+                new BrepBuilder().MakeCompound(ref wc);
+                new BrepBuilder().Add(wc, mpc.Edge());
+                new BrepBuilder().Add(wc, mpc.Face());
+                AddWarning(new AlertBuildingPCurveFailed(wc));
             }
             else
             {
-                Curve2D? aNewPC = aMPC.GetNewPCurve();
+                Curve2D? newPC = mpc.GetNewPCurve();
                 // if aNewPC is null we do not need to update the edge because it already contains
                 // valid p-curve, and only vertices have been updated.
-                if (aNewPC is not null)
+                if (newPC is not null)
                 {
-                    new BrepBuilder().UpdateEdge(aMPC.Edge(), aNewPC, aMPC.Face(), aMPC.GetNewTolerance());
+                    new BrepBuilder().UpdateEdge(mpc.Edge(), newPC, mpc.Face(), mpc.GetNewTolerance());
                 }
             }
         }
     }
 
-    private static readonly Lock theVerticesLock = new();
+    private static readonly Lock VerticesLock = new();
 
     /// <summary>
     /// Updates the tolerances of the edge's vertices comparing the extremities of its 3D curve and of its p-curve on
@@ -700,42 +706,42 @@ public partial class BOPAlgo_PaveFiller
         // concurrent smaller one; under the lock every vertex ends with the largest value, which is the serial
         // result in any order (decision 789).
         int j;
-        double aUx, aVx, aTolV2, aD2, aD;
-        Span<double> aT = stackalloc double[2];
-        Point3D aP3D, aP3Dx;
-        Point2D aP2Dx;
-        Surface aS;
-        Curve3D aC3D;
-        Curve2D aC2D;
-        Edge aEf;
-        Vertex[] aV = new Vertex[2];
-        BrepBuilder aBB = new();
+        double ux, vx, tolV2, d2, d;
+        Span<double> t = stackalloc double[2];
+        Point3D p3D, p3Dx;
+        Point2D p2Dx;
+        Surface s;
+        Curve3D c3D;
+        Curve2D c2D;
+        Edge ef;
+        Vertex[] v = new Vertex[2];
+        BrepBuilder bb = new();
         //
-        aEf = aE;
-        aEf.Orientation(Forward);
+        ef = aE;
+        ef.Orientation(Forward);
         //
-        Exploration.Vertices(aEf, out aV[0], out aV[1]);
+        Exploration.Vertices(ef, out v[0], out v[1]);
         //
-        aS = Tool.Surface(aF)!;
-        aC3D = Tool.Curve(aEf, out aT[0], out aT[1])!;
-        aC2D = Tool.CurveOnSurface(aEf, aF, out aT[0], out aT[1])!;
+        s = Tool.Surface(aF)!;
+        c3D = Tool.Curve(ef, out t[0], out t[1])!;
+        c2D = Tool.CurveOnSurface(ef, aF, out t[0], out t[1])!;
         //
         for (j = 0; j < 2; ++j)
         {
-            aTolV2 = Tool.Tolerance(aV[j]);
-            aTolV2 = aTolV2 * aTolV2;
+            tolV2 = Tool.Tolerance(v[j]);
+            tolV2 = tolV2 * tolV2;
             //
-            aC3D.D0(aT[j], out aP3D);
-            aC2D.D0(aT[j], out aP2Dx);
-            aP2Dx.Coord(out aUx, out aVx);
-            aS.D0(aUx, aVx, out aP3Dx);
-            aD2 = aP3D.SquareDistance(aP3Dx);
-            if (aD2 > aTolV2)
+            c3D.D0(t[j], out p3D);
+            c2D.D0(t[j], out p2Dx);
+            p2Dx.Coord(out ux, out vx);
+            s.D0(ux, vx, out p3Dx);
+            d2 = p3D.SquareDistance(p3Dx);
+            if (d2 > tolV2)
             {
-                aD = Math.Sqrt(aD2);
-                lock (theVerticesLock)
+                d = Math.Sqrt(d2);
+                lock (VerticesLock)
                 {
-                    aBB.UpdateVertex(aV[j], aD + BOPTools_AlgoTools.DTolerance());
+                    bb.UpdateVertex(v[j], d + AlgoTools.DTolerance());
                 }
             }
         }
@@ -745,85 +751,85 @@ public partial class BOPAlgo_PaveFiller
     /// Builds the p-curves of the argument edges on the planar faces that interfere (destructive mode only: the
     /// p-curves are stored in the argument edges).
     /// </summary>
-    protected void Prepare(ProgressRange theRange)
+    protected void Prepare(ProgressRange range)
     {
-        if (myNonDestructive)
+        if (_nonDestructive)
         {
             // do not allow storing pcurves in original edges if non-destructive mode is on
             return;
         }
-        Span<ShapeType> aType = [ShapeType.Vertex, ShapeType.Edge, ShapeType.Face];
+        Span<ShapeType> type = [ShapeType.Vertex, ShapeType.Edge, ShapeType.Face];
         bool bIsBasedOnPlane;
-        int i, aNb, n1, nF, aNbF;
-        Explorer aExp = new();
-        NCollection_IndexedMap<Shape> aMF = new(ShapeHasher.Instance);
+        int i, nb, n1, nF, nbF;
+        Explorer exp = new();
+        NCollection_IndexedMap<Shape> mf = new(ShapeHasher.Instance);
         //
-        aNb = 3;
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
-        for (i = 0; i < aNb; ++i)
+        nb = 3;
+        using var psOuter = new ProgressScope(range, null, 1);
+        for (i = 0; i < nb; ++i)
         {
-            myIterator!.Initialize(aType[i], aType[2]);
-            for (; myIterator.More(); myIterator.Next())
+            _iterator!.Initialize(type[i], type[2]);
+            for (; _iterator.More(); _iterator.Next())
             {
-                myIterator.Value(out n1, out nF);
-                Face aF = ShapeCasts.Face(myDS!.Shape(nF));
+                _iterator.Value(out n1, out nF);
+                Face f = ShapeCasts.Face(_ds!.Shape(nF));
                 //
-                bIsBasedOnPlane = IsBasedOnPlane(aF);
+                bIsBasedOnPlane = IsBasedOnPlane(f);
                 if (bIsBasedOnPlane)
                 {
-                    aMF.Add(aF);
+                    mf.Add(f);
                 }
             }
         }
         //
-        aNbF = aMF.Extent();
-        if (aNbF == 0)
+        nbF = mf.Extent();
+        if (nbF == 0)
         {
             return;
         }
         //
         // Build pcurves of edges on planes; first collect pairs edge-face.
-        NCollection_DynamicArray<BOPAlgo_BPC> aVBPC = new();
+        NCollection_DynamicArray<BPC> vbpc = new();
         //
-        for (i = 1; i <= aNbF; ++i)
+        for (i = 1; i <= nbF; ++i)
         {
-            Face aF = ShapeCasts.Face(aMF[i]);
-            aExp.Init(aF, aType[1]);
-            for (; aExp.More(); aExp.Next())
+            Face f = ShapeCasts.Face(mf[i]);
+            exp.Init(f, type[1]);
+            for (; exp.More(); exp.Next())
             {
-                Edge aE = ShapeCasts.Edge(aExp.Current());
-                BOPAlgo_BPC aBPC = aVBPC.Append(new BOPAlgo_BPC());
-                aBPC.SetEdge(aE);
-                aBPC.SetFace(aF);
+                Edge e = ShapeCasts.Edge(exp.Current());
+                BPC bpc = vbpc.Append(new BPC());
+                bpc.SetEdge(e);
+                bpc.SetFace(f);
             }
         }
         //
-        using var aPS = new ProgressScope(aPSOuter.Next(), "Building 2d curves on planar faces", aVBPC.Length());
-        for (i = 0; i < aVBPC.Length(); i++)
+        using var ps = new ProgressScope(psOuter.Next(), "Building 2d curves on planar faces", vbpc.Length());
+        for (i = 0; i < vbpc.Length(); i++)
         {
-            BOPAlgo_BPC aBPC = aVBPC[i];
-            aBPC.SetRange(aPS.Next());
+            BPC bpc = vbpc[i];
+            bpc.SetRange(ps.Next());
         }
         //======================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVBPC);
+        BooleanParallel.Perform(_runParallel, vbpc);
         //======================================================
-        if (UserBreak(aPS))
+        if (UserBreak(ps))
         {
             return;
         }
         // pcurves are built, and now update edges
-        BrepBuilder aBB = new();
-        for (i = 0; i < aVBPC.Length(); i++)
+        BrepBuilder bb = new();
+        for (i = 0; i < vbpc.Length(); i++)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPAlgo_BPC aBPC = aVBPC[i];
-            if (aBPC.IsToUpdate())
+            BPC bpc = vbpc[i];
+            if (bpc.IsToUpdate)
             {
-                double aTolE = Tool.Tolerance(aBPC.GetEdge());
-                aBB.UpdateEdge(aBPC.GetEdge(), aBPC.GetCurve2d(), aBPC.GetFace(), aTolE);
+                double tolE = Tool.Tolerance(bpc.GetEdge());
+                bb.UpdateEdge(bpc.GetEdge(), bpc.GetCurve2d(), bpc.GetFace(), tolE);
             }
         }
     }
@@ -831,20 +837,20 @@ public partial class BOPAlgo_PaveFiller
     // Whether the face's surface is a plane (or a trimmed plane).
     private static bool IsBasedOnPlane(in Face aF)
     {
-        TrimmedSurface? aGRTS;
-        PlaneSurface? aGP;
+        TrimmedSurface? grts;
+        PlaneSurface? gp;
 
-        Surface? aS = Tool.Surface(aF, out Placement _);
-        aGRTS = aS as TrimmedSurface;
-        if (aGRTS is not null)
+        Surface? s = Tool.Surface(aF, out Placement _);
+        grts = s as TrimmedSurface;
+        if (grts is not null)
         {
-            aGP = aGRTS.BasisSurface() as PlaneSurface;
+            gp = grts.BasisSurface() as PlaneSurface;
         }
         else
         {
-            aGP = aS as PlaneSurface;
+            gp = s as PlaneSurface;
         }
         //
-        return aGP is not null;
+        return gp is not null;
     }
 }

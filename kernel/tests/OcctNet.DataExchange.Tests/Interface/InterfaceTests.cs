@@ -107,18 +107,18 @@ public class InterfaceTests
     public void Check_collects_and_edits_messages()
     {
         var aCheck = new Interface_Check();
-        Assert.Equal(Interface_CheckOK, aCheck.Status());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, aCheck.Status());
         aCheck.AddWarning("a warning", "original warning");
-        Assert.Equal(Interface_CheckWarning, aCheck.Status());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckWarning, aCheck.Status());
         aCheck.AddFail("a fail");
         aCheck.AddFail(""); // ignored
-        Assert.Equal(Interface_CheckFail, aCheck.Status());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aCheck.Status());
         Assert.Equal(1, aCheck.NbFails());
         Assert.Equal("original warning", aCheck.CWarning(1, false));
-        Assert.True(aCheck.Complies(Interface_CheckMessage));
-        Assert.False(aCheck.Complies(Interface_CheckNoFail));
-        Assert.True(aCheck.Complies(new TCollection_HAsciiString("a warning"), 0, Interface_CheckWarning));
-        Assert.True(aCheck.Complies(new TCollection_HAsciiString("warn"), -1, Interface_CheckWarning));
+        Assert.True(aCheck.Complies(Interface_CheckStatus.Interface_CheckMessage));
+        Assert.False(aCheck.Complies(Interface_CheckStatus.Interface_CheckNoFail));
+        Assert.True(aCheck.Complies(new TCollection_HAsciiString("a warning"), 0, Interface_CheckStatus.Interface_CheckWarning));
+        Assert.True(aCheck.Complies(new TCollection_HAsciiString("warn"), -1, Interface_CheckStatus.Interface_CheckWarning));
         Assert.True(aCheck.Mend("FM", 1)); // the fail is marked "Mended"
         Assert.Equal(1, aCheck.NbFails());
         Assert.Equal("Mended : a fail", aCheck.CFail(1));
@@ -134,7 +134,7 @@ public class InterfaceTests
         Assert.Equal(1, anOther.NbFails());
         aCheck.ClearWarnings();
         aCheck.ClearFails();
-        Assert.Equal(Interface_CheckOK, aCheck.Status());
+        Assert.Equal(Interface_CheckStatus.Interface_CheckOK, aCheck.Status());
 
         // a message from the loaded resources
         Interface_StaticSet.LoadMessages();
@@ -161,8 +161,8 @@ public class InterfaceTests
         aList.Add(c1b, 1); // cumulated with the check of 1
         Assert.Equal(1, aList.Check(1)!.NbWarnings());
         Assert.False(aList.IsEmpty(true));
-        Assert.Equal(Interface_CheckFail, aList.Status());
-        Interface_CheckIterator aWarnings = aList.Extract(Interface_CheckWarning);
+        Assert.Equal(Interface_CheckStatus.Interface_CheckFail, aList.Status());
+        Interface_CheckIterator aWarnings = aList.Extract(Interface_CheckStatus.Interface_CheckWarning);
         Assert.Same(c2, aWarnings.Check(2));
         Assert.Equal(0, aList.Check(9)!.NbFails()); // an empty check for a number without one
         aList.CCheck(9)!.AddFail("on the spot");
@@ -181,19 +181,19 @@ public class InterfaceTests
     {
         var aContent = new Interface_UndefinedContent();
         var anEnt = new ToyEntity("e");
-        aContent.AddLiteral(Interface_ParamInteger, new TCollection_HAsciiString("12"));
-        aContent.AddEntity(Interface_ParamIdent, anEnt);
-        aContent.AddLiteral(Interface_ParamText, new TCollection_HAsciiString("'txt'"));
+        aContent.AddLiteral(Interface_ParamType.Interface_ParamInteger, new TCollection_HAsciiString("12"));
+        aContent.AddEntity(Interface_ParamType.Interface_ParamIdent, anEnt);
+        aContent.AddLiteral(Interface_ParamType.Interface_ParamText, new TCollection_HAsciiString("'txt'"));
         Assert.Equal(3, aContent.NbParams());
         Assert.Equal(2, aContent.NbLiterals());
         Assert.True(aContent.IsParamEntity(2));
         Assert.Same(anEnt, aContent.ParamEntity(2));
         Assert.Equal("'txt'", aContent.ParamValue(3)!.ToCString());
-        Assert.Equal(Interface_ParamText, aContent.ParamType(3));
+        Assert.Equal(Interface_ParamType.Interface_ParamText, aContent.ParamType(3));
         Assert.True(aContent.ParamData(2, out Interface_ParamType aType, out Transient? aRef, out _));
-        Assert.Equal(Interface_ParamIdent, aType);
+        Assert.Equal(Interface_ParamType.Interface_ParamIdent, aType);
         Assert.Same(anEnt, aRef);
-        aContent.SetLiteral(2, Interface_ParamReal, new TCollection_HAsciiString("1.5"));
+        aContent.SetLiteral(2, Interface_ParamType.Interface_ParamReal, new TCollection_HAsciiString("1.5"));
         Assert.False(aContent.IsParamEntity(2));
         Assert.Equal("1.5", aContent.ParamValue(2)!.ToCString());
         aContent.RemoveParam(1);
@@ -205,14 +205,14 @@ public class InterfaceTests
     public void ParamSet_lists_parameters_and_their_texts()
     {
         var aSet = new Interface_ParamSet(4);
-        Assert.Equal(1, aSet.Append("abcdef", 3, Interface_ParamText, 0));
-        Assert.Equal(2, aSet.Append("#12", -1, Interface_ParamIdent, 12));
+        Assert.Equal(1, aSet.Append("abcdef", 3, Interface_ParamType.Interface_ParamText, 0));
+        Assert.Equal(2, aSet.Append("#12", -1, Interface_ParamType.Interface_ParamIdent, 12));
         Assert.Equal("abc", aSet.Param(1).CValue());
         Assert.Equal(12, aSet.Param(2).EntityNumber());
         var aFP = new Interface_FileParameter();
-        aFP.Init("3.5", Interface_ParamReal);
+        aFP.Init("3.5", Interface_ParamType.Interface_ParamReal);
         aSet.Append(aFP);
-        aFP.Init("changed", Interface_ParamText); // the set keeps a copy
+        aFP.Init("changed", Interface_ParamType.Interface_ParamText); // the set keeps a copy
         Assert.Equal("3.5", aSet.Param(3).CValue());
         aSet.ChangeParam(3).SetEntityNumber(7); // changed in place
         Assert.Equal(7, aSet.Param(3).EntityNumber());

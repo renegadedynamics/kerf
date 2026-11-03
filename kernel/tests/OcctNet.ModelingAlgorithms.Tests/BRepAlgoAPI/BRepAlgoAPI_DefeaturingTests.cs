@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -15,10 +17,10 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepAlgoAPI_DefeaturingTests
 {
-    private static BRepAlgoAPI_Defeaturing Defeature(in Shape theShape, IEnumerable<Shape> theFaces,
+    private static Defeaturing Defeature(in Shape theShape, IEnumerable<Shape> theFaces,
                                                      bool theHistory = true, bool theParallel = false)
     {
-        BRepAlgoAPI_Defeaturing aDF = new();
+        Defeaturing aDF = new();
         aDF.SetShape(theShape);
         NCollection_List<Shape> aFaces = new(theFaces);
         aDF.AddFacesToRemove(aFaces);
@@ -34,19 +36,19 @@ public class BRepAlgoAPI_DefeaturingTests
         Shape aShape = BOPAlgo_RemoveFeaturesTests.BoxWithPocket();
         string aBefore = BRepTextComparison.Write(aShape);
         List<Shape> aPocket = BOPAlgo_RemoveFeaturesTests.NonBoxFaces(aShape);
-        BRepAlgoAPI_Defeaturing aDF = Defeature(aShape, aPocket);
-        Assert.True(aDF.IsDone());
-        Assert.False(aDF.HasErrors());
+        Defeaturing aDF = Defeature(aShape, aPocket);
+        Assert.True(aDF.IsDone);
+        Assert.False(aDF.HasErrors);
         Assert.Same(aShape.TShape(), aDF.InputShape().TShape());
         Assert.Equal(5, aDF.FacesToRemove().Extent());
 
         Shape aResult = aDF.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
         Assert.Equal(1000.0, BOPAlgo_RemoveFeaturesTests.Volume(aResult), 1.0e-6);
-        Assert.True(aDF.HasHistory());
-        Assert.True(aDF.HasDeleted());
-        Assert.True(aDF.HasModified());
-        Assert.False(aDF.HasGenerated());
+        Assert.True(aDF.HasHistory);
+        Assert.True(aDF.HasDeleted);
+        Assert.True(aDF.HasModified);
+        Assert.False(aDF.HasGenerated);
         foreach (Shape aF in aPocket)
         {
             Assert.True(aDF.IsDeleted(aF));
@@ -71,26 +73,26 @@ public class BRepAlgoAPI_DefeaturingTests
     {
         Shape aShape = BOPAlgo_RemoveFeaturesTests.BoxWithHole();
         List<Shape> aHole = BOPAlgo_RemoveFeaturesTests.FacesOf<CylindricalSurface>(aShape);
-        BRepAlgoAPI_Defeaturing aDF = Defeature(aShape, aHole, theHistory: false);
-        Assert.True(aDF.IsDone());
+        Defeaturing aDF = Defeature(aShape, aHole, theHistory: false);
+        Assert.True(aDF.IsDone);
         Assert.Equal(1000.0, BOPAlgo_RemoveFeaturesTests.Volume(aDF.Shape()), 1.0e-6);
-        Assert.False(aDF.HasHistory());
+        Assert.False(aDF.HasHistory);
         Assert.Null(aDF.History());
         Assert.False(aDF.IsDeleted(aHole[0]));
-        Assert.False(aDF.HasDeleted());
+        Assert.False(aDF.HasDeleted);
     }
 
     [Fact]
     public void Errors_and_warnings_are_reported()
     {
         Shape aBox = BOPAlgo_RemoveFeaturesTests.Box();
-        BRepAlgoAPI_Defeaturing aDF = Defeature(aBox, BOPAlgo_RemoveFeaturesTests.SubShapes(BOPAlgo_RemoveFeaturesTests.Box(), ShapeType.Face));
-        Assert.False(aDF.IsDone());
-        Assert.True(aDF.HasError(typeof(BOPAlgo_AlertNoFacesToRemove)));
+        Defeaturing aDF = Defeature(aBox, BOPAlgo_RemoveFeaturesTests.SubShapes(BOPAlgo_RemoveFeaturesTests.Box(), ShapeType.Face));
+        Assert.False(aDF.IsDone);
+        Assert.True(aDF.HasError(typeof(AlertNoFacesToRemove)));
 
         aDF = Defeature(aBox, [BOPAlgo_RemoveFeaturesTests.SubShapes(aBox, ShapeType.Face)[0]]);
-        Assert.True(aDF.IsDone());
-        Assert.True(aDF.HasWarning(typeof(BOPAlgo_AlertUnableToRemoveTheFeature)));
+        Assert.True(aDF.IsDone);
+        Assert.True(aDF.HasWarning(typeof(AlertUnableToRemoveTheFeature)));
         Assert.True(aDF.Shape().IsSame(aBox));
 
         // a second Build starts again from a cleared report
@@ -105,7 +107,7 @@ public class BRepAlgoAPI_DefeaturingTests
         List<Shape> aBoss = BOPAlgo_RemoveFeaturesTests.NonBoxFaces(aShape);
         string Run(bool theParallel)
         {
-            BRepAlgoAPI_Defeaturing aDF = Defeature(aShape, aBoss, theParallel: theParallel);
+            Defeaturing aDF = Defeature(aShape, aBoss, theParallel: theParallel);
             return BRepTextComparison.Write(aDF.Shape()) + DeterminismHarness.HistoryText([aShape], aDF.Shape(), aDF.History());
         }
         string aSerial = Run(false);

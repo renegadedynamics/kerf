@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Features;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -69,19 +73,19 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
 
     internal static IEnumerable<(string Name, Shape Shape)> Bases()
     {
-        yield return ("box", new BRepPrimAPI_MakeBox(10, 20, 30).Shape());
-        yield return ("cylinder", new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 8, 20).Shape());
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-10, -10, 0), 20, 20, 12).Shape();
-        Shape aHole = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(6, 6, -1), new Direction3D(0, 0, 1)), 2, 14).Shape();
-        yield return ("box with a hole", new BRepAlgoAPI_Cut(aBox, aHole).Shape());
-        var aHexagon = new BRepBuilderAPI_MakePolygon();
+        yield return ("box", new MakeBox(10, 20, 30).Shape());
+        yield return ("cylinder", new ApiMakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 8, 20).Shape());
+        Shape aBox = new MakeBox(new Point3D(-10, -10, 0), 20, 20, 12).Shape();
+        Shape aHole = new ApiMakeCylinder(new Frame3D(new Point3D(6, 6, -1), new Direction3D(0, 0, 1)), 2, 14).Shape();
+        yield return ("box with a hole", new Cut(aBox, aHole).Shape());
+        var aHexagon = new MakePolygon();
         for (int i = 0; i < 6; i++)
         {
             aHexagon.Add(new Point3D(12 * Math.Cos(i * Math.PI / 3), 12 * Math.Sin(i * Math.PI / 3), 0));
         }
         aHexagon.Close();
-        Face aHexFace = new BRepBuilderAPI_MakeFace(aHexagon.Wire(), true).Face();
-        yield return ("hexagonal prism", new BRepPrimAPI_MakePrism(aHexFace, new Vector3D(0, 0, 15)).Shape());
+        Face aHexFace = new MakeFace(aHexagon.Wire(), true).Face();
+        yield return ("hexagonal prism", new ApiMakePrism(aHexFace, new Vector3D(0, 0, 15)).Shape());
     }
 
     // A rectangle or a circle around the centre of a planar face, in its plane, of a quarter of its size
@@ -94,7 +98,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         }
         Plane3D aPln = anAdaptor.Plane();
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(theFace, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theFace, aProps);
         Point3D aC = aProps.CentreOfMass();
         double aSize = Math.Sqrt(aProps.Mass()) / 6;
         Direction3D aN = aPln.Axis().Direction(), aX = aPln.XAxis().Direction();
@@ -105,13 +109,13 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         var aPlane = new Plane3D(new CoordinateSystem(aC, aN, aX));
         if (theCircle)
         {
-            Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(aC, aN, aX), aSize)).Edge();
-            return new BRepBuilderAPI_MakeFace(aPlane, new BRepBuilderAPI_MakeWire(anEdge).Wire(), true).Face();
+            Edge anEdge = new MakeEdge(new Circle3D(new Frame3D(aC, aN, aX), aSize)).Edge();
+            return new MakeFace(aPlane, new MakeWire(anEdge).Wire(), true).Face();
         }
         Direction3D aY = aN.Crossed(aX);
         Point3D P(double u, double v) => aC.Translated(new Vector3D(aX) * u + new Vector3D(aY) * v);
-        var aPoly = new BRepBuilderAPI_MakePolygon(P(-aSize, -aSize / 2), P(aSize, -aSize / 2), P(aSize, aSize / 2), P(-aSize, aSize / 2), true);
-        return new BRepBuilderAPI_MakeFace(aPlane, aPoly.Wire(), true).Face();
+        var aPoly = new MakePolygon(P(-aSize, -aSize / 2), P(aSize, -aSize / 2), P(aSize, aSize / 2), P(-aSize, aSize / 2), true);
+        return new MakeFace(aPlane, aPoly.Wire(), true).Face();
     }
 
     internal enum Mode { Depth, ThruAll, Until }
@@ -133,7 +137,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         foreach (Shape aF in CanonicalShapeComparer.SubShapes(theShape, ShapeType.Face))
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(aF, aProps);
+            MassPropertiesBuilder.SurfaceProperties(aF, aProps);
             aLines.Add($"F {Q(aProps.Mass())} {CanonicalShapeComparer.SubShapes(aF, ShapeType.Edge).Count()}");
         }
         foreach (Shape anE in CanonicalShapeComparer.SubShapes(theShape, ShapeType.Edge))
@@ -149,8 +153,8 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         }
         aLines.Sort(StringComparer.Ordinal);
         var aVolume = new Properties();
-        BRepGProp.VolumeProperties(theShape, aVolume);
-        aLines.Add($"volume {Q(aVolume.Mass())} valid {new BRepCheck_Analyzer(theShape).IsValid()}");
+        MassPropertiesBuilder.VolumeProperties(theShape, aVolume);
+        aLines.Add($"volume {Q(aVolume.Mass())} valid {new Analyzer(theShape).IsValid()}");
         return string.Join("\n", aLines);
 
         static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
@@ -303,7 +307,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                                     string aPStatus = "", aPHist = "";
                                     try
                                     {
-                                        var aP = new BRepFeat_MakeDPrism(aPBase, aPProf, isSketch ? ShapeCasts.Face(aPFaces[iF]) : new Face(),
+                                        var aP = new MakeDraftPrism(aPBase, aPProf, isSketch ? ShapeCasts.Face(aPFaces[iF]) : new Face(),
                                                                          aTaper * Math.PI / 180, aFuse, false);
                                         switch (aMode)
                                         {
@@ -311,8 +315,8 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                                             case Mode.ThruAll: aP.PerformThruAll(); break;
                                             default: aP.Perform(aPFaces[iUntil]); break;
                                         }
-                                        aPStatus = aP.CurrentStatusError().ToString();
-                                        if (aP.IsDone())
+                                        aPStatus = Kerf.Engine.Foundation.OcctTypeNames.Of(aP.CurrentStatusError());
+                                        if (aP.IsDone)
                                         {
                                             aPRes = aP.Shape();
                                             aPHist = Histories(f => aP.IsDeleted(f), f => aP.Modified(f).Count, e => aP.Generated(e).Count, aPFaces, aPEdges);
@@ -439,7 +443,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                         string? aPErr = null, aPSides = "";
                         try
                         {
-                            var aP = new BRepFeat_SplitShape(aPFace);
+                            var aP = new SplitShape(aPFace);
                             var anEdges = new NCollection_Sequence<Shape>();
                             for (var anExp = new Explorer(aPWire, ShapeType.Edge); anExp.More(); anExp.Next())
                             {
@@ -447,7 +451,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
                             }
                             aP.Add(anEdges);
                             aP.Build();
-                            if (aP.IsDone())
+                            if (aP.IsDone)
                             {
                                 aPRes = aP.Shape();
                                 aPSides = $"left {aP.Left().Count} right {aP.Right().Count} modified {aP.Modified(aPFace).Count}";

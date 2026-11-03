@@ -55,8 +55,8 @@ internal class RWStepVisual_RWTextLiteral
 
         // --- own field : path ---
 
-        StepVisual_TextPath aPath = StepVisual_tpUp;
-        if (data.ParamType(num, 5) == Interface_ParamEnum)
+        StepVisual_TextPath aPath = StepVisual_TextPath.StepVisual_tpUp;
+        if (data.ParamType(num, 5) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 5);
             if (!RWStepVisual_RWTextPath.ConvertToEnum(text, ref aPath))

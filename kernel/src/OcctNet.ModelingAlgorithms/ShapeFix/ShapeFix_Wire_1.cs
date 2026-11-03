@@ -8,90 +8,96 @@ using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.Continuity;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Fixes;
 
-public partial class ShapeFix_Wire
+public partial class WireFixer
 {
     /// <summary>Fixes the gaps between the 3d curves of adjacent edges (see <see cref="FixGap3d"/>).</summary>
     public bool FixGaps3d()
     {
-        enterWork(); // OCCT.NET: frozen
-        myStatusGaps3d = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        EnterWork(); // OCCT.NET: frozen
+        _statusGaps3d = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         // if ( !IsReady() ) return false;
 
-        int i, start = (myClosedMode ? 1 : 2);
-        if (myFixGapsByRanges)
+        int i, start = (_closedMode ? 1 : 2);
+        if (_fixGapsByRanges)
         {
             for (i = start; i <= NbEdges(); i++)
             {
                 FixGap3d(i);
-                myStatusGaps3d |= myLastFixStatus;
+                _statusGaps3d |= _lastFixStatus;
             }
         }
         for (i = start; i <= NbEdges(); i++)
         {
             FixGap3d(i, true);
-            myStatusGaps3d |= myLastFixStatus;
+            _statusGaps3d |= _lastFixStatus;
         }
 
-        return StatusGaps3d(ShapeExtend_DONE);
+        return StatusGaps3d(ExtendStatus.Done);
     }
 
     /// <summary>Fixes the gaps between the pcurves of adjacent edges (see <see cref="FixGap2d"/>).</summary>
     public bool FixGaps2d()
     {
-        enterWork(); // OCCT.NET: frozen
-        myStatusGaps2d = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        EnterWork(); // OCCT.NET: frozen
+        _statusGaps2d = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         //  if ( !IsReady() ) return false;
 
-        int i, start = (myClosedMode ? 1 : 2);
-        if (myFixGapsByRanges)
+        int i, start = (_closedMode ? 1 : 2);
+        if (_fixGapsByRanges)
         {
             for (i = start; i <= NbEdges(); i++)
             {
                 FixGap2d(i);
-                myStatusGaps2d |= myLastFixStatus;
+                _statusGaps2d |= _lastFixStatus;
             }
         }
         for (i = start; i <= NbEdges(); i++)
         {
             FixGap2d(i, true);
-            myStatusGaps2d |= myLastFixStatus;
+            _statusGaps2d |= _lastFixStatus;
         }
 
-        return StatusGaps2d(ShapeExtend_DONE);
+        return StatusGaps2d(ExtendStatus.Done);
     }
 
     private static double AdjustOnPeriodic3d(Curve3D c, bool takefirst, double first, double last, double param)
     {
         // 15.11.2002 PTV OCC966
-        if (ShapeAnalysis_Curve.IsPeriodic(c))
+        if (CurveAnalysis.IsPeriodic(c))
         {
-            double T     = c.Period();
-            double shift = -Math.Truncate(first / T) * T;
+            double t     = c.Period();
+            double shift = -Math.Truncate(first / t) * t;
             if (first < 0.0)
             {
-                shift += T;
+                shift += t;
             }
             double sfirst = first + shift, slast = last + shift;
             if (takefirst && (param > slast) && (param > sfirst))
             {
-                return param - T - shift;
+                return param - t - shift;
             }
             if (!takefirst && (param < slast) && (param < sfirst))
             {
-                return param + T - shift;
+                return param + t - shift;
             }
         }
         return param;
@@ -104,8 +110,8 @@ public partial class ShapeFix_Wire
     /// </summary>
     public bool FixGap3d(int num, bool convert = false)
     {
-        enterWork(); // OCCT.NET: frozen
-        myLastFixStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
+        EnterWork(); // OCCT.NET: frozen
+        _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         //  if ( !IsReady() ) return false;
 
         //=============
@@ -114,26 +120,26 @@ public partial class ShapeFix_Wire
 
         if (Context() is null)
         {
-            SetContext(new ShapeBuild_ReShape());
+            SetContext(new ReShapeBuilder());
         }
 
         double preci = Precision();
 
-        ShapeExtend_WireData sbwd = WireData()!;
-        int                  n2   = (num > 0 ? num : sbwd.NbEdges());
-        int                  n1   = (n2 > 1 ? n2 - 1 : sbwd.NbEdges());
+        ExtendWireData sbwd = WireData()!;
+        int                  n2   = (num > 0 ? num : sbwd.EdgeCount);
+        int                  n1   = (n2 > 1 ? n2 - 1 : sbwd.EdgeCount);
         // smh#8
         Shape tmp1 = Context()!.InternalApply(sbwd.Edge(n1)), tmp2 = Context()!.InternalApply(sbwd.Edge(n2));
-        Edge  E1 = ShapeCasts.Edge(tmp1), E2 = ShapeCasts.Edge(tmp2);
+        Edge  e1 = ShapeCasts.Edge(tmp1), e2 = ShapeCasts.Edge(tmp2);
         //  TopoDS_Face face = myAnalyzer->Face(); // comment by enk
 
         // Retrieve curves on edges
         double             cfirst1, clast1, cfirst2, clast2;
         Curve3D?        C1, C2;
-        ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (!SAE.Curve3d(E1, out C1, out cfirst1, out clast1) || !SAE.Curve3d(E2, out C2, out cfirst2, out clast2))
+        EdgeAnalysis sae = new EdgeAnalysis();
+        if (!sae.Curve3d(e1, out C1, out cfirst1, out clast1) || !sae.Curve3d(e2, out C2, out cfirst2, out clast2))
         {
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL1);
             return false;
         }
 
@@ -149,13 +155,13 @@ public partial class ShapeFix_Wire
         // Second phase: collecting data necessary for further analysis
         //=============
 
-        bool reversed1 = (E1.Orientation() == Reversed),
-             reversed2 = (E2.Orientation() == Reversed);
+        bool reversed1 = (e1.Orientation() == Reversed),
+             reversed2 = (e2.Orientation() == Reversed);
 
-        Vertex V1 = SAE.LastVertex(E1), V2 = SAE.FirstVertex(E2);
-        Point3D        vpnt = (V1.IsSame(V2))
-                               ? Tool.Pnt(V1)
-                               : new Point3D((Tool.Pnt(V1).XYZ() + Tool.Pnt(V2).XYZ()) * 0.5);
+        Vertex v1 = sae.LastVertex(e1), v2 = sae.FirstVertex(e2);
+        Point3D        vpnt = (v1.IsSame(v2))
+                               ? Tool.Pnt(v1)
+                               : new Point3D((Tool.Pnt(v1).XYZ() + Tool.Pnt(v2).XYZ()) * 0.5);
 
         double first1, last1, first2, last2;
         if (reversed1)
@@ -187,9 +193,9 @@ public partial class ShapeFix_Wire
         Xyz offval1  = new Xyz(0.0, 0.0, 0.0);
         while (!basic)
         {
-            if (c1 is TrimmedCurve3D aTC1)
+            if (c1 is TrimmedCurve3D tc1)
             {
-                c1       = aTC1.BasisCurve();
+                c1       = tc1.BasisCurve();
                 trimmed1 = true;
             }
             else if (c1 is OffsetCurve3D oc)
@@ -208,9 +214,9 @@ public partial class ShapeFix_Wire
         Xyz offval2  = new Xyz(0.0, 0.0, 0.0);
         while (!basic)
         {
-            if (c2 is TrimmedCurve3D aTC2)
+            if (c2 is TrimmedCurve3D tc2)
             {
-                c2       = aTC2.BasisCurve();
+                c2       = tc2.BasisCurve();
                 trimmed2 = true;
             }
             else if (c2 is OffsetCurve3D oc)
@@ -312,14 +318,14 @@ public partial class ShapeFix_Wire
                 }
                 else if (c is ConicCurve3D)
                 {
-                    var Conv = new Curve3d(new CurveAdaptor(c, first, last),
-                                                  myAnalyzer.Precision(),
+                    var conv = new Curve3d(new CurveAdaptor(c, first, last),
+                                                  _analyzer.Precision(),
                                                   global::Kerf.Geometry.Continuity.C1,
                                                   9,
                                                   1000);
-                    if (Conv.IsDone || Conv.HasResult)
+                    if (conv.IsDone || conv.HasResult)
                     {
-                        bsp = Conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
+                        bsp = conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
                     }
                 }
                 else
@@ -329,7 +335,7 @@ public partial class ShapeFix_Wire
                     try
                     {
                         // 15.11.2002 PTV OCC966
-                        if (!ShapeAnalysis_Curve.IsPeriodic(c))
+                        if (!CurveAnalysis.IsPeriodic(c))
                         {
                             tc = new TrimmedCurve3D(c,
                                                        Max(first, c.FirstParameter()),
@@ -479,38 +485,38 @@ public partial class ShapeFix_Wire
                 double ipar1 = clast1, ipar2 = cfirst2;
 
                 // Try to find projections of vertex point
-                var    Proj = new GeomAPI_ProjectPointOnCurve();
+                var    proj = new ProjectPointOnCurve();
                 double u1   = ipar1, u2 = ipar2;
-                Proj.Init(vpnt, c1, domfirst1, domlast1);
-                if (Proj.NbPoints() != 0)
+                proj.Init(vpnt, c1, domfirst1, domlast1);
+                if (proj.NbPoints() != 0)
                 {
                     int    index = 1;
                     double dist, mindist = -1.0;
-                    for (int i = 1; i <= Proj.NbPoints(); i++)
+                    for (int i = 1; i <= proj.NbPoints(); i++)
                     {
-                        dist = vpnt.Distance(Proj.Point(i));
+                        dist = vpnt.Distance(proj.Point(i));
                         if (mindist > dist || mindist < 0.0)
                         {
                             index   = i;
                             mindist = dist;
                         }
-                        u1 = Proj.Parameter(index);
+                        u1 = proj.Parameter(index);
                     }
                 }
-                Proj.Init(vpnt, c2, domfirst2, domlast2);
-                if (Proj.NbPoints() != 0)
+                proj.Init(vpnt, c2, domfirst2, domlast2);
+                if (proj.NbPoints() != 0)
                 {
                     int    index = 1;
                     double dist, mindist = -1.0;
-                    for (int i = 1; i <= Proj.NbPoints(); i++)
+                    for (int i = 1; i <= proj.NbPoints(); i++)
                     {
-                        dist = vpnt.Distance(Proj.Point(i));
+                        dist = vpnt.Distance(proj.Point(i));
                         if (mindist > dist || mindist < 0.0)
                         {
                             index   = i;
                             mindist = dist;
                         }
-                        u2 = Proj.Parameter(index);
+                        u2 = proj.Parameter(index);
                     }
                 }
                 // Adjust parameters on periodic curves
@@ -553,8 +559,8 @@ public partial class ShapeFix_Wire
                         domlast2  = last2;
                     }
 
-                    var Extr = new GeomAPI_ExtremaCurveCurve(c1, c2, domfirst1, domlast1, domfirst2, domlast2);
-                    if (Extr.NbExtrema() != 0)
+                    var extr = new ExtremaCurveCurve(c1, c2, domfirst1, domlast1, domfirst2, domlast2);
+                    if (extr.NbExtrema() != 0)
                     {
                         try
                         {
@@ -562,9 +568,9 @@ public partial class ShapeFix_Wire
                             Point3D pp1, pp2;
                             int    index1 = 0, index2 = 0;
                             double uu1, uu2, pardist, pardist1 = -1.0, pardist2 = -1.0;
-                            for (int i = 1; i <= Extr.NbExtrema(); i++)
+                            for (int i = 1; i <= extr.NbExtrema(); i++)
                             {
-                                Extr.Parameters(i, out uu1, out uu2);
+                                extr.Parameters(i, out uu1, out uu2);
                                 // Adjust parameters on periodic curves
                                 uu1 = AdjustOnPeriodic3d(c1, reversed1, first1, last1, uu1);
                                 uu2 = AdjustOnPeriodic3d(c2, !reversed2, first2, last2, uu2);
@@ -592,20 +598,20 @@ public partial class ShapeFix_Wire
                                 if (index1 != index2)
                                 {
                                     // take intersection closer to vertex point
-                                    Extr.Parameters(index1, out uu1, out uu2);
+                                    extr.Parameters(index1, out uu1, out uu2);
                                     pp1 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
-                                    Extr.Parameters(index2, out uu1, out uu2);
+                                    extr.Parameters(index2, out uu1, out uu2);
                                     pp2 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
                                     if (pp2.Distance(vpnt) < pp1.Distance(vpnt))
                                     {
                                         index1 = index2;
                                     }
                                 }
-                                Extr.Parameters(index1, out uu1, out uu2);
+                                extr.Parameters(index1, out uu1, out uu2);
                             }
                             else
                             {
-                                Extr.LowerDistanceParameters(out uu1, out uu2);
+                                extr.LowerDistanceParameters(out uu1, out uu2);
                             }
                             // Adjust parameters on periodic curves
                             uu1 = AdjustOnPeriodic3d(c1, reversed1, first1, last1, uu1);
@@ -693,18 +699,18 @@ public partial class ShapeFix_Wire
 
         if (done1 || done2)
         {
-            var B    = new BrepBuilder();
-            var SBE  = new ShapeBuild_Edge();
-            var SFST = new ShapeFix_ShapeTolerance();
+            var b    = new BrepBuilder();
+            var sbe  = new BuildEdgeBuilder();
+            var sfst = new ShapeToleranceFixer();
 
             // Update vertices
             Vertex nullV = new Vertex(), newV1;
             // smh#8
-            Shape  emptyCopiedV2 = V2.EmptyCopied();
+            Shape  emptyCopiedV2 = v2.EmptyCopied();
             Vertex newV2         = ShapeCasts.Vertex(emptyCopiedV2);
-            SFST.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
-            Context()!.Replace(V2, newV2);
-            if (V1.IsSame(V2))
+            sfst.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
+            Context()!.Replace(v2, newV2);
+            if (v1.IsSame(v2))
             // smh#8
             {
                 Shape tmpV2 = newV2.Oriented(Reversed);
@@ -713,76 +719,76 @@ public partial class ShapeFix_Wire
             else
             {
                 // smh#8
-                Shape emptyCopied = V1.EmptyCopied();
+                Shape emptyCopied = v1.EmptyCopied();
                 newV1                    = ShapeCasts.Vertex(emptyCopied);
-                SFST.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
-                Context()!.Replace(V1, newV1);
+                sfst.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
+                Context()!.Replace(v1, newV1);
             }
 
             if (done1)
             {
                 // Update first edge
-                Edge newE1 = SBE.InternalCopyReplaceVertices(E1, nullV, newV1);
+                Edge newE1 = sbe.InternalCopyReplaceVertices(e1, nullV, newV1);
                 // smh#8
                 Shape tmpE1 = newE1.Oriented(Forward);
-                B.UpdateEdge(ShapeCasts.Edge(tmpE1), c1, 0.0);
-                SBE.SetRange3d(ShapeCasts.Edge(tmpE1), first1, last1);
-                SFST.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
-                B.SameRange(newE1, false);
+                b.UpdateEdge(ShapeCasts.Edge(tmpE1), c1, 0.0);
+                sbe.SetRange3d(ShapeCasts.Edge(tmpE1), first1, last1);
+                sfst.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
+                b.SameRange(newE1, false);
                 //      B.SameParameter(newE1,false);
 
                 // To keep NM vertices belonging initial edges
-                for (var aItv = new Iterator(E1, false); aItv.More(); aItv.Next())
+                for (var itv = new Iterator(e1, false); itv.More(); itv.Next())
                 {
-                    if (aItv.Value().Orientation() == Internal
-                        || aItv.Value().Orientation() == External)
+                    if (itv.Value().Orientation() == Internal
+                        || itv.Value().Orientation() == External)
                     {
-                        Vertex aOldV = ShapeCasts.Vertex(aItv.Value());
+                        Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
-                            ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aOldV, newE1, E1);
-                        B.Add(newE1, anewV);
-                        Context()!.Replace(aOldV, anewV);
+                            TransferParametersProjAnalysis.InternalCopyNMVertex(oldV, newE1, e1);
+                        b.Add(newE1, anewV);
+                        Context()!.Replace(oldV, anewV);
                     }
                 }
 
-                Context()!.Replace(E1, newE1);
+                Context()!.Replace(e1, newE1);
                 sbwd.Set(newE1, n1);
             }
 
             if (done2)
             {
                 // Update second edge
-                Edge newE2 = SBE.InternalCopyReplaceVertices(E2, newV2, nullV);
+                Edge newE2 = sbe.InternalCopyReplaceVertices(e2, newV2, nullV);
                 // smh#8
                 Shape tmpE2 = newE2.Oriented(Forward);
-                B.UpdateEdge(ShapeCasts.Edge(tmpE2), c2, 0.0);
-                SBE.SetRange3d(ShapeCasts.Edge(tmpE2), first2, last2);
-                SFST.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
-                B.SameRange(newE2, false);
+                b.UpdateEdge(ShapeCasts.Edge(tmpE2), c2, 0.0);
+                sbe.SetRange3d(ShapeCasts.Edge(tmpE2), first2, last2);
+                sfst.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
+                b.SameRange(newE2, false);
                 //      B.SameParameter(newE2,false);
 
                 // To keep NM vertices belonging initial edges
-                for (var aItv = new Iterator(E2, false); aItv.More(); aItv.Next())
+                for (var itv = new Iterator(e2, false); itv.More(); itv.Next())
                 {
-                    if (aItv.Value().Orientation() == Internal
-                        || aItv.Value().Orientation() == External)
+                    if (itv.Value().Orientation() == Internal
+                        || itv.Value().Orientation() == External)
                     {
-                        Vertex aOldV = ShapeCasts.Vertex(aItv.Value());
+                        Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
-                            ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aOldV, newE2, E2);
-                        B.Add(newE2, anewV);
-                        Context()!.Replace(aOldV, anewV);
+                            TransferParametersProjAnalysis.InternalCopyNMVertex(oldV, newE2, e2);
+                        b.Add(newE2, anewV);
+                        Context()!.Replace(oldV, anewV);
                     }
                 }
-                Context()!.Replace(E2, newE2);
+                Context()!.Replace(e2, newE2);
                 sbwd.Set(newE2, n2);
             }
 
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         }
         else if (convert)
         {
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
         }
 
         return (done1 || done2);
@@ -791,22 +797,22 @@ public partial class ShapeFix_Wire
     private static double AdjustOnPeriodic2d(Curve2D pc, bool takefirst, double first, double last, double param)
     {
         // 15.11.2002 PTV OCC966
-        if (ShapeAnalysis_Curve.IsPeriodic(pc))
+        if (CurveAnalysis.IsPeriodic(pc))
         {
-            double T     = pc.Period();
-            double shift = -Math.Truncate(first / T) * T;
+            double t     = pc.Period();
+            double shift = -Math.Truncate(first / t) * t;
             if (first < 0.0)
             {
-                shift += T;
+                shift += t;
             }
             double sfirst = first + shift, slast = last + shift;
             if (takefirst && (param > slast) && (param > sfirst))
             {
-                return param - T - shift;
+                return param - t - shift;
             }
             if (!takefirst && (param < slast) && (param < sfirst))
             {
-                return param + T - shift;
+                return param + t - shift;
             }
         }
         return param;
@@ -820,9 +826,9 @@ public partial class ShapeFix_Wire
     /// </summary>
     public bool FixGap2d(int num, bool convert = false)
     {
-        enterWork(); // OCCT.NET: frozen
-        myLastFixStatus = ShapeExtend.EncodeStatus(ShapeExtend_OK);
-        if (!IsReady())
+        EnterWork(); // OCCT.NET: frozen
+        _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
+        if (!IsReady)
         {
             return false;
         }
@@ -833,7 +839,7 @@ public partial class ShapeFix_Wire
 
         if (Context() is null)
         {
-            SetContext(new ShapeBuild_ReShape());
+            SetContext(new ReShapeBuilder());
         }
 
         double preci = Kerf.Engine.Foundation.Precision.PConfusion();
@@ -841,22 +847,22 @@ public partial class ShapeFix_Wire
         // GeomAdaptor_Surface& SA = Analyzer().Surface()->Adaptor()->ChangeSurface();
         // preci = std::max(SA.UResolution(preci), SA.VResolution(preci));
 
-        ShapeExtend_WireData sbwd = WireData()!;
-        int                  n2   = (num > 0 ? num : sbwd.NbEdges());
-        int                  n1   = (n2 > 1 ? n2 - 1 : sbwd.NbEdges());
+        ExtendWireData sbwd = WireData()!;
+        int                  n2   = (num > 0 ? num : sbwd.EdgeCount);
+        int                  n1   = (n2 > 1 ? n2 - 1 : sbwd.EdgeCount);
         // smh#8
         Shape tmp1 = Context()!.InternalApply(sbwd.Edge(n1)), tmp2 = Context()!.InternalApply(sbwd.Edge(n2));
-        Edge  E1 = ShapeCasts.Edge(tmp1), E2 = ShapeCasts.Edge(tmp2);
-        Face  face = myAnalyzer.Face();
+        Edge  e1 = ShapeCasts.Edge(tmp1), e2 = ShapeCasts.Edge(tmp2);
+        Face  face = _analyzer.Face();
 
         // Retrieve pcurves on edges
         double             cfirst1, clast1, cfirst2, clast2;
         Curve2D?      PC1, PC2;
-        ShapeAnalysis_Edge SAE = new ShapeAnalysis_Edge();
-        if (!SAE.PCurve(E1, face, out PC1, out cfirst1, out clast1) || !SAE.PCurve(E2, face, out PC2, out cfirst2, out clast2)
+        EdgeAnalysis sae = new EdgeAnalysis();
+        if (!sae.PCurve(e1, face, out PC1, out cfirst1, out clast1) || !sae.PCurve(e2, face, out PC2, out cfirst2, out clast2)
             || sbwd.IsSeam(n1) || sbwd.IsSeam(n2))
         {
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL1);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL1);
             return false;
         }
 
@@ -872,8 +878,8 @@ public partial class ShapeFix_Wire
         // Second phase: collecting data necessary for further analysis
         //=============
 
-        bool reversed1 = (E1.Orientation() == Reversed),
-             reversed2 = (E2.Orientation() == Reversed);
+        bool reversed1 = (e1.Orientation() == Reversed),
+             reversed2 = (e2.Orientation() == Reversed);
 
         double first1, last1, first2, last2;
         if (reversed1)
@@ -905,9 +911,9 @@ public partial class ShapeFix_Wire
         double offval1  = 0.0;
         while (!basic)
         {
-            if (pc1 is TrimmedCurve2D aTC1)
+            if (pc1 is TrimmedCurve2D tc1)
             {
-                pc1      = aTC1.BasisCurve();
+                pc1      = tc1.BasisCurve();
                 trimmed1 = true;
             }
             else if (pc1 is OffsetCurve2D oc)
@@ -926,9 +932,9 @@ public partial class ShapeFix_Wire
         double offval2  = 0.0;
         while (!basic)
         {
-            if (pc2 is TrimmedCurve2D aTC2)
+            if (pc2 is TrimmedCurve2D tc2)
             {
-                pc2      = aTC2.BasisCurve();
+                pc2      = tc2.BasisCurve();
                 trimmed2 = true;
             }
             else if (pc2 is OffsetCurve2D oc)
@@ -1007,10 +1013,10 @@ public partial class ShapeFix_Wire
                 }
                 else if (pc is ConicCurve2D)
                 {
-                    SurfaceAdaptor AS   = myAnalyzer.Surface()!.Adaptor3d()!;
-                    double              tolu = AS.UResolution(myAnalyzer.Precision()),
-                                        tolv = AS.VResolution(myAnalyzer.Precision());
-                    var Conv = new Curve2d(new CurveAdaptor2D(pc, first, last),
+                    SurfaceAdaptor AS   = _analyzer.Surface()!.Adaptor3d()!;
+                    double              tolu = AS.UResolution(_analyzer.Precision()),
+                                        tolv = AS.VResolution(_analyzer.Precision());
+                    var conv = new Curve2d(new CurveAdaptor2D(pc, first, last),
                                                   first,
                                                   last,
                                                   tolu,
@@ -1018,9 +1024,9 @@ public partial class ShapeFix_Wire
                                                   C1,
                                                   9,
                                                   1000);
-                    if (Conv.IsDone || Conv.HasResult)
+                    if (conv.IsDone || conv.HasResult)
                     {
-                        bsp = Conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
+                        bsp = conv.InternalCurve(); // OCCT.NET: frozen: Curve() freezes; the poles are edited below
                     }
                 }
                 else
@@ -1030,7 +1036,7 @@ public partial class ShapeFix_Wire
                     {
                         Curve2D c;
                         // 15.11.2002 PTV OCC966
-                        if (!ShapeAnalysis_Curve.IsPeriodic(pc))
+                        if (!CurveAnalysis.IsPeriodic(pc))
                         {
                             c = new TrimmedCurve2D(pc,
                                                         Max(first, pc.FirstParameter()),
@@ -1180,30 +1186,30 @@ public partial class ShapeFix_Wire
 
                 double ipar1 = clast1, ipar2 = cfirst2;
 
-                var    Inter  = new Geom2dInt_GInter();
+                var    inter  = new GInter();
                 double tolint = Kerf.Engine.Foundation.Precision.PConfusion();
 
-                var AC1 = new CurveAdaptor2D(pc1);
-                var AC2 = new CurveAdaptor2D(pc2);
+                var ac1 = new CurveAdaptor2D(pc1);
+                var ac2 = new CurveAdaptor2D(pc2);
 
                 // Try to find intersection points
-                var dom1 = new IntRes2d_Domain(pc1.Value(domfirst1), domfirst1, tolint, pc1.Value(domlast1), domlast1, tolint);
-                var dom2 = new IntRes2d_Domain(pc2.Value(domfirst2), domfirst2, tolint, pc2.Value(domlast2), domlast2, tolint);
-                Inter.Perform(AC1, dom1, AC2, dom2, tolint, tolint);
-                if (Inter.IsDone())
+                var dom1 = new TwoDDomain(pc1.Value(domfirst1), domfirst1, tolint, pc1.Value(domlast1), domlast1, tolint);
+                var dom2 = new TwoDDomain(pc2.Value(domfirst2), domfirst2, tolint, pc2.Value(domlast2), domlast2, tolint);
+                inter.Perform(ac1, dom1, ac2, dom2, tolint, tolint);
+                if (inter.IsDone)
                 {
-                    if (Inter.NbPoints() != 0 || Inter.NbSegments() != 0)
+                    if (inter.PointCount != 0 || inter.SegmentCount != 0)
                     {
                         int    i, index1 = 0, index2 = 0;
                         double pardist, pardist1 = -1.0, pardist2 = -1.0;
                         // iterate on intersection points
-                        IntRes2d_IntersectionPoint IP;
-                        for (i = 1; i <= Inter.NbPoints(); i++)
+                        IntersectionPoint2D ip;
+                        for (i = 1; i <= inter.PointCount; i++)
                         {
-                            IP = Inter.Point(i);
+                            ip = inter.Point(i);
                             // Adjust parameters on periodic curves
-                            double uu1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, IP.ParamOnFirst());
-                            double uu2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, IP.ParamOnSecond());
+                            double uu1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, ip.ParamOnFirst());
+                            double uu2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, ip.ParamOnSecond());
                             pardist = Math.Abs(cfirst1 - uu1);
                             if (pardist1 > pardist || pardist1 < 0.0)
                             {
@@ -1219,25 +1225,25 @@ public partial class ShapeFix_Wire
                         }
                         int flag1 = 0, flag2 = 0;
                         // iterate on intersection segments
-                        IntRes2d_IntersectionSegment IS;
-                        for (i = 1; i <= Inter.NbSegments(); i++)
+                        IntersectionSegment2D IS;
+                        for (i = 1; i <= inter.SegmentCount; i++)
                         {
-                            IS = Inter.Segment(i);
+                            IS = inter.Segment(i);
                             for (int j = 1; j <= 2; j++)
                             {
-                                if ((j == 1 && IS.HasFirstPoint()) || (j == 2 && IS.HasLastPoint()))
+                                if ((j == 1 && IS.HasFirstPoint) || (j == 2 && IS.HasLastPoint))
                                 {
                                     if (j == 1)
                                     {
-                                        IP = IS.FirstPoint();
+                                        ip = IS.FirstPoint();
                                     }
                                     else
                                     {
-                                        IP = IS.LastPoint();
+                                        ip = IS.LastPoint();
                                     }
                                     // Adjust parameters on periodic curves
-                                    double uu1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, IP.ParamOnFirst());
-                                    double uu2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, IP.ParamOnSecond());
+                                    double uu1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, ip.ParamOnFirst());
+                                    double uu2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, ip.ParamOnSecond());
                                     pardist = Math.Abs(cfirst1 - uu1);
                                     if (pardist1 > pardist || pardist1 < 0.0)
                                     {
@@ -1261,11 +1267,11 @@ public partial class ShapeFix_Wire
                             Point2D pt1, pt2;
                             if (flag1 == 0)
                             {
-                                pt1 = Inter.Point(index1).Value();
+                                pt1 = inter.Point(index1).Value();
                             }
                             else
                             {
-                                IS = Inter.Segment(index1);
+                                IS = inter.Segment(index1);
                                 if (flag1 == 1)
                                 {
                                     pt1 = IS.FirstPoint().Value();
@@ -1277,11 +1283,11 @@ public partial class ShapeFix_Wire
                             }
                             if (flag2 == 0)
                             {
-                                pt2 = Inter.Point(index2).Value();
+                                pt2 = inter.Point(index2).Value();
                             }
                             else
                             {
-                                IS = Inter.Segment(index2);
+                                IS = inter.Segment(index2);
                                 if (flag2 == 1)
                                 {
                                     pt2 = IS.FirstPoint().Value();
@@ -1300,23 +1306,23 @@ public partial class ShapeFix_Wire
                         }
                         if (flag1 == 0)
                         {
-                            IP = Inter.Point(index1);
+                            ip = inter.Point(index1);
                         }
                         else
                         {
-                            IS = Inter.Segment(index1);
+                            IS = inter.Segment(index1);
                             if (flag1 == 1)
                             {
-                                IP = IS.FirstPoint();
+                                ip = IS.FirstPoint();
                             }
                             else
                             {
-                                IP = IS.LastPoint();
+                                ip = IS.LastPoint();
                             }
                         }
                         // Adjust parameters on periodic curves
-                        double u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, IP.ParamOnFirst());
-                        double u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, IP.ParamOnSecond());
+                        double u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, ip.ParamOnFirst());
+                        double u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, ip.ParamOnSecond());
                         // Check points to satisfy distance criterium
                         Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
                         if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
@@ -1334,11 +1340,11 @@ public partial class ShapeFix_Wire
                 // Try to find closest points if nothing yet found
                 if (!done1)
                 {
-                    var Extr = new Geom2dAPI_ExtremaCurveCurve(pc1, pc2, domfirst1, domlast1, domfirst2, domlast2);
-                    if (Extr.NbExtrema() != 0)
+                    var extr = new ExtremaCurveCurve2D(pc1, pc2, domfirst1, domlast1, domfirst2, domlast2);
+                    if (extr.NbExtrema() != 0)
                     {
                         double u1, u2;
-                        Extr.LowerDistanceParameters(out u1, out u2);
+                        extr.LowerDistanceParameters(out u1, out u2);
                         // Adjust parameters on periodic curves
                         u1 = AdjustOnPeriodic2d(pc1, reversed1, first1, last1, u1);
                         u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, u2);
@@ -1359,41 +1365,41 @@ public partial class ShapeFix_Wire
                 // Try to find projections if nothing yet found
                 if (!done1)
                 {
-                    var      Proj  = new Geom2dAPI_ProjectPointOnCurve();
+                    var      proj  = new ProjectPointOnCurve2D();
                     Point2D ipnt1 = cpnt1, ipnt2 = cpnt2;
                     double   u1    = ipar1, u2 = ipar2;
-                    Proj.Init(cpnt2, pc1, domfirst1, domlast1);
-                    if (Proj.NbPoints() != 0)
+                    proj.Init(cpnt2, pc1, domfirst1, domlast1);
+                    if (proj.NbPoints() != 0)
                     {
                         int    index = 1;
                         double dist, mindist = -1.0;
-                        for (int i = 1; i <= Proj.NbPoints(); i++)
+                        for (int i = 1; i <= proj.NbPoints(); i++)
                         {
-                            dist = cpnt2.Distance(Proj.Point(i));
+                            dist = cpnt2.Distance(proj.Point(i));
                             if (mindist > dist || mindist < 0.0)
                             {
                                 index   = i;
                                 mindist = dist;
                             }
-                            ipnt1 = Proj.Point(index);
-                            u1    = Proj.Parameter(index);
+                            ipnt1 = proj.Point(index);
+                            u1    = proj.Parameter(index);
                         }
                     }
-                    Proj.Init(cpnt1, pc2, domfirst2, domlast2);
-                    if (Proj.NbPoints() != 0)
+                    proj.Init(cpnt1, pc2, domfirst2, domlast2);
+                    if (proj.NbPoints() != 0)
                     {
                         int    index = 1;
                         double dist, mindist = -1.0;
-                        for (int i = 1; i <= Proj.NbPoints(); i++)
+                        for (int i = 1; i <= proj.NbPoints(); i++)
                         {
-                            dist = cpnt1.Distance(Proj.Point(i));
+                            dist = cpnt1.Distance(proj.Point(i));
                             if (mindist > dist || mindist < 0.0)
                             {
                                 index   = i;
                                 mindist = dist;
                             }
-                            ipnt2 = Proj.Point(index);
-                            u2    = Proj.Parameter(index);
+                            ipnt2 = proj.Point(index);
+                            u2    = proj.Parameter(index);
                         }
                     }
                     // Adjust parameters on periodic curves
@@ -1410,38 +1416,38 @@ public partial class ShapeFix_Wire
                         Point2D mpnt = new Point2D((cpnt1.XY() + cpnt2.XY()) * 0.5);
                         u1 = ipar1;
                         u2 = ipar2;
-                        Proj.Init(mpnt, pc1, domfirst1, domlast1);
-                        if (Proj.NbPoints() != 0)
+                        proj.Init(mpnt, pc1, domfirst1, domlast1);
+                        if (proj.NbPoints() != 0)
                         {
                             int    index = 1;
                             double dist, mindist = -1.0;
-                            for (int i = 1; i <= Proj.NbPoints(); i++)
+                            for (int i = 1; i <= proj.NbPoints(); i++)
                             {
-                                dist = mpnt.Distance(Proj.Point(i));
+                                dist = mpnt.Distance(proj.Point(i));
                                 if (mindist > dist || mindist < 0.0)
                                 {
                                     index   = i;
                                     mindist = dist;
                                 }
-                                ipnt1 = Proj.Point(index);
-                                u1    = Proj.Parameter(index);
+                                ipnt1 = proj.Point(index);
+                                u1    = proj.Parameter(index);
                             }
                         }
-                        Proj.Init(mpnt, pc2, domfirst2, domlast2);
-                        if (Proj.NbPoints() != 0)
+                        proj.Init(mpnt, pc2, domfirst2, domlast2);
+                        if (proj.NbPoints() != 0)
                         {
                             int    index = 1;
                             double dist, mindist = -1.0;
-                            for (int i = 1; i <= Proj.NbPoints(); i++)
+                            for (int i = 1; i <= proj.NbPoints(); i++)
                             {
-                                dist = mpnt.Distance(Proj.Point(i));
+                                dist = mpnt.Distance(proj.Point(i));
                                 if (mindist > dist || mindist < 0.0)
                                 {
                                     index   = i;
                                     mindist = dist;
                                 }
-                                ipnt2 = Proj.Point(index);
-                                u2    = Proj.Parameter(index);
+                                ipnt2 = proj.Point(index);
+                                u2    = proj.Parameter(index);
                             }
                         }
                     }
@@ -1477,7 +1483,7 @@ public partial class ShapeFix_Wire
                     if (ipar1 < first1 || ipar1 > last1 || ipar2 < first2 || ipar2 > last2)
                     {
                         // Check whether new points lie inside the surface bounds
-                        myAnalyzer.Surface()!.Surface()!.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+                        _analyzer.Surface()!.Surface()!.Bounds(out double umin, out double umax, out double vmin, out double vmax);
                         if (Kerf.Engine.Foundation.Precision.IsInfinite(umin) || Kerf.Engine.Foundation.Precision.IsInfinite(umax)
                             || Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                         {
@@ -1569,8 +1575,8 @@ public partial class ShapeFix_Wire
                                 {
                                     // Intersect pcurve with bounding line
                                     var lin  = new LineCurve2D(P1, new Direction2D(new Vector2D(P1, P2)));
-                                    var ACL  = new CurveAdaptor2D(lin);
-                                    var dlin = new IntRes2d_Domain(P1, 0.0, tolint, P2, P1.Distance(P2), tolint);
+                                    var acl  = new CurveAdaptor2D(lin);
+                                    var dlin = new TwoDDomain(P1, 0.0, tolint, P2, P1.Distance(P2), tolint);
 
                                     Curve2D pc;
                                     double       fpar, lpar;
@@ -1602,26 +1608,26 @@ public partial class ShapeFix_Wire
                                         }
                                         pc = pc2;
                                     }
-                                    var ACC  = new CurveAdaptor2D(pc);
-                                    var domc = new IntRes2d_Domain(pc.Value(fpar), fpar, tolint, pc.Value(lpar), lpar, tolint);
+                                    var acc  = new CurveAdaptor2D(pc);
+                                    var domc = new TwoDDomain(pc.Value(fpar), fpar, tolint, pc.Value(lpar), lpar, tolint);
 
                                     // Intersect line with the pcurve
-                                    Inter.Perform(ACL, dlin, ACC, domc, tolint, tolint);
-                                    if (Inter.IsDone())
+                                    inter.Perform(acl, dlin, acc, domc, tolint, tolint);
+                                    if (inter.IsDone)
                                     {
-                                        if (Inter.NbPoints() != 0 || Inter.NbSegments() != 0)
+                                        if (inter.PointCount != 0 || inter.SegmentCount != 0)
                                         {
                                             int    i, index = 1;
                                             double uu, dist, mindist = -1.0;
                                             // iterate on intersection points
-                                            for (i = 1; i <= Inter.NbPoints(); i++)
+                                            for (i = 1; i <= inter.PointCount; i++)
                                             {
                                                 // Adjust parameters on periodic curve
                                                 uu = AdjustOnPeriodic2d(pc,
                                                                         (j == 1 ? reversed1 : !reversed2),
                                                                         fpar,
                                                                         lpar,
-                                                                        Inter.Point(i).ParamOnSecond());
+                                                                        inter.Point(i).ParamOnSecond());
                                                 dist = Math.Abs((j == 1 ? cfirst1 : clast2) - uu);
                                                 if (mindist > dist || mindist < 0.0)
                                                 {
@@ -1631,22 +1637,22 @@ public partial class ShapeFix_Wire
                                             }
                                             // iterate on intersection segments
                                             int                          flag = 0;
-                                            IntRes2d_IntersectionPoint   IP;
-                                            IntRes2d_IntersectionSegment IS;
-                                            for (i = 1; i <= Inter.NbSegments(); i++)
+                                            IntersectionPoint2D   ip;
+                                            IntersectionSegment2D IS;
+                                            for (i = 1; i <= inter.SegmentCount; i++)
                                             {
-                                                IS = Inter.Segment(i);
+                                                IS = inter.Segment(i);
                                                 for (int jj = 1; jj <= 2; jj++)
                                                 {
-                                                    if ((jj == 1 && IS.HasFirstPoint()) || (jj == 2 && IS.HasLastPoint()))
+                                                    if ((jj == 1 && IS.HasFirstPoint) || (jj == 2 && IS.HasLastPoint))
                                                     {
                                                         if (jj == 1)
                                                         {
-                                                            IP = IS.FirstPoint();
+                                                            ip = IS.FirstPoint();
                                                         }
                                                         else
                                                         {
-                                                            IP = IS.LastPoint();
+                                                            ip = IS.LastPoint();
                                                         }
                                                         // Adjust parameters on periodic curve
                                                         // OCCT: jj (the segment end) is used where j (the curve) is meant
@@ -1654,7 +1660,7 @@ public partial class ShapeFix_Wire
                                                                                 (jj == 1 ? reversed1 : !reversed2),
                                                                                 fpar,
                                                                                 lpar,
-                                                                                IP.ParamOnSecond());
+                                                                                ip.ParamOnSecond());
                                                         dist = Math.Abs((jj == 1 ? cfirst1 : clast2) - uu);
                                                         if (mindist > dist || mindist < 0.0)
                                                         {
@@ -1667,18 +1673,18 @@ public partial class ShapeFix_Wire
                                             }
                                             if (flag == 0)
                                             {
-                                                IP = Inter.Point(index);
+                                                ip = inter.Point(index);
                                             }
                                             else
                                             {
-                                                IS = Inter.Segment(index);
+                                                IS = inter.Segment(index);
                                                 if (flag == 1)
                                                 {
-                                                    IP = IS.FirstPoint();
+                                                    ip = IS.FirstPoint();
                                                 }
                                                 else
                                                 {
-                                                    IP = IS.LastPoint();
+                                                    ip = IS.LastPoint();
                                                 }
                                             }
                                             // Adjust parameters on periodic curve
@@ -1686,16 +1692,16 @@ public partial class ShapeFix_Wire
                                                                     (j == 1 ? reversed1 : !reversed2),
                                                                     fpar,
                                                                     lpar,
-                                                                    IP.ParamOnSecond());
+                                                                    ip.ParamOnSecond());
                                             if (j == 1 && Math.Abs(cfirst1 - uu) > Kerf.Engine.Foundation.Precision.PConfusion())
                                             {
                                                 ipar1 = uu;
-                                                ipnt  = IP.Value();
+                                                ipnt  = ip.Value();
                                             }
                                             if (j == 2 && Math.Abs(clast2 - uu) > Kerf.Engine.Foundation.Precision.PConfusion())
                                             {
                                                 ipar2 = uu;
-                                                ipnt  = IP.Value();
+                                                ipnt  = ip.Value();
                                             }
                                         }
                                     }
@@ -1800,19 +1806,19 @@ public partial class ShapeFix_Wire
 
         if (done1 || done2)
         {
-            var B    = new BrepBuilder();
-            var SBE  = new ShapeBuild_Edge();
-            var SFST = new ShapeFix_ShapeTolerance();
+            var b    = new BrepBuilder();
+            var sbe  = new BuildEdgeBuilder();
+            var sfst = new ShapeToleranceFixer();
 
             // Update vertices
-            Vertex V1 = SAE.LastVertex(E1), V2 = SAE.FirstVertex(E2);
+            Vertex v1 = sae.LastVertex(e1), v2 = sae.FirstVertex(e2);
             Vertex nullV = new Vertex(), newV1;
             // smh#8
-            Shape  emptyCopiedV2 = V2.EmptyCopied();
+            Shape  emptyCopiedV2 = v2.EmptyCopied();
             Vertex newV2         = ShapeCasts.Vertex(emptyCopiedV2);
-            SFST.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
-            Context()!.Replace(V2, newV2);
-            if (V1.IsSame(V2))
+            sfst.SetTolerance(newV2, Kerf.Engine.Foundation.Precision.Confusion());
+            Context()!.Replace(v2, newV2);
+            if (v1.IsSame(v2))
             // smh#8
             {
                 Shape tmpVertexRev = newV2.Oriented(Reversed);
@@ -1821,75 +1827,75 @@ public partial class ShapeFix_Wire
             else
             {
                 // smh#8
-                Shape emptyCopiedV1 = V1.EmptyCopied();
+                Shape emptyCopiedV1 = v1.EmptyCopied();
                 newV1                      = ShapeCasts.Vertex(emptyCopiedV1);
-                SFST.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
-                Context()!.Replace(V1, newV1);
+                sfst.SetTolerance(newV1, Kerf.Engine.Foundation.Precision.Confusion());
+                Context()!.Replace(v1, newV1);
             }
 
             if (done1)
             {
                 // Update first edge
-                Edge newE1 = SBE.InternalCopyReplaceVertices(E1, nullV, newV1);
+                Edge newE1 = sbe.InternalCopyReplaceVertices(e1, nullV, newV1);
                 // smh#8
                 Shape tmpE1 = newE1.Oriented(Forward);
-                B.UpdateEdge(ShapeCasts.Edge(tmpE1), pc1, face, 0.0);
-                B.Range(ShapeCasts.Edge(tmpE1), face, first1, last1);
-                SFST.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
-                B.SameRange(newE1, false);
+                b.UpdateEdge(ShapeCasts.Edge(tmpE1), pc1, face, 0.0);
+                b.Range(ShapeCasts.Edge(tmpE1), face, first1, last1);
+                sfst.SetTolerance(newE1, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
+                b.SameRange(newE1, false);
                 //      B.SameParameter(newE1,false);
 
                 // To keep NM vertices belonging initial edges
-                for (var aItv = new Iterator(E1, false); aItv.More(); aItv.Next())
+                for (var itv = new Iterator(e1, false); itv.More(); itv.Next())
                 {
-                    if (aItv.Value().Orientation() == Internal
-                        || aItv.Value().Orientation() == External)
+                    if (itv.Value().Orientation() == Internal
+                        || itv.Value().Orientation() == External)
                     {
-                        Vertex aOldV = ShapeCasts.Vertex(aItv.Value());
+                        Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
-                            ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aOldV, newE1, E1);
-                        B.Add(newE1, anewV);
-                        Context()!.Replace(aOldV, anewV);
+                            TransferParametersProjAnalysis.InternalCopyNMVertex(oldV, newE1, e1);
+                        b.Add(newE1, anewV);
+                        Context()!.Replace(oldV, anewV);
                     }
                 }
 
-                Context()!.Replace(E1, newE1);
+                Context()!.Replace(e1, newE1);
                 sbwd.Set(newE1, n1);
             }
 
             if (done2)
             {
                 // Update second edge
-                Edge newE2 = SBE.InternalCopyReplaceVertices(E2, newV2, nullV);
+                Edge newE2 = sbe.InternalCopyReplaceVertices(e2, newV2, nullV);
                 // smh#8
                 Shape tmpE2 = newE2.Oriented(Forward);
-                B.UpdateEdge(ShapeCasts.Edge(tmpE2), pc2, face, 0.0);
-                B.Range(ShapeCasts.Edge(tmpE2), face, first2, last2);
-                SFST.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
-                B.SameRange(newE2, false);
+                b.UpdateEdge(ShapeCasts.Edge(tmpE2), pc2, face, 0.0);
+                b.Range(ShapeCasts.Edge(tmpE2), face, first2, last2);
+                sfst.SetTolerance(newE2, Kerf.Engine.Foundation.Precision.Confusion(), ShapeType.Edge);
+                b.SameRange(newE2, false);
                 //      B.SameParameter(newE2,false);
                 // To keep NM vertices belonging initial edges
-                for (var aItv = new Iterator(E2, false); aItv.More(); aItv.Next())
+                for (var itv = new Iterator(e2, false); itv.More(); itv.Next())
                 {
-                    if (aItv.Value().Orientation() == Internal
-                        || aItv.Value().Orientation() == External)
+                    if (itv.Value().Orientation() == Internal
+                        || itv.Value().Orientation() == External)
                     {
-                        Vertex aOldV = ShapeCasts.Vertex(aItv.Value());
+                        Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
-                            ShapeAnalysis_TransferParametersProj.InternalCopyNMVertex(aOldV, newE2, E2);
-                        B.Add(newE2, anewV);
-                        Context()!.Replace(aOldV, anewV);
+                            TransferParametersProjAnalysis.InternalCopyNMVertex(oldV, newE2, e2);
+                        b.Add(newE2, anewV);
+                        Context()!.Replace(oldV, anewV);
                     }
                 }
-                Context()!.Replace(E2, newE2);
+                Context()!.Replace(e2, newE2);
                 sbwd.Set(newE2, n2);
             }
 
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_DONE1);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         }
         else if (convert)
         {
-            myLastFixStatus |= ShapeExtend.EncodeStatus(ShapeExtend_FAIL2);
+            _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
         }
 
         return (done1 || done2);

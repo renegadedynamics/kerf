@@ -4,11 +4,12 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Occt;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 using static Kerf.Geometry.CurveKind;
 
 namespace OcctNet.DrawLite;
@@ -18,13 +19,13 @@ namespace OcctNet.DrawLite;
 /// made by <c>qcircle</c> and <c>qline</c>. <see cref="DrawTrSurf.GetCurve2d"/> reads its curve, as OCCT's does through
 /// the base class.
 /// </summary>
-public sealed class DrawQualifiedCurve2d(Curve2D theCurve, GccEnt_Position thePosition) : DrawDrawable
+public sealed class DrawQualifiedCurve2d(Curve2D theCurve, global::Kerf.Engine.Construction.Constraints.Qualifier thePosition) : DrawDrawable
 {
     /// <summary>The curve (frozen).</summary>
     public Curve2D Curve { get; } = theCurve;
 
     /// <summary>The qualifier.</summary>
-    public GccEnt_Position Position { get; } = thePosition;
+    public global::Kerf.Engine.Construction.Constraints.Qualifier Position { get; } = thePosition;
 
     public override string TypeName => "GeometryTest_DrawableQualifiedCurve2d";
 
@@ -45,7 +46,7 @@ public sealed class DrawQualifiedCurve2d(Curve2D theCurve, GccEnt_Position thePo
     public override void Dump(TextWriter theStream)
     {
         theStream.Write("Qualified curve 2D: \n");
-        theStream.Write("Position :" + GccEnt.PositionToString(Position) + "\n");
+        theStream.Write("Position :" + global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(Position) + "\n");
         Curve2dSet.PrintCurve2d(Curve, theStream);
     }
 
@@ -129,11 +130,11 @@ internal static class GeometryTestCurveTanCommands
             return Fail(theDI, "Error: wrong command name");
         }
 
-        GccEnt_Position aKindOfPosition = GccEnt_unqualified;
+        global::Kerf.Engine.Construction.Constraints.Qualifier aKindOfPosition = global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified;
         if (aPositionType.Length != 0)
         {
-            GccEnt_Position aParameterPosition = GccEnt_unqualified;
-            if (GccEnt.PositionFromString(aPositionType, ref aParameterPosition))
+            global::Kerf.Engine.Construction.Constraints.Qualifier aParameterPosition = global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified;
+            if (global::Kerf.Engine.Construction.Constraints.GccEnt.PositionFromString(aPositionType, ref aParameterPosition))
             {
                 aKindOfPosition = aParameterPosition;
             }
@@ -150,24 +151,24 @@ internal static class GeometryTestCurveTanCommands
         return 0;
     }
 
-    private static int solutions(DrawInterpreter theDI, DrawResult di, GccAna_Circ2d3Tan theCirTan3, string theName)
+    private static int solutions(DrawInterpreter theDI, DrawResult di, AnalyticCirc2d3Tan theCirTan3, string theName)
     {
-        if (!theCirTan3.IsDone())
+        if (!theCirTan3.IsDone)
         {
             return Fail(theDI, "GccAna_Circ2d3Tan is not done");
         }
 
         string aName = theName + "_";
-        for (int aSolId = 1; aSolId <= theCirTan3.NbSolutions(); aSolId++)
+        for (int aSolId = 1; aSolId <= theCirTan3.SolutionCount; aSolId++)
         {
             var aCircle = new CircleCurve2D(theCirTan3.ThisSolution(aSolId));
             string aSolIdName = aName + aSolId;
             DrawTrSurf.Set(theDI, aSolIdName, aCircle);
-            theCirTan3.WhichQualifier(aSolId, out GccEnt_Position aQualifier1, out GccEnt_Position aQualifier2,
-                                      out GccEnt_Position aQualifier3);
+            theCirTan3.WhichQualifier(aSolId, out global::Kerf.Engine.Construction.Constraints.Qualifier aQualifier1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQualifier2,
+                                      out global::Kerf.Engine.Construction.Constraints.Qualifier aQualifier3);
             di.Append("circle: ").Append(aSolIdName).Append(", ")
-              .Append("qualifiers: ").Append(GccEnt.PositionToString(aQualifier1)).Append(", ")
-              .Append(GccEnt.PositionToString(aQualifier2)).Append(", ").Append(GccEnt.PositionToString(aQualifier3))
+              .Append("qualifiers: ").Append(global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(aQualifier1)).Append(", ")
+              .Append(global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(aQualifier2)).Append(", ").Append(global::Kerf.Engine.Construction.Constraints.GccEnt.PositionToString(aQualifier3))
               .Append("\n");
 
             di.Append("  tangent points: point (parameter on solution, parameter on argument)\n");
@@ -209,7 +210,7 @@ internal static class GeometryTestCurveTanCommands
                 DrawTrSurf.Set(theDI, aTanPntIdName, aPntSol);
                 di.Append("    ").Append(aTanPntIdName).Append(" (").Append(aParSol).Append(", ").Append(aParArg).Append(")");
             }
-            if (aSolId != theCirTan3.NbSolutions())
+            if (aSolId != theCirTan3.SolutionCount)
             {
                 di.Append("\n");
             }
@@ -248,7 +249,7 @@ internal static class GeometryTestCurveTanCommands
             {
                 return Fail(theDI, "Error: wrong points definition");
             }
-            return solutions(theDI, di, new GccAna_Circ2d3Tan(aPoint1, aPoint2, aPoint3, aTolerance), aName);
+            return solutions(theDI, di, new AnalyticCirc2d3Tan(aPoint1, aPoint2, aPoint3, aTolerance), aName);
         }
 
         // the first curve is not NULL
@@ -261,13 +262,13 @@ internal static class GeometryTestCurveTanCommands
             var anAdaptorCurve1 = new CurveAdaptor2D(aQCurve1.Curve);
             if (anAdaptorCurve1.GetType() == Circle)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aPoint2, aPoint3, aTolerance), aName);
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aPoint2, aPoint3, aTolerance), aName);
             }
             else if (anAdaptorCurve1.GetType() == Line)
             {
-                var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedLin1, aPoint2, aPoint3, aTolerance), aName);
+                var aQualifiedLin1 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedLin1, aPoint2, aPoint3, aTolerance), aName);
             }
             return Fail(theDI, "Error: wrong curve type");
         }
@@ -283,21 +284,21 @@ internal static class GeometryTestCurveTanCommands
             var anAdaptorCurve2 = new CurveAdaptor2D(aQCurve2.Curve);
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aPoint3, aTolerance), aName);
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                var aQualifiedCircle2 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aPoint3, aTolerance), aName);
             }
             else if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Line)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedLin2, aPoint3, aTolerance), aName);
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                var aQualifiedLin2 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aQualifiedLin2, aPoint3, aTolerance), aName);
             }
             else if (anAdaptorCurve1.GetType() == Line && anAdaptorCurve2.GetType() == Line)
             {
-                var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
-                var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedLin1, aQualifiedLin2, aPoint3, aTolerance), aName);
+                var aQualifiedLin1 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
+                var aQualifiedLin2 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedLin1, aQualifiedLin2, aPoint3, aTolerance), aName);
             }
             return Fail(theDI, "Error: wrong curve type");
         }
@@ -311,37 +312,37 @@ internal static class GeometryTestCurveTanCommands
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle
                 && anAdaptorCurve3.GetType() == Circle)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
-                var aQualifiedCircle3 = new GccEnt_QualifiedCirc(anAdaptorCurve3.Circle(), aQCurve3.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedCircle3, aTolerance),
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                var aQualifiedCircle2 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
+                var aQualifiedCircle3 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve3.Circle(), aQCurve3.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedCircle3, aTolerance),
                                  aName);
             }
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Circle
                 && anAdaptorCurve3.GetType() == Line)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                var aQualifiedCircle2 = new GccEnt_QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
-                var aQualifiedLin3 = new GccEnt_QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedLin3, aTolerance),
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                var aQualifiedCircle2 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve2.Circle(), aQCurve2.Position);
+                var aQualifiedLin3 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aQualifiedCircle2, aQualifiedLin3, aTolerance),
                                  aName);
             }
             if (anAdaptorCurve1.GetType() == Circle && anAdaptorCurve2.GetType() == Line
                 && anAdaptorCurve3.GetType() == Line)
             {
-                var aQualifiedCircle1 = new GccEnt_QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
-                var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
-                var aQualifiedLin3 = new GccEnt_QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedCircle1, aQualifiedLin2, aQualifiedLin3, aTolerance),
+                var aQualifiedCircle1 = new global::Kerf.Engine.Construction.Constraints.QualifiedCirc(anAdaptorCurve1.Circle(), aQCurve1.Position);
+                var aQualifiedLin2 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
+                var aQualifiedLin3 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedCircle1, aQualifiedLin2, aQualifiedLin3, aTolerance),
                                  aName);
             }
             if (anAdaptorCurve1.GetType() == Line && anAdaptorCurve2.GetType() == Line
                 && anAdaptorCurve3.GetType() == Line)
             {
-                var aQualifiedLin1 = new GccEnt_QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
-                var aQualifiedLin2 = new GccEnt_QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
-                var aQualifiedLin3 = new GccEnt_QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
-                return solutions(theDI, di, new GccAna_Circ2d3Tan(aQualifiedLin1, aQualifiedLin2, aQualifiedLin3, aTolerance), aName);
+                var aQualifiedLin1 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve1.Line(), aQCurve1.Position);
+                var aQualifiedLin2 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve2.Line(), aQCurve2.Position);
+                var aQualifiedLin3 = new global::Kerf.Engine.Construction.Constraints.QualifiedLin(anAdaptorCurve3.Line(), aQCurve3.Position);
+                return solutions(theDI, di, new AnalyticCirc2d3Tan(aQualifiedLin1, aQualifiedLin2, aQualifiedLin3, aTolerance), aName);
             }
         }
 

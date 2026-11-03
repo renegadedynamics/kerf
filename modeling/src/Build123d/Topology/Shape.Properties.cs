@@ -1,6 +1,12 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -132,13 +138,13 @@ public abstract partial class Shape
             case global::Kerf.Topology.ShapeType.Vertex:
                 return false;
             case global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire:
-                BRepGProp.LinearProperties(shape, props);
+                MassPropertiesBuilder.LinearProperties(shape, props);
                 return true;
             case global::Kerf.Topology.ShapeType.Face or global::Kerf.Topology.ShapeType.Shell:
-                BRepGProp.SurfaceProperties(shape, props);
+                MassPropertiesBuilder.SurfaceProperties(shape, props);
                 return true;
             default:
-                BRepGProp.VolumeProperties(shape, props);
+                MassPropertiesBuilder.VolumeProperties(shape, props);
                 return true;
         }
     }
@@ -161,7 +167,7 @@ public abstract partial class Shape
             if (IsEmpty)
                 return [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
             var props = new Properties();
-            BRepGProp.VolumeProperties(_wrapped, props);
+            MassPropertiesBuilder.VolumeProperties(_wrapped, props);
             var m = props.MatrixOfInertia();
             return [.. Enumerable.Range(1, 3).Select(i => Enumerable.Range(1, 3).Select(j => m.Value(i, j)).ToArray())];
         }
@@ -174,7 +180,7 @@ public abstract partial class Shape
         {
             NeedsGeometry("principal axes");
             var props = new Properties();
-            BRepGProp.VolumeProperties(_wrapped, props);
+            MassPropertiesBuilder.VolumeProperties(_wrapped, props);
             var principal = props.PrincipalProperties();
             double m1 = 0, m2 = 0, m3 = 0;
             principal.Moments(out m1, out m2, out m3);
@@ -193,7 +199,7 @@ public abstract partial class Shape
             if (IsEmpty)
                 return (0, 0, 0);
             var props = new Properties();
-            BRepGProp.VolumeProperties(_wrapped, props);
+            MassPropertiesBuilder.VolumeProperties(_wrapped, props);
             double x = 0, y = 0, z = 0;
             props.StaticMoments(out x, out y, out z);
             return (x, y, z);
@@ -205,7 +211,7 @@ public abstract partial class Shape
     {
         NeedsGeometry("radius of gyration");
         var props = new Properties();
-        BRepGProp.VolumeProperties(_wrapped, props);
+        MassPropertiesBuilder.VolumeProperties(_wrapped, props);
         var ax1 = axis.ToGpAx1();
         return props.RadiusOfGyration(ax1);
     }
@@ -250,7 +256,7 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 return true;
-            var check = new BRepCheck_Analyzer(_wrapped);
+            var check = new Analyzer(_wrapped);
             check.SetParallel(true);
             return check.IsValid();
         }
@@ -281,10 +287,10 @@ public abstract partial class Shape
                         return false;
                 }
                 // In a closed shell each edge is used once in each direction
-                var orientation = new ShapeAnalysis_Shell();
+                var orientation = new ShellAnalysis();
                 orientation.LoadShells(shape);
                 orientation.CheckOrientedShells(shape, true, true);
-                if (orientation.HasBadEdges())
+                if (orientation.HasBadEdges)
                     return false;
             }
             return true;
@@ -301,7 +307,7 @@ public abstract partial class Shape
     {
         var obb = new OrientedBox();
         if (!IsEmpty)
-            BRepBndLib.AddOBB(_wrapped, ref obb, true);
+            Bounds.AddOBB(_wrapped, ref obb, true);
         return Build123d.OrientedBoundBox.Own(obb);
     }
 
@@ -313,7 +319,7 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        var calc = new BRepExtrema_DistShapeShape(_wrapped, other._wrapped);
+        var calc = new DistanceShapeShape(_wrapped, other._wrapped);
         return calc.Value();
     }
 
@@ -351,14 +357,14 @@ public abstract partial class Shape
         if (IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
         var pnt = point.ToGpPnt();
-        var maker = new BRepBuilderAPI_MakeVertex(pnt);
+        var maker = new MakeVertex(pnt);
         var vertex = maker.Vertex();
         return DistanceToTopo(vertex);
     }
 
     private (double, Vector, Vector) DistanceToTopo(global::Kerf.Topology.Shape other)
     {
-        var calc = new BRepExtrema_DistShapeShape();
+        var calc = new DistanceShapeShape();
         calc.LoadS1(_wrapped);
         calc.LoadS2(other);
         calc.Perform();
@@ -372,7 +378,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot calculate distance to or from an empty shape");
-        var calc = new BRepExtrema_DistShapeShape();
+        var calc = new DistanceShapeShape();
         calc.LoadS1(_wrapped);
         foreach (var other in others)
         {
@@ -392,7 +398,7 @@ public abstract partial class Shape
         var ax1 = axis.ToGpAx1();
         var makeLin = new MakeLin(ax1);
         var line = makeLin.Value();
-        var inter = new BRepIntCurveSurface_Inter();
+        var inter = new CurveShapeIntersector();
         inter.Init(_wrapped, line, tolerance);
         var origin = axis.Position.ToGpPnt();
         var found = new List<(global::Kerf.Topology.Face Face, double Distance)>();
@@ -416,7 +422,7 @@ public abstract partial class Shape
         if (IsEmpty)
             throw new InvalidOperationException("Cannot mesh an empty shape");
         // OCCT.NET meshes a copy of a frozen shape and hands it back (its decision 489)
-        return new BRepMesh_IncrementalMesh(TopoUtil.PrivateCopy(_wrapped), tolerance, relative, angularTolerance, true).Shape();
+        return new IncrementalMesh(TopoUtil.PrivateCopy(_wrapped), tolerance, relative, angularTolerance, true).Shape();
     }
 
     /// <summary>A triangulated approximation: the vertices and the triangles as index triples into them.</summary>

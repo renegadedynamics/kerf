@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -180,7 +181,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
             History? aPHistory = null;
             try
             {
-                var aPU = new ShapeUpgrade_UnifySameDomain(aPIn, anOptions.UnifyEdges, anOptions.UnifyFaces, anOptions.ConcatBSplines);
+                var aPU = new UnifySameDomain(aPIn, anOptions.UnifyEdges, anOptions.UnifyFaces, anOptions.ConcatBSplines);
                 aPU.AllowInternalEdges(anOptions.AllowInternal);
                 aPU.SetSafeInputMode(anOptions.SafeInput);
                 if (anOptions.LinTol > 0)

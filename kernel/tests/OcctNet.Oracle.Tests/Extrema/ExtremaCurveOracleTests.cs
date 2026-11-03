@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
@@ -213,12 +214,12 @@ public class ExtremaCurveOracleTests(ITestOutputHelper output)
                     Point3D aP = RandomPoint(anOracle, aMyC);
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     N.GeomAPI_ProjectPointOnCurve? aN = null;
-                    GeomAPI_ProjectPointOnCurve? aPort = null;
+                    ProjectPointOnCurve? aPort = null;
                     if (!Both(anOracle,
                             () => aN = aWithRange ? new N.GeomAPI_ProjectPointOnCurve(aNP, aNC, aFirst, aLast)
                                                   : new N.GeomAPI_ProjectPointOnCurve(aNP, aNC),
-                            () => aPort = aWithRange ? new GeomAPI_ProjectPointOnCurve(aP, aPC, aFirst, aLast)
-                                                     : new GeomAPI_ProjectPointOnCurve(aP, aPC),
+                            () => aPort = aWithRange ? new ProjectPointOnCurve(aP, aPC, aFirst, aLast)
+                                                     : new ProjectPointOnCurve(aP, aPC),
                             aW))
                     {
                         continue;

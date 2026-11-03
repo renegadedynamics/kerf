@@ -52,8 +52,8 @@ internal class RWStepBasic_RWCoordinatedUniversalTimeOffset
 
         // --- own field : sense ---
 
-        StepBasic_AheadOrBehind aSense = StepBasic_aobAhead;
-        if (data.ParamType(num, 3) == Interface_ParamEnum)
+        StepBasic_AheadOrBehind aSense = StepBasic_AheadOrBehind.StepBasic_aobAhead;
+        if (data.ParamType(num, 3) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 3);
             if (!RWStepBasic_RWAheadOrBehind.ConvertToEnum(text, ref aSense))

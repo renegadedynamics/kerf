@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Process;
+
 namespace Occt;
 
 /// <summary>Provides interface to the algorithms from Shape Healing and others for XSTEP processors.</summary>
@@ -31,7 +33,7 @@ public static class XSAlgo
         {
             return;
         }
-        ShapeAlgo.Init();
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
 
         // init parameters
         theStatics.Standards();
@@ -60,7 +62,7 @@ public static class XSAlgo
         theStatics.SetCVal("xstep.cascade.unit", "MM");
 
         // init Standard Shape Processing operators
-        ShapeProcess_OperLibrary.Init();
+        OperLibrary.Init();
     }
 
     /// <summary>Returns default AlgoContainer.</summary>

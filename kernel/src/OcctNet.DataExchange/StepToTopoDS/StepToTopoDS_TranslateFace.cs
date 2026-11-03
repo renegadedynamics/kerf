@@ -5,8 +5,10 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -327,7 +329,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
 
     public StepToTopoDS_TranslateFace()
     {
-        myError = StepToTopoDS_TranslateFaceOther;
+        myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceOther;
         done = false;
     }
 
@@ -389,7 +391,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         if (theTopoDSTool.IsBound(theFaceSurface))
         {
             myResult = ShapeCasts.Face(theTopoDSTool.Find(theFaceSurface));
-            myError = StepToTopoDS_TranslateFaceDone;
+            myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone;
             done = true;
             return;
         }
@@ -406,7 +408,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         if (aStepGeomSurface is null)
         {
             aMessageHandler.AddFail(aStepGeomSurface, " Surface has not been created");
-            myError = StepToTopoDS_TranslateFaceOther;
+            myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceOther;
             done = false;
             return;
         }
@@ -418,7 +420,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
             // Reverse shape's orientation for the next shell
             anExistingShape.Reverse();
             myResult = anExistingShape;
-            myError = StepToTopoDS_TranslateFaceDone;
+            myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone;
             done = true;
             return;
         }
@@ -433,7 +435,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         if (aGeomSurface is null)
         {
             aMessageHandler.AddFail(aStepGeomSurface, " Surface has not been created");
-            myError = StepToTopoDS_TranslateFaceOther;
+            myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceOther;
             done = false;
             return;
         }
@@ -441,7 +443,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         // pdn to force bsplsurf to be periodic
         if (aStepGeomSurface is StepGeom_BSplineSurface)
         {
-            Surface periodicSurf = ShapeAlgo.AlgoContainer().ConvertToPeriodic(aGeomSurface);
+            Surface periodicSurf = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().ConvertToPeriodic(aGeomSurface);
             if (periodicSurf is not null)
             {
                 aMessageHandler.AddWarning(aStepGeomSurface, "Surface forced to be periodic");
@@ -507,7 +509,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
                     // surface shall be closed (e.g. a spherical_surface.)"
                     // - natural bounds are applied only in case if VertexLoop is only the one defined face
                     // bound.
-                    var anAuxiliaryFaceBuilder = new BRepBuilderAPI_MakeFace(aGeomSurface, Precision());
+                    var anAuxiliaryFaceBuilder = new MakeFace(aGeomSurface, Precision());
                     for (var aFaceIt = new Iterator(anAuxiliaryFaceBuilder.InternalShape()); aFaceIt.More(); aFaceIt.Next())
                     {
                         aFaceBuilder.Add(aResultFace, aFaceIt.Value());
@@ -634,7 +636,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
 
         myResult = aResultFace;
-        myError = StepToTopoDS_TranslateFaceDone;
+        myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone;
         done = true;
     }
 
@@ -711,7 +713,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         aTP.Bind(theTF, new TransferBRep_ShapeBinder(aF));
 
         myResult = aF;
-        myError = StepToTopoDS_TranslateFaceDone;
+        myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone;
         done = true;
     }
 
@@ -762,7 +764,7 @@ public sealed class StepToTopoDS_TranslateFace : StepToTopoDS_Root
         }
 
         myResult = aF;
-        myError = StepToTopoDS_TranslateFaceDone;
+        myError = StepToTopoDS_TranslateFaceError.StepToTopoDS_TranslateFaceDone;
         done = true;
     }
 

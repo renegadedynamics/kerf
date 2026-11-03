@@ -23,7 +23,7 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
     private static double Length(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.LinearProperties(theShape, aProps);
+        MassPropertiesBuilder.LinearProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -44,7 +44,7 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
         for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
         {
             Wire aWire = ShapeCasts.Wire(anIt.Value());
-            Edge anEdge = BRepAlgo.ConcatenateWireC0(aWire);
+            Edge anEdge = global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWireC0(aWire);
             Assert.False(anEdge.IsNull);
             // checknbshapes r -vertex 2 -edge 1
             var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);

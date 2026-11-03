@@ -2,128 +2,132 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
-using static Occt.BOPAlgo_GlueEnum;
+using Occt;
+using static Kerf.Engine.Booleans.GlueMode;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>The vertex/face intersection solver of the pave filler's parallel loop.</summary>
-internal sealed class BOPAlgo_VertexFace : BOPAlgo_ParallelAlgo, BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class VertexFace : ParallelAlgo, BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private int myIV;
-    private int myIF;
-    private int myFlag;
-    private double myT1;
-    private double myT2;
-    private double myTolVNew;
-    private Vertex myV = new();
-    private Face myF = new();
-    private IntTools_Context? myContext;
+    private int _iv;
+    private int _if;
+    private int _flag;
+    private double _t1;
+    private double _t2;
+    private double _tolVNew;
+    private Vertex _v = new();
+    private Face _f = new();
+    private IntersectionContext? _context;
 
-    public BOPAlgo_VertexFace()
+    public VertexFace()
     {
-        myIV = -1;
-        myIF = -1;
-        myFlag = -1;
-        myT1 = -1.0;
-        myT2 = -1.0;
-        myTolVNew = -1.0;
+        _iv = -1;
+        _if = -1;
+        _flag = -1;
+        _t1 = -1.0;
+        _t2 = -1.0;
+        _tolVNew = -1.0;
     }
 
     //
     public void SetIndices(int nV, int nF)
     {
-        myIV = nV;
-        myIF = nF;
+        _iv = nV;
+        _if = nF;
     }
 
     //
     public void Indices(out int nV, out int nF)
     {
-        nV = myIV;
-        nF = myIF;
+        nV = _iv;
+        nF = _if;
     }
 
     //
-    public void SetVertex(in Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => _v = aV;
 
     //
-    public Vertex Vertex() => myV;
+    public Vertex Vertex() => _v;
 
     //
-    public void SetFace(in Face aF) => myF = aF;
+    public void SetFace(in Face aF) => _f = aF;
 
     //
-    public Face Face() => myF;
+    public Face Face() => _f;
 
     //
-    public int Flag() => myFlag;
+    public int Flag() => _flag;
 
     //
     public void Parameters(out double aT1, out double aT2)
     {
-        aT1 = myT1;
-        aT2 = myT2;
+        aT1 = _t1;
+        aT2 = _t2;
     }
 
     //
-    public double VertexNewTolerance() => myTolVNew;
+    public double VertexNewTolerance() => _tolVNew;
 
     //
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
     //
-    public IntTools_Context? Context() => myContext;
+    public IntersectionContext? Context() => _context;
 
     //
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (UserBreak(aPS))
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (UserBreak(ps))
         {
             return;
         }
         try
         {
-            myFlag = myContext!.ComputeVF(myV, myF, ref myT1, ref myT2, ref myTolVNew, myFuzzyValue);
+            _flag = _context!.ComputeVF(_v, _f, ref _t1, ref _t2, ref _tolVNew, _fuzzyValue);
         }
         catch (FailureException)
         {
-            AddError(new BOPAlgo_AlertIntersectionFailed());
+            AddError(new AlertIntersectionFailed());
         }
     }
 }
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>The vertex/face interferences.</summary>
-    protected virtual void PerformVF(ProgressRange theRange)
+    protected virtual void PerformVF(ProgressRange range)
     {
-        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Face);
-        int iSize = myIterator.ExpectedLength();
+        _iterator!.Initialize(ShapeType.Vertex, ShapeType.Face);
+        int iSize = _iterator.ExpectedLength();
         //
         int nV, nF;
         //
-        using var aPSOuter = new ProgressScope(theRange, null, 10);
-        if (myGlue == BOPAlgo_GlueFull)
+        using var psOuter = new ProgressScope(range, null, 10);
+        if (_glue == GlueMode.GlueFull)
         {
             // there is no need to intersect vertices with faces in this mode
             // just initialize FaceInfo for all faces
-            for (; myIterator.More(); myIterator.Next())
+            for (; _iterator.More(); _iterator.Next())
             {
-                myIterator.Value(out nV, out nF);
-                if (!myDS!.IsSubShape(nV, nF))
+                _iterator.Value(out nV, out nF);
+                if (!_ds!.IsSubShape(nV, nF))
                 {
-                    myDS.ChangeFaceInfo(nF);
+                    _ds.ChangeFaceInfo(nF);
                 }
             }
             return;
         }
         //
-        NCollection_DynamicArray<BOPDS_InterfVF> aVFs = myDS!.InterfVF();
+        NCollection_DynamicArray<InterfVF> vFs = _ds!.InterfVF();
         if (iSize == 0)
         {
             //
@@ -131,131 +135,131 @@ public partial class BOPAlgo_PaveFiller
             return;
         }
         //
-        int nVSD = 0, iFlag, nVx, aNbVF, k;
-        NCollection_DynamicArray<BOPAlgo_VertexFace> aVVF = new();
+        int nVSD = 0, iFlag, nVx, nbVF, k;
+        NCollection_DynamicArray<VertexFace> vvf = new();
         //
         // Avoid repeated intersection of the same vertex with face in case
         // the group of vertices formed a single SD vertex
-        NCollection_DataMap<BOPDS_Pair, NCollection_IntMap> aMVFPairs = new();
-        for (; myIterator.More(); myIterator.Next())
+        NCollection_DataMap<Pair, NCollection_IntMap> mvfPairs = new();
+        for (; _iterator.More(); _iterator.Next())
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            myIterator.Value(out nV, out nF);
+            _iterator.Value(out nV, out nF);
             //
-            if (myDS.IsSubShape(nV, nF))
+            if (_ds.IsSubShape(nV, nF))
             {
                 continue;
             }
             //
-            if (myDS.HasInterf(nV, nF))
+            if (_ds.HasInterf(nV, nF))
             {
                 continue;
             }
             //
-            myDS.ChangeFaceInfo(nF);
-            if (myDS.HasInterfShapeSubShapes(nV, nF))
+            _ds.ChangeFaceInfo(nF);
+            if (_ds.HasInterfShapeSubShapes(nV, nF))
             {
                 continue;
             }
             //
             nVx = nV;
-            if (myDS.HasShapeSD(nV, ref nVSD))
+            if (_ds.HasShapeSD(nV, ref nVSD))
             {
                 nVx = nVSD;
             }
             //
-            BOPDS_Pair aVFPair = new(nVx, nF);
-            if (aMVFPairs.Find(aVFPair, out NCollection_IntMap pMV0))
+            Pair vfPair = new(nVx, nF);
+            if (mvfPairs.Find(vfPair, out NCollection_IntMap pMV0))
             {
                 pMV0.Add(nV);
                 continue;
             }
 
-            NCollection_IntMap pMV = aMVFPairs.Bound(aVFPair, new NCollection_IntMap());
+            NCollection_IntMap pMV = mvfPairs.Bound(vfPair, new NCollection_IntMap());
             pMV.Add(nV);
 
-            Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVx));
-            Face aF = ShapeCasts.Face(myDS.Shape(nF));
+            Vertex v = ShapeCasts.Vertex(_ds.Shape(nVx));
+            Face f = ShapeCasts.Face(_ds.Shape(nF));
             //
-            BOPAlgo_VertexFace aVertexFace = aVVF.Append(new BOPAlgo_VertexFace());
+            VertexFace vertexFace = vvf.Append(new VertexFace());
             //
-            aVertexFace.SetIndices(nVx, nF);
-            aVertexFace.SetVertex(aV);
-            aVertexFace.SetFace(aF);
-            aVertexFace.SetFuzzyValue(myFuzzyValue);
+            vertexFace.SetIndices(nVx, nF);
+            vertexFace.SetVertex(v);
+            vertexFace.SetFace(f);
+            vertexFace.SetFuzzyValue(_fuzzyValue);
 
         } // for (; myIterator->More(); myIterator->Next()) {
         //
-        aNbVF = aVVF.Length();
-        using (var aPS = new ProgressScope(aPSOuter.Next(9), "Performing Vertex-Face intersection", aNbVF))
+        nbVF = vvf.Length();
+        using (var ps = new ProgressScope(psOuter.Next(9), "Performing Vertex-Face intersection", nbVF))
         {
-            for (k = 0; k < aNbVF; k++)
+            for (k = 0; k < nbVF; k++)
             {
-                BOPAlgo_VertexFace aVertexFace = aVVF.ChangeValue(k);
-                aVertexFace.SetProgressRange(aPS.Next());
+                VertexFace vertexFace = vvf.ChangeValue(k);
+                vertexFace.SetProgressRange(ps.Next());
             }
             //================================================================
-            BOPTools_Parallel.Perform(myRunParallel, aVVF, myContext!);
+            BooleanParallel.Perform(_runParallel, vvf, _context!);
             //================================================================
         }
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
         //
-        for (k = 0; k < aNbVF; ++k)
+        for (k = 0; k < nbVF; ++k)
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            BOPAlgo_VertexFace aVertexFace = aVVF[k];
+            VertexFace vertexFace = vvf[k];
             //
-            iFlag = aVertexFace.Flag();
+            iFlag = vertexFace.Flag();
             if (iFlag != 0)
             {
-                if (aVertexFace.HasErrors())
+                if (vertexFace.HasErrors)
                 {
                     // Warn about failed intersection of sub-shapes
-                    AddIntersectionFailedWarning(aVertexFace.Vertex(), aVertexFace.Face());
+                    AddIntersectionFailedWarning(vertexFace.Vertex(), vertexFace.Face());
                 }
                 continue;
             }
             //
-            aVertexFace.Indices(out nVx, out nF);
-            aVertexFace.Parameters(out double aT1, out double aT2);
-            double aTolVNew = aVertexFace.VertexNewTolerance();
+            vertexFace.Indices(out nVx, out nF);
+            vertexFace.Parameters(out double t1, out double t2);
+            double tolVNew = vertexFace.VertexNewTolerance();
 
-            BOPDS_Pair aVFPair = new(nVx, nF);
-            NCollection_IntMap aMV = aMVFPairs.Find(aVFPair);
+            Pair vfPair = new(nVx, nF);
+            NCollection_IntMap mv = mvfPairs.Find(vfPair);
             // OCCT iterates the vertices in the int map's bucket order (decision 784): it decides the order of the
             // interferences and which nVx is added to VerticesIn below (the last one).
-            foreach (int nVi in aMV)
+            foreach (int nVi in mv)
             {
                 nV = nVi;
                 // 1
-                BOPDS_InterfVF aVF = aVFs.Append(new BOPDS_InterfVF());
-                aVF.SetIndices(nV, nF);
-                aVF.SetUV(aT1, aT2);
+                InterfVF vf = vFs.Append(new InterfVF());
+                vf.SetIndices(nV, nF);
+                vf.SetUV(t1, t2);
                 // 2
-                myDS.AddInterf(nV, nF);
+                _ds.AddInterf(nV, nF);
                 //
                 // 3 update vertex V/F if necessary
-                nVx = UpdateVertex(nV, aTolVNew);
+                nVx = UpdateVertex(nV, tolVNew);
                 //
                 // 4
-                if (myDS.IsNewShape(nVx))
+                if (_ds.IsNewShape(nVx))
                 {
-                    aVF.SetIndexNew(nVx);
+                    vf.SetIndexNew(nVx);
                 }
             }
             // 5 update FaceInfo
-            BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
-            aMVIn.Add(nVx);
+            FaceInfo fi = _ds.ChangeFaceInfo(nF);
+            NCollection_IntMap mvIn = fi.ChangeVerticesIn();
+            mvIn.Add(nVx);
         } // for (k=0; k < aNbVF; ++k) {
         //
         TreatVerticesEE();
@@ -264,80 +268,80 @@ public partial class BOPAlgo_PaveFiller
     /// <summary>Intersects the new vertices of the edge/edge interferences with the faces.</summary>
     protected void TreatVerticesEE()
     {
-        int i, aNbS, aNbEEs, nF, nV, iFlag;
-        double aT1 = 0.0, aT2 = 0.0, dummy = 0.0; // OCCT: uninitialised, read only on success
+        int i, nbS, nbEEs, nF, nV, iFlag;
+        double t1 = 0.0, t2 = 0.0, dummy = 0.0; // OCCT: uninitialised, read only on success
         //
-        NCollection_List<int> aLIV = new(), aLIF = new();
-        NCollection_IntMap aMI = new(100);
+        NCollection_List<int> liv = new(), lif = new();
+        NCollection_IntMap mi = new(100);
         //
-        aNbS = myDS!.NbSourceShapes();
+        nbS = _ds!.SourceShapeCount;
         //
-        NCollection_DynamicArray<BOPDS_InterfEE> aEEs = myDS.InterfEE();
-        aNbEEs = aEEs.Length();
-        for (i = 0; i < aNbEEs; ++i)
+        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
+        nbEEs = eEs.Length();
+        for (i = 0; i < nbEEs; ++i)
         {
-            BOPDS_InterfEE aEE = aEEs[i];
-            if (aEE.HasIndexNew())
+            InterfEE ee = eEs[i];
+            if (ee.HasIndexNew())
             {
-                nV = aEE.IndexNew();
-                if (aMI.Add(nV))
+                nV = ee.IndexNew();
+                if (mi.Add(nV))
                 {
-                    aLIV.Append(nV);
+                    liv.Append(nV);
                 }
             }
         }
-        if (aLIV.Extent() == 0)
+        if (liv.Extent() == 0)
         {
             return;
         }
         //
-        aNbS = myDS.NbSourceShapes();
-        for (nF = 0; nF < aNbS; ++nF)
+        nbS = _ds.SourceShapeCount;
+        for (nF = 0; nF < nbS; ++nF)
         {
-            BOPDS_ShapeInfo aSI = myDS.ShapeInfo(nF);
-            if (aSI.ShapeType() == ShapeType.Face)
+            ShapeInfo si = _ds.ShapeInfo(nF);
+            if (si.ShapeType() == ShapeType.Face)
             {
-                aLIF.Append(nF);
+                lif.Append(nF);
             }
         }
-        if (aLIF.Extent() == 0)
+        if (lif.Extent() == 0)
         {
             return;
         }
         //-------------------------------------------------------------
-        NCollection_DynamicArray<BOPDS_InterfVF> aVFs = myDS.InterfVF();
+        NCollection_DynamicArray<InterfVF> vFs = _ds.InterfVF();
         //
-        BOPDS_SubIterator aIt = new();
+        SubIterator it = new();
         //
-        aIt.SetDS(myDS);
-        aIt.SetSubSet1(aLIF);
-        aIt.SetSubSet2(aLIV);
-        aIt.Prepare();
-        aIt.Initialize();
-        for (; aIt.More(); aIt.Next())
+        it.SetDS(_ds);
+        it.SetSubSet1(lif);
+        it.SetSubSet2(liv);
+        it.Prepare();
+        it.Initialize();
+        for (; it.More(); it.Next())
         {
-            aIt.Value(out nV, out nF);
+            it.Value(out nV, out nF);
             //
-            BOPDS_FaceInfo aFI = myDS.ChangeFaceInfo(nF);
-            NCollection_IntMap aMVOn = aFI.VerticesOn();
+            FaceInfo fi = _ds.ChangeFaceInfo(nF);
+            NCollection_IntMap mvOn = fi.VerticesOn();
             //
-            if (!aMVOn.Contains(nV))
+            if (!mvOn.Contains(nV))
             {
-                Vertex aV = ShapeCasts.Vertex(myDS.Shape(nV));
-                Face aF = ShapeCasts.Face(myDS.Shape(nF));
-                iFlag = myContext!.ComputeVF(aV, aF, ref aT1, ref aT2, ref dummy, myFuzzyValue);
+                Vertex v = ShapeCasts.Vertex(_ds.Shape(nV));
+                Face f = ShapeCasts.Face(_ds.Shape(nF));
+                iFlag = _context!.ComputeVF(v, f, ref t1, ref t2, ref dummy, _fuzzyValue);
                 if (iFlag == 0)
                 {
                     // 1
-                    BOPDS_InterfVF aVF = aVFs.Append(new BOPDS_InterfVF());
-                    i = aVFs.Length() - 1;
-                    aVF.SetIndices(nV, nF);
-                    aVF.SetUV(aT1, aT2);
+                    InterfVF vf = vFs.Append(new InterfVF());
+                    i = vFs.Length() - 1;
+                    vf.SetIndices(nV, nF);
+                    vf.SetUV(t1, t2);
                     // 2
-                    myDS.AddInterf(nV, nF);
+                    _ds.AddInterf(nV, nF);
                     //
-                    NCollection_IntMap aMVIn = aFI.ChangeVerticesIn();
-                    aMVIn.Add(nV);
+                    NCollection_IntMap mvIn = fi.ChangeVerticesIn();
+                    mvIn.Add(nV);
                 }
             }
         }

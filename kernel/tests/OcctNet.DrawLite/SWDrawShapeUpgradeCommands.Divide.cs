@@ -2,31 +2,36 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Custom;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.DrawLite;
 
 internal static partial class SWDrawShapeUpgradeCommands
 {
-    private static readonly (ShapeExtend_Status Status, string Name)[] theStatuses =
+    private static readonly (ExtendStatus Status, string Name)[] theStatuses =
     [
-        (ShapeExtend_OK, "OK"),
-        (ShapeExtend_DONE1, "DONE1"), (ShapeExtend_DONE2, "DONE2"), (ShapeExtend_DONE3, "DONE3"), (ShapeExtend_DONE4, "DONE4"),
-        (ShapeExtend_DONE5, "DONE5"), (ShapeExtend_DONE6, "DONE6"), (ShapeExtend_DONE7, "DONE7"), (ShapeExtend_DONE8, "DONE8"),
-        (ShapeExtend_FAIL1, "FAIL1"), (ShapeExtend_FAIL2, "FAIL2"), (ShapeExtend_FAIL3, "FAIL3"), (ShapeExtend_FAIL4, "FAIL4"),
-        (ShapeExtend_FAIL5, "FAIL5"), (ShapeExtend_FAIL6, "FAIL6"), (ShapeExtend_FAIL7, "FAIL7"), (ShapeExtend_FAIL8, "FAIL8"),
+        (ExtendStatus.OK, "OK"),
+        (ExtendStatus.DONE1, "DONE1"), (ExtendStatus.DONE2, "DONE2"), (ExtendStatus.DONE3, "DONE3"), (ExtendStatus.DONE4, "DONE4"),
+        (ExtendStatus.DONE5, "DONE5"), (ExtendStatus.DONE6, "DONE6"), (ExtendStatus.DONE7, "DONE7"), (ExtendStatus.DONE8, "DONE8"),
+        (ExtendStatus.FAIL1, "FAIL1"), (ExtendStatus.FAIL2, "FAIL2"), (ExtendStatus.FAIL3, "FAIL3"), (ExtendStatus.FAIL4, "FAIL4"),
+        (ExtendStatus.FAIL5, "FAIL5"), (ExtendStatus.FAIL6, "FAIL6"), (ExtendStatus.FAIL7, "FAIL7"), (ExtendStatus.FAIL8, "FAIL8"),
     ];
 
     // the "if (tool.Status(ShapeExtend_XXX)) di << "Status: XXX\n";" blocks of OCCT's commands
-    private static void PrintStatuses(DrawResult di, Func<ShapeExtend_Status, bool> theStatus)
+    private static void PrintStatuses(DrawResult di, Func<ExtendStatus, bool> theStatus)
     {
-        foreach ((ShapeExtend_Status aStatus, string aName) in theStatuses)
+        foreach ((ExtendStatus aStatus, string aName) in theStatuses)
         {
             if (theStatus(aStatus))
             {
@@ -47,7 +52,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         return SWDRAWShapeFixCommands.InPlace(theDI, theResult, aWork =>
         {
-            ShapeFix.SameParameter(aWork, false);
+            ShapeFixFixer.SameParameter(aWork, false);
             return aWork;
         });
     }
@@ -73,7 +78,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeDivideContinuity(aWork);
+            var tool = new ShapeDivideContinuity(aWork);
 
             // tolerance is optional
             if (n == 4)
@@ -96,11 +101,11 @@ internal static partial class SWDrawShapeUpgradeCommands
 
     // DT_ShapeConvert and DT_ShapeConvertRev: ShapeConvertToBezier on the shape, with the conversions to set
     private static Shape ConvertToBezier(DrawInterpreter theDI, DrawResult di, in Shape theShape,
-                                                Action<ShapeUpgrade_ShapeConvertToBezier> theSetUp)
+                                                Action<ShapeConvertToBezier> theSetUp)
     {
         return SWDRAWShapeFixCommands.InPlace(theDI, theShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeConvertToBezier(aWork);
+            var tool = new ShapeConvertToBezier(aWork);
             theSetUp(tool);
             tool.Perform();
             PrintStatuses(di, tool.Status);
@@ -127,7 +132,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         int c2d = theDI.Atoi(a[3]);
         int c3d = theDI.Atoi(a[4]);
-        Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
+        Shape revsh = Customize.ConvertToRevolution(inputShape);
         if (revsh.IsNull)
         {
             di.Append("NO RESULT\n");
@@ -242,7 +247,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeDivideAngle(maxangle * Math.PI / 180, aWork);
+            var tool = new ShapeDivideAngle(maxangle * Math.PI / 180, aWork);
             tool.Perform();
             PrintStatuses(di, tool.Status);
             return tool.InternalResult();
@@ -275,7 +280,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         // OCCT reads a[3] even when it isn't given (argv[argc] is null); Draw-lite takes no split values then
         int Split = n > 3 ? theDI.Atoi(a[3]) : 0;
-        var theTool = new ShapeUpgrade_SplitCurve3dContinuity();
+        var theTool = new SplitCurve3dContinuity();
         theTool.Init(GC);
         theTool.SetTolerance(Tol);
         theTool.SetCriterion(Continuity.C1);
@@ -318,7 +323,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
         // OCCT reads a[3] even when it isn't given (argv[argc] is null); Draw-lite takes no split values then
         int Split = n > 3 ? theDI.Atoi(a[3]) : 0;
-        var theTool = new ShapeUpgrade_SplitCurve2dContinuity();
+        var theTool = new SplitCurve2dContinuity();
         theTool.Init(GC);
         theTool.SetTolerance(Tol);
         theTool.SetCriterion(Continuity.C1);
@@ -353,7 +358,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             return 1;
         }
 
-        var theTool = new ShapeUpgrade_SplitSurfaceContinuity(); // S4137
+        var theTool = new SplitSurfaceContinuity(); // S4137
 
         double Tol = theDI.Atof(a[3]);
         // OCCT reads a[4] even when it isn't given (argv[argc] is null); Draw-lite takes no split values then
@@ -381,7 +386,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         theTool.Build(true);
 
         di.Append("appel a SplitSurface::GlobalU/VKnots\n");
-        ShapeExtend_CompositeSurface Grid = theTool.ResSurfaces()!;
+        CompositeSurface Grid = theTool.ResSurfaces()!;
         NCollection_HArray1<double> GlobalU = Grid.UJointValues()!;
         NCollection_HArray1<double> GlobalV = Grid.VJointValues()!;
         int nbGlU = GlobalU.Length();
@@ -625,7 +630,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             }
         }
 
-        var Grid = new ShapeExtend_CompositeSurface();
+        var Grid = new CompositeSurface();
         if (!Grid.Init(AS))
         {
             di.Append("Grid badly connected!\n");
@@ -634,10 +639,10 @@ internal static partial class SWDrawShapeUpgradeCommands
         // OCCT splits the face's edges in place: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
         Shape sh = SWDRAWShapeFixCommands.InPlace(theDI, face, aWork =>
         {
-            var SUCS = new ShapeFix_ComposeShell();
+            var SUCS = new ComposeShellFixer();
             var l = new Placement();
             SUCS.Init(Grid, l, ShapeCasts.Face(aWork), global::Kerf.Engine.Foundation.Precision.Confusion());
-            var RS = new ShapeBuild_ReShape();
+            var RS = new ReShapeBuilder();
             SUCS.SetContext(RS);
             SUCS.Perform();
 
@@ -672,8 +677,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             di.Append("Unknown shape\n");
             return 1;
         }
-        Shape revsh = ShapeCustom.ConvertToRevolution(inputShape);
-        Shape res = ShapeCustom.ConvertToBSpline(revsh, options.Contains('e'), options.Contains('r'),
+        Shape revsh = Customize.ConvertToRevolution(inputShape);
+        Shape res = Customize.ConvertToBSpline(revsh, options.Contains('e'), options.Contains('r'),
                                                         options.Contains('o'), options.Contains('p'));
         res = SameParameterInPlace(theDI, res);
         theDI.SetShape(argv[1], res);
@@ -697,7 +702,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeDivideClosed(aWork);
+            var tool = new ShapeDivideClosed(aWork);
             tool.Perform();
             return tool.InternalResult();
         });
@@ -726,7 +731,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeDivideArea(aWork);
+            var tool = new ShapeDivideArea(aWork);
             if (argc > 4)
             {
                 double prec = theDI.Atof(argv[4]);
@@ -778,7 +783,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         Shape res = SWDRAWShapeFixCommands.InPlace(theDI, inputShape, aWork =>
         {
-            var tool = new ShapeUpgrade_ShapeDivideArea(aWork);
+            var tool = new ShapeDivideArea(aWork);
             tool.SetSplittingByNumber(true);
             if (argc == 4)
             {
@@ -819,7 +824,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         }
 
         // RemoveInternalWires only reads the shape (decision 999): it runs on the input
-        var aTool = new ShapeUpgrade_RemoveInternalWires(inputShape);
+        var aTool = new RemoveInternalWires(inputShape);
         var aSeqShapes = new NCollection_Sequence<Shape>();
 
         int k = 4;
@@ -856,20 +861,20 @@ internal static partial class SWDrawShapeUpgradeCommands
         {
             aTool.Perform();
         }
-        if (aTool.Status(ShapeExtend_FAIL1))
+        if (aTool.Status(ExtendStatus.FAIL1))
         {
             di.Append("Initial shape has invalid type\n");
         }
-        else if (aTool.Status(ShapeExtend_FAIL2))
+        else if (aTool.Status(ExtendStatus.FAIL2))
         {
             di.Append("Specified sub-shape is not belonged to whole shape\n");
         }
-        if (aTool.Status(ShapeExtend_DONE1))
+        if (aTool.Status(ExtendStatus.DONE1))
         {
             NCollection_Sequence<Shape> aRemovedWires = aTool.RemovedWires();
             di.Append(aRemovedWires.Length()).Append(" internal wires were removed\n");
         }
-        if (aTool.Status(ShapeExtend_DONE2))
+        if (aTool.Status(ExtendStatus.DONE2))
         {
             NCollection_Sequence<Shape> aRemovedFaces = aTool.RemovedFaces();
             di.Append(aRemovedFaces.Length()).Append(" small faces were removed\n");

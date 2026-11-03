@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeChamfer_Test.cxx (OCCT V8_0_1)
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -15,28 +19,28 @@ public class BRepFilletAPI_MakeChamferTests
     [Fact]
     public void SymmetricChamfer()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         Explorer anExp = new(aBox, ShapeType.Edge);
         Assert.True(anExp.More());
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
-        BRepFilletAPI_MakeChamfer aChamfer = new(aBox);
+        MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(2.0, anEdge);
         Shape aResult = aChamfer.Shape();
-        Assert.True(aChamfer.IsDone());
+        Assert.True(aChamfer.IsDone);
 
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
     }
 
     [Fact]
     public void AsymmetricChamfer()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEdgeFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, anEdgeFaceMap);
@@ -46,29 +50,29 @@ public class BRepFilletAPI_MakeChamferTests
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
         Face aFace = ShapeCasts.Face(anEdgeFaceMap.FindFromKey(anEdge).First());
 
-        BRepFilletAPI_MakeChamfer aChamfer = new(aBox);
+        MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(1.0, 3.0, anEdge, aFace);
         Shape aResult = aChamfer.Shape();
-        Assert.True(aChamfer.IsDone());
+        Assert.True(aChamfer.IsDone);
 
-        Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+        Assert.True(new Analyzer(aResult).IsValid());
     }
 
     [Fact]
     public void ChamferMoreFaces()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         Explorer anExp = new(aBox, ShapeType.Edge);
         Assert.True(anExp.More());
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
 
-        BRepFilletAPI_MakeChamfer aChamfer = new(aBox);
+        MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(2.0, anEdge);
         Shape aResult = aChamfer.Shape();
-        Assert.True(aChamfer.IsDone());
+        Assert.True(aChamfer.IsDone);
 
         int aFaceCount = 0;
         for (Explorer aFaceExp = new(aResult, ShapeType.Face); aFaceExp.More(); aFaceExp.Next())
@@ -83,17 +87,17 @@ public class BRepFilletAPI_MakeChamferTests
     [Fact]
     public void ChamferAfterBooleanFusion()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
+        MakeBox aBoxMaker = new(10.0, 10.0, 10.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         Frame3D anAxis = new(new Point3D(5.0, 0.0, 5.0), new Direction3D(0.0, 1.0, 0.0));
-        BRepPrimAPI_MakeCylinder aCylMaker = new(anAxis, 3.0, 10.0);
+        ApiMakeCylinder aCylMaker = new(anAxis, 3.0, 10.0);
         Shape aCyl = aCylMaker.Shape();
-        Assert.True(aCylMaker.IsDone());
+        Assert.True(aCylMaker.IsDone);
 
-        BRepAlgoAPI_Fuse aFuse = new(aBox, aCyl);
-        Assert.True(aFuse.IsDone());
+        Fuse aFuse = new(aBox, aCyl);
+        Assert.True(aFuse.IsDone);
         Shape aFused = aFuse.Shape();
 
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVtxFaceMap = new(ShapeHasher.Instance);
@@ -102,7 +106,7 @@ public class BRepFilletAPI_MakeChamferTests
         Exploration.MapShapesAndAncestors(aFused, ShapeType.Edge, ShapeType.Face, anEdgeFaceMap);
 
         // Select edges at vertices with 3+ adjacent faces (complex topology).
-        BRepFilletAPI_MakeChamfer aChamfer = new(aFused);
+        MakeChamfer aChamfer = new(aFused);
         int anEdgeCount = 0;
         for (Explorer anEdgeExp = new(aFused, ShapeType.Edge); anEdgeExp.More() && anEdgeCount < 4; anEdgeExp.Next())
         {
@@ -134,9 +138,9 @@ public class BRepFilletAPI_MakeChamferTests
         try
         {
             aChamfer.Build();
-            if (aChamfer.IsDone())
+            if (aChamfer.IsDone)
             {
-                Assert.True(new BRepCheck_Analyzer(aChamfer.Shape()).IsValid());
+                Assert.True(new Analyzer(aChamfer.Shape()).IsValid());
             }
         }
         catch (FailureException)
@@ -150,9 +154,9 @@ public class BRepFilletAPI_MakeChamferTests
     [Fact]
     public void SequentialChamferNoCrash()
     {
-        BRepPrimAPI_MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
+        MakeBox aBoxMaker = new(20.0, 20.0, 20.0);
         Shape aBox = aBoxMaker.Shape();
-        Assert.True(aBoxMaker.IsDone());
+        Assert.True(aBoxMaker.IsDone);
 
         Shape aShape = aBox;
         int aPrevEdges = 0;
@@ -176,13 +180,13 @@ public class BRepFilletAPI_MakeChamferTests
             int anIdx = (i * 3 + 1) % anEdgeMap.Extent() + 1;
             Edge anEdge = ShapeCasts.Edge(anEdgeMap[anIdx]);
 
-            BRepFilletAPI_MakeChamfer aChamfer = new(aShape);
+            MakeChamfer aChamfer = new(aShape);
             aChamfer.Add(1.0, anEdge);
 
             try
             {
                 aChamfer.Build();
-                if (aChamfer.IsDone())
+                if (aChamfer.IsDone)
                 {
                     aShape = aChamfer.Shape();
                     aSuccessCount++;

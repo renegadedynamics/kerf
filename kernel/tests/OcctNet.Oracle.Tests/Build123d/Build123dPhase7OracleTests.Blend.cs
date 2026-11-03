@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -91,7 +92,7 @@ public sealed partial class Build123dPhase7OracleTests
             aTally.Geometric++;
             return;
         }
-        bool isNValid = new BRepCheck_Analyzer(aNRes).IsValid(), isPValid = new BRepCheck_Analyzer(aPRes).IsValid();
+        bool isNValid = new Analyzer(aNRes).IsValid(), isPValid = new Analyzer(aPRes).IsValid();
         string aSummary = string.Join("; ", aDiffs.Take(4));
         if (!isNValid)
         {
@@ -167,10 +168,10 @@ public sealed partial class Build123dPhase7OracleTests
         switch (theShape.ShapeType())
         {
             case ShapeType.Face:
-                BRepGProp.SurfaceProperties(theShape, aProps);
+                MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
                 return ("F " + new FaceSurfaceAdaptor(ShapeCasts.Face(theShape)).GetType(), [aProps.Mass()]);
             case ShapeType.Edge:
-                BRepGProp.LinearProperties(theShape, aProps);
+                MassPropertiesBuilder.LinearProperties(theShape, aProps);
                 return ("E " + new EdgeCurveAdaptor(ShapeCasts.Edge(theShape)).GetType(), [aProps.Mass()]);
             case ShapeType.Vertex:
             {
@@ -178,7 +179,7 @@ public sealed partial class Build123dPhase7OracleTests
                 return ("V", [aP.X(), aP.Y(), aP.Z()]);
             }
             default:
-                BRepGProp.VolumeProperties(theShape, aProps);
+                MassPropertiesBuilder.VolumeProperties(theShape, aProps);
                 return (theShape.ShapeType().ToString(), [aProps.Mass()]);
         }
     }

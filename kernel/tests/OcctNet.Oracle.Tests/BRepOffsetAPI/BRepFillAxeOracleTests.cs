@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -50,7 +52,7 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
 
     private static Wire Polygon(IReadOnlyList<Point3D> thePoints, bool theClosed)
     {
-        BRepBuilderAPI_MakePolygon aMP = new();
+        MakePolygon aMP = new();
         foreach (Point3D aP in thePoints)
         {
             aMP.Add(aP);
@@ -83,7 +85,7 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             }
             Wire aSpineWire = Polygon(aSpinePoints, true);
             bool isFace = anOracle.Bool();
-            Shape aSpine = isFace ? new BRepBuilderAPI_MakeFace(aSpineWire, true).Face() : aSpineWire;
+            Shape aSpine = isFace ? new MakeFace(aSpineWire, true).Face() : aSpineWire;
 
             // a profile of 1 to 3 segments, starting on a spine vertex or somewhere near the spine
             bool isOnVertex = anOracle.Int(0, 3) == 0;
@@ -118,7 +120,7 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             bool aPOn = false;
             try
             {
-                BRepFill.Axe(aPSpine, ShapeCasts.Wire(aPProf), out aPAxe, out aPOn, aTol);
+                Fill.Axe(aPSpine, ShapeCasts.Wire(aPProf), out aPAxe, out aPOn, aTol);
             }
             catch (FailureException f)
             {

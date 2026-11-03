@@ -2,164 +2,169 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Classification;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>A vertex classified against a solid (OCCT's file-local BOPAlgo_VertexSolid).</summary>
-internal sealed class BOPAlgo_VertexSolid : BOPTools_Parallel.IContextSolver<IntTools_Context>
+internal sealed class VertexSolid : BooleanParallel.IContextSolver<IntersectionContext>
 {
-    private int myIV;
-    private int myIZ;
-    private Containment myState;
-    private Vertex myV = new();
-    private Solid myZ = new();
-    private IntTools_Context? myContext;
-    private ProgressRange myProgressRange;
+    private int _iv;
+    private int _iz;
+    private Containment _state;
+    private Vertex _v = new();
+    private Solid _z = new();
+    private IntersectionContext? _context;
+    private ProgressRange _progressRange;
 
-    public BOPAlgo_VertexSolid()
+    public VertexSolid()
     {
-        myIV = -1;
-        myIZ = -1;
-        myState = Unknown;
+        _iv = -1;
+        _iz = -1;
+        _state = Unknown;
     }
 
     //
     public void SetIndices(int nV, int nZ)
     {
-        myIV = nV;
-        myIZ = nZ;
+        _iv = nV;
+        _iz = nZ;
     }
 
     //
     public void Indices(out int nV, out int nZ)
     {
-        nV = myIV;
-        nZ = myIZ;
+        nV = _iv;
+        nZ = _iz;
     }
 
     //
-    public void SetVertex(in Vertex aV) => myV = aV;
+    public void SetVertex(in Vertex aV) => _v = aV;
 
     //
-    public Vertex Vertex() => myV;
+    public Vertex Vertex() => _v;
 
     //
-    public void SetSolid(in Solid aZ) => myZ = aZ;
+    public void SetSolid(in Solid aZ) => _z = aZ;
 
     //
-    public Solid Solid() => myZ;
+    public Solid Solid() => _z;
 
     //
-    public void SetContext(IntTools_Context aContext) => myContext = aContext;
+    public void SetContext(IntersectionContext aContext) => _context = aContext;
 
     //
-    public IntTools_Context? Context() => myContext;
+    public IntersectionContext? Context() => _context;
 
     //
-    public Containment State() => myState;
+    public Containment State() => _state;
 
     //
-    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange range) => _progressRange = range;
 
     //
     public void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (!ps.More())
         {
             return;
         }
 
-        double aTol;
-        Point3D aPV;
+        double tol;
+        Point3D pv;
         //
-        BRepClass3d_SolidClassifier aSC = myContext!.SolidClassifier(myZ);
+        SolidClassifier sc = _context!.SolidClassifier(_z);
         //
-        aPV = Tool.Pnt(myV);
-        aTol = Tool.Tolerance(myV);
+        pv = Tool.Pnt(_v);
+        tol = Tool.Tolerance(_v);
         //
-        aSC.Perform(aPV, aTol);
+        sc.Perform(pv, tol);
         //
-        myState = aSC.State();
+        _state = sc.State();
     }
 }
 
 /// <summary>An edge or face tested against a solid (OCCT's file-local BOPAlgo_ShapeSolid).</summary>
-internal class BOPAlgo_ShapeSolid : BOPTools_Parallel.ISolver
+internal class ShapeSolid : BooleanParallel.ISolver
 {
-    protected int myIE;
-    protected int myIZ;
-    protected bool myHasInterf;
-    protected BOPDS_DS? myDS;
-    protected ProgressRange myProgressRange;
+    protected int _ie;
+    protected int _iz;
+    protected bool _hasInterf;
+    protected DS? _ds;
+    protected ProgressRange _progressRange;
 
-    public BOPAlgo_ShapeSolid()
+    public ShapeSolid()
     {
-        myIE = -1;
-        myIZ = -1;
-        myHasInterf = false;
-        myDS = null;
+        _ie = -1;
+        _iz = -1;
+        _hasInterf = false;
+        _ds = null;
     }
 
     //
     public void SetIndices(int nE, int nZ)
     {
-        myIE = nE;
-        myIZ = nZ;
+        _ie = nE;
+        _iz = nZ;
     }
 
     //
     public void Indices(out int nE, out int nZ)
     {
-        nE = myIE;
-        nZ = myIZ;
+        nE = _ie;
+        nZ = _iz;
     }
 
     //
-    public void SetDS(BOPDS_DS pDS) => myDS = pDS;
+    public void SetDS(DS pDS) => _ds = pDS;
 
     //
-    public bool HasInterf() => myHasInterf;
+    public bool HasInterf => _hasInterf;
 
     //
-    public void SetProgressRange(ProgressRange theRange) => myProgressRange = theRange;
+    public void SetProgressRange(ProgressRange range) => _progressRange = range;
 
     //
     public virtual void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (!ps.More())
         {
             return;
         }
 
         bool bHasInterf;
         //
-        myHasInterf = false;
+        _hasInterf = false;
         //
-        bHasInterf = myDS!.HasInterfShapeSubShapes(myIE, myIZ);
+        bHasInterf = _ds!.HasInterfShapeSubShapes(_ie, _iz);
         if (!bHasInterf)
         {
-            myHasInterf = myDS.HasInterfShapeSubShapes(myIZ, myIE);
+            _hasInterf = _ds.HasInterfShapeSubShapes(_iz, _ie);
         }
     }
 }
 
 /// <summary>Two solids tested against each other (OCCT's file-local BOPAlgo_SolidSolid).</summary>
-internal sealed class BOPAlgo_SolidSolid : BOPAlgo_ShapeSolid
+internal sealed class SolidSolid : ShapeSolid
 {
     //
     public override void Perform()
     {
-        using var aPS = new ProgressScope(myProgressRange, null, 1);
-        if (!aPS.More())
+        using var ps = new ProgressScope(_progressRange, null, 1);
+        if (!ps.More())
         {
             return;
         }
@@ -167,241 +172,241 @@ internal sealed class BOPAlgo_SolidSolid : BOPAlgo_ShapeSolid
         bool bFlag;
         //
         bFlag = false;
-        myHasInterf = false;
+        _hasInterf = false;
         //
-        myHasInterf = myDS!.HasInterfShapeSubShapes(myIZ, myIE, bFlag);
-        if (!myHasInterf)
+        _hasInterf = _ds!.HasInterfShapeSubShapes(_iz, _ie, bFlag);
+        if (!_hasInterf)
         {
-            myHasInterf = myDS.HasInterfShapeSubShapes(myIE, myIZ, bFlag);
+            _hasInterf = _ds.HasInterfShapeSubShapes(_ie, _iz, bFlag);
         }
     }
 }
 
-public partial class BOPAlgo_CheckerSI
+public partial class CheckerSI
 {
     /// <summary>Vertex/solid intersection: a vertex classified IN a solid that doesn't share it.</summary>
-    protected virtual void PerformVZ(ProgressRange theRange)
+    protected virtual void PerformVZ(ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
+        using var psOuter = new ProgressScope(range, null, 1);
 
-        int iSize, nV, nZ, k, aNbVVS;
-        Containment aState;
-        NCollection_Map<BOPDS_Pair> aMPK = new();
+        int iSize, nV, nZ, k, nbVVS;
+        Containment state;
+        NCollection_Map<Pair> mpk = new();
         //
-        myIterator!.Initialize(ShapeType.Vertex, ShapeType.Solid);
-        iSize = myIterator.ExpectedLength();
+        _iterator!.Initialize(ShapeType.Vertex, ShapeType.Solid);
+        iSize = _iterator.ExpectedLength();
         if (iSize == 0)
         {
             return;
         }
         //
-        NCollection_DynamicArray<BOPDS_InterfVZ> aVZs = myDS!.InterfVZ();
+        NCollection_DynamicArray<InterfVZ> vZs = _ds!.InterfVZ();
         //
-        List<BOPAlgo_VertexSolid> aVVS = [];
+        List<VertexSolid> vvs = [];
         //
-        for (; myIterator.More(); myIterator.Next())
+        for (; _iterator.More(); _iterator.Next())
         {
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
-            myIterator.Value(out nV, out nZ);
+            _iterator.Value(out nV, out nZ);
             //
-            if (myDS.HasInterfShapeSubShapes(nV, nZ))
+            if (_ds.HasInterfShapeSubShapes(nV, nZ))
             {
                 continue;
             }
             //
             int nVSD = nV;
-            myDS.HasShapeSD(nV, ref nVSD);
+            _ds.HasShapeSD(nV, ref nVSD);
             //
-            BOPDS_Pair aPK = new();
-            aPK.SetIndices(nVSD, nZ);
-            if (!aMPK.Add(aPK))
+            Pair pk = new();
+            pk.SetIndices(nVSD, nZ);
+            if (!mpk.Add(pk))
             {
                 continue;
             }
             //
-            Vertex aV = ShapeCasts.Vertex(myDS.Shape(nVSD));
-            Solid aZ = ShapeCasts.Solid(myDS.Shape(nZ));
+            Vertex v = ShapeCasts.Vertex(_ds.Shape(nVSD));
+            Solid z = ShapeCasts.Solid(_ds.Shape(nZ));
             //
-            BOPAlgo_VertexSolid aVertexSolid = new();
-            aVVS.Add(aVertexSolid);
-            aVertexSolid.SetIndices(nV, nZ);
-            aVertexSolid.SetVertex(aV);
-            aVertexSolid.SetSolid(aZ);
+            VertexSolid vertexSolid = new();
+            vvs.Add(vertexSolid);
+            vertexSolid.SetIndices(nV, nZ);
+            vertexSolid.SetVertex(v);
+            vertexSolid.SetSolid(z);
         }
         //
-        aNbVVS = aVVS.Count;
+        nbVVS = vvs.Count;
 
-        using var aPSParallel = new ProgressScope(aPSOuter.Next(), "Performing Vertex-Solid intersection", aNbVVS);
-        for (int iVS = 0; iVS < aNbVVS; ++iVS)
+        using var psParallel = new ProgressScope(psOuter.Next(), "Performing Vertex-Solid intersection", nbVVS);
+        for (int iVS = 0; iVS < nbVVS; ++iVS)
         {
-            aVVS[iVS].SetProgressRange(aPSParallel.Next());
+            vvs[iVS].SetProgressRange(psParallel.Next());
         }
         //=============================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVVS, myContext!);
+        BooleanParallel.Perform(_runParallel, vvs, _context!);
         //=============================================================
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
-        for (k = 0; k < aNbVVS; ++k)
+        for (k = 0; k < nbVVS; ++k)
         {
-            BOPAlgo_VertexSolid aVertexSolid = aVVS[k];
-            aState = aVertexSolid.State();
-            if (aState == In)
+            VertexSolid vertexSolid = vvs[k];
+            state = vertexSolid.State();
+            if (state == In)
             {
-                aVertexSolid.Indices(out nV, out nZ);
+                vertexSolid.Indices(out nV, out nZ);
                 //
-                BOPDS_InterfVZ aVZ = aVZs.Append(new BOPDS_InterfVZ());
-                aVZ.SetIndices(nV, nZ);
+                InterfVZ vz = vZs.Append(new InterfVZ());
+                vz.SetIndices(nV, nZ);
                 //
-                myDS.AddInterf(nV, nZ);
+                _ds.AddInterf(nV, nZ);
             }
         }
     }
 
     /// <summary>Edge/solid intersection.</summary>
-    protected virtual void PerformEZ(ProgressRange theRange)
+    protected virtual void PerformEZ(ProgressRange range)
     {
-        PerformSZ(ShapeType.Edge, theRange);
+        PerformSZ(ShapeType.Edge, range);
     }
 
     /// <summary>Face/solid intersection.</summary>
-    protected virtual void PerformFZ(ProgressRange theRange)
+    protected virtual void PerformFZ(ProgressRange range)
     {
-        PerformSZ(ShapeType.Face, theRange);
+        PerformSZ(ShapeType.Face, range);
     }
 
     /// <summary>Solid/solid intersection.</summary>
-    protected virtual void PerformZZ(ProgressRange theRange)
+    protected virtual void PerformZZ(ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
+        using var psOuter = new ProgressScope(range, null, 1);
 
         bool bHasInterf;
-        int iSize, nZ1, nZ, k, aNbSolidSolid;
+        int iSize, nZ1, nZ, k, nbSolidSolid;
         //
-        myIterator!.Initialize(ShapeType.Solid, ShapeType.Solid);
-        iSize = myIterator.ExpectedLength();
+        _iterator!.Initialize(ShapeType.Solid, ShapeType.Solid);
+        iSize = _iterator.ExpectedLength();
         if (iSize == 0)
         {
             return;
         }
         //
-        List<BOPAlgo_SolidSolid> aVSolidSolid = [];
+        List<SolidSolid> vSolidSolid = [];
         //
-        for (; myIterator.More(); myIterator.Next())
+        for (; _iterator.More(); _iterator.Next())
         {
-            myIterator.Value(out nZ1, out nZ);
+            _iterator.Value(out nZ1, out nZ);
             //
-            BOPAlgo_SolidSolid aSolidSolid = new();
-            aVSolidSolid.Add(aSolidSolid);
-            aSolidSolid.SetIndices(nZ1, nZ);
-            aSolidSolid.SetDS(myDS!);
+            SolidSolid solidSolid = new();
+            vSolidSolid.Add(solidSolid);
+            solidSolid.SetIndices(nZ1, nZ);
+            solidSolid.SetDS(_ds!);
         }
         //
-        aNbSolidSolid = aVSolidSolid.Count;
+        nbSolidSolid = vSolidSolid.Count;
 
-        using var aPSParallel = new ProgressScope(aPSOuter.Next(), "Performing Solid-Solid intersection", aNbSolidSolid);
-        for (int iSS = 0; iSS < aNbSolidSolid; ++iSS)
+        using var psParallel = new ProgressScope(psOuter.Next(), "Performing Solid-Solid intersection", nbSolidSolid);
+        for (int iSS = 0; iSS < nbSolidSolid; ++iSS)
         {
-            aVSolidSolid[iSS].SetProgressRange(aPSParallel.Next());
+            vSolidSolid[iSS].SetProgressRange(psParallel.Next());
         }
         //======================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVSolidSolid);
+        BooleanParallel.Perform(_runParallel, vSolidSolid);
         //======================================================
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
         //
-        NCollection_DynamicArray<BOPDS_InterfZZ> aZZs = myDS!.InterfZZ();
+        NCollection_DynamicArray<InterfZZ> zZs = _ds!.InterfZZ();
         //
-        for (k = 0; k < aNbSolidSolid; ++k)
+        for (k = 0; k < nbSolidSolid; ++k)
         {
-            BOPAlgo_SolidSolid aSolidSolid = aVSolidSolid[k];
-            bHasInterf = aSolidSolid.HasInterf();
+            SolidSolid solidSolid = vSolidSolid[k];
+            bHasInterf = solidSolid.HasInterf;
             if (bHasInterf)
             {
-                aSolidSolid.Indices(out nZ1, out nZ);
+                solidSolid.Indices(out nZ1, out nZ);
                 //
-                BOPDS_InterfZZ aZZ = aZZs.Append(new BOPDS_InterfZZ());
-                aZZ.SetIndices(nZ1, nZ);
+                InterfZZ zz = zZs.Append(new InterfZZ());
+                zz.SetIndices(nZ1, nZ);
                 //
-                myDS.AddInterf(nZ1, nZ);
+                _ds.AddInterf(nZ1, nZ);
             }
         }
     }
 
     /// <summary>Edge/solid or face/solid intersection: the shape and the solid share interfering sub-shapes.</summary>
-    protected virtual void PerformSZ(ShapeType theTS, ProgressRange theRange)
+    protected virtual void PerformSZ(ShapeType ts, ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
+        using var psOuter = new ProgressScope(range, null, 1);
 
         bool bHasInterf;
-        int iSize, nS, nZ, k, aNbShapeSolid;
+        int iSize, nS, nZ, k, nbShapeSolid;
         //
-        myIterator!.Initialize(theTS, ShapeType.Solid);
-        iSize = myIterator.ExpectedLength();
+        _iterator!.Initialize(ts, ShapeType.Solid);
+        iSize = _iterator.ExpectedLength();
         if (iSize == 0)
         {
             return;
         }
         //
-        List<BOPAlgo_ShapeSolid> aVShapeSolid = [];
+        List<ShapeSolid> vShapeSolid = [];
         //
-        for (; myIterator.More(); myIterator.Next())
+        for (; _iterator.More(); _iterator.Next())
         {
-            myIterator.Value(out nS, out nZ);
+            _iterator.Value(out nS, out nZ);
             //
-            BOPAlgo_ShapeSolid aShapeSolid = new();
-            aVShapeSolid.Add(aShapeSolid);
-            aShapeSolid.SetIndices(nS, nZ);
-            aShapeSolid.SetDS(myDS!);
+            ShapeSolid shapeSolid = new();
+            vShapeSolid.Add(shapeSolid);
+            shapeSolid.SetIndices(nS, nZ);
+            shapeSolid.SetDS(_ds!);
         }
         //
-        aNbShapeSolid = aVShapeSolid.Count;
+        nbShapeSolid = vShapeSolid.Count;
 
-        using var aPSParallel = new ProgressScope(aPSOuter.Next(),
-                                                          theTS == ShapeType.Edge ? "Performing Edge-Solid intersection"
+        using var psParallel = new ProgressScope(psOuter.Next(),
+                                                          ts == ShapeType.Edge ? "Performing Edge-Solid intersection"
                                                                                : "Performing Face-Solid intersection",
-                                                          aNbShapeSolid);
-        for (int iSS = 0; iSS < aNbShapeSolid; ++iSS)
+                                                          nbShapeSolid);
+        for (int iSS = 0; iSS < nbShapeSolid; ++iSS)
         {
-            aVShapeSolid[iSS].SetProgressRange(aPSParallel.Next());
+            vShapeSolid[iSS].SetProgressRange(psParallel.Next());
         }
         //======================================================
-        BOPTools_Parallel.Perform(myRunParallel, aVShapeSolid);
+        BooleanParallel.Perform(_runParallel, vShapeSolid);
         //======================================================
-        if (UserBreak(aPSOuter))
+        if (UserBreak(psOuter))
         {
             return;
         }
         //
-        NCollection_DynamicArray<BOPDS_InterfEZ> aEZs = myDS!.InterfEZ();
-        NCollection_DynamicArray<BOPDS_InterfFZ> aFZs = myDS.InterfFZ();
+        NCollection_DynamicArray<InterfEZ> eZs = _ds!.InterfEZ();
+        NCollection_DynamicArray<InterfFZ> fZs = _ds.InterfFZ();
         //
-        for (k = 0; k < aNbShapeSolid; ++k)
+        for (k = 0; k < nbShapeSolid; ++k)
         {
-            BOPAlgo_ShapeSolid aShapeSolid = aVShapeSolid[k];
-            bHasInterf = aShapeSolid.HasInterf();
+            ShapeSolid shapeSolid = vShapeSolid[k];
+            bHasInterf = shapeSolid.HasInterf;
             if (bHasInterf)
             {
-                aShapeSolid.Indices(out nS, out nZ);
+                shapeSolid.Indices(out nS, out nZ);
                 //
-                if (theTS == ShapeType.Edge)
+                if (ts == ShapeType.Edge)
                 {
-                    BOPDS_InterfEZ aEZ = aEZs.Append(new BOPDS_InterfEZ());
-                    aEZ.SetIndices(nS, nZ);
+                    InterfEZ ez = eZs.Append(new InterfEZ());
+                    ez.SetIndices(nS, nZ);
                 }
                 else
                 { // if (aTS==TopAbs_FACE)
-                    BOPDS_InterfFZ aFZ = aFZs.Append(new BOPDS_InterfFZ());
-                    aFZ.SetIndices(nS, nZ);
+                    InterfFZ fz = fZs.Append(new InterfFZ());
+                    fz.SetIndices(nS, nZ);
                 }
                 //
-                myDS.AddInterf(nS, nZ);
+                _ds.AddInterf(nS, nZ);
             }
         }
     }

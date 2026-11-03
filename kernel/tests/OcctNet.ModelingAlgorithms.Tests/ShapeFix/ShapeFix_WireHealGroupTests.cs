@@ -1,6 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Build;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -10,7 +13,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.ModelingData.Tests;
 using Xunit.Abstractions;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -98,10 +101,10 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                     foreach (bool isTopo in new[] { false, true })
                     {
                         aWires++;
-                        var sfw = new ShapeFix_Wire();
+                        var sfw = new WireFixer();
                         try
                         {
-                            sfw.SetContext(new ShapeBuild_ReShape());
+                            sfw.SetContext(new ReShapeBuilder());
                             sfw.Init(ShapeCasts.Wire(anIt.Value()), aFace, isTopo ? 1e-3 : Tool.Tolerance(aFace));
                             sfw.ModifyTopologyMode() = isTopo;
                             if (sfw.Perform())
@@ -119,7 +122,7 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                         {
                             aFailures.Add($"{Path.GetFileName(aFile)} face {f} (topology {isTopo}): {Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType())}: {e.Message} {e.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}");
                         }
-                        foreach ((string aName, Func<ShapeExtend_Status, bool> aStatus) in new (string, Func<ShapeExtend_Status, bool>)[]
+                        foreach ((string aName, Func<ExtendStatus, bool> aStatus) in new (string, Func<ExtendStatus, bool>)[]
                                  {
                                      ("reorder", sfw.StatusReorder), ("small", sfw.StatusSmall), ("connected", sfw.StatusConnected),
                                      ("edge curves", sfw.StatusEdgeCurves), ("degenerated", sfw.StatusDegenerated),
@@ -128,7 +131,7 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                                      ("notches", sfw.StatusNotches),
                                  })
                         {
-                            if (aStatus(ShapeExtend_DONE))
+                            if (aStatus(ExtendStatus.Done))
                             {
                                 aStatuses[aName] = aStatuses.GetValueOrDefault(aName) + 1;
                             }

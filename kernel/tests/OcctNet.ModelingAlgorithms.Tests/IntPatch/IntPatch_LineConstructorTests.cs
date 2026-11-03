@@ -2,8 +2,10 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -37,24 +39,24 @@ public class IntPatch_LineConstructorTests
         var aS2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 1.2), 0, 2 * Math.PI, -1, 1);
         TopolTool aD1 = new TopolTool3d(aS1);
         TopolTool aD2 = new TopolTool3d(aS2);
-        var anInter = new IntPatch_ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
-        Assert.True(anInter.IsDone());
-        Assert.Equal(1, anInter.NbLines());
-        IntPatch_Line aL = anInter.Line(1);
-        Assert.Equal(IntPatch_Circle, aL.ArcType());
+        var anInter = new ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
+        Assert.True(anInter.IsDone);
+        Assert.Equal(1, anInter.LineCount);
+        PatchLine aL = anInter.Line(1);
+        Assert.Equal(PatchLineType.Circle, aL.ArcType());
 
-        var aLC = new IntPatch_LineConstructor(2);
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
+        var aLC = new PatchLineConstructor(2);
+        var aSLin = new NCollection_Sequence<PatchLine>();
         aSLin.Append(aL);
         Assert.Throws<DomainErrorException>(() => aLC.Perform(aSLin, aL, aS1, new TopolTool(aS1), aS2,
                                                                new TopolTool(aS2), Tol));
         aLC.Perform(aSLin, aL, aS1, aD1, aS2, aD2, Tol);
-        Assert.Equal(4, aLC.NbLines());
-        for (int i = 1; i <= aLC.NbLines(); i++)
+        Assert.Equal(4, aLC.LineCount);
+        for (int i = 1; i <= aLC.LineCount; i++)
         {
-            var aG = Assert.IsType<IntPatch_GLine>(aLC.Line(i));
-            Assert.Equal(IntPatch_Circle, aG.ArcType());
-            Assert.True(aG.HasFirstPoint() && aG.HasLastPoint());
+            var aG = Assert.IsType<GLine>(aLC.Line(i));
+            Assert.Equal(PatchLineType.Circle, aG.ArcType());
+            Assert.True(aG.HasFirstPoint && aG.HasLastPoint);
             double f = aG.FirstPoint().ParameterOnLine(), l = aG.LastPoint().ParameterOnLine();
             Assert.True(l > f);
             Point3D aMid = global::Kerf.Engine.Geometry.ElCLib.Value(0.5 * (f + l), aG.Circle());
@@ -68,9 +70,9 @@ public class IntPatch_LineConstructorTests
         }
     }
 
-    private static IntSurf_PntOn2S CirclePnt(double t)
+    private static PntOn2S CirclePnt(double t)
     {
-        var aP = new IntSurf_PntOn2S();
+        var aP = new PntOn2S();
         aP.SetValue(new Point3D(Math.Cos(t), Math.Sin(t), 0), Math.Cos(t), Math.Sin(t), t, 0);
         return aP;
     }
@@ -83,15 +85,15 @@ public class IntPatch_LineConstructorTests
         var aS2 = new SurfaceAdaptor(new CylindricalSurface(new CoordinateSystem(), 1.0), 0, 2 * Math.PI, -1, 1);
         var aD1 = new TopolTool(aS1);
         var aD2 = new TopolTool(aS2);
-        var aL = new IntSurf_LineOn2S();
+        var aL = new LineOn2S();
         for (int i = 0; i <= 20; i++)
         {
             aL.Add(CirclePnt(Math.PI * i / 20));
         }
-        var aW = new IntPatch_WLine(aL, false);
+        var aW = new WLine(aL, false);
         foreach (int k in new[] { 1, 11, 21 })
         {
-            var aV = new IntPatch_Point();
+            var aV = new PatchPoint();
             aV.SetValue(aL.Value(k));
             aV.SetParameter(k);
             aV.SetTolerance(Tol);
@@ -99,14 +101,14 @@ public class IntPatch_LineConstructorTests
         }
         aW.SetPeriod(0, 0, 2 * Math.PI, 0);
 
-        var aLC = new IntPatch_LineConstructor(2);
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
+        var aLC = new PatchLineConstructor(2);
+        var aSLin = new NCollection_Sequence<PatchLine>();
         aSLin.Append(aW);
         aLC.Perform(aSLin, aW, aS1, aD1, aS2, aD2, Tol);
-        Assert.Equal(1, aLC.NbLines());
-        var aPart = Assert.IsType<IntPatch_WLine>(aLC.Line(1));
+        Assert.Equal(1, aLC.LineCount);
+        var aPart = Assert.IsType<WLine>(aLC.Line(1));
         Assert.Equal(11, aPart.NbPnts());
-        Assert.Equal(2, aPart.NbVertex());
+        Assert.Equal(2, aPart.VertexCount);
         Assert.Equal(1.0, aPart.Vertex(1).ParameterOnLine());
         Assert.Equal(11.0, aPart.Vertex(2).ParameterOnLine());
         for (int k = 1; k <= 11; k++)
@@ -116,7 +118,7 @@ public class IntPatch_LineConstructorTests
         Assert.Equal(2 * Math.PI, aPart.U2Period());
         // The given line is unchanged.
         Assert.Equal(21, aW.NbPnts());
-        Assert.Equal(3, aW.NbVertex());
+        Assert.Equal(3, aW.VertexCount);
     }
 
     [Fact]
@@ -128,26 +130,26 @@ public class IntPatch_LineConstructorTests
                                           0, 2 * Math.PI, -2, 2);
         var aD1 = new TopolTool(aS1);
         var aD2 = new TopolTool(aS2);
-        var anInter = new IntPatch_ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
-        Assert.True(anInter.IsDone());
-        var aSLin = new NCollection_Sequence<IntPatch_Line>();
-        for (int i = 1; i <= anInter.NbLines(); i++)
+        var anInter = new ImpImpIntersection(aS1, aD1, aS2, aD2, Tol, Tol);
+        Assert.True(anInter.IsDone);
+        var aSLin = new NCollection_Sequence<PatchLine>();
+        for (int i = 1; i <= anInter.LineCount; i++)
         {
             aSLin.Append(anInter.Line(i));
         }
         int aNbALines = 0, aNbParts = 0;
         for (int i = 1; i <= aSLin.Length(); i++)
         {
-            if (aSLin.Value(i) is not IntPatch_ALine anA)
+            if (aSLin.Value(i) is not ALine anA)
             {
                 continue;
             }
             aNbALines++;
-            var aLC = new IntPatch_LineConstructor(2);
+            var aLC = new PatchLineConstructor(2);
             aLC.Perform(aSLin, anA, aS1, aD1, aS2, aD2, Tol);
-            for (int j = 1; j <= aLC.NbLines(); j++)
+            for (int j = 1; j <= aLC.LineCount; j++)
             {
-                var aPart = Assert.IsType<IntPatch_ALine>(aLC.Line(j));
+                var aPart = Assert.IsType<ALine>(aLC.Line(j));
                 aNbParts++;
                 double f = aPart.FirstPoint().ParameterOnLine(), l = aPart.LastPoint().ParameterOnLine();
                 Point3D aMid = aPart.Value(0.5 * (f + l));

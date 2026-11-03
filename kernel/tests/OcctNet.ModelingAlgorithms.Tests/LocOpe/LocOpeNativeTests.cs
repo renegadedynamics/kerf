@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -145,30 +149,30 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         switch (theName)
         {
             case "PRIM_BOX":
-                return new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
+                return new MakeBox(10, 20, 30).Shape();
             case "PRIM_CYLINDER":
-                return new BRepPrimAPI_MakeCylinder(5, 10).Shape();
+                return new ApiMakeCylinder(5, 10).Shape();
             case "PRIM_CONE":
-                return new BRepPrimAPI_MakeCone(5, 2, 8).Shape();
+                return new ApiMakeCone(5, 2, 8).Shape();
             case "PRIM_SPHERE":
-                return new BRepPrimAPI_MakeSphere(6).Shape();
+                return new MakeSphere(6).Shape();
             case "PRIM_TORUS":
-                return new BRepPrimAPI_MakeTorus(10, 3).Shape();
+                return new MakeTorus(10, 3).Shape();
             case "PRIM_BOXHOLE":
             {
-                Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-                Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(5, 10, -1), Constants.DZ()), 3, 32).Shape();
-                return new BRepAlgoAPI_Cut(aBox, aCyl).Shape();
+                Shape aBox = new MakeBox(10, 20, 30).Shape();
+                Shape aCyl = new ApiMakeCylinder(new Frame3D(new Point3D(5, 10, -1), Constants.DZ()), 3, 32).Shape();
+                return new Cut(aBox, aCyl).Shape();
             }
             case "PRIM_HEXAGON":
             {
-                var aPoly = new BRepBuilderAPI_MakePolygon();
+                var aPoly = new MakePolygon();
                 for (int i = 0; i < 6; i++)
                 {
                     aPoly.Add(new Point3D(10 * Math.Cos(i * Math.PI / 3), 10 * Math.Sin(i * Math.PI / 3), 0));
                 }
                 aPoly.Close();
-                return new BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Shape();
+                return new MakeFace(aPoly.Wire(), true).Shape();
             }
         }
 
@@ -182,8 +186,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             var anExp = new Explorer(aShape, ShapeType.Wire);
             if (anExp.More())
             {
-                var aMF = new BRepBuilderAPI_MakeFace(ShapeCasts.Wire(anExp.Current()), true);
-                return aMF.IsDone() ? aMF.Shape() : new Shape();
+                var aMF = new MakeFace(ShapeCasts.Wire(anExp.Current()), true);
+                return aMF.IsDone ? aMF.Shape() : new Shape();
             }
             return new Shape();
         }
@@ -234,15 +238,15 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         Surface aS = Tool.Surface(theFace)!;
         BrepTools.UVBounds(theFace, out double u1, out double u2, out double v1, out double v2);
         Curve3D anIso = aS.UIso((u1 + u2) / 2);
-        var aME = new BRepBuilderAPI_MakeEdge(anIso, v1, v2);
-        return aME.IsDone() ? aME.Edge() : new Edge();
+        var aME = new MakeEdge(anIso, v1, v2);
+        return aME.IsDone ? aME.Edge() : new Edge();
     }
 
-    private static string Spliter(LocOpe_WiresOnShape theWOnS, in Shape theShape)
+    private static string Spliter(WiresOnShape theWOnS, in Shape theShape)
     {
-        var aSpliter = new LocOpe_Spliter(theShape);
+        var aSpliter = new Spliter(theShape);
         aSpliter.Perform(theWOnS);
-        if (!aSpliter.IsDone())
+        if (!aSpliter.IsDone)
         {
             return "NOTDONE";
         }
@@ -276,7 +280,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         for (int i = 1; i <= aMap.Extent(); i++)
         {
             var aProps = new Properties();
-            BRepGProp.SurfaceProperties(aMap[i], aProps);
+            MassPropertiesBuilder.SurfaceProperties(aMap[i], aProps);
             aLines.Add($"F {Q(aProps.Mass())} {Count(aMap[i], ShapeType.Edge).ToString(CultureInfo.InvariantCulture)}");
         }
         aMap = Map(theShape, ShapeType.Edge);
@@ -363,13 +367,13 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             {
                 return null;
             }
-            var aSplit = new LocOpe_SplitShape(S);
+            var aSplit = new LocalSplitShape(S);
             for (int i = 1; i <= aNbE; i++)
             {
                 Edge anE = ShapeCasts.Edge(anEMap[i]);
                 if (Middle(anE, out double aPrm, out Point3D aP) && aSplit.CanSplit(anE))
                 {
-                    aSplit.Add(new BRepBuilderAPI_MakeVertex(aP).Vertex(), aPrm, anE);
+                    aSplit.Add(new MakeVertex(aP).Vertex(), aPrm, anE);
                 }
             }
             string aLine = Split(aSplit.DescendantShapes(S)) + " ";
@@ -415,12 +419,12 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 {
                     return null;
                 }
-                Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP1).Vertex();
-                Vertex aV2 = new BRepBuilderAPI_MakeVertex(aP2).Vertex();
-                var aSplit = new LocOpe_SplitShape(S);
+                Vertex aV1 = new MakeVertex(aP1).Vertex();
+                Vertex aV2 = new MakeVertex(aP2).Vertex();
+                var aSplit = new LocalSplitShape(S);
                 aSplit.Add(aV1, aPrm1, anE1);
                 aSplit.Add(aV2, aPrm2, anE2);
-                Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aV1, aV2).Edge()).Wire();
+                Wire aW = new MakeWire(new MakeEdge(aV1, aV2).Edge()).Wire();
                 bool isOk = aSplit.Add(aW, aF);
                 string aLine = (isOk ? "1 " : "0 ") + Split(aSplit.DescendantShapes(S));
                 return aLine + string.Create(CultureInfo.InvariantCulture,
@@ -431,7 +435,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             {
                 BrepTools.UVBounds(aF, out double u1, out double u2, out double v1, out double v2);
                 var aUV = new Point2D((u1 + u2) / 2, (v1 + v2) / 2);
-                var aClass = new BRepTopAdaptor_FClass2d(aF, 1e-9);
+                var aClass = new FClass2d(aF, 1e-9);
                 if (aClass.Perform(aUV) != In)
                 {
                     return null;
@@ -445,8 +449,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 Point3D aC = Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
                 double aR = 0.1 * Math.Min(u2 - u1, v2 - v1);
                 var aCirc = new Circle3D(new Frame3D(aC, aPln.Axis().Direction()), aR);
-                Wire aW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
-                var aSplit = new LocOpe_SplitShape(S);
+                Wire aW = new MakeWire(new MakeEdge(aCirc).Edge()).Wire();
+                var aSplit = new LocalSplitShape(S);
                 bool isOk = aSplit.Add(aW, aF);
                 return (isOk ? "1 " : "0 ") + Split(aSplit.DescendantShapes(S))
                                             + " " + aSplit.DescendantShapes(aF).Extent().ToString(CultureInfo.InvariantCulture);
@@ -463,7 +467,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 {
                     return null;
                 }
-                var aWOnS = new LocOpe_WiresOnShape(S);
+                var aWOnS = new WiresOnShape(S);
                 aWOnS.Bind(anE, aF);
                 return Spliter(aWOnS, S);
             }));
@@ -484,7 +488,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             {
                 return null;
             }
-            var aWOnS = new LocOpe_WiresOnShape(S);
+            var aWOnS = new WiresOnShape(S);
             bool isAdded = aWOnS.Add(anEdges);
             return (isAdded ? "1 " : "0 ") + Spliter(aWOnS, S);
         }));
@@ -494,7 +498,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             Face aF = ShapeCasts.Face(aFMap[f]);
             add(Run("PRISM", f, () =>
             {
-                var aPrism = new LocOpe_Prism(aF, new Vector3D(3, 4, 12));
+                var aPrism = new LocalPrism(aF, new Vector3D(3, 4, 12));
                 var aCurves = new NCollection_Sequence<Curve3D>();
                 aPrism.Curves(aCurves);
                 return Swept(aPrism.Shape(), aPrism.FirstShape(), aPrism.LastShape(), s => aPrism.Shapes(s), aF)
@@ -502,7 +506,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }));
             add(Run("PRISMT", f, () =>
             {
-                var aPrism = new LocOpe_Prism(aF, new Vector3D(3, 4, 12), new Vector3D(1, 1, 1));
+                var aPrism = new LocalPrism(aF, new Vector3D(3, 4, 12), new Vector3D(1, 1, 1));
                 return Swept(aPrism.Shape(), aPrism.FirstShape(), aPrism.LastShape(), s => aPrism.Shapes(s), aF);
             }));
             for (int aDec = 0; aDec <= 1; aDec++)
@@ -523,7 +527,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                         return null;
                     }
                     var anAxis = new Axis3D(new Point3D(aMin[0] - 5, aMin[1] - 5, aMin[2] - 5), Constants.DZ());
-                    var aRevol = new LocOpe_Revol();
+                    var aRevol = new LocalRevol();
                     if (aDec1 == 1)
                     {
                         aRevol.Perform(aF, anAxis, Math.PI / 6, Math.PI / 12);
@@ -537,7 +541,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }
             add(Run("LFORM", f, () =>
             {
-                var aForm = new LocOpe_LinearForm(aF, new Vector3D(3, 4, 12), new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+                var aForm = new LinearForm(aF, new Vector3D(3, 4, 12), new Point3D(0, 0, 0), new Point3D(1, 0, 0));
                 return Swept(aForm.Shape(), aForm.FirstShape(), aForm.LastShape(), s => aForm.Shapes(s), aF);
             }));
         }
@@ -554,9 +558,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 int aTwo1 = aTwo;
                 add(Run(aTwo1 == 1 ? "DPRISM2" : "DPRISM", f, () =>
                 {
-                    LocOpe_DPrism aDPrism = aTwo1 == 1 ? new LocOpe_DPrism(aF, 10, 4, 3 * Math.PI / 180)
-                                                       : new LocOpe_DPrism(aF, 10, 3 * Math.PI / 180);
-                    if (!aDPrism.IsDone())
+                    DPrism aDPrism = aTwo1 == 1 ? new DPrism(aF, 10, 4, 3 * Math.PI / 180)
+                                                       : new DPrism(aF, 10, 3 * Math.PI / 180);
+                    if (!aDPrism.IsDone)
                     {
                         return "NOTDONE";
                     }
@@ -587,10 +591,10 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 {
                     aZMin = Min(aZMin, Tool.Pnt(ShapeCasts.Vertex(anExp.Current())).Z());
                 }
-                var aDrafts = new LocOpe_SplitDrafts(S);
-                aDrafts.Perform(aF, new BRepBuilderAPI_MakeWire(anE).Wire(), Constants.DZ(), new Plane3D(new Point3D(0, 0, aZMin), Constants.DZ()),
+                var aDrafts = new SplitDrafts(S);
+                aDrafts.Perform(aF, new MakeWire(anE).Wire(), Constants.DZ(), new Plane3D(new Point3D(0, 0, aZMin), Constants.DZ()),
                                 5 * Math.PI / 180);
-                if (!aDrafts.IsDone())
+                if (!aDrafts.IsDone)
                 {
                     return "NOTDONE";
                 }
@@ -603,7 +607,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             Face aF = ShapeCasts.Face(aFMap[f]);
             add(Run("FIND", f, () =>
             {
-                var aFind = new LocOpe_FindEdges(aF, S);
+                var aFind = new FindEdges(aF, S);
                 var aRes = new StringBuilder();
                 int aNb = 0;
                 for (aFind.InitIterator(); aFind.More(); aFind.Next(), aNb++)
@@ -614,7 +618,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }));
             add(Run("FIF", f, () =>
             {
-                var aFind = new LocOpe_FindEdgesInFace(S, aF);
+                var aFind = new FindEdgesInFace(S, aF);
                 var aRes = new StringBuilder();
                 int aNb = 0;
                 for (aFind.Init(); aFind.More(); aFind.Next(), aNb++)

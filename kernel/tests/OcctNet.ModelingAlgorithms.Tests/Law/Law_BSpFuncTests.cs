@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -10,7 +11,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class Law_BSpFuncTests
 {
     /// <summary>A C0 cubic on [0, 3] with a triple knot at 1 and a simple knot at 2.</summary>
-    private static Law_BSpline C0Curve()
+    private static BSpline C0Curve()
     {
         var aKnots = new NCollection_Array1<double>(1, 4);
         aKnots[1] = 0;
@@ -28,14 +29,14 @@ public class Law_BSpFuncTests
         {
             aPoles[i] = Math.Sin(1.3 * i) * 3.0 + 0.1 * i * i;
         }
-        return new Law_BSpline(aPoles, aKnots, aMults, 3);
+        return new BSpline(aPoles, aKnots, aMults, 3);
     }
 
     [Fact]
     public void SetCurve_FreezesAndKeepsTheCurve()
     {
-        Law_BSpline aCurve = C0Curve();
-        var aLaw = new Law_BSpFunc();
+        BSpline aCurve = C0Curve();
+        var aLaw = new BSpFunc();
         Assert.Null(aLaw.Curve());
         aLaw.SetCurve(aCurve);
         Assert.True(aCurve.IsFrozen);
@@ -45,23 +46,23 @@ public class Law_BSpFuncTests
         Assert.Equal(3.0, l);
         Assert.Equal(Continuity.C0, aLaw.Continuity());
 
-        var aTrimmed = Assert.IsType<Law_BSpFunc>(aLaw.Trim(0.5, 2.5, 1.0e-9));
+        var aTrimmed = Assert.IsType<BSpFunc>(aLaw.Trim(0.5, 2.5, 1.0e-9));
         Assert.Same(aCurve, aTrimmed.Curve());
         aTrimmed.Bounds(out f, out l);
         Assert.Equal((0.5, 2.5), (f, l));
 
-        Law_BSpline anOther = C0Curve();
-        var aLaw2 = new Law_BSpFunc(anOther, 1.0, 2.0);
+        BSpline anOther = C0Curve();
+        var aLaw2 = new BSpFunc(anOther, 1.0, 2.0);
         Assert.True(anOther.IsFrozen);
     }
 
     [Fact]
     public void Evaluation_IsOneSidedAtTheBounds()
     {
-        Law_BSpline aCurve = C0Curve();
+        BSpline aCurve = C0Curve();
         // a law ending at the C0 knot evaluates there on its own side
-        var aLeft = new Law_BSpFunc(aCurve, 0.0, 1.0);
-        var aRight = new Law_BSpFunc(aCurve, 1.0, 3.0);
+        var aLeft = new BSpFunc(aCurve, 0.0, 1.0);
+        var aRight = new BSpFunc(aCurve, 1.0, 3.0);
         aLeft.D2(1.0, out double FL, out double DL, out double D2L);
         aRight.D2(1.0, out double FR, out double DR, out double D2R);
         aCurve.LocalD2(1.0, 1, 2, out double P1, out double V1, out double W1);
@@ -88,8 +89,8 @@ public class Law_BSpFuncTests
     [Fact]
     public void Intervals_FollowTheKnotsInsideTheBounds()
     {
-        Law_BSpline aCurve = C0Curve();
-        var aLaw = new Law_BSpFunc(aCurve, 0.5, 2.5);
+        BSpline aCurve = C0Curve();
+        var aLaw = new BSpFunc(aCurve, 0.5, 2.5);
         Assert.Equal(1, aLaw.NbIntervals(Continuity.C0));
         Assert.Equal(2, aLaw.NbIntervals(Continuity.C1));
         var aT = new NCollection_Array1<double>(1, 3);
@@ -102,7 +103,7 @@ public class Law_BSpFuncTests
         Assert.Equal([0.5, 1.0, 2.0, 2.5], aT3.AsSpan().ToArray());
         Assert.Throws<DomainErrorException>(() => aLaw.NbIntervals(Continuity.G1));
         // a law inside one span
-        var anInner = new Law_BSpFunc(aCurve, 1.2, 1.8);
+        var anInner = new BSpFunc(aCurve, 1.2, 1.8);
         Assert.Equal(1, anInner.NbIntervals(Continuity.CN));
         var aT1 = new NCollection_Array1<double>(1, 2);
         anInner.Intervals(aT1, Continuity.CN);

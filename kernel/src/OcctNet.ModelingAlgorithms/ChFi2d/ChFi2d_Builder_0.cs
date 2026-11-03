@@ -8,80 +8,84 @@
 //              des droites ou des cercles; fonction IsLineOrCircle
 //              (BUC60288)
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ChFi2d_ConstructionError;
+using Occt;
+using static Kerf.Engine.Fillets.Planar.ConstructionError;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Topology.Orientation;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets.Planar;
 
-public sealed partial class ChFi2d_Builder
+public sealed partial class PlanarBuilder
 {
     //=================================================================================================
 
     /// <summary>
-    /// Adds a chamfer between the two connected edges <paramref name="E1"/> and <paramref name="E2"/>, at the
-    /// distances <paramref name="D1"/> along <paramref name="E1"/> and <paramref name="D2"/> along <paramref name="E2"/>,
-    /// and returns it (frozen). The edge has sense only if <see cref="Status"/> is <see cref="ChFi2d_IsDone"/>.
+    /// Adds a chamfer between the two connected edges <paramref name="e1"/> and <paramref name="e2"/>, at the
+    /// distances <paramref name="d1"/> along <paramref name="e1"/> and <paramref name="d2"/> along <paramref name="e2"/>,
+    /// and returns it (frozen). The edge has sense only if <see cref="Status"/> is <see cref="IsDone"/>.
     /// </summary>
-    public Edge AddChamfer(in Edge E1, in Edge E2, double D1, double D2)
+    public Edge AddChamfer(in Edge e1, in Edge e2, double d1, double d2)
     {
-        return Published(InternalAddChamfer(E1, E2, D1, D2));
+        return Published(InternalAddChamfer(e1, e2, d1, d2));
     }
 
-    private Edge InternalAddChamfer(in Edge E1, in Edge E2, double D1, double D2)
+    private Edge InternalAddChamfer(in Edge e1, in Edge e2, double d1, double d2)
     {
         Vertex commonVertex = new();
         Edge basisEdge1, basisEdge2;
-        Edge E1Mod = new(), E2Mod = new(), chamfer = new();
+        Edge e1Mod = new(), e2Mod = new(), chamfer = new();
 
-        bool hasConnection = ChFi2d.CommonVertex(E1, E2, ref commonVertex);
+        bool hasConnection = global::Kerf.Engine.Fillets.Planar.ChFi2d.CommonVertex(e1, e2, ref commonVertex);
         if (!hasConnection)
         {
             return chamfer;
         }
 
-        if (IsAFillet(E1) || IsAChamfer(E1) || IsAFillet(E2) || IsAChamfer(E2))
+        if (IsAFillet(e1) || IsAChamfer(e1) || IsAFillet(e2) || IsAChamfer(e2))
         {
-            status = ChFi2d_NotAuthorized;
+            _status = ConstructionError.NotAuthorized;
             return chamfer;
         } //  if (IsAChamfer ...
 
-        if (!IsLineOrCircle(E1, newFace) || !IsLineOrCircle(E2, newFace))
+        if (!IsLineOrCircle(e1, _newFace) || !IsLineOrCircle(e2, _newFace))
         {
-            status = ChFi2d_NotAuthorized;
+            _status = ConstructionError.NotAuthorized;
             return chamfer;
         } //  if (!IsLineOrCircle ...
 
         // EE1 and EE2 are copies of E1 and E2 with the good orientation
         // on <newFace>
-        Edge EE1 = new(), EE2 = new();
-        status = ChFi2d.FindConnectedEdges(newFace, commonVertex, ref EE1, ref EE2);
-        if (EE1.IsSame(E2))
+        Edge ee1 = new(), ee2 = new();
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, commonVertex, ref ee1, ref ee2);
+        if (ee1.IsSame(e2))
         {
-            Orientation orient = EE1.Orientation();
-            EE1 = EE2;
-            EE2 = E2;
-            EE2.Orientation(orient);
+            Orientation orient = ee1.Orientation();
+            ee1 = ee2;
+            ee2 = e2;
+            ee2.Orientation(orient);
         }
 
-        ComputeChamfer(commonVertex, EE1, EE2, D1, D2, ref E1Mod, ref E2Mod, ref chamfer);
-        if (status == ChFi2d_IsDone || status == ChFi2d_FirstEdgeDegenerated
-            || status == ChFi2d_LastEdgeDegenerated || status == ChFi2d_BothEdgesDegenerated)
+        ComputeChamfer(commonVertex, ee1, ee2, d1, d2, ref e1Mod, ref e2Mod, ref chamfer);
+        if (_status == ConstructionError.IsDone || _status == ConstructionError.FirstEdgeDegenerated
+            || _status == ConstructionError.LastEdgeDegenerated || _status == ConstructionError.BothEdgesDegenerated)
         {
             //  if (status == ChFi2d_IsDone) {
-            BuildNewWire(EE1, EE2, E1Mod, chamfer, E2Mod);
-            basisEdge1 = BasisEdge(EE1);
-            basisEdge2 = BasisEdge(EE2);
-            UpDateHistory(basisEdge1, basisEdge2, E1Mod, E2Mod, chamfer, 2);
-            status = ChFi2d_IsDone;
-            return ShapeCasts.Edge(chamfers.Value(chamfers.Length()));
+            BuildNewWire(ee1, ee2, e1Mod, chamfer, e2Mod);
+            basisEdge1 = BasisEdge(ee1);
+            basisEdge2 = BasisEdge(ee2);
+            UpDateHistory(basisEdge1, basisEdge2, e1Mod, e2Mod, chamfer, 2);
+            _status = ConstructionError.IsDone;
+            return ShapeCasts.Edge(_chamfers.Value(_chamfers.Length()));
         }
         return chamfer;
     } // AddChamfer
@@ -89,97 +93,97 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     /// <summary>
-    /// Adds a chamfer between the two edges connected to the vertex <paramref name="V"/>, making the angle
-    /// <paramref name="Ang"/> (radians) with the edge <paramref name="E"/>, one of its ends on <paramref name="E"/> at the
-    /// distance <paramref name="D"/>; returns it (frozen). The edge has sense only if <see cref="Status"/> is
-    /// <see cref="ChFi2d_IsDone"/>.
+    /// Adds a chamfer between the two edges connected to the vertex <paramref name="v"/>, making the angle
+    /// <paramref name="ang"/> (radians) with the edge <paramref name="e"/>, one of its ends on <paramref name="e"/> at the
+    /// distance <paramref name="d"/>; returns it (frozen). The edge has sense only if <see cref="Status"/> is
+    /// <see cref="IsDone"/>.
     /// </summary>
-    public Edge AddChamfer(in Edge E, in Vertex V, double D, double Ang)
+    public Edge AddChamfer(in Edge e, in Vertex v, double d, double ang)
     {
-        return Published(InternalAddChamfer(E, V, D, Ang));
+        return Published(InternalAddChamfer(e, v, d, ang));
     }
 
-    private Edge InternalAddChamfer(in Edge E, in Vertex V, double D, double Ang)
+    private Edge InternalAddChamfer(in Edge e, in Vertex v, double d, double ang)
     {
-        Edge aChamfer = new(), adjEdge1 = new(), adjEdge2 = new();
-        status = ChFi2d.FindConnectedEdges(newFace, V, ref adjEdge1, ref adjEdge2);
-        if (status == ChFi2d_ConnexionError)
+        Edge chamfer = new(), adjEdge1 = new(), adjEdge2 = new();
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, v, ref adjEdge1, ref adjEdge2);
+        if (_status == ConstructionError.ConnexionError)
         {
-            return aChamfer;
+            return chamfer;
         }
 
         // adjEdge1 is a copy of E  with the good orientation
         // on <newFace>
-        if (adjEdge2.IsSame(E))
+        if (adjEdge2.IsSame(e))
         {
             Orientation orient = adjEdge2.Orientation();
             adjEdge2 = adjEdge1;
-            adjEdge1 = E;
+            adjEdge1 = e;
             adjEdge1.Orientation(orient);
         }
 
         if (IsAFillet(adjEdge1) || IsAChamfer(adjEdge1) || IsAFillet(adjEdge2) || IsAChamfer(adjEdge2))
         {
-            status = ChFi2d_NotAuthorized;
-            return aChamfer;
+            _status = ConstructionError.NotAuthorized;
+            return chamfer;
         } //  if (IsAChamfer ...
 
-        if (!IsLineOrCircle(adjEdge1, newFace) || !IsLineOrCircle(adjEdge2, newFace))
+        if (!IsLineOrCircle(adjEdge1, _newFace) || !IsLineOrCircle(adjEdge2, _newFace))
         {
-            status = ChFi2d_NotAuthorized;
-            return aChamfer;
+            _status = ConstructionError.NotAuthorized;
+            return chamfer;
         } //  if (!IsLineOrCircle ...
 
-        Edge E1 = new(), E2 = new();
-        ComputeChamfer(V, adjEdge1, D, Ang, adjEdge2, ref E1, ref E2, ref aChamfer);
+        Edge e1 = new(), e2 = new();
+        ComputeChamfer(v, adjEdge1, d, ang, adjEdge2, ref e1, ref e2, ref chamfer);
         Edge basisEdge1, basisEdge2;
-        if (status == ChFi2d_IsDone || status == ChFi2d_FirstEdgeDegenerated
-            || status == ChFi2d_LastEdgeDegenerated || status == ChFi2d_BothEdgesDegenerated)
+        if (_status == ConstructionError.IsDone || _status == ConstructionError.FirstEdgeDegenerated
+            || _status == ConstructionError.LastEdgeDegenerated || _status == ConstructionError.BothEdgesDegenerated)
         {
             //  if (status == ChFi2d_IsDone) {
-            BuildNewWire(adjEdge1, adjEdge2, E1, aChamfer, E2);
+            BuildNewWire(adjEdge1, adjEdge2, e1, chamfer, e2);
             basisEdge1 = BasisEdge(adjEdge1);
             basisEdge2 = BasisEdge(adjEdge2);
-            UpDateHistory(basisEdge1, basisEdge2, E1, E2, aChamfer, 2);
-            status = ChFi2d_IsDone;
-            return ShapeCasts.Edge(chamfers.Value(chamfers.Length()));
+            UpDateHistory(basisEdge1, basisEdge2, e1, e2, chamfer, 2);
+            _status = ConstructionError.IsDone;
+            return ShapeCasts.Edge(_chamfers.Value(_chamfers.Length()));
         }
-        return aChamfer;
+        return chamfer;
     }
 
     //=================================================================================================
 
     // The chamfer computed from a vertex, two edges and two distances. TrimE1, TrimE2 and Chamfer have sense only if
     // the status is IsDone.
-    private void ComputeChamfer(in Vertex V,
-                                in Edge E1,
-                                in Edge E2,
-                                double D1,
-                                double D2,
-                                ref Edge TrimE1,
-                                ref Edge TrimE2,
-                                ref Edge Chamfer)
+    private void ComputeChamfer(in Vertex v,
+                                in Edge e1,
+                                in Edge e2,
+                                double d1,
+                                double d2,
+                                ref Edge trimE1,
+                                ref Edge trimE2,
+                                ref Edge chamfer)
     {
         Vertex newExtr1 = new(), newExtr2 = new();
-        bool Degen1, Degen2;
-        Chamfer = BuildChamferEdge(V, E1, E2, D1, D2, ref newExtr1, ref newExtr2);
-        if (status != ChFi2d_IsDone)
+        bool degen1, degen2;
+        chamfer = BuildChamferEdge(v, e1, e2, d1, d2, ref newExtr1, ref newExtr2);
+        if (_status != ConstructionError.IsDone)
         {
             return;
         }
-        TrimE1 = BuildNewEdge(E1, V, newExtr1, out Degen1);
-        TrimE2 = BuildNewEdge(E2, V, newExtr2, out Degen2);
-        if (Degen1 && Degen2)
+        trimE1 = BuildNewEdge(e1, v, newExtr1, out degen1);
+        trimE2 = BuildNewEdge(e2, v, newExtr2, out degen2);
+        if (degen1 && degen2)
         {
-            status = ChFi2d_BothEdgesDegenerated;
+            _status = ConstructionError.BothEdgesDegenerated;
         }
-        if (Degen1 && !Degen2)
+        if (degen1 && !degen2)
         {
-            status = ChFi2d_FirstEdgeDegenerated;
+            _status = ConstructionError.FirstEdgeDegenerated;
         }
-        if (!Degen1 && Degen2)
+        if (!degen1 && degen2)
         {
-            status = ChFi2d_LastEdgeDegenerated;
+            _status = ConstructionError.LastEdgeDegenerated;
         }
         //   TrimE1 = BuildNewEdge(E1, V, newExtr1);
         //  TrimE2 = BuildNewEdge(E2, V, newExtr2);
@@ -189,35 +193,35 @@ public sealed partial class ChFi2d_Builder
 
     // The chamfer computed from an edge, a vertex, a distance and an angle. TrimE1, TrimE2 and Chamfer have sense only
     // if the status is IsDone.
-    private void ComputeChamfer(in Vertex V,
-                                in Edge E1,
-                                double D,
-                                double Ang,
-                                in Edge E2,
-                                ref Edge TrimE1,
-                                ref Edge TrimE2,
-                                ref Edge Chamfer)
+    private void ComputeChamfer(in Vertex v,
+                                in Edge e1,
+                                double d,
+                                double ang,
+                                in Edge e2,
+                                ref Edge trimE1,
+                                ref Edge trimE2,
+                                ref Edge chamfer)
     {
         Vertex newExtr1 = new(), newExtr2 = new();
-        bool Degen1, Degen2;
-        Chamfer = BuildChamferEdge(V, E1, D, Ang, E2, ref newExtr1, ref newExtr2);
-        if (status != ChFi2d_IsDone)
+        bool degen1, degen2;
+        chamfer = BuildChamferEdge(v, e1, d, ang, e2, ref newExtr1, ref newExtr2);
+        if (_status != ConstructionError.IsDone)
         {
             return;
         }
-        TrimE1 = BuildNewEdge(E1, V, newExtr1, out Degen1);
-        TrimE2 = BuildNewEdge(E2, V, newExtr2, out Degen2);
-        if (Degen1 && Degen2)
+        trimE1 = BuildNewEdge(e1, v, newExtr1, out degen1);
+        trimE2 = BuildNewEdge(e2, v, newExtr2, out degen2);
+        if (degen1 && degen2)
         {
-            status = ChFi2d_BothEdgesDegenerated;
+            _status = ConstructionError.BothEdgesDegenerated;
         }
-        if (Degen1 && !Degen2)
+        if (degen1 && !degen2)
         {
-            status = ChFi2d_FirstEdgeDegenerated;
+            _status = ConstructionError.FirstEdgeDegenerated;
         }
-        if (!Degen1 && Degen2)
+        if (!degen1 && degen2)
         {
-            status = ChFi2d_LastEdgeDegenerated;
+            _status = ConstructionError.LastEdgeDegenerated;
         }
         //   TrimE1 = BuildNewEdge(E1, V, newExtr1);
         //   TrimE2 = BuildNewEdge(E2, V, newExtr2);
@@ -226,60 +230,60 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     /// <summary>
-    /// Modifies the chamfer <paramref name="Chamfer"/> built between the edges <paramref name="E1"/> and
-    /// <paramref name="E2"/> (only <paramref name="E2"/> is used, as in OCCT), and returns the new chamfer (frozen).
+    /// Modifies the chamfer <paramref name="chamfer"/> built between the edges <paramref name="e1"/> and
+    /// <paramref name="e2"/> (only <paramref name="e2"/> is used, as in OCCT), and returns the new chamfer (frozen).
     /// </summary>
-    public Edge ModifyChamfer(in Edge Chamfer, in Edge E1, in Edge E2, double D1, double D2)
+    public Edge ModifyChamfer(in Edge chamfer, in Edge e1, in Edge e2, double d1, double d2)
     {
-        _ = E1; // OCCT: E1 is unused
-        Vertex aVertex = InternalRemoveChamfer(Chamfer);
+        _ = e1; // OCCT: E1 is unused
+        Vertex vertex = InternalRemoveChamfer(chamfer);
         Edge adjEdge1 = new(), adjEdge2 = new();
-        status = ChFi2d.FindConnectedEdges(newFace, aVertex, ref adjEdge1, ref adjEdge2);
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, vertex, ref adjEdge1, ref adjEdge2);
         Edge aChamfer = new();
-        if (status == ChFi2d_ConnexionError)
+        if (_status == ConstructionError.ConnexionError)
         {
             return aChamfer;
         }
 
         // adjEdge1 and adjEdge2 are copies of E1 and E2 with the good orientation
         // on <newFace>
-        if (adjEdge1.IsSame(E2))
+        if (adjEdge1.IsSame(e2))
         {
             Orientation orient = adjEdge1.Orientation();
             adjEdge1 = adjEdge2;
-            adjEdge2 = E2;
+            adjEdge2 = e2;
             adjEdge2.Orientation(orient);
         }
 
-        aChamfer = InternalAddChamfer(adjEdge1, adjEdge2, D1, D2);
+        aChamfer = InternalAddChamfer(adjEdge1, adjEdge2, d1, d2);
         return Published(aChamfer);
     } // ModifyChamfer
 
     //=================================================================================================
 
     /// <summary>
-    /// Modifies the chamfer <paramref name="Chamfer"/>: the new one makes the angle <paramref name="Ang"/> with the edge
-    /// <paramref name="E"/>, one of its ends on <paramref name="E"/> at the distance <paramref name="D"/> from the vertex
+    /// Modifies the chamfer <paramref name="chamfer"/>: the new one makes the angle <paramref name="ang"/> with the edge
+    /// <paramref name="e"/>, one of its ends on <paramref name="e"/> at the distance <paramref name="d"/> from the vertex
     /// it is built on. Returns the new chamfer (frozen).
     /// </summary>
-    public Edge ModifyChamfer(in Edge Chamfer, in Edge E, double D, double Ang)
+    public Edge ModifyChamfer(in Edge chamfer, in Edge e, double d, double ang)
     {
-        Vertex aVertex = InternalRemoveChamfer(Chamfer);
+        Vertex vertex = InternalRemoveChamfer(chamfer);
         Edge adjEdge1 = new(), adjEdge2 = new();
-        status = ChFi2d.FindConnectedEdges(newFace, aVertex, ref adjEdge1, ref adjEdge2);
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, vertex, ref adjEdge1, ref adjEdge2);
         Edge aChamfer = new();
-        if (status == ChFi2d_ConnexionError)
+        if (_status == ConstructionError.ConnexionError)
         {
             return aChamfer;
         }
 
-        if (adjEdge1.IsSame(E))
+        if (adjEdge1.IsSame(e))
         {
-            aChamfer = InternalAddChamfer(adjEdge1, aVertex, D, Ang);
+            aChamfer = InternalAddChamfer(adjEdge1, vertex, d, ang);
         }
         else
         {
-            aChamfer = InternalAddChamfer(adjEdge2, aVertex, D, Ang);
+            aChamfer = InternalAddChamfer(adjEdge2, vertex, d, ang);
         }
         return Published(aChamfer);
     } // ModifyChamfer
@@ -287,101 +291,101 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     /// <summary>
-    /// Removes the chamfer <paramref name="Chamfer"/> and returns the vertex connecting the two edges adjacent to it
-    /// (frozen; null if <paramref name="Chamfer"/> is not a chamfer of this builder).
+    /// Removes the chamfer <paramref name="chamfer"/> and returns the vertex connecting the two edges adjacent to it
+    /// (frozen; null if <paramref name="chamfer"/> is not a chamfer of this builder).
     /// </summary>
-    public Vertex RemoveChamfer(in Edge Chamfer)
+    public Vertex RemoveChamfer(in Edge chamfer)
     {
-        Vertex aVertex = InternalRemoveChamfer(Chamfer);
-        aVertex.TShape()?.FreezeGraph();
-        return aVertex;
+        Vertex vertex = InternalRemoveChamfer(chamfer);
+        vertex.TShape()?.FreezeGraph();
+        return vertex;
     }
 
-    private Vertex InternalRemoveChamfer(in Edge Chamfer)
+    private Vertex InternalRemoveChamfer(in Edge chamfer)
     {
         Vertex commonVertex = new();
 
         int i = 1;
-        bool IsFind = false;
-        while (i <= chamfers.Length())
+        bool isFind = false;
+        while (i <= _chamfers.Length())
         {
-            Edge aChamfer = ShapeCasts.Edge(chamfers.Value(i));
-            if (aChamfer.IsSame(Chamfer))
+            Edge aChamfer = ShapeCasts.Edge(_chamfers.Value(i));
+            if (aChamfer.IsSame(chamfer))
             {
-                chamfers.Remove(i);
-                IsFind = true;
+                _chamfers.Remove(i);
+                isFind = true;
                 break;
             }
             i++;
         }
-        if (!IsFind)
+        if (!isFind)
         {
             return commonVertex;
         }
 
-        Exploration.Vertices(Chamfer, out Vertex firstVertex, out Vertex lastVertex);
+        Exploration.Vertices(chamfer, out Vertex firstVertex, out Vertex lastVertex);
 
         Edge adjEdge1 = new(), adjEdge2 = new();
-        status = ChFi2d.FindConnectedEdges(newFace, firstVertex, ref adjEdge1, ref adjEdge2);
-        if (status == ChFi2d_ConnexionError)
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, firstVertex, ref adjEdge1, ref adjEdge2);
+        if (_status == ConstructionError.ConnexionError)
         {
             return commonVertex;
         }
 
-        Edge basisEdge1, basisEdge2, E1, E2;
+        Edge basisEdge1, basisEdge2, e1, e2;
         // E1 and E2 are the adjacentes edges to Chamfer
 
-        if (adjEdge1.IsSame(Chamfer))
+        if (adjEdge1.IsSame(chamfer))
         {
-            E1 = adjEdge2;
+            e1 = adjEdge2;
         }
         else
         {
-            E1 = adjEdge1;
+            e1 = adjEdge1;
         }
-        basisEdge1 = BasisEdge(E1);
-        status = ChFi2d.FindConnectedEdges(newFace, lastVertex, ref adjEdge1, ref adjEdge2);
-        if (status == ChFi2d_ConnexionError)
+        basisEdge1 = BasisEdge(e1);
+        _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, lastVertex, ref adjEdge1, ref adjEdge2);
+        if (_status == ConstructionError.ConnexionError)
         {
             return commonVertex;
         }
-        if (adjEdge1.IsSame(Chamfer))
+        if (adjEdge1.IsSame(chamfer))
         {
-            E2 = adjEdge2;
+            e2 = adjEdge2;
         }
         else
         {
-            E2 = adjEdge1;
+            e2 = adjEdge1;
         }
-        basisEdge2 = BasisEdge(E2);
+        basisEdge2 = BasisEdge(e2);
         Vertex connectionE1Chamfer = new(), connectionE2Chamfer = new();
-        bool hasConnection = ChFi2d.CommonVertex(basisEdge1, basisEdge2, ref commonVertex);
+        bool hasConnection = global::Kerf.Engine.Fillets.Planar.ChFi2d.CommonVertex(basisEdge1, basisEdge2, ref commonVertex);
         if (!hasConnection)
         {
-            status = ChFi2d_ConnexionError;
+            _status = ConstructionError.ConnexionError;
             return commonVertex;
         }
-        hasConnection = ChFi2d.CommonVertex(E1, Chamfer, ref connectionE1Chamfer);
+        hasConnection = global::Kerf.Engine.Fillets.Planar.ChFi2d.CommonVertex(e1, chamfer, ref connectionE1Chamfer);
         if (!hasConnection)
         {
-            status = ChFi2d_ConnexionError;
+            _status = ConstructionError.ConnexionError;
             return commonVertex;
         }
-        hasConnection = ChFi2d.CommonVertex(E2, Chamfer, ref connectionE2Chamfer);
+        hasConnection = global::Kerf.Engine.Fillets.Planar.ChFi2d.CommonVertex(e2, chamfer, ref connectionE2Chamfer);
         if (!hasConnection)
         {
-            status = ChFi2d_ConnexionError;
+            _status = ConstructionError.ConnexionError;
             return commonVertex;
         }
 
         // rebuild edges on wire
         Edge newEdge1 = new(), newEdge2 = new();
         Vertex v, v1, v2;
-        var makeEdge = new BRepLib_MakeEdge();
+        var makeEdge = new LibraryMakeEdge();
         Placement loc;
         double first, last;
 
-        Exploration.Vertices(E1, out firstVertex, out lastVertex);
+        Exploration.Vertices(e1, out firstVertex, out lastVertex);
         Exploration.Vertices(basisEdge1, out v1, out v2);
         if (v1.IsSame(commonVertex))
         {
@@ -406,7 +410,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E1, loc, first, last);
-                Curve3D? curve = Tool.Curve(E1, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge1 = makeEdge.InternalEdge();
                 newEdge1.Orientation(basisEdge1.Orientation());
@@ -417,7 +421,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E1, loc, first, last);
-                Curve3D? curve = Tool.Curve(E1, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge1 = makeEdge.InternalEdge();
                 newEdge1.Orientation(basisEdge1.Orientation());
@@ -435,7 +439,7 @@ public sealed partial class ChFi2d_Builder
             v = v1;
         }
 
-        Exploration.Vertices(E2, out firstVertex, out lastVertex);
+        Exploration.Vertices(e2, out firstVertex, out lastVertex);
         if (firstVertex.IsSame(v) || lastVertex.IsSame(v))
         {
             // It means the edge support only one fillet. In this case
@@ -450,7 +454,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E2, loc, first, last);
-                Curve3D? curve = Tool.Curve(E2, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge2 = makeEdge.InternalEdge();
                 newEdge2.Orientation(basisEdge2.Orientation());
@@ -461,7 +465,7 @@ public sealed partial class ChFi2d_Builder
                 //  syntaxe invalide sur NT
                 //      const occ::handle<Geom_Curve>& curve =
                 //	BRep_Tool::Curve(E2, loc, first, last);
-                Curve3D? curve = Tool.Curve(E2, out loc, out first, out last);
+                Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge2 = makeEdge.InternalEdge();
                 newEdge2.Orientation(basisEdge2.Orientation());
@@ -470,37 +474,37 @@ public sealed partial class ChFi2d_Builder
         } // else ...
 
         // rebuild the newFace
-        var Ex = new Explorer(newFace, ShapeType.Edge);
+        var ex = new Explorer(_newFace, ShapeType.Edge);
         Wire newWire = new();
 
-        var B = new BrepBuilder();
-        B.MakeWire(ref newWire);
+        var b = new BrepBuilder();
+        b.MakeWire(ref newWire);
 
-        while (Ex.More())
+        while (ex.More())
         {
-            Edge theEdge = ShapeCasts.Edge(Ex.Current());
-            if (!theEdge.IsSame(E1) && !theEdge.IsSame(E2) && !theEdge.IsSame(Chamfer))
+            Edge theEdge = ShapeCasts.Edge(ex.Current());
+            if (!theEdge.IsSame(e1) && !theEdge.IsSame(e2) && !theEdge.IsSame(chamfer))
             {
-                B.Add(newWire, theEdge);
+                b.Add(newWire, theEdge);
             }
             else
             {
-                if (theEdge.IsEqual(E1))
+                if (theEdge.IsEqual(e1))
                 {
-                    B.Add(newWire, newEdge1);
+                    b.Add(newWire, newEdge1);
                 }
-                else if (theEdge.IsEqual(E2))
+                else if (theEdge.IsEqual(e2))
                 {
-                    B.Add(newWire, newEdge2);
+                    b.Add(newWire, newEdge2);
                 }
             } // else
-            Ex.Next();
+            ex.Next();
         } // while ...
 
-        var Adaptor3dSurface = new FaceSurfaceAdaptor(refFace);
-        var mFace = new BRepLib_MakeFace(Adaptor3dSurface.Plane(), newWire);
-        newFace.Nullify();
-        newFace = mFace.InternalFace();
+        var adaptor3dSurface = new FaceSurfaceAdaptor(_refFace);
+        var mFace = new LibraryMakeFace(adaptor3dSurface.Plane(), newWire);
+        _newFace.Nullify();
+        _newFace = mFace.InternalFace();
 
         UpDateHistory(basisEdge1, basisEdge2, newEdge1, newEdge2);
 
@@ -511,74 +515,74 @@ public sealed partial class ChFi2d_Builder
 
     // The chamfer between AdjEdge1 and AdjEdge2 at V, at the distances D1 and D2; NewExtr1 and NewExtr2 receive the new
     // extremities of the two edges. The edge has sense only if the status is IsDone.
-    private Edge BuildChamferEdge(in Vertex V,
-                                         in Edge AdjEdge1,
-                                         in Edge AdjEdge2,
-                                         double D1,
-                                         double D2,
-                                         ref Vertex NewExtr1,
-                                         ref Vertex NewExtr2)
+    private Edge BuildChamferEdge(in Vertex v,
+                                         in Edge adjEdge1,
+                                         in Edge adjEdge2,
+                                         double d1,
+                                         double d2,
+                                         ref Vertex newExtr1,
+                                         ref Vertex newExtr2)
     {
         Edge chamfer = new();
-        if (D1 <= 0 || D2 <= 0)
+        if (d1 <= 0 || d2 <= 0)
         {
-            status = ChFi2d_ParametersError;
+            _status = ConstructionError.ParametersError;
             return chamfer;
         } // if ( D1 <=0 ...
 
         double param1, param2;
-        Point3D p1 = ComputePoint(V, AdjEdge1, D1, out param1);
-        Point3D p2 = ComputePoint(V, AdjEdge2, D2, out param2);
+        Point3D p1 = ComputePoint(v, adjEdge1, d1, out param1);
+        Point3D p2 = ComputePoint(v, adjEdge2, d2, out param2);
 
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        var B = new BrepBuilder();
-        B.MakeVertex(ref NewExtr1, p1, tol);
-        B.MakeVertex(ref NewExtr2, p2, tol);
-        NewExtr1.Orientation(Forward);
-        NewExtr2.Orientation(Reversed);
+        var b = new BrepBuilder();
+        b.MakeVertex(ref newExtr1, p1, tol);
+        b.MakeVertex(ref newExtr2, p2, tol);
+        newExtr1.Orientation(Forward);
+        newExtr2.Orientation(Reversed);
 
         // chamfer edge construction
-        Surface? refSurf = Tool.Surface(refFace, out Placement loc);
+        Surface? refSurf = Tool.Surface(_refFace, out Placement loc);
         _ = refSurf; // unused, as in OCCT
         _ = loc;
         var myVec = new Vector3D(p1, p2);
         var myDir = new Direction3D(myVec);
         var newLine = new LineCurve3D(p1, myDir);
         double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
-        B.MakeEdge(ref chamfer, newLine, tol);
-        B.Range(chamfer, 0.0, param);
-        B.Add(chamfer, NewExtr1);
-        B.UpdateVertex(NewExtr1, 0.0, chamfer, tol);
-        B.Add(chamfer, NewExtr2);
-        B.UpdateVertex(NewExtr2, param, chamfer, tol);
-        OrientChamfer(ref chamfer, AdjEdge1, V);
+        b.MakeEdge(ref chamfer, newLine, tol);
+        b.Range(chamfer, 0.0, param);
+        b.Add(chamfer, newExtr1);
+        b.UpdateVertex(newExtr1, 0.0, chamfer, tol);
+        b.Add(chamfer, newExtr2);
+        b.UpdateVertex(newExtr2, param, chamfer, tol);
+        OrientChamfer(ref chamfer, adjEdge1, v);
 
         // set the orientation of NewExtr1 and NewExtr2 for the adjacent edges
-        Vertex V1 = Exploration.FirstVertex(AdjEdge1);
-        Vertex V2 = Exploration.LastVertex(AdjEdge1);
-        if (V1.IsSame(V))
+        Vertex v1 = Exploration.FirstVertex(adjEdge1);
+        Vertex v2 = Exploration.LastVertex(adjEdge1);
+        if (v1.IsSame(v))
         {
-            NewExtr1.Orientation(V1.Orientation());
+            newExtr1.Orientation(v1.Orientation());
         }
         else
         {
-            NewExtr1.Orientation(V2.Orientation());
+            newExtr1.Orientation(v2.Orientation());
         }
 
-        V1 = Exploration.FirstVertex(AdjEdge2);
-        V2 = Exploration.LastVertex(AdjEdge2);
-        if (V1.IsSame(V))
+        v1 = Exploration.FirstVertex(adjEdge2);
+        v2 = Exploration.LastVertex(adjEdge2);
+        if (v1.IsSame(v))
         {
-            NewExtr2.Orientation(V1.Orientation());
+            newExtr2.Orientation(v1.Orientation());
         }
         else
         {
-            NewExtr2.Orientation(V2.Orientation());
+            newExtr2.Orientation(v2.Orientation());
         }
-        UpdateNewVertex(B, NewExtr1, param1, AdjEdge1, tol);
-        UpdateNewVertex(B, NewExtr2, param2, AdjEdge2, tol);
+        UpdateNewVertex(b, newExtr1, param1, adjEdge1, tol);
+        UpdateNewVertex(b, newExtr2, param2, adjEdge2, tol);
 
-        status = ChFi2d_IsDone;
+        _status = ConstructionError.IsDone;
         return chamfer;
     } // BuildChamferEdge
 
@@ -586,43 +590,43 @@ public sealed partial class ChFi2d_Builder
 
     // The chamfer at V making the angle Ang with AdjEdge1, one end on AdjEdge1 at the distance D; NewExtr1 and NewExtr2
     // receive the new extremities of the two edges. The edge has sense only if the status is IsDone.
-    private Edge BuildChamferEdge(in Vertex V,
-                                         in Edge AdjEdge1,
-                                         double D,
-                                         double Ang,
-                                         in Edge AdjEdge2,
-                                         ref Vertex NewExtr1,
-                                         ref Vertex NewExtr2)
+    private Edge BuildChamferEdge(in Vertex v,
+                                         in Edge adjEdge1,
+                                         double d,
+                                         double ang,
+                                         in Edge adjEdge2,
+                                         ref Vertex newExtr1,
+                                         ref Vertex newExtr2)
     {
         Edge chamfer = new();
-        if (D <= 0 || Ang <= 0)
+        if (d <= 0 || ang <= 0)
         {
-            status = ChFi2d_ParametersError;
+            _status = ConstructionError.ParametersError;
             return chamfer;
         } // if ( D <= 0 ...
 
         double param1, param2;
-        Point3D p1 = ComputePoint(V, AdjEdge1, D, out param1);
-        Point3D p = Tool.Pnt(V);
+        Point3D p1 = ComputePoint(v, adjEdge1, d, out param1);
+        Point3D p = Tool.Pnt(v);
         var myVec = new Vector3D(p1, p);
 
         // compute the tangent vector on AdjEdge2 at the vertex V.
-        var c = new EdgeCurveAdaptor(AdjEdge2, refFace);
+        var c = new EdgeCurveAdaptor(adjEdge2, _refFace);
         double first, last;
         first = c.FirstParameter();
         last = c.LastParameter();
 
-        Point3D aPoint;
+        Point3D point;
         Vector3D tan;
-        c.D1(first, out aPoint, out tan);
-        if (aPoint.Distance(p) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        c.D1(first, out point, out tan);
+        if (point.Distance(p) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            c.D1(last, out aPoint, out tan);
+            c.D1(last, out point, out tan);
         }
         // tangent orientation
-        Exploration.Vertices(AdjEdge2, out Vertex v1, out Vertex v2);
+        Exploration.Vertices(adjEdge2, out Vertex v1, out Vertex v2);
         Orientation orient;
-        if (v1.IsSame(V))
+        if (v1.IsSame(v))
         {
             orient = v1.Orientation();
         }
@@ -636,57 +640,57 @@ public sealed partial class ChFi2d_Builder
         }
 
         // compute the chamfer geometric support
-        var RotAxe = new Axis3D(p1, new Direction3D(tan ^ myVec));
-        Vector3D vecLin = myVec.Rotated(RotAxe, -Ang);
+        var rotAxe = new Axis3D(p1, new Direction3D(tan ^ myVec));
+        Vector3D vecLin = myVec.Rotated(rotAxe, -ang);
         var myDir = new Direction3D(vecLin);
         var newLine = new LineCurve3D(p1, myDir);
-        var B1 = new BrepBuilder();
-        B1.MakeEdge(ref chamfer, newLine, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Point3D p2 = ComputePoint(refFace, newLine, AdjEdge2, out param2);
+        var b1 = new BrepBuilder();
+        b1.MakeEdge(ref chamfer, newLine, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point3D p2 = ComputePoint(_refFace, newLine, adjEdge2, out param2);
 
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        var B = new BrepBuilder();
-        B.MakeVertex(ref NewExtr1, p1, tol);
-        B.MakeVertex(ref NewExtr2, p2, tol);
-        NewExtr1.Orientation(Forward);
-        NewExtr2.Orientation(Reversed);
+        var b = new BrepBuilder();
+        b.MakeVertex(ref newExtr1, p1, tol);
+        b.MakeVertex(ref newExtr2, p2, tol);
+        newExtr1.Orientation(Forward);
+        newExtr2.Orientation(Reversed);
 
         // chamfer edge construction
         double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
-        B.MakeEdge(ref chamfer, newLine, tol);
-        B.Range(chamfer, 0.0, param);
-        B.Add(chamfer, NewExtr1);
-        B.UpdateVertex(NewExtr1, 0.0, chamfer, tol);
-        B.Add(chamfer, NewExtr2);
-        B.UpdateVertex(NewExtr2, param, chamfer, tol);
-        OrientChamfer(ref chamfer, AdjEdge1, V);
+        b.MakeEdge(ref chamfer, newLine, tol);
+        b.Range(chamfer, 0.0, param);
+        b.Add(chamfer, newExtr1);
+        b.UpdateVertex(newExtr1, 0.0, chamfer, tol);
+        b.Add(chamfer, newExtr2);
+        b.UpdateVertex(newExtr2, param, chamfer, tol);
+        OrientChamfer(ref chamfer, adjEdge1, v);
 
         // set the orientation of NewExtr1 and NewExtr2 for the adjacent edges
-        Vertex V1 = Exploration.FirstVertex(AdjEdge1);
-        Vertex V2 = Exploration.LastVertex(AdjEdge1);
-        if (V1.IsSame(V))
+        Vertex V1 = Exploration.FirstVertex(adjEdge1);
+        Vertex V2 = Exploration.LastVertex(adjEdge1);
+        if (V1.IsSame(v))
         {
-            NewExtr1.Orientation(V1.Orientation());
+            newExtr1.Orientation(V1.Orientation());
         }
         else
         {
-            NewExtr1.Orientation(V2.Orientation());
+            newExtr1.Orientation(V2.Orientation());
         }
 
-        V1 = Exploration.FirstVertex(AdjEdge2);
-        V2 = Exploration.LastVertex(AdjEdge2);
-        if (V1.IsSame(V))
+        V1 = Exploration.FirstVertex(adjEdge2);
+        V2 = Exploration.LastVertex(adjEdge2);
+        if (V1.IsSame(v))
         {
-            NewExtr2.Orientation(V1.Orientation());
+            newExtr2.Orientation(V1.Orientation());
         }
         else
         {
-            NewExtr2.Orientation(V2.Orientation());
+            newExtr2.Orientation(V2.Orientation());
         }
-        UpdateNewVertex(B, NewExtr1, param1, AdjEdge1, tol);
-        UpdateNewVertex(B, NewExtr2, param2, AdjEdge2, tol);
+        UpdateNewVertex(b, newExtr1, param1, adjEdge1, tol);
+        UpdateNewVertex(b, newExtr2, param2, adjEdge2, tol);
 
-        status = ChFi2d_IsDone;
+        _status = ConstructionError.IsDone;
         return chamfer;
     }
 
@@ -695,23 +699,23 @@ public sealed partial class ChFi2d_Builder
     // its tolerance, and sets the edge's Modified flag. When the adjacent edge is frozen (the caller's, or one the
     // builder published), the same call goes through an EmptyCopied stand-in, which has the edge's representations and
     // location: the vertex gets OCCT's points, and the edge's flag is left as it is.
-    private static void UpdateNewVertex(BrepBuilder B, in Vertex V, double Par, in Edge E, double Tol)
+    private static void UpdateNewVertex(BrepBuilder b, in Vertex v, double par, in Edge e, double tol)
     {
-        if (E.TShape()!.IsFrozen && !Tool.Degenerated(E))
+        if (e.TShape()!.IsFrozen && !Tool.Degenerated(e))
         {
-            B.UpdateVertex(V, Par, ShapeCasts.Edge(E.EmptyCopied()), Tol);
+            b.UpdateVertex(v, par, ShapeCasts.Edge(e.EmptyCopied()), tol);
             return;
         }
-        B.UpdateVertex(V, Par, E, Tol);
+        b.UpdateVertex(v, par, e, tol);
     }
 
     //=================================================================================================
 
     // The point at the distance D from V along E (its parameter in Param).
-    private static Point3D ComputePoint(in Vertex V, in Edge E, double D, out double Param)
+    private static Point3D ComputePoint(in Vertex v, in Edge e, double d, out double param)
     {
         // geometric support
-        var c = new EdgeCurveAdaptor(E);
+        var c = new EdgeCurveAdaptor(e);
         double first, last;
         first = c.FirstParameter();
         last = c.LastParameter();
@@ -720,13 +724,13 @@ public sealed partial class ChFi2d_Builder
         if (c.GetType() == Line)
         {
             Point3D p1, p2;
-            Exploration.Vertices(E, out Vertex v1, out Vertex v2);
+            Exploration.Vertices(e, out Vertex v1, out Vertex v2);
             p1 = Tool.Pnt(v1);
             p2 = Tool.Pnt(v2);
             var myVec = new Vector3D(p1, p2);
             myVec.Normalize();
-            myVec *= D;
-            if (v2.IsSame(V))
+            myVec *= d;
+            if (v2.IsSame(v))
             {
                 myVec *= -1; // change the sense of myVec
                 thePoint = p2.Translated(myVec);
@@ -736,9 +740,9 @@ public sealed partial class ChFi2d_Builder
                 thePoint = p1.Translated(myVec);
             }
 
-            Param = global::Kerf.Engine.Geometry.ElCLib.Parameter(c.Line(), thePoint);
+            param = global::Kerf.Engine.Geometry.ElCLib.Parameter(c.Line(), thePoint);
             // szv:OCC20823-begin
-            c.D0(Param, out thePoint);
+            c.D0(param, out thePoint);
             // szv:OCC20823-end
             return thePoint;
         } // if (C->IsKind(TYPE ...
@@ -747,28 +751,28 @@ public sealed partial class ChFi2d_Builder
         {
             Circle3D cir = c.Circle();
             double radius = cir.Radius();
-            Exploration.Vertices(E, out Vertex v1, out Vertex v2);
+            Exploration.Vertices(e, out Vertex v1, out Vertex v2);
             double param1, param2;
-            if (V.IsSame(v1))
+            if (v.IsSame(v1))
             {
-                param1 = Tool.Parameter(v1, E);
-                param2 = Tool.Parameter(v2, E);
+                param1 = Tool.Parameter(v1, e);
+                param2 = Tool.Parameter(v2, e);
             }
             else
             {
-                param1 = Tool.Parameter(v2, E);
-                param2 = Tool.Parameter(v1, E);
+                param1 = Tool.Parameter(v2, e);
+                param2 = Tool.Parameter(v1, e);
             }
-            double deltaAlpha = D / radius;
+            double deltaAlpha = d / radius;
             if (param1 > param2)
             {
-                Param = param1 - deltaAlpha;
+                param = param1 - deltaAlpha;
             }
             else
             {
-                Param = param1 + deltaAlpha;
+                param = param1 + deltaAlpha;
             }
-            c.D0(Param, out thePoint);
+            c.D0(param, out thePoint);
             return thePoint;
         } // if (C->IsKind(TYPE ...
 
@@ -776,8 +780,8 @@ public sealed partial class ChFi2d_Builder
         {
             // in all other case than lines and circles.
             Point3D p;
-            Exploration.Vertices(E, out Vertex v1, out Vertex v2);
-            if (V.IsSame(v1))
+            Exploration.Vertices(e, out Vertex v1, out Vertex v2);
+            if (v.IsSame(v1))
             {
                 p = Tool.Pnt(v1);
             }
@@ -789,15 +793,15 @@ public sealed partial class ChFi2d_Builder
             CurveAdaptor cc = c.Curve();
             if (p.Distance(c.Value(first)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                var computePoint = new AbscissaPoint(cc, D, first);
-                Param = computePoint.Parameter();
+                var computePoint = new AbscissaPoint(cc, d, first);
+                param = computePoint.Parameter();
             }
             else
             {
-                var computePoint = new AbscissaPoint(cc, D, last);
-                Param = computePoint.Parameter();
+                var computePoint = new AbscissaPoint(cc, d, last);
+                param = computePoint.Parameter();
             }
-            thePoint = cc.Value(Param);
+            thePoint = cc.Value(param);
             return thePoint;
         } // else ...
     } // ComputePoint
@@ -805,51 +809,51 @@ public sealed partial class ChFi2d_Builder
     //=================================================================================================
 
     // The first intersection (along L) of the line L with the edge E on the face F; Param is its parameter on E.
-    private static Point3D ComputePoint(in Face F, LineCurve3D L, in Edge E, out double Param)
+    private static Point3D ComputePoint(in Face f, LineCurve3D l, in Edge e, out double param)
     {
-        var Adaptor3dSurface = new FaceSurfaceAdaptor(F);
-        var refSurf = new PlaneSurface(Adaptor3dSurface.Plane());
-        Curve2D lin2d = GeomAPI.To2d(L, refSurf.Pln())!;
+        var adaptor3dSurface = new FaceSurfaceAdaptor(f);
+        var refSurf = new PlaneSurface(adaptor3dSurface.Plane());
+        Curve2D lin2d = Projections.To2d(l, refSurf.Pln())!;
         Curve2D? c2d;
         double first, last;
-        c2d = Tool.CurveOnSurface(E, F, out first, out last);
+        c2d = Tool.CurveOnSurface(e, f, out first, out last);
         var adaptorL = new CurveAdaptor2D(lin2d);
         var adaptorC = new CurveAdaptor2D(c2d!);
-        var Intersection = new Geom2dInt_GInter(adaptorL,
+        var intersection = new GInter(adaptorL,
                                                 adaptorC,
                                                 global::Kerf.Engine.Foundation.Precision.PIntersection(),
                                                 global::Kerf.Engine.Foundation.Precision.PIntersection());
         double paramOnLine = 1E300;
         Point2D p2d = new();
         // OCCT: Param is left unset, and p2d at the origin of the plane, when the line meets nothing
-        Param = 0.0;
-        if (Intersection.IsDone())
+        param = 0.0;
+        if (intersection.IsDone)
         {
             int i = 1;
-            while (i <= Intersection.NbPoints())
+            while (i <= intersection.PointCount)
             {
-                IntRes2d_IntersectionPoint iP = Intersection.Point(i);
+                IntersectionPoint2D iP = intersection.Point(i);
                 if (iP.ParamOnFirst() < paramOnLine)
                 {
                     p2d = iP.Value();
                     paramOnLine = iP.ParamOnFirst();
-                    Param = iP.ParamOnSecond();
+                    param = iP.ParamOnSecond();
                 } // if (iP.ParamOnFirst ...
                 i++;
             } // while ( i <= ...
         } // if (Intersection.IsDone ...
 
-        Point3D thePoint = Adaptor3dSurface.Value(p2d.X(), p2d.Y());
+        Point3D thePoint = adaptor3dSurface.Value(p2d.X(), p2d.Y());
         return thePoint;
     } // ComputePoint
 
     //=================================================================================================
 
-    private static void OrientChamfer(ref Edge chamfer, in Edge E, in Vertex V)
+    private static void OrientChamfer(ref Edge chamfer, in Edge e, in Vertex v)
     {
-        Orientation vOrient, orient = E.Orientation();
-        Exploration.Vertices(E, out Vertex v1, out Vertex v2);
-        if (v1.IsSame(V))
+        Orientation vOrient, orient = e.Orientation();
+        Exploration.Vertices(e, out Vertex v1, out Vertex v2);
+        if (v1.IsSame(v))
         {
             vOrient = v2.Orientation();
         }

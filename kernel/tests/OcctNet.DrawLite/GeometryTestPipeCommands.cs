@@ -2,10 +2,11 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Geometry.Continuity;
-using static Occt.GeomFill_Trihedron;
+using static Kerf.Engine.Construction.Surfaces.Trihedron;
 
 namespace OcctNet.DrawLite;
 
@@ -30,7 +31,7 @@ internal static class GeometryTestPipeCommands
     private static int Sweep(DrawInterpreter theDI, DrawResult di, IReadOnlyList<string> a)
     {
         int n = a.Count;
-        GeomFill_Trihedron Option = GeomFill_IsCorrectedFrenet;
+        Trihedron Option = Trihedron.IsCorrectedFrenet;
         int ipath = 2, isection = 4, NbSeg = 30, MaxDegree = 10;
         double Tol = 1.0e-4;
 
@@ -42,35 +43,35 @@ internal static class GeometryTestPipeCommands
         if (a[2] == "-FX")
         {
             ipath = 3;
-            Option = GeomFill_IsFixed;
+            Option = Trihedron.IsFixed;
         }
         if (a[2] == "-FR")
         {
             ipath = 3;
-            Option = GeomFill_IsFrenet;
+            Option = Trihedron.IsFrenet;
         }
         if (a[2] == "-CF")
         {
             ipath = 3;
-            Option = GeomFill_IsCorrectedFrenet;
+            Option = Trihedron.IsCorrectedFrenet;
         }
         if (a[2] == "-CN")
         {
             ipath = 3;
             isection = 7;
-            Option = GeomFill_IsConstantNormal;
+            Option = Trihedron.IsConstantNormal;
         }
         if (a[2] == "-DX")
         {
             ipath = 3;
             isection = 5;
-            Option = GeomFill_IsDarboux;
+            Option = Trihedron.IsDarboux;
         }
 
-        GeomFill_Pipe Pipe = new();
+        SurfacePipe Pipe = new();
         Pipe.GenerateParticularCase(true);
 
-        if (Option == GeomFill_IsDarboux)
+        if (Option == Trihedron.IsDarboux)
         {
             Curve2D? path = DrawTrSurf.GetCurve2d(theDI, a[ipath]);
             if (path is null)
@@ -92,7 +93,7 @@ internal static class GeometryTestPipeCommands
 
             Pipe.Init(path, Support, firstS);
         }
-        else if (Option == GeomFill_IsConstantNormal)
+        else if (Option == Trihedron.IsConstantNormal)
         {
             Direction3D D = new(theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]));
             Curve3D path = DrawTrSurf.GetCurve(theDI, a[6])!;
@@ -127,7 +128,7 @@ internal static class GeometryTestPipeCommands
 
         Pipe.Perform(Tol, false, C2, MaxDegree, NbSeg);
 
-        if (!Pipe.IsDone())
+        if (!Pipe.IsDone)
         {
             di.Append("GeomFill_Pipe cannot make a surface\n");
             return 1;
@@ -149,7 +150,7 @@ internal static class GeometryTestPipeCommands
         }
 
         Continuity Cont = C2;
-        GeomFill_Pipe Pipe = new();
+        SurfacePipe Pipe = new();
         Pipe.GenerateParticularCase(true);
 
         bool Option_NS = false;
@@ -185,7 +186,7 @@ internal static class GeometryTestPipeCommands
             if (narg == 4)
             {
                 // tuyau a section constante.
-                Pipe.Init(path, firstS, GeomFill_IsCorrectedFrenet);
+                Pipe.Init(path, firstS, Trihedron.IsCorrectedFrenet);
             }
             else
             {
@@ -202,10 +203,10 @@ internal static class GeometryTestPipeCommands
                     {
                         Curve3D lastS = DrawTrSurf.GetCurve(theDI, a[isect + 1])!;
                         Cont = C2;
-                        Pipe = new GeomFill_Pipe(path, firstS, lastS, theDI.Atof(a[5]));
+                        Pipe = new SurfacePipe(path, firstS, lastS, theDI.Atof(a[5]));
                         Pipe.Perform(true);
                         Surface? aSurface = null;
-                        if (Pipe.IsDone())
+                        if (Pipe.IsDone)
                         {
                             aSurface = Pipe.Surface();
                         }
@@ -228,7 +229,7 @@ internal static class GeometryTestPipeCommands
         }
 
         Pipe.Perform(1.0e-4, false, Cont);
-        if (!Pipe.IsDone())
+        if (!Pipe.IsDone)
         {
             di.Append("Error: GeomFill_Pipe cannot make a surface\n");
             return 0;

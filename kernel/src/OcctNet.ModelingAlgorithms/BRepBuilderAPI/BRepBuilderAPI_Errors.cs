@@ -8,112 +8,114 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
 
-/// <summary>The construction status of <see cref="BRepBuilderAPI_MakeEdge"/> and <see cref="BRepBuilderAPI_MakeEdge2d"/>.</summary>
-public enum BRepBuilderAPI_EdgeError
+namespace Kerf.Engine.Construction.Api;
+
+/// <summary>The construction status of <see cref="MakeEdge"/> and <see cref="MakeEdge2d"/>.</summary>
+public enum EdgeError
 {
     /// <summary>The edge is built.</summary>
-    BRepBuilderAPI_EdgeDone,
+    EdgeDone,
 
     /// <summary>A point or vertex couldn't be projected on the curve.</summary>
-    BRepBuilderAPI_PointProjectionFailed,
+    PointProjectionFailed,
 
     /// <summary>A parameter is outside the curve's range.</summary>
-    BRepBuilderAPI_ParameterOutOfRange,
+    ParameterOutOfRange,
 
     /// <summary>The two points of a closed curve differ (they must coincide).</summary>
-    BRepBuilderAPI_DifferentPointsOnClosedCurve,
+    DifferentPointsOnClosedCurve,
 
     /// <summary>A point is given at an infinite parameter.</summary>
-    BRepBuilderAPI_PointWithInfiniteParameter,
+    PointWithInfiniteParameter,
 
     /// <summary>A point and the parameter given with it don't agree.</summary>
-    BRepBuilderAPI_DifferentsPointAndParameter,
+    DifferentsPointAndParameter,
 
     /// <summary>A line through two identical points.</summary>
-    BRepBuilderAPI_LineThroughIdenticPoints,
+    LineThroughIdenticPoints,
 }
 
-/// <summary>The construction status of <see cref="BRepBuilderAPI_MakeFace"/>.</summary>
-public enum BRepBuilderAPI_FaceError
+/// <summary>The construction status of <see cref="MakeFace"/>.</summary>
+public enum FaceError
 {
     /// <summary>The face is built.</summary>
-    BRepBuilderAPI_FaceDone,
+    FaceDone,
 
     /// <summary>No face: no surface or no wire.</summary>
-    BRepBuilderAPI_NoFace,
+    NoFace,
 
     /// <summary>The wire isn't planar (OnlyPlane).</summary>
-    BRepBuilderAPI_NotPlanar,
+    NotPlanar,
 
     /// <summary>A curve couldn't be projected on the surface.</summary>
-    BRepBuilderAPI_CurveProjectionFailed,
+    CurveProjectionFailed,
 
     /// <summary>The parameters are outside the surface's bounds.</summary>
-    BRepBuilderAPI_ParametersOutOfRange,
+    ParametersOutOfRange,
 }
 
-/// <summary>The construction status of <see cref="BRepBuilderAPI_MakeShell"/>.</summary>
-public enum BRepBuilderAPI_ShellError
+/// <summary>The construction status of <see cref="MakeShell"/>.</summary>
+public enum ShellError
 {
     /// <summary>The shell is built.</summary>
-    BRepBuilderAPI_ShellDone,
+    ShellDone,
 
     /// <summary>No shell was built.</summary>
-    BRepBuilderAPI_EmptyShell,
+    EmptyShell,
 
     /// <summary>The shell isn't connected.</summary>
-    BRepBuilderAPI_DisconnectedShell,
+    DisconnectedShell,
 
     /// <summary>The parameters are outside the surface's bounds.</summary>
-    BRepBuilderAPI_ShellParametersOutOfRange,
+    ShellParametersOutOfRange,
 }
 
-/// <summary>The construction status of <see cref="BRepBuilderAPI_MakeWire"/>.</summary>
-public enum BRepBuilderAPI_WireError
+/// <summary>The construction status of <see cref="MakeWire"/>.</summary>
+public enum WireError
 {
     /// <summary>The wire is built.</summary>
-    BRepBuilderAPI_WireDone,
+    WireDone,
 
     /// <summary>No edge was given.</summary>
-    BRepBuilderAPI_EmptyWire,
+    EmptyWire,
 
     /// <summary>The last edge added isn't connected to the wire.</summary>
-    BRepBuilderAPI_DisconnectedWire,
+    DisconnectedWire,
 
     /// <summary>The wire is non-manifold.</summary>
-    BRepBuilderAPI_NonManifoldWire,
+    NonManifoldWire,
 }
 
 /// <summary>The status of the pipe algorithms (BRepOffsetAPI's).</summary>
-public enum BRepBuilderAPI_PipeError
+public enum PipeError
 {
-    BRepBuilderAPI_PipeDone,
-    BRepBuilderAPI_PipeNotDone,
-    BRepBuilderAPI_PlaneNotIntersectGuide,
-    BRepBuilderAPI_ImpossibleContact,
+    PipeDone,
+    PipeNotDone,
+    PlaneNotIntersectGuide,
+    ImpossibleContact,
 }
 
 /// <summary>The state of a face after a shape construction (BRepBuilderAPI_MakeShape's descendants).</summary>
-public enum BRepBuilderAPI_ShapeModification
+public enum ShapeModification
 {
-    BRepBuilderAPI_Preserved,
-    BRepBuilderAPI_Deleted,
-    BRepBuilderAPI_Trimmed,
-    BRepBuilderAPI_Merged,
-    BRepBuilderAPI_BoundaryModified,
+    Preserved,
+    Deleted,
+    Trimmed,
+    Merged,
+    BoundaryModified,
 }
 
 /// <summary>How a sweep treats the discontinuities of its spine.</summary>
-public enum BRepBuilderAPI_TransitionMode
+public enum TransitionMode
 {
     /// <summary>Discontinuities are treated by modification of the sweeping mode.</summary>
-    BRepBuilderAPI_Transformed,
+    Transformed,
 
     /// <summary>Discontinuities are treated like right corners: the pipes are extended and intersected.</summary>
-    BRepBuilderAPI_RightCorner,
+    RightCorner,
 
     /// <summary>Discontinuities are treated like round corners: the pipes are filled.</summary>
-    BRepBuilderAPI_RoundCorner,
+    RoundCorner,
 }

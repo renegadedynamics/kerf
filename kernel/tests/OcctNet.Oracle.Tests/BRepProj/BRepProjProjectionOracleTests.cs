@@ -1,8 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -146,7 +149,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         string[] anInputTexts = [.. thePIn.Select(s => PortText(s))];
         string? aNError = null, aPError = null;
         N.BRepProj_Projection? aN = null;
-        BRepProj_Projection? aP = null;
+        Projection? aP = null;
         try
         {
             aN = Oracle.NativeWithRetry(() => theDir is { } d ? new N.BRepProj_Projection(theNIn[0], theNIn[1], Oracle.ToNative(d))
@@ -158,8 +161,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         }
         try
         {
-            aP = theDir is { } d ? new BRepProj_Projection(thePIn[0], thePIn[1], d)
-                                 : new BRepProj_Projection(thePIn[0], thePIn[1], thePnt!.Value);
+            aP = theDir is { } d ? new Projection(thePIn[0], thePIn[1], d)
+                                 : new Projection(thePIn[0], thePIn[1], thePnt!.Value);
         }
         catch (FailureException f)
         {
@@ -191,12 +194,12 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         }
         using (aN)
         {
-            if (aN!.IsDone() != aP!.IsDone())
+            if (aN!.IsDone() != aP!.IsDone)
             {
-                myDifferences.Add($"{theName}: IsDone native {aN.IsDone()}, port {aP.IsDone()}");
+                myDifferences.Add($"{theName}: IsDone native {aN.IsDone()}, port {aP.IsDone}");
                 return;
             }
-            if (!aP.IsDone())
+            if (!aP.IsDone)
             {
                 myNotDone++;
                 return;
@@ -326,8 +329,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     private bool DestructiveMatches(List<N.TopoDS_Wire> theNW, Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
     {
         var aIn = thePIn.Select(s => BrepTools.ExactCopyForWrite(s, out _)).ToArray();
-        BRepProj_Projection aP = theDir is { } d ? new BRepProj_Projection(aIn[0], aIn[1], d)
-                                                 : new BRepProj_Projection(aIn[0], aIn[1], thePnt!.Value);
+        Projection aP = theDir is { } d ? new Projection(aIn[0], aIn[1], d)
+                                                 : new Projection(aIn[0], aIn[1], thePnt!.Value);
         var aPW = new List<Wire>();
         for (aP.Init(); aP.More(); aP.Next())
         {
@@ -353,7 +356,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
 
     private static Wire Wire(params Edge[] theEdges)
     {
-        BRepBuilderAPI_MakeWire aMW = new();
+        MakeWire aMW = new();
         foreach (Edge anE in theEdges)
         {
             aMW.Add(anE);
@@ -371,11 +374,11 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         switch (theOracle.Int(0, 6))
         {
             case 0:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(theAx, r)).Edge()), "circle");
+                return (Wire(new MakeEdge(new Circle3D(theAx, r)).Edge()), "circle");
             case 1:
             {
                 int aNb = theOracle.Int(3, 6);
-                BRepBuilderAPI_MakePolygon aP = new();
+                MakePolygon aP = new();
                 for (int i = 0; i < aNb; i++)
                 {
                     double a = 2 * Math.PI * i / aNb + 0.3;
@@ -385,9 +388,9 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                 return (aP.Wire(), $"polygon{aNb}");
             }
             case 2:
-                return (Wire(new BRepBuilderAPI_MakeEdge(new Ellipse3D(theAx, r, r * 0.6)).Edge()), "ellipse");
+                return (Wire(new MakeEdge(new Ellipse3D(theAx, r, r * 0.6)).Edge()), "ellipse");
             case 3:
-                return (new BRepBuilderAPI_MakeEdge(new MakeArcOfCircle(new Circle3D(theAx, r), 0.2, 2.5, true).Value()).Edge(), "arc edge");
+                return (new MakeEdge(new MakeArcOfCircle(new Circle3D(theAx, r), 0.2, 2.5, true).Value()).Edge(), "arc edge");
             case 4:
             {
                 NCollection_HArray1<Point3D> aPts = new(1, 5);
@@ -395,20 +398,20 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                 {
                     aPts.SetValue(i, OnPlane(theAx, -r + r * (i - 1) / 2, theOracle.Real(-0.5, 0.5) * r));
                 }
-                GeomAPI_Interpolate anI = new(aPts, false, 1.0e-7);
+                ApiInterpolate anI = new(aPts, false, 1.0e-7);
                 anI.Perform();
-                return (Wire(new BRepBuilderAPI_MakeEdge(anI.Curve()).Edge()), "bspline");
+                return (Wire(new MakeEdge(anI.Curve()).Edge()), "bspline");
             }
             case 5:
             {
-                BRepBuilderAPI_MakePolygon aP = new();
+                MakePolygon aP = new();
                 aP.Add(OnPlane(theAx, -r, -r * 0.3));
                 aP.Add(OnPlane(theAx, 0, r * 0.4));
                 aP.Add(OnPlane(theAx, r, -r * 0.2));
                 return (aP.Wire(), "open polyline");
             }
             default:
-                return (new BRepBuilderAPI_MakeEdge(OnPlane(theAx, -r, 0), OnPlane(theAx, r, r * 0.2)).Edge(), "segment edge");
+                return (new MakeEdge(OnPlane(theAx, -r, 0), OnPlane(theAx, r, r * 0.2)).Edge(), "segment edge");
         }
     }
 
@@ -418,25 +421,25 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
         switch (theOracle.Int(0, 8))
         {
             case 0:
-                return (new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape(), "box");
+                return (new MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape(), "box");
             case 1:
             {
-                Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
-                Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
-                return (new BRepAlgoAPI_Cut(aBox, aPocket).Shape(), "pocketed box");
+                Shape aBox = new MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
+                Shape aPocket = new MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
+                return (new Cut(aBox, aPocket).Shape(), "pocketed box");
             }
             case 2:
-                return (new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape(), "cylinder");
+                return (new ApiMakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape(), "cylinder");
             case 3:
-                return (new BRepPrimAPI_MakeSphere(5).Shape(), "sphere");
+                return (new MakeSphere(5).Shape(), "sphere");
             case 4:
-                return (new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, -4), new Direction3D(0, 0, 1)), 6, 1, 6).Shape(), "cone");
+                return (new ApiMakeCone(new Frame3D(new Point3D(0, 0, -4), new Direction3D(0, 0, 1)), 6, 1, 6).Shape(), "cone");
             case 5:
-                return (new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4, 1.5).Shape(), "torus");
+                return (new MakeTorus(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4, 1.5).Shape(), "torus");
             case 6:
             {
                 // a cylindrical face alone (build123d.NET projects onto faces)
-                Shape aCyl = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape();
+                Shape aCyl = new ApiMakeCylinder(new Frame3D(new Point3D(0, -6, 0), new Direction3D(0, 1, 0)), 4, 12).Shape();
                 Explorer anExp = new(aCyl, ShapeType.Face);
                 return (anExp.Current(), "cylindrical face");
             }
@@ -444,8 +447,8 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
             {
                 // an extruded elliptical arc (build123d.NET's tip-arc test)
                 TrimmedCurve3D anArc = new MakeArcOfEllipse(new Ellipse3D(new Frame3D(), 6, 3), 3.5, 5.9, true).Value();
-                Edge anEdge = new BRepBuilderAPI_MakeEdge(anArc).Edge();
-                Shape aFace = new BRepPrimAPI_MakePrism(anEdge, new Vector3D(0, 0, 4)).Shape();
+                Edge anEdge = new MakeEdge(anArc).Edge();
+                Shape aFace = new ApiMakePrism(anEdge, new Vector3D(0, 0, 4)).Shape();
                 Transform3D aT = new();
                 aT.SetTranslation(new Vector3D(0, 0, -2));
                 return (aFace.Moved(new Placement(aT)), "extruded elliptical face");
@@ -456,7 +459,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                 BrepBuilder aB = new();
                 Compound aC = new();
                 aB.MakeCompound(ref aC);
-                Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-4, -4, -1), 8, 8, 2).Shape();
+                Shape aBox = new MakeBox(new Point3D(-4, -4, -1), 8, 8, 2).Shape();
                 int i = 0;
                 for (Explorer anExp = new(aBox, ShapeType.Face); anExp.More(); anExp.Next(), i++)
                 {
@@ -465,7 +468,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
                         aB.Add(aC, anExp.Current());
                     }
                 }
-                aB.Add(aC, new BRepBuilderAPI_MakeVertex(new Point3D(9, 9, 9)).Vertex());
+                aB.Add(aC, new MakeVertex(new Point3D(9, 9, 9)).Vertex());
                 return (aC, "compound of faces");
             }
         }
@@ -512,22 +515,22 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     {
         // build123d.NET's ProjectionTests: a circle onto a box with a pocket (two wires and more), a circle edge onto a
         // unit box from below, a circle onto a sphere from its centre; then the errors
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
-        Shape aPocket = new BRepPrimAPI_MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
-        Shape aTarget = new BRepAlgoAPI_Cut(aBox, aPocket).Shape();
-        Wire aCircle = Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 3)).Edge());
+        Shape aBox = new MakeBox(new Point3D(-5, -5, -2), 10, 10, 4).Shape();
+        Shape aPocket = new MakeBox(new Point3D(-2.5, -2.5, 0), 5, 5, 2).Shape();
+        Shape aTarget = new Cut(aBox, aPocket).Shape();
+        Wire aCircle = Wire(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 3)).Edge());
         (N.TopoDS_Shape[] aNIn, Shape[] aPIn) = Both(aCircle, aTarget);
         Run("circle onto a pocketed box", aNIn, aPIn, new Direction3D(0, 0, -1), null);
 
-        Edge aCircleEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)), 1)).Edge();
-        (aNIn, aPIn) = Both(aCircleEdge, new BRepPrimAPI_MakeBox(1, 1, 1).Shape());
+        Edge aCircleEdge = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, -5), new Direction3D(0, 0, 1)), 1)).Edge();
+        (aNIn, aPIn) = Both(aCircleEdge, new MakeBox(1, 1, 1).Shape());
         Run("circle edge onto a unit box", aNIn, aPIn, new Direction3D(0, 0, 1), null);
 
-        (aNIn, aPIn) = Both(Wire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), 1)).Edge()), new BRepPrimAPI_MakeSphere(50).Shape());
+        (aNIn, aPIn) = Both(Wire(new MakeEdge(new Circle3D(new Frame3D(), 1)).Edge()), new MakeSphere(50).Shape());
         Run("circle onto a sphere from its centre", aNIn, aPIn, null, new Point3D(0, 0, 0.5));
 
         // errors: a vertex projected, a target without faces, the point on the wire's first vertex
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 10)).Vertex();
+        Vertex aV = new MakeVertex(new Point3D(0, 0, 10)).Vertex();
         (aNIn, aPIn) = Both(aV, aTarget);
         Run("a vertex projected", aNIn, aPIn, new Direction3D(0, 0, -1), null);
         (aNIn, aPIn) = Both(aCircle, aCircle);

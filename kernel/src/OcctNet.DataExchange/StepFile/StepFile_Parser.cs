@@ -440,7 +440,7 @@ public sealed class StepFile_Parser
 
                 Shift();
                 // unid : IDENT
-                StepData.SetTypeArg(Interface_ParamIdent);
+                StepData.SetTypeArg(Interface_ParamType.Interface_ParamIdent);
                 StepData.CreateNewArg();
                 // S75
                 int aNext = Lookahead();
@@ -527,7 +527,7 @@ public sealed class StepFile_Parser
                 {
                     Shift();
                     // unarg : IDENT
-                    StepData.SetTypeArg(Interface_ParamIdent);
+                    StepData.SetTypeArg(Interface_ParamType.Interface_ParamIdent);
                     StepData.CreateNewArg();
                     aState = AfterArg;
                     continue;

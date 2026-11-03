@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -42,10 +46,10 @@ public class BOPTools_AlgoTools_1Tests
     public void CorrectTolerances_grows_edges_to_cover_their_pcurves(string theFile)
     {
         Shape aShape = ShrunkCopy(theFile);
-        bool aWasValid = new BRepCheck_Analyzer(aShape).IsValid();
-        BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, true);
+        bool aWasValid = new Analyzer(aShape).IsValid();
+        AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, true);
         // "in terms of BRepCheck": the analyzer runs the same BRepLib_ValidateEdge (22 samples, not exact)
-        Assert.True(new BRepCheck_Analyzer(aShape).IsValid(), theFile);
+        Assert.True(new Analyzer(aShape).IsValid(), theFile);
         int aChecked = 0, aGrown = 0;
         for (Explorer aFExp = new(aShape, ShapeType.Face); aFExp.More(); aFExp.Next())
         {
@@ -53,7 +57,7 @@ public class BOPTools_AlgoTools_1Tests
             for (Explorer anEExp = new(aF, ShapeType.Edge); anEExp.More(); anEExp.Next())
             {
                 Edge aE = ShapeCasts.Edge(anEExp.Current());
-                if (Tool.Degenerated(aE) || !BOPTools_AlgoTools.ComputeTolerance(aF, aE, out double aMaxDist, out _))
+                if (Tool.Degenerated(aE) || !AlgoTools.ComputeTolerance(aF, aE, out double aMaxDist, out _))
                 {
                     continue;
                 }
@@ -77,7 +81,7 @@ public class BOPTools_AlgoTools_1Tests
     public void CorrectPointOnCurve_covers_the_curve_ends(string theFile)
     {
         Shape aShape = ShrunkCopy(theFile);
-        BOPTools_AlgoTools.CorrectPointOnCurve(aShape, EmptyMap(), 1.0);
+        AlgoTools.CorrectPointOnCurve(aShape, EmptyMap(), 1.0);
         for (Explorer anEExp = new(aShape, ShapeType.Edge); anEExp.More(); anEExp.Next())
         {
             Edge aE = ShapeCasts.Edge(anEExp.Current());
@@ -100,7 +104,7 @@ public class BOPTools_AlgoTools_1Tests
         // one edge with a large tolerance: its vertices must follow it
         Edge aBig = ShapeCasts.Edge(new Explorer(aShape, ShapeType.Edge).Current());
         ((BrepTEdge)aBig.TShape()!).Tolerance(1.0e-3);
-        BOPTools_AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), true);
+        AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), true);
         Exploration.Vertices(aBig, out Vertex aB1, out Vertex aB2);
         Assert.True(Tool.Tolerance(aB1) >= 1.0e-3 && Tool.Tolerance(aB2) >= 1.0e-3, theFile);
         // every edge at least its faces' tolerance (the vertices are raised to the edges' tolerances before that pass)
@@ -122,8 +126,8 @@ public class BOPTools_AlgoTools_1Tests
         NCollection_IndexedMap<Shape> aMap = EmptyMap();
         Exploration.MapShapes(aShape, ShapeType.Edge, aMap);
         Exploration.MapShapes(aShape, ShapeType.Vertex, aMap);
-        BOPTools_AlgoTools.CorrectTolerances(aShape, aMap, 1.0);
-        BOPTools_AlgoTools.CorrectShapeTolerances(aShape, aMap);
+        AlgoTools.CorrectTolerances(aShape, aMap, 1.0);
+        AlgoTools.CorrectShapeTolerances(aShape, aMap);
         foreach (Shape aS in aMap)
         {
             // BRep_Tool.Tolerance reads at least Precision::Confusion
@@ -131,7 +135,7 @@ public class BOPTools_AlgoTools_1Tests
         }
         // a maximal tolerance below every needed one changes nothing
         Shape aShape2 = ShrunkCopy("bottle.brep");
-        BOPTools_AlgoTools.CorrectTolerances(aShape2, EmptyMap(), 1.0e-12);
+        AlgoTools.CorrectTolerances(aShape2, EmptyMap(), 1.0e-12);
         for (Explorer anExp = new(aShape2, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), Tool.Tolerance(ShapeCasts.Edge(anExp.Current())));
@@ -147,8 +151,8 @@ public class BOPTools_AlgoTools_1Tests
             DeterminismHarness.AssertSerialEqualsParallel(() =>
             {
                 Shape aShape = ShrunkCopy(theFile);
-                BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, aParallel);
-                BOPTools_AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), aParallel);
+                AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, aParallel);
+                AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), aParallel);
                 return BRepTextComparison.Write(aShape);
             }, 2);
         }
@@ -156,8 +160,8 @@ public class BOPTools_AlgoTools_1Tests
         string Run(bool theParallel)
         {
             Shape aShape = ShrunkCopy(theFile);
-            BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, theParallel);
-            BOPTools_AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), theParallel);
+            AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0, theParallel);
+            AlgoTools.CorrectShapeTolerances(aShape, EmptyMap(), theParallel);
             return BRepTextComparison.Write(aShape);
         }
         Assert.Equal(Run(false), Run(true));
@@ -168,7 +172,7 @@ public class BOPTools_AlgoTools_1Tests
     {
         Shape aShape = ShrunkCopy("bottle.brep");
         aShape.TShape()!.FreezeGraph();
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => BOPTools_AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => AlgoTools.CorrectTolerances(aShape, EmptyMap(), 1.0));
     }
 
     [Fact]
@@ -177,8 +181,8 @@ public class BOPTools_AlgoTools_1Tests
         Shape aShape = BRepMeshModelKit.ReadDataOcc("Pump_Nut.brep");
         Face aF = ShapeCasts.Face(new Explorer(aShape, ShapeType.Face).Current());
         Edge aE = ShapeCasts.Edge(new Explorer(aF, ShapeType.Edge).Current());
-        Assert.True(BOPTools_AlgoTools.ComputeTolerance(aF, aE, out double aD, out double aT));
-        BRepLib_CheckCurveOnSurface aCS = new(aE, aF);
+        Assert.True(AlgoTools.ComputeTolerance(aF, aE, out double aD, out double aT));
+        LibraryCheckCurveOnSurface aCS = new(aE, aF);
         aCS.Perform();
         Assert.Equal(aCS.MaxDistance(), aD);
         Assert.Equal(aCS.MaxParameter(), aT);
@@ -191,14 +195,14 @@ public class BOPTools_SetTests
     [Fact]
     public void Sets_of_the_same_sub_shapes_are_equal()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
+        Shape aBox = new MakeBox(1, 2, 3).Shape();
         Shape aReversed = aBox.Reversed();
-        BOPTools_Set aS1 = new(), aS2 = new(), aS3 = new();
+        ToolSet aS1 = new(), aS2 = new(), aS3 = new();
         aS1.Add(aBox, ShapeType.Face);
         aS2.Add(aReversed, ShapeType.Face);
         aS3.Add(aBox, ShapeType.Edge);
-        Assert.Equal(6, aS1.NbShapes());
-        Assert.Equal(24, aS3.NbShapes()); // each edge once per face
+        Assert.Equal(6, aS1.ShapeCount);
+        Assert.Equal(24, aS3.ShapeCount); // each edge once per face
         Assert.True(aS1.IsEqual(aS2));
         Assert.Equal(aS1, aS2);
         Assert.Equal(aS1.GetHashCode(), aS2.GetHashCode());
@@ -206,20 +210,20 @@ public class BOPTools_SetTests
         Assert.False(aS1.IsEqual(aS3));
         Assert.True(aS1.Shape().IsEqual(aBox));
 
-        Shape anOther = new BRepPrimAPI_MakeBox(1, 2, 3).Shape();
-        BOPTools_Set aS4 = new();
+        Shape anOther = new MakeBox(1, 2, 3).Shape();
+        ToolSet aS4 = new();
         aS4.Add(anOther, ShapeType.Face);
         Assert.False(aS1.IsEqual(aS4));
 
-        BOPTools_Set aCopy = new(aS1);
+        ToolSet aCopy = new(aS1);
         Assert.True(aCopy.IsEqual(aS1));
         aCopy.Add(anOther, ShapeType.Face);
         Assert.True(aS1.IsEqual(aS2)); // the copy doesn't share the list
-        BOPTools_Set anAssigned = new();
+        ToolSet anAssigned = new();
         anAssigned.Assign(aS3);
         Assert.Equal(aS3, anAssigned);
 
-        NCollection_IndexedDataMap<BOPTools_Set, Shape> aMap = new(EqualityComparer<BOPTools_Set>.Default);
+        NCollection_IndexedDataMap<ToolSet, Shape> aMap = new(EqualityComparer<ToolSet>.Default);
         aMap.Add(aS1, aBox);
         Assert.True(aMap.Contains(aS2));
         Assert.False(aMap.Contains(aS4));
@@ -228,24 +232,24 @@ public class BOPTools_SetTests
     [Fact]
     public void Degenerated_edges_are_left_out_and_internal_shapes_count_twice()
     {
-        Shape aSphere = new BRepPrimAPI_MakeSphere(2).Shape();
-        BOPTools_Set aS = new();
+        Shape aSphere = new MakeSphere(2).Shape();
+        ToolSet aS = new();
         aS.Add(aSphere, ShapeType.Edge);
         // the sphere's seam twice (FORWARD and REVERSED in its face), its two degenerated poles left out
-        Assert.Equal(2, aS.NbShapes());
+        Assert.Equal(2, aS.ShapeCount);
 
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         Compound aC = new();
         BrepBuilder aBB = new();
         aBB.MakeCompound(ref aC);
         aBB.Add(aC, anEdge.Oriented(Orientation.Internal));
-        BOPTools_Set aSI = new();
+        ToolSet aSI = new();
         aSI.Add(aC, ShapeType.Edge);
-        Assert.Equal(2, aSI.NbShapes());
+        Assert.Equal(2, aSI.ShapeCount);
 
-        BOPTools_Set anEmpty = new();
+        ToolSet anEmpty = new();
         anEmpty.Add(aC, ShapeType.Face);
-        Assert.Equal(0, anEmpty.NbShapes());
+        Assert.Equal(0, anEmpty.ShapeCount);
         Assert.Equal(0UL, anEmpty.GetSum());
     }
 }

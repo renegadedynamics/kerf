@@ -2,9 +2,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Surfaces;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.GeomFill_FillingStyle;
+using static Kerf.Engine.Construction.Surfaces.FillingStyle;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -38,11 +42,11 @@ public class GeomFill_BSplineCurves_Test
             NCollection_HArray1<Point2D> aHArray = new(1, 2);
             aHArray.SetValue(1, new Point2D(-aV1.Y(), 0));
             aHArray.SetValue(2, new Point2D(0, aHeight + aHeight / 2));
-            Geom2dAPI_Interpolate anInterp = new(aHArray, false, 1e-6);
+            Interpolate2D anInterp = new(aHArray, false, 1e-6);
             anInterp.Load(new Vector2D(0, 1), new Vector2D(1, 0));
             anInterp.Perform();
             Plane3D aPln = new(new CoordinateSystem(new Point3D(), new Direction3D(Direction3D.D.X), new Direction3D(Direction3D.D.NY)));
-            aCurve1 = (BSplineCurve3D)GeomAPI.To3d(anInterp.Curve(), aPln);
+            aCurve1 = (BSplineCurve3D)Projections.To3d(anInterp.Curve(), aPln);
         }
 
         // Second side curve from 2D interpolation projected on XZ plane
@@ -52,17 +56,17 @@ public class GeomFill_BSplineCurves_Test
             aHArray.SetValue(1, new Point2D(-aV0.X(), 0));
             aHArray.SetValue(2, new Point2D(-aV0.X() - 2.6, aHeight));
             aHArray.SetValue(3, new Point2D(0, aHeight + aHeight / 2));
-            Geom2dAPI_Interpolate anInterp = new(aHArray, false, 1e-6);
+            Interpolate2D anInterp = new(aHArray, false, 1e-6);
             anInterp.Perform();
             Plane3D aPln = new(new CoordinateSystem(new Point3D(), new Direction3D(Direction3D.D.NY), new Direction3D(Direction3D.D.NX)));
-            aCurve2 = (BSplineCurve3D)GeomAPI.To3d(anInterp.Curve(), aPln);
+            aCurve2 = (BSplineCurve3D)Projections.To3d(anInterp.Curve(), aPln);
         }
 
-        GeomFill_BSplineCurves aFill = new();
-        aFill.Init(anOutlineCurve, aCurve1, aCurve2, GeomFill_CoonsStyle);
+        BSplineCurves aFill = new();
+        aFill.Init(anOutlineCurve, aCurve1, aCurve2, FillingStyle.CoonsStyle);
 
-        BRepBuilderAPI_MakeFace aFaceBuilder = new(aFill.Surface()!, 0);
-        return aFaceBuilder.IsDone() ? aFaceBuilder.Shape() : new Shape();
+        MakeFace aFaceBuilder = new(aFill.Surface()!, 0);
+        return aFaceBuilder.IsDone ? aFaceBuilder.Shape() : new Shape();
     }
 
     [Fact]
@@ -70,6 +74,6 @@ public class GeomFill_BSplineCurves_Test
     {
         Shape aFace = createOCC28131Face();
         Assert.False(aFace.IsNull);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
+        Assert.True(new Analyzer(aFace).IsValid());
     }
 }

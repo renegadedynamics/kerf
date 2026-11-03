@@ -2,7 +2,9 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -242,7 +244,7 @@ internal static class BRepTestOtherCommands
             return 1;
         }
 
-        var theAlg = new BRepIntCurveSurface_Inter();
+        var theAlg = new CurveShapeIntersector();
         double tol = 1e-6;
         if (indshape < n - 1)
         {
@@ -374,7 +376,7 @@ internal static class BRepTestOtherCommands
             aTol = theDI.Atof(a[2]);
         }
         //
-        var aSC = new BRepClass3d_SolidClassifier(aS);
+        var aSC = new SolidClassifier(aS);
         aSC.PerformInfinitePoint(aTol);
 
         Containment aState = aSC.State();

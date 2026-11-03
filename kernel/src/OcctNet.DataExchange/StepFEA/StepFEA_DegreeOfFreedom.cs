@@ -89,21 +89,21 @@ public class StepFEA_DegreeOfFreedom : StepData_SelectType
         StepFEA_DegreeOfFreedomMember SelMem = Value() as StepFEA_DegreeOfFreedomMember;
         if (SelMem is null)
         {
-            return StepFEA_XTranslation;
+            return StepFEA_EnumeratedDegreeOfFreedom.StepFEA_XTranslation;
         }
         TCollection_HAsciiString name = new TCollection_HAsciiString();
         name.AssignCat(SelMem.Name());
         TCollection_HAsciiString nameitem = new TCollection_HAsciiString("ENUMERATED_DEGREE_OF_FREEDOM");
         if (name.IsDifferent(nameitem))
         {
-            return StepFEA_XTranslation;
+            return StepFEA_EnumeratedDegreeOfFreedom.StepFEA_XTranslation;
         }
         int numit = SelMem.Enum();
         StepFEA_EnumeratedDegreeOfFreedom val = default;
         switch (numit)
         {
             case 1:
-                val = StepFEA_XTranslation;
+                val = StepFEA_EnumeratedDegreeOfFreedom.StepFEA_XTranslation;
                 break;
             //  case 2 : val = StepElement_YTranslation; break;
             //  case 3 : val = StepElement_ZTranslation; break;
@@ -113,7 +113,7 @@ public class StepFEA_DegreeOfFreedom : StepData_SelectType
             //  case 7 : val = StepElement_Warp; break;
             //  case 8 : val = StepElement_None; break;
             default:
-                return StepFEA_XTranslation;
+                return StepFEA_EnumeratedDegreeOfFreedom.StepFEA_XTranslation;
         }
         return val;
     }

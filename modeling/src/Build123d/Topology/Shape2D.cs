@@ -1,4 +1,8 @@
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Features;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement.Distance;
+using Kerf.Engine.Offsets;
 using Kerf.Geometry;
 using Occt;
 
@@ -115,7 +119,7 @@ public abstract partial class Shape2D : Shape
                 perimeterEdges.Append(piece.TopoShape);
         }
 
-        var constructor = new BRepFeat_SplitShape(TopoShape);
+        var constructor = new SplitShape(TopoShape);
         constructor.Add(perimeterEdges);
         constructor.Build();
         List<Shape> Sides(IEnumerable<global::Kerf.Topology.Shape> list) => [.. list.Where(s => !s.IsNull).Select(CastLike)];
@@ -175,11 +179,11 @@ public abstract partial class Shape2D : Shape
             {
                 // The common part (coplanar overlap) and the section (crossing curves)
                 ShapeList<Shape> commonFaces;
-                var common = new BRepAlgoAPI_Common();
+                var common = new Common();
                 commonFaces = BoolOpList([this], [surface], common).Expand();
                 results.AddRange(commonFaces);
                 ShapeList<Shape> sectionEdges;
-                var section = new BRepAlgoAPI_Section();
+                var section = new SectionOperation();
                 // The section's vertices are boundary contacts (touches), not intersections
                 sectionEdges = new ShapeList<Shape>(BoolOpList([this], [surface], section).OfType<Edge>()).Expand();
                 if (commonFaces.Count == 0)
@@ -199,7 +203,7 @@ public abstract partial class Shape2D : Shape
             }
             case Shape1D line:
             {
-                var section = new BRepAlgoAPI_Section();
+                var section = new SectionOperation();
                 results.AddRange(BoolOpList([this], [line], section));
                 break;
             }
@@ -253,18 +257,18 @@ public abstract partial class Shape2D : Shape
         var results = new List<Shape>();
         var foundVertices = new List<Vertex>();
         // All contact points (vertex-vertex, vertex-edge, vertex-face), with high precision to avoid duplicates
-        var extrema = new BRepExtrema_DistShapeShape();
+        var extrema = new DistanceShapeShape();
         extrema.SetDeflection(tolerance * 1e-3);
         extrema.LoadS1(TopoShape);
         extrema.LoadS2(other.TopoShape);
         extrema.Perform();
-        if (extrema.IsDone() && extrema.Value() <= tolerance)
+        if (extrema.IsDone && extrema.Value() <= tolerance)
         {
             var selfEdges = Edges();
             var otherEdges = other.Edges();
             var selfVertices = Vertices();
             var otherVertices = other.Vertices();
-            for (int i = 1; i <= extrema.NbSolution(); i++)
+            for (int i = 1; i <= extrema.SolutionCount; i++)
             {
                 var p1 = extrema.PointOnShape1(i);
                 var p2 = extrema.PointOnShape2(i);
@@ -301,8 +305,8 @@ public abstract partial class Shape2D : Shape
     {
         if (amount == 0)
             return this;
-        var builder = new BRepOffset_MakeOffset();
-        builder.Initialize(TopoShape, amount, Constants.Tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false,
+        var builder = new MakeOffset();
+        builder.Initialize(TopoShape, amount, Constants.Tolerance, OffsetMode.Skin, true, false,
                            JoinKind.Intersection, false, true);
         builder.MakeOffsetShape();
         var offset = builder.Shape();

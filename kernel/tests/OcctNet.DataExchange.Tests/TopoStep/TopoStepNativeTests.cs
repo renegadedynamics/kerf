@@ -72,7 +72,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     public void StepToTopoDS_translates_the_corpus_as_native()
     {
         StepData_Protocol aProtocol = TopoStepRecorder.Protocol();
-        ShapeAlgo.Init(); // as STEPControl_Controller does natively
+        global::Kerf.Engine.Healing.ShapeAlgo.Init(); // as STEPControl_Controller does natively
         List<Block> aBlocks = Recording("TopoStep.toporec-s2t.txt.gz");
         Assert.Equal(338, aBlocks.Count);
         int aRun = 0, aItems = 0, aSame = 0, aAttributed = 0;
@@ -137,7 +137,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     [Fact]
     public void TopoDSToStep_converts_the_shapes_as_native()
     {
-        ShapeAlgo.Init();
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
         List<Block> aBlocks = Recording("TopoStep.toporec-t2s.txt.gz");
         int aRun = 0, aConv = 0, aSame = 0;
         var aDiffs = new List<string>();

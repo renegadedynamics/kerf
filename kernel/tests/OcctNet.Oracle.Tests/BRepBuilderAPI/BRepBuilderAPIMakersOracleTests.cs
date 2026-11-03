@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -182,7 +183,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
         {
             int aKind = aCase % 12;
             N.BRepBuilderAPI_MakeEdge aNM;
-            BRepBuilderAPI_MakeEdge aPM;
+            MakeEdge aPM;
             string aWhat;
             switch (aKind)
             {
@@ -194,7 +195,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aN1 = Oracle.ToNative(aP1);
                     using var aN2 = Oracle.ToNative(aP2);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aN1, aN2);
-                    aPM = new BRepBuilderAPI_MakeEdge(aP1, aP2);
+                    aPM = new MakeEdge(aP1, aP2);
                     aWhat = "points";
                     break;
                 }
@@ -205,10 +206,10 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aN1 = Oracle.ToNative(aP1);
                     using var aN2 = Oracle.ToNative(aP2);
                     N.TopoDS_Vertex aNV1 = new N.BRepBuilderAPI_MakeVertex(aN1).Vertex(), aNV2 = new N.BRepBuilderAPI_MakeVertex(aN2).Vertex();
-                    Vertex aV1 = new BRepBuilderAPI_MakeVertex(aP1).Vertex(), aV2 = new BRepBuilderAPI_MakeVertex(aP2).Vertex();
+                    Vertex aV1 = new MakeVertex(aP1).Vertex(), aV2 = new MakeVertex(aP2).Vertex();
                     Compare(aT, "vertex", aNV1, aV1);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNV1, aNV2);
-                    aPM = new BRepBuilderAPI_MakeEdge(aV1, aV2);
+                    aPM = new MakeEdge(aV1, aV2);
                     aWhat = "vertices";
                     break;
                 }
@@ -222,7 +223,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aND = Oracle.ToNative(aD);
                     using var aNL = new N.gp_Lin(aNP, aND);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNL, p1, p2);
-                    aPM = new BRepBuilderAPI_MakeEdge(new Line3D(aP, aD), p1, p2);
+                    aPM = new MakeEdge(new Line3D(aP, aD), p1, p2);
                     aWhat = "line";
                     break;
                 }
@@ -236,13 +237,13 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     if (anO.Bool())
                     {
                         aNM = new N.BRepBuilderAPI_MakeEdge(aNC);
-                        aPM = new BRepBuilderAPI_MakeEdge(new Circle3D(anAx, r));
+                        aPM = new MakeEdge(new Circle3D(anAx, r));
                     }
                     else
                     {
                         double p1 = anO.Real(-10, 10), p2 = anO.Real(-10, 10);
                         aNM = new N.BRepBuilderAPI_MakeEdge(aNC, p1, p2);
-                        aPM = new BRepBuilderAPI_MakeEdge(new Circle3D(anAx, r), p1, p2);
+                        aPM = new MakeEdge(new Circle3D(anAx, r), p1, p2);
                     }
                     aWhat = "circle";
                     break;
@@ -260,7 +261,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aN1 = Oracle.ToNative(aP1);
                     using var aN2 = Oracle.ToNative(aP2);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNC, aN1, aN2);
-                    aPM = new BRepBuilderAPI_MakeEdge(aC, aP1, aP2);
+                    aPM = new MakeEdge(aC, aP1, aP2);
                     aWhat = "circle points";
                     break;
                 }
@@ -272,7 +273,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aNAx = Oracle.ToNative(anAx);
                     using var aNE = new N.gp_Elips(aNAx, a, b);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNE, p1, p2);
-                    aPM = new BRepBuilderAPI_MakeEdge(new Ellipse3D(anAx, a, b), p1, p2);
+                    aPM = new MakeEdge(new Ellipse3D(anAx, a, b), p1, p2);
                     aWhat = "ellipse";
                     break;
                 }
@@ -284,7 +285,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aNAx = Oracle.ToNative(anAx);
                     using var aNH = new N.gp_Hypr(aNAx, a, b);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNH, p1, p2);
-                    aPM = new BRepBuilderAPI_MakeEdge(new Hyperbola3D(anAx, a, b), p1, p2);
+                    aPM = new MakeEdge(new Hyperbola3D(anAx, a, b), p1, p2);
                     aWhat = "hyperbola";
                     break;
                 }
@@ -296,7 +297,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aNAx = Oracle.ToNative(anAx);
                     using var aNP = new N.gp_Parab(aNAx, f);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNP, p1, p2);
-                    aPM = new BRepBuilderAPI_MakeEdge(new Parabola3D(anAx, f), p1, p2);
+                    aPM = new MakeEdge(new Parabola3D(anAx, f), p1, p2);
                     aWhat = "parabola";
                     break;
                 }
@@ -324,14 +325,14 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     if (aKind == 8)
                     {
                         aNM = new N.BRepBuilderAPI_MakeEdge(aNC, p1, p2);
-                        aPM = new BRepBuilderAPI_MakeEdge(aC, p1, p2);
+                        aPM = new MakeEdge(aC, p1, p2);
                     }
                     else
                     {
                         double t1 = f + 0.1 * (l - f), t2 = f + 0.9 * (l - f);
                         var aNT = new N.Geom_TrimmedCurve(aNC, t1, t2);
                         aNM = new N.BRepBuilderAPI_MakeEdge(aNT);
-                        aPM = new BRepBuilderAPI_MakeEdge(new TrimmedCurve3D(aC, t1, t2));
+                        aPM = new MakeEdge(new TrimmedCurve3D(aC, t1, t2));
                     }
                     aWhat = "bspline";
                     break;
@@ -350,7 +351,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aNQ1 = Oracle.ToNative(aQ1);
                     using var aNQ2 = Oracle.ToNative(aQ2);
                     aNM = new N.BRepBuilderAPI_MakeEdge(aNL, aNQ1, aNQ2, p1, p2);
-                    aPM = new BRepBuilderAPI_MakeEdge(aL, aQ1, aQ2, p1, p2);
+                    aPM = new MakeEdge(aL, aQ1, aQ2, p1, p2);
                     aWhat = "points and parameters";
                     break;
                 }
@@ -380,14 +381,14 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     if (anO.Bool())
                     {
                         aNM = new N.BRepBuilderAPI_MakeEdge(new N.Geom2d_Line(aNP, aND), aNS, p1, p2);
-                        aPM = new BRepBuilderAPI_MakeEdge(new LineCurve2D(aP, aD), aS, p1, p2);
+                        aPM = new MakeEdge(new LineCurve2D(aP, aD), aS, p1, p2);
                     }
                     else
                     {
                         double r = anO.Real(0.2, 2);
                         using var aNA2 = new N.gp_Ax2d(aNP, aND);
                         aNM = new N.BRepBuilderAPI_MakeEdge(new N.Geom2d_Circle(aNA2, r), aNS);
-                        aPM = new BRepBuilderAPI_MakeEdge(new CircleCurve2D(new Axis2D(aP, aD), r), aS);
+                        aPM = new MakeEdge(new CircleCurve2D(new Axis2D(aP, aD), r), aS);
                     }
                     aWhat = "curve on surface";
                     break;
@@ -395,7 +396,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             }
 
             Assert.Equal((int)aNM.Error(), (int)aPM.Error());
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             if (aNM.IsDone())
             {
                 Compare(aT, aWhat, aNM.Edge(), aPM.Edge());
@@ -434,7 +435,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 }
                 bool aClose = anO.Bool();
                 var aNP = new N.BRepBuilderAPI_MakePolygon();
-                var aPP = new BRepBuilderAPI_MakePolygon();
+                var aPP = new MakePolygon();
                 foreach (Point3D aP in aPts)
                 {
                     using var aN = Oracle.ToNative(aP);
@@ -447,7 +448,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     aNP.Close();
                     aPP.Close();
                 }
-                Assert.Equal(aNP.IsDone(), aPP.IsDone());
+                Assert.Equal(aNP.IsDone(), aPP.IsDone);
                 Compare(aT, "polygon", aNP.Wire(), aPP.Wire());
                 continue;
             }
@@ -460,7 +461,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             {
                 using var aN = Oracle.ToNative(aPts[i]);
                 aNV[i] = new N.BRepBuilderAPI_MakeVertex(aN).Vertex();
-                aPV[i] = new BRepBuilderAPI_MakeVertex(aPts[i]).Vertex();
+                aPV[i] = new MakeVertex(aPts[i]).Vertex();
             }
             bool aClosed = anO.Bool();
             int aNbEdges = aClosed ? n : n - 1;
@@ -472,7 +473,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 if (aKind == 1)
                 {
                     aNE[i] = new N.BRepBuilderAPI_MakeEdge(aNV[i], aNV[j]).Edge();
-                    aPE[i] = new BRepBuilderAPI_MakeEdge(aPV[i], aPV[j]).Edge();
+                    aPE[i] = new MakeEdge(aPV[i], aPV[j]).Edge();
                 }
                 else
                 {
@@ -484,7 +485,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     using var aN1 = Oracle.ToNative(aStart);
                     using var aN2 = Oracle.ToNative(aPts[j]);
                     aNE[i] = new N.BRepBuilderAPI_MakeEdge(aN1, aN2).Edge();
-                    aPE[i] = new BRepBuilderAPI_MakeEdge(aStart, aPts[j]).Edge();
+                    aPE[i] = new MakeEdge(aStart, aPts[j]).Edge();
                 }
                 if (anO.Int(0, 3) == 0)
                 {
@@ -494,7 +495,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             }
 
             var aNW = new N.BRepBuilderAPI_MakeWire();
-            var aPW = new BRepBuilderAPI_MakeWire();
+            var aPW = new MakeWire();
             if (aKind == 4)
             {
                 int[] anOrder = Enumerable.Range(0, aNbEdges).OrderBy(_ => anO.Real()).ToArray();
@@ -518,7 +519,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 }
             }
             Assert.Equal((int)aNW.Error(), (int)aPW.Error());
-            Assert.Equal(aNW.IsDone(), aPW.IsDone());
+            Assert.Equal(aNW.IsDone(), aPW.IsDone);
             if (aNW.IsDone())
             {
                 Compare(aT, $"wire {aKind}", aNW.Wire(), aPW.Wire());
@@ -546,7 +547,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             bool aWhole = anO.Int(0, 3) == 0;
             double u1 = anO.Real(-1, 4), u2 = anO.Real(-1, 7), v1 = anO.Real(-3, 3), v2 = anO.Real(-3, 3);
             N.BRepBuilderAPI_MakeFace aNM;
-            BRepBuilderAPI_MakeFace aPM;
+            MakeFace aPM;
             string aWhat;
             switch (aKind)
             {
@@ -554,8 +555,8 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 {
                     using var aNS = new N.gp_Pln(aNAx);
                     var aS = new Plane3D(anAx);
-                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new BRepBuilderAPI_MakeFace(aS))
-                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new BRepBuilderAPI_MakeFace(aS, u1, u2, v1, v2));
+                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
+                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "plane";
                     break;
                 }
@@ -569,8 +570,8 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                         u1 = 0;
                         u2 = 2 * Math.PI;
                     }
-                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new BRepBuilderAPI_MakeFace(aS))
-                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new BRepBuilderAPI_MakeFace(aS, u1, u2, v1, v2));
+                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
+                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "cylinder";
                     break;
                 }
@@ -583,8 +584,8 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     {
                         v1 = -r / Math.Sin(ang); // the apex
                     }
-                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new BRepBuilderAPI_MakeFace(aS))
-                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new BRepBuilderAPI_MakeFace(aS, u1, u2, v1, v2));
+                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
+                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "cone";
                     break;
                 }
@@ -599,8 +600,8 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     {
                         v1 = -Math.PI / 2;
                     }
-                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new BRepBuilderAPI_MakeFace(aS))
-                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new BRepBuilderAPI_MakeFace(aS, u1, u2, v1, v2));
+                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
+                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "sphere";
                     break;
                 }
@@ -609,8 +610,8 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     double r1 = anO.Real(2, 10), r2 = anO.Real(0.2, 1.9);
                     using var aNS = new N.gp_Torus(aNAx, r1, r2);
                     var aS = new Torus(anAx, r1, r2);
-                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new BRepBuilderAPI_MakeFace(aS))
-                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new BRepBuilderAPI_MakeFace(aS, u1, u2, v1, v2));
+                    (aNM, aPM) = aWhole ? (new N.BRepBuilderAPI_MakeFace(aNS), new MakeFace(aS))
+                                        : (new N.BRepBuilderAPI_MakeFace(aNS, u1, u2, v1, v2), new MakeFace(aS, u1, u2, v1, v2));
                     aWhat = "torus";
                     break;
                 }
@@ -633,13 +634,13 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                     if (aWhole)
                     {
                         aNM = new N.BRepBuilderAPI_MakeFace(aNS, tol);
-                        aPM = new BRepBuilderAPI_MakeFace(aS, tol);
+                        aPM = new MakeFace(aS, tol);
                     }
                     else
                     {
                         double a = anO.Real(-0.2, 1), b = anO.Real(-0.2, 1.2), c = anO.Real(0, 1), d = anO.Real(0, 1);
                         aNM = new N.BRepBuilderAPI_MakeFace(aNS, a, b, c, d, tol);
-                        aPM = new BRepBuilderAPI_MakeFace(aS, a, b, c, d, tol);
+                        aPM = new MakeFace(aS, a, b, c, d, tol);
                     }
                     aWhat = "bezier";
                     break;
@@ -647,7 +648,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             }
 
             Assert.Equal((int)aNM.Error(), (int)aPM.Error());
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             if (aNM.IsDone())
             {
                 Compare(aT, aWhat, aNM.Face(), aPM.Face());
@@ -689,7 +690,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 Array.Reverse(aPts);
             }
             var aNP = new N.BRepBuilderAPI_MakePolygon();
-            var aPP = new BRepBuilderAPI_MakePolygon();
+            var aPP = new MakePolygon();
             foreach (Point3D aP in aPts)
             {
                 using var aN = Oracle.ToNative(aP);
@@ -702,7 +703,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             Wire aPW = aPP.Wire();
 
             N.BRepBuilderAPI_MakeFace aNM;
-            BRepBuilderAPI_MakeFace aPM;
+            MakeFace aPM;
             if (aKind == 0)
             {
                 // a plane and the wire
@@ -710,17 +711,17 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 using var aNPln = new N.gp_Pln(aNAx);
                 bool anInside = anO.Int(0, 4) != 0;
                 aNM = new N.BRepBuilderAPI_MakeFace(aNPln, aNW, anInside);
-                aPM = new BRepBuilderAPI_MakeFace(new Plane3D(anAx), aPW, anInside);
+                aPM = new MakeFace(new Plane3D(anAx), aPW, anInside);
             }
             else
             {
                 // the plane found through the wire (the wire's edges updated on a copy for write)
                 bool anOnlyPlane = aKind == 2;
                 aNM = new N.BRepBuilderAPI_MakeFace(aNW, anOnlyPlane);
-                aPM = new BRepBuilderAPI_MakeFace(aPW, anOnlyPlane);
+                aPM = new MakeFace(aPW, anOnlyPlane);
             }
             Assert.Equal((int)aNM.Error(), (int)aPM.Error());
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             if (!aNM.IsDone())
             {
                 aT.ErrorsCompared++;
@@ -734,7 +735,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             {
                 Point3D[] aHole = StarPolygon(anO, anAx, anO.Int(3, 6), 0.2);
                 var aNH = new N.BRepBuilderAPI_MakePolygon();
-                var aPH = new BRepBuilderAPI_MakePolygon();
+                var aPH = new MakePolygon();
                 foreach (Point3D aP in aHole)
                 {
                     using var aN = Oracle.ToNative(aP);
@@ -744,7 +745,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
                 aNH.Close();
                 aPH.Close();
                 aNF = new N.BRepBuilderAPI_MakeFace(aNF, N.TopoDS.Wire(aNH.Wire().Reversed())).Face();
-                aPF = new BRepBuilderAPI_MakeFace(aPF, ShapeCasts.Wire(aPH.Wire().Reversed())).Face();
+                aPF = new MakeFace(aPF, ShapeCasts.Wire(aPH.Wire().Reversed())).Face();
             }
             Compare(aT, $"face from wire {aKind}", aNF, aPF);
         }
@@ -789,21 +790,21 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             var aNS = new N.Geom_BSplineSurface(aNPoles, aNUK, aNVK, aNUM, aNVM, aDegU, aDegV);
             bool aSegment = anO.Bool();
             N.BRepBuilderAPI_MakeShell aNM;
-            BRepBuilderAPI_MakeShell aPM;
+            MakeShell aPM;
             if (anO.Bool())
             {
                 aNM = new N.BRepBuilderAPI_MakeShell(aNS, aSegment);
-                aPM = new BRepBuilderAPI_MakeShell(aS, aSegment);
+                aPM = new MakeShell(aS, aSegment);
             }
             else
             {
                 double u1 = aUKnots[1] + anO.Real(0, 0.3), u2 = aUKnots[aUKnots.Upper()] - anO.Real(0, 0.3);
                 double v1 = aVKnots[1] + anO.Real(0, 0.3), v2 = aVKnots[aVKnots.Upper()] - anO.Real(0, 0.3);
                 aNM = new N.BRepBuilderAPI_MakeShell(aNS, u1, u2, v1, v2, aSegment);
-                aPM = new BRepBuilderAPI_MakeShell(aS, u1, u2, v1, v2, aSegment);
+                aPM = new MakeShell(aS, u1, u2, v1, v2, aSegment);
             }
             Assert.Equal((int)aNM.Error(), (int)aPM.Error());
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             if (aNM.IsDone())
             {
                 Compare(aT, "shell", aNM.Shell(), aPM.Shell());
@@ -827,19 +828,19 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
             double dx = anO.Real(0.5, 10), dy = anO.Real(0.5, 10), dz = anO.Real(0.5, 10);
             (N.TopoDS_Shell N, Shell P) aShell = BoxShell(anAx, dx, dy, dz);
             N.BRepBuilderAPI_MakeSolid aNM;
-            BRepBuilderAPI_MakeSolid aPM;
+            MakeSolid aPM;
             if (aCase % 2 == 0)
             {
                 aNM = new N.BRepBuilderAPI_MakeSolid(aShell.N);
-                aPM = new BRepBuilderAPI_MakeSolid(aShell.P);
+                aPM = new MakeSolid(aShell.P);
             }
             else
             {
                 (N.TopoDS_Shell N, Shell P) aInner = BoxShell(anAx, dx / 2, dy / 2, dz / 2);
                 aNM = new N.BRepBuilderAPI_MakeSolid(aShell.N, N.TopoDS.Shell(aInner.N.Reversed()));
-                aPM = new BRepBuilderAPI_MakeSolid(aShell.P, ShapeCasts.Shell(aInner.P.Reversed()));
+                aPM = new MakeSolid(aShell.P, ShapeCasts.Shell(aInner.P.Reversed()));
             }
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             Compare(aT, "solid", aNM.Solid(), aPM.Solid());
         }
         Finish(aT);
@@ -861,7 +862,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
         {
             using var aN = Oracle.ToNative(aP[i]);
             aNV[i] = new N.BRepBuilderAPI_MakeVertex(aN).Vertex();
-            aPV[i] = new BRepBuilderAPI_MakeVertex(aP[i]).Vertex();
+            aPV[i] = new MakeVertex(aP[i]).Vertex();
         }
         int[][] anEdges = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
         var aNE = new N.TopoDS_Edge[12];
@@ -869,7 +870,7 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
         for (int i = 0; i < 12; i++)
         {
             aNE[i] = new N.BRepBuilderAPI_MakeEdge(aNV[anEdges[i][0]], aNV[anEdges[i][1]]).Edge();
-            aPE[i] = new BRepBuilderAPI_MakeEdge(aPV[anEdges[i][0]], aPV[anEdges[i][1]]).Edge();
+            aPE[i] = new MakeEdge(aPV[anEdges[i][0]], aPV[anEdges[i][1]]).Edge();
         }
         // faces by their edges, in order around them
         int[][] aFaces = [[0, 5, 1, 4], [2, 7, 3, 6], [0, 9, 2, 8], [1, 11, 3, 10], [4, 10, 6, 8], [5, 11, 7, 9]];
@@ -882,14 +883,14 @@ public sealed class BRepBuilderAPIMakersOracleTests(ITestOutputHelper output) : 
         foreach (int[] aF in aFaces)
         {
             var aNW = new N.BRepBuilderAPI_MakeWire();
-            var aPW = new BRepBuilderAPI_MakeWire();
+            var aPW = new MakeWire();
             foreach (int e in aF)
             {
                 aNW.Add(aNE[e]);
                 aPW.Add(aPE[e]);
             }
             N.TopoDS_Face aNF = new N.BRepBuilderAPI_MakeFace(aNW.Wire(), true).Face();
-            Face aPF = new BRepBuilderAPI_MakeFace(aPW.Wire(), true).Face();
+            Face aPF = new MakeFace(aPW.Wire(), true).Face();
             aNB.Add(aNShell, aNF);
             aPB.Add(aPShell, aPF);
         }

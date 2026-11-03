@@ -4,9 +4,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using Occt;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>
 /// Qualified lines and circles: the arguments of the constraint solvers, each with the relative position of the
@@ -18,38 +19,38 @@ public static class GccEnt
         ["UNQUALIFIED", "ENCLOSING", "ENCLOSED", "OUTSIDE", "NOQUALIFIER"];
 
     /// <summary>Writes the name of the position to the stream.</summary>
-    public static TextWriter Print(GccEnt_Position thePosition, TextWriter theStream)
+    public static TextWriter Print(Qualifier position, TextWriter stream)
     {
-        theStream.Write(PositionToString(thePosition));
-        return theStream;
+        stream.Write(PositionToString(position));
+        return stream;
     }
 
     /// <summary>The name of the position: UNQUALIFIED, ENCLOSING, ENCLOSED, OUTSIDE or NOQUALIFIER.</summary>
-    public static string PositionToString(GccEnt_Position thePosition)
+    public static string PositionToString(Qualifier position)
     {
-        return GccEnt_Table_PrintPosition[(int)thePosition];
+        return GccEnt_Table_PrintPosition[(int)position];
     }
 
     /// <summary>The position named by the string (ignoring case), or GccEnt_unqualified if the name is unknown.</summary>
-    public static GccEnt_Position PositionFromString(string thePositionString)
+    public static Qualifier PositionFromString(string positionString)
     {
-        GccEnt_Position aPosition = GccEnt_unqualified;
-        PositionFromString(thePositionString, ref aPosition);
-        return aPosition;
+        Qualifier position = Qualifier.Unqualified;
+        PositionFromString(positionString, ref position);
+        return position;
     }
 
     /// <summary>
     /// The position named by the string (ignoring case); false, leaving the position unchanged, if the name is unknown.
     /// </summary>
-    public static bool PositionFromString(string thePositionString, ref GccEnt_Position thePosition)
+    public static bool PositionFromString(string positionString, ref Qualifier position)
     {
-        string aName = thePositionString.ToUpperInvariant();
-        for (int aTypeIter = 0; aTypeIter <= (int)GccEnt_noqualifier; ++aTypeIter)
+        string name = positionString.ToUpperInvariant();
+        for (int typeIter = 0; typeIter <= (int)Qualifier.Noqualifier; ++typeIter)
         {
-            string aTypeName = GccEnt_Table_PrintPosition[aTypeIter];
-            if (aName == aTypeName)
+            string typeName = GccEnt_Table_PrintPosition[typeIter];
+            if (name == typeName)
             {
-                thePosition = (GccEnt_Position)aTypeIter;
+                position = (Qualifier)typeIter;
                 return true;
             }
         }
@@ -57,44 +58,44 @@ public static class GccEnt
     }
 
     /// <summary>A line whose solutions may lie on either side.</summary>
-    public static GccEnt_QualifiedLin Unqualified(in Line2D Line)
+    public static QualifiedLin Unqualified(in Line2D line)
     {
-        return new GccEnt_QualifiedLin(Line, GccEnt_unqualified);
+        return new QualifiedLin(line, Qualifier.Unqualified);
     }
 
     /// <summary>A circle whose solutions may take any position.</summary>
-    public static GccEnt_QualifiedCirc Unqualified(in Circle2D Circle)
+    public static QualifiedCirc Unqualified(in Circle2D circle)
     {
-        return new GccEnt_QualifiedCirc(Circle, GccEnt_unqualified);
+        return new QualifiedCirc(circle, Qualifier.Unqualified);
     }
 
     /// <summary>A circle that the solutions enclose.</summary>
-    public static GccEnt_QualifiedCirc Enclosing(in Circle2D Circle)
+    public static QualifiedCirc Enclosing(in Circle2D circle)
     {
-        return new GccEnt_QualifiedCirc(Circle, GccEnt_enclosing);
+        return new QualifiedCirc(circle, Qualifier.Enclosing);
     }
 
     /// <summary>A line whose solutions lie on its left (its inside).</summary>
-    public static GccEnt_QualifiedLin Enclosed(in Line2D Line)
+    public static QualifiedLin Enclosed(in Line2D line)
     {
-        return new GccEnt_QualifiedLin(Line, GccEnt_enclosed);
+        return new QualifiedLin(line, Qualifier.Enclosed);
     }
 
     /// <summary>A circle that encloses the solutions.</summary>
-    public static GccEnt_QualifiedCirc Enclosed(in Circle2D Circle)
+    public static QualifiedCirc Enclosed(in Circle2D circle)
     {
-        return new GccEnt_QualifiedCirc(Circle, GccEnt_enclosed);
+        return new QualifiedCirc(circle, Qualifier.Enclosed);
     }
 
     /// <summary>A circle outside the solutions, as they are outside it.</summary>
-    public static GccEnt_QualifiedCirc Outside(in Circle2D Circle)
+    public static QualifiedCirc Outside(in Circle2D circle)
     {
-        return new GccEnt_QualifiedCirc(Circle, GccEnt_outside);
+        return new QualifiedCirc(circle, Qualifier.Outside);
     }
 
     /// <summary>A line whose solutions lie on its right (its outside).</summary>
-    public static GccEnt_QualifiedLin Outside(in Line2D Line)
+    public static QualifiedLin Outside(in Line2D line)
     {
-        return new GccEnt_QualifiedLin(Line, GccEnt_outside);
+        return new QualifiedLin(line, Qualifier.Outside);
     }
 }

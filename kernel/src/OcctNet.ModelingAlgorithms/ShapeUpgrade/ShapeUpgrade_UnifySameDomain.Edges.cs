@@ -5,21 +5,25 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Curves;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Construct;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.Orientation;
 
-namespace Occt;
+namespace Kerf.Engine.Healing.Upgrade;
 
-public partial class ShapeUpgrade_UnifySameDomain
+public partial class UnifySameDomain
 {
     /// <summary>A chain of edges that can be merged, and the edge they are merged into (null if not merged).</summary>
     protected sealed class SubSequenceOfEdges
@@ -32,135 +36,135 @@ public partial class ShapeUpgrade_UnifySameDomain
 
     // OCCT.NET: frozen. A curve OCCT edits in place that may have been handed out frozen (a basis curve read through
     // BasisCurve(), which freezes it): the edit is made on a copy. OCCT edits curves it made itself at these sites.
-    private static T owned<T>(T theCurve) where T : Transient
-        => theCurve.IsFrozen ? (T)(object)copyOf(theCurve) : theCurve;
+    private static T Owned<T>(T curve) where T : Transient
+        => curve.IsFrozen ? (T)(object)CopyOf(curve) : curve;
 
-    private static object copyOf(Transient theCurve) => theCurve switch
+    private static object CopyOf(Transient curve) => curve switch
     {
-        Geometry2D aG2d => aG2d.Copy(),
-        Geometry3D aG => aG.Copy(),
+        Geometry2D g2d => g2d.Copy(),
+        Geometry3D g => g.Copy(),
         _ => throw new ProgramErrorException("ShapeUpgrade_UnifySameDomain: not a geometry"),
     };
 
     // Glues 3d curves of the sequence of edges
     private static Edge GlueEdgesWith3DCurves(NCollection_Sequence<Shape> aChain,
-                                                     in Vertex                   FirstVertex,
-                                                     in Vertex                   LastVertex)
+                                                     in Vertex                   firstVertex,
+                                                     in Vertex                   lastVertex)
     {
         // number of curves
-        int aCurveCount = aChain.Length();
+        int curveCount = aChain.Length();
 
-        Edge   aPrevEdge     = ShapeCasts.Edge(aChain[1]);
-        Vertex aPrevVertex   = FirstVertex;
-        double        aMaxTolerance = 0.0;
+        Edge   prevEdge     = ShapeCasts.Edge(aChain[1]);
+        Vertex prevVertex   = firstVertex;
+        double        maxTolerance = 0.0;
         // array of the curves converted to BSpline
-        var aBSplines = new NCollection_Array1<BSplineCurve3D>(0, aCurveCount - 1);
+        var bSplines = new NCollection_Array1<BSplineCurve3D>(0, curveCount - 1);
         // array of the tolerances at the vertices
-        var aVerticesTolerances = new NCollection_Array1<double>(0, aCurveCount - 1);
-        for (int i = 1; i <= aCurveCount; ++i)
+        var verticesTolerances = new NCollection_Array1<double>(0, curveCount - 1);
+        for (int i = 1; i <= curveCount; ++i)
         {
-            Edge aCurrentEdge = ShapeCasts.Edge(aChain[i]);
-            Exploration.Vertices(aCurrentEdge, out Vertex aCurrentFirstVertex, out Vertex aCurrentLastVertex);
-            bool aToReverse = !aCurrentFirstVertex.IsSame(aPrevVertex);
+            Edge currentEdge = ShapeCasts.Edge(aChain[i]);
+            Exploration.Vertices(currentEdge, out Vertex currentFirstVertex, out Vertex currentLastVertex);
+            bool toReverse = !currentFirstVertex.IsSame(prevVertex);
 
-            aMaxTolerance = Max(Max(aMaxTolerance, Tool.Tolerance(aCurrentFirstVertex)),
-                                Tool.Tolerance(aCurrentLastVertex));
+            maxTolerance = Max(Max(maxTolerance, Tool.Tolerance(currentFirstVertex)),
+                                Tool.Tolerance(currentLastVertex));
             if (i > 1)
             {
-                var aCommonVertex = new Vertex();
-                Exploration.CommonVertex(aPrevEdge, aCurrentEdge, ref aCommonVertex);
-                aVerticesTolerances[i - 2] = Tool.Tolerance(aCommonVertex);
+                var commonVertex = new Vertex();
+                Exploration.CommonVertex(prevEdge, currentEdge, ref commonVertex);
+                verticesTolerances[i - 2] = Tool.Tolerance(commonVertex);
             }
 
-            Curve3D aCurrentCurve = Tool.Curve(aCurrentEdge, out double aFirstParam, out double aLastParam)!;
-            var        aTrimmedCurve = new TrimmedCurve3D(aCurrentCurve, aFirstParam, aLastParam);
-            aBSplines[i - 1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimmedCurve);
-            global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref aBSplines[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
-            if (aToReverse)
+            Curve3D currentCurve = Tool.Curve(currentEdge, out double firstParam, out double lastParam)!;
+            var        trimmedCurve = new TrimmedCurve3D(currentCurve, firstParam, lastParam);
+            bSplines[i - 1] = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(trimmedCurve);
+            global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref bSplines[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
+            if (toReverse)
             {
-                aBSplines[i - 1] = owned(aBSplines[i - 1]);
-                aBSplines[i - 1].Reverse();
+                bSplines[i - 1] = Owned(bSplines[i - 1]);
+                bSplines[i - 1].Reverse();
             }
 
-            aPrevVertex = aToReverse ? aCurrentFirstVertex : aCurrentLastVertex;
-            aPrevEdge   = aCurrentEdge;
+            prevVertex = toReverse ? currentFirstVertex : currentLastVertex;
+            prevEdge   = currentEdge;
         }
 
         // Array of the concatenated curves.
         // Array of the remaining Vertex, effectively ignored here.
         // Flag of closedness of the concatenated curve, effectively ignored here.
-        bool aClosedFlag = false;
-        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aBSplines,
-                             aVerticesTolerances,
+        bool closedFlag = false;
+        global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(bSplines,
+                             verticesTolerances,
                              out NCollection_HArray1<int> _,
-                             out NCollection_HArray1<BSplineCurve3D> aConcatCurves,
-                             ref aClosedFlag,
+                             out NCollection_HArray1<BSplineCurve3D> concatCurves,
+                             ref closedFlag,
                              global::Kerf.Engine.Foundation.Precision.Confusion()); // C1 concatenation
 
-        if (aConcatCurves.Length() > 1)
+        if (concatCurves.Length() > 1)
         {
-            var Concat = new CompCurveToBSplineCurve(aConcatCurves.Value(aConcatCurves.Lower()));
+            var concat = new CompCurveToBSplineCurve(concatCurves.Value(concatCurves.Lower()));
 
-            for (int i = aConcatCurves.Lower() + 1; i <= aConcatCurves.Upper(); ++i)
+            for (int i = concatCurves.Lower() + 1; i <= concatCurves.Upper(); ++i)
             {
-                Concat.Add(aConcatCurves.Value(i), aMaxTolerance, true);
+                concat.Add(concatCurves.Value(i), maxTolerance, true);
             }
 
-            aConcatCurves.SetValue(aConcatCurves.Lower(), Concat.InternalBSplineCurve()!);
+            concatCurves.SetValue(concatCurves.Lower(), concat.InternalBSplineCurve()!);
         }
 
-        BSplineCurve3D aResCurve = aConcatCurves.Value(aConcatCurves.Lower());
-        Edge aResEdge = new BRepLib_MakeEdge(aResCurve,
-                                                    FirstVertex,
-                                                    LastVertex,
-                                                    aResCurve.FirstParameter(),
-                                                    aResCurve.LastParameter()).InternalEdge();
-        var aBuilder = new BrepBuilder();
-        aBuilder.SameRange(aResEdge, false);
-        aBuilder.SameParameter(aResEdge, false);
-        BRepLib.SameParameter((Shape)aResEdge, aMaxTolerance, true);
-        return aResEdge;
+        BSplineCurve3D resCurve = concatCurves.Value(concatCurves.Lower());
+        Edge resEdge = new LibraryMakeEdge(resCurve,
+                                                    firstVertex,
+                                                    lastVertex,
+                                                    resCurve.FirstParameter(),
+                                                    resCurve.LastParameter()).InternalEdge();
+        var builder = new BrepBuilder();
+        builder.SameRange(resEdge, false);
+        builder.SameParameter(resEdge, false);
+        BrepLibrary.SameParameter((Shape)resEdge, maxTolerance, true);
+        return resEdge;
     }
 
     /// <summary>Unifies the pcurves of the chain into one pcurve of the edge.</summary>
-    protected void UnionPCurves(NCollection_Sequence<Shape> theChain, ref Edge theEdge)
+    protected void UnionPCurves(NCollection_Sequence<Shape> chain, ref Edge edge)
     {
-        Curve3D? aCurve   = Tool.Curve(theEdge, out double aFirst3d, out double aLast3d);
-        double      aTolEdge = Tool.Tolerance(theEdge);
-        double      aMaxTol  = aTolEdge;
+        Curve3D? curve   = Tool.Curve(edge, out double first3d, out double last3d);
+        double      tolEdge = Tool.Tolerance(edge);
+        double      maxTol  = tolEdge;
 
-        var aFaceSeq = new NCollection_Sequence<Shape>();
+        var faceSeq = new NCollection_Sequence<Shape>();
 
-        Edge                    aFirstEdge = ShapeCasts.Edge(theChain.Value(1));
-        NCollection_List<Shape> aFaceList  = myEFmap.FindFromKey(aFirstEdge);
-        var                            anItl      = new NCollection_List<Shape>.Iterator(aFaceList);
-        for (; anItl.More(); anItl.Next())
+        Edge                    firstEdge = ShapeCasts.Edge(chain.Value(1));
+        NCollection_List<Shape> faceList  = _eFmap.FindFromKey(firstEdge);
+        var                            itl      = new NCollection_List<Shape>.Iterator(faceList);
+        for (; itl.More(); itl.Next())
         {
-            Face aFace = ShapeCasts.Face(anItl.Value());
-            if (myFacePlaneMap.IsBound(aFace))
+            Face face = ShapeCasts.Face(itl.Value());
+            if (_facePlaneMap.IsBound(face))
             {
                 continue;
             }
 
-            if (myFaceNewFace.IsBound(aFace))
+            if (_faceNewFace.IsBound(face))
             {
-                aFace = ShapeCasts.Face(myFaceNewFace[aFace]);
+                face = ShapeCasts.Face(_faceNewFace[face]);
             }
 
-            aFace.Orientation(Forward); // to get proper pcurves of seam edges
+            face.Orientation(Forward); // to get proper pcurves of seam edges
 
-            var aBAsurf = new FaceSurfaceAdaptor(aFace, false);
-            if (aBAsurf.GetType() == Plane)
+            var bAsurf = new FaceSurfaceAdaptor(face, false);
+            if (bAsurf.GetType() == Plane)
             {
                 continue;
             }
 
-            Surface? aSurf   = Tool.Surface(aFace, out Placement aLoc);
+            Surface? surf   = Tool.Surface(face, out Placement loc);
             bool          isFound = false;
-            for (int ii = 1; ii <= aFaceSeq.Length(); ii++)
+            for (int ii = 1; ii <= faceSeq.Length(); ii++)
             {
-                Surface? aPrevSurf = Tool.Surface(ShapeCasts.Face(aFaceSeq[ii]), out Placement aPrevLoc);
-                if (ReferenceEquals(aPrevSurf, aSurf) && aPrevLoc == aLoc)
+                Surface? prevSurf = Tool.Surface(ShapeCasts.Face(faceSeq[ii]), out Placement prevLoc);
+                if (ReferenceEquals(prevSurf, surf) && prevLoc == loc)
                 {
                     isFound = true;
                     break;
@@ -171,137 +175,137 @@ public partial class ShapeUpgrade_UnifySameDomain
                 continue;
             }
 
-            aFaceSeq.Append(aFace);
+            faceSeq.Append(face);
         }
 
-        var         ResPCurves = new NCollection_Sequence<Curve2D>();
-        var         ResFirsts  = new NCollection_Sequence<double>();
-        var         ResLasts   = new NCollection_Sequence<double>();
-        var         aTolVerSeq = new NCollection_Sequence<double>();
-        var         aPrevEdge  = new Edge();
-        bool        anIsSeam   = false;
+        var         resPCurves = new NCollection_Sequence<Curve2D>();
+        var         resFirsts  = new NCollection_Sequence<double>();
+        var         resLasts   = new NCollection_Sequence<double>();
+        var         tolVerSeq = new NCollection_Sequence<double>();
+        var         prevEdge  = new Edge();
+        bool        isSeam   = false;
 
-        for (int j = 1; j <= aFaceSeq.Length(); j++)
+        for (int j = 1; j <= faceSeq.Length(); j++)
         {
-            var               aPCurveSeq   = new NCollection_Sequence<Curve2D>();
-            var               aFirstsSeq   = new NCollection_Sequence<double>();
-            var               aLastsSeq    = new NCollection_Sequence<double>();
-            var               aForwardsSeq = new NCollection_Sequence<bool>();
-            CurveKind aCurrentType = OtherCurve;
+            var               pCurveSeq   = new NCollection_Sequence<Curve2D>();
+            var               firstsSeq   = new NCollection_Sequence<double>();
+            var               lastsSeq    = new NCollection_Sequence<double>();
+            var               forwardsSeq = new NCollection_Sequence<bool>();
+            CurveKind currentType = OtherCurve;
 
-            double aFirst, aLast;
-            for (int i = 1; i <= theChain.Length(); i++)
+            double first, last;
+            for (int i = 1; i <= chain.Length(); i++)
             {
-                Edge anEdge    = ShapeCasts.Edge(theChain.Value(i));
+                Edge anEdge    = ShapeCasts.Edge(chain.Value(i));
                 bool        isForward = (anEdge.Orientation() != Reversed);
 
-                if (anIsSeam && j == 2)
+                if (isSeam && j == 2)
                 { // second pass
                     anEdge.Reverse();
                 }
 
-                Curve2D? aPCurve = Tool.CurveOnSurface(anEdge, ShapeCasts.Face(aFaceSeq[j]), out aFirst, out aLast);
-                if (aPCurve is null)
+                Curve2D? pCurve = Tool.CurveOnSurface(anEdge, ShapeCasts.Face(faceSeq[j]), out first, out last);
+                if (pCurve is null)
                 {
                     continue;
                 }
 
-                if (aFaceSeq.Length() == 1)
+                if (faceSeq.Length() == 1)
                 {
-                    Edge aReversedEdge = anEdge;
-                    aReversedEdge.Reverse();
-                    Curve2D? aPCurve2 =
-                      Tool.CurveOnSurface(aReversedEdge, ShapeCasts.Face(aFaceSeq[j]), out aFirst, out aLast);
-                    if (!ReferenceEquals(aPCurve, aPCurve2))
+                    Edge reversedEdge = anEdge;
+                    reversedEdge.Reverse();
+                    Curve2D? pCurve2 =
+                      Tool.CurveOnSurface(reversedEdge, ShapeCasts.Face(faceSeq[j]), out first, out last);
+                    if (!ReferenceEquals(pCurve, pCurve2))
                     {
-                        anIsSeam = true;
-                        aFaceSeq.Append(aFaceSeq[j]);
+                        isSeam = true;
+                        faceSeq.Append(faceSeq[j]);
                     }
                 }
 
-                var               anAdaptor = new CurveAdaptor2D(aPCurve);
-                CurveKind aType     = anAdaptor.GetType();
+                var               adaptor = new CurveAdaptor2D(pCurve);
+                CurveKind type     = adaptor.GetType();
 
-                LineCurve2D? aLine = null;
-                if (aType == BSplineCurve || aType == BezierCurve)
+                LineCurve2D? line = null;
+                if (type == BSplineCurve || type == BezierCurve)
                 {
-                    TryMakeLine(aPCurve, aFirst, aLast, ref aLine);
+                    TryMakeLine(pCurve, first, last, ref line);
                 }
-                if (aLine is not null)
+                if (line is not null)
                 {
-                    aPCurve = aLine;
-                    anAdaptor.Load(aPCurve);
-                    aType = Line;
+                    pCurve = line;
+                    adaptor.Load(pCurve);
+                    type = Line;
                 }
 
-                if (aPCurveSeq.IsEmpty())
+                if (pCurveSeq.IsEmpty())
                 {
-                    var aCopyPCurve = (Curve2D)aPCurve.Copy();
-                    if (aCopyPCurve is TrimmedCurve2D aCopyTrimmed)
+                    var copyPCurve = (Curve2D)pCurve.Copy();
+                    if (copyPCurve is TrimmedCurve2D copyTrimmed)
                     {
-                        aCopyPCurve = aCopyTrimmed.BasisCurve();
+                        copyPCurve = copyTrimmed.BasisCurve();
                     }
 
-                    aPCurveSeq.Append(aCopyPCurve);
-                    aFirstsSeq.Append(aFirst);
-                    aLastsSeq.Append(aLast);
-                    aForwardsSeq.Append(isForward);
-                    aCurrentType = aType;
-                    aPrevEdge    = anEdge;
+                    pCurveSeq.Append(copyPCurve);
+                    firstsSeq.Append(first);
+                    lastsSeq.Append(last);
+                    forwardsSeq.Append(isForward);
+                    currentType = type;
+                    prevEdge    = anEdge;
                     continue;
                 }
 
                 bool   isSameCurve = false;
-                double aNewF       = aFirst;
-                double aNewL       = aLast;
-                if (ReferenceEquals(aPCurve, aPCurveSeq.Last()))
+                double newF       = first;
+                double newL       = last;
+                if (ReferenceEquals(pCurve, pCurveSeq.Last()))
                 {
                     isSameCurve = true;
                 }
-                else if (aType == aCurrentType)
+                else if (type == currentType)
                 {
-                    var aPrevAdaptor = new CurveAdaptor2D(aPCurveSeq.Last());
-                    switch (aType)
+                    var prevAdaptor = new CurveAdaptor2D(pCurveSeq.Last());
+                    switch (type)
                     {
                         case Line:
                         {
-                            Line2D aPrevLin  = aPrevAdaptor.Line();
-                            Point2D aFirstP2d = aPCurve.Value(aFirst);
-                            Point2D aLastP2d  = aPCurve.Value(aLast);
-                            if (aPrevLin.Contains(aFirstP2d, global::Kerf.Engine.Foundation.Precision.Confusion())
-                                && aPrevLin.Contains(aLastP2d, global::Kerf.Engine.Foundation.Precision.Confusion()))
+                            Line2D prevLin  = prevAdaptor.Line();
+                            Point2D firstP2d = pCurve.Value(first);
+                            Point2D lastP2d  = pCurve.Value(last);
+                            if (prevLin.Contains(firstP2d, global::Kerf.Engine.Foundation.Precision.Confusion())
+                                && prevLin.Contains(lastP2d, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 isSameCurve = true;
-                                Point2D p1 = anAdaptor.Value(aFirst);
-                                Point2D p2 = anAdaptor.Value(aLast);
-                                aNewF = global::Kerf.Engine.Geometry.ElCLib.Parameter(aPrevLin, p1);
-                                aNewL = global::Kerf.Engine.Geometry.ElCLib.Parameter(aPrevLin, p2);
-                                if (aNewF > aNewL)
+                                Point2D p1 = adaptor.Value(first);
+                                Point2D p2 = adaptor.Value(last);
+                                newF = global::Kerf.Engine.Geometry.ElCLib.Parameter(prevLin, p1);
+                                newL = global::Kerf.Engine.Geometry.ElCLib.Parameter(prevLin, p2);
+                                if (newF > newL)
                                 {
-                                    double aTmp = aNewF;
-                                    aNewF       = aNewL;
-                                    aNewL       = aTmp;
+                                    double tmp = newF;
+                                    newF       = newL;
+                                    newL       = tmp;
                                 }
                             }
                             break;
                         }
                         case Circle:
                         {
-                            Circle2D aCirc     = anAdaptor.Circle();
-                            Circle2D aPrevCirc = aPrevAdaptor.Circle();
-                            if (aCirc.Location().Distance(aPrevCirc.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                && Math.Abs(aCirc.Radius() - aPrevCirc.Radius()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                            Circle2D circ     = adaptor.Circle();
+                            Circle2D prevCirc = prevAdaptor.Circle();
+                            if (circ.Location().Distance(prevCirc.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                && Math.Abs(circ.Radius() - prevCirc.Radius()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 isSameCurve = true;
-                                Point2D p1 = anAdaptor.Value(aFirst);
-                                Point2D p2 = anAdaptor.Value(aLast);
-                                aNewF = global::Kerf.Engine.Geometry.ElCLib.Parameter(aPrevCirc, p1);
-                                aNewL = global::Kerf.Engine.Geometry.ElCLib.Parameter(aPrevCirc, p2);
-                                if (aNewF > aNewL)
+                                Point2D p1 = adaptor.Value(first);
+                                Point2D p2 = adaptor.Value(last);
+                                newF = global::Kerf.Engine.Geometry.ElCLib.Parameter(prevCirc, p1);
+                                newL = global::Kerf.Engine.Geometry.ElCLib.Parameter(prevCirc, p2);
+                                if (newF > newL)
                                 {
-                                    double aTmp = aNewF;
-                                    aNewF       = aNewL;
-                                    aNewL       = aTmp;
+                                    double tmp = newF;
+                                    newF       = newL;
+                                    newL       = tmp;
                                 }
                             }
                             break;
@@ -312,292 +316,292 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
                 if (isSameCurve)
                 {
-                    if (aForwardsSeq.Last())
+                    if (forwardsSeq.Last())
                     {
-                        aLastsSeq.ChangeLast() = aNewL;
+                        lastsSeq.ChangeLast() = newL;
                     }
                     else
                     {
-                        aFirstsSeq.ChangeLast() = aNewF;
+                        firstsSeq.ChangeLast() = newF;
                     }
                 }
                 else
                 {
-                    var aCopyPCurve = (Curve2D)aPCurve.Copy();
-                    if (aCopyPCurve is TrimmedCurve2D aCopyTrimmed)
+                    var copyPCurve = (Curve2D)pCurve.Copy();
+                    if (copyPCurve is TrimmedCurve2D copyTrimmed)
                     {
-                        aCopyPCurve = aCopyTrimmed.BasisCurve();
+                        copyPCurve = copyTrimmed.BasisCurve();
                     }
 
-                    aPCurveSeq.Append(aCopyPCurve);
-                    aFirstsSeq.Append(aFirst);
-                    aLastsSeq.Append(aLast);
-                    aForwardsSeq.Append(isForward);
-                    aCurrentType = aType;
-                    var aV = new Vertex();
-                    Exploration.CommonVertex(aPrevEdge, anEdge, ref aV);
-                    double aTol = Tool.Tolerance(aV);
-                    aTolVerSeq.Append(aTol);
+                    pCurveSeq.Append(copyPCurve);
+                    firstsSeq.Append(first);
+                    lastsSeq.Append(last);
+                    forwardsSeq.Append(isForward);
+                    currentType = type;
+                    var v = new Vertex();
+                    Exploration.CommonVertex(prevEdge, anEdge, ref v);
+                    double tol = Tool.Tolerance(v);
+                    tolVerSeq.Append(tol);
                 }
-                aPrevEdge = anEdge;
+                prevEdge = anEdge;
             }
 
-            Curve2D aResPCurve;
-            double       aResFirst, aResLast;
-            if (aPCurveSeq.Length() == 1)
+            Curve2D resPCurve;
+            double       resFirst, resLast;
+            if (pCurveSeq.Length() == 1)
             {
-                aResPCurve = aPCurveSeq.Last();
-                aResFirst  = aFirstsSeq.Last();
-                aResLast   = aLastsSeq.Last();
-                if (!aForwardsSeq.Last())
+                resPCurve = pCurveSeq.Last();
+                resFirst  = firstsSeq.Last();
+                resLast   = lastsSeq.Last();
+                if (!forwardsSeq.Last())
                 {
-                    double aNewLast  = aResPCurve.ReversedParameter(aResFirst);
-                    double aNewFirst = aResPCurve.ReversedParameter(aResLast);
+                    double newLast  = resPCurve.ReversedParameter(resFirst);
+                    double newFirst = resPCurve.ReversedParameter(resLast);
                     // the basis of a copied trimmed curve, frozen by BasisCurve()
-                    aResPCurve = owned(aResPCurve);
-                    aResPCurve.Reverse();
-                    aResFirst = aNewFirst;
-                    aResLast  = aNewLast;
+                    resPCurve = Owned(resPCurve);
+                    resPCurve.Reverse();
+                    resFirst = newFirst;
+                    resLast  = newLast;
                 }
             }
             else
             {
                 // C1 concatenation for PCurveSeq
-                var tab_c2d = new NCollection_Array1<BSplineCurve2D>(0, aPCurveSeq.Length() - 1);
-                for (int i = 1; i <= aPCurveSeq.Length(); i++)
+                var tab_c2d = new NCollection_Array1<BSplineCurve2D>(0, pCurveSeq.Length() - 1);
+                for (int i = 1; i <= pCurveSeq.Length(); i++)
                 {
-                    var aTrPCurve = new TrimmedCurve2D(aPCurveSeq[i], aFirstsSeq[i], aLastsSeq[i]);
-                    if (!aForwardsSeq[i])
+                    var trPCurve = new TrimmedCurve2D(pCurveSeq[i], firstsSeq[i], lastsSeq[i]);
+                    if (!forwardsSeq[i])
                     {
-                        aTrPCurve.Reverse();
+                        trPCurve.Reverse();
                     }
-                    tab_c2d[i - 1] = Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve);
+                    tab_c2d[i - 1] = Geom2dConvert2D.CurveToBSplineCurve(trPCurve);
                     Geom2dConvert2D.C0BSplineToC1BSplineCurve(ref tab_c2d[i - 1], global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
 
-                var tabtolvertex = new NCollection_Array1<double>(0, aTolVerSeq.Length() - 1);
-                for (int i = 1; i <= aTolVerSeq.Length(); i++)
+                var tabtolvertex = new NCollection_Array1<double>(0, tolVerSeq.Length() - 1);
+                for (int i = 1; i <= tolVerSeq.Length(); i++)
                 {
-                    double aTol = aTolVerSeq[i];
-                    tabtolvertex[i - 1] = aTol;
-                    if (aTol > aMaxTol)
+                    double tol = tolVerSeq[i];
+                    tabtolvertex[i - 1] = tol;
+                    if (tol > maxTol)
                     {
-                        aMaxTol = aTol;
+                        maxTol = tol;
                     }
                 }
 
-                bool aClosedFlag = false;
+                bool closedFlag = false;
                 Geom2dConvert2D.ConcatC1(tab_c2d,
                                        tabtolvertex,
                                        out NCollection_HArray1<int> _,                     // array of the remaining Vertex
                                        out NCollection_HArray1<BSplineCurve2D> concatc2d, // array of the concatenated curves
-                                       ref aClosedFlag,
+                                       ref closedFlag,
                                        global::Kerf.Engine.Foundation.Precision.Confusion()); // C1 concatenation
 
                 if (concatc2d.Length() > 1)
                 {
-                    var Concat2d = new CompCurveToBSplineCurve2D(concatc2d.Value(concatc2d.Lower()));
+                    var concat2d = new CompCurveToBSplineCurve2D(concatc2d.Value(concatc2d.Lower()));
 
                     for (int i = concatc2d.Lower() + 1; i <= concatc2d.Upper(); i++)
                     {
-                        Concat2d.Add(concatc2d.Value(i), aMaxTol, true);
+                        concat2d.Add(concatc2d.Value(i), maxTol, true);
                     }
 
-                    concatc2d.SetValue(concatc2d.Lower(), Concat2d.InternalBSplineCurve()!);
+                    concatc2d.SetValue(concatc2d.Lower(), concat2d.InternalBSplineCurve()!);
                 }
-                BSplineCurve2D aBSplineCurve = concatc2d.Value(concatc2d.Lower());
-                aResPCurve = aBSplineCurve;
-                aResFirst  = aBSplineCurve.FirstParameter();
-                aResLast   = aBSplineCurve.LastParameter();
+                BSplineCurve2D bSplineCurve = concatc2d.Value(concatc2d.Lower());
+                resPCurve = bSplineCurve;
+                resFirst  = bSplineCurve.FirstParameter();
+                resLast   = bSplineCurve.LastParameter();
             }
-            ResPCurves.Append(aResPCurve);
-            ResFirsts.Append(aResFirst);
-            ResLasts.Append(aResLast);
+            resPCurves.Append(resPCurve);
+            resFirsts.Append(resFirst);
+            resLasts.Append(resLast);
         }
 
-        var aBuilder = new BrepBuilder();
+        var builder = new BrepBuilder();
 
         // Check the results for consistency
-        bool   IsBadRange = false;
-        double aRange3d   = aLast3d - aFirst3d;
-        for (int ii = 1; ii <= ResPCurves.Length(); ii++)
+        bool   isBadRange = false;
+        double range3d   = last3d - first3d;
+        for (int ii = 1; ii <= resPCurves.Length(); ii++)
         {
-            double aRange = ResLasts[ii] - ResFirsts[ii];
-            if (Math.Abs(aRange3d - aRange) > aMaxTol)
+            double range = resLasts[ii] - resFirsts[ii];
+            if (Math.Abs(range3d - range) > maxTol)
             {
-                IsBadRange = true;
+                isBadRange = true;
             }
         }
 
-        if (IsBadRange)
+        if (isBadRange)
         {
-            for (int ii = 1; ii <= ResPCurves.Length(); ii++)
+            for (int ii = 1; ii <= resPCurves.Length(); ii++)
             {
-                Face aFace     = ShapeCasts.Face(aFaceSeq[ii]);
-                Surface? aSurf   = Tool.Surface(aFace);
-                var         aSAS      = new ShapeAnalysis_Surface(aSurf);
-                var         aToolProj = new ShapeConstruct_ProjectCurveOnSurface();
-                aToolProj.Init(aSAS, global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (aToolProj.InternalPerform(aCurve, aFirst3d, aLast3d, out Curve2D? aNewPCurve))
+                Face face     = ShapeCasts.Face(faceSeq[ii]);
+                Surface? surf   = Tool.Surface(face);
+                var         sas      = new SurfaceAnalysis(surf);
+                var         toolProj = new ProjectCurveOnSurface();
+                toolProj.Init(sas, global::Kerf.Engine.Foundation.Precision.Confusion());
+                if (toolProj.InternalPerform(curve, first3d, last3d, out Curve2D? newPCurve))
                 {
-                    ResPCurves[ii] = aNewPCurve!;
+                    resPCurves[ii] = newPCurve!;
                 }
                 else
                 {
                     // Reparametrize pcurve
-                    var aTrPCurve = new TrimmedCurve2D(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
-                    BSplineCurve2D aBSplinePCurve = owned(Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve));
-                    var aKnots = new NCollection_Array1<double>(aBSplinePCurve.InternalKnots());
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(aFirst3d, aLast3d, aKnots);
-                    aBSplinePCurve.SetKnots(aKnots);
-                    ResPCurves[ii] = aBSplinePCurve;
+                    var trPCurve = new TrimmedCurve2D(resPCurves[ii], resFirsts[ii], resLasts[ii]);
+                    BSplineCurve2D bSplinePCurve = Owned(Geom2dConvert2D.CurveToBSplineCurve(trPCurve));
+                    var knots = new NCollection_Array1<double>(bSplinePCurve.InternalKnots());
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(first3d, last3d, knots);
+                    bSplinePCurve.SetKnots(knots);
+                    resPCurves[ii] = bSplinePCurve;
                 }
-                ResFirsts[ii] = aFirst3d;
-                ResLasts[ii]  = aLast3d;
+                resFirsts[ii] = first3d;
+                resLasts[ii]  = last3d;
             }
         }
 
         // Reparametrize pcurves if needed
-        if (!ResPCurves.IsEmpty())
+        if (!resPCurves.IsEmpty())
         {
-            for (int ii = 1; ii <= ResPCurves.Length(); ii++)
+            for (int ii = 1; ii <= resPCurves.Length(); ii++)
             {
-                if (Math.Abs(aFirst3d - ResFirsts[ii]) > aMaxTol || Math.Abs(aLast3d - ResLasts[ii]) > aMaxTol)
+                if (Math.Abs(first3d - resFirsts[ii]) > maxTol || Math.Abs(last3d - resLasts[ii]) > maxTol)
                 {
-                    var               aGAcurve = new CurveAdaptor2D(ResPCurves[ii]);
-                    CurveKind aType    = aGAcurve.GetType();
-                    if (aType == Line)
+                    var               gAcurve = new CurveAdaptor2D(resPCurves[ii]);
+                    CurveKind type    = gAcurve.GetType();
+                    if (type == Line)
                     {
-                        Line2D aLin2d   = aGAcurve.Line();
-                        Direction2D aDir2d   = aLin2d.Direction();
-                        Point2D aPnt2d   = aGAcurve.Value(ResFirsts[ii]);
-                        Vector2D anOffset = -new Vector2D(aDir2d);
-                        anOffset *= aFirst3d;
-                        aPnt2d.Translate(anOffset);
-                        var aNewLine2d = new LineCurve2D(aPnt2d, aDir2d);
-                        ResPCurves[ii] = aNewLine2d;
+                        Line2D lin2d   = gAcurve.Line();
+                        Direction2D dir2d   = lin2d.Direction();
+                        Point2D pnt2d   = gAcurve.Value(resFirsts[ii]);
+                        Vector2D offset = -new Vector2D(dir2d);
+                        offset *= first3d;
+                        pnt2d.Translate(offset);
+                        var newLine2d = new LineCurve2D(pnt2d, dir2d);
+                        resPCurves[ii] = newLine2d;
                     }
-                    else if (aType == Circle)
+                    else if (type == Circle)
                     {
-                        Circle2D aCirc2d   = aGAcurve.Circle();
-                        double    aRadius   = aCirc2d.Radius();
-                        Frame2D  aPosition = aCirc2d.Position();
-                        Point2D  aLocation = aCirc2d.Location();
-                        double    anOffset  = ResFirsts[ii] - aFirst3d;
-                        aPosition.Rotate(aLocation, anOffset);
-                        var aNewCircle2d = new CircleCurve2D(aPosition, aRadius);
-                        ResPCurves[ii] = aNewCircle2d;
+                        Circle2D circ2d   = gAcurve.Circle();
+                        double    radius   = circ2d.Radius();
+                        Frame2D  position = circ2d.Position();
+                        Point2D  location = circ2d.Location();
+                        double    offset  = resFirsts[ii] - first3d;
+                        position.Rotate(location, offset);
+                        var newCircle2d = new CircleCurve2D(position, radius);
+                        resPCurves[ii] = newCircle2d;
                     }
                     else // general case
                     {
-                        var aTrPCurve = new TrimmedCurve2D(ResPCurves[ii], ResFirsts[ii], ResLasts[ii]);
-                        BSplineCurve2D aBSplinePCurve = owned(Geom2dConvert2D.CurveToBSplineCurve(aTrPCurve));
-                        var aKnots = new NCollection_Array1<double>(aBSplinePCurve.InternalKnots());
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(aFirst3d, aLast3d, aKnots);
-                        aBSplinePCurve.SetKnots(aKnots);
-                        ResPCurves[ii] = aBSplinePCurve;
+                        var trPCurve = new TrimmedCurve2D(resPCurves[ii], resFirsts[ii], resLasts[ii]);
+                        BSplineCurve2D bSplinePCurve = Owned(Geom2dConvert2D.CurveToBSplineCurve(trPCurve));
+                        var knots = new NCollection_Array1<double>(bSplinePCurve.InternalKnots());
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(first3d, last3d, knots);
+                        bSplinePCurve.SetKnots(knots);
+                        resPCurves[ii] = bSplinePCurve;
                     }
-                    ResFirsts[ii] = aFirst3d;
-                    ResLasts[ii]  = aLast3d;
+                    resFirsts[ii] = first3d;
+                    resLasts[ii]  = last3d;
                 } // if ranges > aMaxTol
             } // for (int ii = 1; ii <= ResPCurves.Length(); ii++)
         }
 
-        if (anIsSeam)
+        if (isSeam)
         {
-            aBuilder.UpdateEdge(theEdge, ResPCurves[1], ResPCurves[2], ShapeCasts.Face(aFaceSeq[1]), aTolEdge);
+            builder.UpdateEdge(edge, resPCurves[1], resPCurves[2], ShapeCasts.Face(faceSeq[1]), tolEdge);
         }
         else
         {
-            for (int j = 1; j <= ResPCurves.Length(); j++)
+            for (int j = 1; j <= resPCurves.Length(); j++)
             {
-                aBuilder.UpdateEdge(theEdge, ResPCurves[j], ShapeCasts.Face(aFaceSeq[j]), aTolEdge);
+                builder.UpdateEdge(edge, resPCurves[j], ShapeCasts.Face(faceSeq[j]), tolEdge);
             }
         }
     }
 
     /// <summary>Merges a sequence of edges into one edge if possible.</summary>
-    protected bool MergeSubSeq(NCollection_Sequence<Shape>                                       theChain,
-                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
-                               ref Edge                                                          OutEdge)
+    protected bool MergeSubSeq(NCollection_Sequence<Shape>                                       chain,
+                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                               ref Edge                                                          outEdge)
     {
-        var sae = new ShapeAnalysis_Edge();
-        var B   = new BrepBuilder();
+        var sae = new EdgeAnalysis();
+        var b   = new BrepBuilder();
         // union edges in chain
         int         j;
         double      fp1, lp1;
-        bool        IsUnionOfLinesPossible   = true;
-        bool        IsUnionOfCirclesPossible = true;
+        bool        isUnionOfLinesPossible   = true;
+        bool        isUnionOfCirclesPossible = true;
         Curve3D? c3d1, c3d2;
-        for (j = 1; j < theChain.Length(); j++)
+        for (j = 1; j < chain.Length(); j++)
         {
-            Edge edge1 = ShapeCasts.Edge(theChain.Value(j));
-            Edge edge2 = ShapeCasts.Edge(theChain.Value(j + 1));
+            Edge edge1 = ShapeCasts.Edge(chain.Value(j));
+            Edge edge2 = ShapeCasts.Edge(chain.Value(j + 1));
 
             if (Tool.Degenerated(edge1) && Tool.Degenerated(edge2))
             {
                 // Find the closest points in 2d
-                Edge        edgeFirst    = ShapeCasts.Edge(theChain.First());
-                Edge        edgeLast     = ShapeCasts.Edge(theChain.Last());
-                var                CommonFace   = new Face();
-                double             MinSqDist    = 0.0;
-                Orientation OrOfE1OnFace = Forward, OrOfE2OnFace = Forward;
-                int                IndOnE1      = 0, IndOnE2 = 0;
-                Span<Point2D>     PointsOnEdge1 = [new Point2D(), new Point2D()];
-                Span<Point2D>     PointsOnEdge2 = [new Point2D(), new Point2D()];
+                Edge        edgeFirst    = ShapeCasts.Edge(chain.First());
+                Edge        edgeLast     = ShapeCasts.Edge(chain.Last());
+                var                commonFace   = new Face();
+                double             minSqDist    = 0.0;
+                Orientation orOfE1OnFace = Forward, orOfE2OnFace = Forward;
+                int                indOnE1      = 0, indOnE2 = 0;
+                Span<Point2D>     pointsOnEdge1 = [new Point2D(), new Point2D()];
+                Span<Point2D>     pointsOnEdge2 = [new Point2D(), new Point2D()];
                 if (!FindClosestPoints(edgeFirst,
                                        edgeLast,
-                                       theVFmap,
-                                       ref CommonFace,
-                                       ref MinSqDist,
-                                       ref OrOfE1OnFace,
-                                       ref OrOfE2OnFace,
-                                       ref IndOnE1,
-                                       ref IndOnE2,
-                                       PointsOnEdge1,
-                                       PointsOnEdge2))
+                                       vFmap,
+                                       ref commonFace,
+                                       ref minSqDist,
+                                       ref orOfE1OnFace,
+                                       ref orOfE2OnFace,
+                                       ref indOnE1,
+                                       ref indOnE2,
+                                       pointsOnEdge1,
+                                       pointsOnEdge2))
                 {
                     return false;
                 }
 
                 // Define indices corresponding to extremities of future edge
-                IndOnE1 = 1 - IndOnE1;
-                IndOnE2 = 1 - IndOnE2;
+                indOnE1 = 1 - indOnE1;
+                indOnE2 = 1 - indOnE2;
 
                 // Construct new degenerated edge
-                Point2D StartPoint = PointsOnEdge1[IndOnE1];
-                Point2D EndPoint   = PointsOnEdge2[IndOnE2];
-                if ((OrOfE1OnFace == Forward && IndOnE1 == 1)
-                    || (OrOfE1OnFace == Reversed && IndOnE1 == 0))
+                Point2D startPoint = pointsOnEdge1[indOnE1];
+                Point2D endPoint   = pointsOnEdge2[indOnE2];
+                if ((orOfE1OnFace == Forward && indOnE1 == 1)
+                    || (orOfE1OnFace == Reversed && indOnE1 == 0))
                 {
-                    Point2D Tmp = StartPoint;
-                    StartPoint = EndPoint;
-                    EndPoint   = Tmp;
+                    Point2D tmp = startPoint;
+                    startPoint = endPoint;
+                    endPoint   = tmp;
                 }
 
-                LineCurve2D aLine = new MakeLine2d(StartPoint, EndPoint).Value();
+                LineCurve2D line = new MakeLine2d(startPoint, endPoint).Value();
 
-                Vertex aVertex     = Exploration.FirstVertex(edgeFirst);
-                Vertex StartVertex = aVertex, EndVertex = aVertex;
-                StartVertex.Orientation(Forward);
-                EndVertex.Orientation(Reversed);
+                Vertex vertex     = Exploration.FirstVertex(edgeFirst);
+                Vertex startVertex = vertex, endVertex = vertex;
+                startVertex.Orientation(Forward);
+                endVertex.Orientation(Reversed);
 
-                var NewEdge = new Edge();
-                B.MakeEdge(ref NewEdge);
-                B.UpdateEdge(NewEdge, aLine, CommonFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-                B.Range(NewEdge, 0.0, StartPoint.Distance(EndPoint));
-                B.Add(NewEdge, StartVertex);
-                B.Add(NewEdge, EndVertex);
-                B.Degenerated(NewEdge, true);
-                OutEdge = NewEdge;
+                var newEdge = new Edge();
+                b.MakeEdge(ref newEdge);
+                b.UpdateEdge(newEdge, line, commonFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+                b.Range(newEdge, 0.0, startPoint.Distance(endPoint));
+                b.Add(newEdge, startVertex);
+                b.Add(newEdge, endVertex);
+                b.Degenerated(newEdge, true);
+                outEdge = newEdge;
                 return true;
             }
 
             c3d1 = Tool.Curve(edge1, out fp1, out lp1);
             c3d2 = Tool.Curve(edge2, out _, out _);
 
-            var    aBAcurve1 = new EdgeCurveAdaptor(edge1);
-            var    aBAcurve2 = new EdgeCurveAdaptor(edge2);
+            var    bAcurve1 = new EdgeCurveAdaptor(edge1);
+            var    bAcurve2 = new EdgeCurveAdaptor(edge2);
             Direction3D aDir1 = new(), aDir2 = new();
 
             if (c3d1 is null || c3d2 is null)
@@ -613,211 +617,211 @@ public partial class ShapeUpgrade_UnifySameDomain
             {
                 c3d2 = tc2.BasisCurve();
             }
-            if (IsLinear(aBAcurve1, ref aDir1) && IsLinear(aBAcurve2, ref aDir2))
+            if (IsLinear(bAcurve1, ref aDir1) && IsLinear(bAcurve2, ref aDir2))
             {
-                if (!aDir1.IsParallel(aDir2, myAngTol))
+                if (!aDir1.IsParallel(aDir2, _angTol))
                 {
-                    IsUnionOfLinesPossible = false;
+                    isUnionOfLinesPossible = false;
                 }
             }
             else
             {
-                IsUnionOfLinesPossible = false;
+                isUnionOfLinesPossible = false;
             }
-            if (c3d1 is CircleCurve3D C1 && c3d2 is CircleCurve3D C2)
+            if (c3d1 is CircleCurve3D c1 && c3d2 is CircleCurve3D c2)
             {
-                Point3D P01 = C1.Location();
-                Point3D P02 = C2.Location();
-                if (P01.Distance(P02) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                Point3D p01 = c1.Location();
+                Point3D p02 = c2.Location();
+                if (p01.Distance(p02) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    IsUnionOfCirclesPossible = false;
+                    isUnionOfCirclesPossible = false;
                 }
             }
             else
             {
-                IsUnionOfCirclesPossible = false;
+                isUnionOfCirclesPossible = false;
             }
         }
-        if (IsUnionOfLinesPossible && IsUnionOfCirclesPossible)
+        if (isUnionOfLinesPossible && isUnionOfCirclesPossible)
         {
             return false;
         }
 
         // union of lines is possible
-        if (IsUnionOfLinesPossible)
+        if (isUnionOfLinesPossible)
         {
-            var V = new Vertex[2];
-            V[0] = sae.FirstVertex(ShapeCasts.Edge(theChain.First()));
-            Point3D PV1 = Tool.Pnt(V[0]);
-            V[1] = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
-            Point3D PV2 = Tool.Pnt(V[1]);
-            var    Vec = new Vector3D(PV1, PV2);
-            if (mySafeInputMode)
+            var v = new Vertex[2];
+            v[0] = sae.FirstVertex(ShapeCasts.Edge(chain.First()));
+            Point3D pv1 = Tool.Pnt(v[0]);
+            v[1] = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
+            Point3D pv2 = Tool.Pnt(v[1]);
+            var    vec = new Vector3D(pv1, pv2);
+            if (_safeInputMode)
             {
                 for (int k = 0; k < 2; k++)
                 {
-                    if (!myContext.IsRecorded(V[k]))
+                    if (!_context.IsRecorded(v[k]))
                     {
-                        Vertex Vcopy = ShapeCasts.Vertex(V[k].EmptyCopied());
-                        myContext.Replace(V[k], Vcopy);
-                        V[k] = Vcopy;
+                        Vertex vcopy = ShapeCasts.Vertex(v[k].EmptyCopied());
+                        _context.Replace(v[k], vcopy);
+                        v[k] = vcopy;
                     }
                     else
                     {
-                        V[k] = ShapeCasts.Vertex(myContext.InternalApply(V[k]));
+                        v[k] = ShapeCasts.Vertex(_context.InternalApply(v[k]));
                     }
                 }
             }
-            var    L    = new LineCurve3D(new Axis3D(PV1, new Direction3D(Vec)));
-            double dist = PV1.Distance(PV2);
-            var    tc   = new TrimmedCurve3D(L, 0.0, dist);
-            var    E    = new Edge();
-            B.MakeEdge(ref E, tc, global::Kerf.Engine.Foundation.Precision.Confusion());
-            B.Add(E, V[0]);
-            B.Add(E, V[1]);
-            B.UpdateVertex(V[0], 0.0, E, 0.0);
-            B.UpdateVertex(V[1], dist, E, 0.0);
-            UnionPCurves(theChain, ref E);
-            OutEdge = E;
+            var    l    = new LineCurve3D(new Axis3D(pv1, new Direction3D(vec)));
+            double dist = pv1.Distance(pv2);
+            var    tc   = new TrimmedCurve3D(l, 0.0, dist);
+            var    e    = new Edge();
+            b.MakeEdge(ref e, tc, global::Kerf.Engine.Foundation.Precision.Confusion());
+            b.Add(e, v[0]);
+            b.Add(e, v[1]);
+            b.UpdateVertex(v[0], 0.0, e, 0.0);
+            b.UpdateVertex(v[1], dist, e, 0.0);
+            UnionPCurves(chain, ref e);
+            outEdge = e;
             return true;
         }
 
-        if (IsUnionOfCirclesPossible)
+        if (isUnionOfCirclesPossible)
         {
-            Edge FE  = ShapeCasts.Edge(theChain.First());
-            Curve3D  c3d = Tool.Curve(FE, out _, out _)!;
+            Edge fe  = ShapeCasts.Edge(chain.First());
+            Curve3D  c3d = Tool.Curve(fe, out _, out _)!;
 
             if (c3d is TrimmedCurve3D tc)
             {
                 c3d = tc.BasisCurve();
             }
-            var Cir = (CircleCurve3D)c3d;
+            var cir = (CircleCurve3D)c3d;
 
-            var V = new Vertex[2];
-            V[0] = sae.FirstVertex(FE);
-            V[1] = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
-            bool isClosed = V[0].IsSame(V[1]);
+            var v = new Vertex[2];
+            v[0] = sae.FirstVertex(fe);
+            v[1] = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
+            bool isClosed = v[0].IsSame(v[1]);
             if (!isClosed)
             {
                 // additionally check the points for equality to make a final decision about closedness of the
                 // result curve
-                Point3D aP0  = Tool.Pnt(V[0]);
-                Point3D aP1  = Tool.Pnt(V[1]);
-                double aTol = Max(Tool.Tolerance(V[0]), Tool.Tolerance(V[1]));
-                if (aP0.SquareDistance(aP1) < aTol * aTol)
+                Point3D p0  = Tool.Pnt(v[0]);
+                Point3D p1  = Tool.Pnt(v[1]);
+                double tol = Max(Tool.Tolerance(v[0]), Tool.Tolerance(v[1]));
+                if (p0.SquareDistance(p1) < tol * tol)
                 {
                     isClosed = true;
-                    V[1]     = V[0];
-                    V[1].Reverse();
+                    v[1]     = v[0];
+                    v[1].Reverse();
                 }
             }
-            var E = new Edge();
+            var e = new Edge();
             if (isClosed)
             {
                 // closed chain
-                var          adef = new EdgeCurveAdaptor(FE);
-                CircleCurve3D  Cir1;
-                double       FP, LP;
-                if (FE.Orientation() == Forward)
+                var          adef = new EdgeCurveAdaptor(fe);
+                CircleCurve3D  cir1;
+                double       fp, lp;
+                if (fe.Orientation() == Forward)
                 {
-                    FP = adef.FirstParameter();
-                    LP = adef.LastParameter();
+                    fp = adef.FirstParameter();
+                    lp = adef.LastParameter();
                 }
                 else
                 {
-                    FP = adef.LastParameter();
-                    LP = adef.FirstParameter();
+                    fp = adef.LastParameter();
+                    lp = adef.FirstParameter();
                 }
-                if (Math.Abs(FP) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (Math.Abs(fp) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    B.MakeEdge(ref E, Cir, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    B.Add(E, V[0]);
-                    B.Add(E, V[1]);
-                    E.Orientation(FE.Orientation());
+                    b.MakeEdge(ref e, cir, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    b.Add(e, v[0]);
+                    b.Add(e, v[1]);
+                    e.Orientation(fe.Orientation());
                 }
                 else
                 {
-                    var MC1 = new MakeCircle(adef.Value(FP), adef.Value((FP + LP) * 0.5), adef.Value(LP));
-                    if (MC1.IsDone)
+                    var mc1 = new MakeCircle(adef.Value(fp), adef.Value((fp + lp) * 0.5), adef.Value(lp));
+                    if (mc1.IsDone)
                     {
-                        Cir1 = MC1.Value();
+                        cir1 = mc1.Value();
                     }
                     else
                     {
                         return false;
                     }
-                    B.MakeEdge(ref E, Cir1, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    B.Add(E, V[0]);
-                    B.Add(E, V[1]);
+                    b.MakeEdge(ref e, cir1, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    b.Add(e, v[0]);
+                    b.Add(e, v[1]);
                 }
             }
             else // open chain
             {
-                double        ParamFirst     = Tool.Parameter(V[0], FE);
-                Vertex VertexLastOnFE = sae.LastVertex(FE);
-                double        ParamLast      = Tool.Parameter(VertexLastOnFE, FE);
+                double        paramFirst     = Tool.Parameter(v[0], fe);
+                Vertex vertexLastOnFE = sae.LastVertex(fe);
+                double        paramLast      = Tool.Parameter(vertexLastOnFE, fe);
 
-                if (mySafeInputMode)
+                if (_safeInputMode)
                 {
                     for (int k = 0; k < 2; k++)
                     {
-                        if (!myContext.IsRecorded(V[k]))
+                        if (!_context.IsRecorded(v[k]))
                         {
-                            Vertex Vcopy = ShapeCasts.Vertex(V[k].EmptyCopied());
-                            myContext.Replace(V[k], Vcopy);
-                            V[k] = Vcopy;
+                            Vertex vcopy = ShapeCasts.Vertex(v[k].EmptyCopied());
+                            _context.Replace(v[k], vcopy);
+                            v[k] = vcopy;
                         }
                         else
                         {
-                            V[k] = ShapeCasts.Vertex(myContext.InternalApply(V[k]));
+                            v[k] = ShapeCasts.Vertex(_context.InternalApply(v[k]));
                         }
                     }
                 }
 
-                Point3D PointFirst = Tool.Pnt(V[0]);
-                while (Math.Abs(ParamLast - ParamFirst) > 7 * M_PI / 8)
+                Point3D pointFirst = Tool.Pnt(v[0]);
+                while (Math.Abs(paramLast - paramFirst) > 7 * M_PI / 8)
                 {
-                    ParamLast = (ParamFirst + ParamLast) / 2;
+                    paramLast = (paramFirst + paramLast) / 2;
                 }
-                var    BAcurveFE        = new EdgeCurveAdaptor(FE);
-                Point3D PointLast        = BAcurveFE.Value(ParamLast);
-                Point3D Origin           = Cir.Circ().Location();
-                var    Dir1             = new Direction3D(new Vector3D(Origin, PointFirst));
-                var    Dir2             = new Direction3D(new Vector3D(Origin, PointLast));
-                Direction3D Vdir             = Dir1 ^ Dir2;
-                var    anAx2            = new Frame3D(Origin, Vdir, Dir1);
-                var    aNewCircle       = new CircleCurve3D(anAx2, Cir.Radius());
-                Point3D PointLastInChain = Tool.Pnt(V[1]);
-                var    DirLastInChain   = new Direction3D(new Vector3D(Origin, PointLastInChain));
-                double lpar             = Dir1.AngleWithRef(DirLastInChain, Vdir);
+                var    bAcurveFE        = new EdgeCurveAdaptor(fe);
+                Point3D pointLast        = bAcurveFE.Value(paramLast);
+                Point3D origin           = cir.Circ().Location();
+                var    dir1             = new Direction3D(new Vector3D(origin, pointFirst));
+                var    dir2             = new Direction3D(new Vector3D(origin, pointLast));
+                Direction3D vdir             = dir1 ^ dir2;
+                var    ax2            = new Frame3D(origin, vdir, dir1);
+                var    newCircle       = new CircleCurve3D(ax2, cir.Radius());
+                Point3D pointLastInChain = Tool.Pnt(v[1]);
+                var    dirLastInChain   = new Direction3D(new Vector3D(origin, pointLastInChain));
+                double lpar             = dir1.AngleWithRef(dirLastInChain, vdir);
                 if (lpar < 0.0)
                 {
                     lpar += 2 * M_PI;
                 }
 
-                var tc1 = new TrimmedCurve3D(aNewCircle, 0.0, lpar);
-                B.MakeEdge(ref E, tc1, global::Kerf.Engine.Foundation.Precision.Confusion());
-                B.Add(E, V[0]);
-                B.Add(E, V[1]);
-                B.UpdateVertex(V[0], 0.0, E, 0.0);
-                B.UpdateVertex(V[1], lpar, E, 0.0);
+                var tc1 = new TrimmedCurve3D(newCircle, 0.0, lpar);
+                b.MakeEdge(ref e, tc1, global::Kerf.Engine.Foundation.Precision.Confusion());
+                b.Add(e, v[0]);
+                b.Add(e, v[1]);
+                b.UpdateVertex(v[0], 0.0, e, 0.0);
+                b.UpdateVertex(v[1], lpar, e, 0.0);
             }
-            UnionPCurves(theChain, ref E);
-            OutEdge = E;
+            UnionPCurves(chain, ref e);
+            outEdge = e;
             return true;
         }
-        if (theChain.Length() > 1 && myConcatBSplines)
+        if (chain.Length() > 1 && _concatBSplines)
         {
             // second step: union edges with various curves
             // skl for bug 0020052 from Mantis: perform such unions
             // only if curves are bspline or bezier
 
-            Vertex VF        = sae.FirstVertex(ShapeCasts.Edge(theChain.First()));
-            Vertex VL        = sae.LastVertex(ShapeCasts.Edge(theChain.Last()));
-            bool          NeedUnion = true;
-            for (j = 1; j <= theChain.Length(); j++)
+            Vertex vf        = sae.FirstVertex(ShapeCasts.Edge(chain.First()));
+            Vertex vl        = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
+            bool          needUnion = true;
+            for (j = 1; j <= chain.Length(); j++)
             {
-                Edge edge = ShapeCasts.Edge(theChain.Value(j));
+                Edge edge = ShapeCasts.Edge(chain.Value(j));
                 Curve3D? c3d  = Tool.Curve(edge, out _, out fp1, out lp1);
                 if (c3d is null)
                 {
@@ -831,12 +835,12 @@ public partial class ShapeUpgrade_UnifySameDomain
                 {
                     continue;
                 }
-                NeedUnion = false;
+                needUnion = false;
                 break;
             }
-            if (NeedUnion)
+            if (needUnion)
             {
-                OutEdge = GlueEdgesWith3DCurves(theChain, VF, VL);
+                outEdge = GlueEdgesWith3DCurves(chain, vf, vl);
                 return true;
             }
         }
@@ -846,55 +850,55 @@ public partial class ShapeUpgrade_UnifySameDomain
     // Checks if merging of two edges is possible
     private static bool IsMergingPossible(in Edge                                                         edge1,
                                           in Edge                                                         edge2,
-                                          double                                                                 theAngTol,
-                                          double                                                                 theLinTol,
-                                          NCollection_Map<Shape>                                          AvoidEdgeVrt,
-                                          bool                                                                   theLineDirectionOk,
-                                          in Point3D                                                              theFirstPoint,
-                                          in Vector3D                                                              theDirectionVec,
-                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap)
+                                          double                                                                 angTol,
+                                          double                                                                 linTol,
+                                          NCollection_Map<Shape>                                          avoidEdgeVrt,
+                                          bool                                                                   lineDirectionOk,
+                                          in Point3D                                                              firstPoint,
+                                          in Vector3D                                                              directionVec,
+                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap)
     {
-        bool IsDegE1 = Tool.Degenerated(edge1);
-        bool IsDegE2 = Tool.Degenerated(edge2);
+        bool isDegE1 = Tool.Degenerated(edge1);
+        bool isDegE2 = Tool.Degenerated(edge2);
 
-        if (IsDegE1 && IsDegE2)
+        if (isDegE1 && isDegE2)
         {
             // Find connstion point in 2d
-            var                CommonFace    = new Face();
-            double             MinSqDist     = 0.0;
-            Orientation OrOfE1OnFace  = Forward, OrOfE2OnFace = Forward;
-            int                IndOnE1       = 0, IndOnE2 = 0;
-            Span<Point2D>     PointsOnEdge1 = [new Point2D(), new Point2D()];
-            Span<Point2D>     PointsOnEdge2 = [new Point2D(), new Point2D()];
+            var                commonFace    = new Face();
+            double             minSqDist     = 0.0;
+            Orientation orOfE1OnFace  = Forward, orOfE2OnFace = Forward;
+            int                indOnE1       = 0, indOnE2 = 0;
+            Span<Point2D>     pointsOnEdge1 = [new Point2D(), new Point2D()];
+            Span<Point2D>     pointsOnEdge2 = [new Point2D(), new Point2D()];
             if (!FindClosestPoints(edge1,
                                    edge2,
-                                   theVFmap,
-                                   ref CommonFace,
-                                   ref MinSqDist,
-                                   ref OrOfE1OnFace,
-                                   ref OrOfE2OnFace,
-                                   ref IndOnE1,
-                                   ref IndOnE2,
-                                   PointsOnEdge1,
-                                   PointsOnEdge2))
+                                   vFmap,
+                                   ref commonFace,
+                                   ref minSqDist,
+                                   ref orOfE1OnFace,
+                                   ref orOfE2OnFace,
+                                   ref indOnE1,
+                                   ref indOnE2,
+                                   pointsOnEdge1,
+                                   pointsOnEdge2))
             {
                 return false;
             }
 
-            if (MinSqDist <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (minSqDist <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 return true;
             }
 
             return false;
         }
-        else if (IsDegE1 || IsDegE2)
+        else if (isDegE1 || isDegE2)
         {
             return false;
         }
 
-        Vertex CV = Exploration.LastVertex(edge1, true);
-        if (CV.IsNull || AvoidEdgeVrt.Contains(CV))
+        Vertex cv = Exploration.LastVertex(edge1, true);
+        if (cv.IsNull || avoidEdgeVrt.Contains(cv))
         {
             return false;
         }
@@ -913,8 +917,8 @@ public partial class ShapeUpgrade_UnifySameDomain
             }
         }
 
-        Direction3D aDir1 = new(), aDir2 = new();
-        if (!(IsLinear(ade1, ref aDir1) && IsLinear(ade2, ref aDir2))
+        Direction3D dir1 = new(), dir2 = new();
+        if (!(IsLinear(ade1, ref dir1) && IsLinear(ade2, ref dir2))
             && ((t1 != BezierCurve && t1 != BSplineCurve)
                 || (t2 != BezierCurve && t2 != BSplineCurve))
             && t1 != t2)
@@ -922,40 +926,40 @@ public partial class ShapeUpgrade_UnifySameDomain
             return false;
         }
 
-        Vector3D Diff1, Diff2;
-        Point3D P1, P2;
+        Vector3D diff1, diff2;
+        Point3D p1, p2;
         if (edge1.Orientation() == Forward)
         {
-            ade1.D1(ade1.LastParameter(), out P1, out Diff1);
+            ade1.D1(ade1.LastParameter(), out p1, out diff1);
         }
         else
         {
-            ade1.D1(ade1.FirstParameter(), out P1, out Diff1);
-            Diff1 = -Diff1;
+            ade1.D1(ade1.FirstParameter(), out p1, out diff1);
+            diff1 = -diff1;
         }
 
         if (edge2.Orientation() == Forward)
         {
-            ade2.D1(ade2.FirstParameter(), out P2, out Diff2);
+            ade2.D1(ade2.FirstParameter(), out p2, out diff2);
         }
         else
         {
-            ade2.D1(ade2.LastParameter(), out P2, out Diff2);
-            Diff2 = -Diff2;
+            ade2.D1(ade2.LastParameter(), out p2, out diff2);
+            diff2 = -diff2;
         }
 
-        if (Diff1.Angle(Diff2) > theAngTol)
+        if (diff1.Angle(diff2) > angTol)
         {
             return false;
         }
 
-        if (theLineDirectionOk && t2 == Line)
+        if (lineDirectionOk && t2 == Line)
         {
             // Check that the accumulated deflection does not exceed the linear tolerance
-            double aLast = (edge2.Orientation() == Forward) ? ade2.LastParameter() : ade2.FirstParameter();
-            var    aCurV = new Vector3D(theFirstPoint, ade2.Value(aLast));
-            double aDD   = theDirectionVec.CrossSquareMagnitude(aCurV);
-            if (aDD > theLinTol * theLinTol)
+            double last = (edge2.Orientation() == Forward) ? ade2.LastParameter() : ade2.FirstParameter();
+            var    curV = new Vector3D(firstPoint, ade2.Value(last));
+            double dd   = directionVec.CrossSquareMagnitude(curV);
+            if (dd > linTol * linTol)
             {
                 return false;
             }
@@ -964,7 +968,7 @@ public partial class ShapeUpgrade_UnifySameDomain
             // For symmetry, check the angle between vectors of:
             // - first edge and resulting curve, and
             // - the last edge and resulting curve.
-            if (theDirectionVec.Angle(aCurV) > theAngTol || Diff2.Angle(aCurV) > theAngTol)
+            if (directionVec.Angle(curV) > angTol || diff2.Angle(curV) > angTol)
             {
                 return false;
             }
@@ -973,58 +977,58 @@ public partial class ShapeUpgrade_UnifySameDomain
         return true;
     }
 
-    private static bool GetLineEdgePoints(in Edge theInpEdge, ref Point3D theFirstPoint, ref Vector3D theDirectionVec)
+    private static bool GetLineEdgePoints(in Edge inpEdge, ref Point3D firstPoint, ref Vector3D directionVec)
     {
-        Curve3D? aCur = Tool.Curve(theInpEdge, out double f, out double l);
-        if (aCur is null)
+        Curve3D? cur = Tool.Curve(inpEdge, out double f, out double l);
+        if (cur is null)
         {
             return false;
         }
 
-        if (aCur is TrimmedCurve3D aTC)
+        if (cur is TrimmedCurve3D tc)
         {
-            aCur = aTC.BasisCurve();
+            cur = tc.BasisCurve();
         }
 
-        if (aCur.GetType() != typeof(LineCurve3D))
+        if (cur.GetType() != typeof(LineCurve3D))
         {
             return false;
         }
 
-        if (theInpEdge.Orientation() == Reversed)
+        if (inpEdge.Orientation() == Reversed)
         {
             double tmp = f;
             f = l;
             l = tmp;
         }
-        theFirstPoint = aCur.Value(f);
-        Point3D aLP = aCur.Value(l);
-        theDirectionVec = new Vector3D(aLP.XYZ().Subtracted(theFirstPoint.XYZ()));
-        theDirectionVec.Normalize();
+        firstPoint = cur.Value(f);
+        Point3D lp = cur.Value(l);
+        directionVec = new Vector3D(lp.XYZ().Subtracted(firstPoint.XYZ()));
+        directionVec.Normalize();
         return true;
     }
 
     // Generates sub-sequences of edges from sequence of edges. Edges from each subsequences can be merged into the
     // one edge.
-    private static void generateSubSeq(NCollection_Sequence<Shape>                                       anInpEdgeSeq,
-                                       NCollection_Sequence<SubSequenceOfEdges>                                 SeqOfSubSeqOfEdges,
-                                       bool                                                                     IsClosed,
-                                       double                                                                   theAngTol,
-                                       double                                                                   theLinTol,
-                                       NCollection_Map<Shape>                                            AvoidEdgeVrt,
-                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap)
+    private static void GenerateSubSeq(NCollection_Sequence<Shape>                                       anInpEdgeSeq,
+                                       NCollection_Sequence<SubSequenceOfEdges>                                 seqOfSubSeqOfEdges,
+                                       bool                                                                     isClosed,
+                                       double                                                                   angTol,
+                                       double                                                                   linTol,
+                                       NCollection_Map<Shape>                                            avoidEdgeVrt,
+                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap)
     {
         bool        isOk;
         Edge edge1, edge2;
 
         var         SubSeq  = new SubSequenceOfEdges();
-        Edge RefEdge = ShapeCasts.Edge(anInpEdgeSeq[1]);
-        SubSeq.SeqsEdges.Append(RefEdge);
-        SeqOfSubSeqOfEdges.Append(SubSeq);
+        Edge refEdge = ShapeCasts.Edge(anInpEdgeSeq[1]);
+        SubSeq.SeqsEdges.Append(refEdge);
+        seqOfSubSeqOfEdges.Append(SubSeq);
 
-        var  aFirstPoint       = new Point3D();
-        var  aDirectionVec     = new Vector3D();
-        bool isLineDirectionOk = GetLineEdgePoints(RefEdge, ref aFirstPoint, ref aDirectionVec);
+        var  firstPoint       = new Point3D();
+        var  directionVec     = new Vector3D();
+        bool isLineDirectionOk = GetLineEdgePoints(refEdge, ref firstPoint, ref directionVec);
 
         for (int i = 1; i < anInpEdgeSeq.Length(); i++)
         {
@@ -1032,91 +1036,91 @@ public partial class ShapeUpgrade_UnifySameDomain
             edge2 = ShapeCasts.Edge(anInpEdgeSeq[i + 1]);
             isOk  = IsMergingPossible(edge1,
                                      edge2,
-                                     theAngTol,
-                                     theLinTol,
-                                     AvoidEdgeVrt,
+                                     angTol,
+                                     linTol,
+                                     avoidEdgeVrt,
                                      isLineDirectionOk,
-                                     aFirstPoint,
-                                     aDirectionVec,
-                                     theVFmap);
+                                     firstPoint,
+                                     directionVec,
+                                     vFmap);
             if (!isOk)
             {
-                var aSubSeq = new SubSequenceOfEdges();
-                aSubSeq.SeqsEdges.Append(edge2);
-                SeqOfSubSeqOfEdges.Append(aSubSeq);
-                isLineDirectionOk = GetLineEdgePoints(edge2, ref aFirstPoint, ref aDirectionVec);
+                var subSeq = new SubSequenceOfEdges();
+                subSeq.SeqsEdges.Append(edge2);
+                seqOfSubSeqOfEdges.Append(subSeq);
+                isLineDirectionOk = GetLineEdgePoints(edge2, ref firstPoint, ref directionVec);
             }
             else
             {
-                SeqOfSubSeqOfEdges.ChangeLast().SeqsEdges.Append(edge2);
+                seqOfSubSeqOfEdges.ChangeLast().SeqsEdges.Append(edge2);
             }
         }
         // check first and last chain segments
-        if (IsClosed && SeqOfSubSeqOfEdges.Length() > 1)
+        if (isClosed && seqOfSubSeqOfEdges.Length() > 1)
         {
             edge1 = ShapeCasts.Edge(anInpEdgeSeq.Last());
             edge2 = ShapeCasts.Edge(anInpEdgeSeq.First());
             if (IsMergingPossible(edge1,
                                   edge2,
-                                  theAngTol,
-                                  theLinTol,
-                                  AvoidEdgeVrt,
+                                  angTol,
+                                  linTol,
+                                  avoidEdgeVrt,
                                   false,
-                                  aFirstPoint,
-                                  aDirectionVec,
-                                  theVFmap))
+                                  firstPoint,
+                                  directionVec,
+                                  vFmap))
             {
-                SeqOfSubSeqOfEdges.ChangeLast().SeqsEdges.Append(SeqOfSubSeqOfEdges.ChangeFirst().SeqsEdges);
-                SeqOfSubSeqOfEdges.Remove(1);
+                seqOfSubSeqOfEdges.ChangeLast().SeqsEdges.Append(seqOfSubSeqOfEdges.ChangeFirst().SeqsEdges);
+                seqOfSubSeqOfEdges.Remove(1);
             }
         }
     }
 
     /// <summary>Splits the sequence of edges into the sequence of chains.</summary>
-    protected bool MergeEdges(NCollection_Sequence<Shape>                                       SeqEdges,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
-                              NCollection_Sequence<SubSequenceOfEdges>                                 SeqOfSubSeqOfEdges,
-                              NCollection_Map<Shape>                                            NonMergVrt)
+    protected bool MergeEdges(NCollection_Sequence<Shape>                                       seqEdges,
+                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                              NCollection_Sequence<SubSequenceOfEdges>                                 seqOfSubSeqOfEdges,
+                              NCollection_Map<Shape>                                            nonMergVrt)
     {
-        var aMapVE          = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapVE          = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int j;
-        var VerticesToAvoid = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        int aNbE            = SeqEdges.Length();
-        for (j = 1; j <= aNbE; j++)
+        var verticesToAvoid = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        int nbE            = seqEdges.Length();
+        for (j = 1; j <= nbE; j++)
         {
-            Edge anEdge = ShapeCasts.Edge(SeqEdges[j]);
+            Edge anEdge = ShapeCasts.Edge(seqEdges[j]);
             // fill in the map V-E
             for (var it = new Iterator(anEdge.Oriented(Forward)); it.More(); it.Next())
             {
                 Shape aV = it.Value();
                 if (aV.Orientation() == Forward || aV.Orientation() == Reversed)
                 {
-                    if (!aMapVE.Contains(aV))
+                    if (!mapVE.Contains(aV))
                     {
-                        aMapVE.Add(aV, new NCollection_List<Shape>());
+                        mapVE.Add(aV, new NCollection_List<Shape>());
                     }
-                    aMapVE.ChangeFromKey(aV).Append(anEdge);
+                    mapVE.ChangeFromKey(aV).Append(anEdge);
                 }
             }
         }
-        NCollection_MapAlgo.Unite(VerticesToAvoid, NonMergVrt);
+        NCollection_MapAlgo.Unite(verticesToAvoid, nonMergVrt);
 
         // do loop while there are unused edges
-        var aUsedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var usedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
 
-        for (int iE = 1; iE <= aNbE; ++iE)
+        for (int iE = 1; iE <= nbE; ++iE)
         {
-            Edge edge = ShapeCasts.Edge(SeqEdges[iE]);
-            if (!aUsedEdges.Add(edge))
+            Edge edge = ShapeCasts.Edge(seqEdges[iE]);
+            if (!usedEdges.Add(edge))
             {
                 continue;
             }
 
             // make chain for unite
-            var aChain = new NCollection_Sequence<Shape>();
-            aChain.Append(edge);
-            var V = new Vertex[2];
-            Exploration.Vertices(edge, out V[0], out V[1], true);
+            var chain = new NCollection_Sequence<Shape>();
+            chain.Append(edge);
+            var v = new Vertex[2];
+            Exploration.Vertices(edge, out v[0], out v[1], true);
 
             // connect more edges to the chain in both directions
             for (j = 0; j < 2; j++)
@@ -1125,31 +1129,31 @@ public partial class ShapeUpgrade_UnifySameDomain
                 while (isAdded)
                 {
                     isAdded = false;
-                    if (V[j].IsNull)
+                    if (v[j].IsNull)
                     {
                         break;
                     }
-                    NCollection_List<Shape> aLE = aMapVE.FindFromKey(V[j]);
-                    for (var itL = new NCollection_List<Shape>.Iterator(aLE); itL.More(); itL.Next())
+                    NCollection_List<Shape> le = mapVE.FindFromKey(v[j]);
+                    for (var itL = new NCollection_List<Shape>.Iterator(le); itL.More(); itL.Next())
                     {
                         edge = ShapeCasts.Edge(itL.Value());
-                        if (!aUsedEdges.Contains(edge))
+                        if (!usedEdges.Contains(edge))
                         {
-                            var V2 = new Vertex[2];
-                            Exploration.Vertices(edge, out V2[0], out V2[1], true);
+                            var v2 = new Vertex[2];
+                            Exploration.Vertices(edge, out v2[0], out v2[1], true);
                             // the neighboring edge must have V[j] reversed and located on the opposite end
-                            if (V2[1 - j].IsEqual(V[j].Reversed()))
+                            if (v2[1 - j].IsEqual(v[j].Reversed()))
                             {
                                 if (j == 0)
                                 {
-                                    aChain.Prepend(edge);
+                                    chain.Prepend(edge);
                                 }
                                 else
                                 {
-                                    aChain.Append(edge);
+                                    chain.Append(edge);
                                 }
-                                aUsedEdges.Add(edge);
-                                V[j]    = V2[j];
+                                usedEdges.Add(edge);
+                                v[j]    = v2[j];
                                 isAdded = true;
                                 break;
                             }
@@ -1158,56 +1162,56 @@ public partial class ShapeUpgrade_UnifySameDomain
                 }
             }
 
-            if (aChain.Length() < 2)
+            if (chain.Length() < 2)
             {
                 continue;
             }
 
-            bool IsClosed = false;
-            if (V[0].IsSame(V[1]))
+            bool isClosed = false;
+            if (v[0].IsSame(v[1]))
             {
-                IsClosed = true;
+                isClosed = true;
             }
 
             // split chain by vertices at which merging is not possible
-            var aOneSeq = new NCollection_Sequence<SubSequenceOfEdges>();
-            generateSubSeq(aChain, aOneSeq, IsClosed, myAngTol, myLinTol, VerticesToAvoid, theVFmap);
+            var oneSeq = new NCollection_Sequence<SubSequenceOfEdges>();
+            GenerateSubSeq(chain, oneSeq, isClosed, _angTol, _linTol, verticesToAvoid, vFmap);
 
             // put sub-chains in the result
-            SeqOfSubSeqOfEdges.Append(aOneSeq);
+            seqOfSubSeqOfEdges.Append(oneSeq);
         }
 
-        for (int i = 1; i <= SeqOfSubSeqOfEdges.Length(); i++)
+        for (int i = 1; i <= seqOfSubSeqOfEdges.Length(); i++)
         {
-            var UE = new Edge();
-            if (SeqOfSubSeqOfEdges[i].SeqsEdges.Length() < 2)
+            var ue = new Edge();
+            if (seqOfSubSeqOfEdges[i].SeqsEdges.Length() < 2)
             {
                 continue;
             }
-            if (MergeSubSeq(SeqOfSubSeqOfEdges[i].SeqsEdges, theVFmap, ref UE))
+            if (MergeSubSeq(seqOfSubSeqOfEdges[i].SeqsEdges, vFmap, ref ue))
             {
-                SeqOfSubSeqOfEdges[i].UnionEdges = UE;
+                seqOfSubSeqOfEdges[i].UnionEdges = ue;
             }
         }
         return true;
     }
 
     /// <summary>Tries to unify the sequence of edges with the set of another edges which lies on the same geometry.</summary>
-    protected bool MergeSeq(NCollection_Sequence<Shape>                                       SeqEdges,
-                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theVFmap,
+    protected bool MergeSeq(NCollection_Sequence<Shape>                                       seqEdges,
+                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
                             NCollection_Map<Shape>                                            nonMergVert)
     {
-        var SeqOfSubsSeqOfEdges = new NCollection_Sequence<SubSequenceOfEdges>();
-        if (MergeEdges(SeqEdges, theVFmap, SeqOfSubsSeqOfEdges, nonMergVert))
+        var seqOfSubsSeqOfEdges = new NCollection_Sequence<SubSequenceOfEdges>();
+        if (MergeEdges(seqEdges, vFmap, seqOfSubsSeqOfEdges, nonMergVert))
         {
-            for (int i = 1; i <= SeqOfSubsSeqOfEdges.Length(); i++)
+            for (int i = 1; i <= seqOfSubsSeqOfEdges.Length(); i++)
             {
-                if (SeqOfSubsSeqOfEdges[i].UnionEdges.IsNull)
+                if (seqOfSubsSeqOfEdges[i].UnionEdges.IsNull)
                 {
                     continue;
                 }
 
-                myContext.Merge(SeqOfSubsSeqOfEdges[i].SeqsEdges, SeqOfSubsSeqOfEdges[i].UnionEdges);
+                _context.Merge(seqOfSubsSeqOfEdges[i].SeqsEdges, seqOfSubsSeqOfEdges[i].UnionEdges);
             }
             return true;
         }

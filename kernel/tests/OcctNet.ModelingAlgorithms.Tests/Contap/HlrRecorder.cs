@@ -1,14 +1,20 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.HiddenLines.Contours;
+using Kerf.Engine.Intersection;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Text;
-using static Occt.Contap_IType;
+using static Kerf.Engine.HiddenLines.Contours.ContourLineType;
 using static Kerf.Geometry.CurveKind;
-using static Occt.IntSurf_TypeTrans;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -89,7 +95,7 @@ internal sealed class HlrRecorder
     private static readonly double[,] THE_PTS =
         { { 0.0, 0.0, 0.0 }, { 1.0, 2.0, 3.0 }, { -4.5, 0.25, 7.0 }, { 10.0, -3.0, -2.0 }, { 0.1, 0.2, -0.3 } };
 
-    private void RecProjector(string theName, HLRAlgo_Projector P)
+    private void RecProjector(string theName, AlgorithmProjector P)
     {
         Line($"case projector {theName}");
         Tag("persp");
@@ -146,19 +152,19 @@ internal sealed class HlrRecorder
 
     public void RecProjectors()
     {
-        RecProjector("identity", new HLRAlgo_Projector());
-        RecProjector("ax2 top", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))));
-        RecProjector("ax2 front", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))));
-        RecProjector("ax2 axo", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1.4142135623730951),
+        RecProjector("identity", new AlgorithmProjector());
+        RecProjector("ax2 top", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))));
+        RecProjector("ax2 front", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0))));
+        RecProjector("ax2 axo", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, -1, 1.4142135623730951),
                                                                  new Direction3D(1, 1, 0))));
-        RecProjector("ax2 axo0", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1),
+        RecProjector("ax2 axo0", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1),
                                                                   new Direction3D(1.4142135623730951, -1, 1))));
-        RecProjector("ax2 general", new HLRAlgo_Projector(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0.3, -0.7, 0.5),
+        RecProjector("ax2 general", new AlgorithmProjector(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0.3, -0.7, 0.5),
                                                                      new Direction3D(0.7, 0.3, 0.0))));
-        RecProjector("ax2 down", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))));
-        RecProjector("persp", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, -0.7, 0.5),
+        RecProjector("ax2 down", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, -1), new Direction3D(1, 0, 0))));
+        RecProjector("persp", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0.3, -0.7, 0.5),
                                                                new Direction3D(0.7, 0.3, 0.0)), 50.0));
-        RecProjector("persp top", new HLRAlgo_Projector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
+        RecProjector("persp top", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
                                                         20.0));
 
         Transform3D aT = new();
@@ -166,17 +172,17 @@ internal sealed class HlrRecorder
         Transform3D aS = new();
         aS.SetScale(new Point3D(0.5, 0.5, 0.5), 2.5);
         Transform3D aTS = aS * aT;
-        RecProjector("trsf", new HLRAlgo_Projector(aTS, false, 0.0));
-        RecProjector("trsf persp", new HLRAlgo_Projector(aTS, true, 30.0));
-        HLRAlgo_Projector aScaled = new(aTS, false, 0.0);
+        RecProjector("trsf", new AlgorithmProjector(aTS, false, 0.0));
+        RecProjector("trsf persp", new AlgorithmProjector(aTS, true, 30.0));
+        AlgorithmProjector aScaled = new(aTS, false, 0.0);
         aScaled.Scaled(true);
         RecProjector("trsf scaled", aScaled);
-        HLRAlgo_Projector aScaledP = new(aTS, true, 30.0);
+        AlgorithmProjector aScaledP = new(aTS, true, 30.0);
         aScaledP.Scaled(true);
         RecProjector("trsf persp scaled", aScaledP);
-        RecProjector("trsf dirs", new HLRAlgo_Projector(aT, false, 0.0, new Vector2D(1, 2), new Vector2D(-3, 0.5),
+        RecProjector("trsf dirs", new AlgorithmProjector(aT, false, 0.0, new Vector2D(1, 2), new Vector2D(-3, 0.5),
                                                         new Vector2D(0.25, 0.75)));
-        HLRAlgo_Projector aSet = new();
+        AlgorithmProjector aSet = new();
         aSet.Set(aT, true, 12.5);
         RecProjector("set", aSet);
     }
@@ -184,11 +190,11 @@ internal sealed class HlrRecorder
     // ------------------------------------------------------------------------------------------------------------
     // Intrv_Intervals, HLRAlgo_EdgeStatus, HLRAlgo_EdgeIterator
 
-    private void Intervals(Intrv_Intervals I)
+    private void Intervals(Intervals I)
     {
         Tag("intervals");
-        Int(I.NbIntervals());
-        for (int i = 1; i <= I.NbIntervals(); i++)
+        Int(I.IntervalCount);
+        for (int i = 1; i <= I.IntervalCount; i++)
         {
             I.Value(i).Bounds(out double S, out float TS, out double E, out float TE);
             Hex(S);
@@ -202,62 +208,62 @@ internal sealed class HlrRecorder
     public void RecIntervals()
     {
         Line("case intervals unite");
-        Intrv_Intervals I = new(new Intrv_Interval(0.0, 1.0e-6f, 10.0, 1.0e-6f));
+        Intervals I = new(new IntersectionInterval(0.0, 1.0e-6f, 10.0, 1.0e-6f));
         Intervals(I);
-        I.Unite(new Intrv_Interval(12.0, 1.0e-3f, 14.0, 1.0e-3f));
+        I.Unite(new IntersectionInterval(12.0, 1.0e-3f, 14.0, 1.0e-3f));
         Intervals(I);
-        I.Unite(new Intrv_Interval(-5.0, 0.0f, -2.0, 0.0f));
+        I.Unite(new IntersectionInterval(-5.0, 0.0f, -2.0, 0.0f));
         Intervals(I);
-        I.Unite(new Intrv_Interval(9.9995, 1.0e-3f, 12.0005, 1.0e-3f));
+        I.Unite(new IntersectionInterval(9.9995, 1.0e-3f, 12.0005, 1.0e-3f));
         Intervals(I);
-        I.Unite(new Intrv_Interval(-3.0, 1.0e-2f, 1.0, 1.0e-2f));
+        I.Unite(new IntersectionInterval(-3.0, 1.0e-2f, 1.0, 1.0e-2f));
         Intervals(I);
-        I.Unite(new Intrv_Interval(-10.0, 20.0));
+        I.Unite(new IntersectionInterval(-10.0, 20.0));
         Intervals(I);
 
         Line("case intervals subtract");
-        Intrv_Intervals J = new(new Intrv_Interval(0.0, 1.0e-6f, 10.0, 1.0e-6f));
-        J.Subtract(new Intrv_Interval(2.0, 1.0e-4f, 3.0, 1.0e-4f));
+        Intervals J = new(new IntersectionInterval(0.0, 1.0e-6f, 10.0, 1.0e-6f));
+        J.Subtract(new IntersectionInterval(2.0, 1.0e-4f, 3.0, 1.0e-4f));
         Intervals(J);
-        J.Subtract(new Intrv_Interval(-1.0, 1.0e-4f, 0.5, 1.0e-4f));
+        J.Subtract(new IntersectionInterval(-1.0, 1.0e-4f, 0.5, 1.0e-4f));
         Intervals(J);
-        J.Subtract(new Intrv_Interval(9.0, 1.0e-4f, 11.0, 1.0e-4f));
+        J.Subtract(new IntersectionInterval(9.0, 1.0e-4f, 11.0, 1.0e-4f));
         Intervals(J);
-        J.Subtract(new Intrv_Interval(3.0, 1.0e-4f, 3.5, 1.0e-4f));
+        J.Subtract(new IntersectionInterval(3.0, 1.0e-4f, 3.5, 1.0e-4f));
         Intervals(J);
-        J.Subtract(new Intrv_Interval(5.0, 1.0e-4f, 6.0, 1.0e-4f));
+        J.Subtract(new IntersectionInterval(5.0, 1.0e-4f, 6.0, 1.0e-4f));
         Intervals(J);
-        J.Subtract(new Intrv_Interval(-100.0, 100.0));
+        J.Subtract(new IntersectionInterval(-100.0, 100.0));
         Intervals(J);
 
         Line("case intervals intersect xunite");
-        Intrv_Intervals K = new(new Intrv_Interval(0.0, 1.0e-6f, 4.0, 1.0e-6f));
-        K.Unite(new Intrv_Interval(6.0, 1.0e-6f, 9.0, 1.0e-6f));
-        Intrv_Intervals L = new(new Intrv_Interval(3.0, 1.0e-5f, 7.0, 1.0e-5f));
-        L.Unite(new Intrv_Interval(8.5, 1.0e-5f, 12.0, 1.0e-5f));
-        Intrv_Intervals KI = new(K);
+        Intervals K = new(new IntersectionInterval(0.0, 1.0e-6f, 4.0, 1.0e-6f));
+        K.Unite(new IntersectionInterval(6.0, 1.0e-6f, 9.0, 1.0e-6f));
+        Intervals L = new(new IntersectionInterval(3.0, 1.0e-5f, 7.0, 1.0e-5f));
+        L.Unite(new IntersectionInterval(8.5, 1.0e-5f, 12.0, 1.0e-5f));
+        Intervals KI = new(K);
         KI.Intersect(L);
         Intervals(KI);
-        Intrv_Intervals KX = new(K);
+        Intervals KX = new(K);
         KX.XUnite(L);
         Intervals(KX);
-        Intrv_Intervals KS = new(K);
+        Intervals KS = new(K);
         KS.Subtract(L);
         Intervals(KS);
-        Intrv_Intervals KU = new(K);
+        Intervals KU = new(K);
         KU.Unite(L);
         Intervals(KU);
-        KI.Intersect(new Intrv_Interval(3.5, 1.0e-5f, 8.75, 1.0e-5f));
+        KI.Intersect(new IntersectionInterval(3.5, 1.0e-5f, 8.75, 1.0e-5f));
         Intervals(KI);
-        KX.XUnite(new Intrv_Interval(0.0, 1.0e-5f, 1.0, 1.0e-5f));
+        KX.XUnite(new IntersectionInterval(0.0, 1.0e-5f, 1.0, 1.0e-5f));
         Intervals(KX);
 
         Line("case interval positions");
         double[,] aB = { { -5.0, -3.0 }, { -5.0, 0.0 }, { -5.0, 2.0 }, { -5.0, 4.0 }, { 0.0, 2.0 }, { 1.0, 3.0 }, { 3.0, 6.0 } };
-        Intrv_Interval aRef = new(0.0, 1.0e-3f, 4.0, 1.0e-3f);
+        IntersectionInterval aRef = new(0.0, 1.0e-3f, 4.0, 1.0e-3f);
         for (int i = 0; i < 7; i++)
         {
-            Intrv_Interval aI = new(aB[i, 0], 1.0e-3f, aB[i, 1], 1.0e-3f);
+            IntersectionInterval aI = new(aB[i, 0], 1.0e-3f, aB[i, 1], 1.0e-3f);
             Tag("pos");
             Int((int)aI.Position(aRef));
             Int((int)aRef.Position(aI));
@@ -274,11 +280,11 @@ internal sealed class HlrRecorder
             Int(aI.IsJustOverlappingAtStart(aRef) ? 1 : 0);
             Int(aI.IsJustOverlappingAtEnd(aRef) ? 1 : 0);
             Int(aI.IsSimilar(aRef) ? 1 : 0);
-            Int(aI.IsProbablyEmpty() ? 1 : 0);
+            Int(aI.IsProbablyEmpty ? 1 : 0);
             End();
         }
-        Intrv_Interval aDef = new();
-        Intrv_Interval aTwo = new(1.5, -2.0);
+        IntersectionInterval aDef = new();
+        IntersectionInterval aTwo = new(1.5, -2.0);
         Tag("defaults");
         Hex(aDef.Start());
         HexF(aDef.TolStart());
@@ -291,7 +297,7 @@ internal sealed class HlrRecorder
         End();
     }
 
-    private void Status(HLRAlgo_EdgeStatus S)
+    private void Status(EdgeStatus S)
     {
         Tag("status");
         Int(S.AllHidden() ? 1 : 0);
@@ -306,7 +312,7 @@ internal sealed class HlrRecorder
             HexF(TB);
         }
         End();
-        HLRAlgo_EdgeIterator It = new();
+        EdgeIterator It = new();
         Tag("visible");
         for (It.InitVisible(S); It.MoreVisible(); It.NextVisible())
         {
@@ -332,7 +338,7 @@ internal sealed class HlrRecorder
     public void RecStatus()
     {
         Line("case edgestatus hide");
-        HLRAlgo_EdgeStatus S = new(0.0, 1.0e-5f, 1.0, 1.0e-5f);
+        EdgeStatus S = new(0.0, 1.0e-5f, 1.0, 1.0e-5f);
         Status(S);
         S.Hide(0.2, 1.0e-5f, 0.3, 1.0e-5f, false, false);
         Status(S);
@@ -350,7 +356,7 @@ internal sealed class HlrRecorder
         Status(S);
 
         Line("case edgestatus all");
-        HLRAlgo_EdgeStatus T = new(-2.0, 1.0e-4f, 3.0, 1.0e-4f);
+        EdgeStatus T = new(-2.0, 1.0e-4f, 3.0, 1.0e-4f);
         T.HideAll();
         Status(T);
         T.ShowAll();
@@ -361,7 +367,7 @@ internal sealed class HlrRecorder
         Status(T);
         T.Hide(1.0005, 1.0e-3f, 1.9995, 1.0e-3f, false, false);
         Status(T);
-        HLRAlgo_EdgeStatus U = new();
+        EdgeStatus U = new();
         // the default status: no visible part (its hidden iteration reads past the empty intervals in OCCT)
         Tag("default");
         Int(U.AllHidden() ? 1 : 0);
@@ -377,12 +383,12 @@ internal sealed class HlrRecorder
     {
         Line("case minmax");
         double[] Min = new double[16], Max = new double[16];
-        HLRAlgo.InitMinMax(1.0e100, Min, Max);
+        HlrAlgo.InitMinMax(1.0e100, Min, Max);
         for (int i = 0; i < 5; i++)
         {
-            HLRAlgo.UpdateMinMax(THE_PTS[i, 0], THE_PTS[i, 1], THE_PTS[i, 2], Min, Max);
+            HlrAlgo.UpdateMinMax(THE_PTS[i, 0], THE_PTS[i, 1], THE_PTS[i, 2], Min, Max);
         }
-        HLRAlgo.EnlargeMinMax(0.125, Min, Max);
+        HlrAlgo.EnlargeMinMax(0.125, Min, Max);
         Tag("box");
         for (int i = 0; i < 16; i++)
         {
@@ -390,7 +396,7 @@ internal sealed class HlrRecorder
             Hex(Max[i]);
         }
         End();
-        HLRAlgo_EdgesBlock.MinMaxIndices aMin = new(), aMax = new(), aMM = new(), aMin2 = new(), aMax2 = new();
+        EdgesBlock.MinMaxIndices aMin = new(), aMax = new(), aMM = new(), aMin2 = new(), aMax2 = new();
         for (int i = 0; i < 8; i++)
         {
             aMin.Min[i] = (int)((Min[i] + 20.0) * 100.0);
@@ -398,8 +404,8 @@ internal sealed class HlrRecorder
             aMax.Min[i] = (int)((Max[i] + 20.0) * 100.0);
             aMax.Max[i] = (int)((Max[i + 8] + 20.0) * 100.0);
         }
-        HLRAlgo.EncodeMinMax(ref aMin, ref aMax, ref aMM);
-        HLRAlgo.DecodeMinMax(aMM, ref aMin2, ref aMax2);
+        HlrAlgo.EncodeMinMax(ref aMin, ref aMax, ref aMM);
+        HlrAlgo.DecodeMinMax(aMM, ref aMin2, ref aMax2);
         Tag("encoded");
         for (int i = 0; i < 8; i++)
         {
@@ -417,9 +423,9 @@ internal sealed class HlrRecorder
         }
         End();
         Tag("size");
-        Hex(HLRAlgo.SizeBox(ref aMin2, ref aMax2));
+        Hex(HlrAlgo.SizeBox(ref aMin2, ref aMax2));
         End();
-        HLRAlgo_EdgesBlock.MinMaxIndices aOMin = aMin2, aOMax = aMax2;
+        EdgesBlock.MinMaxIndices aOMin = aMin2, aOMax = aMax2;
         for (int i = 0; i < 8; i++)
         {
             aMin.Min[i] = aMin2.Min[i] - 3 + i;
@@ -427,7 +433,7 @@ internal sealed class HlrRecorder
             aMax.Min[i] = aMax2.Min[i] + 5 - i;
             aMax.Max[i] = aMax2.Max[i] - 4 + i;
         }
-        HLRAlgo.AddMinMax(ref aMin, ref aMax, ref aOMin, ref aOMax);
+        HlrAlgo.AddMinMax(ref aMin, ref aMax, ref aOMin, ref aOMax);
         Tag("added");
         for (int i = 0; i < 8; i++)
         {
@@ -442,31 +448,31 @@ internal sealed class HlrRecorder
     // ------------------------------------------------------------------------------------------------------------
     // Contap
 
-    private void Transition(IntSurf_Transition T)
+    private void Transition(WalkingTransition T)
     {
         Int((int)T.TransitionType());
-        if (T.TransitionType() != IntSurf_Undecided)
+        if (T.TransitionType() != WalkingTypeTrans.Undecided)
         {
-            Int(T.IsTangent() ? 1 : 0);
+            Int(T.IsTangent ? 1 : 0);
         }
-        if (T.TransitionType() == IntSurf_Touch)
+        if (T.TransitionType() == WalkingTypeTrans.Touch)
         {
             Int((int)T.Situation());
-            Int(T.IsOpposite() ? 1 : 0);
+            Int(T.IsOpposite ? 1 : 0);
         }
     }
 
-    private void ContAna(Contap_ContAna C)
+    private void ContAna(ContAna C)
     {
         Tag("contana");
-        Int(C.IsDone() ? 1 : 0);
-        if (C.IsDone())
+        Int(C.IsDone ? 1 : 0);
+        if (C.IsDone)
         {
-            Int(C.NbContours());
-            if (C.NbContours() > 0)
+            Int(C.ContourCount);
+            if (C.ContourCount > 0)
             {
                 Int((int)C.TypeContour());
-                if (C.TypeContour() == Circle)
+                if (C.TypeContour() == global::Kerf.Geometry.CurveKind.Circle)
                 {
                     Circle3D aC = C.Circle();
                     Pnt(aC.Location());
@@ -476,7 +482,7 @@ internal sealed class HlrRecorder
                 }
                 else
                 {
-                    for (int i = 1; i <= C.NbContours(); i++)
+                    for (int i = 1; i <= C.ContourCount; i++)
                     {
                         Line3D aL = C.Line(i);
                         Pnt(aL.Location());
@@ -496,7 +502,7 @@ internal sealed class HlrRecorder
         Direction3D aD1 = new(0.3, -0.4, 0.8), aD2 = new(0, 0, 1), aD3 = new(1, 0, 0);
         Point3D aEye = new(20, -15, 30), aEyeIn = new(1, 2, 4);
         Line("case contana sphere");
-        Contap_ContAna C = new();
+        ContAna C = new();
         C.Perform(aSph, aD1);
         ContAna(C);
         C.Perform(aSph, aD2);
@@ -535,35 +541,35 @@ internal sealed class HlrRecorder
         ContAna(C);
     }
 
-    private void Contour(Contap_Contour C)
+    private void Contour(Contour C)
     {
         Tag("done");
-        Int(C.IsDone() ? 1 : 0);
+        Int(C.IsDone ? 1 : 0);
         End();
-        if (!C.IsDone())
+        if (!C.IsDone)
         {
             return;
         }
         Tag("lines");
-        Int(C.NbLines());
+        Int(C.LineCount);
         End();
-        for (int l = 1; l <= C.NbLines(); l++)
+        for (int l = 1; l <= C.LineCount; l++)
         {
-            Contap_Line L = C.Line(l);
+            ContourLine L = C.Line(l);
             Tag("line");
             Int((int)L.TypeContour());
             Int((int)L.TransitionOnS());
-            Int(L.NbVertex());
+            Int(L.VertexCount);
             switch (L.TypeContour())
             {
-                case Contap_Lin:
+                case ContourLineType.Lin:
                 {
                     Line3D aL = L.Line();
                     Pnt(aL.Location());
                     Dir(aL.Direction());
                     break;
                 }
-                case Contap_Circle:
+                case ContourLineType.Circle:
                 {
                     Circle3D aC = L.Circle();
                     Pnt(aC.Location());
@@ -572,18 +578,18 @@ internal sealed class HlrRecorder
                     Hex(aC.Radius());
                     break;
                 }
-                case Contap_Walking:
-                    Int(L.NbPnts());
+                case ContourLineType.Walking:
+                    Int(L.PntCount);
                     break;
-                case Contap_Restriction:
+                case ContourLineType.Restriction:
                     Hex(L.Arc().FirstParameter());
                     Hex(L.Arc().LastParameter());
                     break;
             }
             End();
-            if (L.TypeContour() == Contap_Walking)
+            if (L.TypeContour() == ContourLineType.Walking)
             {
-                for (int i = 1; i <= L.NbPnts(); i++)
+                for (int i = 1; i <= L.PntCount; i++)
                 {
                     L.Point(i).ParametersOnS2(out double U, out double V);
                     Tag("p");
@@ -593,20 +599,20 @@ internal sealed class HlrRecorder
                     End();
                 }
             }
-            for (int i = 1; i <= L.NbVertex(); i++)
+            for (int i = 1; i <= L.VertexCount; i++)
             {
-                Contap_Point P = L.Vertex(i);
+                ContourPoint P = L.Vertex(i);
                 P.Parameters(out double U, out double V);
                 Tag("v");
                 Pnt(P.Value());
                 Hex(U);
                 Hex(V);
                 Hex(P.ParameterOnLine());
-                Int(P.IsVertex() ? 1 : 0);
-                Int(P.IsMultiple() ? 1 : 0);
-                Int(P.IsInternal() ? 1 : 0);
-                Int(P.IsOnArc() ? 1 : 0);
-                if (P.IsOnArc())
+                Int(P.IsVertex ? 1 : 0);
+                Int(P.IsMultiple ? 1 : 0);
+                Int(P.IsInternal ? 1 : 0);
+                Int(P.IsOnArc ? 1 : 0);
+                if (P.IsOnArc)
                 {
                     Hex(P.ParameterOnArc());
                     Transition(P.TransitionOnLine());
@@ -657,8 +663,8 @@ internal sealed class HlrRecorder
     private void RecFace(string theName, Face theFace)
     {
         Face aF = ShapeCasts.Face(theFace.Oriented(Forward));
-        BRepTopAdaptor_Tool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
-        BRepTopAdaptor_TopolTool aDomain = aTool.GetTopolTool();
+        AdaptorTool aTool = new(aF, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        BrepTopolTool aDomain = aTool.GetTopolTool();
         SurfaceAdaptorBase aSurface = aTool.GetSurface()!;
 
         Vector3D[] aDirs = [new Vector3D(0.3, -0.4, 0.8), new Vector3D(1, 0, 0), new Vector3D(0.6, 0.7, -0.2)];
@@ -668,7 +674,7 @@ internal sealed class HlrRecorder
             Line($"case contour {theName} dir {i}");
             try
             {
-                Contap_Contour C = new(aSurface, aDomain, aDirs[i]);
+                Contour C = new(aSurface, aDomain, aDirs[i]);
                 Contour(C);
             }
             catch (global::Kerf.Engine.Foundation.FailureException)
@@ -681,7 +687,7 @@ internal sealed class HlrRecorder
             Line($"case contour {theName} eye {i}");
             try
             {
-                Contap_Contour C = new(aEyes[i]);
+                Contour C = new(aEyes[i]);
                 C.Perform(aSurface, aDomain);
                 Contour(C);
             }
@@ -693,7 +699,7 @@ internal sealed class HlrRecorder
         Line($"case contour {theName} draft");
         try
         {
-            Contap_Contour C = new();
+            Contour C = new();
             C.Perform(aSurface, aDomain, aDirs[0], 0.15);
             Contour(C);
         }
@@ -706,23 +712,23 @@ internal sealed class HlrRecorder
     /// <summary>The faces of the contour cases, by name (in the recorder's order).</summary>
     internal static IEnumerable<(string Name, Face Face)> Faces()
     {
-        yield return ("sphere", FirstFace(new BRepPrimAPI_MakeSphere(new Point3D(1, 2, 3), 10.0).Shape(), 1));
-        yield return ("halfsphere", FirstFace(new BRepPrimAPI_MakeSphere(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        yield return ("sphere", FirstFace(new MakeSphere(new Point3D(1, 2, 3), 10.0).Shape(), 1));
+        yield return ("halfsphere", FirstFace(new MakeSphere(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                           8.0, 0.0, M_PI / 2.0, M_PI).Shape(), 1));
-        yield return ("cylinder", FirstFace(new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        yield return ("cylinder", FirstFace(new ApiMakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                           5.0, 20.0).Shape(), 1));
-        yield return ("cylinder part", FirstFace(new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(1, 1, 0), new Direction3D(0.1, 0.2, 1)),
+        yield return ("cylinder part", FirstFace(new ApiMakeCylinder(new Frame3D(new Point3D(1, 1, 0), new Direction3D(0.1, 0.2, 1)),
                                                                                4.0, 12.0, 4.0).Shape(), 1));
-        yield return ("cone", FirstFace(new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        yield return ("cone", FirstFace(new ApiMakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                   10.0, 3.0, 15.0).Shape(), 1));
-        yield return ("cone apex", FirstFace(new BRepPrimAPI_MakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
+        yield return ("cone apex", FirstFace(new ApiMakeCone(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)),
                                                                        6.0, 0.0, 9.0).Shape(), 1));
-        yield return ("torus", FirstFace(new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
+        yield return ("torus", FirstFace(new MakeTorus(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     10.0, 3.0).Shape(), 1));
-        yield return ("torus part", FirstFace(new BRepPrimAPI_MakeTorus(new Frame3D(new Point3D(2, 0, 1), new Direction3D(0, 1, 1)),
+        yield return ("torus part", FirstFace(new MakeTorus(new Frame3D(new Point3D(2, 0, 1), new Direction3D(0, 1, 1)),
                                                                          8.0, 2.5, 0.0, M_PI, 4.0).Shape(), 1));
-        yield return ("box", FirstFace(new BRepPrimAPI_MakeBox(10.0, 20.0, 30.0).Shape(), 3));
-        yield return ("bspline", new BRepBuilderAPI_MakeFace(Bump(), global::Kerf.Engine.Foundation.Precision.Confusion()).Face());
+        yield return ("box", FirstFace(new MakeBox(10.0, 20.0, 30.0).Shape(), 3));
+        yield return ("bspline", new MakeFace(Bump(), global::Kerf.Engine.Foundation.Precision.Confusion()).Face());
     }
 
     public void RecContours()

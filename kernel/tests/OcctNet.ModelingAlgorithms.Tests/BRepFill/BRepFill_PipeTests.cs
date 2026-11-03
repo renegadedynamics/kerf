@@ -1,13 +1,17 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.GeomFill_Trihedron;
+using static Kerf.Engine.Construction.Surfaces.Trihedron;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -22,7 +26,7 @@ public class BRepFill_PipeTests
 {
     private static Wire Polyline(params Point3D[] thePoints)
     {
-        BRepBuilderAPI_MakePolygon aP = new();
+        MakePolygon aP = new();
         foreach (Point3D aQ in thePoints)
         {
             aP.Add(aQ);
@@ -32,8 +36,8 @@ public class BRepFill_PipeTests
 
     private static Wire Circle(double theRadius)
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(), theRadius)).Edge();
-        return new BRepBuilderAPI_MakeWire(anEdge).Wire();
+        Edge anEdge = new MakeEdge(new Circle3D(new Frame3D(), theRadius)).Edge();
+        return new MakeWire(anEdge).Wire();
     }
 
     private static string Text(in Shape theShape)
@@ -60,8 +64,8 @@ public class BRepFill_PipeTests
         (Shape Profile, ShapeType Type, double Measure)[] aCases =
         [
             (Circle(1), ShapeType.Shell, 2 * Math.PI * 10),                                    // lateral area
-            (new BRepBuilderAPI_MakeFace(Circle(2)).Face(), ShapeType.Solid, Math.PI * 4 * 10), // volume
-            (new BRepBuilderAPI_MakeVertex(new Point3D(1, 0, 0)).Vertex(), ShapeType.Edge, 10),  // length
+            (new MakeFace(Circle(2)).Face(), ShapeType.Solid, Math.PI * 4 * 10), // volume
+            (new MakeVertex(new Point3D(1, 0, 0)).Vertex(), ShapeType.Edge, 10),  // length
             (Polyline(new Point3D(1, 0, 0), new Point3D(2, 0, 0)), ShapeType.Shell, 10),         // area
         ];
         string aSpineText = Text(aSpine);
@@ -69,10 +73,10 @@ public class BRepFill_PipeTests
         {
             Assert.True(aProfile.TShape()!.IsFrozen);
             string aText = Text(aProfile);
-            foreach (GeomFill_Trihedron aMode in new[] { GeomFill_IsCorrectedFrenet, GeomFill_IsFrenet, GeomFill_IsDiscreteTrihedron })
+            foreach (Trihedron aMode in new[] { Trihedron.IsCorrectedFrenet, Trihedron.IsFrenet, Trihedron.IsDiscreteTrihedron })
             {
-                BRepOffsetAPI_MakePipe aPipe = new(aSpine, aProfile, aMode);
-                Assert.True(aPipe.IsDone());
+                ApiMakePipe aPipe = new(aSpine, aProfile, aMode);
+                Assert.True(aPipe.IsDone);
                 Shape aResult = aPipe.Shape();
                 Assert.True(aResult.TShape()!.IsFrozen);
                 Shape aBody = aResult;
@@ -86,17 +90,17 @@ public class BRepFill_PipeTests
                 switch (aType)
                 {
                     case ShapeType.Solid:
-                        BRepGProp.VolumeProperties(aBody, aProps);
+                        MassPropertiesBuilder.VolumeProperties(aBody, aProps);
                         break;
                     case ShapeType.Shell:
-                        BRepGProp.SurfaceProperties(aBody, aProps);
+                        MassPropertiesBuilder.SurfaceProperties(aBody, aProps);
                         break;
                     default:
-                        BRepGProp.LinearProperties(aBody, aProps);
+                        MassPropertiesBuilder.LinearProperties(aBody, aProps);
                         break;
                 }
                 Assert.Equal(aMeasure, aProps.Mass(), 1e-6 * aMeasure);
-                Assert.True(new BRepCheck_Analyzer(aResult).IsValid());
+                Assert.True(new Analyzer(aResult).IsValid());
                 Assert.Equal(aText, Text(aProfile));
             }
             Assert.Equal(aText, Text(aProfile));
@@ -108,11 +112,11 @@ public class BRepFill_PipeTests
     public void A_solid_profile_is_refused_after_the_first_and_last_shapes_are_placed()
     {
         // Perform places the profile and builds the first and last shapes before MakeShape refuses the solid, as OCCT.
-        Shape aBox = new BRepPrimAPI_MakeBox(new Point3D(-1, -1, 0), 2, 2, 1).Shape();
+        Shape aBox = new MakeBox(new Point3D(-1, -1, 0), 2, 2, 1).Shape();
         string aBoxText = Text(aBox);
         Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(0, 0, 4), new Point3D(0, 0, 10));
 
-        BRepFill_Pipe aPipe = new();
+        Pipe aPipe = new();
         var anError = Assert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
         Assert.Contains("profile contains solids", anError.Message, StringComparison.Ordinal);
         Assert.Equal(aBoxText, Text(aBox));
@@ -141,16 +145,16 @@ public class BRepFill_PipeTests
         Compound aCompound = new();
         aB.MakeCompound(ref aCompound);
         aB.Add(aCompound, aBox);
-        Assert.Throws<DomainErrorException>(() => new BRepOffsetAPI_MakePipe(aSpine, aCompound));
+        Assert.Throws<DomainErrorException>(() => new ApiMakePipe(aSpine, aCompound));
         Assert.Equal(aBoxText, Text(aBox));
     }
 
     [Fact]
     public void Queries_of_an_unbuilt_pipe_throw_as_OCCT_does()
     {
-        Shape aBox = new BRepPrimAPI_MakeBox(1, 1, 1).Shape();
+        Shape aBox = new MakeBox(1, 1, 1).Shape();
         Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(0, 0, 3));
-        BRepFill_Pipe aPipe = new();
+        Pipe aPipe = new();
         Assert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
         Assert.True(aPipe.Shape().IsNull);
         Assert.Equal(ShapeType.Wire, aPipe.Spine().ShapeType());
@@ -160,7 +164,7 @@ public class BRepFill_PipeTests
         // the profile is searched first: a solid profile is refused
         Assert.Throws<DomainErrorException>(() => aPipe.Face(aSpineEdge, aBoxEdge));
         // a vertex not on the spine
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D(5, 5, 5)).Vertex();
+        Vertex aV = new MakeVertex(new Point3D(5, 5, 5)).Vertex();
         Assert.Throws<DomainErrorException>(() => aPipe.Section(aV));
         // a spine vertex: OCCT reads the sections the sweep would have made
         Vertex aSpineVertex = Exploration.FirstVertex(aSpineEdge);

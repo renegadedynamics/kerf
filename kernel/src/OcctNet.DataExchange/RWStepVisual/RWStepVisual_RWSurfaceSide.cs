@@ -24,11 +24,11 @@ internal static class RWStepVisual_RWSurfaceSide
     {
         switch (theSourceEnum)
         {
-            case StepVisual_ssNegative:
+            case StepVisual_SurfaceSide.StepVisual_ssNegative:
                 return ssNegative;
-            case StepVisual_ssPositive:
+            case StepVisual_SurfaceSide.StepVisual_ssPositive:
                 return ssPositive;
-            case StepVisual_ssBoth:
+            case StepVisual_SurfaceSide.StepVisual_ssBoth:
                 return ssBoth;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepVisual_RWSurfaceSide
     {
         if (theSideStr == ssNegative)
         {
-            theResultEnum = StepVisual_ssNegative;
+            theResultEnum = StepVisual_SurfaceSide.StepVisual_ssNegative;
         }
         else if (theSideStr == ssPositive)
         {
-            theResultEnum = StepVisual_ssPositive;
+            theResultEnum = StepVisual_SurfaceSide.StepVisual_ssPositive;
         }
         else if (theSideStr == ssBoth)
         {
-            theResultEnum = StepVisual_ssBoth;
+            theResultEnum = StepVisual_SurfaceSide.StepVisual_ssBoth;
         }
         else
         {

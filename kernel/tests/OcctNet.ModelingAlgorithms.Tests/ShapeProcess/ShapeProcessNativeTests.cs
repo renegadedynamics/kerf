@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Collections.Concurrent;
@@ -106,7 +107,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         }
     }
 
-    private static string Record(string theRun, in Shape theInput, ShapeProcess_ShapeContext theContext, bool theDone,
+    private static string Record(string theRun, in Shape theInput, global::Kerf.Engine.Healing.Process.ShapeContext theContext, bool theDone,
                                  StringPrinter thePrinter)
     {
         Shape aRes = theContext.Result();
@@ -140,7 +141,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         }
 
         var aTexts = new List<string>();
-        if (theContext.Messages() is ShapeExtend_MsgRegistrator aMessages)
+        if (theContext.Messages() is MsgRegistrator aMessages)
         {
             foreach (KeyValuePair<Shape, NCollection_List<Msg>> anItem in aMessages.MapShape())
             {
@@ -198,23 +199,23 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         return Run(theSeq, () =>
         {
             var aPrinter = new StringPrinter();
-            var aContext = new ShapeProcess_ShapeContext(aShape, theRsc, "", aDir);
+            var aContext = new global::Kerf.Engine.Healing.Process.ShapeContext(aShape, theRsc, "", aDir);
             aContext.SetMessenger(new Messenger(aPrinter));
-            bool isDone = ShapeProcess.Perform(aContext, theSeq);
+            bool isDone = global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(aContext, theSeq);
             return Record(theSeq, aShape, aContext, isDone, aPrinter);
         });
     }
 
-    private static string Operation(in Shape theShape, ShapeProcess.Operation theOperation)
+    private static string Operation(in Shape theShape, global::Kerf.Engine.Healing.Process.ShapeProcess.Operation theOperation)
     {
         Shape aShape = theShape;
         string aRun = "OP:" + s_operations[(int)theOperation];
         return Run(aRun, () =>
         {
             var aPrinter = new StringPrinter();
-            var aContext = new ShapeProcess_ShapeContext(aShape, "");
+            var aContext = new global::Kerf.Engine.Healing.Process.ShapeContext(aShape, "");
             aContext.SetMessenger(new Messenger(aPrinter));
-            bool isDone = ShapeProcess.Perform(aContext, new ShapeProcess.OperationsFlags(theOperation));
+            bool isDone = global::Kerf.Engine.Healing.Process.ShapeProcess.Perform(aContext, new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(theOperation));
             return Record(aRun, aShape, aContext, isDone, aPrinter);
         });
     }
@@ -240,7 +241,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
             Sequence(theShape, "STEP", "ToSTEP"),
             Sequence(theShape, "STEP", "FromSTEP"),
         };
-        for (ShapeProcess.Operation anOperation = ShapeProcess.Operation.First; anOperation <= ShapeProcess.Operation.Last; anOperation++)
+        for (global::Kerf.Engine.Healing.Process.ShapeProcess.Operation anOperation = global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.First; anOperation <= global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.Last; anOperation++)
         {
             aRecords.Add(Operation(theShape, anOperation));
         }
@@ -284,7 +285,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
     [Fact]
     public void Sequences_and_operators_AsNativeOCCT()
     {
-        ShapeProcess_OperLibrary.Init();
+        global::Kerf.Engine.Healing.Process.OperLibrary.Init();
         var aByName = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (string aFile in Directory.GetFiles(Path.Combine(Metadata("OcctSourceDir"), "data", "occ"), "*.brep"))
         {

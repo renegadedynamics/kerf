@@ -1,5 +1,6 @@
 using Kerf.Engine.Geometry.Bounds;
 
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -10,36 +11,36 @@ public class IntTools_RangeSampleTests
     [Fact]
     public void BaseRangeSample()
     {
-        Assert.Equal(0, new IntTools_BaseRangeSample().GetDepth());
-        IntTools_BaseRangeSample aSample = new(3);
+        Assert.Equal(0, new BaseRangeSample().GetDepth());
+        BaseRangeSample aSample = new(3);
         Assert.Equal(3, aSample.GetDepth());
         aSample.SetDepth(4);
-        Assert.Equal(new IntTools_BaseRangeSample(4), aSample);
+        Assert.Equal(new BaseRangeSample(4), aSample);
         Assert.Equal(5, aSample.WithDepth(5).GetDepth());
     }
 
     [Fact]
     public void CurveRangeSample_IndexDepthAndRange()
     {
-        IntTools_CurveRangeSample aSample = new(4);
+        CurveRangeSample aSample = new(4);
         Assert.Equal(4, aSample.GetRangeIndex());
         Assert.Equal(0, aSample.GetDepth());
 
         // depth 0: the whole range
-        Assert.Equal(new IntTools_Range(0.0, 9.0), aSample.GetRange(0.0, 9.0, 3));
+        Assert.Equal(new ParameterRange(0.0, 9.0), aSample.GetRange(0.0, 9.0, 3));
 
         // depth 2, 3 samples: 9 parts of length 1; index 4 is [4, 5]
         aSample.SetDepth(2);
-        Assert.Equal(new IntTools_Range(4.0, 5.0), aSample.GetRange(0.0, 9.0, 3));
+        Assert.Equal(new ParameterRange(4.0, 5.0), aSample.GetRange(0.0, 9.0, 3));
         Assert.Equal(12, aSample.GetRangeIndexDeeper(3));
-        Assert.Equal(new IntTools_BaseRangeSample(2), aSample.BaseRangeSample());
+        Assert.Equal(new BaseRangeSample(2), aSample.BaseRangeSample());
     }
 
     [Fact]
     public void CurveRangeSample_EqualityAndHashing()
     {
-        IntTools_CurveRangeSample a = new IntTools_CurveRangeSample(2).WithDepth(1);
-        IntTools_CurveRangeSample b = new IntTools_CurveRangeSample().WithRangeIndex(2).WithDepth(1);
+        CurveRangeSample a = new CurveRangeSample(2).WithDepth(1);
+        CurveRangeSample b = new CurveRangeSample().WithRangeIndex(2).WithDepth(1);
         Assert.True(a.IsEqual(b));
         Assert.Equal(a, b);
         Assert.True(a == b);
@@ -47,7 +48,7 @@ public class IntTools_RangeSampleTests
         Assert.NotEqual(a, b.WithDepth(2));
         Assert.NotEqual(a, b.WithRangeIndex(3));
 
-        NCollection_Map<IntTools_CurveRangeSample> aMap = new();
+        NCollection_Map<CurveRangeSample> aMap = new();
         Assert.True(aMap.Add(a));
         Assert.False(aMap.Add(b));
         Assert.True(aMap.Add(b.WithDepth(2)));
@@ -56,33 +57,33 @@ public class IntTools_RangeSampleTests
     [Fact]
     public void SurfaceRangeSample_RangesIndicesDepths()
     {
-        IntTools_SurfaceRangeSample aSample = new(1, 2, 3, 4);
+        SurfaceRangeSample aSample = new(1, 2, 3, 4);
         aSample.GetIndexes(out int iu, out int iv);
         aSample.GetDepths(out int du, out int dv);
         Assert.Equal((1, 3, 2, 4), (iu, iv, du, dv));
         Assert.Equal(1, aSample.GetIndexU());
         Assert.Equal(4, aSample.GetDepthV());
 
-        aSample.GetRanges(out IntTools_CurveRangeSample aRU, out IntTools_CurveRangeSample aRV);
-        Assert.Equal(new IntTools_CurveRangeSample(1).WithDepth(2), aRU);
-        Assert.Equal(new IntTools_CurveRangeSample(3).WithDepth(4), aRV);
+        aSample.GetRanges(out CurveRangeSample aRU, out CurveRangeSample aRV);
+        Assert.Equal(new CurveRangeSample(1).WithDepth(2), aRU);
+        Assert.Equal(new CurveRangeSample(3).WithDepth(4), aRV);
         Assert.Equal(aRU, aSample.GetSampleRangeU());
-        Assert.Equal(new IntTools_SurfaceRangeSample(aRU, aRV), aSample);
+        Assert.Equal(new SurfaceRangeSample(aRU, aRV), aSample);
 
         // U: depth 2 of 2 samples cuts [0, 8] into 4 parts; index 1 is [2, 4]
-        Assert.Equal(new IntTools_Range(2.0, 4.0), aSample.GetRangeU(0.0, 8.0, 2));
+        Assert.Equal(new ParameterRange(2.0, 4.0), aSample.GetRangeU(0.0, 8.0, 2));
         Assert.Equal(2, aSample.GetRangeIndexUDeeper(2));
         Assert.Equal(6, aSample.GetRangeIndexVDeeper(2));
 
         aSample.SetIndexes(5, 6);
         aSample.SetDepthU(0);
-        Assert.Equal(new IntTools_SurfaceRangeSample(5, 0, 6, 4), aSample);
-        Assert.Equal(new IntTools_Range(0.0, 8.0), aSample.GetRangeU(0.0, 8.0, 2));
-        Assert.Equal(aSample.GetHashCode(), new IntTools_SurfaceRangeSample(5, 0, 6, 4).GetHashCode());
+        Assert.Equal(new SurfaceRangeSample(5, 0, 6, 4), aSample);
+        Assert.Equal(new ParameterRange(0.0, 8.0), aSample.GetRangeU(0.0, 8.0, 2));
+        Assert.Equal(aSample.GetHashCode(), new SurfaceRangeSample(5, 0, 6, 4).GetHashCode());
         Assert.NotEqual(aSample, aSample.WithIndexV(7));
         Assert.True(aSample != aSample.WithDepthU(1));
 
-        IntTools_SurfaceRangeSample aCopy = aSample; // OCCT's copy constructor and Assign are a plain copy
+        SurfaceRangeSample aCopy = aSample; // OCCT's copy constructor and Assign are a plain copy
         aCopy.SetIndexU(9);
         Assert.Equal(5, aSample.GetIndexU());
     }
@@ -90,11 +91,11 @@ public class IntTools_RangeSampleTests
     [Fact]
     public void CurveRangeLocalizeData_OutRangesAndBoxes()
     {
-        IntTools_CurveRangeLocalizeData aData = new(10, 1.0e-3);
+        CurveRangeLocalizeData aData = new(10, 1.0e-3);
         Assert.Equal(10, aData.GetNbSample());
         Assert.Equal(1.0e-3, aData.GetMinRange());
 
-        IntTools_CurveRangeSample aS1 = new(1), aS2 = new(2), aS3 = new IntTools_CurveRangeSample(3).WithDepth(1);
+        CurveRangeSample aS1 = new(1), aS2 = new(2), aS3 = new CurveRangeSample(3).WithDepth(1);
         Box aBox = new();
         aBox.Update(0, 0, 0, 1, 1, 1);
         aData.AddBox(aS1, aBox);
@@ -116,7 +117,7 @@ public class IntTools_RangeSampleTests
         Assert.False(aData.FindBox(aS2, ref aMissing));
 
         // listed in insertion order (OCCT: hash order), appended to the list
-        NCollection_List<IntTools_CurveRangeSample> aList = new();
+        NCollection_List<CurveRangeSample> aList = new();
         aList.Append(aS1);
         aData.ListRangeOut(aList);
         Assert.Equal(new[] { aS1, aS2, aS3 }, aList);
@@ -125,13 +126,13 @@ public class IntTools_RangeSampleTests
     [Fact]
     public void SurfaceRangeLocalizeData_OutRangesAndBoxes()
     {
-        IntTools_SurfaceRangeLocalizeData aDefault = new();
+        SurfaceRangeLocalizeData aDefault = new();
         Assert.Equal((1, 1, 0.0, 0.0), (aDefault.GetNbSampleU(), aDefault.GetNbSampleV(), aDefault.GetMinRangeU(), aDefault.GetMinRangeV()));
 
-        IntTools_SurfaceRangeLocalizeData aData = new(3, 4, 0.1, 0.2);
+        SurfaceRangeLocalizeData aData = new(3, 4, 0.1, 0.2);
         Assert.Equal((3, 4, 0.1, 0.2), (aData.GetNbSampleU(), aData.GetNbSampleV(), aData.GetMinRangeU(), aData.GetMinRangeV()));
 
-        IntTools_SurfaceRangeSample aS1 = new(0, 1, 0, 1), aS2 = new(1, 1, 0, 1);
+        SurfaceRangeSample aS1 = new(0, 1, 0, 1), aS2 = new(1, 1, 0, 1);
         Box aBox = new();
         aBox.Update(0, 0, 0, 1, 1, 1);
         aData.AddBox(aS1, aBox);
@@ -141,12 +142,12 @@ public class IntTools_RangeSampleTests
         Assert.True(aData.FindBox(aS1, ref aFound)); // the surface's out range keeps its box
         Assert.True(aData.IsRangeOut(aS2));
 
-        NCollection_List<IntTools_SurfaceRangeSample> aList = new();
+        NCollection_List<SurfaceRangeSample> aList = new();
         aData.ListRangeOut(aList);
         Assert.Equal(new[] { aS1, aS2 }, aList);
 
         // a copy has maps of its own
-        IntTools_SurfaceRangeLocalizeData aCopy = new(aData);
+        SurfaceRangeLocalizeData aCopy = new(aData);
         aCopy.RemoveRangeOutAll();
         Assert.False(aCopy.IsRangeOut(aS1));
         Assert.True(aData.IsRangeOut(aS1));
@@ -156,7 +157,7 @@ public class IntTools_RangeSampleTests
     [Fact]
     public void SurfaceRangeLocalizeData_GridAndFrame()
     {
-        IntTools_SurfaceRangeLocalizeData aData = new(3, 3, 0.0, 0.0);
+        SurfaceRangeLocalizeData aData = new(3, 3, 0.0, 0.0);
         Assert.Equal(0, aData.GetRangeUGrid());
         aData.SetGridDeflection(0.01);
         Assert.Equal(0.01, aData.GetGridDeflection());
@@ -195,7 +196,7 @@ public class IntTools_RangeSampleTests
         Assert.Equal(0, aData.GetNBUPointsInFrame());
 
         // a copy shares the grid arrays (OCCT copies the handles)
-        IntTools_SurfaceRangeLocalizeData aCopy = new(aData);
+        SurfaceRangeLocalizeData aCopy = new(aData);
         aCopy.SetUParam(1, 42.0);
         Assert.Equal(42.0, aData.GetUParam(1));
 

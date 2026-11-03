@@ -1,4 +1,8 @@
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -121,7 +125,7 @@ public abstract partial class Shape
     /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another class.</summary>
     public Shape Cut(params IEnumerable<Shape> toCut)
     {
-        var op = new BRepAlgoAPI_Cut();
+        var op = new Cut();
         return BoolOp([this], toCut, op);
     }
 
@@ -131,9 +135,9 @@ public abstract partial class Shape
     /// </summary>
     public Shape Fuse(IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = null)
     {
-        var op = new BRepAlgoAPI_Fuse();
+        var op = new Fuse();
         if (glue)
-            op.SetGlue(BOPAlgo_GlueEnum.BOPAlgo_GlueShift);
+            op.SetGlue(GlueMode.GlueShift);
         if (tolerance is { } tol && tol != 0)
             op.SetFuzzyValue(tol);
         return BoolOp([this], toFuse, op);
@@ -143,7 +147,7 @@ public abstract partial class Shape
     public Shape Fuse(params Shape[] toFuse) => Fuse((IEnumerable<Shape>)toFuse);
 
     /// <summary>A boolean operation, its result cast to the highest-ranked class among the inputs.</summary>
-    private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
+    private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BuilderAlgo operation)
     {
         var argList = args.ToList();
         var toolList = tools.ToList();
@@ -162,19 +166,19 @@ public abstract partial class Shape
         global::Kerf.Topology.Shape? topoResult = null;
         switch (operation)
         {
-            case BRepAlgoAPI_Cut:
+            case global::Kerf.Engine.Booleans.Api.Cut:
                 if (arg.Count == 0)   // nothing less anything is still nothing
                     return ZeroOf([this, .. Operands(argList), .. Operands(toolList)]);
                 if (tool.Count == 0)
                     topoResult = arg.Count == 1 ? arg[0] : TopoUtil.MakeCompound(arg);
                 break;
-            case BRepAlgoAPI_Fuse:
+            case global::Kerf.Engine.Booleans.Api.Fuse:
                 if (tool.Count == 0)
                     topoResult = arg.Count == 1 ? arg[0] : TopoUtil.MakeCompound(arg);
                 else if (arg.Count == 0)
                     topoResult = tool.Count == 1 ? tool[0] : TopoUtil.MakeCompound(tool);
                 break;
-            case BRepAlgoAPI_Common:
+            case Common:
                 if (tool.Count == 0 || arg.Count == 0)
                     return ZeroOf([this, .. Operands(argList), .. Operands(toolList)]);
                 break;
@@ -200,7 +204,7 @@ public abstract partial class Shape
 
         if (SkipClean.Clean)
         {
-            var upgrader = new ShapeUpgrade_UnifySameDomain(result, true, true, true);
+            var upgrader = new UnifySameDomain(result, true, true, true);
             upgrader.AllowInternalEdges(false);
             try
             {
@@ -229,7 +233,7 @@ public abstract partial class Shape
     }
 
     /// <summary>A boolean operation whose pieces are returned as a list, empty for nothing.</summary>
-    private protected ShapeList<Shape> BoolOpList(IEnumerable<Shape> args, IEnumerable<Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
+    private protected ShapeList<Shape> BoolOpList(IEnumerable<Shape> args, IEnumerable<Shape> tools, BuilderAlgo operation)
     {
         var result = BoolOp(args, tools, operation);
         if (result.IsEmpty)
@@ -293,7 +297,7 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             return ([], []);
-        var section = new BRepAlgoAPI_Section(_wrapped, other._wrapped, false);
+        var section = new SectionOperation(_wrapped, other._wrapped, false);
         section.SetNonDestructive(true);   // leave the inputs' tolerances alone
         section.SetRunParallel(true);
         section.Approximation(true);
@@ -352,7 +356,7 @@ public abstract partial class Shape
             Shape s => s.Wrapped,
             _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
         };
-        var splitter = new BRepAlgoAPI_Splitter();
+        var splitter = new SplitterOperation();
         var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], splitter);
         var pieces = TopoUtil.TopLevelShapes(splitResult);
 
@@ -375,13 +379,13 @@ public abstract partial class Shape
             BrepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
             var surfacePnt = new Point3D();
             var surfaceNormal = new Vector3D();
-            var props = new BRepGProp_Face(toolFace);
+            var props = new FaceIntegrand(toolFace);
             props.Normal((uMin + uMax) / 2, (vMin + vMax) / 2, out surfacePnt, out surfaceNormal);
             var refPoint = new Vector(surfacePnt) + new Vector(surfaceNormal).Normalized();
             var refPnt = refPoint.ToGpPnt();
             var halfSpace = trimTool.IsShell()
-                ? new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Shell(trimTool), refPnt)
-                : new BRepPrimAPI_MakeHalfSpace(ShapeCasts.Face(trimTool), refPnt);
+                ? new MakeHalfSpace(ShapeCasts.Shell(trimTool), refPnt)
+                : new MakeHalfSpace(ShapeCasts.Face(trimTool), refPnt);
             toolSolid = halfSpace.Solid();
         }
 
@@ -402,10 +406,10 @@ public abstract partial class Shape
             else
             {
                 // Intersect the piece and the thickened tool
-                var common = new BRepAlgoAPI_Common();
+                var common = new Common();
                 var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], common);
                 var props = new Properties();
-                BRepGProp.LinearProperties(isUpObj, props);
+                MassPropertiesBuilder.LinearProperties(isUpObj, props);
                 // Mass is the total length for linear properties
                 isUp = props.Mass() >= Constants.Tolerance;
             }
@@ -425,7 +429,7 @@ public abstract partial class Shape
     internal static global::Kerf.Topology.Face MakePlaneFace(Plane plane)
     {
         var pln = plane.ToGpPln();
-        var maker = new BRepBuilderAPI_MakeFace(pln);
+        var maker = new MakeFace(pln);
         return maker.Face();
     }
 }

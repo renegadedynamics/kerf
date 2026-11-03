@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -34,12 +35,12 @@ public class Law_InterpolateTests
             aValues[i] = aRnd.NextDouble() * 10 - 5;
             aParams[i] = i == 0 ? 0.0 : aParams[i - 1] + 0.5 + aRnd.NextDouble();
         }
-        var anInter = new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9);
-        Assert.False(anInter.IsDone());
+        var anInter = new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9);
+        Assert.False(anInter.IsDone);
         Assert.Throws<NotDoneException>(() => anInter.Curve());
         anInter.Perform();
-        Assert.True(anInter.IsDone());
-        Law_BSpline aCurve = anInter.Curve();
+        Assert.True(anInter.IsDone);
+        BSpline aCurve = anInter.Curve();
         Assert.True(aCurve.IsFrozen);
         Assert.Equal(theDegree, aCurve.Degree());
         for (int i = 0; i < theNb; i++)
@@ -53,10 +54,10 @@ public class Law_InterpolateTests
     {
         double[] aValues = [0.0, 1.0, 0.5, 2.0];
         double[] aParams = [0.0, 1.0, 2.5, 3.0];
-        var anInter = new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9);
+        var anInter = new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9);
         anInter.Load(3.0, -1.0);
         anInter.Perform();
-        Law_BSpline aCurve = anInter.Curve();
+        BSpline aCurve = anInter.Curve();
         for (int i = 0; i < 4; i++)
         {
             Assert.Equal(aValues[i], aCurve.Value(aParams[i]), 1.0e-12);
@@ -77,10 +78,10 @@ public class Law_InterpolateTests
         aFlags[3] = true;
         var aTangents = new NCollection_Array1<double>(1, 5);
         aTangents[3] = 4.0;
-        var anInter = new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9);
+        var anInter = new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9);
         anInter.Load(aTangents, aFlags);
         anInter.Perform();
-        Law_BSpline aCurve = anInter.Curve();
+        BSpline aCurve = anInter.Curve();
         for (int i = 0; i < 5; i++)
         {
             Assert.Equal(aValues[i], aCurve.Value(aParams[i]), 1.0e-12);
@@ -97,10 +98,10 @@ public class Law_InterpolateTests
     {
         double[] aValues = [1.0, 3.0, 2.0, 0.0];
         double[] aParams = [0.0, 1.0, 2.0, 3.0, 4.0];
-        var anInter = new Law_Interpolate(Array(aValues), Array(aParams), true, 1.0e-9);
+        var anInter = new LawsInterpolate(Array(aValues), Array(aParams), true, 1.0e-9);
         anInter.Perform();
-        Law_BSpline aCurve = anInter.Curve();
-        Assert.True(aCurve.IsPeriodic());
+        BSpline aCurve = anInter.Curve();
+        Assert.True(aCurve.IsPeriodic);
         for (int i = 0; i < 4; i++)
         {
             Assert.Equal(aValues[i], aCurve.Value(aParams[i]), 1.0e-12);
@@ -109,7 +110,7 @@ public class Law_InterpolateTests
         aCurve.D1(0.0, out _, out double D0);
         aCurve.D1(4.0, out _, out double D4);
         Assert.Equal(D0, D4, 1.0e-10);
-        Assert.Throws<ConstructionErrorException>(() => new Law_Interpolate(Array(aValues), Array(aParams), false, 1.0e-9)
+        Assert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(aValues), Array(aParams), false, 1.0e-9)
                                                         .Load(new NCollection_Array1<double>(1, 3), new NCollection_HArray1<bool>(1, 3)));
     }
 
@@ -117,14 +118,14 @@ public class Law_InterpolateTests
     public void ComputedParameters_FollowTheValues()
     {
         // parameters from the differences of the values: 0, 2, 3, 7
-        var anInter = new Law_Interpolate(Array(1.0, 3.0, 2.0, 6.0), false, 1.0e-9);
+        var anInter = new LawsInterpolate(Array(1.0, 3.0, 2.0, 6.0), false, 1.0e-9);
         anInter.Perform();
-        Law_BSpline aCurve = anInter.Curve();
+        BSpline aCurve = anInter.Curve();
         Assert.Equal(0.0, aCurve.FirstParameter());
         Assert.Equal(7.0, aCurve.LastParameter());
         Assert.Equal(3.0, aCurve.Value(2.0), 1.0e-12);
         Assert.Equal(2.0, aCurve.Value(3.0), 1.0e-12);
-        Assert.Throws<ConstructionErrorException>(() => new Law_Interpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
+        Assert.Throws<ConstructionErrorException>(() => new LawsInterpolate(Array(1.0, 2.0), Array(0.0, 0.0), false, 1.0e-9));
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public class Law_InterpolateTests
         aPnts[2] = new Point2D(1.0, 2.0);
         aPnts[3] = new Point2D(2.0, 1.5);
         aPnts[4] = new Point2D(4.0, 3.0);
-        var aLaw = new Law_Interpol();
+        var aLaw = new Interpol();
         aLaw.Set(aPnts);
         for (int i = 1; i <= 4; i++)
         {
@@ -159,7 +160,7 @@ public class Law_InterpolateTests
         // periodic: the last value is the first
         aPnts[4] = new Point2D(4.0, 1.0);
         aLaw.Set(aPnts, true);
-        Assert.True(aLaw.Curve()!.IsPeriodic());
+        Assert.True(aLaw.Curve()!.IsPeriodic);
         Assert.Equal(1.0, aLaw.Value(4.0), 1.0e-7);
         aLaw.SetInRelative(aPnts, 0.0, 1.0, true);
         Assert.Equal(2.0, aLaw.Value(0.25), 1.0e-7);

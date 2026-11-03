@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -42,18 +43,18 @@ public class Geom2dAPI_InterpolateTest
         aTangentFlagsArray[6] = true;
 
         // Interpolation with tangent scale
-        Geom2dAPI_Interpolate anInterpWithScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Interpolate2D anInterpWithScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInterpWithScale.Load(aTangents, aTangentFlags);
         anInterpWithScale.Perform();
-        Assert.True(anInterpWithScale.IsDone());
+        Assert.True(anInterpWithScale.IsDone);
         BSplineCurve2D aCurveWithScale = anInterpWithScale.Curve();
         Assert.NotNull(aCurveWithScale);
 
         // Interpolation without tangent scale
-        Geom2dAPI_Interpolate anInterpWithoutScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Interpolate2D anInterpWithoutScale = new(aPoints, false, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInterpWithoutScale.Load(aTangents, aTangentFlags, false);
         anInterpWithoutScale.Perform();
-        Assert.True(anInterpWithoutScale.IsDone());
+        Assert.True(anInterpWithoutScale.IsDone);
         BSplineCurve2D aCurveWithoutScale = anInterpWithoutScale.Curve();
         Assert.NotNull(aCurveWithoutScale);
 

@@ -1,6 +1,10 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -68,20 +72,20 @@ public partial class Wire : Shape1D
             }
             list = placed;
         }
-        var builder = new BRepBuilderAPI_MakeWire();
+        var builder = new MakeWire();
         var combined = TopoUtil.ListOf(list.Where(e => !e.IsEmpty).Select(e => e.TopoShape));
         builder.Add(combined);
         builder.Build();
-        if (!builder.IsDone())
+        if (!builder.IsDone)
         {
             switch (builder.Error())
             {
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_NonManifoldWire:
+                case WireError.NonManifoldWire:
                     Warnings.Warn("Wire is non manifold (e.g. branching, self intersecting)");
                     break;
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_EmptyWire:
+                case WireError.EmptyWire:
                     throw new InvalidOperationException("Wire is empty");
-                case BRepBuilderAPI_WireError.BRepBuilderAPI_DisconnectedWire:
+                case WireError.DisconnectedWire:
                     throw new ArgumentException("Edges are disconnected");
             }
         }
@@ -113,7 +117,7 @@ public partial class Wire : Shape1D
         var vectors = vertices.ToList();
         if ((vectors[0] - vectors[^1]).Length > Constants.Tolerance && close)
             vectors.Add(vectors[0]);
-        var builder = new BRepBuilderAPI_MakePolygon();
+        var builder = new MakePolygon();
         foreach (var v in vectors)
         {
             var p = v.ToGpPnt();
@@ -284,21 +288,21 @@ public partial class Wire : Shape1D
         var separation = DistanceTo(point);
         if (!TopologyUtils.IsCloseB(separation, 0, absTol: Constants.Tolerance))
             throw new ArgumentException($"point ({point}) is {separation} from wire");
-        var extrema = new BRepExtrema_DistShapeShape(vertex.TopoShape, TopoShape);
+        var extrema = new DistanceShapeShape(vertex.TopoShape, TopoShape);
         extrema.Perform();
-        if (!extrema.IsDone() || extrema.NbSolution() == 0)
+        if (!extrema.IsDone || extrema.SolutionCount == 0)
             throw new ArgumentException("point is not on Wire");
 
         global::Kerf.Topology.Edge closestEdge;
         double closestParam;
         switch (extrema.SupportTypeShape2(1))
         {
-            case BRepExtrema_SupportType.BRepExtrema_IsOnEdge:
+            case SupportType.IsOnEdge:
                 closestEdge = ShapeCasts.Edge(extrema.SupportOnShape2(1));
                 closestParam = 0;
                 extrema.ParOnEdgeS2(1, out closestParam);
                 break;
-            case BRepExtrema_SupportType.BRepExtrema_IsVertex:
+            case SupportType.IsVertex:
             {
                 var hit = ShapeCasts.Vertex(extrema.SupportOnShape2(1));
                 var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
@@ -410,7 +414,7 @@ public partial class Wire : Shape1D
         if (IsEmpty)
             throw new InvalidOperationException("Can't chamfer empty wire");
         var unchamfered = TopoUtil.MakeFaceFromWires(TopoWire);
-        var builder = new BRepFilletAPI_MakeFillet2d(unchamfered);
+        var builder = new MakeFillet2D(unchamfered);
         var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(unchamfered, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
         foreach (var v in vertices)
@@ -426,7 +430,7 @@ public partial class Wire : Shape1D
         builder.Build();
         var chamfered = builder.Shape();
         // The chamfered face shares the wire's other edges, which ShapeFix would edit: it fixes a copy
-        var fix = new ShapeFix_Shape(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
+        var fix = new ShapeFixer(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
         fix.Perform();
         var fixedShape = TopoUtil.Downcast(fix.Shape());
         if (!fixedShape.IsFace())
@@ -440,7 +444,7 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't fix an empty edge");
-        var fix = new ShapeFix_Wireframe(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
+        var fix = new WireframeFixer(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
         fix.SetPrecision(precision);
         fix.SetMaxTolerance(1e-6);
         fix.FixSmallEdges();
@@ -453,7 +457,7 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty || other.IsEmpty)
             throw new InvalidOperationException("Can't stitch empty wires");
-        var builder = new BRepBuilderAPI_MakeWire();
+        var builder = new MakeWire();
         builder.Add(TopoWire);
         builder.Add(other.TopoWire);
         builder.Build();
@@ -484,8 +488,8 @@ public partial class Wire : Shape1D
                 throw new InvalidOperationException("Failed to build bspline.");
         }
         var spline = builder.BSplineCurve();
-        var maker = new BRepBuilderAPI_MakeEdge(spline!);
-        if (!maker.IsDone())
+        var maker = new MakeEdge(spline!);
+        if (!maker.IsDone)
             throw new InvalidOperationException("Failed to build bspline.");
         return new Edge(maker.Edge());
     }
@@ -558,16 +562,16 @@ public partial class Wire : Shape1D
         else
             throw new ArgumentException("Provide exactly one of direction or center");
 
-        BRepProj_Projection projection;
+        Projection projection;
         if (directionVector is { } dv)
         {
             var dir = dv.ToGpDir();
-            projection = new BRepProj_Projection(TopoShape, targetObject.TopoShape, dir);
+            projection = new Projection(TopoShape, targetObject.TopoShape, dir);
         }
         else
         {
             var pnt = centerPoint.ToGpPnt();
-            projection = new BRepProj_Projection(TopoShape, targetObject.TopoShape, pnt);
+            projection = new Projection(TopoShape, targetObject.TopoShape, pnt);
         }
         var output = new List<Wire>();
         {

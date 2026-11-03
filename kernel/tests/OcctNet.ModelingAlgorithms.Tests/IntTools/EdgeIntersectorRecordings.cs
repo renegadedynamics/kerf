@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -115,13 +116,13 @@ internal static class EdgeIntersectorRecordings
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string CommonPart(IntTools_CommonPrt theCP, in Edge theE1, bool theWithPoints)
+    private static string CommonPart(CommonPrt theCP, in Edge theE1, bool theWithPoints)
     {
         StringBuilder aS = new();
         aS.Append(" | ").Append((int)theCP.Type()).Append(theCP.Edge1().IsSame(theE1) ? " 1" : " 2");
         theCP.Range1(out double f, out double l);
         aS.Append(' ').Append(Hex(f)).Append(' ').Append(Hex(l));
-        NCollection_Sequence<IntTools_Range> aR2 = theCP.Ranges2();
+        NCollection_Sequence<ParameterRange> aR2 = theCP.Ranges2();
         aS.Append(' ').Append(aR2.Length());
         for (int k = 1; k <= aR2.Length(); k++)
         {
@@ -144,7 +145,7 @@ internal static class EdgeIntersectorRecordings
     /// </summary>
     public static string RunEE(in Edge theE1, in Edge theE2, int theVariant)
     {
-        IntTools_EdgeEdge anEE = new();
+        EdgeEdge anEE = new();
         anEE.SetEdge1(theE1);
         anEE.SetEdge2(theE2);
         if (theVariant == 1)
@@ -166,7 +167,7 @@ internal static class EdgeIntersectorRecordings
         {
             anEE.Perform();
             StringBuilder aS = new();
-            aS.Append(anEE.IsDone() ? "1" : "0").Append(' ').Append(anEE.CommonParts().Length());
+            aS.Append(anEE.IsDone ? "1" : "0").Append(' ').Append(anEE.CommonParts().Length());
             for (int k = 1; k <= anEE.CommonParts().Length(); k++)
             {
                 aS.Append(CommonPart(anEE.CommonParts().Value(k), theE1, false));
@@ -180,9 +181,9 @@ internal static class EdgeIntersectorRecordings
     }
 
     /// <summary>An edge/face run on the edge's range with the context and the fuzzy value (0: the default).</summary>
-    public static string RunEF(in Edge theE, in Face theF, IntTools_Context theCtx, double theFuzz = 0.0)
+    public static string RunEF(in Edge theE, in Face theF, IntersectionContext theCtx, double theFuzz = 0.0)
     {
-        IntTools_EdgeFace anEF = new();
+        EdgeFace anEF = new();
         anEF.SetEdge(theE);
         anEF.SetFace(theF);
         Tool.Range(theE, out double f, out double l);
@@ -196,7 +197,7 @@ internal static class EdgeIntersectorRecordings
         {
             anEF.Perform();
             StringBuilder aS = new();
-            aS.Append(anEF.IsDone() ? "1" : "0").Append(' ').Append(anEF.ErrorStatus()).Append(' ')
+            aS.Append(anEF.IsDone ? "1" : "0").Append(' ').Append(anEF.ErrorStatus()).Append(' ')
               .Append(Hex(anEF.MinimalDistance())).Append(' ').Append(anEF.CommonParts().Length());
             for (int k = 1; k <= anEF.CommonParts().Length(); k++)
             {

@@ -5,10 +5,13 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -310,7 +313,7 @@ public static class StepToGeom
                        RUC.SelfIntersect(),
                        Kmult,
                        Knots,
-                       StepGeom_ktUnspecified,
+                       StepGeom_KnotType.StepGeom_ktUnspecified,
                        RUC.WeightsData());
 
             return MakeBSplineCurve(RBSPL, theLocalFactors);
@@ -346,7 +349,7 @@ public static class StepToGeom
                        RQUC.SelfIntersect(),
                        Kmult,
                        Knots,
-                       StepGeom_ktUnspecified,
+                       StepGeom_KnotType.StepGeom_ktUnspecified,
                        RQUC.WeightsData());
 
             return MakeBSplineCurve(RBSPL, theLocalFactors);
@@ -567,7 +570,7 @@ public static class StepToGeom
                        VKmult,
                        UKnots,
                        VKnots,
-                       StepGeom_ktUnspecified,
+                       StepGeom_KnotType.StepGeom_ktUnspecified,
                        RUS.WeightsData());
 
             return MakeBSplineSurface(RBSPL, theLocalFactors);
@@ -615,7 +618,7 @@ public static class StepToGeom
                        VKmult,
                        UKnots,
                        VKnots,
-                       StepGeom_ktUnspecified,
+                       StepGeom_KnotType.StepGeom_ktUnspecified,
                        RQUS.WeightsData());
             return MakeBSplineSurface(RBSPL, theLocalFactors);
         }
@@ -821,7 +824,7 @@ public static class StepToGeom
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
+        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_Logical.StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
         {
             aBSplineCurve.SetPeriodic();
         }
@@ -890,7 +893,7 @@ public static class StepToGeom
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
+        if (theStepGeom_BSplineCurve.ClosedCurve() != StepData_Logical.StepData_LFalse && aBSplineCurve.Degree() > 1 && aBSplineCurve.IsClosed)
         {
             aBSplineCurve.SetPeriodic();
         }
@@ -1925,11 +1928,11 @@ public static class StepToGeom
                     double anOffset = OS.Distance() * theLocalFactors.LengthFactor();
                     if (aBasisSurface.Continuity() == C0)
                     {
-                        BRepBuilderAPI_MakeFace aBFace = new BRepBuilderAPI_MakeFace(aBasisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
-                        if (aBFace.IsDone())
+                        MakeFace aBFace = new MakeFace(aBasisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
+                        if (aBFace.IsDone)
                         {
                             // OCCT: the process-wide container (null before ShapeAlgo.Init, as in OCCT)
-                            Shape aResult = ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(aBFace.Face(), Math.Abs(anOffset));
+                            Shape aResult = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(aBFace.Face(), Math.Abs(anOffset));
                             if (aResult.ShapeType() == ShapeType.Face)
                             {
                                 aBasisSurface = Tool.Surface(ShapeCasts.Face(aResult));
@@ -2235,7 +2238,7 @@ public static class StepToGeom
                 Point3D thegpPnt = theGeomPnt.Pnt();
 
                 //: S4136: use advanced algorithm
-                ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
+                CurveAnalysis sac = new CurveAnalysis();
                 sac.Project(aGeomCurve, thegpPnt, global::Kerf.Engine.Foundation.Precision.Confusion(), out Point3D p, out aParam);
                 return true;
             }
@@ -2265,7 +2268,7 @@ public static class StepToGeom
                 // OCCT: as above, a point that isn't 3D is dereferenced null
                 Point3D thegpPnt = theGeomPnt.Pnt();
                 // Project Point On Curve
-                ShapeAnalysis_Curve sac = new ShapeAnalysis_Curve();
+                CurveAnalysis sac = new CurveAnalysis();
                 sac.Project(aGeomCurve, thegpPnt, global::Kerf.Engine.Foundation.Precision.Confusion(), out Point3D p, out aParam);
                 return true;
             }
@@ -2298,10 +2301,10 @@ public static class StepToGeom
         int MasterRep;
         switch (SC.MasterRepresentation())
         {
-            case StepGeom_tpCartesian:
+            case StepGeom_TrimmingPreference.StepGeom_tpCartesian:
                 MasterRep = 1;
                 break;
-            case StepGeom_tpParameter:
+            case StepGeom_TrimmingPreference.StepGeom_tpParameter:
                 MasterRep = 2;
                 break;
             default:

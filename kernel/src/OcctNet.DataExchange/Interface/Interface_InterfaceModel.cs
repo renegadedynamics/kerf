@@ -281,43 +281,43 @@ public abstract class Interface_InterfaceModel : Transient
         {
             if (!therepch.IsBound(num))
             {
-                return Interface_StateOK;
+                return Interface_DataState.Interface_StateOK;
             }
             rep = (therepch.Find(num) as Interface_ReportEntity);
             if (rep.IsError())
             {
-                return Interface_DataFail;
+                return Interface_DataState.Interface_DataFail;
             }
-            return Interface_DataWarning;
+            return Interface_DataState.Interface_DataWarning;
         }
         rep = (thereports.Find(num) as Interface_ReportEntity);
         if (rep is null)
         {
-            return Interface_StateUnknown;
+            return Interface_DataState.Interface_StateUnknown;
         }
         if (rep.IsUnknown())
         {
-            return Interface_StateUnknown;
+            return Interface_DataState.Interface_StateUnknown;
         }
         if (rep.HasNewContent())
         {
-            return Interface_StateUnloaded;
+            return Interface_DataState.Interface_StateUnloaded;
         }
         if (rep.IsError())
         {
-            return Interface_LoadFail;
+            return Interface_DataState.Interface_LoadFail;
         }
 
         if (!therepch.IsBound(num))
         {
-            return Interface_LoadWarning;
+            return Interface_DataState.Interface_LoadWarning;
         }
         rep = (therepch.Find(num) as Interface_ReportEntity);
         if (rep.IsError())
         {
-            return Interface_DataFail;
+            return Interface_DataState.Interface_DataFail;
         }
-        return Interface_DataWarning;
+        return Interface_DataState.Interface_DataWarning;
     }
 
     /// <summary>

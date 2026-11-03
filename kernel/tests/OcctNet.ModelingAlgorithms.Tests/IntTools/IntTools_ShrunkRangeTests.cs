@@ -1,3 +1,5 @@
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -12,13 +14,13 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class IntTools_ShrunkRangeTests
 {
-    private static IntTools_ShrunkRange Perform(in Edge theEdge)
+    private static EdgeShrunkRange Perform(in Edge theEdge)
     {
         Exploration.Vertices(theEdge, out Vertex aV1, out Vertex aV2);
         Tool.Range(theEdge, out double aT1, out double aT2);
-        IntTools_ShrunkRange aSR = new();
+        EdgeShrunkRange aSR = new();
         aSR.SetData(theEdge, aT1, aT2, aV1, aV2);
-        aSR.SetContext(new IntTools_Context());
+        aSR.SetContext(new IntersectionContext());
         aSR.Perform();
         return aSR;
     }
@@ -26,11 +28,11 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void Defaults()
     {
-        IntTools_ShrunkRange aSR = new();
+        EdgeShrunkRange aSR = new();
         aSR.ShrunkRange(out double aT1, out double aT2);
         Assert.Equal((-99.0, -99.0), (aT1, aT2));
-        Assert.False(aSR.IsDone());
-        Assert.False(aSR.IsSplittable());
+        Assert.False(aSR.IsDone);
+        Assert.False(aSR.IsSplittable);
         Assert.Equal(0.0, aSR.Length());
         Assert.True(aSR.BndBox().IsVoid);
         Assert.Null(aSR.Context());
@@ -39,10 +41,10 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void StraightEdge()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
-        IntTools_ShrunkRange aSR = Perform(anEdge);
-        Assert.True(aSR.IsDone());
-        Assert.True(aSR.IsSplittable());
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        EdgeShrunkRange aSR = Perform(anEdge);
+        Assert.True(aSR.IsDone);
+        Assert.True(aSR.IsSplittable);
         Assert.True(aSR.Edge().IsSame(anEdge));
         Assert.NotNull(aSR.Context());
 
@@ -63,10 +65,10 @@ public class IntTools_ShrunkRangeTests
     public void CircularEdge()
     {
         Circle3D aCirc = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(aCirc, 0.0, Math.PI).Edge();
-        IntTools_ShrunkRange aSR = Perform(anEdge);
-        Assert.True(aSR.IsDone());
-        Assert.True(aSR.IsSplittable());
+        Edge anEdge = new MakeEdge(aCirc, 0.0, Math.PI).Edge();
+        EdgeShrunkRange aSR = Perform(anEdge);
+        Assert.True(aSR.IsDone);
+        Assert.True(aSR.IsSplittable);
 
         // a sphere of radius 2e-7 at each end cuts the circle of radius 2 at the angle 2e-7 / 2
         aSR.ShrunkRange(out double aTS1, out double aTS2);
@@ -80,12 +82,12 @@ public class IntTools_ShrunkRangeTests
     {
         // a 1e-3 edge of tolerance 2.6e-4: the shrunk range is 1e-3 - 2 * (2.6e-4 + 1e-7) = 4.798e-4 long, less than
         // the 2 * TolE + 2 * Confusion = 5.202e-4 needed to split it once
-        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
+        MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         Edge anEdge = aMaker.InternalEdge();
         new BrepBuilder().UpdateEdge(anEdge, 2.6e-4);
-        IntTools_ShrunkRange aSR = Perform(anEdge);
-        Assert.True(aSR.IsDone());
-        Assert.False(aSR.IsSplittable());
+        EdgeShrunkRange aSR = Perform(anEdge);
+        Assert.True(aSR.IsDone);
+        Assert.False(aSR.IsSplittable);
         // FindValidRange stops within its epsilon, Resolution(TolE) / 10 = 2.6e-5, of each sphere
         Assert.Equal(4.798e-4, aSR.Length(), 6.0e-5);
     }
@@ -93,43 +95,43 @@ public class IntTools_ShrunkRangeTests
     [Fact]
     public void ShortEdgeWithSmallerTolerance_Splittable()
     {
-        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
+        MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         Edge anEdge = aMaker.InternalEdge();
         new BrepBuilder().UpdateEdge(anEdge, 2.0e-4);
-        IntTools_ShrunkRange aSR = Perform(anEdge);
-        Assert.True(aSR.IsDone());
-        Assert.True(aSR.IsSplittable());
+        EdgeShrunkRange aSR = Perform(anEdge);
+        Assert.True(aSR.IsDone);
+        Assert.True(aSR.IsSplittable);
     }
 
     [Fact]
     public void EdgeCoveredByItsVertices_NotDone()
     {
-        BRepBuilderAPI_MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
+        MakeEdge aMaker = new(new Point3D(0, 0, 0), new Point3D(1.0e-3, 0, 0));
         Edge anEdge = aMaker.InternalEdge();
         new BrepBuilder().UpdateEdge(anEdge, 6.0e-4);
-        IntTools_ShrunkRange aSR = Perform(anEdge);
-        Assert.False(aSR.IsDone());
-        Assert.False(aSR.IsSplittable());
+        EdgeShrunkRange aSR = Perform(anEdge);
+        Assert.False(aSR.IsDone);
+        Assert.False(aSR.IsSplittable);
         Assert.True(aSR.BndBox().IsVoid);
     }
 
     [Fact]
     public void TooShortRange_NotDone()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
-        IntTools_ShrunkRange aSR = new();
+        EdgeShrunkRange aSR = new();
         aSR.SetData(anEdge, 5.0, 5.0 + 1.0e-10, aV1, aV2);
         aSR.Perform();
-        Assert.False(aSR.IsDone());
+        Assert.False(aSR.IsDone);
     }
 
     [Fact]
     public void SetShrunkRange_AddsToTheBox()
     {
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge anEdge = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         Exploration.Vertices(anEdge, out Vertex aV1, out Vertex aV2);
-        IntTools_ShrunkRange aSR = new();
+        EdgeShrunkRange aSR = new();
         aSR.SetData(anEdge, 0.0, 10.0, aV1, aV2);
         aSR.SetShrunkRange(2.0, 3.0);
         aSR.ShrunkRange(out double aT1, out double aT2);

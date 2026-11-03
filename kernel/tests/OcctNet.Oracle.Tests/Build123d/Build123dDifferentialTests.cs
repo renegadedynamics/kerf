@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -296,8 +297,8 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             // place through its location, the port leaves a frozen one as it is: decisions 92 and 275)
             return Kind.LocalPoints;
         }
-        if (!new BRepCheck_Analyzer(BooleanOracleTests.ReadPort(aNText)).IsValid()
-            && !new BRepCheck_Analyzer(BooleanOracleTests.ReadPort(thePort.Text!)).IsValid())
+        if (!new Analyzer(BooleanOracleTests.ReadPort(aNText)).IsValid()
+            && !new Analyzer(BooleanOracleTests.ReadPort(thePort.Text!)).IsValid())
         {
             // an operation's failed attempt, which build123d rejects as invalid on both backends (a fillet too large
             // for its edges, MaxFillet's search); phase 7's oracle compares failures by their errors, not their shapes
@@ -385,11 +386,11 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
                 aCounts.Add(aMap.Extent());
             }
             var aVolume = new Properties();
-            BRepGProp.VolumeProperties(aShape, aVolume);
+            MassPropertiesBuilder.VolumeProperties(aShape, aVolume);
             var anArea = new Properties();
-            BRepGProp.SurfaceProperties(aShape, anArea);
+            MassPropertiesBuilder.SurfaceProperties(aShape, anArea);
             var aBox = new Box();
-            BRepBndLib.Add(aShape, ref aBox);
+            Bounds.Add(aShape, ref aBox);
             string aBounds = "void";
             if (!aBox.IsVoid)
             {

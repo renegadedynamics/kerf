@@ -60,27 +60,27 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
             }
         }
 
-        aSurfaceForm = StepGeom_bssfUnspecified;
+        aSurfaceForm = StepGeom_BSplineSurfaceForm.StepGeom_bssfUnspecified;
 
         if (BS.IsUClosed)
         {
-            aUClosed = StepData_LTrue;
+            aUClosed = StepData_Logical.StepData_LTrue;
         }
         else
         {
-            aUClosed = StepData_LFalse;
+            aUClosed = StepData_Logical.StepData_LFalse;
         }
 
         if (BS.IsVClosed)
         {
-            aVClosed = StepData_LTrue;
+            aVClosed = StepData_Logical.StepData_LTrue;
         }
         else
         {
-            aVClosed = StepData_LFalse;
+            aVClosed = StepData_Logical.StepData_LFalse;
         }
 
-        aSelfIntersect = StepData_LFalse;
+        aSelfIntersect = StepData_Logical.StepData_LFalse;
 
         NUknots = BS.UKnotCount;
         NVknots = BS.VKnotCount;
@@ -118,23 +118,23 @@ public sealed class GeomToStep_MakeBSplineSurfaceWithKnotsAndRationalBSplineSurf
         VDistribution = BS.VKnotDistribution();
         if (UDistribution == NonUniform && VDistribution == NonUniform)
         {
-            KnotSpec = StepGeom_ktUnspecified;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUnspecified;
         }
         else if (UDistribution == Uniform && VDistribution == Uniform)
         {
-            KnotSpec = StepGeom_ktUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUniformKnots;
         }
         else if (UDistribution == QuasiUniform && VDistribution == QuasiUniform)
         {
-            KnotSpec = StepGeom_ktQuasiUniformKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktQuasiUniformKnots;
         }
         else if (UDistribution == PiecewiseBezier && VDistribution == PiecewiseBezier)
         {
-            KnotSpec = StepGeom_ktPiecewiseBezierKnots;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktPiecewiseBezierKnots;
         }
         else
         {
-            KnotSpec = StepGeom_ktUnspecified;
+            KnotSpec = StepGeom_KnotType.StepGeom_ktUnspecified;
         }
 
         NCollection_Array2<double> W = BS.InternalWeightsArray();

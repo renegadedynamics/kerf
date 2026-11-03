@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
 using Kerf.Geometry;
 
 using Kerf.Topology;
@@ -1838,17 +1840,17 @@ public static class BRepAlgoAPI_FuseTests
         [Fact]
         public void OCC277_FuseAndCommonOfOverlappingBoxes()
         {
-            BRepPrimAPI_MakeBox aBox1Maker = new(100, 100, 100);
-            BRepPrimAPI_MakeBox aBox2Maker = new(new Point3D(50, 50, 50), 200, 200, 200);
+            MakeBox aBox1Maker = new(100, 100, 100);
+            MakeBox aBox2Maker = new(new Point3D(50, 50, 50), 200, 200, 200);
 
             Shape aShape1 = aBox1Maker.Shape();
             Shape aShape2 = aBox2Maker.Shape();
 
-            BRepAlgoAPI_Fuse aFuseOp = new(aShape1, aShape2);
+            Fuse aFuseOp = new(aShape1, aShape2);
             Shape aFuseResult = aFuseOp.Shape();
             Assert.False(aFuseResult.IsNull);
 
-            BRepAlgoAPI_Common aCommonOp = new(aShape1, aShape2);
+            Common aCommonOp = new(aShape1, aShape2);
             Shape aCommonResult = aCommonOp.Shape();
             Assert.False(aCommonResult.IsNull);
         }

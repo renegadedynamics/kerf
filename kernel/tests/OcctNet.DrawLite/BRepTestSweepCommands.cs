@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -123,7 +125,7 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        Shape Volevo = (Shape)new BRepOffsetAPI_MakeEvolved(Base,
+        Shape Volevo = (Shape)new MakeEvolved(Base,
                                                                            Prof,
                                                                            JoinKind.Arc,
                                                                            !hasToComputeAxes,
@@ -170,14 +172,14 @@ internal static class BRepTestSweepCommands
 
         Shape res;
 
-        BRepPrimAPI_MakePrism Prism;
+        ApiMakePrism Prism;
         if (inf || sinf)
         {
-            Prism = new BRepPrimAPI_MakePrism(@base, new Direction3D(V), inf);
+            Prism = new ApiMakePrism(@base, new Direction3D(V), inf);
         }
         else
         {
-            Prism = new BRepPrimAPI_MakePrism(@base, V, copy);
+            Prism = new ApiMakePrism(@base, V, copy);
         }
 
         res = Prism.Shape();
@@ -214,9 +216,9 @@ internal static class BRepTestSweepCommands
 
         bool copy = n > 10;
 
-        var Revol = new BRepPrimAPI_MakeRevol(@base, A, angle, copy);
+        var Revol = new ApiMakeRevol(@base, A, angle, copy);
 
-        if (Revol.IsDone())
+        if (Revol.IsDone)
         {
             Shape res = Revol.Shape();
 
@@ -265,17 +267,17 @@ internal static class BRepTestSweepCommands
             return 1;
         }
 
-        GeomFill_Trihedron Mode = GeomFill_Trihedron.GeomFill_IsCorrectedFrenet;
+        Trihedron Mode = Trihedron.IsCorrectedFrenet;
         if (n >= 5)
         {
             int iMode = theDI.Atoi(a[4]);
             if (iMode == 1)
             {
-                Mode = GeomFill_Trihedron.GeomFill_IsFrenet;
+                Mode = Trihedron.IsFrenet;
             }
             else if (iMode == 2)
             {
-                Mode = GeomFill_Trihedron.GeomFill_IsDiscreteTrihedron;
+                Mode = Trihedron.IsDiscreteTrihedron;
             }
         }
 
@@ -285,7 +287,7 @@ internal static class BRepTestSweepCommands
             ForceApproxC1 = true;
         }
 
-        var PipeBuilder = new BRepOffsetAPI_MakePipe(ShapeCasts.Wire(Spine), Profile, Mode, ForceApproxC1);
+        var PipeBuilder = new ApiMakePipe(ShapeCasts.Wire(Spine), Profile, Mode, ForceApproxC1);
         Shape S = PipeBuilder.Shape();
 
         theDI.SetShape(a[1], S);

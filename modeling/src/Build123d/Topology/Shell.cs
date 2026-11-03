@@ -1,3 +1,7 @@
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Occt;
@@ -46,7 +50,7 @@ public partial class Shell : Shape2D
         {
             if (!IsManifold)
                 return 0.0;
-            var fix = new ShapeFix_Solid();
+            var fix = new SolidFixer();
             var solid = fix.SolidFromShell(TopoShell);
             var props = new Properties();
             MassProperties(solid, props);
@@ -59,7 +63,7 @@ public partial class Shell : Shape2D
     {
         NeedsGeometry("center");
         var props = new Properties();
-        BRepGProp.LinearProperties(TopoShape, props);
+        MassPropertiesBuilder.LinearProperties(TopoShape, props);
         var c = props.CentreOfMass();
         return new Vector(c);
     }
@@ -86,7 +90,7 @@ public partial class Shell : Shape2D
     {
         var wire = new Wire(profile.Edges());
         var ax1 = axis.ToGpAx1();
-        var builder = new BRepPrimAPI_MakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
+        var builder = new ApiMakeRevol(wire.TopoShape, ax1, angle * Constants.DegToRad, true);
         return new Shell(ShapeCasts.Shell(builder.Shape()));
     }
 
@@ -95,7 +99,7 @@ public partial class Shell : Shape2D
     {
         var profileWire = new Wire(profile.Edges());
         var pathWire = new Wire(new Wire(path.Edges()).OrderEdges());
-        var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+        var builder = new MakePipeShell(pathWire.TopoWire);
         builder.Add(profileWire.TopoShape, false, false);
         builder.SetTransitionMode(Face.TransitionMode(transition));
         builder.Build();
@@ -209,7 +213,7 @@ public partial class Shell : Shape2D
             if (face.GeomType == GeomType.Cylinder && face.Radius is not > 0)
                 throw new ArgumentException("a sheet's cylindrical faces need a positive radius");
         }
-        var sewing = new BRepBuilderAPI_Sewing();
+        var sewing = new Sewing();
         foreach (var face in faces)
             sewing.Add(face.TopoShape);
         sewing.Perform();
@@ -246,7 +250,7 @@ public static class TwoD
     /// <summary>The pieces of an edge split at a vertex (<c>BOPAlgo_Splitter</c>).</summary>
     internal static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
     {
-        var splitter = new BOPAlgo_Splitter();
+        var splitter = new Splitter();
         splitter.SetNonDestructive(true);   // leave the inputs' tolerances alone
         splitter.AddArgument(edge.TopoShape);
         splitter.AddTool(splitVertex.TopoShape);

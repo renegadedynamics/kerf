@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy;
 using Kerf.Geometry;
 using Kerf.Topology;
 using static Kerf.Topology.Orientation;
@@ -21,7 +22,7 @@ public class TopTrans_CurveTransition_PortTests
     public void Empty_and_reset_transitions()
     {
         // OCCT's constructor leaves Init false and both transitions FORWARD
-        var aTransition = new TopTrans_CurveTransition();
+        var aTransition = new CurveTransition();
         Assert.Equal(Out, aTransition.StateBefore());
         Assert.Equal(In, aTransition.StateAfter());
 
@@ -43,7 +44,7 @@ public class TopTrans_CurveTransition_PortTests
                                                     Containment theAfter)
     {
         // The X axis crosses an edge along Y in its middle (O = INTERNAL)
-        var aTransition = new TopTrans_CurveTransition();
+        var aTransition = new CurveTransition();
         aTransition.Reset(D(1.0, 0.0));
         aTransition.Compare(Tol, D(0.0, 1.0), D(1.0, 0.0), 0.0, theTrans, Internal);
         Assert.Equal(theBefore, aTransition.StateBefore());
@@ -54,7 +55,7 @@ public class TopTrans_CurveTransition_PortTests
     public void Internal_transition_takes_the_orientation()
     {
         // An INTERNAL transition becomes the orientation, reversed when the edge goes against the curve
-        var aTransition = new TopTrans_CurveTransition();
+        var aTransition = new CurveTransition();
         aTransition.Reset(D(1.0, 0.0));
         aTransition.Compare(Tol, D(0.0, 1.0), D(1.0, 0.0), 0.0, Internal, Internal);
         Assert.Equal(In, aTransition.StateBefore());
@@ -74,7 +75,7 @@ public class TopTrans_CurveTransition_PortTests
         // O = REVERSED) and the bottom edge starts (tangent (1, 0), O = FORWARD).
 
         // Direction (1, 1): enters the square through the corner. Both edges are crossed inwards.
-        var aThrough = new TopTrans_CurveTransition();
+        var aThrough = new CurveTransition();
         aThrough.Reset(D(1.0, 1.0));
         aThrough.Compare(Tol, D(0.0, -1.0), D(1.0, 0.0), 0.0, Forward, Reversed);
         aThrough.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.0, Forward, Forward);
@@ -83,7 +84,7 @@ public class TopTrans_CurveTransition_PortTests
 
         // Direction (1, -1): only touches the corner. The left edge is crossed inwards, the bottom one outwards;
         // the left edge is nearest before the corner and the bottom one nearest after it.
-        var aTouch = new TopTrans_CurveTransition();
+        var aTouch = new CurveTransition();
         aTouch.Reset(D(1.0, -1.0));
         aTouch.Compare(Tol, D(0.0, -1.0), D(1.0, 0.0), 0.0, Forward, Reversed);
         aTouch.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.0, Reversed, Forward);
@@ -91,7 +92,7 @@ public class TopTrans_CurveTransition_PortTests
         Assert.Equal(Out, aTouch.StateAfter());
 
         // The same edges given in the other order
-        var aTouch2 = new TopTrans_CurveTransition();
+        var aTouch2 = new CurveTransition();
         aTouch2.Reset(D(1.0, -1.0));
         aTouch2.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.0, Reversed, Forward);
         aTouch2.Compare(Tol, D(0.0, -1.0), D(1.0, 0.0), 0.0, Forward, Reversed);
@@ -107,7 +108,7 @@ public class TopTrans_CurveTransition_PortTests
         // (tangent (1, 0), O = FORWARD).
 
         // Direction (1, -1): from the matter into the missing quadrant. Both edges are crossed outwards.
-        var aLeaving = new TopTrans_CurveTransition();
+        var aLeaving = new CurveTransition();
         aLeaving.Reset(D(1.0, -1.0));
         aLeaving.Compare(Tol, D(0.0, 1.0), D(-1.0, 0.0), 0.0, Reversed, Reversed);
         aLeaving.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.0, Reversed, Forward);
@@ -116,7 +117,7 @@ public class TopTrans_CurveTransition_PortTests
 
         // Direction (1, 1): stays in the matter. The first edge is crossed outwards (x = 0 towards x > 0), the
         // second inwards (y = 0 towards y > 0); the first is nearest before the corner, the second after it.
-        var aInside = new TopTrans_CurveTransition();
+        var aInside = new CurveTransition();
         aInside.Reset(D(1.0, 1.0));
         aInside.Compare(Tol, D(0.0, 1.0), D(-1.0, 0.0), 0.0, Reversed, Reversed);
         aInside.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.0, Forward, Forward);
@@ -130,7 +131,7 @@ public class TopTrans_CurveTransition_PortTests
         // Two boundary arcs leave the intersection tangent to the straight reference (same angle): the
         // curvatures decide which is nearest. Reference straight (myCurv = 0) and cos > 0: the larger curvature
         // comes first (OCCT's 2000 modification reverses the lower-curvature rule).
-        var aTransition = new TopTrans_CurveTransition();
+        var aTransition = new CurveTransition();
         aTransition.Reset(D(1.0, 0.0));
         aTransition.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 1.0, Forward, Forward);
         aTransition.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 2.0, Reversed, Forward);
@@ -138,7 +139,7 @@ public class TopTrans_CurveTransition_PortTests
         Assert.Equal(In, aTransition.StateAfter()); // last: unchanged, the first arc (FORWARD)
 
         // In the other order the second arc doesn't replace the first
-        var aOther = new TopTrans_CurveTransition();
+        var aOther = new CurveTransition();
         aOther.Reset(D(1.0, 0.0));
         aOther.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 2.0, Reversed, Forward);
         aOther.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 1.0, Forward, Forward);
@@ -151,7 +152,7 @@ public class TopTrans_CurveTransition_PortTests
     {
         // Reference of curvature 1 towards +Y; two tangent boundary arcs. The one whose curvature is nearer
         // below the reference's (deltaC = (C - 1) * (N . myNorm)) comes first, reversed because cos > 0.
-        var aTransition = new TopTrans_CurveTransition();
+        var aTransition = new CurveTransition();
         aTransition.Reset(D(1.0, 0.0), D(0.0, 1.0), 1.0);
         aTransition.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 0.5, Forward, Forward);
         aTransition.Compare(Tol, D(1.0, 0.0), D(0.0, 1.0), 3.0, Reversed, Forward);

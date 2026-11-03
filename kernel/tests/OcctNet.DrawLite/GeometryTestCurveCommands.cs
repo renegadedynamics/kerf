@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Engine.Topology;
@@ -76,7 +77,7 @@ internal static class GeometryTestCurveCommands
         {
             return 1;
         }
-        Curve2D? r = GeomAPI.To2d(C, P.Pln());
+        Curve2D? r = Projections.To2d(C, P.Pln());
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;
     }
@@ -114,7 +115,7 @@ internal static class GeometryTestCurveCommands
         {
             return 1;
         }
-        Curve3D r = GeomAPI.To3d(C, P.Pln());
+        Curve3D r = Projections.To3d(C, P.Pln());
 
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;

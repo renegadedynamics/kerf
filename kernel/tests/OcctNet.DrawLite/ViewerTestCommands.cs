@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.HiddenLines;
+using Kerf.Engine.HiddenLines.Algorithm;
+using Kerf.Engine.HiddenLines.Presentation;
+using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -37,10 +41,10 @@ internal static class ViewerTestCommands
     private const int AIS_Shaded = 1;
 
     /// <summary>An AIS_Shape: the shape, its drawer and what AIS has computed of it.</summary>
-    private sealed class AisShape(Shape theShape, Prs3d_Drawer theDrawer)
+    private sealed class AisShape(Shape theShape, Drawer theDrawer)
     {
         public Shape Shape = theShape;
-        public readonly Prs3d_Drawer Drawer = theDrawer;
+        public readonly Drawer Drawer = theDrawer;
         public int OwnDisplayMode = -1;
         public bool IsDisplayed;
         public bool IsErased;
@@ -57,7 +61,7 @@ internal static class ViewerTestCommands
     /// <summary>The AIS_InteractiveContext of the views, and ViewerTest's map of displayed objects by name.</summary>
     private sealed class AisContext
     {
-        public readonly Prs3d_Drawer DefaultDrawer = new();
+        public readonly Drawer DefaultDrawer = new();
         public int DisplayMode = AIS_WireFrame;
         public readonly Dictionary<string, AisShape> Objects = new(StringComparer.Ordinal);
         public int NbViews;
@@ -142,7 +146,7 @@ internal static class ViewerTestCommands
     private static void Compute(DrawInterpreter theDI, AisShape theObject, int theMode)
     {
         Shape aShape = theObject.Shape;
-        if (IsEmpty(aShape) || theMode != AIS_Shaded || (int)aShape.ShapeType() > 4 || !theObject.Drawer.IsAutoTriangulation())
+        if (IsEmpty(aShape) || theMode != AIS_Shaded || (int)aShape.ShapeType() > 4 || !theObject.Drawer.IsAutoTriangulation)
         {
             // the wireframe and bounding box modes, and wires, edges and vertices, draw without meshing
             return;
@@ -150,7 +154,7 @@ internal static class ViewerTestCommands
 
         try
         {
-            if (StdPrs_ToolTriangulatedShape.Tessellate(aShape, theObject.Drawer, out Shape aMeshed, out _))
+            if (PresentationToolTriangulatedShape.Tessellate(aShape, theObject.Drawer, out Shape aMeshed, out _))
             {
                 DrawShapeRebind.Rebind(theDI, aShape, aMeshed);
             }
@@ -176,10 +180,10 @@ internal static class ViewerTestCommands
 
         try
         {
-            double aDeflection = StdPrs_ToolTriangulatedShape.GetDeflection(aShape, theObject.Drawer);
-            if (theObject.Drawer.IsAutoTriangulation() && !BrepTools.Triangulation(aShape, global::Kerf.Engine.Foundation.Precision.Infinite(), true))
+            double aDeflection = PresentationToolTriangulatedShape.GetDeflection(aShape, theObject.Drawer);
+            if (theObject.Drawer.IsAutoTriangulation && !BrepTools.Triangulation(aShape, global::Kerf.Engine.Foundation.Precision.Infinite(), true))
             {
-                var aMesher = new BRepMesh_IncrementalMesh(aShape, aDeflection, false, theObject.Drawer.DeviationAngle());
+                var aMesher = new IncrementalMesh(aShape, aDeflection, false, theObject.Drawer.DeviationAngle());
                 DrawShapeRebind.Rebind(theDI, aShape, aMesher.Shape());
             }
         }
@@ -369,7 +373,7 @@ internal static class ViewerTestCommands
                     continue;
                 }
 
-                var aDrawer = new Prs3d_Drawer();
+                var aDrawer = new Drawer();
                 aDrawer.SetLink(aCtx.DefaultDrawer);
                 aShape = new AisShape(aDrawShape, aDrawer);
                 if (isAutoTriang != -1)
@@ -624,11 +628,11 @@ internal static class ViewerTestCommands
             return 1;
         }
 
-        Prs3d_Drawer aDefParams = aCtx.DefaultDrawer;
+        Drawer aDefParams = aCtx.DefaultDrawer;
         int theArgsNb = theArgVec.Count;
         if (theArgsNb < 2)
         {
-            if (aDefParams.TypeOfDeflection() == Aspect_TypeOfDeflection.Aspect_TOD_RELATIVE)
+            if (aDefParams.TypeOfDeflection() == TypeOfDeflection.TodRelative)
             {
                 theDi.Append("DeflType:           relative\n")
                      .Append("DeviationCoeff:     ").Append(aDefParams.DeviationCoefficient()).Append("\n");
@@ -640,7 +644,7 @@ internal static class ViewerTestCommands
             }
 
             theDi.Append("AngularDeflection:  ").Append(180.0 * aDefParams.DeviationAngle() / Math.PI).Append("\n");
-            theDi.Append("AutoTriangulation:  ").Append(aDefParams.IsAutoTriangulation() ? "on" : "off").Append("\n");
+            theDi.Append("AutoTriangulation:  ").Append(aDefParams.IsAutoTriangulation ? "on" : "off").Append("\n");
             return 0;
         }
 
@@ -655,7 +659,7 @@ internal static class ViewerTestCommands
                     return 1;
                 }
 
-                aDefParams.SetTypeOfDeflection(Aspect_TypeOfDeflection.Aspect_TOD_ABSOLUTE);
+                aDefParams.SetTypeOfDeflection(TypeOfDeflection.TodAbsolute);
                 aDefParams.SetMaximalChordialDeviation(theDI.Atof(theArgVec[anArgIter]));
             }
             else if (anArg is "-RELDEFL" or "-RELATIVEDEFLECTION" or "-DEVCOEFF" or "-DEVIATIONCOEFF" or "-DEVIATIONCOEFFICIENT")
@@ -666,7 +670,7 @@ internal static class ViewerTestCommands
                     return 1;
                 }
 
-                aDefParams.SetTypeOfDeflection(Aspect_TypeOfDeflection.Aspect_TOD_RELATIVE);
+                aDefParams.SetTypeOfDeflection(TypeOfDeflection.TodRelative);
                 aDefParams.SetDeviationCoefficient(theDI.Atof(theArgVec[anArgIter]));
             }
             else if (anArg is "-ANGDEFL" or "-ANGULARDEFL" or "-ANGULARDEFLECTION")
@@ -861,22 +865,22 @@ internal static class ViewerTestCommands
             return 1;
         }
 
-        HLRAlgo_Projector aProjector = new(aProjAx);
+        AlgorithmProjector aProjector = new(aProjAx);
         Shape[] aVisible = new Shape[6];
         Shape[] aHidden = new Shape[6];
-        const int Sharp = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Sharp;
-        const int OutLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_OutLine;
-        const int Rg1Line = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_Rg1Line;
-        const int RgNLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_RgNLine;
-        const int IsoLine = (int)HLRBRep_TypeOfResultingEdge.HLRBRep_IsoLine;
+        const int Sharp = (int)TypeOfResultingEdge.Sharp;
+        const int OutLine = (int)TypeOfResultingEdge.OutLine;
+        const int Rg1Line = (int)TypeOfResultingEdge.Rg1Line;
+        const int RgNLine = (int)TypeOfResultingEdge.RgNLine;
+        const int IsoLine = (int)TypeOfResultingEdge.IsoLine;
         if (isPolyAlgo)
         {
-            HLRBRep_PolyAlgo aPolyAlgo = new();
+            PolyAlgo aPolyAlgo = new();
             aPolyAlgo.Projector(aProjector);
             aPolyAlgo.Load(aSh);
             aPolyAlgo.Update();
 
-            HLRBRep_PolyHLRToShape aHLRToShape = new();
+            PolyHlrToShape aHLRToShape = new();
             aHLRToShape.Update(aPolyAlgo);
 
             aVisible[Sharp] = aHLRToShape.VCompound();
@@ -899,13 +903,13 @@ internal static class ViewerTestCommands
         }
         else
         {
-            HLRBRep_Algo aHlrAlgo = new();
+            HiddenLineAlgo aHlrAlgo = new();
             aHlrAlgo.Add(aSh, aNbIsolines);
             aHlrAlgo.Projector(aProjector);
             aHlrAlgo.Update();
             aHlrAlgo.Hide();
 
-            HLRBRep_HLRToShape aHLRToShape = new(aHlrAlgo);
+            HlrToShape aHLRToShape = new(aHlrAlgo);
             aVisible[Sharp] = aHLRToShape.VCompound();
             aVisible[OutLine] = aHLRToShape.OutLineVCompound();
             aVisible[Rg1Line] = aHLRToShape.Rg1LineVCompound();

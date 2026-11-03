@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Topology;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The fillets' reconstruction on the Boolean engine (unit 7R) against native OCCT: native's data structure
-/// (<see cref="ReconRecordings"/>) rebuilt by <see cref="ChFi3d_BOPReconstruction"/> must give native's result and
+/// (<see cref="ReconRecordings"/>) rebuilt by <see cref="BOPReconstruction"/> must give native's result and
 /// history geometrically (<see cref="ReconComparison"/>), or exactly the differences attributed here.
 /// </summary>
 public class ReconstructionNativeTests
@@ -113,7 +115,7 @@ public class ReconstructionNativeTests
         // gives native's faults (pyramid_base_edges: native's exactly, its geometry equal), so they are ChFi3d's data
         ReconCase aCase = ReconRecordings.Cases[theName];
         Shape aNative = aCase.Result!.Value;
-        Assert.False(new BRepCheck_Analyzer(aNative).IsValid());
+        Assert.False(new Analyzer(aNative).IsValid());
         Assert.Contains(theFaults.Trim('{', '}'), ReconComparison.Faults(aNative));
         ReconComparison.Run aRun = ReconComparison.Reconstruct(aCase);
         Assert.Equal(theFaults, ReconComparison.Faults(aRun.Result));

@@ -24,6 +24,7 @@
 // test_wire is SingleWire (the C# name of wire(); a method can't be named after the Wire type it uses).
 // test_zero_offset_returns_a_copy doesn't check identity: shapes are immutable, so returning the same face is fine.
 // test_is_convex_concave's BuildPart is the offset and fillet operations in algebra form.
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -529,7 +530,7 @@ public class FaceTests
         // a face across both seams of a torus: periodic parameters land in the face's own range, in u and in v
         var ax3 = new CoordinateSystem();
         var toroidal = new ToroidalSurface(ax3, 10, 2);
-        var maker = new BRepBuilderAPI_MakeFace(toroidal, -Math.PI / 2, Math.PI / 2, -Math.PI / 3, Math.PI / 3, 1e-6);
+        var maker = new MakeFace(toroidal, -Math.PI / 2, Math.PI / 2, -Math.PI / 3, Math.PI / 3, 1e-6);
         var across = new Face(maker.Face());
         foreach (var (u, v) in new[] { (0.1, 0.1), (0.9, 0.9), (0.1, 0.9) })
         {
@@ -909,7 +910,7 @@ public class FaceTests
         var ax3 = new CoordinateSystem(origin, up);
         var cylSurf = new CylindricalSurface(ax3, 2.0);
         var trimSurf = new TrimmedSurface(cylSurf, 0.0, 1.0, 0.5, 1.5);
-        var trimMaker = new BRepBuilderAPI_MakeFace(trimSurf, 1e-6);
+        var trimMaker = new MakeFace(trimSurf, 1e-6);
         var trimFace = new Face(trimMaker.Face());
         Check.AlmostEqual((0, 0, 1), trimFace.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual((0, 0, 0), trimFace.AxisOfRotation!.Value.Position, 5);
@@ -917,7 +918,7 @@ public class FaceTests
 
         // Geom_OffsetSurface
         var cylOffSurf = new OffsetSurface(cylSurf, 0.5);
-        var offMaker = new BRepBuilderAPI_MakeFace(cylOffSurf, 1e-6);
+        var offMaker = new MakeFace(cylOffSurf, 1e-6);
         var offFace = new Face(offMaker.Face());
         Check.AlmostEqual((0, 0, 1), offFace.AxisOfRotation!.Value.Direction, 5);
         Check.AlmostEqual((0, 0, 0), offFace.AxisOfRotation!.Value.Position, 5);
@@ -1144,7 +1145,7 @@ public class FacePropertiesTests
         var lateral = Obj.Cone(5, 0, 5).Faces().FilterBy(GeomType.Cone)[0];
         var surface = Tool.Surface(ShapeCasts.Face(lateral.Wrapped));
         var trimmed = new TrimmedSurface(surface!, 0.0, 1.0, 0.0, 2.0);
-        var maker = new BRepBuilderAPI_MakeFace(trimmed, 1e-6);
+        var maker = new MakeFace(trimmed, 1e-6);
         var face = new Face(maker.Face());
         Assert.Equal(GeomType.Cone, face.GeomType);
         Check.AlmostEqual(45, Math.Abs(face.SemiAngle!.Value), 5);

@@ -1,15 +1,18 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepLib_EdgeError;
-using static Occt.BRepLib_FaceError;
-using static Occt.BRepLib_ShapeModification;
-using static Occt.BRepLib_ShellError;
-using static Occt.BRepLib_WireError;
+using static Kerf.Engine.Construction.Library.LibraryEdgeError;
+using static Kerf.Engine.Construction.Library.LibraryFaceError;
+using static Kerf.Engine.Construction.Library.LibraryShapeModification;
+using static Kerf.Engine.Construction.Library.LibraryShellError;
+using static Kerf.Engine.Construction.Library.LibraryWireError;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
@@ -24,12 +27,12 @@ public class BRepLibMakersTests
 {
     private const double Conf = 1e-7;
 
-    private static Vertex V(double x, double y, double z) => new BRepLib_MakeVertex(new Point3D(x, y, z)).Vertex();
+    private static Vertex V(double x, double y, double z) => new LibraryMakeVertex(new Point3D(x, y, z)).Vertex();
 
-    private static Edge E(in Vertex v1, in Vertex v2) => new BRepLib_MakeEdge(v1, v2).Edge();
+    private static Edge E(in Vertex v1, in Vertex v2) => new LibraryMakeEdge(v1, v2).Edge();
 
     private static Edge E(double x1, double y1, double z1, double x2, double y2, double z2)
-        => new BRepLib_MakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
+        => new LibraryMakeEdge(new Point3D(x1, y1, z1), new Point3D(x2, y2, z2)).Edge();
 
     private static int Count(in Shape S, ShapeType T)
     {
@@ -56,12 +59,12 @@ public class BRepLibMakersTests
     [Fact]
     public void MakeVertex_is_a_frozen_vertex_at_the_point_with_the_default_precision()
     {
-        var aMV = new BRepLib_MakeVertex(new Point3D(1, 2, 3));
-        Assert.True(aMV.IsDone());
+        var aMV = new LibraryMakeVertex(new Point3D(1, 2, 3));
+        Assert.True(aMV.IsDone);
         Vertex aV = aMV.Vertex();
         Assert.True(aV.TShape()!.IsFrozen);
         Assert.Equal(new Point3D(1, 2, 3), Tool.Pnt(aV));
-        Assert.Equal(BRepLib.Precision(), Tool.Tolerance(aV));
+        Assert.Equal(BrepLibrary.Precision(), Tool.Tolerance(aV));
         Assert.Equal(aV, (Vertex)aMV);
         Assert.Equal((Shape)aV, aMV.Shape());
     }
@@ -69,7 +72,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Internal_accessors_do_not_freeze()
     {
-        var aME = new BRepLib_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var aME = new LibraryMakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Edge anE = aME.InternalEdge();
         Assert.False(anE.TShape()!.IsFrozen);
         Assert.False(aME.InternalVertex1().TShape()!.IsFrozen);
@@ -82,9 +85,9 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_from_two_points_is_a_segment_parametrised_by_length()
     {
-        var aME = new BRepLib_MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 3, 4));
-        Assert.True(aME.IsDone());
-        Assert.Equal(BRepLib_EdgeDone, aME.Error());
+        var aME = new LibraryMakeEdge(new Point3D(1, 0, 0), new Point3D(1, 3, 4));
+        Assert.True(aME.IsDone);
+        Assert.Equal(LibraryEdgeError.EdgeDone, aME.Error());
         Edge anE = aME.Edge();
         Assert.True(anE.TShape()!.IsFrozen);
         Curve3D? aC = Tool.Curve(anE, out double f, out double l);
@@ -99,7 +102,7 @@ public class BRepLibMakersTests
         Assert.Equal(Reversed, aME.Vertex2().Orientation());
         Assert.False(anE.Closed());
         Assert.False(Tool.Degenerated(anE));
-        Assert.Equal(BRepLib.Precision(), Tool.Tolerance(anE));
+        Assert.Equal(BrepLibrary.Precision(), Tool.Tolerance(anE));
     }
 
     [Fact]
@@ -118,9 +121,9 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_through_identical_points_fails()
     {
-        var aME = new BRepLib_MakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
-        Assert.False(aME.IsDone());
-        Assert.Equal(BRepLib_LineThroughIdenticPoints, aME.Error());
+        var aME = new LibraryMakeEdge(new Point3D(1, 1, 1), new Point3D(1, 1, 1));
+        Assert.False(aME.IsDone);
+        Assert.Equal(LibraryEdgeError.LineThroughIdenticPoints, aME.Error());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Edge());
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aME.Vertex1());
     }
@@ -129,7 +132,7 @@ public class BRepLibMakersTests
     public void Edge_on_a_line_between_parameters_reorders_them()
     {
         var aL = new Line3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0));
-        Edge anE = new BRepLib_MakeEdge(aL, 3.0, -2.0).Edge();
+        Edge anE = new LibraryMakeEdge(aL, 3.0, -2.0).Edge();
         Tool.Range(anE, out double f, out double l);
         Assert.Equal(-2.0, f);
         Assert.Equal(3.0, l);
@@ -141,8 +144,8 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge_on_a_whole_line_is_infinite_without_vertices()
     {
-        var aME = new BRepLib_MakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
-        Assert.True(aME.IsDone());
+        var aME = new LibraryMakeEdge(new Line3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        Assert.True(aME.IsDone);
         Edge anE = aME.Edge();
         Assert.True(aME.Vertex1().IsNull);
         Assert.True(aME.Vertex2().IsNull);
@@ -156,7 +159,7 @@ public class BRepLibMakersTests
     public void Edge_on_a_whole_circle_is_closed_with_one_vertex()
     {
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        var aME = new BRepLib_MakeEdge(aCirc);
+        var aME = new LibraryMakeEdge(aCirc);
         Edge anE = aME.Edge();
         Assert.True(anE.Closed());
         Assert.False(Tool.Degenerated(anE));
@@ -172,8 +175,8 @@ public class BRepLibMakersTests
     public void Arc_of_circle_between_points_projects_them()
     {
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        var aME = new BRepLib_MakeEdge(aCirc, new Point3D(0, 2, 0), new Point3D(-2, 0, 0));
-        Assert.True(aME.IsDone());
+        var aME = new LibraryMakeEdge(aCirc, new Point3D(0, 2, 0), new Point3D(-2, 0, 0));
+        Assert.True(aME.IsDone);
         Tool.Range(aME.Edge(), out double f, out double l);
         Assert.Equal(Math.PI / 2, f, 1e-12);
         Assert.Equal(Math.PI, l, 1e-12);
@@ -183,7 +186,7 @@ public class BRepLibMakersTests
     public void Arc_of_circle_with_parameters_adjusts_them_into_the_period()
     {
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
-        Edge anE = new BRepLib_MakeEdge(aCirc, 7.0, 8.0).Edge();
+        Edge anE = new LibraryMakeEdge(aCirc, 7.0, 8.0).Edge();
         Tool.Range(anE, out double f, out double l);
         Assert.Equal(7.0 - 2 * Math.PI, f, 1e-12);
         Assert.Equal(8.0 - 2 * Math.PI, l, 1e-12);
@@ -193,20 +196,20 @@ public class BRepLibMakersTests
     public void Point_off_the_curve_fails_its_projection()
     {
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        var aME = new BRepLib_MakeEdge(aCirc, new Point3D(0, 2.1, 0), new Point3D(-2, 0, 0));
-        Assert.False(aME.IsDone());
-        Assert.Equal(BRepLib_PointProjectionFailed, aME.Error());
+        var aME = new LibraryMakeEdge(aCirc, new Point3D(0, 2.1, 0), new Point3D(-2, 0, 0));
+        Assert.False(aME.IsDone);
+        Assert.Equal(LibraryEdgeError.PointProjectionFailed, aME.Error());
     }
 
     [Fact]
     public void Ellipse_hyperbola_and_parabola_arcs()
     {
         var anAx = new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1));
-        Edge anEl = new BRepLib_MakeEdge(new Ellipse3D(anAx, 3, 1), 0.0, 1.0).Edge();
+        Edge anEl = new LibraryMakeEdge(new Ellipse3D(anAx, 3, 1), 0.0, 1.0).Edge();
         Assert.IsType<EllipseCurve3D>(Tool.Curve(anEl, out _, out _));
-        Edge aHy = new BRepLib_MakeEdge(new Hyperbola3D(anAx, 3, 1), -1.0, 1.0).Edge();
+        Edge aHy = new LibraryMakeEdge(new Hyperbola3D(anAx, 3, 1), -1.0, 1.0).Edge();
         Assert.IsType<HyperbolaCurve3D>(Tool.Curve(aHy, out _, out _));
-        Edge aPa = new BRepLib_MakeEdge(new Parabola3D(anAx, 0.5), -2.0, 2.0).Edge();
+        Edge aPa = new LibraryMakeEdge(new Parabola3D(anAx, 0.5), -2.0, 2.0).Edge();
         Assert.IsType<ParabolaCurve3D>(Tool.Curve(aPa, out double f, out double l));
         Assert.Equal(-2.0, f);
         Assert.Equal(2.0, l);
@@ -234,7 +237,7 @@ public class BRepLibMakersTests
     public void BSpline_edge_with_a_range_and_out_of_range_parameters()
     {
         BSplineCurve3D aC = BSpline();
-        var aME = new BRepLib_MakeEdge(aC, 0.25, 0.75);
+        var aME = new LibraryMakeEdge(aC, 0.25, 0.75);
         Edge anE = aME.Edge();
         Assert.Same(aC, Tool.Curve(anE, out double f, out double l));
         Assert.True(aC.IsFrozen); // frozen when the edge took it
@@ -242,16 +245,16 @@ public class BRepLibMakersTests
         Assert.Equal(0.75, l);
         AssertPoint(aC.Value(0.25), Tool.Pnt(aME.Vertex1()));
 
-        var aBad = new BRepLib_MakeEdge(BSpline(), 0.5, 1.5);
-        Assert.Equal(BRepLib_ParameterOutOfRange, aBad.Error());
-        Assert.False(aBad.IsDone());
+        var aBad = new LibraryMakeEdge(BSpline(), 0.5, 1.5);
+        Assert.Equal(LibraryEdgeError.ParameterOutOfRange, aBad.Error());
+        Assert.False(aBad.IsDone);
     }
 
     [Fact]
     public void Trimmed_curves_are_replaced_by_their_basis()
     {
         var aT = new TrimmedCurve3D(new TrimmedCurve3D(BSpline(), 0.1, 0.9), 0.2, 0.8);
-        Edge anE = new BRepLib_MakeEdge(aT).Edge();
+        Edge anE = new LibraryMakeEdge(aT).Edge();
         // Geom_TrimmedCurve keeps a copy of its basis; the edge gets that B-spline, not a trimmed curve
         Curve3D? anEC = Tool.Curve(anE, out double f, out double l);
         Assert.Same(aT.BasisCurve(), anEC);
@@ -264,18 +267,18 @@ public class BRepLibMakersTests
     public void Vertex_away_from_its_parameter_fails()
     {
         Vertex aV1 = V(0, 0, 0), aV2 = V(5, 1, 0);
-        var aME = new BRepLib_MakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, aV2, 0.0, 5.0);
-        Assert.Equal(BRepLib_DifferentsPointAndParameter, aME.Error());
-        Assert.False(aME.IsDone());
+        var aME = new LibraryMakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, aV2, 0.0, 5.0);
+        Assert.Equal(LibraryEdgeError.DifferentsPointAndParameter, aME.Error());
+        Assert.False(aME.IsDone);
     }
 
     [Fact]
     public void Vertex_at_an_infinite_parameter_fails()
     {
         Vertex aV1 = V(0, 0, 0);
-        var aME = new BRepLib_MakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, new Vertex(),
+        var aME = new LibraryMakeEdge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), aV1, new Vertex(),
                                        -global::Kerf.Engine.Foundation.Precision.Infinite(), 0.0);
-        Assert.Equal(BRepLib_PointWithInfiniteParameter, aME.Error());
+        Assert.Equal(LibraryEdgeError.PointWithInfiniteParameter, aME.Error());
     }
 
     [Fact]
@@ -283,8 +286,8 @@ public class BRepLibMakersTests
     {
         var aCirc = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
         Vertex aV1 = V(1, 0, 0), aV2 = V(1, 0, 0);
-        var aME = new BRepLib_MakeEdge(aCirc, aV1, aV2, 0.0, 2 * Math.PI);
-        Assert.Equal(BRepLib_DifferentPointsOnClosedCurve, aME.Error());
+        var aME = new LibraryMakeEdge(aCirc, aV1, aV2, 0.0, 2 * Math.PI);
+        Assert.Equal(LibraryEdgeError.DifferentPointsOnClosedCurve, aME.Error());
     }
 
     [Fact]
@@ -292,8 +295,8 @@ public class BRepLibMakersTests
     {
         var aCirc = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1e-8);
         Vertex aV = V(1e-8, 0, 0);
-        var aME = new BRepLib_MakeEdge(aCirc, aV, aV, 0.0, 2 * Math.PI);
-        Assert.True(aME.IsDone());
+        var aME = new LibraryMakeEdge(aCirc, aV, aV, 0.0, 2 * Math.PI);
+        Assert.True(aME.IsDone);
         Assert.True(Tool.Degenerated(aME.Edge()));
     }
 
@@ -302,7 +305,7 @@ public class BRepLibMakersTests
     {
         var aPlane = new PlaneSurface(new Point3D(0, 0, 1), new Direction3D(0, 0, 1));
         var aL = new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 0));
-        var aME = new BRepLib_MakeEdge(aL, aPlane, 0.0, 2.0);
+        var aME = new LibraryMakeEdge(aL, aPlane, 0.0, 2.0);
         Edge anE = aME.Edge();
         Assert.Null(Tool.Curve(anE, out _, out _));
         Curve2D? aPC = Tool.CurveOnSurface(anE, aPlane, new Placement(), out double f, out double l);
@@ -313,14 +316,14 @@ public class BRepLibMakersTests
         Assert.Equal(Forward, anE.Orientation());
 
         // reversed parameters reverse the edge
-        Edge aR = new BRepLib_MakeEdge(new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 0)), aPlane, 2.0, 0.0).Edge();
+        Edge aR = new LibraryMakeEdge(new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 0)), aPlane, 2.0, 0.0).Edge();
         Assert.Equal(Reversed, aR.Orientation());
     }
 
     [Fact]
     public void Init_after_a_public_read_makes_a_new_edge()
     {
-        var aME = new BRepLib_MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
+        var aME = new LibraryMakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         Edge aFirst = aME.Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFirst);
         aME.Init(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 0.0, 2.0);
@@ -334,12 +337,12 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge2d_between_points_is_a_pcurve_on_the_default_plane()
     {
-        var aME = new BRepLib_MakeEdge2d(new Point2D(1, 1), new Point2D(4, 5));
-        Assert.True(aME.IsDone());
-        Assert.Equal(BRepLib_EdgeDone, aME.Error());
+        var aME = new LibraryMakeEdge2d(new Point2D(1, 1), new Point2D(4, 5));
+        Assert.True(aME.IsDone);
+        Assert.Equal(LibraryEdgeError.EdgeDone, aME.Error());
         Edge anE = aME.Edge();
         Assert.True(anE.TShape()!.IsFrozen);
-        Curve2D? aPC = Tool.CurveOnSurface(anE, BRepLib.Plane(), new Placement(), out double f, out double l);
+        Curve2D? aPC = Tool.CurveOnSurface(anE, BrepLibrary.Plane(), new Placement(), out double f, out double l);
         Assert.IsType<LineCurve2D>(aPC);
         Assert.Equal(0.0, f);
         Assert.Equal(5.0, l);
@@ -350,8 +353,8 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge2d_whole_circle_is_closed()
     {
-        var aME = new BRepLib_MakeEdge2d(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.5));
-        Assert.True(aME.IsDone());
+        var aME = new LibraryMakeEdge2d(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.5));
+        Assert.True(aME.IsDone);
         Assert.True(aME.Vertex1().IsSame(aME.Vertex2()));
         Assert.Equal(new Point3D(1.5, 0, 0), Tool.Pnt(aME.Vertex1()));
     }
@@ -359,9 +362,9 @@ public class BRepLibMakersTests
     [Fact]
     public void Edge2d_through_identical_points_fails()
     {
-        var aME = new BRepLib_MakeEdge2d(new Point2D(1, 1), new Point2D(1, 1));
-        Assert.Equal(BRepLib_LineThroughIdenticPoints, aME.Error());
-        Assert.False(aME.IsDone());
+        var aME = new LibraryMakeEdge2d(new Point2D(1, 1), new Point2D(1, 1));
+        Assert.Equal(LibraryEdgeError.LineThroughIdenticPoints, aME.Error());
+        Assert.False(aME.IsDone);
     }
 
     // ---------------------------------------------------------------- wires
@@ -372,8 +375,8 @@ public class BRepLibMakersTests
         Vertex a = V(0, 0, 0), b = V(1, 0, 0), c = V(1, 1, 0);
         Edge e1 = E(a, b), e2 = E(b, c), e3 = E(c, a);
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1), s2 = ShapeSnapshot.Of(e2);
-        var aMW = new BRepLib_MakeWire(e1, e2);
-        Assert.Equal(BRepLib_WireDone, aMW.Error());
+        var aMW = new LibraryMakeWire(e1, e2);
+        Assert.Equal(LibraryWireError.WireDone, aMW.Error());
         Wire aW = aMW.Wire();
         Assert.True(aW.TShape()!.IsFrozen);
         Assert.False(aW.Closed());
@@ -393,19 +396,19 @@ public class BRepLibMakersTests
     [Fact]
     public void Disconnected_edge_is_refused()
     {
-        var aMW = new BRepLib_MakeWire(E(0, 0, 0, 1, 0, 0));
+        var aMW = new LibraryMakeWire(E(0, 0, 0, 1, 0, 0));
         aMW.Add(E(5, 0, 0, 6, 0, 0));
-        Assert.Equal(BRepLib_DisconnectedWire, aMW.Error());
-        Assert.False(aMW.IsDone());
+        Assert.Equal(LibraryWireError.DisconnectedWire, aMW.Error());
+        Assert.False(aMW.IsDone);
         Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aMW.Wire());
     }
 
     [Fact]
     public void Empty_maker_reports_an_empty_wire()
     {
-        var aMW = new BRepLib_MakeWire();
-        Assert.Equal(BRepLib_EmptyWire, aMW.Error());
-        Assert.False(aMW.IsDone());
+        var aMW = new LibraryMakeWire();
+        Assert.Equal(LibraryWireError.EmptyWire, aMW.Error());
+        Assert.False(aMW.IsDone);
     }
 
     [Fact]
@@ -413,8 +416,8 @@ public class BRepLibMakersTests
     {
         Edge e1 = E(0, 0, 0, 1, 0, 0), e2 = E(1, 0, 0, 1, 1, 0), e3 = E(1, 1, 0, 0, 0, 0);
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1), s2 = ShapeSnapshot.Of(e2), s3 = ShapeSnapshot.Of(e3);
-        var aMW = new BRepLib_MakeWire(e1, e2, e3);
-        Assert.Equal(BRepLib_WireDone, aMW.Error());
+        var aMW = new LibraryMakeWire(e1, e2, e3);
+        Assert.Equal(LibraryWireError.WireDone, aMW.Error());
         Wire aW = aMW.Wire();
         Assert.True(aW.Closed());
         Assert.Equal(3, Count(aW, ShapeType.Edge));
@@ -435,8 +438,8 @@ public class BRepLibMakersTests
         Edge e1 = E(0, 0, 0, 1, 0, 0);
         Edge e2 = E(1 + 5e-8, 0, 0, 1, 1, 0);
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1), s2 = ShapeSnapshot.Of(e2);
-        var aMW = new BRepLib_MakeWire(e1, e2);
-        Assert.Equal(BRepLib_WireDone, aMW.Error());
+        var aMW = new LibraryMakeWire(e1, e2);
+        Assert.Equal(LibraryWireError.WireDone, aMW.Error());
         Wire aW = aMW.Wire();
         Assert.Equal(2, Count(aW, ShapeType.Edge));
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
@@ -458,9 +461,9 @@ public class BRepLibMakersTests
     public void Edge_meeting_the_wire_at_an_inner_vertex_builds_a_non_manifold_wire()
     {
         Vertex a = V(0, 0, 0), b = V(1, 0, 0), c = V(2, 0, 0), d = V(1, 1, 0);
-        var aMW = new BRepLib_MakeWire(E(a, b), E(b, c));
+        var aMW = new LibraryMakeWire(E(a, b), E(b, c));
         aMW.Add(E(b, d));
-        Assert.True(aMW.IsDone());
+        Assert.True(aMW.IsDone);
         Wire aW = aMW.Wire();
         Assert.Equal(3, Count(aW, ShapeType.Edge));
         Assert.False(aW.Closed());
@@ -477,9 +480,9 @@ public class BRepLibMakersTests
         aL.Append(e4);
         aL.Append(e2);
         ShapeSnapshot s1 = ShapeSnapshot.Of(e1);
-        var aMW = new BRepLib_MakeWire();
+        var aMW = new LibraryMakeWire();
         aMW.Add(aL);
-        Assert.True(aMW.IsDone());
+        Assert.True(aMW.IsDone);
         Wire aW = aMW.Wire();
         Assert.Equal(4, Count(aW, ShapeType.Edge));
         Assert.Equal(4, Count(aW, ShapeType.Vertex));
@@ -490,23 +493,23 @@ public class BRepLibMakersTests
         var aBad = new NCollection_List<Shape>();
         aBad.Append(E(0, 0, 0, 1, 0, 0));
         aBad.Append(E(3, 0, 0, 4, 0, 0));
-        var aMW2 = new BRepLib_MakeWire();
+        var aMW2 = new LibraryMakeWire();
         aMW2.Add(aBad);
-        Assert.False(aMW2.IsDone());
-        Assert.Equal(BRepLib_DisconnectedWire, aMW2.Error());
+        Assert.False(aMW2.IsDone);
+        Assert.Equal(LibraryWireError.DisconnectedWire, aMW2.Error());
     }
 
     [Fact]
     public void List_added_to_a_frozen_wire_grows_its_vertex_on_a_copy()
     {
         // the wire's end vertex (tolerance 1e-7) must grow to reach a list edge's vertex 1.5e-7 away (tolerance 1e-7)
-        Wire aW0 = new BRepLib_MakeWire(E(0, 0, 0, 1, 0, 0)).Wire();
+        Wire aW0 = new LibraryMakeWire(E(0, 0, 0, 1, 0, 0)).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aW0);
         var aL = new NCollection_List<Shape>();
         aL.Append(E(1 + 1.5e-7, 0, 0, 2, 0, 0));
-        var aMW = new BRepLib_MakeWire(aW0);
+        var aMW = new LibraryMakeWire(aW0);
         aMW.Add(aL);
-        Assert.True(aMW.IsDone());
+        Assert.True(aMW.IsDone);
         Wire aW = aMW.Wire();
         Assert.Equal(2, Count(aW, ShapeType.Edge));
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
@@ -517,10 +520,10 @@ public class BRepLibMakersTests
     [Fact]
     public void Wire_of_a_frozen_wire_and_an_edge()
     {
-        Wire aW0 = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Wire();
+        Wire aW0 = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aW0);
-        var aMW = new BRepLib_MakeWire(aW0, E(1, 1, 0, 0, 0, 0));
-        Assert.True(aMW.IsDone());
+        var aMW = new LibraryMakeWire(aW0, E(1, 1, 0, 0, 0, 0));
+        Assert.True(aMW.IsDone);
         Assert.True(aMW.Wire().Closed());
         aSnap.AssertUnchanged(aW0);
     }
@@ -530,8 +533,8 @@ public class BRepLibMakersTests
     [Fact]
     public void Polygon_open_then_closed()
     {
-        var aMP = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0));
-        Assert.True(aMP.IsDone());
+        var aMP = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0));
+        Assert.True(aMP.IsDone);
         Wire aOpen = aMP.Wire();
         Assert.False(aOpen.Closed());
         Assert.Equal(2, Count(aOpen, ShapeType.Edge));
@@ -549,7 +552,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Polygon_of_four_points_closed()
     {
-        Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0),
+        Wire aW = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0),
                                                  new Point3D(0, 1, 0), true).Wire();
         Assert.True(aW.Closed());
         Assert.Equal(4, Count(aW, ShapeType.Edge));
@@ -560,7 +563,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Polygon_skips_a_repeated_point_and_closes_on_the_first()
     {
-        var aMP = new BRepLib_MakePolygon();
+        var aMP = new LibraryMakePolygon();
         aMP.Add(new Point3D(0, 0, 0));
         aMP.Add(new Point3D(1, 0, 0));
         Assert.True(aMP.Added());
@@ -580,7 +583,7 @@ public class BRepLibMakersTests
     {
         Vertex a = V(0, 0, 0), b = V(3, 0, 0), c = V(0, 4, 0);
         ShapeSnapshot aSa = ShapeSnapshot.Of(a);
-        Wire aW = new BRepLib_MakePolygon(a, b, c, true).Wire();
+        Wire aW = new LibraryMakePolygon(a, b, c, true).Wire();
         Assert.True(aW.Closed());
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
         var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
@@ -594,9 +597,9 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_plane_has_no_wire()
     {
-        var aMF = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
-        Assert.True(aMF.IsDone());
-        Assert.Equal(BRepLib_FaceDone, aMF.Error());
+        var aMF = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 1), new Direction3D(0, 0, 1)));
+        Assert.True(aMF.IsDone);
+        Assert.Equal(LibraryFaceError.FaceDone, aMF.Error());
         Face aF = aMF.Face();
         Assert.True(aF.TShape()!.IsFrozen);
         Assert.Equal(0, Count(aF, ShapeType.Wire));
@@ -608,7 +611,7 @@ public class BRepLibMakersTests
     public void Face_on_a_bounded_plane_has_a_wire_of_four_iso_edges()
     {
         var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        Face aF = new BRepLib_MakeFace(aPln, 0, 2, 0, 3).Face();
+        Face aF = new LibraryMakeFace(aPln, 0, 2, 0, 3).Face();
         Assert.Equal(1, Count(aF, ShapeType.Wire));
         Assert.Equal(4, Count(aF, ShapeType.Edge));
         Assert.Equal(4, Count(aF, ShapeType.Vertex));
@@ -619,7 +622,7 @@ public class BRepLibMakersTests
             Assert.NotNull(Tool.CurveOnSurface(anE, aF, out _, out _));
             Assert.NotNull(Tool.Curve(anE, out _, out _));
         }
-        var aFC = new BRepTopAdaptor_FClass2d(aF, 0);
+        var aFC = new FClass2d(aF, 0);
         Assert.Equal(Out, aFC.PerformInfinitePoint());
     }
 
@@ -627,7 +630,7 @@ public class BRepLibMakersTests
     public void Face_on_a_whole_cylinder_band_has_a_seam()
     {
         var aCyl = new Cylinder(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
-        Face aF = new BRepLib_MakeFace(aCyl, 0, 2 * Math.PI, 0, 5).Face();
+        Face aF = new LibraryMakeFace(aCyl, 0, 2 * Math.PI, 0, 5).Face();
         Assert.Equal(3, Count(aF, ShapeType.Edge));
         Assert.Equal(4, CountOccurrences(aF, ShapeType.Edge));
         int aSeams = 0;
@@ -644,7 +647,7 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_on_a_whole_sphere_has_degenerated_poles()
     {
-        Face aF = new BRepLib_MakeFace(new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 3.0)).Face();
+        Face aF = new LibraryMakeFace(new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 0, 1)), 3.0)).Face();
         int aDegenerated = 0;
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -665,7 +668,7 @@ public class BRepLibMakersTests
         double aSemi = Math.PI / 6;
         var aCone = new Cone(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), aSemi, 1.0);
         double vApex = -1.0 / Math.Sin(aSemi);
-        Face aF = new BRepLib_MakeFace(aCone, 0, 2 * Math.PI, vApex, 1.0).Face();
+        Face aF = new LibraryMakeFace(aCone, 0, 2 * Math.PI, vApex, 1.0).Face();
         int aDegenerated = 0;
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -686,11 +689,11 @@ public class BRepLibMakersTests
         aPoles[2, 1] = new Point3D(1, 0, 0);
         aPoles[2, 2] = new Point3D(1, 1, 1);
         var aS = new BezierSurface(aPoles);
-        var aBad = new BRepLib_MakeFace(aS, 2.0, 0.5, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(BRepLib_ParametersOutOfRange, aBad.Error());
-        Assert.False(aBad.IsDone());
-        var aGood = new BRepLib_MakeFace(aS, 0.25, 0.75, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aGood.IsDone());
+        var aBad = new LibraryMakeFace(aS, 2.0, 0.5, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(LibraryFaceError.ParametersOutOfRange, aBad.Error());
+        Assert.False(aBad.IsDone);
+        var aGood = new LibraryMakeFace(aS, 0.25, 0.75, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aGood.IsDone);
         Assert.Equal(4, Count(aGood.Face(), ShapeType.Edge));
     }
 
@@ -701,7 +704,7 @@ public class BRepLibMakersTests
         {
             Array.Reverse(aP);
         }
-        return new BRepLib_MakePolygon(aP[0], aP[1], aP[2], aP[3], true).Wire();
+        return new LibraryMakePolygon(aP[0], aP[1], aP[2], aP[3], true).Wire();
     }
 
     [Fact]
@@ -712,10 +715,10 @@ public class BRepLibMakersTests
         {
             Wire aW = Square(0, 0, 1, aCcw);
             ShapeSnapshot aSnap = ShapeSnapshot.Of(aW);
-            var aMF = new BRepLib_MakeFace(aPln, aW);
-            Assert.True(aMF.IsDone());
+            var aMF = new LibraryMakeFace(aPln, aW);
+            Assert.True(aMF.IsDone);
             Face aF = aMF.Face();
-            Assert.Equal(Out, new BRepTopAdaptor_FClass2d(aF, 0).PerformInfinitePoint());
+            Assert.Equal(Out, new FClass2d(aF, 0).PerformInfinitePoint());
             var anIt = new Iterator(aF);
             Assert.True(anIt.Value().IsSame(aW));
             Assert.Equal(aCcw ? Forward : Reversed, anIt.Value().Orientation());
@@ -723,7 +726,7 @@ public class BRepLibMakersTests
         }
 
         // Inside false keeps the wire as given
-        Face aKept = new BRepLib_MakeFace(aPln, Square(0, 0, 1, false), false).Face();
+        Face aKept = new LibraryMakeFace(aPln, Square(0, 0, 1, false), false).Face();
         Assert.Equal(Forward, new Iterator(aKept).Value().Orientation());
     }
 
@@ -731,7 +734,7 @@ public class BRepLibMakersTests
     public void Face_with_a_hole_and_Add_after_a_public_read()
     {
         var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aMF = new BRepLib_MakeFace(aPln, Square(0, 0, 4, true));
+        var aMF = new LibraryMakeFace(aPln, Square(0, 0, 4, true));
         Face aOuterOnly = aMF.Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aOuterOnly);
         aMF.Add(Square(1, 1, 1, false));
@@ -741,7 +744,7 @@ public class BRepLibMakersTests
         aSnap.AssertUnchanged(aOuterOnly);
         Assert.Equal(1, Count(aOuterOnly, ShapeType.Wire));
 
-        var aFC = new BRepClass_FaceClassifier(aF, new Point2D(1.5, 1.5), 1e-7);
+        var aFC = new FaceClassifier(aF, new Point2D(1.5, 1.5), 1e-7);
         Assert.Equal(Out, aFC.State());
         aFC.Perform(aF, new Point2D(0.5, 0.5), 1e-7);
         Assert.Equal(In, aFC.State());
@@ -750,10 +753,10 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_loaded_from_a_face_is_a_new_face_with_the_same_wires()
     {
-        Face aF0 = new BRepLib_MakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Square(0, 0, 4, true)).Face();
+        Face aF0 = new LibraryMakeFace(new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Square(0, 0, 4, true)).Face();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aF0);
         Wire aHole = Square(1, 1, 1, false);
-        Face aF = new BRepLib_MakeFace(aF0, aHole).Face();
+        Face aF = new LibraryMakeFace(aF0, aHole).Face();
         Assert.False(aF.IsSame(aF0));
         Assert.Same(Tool.Surface(aF0), Tool.Surface(aF));
         Assert.Equal(2, Count(aF, ShapeType.Wire));
@@ -763,10 +766,10 @@ public class BRepLibMakersTests
     [Fact]
     public void IsDegenerated_on_circles_and_poles()
     {
-        Assert.True(BRepLib_MakeFace.IsDegenerated(new CircleCurve3D(new Frame3D(), 1e-9), 1e-7, out double aTol));
+        Assert.True(LibraryMakeFace.IsDegenerated(new CircleCurve3D(new Frame3D(), 1e-9), 1e-7, out double aTol));
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aTol);
-        Assert.False(BRepLib_MakeFace.IsDegenerated(new CircleCurve3D(new Frame3D(), 1.0), 1e-7, out _));
-        Assert.False(BRepLib_MakeFace.IsDegenerated(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1e-7, out _));
+        Assert.False(LibraryMakeFace.IsDegenerated(new CircleCurve3D(new Frame3D(), 1.0), 1e-7, out _));
+        Assert.False(LibraryMakeFace.IsDegenerated(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1e-7, out _));
     }
 
     // ---------------------------------------------------------------- faces through BRepLib's statics
@@ -776,9 +779,9 @@ public class BRepLibMakersTests
     {
         Wire aW = Square(1, 2, 3, true);
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aW);
-        var aMF = new BRepLib_MakeFace(aW, true);
-        Assert.True(aMF.IsDone());
-        Assert.Equal(BRepLib_FaceDone, aMF.Error());
+        var aMF = new LibraryMakeFace(aW, true);
+        Assert.True(aMF.IsDone);
+        Assert.Equal(LibraryFaceError.FaceDone, aMF.Error());
         Face aF = aMF.Face();
         Assert.True(aF.TShape()!.IsFrozen);
         aSnap.AssertUnchanged(aW);
@@ -795,7 +798,7 @@ public class BRepLibMakersTests
         Assert.Equal(4, Count(aF, ShapeType.Edge));
         var aPlane = Assert.IsType<PlaneSurface>(Tool.Surface(aF));
         Assert.Equal(1.0, Math.Abs(aPlane.Position().Direction().Z()), 1e-12);
-        Assert.Equal(Out, new BRepTopAdaptor_FClass2d(aF, 0).PerformInfinitePoint());
+        Assert.Equal(Out, new FClass2d(aF, 0).PerformInfinitePoint());
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.True(Tool.SameParameter(ShapeCasts.Edge(anExp.Current())));
@@ -813,10 +816,10 @@ public class BRepLibMakersTests
             aV[i] = TestShapes.Vertex(aP[i]);
         }
         Edge aShared = TestShapes.Edge(aV[1], aV[4]);
-        var aW1 = new BRepLib_MakeWire(TestShapes.Edge(aV[0], aV[1]), aShared, TestShapes.Edge(aV[4], aV[5]), TestShapes.Edge(aV[5], aV[0])).Wire();
-        var aW2 = new BRepLib_MakeWire(TestShapes.Edge(aV[1], aV[2]), TestShapes.Edge(aV[2], aV[3]), TestShapes.Edge(aV[3], aV[4]), aShared).Wire();
-        Face aF1 = new BRepLib_MakeFace(aW1, true).Face();
-        Face aF2 = new BRepLib_MakeFace(aW2, true).Face();
+        var aW1 = new LibraryMakeWire(TestShapes.Edge(aV[0], aV[1]), aShared, TestShapes.Edge(aV[4], aV[5]), TestShapes.Edge(aV[5], aV[0])).Wire();
+        var aW2 = new LibraryMakeWire(TestShapes.Edge(aV[1], aV[2]), TestShapes.Edge(aV[2], aV[3]), TestShapes.Edge(aV[3], aV[4]), aShared).Wire();
+        Face aF1 = new LibraryMakeFace(aW1, true).Face();
+        Face aF2 = new LibraryMakeFace(aW2, true).Face();
 
         var aShell = Builder.MakeCompound(aF1, aF2);
         var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
@@ -848,11 +851,11 @@ public class BRepLibMakersTests
             TestShapes.Edge(new LineCurve3D(aP[2], new Direction3D(-1, 0, 0)), 0, 1, aV[2], aOff),
             TestShapes.Edge(new LineCurve3D(aP[3], new Direction3D(0, -1, 0)), 0, 1, aOff, aV[0]),
         };
-        var aWire = new BRepLib_MakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
+        var aWire = new LibraryMakeWire(TestShapes.Frozen(anEdges[0]), TestShapes.Frozen(anEdges[1]),
                                          TestShapes.Frozen(anEdges[2]), TestShapes.Frozen(anEdges[3])).Wire();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aWire);
-        var aMF = new BRepLib_MakeFace(aWire, true);
-        Assert.True(aMF.IsDone());
+        var aMF = new LibraryMakeFace(aWire, true);
+        Assert.True(aMF.IsDone);
         Face aF = aMF.Face();
         aSnap.AssertUnchanged(aWire);
 
@@ -874,11 +877,11 @@ public class BRepLibMakersTests
     [Fact]
     public void Face_from_a_wire_that_is_not_planar_fails()
     {
-        Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
+        Wire aW = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
                                                  new Point3D(0, 1, 0), true).Wire();
-        var aMF = new BRepLib_MakeFace(aW);
-        Assert.False(aMF.IsDone());
-        Assert.Equal(BRepLib_NotPlanar, aMF.Error());
+        var aMF = new LibraryMakeFace(aW);
+        Assert.False(aMF.IsDone);
+        Assert.Equal(LibraryFaceError.NotPlanar, aMF.Error());
     }
 
     [Fact]
@@ -886,8 +889,8 @@ public class BRepLibMakersTests
     {
         var aCyl = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var anOffset = new OffsetSurface(aCyl, 0.5);
-        var aMF = new BRepLib_MakeFace(anOffset, 0, Math.PI, 0, 3, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aMF.IsDone());
+        var aMF = new LibraryMakeFace(anOffset, 0, Math.PI, 0, 3, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aMF.IsDone);
         Face aF = aMF.Face();
         Assert.Equal(4, Count(aF, ShapeType.Edge));
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -932,9 +935,9 @@ public class BRepLibMakersTests
     public void Shell_of_a_BSpline_surface_is_split_at_its_C1_knot()
     {
         BSplineSurface aS = SurfaceWithAC1Knot();
-        var aMS = new BRepLib_MakeShell(aS);
-        Assert.True(aMS.IsDone());
-        Assert.Equal(BRepLib_ShellDone, aMS.Error());
+        var aMS = new LibraryMakeShell(aS);
+        Assert.True(aMS.IsDone);
+        Assert.Equal(LibraryShellError.ShellDone, aMS.Error());
         Shell aSh = aMS.Shell();
         Assert.True(aSh.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aSh, ShapeType.Face));
@@ -954,7 +957,7 @@ public class BRepLibMakersTests
         }
 
         // with Segment, each face has its own segment
-        Shell aSeg = new BRepLib_MakeShell(aS, true).Shell();
+        Shell aSeg = new LibraryMakeShell(aS, true).Shell();
         for (var anExp = new Explorer(aSeg, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aFS = Assert.IsType<BSplineSurface>(Tool.Surface(ShapeCasts.Face(anExp.Current())));
@@ -966,10 +969,10 @@ public class BRepLibMakersTests
     [Fact]
     public void Shell_between_parameters_and_the_empty_maker()
     {
-        var aMS = new BRepLib_MakeShell(SurfaceWithAC1Knot(), 0.5, 1.5, 0.2, 0.8);
-        Assert.True(aMS.IsDone());
+        var aMS = new LibraryMakeShell(SurfaceWithAC1Knot(), 0.5, 1.5, 0.2, 0.8);
+        Assert.True(aMS.IsDone);
         Assert.Equal(2, Count(aMS.Shell(), ShapeType.Face));
-        Assert.Equal(BRepLib_EmptyShell, new BRepLib_MakeShell().Error());
+        Assert.Equal(LibraryShellError.EmptyShell, new LibraryMakeShell().Error());
     }
 
     // ---------------------------------------------------------------- solids
@@ -980,8 +983,8 @@ public class BRepLibMakersTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Shell aShell = ShapeCasts.Shell(new Iterator(aBox).Value());
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aShell);
-        var aMS = new BRepLib_MakeSolid(aShell);
-        Assert.True(aMS.IsDone());
+        var aMS = new LibraryMakeSolid(aShell);
+        Assert.True(aMS.IsDone);
         Solid aS1 = aMS.Solid();
         Assert.True(aS1.TShape()!.IsFrozen);
         Assert.Equal(1, Count(aS1, ShapeType.Shell));
@@ -991,7 +994,7 @@ public class BRepLibMakersTests
         Assert.Equal(2, Count(aS2, ShapeType.Shell));
         Assert.Equal(1, Count(aS1, ShapeType.Shell));
         aSnap.AssertUnchanged(aShell);
-        Assert.Equal(BRepLib_Preserved, aMS.FaceStatus(ShapeCasts.Face(new Explorer(aS2, ShapeType.Face).Current())));
+        Assert.Equal(LibraryShapeModification.Preserved, aMS.FaceStatus(ShapeCasts.Face(new Explorer(aS2, ShapeType.Face).Current())));
     }
 
     [Fact]
@@ -999,11 +1002,11 @@ public class BRepLibMakersTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Shell aSh = ShapeCasts.Shell(new Iterator(aBox).Value());
-        Assert.Equal(2, CountOccurrences(new BRepLib_MakeSolid(aSh, ShapeCasts.Shell(aSh.Reversed())).Solid(), ShapeType.Shell));
-        Assert.Equal(1, Count(new BRepLib_MakeSolid(aBox).Solid(), ShapeType.Shell));
-        Solid aTwo = new BRepLib_MakeSolid(aBox, ShapeCasts.Shell(new Iterator(TestShapes.Frozen(TestShapes.Box(2, 2, 2))).Value())).Solid();
+        Assert.Equal(2, CountOccurrences(new LibraryMakeSolid(aSh, ShapeCasts.Shell(aSh.Reversed())).Solid(), ShapeType.Shell));
+        Assert.Equal(1, Count(new LibraryMakeSolid(aBox).Solid(), ShapeType.Shell));
+        Solid aTwo = new LibraryMakeSolid(aBox, ShapeCasts.Shell(new Iterator(TestShapes.Frozen(TestShapes.Box(2, 2, 2))).Value())).Solid();
         Assert.Equal(2, Count(aTwo, ShapeType.Shell));
-        Assert.Equal(0, Count(new BRepLib_MakeSolid().Solid(), ShapeType.Shell));
+        Assert.Equal(0, Count(new LibraryMakeSolid().Solid(), ShapeType.Shell));
     }
 
     [Fact]
@@ -1026,11 +1029,11 @@ public class BRepLibMakersTests
         aB.Add(aCS, aSolid2);
         aCS = ShapeCasts.CompSolid(TestShapes.Frozen(aCS));
 
-        var aMS = new BRepLib_MakeSolid(aCS);
+        var aMS = new LibraryMakeSolid(aCS);
         Solid aS = aMS.Solid();
         Assert.Equal(1, Count(aS, ShapeType.Shell));
         Assert.Equal(5, Count(aS, ShapeType.Face));
-        Assert.Equal(BRepLib_Deleted, aMS.FaceStatus(aShared));
+        Assert.Equal(LibraryShapeModification.Deleted, aMS.FaceStatus(aShared));
         Assert.True(ShapeCasts.Shell(new Iterator(aS).Value()).Closed() == false);
     }
 
@@ -1043,7 +1046,7 @@ public class BRepLibMakersTests
         {
             Wire aW = Square(0, 0, 2, aCcw);
             ShapeSnapshot aSnap = ShapeSnapshot.Of(aW);
-            var aFS = new BRepLib_FindSurface(aW);
+            var aFS = new FindSurface(aW);
             Assert.True(aFS.Found());
             Assert.False(aFS.Existed());
             Assert.True(aFS.Location().IsIdentity);
@@ -1061,12 +1064,12 @@ public class BRepLibMakersTests
     [Fact]
     public void FindSurface_rejects_a_non_planar_polygon_unless_the_tolerance_allows_it()
     {
-        Wire aW = new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.1),
+        Wire aW = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.1),
                                                  new Point3D(0, 1, 0), true).Wire();
-        var aFS = new BRepLib_FindSurface(aW);
+        var aFS = new FindSurface(aW);
         Assert.False(aFS.Found());
         Assert.True(aFS.ToleranceReached() > 0.01);
-        var aLoose = new BRepLib_FindSurface(aW, 0.1);
+        var aLoose = new FindSurface(aW, 0.1);
         Assert.True(aLoose.Found());
         Assert.Equal(0.1, aLoose.Tolerance());
     }
@@ -1077,7 +1080,7 @@ public class BRepLibMakersTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Face aF = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
         Wire aW = ShapeCasts.Wire(new Iterator(aF).Value());
-        var aFS = new BRepLib_FindSurface(aW, -1, true);
+        var aFS = new FindSurface(aW, -1, true);
         Assert.True(aFS.Found());
         Assert.True(aFS.Existed());
         Assert.Same(Tool.Surface(aF, out Placement aLoc), aFS.Surface());
@@ -1086,16 +1089,16 @@ public class BRepLibMakersTests
         // the cylinder's wire has pcurves on a cylinder only
         Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(1, 2));
         Wire aCW = ShapeCasts.Wire(new Iterator(aCyl).Value());
-        Assert.IsType<CylindricalSurface>(new BRepLib_FindSurface(aCW).Surface());
-        Assert.False(new BRepLib_FindSurface(aCW, -1, true).Existed());
+        Assert.IsType<CylindricalSurface>(new FindSurface(aCW).Surface());
+        Assert.False(new FindSurface(aCW, -1, true).Existed());
     }
 
     [Fact]
     public void FindSurface_needs_edges_and_three_points()
     {
-        Assert.False(new BRepLib_FindSurface(V(0, 0, 0)).Found());
-        Assert.False(new BRepLib_FindSurface(E(0, 0, 0, 1, 0, 0)).Found()); // two points
-        var aEmpty = new BRepLib_FindSurface();
+        Assert.False(new FindSurface(V(0, 0, 0)).Found());
+        Assert.False(new FindSurface(E(0, 0, 0, 1, 0, 0)).Found()); // two points
+        var aEmpty = new FindSurface();
         Assert.False(aEmpty.Found());
         Assert.Equal(0.0, aEmpty.Tolerance());
     }

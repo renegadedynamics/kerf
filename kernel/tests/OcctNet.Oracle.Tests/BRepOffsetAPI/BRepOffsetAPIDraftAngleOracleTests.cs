@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -45,7 +49,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     // ---------------------------------------------------------------------------------------------------------------
     // Inputs
 
-    private static Shape Box(double x, double y, double z) => new BRepPrimAPI_MakeBox(x, y, z).Shape();
+    private static Shape Box(double x, double y, double z) => new MakeBox(x, y, z).Shape();
 
     private static Frame3D Ax(double x, double y, double z) => new(new Point3D(x, y, z), new Direction3D(0, 0, 1));
 
@@ -53,50 +57,50 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     {
         Transform3D aT = new();
         aT.SetTranslation(new Vector3D(x, y, z));
-        return new BRepBuilderAPI_Transform(theS, aT, true).Shape();
+        return new Transform(theS, aT, true).Shape();
     }
 
     private static Face Polygon(params (double X, double Y)[] thePoints)
     {
-        var aP = new BRepBuilderAPI_MakePolygon();
+        var aP = new MakePolygon();
         foreach ((double x, double y) in thePoints)
         {
             aP.Add(new Point3D(x, y, 0));
         }
         aP.Close();
-        return new BRepBuilderAPI_MakeFace(aP.Wire()).Face();
+        return new MakeFace(aP.Wire()).Face();
     }
 
-    private static Shape Prism(in Face theFace, double h) => new BRepPrimAPI_MakePrism(theFace, new Vector3D(0, 0, h)).Shape();
+    private static Shape Prism(in Face theFace, double h) => new ApiMakePrism(theFace, new Vector3D(0, 0, h)).Shape();
 
     /// <summary>Solids: primitives and Boolean results like the draft group's.</summary>
     internal static List<(string Name, Shape Shape)> Solids() =>
     [
         ("box 10x20x30", Box(10, 20, 30)),
         ("cube 20 centred", Moved(Box(20, 20, 20), -10, -10, 0)),
-        ("cylinder r5 h12", new BRepPrimAPI_MakeCylinder(5, 12).Shape()),
-        ("cone r6 r2 h10", new BRepPrimAPI_MakeCone(6, 2, 10).Shape()),
-        ("cone r2 r6 h10", new BRepPrimAPI_MakeCone(2, 6, 10).Shape()),
+        ("cylinder r5 h12", new ApiMakeCylinder(5, 12).Shape()),
+        ("cone r6 r2 h10", new ApiMakeCone(6, 2, 10).Shape()),
+        ("cone r2 r6 h10", new ApiMakeCone(2, 6, 10).Shape()),
         ("L prism", Prism(Polygon((0, 0), (20, 0), (20, 6), (6, 6), (6, 15), (0, 15)), 8)),
         ("hexagon prism", Prism(Polygon((4, 0), (2, 3.4641016151377544), (-2, 3.4641016151377544), (-4, 0),
                                         (-2, -3.4641016151377544), (2, -3.4641016151377544)), 5)),
-        ("box with hole", new BRepAlgoAPI_Cut(Box(20, 20, 8), new BRepPrimAPI_MakeCylinder(Ax(10, 10, -1), 4, 10).Shape()).Shape()),
-        ("box with pocket", new BRepAlgoAPI_Cut(Box(20, 20, 10), Moved(Box(10, 10, 10), 5, 5, 4)).Shape()),
-        ("box and cylinder fuse", new BRepAlgoAPI_Fuse(Box(20, 20, 5), new BRepPrimAPI_MakeCylinder(Ax(10, 10, 5), 4, 8).Shape()).Shape()),
-        ("stepped fuse", new BRepAlgoAPI_Fuse(Box(20, 20, 5), Moved(Box(10, 20, 5), 0, 0, 5)).Shape()),
-        ("cylinder on box", new BRepAlgoAPI_Fuse(Moved(Box(20, 20, 10), -10, -10, 0), new BRepPrimAPI_MakeCylinder(Ax(0, 0, 10), 5, 10).Shape()).Shape()),
-        ("cone on box", new BRepAlgoAPI_Fuse(Moved(Box(20, 20, 10), -10, -10, 0), new BRepPrimAPI_MakeCone(Ax(0, 0, 10), 6, 3, 10).Shape()).Shape()),
-        ("half sphere box", new BRepAlgoAPI_Fuse(new BRepPrimAPI_MakeSphere(20, 0, Math.PI / 2).Shape(), Moved(Box(20, 20, 20), -10, -10, 10)).Shape()),
+        ("box with hole", new Cut(Box(20, 20, 8), new ApiMakeCylinder(Ax(10, 10, -1), 4, 10).Shape()).Shape()),
+        ("box with pocket", new Cut(Box(20, 20, 10), Moved(Box(10, 10, 10), 5, 5, 4)).Shape()),
+        ("box and cylinder fuse", new Fuse(Box(20, 20, 5), new ApiMakeCylinder(Ax(10, 10, 5), 4, 8).Shape()).Shape()),
+        ("stepped fuse", new Fuse(Box(20, 20, 5), Moved(Box(10, 20, 5), 0, 0, 5)).Shape()),
+        ("cylinder on box", new Fuse(Moved(Box(20, 20, 10), -10, -10, 0), new ApiMakeCylinder(Ax(0, 0, 10), 5, 10).Shape()).Shape()),
+        ("cone on box", new Fuse(Moved(Box(20, 20, 10), -10, -10, 0), new ApiMakeCone(Ax(0, 0, 10), 6, 3, 10).Shape()).Shape()),
+        ("half sphere box", new Fuse(new MakeSphere(20, 0, Math.PI / 2).Shape(), Moved(Box(20, 20, 20), -10, -10, 10)).Shape()),
     ];
 
     /// <summary>build123d.NET's ExtrudeTaper profiles: the prism of each, drafted on its sides about the profile's plane.</summary>
     internal static List<(string Name, Face Profile, double Height)> Profiles()
     {
-        Face aCircle = new BRepBuilderAPI_MakeFace(
-            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge()).Wire()).Face();
+        Face aCircle = new MakeFace(
+            new MakeWire(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge()).Wire()).Face();
         Face aRect = Polygon((-5, -3), (5, -3), (5, 3), (-5, 3));
-        Face aRectHole = new BRepAlgoAPI_Cut(aRect, new BRepBuilderAPI_MakeFace(
-            new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.5)).Edge()).Wire()).Face()).Shape() is var aCut
+        Face aRectHole = new Cut(aRect, new MakeFace(
+            new MakeWire(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.5)).Edge()).Wire()).Face()).Shape() is var aCut
             && new Explorer(aCut, ShapeType.Face) is { } anExp && anExp.More() ? ShapeCasts.Face(anExp.Current()) : aRect;
         return
         [
@@ -141,7 +145,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     private static (double ZMin, double ZMax) ZRange(in Shape theShape)
     {
         Box aBox = new();
-        BRepBndLib.Add(theShape, ref aBox);
+        Bounds.Add(theShape, ref aBox);
         aBox.Get(out _, out _, out double z0, out _, out _, out double z1);
         return (z0, z1);
     }
@@ -214,7 +218,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         // build123d.NET's ExtrudeTaper: the prism's sides drafted about the profile's plane, inner walls the other way
         foreach ((string aName, Face aProfile, double aHeight) in Tape.Budget(Profiles()))
         {
-            BRepPrimAPI_MakePrism aMaker = new(aProfile, new Vector3D(0, 0, aHeight));
+            ApiMakePrism aMaker = new(aProfile, new Vector3D(0, 0, aHeight));
             Shape aPrism = aMaker.Shape();
             NCollection_IndexedMap<Shape> aFaces = FacesOf(aPrism);
             Wire anOuter = BrepTools.OuterWire(aProfile);
@@ -506,7 +510,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         Exploration.MapShapes(theInput, anInMap);
         try
         {
-            var aDraft = new BRepOffsetAPI_DraftAngle(theInput);
+            var aDraft = new DraftAngle(theInput);
             for (int k = 0; k < theCase.Faces.Length; k++)
             {
                 aDraft.Add(ShapeCasts.Face(aFaces[theCase.Faces[k]]), theCase.Dir, theCase.Angles[k] * Math.PI / 180.0, theCase.Plane, theCase.Flag);
@@ -520,8 +524,8 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                 return new Outcome(null, $"add=False status={(int)aDraft.Status()} bad={IndexOf(anInMap, aDraft.ProblematicShape())}", null, "", null);
             }
             aDraft.Build();
-            string aStatus = $"add=True done={aDraft.IsDone()} status={(int)aDraft.Status()}";
-            if (!aDraft.IsDone())
+            string aStatus = $"add=True done={aDraft.IsDone} status={(int)aDraft.Status()}";
+            if (!aDraft.IsDone)
             {
                 return new Outcome(null, aStatus + $" bad={IndexOf(anInMap, aDraft.ProblematicShape())}", null, "", null);
             }

@@ -1,11 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Fillets.Blend;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
-using static Occt.BlendFunc_SectionShape;
+using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
 
@@ -17,12 +19,12 @@ public class BlendFuncTests
     [Fact]
     public void BlendPoint_KnowsWhatItCarries()
     {
-        Blend_Point P0 = new();
-        Assert.True(P0.IsTangencyPoint());
+        BlendPoint P0 = new();
+        Assert.True(P0.IsTangencyPoint);
 
-        Blend_Point P = new(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 3, 4, new Vector3D(1, 0, 0),
+        BlendPoint P = new(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 3, 4, new Vector3D(1, 0, 0),
                             new Vector3D(0, 1, 0), new Vector2D(1, 1), new Vector2D(2, 2));
-        Assert.False(P.IsTangencyPoint());
+        Assert.False(P.IsTangencyPoint);
         P.ParametersOnS2(out double u, out double v);
         Assert.Equal((3.0, 4.0), (u, v));
         Assert.Equal(new Vector2D(2, 2), P.Tangent2dOnS2());
@@ -30,17 +32,17 @@ public class BlendFuncTests
         Assert.Equal(0.5, P.Parameter());
         Assert.Equal(0.75, P.WithParameter(0.75).Parameter());
 
-        Blend_Point C = new(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 7);
-        Assert.True(C.IsTangencyPoint());
+        BlendPoint C = new(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 7);
+        Assert.True(C.IsTangencyPoint);
         Assert.Equal(7.0, C.ParameterOnC());
         Assert.ThrowsAny<DomainErrorException>(() => C.ParametersOnS2(out _, out _));
         Assert.ThrowsAny<DomainErrorException>(() => C.TangentOnS());
         Assert.ThrowsAny<DomainErrorException>(() => C.ParameterOnC1());
 
-        Blend_Point R = P0.WithValue(new Point3D(), new Point3D(1, 1, 1), 2.0, 5, 6);
+        BlendPoint R = P0.WithValue(new Point3D(), new Point3D(1, 1, 1), 2.0, 5, 6);
         Assert.Equal((5.0, 6.0), (R.ParameterOnC1(), R.ParameterOnC2()));
         Assert.ThrowsAny<DomainErrorException>(() => R.ParametersOnS1(out _, out _));
-        Assert.Equal(P, new Blend_Point(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 3, 4, new Vector3D(1, 0, 0),
+        Assert.Equal(P, new BlendPoint(new Point3D(1, 0, 0), new Point3D(0, 1, 0), 0.5, 1, 2, 3, 4, new Vector3D(1, 0, 0),
                                         new Vector3D(0, 1, 0), new Vector2D(1, 1), new Vector2D(2, 2)));
     }
 
@@ -48,25 +50,25 @@ public class BlendFuncTests
     public void BlendFunc_ShapesAndContinuity()
     {
         ParameterisationType T = TgtThetaOver2;
-        BlendFunc.GetShape(BlendFunc_Rational, 1.0, out int nbp, out int nbk, out int deg, ref T);
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetShape(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Rational, 1.0, out int nbp, out int nbk, out int deg, ref T);
         Assert.Equal((3, 2, 2, TgtThetaOver2_1), (nbp, nbk, deg, T));
-        BlendFunc.GetShape(BlendFunc_Rational, 3.0, out nbp, out nbk, out deg, ref T);
-        Assert.Equal((7, 2, 6, QuasiAngular), (nbp, nbk, deg, T));
-        BlendFunc.GetShape(BlendFunc_Polynomial, 3.0, out nbp, out nbk, out deg, ref T);
-        Assert.Equal((8, 2, 7, Polynomial), (nbp, nbk, deg, T));
-        BlendFunc.GetShape(BlendFunc_Linear, 3.0, out nbp, out nbk, out deg, ref T);
-        Assert.Equal((2, 2, 1, Polynomial), (nbp, nbk, deg, T)); // the conversion is left as it was
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetShape(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Rational, 3.0, out nbp, out nbk, out deg, ref T);
+        Assert.Equal((7, 2, 6, global::Kerf.Engine.Geometry.Conversion.ParameterisationType.QuasiAngular), (nbp, nbk, deg, T));
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetShape(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Polynomial, 3.0, out nbp, out nbk, out deg, ref T);
+        Assert.Equal((8, 2, 7, global::Kerf.Engine.Geometry.Conversion.ParameterisationType.Polynomial), (nbp, nbk, deg, T));
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetShape(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Linear, 3.0, out nbp, out nbk, out deg, ref T);
+        Assert.Equal((2, 2, 1, global::Kerf.Engine.Geometry.Conversion.ParameterisationType.Polynomial), (nbp, nbk, deg, T)); // the conversion is left as it was
 
-        Assert.Equal(C1, BlendFunc.NextShape(C0));
-        Assert.Equal(C3, BlendFunc.NextShape(C2));
-        Assert.Equal(CN, BlendFunc.NextShape(C3));
-        Assert.Equal(CN, BlendFunc.NextShape(G1));
+        Assert.Equal(C1, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(C0));
+        Assert.Equal(C3, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(C2));
+        Assert.Equal(CN, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(C3));
+        Assert.Equal(CN, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(G1));
 
         var aW = new NCollection_Array1<double>(1, 3);
-        BlendFunc.GetMinimalWeights(BlendFunc_Rational, TgtThetaOver2_1, 0.5, 1.0, aW);
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetMinimalWeights(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Rational, TgtThetaOver2_1, 0.5, 1.0, aW);
         Assert.Equal(1.0, aW[1]);
         Assert.Equal(Math.Cos(0.5), aW[2], 1.0e-15); // the smaller angle gives the smaller middle weight
-        BlendFunc.GetMinimalWeights(BlendFunc_Linear, TgtThetaOver2_1, 0.5, 1.0, aW);
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetMinimalWeights(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Linear, TgtThetaOver2_1, 0.5, 1.0, aW);
         Assert.Equal(1.0, aW[2]);
     }
 
@@ -77,9 +79,9 @@ public class BlendFuncTests
         SurfaceAdaptor aSphere = new(new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     2.0));
         Vector3D N = new(), DNu = new(), DNv = new();
-        Assert.True(BlendFunc.ComputeNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N));
+        Assert.True(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.ComputeNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N));
         Assert.Equal(1.0, Math.Abs(N.Z()), 1.0e-12);
-        Assert.True(BlendFunc.ComputeDNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N, ref DNu, ref DNv));
+        Assert.True(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.ComputeDNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N, ref DNu, ref DNv));
         Assert.Equal(1.0, Math.Abs(N.Z()), 1.0e-12);
 
     }
@@ -87,7 +89,7 @@ public class BlendFuncTests
     [Fact]
     public void Tensor_MultipliesByItsLastIndex()
     {
-        BlendFunc_Tensor T = new(2, 3, 4);
+        global::Kerf.Engine.Fillets.BlendFunctions.Tensor T = new(2, 3, 4);
         T.Init(1.0);
         T[2, 3, 4] = 5.0;
         Assert.Equal(5.0, T.Value(2, 3, 4));
@@ -103,37 +105,37 @@ public class BlendFuncTests
     {
         SurfaceAdaptorBase S1 = BlendRecorder.Surf(0), S2 = BlendRecorder.Surf(1);
         CurveAdaptorBase G = BlendRecorder.Guide(0);
-        BlendFunc_ConstRad aConstRad = new(S1, S2, G);
+        global::Kerf.Engine.Fillets.BlendFunctions.ConstRad aConstRad = new(S1, S2, G);
         Assert.Equal(4, aConstRad.NbVariables());
         Assert.Equal(4, aConstRad.NbEquations());
-        Assert.True(aConstRad.IsTangencyPoint());
+        Assert.True(aConstRad.IsTangencyPoint);
         Assert.ThrowsAny<DomainErrorException>(() => aConstRad.TangentOnS1());
-        Assert.True(aConstRad.IsRational());
-        aConstRad.Set(BlendFunc_Linear);
-        Assert.False(aConstRad.IsRational());
+        Assert.True(aConstRad.IsRational);
+        aConstRad.Set(global::Kerf.Engine.Fillets.BlendFunctions.SectionShape.Linear);
+        Assert.False(aConstRad.IsRational);
         Assert.Equal(RealLast(), aConstRad.GetMinimalDistance());
 
-        BlendFunc_Chamfer aChamfer = new(S1, S2, G);
-        Assert.False(aChamfer.IsRational());
+        global::Kerf.Engine.Fillets.BlendFunctions.Chamfer aChamfer = new(S1, S2, G);
+        Assert.False(aChamfer.IsRational);
         Assert.ThrowsAny<MethodNotImplementedException>(() => aChamfer.GetSectionSize());
         var aKnots = new NCollection_Array1<double>(1, 2);
         aChamfer.Knots(aKnots);
         Assert.Equal((0.0, 1.0), (aKnots[1], aKnots[2]));
 
-        BlendFunc_Ruled aRuled = new(S1, S2, G);
+        global::Kerf.Engine.Fillets.BlendFunctions.Ruled aRuled = new(S1, S2, G);
         Assert.ThrowsAny<MethodNotImplementedException>(() => aRuled.Set(0.0, 1.0));
 
-        BlendFunc_CSConstRad aCS = new(S1, BlendRecorder.Guide(4), G);
+        global::Kerf.Engine.Fillets.BlendFunctions.CSConstRad aCS = new(S1, BlendRecorder.Guide(4), G);
         Assert.Equal(3, aCS.NbVariables());
         Assert.Equal(3, aCS.NbEquations());
         Assert.Equal(aCS.PointOnC(), aCS.Pnt1());
-        Assert.ThrowsAny<MethodNotImplementedException>(() => ((Blend_CSFunction)aCS).Set(0.0, 1.0));
+        Assert.ThrowsAny<MethodNotImplementedException>(() => ((CSFunction)aCS).Set(0.0, 1.0));
 
-        BlendFunc_CSCircular aCirc = new(S1, BlendRecorder.Guide(4), G, new Law_Linear());
+        global::Kerf.Engine.Fillets.BlendFunctions.CSCircular aCirc = new(S1, BlendRecorder.Guide(4), G, new Linear());
         Assert.Equal(2, aCirc.NbVariables());
 
-        Assert.Equal(4, new BlendFunc_ChamfInv(S1, S2, G).NbVariables());
-        Assert.Equal(4, new BlendFunc_RuledInv(S1, S2, G).NbEquations());
+        Assert.Equal(4, new global::Kerf.Engine.Fillets.BlendFunctions.ChamfInv(S1, S2, G).NbVariables());
+        Assert.Equal(4, new global::Kerf.Engine.Fillets.BlendFunctions.RuledInv(S1, S2, G).NbEquations());
     }
 
     [Fact]
@@ -144,7 +146,7 @@ public class BlendFuncTests
         BlendRecorder.PairCase C = BlendRecorder.THE_PAIRS[1];
         string Run()
         {
-            BlendFunc_ConstRad F = new(BlendRecorder.Surf(C.S1), BlendRecorder.Surf(C.S2), BlendRecorder.Guide(C.G));
+            global::Kerf.Engine.Fillets.BlendFunctions.ConstRad F = new(BlendRecorder.Surf(C.S1), BlendRecorder.Surf(C.S2), BlendRecorder.Guide(C.G));
             F.Set(1.0, 1);
             F.Set(C.W);
             math_Vector X = new(1, 4), aF = new(1, 4);

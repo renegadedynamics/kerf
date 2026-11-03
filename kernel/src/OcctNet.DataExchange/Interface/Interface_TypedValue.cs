@@ -18,7 +18,7 @@ public class Interface_TypedValue : MoniTool_TypedValue
     /// Creates a typed value, with a name. <paramref name="type"/> gives the type of the parameter, default is free
     /// text. <paramref name="init"/> gives an initial value; if it is not given, the value begins as "not set".
     /// </summary>
-    public Interface_TypedValue(string name, Interface_ParamType type = Interface_ParamText, string init = "")
+    public Interface_TypedValue(string name, Interface_ParamType type = Interface_ParamType.Interface_ParamText, string init = "")
         : base(name, Interface_TypedValue.ParamTypeToValueType(type), init)
     {
     }

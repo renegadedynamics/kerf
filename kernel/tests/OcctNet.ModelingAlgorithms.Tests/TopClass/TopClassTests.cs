@@ -1,9 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy;
+using Kerf.Engine.Classification.Topological;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.IntRes2d_Position;
+using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 
@@ -22,12 +25,12 @@ public class TopClassTests
     }
 
     /// <summary>Intersects the segment [0, P] of a line with a straight edge.</summary>
-    internal sealed class TestIntersector : IntRes2d_Intersection, ITopClass_Intersector<TestEdge>
+    internal sealed class TestIntersector : Intersection2D, IIntersector<TestEdge>
     {
         public void Perform(in Line2D L, double P, double Tol, in TestEdge E)
         {
             ResetFields();
-            done = true;
+            _done = true;
             Point2D anO = L.Location();
             Vector2D aD = new(L.Direction());
             Vector2D aV = E.V();
@@ -46,15 +49,15 @@ public class TopClassTests
             }
 
             Point2D aPnt = new(anO.X() + t * aD.X(), anO.Y() + t * aD.Y());
-            var aDomLin = new IntRes2d_Domain(anO, 0, Tol, new Point2D(anO.X() + P * aD.X(), anO.Y() + P * aD.Y()), P, Tol);
-            var aDomEdge = new IntRes2d_Domain(E.P0, 0, 1e-9, E.P1, 1, 1e-9);
-            IntImpParGen.DeterminePosition(out IntRes2d_Position aPos1, aDomLin, aPnt, t);
-            IntImpParGen.DeterminePosition(out IntRes2d_Position aPos2, aDomEdge, aPnt, s);
-            IntRes2d_Transition aT1 = new(), aT2 = new();
+            var aDomLin = new TwoDDomain(anO, 0, Tol, new Point2D(anO.X() + P * aD.X(), anO.Y() + P * aD.Y()), P, Tol);
+            var aDomEdge = new TwoDDomain(E.P0, 0, 1e-9, E.P1, 1, 1e-9);
+            global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out Position2D aPos1, aDomLin, aPnt, t);
+            global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out Position2D aPos2, aDomEdge, aPnt, s);
+            Transition aT1 = new(), aT2 = new();
             Vector2D aTan1 = aD, aTan2 = aV;
-            IntImpParGen.DetermineTransition(aPos1, ref aTan1, new Vector2D(0, 0), ref aT1,
+            global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DetermineTransition(aPos1, ref aTan1, new Vector2D(0, 0), ref aT1,
                                              aPos2, ref aTan2, new Vector2D(0, 0), ref aT2, Tol);
-            Insert(new IntRes2d_IntersectionPoint(aPnt, t, s, aT1, aT2, false));
+            Insert(new IntersectionPoint2D(aPnt, t, s, aT1, aT2, false));
         }
 
         public void LocalGeometry(in TestEdge E, double U, out Direction2D T, out Direction2D N, out double C)
@@ -67,7 +70,7 @@ public class TopClassTests
 
     /// <summary>Explores the wires of a polygonal face; the half-lines aim at the given targets in turn.</summary>
     internal sealed class TestFaceExplorer(TestEdge[][] theWires, params Point2D[] theTargets)
-        : ITopClass_FaceExplorer<TestEdge>
+        : IFaceExplorer<TestEdge>
     {
         private int myWire;
         private int myEdge;
@@ -122,7 +125,7 @@ public class TopClassTests
     }
 
     /// <summary>The 2D classifier, as BRepClass_FClass2dOfFClassifier: fields passed to TopClass_Classifier2d.</summary>
-    internal sealed class TestFClass2d : ITopClass_FClass2d<TestEdge>
+    internal sealed class TestFClass2d : IFClass2d<TestEdge>
     {
         private Line2D myLin = new();
         private double myParam;
@@ -134,14 +137,14 @@ public class TopClassTests
         private bool myIsSet;
         private bool myIsHeadOrEnd;
         private readonly TestIntersector myIntersector = new();
-        private readonly TopTrans_CurveTransition myTrans = new();
+        private readonly CurveTransition myTrans = new();
 
         public void Reset(in Line2D L, double P, double Tol)
-            => TopClass_Classifier2d.Reset(out myLin, out myParam, out myTolerance, out myState, out myFirstCompare,
+            => Classifier2d.Reset(out myLin, out myParam, out myTolerance, out myState, out myFirstCompare,
                                            out myFirstTrans, out myClosest, out myIsSet, out myIsHeadOrEnd, L, P, Tol);
 
         public void Compare(in TestEdge E, Orientation Or)
-            => TopClass_Classifier2d.Compare(ref myClosest, myIntersector, myLin, ref myParam, myTolerance,
+            => Classifier2d.Compare(ref myClosest, myIntersector, myLin, ref myParam, myTolerance,
                                              ref myState, ref myFirstCompare, ref myFirstTrans, myTrans,
                                              ref myIsHeadOrEnd, E, Or);
 
@@ -149,7 +152,7 @@ public class TopClassTests
 
         public int ClosestIntersection() => myClosest;
 
-        public IntRes2d_Intersection Intersector() => myIntersector;
+        public Intersection2D Intersector() => myIntersector;
 
         public Containment State() => myState;
 
@@ -175,23 +178,23 @@ public class TopClassTests
         new(new Point2D(0.6, 0.4), new Point2D(0.4, 0.4)),
     ];
 
-    private static (Containment State, TestEdge Edge, IntRes2d_Position Position, double Parameter) Classify(
+    private static (Containment State, TestEdge Edge, Position2D Position, double Parameter) Classify(
         Point2D theP, TestEdge[][] theWires, params Point2D[] theTargets)
     {
         var aClassifier = new TestFClass2d();
         var anExplorer = new TestFaceExplorer(theWires, theTargets);
         TestEdge anEdge = default;
-        IntRes2d_Position aPosition = IntRes2d_Middle;
+        Position2D aPosition = Position2D.Middle;
         double aParameter = 0;
         bool aNoWires = false;
-        TopClass_FaceClassifier.Perform(out bool aRejected, ref aNoWires, aClassifier, ref anEdge, ref aPosition,
+        TopologicalFaceClassifier.Perform(out bool aRejected, ref aNoWires, aClassifier, ref anEdge, ref aPosition,
                                         ref aParameter, anExplorer, theP, 1e-9);
         Assert.True(aClassifier.IsSet());
-        Containment aState = TopClass_FaceClassifier.State(aRejected, aNoWires, aClassifier);
+        Containment aState = TopologicalFaceClassifier.State(aRejected, aNoWires, aClassifier);
         if (aClassifier.ClosestIntersection() != 0)
         {
-            Assert.Equal(aParameter, TopClass_FaceClassifier.EdgeParameter(aRejected, aParameter));
-            Assert.Equal(anEdge, TopClass_FaceClassifier.Edge(aRejected, anEdge));
+            Assert.Equal(aParameter, TopologicalFaceClassifier.EdgeParameter(aRejected, aParameter));
+            Assert.Equal(anEdge, TopologicalFaceClassifier.Edge(aRejected, anEdge));
         }
 
         return (aState, anEdge, aPosition, aParameter);
@@ -203,7 +206,7 @@ public class TopClassTests
         var aResult = Classify(new Point2D(0.5, 0.25), [theSquare], new Point2D(1, 0.4));
         Assert.Equal(In, aResult.State);
         Assert.Equal(theSquare[1], aResult.Edge);
-        Assert.Equal(IntRes2d_Middle, aResult.Position);
+        Assert.Equal(Position2D.Middle, aResult.Position);
         Assert.Equal(0.4, aResult.Parameter, 12);
     }
 
@@ -231,7 +234,7 @@ public class TopClassTests
         // Through the corner (1, 1): two edge ends, decided by the complex transition (TopTrans).
         var aResult = Classify(new Point2D(0.5, 0.5), [theSquare], new Point2D(1, 1));
         Assert.Equal(In, aResult.State);
-        Assert.True(aResult.Position is IntRes2d_Head or IntRes2d_End);
+        Assert.True(aResult.Position is Position2D.Head or Position2D.End);
     }
 
     [Fact]
@@ -258,8 +261,8 @@ public class TopClassTests
     [Fact]
     public void Rejected_IsOutside()
     {
-        Assert.Equal(Out, TopClass_FaceClassifier.State(true, false, new TestFClass2d()));
-        Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.EdgeParameter(true, 0.5));
-        Assert.ThrowsAny<DomainErrorException>(() => TopClass_FaceClassifier.Edge(true, theSquare[0]));
+        Assert.Equal(Out, TopologicalFaceClassifier.State(true, false, new TestFClass2d()));
+        Assert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.EdgeParameter(true, 0.5));
+        Assert.ThrowsAny<DomainErrorException>(() => TopologicalFaceClassifier.Edge(true, theSquare[0]));
     }
 }

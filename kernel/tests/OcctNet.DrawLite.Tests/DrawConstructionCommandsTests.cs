@@ -178,7 +178,7 @@ public class DrawConstructionCommandsTests
         Assert.Equal(ShapeType.Face, r.ShapeType());
         Assert.Equal(4, Count(r, ShapeType.Edge));
         var aProps = new Properties();
-        BRepGProp.SurfaceProperties(r, aProps);
+        MassPropertiesBuilder.SurfaceProperties(r, aProps);
         Assert.Equal(2.0, aProps.Mass(), 12);
 
         // an open wire raised to z = 1; an arc; the codes' errors
@@ -187,7 +187,7 @@ public class DrawConstructionCommandsTests
         Assert.Equal(2, Count(i.GetShape("w"), ShapeType.Edge));
         i.Eval("profile c F 1 0 C 1 180 X -2");
         aProps = new Properties();
-        BRepGProp.SurfaceProperties(i.GetShape("c"), aProps);
+        MassPropertiesBuilder.SurfaceProperties(i.GetShape("c"), aProps);
         // a half disc of radius 1 and the triangle (1, 0), (1, 2), (-1, 2)
         Assert.Equal(2 + Math.PI / 2, aProps.Mass(), 12);
         Assert.Equal("profile : unknown code Q", Error(i, "profile x Q 1"));

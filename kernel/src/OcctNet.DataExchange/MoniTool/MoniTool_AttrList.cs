@@ -104,21 +104,21 @@ public class MoniTool_AttrList
         Transient atr = Attribute(name);
         if (atr is null)
         {
-            return MoniTool_ValueVoid;
+            return MoniTool_ValueType.MoniTool_ValueVoid;
         }
         if (atr.DynamicType() == typeof(MoniTool_IntVal))
         {
-            return MoniTool_ValueInteger;
+            return MoniTool_ValueType.MoniTool_ValueInteger;
         }
         if (atr.DynamicType() == typeof(MoniTool_RealVal))
         {
-            return MoniTool_ValueReal;
+            return MoniTool_ValueType.MoniTool_ValueReal;
         }
         if (atr.DynamicType() == typeof(TCollection_HAsciiString))
         {
-            return MoniTool_ValueText;
+            return MoniTool_ValueType.MoniTool_ValueText;
         }
-        return MoniTool_ValueIdent;
+        return MoniTool_ValueType.MoniTool_ValueIdent;
     }
 
     /// <summary>

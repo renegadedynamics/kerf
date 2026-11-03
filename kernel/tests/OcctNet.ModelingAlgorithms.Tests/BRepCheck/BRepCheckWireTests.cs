@@ -1,11 +1,12 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using OcctNet.ModelingData.Tests;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -19,7 +20,7 @@ public class BRepCheckWireTests
 {
     private const double Tol = 1.0e-7;
 
-    private static List<BRepCheck_Status> ToList(NCollection_List<BRepCheck_Status> theList) => [.. theList];
+    private static List<StatusCheck> ToList(NCollection_List<StatusCheck> theList) => [.. theList];
 
     /// <summary>A face on the plane z = 0 (normal +Z, UV = XY), without wires. Unfrozen.</summary>
     private static Face PlaneFace()
@@ -90,9 +91,9 @@ public class BRepCheckWireTests
     }
 
     /// <summary>The statuses of the wire in the face, checked as the analyzer does.</summary>
-    private static List<BRepCheck_Status> InFaceStatus(in Wire theWire, in Face theFace, bool theIsParallel = false)
+    private static List<StatusCheck> InFaceStatus(in Wire theWire, in Face theFace, bool theIsParallel = false)
     {
-        var aCheck = new BRepCheck_Wire(theWire);
+        var aCheck = new WireCheck(theWire);
         aCheck.SetParallel(theIsParallel);
         aCheck.InContext(theFace);
         return ToList(aCheck.StatusOnShape(theFace));
@@ -102,25 +103,25 @@ public class BRepCheckWireTests
     public void Closed_square_is_valid()
     {
         (Face aF, Wire aW) = Square();
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.True(aCheck.IsMinimum());
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.True(aCheck.IsMinimum);
         Assert.True(aCheck.GeometricControls());
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_NoError, aCheck.Orientation(aF));
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed2d(aF));
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.NoError, aCheck.Orientation(aF));
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed2d(aF));
         Edge anE1 = new(), anE2 = new();
-        Assert.Equal(BRepCheck_NoError, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
+        Assert.Equal(StatusCheck.NoError, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
         Assert.True(anE1.IsNull);
         Assert.True(anE2.IsNull);
         aCheck.InContext(aF);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape(aF)));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape(aF)));
         // a second InContext does nothing
         aCheck.InContext(aF);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape(aF)));
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape(aF)));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
         // the wire on its own, without a face: closed and coherently oriented
-        Assert.Equal(BRepCheck_NoError, aCheck.Orientation(new Face()));
+        Assert.Equal(StatusCheck.NoError, aCheck.Orientation(new Face()));
     }
 
     [Fact]
@@ -129,13 +130,13 @@ public class BRepCheckWireTests
         Face aF = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
         for (var anExp = new Explorer(aF, ShapeType.Wire); anExp.More(); anExp.Next())
         {
-            Assert.Equal([BRepCheck_NoError], InFaceStatus(ShapeCasts.Wire(anExp.Current()), aF));
+            Assert.Equal([StatusCheck.NoError], InFaceStatus(ShapeCasts.Wire(anExp.Current()), aF));
         }
 
         Face aR = ShapeCasts.Face(aF.Reversed());
         for (var anExp = new Explorer(aR, ShapeType.Wire); anExp.More(); anExp.Next())
         {
-            Assert.Equal([BRepCheck_NoError], InFaceStatus(ShapeCasts.Wire(anExp.Current()), aR));
+            Assert.Equal([StatusCheck.NoError], InFaceStatus(ShapeCasts.Wire(anExp.Current()), aR));
         }
     }
 
@@ -143,13 +144,13 @@ public class BRepCheckWireTests
     public void Empty_wire()
     {
         Wire aW = TestShapes.Frozen(WireOf());
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_EmptyWire], ToList(aCheck.Status()));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.EmptyWire], ToList(aCheck.Status()));
         Face aF = TestShapes.Frozen(PlaneFace());
         Edge anE1 = new(), anE2 = new();
-        Assert.Equal(BRepCheck_EmptyWire, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
+        Assert.Equal(StatusCheck.EmptyWire, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
         // Closed reports the first status of the wire
-        Assert.Equal(BRepCheck_EmptyWire, aCheck.Closed());
+        Assert.Equal(StatusCheck.EmptyWire, aCheck.Closed());
     }
 
     [Fact]
@@ -159,9 +160,9 @@ public class BRepCheckWireTests
         Edge[] aSquare = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
         Edge[] anOther = Polygon(aF, true, (20, 0), (30, 0), (30, 10));
         Wire aW = TestShapes.Frozen(WireOf([.. aSquare, .. anOther]));
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NotConnected], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NotConnected, aCheck.Closed());
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NotConnected], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotConnected, aCheck.Closed());
     }
 
     [Fact]
@@ -169,13 +170,13 @@ public class BRepCheckWireTests
     {
         Face aF = PlaneFace();
         Wire aW = InFace(ref aF, WireOf(Polygon(aF, false, (0, 0), (10, 0), (10, 10), (0, 10))));
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NotClosed, aCheck.Closed());
-        Assert.Equal([BRepCheck_NotClosed], InFaceStatus(aW, aF));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotClosed, aCheck.Closed());
+        Assert.Equal([StatusCheck.NotClosed], InFaceStatus(aW, aF));
         // Update adds the status to the wire's own list, replacing NoError
-        Assert.Equal(BRepCheck_NotClosed, aCheck.Closed(true));
-        Assert.Equal([BRepCheck_NotClosed], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NotClosed, aCheck.Closed(true));
+        Assert.Equal([StatusCheck.NotClosed], ToList(aCheck.Status()));
     }
 
     [Fact]
@@ -184,10 +185,10 @@ public class BRepCheckWireTests
         Face aF = PlaneFace();
         Edge[] aSquare = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
         Wire aW = InFace(ref aF, WireOf([.. aSquare, aSquare[0]]));
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_RedundantEdge, aCheck.Closed());
-        Assert.Equal([BRepCheck_RedundantEdge], InFaceStatus(aW, aF));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.RedundantEdge, aCheck.Closed());
+        Assert.Equal([StatusCheck.RedundantEdge], InFaceStatus(aW, aF));
     }
 
     [Fact]
@@ -196,12 +197,12 @@ public class BRepCheckWireTests
         Face aF = PlaneFace();
         Edge[] aSquare = Polygon(aF, true, (0, 0), (10, 0), (10, 10), (0, 10));
         Wire aW = InFace(ref aF, WireOf(aSquare[0], aSquare[1], aSquare[2].Reversed(), aSquare[3]));
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_BadOrientationOfSubshape, aCheck.Orientation(aF));
-        Assert.Equal([BRepCheck_BadOrientationOfSubshape], InFaceStatus(aW, aF));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.BadOrientationOfSubshape, aCheck.Orientation(aF));
+        Assert.Equal([StatusCheck.BadOrientationOfSubshape], InFaceStatus(aW, aF));
         // without a face too
-        Assert.Equal(BRepCheck_BadOrientationOfSubshape, new BRepCheck_Wire(aW).Orientation(new Face()));
+        Assert.Equal(StatusCheck.BadOrientationOfSubshape, new WireCheck(aW).Orientation(new Face()));
     }
 
     [Fact]
@@ -211,30 +212,30 @@ public class BRepCheckWireTests
         // (0, 0) -> (10, 10) -> (10, 0) -> (0, 10) -> (0, 0): the first and third edges cross at (5, 5)
         Edge[] anEdges = Polygon(aF, true, (0, 0), (10, 10), (10, 0), (0, 10));
         Wire aW = InFace(ref aF, WireOf(anEdges));
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
         Edge anE1 = new(), anE2 = new();
-        Assert.Equal(BRepCheck_SelfIntersectingWire, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
+        Assert.Equal(StatusCheck.SelfIntersectingWire, aCheck.SelfIntersect(aF, ref anE1, ref anE2));
         Assert.True(anE1.IsSame(anEdges[0]));
         Assert.True(anE2.IsSame(anEdges[2]));
-        Assert.Equal([BRepCheck_SelfIntersectingWire], InFaceStatus(aW, aF));
+        Assert.Equal([StatusCheck.SelfIntersectingWire], InFaceStatus(aW, aF));
 
         // the static
         Edge aS1 = new(), aS2 = new();
-        Assert.True(BRepCheck.SelfIntersection(aW, aF, ref aS1, ref aS2));
+        Assert.True(BRepCheckCheck.SelfIntersection(aW, aF, ref aS1, ref aS2));
         Assert.True(aS1.IsSame(anEdges[0]));
         Assert.True(aS2.IsSame(anEdges[2]));
         (Face aSqF, Wire aSqW) = Square();
         Edge aN1 = new(), aN2 = new();
-        Assert.False(BRepCheck.SelfIntersection(aSqW, aSqF, ref aN1, ref aN2));
+        Assert.False(BRepCheckCheck.SelfIntersection(aSqW, aSqF, ref aN1, ref aN2));
         Assert.True(aN1.IsNull && aN2.IsNull);
 
         // without the geometric controls, InContext doesn't look for self-intersections
-        var aBlind = new BRepCheck_Wire(aW);
+        var aBlind = new WireCheck(aW);
         aBlind.GeometricControls(false);
         Assert.False(aBlind.GeometricControls());
         aBlind.InContext(aF);
-        Assert.DoesNotContain(BRepCheck_SelfIntersectingWire, ToList(aBlind.StatusOnShape(aF)));
+        Assert.DoesNotContain(StatusCheck.SelfIntersectingWire, ToList(aBlind.StatusOnShape(aF)));
     }
 
     [Fact]
@@ -243,7 +244,7 @@ public class BRepCheckWireTests
         Face aF = PlaneFace();
         Wire aW = InFace(ref aF, WireOf(Polygon(aF, true, (0, 0), (10, 0), (5, 8))));
         Edge anE1 = new(), anE2 = new();
-        Assert.Equal(BRepCheck_NoError, new BRepCheck_Wire(aW).SelfIntersect(aF, ref anE1, ref anE2));
+        Assert.Equal(StatusCheck.NoError, new WireCheck(aW).SelfIntersect(aF, ref anE1, ref anE2));
     }
 
     [Fact]
@@ -255,7 +256,7 @@ public class BRepCheckWireTests
         Wire aW = InFace(ref aF, WireOf(anEdges));
         Face aCyl = TestShapes.Frozen(TestShapes.CylinderFace(1, 2));
         Edge anE1 = new(), anE2 = new();
-        Assert.Equal(BRepCheck_SelfIntersectingWire, new BRepCheck_Wire(aW).SelfIntersect(aCyl, ref anE1, ref anE2));
+        Assert.Equal(StatusCheck.SelfIntersectingWire, new WireCheck(aW).SelfIntersect(aCyl, ref anE1, ref anE2));
         Assert.True(anE1.IsSame(anEdges[0]));
         Assert.True(anE2.IsNull);
     }
@@ -265,19 +266,19 @@ public class BRepCheckWireTests
     {
         Face aF = TestShapes.Frozen(TestShapes.CylinderFace(1, 2));
         Wire aW = ShapeCasts.Wire(new Iterator(aF).Value());
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.Status()));
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed2d(aF));
-        Assert.Equal([BRepCheck_NoError], InFaceStatus(aW, aF));
-        Assert.Equal([BRepCheck_NoError], InFaceStatus(aW, aF, true));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.Status()));
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed2d(aF));
+        Assert.Equal([StatusCheck.NoError], InFaceStatus(aW, aF));
+        Assert.Equal([StatusCheck.NoError], InFaceStatus(aW, aF, true));
         // in the reversed face, the wire is reversed too (as the analyzer's TopoDS_Iterator gives it)
         Face aR = ShapeCasts.Face(aF.Reversed());
         Wire aRW = ShapeCasts.Wire(new Iterator(aR).Value());
         Assert.Equal(Reversed, aRW.Orientation());
-        Assert.Equal([BRepCheck_NoError], InFaceStatus(aRW, aR));
+        Assert.Equal([StatusCheck.NoError], InFaceStatus(aRW, aR));
         // the forward wire in the reversed face takes the other pcurves of the seam: not closed in 2D
-        Assert.Equal([BRepCheck_NotClosed], InFaceStatus(aW, aR));
+        Assert.Equal([StatusCheck.NotClosed], InFaceStatus(aW, aR));
     }
 
     /// <summary>
@@ -312,10 +313,10 @@ public class BRepCheckWireTests
     public void Wire_closed_in_3d_but_not_in_2d()
     {
         (Face aF, Wire aW) = CylinderPatchOpenIn2d();
-        var aCheck = new BRepCheck_Wire(aW);
-        Assert.Equal(BRepCheck_NoError, aCheck.Closed());
-        Assert.Equal(BRepCheck_NotClosed, aCheck.Closed2d(aF));
-        Assert.Equal([BRepCheck_NotClosed], InFaceStatus(aW, aF));
+        var aCheck = new WireCheck(aW);
+        Assert.Equal(StatusCheck.NoError, aCheck.Closed());
+        Assert.Equal(StatusCheck.NotClosed, aCheck.Closed2d(aF));
+        Assert.Equal([StatusCheck.NotClosed], InFaceStatus(aW, aF));
     }
 
     [Fact]
@@ -323,7 +324,7 @@ public class BRepCheckWireTests
     {
         (Face _, Wire aW) = Square();
         (Face anOther, Wire _) = Square();
-        Assert.Equal([BRepCheck_SubshapeNotInShape], InFaceStatus(aW, anOther));
+        Assert.Equal([StatusCheck.SubshapeNotInShape], InFaceStatus(aW, anOther));
     }
 
     [Fact]
@@ -343,26 +344,26 @@ public class BRepCheckWireTests
 
         foreach ((Wire aWire, Face aFace) in aCases)
         {
-            List<BRepCheck_Status> aSerial = InFaceStatus(aWire, aFace);
-            List<BRepCheck_Status> aParallel = InFaceStatus(aWire, aFace, true);
+            List<StatusCheck> aSerial = InFaceStatus(aWire, aFace);
+            List<StatusCheck> aParallel = InFaceStatus(aWire, aFace, true);
             Assert.Equal(aSerial, aParallel);
         }
 
         // concurrent contexts on one result, as the analyzer's parallel mode does
-        var aCheck = new BRepCheck_Wire(aW);
+        var aCheck = new WireCheck(aW);
         aCheck.SetParallel(true);
         Parallel.For(0, 8, i => aCheck.InContext(i % 2 == 0 ? aF : ShapeCasts.Face(aF.Reversed())));
-        Assert.Equal([BRepCheck_NoError], ToList(aCheck.StatusOnShape(aF)));
+        Assert.Equal([StatusCheck.NoError], ToList(aCheck.StatusOnShape(aF)));
     }
 
     [Fact]
     public void SetStatus_adds_to_the_wire_statuses()
     {
         (Face _, Wire aW) = Square();
-        var aCheck = new BRepCheck_Wire(aW);
-        aCheck.SetStatus(BRepCheck_SelfIntersectingWire);
-        Assert.Equal([BRepCheck_SelfIntersectingWire], ToList(aCheck.Status()));
+        var aCheck = new WireCheck(aW);
+        aCheck.SetStatus(StatusCheck.SelfIntersectingWire);
+        Assert.Equal([StatusCheck.SelfIntersectingWire], ToList(aCheck.Status()));
         aCheck.Blind();
-        Assert.True(aCheck.IsBlind());
+        Assert.True(aCheck.IsBlind);
     }
 }

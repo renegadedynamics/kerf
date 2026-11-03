@@ -1,6 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -19,11 +23,11 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class BRepFillTests
 {
-    private static Edge Segment(Point3D theP1, Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static Edge Segment(Point3D theP1, Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
     private static Wire Polygon(bool theClosed, params Point3D[] thePoints)
     {
-        BRepBuilderAPI_MakePolygon aP = new();
+        MakePolygon aP = new();
         foreach (Point3D aQ in thePoints)
         {
             aP.Add(aQ);
@@ -68,7 +72,7 @@ public class BRepFillTests
     private static double Area(in Shape theShape)
     {
         Properties aProps = new();
-        BRepGProp.SurfaceProperties(theShape, aProps);
+        MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -79,10 +83,10 @@ public class BRepFillTests
         Edge aE2 = Segment(new Point3D(0, 5, 0), new Point3D(10, 5, 0));
         string aBefore1 = BRepTextComparison.Write(aE1), aBefore2 = BRepTextComparison.Write(aE2);
 
-        Face aF = BRepFill.Face(aE1, aE2);
+        Face aF = Fill.Face(aE1, aE2);
 
         Assert.True(aF.TShape()!.IsFrozen);
-        Assert.True(new BRepCheck_Analyzer(aF).IsValid());
+        Assert.True(new Analyzer(aF).IsValid());
         Assert.Equal(50.0, Area(aF), 1e-9);
         Assert.Equal(4, Count(aF, ShapeType.Edge));
         Surface aS = Tool.Surface(aF)!;
@@ -105,15 +109,15 @@ public class BRepFillTests
     [Fact]
     public void Face_SharedVertex_GivesDegeneratedEdge_AndKeepsSharing()
     {
-        Vertex aA = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, 0)).Vertex();
-        Vertex aB = new BRepBuilderAPI_MakeVertex(new Point3D(10, 0, 0)).Vertex();
-        Vertex aC = new BRepBuilderAPI_MakeVertex(new Point3D(10, 6, 2)).Vertex();
-        Edge aE1 = new BRepBuilderAPI_MakeEdge(aA, aB).Edge();
-        Edge aE2 = new BRepBuilderAPI_MakeEdge(aA, aC).Edge();
+        Vertex aA = new MakeVertex(new Point3D(0, 0, 0)).Vertex();
+        Vertex aB = new MakeVertex(new Point3D(10, 0, 0)).Vertex();
+        Vertex aC = new MakeVertex(new Point3D(10, 6, 2)).Vertex();
+        Edge aE1 = new MakeEdge(aA, aB).Edge();
+        Edge aE2 = new MakeEdge(aA, aC).Edge();
 
-        Face aF = BRepFill.Face(aE1, aE2);
+        Face aF = Fill.Face(aE1, aE2);
 
-        Assert.True(new BRepCheck_Analyzer(aF).IsValid());
+        Assert.True(new Analyzer(aF).IsValid());
         int aNbDegenerated = 0;
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -130,12 +134,12 @@ public class BRepFillTests
     [Fact]
     public void Face_ClosedEdges_GiveSeam()
     {
-        Edge aE1 = new BRepBuilderAPI_MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
-        Edge aE2 = new BRepBuilderAPI_MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 8), new Direction3D(0, 0, 1)), 3)).Edge();
+        Edge aE1 = new MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5)).Edge();
+        Edge aE2 = new MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 8), new Direction3D(0, 0, 1)), 3)).Edge();
 
-        Face aF = BRepFill.Face(aE1, aE2);
+        Face aF = Fill.Face(aE1, aE2);
 
-        Assert.True(new BRepCheck_Analyzer(aF).IsValid());
+        Assert.True(new Analyzer(aF).IsValid());
         Assert.Equal(3, Count(aF, ShapeType.Edge));
         int aNbSeams = 0;
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -156,10 +160,10 @@ public class BRepFillTests
         Wire aW1 = Square(10, 0), aW2 = Square(10, 7);
         string aBefore1 = BRepTextComparison.Write(aW1), aBefore2 = BRepTextComparison.Write(aW2);
 
-        Shell aS = BRepFill.Shell(aW1, aW2);
+        Shell aS = Fill.Shell(aW1, aW2);
 
         Assert.True(aS.TShape()!.IsFrozen);
-        Assert.True(new BRepCheck_Analyzer(aS).IsValid());
+        Assert.True(new Analyzer(aS).IsValid());
         Assert.Equal(4, Count(aS, ShapeType.Face));
         Assert.Equal(12, Count(aS, ShapeType.Edge));
         Assert.Equal(8, Count(aS, ShapeType.Vertex));
@@ -176,7 +180,7 @@ public class BRepFillTests
 
         // a profile starting at the middle of the edge y = 0, standing up
         Wire aProfile = Polygon(false, new Point3D(4, 0, 0), new Point3D(4, 0, 3), new Point3D(6, 0, 3));
-        BRepFill.Axe(aSpine, aProfile, out CoordinateSystem anAx, out bool isOn, 1e-7);
+        Fill.Axe(aSpine, aProfile, out CoordinateSystem anAx, out bool isOn, 1e-7);
         Assert.True(isOn);
         Assert.True(anAx.Location().IsEqual(new Point3D(4, 0, 0), 1e-12));
         Assert.Equal(1.0, Math.Abs(anAx.Direction().Z()), 1e-12);
@@ -184,14 +188,14 @@ public class BRepFillTests
 
         // a profile away from the spine
         Wire aFar = Polygon(false, new Point3D(12, 5, 2), new Point3D(12, 5, 6));
-        BRepFill.Axe(aSpine, aFar, out anAx, out isOn, 1e-7);
+        Fill.Axe(aSpine, aFar, out anAx, out isOn, 1e-7);
         Assert.False(isOn);
         Assert.True(anAx.Location().IsEqual(new Point3D(10, 5, 0), 1e-9));
         Assert.Equal(1.0, Math.Abs(anAx.XDirection().Y()), 1e-12);
 
         // a profile on a spine vertex
         Wire aOnVertex = Polygon(false, new Point3D(10, 10, 0), new Point3D(10, 10, 4), new Point3D(11, 10, 4));
-        BRepFill.Axe(aSpine, aOnVertex, out anAx, out isOn, 1e-7);
+        Fill.Axe(aSpine, aOnVertex, out anAx, out isOn, 1e-7);
         Assert.True(isOn);
         Assert.True(anAx.Location().IsEqual(new Point3D(10, 10, 0), 1e-12));
     }
@@ -199,9 +203,9 @@ public class BRepFillTests
     [Fact]
     public void Axe_NonPlanarFace_Throws()
     {
-        Face aCyl = new BRepBuilderAPI_MakeFace(new CylindricalSurface(new CoordinateSystem(), 5), 0, 2, 0, 3, 1e-7).Face();
+        Face aCyl = new MakeFace(new CylindricalSurface(new CoordinateSystem(), 5), 0, 2, 0, 3, 1e-7).Face();
         Wire aProfile = Polygon(false, new Point3D(5, 0, 0), new Point3D(6, 0, 0));
-        Assert.ThrowsAny<NoSuchObjectException>(() => BRepFill.Axe(aCyl, aProfile, out _, out _, 1e-7));
+        Assert.ThrowsAny<NoSuchObjectException>(() => Fill.Axe(aCyl, aProfile, out _, out _, 1e-7));
     }
 
     private static Wire Polyline345() =>
@@ -211,7 +215,7 @@ public class BRepFillTests
     public void ComputeACR_Polyline()
     {
         var aACR = new NCollection_Array1<double>(0, 3);
-        BRepFill.ComputeACR(Polyline345(), aACR);
+        Fill.ComputeACR(Polyline345(), aACR);
         Assert.Equal(12.0, aACR[0], 1e-12);
         Assert.Equal(3.0 / 12, aACR[1], 1e-12);
         Assert.Equal(7.0 / 12, aACR[2], 1e-12);
@@ -229,12 +233,12 @@ public class BRepFillTests
         aCuts[3] = 0.5;          // on the second edge
         aCuts[4] = 0.9;          // on the third edge
 
-        Wire aRes = BRepFill.InsertACR(aW, aCuts, 1e-6);
+        Wire aRes = Fill.InsertACR(aW, aCuts, 1e-6);
 
         Assert.True(aRes.TShape()!.IsFrozen);
         Assert.Equal(6, Count(aRes, ShapeType.Edge));
         var aACR = new NCollection_Array1<double>(0, 6);
-        BRepFill.ComputeACR(aRes, aACR);
+        Fill.ComputeACR(aRes, aACR);
         Assert.Equal(12.0, aACR[0], 1e-9);
         Assert.Equal(0.1, aACR[1], 1e-9);
         Assert.Equal(0.25, aACR[2], 1e-9);
@@ -246,7 +250,7 @@ public class BRepFillTests
         // with a precision larger than the distance to the ends, nothing is cut
         var aNear = new NCollection_Array1<double>(1, 1);
         aNear[1] = 0.26;
-        Assert.Equal(3, Count(BRepFill.InsertACR(aW, aNear, 0.05), ShapeType.Edge));
+        Assert.Equal(3, Count(Fill.InsertACR(aW, aNear, 0.05), ShapeType.Edge));
     }
 
     [Fact]
@@ -257,7 +261,7 @@ public class BRepFillTests
 
         // a point in the middle of the edge y = 0: the edge is cut there and the wire starts at the new vertex
         Wire aCut = aW;
-        BRepFill.SearchOrigin(ref aCut, new Point3D(5, 0, 0), new Vector3D(1, 0, 0), 1e-7);
+        Fill.SearchOrigin(ref aCut, new Point3D(5, 0, 0), new Vector3D(1, 0, 0), 1e-7);
         Assert.Equal(5, Count(aCut, ShapeType.Edge));
         Assert.True(aCut.Closed());
         var anExp = new WireExplorer(aCut);
@@ -268,7 +272,7 @@ public class BRepFillTests
         // a point on a vertex, against the wire's direction: the same four edges, reversed, nothing cut (the
         // reversed wire is rebuilt from the edge starting at the vertex, so it starts at that edge's other end)
         Wire aRev = aW;
-        BRepFill.SearchOrigin(ref aRev, new Point3D(10, 10, 0), new Vector3D(1, 0, 0), 1e-7);
+        Fill.SearchOrigin(ref aRev, new Point3D(10, 10, 0), new Vector3D(1, 0, 0), 1e-7);
         Assert.Equal(4, Count(aRev, ShapeType.Edge));
         Assert.Equal(4, Count(aRev, ShapeType.Vertex));
         Assert.True(aRev.Closed());
@@ -277,7 +281,7 @@ public class BRepFillTests
         Assert.Throws<NoSuchObjectException>(() =>
         {
             Wire anOpen = Polyline345();
-            BRepFill.SearchOrigin(ref anOpen, new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 1e-7);
+            Fill.SearchOrigin(ref anOpen, new Point3D(0, 0, 0), new Vector3D(1, 0, 0), 1e-7);
         });
     }
 
@@ -285,20 +289,20 @@ public class BRepFillTests
     public void InternalFace_UnfrozenInputs_WrittenInPlace()
     {
         // ported code's own unfrozen edges are used and written in place, as in OCCT
-        Edge aE1 = new BRepLib_MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
-        Edge aE2 = new BRepLib_MakeEdge(new Point3D(0, 5, 3), new Point3D(10, 5, 3)).InternalEdge();
+        Edge aE1 = new LibraryMakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).InternalEdge();
+        Edge aE2 = new LibraryMakeEdge(new Point3D(0, 5, 3), new Point3D(10, 5, 3)).InternalEdge();
         Assert.False(aE1.TShape()!.IsFrozen);
 
-        Face aF = BRepFill.InternalFace(aE1, aE2);
+        Face aF = Fill.InternalFace(aE1, aE2);
 
         Assert.False(aF.TShape()!.IsFrozen);
         Assert.True(Holds(aF, aE1.TShape()!));
         Assert.True(Holds(aF, aE2.TShape()!));
         Assert.NotNull(Tool.CurveOnSurface(aE1, aF, out _, out _));
 
-        Shell aS = BRepFill.InternalShell(
-            ShapeCasts.Wire(new BRepLib_MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)).InternalWire()),
-            ShapeCasts.Wire(new BRepLib_MakePolygon(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1)).InternalWire()));
+        Shell aS = Fill.InternalShell(
+            ShapeCasts.Wire(new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0)).InternalWire()),
+            ShapeCasts.Wire(new LibraryMakePolygon(new Point3D(0, 0, 1), new Point3D(1, 0, 1), new Point3D(1, 1, 1)).InternalWire()));
         Assert.False(aS.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aS, ShapeType.Face));
     }

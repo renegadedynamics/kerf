@@ -189,7 +189,7 @@ public class ShapeMeshTests
         var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
         var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
         var clock = Stopwatch.StartNew();
-        var buffers = OcctNet.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
+        var buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
         clock.Stop();
         var triangles = buffers.Triangles.Length / 3;
         Assert.True(triangles > 100_000, $"{triangles} triangles");

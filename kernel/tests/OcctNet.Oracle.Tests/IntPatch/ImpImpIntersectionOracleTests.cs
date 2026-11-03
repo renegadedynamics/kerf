@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Intersection.Patches;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -142,19 +143,19 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         return ("Hyperbola", [.. anAx2, aH.MajorRadius(), aH.MinorRadius()]);
     }
 
-    private static (string Type, double[] Values)? PortConic(IntPatch_Line theLine)
+    private static (string Type, double[] Values)? PortConic(PatchLine theLine)
     {
-        if (theLine is not IntPatch_GLine aG)
+        if (theLine is not GLine aG)
         {
             return null;
         }
         return aG.ArcType() switch
         {
-            IntPatch_Lin => ("Line", [.. Components(aG.Line().Location()), .. Components(aG.Line().Direction())]),
-            IntPatch_Circle => ("Circle", [.. Components(aG.Circle().Position()), aG.Circle().Radius()]),
-            IntPatch_Ellipse => ("Ellipse", [.. Components(aG.Ellipse().Position()), aG.Ellipse().MajorRadius(),
+            PatchLineType.Lin => ("Line", [.. Components(aG.Line().Location()), .. Components(aG.Line().Direction())]),
+            PatchLineType.Circle => ("Circle", [.. Components(aG.Circle().Position()), aG.Circle().Radius()]),
+            PatchLineType.Ellipse => ("Ellipse", [.. Components(aG.Ellipse().Position()), aG.Ellipse().MajorRadius(),
                                              aG.Ellipse().MinorRadius()]),
-            IntPatch_Parabola => ("Parabola", [.. Components(aG.Parabola().Position()), aG.Parabola().Focal()]),
+            PatchLineType.Parabola => ("Parabola", [.. Components(aG.Parabola().Position()), aG.Parabola().Focal()]),
             _ => ("Hyperbola", [.. Components(aG.Hyperbola().Position()), aG.Hyperbola().MajorRadius(),
                                 aG.Hyperbola().MinorRadius()]),
         };
@@ -240,14 +241,14 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
             }
 
             SurfaceAdaptor aS1 = new(aP1), aS2 = new(aP2);
-            var aPort = new IntPatch_ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
+            var aPort = new ImpImpIntersection(aS1, new TopolTool(aS1), aS2,
                                                         new TopolTool(aS2), 1.0e-7, 1.0e-7);
-            Assert.True(aPort.IsDone() || aNativeConics.Count == 0, $"pair {i}: the port failed");
+            Assert.True(aPort.IsDone || aNativeConics.Count == 0, $"pair {i}: the port failed");
             aPairs++;
             List<(string Type, double[] Values)> aPortConics = [];
-            if (aPort.IsDone() && !aPort.IsEmpty())
+            if (aPort.IsDone && !aPort.IsEmpty)
             {
-                for (int j = 1; j <= aPort.NbLines(); j++)
+                for (int j = 1; j <= aPort.LineCount; j++)
                 {
                     var aConic = PortConic(aPort.Line(j));
                     if (aConic is not null)

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
@@ -12,9 +13,9 @@ public class GeomFill_LocationDraftTests
     private const double Angle = 0.3;
 
     // A draft along a circle of radius 5 in the plane z = 0, direction Z; the stop surface is the plane z = -4.
-    private static GeomFill_LocationDraft Draft(bool theWithStop = true)
+    private static LocationDraft Draft(bool theWithStop = true)
     {
-        var aLaw = new GeomFill_LocationDraft(new Direction3D(0, 0, 1), Angle);
+        var aLaw = new LocationDraft(new Direction3D(0, 0, 1), Angle);
         aLaw.SetCurve(new CurveAdaptor(new CircleCurve3D(Constants.XOY(), 5), 0, 3));
         if (theWithStop)
         {
@@ -26,13 +27,13 @@ public class GeomFill_LocationDraftTests
     [Fact]
     public void WithoutStopSurface_IsTheDraftTrihedron()
     {
-        GeomFill_LocationDraft aLaw = Draft(false);
-        Assert.False(aLaw.IsIntersec());
+        LocationDraft aLaw = Draft(false);
+        Assert.False(aLaw.IsIntersec);
         Assert.Equal(0, aLaw.TraceNumber());
-        Assert.False(aLaw.HasLastRestriction());
+        Assert.False(aLaw.HasLastRestriction);
         Assert.Equal(new Direction3D(0, 0, 1), aLaw.Direction());
 
-        var aTri = new GeomFill_DraftTrihedron(new Vector3D(0, 0, 1), Angle);
+        var aTri = new DraftTrihedron(new Vector3D(0, 0, 1), Angle);
         aTri.SetCurve(aLaw.GetCurve()!);
         Matrix3x3 M = new();
         Vector3D V = new(), T = new(), N = new(), B = new();
@@ -51,11 +52,11 @@ public class GeomFill_LocationDraftTests
     [Fact]
     public void D0_TheTraceIsOnTheStopSurfaceAndTheGeneratrix()
     {
-        GeomFill_LocationDraft aLaw = Draft();
-        Assert.True(aLaw.IsIntersec());
+        LocationDraft aLaw = Draft();
+        Assert.True(aLaw.IsIntersec);
         Assert.Equal(1, aLaw.TraceNumber());
-        Assert.False(aLaw.HasFirstRestriction());
-        Assert.True(aLaw.HasLastRestriction());
+        Assert.False(aLaw.HasFirstRestriction);
+        Assert.True(aLaw.HasLastRestriction);
         Assert.Equal(2, aLaw.Nb2dCurves()); // the trace and the last restriction
 
         var aPlane = new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0, 0, 1));
@@ -77,7 +78,7 @@ public class GeomFill_LocationDraftTests
     }
 
     private static (Vector2D Surface, Vector2D Curve, Vector2D FDSurface, Vector2D FDCurve) PoleDerivatives(
-        GeomFill_LocationDraft theLaw, double t)
+        LocationDraft theLaw, double t)
     {
         var P = new NCollection_Array1<Point2D>(1, 2);
         var Pp = new NCollection_Array1<Point2D>(1, 2);
@@ -96,10 +97,10 @@ public class GeomFill_LocationDraftTests
     public void D1_PolesMatchFiniteDifferencesAlongALine()
     {
         // a straight path (a constant trihedron) and a tilted stop plane: the trace moves along the plane
-        var aLaw = new GeomFill_LocationDraft(new Direction3D(0, 0, 1), Angle);
+        var aLaw = new LocationDraft(new Direction3D(0, 0, 1), Angle);
         aLaw.SetCurve(new CurveAdaptor(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 4));
         aLaw.SetStopSurf(new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0.2, 0.1, 1))));
-        Assert.True(aLaw.IsIntersec());
+        Assert.True(aLaw.IsIntersec);
         (Vector2D aSurf, Vector2D aCurve, Vector2D aFDSurf, Vector2D aFDCurve) = PoleDerivatives(aLaw, 1.7);
         Assert.True(aFDSurf.Subtracted(aSurf).Magnitude() < 1e-6, $"{aFDSurf} and {aSurf}");
         Assert.True(aFDCurve.Subtracted(aCurve).Magnitude() < 1e-6, $"{aFDCurve} and {aCurve}");
@@ -118,7 +119,7 @@ public class GeomFill_LocationDraftTests
     [Fact]
     public void D2_MatricesAreTheTrihedrons()
     {
-        GeomFill_LocationDraft aLaw = Draft();
+        LocationDraft aLaw = Draft();
         var P = new NCollection_Array1<Point2D>(1, 2);
         var DP = new NCollection_Array1<Vector2D>(1, 2);
         var D2P = new NCollection_Array1<Vector2D>(1, 2);
@@ -130,7 +131,7 @@ public class GeomFill_LocationDraftTests
         Assert.Equal(1.0, DP[2].Y());
 
         // the matrices are those of the trihedron, as without a stop surface
-        GeomFill_LocationDraft aFree = Draft(false);
+        LocationDraft aFree = Draft(false);
         Matrix3x3 Mf = new(), DMf = new(), D2Mf = new();
         Vector3D Vf = new(), DVf = new(), D2Vf = new();
         aFree.D2(t, ref Mf, ref Vf, ref DMf, ref DVf, ref D2Mf, ref D2Vf, P, DP, D2P);
@@ -142,7 +143,7 @@ public class GeomFill_LocationDraftTests
     [Fact]
     public void Resolution_SetTrsf_Copy()
     {
-        GeomFill_LocationDraft aLaw = Draft();
+        LocationDraft aLaw = Draft();
         aLaw.Resolution(1, 1e-3, out double aTolU, out double aTolV);
         Assert.Equal(1e-3, aTolU);
         Assert.Equal(1e-3, aTolV);
@@ -157,8 +158,8 @@ public class GeomFill_LocationDraftTests
         aLaw.D0(0.5, ref M1, ref V);
         Assert.Equal(M0 * aTrsf, M1);
 
-        var aCopy = (GeomFill_LocationDraft)aLaw.Copy();
-        Assert.True(aCopy.IsIntersec());
+        var aCopy = (LocationDraft)aLaw.Copy();
+        Assert.True(aCopy.IsIntersec);
         Matrix3x3 Mc = new();
         aCopy.D0(0.5, ref Mc, ref V);
         Assert.Equal(M1, Mc);

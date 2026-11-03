@@ -6,54 +6,56 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-namespace Occt;
+using Occt;
 
-/// <summary>Errors of <see cref="BRepLib_MakeEdge"/> and <see cref="BRepLib_MakeEdge2d"/>.</summary>
-public enum BRepLib_EdgeError
+namespace Kerf.Engine.Construction.Library;
+
+/// <summary>Errors of <see cref="LibraryMakeEdge"/> and <see cref="LibraryMakeEdge2d"/>.</summary>
+public enum LibraryEdgeError
 {
-    BRepLib_EdgeDone,
-    BRepLib_PointProjectionFailed,
-    BRepLib_ParameterOutOfRange,
-    BRepLib_DifferentPointsOnClosedCurve,
-    BRepLib_PointWithInfiniteParameter,
-    BRepLib_DifferentsPointAndParameter,
-    BRepLib_LineThroughIdenticPoints,
+    EdgeDone,
+    PointProjectionFailed,
+    ParameterOutOfRange,
+    DifferentPointsOnClosedCurve,
+    PointWithInfiniteParameter,
+    DifferentsPointAndParameter,
+    LineThroughIdenticPoints,
 }
 
-/// <summary>Errors of <see cref="BRepLib_MakeFace"/>.</summary>
-public enum BRepLib_FaceError
+/// <summary>Errors of <see cref="LibraryMakeFace"/>.</summary>
+public enum LibraryFaceError
 {
-    BRepLib_FaceDone,
-    BRepLib_NoFace,
-    BRepLib_NotPlanar,
-    BRepLib_CurveProjectionFailed,
-    BRepLib_ParametersOutOfRange,
+    FaceDone,
+    NoFace,
+    NotPlanar,
+    CurveProjectionFailed,
+    ParametersOutOfRange,
 }
 
-/// <summary>Errors of <see cref="BRepLib_MakeShell"/>.</summary>
-public enum BRepLib_ShellError
+/// <summary>Errors of <see cref="LibraryMakeShell"/>.</summary>
+public enum LibraryShellError
 {
-    BRepLib_ShellDone,
-    BRepLib_EmptyShell,
-    BRepLib_DisconnectedShell,
-    BRepLib_ShellParametersOutOfRange,
+    ShellDone,
+    EmptyShell,
+    DisconnectedShell,
+    ShellParametersOutOfRange,
 }
 
-/// <summary>Errors of <see cref="BRepLib_MakeWire"/>.</summary>
-public enum BRepLib_WireError
+/// <summary>Errors of <see cref="LibraryMakeWire"/>.</summary>
+public enum LibraryWireError
 {
-    BRepLib_WireDone,
-    BRepLib_EmptyWire,
-    BRepLib_DisconnectedWire,
-    BRepLib_NonManifoldWire,
+    WireDone,
+    EmptyWire,
+    DisconnectedWire,
+    NonManifoldWire,
 }
 
 /// <summary>Modification type after a topological operation.</summary>
-public enum BRepLib_ShapeModification
+public enum LibraryShapeModification
 {
-    BRepLib_Preserved,
-    BRepLib_Deleted,
-    BRepLib_Trimmed,
-    BRepLib_Merged,
-    BRepLib_BoundaryModified,
+    Preserved,
+    Deleted,
+    Trimmed,
+    Merged,
+    BoundaryModified,
 }

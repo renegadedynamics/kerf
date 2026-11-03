@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
+using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Offsets.Blend;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -175,10 +178,10 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                 {
                     case "DRAFT":
                     {
-                        var aMk = new BRepOffsetAPI_MakeDraft(Input(w[1]), new Direction3D(0, 0, 1), FromHex(w[2]));
+                        var aMk = new MakeDraft(Input(w[1]), new Direction3D(0, 0, 1), FromHex(w[2]));
                         if (w[5] == "1")
                         {
-                            aMk.SetOptions(BRepBuilderAPI_TransitionMode.BRepBuilderAPI_RoundCorner);
+                            aMk.SetOptions(TransitionMode.RoundCorner);
                         }
                         if (w[4] == "1")
                         {
@@ -197,7 +200,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                                 break;
                         }
                         Shape aShape = aMk.Shape();
-                        aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aShape));
+                        aPort.Add(("DONE " + (aMk.IsDone ? "1" : "0"), aShape));
                         aPort.Add(("SHELL", aMk.Shell()));
                         break;
                     }
@@ -206,7 +209,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                         Shape aS = Input(w[1]);
                         var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
                         Exploration.MapShapes(aS, ShapeType.Face, aFaces);
-                        var aRoll = new BiTgte_Blend();
+                        var aRoll = new OffsetBlend();
                         aRoll.Init(aS, FromHex(w[2]), 1.0e-4, false);
                         int[] anIdx = w[4].Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
                         for (int i = 0; i + 1 < anIdx.Length; i += 2)
@@ -215,10 +218,10 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                         }
                         aRoll.Perform(w[3] == "1");
                         // the recorder writes the contact types as it goes: an exception ends the line
-                        var aSb = new StringBuilder("SURFACES ").Append(aRoll.NbSurfaces());
+                        var aSb = new StringBuilder("SURFACES ").Append(aRoll.SurfaceCount);
                         try
                         {
-                            for (int i = 1; i <= aRoll.NbSurfaces(); i++)
+                            for (int i = 1; i <= aRoll.SurfaceCount; i++)
                             {
                                 int aType = (int)aRoll.ContactType(i);
                                 aSb.Append(' ').Append(aType);
@@ -230,14 +233,14 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                             break;
                         }
                         aPort.Add((aSb.ToString(), null));
-                        aPort.Add(("DONE " + (aRoll.IsDone() ? "1" : "0"), aRoll.Shape()));
+                        aPort.Add(("DONE " + (aRoll.IsDone ? "1" : "0"), aRoll.Shape()));
                         break;
                     }
                     default:
                     {
-                        var aMk = new BRepOffsetAPI_MakeEvolved(Input(w[1]), ShapeCasts.Wire(Input(w[2])), JoinKind.Arc, true,
+                        var aMk = new MakeEvolved(Input(w[1]), ShapeCasts.Wire(Input(w[2])), JoinKind.Arc, true,
                                                                 w[3] == "1", false, 1.0e-7, true);
-                        aPort.Add(("DONE " + (aMk.IsDone() ? "1" : "0"), aMk.IsDone() ? aMk.Shape() : new Shape()));
+                        aPort.Add(("DONE " + (aMk.IsDone ? "1" : "0"), aMk.IsDone ? aMk.Shape() : new Shape()));
                         break;
                     }
                 }

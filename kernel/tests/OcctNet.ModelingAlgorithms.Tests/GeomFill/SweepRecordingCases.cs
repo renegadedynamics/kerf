@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
@@ -7,8 +8,8 @@ using System.IO.Compression;
 using System.Text;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 using static Kerf.Geometry.Continuity;
-using static Occt.GeomFill_ApproxStyle;
-using static Occt.GeomFill_Trihedron;
+using static Kerf.Engine.Construction.Surfaces.ApproxStyle;
+using static Kerf.Engine.Construction.Surfaces.Trihedron;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -73,10 +74,10 @@ internal static class SweepRecordingCases
         switch (theKind)
         {
             case "pipe-radius": PipeRadius(r); break;
-            case "pipe-cfrenet": PipeSection(r, GeomFill_IsCorrectedFrenet); break;
-            case "pipe-frenet": PipeSection(r, GeomFill_IsFrenet); break;
-            case "pipe-fixed": PipeSection(r, GeomFill_IsFixed); break;
-            case "pipe-cnormal": PipeSection(r, GeomFill_IsConstantNormal); break;
+            case "pipe-cfrenet": PipeSection(r, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsCorrectedFrenet); break;
+            case "pipe-frenet": PipeSection(r, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsFrenet); break;
+            case "pipe-fixed": PipeSection(r, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsFixed); break;
+            case "pipe-cnormal": PipeSection(r, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsConstantNormal); break;
             case "pipe-dir": PipeDir(r); break;
             case "pipe-darboux": PipeDarboux(r); break;
             case "pipe-2sect": PipeTwoSections(r, false); break;
@@ -317,9 +318,9 @@ internal static class SweepRecordingCases
         Line(aLine);
     }
 
-    private static void DumpPipe(GeomFill_Pipe thePipe)
+    private static void DumpPipe(global::Kerf.Engine.Construction.Surfaces.SurfacePipe thePipe)
     {
-        Line("PIPE " + Int(thePipe.IsDone()) + " " + Int((int)thePipe.GetStatus()) + " " + Hex(thePipe.ErrorOnSurf())
+        Line("PIPE " + Int(thePipe.IsDone) + " " + Int((int)thePipe.GetStatus()) + " " + Hex(thePipe.ErrorOnSurf())
              + " " + Int(thePipe.ExchangeUV()));
         DumpSurface(thePipe.Surface());
     }
@@ -369,14 +370,14 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new(aPath, aR);
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, aR);
             aPipe.GenerateParticularCase(true);
             aPipe.Perform(1.0e-4, false, C2);
             DumpPipe(aPipe);
         });
     }
 
-    private static void PipeSection(Rng r, GeomFill_Trihedron theOption)
+    private static void PipeSection(Rng r, global::Kerf.Engine.Construction.Surfaces.Trihedron theOption)
     {
         bool aRat = r.I(0, 3) == 0;
         double aWig = r.R(0.5, 5.0);
@@ -392,7 +393,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Hex(aSect.Value(aSect.FirstParameter())));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             aPipe.Init(aPath, aSect, theOption);
             aPipe.Perform(1.0e-4, false, C2, aDeg, 30);
@@ -413,7 +414,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             aPipe.Init(aPath, aSect, aDir);
             aPipe.Perform(1.0e-4, false, C2, 11, 30);
@@ -476,7 +477,7 @@ internal static class SweepRecordingCases
         Line("IN " + Int(aSupKind) + " " + Hex(aP) + " " + Int(aKind));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             aPipe.Init(aPath, aSup, aSect);
             aPipe.Perform(1.0e-4, false, C2, 11, 30);
@@ -512,7 +513,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             aPipe.Init(aPath, aS1, aS2);
             aPipe.Perform(1.0e-4, false, C2);
@@ -537,7 +538,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aNb) + " " + Int(aKind));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             aPipe.Init(aPath, aSeq);
             aPipe.Perform(1.0e-4, false, C2);
@@ -566,7 +567,7 @@ internal static class SweepRecordingCases
         Guard(() =>
         {
             CurveAdaptor aG = new(aGuide);
-            GeomFill_Pipe aPipe = new(aPath, aG, aSect, byACR, rotat);
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, aG, aSect, byACR, rotat);
             aPipe.GenerateParticularCase(true);
             aPipe.Perform(1.0e-4, false, C2, 11, 30);
             DumpPipe(aPipe);
@@ -600,7 +601,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR) + " " + Int(aPoly));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new(aPath, aC1, aC2, aR);
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, aC1, aC2, aR);
             aPipe.GenerateParticularCase(true);
             if (theOld)
             {
@@ -672,7 +673,7 @@ internal static class SweepRecordingCases
         Line("IN " + Int(aCase) + " " + Int(aSectKind) + " " + Int(aTwo));
         Guard(() =>
         {
-            GeomFill_Pipe aPipe = new();
+            global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
             aPipe.GenerateParticularCase(true);
             if (aTwo)
             {
@@ -682,7 +683,7 @@ internal static class SweepRecordingCases
             }
             else
             {
-                aPipe.Init(aPath, aSect, GeomFill_IsCorrectedFrenet);
+                aPipe.Init(aPath, aSect, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsCorrectedFrenet);
             }
             aPipe.Perform(1.0e-4, false, C2);
             DumpPipe(aPipe);
@@ -695,11 +696,11 @@ internal static class SweepRecordingCases
         aPath.D1(aPath.FirstParameter(), out Point3D _, out Vector3D _);
         int aKind = r.I(0, 4);
         Curve3D aSect = MakeSection(r, aKind, new Point3D(0, 0, 0), new Vector3D(0, 0, 1), 1.0);
-        Law_Function aLaw;
+        LawsFunction aLaw;
         double f = aPath.FirstParameter(), l = aPath.LastParameter();
         if (r.I(0, 1) == 0)
         {
-            Law_Linear aLin = new();
+            Linear aLin = new();
             double v1 = r.R(0.5, 1.5);
             double v2 = r.R(0.5, 1.5);
             aLin.Set(f, v1, l, v2);
@@ -707,7 +708,7 @@ internal static class SweepRecordingCases
         }
         else
         {
-            Law_S anS = new();
+            S anS = new();
             double v1 = r.R(0.5, 1.5);
             double v2 = r.R(0.5, 1.5);
             anS.Set(f, v1, l, v2);
@@ -719,16 +720,16 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Int(aKPart) + " " + Int((int)aCont));
         Guard(() =>
         {
-            GeomFill_CurveAndTrihedron aLoc = new(new GeomFill_CorrectedFrenet());
+            global::Kerf.Engine.Construction.Surfaces.CurveAndTrihedron aLoc = new(new global::Kerf.Engine.Construction.Surfaces.CorrectedFrenet());
             aLoc.SetCurve(new CurveAdaptor(aPath));
-            GeomFill_EvolvedSection aSec = new(aSect, aLaw);
-            GeomFill_Sweep aSweep = new(aLoc, aKPart);
+            global::Kerf.Engine.Construction.Surfaces.EvolvedSection aSec = new(aSect, aLaw);
+            global::Kerf.Engine.Construction.Surfaces.SurfaceSweep aSweep = new(aLoc, aKPart);
             aSweep.SetTolerance(1.0e-4, 1.0e-4, 1.0e-5, 0.01);
             aSweep.SetForceApproxC1(aForce);
-            aSweep.Build(aSec, GeomFill_Location, aCont, 10, 30);
-            Line("SWEEP " + Int(aSweep.IsDone()) + " " + Hex(aSweep.ErrorOnSurface()) + " " + Int(aSweep.ExchangeUV())
+            aSweep.Build(aSec, global::Kerf.Engine.Construction.Surfaces.ApproxStyle.Location, aCont, 10, 30);
+            Line("SWEEP " + Int(aSweep.IsDone) + " " + Hex(aSweep.ErrorOnSurface()) + " " + Int(aSweep.ExchangeUV())
                  + " " + Int(aSweep.UReversed()) + " " + Int(aSweep.VReversed()) + " " + Int(aSweep.NumberOfTrace()));
-            if (aSweep.IsDone())
+            if (aSweep.IsDone)
             {
                 DumpSurface(aSweep.Surface());
                 DumpCurve2d("R1", aSweep.Restriction(true));
@@ -758,8 +759,8 @@ internal static class SweepRecordingCases
         Line("IN " + Int(aNb) + " " + Int(aKind) + " " + Int(aWithPar));
         Guard(() =>
         {
-            GeomFill_NSections aLaw = aWithPar ? new GeomFill_NSections(aSeq, aPar, 0.0, 1.0, aPar.First(), aPar.Last())
-                                               : new GeomFill_NSections(aSeq);
+            global::Kerf.Engine.Construction.Surfaces.SurfaceNSections aLaw = aWithPar ? new global::Kerf.Engine.Construction.Surfaces.SurfaceNSections(aSeq, aPar, 0.0, 1.0, aPar.First(), aPar.Last())
+                                               : new global::Kerf.Engine.Construction.Surfaces.SurfaceNSections(aSeq);
             BSplineSurface? aS = aLaw.BSplineSurface();
             DumpSurface(aS);
             if (aS is null)
@@ -770,8 +771,8 @@ internal static class SweepRecordingCases
             double anErr = -1.0;
             bool aConst = aLaw.IsConstant(ref anErr);
             bool aConic = aLaw.IsConicalLaw(ref anErr);
-            Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aLaw.IsRational()) + " "
-                 + Int(aLaw.IsUPeriodic()) + " " + Int(aLaw.IsVPeriodic()) + " " + Int(aConst) + " " + Int(aConic) + " "
+            Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aLaw.IsRational) + " "
+                 + Int(aLaw.IsUPeriodic) + " " + Int(aLaw.IsVPeriodic) + " " + Int(aConst) + " " + Int(aConic) + " "
                  + Hex(aLaw.MaximalSection()) + " " + Hex(aLaw.BarycentreOfSurf()));
             int aNbI = aLaw.NbIntervals(C2);
             NCollection_Array1<double> anI = new(1, aNbI + 1);
@@ -811,7 +812,7 @@ internal static class SweepRecordingCases
         Line("IN " + Hex(aPath.Pole(1)) + " " + Hex(aR) + " " + Int(aPoly));
         Guard(() =>
         {
-            GeomFill_CircularBlendFunc aF = new(new CurveAdaptor(aPath), new CurveAdaptor(aC1),
+            global::Kerf.Engine.Construction.Surfaces.CircularBlendFunc aF = new(new CurveAdaptor(aPath), new CurveAdaptor(aC1),
                                                 new CurveAdaptor(aC2), aR, aPoly);
             aF.SectionShape(out int aNbP, out int aNbK, out int aDeg);
             Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aF.IsRational) + " "
@@ -883,7 +884,7 @@ internal static class SweepRecordingCases
         Line("IN " + Int(aType) + " " + Int(aKind));
         Guard(() =>
         {
-            GeomFill_SweepSectionGenerator aGen = new();
+            global::Kerf.Engine.Construction.Surfaces.SweepSectionGenerator aGen = new();
             if (aType == 1 || aType == 4)
             {
                 aGen.Init(aPath, r.R(0.5, 2.0));
@@ -898,7 +899,7 @@ internal static class SweepRecordingCases
             }
             aGen.Perform(false);
             aGen.GetShape(out int aNbP, out int aNbK, out int aDeg, out int aNb2d);
-            int aNbS = aGen.NbSections();
+            int aNbS = aGen.SectionCount;
             Line("SHAPE " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg) + " " + Int(aNb2d) + " " + Int(aNbS));
             NCollection_Array1<Point3D> aPo = new(1, aNbP);
             NCollection_Array1<Vector3D> aD = new(1, aNbP);
@@ -935,11 +936,11 @@ internal static class SweepRecordingCases
             foreach (ParameterisationType aConv0 in aConvs)
             {
                 ParameterisationType aConv = aConv0;
-                GeomFill.GetShape(anAng, out int aNbP, out int aNbK, out int aDeg, ref aConv);
+                global::Kerf.Engine.Construction.Surfaces.GeomFill.GetShape(anAng, out int aNbP, out int aNbK, out int aDeg, ref aConv);
                 NCollection_Array1<double> aK = new(1, aNbK);
                 NCollection_Array1<int> aM = new(1, aNbK);
-                GeomFill.Knots(aConv, aK);
-                GeomFill.Mults(aConv, aM);
+                global::Kerf.Engine.Construction.Surfaces.GeomFill.Knots(aConv, aK);
+                global::Kerf.Engine.Construction.Surfaces.GeomFill.Mults(aConv, aM);
                 string aLine = "GS " + Int((int)aConv) + " " + Int(aNbP) + " " + Int(aNbK) + " " + Int(aDeg);
                 for (int i = 1; i <= aNbK; i++)
                 {
@@ -947,12 +948,12 @@ internal static class SweepRecordingCases
                 }
                 Line(aLine);
                 double aMin = r.R(0.01, anAng);
-                Line("TOL " + Hex(GeomFill.GetTolerance(aConv, aMin, r.R(0.5, 3.0), 0.01, 1.0e-4)));
+                Line("TOL " + Hex(global::Kerf.Engine.Construction.Surfaces.GeomFill.GetTolerance(aConv, aMin, r.R(0.5, 3.0), 0.01, 1.0e-4)));
                 if (aConv != TgtThetaOver2 || aNbP <= 7)
                 {
                     NCollection_Array1<double> aWm = new(1, aNbP);
                     NCollection_Array1<Point3D> aDummy = new(1, aNbP);
-                    GeomFill.GetMinimalWeights(aConv, aMin, anAng, aWm);
+                    global::Kerf.Engine.Construction.Surfaces.GeomFill.GetMinimalWeights(aConv, aMin, anAng, aWm);
                     DumpArrays("MINW", aDummy, aWm);
                 }
 
@@ -983,14 +984,14 @@ internal static class SweepRecordingCases
                 NCollection_Array1<Point3D> aP = new(1, aNbP);
                 NCollection_Array1<Vector3D> aD1 = new(1, aNbP), aD2 = new(1, aNbP);
                 NCollection_Array1<double> aW = new(1, aNbP), aDW = new(1, aNbP), aD2W = new(1, aNbP);
-                GeomFill.GetCircle(aConv, ns1, ns2, nplan, aP1, aP2, aRad, aC, aP, aW);
+                global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, ns1, ns2, nplan, aP1, aP2, aRad, aC, aP, aW);
                 DumpArrays("C0", aP, aW);
-                bool ok1 = GeomFill.GetCircle(aConv, ns1, ns2, dn1, dn2, nplan, dnp, aP1, aP2, t1, t2, aRad, 0.1, aC, dc,
+                bool ok1 = global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, ns1, ns2, dn1, dn2, nplan, dnp, aP1, aP2, t1, t2, aRad, 0.1, aC, dc,
                                               aP, aD1, aW, aDW);
                 Line("C1 " + Int(ok1));
                 DumpArrays("C1P", aP, aW);
                 DumpArrays("C1V", aD1, aDW);
-                bool ok2 = GeomFill.GetCircle(aConv, ns1, ns2, dn1, dn2, d2n1, d2n2, nplan, dnp, d2np, aP1, aP2, t1, t2,
+                bool ok2 = global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, ns1, ns2, dn1, dn2, d2n1, d2n2, nplan, dnp, d2np, aP1, aP2, t1, t2,
                                               dt1, dt2, aRad, 0.1, 0.05, aC, dc, d2c, aP, aD1, aD2, aW, aDW, aD2W);
                 Line("C2 " + Int(ok2));
                 DumpArrays("C2P", aP, aW);
@@ -1052,6 +1053,6 @@ internal static class SweepRecordingCases
                 }
         }
         Line("IN " + Int(aCase));
-        Guard(() => DumpSurface(GeomFill.Surface(aC1, aC2)));
+        Guard(() => DumpSurface(global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(aC1, aC2)));
     }
 }

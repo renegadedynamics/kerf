@@ -1,7 +1,13 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -57,7 +63,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     private static double Diagonal(in Shape theShape)
     {
         Box aBox = new();
-        BRepBndLib.Add(theShape, ref aBox);
+        Bounds.Add(theShape, ref aBox);
         return Math.Sqrt(aBox.SquareExtent());
     }
 
@@ -201,10 +207,10 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // OCC1077: box common sphere, cut by a cylinder, the section edges filleted (BRepFilletAPI_MakeFillet_Test)
         var aTally = new Tally();
         using var aRun = new ShapeFixOracleRun(output, "fillet");
-        Shape aCommon = new BRepAlgoAPI_Common(new BRepPrimAPI_MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape(),
-                                                      new BRepPrimAPI_MakeSphere(7).Shape()).Shape();
-        Shape aCyl1 = new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
-        BRepAlgoAPI_Cut aCut = new(aCommon, aCyl1);
+        Shape aCommon = new Common(new MakeBox(new Point3D(-5, -5, -5), 10, 10, 10).Shape(),
+                                                      new MakeSphere(7).Shape()).Shape();
+        Shape aCyl1 = new ApiMakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
+        Cut aCut = new(aCommon, aCyl1);
         Shape aCutShape = aCut.Shape();
         NCollection_IndexedMap<Shape> anEdges = Map(aCutShape, ShapeType.Edge);
         CaseEdge[] aSection = [.. aCut.SectionEdges().Select(e => new CaseEdge(anEdges.FindIndex(e), 0.7))];
@@ -216,38 +222,38 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // the next cuts, on the port's filleted and fixed result (as the GTest builds it)
         Shape aStage = aCutShape;
         {
-            BRepFilletAPI_MakeFillet aF = new(aCutShape);
+            MakeFillet aF = new(aCutShape);
             foreach (CaseEdge e in aSection)
             {
                 aF.Add(0.7, ShapeCasts.Edge(anEdges[e.K]));
             }
-            ShapeFix_Shape aFix = new(aF.Shape());
+            ShapeFixer aFix = new(aF.Shape());
             aFix.Perform();
             aStage = aFix.Shape();
         }
         Shape[] aCyls =
         [
-            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape(),
-            new BRepPrimAPI_MakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape(),
+            new ApiMakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape(),
+            new ApiMakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape(),
         ];
         for (int c = 0; c < aCyls.Length; c++)
         {
-            BRepAlgoAPI_Cut aCutC = new(aStage, aCyls[c]);
+            Cut aCutC = new(aStage, aCyls[c]);
             Shape aCutCShape = aCutC.Shape();
             NCollection_IndexedMap<Shape> anEdgesC = Map(aCutCShape, ShapeType.Edge);
             CaseEdge[] aSectionC = [.. aCutC.SectionEdges().Select(e => new CaseEdge(anEdgesC.FindIndex(e), 0.7))];
             Compare(aRun, aTally, new Case($"OCC1077 cut {c + 2}, section edges r0.7", false, aSectionC), aCutCShape);
-            BRepFilletAPI_MakeFillet aF = new(aCutCShape);
+            MakeFillet aF = new(aCutCShape);
             foreach (CaseEdge e in aSectionC)
             {
                 aF.Add(0.7, ShapeCasts.Edge(anEdgesC[e.K]));
             }
             aF.Build();
-            if (!aF.IsDone())
+            if (!aF.IsDone)
             {
                 break;
             }
-            ShapeFix_Shape aFix = new(aF.Shape());
+            ShapeFixer aFix = new(aF.Shape());
             aFix.Perform();
             aStage = aFix.Shape();
         }
@@ -255,7 +261,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Compare(aRun, aTally, new Case("OCC426 all edges r1", false, [.. SharpEdges(OCC426Input()).Select(k => new CaseEdge(k, 1.0))]),
                 OCC426Input());
         // OCC570: a box's first wire, variable and constant radii
-        Shape aBox = new BRepPrimAPI_MakeBox(100, 100, 100).Shape();
+        Shape aBox = new MakeBox(100, 100, 100).Shape();
         NCollection_IndexedMap<Shape> aBoxEdges = Map(aBox, ShapeType.Edge);
         List<int> aWire = [];
         for (Explorer ex = new(new Explorer(aBox, ShapeType.Wire).Current(), ShapeType.Edge); ex.More(); ex.Next())
@@ -272,21 +278,21 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     {
         Shape Ring(double r1, double r2, double z1, double z2, double a, double angle)
         {
-            BRepBuilderAPI_MakePolygon aW = new();
+            MakePolygon aW = new();
             double c = Math.Cos(a), s = Math.Sin(a);
             aW.Add(new Point3D(r1 * c, r1 * s, z1));
             aW.Add(new Point3D(r2 * c, r2 * s, z1));
             aW.Add(new Point3D(r2 * c, r2 * s, z2));
             aW.Add(new Point3D(r1 * c, r1 * s, z2));
             aW.Add(new Point3D(r1 * c, r1 * s, z1));
-            Face aF = new BRepBuilderAPI_MakeFace(aW.Wire(), false).Face();
-            return new BRepPrimAPI_MakeRevol(aF, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), angle).Shape();
+            Face aF = new MakeFace(aW.Wire(), false).Face();
+            return new ApiMakeRevol(aF, new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), angle).Shape();
         }
         Shape aRs1 = Ring(10, 20, 0, 10, 0, 2 * Math.PI);
         Shape aRs2 = Ring(10, 20, 10, 20, Math.PI / 4, 270.0 * Math.PI / 180.0);
         Shape aRs3 = Ring(10, 20, 20, 30, 0, 2 * Math.PI);
-        Shape aFuse = new BRepAlgoAPI_Fuse(new BRepAlgoAPI_Fuse(aRs3, aRs2).Shape(), aRs1).Shape();
-        ShapeUpgrade_UnifySameDomain aU = new(aFuse, true, true, true);
+        Shape aFuse = new Fuse(new Fuse(aRs3, aRs2).Shape(), aRs1).Shape();
+        UnifySameDomain aU = new(aFuse, true, true, true);
         aU.Build();
         return aU.Shape();
     }
@@ -301,8 +307,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "fillet");
         List<string> aDifferences = [];
         int aProbes = 0, aSearches = 0;
-        Shape aBox = new BRepPrimAPI_MakeBox(10, 20, 30).Shape();
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5, 12).Shape();
+        Shape aBox = new MakeBox(10, 20, 30).Shape();
+        Shape aCyl = new ApiMakeCylinder(5, 12).Shape();
         List<(string, Shape, int[])> aSearchCases =
         [
             ("box all edges", aBox, [.. SharpEdges(aBox)]),
@@ -386,12 +392,12 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         try
         {
             NCollection_IndexedMap<Shape> anEdges = Map(theInput, ShapeType.Edge);
-            BRepFilletAPI_MakeFillet aB = new(theInput);
+            MakeFillet aB = new(theInput);
             foreach (int k in theEdges)
             {
                 aB.Add(theR, ShapeCasts.Edge(anEdges[k]));
             }
-            return new BRepCheck_Analyzer(aB.Shape()).IsValid();
+            return new Analyzer(aB.Shape()).IsValid();
         }
         catch (FailureException)
         {
@@ -551,11 +557,11 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Exploration.MapShapesAndAncestors(theInput, ShapeType.Edge, ShapeType.Face, EF);
         try
         {
-            BRepFilletAPI_LocalOperation aMaker;
+            LocalOperation aMaker;
             string aStatus;
             if (theCase.Chamfer)
             {
-                BRepFilletAPI_MakeChamfer aC = new(theInput);
+                MakeChamfer aC = new(theInput);
                 aMaker = aC;
                 foreach (CaseEdge e in theCase.Edges)
                 {
@@ -575,11 +581,11 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     }
                 }
                 aC.Build();
-                aStatus = Status(aC.IsDone(), aC.NbContours(), Enumerable.Range(1, aC.NbContours()).Select(ic => $"edges{ic}={aC.NbEdges(ic)}"));
+                aStatus = Status(aC.IsDone, aC.ContourCount, Enumerable.Range(1, aC.ContourCount).Select(ic => $"edges{ic}={aC.NbEdges(ic)}"));
             }
             else
             {
-                BRepFilletAPI_MakeFillet aF = new(theInput);
+                MakeFillet aF = new(theInput);
                 aMaker = aF;
                 foreach (CaseEdge e in theCase.Edges)
                 {
@@ -603,13 +609,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                     }
                 }
                 aF.Build();
-                List<string> aDiag = [$"faulty={aF.NbFaultyContours()}:" + string.Join(',', Enumerable.Range(1, aF.NbFaultyContours()).Select(aF.FaultyContour))];
-                aDiag.Add("statuses=" + string.Join(',', Enumerable.Range(1, aF.NbContours()).Select(ic => (int)aF.StripeStatus(ic))));
-                aDiag.Add("computed=" + string.Join(',', Enumerable.Range(1, aF.NbContours()).Select(aF.NbComputedSurfaces)));
-                aDiag.Add($"faultyvertices={aF.NbFaultyVertices()} hasresult={aF.HasResult()}");
-                aStatus = Status(aF.IsDone(), aF.NbContours(), aDiag);
+                List<string> aDiag = [$"faulty={aF.FaultyContourCount}:" + string.Join(',', Enumerable.Range(1, aF.FaultyContourCount).Select(aF.FaultyContour))];
+                aDiag.Add("statuses=" + string.Join(',', Enumerable.Range(1, aF.ContourCount).Select(ic => (int)aF.StripeStatus(ic))));
+                aDiag.Add("computed=" + string.Join(',', Enumerable.Range(1, aF.ContourCount).Select(aF.NbComputedSurfaces)));
+                aDiag.Add($"faultyvertices={aF.FaultyVertexCount} hasresult={aF.HasResult}");
+                aStatus = Status(aF.IsDone, aF.ContourCount, aDiag);
             }
-            if (!aMaker.IsDone())
+            if (!aMaker.IsDone)
             {
                 return new Outcome(null, aStatus, null, []);
             }
@@ -686,8 +692,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
         theTally.Done++;
         List<string> d = Geometric(aN, aP);
-        bool aNValid = new BRepCheck_Analyzer(aN.Result.Value).IsValid();
-        bool aPValid = new BRepCheck_Analyzer(aP.Result!.Value).IsValid();
+        bool aNValid = new Analyzer(aN.Result.Value).IsValid();
+        bool aPValid = new Analyzer(aP.Result!.Value).IsValid();
         if (d.Count == 0)
         {
             theTally.Equal++;
@@ -710,14 +716,14 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     private static double Volume(in Shape S)
     {
         Properties p = new();
-        BRepGProp.VolumeProperties(S, p);
+        MassPropertiesBuilder.VolumeProperties(S, p);
         return p.Mass();
     }
 
     private static double Area(in Shape S)
     {
         Properties p = new();
-        BRepGProp.SurfaceProperties(S, p);
+        MassPropertiesBuilder.SurfaceProperties(S, p);
         return p.Mass();
     }
 
@@ -727,17 +733,17 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // The faults BRepCheck finds, by sub-shape type.
     internal static string ReconFaults(in Shape S)
     {
-        BRepCheck_Analyzer an = new(S);
+        Analyzer an = new(S);
         SortedSet<string> aFaults = [];
         foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex })
         {
             for (Explorer exp = new(S, T); exp.More(); exp.Next())
             {
-                if (an.Result(exp.Current()) is BRepCheck_Result r)
+                if (an.Result(exp.Current()) is ResultCheck r)
                 {
-                    foreach (BRepCheck_Status st in r.Status())
+                    foreach (StatusCheck st in r.Status())
                     {
-                        if (st != BRepCheck_Status.BRepCheck_NoError)
+                        if (st != StatusCheck.NoError)
                         {
                             aFaults.Add(Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "") + ":" + Kerf.Engine.Foundation.OcctTypeNames.Of(st).Replace("BRepCheck_", ""));
                         }
@@ -786,14 +792,14 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 d.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "")} {n1} | {n2}");
             }
         }
-        bool ok1 = new BRepCheck_Analyzer(aN).IsValid(), ok2 = new BRepCheck_Analyzer(aP).IsValid();
+        bool ok1 = new Analyzer(aN).IsValid(), ok2 = new Analyzer(aP).IsValid();
         if (ok1 != ok2)
         {
             d.Add($"valid {ok1} | {ok2}");
         }
         Box b1 = new(), b2 = new();
-        BRepBndLib.AddOptimal(aN, ref b1, false, false);
-        BRepBndLib.AddOptimal(aP, ref b2, false, false);
+        Bounds.AddOptimal(aN, ref b1, false, false);
+        Bounds.AddOptimal(aP, ref b2, false, false);
         if (!b1.IsVoid && !b2.IsVoid)
         {
             b1.Get(out double x1, out double y1, out double z1, out double X1, out double Y1, out double Z1);

@@ -136,7 +136,7 @@ public sealed class StepToGeomTests
         var aTrim2 = new NCollection_HArray1<StepGeom_TrimmingSelect>(1, 1);
         aTrim2.SetValue(1, T2);
         var T = new StepGeom_TrimmedCurve();
-        T.Init(Name(), aCircle, aTrim1, aTrim2, true, StepGeom_tpParameter);
+        T.Init(Name(), aCircle, aTrim1, aTrim2, true, StepGeom_TrimmingPreference.StepGeom_tpParameter);
 
         TrimmedCurve3D? G = StepToGeom.MakeTrimmedCurve(T, Inches);
         Assert.NotNull(G);
@@ -162,7 +162,7 @@ public sealed class StepToGeomTests
         aKnots.SetValue(1, 0);
         aKnots.SetValue(2, 1);
         var B = new StepGeom_BSplineCurveWithKnots();
-        B.Init(Name(), 1, aPoles, StepGeom_bscfUnspecified, StepData_LFalse, StepData_LFalse, aMults, aKnots, StepGeom_ktUnspecified);
+        B.Init(Name(), 1, aPoles, StepGeom_BSplineCurveForm.StepGeom_bscfUnspecified, StepData_Logical.StepData_LFalse, StepData_Logical.StepData_LFalse, aMults, aKnots, StepGeom_KnotType.StepGeom_ktUnspecified);
 
         BSplineCurve3D? G = StepToGeom.MakeBSplineCurve(B);
         Assert.NotNull(G);

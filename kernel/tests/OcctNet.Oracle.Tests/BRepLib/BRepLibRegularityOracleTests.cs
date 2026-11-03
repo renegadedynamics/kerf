@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -128,7 +129,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             N.TopoDS_Shape aNC = NativeCopy(aN);
             Shape aPC = PortCopy(aP);
             N.BRepLib.EncodeRegularity(aNC, aTolAng);
-            BRepLib.EncodeRegularity(aPC, aTolAng);
+            BrepLibrary.EncodeRegularity(aPC, aTolAng);
             CompareTexts(aNC, aPC, aWhat + ", whole", aTally);
 
             // every other edge, in a list
@@ -143,7 +144,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 aPList.Append(aPE[e]);
             }
             N.BRepLib.EncodeRegularity(aNC, aNList, aTolAng);
-            BRepLib.EncodeRegularity(aPC, aPList, aTolAng);
+            BrepLibrary.EncodeRegularity(aPC, aPList, aTolAng);
             CompareTexts(aNC, aPC, aWhat + ", listed edges", aTally);
 
             // edge by edge, with the edge's first two faces (or its face twice for a seam)
@@ -164,7 +165,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                     continue;
                 }
                 N.BRepLib.EncodeRegularity(N.TopoDS.Edge(aNEF.FindKey(e)), N.TopoDS.Face(aNF[0]), N.TopoDS.Face(aNF[^1]), aTolAng);
-                BRepLib.EncodeRegularity(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF.First()), ShapeCasts.Face(aPF.Last()), aTolAng);
+                BrepLibrary.EncodeRegularity(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF.First()), ShapeCasts.Face(aPF.Last()), aTolAng);
             }
             CompareTexts(aNC, aPC, aWhat + ", edge by edge", aTally);
         }
@@ -196,7 +197,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                         {
                             int aNC = (int)N.BRepLib.ContinuityOfFaces(N.TopoDS.Edge(aNEF.FindKey(e)), N.TopoDS.Face(aNF[f1]),
                                                                       N.TopoDS.Face(aNF[f2]), aTolAng);
-                            int aPC = (int)BRepLib.ContinuityOfFaces(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF[f1]),
+                            int aPC = (int)BrepLibrary.ContinuityOfFaces(ShapeCasts.Edge(aPEF.FindKey(e)), ShapeCasts.Face(aPF[f1]),
                                                                      ShapeCasts.Face(aPF[f2]), aTolAng);
                             anOracle.Same(aNC, aPC, $"{aWhat}: ContinuityOfFaces of edge {e}, faces {f1}, {f2}, {aTolAng}");
                             aCounts[aPC]++;
@@ -232,7 +233,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 {
                     N.BRepLib.ReverseSortFaces(aN, aNList);
                 }
-                ISchematiqList<Shape> aPList = aReverse == 0 ? BRepLib.SortFaces(aP) : BRepLib.ReverseSortFaces(aP);
+                ISchematiqList<Shape> aPList = aReverse == 0 ? BrepLibrary.SortFaces(aP) : BrepLibrary.ReverseSortFaces(aP);
                 N.TopoDS_Shape[] aNArray = aNList.ToArray();
                 Assert.Equal(aNArray.Length, aPList.Count);
                 for (int k = 0; k < aNArray.Length; k++)
@@ -251,7 +252,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 Edge aPE = ShapeCasts.Edge(aPEdges[e]);
                 double aNF = -7, aNL = -7, aPF = -7, aPL = -7;
                 bool isN = N.BRepLib.FindValidRange(aNE, ref aNF, ref aNL);
-                bool isP = BRepLib.FindValidRange(aPE, ref aPF, ref aPL);
+                bool isP = BrepLibrary.FindValidRange(aPE, ref aPF, ref aPL);
                 anOracle.Same(isN, isP, $"{aWhat}: FindValidRange of edge {e}");
                 anOracle.Same(aNF, aPF, $"{aWhat}: FindValidRange first of edge {e}", 0);
                 anOracle.Same(aNL, aPL, $"{aWhat}: FindValidRange last of edge {e}", 0);
@@ -275,7 +276,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 using N.gp_Pnt aNP1 = Oracle.ToNative(aP1), aNP2 = Oracle.ToNative(aP2);
                 aNF = aNL = aPF = aPL = -7;
                 isN = N.BRepLib.FindValidRange(aNAC, aTolE, aF, aNP1, aTol1, aL, aNP2, aTol2, ref aNF, ref aNL);
-                isP = BRepLib.FindValidRange(aPAC, aTolE, aF, aP1, aTol1, aL, aP2, aTol2, ref aPF, ref aPL);
+                isP = BrepLibrary.FindValidRange(aPAC, aTolE, aF, aP1, aTol1, aL, aP2, aTol2, ref aPF, ref aPL);
                 anOracle.Same(isN, isP, $"{aWhat}: FindValidRange of the adaptor of edge {e}");
                 anOracle.Same(aNF, aPF, $"{aWhat}: FindValidRange first of the adaptor of edge {e}", 0);
                 anOracle.Same(aNL, aPL, $"{aWhat}: FindValidRange last of the adaptor of edge {e}", 0);
@@ -300,7 +301,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 var aPC = new Point3D(1, 2, 3);
                 double aNTol = -1, aPTol = -1;
                 N.BRepLib.BoundingVertex(aNList, aNC, ref aNTol);
-                BRepLib.BoundingVertex(aPList, ref aPC, ref aPTol);
+                BrepLibrary.BoundingVertex(aPList, ref aPC, ref aPTol);
                 anOracle.Same(aNC, aPC, $"{aWhat}: BoundingVertex centre", 0);
                 anOracle.Same(aNTol, aPTol, $"{aWhat}: BoundingVertex radius", 0);
                 aValues += 4;
@@ -332,10 +333,10 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 (N.TopTools_IndexedMapOfShape aNE, NCollection_IndexedMap<Shape> aPE) = Map(aNF, aPF, ShapeType.Edge);
                 for (int e = 1; e <= aNE.Extent(); e++)
                 {
-                    BRepLib.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF, out _, out bool isToUpdate);
+                    BrepLibrary.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF, out _, out bool isToUpdate);
                     aPCurves += isToUpdate ? 1 : 0;
                     N.BRepLib.BuildPCurveForEdgeOnPlane(N.TopoDS.Edge(aNE.FindKey(e)), aNF);
-                    BRepLib.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF);
+                    BrepLibrary.BuildPCurveForEdgeOnPlane(ShapeCasts.Edge(aPE[e]), aPF);
                 }
             }
             CompareTexts(aNC, aPC, $"{aWhat}: planar pcurves", aTally);
@@ -348,7 +349,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 bool u1 = anOracle.Bool(), u2 = anOracle.Bool(), v1 = anOracle.Bool(), v2 = anOracle.Bool();
                 var aNExt = new N.TopoDS_Face();
                 N.BRepLib.ExtendFace(N.TopoDS.Face(aNFaces.FindKey(f)), anExt, u1, u2, v1, v2, aNExt);
-                BRepLib.ExtendFace(ShapeCasts.Face(aPFaces[f]), anExt, u1, u2, v1, v2, out Face aPExt);
+                BrepLibrary.ExtendFace(ShapeCasts.Face(aPFaces[f]), anExt, u1, u2, v1, v2, out Face aPExt);
                 CompareTexts(aNExt, aPExt, $"{aWhat}: ExtendFace of face {f}", aTally);
             }
 
@@ -378,7 +379,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             {
                 var aNExt = new N.TopoDS_Face();
                 N.BRepLib.ExtendFace(N.TopoDS.Face(aNFaces.FindKey(f)), 0.5, true, true, true, true, aNExt);
-                BRepLib.ExtendFace(ShapeCasts.Face(aPFaces[f]), 0.5, true, true, true, true, out Face aPExt);
+                BrepLibrary.ExtendFace(ShapeCasts.Face(aPFaces[f]), 0.5, true, true, true, true, out Face aPExt);
                 CompareTexts(aNExt, aPExt, $"{aWhat}: ExtendFace of face {f}", aTally);
                 aFaces++;
             }
@@ -413,7 +414,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         (N.TopoDS_Wire, Wire) Polygon(double theR, bool theReversed)
         {
             using var aNPolygon = new N.BRepBuilderAPI_MakePolygon();
-            var aPolygon = new BRepLib_MakePolygon();
+            var aPolygon = new LibraryMakePolygon();
             int aNb = theOracle.Int(3, 7);
             for (int k = 0; k < aNb; k++)
             {
@@ -433,7 +434,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
         using var aNPln = new N.gp_Pln(aNAx3);
         (N.TopoDS_Wire aNOuter, Wire anOuter) = Polygon(theOracle.Real(2, 5), false);
         using var aNMaker = new N.BRepBuilderAPI_MakeFace(aNPln, aNOuter, true);
-        var aMaker = new BRepLib_MakeFace(aPln, anOuter, true);
+        var aMaker = new LibraryMakeFace(aPln, anOuter, true);
         bool isHoled = theOracle.Bool();
         if (isHoled)
         {
@@ -457,7 +458,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             N.TopoDS_Shape aNC = NativeCopy(aN);
             Shape aPC = PortCopy(aP);
             N.BRepLib.UpdateDeflection(aNC);
-            BRepLib.UpdateDeflection(aPC);
+            BrepLibrary.UpdateDeflection(aPC);
             CompareTexts(aNC, aPC, aWhat + ", UpdateDeflection", aTally);
 
             // twice: the second call finds the normals of the first
@@ -466,7 +467,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 double anAngTol = anOracle.Real(0.001, 0.5);
                 bool isForce = anOracle.Bool();
                 bool isN = N.BRepLib.EnsureNormalConsistency(aNC, anAngTol, isForce);
-                bool isP = BRepLib.EnsureNormalConsistency(aPC, anAngTol, isForce);
+                bool isP = BrepLibrary.EnsureNormalConsistency(aPC, anAngTol, isForce);
                 anOracle.Same(isN, isP, $"{aWhat}: EnsureNormalConsistency");
                 aCorrected += isP ? 1 : 0;
                 CompareTexts(aNC, aPC, aWhat + ", EnsureNormalConsistency", aTally);

@@ -3,6 +3,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Occt;
@@ -23,7 +25,7 @@ public class Geom2dAPI_InterCurveCurveTests
         EllipseCurve2D Ge2 = new(e2);
 
         // Find intersection points
-        Geom2dAPI_InterCurveCurve Intersector = new();
+        CurveCurveIntersection2D Intersector = new();
         Intersector.Init(Ge1, Ge2, 1.0e-7);
         Assert.True(Intersector.NbPoints() > 0, "Error: intersector found no points");
 
@@ -59,7 +61,7 @@ public class Geom2dAPI_InterCurveCurveTests
         Ellipse2D anEllipse2 = new(new Axis2D(new Point2D(0.5, 0.5), new Direction2D(1.0, 1.0)), 2.0, 1.0);
         EllipseCurve2D aCurve2 = new(anEllipse2);
 
-        Geom2dAPI_InterCurveCurve anIntersector = new(aCurve1, aCurve2, 1.0e-7);
+        CurveCurveIntersection2D anIntersector = new(aCurve1, aCurve2, 1.0e-7);
         Assert.True(anIntersector.NbPoints() > 0);
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anIntersector.Point(0));
@@ -74,16 +76,16 @@ public class Geom2dAPI_InterCurveCurveTests
         Curve2D aValidCurve = new EllipseCurve2D(anEllipse);
 
         // Both null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new Geom2dAPI_InterCurveCurve(aNullCurve, aNullCurve, 1.0e-7));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aNullCurve, 1.0e-7));
 
         // First null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new Geom2dAPI_InterCurveCurve(aNullCurve, aValidCurve, 1.0e-7));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aNullCurve, aValidCurve, 1.0e-7));
 
         // Second null.
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new Geom2dAPI_InterCurveCurve(aValidCurve, aNullCurve, 1.0e-7));
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => new CurveCurveIntersection2D(aValidCurve, aNullCurve, 1.0e-7));
 
         // Single-curve Init with null.
-        Geom2dAPI_InterCurveCurve anInter = new();
+        CurveCurveIntersection2D anInter = new();
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NullObjectException>(() => anInter.Init(aNullCurve, 1.0e-7));
     }
 
@@ -104,11 +106,11 @@ public class Geom2dAPI_InterCurveCurveTests
 
         // Perform intersection
         double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Geom2dAPI_InterCurveCurve aIntTool = new(aTrim1, aTrim2, aTol);
+        CurveCurveIntersection2D aIntTool = new(aTrim1, aTrim2, aTol);
 
         Assert.True(aIntTool.NbPoints() > 0, "Intersection should find at least one point");
 
-        IntRes2d_IntersectionPoint aIntPnt = aIntTool.Intersector().Point(1);
+        IntersectionPoint2D aIntPnt = aIntTool.Intersector().Point(1);
 
         double aParOnC1 = aIntPnt.ParamOnFirst();
         double aParOnC2 = aIntPnt.ParamOnSecond();
@@ -147,12 +149,12 @@ public class Geom2dAPI_InterCurveCurveTests
         return new BSplineCurve2D(aPoles, aKnots, aMults, 1);
     }
 
-    private static void AssertOnBoth(Geom2dAPI_InterCurveCurve theInter, Curve2D theC1, Curve2D theC2,
+    private static void AssertOnBoth(CurveCurveIntersection2D theInter, Curve2D theC1, Curve2D theC2,
                                      double theTol)
     {
         for (int i = 1; i <= theInter.NbPoints(); i++)
         {
-            IntRes2d_IntersectionPoint aP = theInter.Intersector().Point(i);
+            IntersectionPoint2D aP = theInter.Intersector().Point(i);
             Assert.True(theC1.Value(aP.ParamOnFirst()).Distance(aP.Value()) < theTol);
             Assert.True(theC2.Value(aP.ParamOnSecond()).Distance(aP.Value()) < theTol);
         }
@@ -163,7 +165,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         LineCurve2D aLine = new(new Point2D(-5, 0.5), new Direction2D(1, 0));
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aLine, aCircle, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aLine, aCircle, 1.0e-7);
         Assert.Equal(2, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
         double aX = Math.Sqrt(1 - 0.25);
@@ -180,7 +182,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         LineCurve2D aLine = new(new Point2D(-5, 2), new Direction2D(1, 0));
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aLine, aCircle, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aLine, aCircle, 1.0e-7);
         Assert.True(anInter.NbPoints() + anInter.NbSegments() >= 1);
         if (anInter.NbPoints() > 0)
         {
@@ -194,7 +196,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         CircleCurve2D aC1 = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         CircleCurve2D aC2 = new(new Axis2D(new Point2D(1, 0), new Direction2D(1, 0)), 1.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aC1, aC2, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(2, anInter.NbPoints());
         for (int i = 1; i <= 2; i++)
         {
@@ -209,7 +211,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         CircleCurve2D aC1 = new(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3.0);
         CircleCurve2D aC2 = new(new Axis2D(new Point2D(1, 2), new Direction2D(1, 0)), 3.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aC1, aC2, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(0, anInter.NbPoints());
         Assert.True(anInter.NbSegments() >= 1);
         anInter.Segment(1, out Curve2D aS1, out Curve2D aS2);
@@ -223,7 +225,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         EllipseCurve2D anE = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         TrimmedCurve2D aSeg = new(new LineCurve2D(new Point2D(0, -5), new Direction2D(0, 1)), 0.0, 4.0);
-        Geom2dAPI_InterCurveCurve anInter = new(anE, aSeg, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(anE, aSeg, 1.0e-7);
         Assert.Equal(1, anInter.NbPoints());
         Assert.Equal(0.0, anInter.Point(1).X(), 1e-12);
         Assert.Equal(-2.0, anInter.Point(1).Y(), 1e-12);
@@ -234,7 +236,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         BSplineCurve2D aC1 = Polyline((0, 0), (4, 4), (8, 0));
         BSplineCurve2D aC2 = Polyline((0, 1), (8, 1));
-        Geom2dAPI_InterCurveCurve anInter = new(aC1, aC2, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(2, anInter.NbPoints());
         double[] aXs = [anInter.Point(1).X(), anInter.Point(2).X()];
         Array.Sort(aXs);
@@ -253,7 +255,7 @@ public class Geom2dAPI_InterCurveCurveTests
         aPoles[4] = new Point2D(2, 1);
         BezierCurve2D aBez = new(aPoles);
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aBez, aCircle, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aBez, aCircle, 1.0e-7);
         Assert.True(anInter.NbPoints() >= 2);
         for (int i = 1; i <= anInter.NbPoints(); i++)
         {
@@ -267,7 +269,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         // A polyline crossing itself once at (2, 2).
         BSplineCurve2D aC = Polyline((0, 0), (4, 4), (4, 0), (0, 4));
-        Geom2dAPI_InterCurveCurve anInter = new(aC, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aC, 1.0e-7);
         Assert.Equal(1, anInter.NbPoints());
         Assert.Equal(2.0, anInter.Point(1).X(), 1e-9);
         Assert.Equal(2.0, anInter.Point(1).Y(), 1e-9);
@@ -277,8 +279,8 @@ public class Geom2dAPI_InterCurveCurveTests
     public void SelfIntersection_OfConic_IsEmpty()
     {
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aCircle, 1.0e-7);
-        Assert.True(anInter.Intersector().IsDone());
+        CurveCurveIntersection2D anInter = new(aCircle, 1.0e-7);
+        Assert.True(anInter.Intersector().IsDone);
         Assert.Equal(0, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
     }
@@ -288,7 +290,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         BSplineCurve2D aC1 = Polyline((0, 0), (4, 0));
         BSplineCurve2D aC2 = Polyline((2, 0), (6, 0));
-        Geom2dAPI_InterCurveCurve anInter = new(aC1, aC2, 1.0e-7);
+        CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(1, anInter.NbSegments());
         anInter.Segment(1, out Curve2D aS1, out Curve2D aS2);
         Assert.Equal(2.0, aS1.Value(aS1.FirstParameter()).X(), 1e-7);
@@ -302,7 +304,7 @@ public class Geom2dAPI_InterCurveCurveTests
     {
         CircleCurve2D aC1 = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         CircleCurve2D aC2 = new(new Axis2D(new Point2D(5, 0), new Direction2D(1, 0)), 1.0);
-        Geom2dAPI_InterCurveCurve anInter = new(aC1, aC2);
+        CurveCurveIntersection2D anInter = new(aC1, aC2);
         Assert.Equal(0, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.OutOfRangeException>(() => anInter.Segment(1, out _, out _));
@@ -311,7 +313,7 @@ public class Geom2dAPI_InterCurveCurveTests
     [Fact]
     public void Empty_HasNoResults()
     {
-        Geom2dAPI_InterCurveCurve anInter = new();
+        CurveCurveIntersection2D anInter = new();
         Assert.Equal(0, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
     }

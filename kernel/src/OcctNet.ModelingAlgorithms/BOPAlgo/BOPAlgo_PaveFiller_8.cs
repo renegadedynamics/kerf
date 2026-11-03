@@ -2,93 +2,97 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2010-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
-public partial class BOPAlgo_PaveFiller
+public partial class PaveFiller
 {
     /// <summary>Treats the degenerated edges: splits them by the pave blocks passing through their vertex.</summary>
-    protected void ProcessDE(ProgressRange theRange)
+    protected void ProcessDE(ProgressRange range)
     {
-        using var aPSOuter = new ProgressScope(theRange, null, 1);
+        using var psOuter = new ProgressScope(range, null, 1);
         //
         // 1. Find degenerated edges
         //-----------------------------------------------------scope f
         //
 
-        for (int anEdgeIndex = 0; anEdgeIndex < myDS!.NbSourceShapes(); ++anEdgeIndex)
+        for (int edgeIndex = 0; edgeIndex < _ds!.SourceShapeCount; ++edgeIndex)
         {
-            BOPDS_ShapeInfo anEdgeInfo = myDS.ShapeInfo(anEdgeIndex);
-            if (anEdgeInfo.ShapeType() != ShapeType.Edge)
+            ShapeInfo edgeInfo = _ds.ShapeInfo(edgeIndex);
+            if (edgeInfo.ShapeType() != ShapeType.Edge)
             {
                 continue;
             }
 
-            if (anEdgeInfo.HasFlag(out int nF))
+            if (edgeInfo.HasFlag(out int nF))
             {
-                BOPDS_ShapeInfo aSIF = myDS.ShapeInfo(nF);
-                int nV = anEdgeInfo.SubShapes().First();
+                ShapeInfo sif = _ds.ShapeInfo(nF);
+                int nV = edgeInfo.SubShapes().First();
                 int nVSD = 0;
-                if (myDS.HasShapeSD(nV, ref nVSD))
+                if (_ds.HasShapeSD(nV, ref nVSD))
                 {
                     nV = nVSD;
                 }
 
-                if (aSIF.ShapeType() == ShapeType.Face)
+                if (sif.ShapeType() == ShapeType.Face)
                 {
                     // 1. Find PaveBlocks that go through nV for nF
-                    NCollection_List<BOPDS_PaveBlock> aLPBOut = new();
-                    FindPaveBlocks(nV, nF, aLPBOut);
-                    if (!aLPBOut.IsEmpty())
+                    NCollection_List<PaveBlock> lpbOut = new();
+                    FindPaveBlocks(nV, nF, lpbOut);
+                    if (!lpbOut.IsEmpty())
                     {
                         //
                         // 2.
-                        NCollection_List<BOPDS_PaveBlock> aLPBD = myDS.ChangePaveBlocks(anEdgeIndex);
+                        NCollection_List<PaveBlock> lpbd = _ds.ChangePaveBlocks(edgeIndex);
                         // OCCT's Standard_ASSERT_VOID(!aLPBD.IsEmpty(), ...) is compiled out in release builds.
-                        if (aLPBD.IsEmpty())
+                        if (lpbd.IsEmpty())
                         {
                             continue;
                         }
-                        BOPDS_PaveBlock aPBD = aLPBD.First();
+                        PaveBlock pbd = lpbd.First();
                         //
-                        FillPaves(nV, anEdgeIndex, nF, aLPBOut, aPBD);
+                        FillPaves(nV, edgeIndex, nF, lpbOut, pbd);
                         //
-                        myDS.UpdatePaveBlock(aPBD);
+                        _ds.UpdatePaveBlock(pbd);
                     }
                     //
-                    MakeSplitEdge(anEdgeIndex, nF);
+                    MakeSplitEdge(edgeIndex, nF);
                 }
-                if (aSIF.ShapeType() == ShapeType.Edge)
+                if (sif.ShapeType() == ShapeType.Edge)
                 {
-                    Edge aDE = ShapeCasts.Edge(myDS.Shape(anEdgeIndex));
-                    Vertex aVn = ShapeCasts.Vertex(myDS.Shape(nV));
+                    Edge de = ShapeCasts.Edge(_ds.Shape(edgeIndex));
+                    Vertex vn = ShapeCasts.Vertex(_ds.Shape(nV));
                     //
-                    Edge aE = aDE;
-                    aE.EmptyCopy();
-                    BrepBuilder BB = new();
-                    BB.Add(aE, aVn);
-                    BB.Degenerated(aE, true);
-                    BB.UpdateEdge(aE, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    BOPDS_ShapeInfo aSI = new();
-                    aSI.SetShapeType(ShapeType.Edge);
-                    aSI.SetShape(aE);
-                    int nEn = myDS.Append(aSI);
-                    NCollection_List<BOPDS_PaveBlock> aLPBD = myDS.ChangePaveBlocks(anEdgeIndex);
-                    BOPDS_PaveBlock aPBD = aLPBD.First();
-                    aPBD.SetEdge(nEn);
+                    Edge e = de;
+                    e.EmptyCopy();
+                    BrepBuilder bb = new();
+                    bb.Add(e, vn);
+                    bb.Degenerated(e, true);
+                    bb.UpdateEdge(e, global::Kerf.Engine.Foundation.Precision.Confusion());
+                    ShapeInfo si = new();
+                    si.SetShapeType(ShapeType.Edge);
+                    si.SetShape(e);
+                    int nEn = _ds.Append(si);
+                    NCollection_List<PaveBlock> lpbd = _ds.ChangePaveBlocks(edgeIndex);
+                    PaveBlock pbd = lpbd.First();
+                    pbd.SetEdge(nEn);
                 }
             }
 
-            if (UserBreak(aPSOuter))
+            if (UserBreak(psOuter))
             {
                 return;
             }
@@ -96,77 +100,77 @@ public partial class BOPAlgo_PaveFiller
     }
 
     /// <summary>Finds the pave blocks of the face (In, On and Sc) that have the vertex as a bound.</summary>
-    protected void FindPaveBlocks(int thePaveIndex, int theFaceInfoIndex, NCollection_List<BOPDS_PaveBlock> theFoundBlocks)
+    protected void FindPaveBlocks(int paveIndex, int faceInfoIndex, NCollection_List<PaveBlock> foundBlocks)
     {
-        void processPaveBlocks(NCollection_IndexedMap<BOPDS_PaveBlock> thePaveBlocksMap)
+        void processPaveBlocks(NCollection_IndexedMap<PaveBlock> paveBlocksMap)
         {
-            for (int aBlockIndex = 1; aBlockIndex <= thePaveBlocksMap.Extent(); ++aBlockIndex)
+            for (int blockIndex = 1; blockIndex <= paveBlocksMap.Extent(); ++blockIndex)
             {
-                BOPDS_PaveBlock aPaveBlock = thePaveBlocksMap[aBlockIndex];
-                aPaveBlock.Indices(out int nV1, out int nV2);
-                if (thePaveIndex == nV1 || thePaveIndex == nV2)
+                PaveBlock paveBlock = paveBlocksMap[blockIndex];
+                paveBlock.Indices(out int nV1, out int nV2);
+                if (paveIndex == nV1 || paveIndex == nV2)
                 {
-                    theFoundBlocks.Append(aPaveBlock);
+                    foundBlocks.Append(paveBlock);
                 }
             }
         }
 
-        BOPDS_FaceInfo aFaceInfo = myDS!.ChangeFaceInfo(theFaceInfoIndex);
-        processPaveBlocks(aFaceInfo.PaveBlocksIn());
-        processPaveBlocks(aFaceInfo.PaveBlocksOn());
-        processPaveBlocks(aFaceInfo.PaveBlocksSc());
+        FaceInfo faceInfo = _ds!.ChangeFaceInfo(faceInfoIndex);
+        processPaveBlocks(faceInfo.PaveBlocksIn());
+        processPaveBlocks(faceInfo.PaveBlocksOn());
+        processPaveBlocks(faceInfo.PaveBlocksSc());
     }
 
     /// <summary>Makes the split edges of the degenerated edge on the face.</summary>
     protected void MakeSplitEdge(int nDE, int nDF)
     {
-        int nSp, nV1, nV2, aNbPB;
-        double aT1, aT2;
-        Edge aDE, aSp = new();
-        Vertex aV1, aV2;
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new();
-        BOPDS_ShapeInfo aSI = new();
+        int nSp, nV1, nV2, nbPB;
+        double t1, t2;
+        Edge de, sp = new();
+        Vertex v1, v2;
+        NCollection_List<PaveBlock>.Iterator itLPB = new();
+        ShapeInfo si = new();
         //
-        aSI.SetShapeType(ShapeType.Edge);
+        si.SetShapeType(ShapeType.Edge);
         //
-        aDE = ShapeCasts.Edge(myDS!.Shape(nDE));
-        aDE.Orientation(Forward);
+        de = ShapeCasts.Edge(_ds!.Shape(nDE));
+        de.Orientation(Forward);
         //
-        Face aDF = ShapeCasts.Face(myDS.Shape(nDF));
+        Face df = ShapeCasts.Face(_ds.Shape(nDF));
         //
-        NCollection_List<BOPDS_PaveBlock> aLPB = myDS.ChangePaveBlocks(nDE);
-        aNbPB = aLPB.Extent();
+        NCollection_List<PaveBlock> lpb = _ds.ChangePaveBlocks(nDE);
+        nbPB = lpb.Extent();
         //
-        aItLPB.Initialize(aLPB);
-        for (; aItLPB.More(); aItLPB.Next())
+        itLPB.Initialize(lpb);
+        for (; itLPB.More(); itLPB.Next())
         {
-            BOPDS_PaveBlock aPB = aItLPB.Value();
+            PaveBlock pb = itLPB.Value();
             //
-            BOPDS_Pave aPave1 = aPB.Pave1();
-            aPave1.Contents(out nV1, out aT1);
+            Pave pave1 = pb.Pave1();
+            pave1.Contents(out nV1, out t1);
             //
-            BOPDS_Pave aPave2 = aPB.Pave2();
-            aPave2.Contents(out nV2, out aT2);
+            Pave pave2 = pb.Pave2();
+            pave2.Contents(out nV2, out t2);
             //
-            if (myDS.IsNewShape(nV1) || aNbPB > 1)
+            if (_ds.IsNewShape(nV1) || nbPB > 1)
             {
-                aV1 = ShapeCasts.Vertex(myDS.Shape(nV1));
-                aV1.Orientation(Forward);
+                v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
+                v1.Orientation(Forward);
                 //
-                aV2 = ShapeCasts.Vertex(myDS.Shape(nV2));
-                aV2.Orientation(Reversed);
+                v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
+                v2.Orientation(Reversed);
                 //
-                MakeSplitEdge1(aDE, aDF, aV1, aT1, aV2, aT2, out aSp);
+                MakeSplitEdge1(de, df, v1, t1, v2, t2, out sp);
                 //
                 // OCCT reuses one ShapeInfo, which Append copies (decision 631).
-                aSI.SetShape(aSp);
-                nSp = myDS.Append(aSI);
-                aPB.SetEdge(nSp);
+                si.SetShape(sp);
+                nSp = _ds.Append(si);
+                pb.SetEdge(nSp);
             }
             else
             {
-                myDS.ChangeShapeInfo(nDE).SetReference(-1);
-                aLPB.Clear();
+                _ds.ChangeShapeInfo(nDE).SetReference(-1);
+                lpb.Clear();
                 break;
             }
         }
@@ -177,102 +181,102 @@ public partial class BOPAlgo_PaveFiller
     /// degenerated edge somewhere in the middle, and saves the intersection points as extra paves of the degenerated
     /// edge's pave block for its later splitting.
     /// </summary>
-    protected void FillPaves(int nVD, int nED, int nFD, NCollection_List<BOPDS_PaveBlock> aLPBOut, BOPDS_PaveBlock aPBD)
+    protected void FillPaves(int nVD, int nED, int nFD, NCollection_List<PaveBlock> aLPBOut, PaveBlock aPBD)
     {
         // Prepare pave to put to pave block as an Extra pave
-        BOPDS_Pave aPave = new();
-        aPave.SetIndex(nVD);
+        Pave pave = new();
+        pave.SetIndex(nVD);
         //
-        Vertex aDV = ShapeCasts.Vertex(myDS!.Shape(nVD));
-        Edge aDE = ShapeCasts.Edge(myDS.Shape(nED));
-        Face aDF = ShapeCasts.Face(myDS.Shape(nFD));
+        Vertex dv = ShapeCasts.Vertex(_ds!.Shape(nVD));
+        Edge de = ShapeCasts.Edge(_ds.Shape(nED));
+        Face df = ShapeCasts.Face(_ds.Shape(nFD));
         //
-        double aTolV = Tool.Tolerance(aDV);
-        FaceSurfaceAdaptor aBAS = myContext!.SurfaceAdaptor(aDF);
+        double tolV = Tool.Tolerance(dv);
+        FaceSurfaceAdaptor bas = _context!.SurfaceAdaptor(df);
         //
         // 2D intersection tolerance should be computed as a resolution
         // from the tolerance of vertex to resolve the touching cases
-        double aTolInt = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        double tolInt = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // UResolution from the tolerance of the vertex
-        double aURes = aBAS.UResolution(aTolV);
+        double uRes = bas.UResolution(tolV);
         // VResolution from the tolerance of the vertex
-        double aVRes = aBAS.VResolution(aTolV);
+        double vRes = bas.VResolution(tolV);
         //
-        aTolInt = Max(aTolInt, Max(aURes, aVRes));
+        tolInt = Max(tolInt, Max(uRes, vRes));
         //
         // Parametric tolerance to compare intersection point with boundaries
         // should be computed as a resolution from the tolerance of vertex
         // in the direction of the 2D curve of degenerated edge
-        double aTolCmp = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        double tolCmp = global::Kerf.Engine.Foundation.Precision.PConfusion();
         // Get 2D curve
-        Curve2D? aC2DDE = Tool.CurveOnSurface(aDE, aDF, out double aTD1, out double aTD2);
-        if (aC2DDE is null)
+        Curve2D? c2DDE = Tool.CurveOnSurface(de, df, out double td1, out double td2);
+        if (c2DDE is null)
         {
             return;
         }
 
         // Get direction of the curve
-        bool bUDir = Math.Abs(aC2DDE.Value(aTD1).Y() - aC2DDE.Value(aTD2).Y()) < global::Kerf.Engine.Foundation.Precision.PConfusion();
+        bool bUDir = Math.Abs(c2DDE.Value(td1).Y() - c2DDE.Value(td2).Y()) < global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
-        aTolCmp = Max(aTolCmp, (bUDir ? aURes : aVRes));
+        tolCmp = Max(tolCmp, (bUDir ? uRes : vRes));
         //
         // Prepare adaptor for the degenerated edge for intersection
-        CurveAdaptor2D aGAC1 = new();
-        aGAC1.Load(aC2DDE, aTD1, aTD2);
+        CurveAdaptor2D gac1 = new();
+        gac1.Load(c2DDE, td1, td2);
         //
-        NCollection_List<BOPDS_PaveBlock>.Iterator aItLPB = new(aLPBOut);
-        for (; aItLPB.More(); aItLPB.Next())
+        NCollection_List<PaveBlock>.Iterator itLPB = new(aLPBOut);
+        for (; itLPB.More(); itLPB.Next())
         {
-            BOPDS_PaveBlock aPB = aItLPB.Value();
-            int nE = aPB.Edge();
+            PaveBlock pb = itLPB.Value();
+            int nE = pb.Edge();
             if (nE < 0)
             {
                 continue;
             }
-            Edge aE = ShapeCasts.Edge(myDS.Shape(nE));
-            Curve2D? aC2D = Tool.CurveOnSurface(aE, aDF, out double aT1, out double aT2);
-            if (aC2D is null)
+            Edge e = ShapeCasts.Edge(_ds.Shape(nE));
+            Curve2D? c2D = Tool.CurveOnSurface(e, df, out double t1, out double t2);
+            if (c2D is null)
             {
                 continue;
             }
             //
             // Prepare adaptor for the passing edge for intersection
-            CurveAdaptor2D aGAC2 = new();
+            CurveAdaptor2D gac2 = new();
             //
-            LineCurve2D? aL2D = aC2D as LineCurve2D;
-            if (aL2D is not null)
+            LineCurve2D? l2D = c2D as LineCurve2D;
+            if (l2D is not null)
             {
-                aGAC2.Load(aC2D);
+                gac2.Load(c2D);
             }
             else
             {
-                aGAC2.Load(aC2D, aT1, aT2);
+                gac2.Load(c2D, t1, t2);
             }
             // Intersection
-            Geom2dInt_GInter aGInter = new(aGAC1, aGAC2, aTolInt, aTolInt);
-            if (aGInter.IsDone() && aGInter.NbPoints() != 0)
+            GInter gInter = new(gac1, gac2, tolInt, tolInt);
+            if (gInter.IsDone && gInter.PointCount != 0)
             {
                 // Analyze intersection points
-                int i, aNbPoints = aGInter.NbPoints();
-                for (i = 1; i <= aNbPoints; ++i)
+                int i, nbPoints = gInter.PointCount;
+                for (i = 1; i <= nbPoints; ++i)
                 {
-                    double aX = aGInter.Point(i).ParamOnFirst();
-                    aPave.SetParameter(aX);
-                    AddSplitPoint(aPBD, aPave, aTolCmp);
+                    double x = gInter.Point(i).ParamOnFirst();
+                    pave.SetParameter(x);
+                    AddSplitPoint(aPBD, pave, tolCmp);
                 }
             }
             else
             {
                 // If the intersection did not succeed, try the projection of the end point
                 // of the curve corresponding to the vertex of degenerated edge
-                double aT = (nVD == aPB.Pave1().Index() ? aPB.Pave1().Parameter() : aPB.Pave2().Parameter());
-                Point2D aP2d = aC2D.Value(aT);
-                Geom2dAPI_ProjectPointOnCurve aProj2d = new(aP2d, aC2DDE, aTD1, aTD2);
-                if (aProj2d.NbPoints() != 0)
+                double t = (nVD == pb.Pave1().Index() ? pb.Pave1().Parameter() : pb.Pave2().Parameter());
+                Point2D p2d = c2D.Value(t);
+                ProjectPointOnCurve2D proj2d = new(p2d, c2DDE, td1, td2);
+                if (proj2d.NbPoints() != 0)
                 {
-                    double aX = aProj2d.LowerDistanceParameter();
-                    aPave.SetParameter(aX);
-                    AddSplitPoint(aPBD, aPave, aTolCmp);
+                    double x = proj2d.LowerDistanceParameter();
+                    pave.SetParameter(x);
+                    AddSplitPoint(aPBD, pave, tolCmp);
                 }
             }
         }
@@ -282,46 +286,46 @@ public partial class BOPAlgo_PaveFiller
     private static void MakeSplitEdge1(in Edge aE, in Face aF, in Vertex aV1, double aP1,
                                        in Vertex aV2, double aP2, out Edge aNewEdge)
     {
-        double aTol = 1.0e-7;
+        double tol = 1.0e-7;
 
-        Edge E = aE;
+        Edge e = aE;
 
-        E.EmptyCopy();
-        BrepBuilder BB = new();
-        BB.Add(E, aV1);
-        BB.Add(E, aV2);
+        e.EmptyCopy();
+        BrepBuilder bb = new();
+        bb.Add(e, aV1);
+        bb.Add(e, aV2);
 
-        BB.Range(E, aF, aP1, aP2);
+        bb.Range(e, aF, aP1, aP2);
 
-        BB.Degenerated(E, true);
+        bb.Degenerated(e, true);
 
-        BB.UpdateEdge(E, aTol);
-        aNewEdge = E;
+        bb.UpdateEdge(e, tol);
+        aNewEdge = e;
     }
 
     // Validates the point represented by the pave for the pave block: if it passes the checks, it is added as an
     // extra pave of the pave block for its later splitting. Returns true if the point is added.
-    private static bool AddSplitPoint(BOPDS_PaveBlock thePBD, in BOPDS_Pave thePave, double theTol)
+    private static bool AddSplitPoint(PaveBlock pbd, in Pave pave, double tol)
     {
-        thePBD.Range(out double aTD1, out double aTD2);
+        pbd.Range(out double td1, out double td2);
 
-        double aT = thePave.Parameter();
+        double t = pave.Parameter();
         // Check that the parameter is inside the Pave Block
-        if (aT - aTD1 < theTol || aTD2 - aT < theTol)
+        if (t - td1 < tol || td2 - t < tol)
         {
             return false;
         }
 
         // Check that the pave block does not contain the same parameter
-        int anInd = 0;
-        if (thePBD.ContainsParameter(aT, theTol, ref anInd))
+        int ind = 0;
+        if (pbd.ContainsParameter(t, tol, ref ind))
         {
             return false;
         }
 
         // Add the point as an Extra pave to the Pave Block for further
         // splitting of the latter
-        thePBD.AppendExtPave1(thePave);
+        pbd.AppendExtPave1(pave);
         return true;
     }
 }

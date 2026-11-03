@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -10,7 +12,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.Oracle.Tests;
 
@@ -309,10 +311,10 @@ internal sealed class ShapeFixOracleRun(ITestOutputHelper output, string thePref
 /// </remarks>
 public class ShapeFixShapeOracleTests(ITestOutputHelper output)
 {
-    private static string Status(bool theDone, Func<ShapeExtend_Status, bool> theStatus)
-        => $"{theDone}/{theStatus(ShapeExtend_DONE1)}/{theStatus(ShapeExtend_DONE2)}/{theStatus(ShapeExtend_DONE3)}/{theStatus(ShapeExtend_DONE4)}/{theStatus(ShapeExtend_FAIL)}";
+    private static string Status(bool theDone, Func<ExtendStatus, bool> theStatus)
+        => $"{theDone}/{theStatus(DONE1)}/{theStatus(DONE2)}/{theStatus(DONE3)}/{theStatus(DONE4)}/{theStatus(Fail)}";
 
-    private static N.ShapeExtend_Status NS(ShapeExtend_Status theStatus) => (N.ShapeExtend_Status)(int)theStatus;
+    private static N.ShapeExtend_Status NS(ExtendStatus theStatus) => (N.ShapeExtend_Status)(int)theStatus;
 
     private static void CompareFixShape(ShapeFixOracleRun theRun, N.TopoDS_Shape theShape, string theWhat, double thePrecision = -1.0,
                                         double theMaxTol = -1.0)
@@ -348,7 +350,7 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         string aPStatus = "";
         try
         {
-            var aFix = new ShapeFix_Shape(aPS);
+            var aFix = new ShapeFixer(aPS);
             if (thePrecision > 0.0)
             {
                 aFix.SetPrecision(thePrecision);
@@ -389,9 +391,9 @@ public class ShapeFixShapeOracleTests(ITestOutputHelper output)
         Shape? aPRes = null;
         try
         {
-            var aFix = new ShapeFix_Solid();
+            var aFix = new SolidFixer();
             aPRes = aFix.SolidFromShell(ShapeCasts.Shell(aPS));
-            aPStatus = $"{aFix.Status(ShapeExtend_DONE2)}";
+            aPStatus = $"{aFix.Status(DONE2)}";
         }
         catch (FailureException e)
         {

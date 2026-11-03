@@ -1,10 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -23,14 +27,14 @@ public class ShapeAnalysis_WireTests
     private static readonly Point3D C = new(1, 1, 0);
     private static readonly Point3D D = new(0, 1, 0);
 
-    private static Edge Edge(in Point3D P1, in Point3D P2) => new BRepBuilderAPI_MakeEdge(P1, P2).Edge();
+    private static Edge Edge(in Point3D P1, in Point3D P2) => new MakeEdge(P1, P2).Edge();
 
-    private static Edge Edge(in Vertex V1, in Vertex V2) => new BRepBuilderAPI_MakeEdge(V1, V2).Edge();
+    private static Edge Edge(in Vertex V1, in Vertex V2) => new MakeEdge(V1, V2).Edge();
 
-    private static Vertex Vertex(double X, double Y) => new BRepBuilderAPI_MakeVertex(new Point3D(X, Y, 0)).Vertex();
+    private static Vertex Vertex(double X, double Y) => new MakeVertex(new Point3D(X, Y, 0)).Vertex();
 
     /// <summary>The plane z = 0 as an infinite face (UV = XY).</summary>
-    private static Face PlaneFace() => new BRepBuilderAPI_MakeFace(new Plane3D()).Face();
+    private static Face PlaneFace() => new MakeFace(new Plane3D()).Face();
 
     /// <summary>The unit square ABCD as four edges sharing their vertices, counter-clockwise.</summary>
     private static Edge[] SquareEdges()
@@ -39,9 +43,9 @@ public class ShapeAnalysis_WireTests
         return [Edge(aV[0], aV[1]), Edge(aV[1], aV[2]), Edge(aV[2], aV[3]), Edge(aV[3], aV[0])];
     }
 
-    private static ShapeExtend_WireData WireData(params Edge[] theEdges)
+    private static ExtendWireData WireData(params Edge[] theEdges)
     {
-        var aWD = new ShapeExtend_WireData();
+        var aWD = new ExtendWireData();
         foreach (Edge anE in theEdges)
         {
             aWD.Add(anE);
@@ -52,7 +56,7 @@ public class ShapeAnalysis_WireTests
 
     private static Wire Polygon(params Point3D[] thePoints)
     {
-        var aMaker = new BRepBuilderAPI_MakePolygon();
+        var aMaker = new MakePolygon();
         foreach (Point3D aP in thePoints)
         {
             aMaker.Add(aP);
@@ -62,7 +66,7 @@ public class ShapeAnalysis_WireTests
         return aMaker.Wire();
     }
 
-    private static int[] Order(ShapeAnalysis_WireOrder theOrder, int theNb)
+    private static int[] Order(WireOrderAnalysis theOrder, int theNb)
     {
         var anOrder = new int[theNb];
         for (int i = 1; i <= theNb; i++)
@@ -79,14 +83,14 @@ public class ShapeAnalysis_WireTests
     public void CheckOrder_OrderedSquare_IsOk()
     {
         Edge[] anE = SquareEdges();
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE), PlaneFace(), Prec);
-        var anOrder = new ShapeAnalysis_WireOrder();
+        var aSAW = new WireAnalysis(WireData(anE), PlaneFace(), Prec);
+        var anOrder = new WireOrderAnalysis();
         Assert.False(aSAW.CheckOrder(anOrder, true, true));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.OK));
         Assert.Equal([1, 2, 3, 4], Order(anOrder, 4));
 
         Assert.False(aSAW.CheckOrder());
-        Assert.True(aSAW.StatusOrder(ShapeExtend_OK));
+        Assert.True(aSAW.StatusOrder(ExtendStatus.OK));
     }
 
     [Fact]
@@ -94,18 +98,18 @@ public class ShapeAnalysis_WireTests
     {
         Edge[] anE = SquareEdges();
         // AB, CD, BC, DA: the chain from AB takes BC (3), then CD (2), then DA (4)
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE[0], anE[2], anE[1], anE[3]), PlaneFace(), Prec);
-        var anOrder = new ShapeAnalysis_WireOrder();
+        var aSAW = new WireAnalysis(WireData(anE[0], anE[2], anE[1], anE[3]), PlaneFace(), Prec);
+        var anOrder = new WireOrderAnalysis();
         Assert.True(aSAW.CheckOrder(anOrder, true, true));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
-        Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
+        Assert.False(aSAW.LastCheckStatus(ExtendStatus.DONE3));
         Assert.Equal([1, 3, 2, 4], Order(anOrder, 4));
 
         // BC, AB, CD, DA: AB is prepended, then CD and DA follow BC
-        aSAW = new ShapeAnalysis_Wire(WireData(anE[1], anE[0], anE[2], anE[3]), PlaneFace(), Prec);
-        anOrder = new ShapeAnalysis_WireOrder();
+        aSAW = new WireAnalysis(WireData(anE[1], anE[0], anE[2], anE[3]), PlaneFace(), Prec);
+        anOrder = new WireOrderAnalysis();
         Assert.True(aSAW.CheckOrder(anOrder, true, true));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
         Assert.Equal([1, 3, 4, 2], Order(anOrder, 4));
     }
 
@@ -114,16 +118,16 @@ public class ShapeAnalysis_WireTests
     {
         Edge[] anE = SquareEdges();
         // AB, BC, CD, then DA reversed (A to D): it must be reversed at the end
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE[0], anE[1], anE[2], ShapeCasts.Edge(anE[3].Reversed())), PlaneFace(), Prec);
-        var anOrder = new ShapeAnalysis_WireOrder();
+        var aSAW = new WireAnalysis(WireData(anE[0], anE[1], anE[2], ShapeCasts.Edge(anE[3].Reversed())), PlaneFace(), Prec);
+        var anOrder = new WireOrderAnalysis();
         Assert.True(aSAW.CheckOrder(anOrder, true, true));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE3));
         Assert.Equal([1, 2, 3, -4], Order(anOrder, 4));
 
         // the same in 2D, on the pcurves
-        anOrder = new ShapeAnalysis_WireOrder();
+        anOrder = new WireOrderAnalysis();
         Assert.True(aSAW.CheckOrder(anOrder, true, false));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE3));
         Assert.Equal([1, 2, 3, -4], Order(anOrder, 4));
     }
 
@@ -132,10 +136,10 @@ public class ShapeAnalysis_WireTests
     {
         Edge[] anE = SquareEdges();
         // CB (BC reversed), DA, AB, CD
-        var aSAW = new ShapeAnalysis_Wire(WireData(ShapeCasts.Edge(anE[1].Reversed()), anE[3], anE[0], anE[2]), PlaneFace(), Prec);
-        var anOrder = new ShapeAnalysis_WireOrder();
+        var aSAW = new WireAnalysis(WireData(ShapeCasts.Edge(anE[1].Reversed()), anE[3], anE[0], anE[2]), PlaneFace(), Prec);
+        var anOrder = new WireOrderAnalysis();
         Assert.True(aSAW.CheckOrder(anOrder, true, true));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE3));
         // every edge is used once, and the chain closes
         int[] anOrd = Order(anOrder, 4);
         Assert.Equal([1, 2, 3, 4], anOrd.Select(Math.Abs).Order());
@@ -144,10 +148,10 @@ public class ShapeAnalysis_WireTests
     [Fact]
     public void CheckOrder_2dMode_WithoutFace_Fails()
     {
-        var aSAW = new ShapeAnalysis_Wire();
+        var aSAW = new WireAnalysis();
         aSAW.Load(WireData(SquareEdges()));
-        Assert.False(aSAW.CheckOrder(new ShapeAnalysis_WireOrder(), true, false));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL2));
+        Assert.False(aSAW.CheckOrder(new WireOrderAnalysis(), true, false));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.FAIL2));
     }
 
     [Fact]
@@ -157,13 +161,13 @@ public class ShapeAnalysis_WireTests
         foreach (Wire aW in new[] { anOuter, aHole1, aHole2 })
         {
             // as BRepMesh_ShapeVisitor: non-manifold mode, 2D
-            var aWD = new ShapeExtend_WireData(aW, true, false);
-            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-            var anOrder = new ShapeAnalysis_WireOrder();
+            var aWD = new ExtendWireData(aW, true, false);
+            var aSAW = new WireAnalysis(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+            var anOrder = new WireOrderAnalysis();
             aSAW.CheckOrder(anOrder, true, false);
-            Assert.False(aSAW.LastCheckStatus(ShapeExtend_FAIL));
-            Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE3));
-            Assert.Equal(aWD.NbEdges(), anOrder.NbEdges());
+            Assert.False(aSAW.LastCheckStatus(ExtendStatus.Fail));
+            Assert.False(aSAW.LastCheckStatus(ExtendStatus.DONE3));
+            Assert.Equal(aWD.EdgeCount, anOrder.EdgeCount);
         }
     }
 
@@ -175,28 +179,28 @@ public class ShapeAnalysis_WireTests
         // OCCT's order is 1, 4, 3, 2: the edges reversed in sequence, only shifted (status 3, DONE5), nothing to reverse.
         Face[] aFaces =
         [
-            new BRepPrimAPI_MakeCylinder(2, 5).Face(),
-            new BRepPrimAPI_MakeSphere(3).Face(),
-            new BRepPrimAPI_MakeCone(2, 0, 4).Face(),
+            new ApiMakeCylinder(2, 5).Face(),
+            new MakeSphere(3).Face(),
+            new ApiMakeCone(2, 0, 4).Face(),
         ];
         foreach (Face aFace in aFaces)
         {
-            Wire aW = ShapeAnalysis.OuterWire(aFace);
-            var aWD = new ShapeExtend_WireData(aW, true, false);
-            var aSAW = new ShapeAnalysis_Wire(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-            var anOrder = new ShapeAnalysis_WireOrder();
+            Wire aW = ShapeAnalysisAnalysis.OuterWire(aFace);
+            var aWD = new ExtendWireData(aW, true, false);
+            var aSAW = new WireAnalysis(aWD, aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
+            var anOrder = new WireOrderAnalysis();
             Assert.True(aSAW.CheckOrder(anOrder, true, false));
-            Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
-            Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE3));
-            Assert.False(aSAW.LastCheckStatus(ShapeExtend_FAIL));
-            Assert.Equal(aWD.NbEdges(), anOrder.NbEdges());
+            Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE5));
+            Assert.False(aSAW.LastCheckStatus(ExtendStatus.DONE3));
+            Assert.False(aSAW.LastCheckStatus(ExtendStatus.Fail));
+            Assert.Equal(aWD.EdgeCount, anOrder.EdgeCount);
             Assert.Equal([1, 4, 3, 2], Order(anOrder, 4));
 
             // in 3D too: the top edge is closed, and the seam leaving its vertex (edge 4) is preferred to the one
             // arriving there (edge 2)
-            anOrder = new ShapeAnalysis_WireOrder();
+            anOrder = new WireOrderAnalysis();
             Assert.True(aSAW.CheckOrder(anOrder, true, true));
-            Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
+            Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE5));
             Assert.Equal([1, 4, 3, 2], Order(anOrder, 4));
         }
     }
@@ -209,63 +213,63 @@ public class ShapeAnalysis_WireTests
         Face aFace = PlaneFace();
         // shared vertex: OK
         Edge[] anE = SquareEdges();
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE), aFace, Prec);
+        var aSAW = new WireAnalysis(WireData(anE), aFace, Prec);
         Assert.False(aSAW.CheckConnected(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.OK));
         Assert.False(aSAW.CheckConnected());
 
         // distinct vertices at the same point: DONE1
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(B, C)), aFace, Prec);
+        aSAW = new WireAnalysis(WireData(Edge(A, B), Edge(B, C)), aFace, Prec);
         Assert.True(aSAW.CheckConnected(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
         Assert.Equal(0.0, aSAW.MinDistance3d());
 
         // a gap under the precision: DONE2
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new Point3D(1, 1e-5, 0), C)), aFace, 1e-3);
+        aSAW = new WireAnalysis(WireData(Edge(A, B), Edge(new Point3D(1, 1e-5, 0), C)), aFace, 1e-3);
         Assert.True(aSAW.CheckConnected(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE2));
         Assert.Equal(1e-5, aSAW.MinDistance3d(), 1e-15);
 
         // a gap under prec only: DONE3
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(new Point3D(1, 0.1, 0), C)), aFace, 1e-3);
+        aSAW = new WireAnalysis(WireData(Edge(A, B), Edge(new Point3D(1, 0.1, 0), C)), aFace, 1e-3);
         Assert.True(aSAW.CheckConnected(2, 0.5));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE3));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE3));
 
         // too far: FAIL1
         Assert.False(aSAW.CheckConnected(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.FAIL1));
 
         // the second edge the wrong way round: FAIL2
-        aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(C, B)), aFace, 1e-3);
+        aSAW = new WireAnalysis(WireData(Edge(A, B), Edge(C, B)), aFace, 1e-3);
         Assert.False(aSAW.CheckConnected(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.FAIL2));
     }
 
     [Fact]
     public void CheckSmall_DetectsEdgesUnderTheGivenPrecision()
     {
-        var aSAW = new ShapeAnalysis_Wire(WireData(Edge(A, B), Edge(B, new Point3D(5, 0, 0))), PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(WireData(Edge(A, B), Edge(B, new Point3D(5, 0, 0))), PlaneFace(), Prec);
         Assert.False(aSAW.CheckSmall(1, 0.5));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.OK));
         Assert.True(aSAW.CheckSmall(1, 2.0));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE2));
         Assert.False(aSAW.CheckSmall(0.5));
         Assert.True(aSAW.CheckSmall(2.0));
-        Assert.True(aSAW.StatusSmall(ShapeExtend_DONE2));
+        Assert.True(aSAW.StatusSmall(ExtendStatus.DONE2));
     }
 
     [Fact]
     public void CheckClosed_OpenAndClosedWires()
     {
         Face aFace = PlaneFace();
-        var aSAW = new ShapeAnalysis_Wire(WireData(SquareEdges()), aFace, Prec);
+        var aSAW = new WireAnalysis(WireData(SquareEdges()), aFace, Prec);
         Assert.False(aSAW.CheckClosed());
-        Assert.True(aSAW.StatusClosed(ShapeExtend_OK));
+        Assert.True(aSAW.StatusClosed(ExtendStatus.OK));
 
         Edge[] anE = SquareEdges();
-        aSAW = new ShapeAnalysis_Wire(WireData(anE[0], anE[1], anE[2]), aFace, Prec);
+        aSAW = new WireAnalysis(WireData(anE[0], anE[1], anE[2]), aFace, Prec);
         Assert.False(aSAW.CheckClosed());
-        Assert.True(aSAW.StatusClosed(ShapeExtend_FAIL1));
+        Assert.True(aSAW.StatusClosed(ExtendStatus.FAIL1));
     }
 
     // ---------------------------------------------------------------- whole checks on good faces
@@ -274,11 +278,11 @@ public class ShapeAnalysis_WireTests
     public void Perform_OnAGoodPolygonFace_FindsNothing()
     {
         Wire aW = Polygon(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 3, 0), new Point3D(0, 3, 0));
-        Face aFace = new BRepBuilderAPI_MakeFace(aW).Face();
-        var aSAW = new ShapeAnalysis_Wire(aW, aFace, Prec);
-        Assert.True(aSAW.IsLoaded());
-        Assert.True(aSAW.IsReady());
-        Assert.Equal(4, aSAW.NbEdges());
+        Face aFace = new MakeFace(aW).Face();
+        var aSAW = new WireAnalysis(aW, aFace, Prec);
+        Assert.True(aSAW.IsLoaded);
+        Assert.True(aSAW.IsReady);
+        Assert.Equal(4, aSAW.EdgeCount);
         Assert.False(aSAW.Perform());
         Assert.False(aSAW.CheckEdgeCurves());
         Assert.False(aSAW.CheckDegenerated());
@@ -304,15 +308,15 @@ public class ShapeAnalysis_WireTests
     {
         Face[] aFaces =
         [
-            new BRepPrimAPI_MakeCylinder(2, 5).Face(),
-            new BRepPrimAPI_MakeSphere(3).Face(),
+            new ApiMakeCylinder(2, 5).Face(),
+            new MakeSphere(3).Face(),
         ];
         foreach (Face aFace in aFaces)
         {
-            var aSAW = new ShapeAnalysis_Wire(ShapeAnalysis.OuterWire(aFace), aFace, Prec);
+            var aSAW = new WireAnalysis(ShapeAnalysisAnalysis.OuterWire(aFace), aFace, Prec);
             Assert.False(aSAW.CheckDegenerated());
             Assert.False(aSAW.CheckSelfIntersection());
-            for (int i = 1; i <= aSAW.NbEdges(); i++)
+            for (int i = 1; i <= aSAW.EdgeCount; i++)
             {
                 Assert.False(aSAW.CheckSeam(i));
             }
@@ -326,13 +330,13 @@ public class ShapeAnalysis_WireTests
     {
         // (0,0) - (2,2) - (2,0) - (0,2): the first and third edges cross at (1,1)
         Wire aW = Polygon(new Point3D(0, 0, 0), new Point3D(2, 2, 0), new Point3D(2, 0, 0), new Point3D(0, 2, 0));
-        var aSAW = new ShapeAnalysis_Wire(aW, PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(aW, PlaneFace(), Prec);
         Assert.True(aSAW.CheckSelfIntersection());
-        Assert.True(aSAW.StatusSelfIntersection(ShapeExtend_DONE3));
-        Assert.False(aSAW.StatusSelfIntersection(ShapeExtend_DONE1));
-        Assert.False(aSAW.StatusSelfIntersection(ShapeExtend_DONE2));
+        Assert.True(aSAW.StatusSelfIntersection(ExtendStatus.DONE3));
+        Assert.False(aSAW.StatusSelfIntersection(ExtendStatus.DONE1));
+        Assert.False(aSAW.StatusSelfIntersection(ExtendStatus.DONE2));
 
-        var aPnts2d = new NCollection_Sequence<IntRes2d_IntersectionPoint>();
+        var aPnts2d = new NCollection_Sequence<IntersectionPoint2D>();
         var aPnts3d = new NCollection_Sequence<Point3D>();
         var anErrors = new NCollection_Sequence<double>();
         Assert.True(aSAW.CheckIntersectingEdges(1, 3, aPnts2d, aPnts3d, anErrors));
@@ -341,7 +345,7 @@ public class ShapeAnalysis_WireTests
         Assert.True(anErrors.Value(1) < 1e-9);
         // adjacent edges meet at their common vertex only
         Assert.False(aSAW.CheckIntersectingEdges(2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.OK));
         Assert.False(aSAW.CheckSelfIntersectingEdge(1));
     }
 
@@ -365,11 +369,11 @@ public class ShapeAnalysis_WireTests
         aB.Add(anE2, aV2.Oriented(Reversed));
         aB.Range(anE2, 0, 1);
 
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE1, anE2), PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(WireData(anE1, anE2), PlaneFace(), Prec);
         Point2D aP1 = new(), aP2 = new();
         Assert.True(aSAW.CheckLacking(2, 0.05, ref aP1, ref aP2));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
-        Assert.False(aSAW.LastCheckStatus(ShapeExtend_DONE2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
+        Assert.False(aSAW.LastCheckStatus(ExtendStatus.DONE2));
         Assert.True(aP1.Distance(new Point2D(1, 0)) < 1e-12);
         Assert.True(aP2.Distance(new Point2D(1.2, 0)) < 1e-12);
         Assert.Equal(0.2, aSAW.MaxDistance2d(), 1e-12);
@@ -383,7 +387,7 @@ public class ShapeAnalysis_WireTests
     public void CheckNotchedEdges_EdgeGoingBack()
     {
         Vertex aVA = Vertex(0, 0), aVB = Vertex(5, 0), aVC = Vertex(2, 0);
-        var aSAW = new ShapeAnalysis_Wire(WireData(Edge(aVA, aVB), Edge(aVB, aVC)), PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(WireData(Edge(aVA, aVB), Edge(aVB, aVC)), PlaneFace(), Prec);
         int aShort = 0;
         double aParam = 0;
         Assert.True(aSAW.CheckNotchedEdges(2, ref aShort, ref aParam, 0.01));
@@ -396,7 +400,7 @@ public class ShapeAnalysis_WireTests
     {
         Vertex aVA = Vertex(0, 0), aVB = Vertex(10, 0), aVC = Vertex(0, 1e-4);
         Edge anE1 = Edge(aVA, aVB), anE2 = Edge(aVB, aVC);
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE1, anE2), PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(WireData(anE1, anE2), PlaneFace(), Prec);
         Edge anE11 = new(), anE12 = new(), anE21 = new(), anE22 = new();
         Assert.True(aSAW.CheckTail(anE1, anE2, 0.01, 0.001, 0.1, ref anE11, ref anE12, ref anE21, ref anE22));
         Assert.True(anE11.IsEqual(anE1));
@@ -414,14 +418,14 @@ public class ShapeAnalysis_WireTests
     public void CheckLoop_FindsTheVertexOfTwoTriangles()
     {
         Vertex aO = Vertex(0, 0), aA = Vertex(1, 0), aB = Vertex(1, 1), aC = Vertex(-1, 0), aD = Vertex(-1, -1);
-        var aSAW = new ShapeAnalysis_Wire(WireData(Edge(aO, aA), Edge(aA, aB), Edge(aB, aO), Edge(aO, aC), Edge(aC, aD), Edge(aD, aO)),
+        var aSAW = new WireAnalysis(WireData(Edge(aO, aA), Edge(aA, aB), Edge(aB, aO), Edge(aO, aC), Edge(aC, aD), Edge(aD, aO)),
                                           PlaneFace(), Prec);
         var aLoops = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         var aVE = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var aSmall = new NCollection_Map<Shape>(ShapeHasher.Instance);
         var aSeams = new NCollection_Map<Shape>(ShapeHasher.Instance);
         Assert.True(aSAW.CheckLoop(aLoops, aVE, aSmall, aSeams));
-        Assert.True(aSAW.StatusLoop(ShapeExtend_DONE1));
+        Assert.True(aSAW.StatusLoop(ExtendStatus.DONE1));
         Assert.Equal(1, aLoops.Extent());
         Assert.True(aLoops.FindKey(1).IsSame(aO));
         Assert.Equal(5, aVE.Extent());
@@ -433,30 +437,30 @@ public class ShapeAnalysis_WireTests
     public void CheckSmallArea_Sliver()
     {
         Wire aSliver = Polygon(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(5, 1e-9, 0));
-        var aSAW = new ShapeAnalysis_Wire(aSliver, PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(aSliver, PlaneFace(), Prec);
         Assert.True(aSAW.CheckSmallArea(aSliver));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
 
         Wire aSquare = Polygon(A, B, C, D);
-        aSAW = new ShapeAnalysis_Wire(aSquare, PlaneFace(), Prec);
+        aSAW = new WireAnalysis(aSquare, PlaneFace(), Prec);
         Assert.False(aSAW.CheckSmallArea(aSquare));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_OK));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.OK));
     }
 
     [Fact]
     public void CheckShapeConnect_FollowingEdgeDirectAndReversed()
     {
         Edge[] anE = SquareEdges();
-        var aSAW = new ShapeAnalysis_Wire(WireData(anE[0], anE[1]), PlaneFace(), Prec);
+        var aSAW = new WireAnalysis(WireData(anE[0], anE[1]), PlaneFace(), Prec);
         // C to D follows the wire A-B-C directly
         Assert.True(aSAW.CheckShapeConnect(Edge(C, D)));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE5));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE5));
         Assert.Equal(0.0, aSAW.MinDistance3d());
 
         // D to C follows it reversed
         Assert.True(aSAW.CheckShapeConnect(out double aTH, out double aTT, out double aHT, out double aHH, Edge(D, C)));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE2));
         Assert.Equal(1.0, aTH);
         Assert.Equal(0.0, aTT);
         Assert.Equal(Math.Sqrt(2.0), aHT);
@@ -464,38 +468,38 @@ public class ShapeAnalysis_WireTests
 
         // far away: FAIL2; not an edge or a wire: FAIL1
         Assert.False(aSAW.CheckShapeConnect(Edge(new Point3D(5, 5, 0), new Point3D(6, 5, 0))));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL2));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.FAIL2));
         Assert.False(aSAW.CheckShapeConnect(Vertex(5, 5)));
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_FAIL1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.FAIL1));
     }
 
     [Fact]
     public void CheckOuterBound_HoleWire()
     {
         Face aFace = FaceWithHoles(out Wire anOuter, out Wire aHole1, out _);
-        var aSAW = new ShapeAnalysis_Wire(anOuter, aFace, Prec);
+        var aSAW = new WireAnalysis(anOuter, aFace, Prec);
         Assert.False(aSAW.CheckOuterBound());
         Assert.False(aSAW.CheckOuterBound(false));
-        aSAW = new ShapeAnalysis_Wire(aHole1, aFace, Prec);
+        aSAW = new WireAnalysis(aHole1, aFace, Prec);
         Assert.True(aSAW.CheckOuterBound());
-        Assert.True(aSAW.LastCheckStatus(ShapeExtend_DONE1));
+        Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
     }
 
     [Fact]
     public void SetSurface_MakesAFrozenFace()
     {
-        var aSAW = new ShapeAnalysis_Wire();
-        Assert.False(aSAW.IsLoaded());
-        Assert.Equal(0, aSAW.NbEdges());
+        var aSAW = new WireAnalysis();
+        Assert.False(aSAW.IsLoaded);
+        Assert.Equal(0, aSAW.EdgeCount);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aSAW.Precision());
         aSAW.SetSurface(new PlaneSurface(new Plane3D()));
         Assert.False(aSAW.Face().IsNull);
         Assert.True(aSAW.Face().TShape()!.IsFrozen);
         Assert.NotNull(aSAW.Surface());
         aSAW.Load(WireData(SquareEdges()));
-        Assert.True(aSAW.IsReady());
+        Assert.True(aSAW.IsReady);
         aSAW.ClearStatuses();
-        Assert.True(aSAW.StatusOrder(ShapeExtend_OK));
+        Assert.True(aSAW.StatusOrder(ExtendStatus.OK));
     }
 
     // ---------------------------------------------------------------- helpers

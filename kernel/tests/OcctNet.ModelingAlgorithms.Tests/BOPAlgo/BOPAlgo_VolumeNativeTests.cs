@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -91,12 +92,12 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
     {
         public readonly List<(string Text, Shape Shape)> Read = [];
         public readonly NCollection_List<Shape> Objects = new(), Tools = new();
-        public BOPAlgo_PaveFiller PaveFiller = new();
+        public PaveFiller PaveFiller = new();
         public bool HasDS;
-        public readonly BOPAlgo_CellsBuilder Cells = new();
+        public readonly CellsBuilder Cells = new();
         public bool RunParallel;
         public double Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
-        public BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
+        public GlueMode Glue = GlueMode.GlueOff;
 
         public Shape Resolve(string theText)
         {
@@ -185,13 +186,13 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 theS.Tools.Clear();
                 return "";
             case "bclear":
-                theS.PaveFiller = new BOPAlgo_PaveFiller();
+                theS.PaveFiller = new PaveFiller();
                 theS.HasDS = false;
                 theS.Objects.Clear();
                 theS.Tools.Clear();
                 theS.RunParallel = false;
                 theS.Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
-                theS.Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
+                theS.Glue = GlueMode.GlueOff;
                 return "";
             case "bfuzzyvalue":
                 theS.Fuzzy = double.Parse(a[1], CultureInfo.InvariantCulture);
@@ -202,7 +203,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             case "bnondestructive":
                 return "";
             case "bglue":
-                theS.Glue = (BOPAlgo_GlueEnum)Atoi(a[1]);
+                theS.Glue = (GlueMode)Atoi(a[1]);
                 return "";
             case "bfillds":
             {
@@ -219,7 +220,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 {
                     aLC.Append(aS);
                 }
-                BOPAlgo_PaveFiller aPF = theS.PaveFiller;
+                PaveFiller aPF = theS.PaveFiller;
                 aPF.SetArguments(aLC);
                 aPF.SetRunParallel(aParallel);
                 aPF.SetNonDestructive(true);
@@ -230,7 +231,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 return Outcome(aPF.GetReport());
             }
         }
-        BOPAlgo_CellsBuilder aCB = theS.Cells;
+        CellsBuilder aCB = theS.Cells;
         string History() => DeterminismHarness.HistoryText(ToList(aCB.Arguments()), aCB.Shape(), aCB.History()) + "\n";
         string CellsOut(Shape theR) => Outcome(aCB.GetReport()) + ShapeOut(theR) + History();
         switch (c)
@@ -255,7 +256,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 aCB.SetNonDestructive(true);
                 aCB.SetGlue(theS.Glue);
                 aCB.PerformWithFiller(theS.PaveFiller);
-                if (aCB.HasErrors())
+                if (aCB.HasErrors)
                 {
                     return Outcome(aCB.GetReport());
                 }
@@ -375,7 +376,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                     }
                     aLS = aLSx;
                 }
-                BOPAlgo_MakerVolume aMV = new();
+                MakerVolume aMV = new();
                 aMV.SetArguments(aLS);
                 aMV.SetIntersect(bToIntersect);
                 aMV.SetRunParallel(aParallel);
@@ -384,7 +385,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 aMV.SetAvoidInternalShapes(bAvoidInternal);
                 aMV.SetGlue(theS.Glue);
                 aMV.Perform();
-                if (aMV.HasErrors())
+                if (aMV.HasErrors)
                 {
                     return Outcome(aMV.GetReport());
                 }

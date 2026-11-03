@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Features;
+using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Custom;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -414,34 +419,34 @@ internal static partial class Build123dPhase7Capture
             {
                 case P7Op.ThickSolid:
                 {
-                    var aMT = new BRepOffsetAPI_MakeThickSolid();
+                    var aMT = new MakeThickSolid();
                     var aClosing = new NCollection_List<Shape>();
                     foreach (int i in a.Faces ?? [])
                     {
                         aClosing.Append(aFaces[i]);
                     }
-                    aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, BRepOffset_Mode.BRepOffset_Skin, a.Inter, false,
+                    aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, OffsetMode.Skin, a.Inter, false,
                                              (JoinKind)a.Join, a.RemoveIntEdges);
                     aMT.Build();
-                    string aStatus = $"done={aMT.IsDone()} error={(int)aMT.MakeOffset().Error()}";
+                    string aStatus = $"done={aMT.IsDone} error={(int)aMT.MakeOffset().Error()}";
                     Shape aRes = aMT.Shape();
                     return new P7Port(null, aStatus, aRes,
                                       theHistory && !aRes.IsNull ? PortHistory(theOps, aRes, s => aMT.Generated(s), s => aMT.Modified(s), s => aMT.IsDeleted(s)) : "");
                 }
                 case P7Op.MakeOffset:
                 {
-                    var aMO = new BRepOffset_MakeOffset();
+                    var aMO = new MakeOffset();
                     if (a.ThreeArgs)
                     {
                         aMO.Initialize(theOps[0], a.Value, a.Tol);
                     }
                     else
                     {
-                        aMO.Initialize(theOps[0], a.Value, a.Tol, BRepOffset_Mode.BRepOffset_Skin, a.Inter, false, (JoinKind)a.Join,
+                        aMO.Initialize(theOps[0], a.Value, a.Tol, OffsetMode.Skin, a.Inter, false, (JoinKind)a.Join,
                                        a.Thickening, a.RemoveIntEdges);
                     }
                     aMO.MakeOffsetShape();
-                    string aStatus = $"done={aMO.IsDone()} error={(int)aMO.Error()}";
+                    string aStatus = $"done={aMO.IsDone} error={(int)aMO.Error()}";
                     Shape aRes = aMO.Shape();
                     return new P7Port(null, aStatus, aRes,
                                       theHistory && !aRes.IsNull ? PortHistory(theOps, aRes, s => aMO.Generated(s), s => aMO.Modified(s), s => aMO.IsDeleted(s)) : "");
@@ -450,7 +455,7 @@ internal static partial class Build123dPhase7Capture
                 {
                     var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(theOps[0], anIn);
-                    var aDraft = new BRepOffsetAPI_DraftAngle(theOps[0]);
+                    var aDraft = new DraftAngle(theOps[0]);
                     var aDir = new Direction3D(a.Dir![0], a.Dir[1], a.Dir[2]);
                     var aPln = new Plane3D(new Point3D(a.PlnLoc![0], a.PlnLoc[1], a.PlnLoc[2]), aDir);
                     for (int k = 0; k < a.Faces!.Length; k++)
@@ -462,8 +467,8 @@ internal static partial class Build123dPhase7Capture
                         }
                     }
                     aDraft.Build();
-                    string aStatus = $"add=True done={aDraft.IsDone()} status={(int)aDraft.Status()}";
-                    if (!aDraft.IsDone())
+                    string aStatus = $"add=True done={aDraft.IsDone} status={(int)aDraft.Status()}";
+                    if (!aDraft.IsDone)
                     {
                         return new P7Port(null, aStatus + $" bad={Index(anIn, aDraft.ProblematicShape())}", null, "");
                     }
@@ -479,7 +484,7 @@ internal static partial class Build123dPhase7Capture
                     string aHistory = "";
                     for (int k = 1; k <= a.NbProfiles; k++)
                     {
-                        var aFeature = new BRepFeat_MakeDPrism(aShape, ShapeCasts.Face(theOps[k]), aBasis, a.Taper, a.Fuse, false);
+                        var aFeature = new MakeDraftPrism(aShape, ShapeCasts.Face(theOps[k]), aBasis, a.Taper, a.Fuse, false);
                         switch (a.Mode)
                         {
                             case 2:
@@ -492,7 +497,7 @@ internal static partial class Build123dPhase7Capture
                                 aFeature.Perform(a.Value);
                                 break;
                         }
-                        aStatus += $"done={aFeature.IsDone()} status={(int)aFeature.CurrentStatusError()} ";
+                        aStatus += $"done={aFeature.IsDone} status={(int)aFeature.CurrentStatusError()} ";
                         Shape aRes = aFeature.Shape();
                         if (theHistory && a.NbProfiles == 1)
                         {
@@ -504,7 +509,7 @@ internal static partial class Build123dPhase7Capture
                 }
                 case P7Op.Split:
                 {
-                    var aSplit = new BRepFeat_SplitShape(theOps[0]);
+                    var aSplit = new SplitShape(theOps[0]);
                     var anEdges = new NCollection_Sequence<Shape>();
                     foreach (Shape anEdge in theOps.Skip(1))
                     {
@@ -523,12 +528,12 @@ internal static partial class Build123dPhase7Capture
                         aHistory = $"left [{Sorted(aLeft.Select(s => Index(aResMap, s)))}] right [{Sorted(aRight.Select(s => Index(aResMap, s)))}]\n"
                                    + PortHistory(theOps, aRes, s => aSplit.Generated(s), s => aSplit.Modified(s), s => aSplit.IsDeleted(s));
                     }
-                    return new P7Port(null, $"done={aSplit.IsDone()}", aRes, aHistory, aLeft, aRight);
+                    return new P7Port(null, $"done={aSplit.IsDone}", aRes, aHistory, aLeft, aRight);
                 }
                 default:
                 {
-                    Shape aRes = ShapeCustom.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, Continuity.C0,
-                                                                       Continuity.C0, true, !a.Nurbs, new ShapeCustom_RestrictionParameters());
+                    Shape aRes = Customize.BSplineRestriction(theOps[0], a.Tol, a.Tol, a.Degree, 1, Continuity.C0,
+                                                                       Continuity.C0, true, !a.Nurbs, new RestrictionParameters());
                     return new P7Port(null, "", aRes, "");
                 }
             }

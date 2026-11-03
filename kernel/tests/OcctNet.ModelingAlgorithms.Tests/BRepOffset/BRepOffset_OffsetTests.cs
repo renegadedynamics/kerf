@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Offsets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -28,7 +31,7 @@ public class BRepOffset_OffsetTests
         return aList;
     }
 
-    private static Shape Box() => new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
+    private static Shape Box() => new MakeBox(new Point3D(0, 0, 0), new Point3D(10, 20, 30)).Shape();
 
     private static Face FaceOnPlane(in Shape theShape, Func<Plane3D, bool> thePredicate)
     {
@@ -67,13 +70,13 @@ public class BRepOffset_OffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         (Face aTop, _, Edge anEdge) = TopFrontAndEdge(aBox);
 
-        var anOffset = new BRepOffset_Offset(aTop, 2.0);
+        var anOffset = new Offset(aTop, 2.0);
         Face aFace = anOffset.Face();
 
         aSnap.AssertUnchanged(aBox);
-        Assert.Equal(BRepOffset_Status.BRepOffset_Good, anOffset.Status());
+        Assert.Equal(OffsetStatus.Good, anOffset.Status());
         Assert.True(aFace.TShape()!.IsFrozen);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
+        Assert.True(new Analyzer(aFace).IsValid());
         Assert.Equal(4, SubShapes(aFace, ShapeType.Edge).Count);
         var aPln = ((PlaneSurface)Tool.Surface(aFace)!).Pln();
         Assert.Equal(32.0, aPln.Location().Z(), 9);
@@ -91,15 +94,15 @@ public class BRepOffset_OffsetTests
     [Fact]
     public void Face_OfAFrozenCylinderSide_IsTheLargerCylinder_TheInputIsUnchanged()
     {
-        Shape aCyl = new BRepPrimAPI_MakeCylinder(5.0, 10.0).Shape();
+        Shape aCyl = new ApiMakeCylinder(5.0, 10.0).Shape();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCyl);
         Face aSide = ShapeCasts.Face(SubShapes(aCyl, ShapeType.Face).First(f => Tool.Surface(ShapeCasts.Face(f)) is CylindricalSurface));
 
-        var anOffset = new BRepOffset_Offset(aSide, 1.5);
+        var anOffset = new Offset(aSide, 1.5);
         Face aFace = anOffset.Face();
 
         aSnap.AssertUnchanged(aCyl);
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
+        Assert.True(new Analyzer(aFace).IsValid());
         var aSurf = (CylindricalSurface)Tool.Surface(aFace)!;
         Assert.Equal(6.5, aSurf.Radius(), 9);
         foreach (Shape anE in SubShapes(aFace, ShapeType.Edge))
@@ -113,8 +116,8 @@ public class BRepOffset_OffsetTests
     {
         Shape aBox = Box();
         (Face aTop, Face aFront, Edge anEdge) = TopFrontAndEdge(aBox);
-        var anOF1 = new BRepOffset_Offset(aTop, 2.0);
-        var anOF2 = new BRepOffset_Offset(aFront, 2.0);
+        var anOF1 = new Offset(aTop, 2.0);
+        var anOF2 = new Offset(aFront, 2.0);
         Edge anE1 = ShapeCasts.Edge(anOF1.Generated(anEdge)); // frozen
         Edge anE2 = ShapeCasts.Edge(anOF2.Generated(anEdge)); // frozen
         Shape aFace1 = anOF1.Face();
@@ -123,7 +126,7 @@ public class BRepOffset_OffsetTests
         ShapeSnapshot aSnap1 = ShapeSnapshot.Of(aFace1);
         ShapeSnapshot aSnap2 = ShapeSnapshot.Of(aFace2);
 
-        var aPipe = new BRepOffset_Offset(anEdge, anE1, anE2, 2.0);
+        var aPipe = new Offset(anEdge, anE1, anE2, 2.0);
         Face aFace = aPipe.Face();
 
         aSnapBox.AssertUnchanged(aBox);
@@ -132,7 +135,7 @@ public class BRepOffset_OffsetTests
         Assert.True(aFace.TShape()!.IsFrozen);
         Assert.Equal(4, SubShapes(aFace, ShapeType.Edge).Count);
         Assert.DoesNotContain(SubShapes(aFace, ShapeType.Edge), e => e.IsSame(anE1) || e.IsSame(anE2));
-        Assert.True(new BRepCheck_Analyzer(aFace).IsValid());
+        Assert.True(new Analyzer(aFace).IsValid());
         Assert.IsType<CylindricalSurface>(((TrimmedSurface)Tool.Surface(aFace)!).BasisSurface());
     }
 
@@ -141,13 +144,13 @@ public class BRepOffset_OffsetTests
     {
         Shape aBox = Box();
         (Face aTop, Face aFront, Edge anEdge) = TopFrontAndEdge(aBox);
-        var anOF1 = new BRepOffset_Offset(aTop, 2.0);
-        var anOF2 = new BRepOffset_Offset(aFront, 2.0);
+        var anOF1 = new Offset(aTop, 2.0);
+        var anOF2 = new Offset(aFront, 2.0);
         Edge anE1 = ShapeCasts.Edge(anOF1.InternalGenerated(anEdge));
         Edge anE2 = ShapeCasts.Edge(anOF2.InternalGenerated(anEdge));
         Assert.False(anE1.TShape()!.IsFrozen);
 
-        var aPipe = new BRepOffset_Offset(anEdge, anE1, anE2, 2.0);
+        var aPipe = new Offset(anEdge, anE1, anE2, 2.0);
         Face aFace = aPipe.InternalFace();
 
         // the pipe shares the offset faces' edges, which now have pcurves on it
@@ -164,20 +167,20 @@ public class BRepOffset_OffsetTests
     {
         const double R = 3.0;
         var aCenter = new Point3D(0, 0, 0);
-        Vertex aV = new BRepBuilderAPI_MakeVertex(aCenter).Vertex();
-        Vertex aVX = new BRepBuilderAPI_MakeVertex(new Point3D(R, 0, 0)).Vertex();
-        Vertex aVY = new BRepBuilderAPI_MakeVertex(new Point3D(0, R, 0)).Vertex();
-        Vertex aVZ = new BRepBuilderAPI_MakeVertex(new Point3D(0, 0, R)).Vertex();
+        Vertex aV = new MakeVertex(aCenter).Vertex();
+        Vertex aVX = new MakeVertex(new Point3D(R, 0, 0)).Vertex();
+        Vertex aVY = new MakeVertex(new Point3D(0, R, 0)).Vertex();
+        Vertex aVZ = new MakeVertex(new Point3D(0, 0, R)).Vertex();
         var aCXY = new Circle3D(new Frame3D(aCenter, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), R);
         var aCYZ = new Circle3D(new Frame3D(aCenter, new Direction3D(1, 0, 0), new Direction3D(0, 1, 0)), R);
         var aCZX = new Circle3D(new Frame3D(aCenter, new Direction3D(0, 1, 0), new Direction3D(0, 0, 1)), R);
         var aList = new NCollection_List<Shape>();
-        aList.Append(new BRepBuilderAPI_MakeEdge(aCXY, aVX, aVY).Edge());
-        aList.Append(new BRepBuilderAPI_MakeEdge(aCYZ, aVY, aVZ).Edge());
-        aList.Append(new BRepBuilderAPI_MakeEdge(aCZX, aVZ, aVX).Edge());
+        aList.Append(new MakeEdge(aCXY, aVX, aVY).Edge());
+        aList.Append(new MakeEdge(aCYZ, aVY, aVZ).Edge());
+        aList.Append(new MakeEdge(aCZX, aVZ, aVX).Edge());
         var aSnaps = aList.Select(e => (e, ShapeSnapshot.Of(e))).ToList();
 
-        var aSphere = new BRepOffset_Offset(aV, aList, R);
+        var aSphere = new Offset(aV, aList, R);
         Face aFace = aSphere.Face();
 
         foreach ((Shape anE, ShapeSnapshot aSnap) in aSnaps)

@@ -2,10 +2,13 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Meshing;
 
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -34,8 +37,8 @@ public class BRepMesh_BaseMeshAlgoTest
         }
 
         Surface aSurf = Tool.Surface(theFace)!;
-        GeomAPI_ProjectPointOnSurf aProjection = new(thePoint, aSurf);
-        if (!aProjection.IsDone() || aProjection.NbPoints() == 0)
+        ProjectPointOnSurface aProjection = new(thePoint, aSurf);
+        if (!aProjection.IsDone || aProjection.NbPoints() == 0)
         {
             return new Vertex();
         }
@@ -112,7 +115,7 @@ public class BRepMesh_BaseMeshAlgoTest
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         double aUMin = 0.0, aUMax = 100.0;
         double aVMin = 0.0, aVMax = 50.0;
-        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, aUMin, aUMax, aVMin, aVMax).Face();
+        Face aFace = new MakeFace(aPlane, aUMin, aUMax, aVMin, aVMax).Face();
 
         // Add internal vertices on the face
         Point3D[] aInternalPts = [new(40.0, 20.0, 0.0), new(60.0, 30.0, 0.0), new(77.0, 33.0, 0.0)];
@@ -124,10 +127,10 @@ public class BRepMesh_BaseMeshAlgoTest
         }
 
         // Mesh with internal vertices mode enabled
-        IMeshTools_Parameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = true };
+        ToolParameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = true };
 
-        BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aFace, aParams);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
         aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         // Get triangulation
@@ -156,7 +159,7 @@ public class BRepMesh_BaseMeshAlgoTest
         // Test with more internal vertices to ensure the fix handles multiple vertices correctly
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
         const double aSize = 100.0;
-        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, aSize, 0.0, aSize).Face();
+        Face aFace = new MakeFace(aPlane, 0.0, aSize, 0.0, aSize).Face();
 
         // Add a grid of internal vertices (5x5 = 25 vertices)
         const int aGridSize = 5;
@@ -174,10 +177,10 @@ public class BRepMesh_BaseMeshAlgoTest
             }
         }
 
-        IMeshTools_Parameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = true };
+        ToolParameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = true };
 
-        BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aFace, aParams);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
         aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);
@@ -205,17 +208,17 @@ public class BRepMesh_BaseMeshAlgoTest
     {
         // Verify that when InternalVerticesMode is disabled, internal vertices are not included
         Plane3D aPlane = new(new Point3D(0.0, 0.0, 0.0), Constants.DZ());
-        Face aFace = new BRepBuilderAPI_MakeFace(aPlane, 0.0, 100.0, 0.0, 50.0).Face();
+        Face aFace = new MakeFace(aPlane, 0.0, 100.0, 0.0, 50.0).Face();
 
         Point3D aInternalPt = new(50.0, 25.0, 0.0);
         Vertex aVertex = addInternalVertexToFace(ref aFace, aInternalPt);
         Assert.False(aVertex.IsNull, "Failed to add internal vertex");
 
         // Mesh with internal vertices mode DISABLED
-        IMeshTools_Parameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = false };
+        ToolParameters aParams = new() { Deflection = 1.0, Angle = 0.5, InternalVerticesMode = false };
 
-        BRepMesh_IncrementalMesh aMesher = new(aFace, aParams);
-        Assert.True(aMesher.IsDone(), "Meshing should succeed");
+        IncrementalMesh aMesher = new(aFace, aParams);
+        Assert.True(aMesher.IsDone, "Meshing should succeed");
         aFace = ShapeCasts.Face(aMesher.Shape()); // OCCT.NET: the meshed shape (a copy if the input holds frozen sub-shapes, decision 489)
 
         Triangulation? aTri = Tool.Triangulation(aFace, out Placement aLoc);

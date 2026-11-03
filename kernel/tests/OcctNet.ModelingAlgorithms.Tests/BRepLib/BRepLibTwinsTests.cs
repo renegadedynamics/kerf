@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -87,9 +88,9 @@ public class BRepLibTwinsTests
     public void Curves3dBuilt_builds_the_missing_curve_and_keeps_the_other_edges()
     {
         Face aF = SquareWithAPcurveOnlyEdge();
-        AssertTwin(aF, s => BRepLib.Curves3dBuilt(s, 1e-5, out _), s => BRepLib.BuildCurves3d(s, 1e-5));
+        AssertTwin(aF, s => BrepLibrary.Curves3dBuilt(s, 1e-5, out _), s => BrepLibrary.BuildCurves3d(s, 1e-5));
 
-        Shape aResult = BRepLib.Curves3dBuilt(aF, 1e-5, out bool isDone, out History aH);
+        Shape aResult = BrepLibrary.Curves3dBuilt(aF, 1e-5, out bool isDone, out History aH);
         Assert.True(isDone);
         Assert.Equal(3, CountShared(aF, aResult, ShapeType.Edge));
         for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -104,13 +105,13 @@ public class BRepLibTwinsTests
     public void A_twin_that_changes_nothing_returns_its_input()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        Shape aResult = BRepLib.Curves3dBuilt(aBox, 1e-5, out bool isDone, out History aH);
+        Shape aResult = BrepLibrary.Curves3dBuilt(aBox, 1e-5, out bool isDone, out History aH);
         Assert.True(isDone);
         Assert.True(aResult.IsEqual(aBox));
         Assert.False(aH.HasModified);
 
-        Shape anEncoded = BRepLib.RegularityEncoded(aBox);
-        Shape aTwice = BRepLib.RegularityEncoded(anEncoded);
+        Shape anEncoded = BrepLibrary.RegularityEncoded(aBox);
+        Shape aTwice = BrepLibrary.RegularityEncoded(anEncoded);
         Assert.True(aTwice.IsEqual(anEncoded));
     }
 
@@ -118,8 +119,8 @@ public class BRepLibTwinsTests
     public void RegularityEncoded_codes_the_edges_of_a_frozen_box()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        AssertTwin(aBox, s => BRepLib.RegularityEncoded(s), s => BRepLib.EncodeRegularity(s));
-        Shape aResult = BRepLib.RegularityEncoded(aBox, out History aH);
+        AssertTwin(aBox, s => BrepLibrary.RegularityEncoded(s), s => BrepLibrary.EncodeRegularity(s));
+        Shape aResult = BrepLibrary.RegularityEncoded(aBox, out History aH);
         var anEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aResult, ShapeType.Edge, ShapeType.Face, anEF);
         for (int i = 1; i <= anEF.Extent(); i++)
@@ -142,7 +143,7 @@ public class BRepLibTwinsTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Shape anEdge = new Explorer(aBox, ShapeType.Edge).Current();
-        Shape aResult = BRepLib.RegularityEncoded(aBox, [anEdge], out History aH);
+        Shape aResult = BrepLibrary.RegularityEncoded(aBox, [anEdge], out History aH);
         Assert.Single(aH.Modified(anEdge));
         Assert.Equal(11, CountShared(aBox, aResult, ShapeType.Edge));
     }
@@ -165,8 +166,8 @@ public class BRepLibTwinsTests
         aB.Add(aF, aW);
         TestShapes.Frozen(aF);
 
-        AssertTwin(aF, s => BRepLib.SameParametered(s, 1e-5), s => BRepLib.SameParameter(s, 1e-5));
-        Shape aResult = BRepLib.SameParametered(aF, out History aH, 1e-5);
+        AssertTwin(aF, s => BrepLibrary.SameParametered(s, 1e-5), s => BrepLibrary.SameParameter(s, 1e-5));
+        Shape aResult = BrepLibrary.SameParametered(aF, out History aH, 1e-5);
         Edge aNewE = ShapeCasts.Edge(new Explorer(aResult, ShapeType.Edge).Current());
         Assert.True(Tool.SameParameter(aNewE));
         Assert.False(Tool.SameParameter(anE));
@@ -182,8 +183,8 @@ public class BRepLibTwinsTests
         // the vertices change by two units in the last place, the edges holding them and the faces with them; the
         // curves and surfaces are the box's own
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        AssertTwin(aBox, s => BRepLib.SameParametered(s), s => BRepLib.SameParameter(s));
-        Shape aResult = BRepLib.SameParametered(aBox, out History aH);
+        AssertTwin(aBox, s => BrepLibrary.SameParametered(s), s => BrepLibrary.SameParameter(s));
+        Shape aResult = BrepLibrary.SameParametered(aBox, out History aH);
         Assert.Equal(0, CountShared(aBox, aResult, ShapeType.Vertex));
         for (var anExp = new Explorer(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -205,8 +206,8 @@ public class BRepLibTwinsTests
         Edge anE = TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0));
         aB.UpdateEdge(anE, 1e-3);
         TestShapes.Frozen(anE);
-        AssertTwin(anE, s => BRepLib.TolerancesUpdated(s), s => BRepLib.UpdateTolerances(s));
-        Shape aResult = BRepLib.TolerancesUpdated(anE, out History aH);
+        AssertTwin(anE, s => BrepLibrary.TolerancesUpdated(s), s => BrepLibrary.UpdateTolerances(s));
+        Shape aResult = BrepLibrary.TolerancesUpdated(anE, out History aH);
         for (var anExp = new Explorer(aResult, ShapeType.Vertex); anExp.More(); anExp.Next())
         {
             Assert.True(Tool.Tolerance(ShapeCasts.Vertex(anExp.Current())) >= 1e-3);
@@ -227,13 +228,13 @@ public class BRepLibTwinsTests
         aB.MakeVertex(ref aV2, new Point3D(1, 0.01, 0), Conf);
         Edge anE = TestShapes.Edge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 1, aV1, aV2);
         TestShapes.Frozen(anE);
-        AssertTwin(anE, s => BRepLib.InnerTolerancesUpdated(s), s => BRepLib.UpdateInnerTolerances(s));
-        Shape aResult = BRepLib.InnerTolerancesUpdated(anE);
+        AssertTwin(anE, s => BrepLibrary.InnerTolerancesUpdated(s), s => BrepLibrary.UpdateInnerTolerances(s));
+        Shape aResult = BrepLibrary.InnerTolerancesUpdated(anE);
         Exploration.Vertices(ShapeCasts.Edge(aResult), out _, out Vertex aNewV2);
         Assert.True(Tool.Tolerance(aNewV2) >= 0.01);
 
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        AssertTwin(aBox, s => BRepLib.InnerTolerancesUpdated(s), s => BRepLib.UpdateInnerTolerances(s));
+        AssertTwin(aBox, s => BrepLibrary.InnerTolerancesUpdated(s), s => BrepLibrary.UpdateInnerTolerances(s));
     }
 
     [Fact]
@@ -241,11 +242,11 @@ public class BRepLibTwinsTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Solid aReversed = ShapeCasts.Solid(aBox.Reversed());
-        Solid aResult = BRepLib.ClosedSolidOriented(aReversed, out bool isOriented);
+        Solid aResult = BrepLibrary.ClosedSolidOriented(aReversed, out bool isOriented);
         Assert.True(isOriented);
         Assert.True(aResult.IsSame(aBox));
         Assert.Equal(aBox.Orientation(), aResult.Orientation());
-        Assert.True(BRepLib.ClosedSolidOriented(aBox, out isOriented).IsEqual(aBox));
+        Assert.True(BrepLibrary.ClosedSolidOriented(aBox, out isOriented).IsEqual(aBox));
         Assert.True(isOriented);
     }
 
@@ -253,12 +254,12 @@ public class BRepLibTwinsTests
     public void Twins_of_a_null_shape_return_it()
     {
         Shape aNull = new();
-        Assert.True(BRepLib.SameParametered(aNull).IsNull);
-        Assert.True(BRepLib.TolerancesUpdated(aNull).IsNull);
-        Assert.True(BRepLib.InnerTolerancesUpdated(aNull).IsNull);
-        Assert.True(BRepLib.Curves3dBuilt(aNull, out _).IsNull);
-        Assert.True(BRepLib.RegularityEncoded(aNull).IsNull);
-        Assert.True(BRepLib.DeflectionUpdated(aNull).IsNull);
-        Assert.True(BRepLib.NormalConsistencyEnsured(aNull, out _).IsNull);
+        Assert.True(BrepLibrary.SameParametered(aNull).IsNull);
+        Assert.True(BrepLibrary.TolerancesUpdated(aNull).IsNull);
+        Assert.True(BrepLibrary.InnerTolerancesUpdated(aNull).IsNull);
+        Assert.True(BrepLibrary.Curves3dBuilt(aNull, out _).IsNull);
+        Assert.True(BrepLibrary.RegularityEncoded(aNull).IsNull);
+        Assert.True(BrepLibrary.DeflectionUpdated(aNull).IsNull);
+        Assert.True(BrepLibrary.NormalConsistencyEnsured(aNull, out _).IsNull);
     }
 }

@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry;
 
+using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -250,7 +251,7 @@ public class GeomAPI_ExtremaCurveCurve_Test
         LineCurve3D aLine = new(new Point3D(aP1), new Direction3D(aP2 - aP1));
         TrimmedCurve3D aC2 = new(aLine, 0.0, (aP2 - aP1).Modulus());
 
-        GeomAPI_ExtremaCurveCurve anEx = new(aC1, aC2);
+        ExtremaCurveCurve anEx = new(aC1, aC2);
 
         if (anEx.Extrema().IsParallel)
         {

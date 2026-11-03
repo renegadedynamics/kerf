@@ -2,6 +2,7 @@
 // Omitted:
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -48,7 +49,7 @@ internal static class GeomEqualObjects
                 weightArray.SetValue(i + 1, weights[i]);
             curve = new BSplineCurve3D(poleArray, weightArray, knotArray, multArray, degree, false);
         }
-        var maker = new BRepBuilderAPI_MakeEdge(curve);
+        var maker = new MakeEdge(curve);
         return new Edge(maker.Edge());
     }
 }
@@ -422,7 +423,7 @@ public class EdgeGeomEqualOffsetTests
         var basis = Tool.Curve(topoEdge, out f, out l);
         var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
         var curve = new OffsetCurve3D(basis!, distance, dir);
-        var maker = new BRepBuilderAPI_MakeEdge(curve, first, last);
+        var maker = new MakeEdge(curve, first, last);
         var edge = new Edge(maker.Edge());
         Assert.Equal(GeomType.Offset, edge.GeomType);
         return edge;

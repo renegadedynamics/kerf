@@ -8,21 +8,22 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace Occt;
+namespace Kerf.Engine.Features.Local;
 
 /// <summary>Provides tools to implement local topological operations on a shape.</summary>
 public static class LocOpe
 {
-    private const int NECHANT = 10;
+    private const int Nechant = 10;
 
-    /// <summary>Returns true when the wire <paramref name="W"/> is closed on the face <paramref name="F"/>.</summary>
-    public static bool Closed(in Wire W, in Face F)
+    /// <summary>Returns true when the wire <paramref name="w"/> is closed on the face <paramref name="F"/>.</summary>
+    public static bool Closed(in Wire w, in Face F)
     {
-        Exploration.Vertices(W, out Vertex Vf, out Vertex Vl);
-        if (!Vf.IsSame(Vl))
+        Exploration.Vertices(w, out Vertex vf, out Vertex vl);
+        if (!vf.IsSame(vl))
         {
             return false;
         }
@@ -30,11 +31,11 @@ public static class LocOpe
         // On recherche l`edge contenant Vf FORWARD
 
         Explorer exp = new(), exp2 = new();
-        for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
+        for (exp.Init(w.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
         {
             for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(Vf) && exp2.Current().Orientation() == Forward)
+                if (exp2.Current().IsSame(vf) && exp2.Current().Orientation() == Forward)
                 {
                     break;
                 }
@@ -44,15 +45,15 @@ public static class LocOpe
                 break;
             }
         }
-        Edge Ef = ShapeCasts.Edge(exp.Current());
+        Edge ef = ShapeCasts.Edge(exp.Current());
 
         // On recherche l`edge contenant Vl REVERSED
 
-        for (exp.Init(W.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
+        for (exp.Init(w.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
         {
             for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(Vl) && exp2.Current().Orientation() == Reversed)
+                if (exp2.Current().IsSame(vl) && exp2.Current().Orientation() == Reversed)
                 {
                     break;
                 }
@@ -62,26 +63,26 @@ public static class LocOpe
                 break;
             }
         }
-        Edge El = ShapeCasts.Edge(exp.Current());
+        Edge el = ShapeCasts.Edge(exp.Current());
 
         Point2D pf, pl;
-        Curve2D C2d = Tool.CurveOnSurface(Ef, F, out double f, out double l)!;
-        if (Ef.Orientation() == Forward)
+        Curve2D c2d = Tool.CurveOnSurface(ef, F, out double f, out double l)!;
+        if (ef.Orientation() == Forward)
         {
-            pf = C2d.Value(f);
+            pf = c2d.Value(f);
         }
         else
         {
-            pf = C2d.Value(l);
+            pf = c2d.Value(l);
         }
-        C2d = Tool.CurveOnSurface(El, F, out f, out l)!;
-        if (El.Orientation() == Forward)
+        c2d = Tool.CurveOnSurface(el, F, out f, out l)!;
+        if (el.Orientation() == Forward)
         {
-            pl = C2d.Value(l);
+            pl = c2d.Value(l);
         }
         else
         {
-            pl = C2d.Value(f);
+            pl = c2d.Value(f);
         }
 
         if (pf.Distance(pl) <= global::Kerf.Engine.Foundation.Precision.PConfusion(global::Kerf.Engine.Foundation.Precision.Confusion()))
@@ -91,35 +92,35 @@ public static class LocOpe
         return false;
     }
 
-    /// <summary>Returns true when the edge <paramref name="E"/> is closed on the face <paramref name="F"/>.</summary>
-    public static bool Closed(in Edge E, in Face F)
+    /// <summary>Returns true when the edge <paramref name="e"/> is closed on the face <paramref name="f"/>.</summary>
+    public static bool Closed(in Edge e, in Face f)
     {
-        BrepBuilder B = new();
-        Wire W = new();
-        B.MakeWire(ref W);
-        B.Add(W, E.Oriented(Forward));
-        return Closed(W, F);
+        BrepBuilder b = new();
+        Wire w = new();
+        b.MakeWire(ref w);
+        b.Add(w, e.Oriented(Forward));
+        return Closed(w, f);
     }
 
     /// <summary>Returns true when the faces are tangent along <paramref name="E"/>.</summary>
-    public static bool TgtFaces(in Edge E, in Face F1, in Face F2)
+    public static bool TgtFaces(in Edge E, in Face f1, in Face f2)
     {
-        FaceSurfaceAdaptor bs = new(F1, false);
+        FaceSurfaceAdaptor bs = new(f1, false);
         double u;
         double ta = 0.0001;
 
         Edge e = E;
 
-        FaceSurfaceAdaptor HS1 = new(F1);
-        FaceSurfaceAdaptor HS2 = new(F2);
+        FaceSurfaceAdaptor hs1 = new(f1);
+        FaceSurfaceAdaptor hs2 = new(f2);
         e.Orientation(Forward);
-        EdgeCurve2DAdaptor HC2d = new();
-        EdgeCurve2DAdaptor HC2d2 = new();
-        HC2d.Initialize(e, F1);
-        HC2d2.Initialize(e, F2);
+        EdgeCurve2DAdaptor hc2d = new();
+        EdgeCurve2DAdaptor hc2d2 = new();
+        hc2d.Initialize(e, f1);
+        hc2d2.Initialize(e, f2);
 
-        bool rev1 = (F1.Orientation() == Reversed);
-        bool rev2 = (F2.Orientation() == Reversed);
+        bool rev1 = (f1.Orientation() == Reversed);
+        bool rev2 = (f2.Orientation() == Reversed);
         double eps, angmin = Math.PI, angmax = -Math.PI, ang;
         Tool.Range(e, out double f, out double l);
 
@@ -134,16 +135,16 @@ public static class LocOpe
         for (i = 0; i <= 20; i++)
         {
             u = f + (l - f) * i / 20;
-            HC2d.D0(u, out Point2D p);
-            HS1.D1(p.X(), p.Y(), out Point3D pp1, out Vector3D du, out Vector3D dv);
+            hc2d.D0(u, out Point2D p);
+            hs1.D1(p.X(), p.Y(), out Point3D pp1, out Vector3D du, out Vector3D dv);
             d1 = (du.Crossed(dv)).Normalized();
             if (rev1)
             {
                 d1.Reverse();
             }
-            HC2d2.D0(u, out p);
+            hc2d2.D0(u, out p);
             p.Coord(out uu, out vv);
-            HS2.D1(uu, vv, out pp1, out du, out dv);
+            hs2.D1(uu, vv, out pp1, out du, out dv);
             d2 = (du.Crossed(dv)).Normalized();
             if (rev2)
             {
@@ -164,15 +165,15 @@ public static class LocOpe
     }
 
     /// <summary>
-    /// Fills <paramref name="theSeq"/> with points sampled on the edges of <paramref name="theShape"/> (not at their
+    /// Fills <paramref name="seq"/> with points sampled on the edges of <paramref name="shape"/> (not at their
     /// ends), then with every vertex.
     /// </summary>
-    public static void SampleEdges(in Shape theShape, NCollection_Sequence<Point3D> theSeq)
+    public static void SampleEdges(in Shape shape, NCollection_Sequence<Point3D> seq)
     {
-        theSeq.Clear();
+        seq.Clear();
         NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
 
-        Explorer exp = new(theShape, ShapeType.Edge);
+        Explorer exp = new(shape, ShapeType.Edge);
         double prm;
         int i;
 
@@ -186,23 +187,23 @@ public static class LocOpe
             }
             if (!Tool.Degenerated(edg))
             {
-                Curve3D C = Tool.Curve(edg, out Placement Loc, out double f, out double l)!;
-                C = (Curve3D)C.Transformed(Loc.Transformation());
-                double delta = (l - f) / NECHANT * 0.123456;
-                for (i = 1; i < NECHANT; i++)
+                Curve3D c = Tool.Curve(edg, out Placement loc, out double f, out double l)!;
+                c = (Curve3D)c.Transformed(loc.Transformation());
+                double delta = (l - f) / Nechant * 0.123456;
+                for (i = 1; i < Nechant; i++)
                 {
-                    prm = delta + ((NECHANT - i) * f + i * l) / NECHANT;
-                    theSeq.Append(C.Value(prm));
+                    prm = delta + ((Nechant - i) * f + i * l) / Nechant;
+                    seq.Append(c.Value(prm));
                 }
             }
         }
 
         // Adds every vertex
-        for (exp.Init(theShape, ShapeType.Vertex); exp.More(); exp.Next())
+        for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
         {
             if (theMap.Add(exp.Current()))
             {
-                theSeq.Append(Tool.Pnt(ShapeCasts.Vertex(exp.Current())));
+                seq.Append(Tool.Pnt(ShapeCasts.Vertex(exp.Current())));
             }
         }
     }

@@ -91,8 +91,8 @@ internal class RWStepGeom_RWTrimmedCurve
 
         // --- own field : masterRepresentation ---
 
-        StepGeom_TrimmingPreference aMasterRepresentation = StepGeom_tpCartesian;
-        if (data.ParamType(num, 6) == Interface_ParamEnum)
+        StepGeom_TrimmingPreference aMasterRepresentation = StepGeom_TrimmingPreference.StepGeom_tpCartesian;
+        if (data.ParamType(num, 6) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 6);
             if (!RWStepGeom_RWTrimmingPreference.ConvertToEnum(text, ref aMasterRepresentation))

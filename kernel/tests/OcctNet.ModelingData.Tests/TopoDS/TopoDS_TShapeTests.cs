@@ -2,6 +2,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Edge_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -15,9 +16,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_TShapeTests
 {
-    private static Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static Vertex MakeVertex(in Point3D theP) => new MakeVertex(theP).Vertex();
 
-    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
     [Fact]
     public void ShapeType_AllTypes()
@@ -280,7 +281,7 @@ public class TopoDS_TShapeTests
     public void BUC60828_InfiniteFlag()
     {
         // Create a simple edge
-        Edge anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 0.0, 1.0)).InternalEdge();
+        Edge anEdge = new MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 0.0, 1.0)).InternalEdge();
 
         // Check initial flag value (should be false by default)
         bool anInitialValue = anEdge.Infinite();
@@ -298,7 +299,7 @@ public class TopoDS_TShapeTests
     public void Initial_flags_of_each_TShape_type_are_OCCTs()
     {
         // TopoDS_TShape: Free, Modified, Orientable; TCompound and TSolid aren't orientable; TVertex is closed and convex
-        Vertex aV = new BRepBuilderAPI_MakeVertex(new Point3D()).InternalVertex();
+        Vertex aV = new MakeVertex(new Point3D()).InternalVertex();
         Assert.True(aV.Free() && aV.Modified() && aV.Orientable() && aV.Closed() && aV.Convex());
         Solid aSolid = new();
         new Builder().MakeSolid(ref aSolid);

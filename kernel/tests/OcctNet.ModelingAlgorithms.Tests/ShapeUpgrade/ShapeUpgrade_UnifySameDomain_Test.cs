@@ -2,7 +2,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -40,8 +43,8 @@ public class ShapeUpgrade_UnifySameDomainTest
                                         in Vertex   theLast,
                                         bool            theAddPCurve)
     {
-        var anEdgeMaker = new BRepBuilderAPI_MakeEdge(theFirst, theLast);
-        if (!anEdgeMaker.IsDone())
+        var anEdgeMaker = new MakeEdge(theFirst, theLast);
+        if (!anEdgeMaker.IsDone)
         {
             return new Edge();
         }
@@ -190,32 +193,32 @@ public class ShapeUpgrade_UnifySameDomainTest
             return false;
         }
 
-        var aLeftWireMaker = new BRepBuilderAPI_MakeWire();
+        var aLeftWireMaker = new MakeWire();
         aLeftWireMaker.Add(anEdge12);
         aLeftWireMaker.Add(anEdge23);
         aLeftWireMaker.Add(anEdge34);
         aLeftWireMaker.Add(anEdge41);
-        if (!aLeftWireMaker.IsDone())
+        if (!aLeftWireMaker.IsDone)
         {
             return false;
         }
 
         Edge aReversedEdge23 = anEdge23;
         aReversedEdge23.Reverse();
-        var aRightWireMaker = new BRepBuilderAPI_MakeWire();
+        var aRightWireMaker = new MakeWire();
         aRightWireMaker.Add(aReversedEdge23);
         aRightWireMaker.Add(anEdge25);
         aRightWireMaker.Add(anEdge56);
         aRightWireMaker.Add(anEdge63);
-        if (!aRightWireMaker.IsDone())
+        if (!aRightWireMaker.IsDone)
         {
             return false;
         }
 
         var aPlanarSurface  = new Plane3D(new CoordinateSystem(Constants.XOY()));
-        var aLeftFaceMaker  = new BRepBuilderAPI_MakeFace(aPlanarSurface, aLeftWireMaker.InternalWire());
-        var aRightFaceMaker = new BRepBuilderAPI_MakeFace(aPlanarSurface, aRightWireMaker.InternalWire());
-        if (!aLeftFaceMaker.IsDone() || !aRightFaceMaker.IsDone())
+        var aLeftFaceMaker  = new MakeFace(aPlanarSurface, aLeftWireMaker.InternalWire());
+        var aRightFaceMaker = new MakeFace(aPlanarSurface, aRightWireMaker.InternalWire());
+        if (!aLeftFaceMaker.IsDone || !aRightFaceMaker.IsDone)
         {
             return false;
         }
@@ -252,24 +255,24 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aP3 = new Point3D(10, 10, 0);
         var aP4 = new Point3D(0, 10, 0);
 
-        var aME1 = new BRepBuilderAPI_MakeEdge(aP1, aP2);
-        var aME2 = new BRepBuilderAPI_MakeEdge(aP2, aP3);
-        var aME3 = new BRepBuilderAPI_MakeEdge(aP3, aP4);
-        var aME4 = new BRepBuilderAPI_MakeEdge(aP4, aP1);
+        var aME1 = new MakeEdge(aP1, aP2);
+        var aME2 = new MakeEdge(aP2, aP3);
+        var aME3 = new MakeEdge(aP3, aP4);
+        var aME4 = new MakeEdge(aP4, aP1);
 
-        var aMW = new BRepBuilderAPI_MakeWire();
+        var aMW = new MakeWire();
         aMW.Add(aME1.Edge());
         aMW.Add(aME2.Edge());
         aMW.Add(aME3.Edge());
         aMW.Add(aME4.Edge());
 
-        Assert.True(aMW.IsDone(), "Failed to create outer wire");
+        Assert.True(aMW.IsDone, "Failed to create outer wire");
         Wire anOuterWire = aMW.Wire();
 
         // Create a face from the outer wire
         var aPlane = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aMF    = new BRepBuilderAPI_MakeFace(aPlane, anOuterWire);
-        Assert.True(aMF.IsDone(), "Failed to create face");
+        var aMF    = new MakeFace(aPlane, anOuterWire);
+        Assert.True(aMF.IsDone, "Failed to create face");
 
         Face aFace = aMF.InternalFace();
 
@@ -280,17 +283,17 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aIP2 = new Point3D(5, 5, 0);
         var aIP3 = new Point3D(8, 2, 0);
 
-        var aMIE1 = new BRepBuilderAPI_MakeEdge(aIP1, aIP2);
-        var aMIE2 = new BRepBuilderAPI_MakeEdge(aIP2, aIP3);
+        var aMIE1 = new MakeEdge(aIP1, aIP2);
+        var aMIE2 = new MakeEdge(aIP2, aIP3);
 
-        Assert.True(aMIE1.IsDone(), "Failed to create internal edge 1");
-        Assert.True(aMIE2.IsDone(), "Failed to create internal edge 2");
+        Assert.True(aMIE1.IsDone, "Failed to create internal edge 1");
+        Assert.True(aMIE2.IsDone, "Failed to create internal edge 2");
 
         // Create an internal wire from the edges
-        var aMIW = new BRepBuilderAPI_MakeWire();
+        var aMIW = new MakeWire();
         aMIW.Add(aMIE1.Edge());
         aMIW.Add(aMIE2.Edge());
-        Assert.True(aMIW.IsDone(), "Failed to create internal wire");
+        Assert.True(aMIW.IsDone, "Failed to create internal wire");
 
         Wire anInternalWire = aMIW.Wire();
 
@@ -305,7 +308,7 @@ public class ShapeUpgrade_UnifySameDomainTest
 
         // Run UnifySameDomain - before the fix, this would enter an infinite loop
         // because internal edges removed from InternalEdges were not removed from IntVEmap.
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
+        var aUnifier = new UnifySameDomain(aShell);
         aUnifier.SetAngularTolerance(1e-6);
         aUnifier.SetLinearTolerance(1e-5);
         aUnifier.AllowInternalEdges(true);
@@ -342,16 +345,16 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aP3 = new Point3D(5, 10, 0);
         var aP4 = new Point3D(0, 10, 0);
 
-        var aMW1 = new BRepBuilderAPI_MakeWire();
-        aMW1.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
-        aMW1.Add(new BRepBuilderAPI_MakeEdge(aP2, aP3).Edge());
-        aMW1.Add(new BRepBuilderAPI_MakeEdge(aP3, aP4).Edge());
-        aMW1.Add(new BRepBuilderAPI_MakeEdge(aP4, aP1).Edge());
+        var aMW1 = new MakeWire();
+        aMW1.Add(new MakeEdge(aP1, aP2).Edge());
+        aMW1.Add(new MakeEdge(aP2, aP3).Edge());
+        aMW1.Add(new MakeEdge(aP3, aP4).Edge());
+        aMW1.Add(new MakeEdge(aP4, aP1).Edge());
 
-        Assert.True(aMW1.IsDone(), "Failed to create wire 1");
+        Assert.True(aMW1.IsDone, "Failed to create wire 1");
 
-        var aMF1 = new BRepBuilderAPI_MakeFace(aPlane, aMW1.Wire());
-        Assert.True(aMF1.IsDone(), "Failed to create face 1");
+        var aMF1 = new MakeFace(aPlane, aMW1.Wire());
+        Assert.True(aMF1.IsDone, "Failed to create face 1");
         Face aFace1 = aMF1.InternalFace();
 
         // Second face: 5-10 x 0-10
@@ -360,24 +363,24 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aP7 = new Point3D(10, 10, 0);
         var aP8 = new Point3D(5, 10, 0);
 
-        var aMW2 = new BRepBuilderAPI_MakeWire();
-        aMW2.Add(new BRepBuilderAPI_MakeEdge(aP5, aP6).Edge());
-        aMW2.Add(new BRepBuilderAPI_MakeEdge(aP6, aP7).Edge());
-        aMW2.Add(new BRepBuilderAPI_MakeEdge(aP7, aP8).Edge());
-        aMW2.Add(new BRepBuilderAPI_MakeEdge(aP8, aP5).Edge());
+        var aMW2 = new MakeWire();
+        aMW2.Add(new MakeEdge(aP5, aP6).Edge());
+        aMW2.Add(new MakeEdge(aP6, aP7).Edge());
+        aMW2.Add(new MakeEdge(aP7, aP8).Edge());
+        aMW2.Add(new MakeEdge(aP8, aP5).Edge());
 
-        Assert.True(aMW2.IsDone(), "Failed to create wire 2");
+        Assert.True(aMW2.IsDone, "Failed to create wire 2");
 
-        var aMF2 = new BRepBuilderAPI_MakeFace(aPlane, aMW2.Wire());
-        Assert.True(aMF2.IsDone(), "Failed to create face 2");
+        var aMF2 = new MakeFace(aPlane, aMW2.Wire());
+        Assert.True(aMF2.IsDone, "Failed to create face 2");
         Face aFace2 = aMF2.InternalFace();
 
         // Add internal wire to first face
         var aIP1  = new Point3D(1, 5, 0);
         var aIP2  = new Point3D(4, 5, 0);
-        var aMIW1 = new BRepBuilderAPI_MakeWire();
-        aMIW1.Add(new BRepBuilderAPI_MakeEdge(aIP1, aIP2).Edge());
-        Assert.True(aMIW1.IsDone(), "Failed to create internal wire 1");
+        var aMIW1 = new MakeWire();
+        aMIW1.Add(new MakeEdge(aIP1, aIP2).Edge());
+        Assert.True(aMIW1.IsDone, "Failed to create internal wire 1");
         Wire anInternalWire1 = aMIW1.Wire();
         anInternalWire1.Orientation(Internal);
         aBuilder.Add(aFace1, anInternalWire1);
@@ -385,15 +388,15 @@ public class ShapeUpgrade_UnifySameDomainTest
         // Add internal wire to second face
         var aIP3  = new Point3D(6, 5, 0);
         var aIP4  = new Point3D(9, 5, 0);
-        var aMIW2 = new BRepBuilderAPI_MakeWire();
-        aMIW2.Add(new BRepBuilderAPI_MakeEdge(aIP3, aIP4).Edge());
-        Assert.True(aMIW2.IsDone(), "Failed to create internal wire 2");
+        var aMIW2 = new MakeWire();
+        aMIW2.Add(new MakeEdge(aIP3, aIP4).Edge());
+        Assert.True(aMIW2.IsDone, "Failed to create internal wire 2");
         Wire anInternalWire2 = aMIW2.Wire();
         anInternalWire2.Orientation(Internal);
         aBuilder.Add(aFace2, anInternalWire2);
 
         // Sew the faces together to share common edge
-        var aSewer = new BRepBuilderAPI_Sewing(1e-6);
+        var aSewer = new Sewing(1e-6);
         aSewer.Add(aFace1);
         aSewer.Add(aFace2);
         aSewer.Perform();
@@ -402,7 +405,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         Assert.False(aSewedShape.IsNull, "Sewing failed");
 
         // Run UnifySameDomain
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aSewedShape);
+        var aUnifier = new UnifySameDomain(aSewedShape);
         aUnifier.SetAngularTolerance(1e-6);
         aUnifier.SetLinearTolerance(1e-5);
         aUnifier.AllowInternalEdges(true);
@@ -435,17 +438,17 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aP3 = new Point3D(20, 20, 0);
         var aP4 = new Point3D(0, 20, 0);
 
-        var aMW = new BRepBuilderAPI_MakeWire();
-        aMW.Add(new BRepBuilderAPI_MakeEdge(aP1, aP2).Edge());
-        aMW.Add(new BRepBuilderAPI_MakeEdge(aP2, aP3).Edge());
-        aMW.Add(new BRepBuilderAPI_MakeEdge(aP3, aP4).Edge());
-        aMW.Add(new BRepBuilderAPI_MakeEdge(aP4, aP1).Edge());
+        var aMW = new MakeWire();
+        aMW.Add(new MakeEdge(aP1, aP2).Edge());
+        aMW.Add(new MakeEdge(aP2, aP3).Edge());
+        aMW.Add(new MakeEdge(aP3, aP4).Edge());
+        aMW.Add(new MakeEdge(aP4, aP1).Edge());
 
-        Assert.True(aMW.IsDone(), "Failed to create outer wire");
+        Assert.True(aMW.IsDone, "Failed to create outer wire");
 
         var aPlane = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aMF    = new BRepBuilderAPI_MakeFace(aPlane, aMW.Wire());
-        Assert.True(aMF.IsDone(), "Failed to create face");
+        var aMF    = new MakeFace(aPlane, aMW.Wire());
+        Assert.True(aMF.IsDone, "Failed to create face");
         Face aFace = aMF.InternalFace();
 
         // Create a closed internal wire (triangle) inside the face
@@ -453,12 +456,12 @@ public class ShapeUpgrade_UnifySameDomainTest
         var aIP2 = new Point3D(15, 5, 0);
         var aIP3 = new Point3D(10, 15, 0);
 
-        var aMIW = new BRepBuilderAPI_MakeWire();
-        aMIW.Add(new BRepBuilderAPI_MakeEdge(aIP1, aIP2).Edge());
-        aMIW.Add(new BRepBuilderAPI_MakeEdge(aIP2, aIP3).Edge());
-        aMIW.Add(new BRepBuilderAPI_MakeEdge(aIP3, aIP1).Edge());
+        var aMIW = new MakeWire();
+        aMIW.Add(new MakeEdge(aIP1, aIP2).Edge());
+        aMIW.Add(new MakeEdge(aIP2, aIP3).Edge());
+        aMIW.Add(new MakeEdge(aIP3, aIP1).Edge());
 
-        Assert.True(aMIW.IsDone(), "Failed to create internal wire");
+        Assert.True(aMIW.IsDone, "Failed to create internal wire");
 
         Wire anInternalWire = aMIW.Wire();
         anInternalWire.Orientation(Internal);
@@ -470,7 +473,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         aBuilder.Add(aShell, aFace);
 
         // Run UnifySameDomain
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aShell);
+        var aUnifier = new UnifySameDomain(aShell);
         aUnifier.SetAngularTolerance(1e-6);
         aUnifier.SetLinearTolerance(1e-5);
         aUnifier.AllowInternalEdges(true);
@@ -487,14 +490,14 @@ public class ShapeUpgrade_UnifySameDomainTest
     public void BasicBoxUnification()
     {
         // Create a simple box using two corner points
-        var aBoxMaker = new BRepPrimAPI_MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10));
+        var aBoxMaker = new MakeBox(new Point3D(0, 0, 0), new Point3D(10, 10, 10));
         aBoxMaker.Build();
-        Assert.True(aBoxMaker.IsDone(), "Failed to create box");
+        Assert.True(aBoxMaker.IsDone, "Failed to create box");
 
         Shape aBox = aBoxMaker.Shape();
 
         // Run UnifySameDomain
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aBox);
+        var aUnifier = new UnifySameDomain(aBox);
         aUnifier.Build();
 
         Shape aResult = aUnifier.Shape();
@@ -521,7 +524,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         Assert.Null(Tool.CurveOnSurface(aTestShape.MissingPCurveEdge, aTestShape.ReferenceFace, out _, out _));
         Assert.NotNull(Tool.CurveOnSurface(aTestShape.ValidPCurveEdge, aTestShape.ReferenceFace, out _, out _));
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aTestShape.Shell, false, true, false);
+        var aUnifier = new UnifySameDomain(aTestShape.Shell, false, true, false);
         aUnifier.AllowInternalEdges(true);
         aUnifier.Build();
 
@@ -541,7 +544,7 @@ public class ShapeUpgrade_UnifySameDomainTest
 
         Assert.Null(Tool.CurveOnSurface(aTestShape.MissingPCurveEdge, aTestShape.ReferenceFace, out _, out _));
 
-        var aUnifier = new ShapeUpgrade_UnifySameDomain(aTestShape.Shell, false, true, false);
+        var aUnifier = new UnifySameDomain(aTestShape.Shell, false, true, false);
         aUnifier.AllowInternalEdges(true);
         aUnifier.Build();
 

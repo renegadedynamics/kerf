@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopoDS_Builder_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -13,9 +14,9 @@ namespace OcctNet.ModelingData.Tests;
 /// </summary>
 public class TopoDS_BuilderTests
 {
-    private static Vertex MakeVertex(in Point3D theP) => new BRepBuilderAPI_MakeVertex(theP).Vertex();
+    private static Vertex MakeVertex(in Point3D theP) => new MakeVertex(theP).Vertex();
 
-    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new BRepBuilderAPI_MakeEdge(theP1, theP2).Edge();
+    private static Edge MakeEdge(in Point3D theP1, in Point3D theP2) => new MakeEdge(theP1, theP2).Edge();
 
     private static int Count(in Shape theShape)
     {

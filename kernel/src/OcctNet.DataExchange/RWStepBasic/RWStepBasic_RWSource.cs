@@ -24,11 +24,11 @@ internal static class RWStepBasic_RWSource
     {
         switch (theSourceEnum)
         {
-            case StepBasic_sBought:
+            case StepBasic_Source.StepBasic_sBought:
                 return sBought;
-            case StepBasic_sNotKnown:
+            case StepBasic_Source.StepBasic_sNotKnown:
                 return sNotKnown;
-            case StepBasic_sMade:
+            case StepBasic_Source.StepBasic_sMade:
                 return sMade;
         }
         return null;
@@ -44,15 +44,15 @@ internal static class RWStepBasic_RWSource
     {
         if (theSourceStr == sBought)
         {
-            theResultEnum = StepBasic_sBought;
+            theResultEnum = StepBasic_Source.StepBasic_sBought;
         }
         else if (theSourceStr == sNotKnown)
         {
-            theResultEnum = StepBasic_sNotKnown;
+            theResultEnum = StepBasic_Source.StepBasic_sNotKnown;
         }
         else if (theSourceStr == sMade)
         {
-            theResultEnum = StepBasic_sMade;
+            theResultEnum = StepBasic_Source.StepBasic_sMade;
         }
         else
         {

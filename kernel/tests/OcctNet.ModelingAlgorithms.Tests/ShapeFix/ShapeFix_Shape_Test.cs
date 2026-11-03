@@ -2,10 +2,14 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing.Checks;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Occt.ShapeExtend_Status;
+using static Kerf.Engine.Healing.Extend.ExtendStatus;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -15,37 +19,37 @@ public class ShapeFix_ShapeTest
     [Fact]
     public void FixValidBox()
     {
-        var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aMakeBox = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aMakeBox.Shape();
-        Assert.True(aMakeBox.IsDone());
+        Assert.True(aMakeBox.IsDone);
 
-        var aFixer = new ShapeFix_Shape(aBox);
+        var aFixer = new ShapeFixer(aBox);
         aFixer.Perform();
         Shape aResult = aFixer.Shape();
         Assert.False(aResult.IsNull);
 
-        var anAnalyzer = new BRepCheck_Analyzer(aResult);
+        var anAnalyzer = new Analyzer(aResult);
         Assert.True(anAnalyzer.IsValid());
     }
 
     [Fact]
     public void StatusAfterFix()
     {
-        var aMakeBox = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aMakeBox = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox = aMakeBox.Shape();
-        Assert.True(aMakeBox.IsDone());
+        Assert.True(aMakeBox.IsDone);
 
-        var aFixer = new ShapeFix_Shape(aBox);
+        var aFixer = new ShapeFixer(aBox);
         aFixer.Perform();
 
         // A valid box should not require any failure-level fixes
-        Assert.False(aFixer.Status(ShapeExtend_FAIL));
+        Assert.False(aFixer.Status(ExtendStatus.Fail));
     }
 
     [Fact]
     public void SetPrecision()
     {
-        var aFixer = new ShapeFix_Shape();
+        var aFixer = new ShapeFixer();
 
         const double aPrecision    = 0.01;
         const double aMinTolerance = 0.001;
@@ -63,13 +67,13 @@ public class ShapeFix_ShapeTest
     [Fact]
     public void FixCompound()
     {
-        var aMakeBox1 = new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0);
+        var aMakeBox1 = new MakeBox(10.0, 10.0, 10.0);
         Shape aBox1 = aMakeBox1.Shape();
-        Assert.True(aMakeBox1.IsDone());
+        Assert.True(aMakeBox1.IsDone);
 
-        var aMakeBox2 = new BRepPrimAPI_MakeBox(new Point3D(20.0, 0.0, 0.0), 5.0, 5.0, 5.0);
+        var aMakeBox2 = new MakeBox(new Point3D(20.0, 0.0, 0.0), 5.0, 5.0, 5.0);
         Shape aBox2 = aMakeBox2.Shape();
-        Assert.True(aMakeBox2.IsDone());
+        Assert.True(aMakeBox2.IsDone);
 
         var aBuilder = new BrepBuilder();
         var aCompound = new Compound();
@@ -77,12 +81,12 @@ public class ShapeFix_ShapeTest
         aBuilder.Add(aCompound, aBox1);
         aBuilder.Add(aCompound, aBox2);
 
-        var aFixer = new ShapeFix_Shape(aCompound);
+        var aFixer = new ShapeFixer(aCompound);
         aFixer.Perform();
         Shape aResult = aFixer.Shape();
         Assert.False(aResult.IsNull);
 
-        var anAnalyzer = new BRepCheck_Analyzer(aResult);
+        var anAnalyzer = new Analyzer(aResult);
         Assert.True(anAnalyzer.IsValid());
     }
 
@@ -92,25 +96,25 @@ public class ShapeFix_ShapeTest
     public void HealPrismFromSelfIntersectingFace()
     {
         // Bowtie quad: vertices ordered so the two diagonals cross -> the wire self-intersects.
-        var aPoly = new BRepBuilderAPI_MakePolygon();
+        var aPoly = new MakePolygon();
         aPoly.Add(new Point3D(0.0, 0.0, 0.0));
         aPoly.Add(new Point3D(1.0, 1.0, 0.0));
         aPoly.Add(new Point3D(1.0, 0.0, 0.0));
         aPoly.Add(new Point3D(0.0, 1.0, 0.0));
         aPoly.Close();
-        Assert.True(aPoly.IsDone());
+        Assert.True(aPoly.IsDone);
 
-        var aMakeFace = new BRepBuilderAPI_MakeFace(aPoly.Wire(), true);
-        Assert.True(aMakeFace.IsDone());
+        var aMakeFace = new MakeFace(aPoly.Wire(), true);
+        Assert.True(aMakeFace.IsDone);
 
-        var aMakePrism = new BRepPrimAPI_MakePrism(aMakeFace.Face(), new Vector3D(0.0, 0.0, 1.0));
-        Assert.True(aMakePrism.IsDone());
+        var aMakePrism = new ApiMakePrism(aMakeFace.Face(), new Vector3D(0.0, 0.0, 1.0));
+        Assert.True(aMakePrism.IsDone);
 
-        var aFixer = new ShapeFix_Shape(aMakePrism.Shape());
+        var aFixer = new ShapeFixer(aMakePrism.Shape());
         aFixer.Perform();
         Assert.False(aFixer.Shape().IsNull);
 
-        var anAnalyzer = new BRepCheck_Analyzer(aFixer.Shape());
+        var anAnalyzer = new Analyzer(aFixer.Shape());
         Assert.True(anAnalyzer.IsValid());
     }
 }

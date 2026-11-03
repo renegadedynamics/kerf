@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -17,15 +19,15 @@ internal static class MeshTestKit
     public static readonly ColorWithAlpha Green = new(0.0f, 1.0f, 0.0f, 1.0f);
     public static readonly ColorWithAlpha Blue = new(0.0f, 0.0f, 1.0f, 0.5f);
 
-    public static IMeshTools_Parameters MeshParameters => new() { Deflection = 0.1, Angle = 0.5 };
+    public static ToolParameters MeshParameters => new() { Deflection = 0.1, Angle = 0.5 };
 
     /// <summary>A box, unmeshed.</summary>
     public static Shape Box(double theDx, double theDy, double theDz)
-        => new BRepPrimAPI_MakeBox(theDx, theDy, theDz).Shape();
+        => new MakeBox(theDx, theDy, theDz).Shape();
 
     /// <summary>A box, meshed (frozen).</summary>
     public static Shape MeshedBox(double theDx, double theDy, double theDz)
-        => BRepMesh_IncrementalMesh.Meshed(Box(theDx, theDy, theDz), MeshParameters);
+        => IncrementalMesh.Meshed(Box(theDx, theDy, theDz), MeshParameters);
 
     public static Placement Translation(double theX, double theY, double theZ)
         => new(Transform3D.Translation(new Vector3D(theX, theY, theZ)));

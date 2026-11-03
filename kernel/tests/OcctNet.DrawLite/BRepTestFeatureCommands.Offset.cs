@@ -1,13 +1,15 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Offsets;
+using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Occt.BRepOffset_Error;
-using static Occt.BRepOffset_Mode;
+using static Kerf.Engine.Offsets.Error;
+using static Kerf.Engine.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -30,7 +32,7 @@ internal static partial class BRepTestFeatureCommands
     // OCCT's statics TheOffset, TheRadius, theYaBouchon, TheTolerance, TheInter, TheJoin and RemoveIntEdges.
     private sealed class OffsetState
     {
-        public readonly BRepOffset_MakeOffset TheOffset = new();
+        public readonly MakeOffset TheOffset = new();
         public double TheRadius;
         public bool theYaBouchon;
         public double TheTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -56,35 +58,35 @@ internal static partial class BRepTestFeatureCommands
         DrawCxx.Add(theInterpreter, "offsetshapesimple", ComputeSimpleOffset);
     }
 
-    private static void reportOffsetState(DrawResult theCommands, BRepOffset_Error theErrorCode)
+    private static void reportOffsetState(DrawResult theCommands, Error theErrorCode)
     {
         switch (theErrorCode)
         {
-            case BRepOffset_NoError:
+            case Error.NoError:
                 theCommands.Append("OK. Offset performed successfully.");
                 break;
-            case BRepOffset_BadNormalsOnGeometry:
+            case Error.BadNormalsOnGeometry:
                 theCommands.Append("ERROR. Degenerated normal on input data.");
                 break;
-            case BRepOffset_C0Geometry:
+            case Error.C0Geometry:
                 theCommands.Append("ERROR. C0 continuity of input data.");
                 break;
-            case BRepOffset_NullOffset:
+            case Error.NullOffset:
                 theCommands.Append("ERROR. Null offset of all faces.");
                 break;
-            case BRepOffset_NotConnectedShell:
+            case Error.NotConnectedShell:
                 theCommands.Append("ERROR. Incorrect set of faces to remove, the remaining shell is not connected.");
                 break;
-            case BRepOffset_CannotTrimEdges:
+            case Error.CannotTrimEdges:
                 theCommands.Append("ERROR. Can not trim edges.");
                 break;
-            case BRepOffset_CannotFuseVertices:
+            case Error.CannotFuseVertices:
                 theCommands.Append("ERROR. Can not fuse vertices.");
                 break;
-            case BRepOffset_CannotExtentEdge:
+            case Error.CannotExtentEdge:
                 theCommands.Append("ERROR. Can not extent edge.");
                 break;
-            case BRepOffset_MixedConnectivity:
+            case Error.MixedConnectivity:
                 theCommands.Append("ERROR. Mixed connectivity of faces.");
                 break;
             default:
@@ -130,12 +132,12 @@ internal static partial class BRepTestFeatureCommands
             Tol = theDI.Atof(a[5]);
         }
 
-        BRepOffset_MakeOffset B = new();
-        B.Initialize(S, Of, Tol, BRepOffset_Skin, Inter, false, JT, true);
+        MakeOffset B = new();
+        B.Initialize(S, Of, Tol, OffsetMode.Skin, Inter, false, JT, true);
 
         B.MakeOffsetShape();
 
-        BRepOffset_Error aRetCode = B.Error();
+        Error aRetCode = B.Error();
         reportOffsetState(theCommands, aRetCode);
 
         if (!B.Shape().IsNull)
@@ -161,7 +163,7 @@ internal static partial class BRepTestFeatureCommands
             return 1;
         }
         double anOffVal = theDI.Atof(theArgVec[3]);
-        BRepOffsetAPI_MakeOffsetShape aMaker = new();
+        MakeOffsetShape aMaker = new();
         if (theArgNb == 4)
         {
             aMaker.PerformBySimple(aShape, anOffVal);
@@ -205,10 +207,10 @@ internal static partial class BRepTestFeatureCommands
                     aRemIntEdges = true;
                 }
             }
-            aMaker.PerformByJoin(aShape, anOffVal, aTol, BRepOffset_Skin, anInt, aSelfInt, aJoin, aRemIntEdges);
+            aMaker.PerformByJoin(aShape, anOffVal, aTol, OffsetMode.Skin, anInt, aSelfInt, aJoin, aRemIntEdges);
         }
 
-        if (!aMaker.IsDone())
+        if (!aMaker.IsDone)
         {
             theDIResult.Append(" Error: Offset is not done.\n");
             return 1;
@@ -241,7 +243,7 @@ internal static partial class BRepTestFeatureCommands
             Inter = true;
         }
 
-        BRepOffset_MakeOffset B = new();
+        MakeOffset B = new();
         int IB = 4;
         double Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         if (n > 4)
@@ -253,7 +255,7 @@ internal static partial class BRepTestFeatureCommands
                 Tol = theDI.Atof(a[4]);
             }
         }
-        B.Initialize(S, Of, Tol, BRepOffset_Skin, Inter, false, JT);
+        B.Initialize(S, Of, Tol, OffsetMode.Skin, Inter, false, JT);
         //------------------------------------------
         // recuperation et chargement des bouchons.
         //----------------------------------------
@@ -278,7 +280,7 @@ internal static partial class BRepTestFeatureCommands
             B.MakeThickSolid();
         }
 
-        BRepOffset_Error aRetCode = B.Error();
+        Error aRetCode = B.Error();
         reportOffsetState(theCommands, aRetCode);
 
         if (!B.Shape().IsNull)
@@ -384,7 +386,7 @@ internal static partial class BRepTestFeatureCommands
         s.TheRadius = Of;
         //  bool Inter = true;
 
-        s.TheOffset.Initialize(S, Of, s.TheTolerance, BRepOffset_Skin, s.TheInter, false, s.TheJoin, false, s.RemoveIntEdges);
+        s.TheOffset.Initialize(S, Of, s.TheTolerance, OffsetMode.Skin, s.TheInter, false, s.TheJoin, false, s.RemoveIntEdges);
         //------------------------------------------
         // recuperation et chargement des bouchons.
         //----------------------------------------
@@ -446,13 +448,13 @@ internal static partial class BRepTestFeatureCommands
             s.TheOffset.MakeOffsetShape();
         }
 
-        if (s.TheOffset.IsDone())
+        if (s.TheOffset.IsDone)
         {
             theDI.SetShape(a[1], s.TheOffset.Shape());
         }
         else
         {
-            BRepOffset_Error aRetCode = s.TheOffset.Error();
+            Error aRetCode = s.TheOffset.Error();
             reportOffsetState(theCommands, aRetCode);
         }
 
@@ -469,7 +471,7 @@ internal static partial class BRepTestFeatureCommands
 
     // OCCT's BRepTest_Objects::SetHistory<BRepOffset_MakeOffset> reads the algorithm's Generated, Modified and
     // IsDeleted through a template; the port's history takes the interface.
-    private sealed class OffsetHistory(BRepOffset_MakeOffset theAlgo) : History.IAlgorithm
+    private sealed class OffsetHistory(MakeOffset theAlgo) : History.IAlgorithm
     {
         public bool IsDeleted(in Shape theS) => theAlgo.IsDeleted(theS);
 
@@ -507,12 +509,12 @@ internal static partial class BRepTestFeatureCommands
         int iTolArg = (makeSolid ? 5 : 4);
         double aTol = (narg > iTolArg ? theDI.Atof(a[iTolArg]) : global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        BRepOffset_MakeSimpleOffset aMaker = new(aShape, anOffsetValue);
+        MakeSimpleOffset aMaker = new(aShape, anOffsetValue);
         aMaker.SetTolerance(aTol);
         aMaker.SetBuildSolidFlag(makeSolid);
         aMaker.Perform();
 
-        if (!aMaker.IsDone())
+        if (!aMaker.IsDone)
         {
             theCommands.Append("ERROR:").Append(aMaker.GetErrorMessage()).Append("\n");
             return 0;

@@ -244,7 +244,7 @@ public sealed class StepData_Field
     }
 
     /// <summary>Sets a Logical Value (or predeclares a list as logical).</summary>
-    public void SetLogical(StepData_Logical val = StepData_LFalse)
+    public void SetLogical(StepData_Logical val = StepData_Logical.StepData_LFalse)
     {
         if (thekind == KindSelect)
         {
@@ -255,15 +255,15 @@ public sealed class StepData_Field
             }
         }
         Clear(KindLogical);
-        if (val == StepData_LFalse)
+        if (val == StepData_Logical.StepData_LFalse)
         {
             theint = 0;
         }
-        if (val == StepData_LTrue)
+        if (val == StepData_Logical.StepData_LTrue)
         {
             theint = 1;
         }
-        if (val == StepData_LUnknown)
+        if (val == StepData_Logical.StepData_LUnknown)
         {
             theint = 2;
         }
@@ -549,15 +549,15 @@ public sealed class StepData_Field
 
     public void SetLogical(int num, StepData_Logical val)
     {
-        if (val == StepData_LFalse)
+        if (val == StepData_Logical.StepData_LFalse)
         {
             SetInt(num, 0, KindLogical);
         }
-        if (val == StepData_LTrue)
+        if (val == StepData_Logical.StepData_LTrue)
         {
             SetInt(num, 1, KindLogical);
         }
-        if (val == StepData_LUnknown)
+        if (val == StepData_Logical.StepData_LUnknown)
         {
             SetInt(num, 2, KindLogical);
         }
@@ -920,13 +920,13 @@ public sealed class StepData_Field
         int ival = Integer(n1, n2);
         if (ival == 0)
         {
-            return StepData_LFalse;
+            return StepData_Logical.StepData_LFalse;
         }
         if (ival == 1)
         {
-            return StepData_LTrue;
+            return StepData_Logical.StepData_LTrue;
         }
-        return StepData_LUnknown;
+        return StepData_Logical.StepData_LUnknown;
     }
 
     public double Real(int n1 = 1, int n2 = 1)

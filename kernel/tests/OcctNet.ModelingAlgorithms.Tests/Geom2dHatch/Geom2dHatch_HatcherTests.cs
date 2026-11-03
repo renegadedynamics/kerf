@@ -1,10 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification.Hatching;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
-using static Occt.HatchGen_ErrorStatus;
+using static Kerf.Engine.Classification.Hatching.HatchingErrorStatus;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.Containment;
 
@@ -16,8 +17,8 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// </summary>
 public class Geom2dHatch_HatcherTests
 {
-    private static Geom2dHatch_Hatcher NewHatcher() =>
-        new(new Geom2dHatch_Intersector(1.0e-10, 1.0e-10), 1.0e-8, 1.0e-8, true, false);
+    private static Hatcher2D NewHatcher() =>
+        new(new Intersector2D(1.0e-10, 1.0e-10), 1.0e-8, 1.0e-8, true, false);
 
     // A segment as a trimmed line, as IntTools_Context trims the pcurves.
     private static CurveAdaptor2D Segment(double x1, double y1, double x2, double y2)
@@ -28,7 +29,7 @@ public class Geom2dHatch_HatcherTests
     }
 
     // A counterclockwise polygon (inside on the left), its edges added in order.
-    private static void AddPolygon(Geom2dHatch_Hatcher theHatcher, Orientation theOr, params double[] theXY)
+    private static void AddPolygon(Hatcher2D theHatcher, Orientation theOr, params double[] theXY)
     {
         int aNb = theXY.Length / 2;
         for (int i = 0; i < aNb; i++)
@@ -43,20 +44,20 @@ public class Geom2dHatch_HatcherTests
         new(new TrimmedCurve2D(new LineCurve2D(new Point2D(x, y), new Direction2D(dx, dy)), 0.0,
                                     global::Kerf.Engine.Foundation.Precision.Infinite()));
 
-    private static (double First, double Second)[] Domains(Geom2dHatch_Hatcher theHatcher, int theIndH)
+    private static (double First, double Second)[] Domains(Hatcher2D theHatcher, int theIndH)
     {
         theHatcher.Trim();
         Assert.True(theHatcher.TrimDone(theIndH));
         Assert.False(theHatcher.TrimFailed(theIndH));
         theHatcher.ComputeDomains(theIndH);
         Assert.True(theHatcher.IsDone(theIndH));
-        Assert.Equal(HatchGen_NoProblem, theHatcher.Status(theIndH));
+        Assert.Equal(HatchingErrorStatus.NoProblem, theHatcher.Status(theIndH));
         var aResult = new (double, double)[theHatcher.NbDomains(theIndH)];
         for (int i = 1; i <= aResult.Length; i++)
         {
-            HatchGen_Domain aDomain = theHatcher.Domain(theIndH, i);
-            aResult[i - 1] = (aDomain.HasFirstPoint() ? aDomain.FirstPoint().Parameter() : double.NegativeInfinity,
-                              aDomain.HasSecondPoint() ? aDomain.SecondPoint().Parameter() : double.PositiveInfinity);
+            HatchingDomain aDomain = theHatcher.Domain(theIndH, i);
+            aResult[i - 1] = (aDomain.HasFirstPoint ? aDomain.FirstPoint().Parameter() : double.NegativeInfinity,
+                              aDomain.HasSecondPoint ? aDomain.SecondPoint().Parameter() : double.PositiveInfinity);
         }
         return aResult;
     }
@@ -64,7 +65,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Square_LineThroughIt()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         int aIH = aHatcher.AddHatching(HalfLine(-1, 0.5, 1, 0));
         Assert.Equal(1, aIH);
@@ -76,15 +77,15 @@ public class Geom2dHatch_HatcherTests
 
         // The points: entering through the left edge (element 4), leaving through the right one (element 2)
         Assert.Equal(2, aHatcher.NbPoints(aIH));
-        HatchGen_PointOnHatching aP1 = aHatcher.Point(aIH, 1), aP2 = aHatcher.Point(aIH, 2);
+        PointOnHatching aP1 = aHatcher.Point(aIH, 1), aP2 = aHatcher.Point(aIH, 2);
         Assert.Equal(Out, aP1.StateBefore());
         Assert.Equal(In, aP1.StateAfter());
         Assert.Equal(In, aP2.StateBefore());
         Assert.Equal(Out, aP2.StateAfter());
-        Assert.Equal(1, aP1.NbPoints());
+        Assert.Equal(1, aP1.PointCount);
         Assert.Equal(4, aP1.Point(1).Index());
         Assert.Equal(2, aP2.Point(1).Index());
-        Assert.Equal(HatchGen_IntersectionType.HatchGen_TRUE, aP1.Point(1).IntersectionType());
+        Assert.Equal(IntersectionType.True, aP1.Point(1).IntersectionType());
         Assert.Equal(Internal, aP1.Point(1).Position());
         Assert.Equal(0.5, aP1.Point(1).Parameter(), 1e-12); // the middle of the left edge (from (0, 1) to (0, 0))
     }
@@ -92,7 +93,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void SquareWithHole_TwoDomains()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 4, 0, 4, 4, 0, 4);
         AddPolygon(aHatcher, Forward, 1, 1, 1, 3, 3, 3, 3, 1); // clockwise: a hole
         int aIH = aHatcher.AddHatching(HalfLine(-1, 2, 1, 0));
@@ -109,7 +110,7 @@ public class Geom2dHatch_HatcherTests
     public void SquareWithHole_ReversedElements()
     {
         // The hole counterclockwise but its elements REVERSED: the same domains
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 4, 0, 4, 4, 0, 4);
         AddPolygon(aHatcher, Reversed, 1, 1, 3, 1, 3, 3, 1, 3);
         int aIH = aHatcher.AddHatching(HalfLine(-1, 2, 1, 0));
@@ -127,7 +128,7 @@ public class Geom2dHatch_HatcherTests
     {
         // The diagonal meets two elements at each of the corners (0, 0) and (1, 1): each point on the hatching holds
         // two points on element, at their ends, and the complex transition gives OUT/IN then IN/OUT
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         double s = Math.Sqrt(0.5);
         int aIH = aHatcher.AddHatching(HalfLine(-1, -1, s, s));
@@ -138,17 +139,17 @@ public class Geom2dHatch_HatcherTests
         Assert.Equal(2.0 * Math.Sqrt(2.0), aDomains[0].Second, 1e-9);
 
         Assert.Equal(2, aHatcher.NbPoints(aIH));
-        HatchGen_PointOnHatching aP1 = aHatcher.Point(aIH, 1);
-        Assert.Equal(2, aP1.NbPoints());
+        PointOnHatching aP1 = aHatcher.Point(aIH, 1);
+        Assert.Equal(2, aP1.PointCount);
         Assert.Equal(Out, aP1.StateBefore());
         Assert.Equal(In, aP1.StateAfter());
-        Assert.Equal(2, aHatcher.Point(aIH, 2).NbPoints());
+        Assert.Equal(2, aHatcher.Point(aIH, 2).PointCount);
     }
 
     [Fact]
     public void Circle_Chord()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         aHatcher.AddElement(new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         int aIH = aHatcher.AddHatching(HalfLine(-2, 0.6, 1, 0));
 
@@ -161,7 +162,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void NoIntersection_ClassifiedInside_OneInfiniteDomain()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         int aIH = aHatcher.AddHatching(Segment(0.2, 0.5, 0.8, 0.5));
         (double First, double Second)[] aDomains = Domains(aHatcher, aIH);
@@ -174,7 +175,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void NoIntersection_ClassifiedOutside_NoDomain()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         int aIH = aHatcher.AddHatching(Segment(2, 0.5, 3, 0.5));
         Assert.Empty(Domains(aHatcher, aIH));
@@ -185,7 +186,7 @@ public class Geom2dHatch_HatcherTests
     {
         // BOPTools_AlgoTools3D::PointInFace: ClrHatchings, AddHatching (index 1 again), Trim, ComputeDomains,
         // RemHatching; the elements stay
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         for (int k = 0; k < 3; k++)
         {
@@ -204,7 +205,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Indices_ReuseTheLowestFreeOne()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1);
         Assert.Equal(4, aHatcher.AddElement(Segment(0, 0, 1, 1)));
         aHatcher.RemElement(2);
@@ -226,19 +227,19 @@ public class Geom2dHatch_HatcherTests
     {
         // OCCT's RemElement removes the element's points from a copy of each point on the hatching (occt-issues.md):
         // a point holding the removed element and another keeps both; a point holding only the removed element goes
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         double s = Math.Sqrt(0.5);
         int aDiag = aHatcher.AddHatching(HalfLine(-1, -1, s, s));
         int aMid = aHatcher.AddHatching(HalfLine(-1, 0.5, 1, 0));
         aHatcher.Trim();
         aHatcher.ComputeDomains();
-        Assert.Equal(2, aHatcher.Point(aDiag, 1).NbPoints());
+        Assert.Equal(2, aHatcher.Point(aDiag, 1).PointCount);
 
         aHatcher.RemElement(4); // the left edge, from (0, 1) to (0, 0)
 
         Assert.Equal(2, aHatcher.NbPoints(aDiag));
-        Assert.Equal(2, aHatcher.Point(aDiag, 1).NbPoints()); // OCCT: still holds element 4's point
+        Assert.Equal(2, aHatcher.Point(aDiag, 1).PointCount); // OCCT: still holds element 4's point
         Assert.False(aHatcher.IsDone(aDiag));
         Assert.Equal(1, aHatcher.NbPoints(aMid)); // the left crossing went
         Assert.False(aHatcher.IsDone(aMid));
@@ -247,7 +248,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Settings_ClearPointsOrDomains()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         int aIH = aHatcher.AddHatching(HalfLine(-1, 0.5, 1, 0));
         Domains(aHatcher, aIH);
@@ -268,7 +269,7 @@ public class Geom2dHatch_HatcherTests
         Assert.True(aHatcher.IsDone(aIH));
         Assert.Equal(1, aHatcher.NbDomains(aIH));
 
-        aHatcher.Intersector(new Geom2dHatch_Intersector(1.0e-9, 1.0e-9));
+        aHatcher.Intersector(new Intersector2D(1.0e-9, 1.0e-9));
         Assert.Equal(1.0e-9, aHatcher.Intersector().ConfusionTolerance());
         Assert.Equal(0, aHatcher.NbPoints(aIH));
 
@@ -279,8 +280,8 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Intersector_IsCopied()
     {
-        Geom2dHatch_Intersector anIntersector = new(1.0e-10, 1.0e-10);
-        Geom2dHatch_Hatcher aHatcher = new(anIntersector, 1.0e-8, 1.0e-8);
+        Intersector2D anIntersector = new(1.0e-10, 1.0e-10);
+        Hatcher2D aHatcher = new(anIntersector, 1.0e-8, 1.0e-8);
         anIntersector.SetConfusionTolerance(0.5);
         Assert.Equal(1.0e-10, aHatcher.Intersector().ConfusionTolerance());
         Assert.False(aHatcher.KeepPoints());
@@ -291,7 +292,7 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Dump_WritesTheHatcher()
     {
-        Geom2dHatch_Hatcher aHatcher = NewHatcher();
+        Hatcher2D aHatcher = NewHatcher();
         AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
         int aIH = aHatcher.AddHatching(HalfLine(-1, 0.5, 1, 0));
         Domains(aHatcher, aIH);
@@ -310,31 +311,31 @@ public class Geom2dHatch_HatcherTests
     [Fact]
     public void Classifier_OnElements()
     {
-        Geom2dHatch_Elements anElements = new();
-        anElements.Bind(1, new Geom2dHatch_Element(Segment(0, 0, 1, 0)));
-        anElements.Bind(2, new Geom2dHatch_Element(Segment(1, 0, 1, 1)));
-        anElements.Bind(3, new Geom2dHatch_Element(Segment(1, 1, 0, 1)));
-        anElements.Bind(4, new Geom2dHatch_Element(Segment(0, 1, 0, 0)));
+        Elements2D anElements = new();
+        anElements.Bind(1, new Element2D(Segment(0, 0, 1, 0)));
+        anElements.Bind(2, new Element2D(Segment(1, 0, 1, 1)));
+        anElements.Bind(3, new Element2D(Segment(1, 1, 0, 1)));
+        anElements.Bind(4, new Element2D(Segment(0, 1, 0, 0)));
 
-        Assert.Equal(In, new Geom2dHatch_Classifier(anElements, new Point2D(0.3, 0.6), 1.0e-7).State());
-        Assert.Equal(Out, new Geom2dHatch_Classifier(anElements, new Point2D(1.3, 0.6), 1.0e-7).State());
-        Geom2dHatch_Classifier anOn = new(anElements, new Point2D(1.0, 0.4), 1.0e-7);
+        Assert.Equal(In, new Classifier2D(anElements, new Point2D(0.3, 0.6), 1.0e-7).State());
+        Assert.Equal(Out, new Classifier2D(anElements, new Point2D(1.3, 0.6), 1.0e-7).State());
+        Classifier2D anOn = new(anElements, new Point2D(1.0, 0.4), 1.0e-7);
         Assert.Equal(On, anOn.State());
         Assert.Equal(0.4, anOn.EdgeParameter(), 1e-9);
         Assert.Equal(1.0, anOn.Edge().Value(0.0).X());
         Assert.False(anOn.Rejected());
         Assert.False(anOn.NoWires());
 
-        Assert.Equal(In, new Geom2dHatch_Classifier(new Geom2dHatch_Elements(), new Point2D(), 1.0e-7).State());
+        Assert.Equal(In, new Classifier2D(new Elements2D(), new Point2D(), 1.0e-7).State());
     }
 
     [Fact]
     public void Elements_CopyConstructorCopiesNothing()
     {
         // OCCT's "magic constructor" (occt-issues.md)
-        Geom2dHatch_Elements anElements = new();
-        anElements.Bind(1, new Geom2dHatch_Element(Segment(0, 0, 1, 0)));
-        Geom2dHatch_Elements aCopy = new(anElements);
+        Elements2D anElements = new();
+        anElements.Bind(1, new Element2D(Segment(0, 0, 1, 0)));
+        Elements2D aCopy = new(anElements);
         Assert.False(aCopy.IsBound(1));
         Assert.True(anElements.IsBound(1));
     }
@@ -343,11 +344,11 @@ public class Geom2dHatch_HatcherTests
     public void Element_CopiesTheAdaptor()
     {
         CurveAdaptor2D aCurve = Segment(0, 0, 1, 0);
-        Geom2dHatch_Element anElement = new(aCurve, Reversed);
+        Element2D anElement = new(aCurve, Reversed);
         aCurve.Load(new LineCurve2D(new Point2D(5, 5), new Direction2D(0, 1)));
         Assert.Equal(0.0, anElement.Curve().Value(0.0).X());
         Assert.Equal(Reversed, anElement.Orientation());
-        Geom2dHatch_Element aForward = anElement.WithOrientation(Forward);
+        Element2D aForward = anElement.WithOrientation(Forward);
         Assert.Equal(Forward, aForward.Orientation());
         Assert.Equal(Reversed, anElement.Orientation());
         Assert.Same(anElement.Curve(), aForward.Curve());

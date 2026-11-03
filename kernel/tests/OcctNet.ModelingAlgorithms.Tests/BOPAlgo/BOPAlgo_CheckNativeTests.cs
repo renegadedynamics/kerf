@@ -1,5 +1,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -21,7 +25,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <remarks>
 /// Each case holds its arguments as BRep text, which both sides read back (the port's shapes are frozen, so the checks
 /// also show that they never write their arguments). CheckerSI's outcome is its alerts, its table of interferences in
-/// iteration order (OCCT's hash order, <see cref="BOPDS_MapOfPair"/>), the numbers of its solid interferences and the
+/// iteration order (OCCT's hash order, <see cref="MapOfPair"/>), the numbers of its solid interferences and the
 /// pave filler's whole dump (<see cref="PaveFillerDump"/>); the analyzers' outcome is their list of results, each
 /// shape as its index in the shapes' TopExp.MapShapes and its orientation, every double in hex.
 /// </remarks>
@@ -113,12 +117,12 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
             theS.IsNull ? "-" : $"{myMap.FindIndex(theS)}o{(int)theS.Orientation()}";
     }
 
-    private static string Results(IEnumerable<BOPAlgo_CheckResult> theResults, ShapeIndex theIndex)
+    private static string Results(IEnumerable<CheckResult> theResults, ShapeIndex theIndex)
     {
-        List<BOPAlgo_CheckResult> aList = [.. theResults];
+        List<CheckResult> aList = [.. theResults];
         StringBuilder aB = new();
         aB.Append("results ").Append(aList.Count).Append('\n');
-        foreach (BOPAlgo_CheckResult aR in aList)
+        foreach (CheckResult aR in aList)
         {
             aB.Append("r ").Append((int)aR.GetCheckStatus()).Append(' ').Append(theIndex.Of(aR.GetShape1())).Append(' ')
               .Append(theIndex.Of(aR.GetShape2())).Append(" f1");
@@ -146,7 +150,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         {
             case "si":
             {
-                BOPAlgo_CheckerSI aChecker = new();
+                CheckerSI aChecker = new();
                 NCollection_List<Shape> aLS = new();
                 aLS.Append(aS1);
                 aChecker.SetArguments(aLS);
@@ -173,9 +177,9 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 string aModes = aRun[1];
                 if (aRun[4] == "1" && !aS2.IsNull)
                 {
-                    aS2 = new BRepBuilderAPI_Copy(aS2).Shape();
+                    aS2 = new Copy(aS2).Shape();
                 }
-                BOPAlgo_ArgumentAnalyzer aChecker = new();
+                ArgumentAnalyzer aChecker = new();
                 aChecker.SetFuzzyValue(FromHex(aRun[3]));
                 aChecker.SetRunParallel(theParallel);
                 aChecker.SetShape1(aS1);
@@ -183,7 +187,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 {
                     aChecker.SetShape2(aS2);
                 }
-                aChecker.OperationType() = (BOPAlgo_Operation)int.Parse(aRun[2], CultureInfo.InvariantCulture);
+                aChecker.OperationType() = (Operation)int.Parse(aRun[2], CultureInfo.InvariantCulture);
                 aChecker.ArgumentTypeMode() = aModes[0] == '1';
                 aChecker.SelfInterMode() = aModes[1] == '1';
                 aChecker.SmallEdgeMode() = aModes[2] == '1';
@@ -195,11 +199,11 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 aChecker.CurveOnSurfaceMode() = aModes[8] == '1';
                 aChecker.StopOnFirstFaulty() = aModes[9] == '1';
                 aChecker.Perform();
-                return (aChecker.HasFaulty() ? "faulty 1\n" : "faulty 0\n") + Results(aChecker.GetCheckResult(), new ShapeIndex(aS1, aS2));
+                return (aChecker.HasFaulty ? "faulty 1\n" : "faulty 0\n") + Results(aChecker.GetCheckResult(), new ShapeIndex(aS1, aS2));
             }
             case "api":
             {
-                BRepAlgoAPI_Check aChecker = new();
+                Check aChecker = new();
                 aChecker.SetFuzzyValue(FromHex(aRun[4]));
                 aChecker.SetRunParallel(theParallel);
                 bool aSE = aRun[2] == "1", aSI = aRun[3] == "1";
@@ -209,10 +213,10 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 }
                 else
                 {
-                    aChecker.SetData(aS1, aS2, (BOPAlgo_Operation)int.Parse(aRun[1], CultureInfo.InvariantCulture), aSE, aSI);
+                    aChecker.SetData(aS1, aS2, (Operation)int.Parse(aRun[1], CultureInfo.InvariantCulture), aSE, aSI);
                 }
                 aChecker.Perform();
-                return (aChecker.IsValid() ? "valid 1\n" : "valid 0\n") + Results(aChecker.Result(), new ShapeIndex(aS1, aS2));
+                return (aChecker.IsValid ? "valid 1\n" : "valid 0\n") + Results(aChecker.Result(), new ShapeIndex(aS1, aS2));
             }
             default:
                 throw new InvalidOperationException(aRun[0]);

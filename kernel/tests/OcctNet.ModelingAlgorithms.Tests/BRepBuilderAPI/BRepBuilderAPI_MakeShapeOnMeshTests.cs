@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -40,9 +42,9 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
     [Fact]
     public void Triangles_become_planar_faces_sharing_vertices_and_edges()
     {
-        var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(Quad());
+        var aMaker = new MakeShapeOnMesh(Quad());
         aMaker.Build();
-        Assert.True(aMaker.IsDone());
+        Assert.True(aMaker.IsDone);
         Shape aShape = aMaker.Shape();
         Assert.Equal(ShapeType.Compound, aShape.ShapeType());
         Assert.True(aShape.TShape()!.IsFrozen);
@@ -58,13 +60,13 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
             double aSign = anExp.Current().Orientation() == Orientation.Reversed ? -1 : 1;
             Assert.Equal(1.0, aSign * aNorm.Z(), 12);
         }
-        Assert.True(new BRepCheck_Analyzer(aShape).IsValid());
+        Assert.True(new Analyzer(aShape).IsValid());
     }
 
     [Fact]
     public void Degenerate_triangles_are_skipped()
     {
-        var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(Quad(new Triangle1(1, 1, 2), new Triangle1(3, 4, 5)));
+        var aMaker = new MakeShapeOnMesh(Quad(new Triangle1(1, 1, 2), new Triangle1(3, 4, 5)));
         Shape aShape = aMaker.Shape();
         Assert.Equal(2, Count(aShape, ShapeType.Face));
     }
@@ -72,11 +74,11 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
     [Fact]
     public void A_null_or_empty_mesh_builds_nothing()
     {
-        var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(null);
+        var aMaker = new MakeShapeOnMesh(null);
         aMaker.Build();
-        Assert.False(aMaker.IsDone());
+        Assert.False(aMaker.IsDone);
         Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
-        Assert.False(new BRepBuilderAPI_MakeShapeOnMesh(new Triangulation()).IsDone());
+        Assert.False(new MakeShapeOnMesh(new Triangulation()).IsDone);
     }
 
     [Fact]
@@ -84,8 +86,8 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
     {
         using var aSource = new CancellationTokenSource();
         aSource.Cancel();
-        var aMaker = new BRepBuilderAPI_MakeShapeOnMesh(Quad());
+        var aMaker = new MakeShapeOnMesh(Quad());
         aMaker.Build(new ProgressIndicator(aSource.Token).Start());
-        Assert.False(aMaker.IsDone());
+        Assert.False(aMaker.IsDone);
     }
 }

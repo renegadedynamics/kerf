@@ -7,6 +7,9 @@
 #pragma warning disable CS0168 // locals OCCT declares and never uses
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -28,7 +31,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
 
     public TopoDSToStep_MakeStepWire()
     {
-        myError = TopoDSToStep_WireOther;
+        myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireOther;
         done = false;
     }
 
@@ -52,7 +55,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
 
         if (aTool.IsBound(aWire))
         {
-            myError = TopoDSToStep_WireDone;
+            myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireDone;
             done = true;
             myResult = aTool.Find(aWire);
             return;
@@ -62,7 +65,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
         {
             var errShape = new TransferBRep_ShapeMapper(aWire);
             FP.AddWarning(errShape, " Wire(internal/external) from Non Manifold Topology");
-            myError = TopoDSToStep_NonManifoldWire;
+            myError = TopoDSToStep_MakeWireError.TopoDSToStep_NonManifoldWire;
             done = false;
             return;
         }
@@ -105,7 +108,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                 {
                     var errShape = new TransferBRep_ShapeMapper(aWire);
                     FP.AddWarning(errShape, " a Vertex Point not mapped");
-                    myError = TopoDSToStep_WireOther;
+                    myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireOther;
                     done = false;
                     return;
                 }
@@ -125,7 +128,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                 PL.Init(aName, aPolygon);
 
                 aTool.Bind(aWire, PL);
-                myError = TopoDSToStep_WireDone;
+                myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireDone;
                 done = true;
                 myResult = PL;
                 return;
@@ -134,7 +137,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             {
                 var errShape = new TransferBRep_ShapeMapper(aWire);
                 FP.AddWarning(errShape, " PolyLoop: Wire has less than 3 points");
-                myError = TopoDSToStep_WireOther;
+                myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireOther;
                 done = false;
                 return;
             }
@@ -153,22 +156,22 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             var MkEdge = new TopoDSToStep_MakeStepEdge();
 
             Wire ForwardWire = ShapeCasts.Wire(aWire.Oriented(Forward));
-            var STW = new ShapeFix_Wire(ForwardWire, aTool.CurrentFace(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            var STW = new WireFixer(ForwardWire, aTool.CurrentFace(), global::Kerf.Engine.Foundation.Precision.Confusion());
             // for toroidal like surfaces we need to use both (3d and 2d) mode to correctly reorder the
             // edges
             STW.FixReorder(true);
             // OCCT.NET: the fix works on copies of frozen edges; a result gives the wire data back the caller's own
             // edges, which the tool keys the edges' entities by (decision 1250)
             STW.Wire();
-            ShapeExtend_WireData anExtWire = STW.WireData();
+            ExtendWireData anExtWire = STW.WireData();
 
             //: abv 04.05.00: CAX-IF TRJ4: writing complete sphere with single vertex_loop
             // check that whole wire is one seam (perhaps made of several seam edges)
             // pdn remove degenerated pcurves
 
             // collect not degenerated edges
-            var anExtWire2 = new ShapeExtend_WireData();
-            for (int ie = 1; ie <= anExtWire.NbEdges(); ie++)
+            var anExtWire2 = new ExtendWireData();
+            for (int ie = 1; ie <= anExtWire.EdgeCount; ie++)
             {
                 Edge anEdge = anExtWire.Edge(ie);
                 if (!Tool.Degenerated(anEdge))
@@ -178,7 +181,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             }
 
             // check for seam edges
-            int nb = anExtWire2.NbEdges();
+            int nb = anExtWire2.EdgeCount;
             if (nb % 2 == 0)
             {
                 int ie;
@@ -207,14 +210,14 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                     if (ie > nb)
                     {
                         // make vertex_loop
-                        var sae = new ShapeAnalysis_Edge();
+                        var sae = new EdgeAnalysis();
                         Vertex V = sae.FirstVertex(anExtWire2.Edge(1));
                         var mkV = new TopoDSToStep_MakeStepVertex(V, aTool, FP, theLocalFactors);
                         var vloop = new StepShape_VertexLoop();
                         var name = new TCollection_HAsciiString("");
                         vloop.Init(name, mkV.Value() as StepShape_Vertex);
                         aTool.Bind(aWire, vloop);
-                        myError = TopoDSToStep_WireDone;
+                        myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireDone;
                         done = true;
                         myResult = vloop;
                         return;
@@ -222,7 +225,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                 }
             }
 
-            for (int nEdge = 1; nEdge <= anExtWire.NbEdges(); nEdge++)
+            for (int nEdge = 1; nEdge <= anExtWire.EdgeCount; nEdge++)
             {
                 Edge anEdge = anExtWire.Edge(nEdge);
 
@@ -252,7 +255,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
                     {
                         var errShape = new TransferBRep_ShapeMapper(aWire);
                         FP.AddWarning(errShape, " EdgeLoop: an Edge not mapped");
-                        myError = TopoDSToStep_WireOther;
+                        myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireOther;
                         done = false;
                         return;
                     }
@@ -280,7 +283,7 @@ public sealed class TopoDSToStep_MakeStepWire : TopoDSToStep_Root
             {
                 var errShape = new TransferBRep_ShapeMapper(aWire);
                 FP.AddWarning(errShape, " No Edges of this Wire were mapped");
-                myError = TopoDSToStep_WireOther;
+                myError = TopoDSToStep_MakeWireError.TopoDSToStep_WireOther;
                 done = false;
                 return;
             }

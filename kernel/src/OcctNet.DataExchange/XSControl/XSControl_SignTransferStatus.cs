@@ -41,19 +41,19 @@ public class XSControl_SignTransferStatus : IFSelect_Signature
         Interface_CheckStatus cst = binder.Check().Status();
         Transfer_StatusExec est = binder.StatusExec();
         bool res = binder.HasResult();
-        if (est == Transfer_StatusRun || est == Transfer_StatusLoop)
+        if (est == Transfer_StatusExec.Transfer_StatusRun || est == Transfer_StatusExec.Transfer_StatusLoop)
         {
             return 20;
         }
-        if (cst == Interface_CheckOK)
+        if (cst == Interface_CheckStatus.Interface_CheckOK)
         {
             stat = (res ? 11 : 1);
         }
-        else if (cst == Interface_CheckWarning)
+        else if (cst == Interface_CheckStatus.Interface_CheckWarning)
         {
             stat = (res ? 12 : 2);
         }
-        else if (cst == Interface_CheckFail)
+        else if (cst == Interface_CheckStatus.Interface_CheckFail)
         {
             stat = (res ? 13 : 3);
         }
@@ -158,7 +158,7 @@ public class XSControl_SignTransferStatus : IFSelect_Signature
             bool hasres = false;
             while (bnd is not null)
             {
-                if (bnd.Status() != Transfer_StatusVoid)
+                if (bnd.Status() != Transfer_StatusResult.Transfer_StatusVoid)
                 {
                     if (!hasres)
                     {

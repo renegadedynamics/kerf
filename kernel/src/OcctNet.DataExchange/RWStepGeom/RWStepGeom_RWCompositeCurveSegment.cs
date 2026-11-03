@@ -31,8 +31,8 @@ internal class RWStepGeom_RWCompositeCurveSegment
 
         // --- own field : transition ---
 
-        StepGeom_TransitionCode aTransition = StepGeom_tcDiscontinuous;
-        if (data.ParamType(num, 1) == Interface_ParamEnum)
+        StepGeom_TransitionCode aTransition = StepGeom_TransitionCode.StepGeom_tcDiscontinuous;
+        if (data.ParamType(num, 1) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
             if (!RWStepGeom_RWTransitionCode.ConvertToEnum(text, ref aTransition))

@@ -1,7 +1,11 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -18,9 +22,9 @@ public class BOPTools_ParallelContextTests
 {
     /// <summary>One face's queries, as a BOPAlgo solver would make them through its context.</summary>
     private sealed class FaceSolver(Face theFace, Solid theSolid, Point3D[] thePoints)
-        : BOPTools_Parallel.IContextSolver<IntTools_Context>
+        : BooleanParallel.IContextSolver<IntersectionContext>
     {
-        private IntTools_Context? myContext;
+        private IntersectionContext? myContext;
 
         public Face Face => theFace;
         public Solid Solid => theSolid;
@@ -30,14 +34,14 @@ public class BOPTools_ParallelContextTests
 
         public List<long> Result { get; } = [];
 
-        public void SetContext(IntTools_Context theContext) => myContext = theContext;
+        public void SetContext(IntersectionContext theContext) => myContext = theContext;
 
         public void Perform()
         {
-            IntTools_Context aCtx = myContext!;
+            IntersectionContext aCtx = myContext!;
             Point3D aP = new();
             Point2D aP2D = new();
-            int iErr = BOPTools_AlgoTools3D.PointInFace(theFace, ref aP, ref aP2D, aCtx);
+            int iErr = AlgoTools3D.PointInFace(theFace, ref aP, ref aP2D, aCtx);
             Result.Add(iErr);
             Result.Add(BitConverter.DoubleToInt64Bits(aP.X()));
             Result.Add(BitConverter.DoubleToInt64Bits(aP2D.Y()));
@@ -45,10 +49,10 @@ public class BOPTools_ParallelContextTests
             foreach (Point3D aPnt in thePoints)
             {
                 Result.Add(aCtx.IsValidPointForFace(aPnt, theFace, 1.0e-3) ? 1 : 0);
-                Result.Add((long)BOPTools_AlgoTools.ComputeState(aPnt, theSolid, 1.0e-7, aCtx));
-                GeomAPI_ProjectPointOnSurf aProj = aCtx.ProjPS(theFace);
+                Result.Add((long)AlgoTools.ComputeState(aPnt, theSolid, 1.0e-7, aCtx));
+                ProjectPointOnSurface aProj = aCtx.ProjPS(theFace);
                 aProj.Perform(aPnt);
-                Result.Add(aProj.IsDone() ? BitConverter.DoubleToInt64Bits(aProj.LowerDistance()) : -1);
+                Result.Add(aProj.IsDone ? BitConverter.DoubleToInt64Bits(aProj.LowerDistance()) : -1);
             }
         }
     }
@@ -57,7 +61,7 @@ public class BOPTools_ParallelContextTests
     {
         Solid aSolid = ShapeCasts.Solid(new Explorer(theShape, ShapeType.Solid).Current());
         Box aBox = new();
-        BRepBndLib.Add(theShape, ref aBox);
+        Bounds.Add(theShape, ref aBox);
         aBox.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
         Random aRnd = new(theSeed);
         List<FaceSolver> aSolvers = [];
@@ -78,7 +82,7 @@ public class BOPTools_ParallelContextTests
     private static List<List<long>> Run(List<FaceSolver> theTemplate, bool theParallel)
     {
         List<FaceSolver> aSolvers = [.. theTemplate.Select(s => s.Fresh())];
-        BOPTools_Parallel.Perform(theParallel, aSolvers, new IntTools_Context());
+        BooleanParallel.Perform(theParallel, aSolvers, new IntersectionContext());
         return [.. aSolvers.Select(s => s.Result)];
     }
 

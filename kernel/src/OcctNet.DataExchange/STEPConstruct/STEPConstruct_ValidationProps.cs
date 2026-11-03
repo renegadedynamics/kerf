@@ -317,7 +317,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
         if (volUnit.DerivedUnit() is null)
         {
             StepBasic_SiUnitAndLengthUnit MM = new StepBasic_SiUnitAndLengthUnit();
-            MM.Init(true, StepBasic_spMilli, StepBasic_sunMetre);
+            MM.Init(true, StepBasic_SiPrefix.StepBasic_spMilli, StepBasic_SiUnitName.StepBasic_sunMetre);
 
             StepBasic_DerivedUnitElement DUE = new StepBasic_DerivedUnitElement();
             DUE.Init(MM, 3.0);
@@ -350,7 +350,7 @@ public class STEPConstruct_ValidationProps : STEPConstruct_Tool
         if (areaUnit.DerivedUnit() is null)
         {
             StepBasic_SiUnitAndLengthUnit MM = new StepBasic_SiUnitAndLengthUnit();
-            MM.Init(true, StepBasic_spMilli, StepBasic_sunMetre);
+            MM.Init(true, StepBasic_SiPrefix.StepBasic_spMilli, StepBasic_SiUnitName.StepBasic_sunMetre);
 
             StepBasic_DerivedUnitElement DUE = new StepBasic_DerivedUnitElement();
             DUE.Init(MM, 2.0);

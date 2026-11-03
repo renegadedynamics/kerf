@@ -78,8 +78,8 @@ internal class RWStepGeom_RWBSplineSurfaceWithKnots
 
         // --- inherited field : surfaceForm ---
 
-        StepGeom_BSplineSurfaceForm aSurfaceForm = StepGeom_bssfPlaneSurf;
-        if (data.ParamType(num, 5) == Interface_ParamEnum)
+        StepGeom_BSplineSurfaceForm aSurfaceForm = StepGeom_BSplineSurfaceForm.StepGeom_bssfPlaneSurf;
+        if (data.ParamType(num, 5) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 5);
             if (!RWStepGeom_RWBSplineSurfaceForm.ConvertToEnum(text, ref aSurfaceForm))
@@ -188,8 +188,8 @@ internal class RWStepGeom_RWBSplineSurfaceWithKnots
 
         // --- own field : knotSpec ---
 
-        StepGeom_KnotType aKnotSpec = StepGeom_ktUniformKnots;
-        if (data.ParamType(num, 13) == Interface_ParamEnum)
+        StepGeom_KnotType aKnotSpec = StepGeom_KnotType.StepGeom_ktUniformKnots;
+        if (data.ParamType(num, 13) == Interface_ParamType.Interface_ParamEnum)
         {
             string text = data.ParamCValue(num, 13);
             if (!RWStepGeom_RWKnotType.ConvertToEnum(text, ref aKnotSpec))

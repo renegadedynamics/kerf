@@ -2,6 +2,7 @@
 // An OCCT.NET addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -13,7 +14,7 @@ using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
-namespace OcctNet;
+namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// Every face's triangulation and every edge's polyline of a meshed shape, in a few flat buffers, for a viewer: the
@@ -21,9 +22,9 @@ namespace OcctNet;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The shape is meshed first (<see cref="BRepMesh_IncrementalMesh"/>); extraction only reads it, so it is safe from any
+/// The shape is meshed first (<see cref="IncrementalMesh"/>); extraction only reads it, so it is safe from any
 /// thread on a frozen shape, and a shape shared by several callers is never written. Native OCCT computes the nodal
-/// normals into the face's own triangulation (<see cref="BRepLib_ToolTriangulatedShape.ComputeNormals(in Face, Triangulation?)"/>);
+/// normals into the face's own triangulation (<see cref="ToolTriangulatedShape.ComputeNormals(in Face, Triangulation?)"/>);
 /// here they are computed on an unattached copy (phase3-design section 5), with the same values.
 /// </para>
 /// <para>
@@ -37,90 +38,90 @@ namespace OcctNet;
 public static class MeshExtraction
 {
     /// <summary>
-    /// The buffers of <paramref name="theFaces"/> and <paramref name="theEdges"/>, sub-shapes of the meshed
-    /// <paramref name="theRoot"/>, in the order given (b3d_mesh_extract's arguments).
+    /// The buffers of <paramref name="faces"/> and <paramref name="edges"/>, sub-shapes of the meshed
+    /// <paramref name="root"/>, in the order given (b3d_mesh_extract's arguments).
     /// </summary>
-    /// <param name="theRoot">The meshed shape: its faces are the edges' ancestors.</param>
-    /// <param name="theFaces">The faces to extract, with their locations and orientations.</param>
-    /// <param name="theEdges">The edges to extract, with their locations and orientations.</param>
-    /// <param name="theDeflection">The linear deflection for edges without a polygon.</param>
-    /// <param name="theAngle">The angular deflection, in radians, for edges without a polygon.</param>
-    public static MeshBuffers Extract(in Shape theRoot, IReadOnlyList<Shape> theFaces,
-                                      IReadOnlyList<Shape> theEdges, double theDeflection, double theAngle)
+    /// <param name="root">The meshed shape: its faces are the edges' ancestors.</param>
+    /// <param name="faces">The faces to extract, with their locations and orientations.</param>
+    /// <param name="edges">The edges to extract, with their locations and orientations.</param>
+    /// <param name="deflection">The linear deflection for edges without a polygon.</param>
+    /// <param name="angle">The angular deflection, in radians, for edges without a polygon.</param>
+    public static global::Kerf.Engine.Meshing.MeshBuffers Extract(in Shape root, IReadOnlyList<Shape> faces,
+                                      IReadOnlyList<Shape> edges, double deflection, double angle)
     {
-        ArgumentNullException.ThrowIfNull(theFaces);
-        ArgumentNullException.ThrowIfNull(theEdges);
+        ArgumentNullException.ThrowIfNull(faces);
+        ArgumentNullException.ThrowIfNull(edges);
 
-        var anEdgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(theRoot, ShapeType.Edge, ShapeType.Face, anEdgeFaces);
+        var edgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(root, ShapeType.Edge, ShapeType.Face, edgeFaces);
 
         // Sizes first, so each buffer is allocated once at its final length
-        var aTris = new Triangulation?[theFaces.Count];
-        var aLocations = new Placement[theFaces.Count];
-        long aNbNodes = 0, aNbIndices = 0;
-        for (int i = 0; i < theFaces.Count; i++)
+        var tris = new Triangulation?[faces.Count];
+        var locations = new Placement[faces.Count];
+        long nbNodes = 0, nbIndices = 0;
+        for (int i = 0; i < faces.Count; i++)
         {
-            aTris[i] = Tool.Triangulation(ShapeCasts.Face(theFaces[i]), out aLocations[i]);
-            if (aTris[i] is { } aTri)
+            tris[i] = Tool.Triangulation(ShapeCasts.Face(faces[i]), out locations[i]);
+            if (tris[i] is { } tri)
             {
-                aNbNodes += aTri.NodeCount;
-                aNbIndices += 3L * aTri.TriangleCount;
+                nbNodes += tri.NodeCount;
+                nbIndices += 3L * tri.TriangleCount;
             }
         }
 
-        var aBuilder = new Builder(checked((int)(3 * aNbNodes)), checked((int)aNbIndices), theFaces.Count, theEdges.Count);
-        for (int i = 0; i < theFaces.Count; i++)
+        var builder = new Builder(checked((int)(3 * nbNodes)), checked((int)nbIndices), faces.Count, edges.Count);
+        for (int i = 0; i < faces.Count; i++)
         {
-            aBuilder.AddFace(ShapeCasts.Face(theFaces[i]), aTris[i], aLocations[i]);
+            builder.AddFace(ShapeCasts.Face(faces[i]), tris[i], locations[i]);
         }
-        aBuilder.FaceNodes[theFaces.Count] = aBuilder.NodeCount;
-        aBuilder.FaceTriangles[theFaces.Count] = aBuilder.IndexCount;
+        builder.FaceNodes[faces.Count] = builder.NodeCount;
+        builder.FaceTriangles[faces.Count] = builder.IndexCount;
 
-        for (int i = 0; i < theEdges.Count; i++)
+        for (int i = 0; i < edges.Count; i++)
         {
-            aBuilder.AddEdge(ShapeCasts.Edge(theEdges[i]), anEdgeFaces, theDeflection, theAngle);
+            builder.AddEdge(ShapeCasts.Edge(edges[i]), edgeFaces, deflection, angle);
         }
-        return aBuilder.Finish();
+        return builder.Finish();
     }
 
     /// <summary>
-    /// The buffers of every face and every edge of the meshed <paramref name="theRoot"/>, in the order of
+    /// The buffers of every face and every edge of the meshed <paramref name="root"/>, in the order of
     /// <see cref="Faces"/> and <see cref="Edges"/>: build123d.NET's <c>ShapeMesh</c>.
     /// </summary>
-    public static MeshBuffers Extract(in Shape theRoot, double theDeflection, double theAngle)
-        => Extract(theRoot, Faces(theRoot), Edges(theRoot), theDeflection, theAngle);
+    public static global::Kerf.Engine.Meshing.MeshBuffers Extract(in Shape root, double deflection, double angle)
+        => Extract(root, Faces(root), Edges(root), deflection, angle);
 
     /// <summary>
     /// The distinct faces of a shape in exploration order, as build123d.NET's <c>Shape.Faces()</c>: each face once
     /// (<see cref="Shape.IsSame"/>), at its first place, with the orientation of its last occurrence.
     /// </summary>
-    public static List<Shape> Faces(in Shape theShape) => Entities(theShape, ShapeType.Face);
+    public static List<Shape> Faces(in Shape shape) => Entities(shape, ShapeType.Face);
 
     /// <summary>The distinct edges of a shape, as <see cref="Faces"/>: build123d.NET's <c>Shape.Edges()</c>.</summary>
-    public static List<Shape> Edges(in Shape theShape) => Entities(theShape, ShapeType.Edge);
+    public static List<Shape> Edges(in Shape shape) => Entities(shape, ShapeType.Edge);
 
-    private static List<Shape> Entities(in Shape theShape, ShapeType theType)
+    private static List<Shape> Entities(in Shape shape, ShapeType type)
     {
-        var anIndex = new Dictionary<Shape, int>(ShapeHasher.Instance);
-        var aFound = new List<Shape>();
-        if (theShape.IsNull)
+        var index = new Dictionary<Shape, int>(ShapeHasher.Instance);
+        var found = new List<Shape>();
+        if (shape.IsNull)
         {
-            return aFound;
+            return found;
         }
-        for (var anExp = new Explorer(theShape, theType); anExp.More(); anExp.Next())
+        for (var exp = new Explorer(shape, type); exp.More(); exp.Next())
         {
-            Shape anItem = anExp.Current();
-            if (anIndex.TryGetValue(anItem, out int i))
+            Shape item = exp.Current();
+            if (index.TryGetValue(item, out int i))
             {
-                aFound[i] = anItem;
+                found[i] = item;
             }
             else
             {
-                anIndex.Add(anItem, aFound.Count);
-                aFound.Add(anItem);
+                index.Add(item, found.Count);
+                found.Add(item);
             }
         }
-        return aFound;
+        return found;
     }
 
     /// <summary>Fills the buffers: b3d_mesh.cpp's addFace and addEdge.</summary>
@@ -134,90 +135,90 @@ public static class MeshExtraction
         public readonly int[] FaceTypes = new int[theFaces];
         public readonly long[] EdgePoints = new long[theEdges + 1];
         public readonly int[] EdgeTypes = new int[theEdges];
-        private readonly List<float> myPoints = new(Math.Max(16, 4 * theNodeFloats / 10));
-        private int myNodeFloats, myIndices, myFace, myEdge;
+        private readonly List<float> _points = new(Math.Max(16, 4 * theNodeFloats / 10));
+        private int _nodeFloats, _indices, _face, _edge;
 
-        public long NodeCount => myNodeFloats / 3;
+        public long NodeCount => _nodeFloats / 3;
 
-        public long IndexCount => myIndices;
+        public long IndexCount => _indices;
 
-        public void AddFace(in Face theFace, Triangulation? theTri, in Placement theLocation)
+        public void AddFace(in Face face, Triangulation? tri, in Placement location)
         {
-            FaceNodes[myFace] = NodeCount;
-            FaceTriangles[myFace] = myIndices;
-            FaceTypes[myFace++] = (int)new FaceSurfaceAdaptor(theFace, false).GetType();
-            if (theTri is null)
+            FaceNodes[_face] = NodeCount;
+            FaceTriangles[_face] = _indices;
+            FaceTypes[_face++] = (int)new FaceSurfaceAdaptor(face, false).GetType();
+            if (tri is null)
             {
                 return;
             }
 
             // The surface's normals at the nodes, on a copy: the face's own triangulation is never written
-            Triangulation aTri = BRepLib_ToolTriangulatedShape.NormalsComputed(theFace, theTri)!;
-            Transform3D aTrsf = theLocation.Transformation();
-            bool isReversed = theFace.Orientation() == Reversed;
+            Triangulation aTri = ToolTriangulatedShape.NormalsComputed(face, tri)!;
+            Transform3D trsf = location.Transformation();
+            bool isReversed = face.Orientation() == Reversed;
             // Winding follows the surface's natural normal: flipped for a reversed face, and again by a mirroring location
-            bool toFlip = isReversed != aTrsf.IsNegative;
+            bool toFlip = isReversed != trsf.IsNegative;
             for (int i = 1; i <= aTri.NodeCount; ++i)
             {
-                Point3D aP = aTri.Node(i).Transformed(aTrsf);
-                Positions[myNodeFloats] = (float)aP.X();
-                Positions[myNodeFloats + 1] = (float)aP.Y();
-                Positions[myNodeFloats + 2] = (float)aP.Z();
-                Direction3D aN = aTri.Normal(i).Transformed(aTrsf);
+                Point3D p = aTri.Node(i).Transformed(trsf);
+                Positions[_nodeFloats] = (float)p.X();
+                Positions[_nodeFloats + 1] = (float)p.Y();
+                Positions[_nodeFloats + 2] = (float)p.Z();
+                Direction3D n = aTri.Normal(i).Transformed(trsf);
                 if (isReversed)
                 {
-                    aN = aN.Reversed();
+                    n = n.Reversed();
                 }
-                Normals[myNodeFloats] = (float)aN.X();
-                Normals[myNodeFloats + 1] = (float)aN.Y();
-                Normals[myNodeFloats + 2] = (float)aN.Z();
-                myNodeFloats += 3;
+                Normals[_nodeFloats] = (float)n.X();
+                Normals[_nodeFloats + 1] = (float)n.Y();
+                Normals[_nodeFloats + 2] = (float)n.Z();
+                _nodeFloats += 3;
             }
             for (int i = 1; i <= aTri.TriangleCount; ++i)
             {
                 aTri.Triangle(i).Get(out int a, out int b, out int c);
-                Triangles[myIndices] = a - 1;
-                Triangles[myIndices + 1] = toFlip ? c - 1 : b - 1;
-                Triangles[myIndices + 2] = toFlip ? b - 1 : c - 1;
-                myIndices += 3;
+                Triangles[_indices] = a - 1;
+                Triangles[_indices + 1] = toFlip ? c - 1 : b - 1;
+                Triangles[_indices + 2] = toFlip ? b - 1 : c - 1;
+                _indices += 3;
             }
         }
 
-        private void AddPoint(in Point3D theP)
+        private void AddPoint(in Point3D p)
         {
-            myPoints.Add((float)theP.X());
-            myPoints.Add((float)theP.Y());
-            myPoints.Add((float)theP.Z());
+            _points.Add((float)p.X());
+            _points.Add((float)p.Y());
+            _points.Add((float)p.Z());
         }
 
-        public void AddEdge(in Edge theEdge, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEdgeFaces,
-                            double theDeflection, double theAngle)
+        public void AddEdge(in Edge edge, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaces,
+                            double deflection, double angle)
         {
-            EdgePoints[myEdge] = myPoints.Count / 3;
-            var aCurve = new EdgeCurveAdaptor(theEdge);
-            EdgeTypes[myEdge++] = (int)aCurve.GetType();
-            int aStart = myPoints.Count;
+            EdgePoints[_edge] = _points.Count / 3;
+            var curve = new EdgeCurveAdaptor(edge);
+            EdgeTypes[_edge++] = (int)curve.GetType();
+            int start = _points.Count;
 
             // On a face's triangulation, so the edge sits exactly on the shaded surface
             bool isDone = false;
-            if (theEdgeFaces.FindFromKey(theEdge, out NCollection_List<Shape> aFaces))
+            if (edgeFaces.FindFromKey(edge, out NCollection_List<Shape> faces))
             {
-                foreach (Shape aShape in aFaces)
+                foreach (Shape shape in faces)
                 {
-                    Triangulation? aTri = Tool.Triangulation(ShapeCasts.Face(aShape), out Placement aLocation);
-                    if (aTri is null)
+                    Triangulation? tri = Tool.Triangulation(ShapeCasts.Face(shape), out Placement location);
+                    if (tri is null)
                     {
                         continue;
                     }
-                    PolygonOnTriangulation? aPolygon = Tool.PolygonOnTriangulation(theEdge, aTri, aLocation);
-                    if (aPolygon is null)
+                    PolygonOnTriangulation? polygon = Tool.PolygonOnTriangulation(edge, tri, location);
+                    if (polygon is null)
                     {
                         continue;
                     }
-                    Transform3D aTrsf = aLocation.Transformation();
-                    for (int i = 1; i <= aPolygon.NodeCount; ++i)
+                    Transform3D trsf = location.Transformation();
+                    for (int i = 1; i <= polygon.NodeCount; ++i)
                     {
-                        AddPoint(aTri.Node(aPolygon.Node(i)).Transformed(aTrsf));
+                        AddPoint(tri.Node(polygon.Node(i)).Transformed(trsf));
                     }
                     isDone = true;
                     break;
@@ -226,14 +227,14 @@ public static class MeshExtraction
             // A free edge's own polygon, from the mesher
             if (!isDone)
             {
-                Polygon3D? aPolygon = Tool.Polygon3D(theEdge, out Placement aLocation);
-                if (aPolygon is not null)
+                Polygon3D? polygon = Tool.Polygon3D(edge, out Placement location);
+                if (polygon is not null)
                 {
-                    Transform3D aTrsf = aLocation.Transformation();
-                    NCollection_Array1<Point3D> aNodes = aPolygon.Nodes();
-                    for (int i = 1; i <= aPolygon.NodeCount; ++i)
+                    Transform3D trsf = location.Transformation();
+                    NCollection_Array1<Point3D> nodes = polygon.Nodes();
+                    for (int i = 1; i <= polygon.NodeCount; ++i)
                     {
-                        AddPoint(aNodes.Value(i).Transformed(aTrsf));
+                        AddPoint(nodes.Value(i).Transformed(trsf));
                     }
                     isDone = true;
                 }
@@ -241,31 +242,31 @@ public static class MeshExtraction
             // Else discretised to the same tolerances
             if (!isDone)
             {
-                var aDiscretizer = new TangentialDeflection(aCurve, theAngle, theDeflection);
-                for (int i = 1; i <= aDiscretizer.PointCount; ++i)
+                var discretizer = new TangentialDeflection(curve, angle, deflection);
+                for (int i = 1; i <= discretizer.PointCount; ++i)
                 {
-                    AddPoint(aDiscretizer.Value(i));
+                    AddPoint(discretizer.Value(i));
                 }
             }
             // Polygons follow the curve's parameter: reversed to run the way the edge does
-            if (theEdge.Orientation() == Reversed)
+            if (edge.Orientation() == Reversed)
             {
-                int aCount = (myPoints.Count - aStart) / 3;
-                for (int i = 0; i < aCount / 2; ++i)
+                int count = (_points.Count - start) / 3;
+                for (int i = 0; i < count / 2; ++i)
                 {
                     for (int k = 0; k < 3; ++k)
                     {
-                        int p = aStart + 3 * i + k, q = aStart + 3 * (aCount - 1 - i) + k;
-                        (myPoints[p], myPoints[q]) = (myPoints[q], myPoints[p]);
+                        int p = start + 3 * i + k, q = start + 3 * (count - 1 - i) + k;
+                        (_points[p], _points[q]) = (_points[q], _points[p]);
                     }
                 }
             }
         }
 
-        public MeshBuffers Finish()
+        public global::Kerf.Engine.Meshing.MeshBuffers Finish()
         {
-            EdgePoints[myEdge] = myPoints.Count / 3;
-            return new MeshBuffers(Positions, Normals, Triangles, FaceNodes, FaceTriangles, FaceTypes, [.. myPoints],
+            EdgePoints[_edge] = _points.Count / 3;
+            return new global::Kerf.Engine.Meshing.MeshBuffers(Positions, Normals, Triangles, FaceNodes, FaceTriangles, FaceTypes, [.. _points],
                                    EdgePoints, EdgeTypes);
         }
     }
@@ -280,18 +281,18 @@ public static class MeshExtraction
 /// <remarks>The arrays are the extraction's own; nothing else holds them.</remarks>
 public sealed class MeshBuffers
 {
-    internal MeshBuffers(float[] thePositions, float[] theNormals, int[] theTriangles, long[] theFaceNodes, long[] theFaceTriangles,
-                         int[] theFaceTypes, float[] thePoints, long[] theEdgePoints, int[] theEdgeTypes)
+    internal MeshBuffers(float[] positions, float[] normals, int[] triangles, long[] faceNodes, long[] faceTriangles,
+                         int[] faceTypes, float[] points, long[] edgePoints, int[] edgeTypes)
     {
-        Positions = thePositions;
-        Normals = theNormals;
-        Triangles = theTriangles;
-        FaceNodes = theFaceNodes;
-        FaceTriangles = theFaceTriangles;
-        FaceTypes = theFaceTypes;
-        Points = thePoints;
-        EdgePoints = theEdgePoints;
-        EdgeTypes = theEdgeTypes;
+        Positions = positions;
+        Normals = normals;
+        Triangles = triangles;
+        FaceNodes = faceNodes;
+        FaceTriangles = faceTriangles;
+        FaceTypes = faceTypes;
+        Points = points;
+        EdgePoints = edgePoints;
+        EdgeTypes = edgeTypes;
     }
 
     /// <summary>The faces' nodes, x, y, z each, with their locations applied.</summary>

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Messages;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -13,13 +14,13 @@ public class SHMessageTests
     [Fact]
     public void Init_LoadsShapeHealingsMessages()
     {
-        ShapeExtend.Init();
-        ShapeExtend.Init(); // once
+        global::Kerf.Engine.Healing.Extend.ShapeExtend.Init();
+        global::Kerf.Engine.Healing.Extend.ShapeExtend.Init(); // once
         Assert.True(MsgFile.HasMsg("ShapeFix.FixSmallSolid.MSG0"));
         // As OCCT's, Init loads only when its probe keyword is missing, and Msg stores an unknown keyword's error text
         // under that keyword: a test that ran ShapeFix_FixSmallSolid before Init leaves the table without the texts
         // for the rest of the process. Load them again, as Init would have.
-        MsgFile.LoadFromString(SHMessage_SHAPE_us.Text);
+        MsgFile.LoadFromString(ShapeMessages.Text);
         Assert.Equal("Face converted to BSpline", MsgFile.Msg("BSplineRestriction.NewSurface.MSG0"));
         Assert.Equal("Info: Shape Processing: Operator %d/%d: %s", MsgFile.Msg("SP.Sequence.Info.Operator"));
         Assert.Equal("Edge %d was small, removed", new Msg("FixAdvWire.FixSmall.MSG5").Original());

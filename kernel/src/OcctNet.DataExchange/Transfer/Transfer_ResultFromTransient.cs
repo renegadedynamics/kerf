@@ -68,7 +68,7 @@ public class Transfer_ResultFromTransient : Transient
     {
         if (thebinder is null)
         {
-            return Interface_CheckOK;
+            return Interface_CheckStatus.Interface_CheckOK;
         }
         Interface_Check ach = thebinder.Check();
         return ach.Status();

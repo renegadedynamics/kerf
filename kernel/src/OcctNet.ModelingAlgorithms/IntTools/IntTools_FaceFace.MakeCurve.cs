@@ -6,33 +6,38 @@ using Kerf.Engine.Approximation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Intersection.Approximation;
+using Kerf.Engine.Intersection.Patches;
+using Kerf.Engine.Intersection.Surfaces;
+using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Geometry.SurfaceKind;
-using static Occt.IntPatch_IType;
+using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Topology.Containment;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Tools;
 
-public partial class IntTools_FaceFace
+public partial class FaceFace
 {
     /// <summary>
     /// Makes the curves of the intersection line of index Index and appends them to the result: trimmed lines,
     /// conics and circles with their projected 2D curves, approximated (or polygonal) B-splines for walking lines,
     /// approximated restriction lines trimmed on the surfaces' domains.
     /// </summary>
-    protected void MakeCurve(int Index, TopolTool dom1, TopolTool dom2, double theToler)
+    protected void MakeCurve(int index, TopolTool dom1, TopolTool dom2, double toler)
     {
         bool bDone, rejectSurface, reApprox, bAvoidLineConstructor;
         bool ok, bPCurvesOk;
-        int i, j, aNbParts;
+        int i, j, nbParts;
         double fprm, lprm;
-        double Tolpc;
-        IntPatch_Line L;
-        IntPatch_IType typl;
+        double tolpc;
+        PatchLine l;
+        PatchLineType typl;
         Curve3D newc;
         //
-        const double TOLCHECK = 1.0e-7;
-        const double TOLANGCHECK = 1.0e-6;
+        const double tolcheck = 1.0e-7;
+        const double tolangcheck = 1.0e-6;
         //
         rejectSurface = false;
         reApprox = false;
@@ -41,23 +46,23 @@ public partial class IntTools_FaceFace
 
     reapprox:;
 
-        Tolpc = myTolApprox;
+        tolpc = _tolApprox;
         bAvoidLineConstructor = false;
-        L = myIntersector.Line(Index);
-        typl = L.ArcType();
+        l = _intersector.Line(index);
+        typl = l.ArcType();
         //
-        if (typl == IntPatch_Walking)
+        if (typl == PatchLineType.Walking)
         {
-            IntPatch_WLine? aWLine = L as IntPatch_WLine;
-            if (aWLine is null)
+            WLine? wLine = l as WLine;
+            if (wLine is null)
             {
                 return;
             }
-            L = aWLine;
+            l = wLine;
 
-            int nbp = aWLine.NbPnts();
-            IntSurf_PntOn2S p1 = aWLine.Point(1);
-            IntSurf_PntOn2S p2 = aWLine.Point(nbp);
+            int nbp = wLine.NbPnts();
+            PntOn2S p1 = wLine.Point(1);
+            PntOn2S p2 = wLine.Point(nbp);
 
             Point3D P1 = p1.Value();
             Point3D P2 = p2.Value();
@@ -68,9 +73,9 @@ public partial class IntTools_FaceFace
             }
         }
 
-        typl = L.ArcType();
+        typl = l.ArcType();
 
-        if (typl == IntPatch_Restriction)
+        if (typl == PatchLineType.Restriction)
         {
             bAvoidLineConstructor = true;
         }
@@ -79,18 +84,18 @@ public partial class IntTools_FaceFace
         // Line Constructor
         if (!bAvoidLineConstructor)
         {
-            myLConstruct.Perform(L);
+            _lConstruct.Perform(l);
             //
-            bDone = myLConstruct.IsDone();
+            bDone = _lConstruct.IsDone;
             if (!bDone)
             {
                 return;
             }
 
-            if (typl != IntPatch_Restriction)
+            if (typl != PatchLineType.Restriction)
             {
-                aNbParts = myLConstruct.NbParts();
-                if (aNbParts <= 0)
+                nbParts = _lConstruct.PartCount;
+                if (nbParts <= 0)
                 {
                     return;
                 }
@@ -103,31 +108,31 @@ public partial class IntTools_FaceFace
             // ########################################
             //  Line, Parabola, Hyperbola
             // ########################################
-            case IntPatch_Lin:
-            case IntPatch_Parabola:
-            case IntPatch_Hyperbola:
+            case PatchLineType.Lin:
+            case PatchLineType.Parabola:
+            case PatchLineType.Hyperbola:
             {
-                if (typl == IntPatch_Lin)
+                if (typl == PatchLineType.Lin)
                 {
-                    newc = new LineCurve3D((L as IntPatch_GLine)!.Line());
+                    newc = new LineCurve3D((l as GLine)!.Line());
                 }
 
-                else if (typl == IntPatch_Parabola)
+                else if (typl == PatchLineType.Parabola)
                 {
-                    newc = new ParabolaCurve3D((L as IntPatch_GLine)!.Parabola());
+                    newc = new ParabolaCurve3D((l as GLine)!.Parabola());
                 }
 
                 else
                 {
-                    newc = new HyperbolaCurve3D((L as IntPatch_GLine)!.Hyperbola());
+                    newc = new HyperbolaCurve3D((l as GLine)!.Hyperbola());
                 }
                 //
-                aNbParts = myLConstruct.NbParts();
-                for (i = 1; i <= aNbParts; i++)
+                nbParts = _lConstruct.PartCount;
+                for (i = 1; i <= nbParts; i++)
                 {
                     bool bFNIt, bLPIt;
                     //
-                    myLConstruct.Part(i, out fprm, out lprm);
+                    _lConstruct.Part(i, out fprm, out lprm);
                     //
                     bFNIt = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(fprm);
                     bLPIt = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(lprm);
@@ -135,83 +140,83 @@ public partial class IntTools_FaceFace
                     if (!bFNIt && !bLPIt)
                     {
                         //
-                        IntTools_Curve aCurve = new();
+                        IntersectionCurve curve = new();
                         //
-                        TrimmedCurve3D aCT3D = new(newc, fprm, lprm);
-                        aCurve.SetCurve(aCT3D);
-                        if (typl == IntPatch_Parabola)
+                        TrimmedCurve3D ct3D = new(newc, fprm, lprm);
+                        curve.SetCurve(ct3D);
+                        if (typl == PatchLineType.Parabola)
                         {
-                            double aTolC = IntTools_Tools.CurveTolerance(aCT3D, myTol);
-                            aCurve.SetTolerance(aTolC);
+                            double tolC = IntersectionTools.CurveTolerance(ct3D, _tol);
+                            curve.SetTolerance(tolC);
                         }
                         //
-                        if (myApprox1)
+                        if (_approx1)
                         {
-                            Curve2D? C2d = null;
-                            GeomInt_IntSS.BuildPCurves(fprm, lprm, ref Tolpc, myHS1.Surface(), newc, ref C2d);
+                            Curve2D? c2d = null;
+                            IntSS.BuildPCurves(fprm, lprm, ref tolpc, _hs1.Surface(), newc, ref c2d);
 
                             // OCCT: when both projections fail BuildPCurves dereferences null first (unit 5G)
-                            if (C2d is null)
+                            if (c2d is null)
                             {
                                 continue;
                             }
 
-                            aCurve.SetFirstCurve2d(new TrimmedCurve2D(C2d, fprm, lprm));
+                            curve.SetFirstCurve2d(new TrimmedCurve2D(c2d, fprm, lprm));
                         }
                         //
-                        if (myApprox2)
+                        if (_approx2)
                         {
-                            Curve2D? C2d = null;
-                            GeomInt_IntSS.BuildPCurves(fprm, lprm, ref Tolpc, myHS2.Surface(), newc, ref C2d);
+                            Curve2D? c2d = null;
+                            IntSS.BuildPCurves(fprm, lprm, ref tolpc, _hs2.Surface(), newc, ref c2d);
 
-                            if (C2d is null)
+                            if (c2d is null)
                             {
                                 continue;
                             }
 
-                            aCurve.SetSecondCurve2d(new TrimmedCurve2D(C2d, fprm, lprm));
+                            curve.SetSecondCurve2d(new TrimmedCurve2D(c2d, fprm, lprm));
                         }
                         //
-                        mySeqOfCurve.Append(aCurve);
+                        _seqOfCurve.Append(curve);
                     } // if (!bFNIt && !bLPIt) {
                     else
                     {
                         //  on regarde si on garde
                         //
-                        double aTestPrm, dT = 100.0;
+                        double testPrm, dT = 100.0;
                         //
-                        aTestPrm = 0.0;
+                        testPrm = 0.0;
                         if (bFNIt && !bLPIt)
                         {
-                            aTestPrm = lprm - dT;
+                            testPrm = lprm - dT;
                         }
                         else if (!bFNIt && bLPIt)
                         {
-                            aTestPrm = fprm + dT;
+                            testPrm = fprm + dT;
                         }
                         else
                         {
                             // i.e, if (bFNIt && bLPIt)
-                            aTestPrm = IntTools_Tools.IntermediatePoint(-dT, dT);
+                            testPrm = IntersectionTools.IntermediatePoint(-dT, dT);
                         }
                         //
-                        Point3D ptref = newc.Value(aTestPrm);
+                        Point3D ptref = newc.Value(testPrm);
                         //
-                        SurfaceKind typS1 = myHS1.GetType();
-                        SurfaceKind typS2 = myHS2.GetType();
+                        SurfaceKind typS1 = _hs1.GetType();
+                        SurfaceKind typS2 = _hs2.GetType();
                         if (typS1 == SurfaceOfExtrusion || typS1 == SurfaceKind.OffsetSurface
                             || typS1 == SurfaceOfRevolution || typS2 == SurfaceOfExtrusion
                             || typS2 == SurfaceKind.OffsetSurface || typS2 == SurfaceOfRevolution)
                         {
-                            BSplineCurve2D? H1 = null;
-                            mySeqOfCurve.Append(new IntTools_Curve(newc, H1, H1));
+                            BSplineCurve2D? h1 = null;
+                            _seqOfCurve.Append(new IntersectionCurve(newc, h1, h1));
                             continue;
                         }
 
                         double u1, v1, u2, v2, Tol;
 
                         Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-                        Parameters(myHS1, myHS2, ptref, out u1, out v1, out u2, out v2);
+                        Parameters(_hs1, _hs2, ptref, out u1, out v1, out u2, out v2);
                         ok = (dom1.Classify(new Point2D(u1, v1), Tol) != Out);
                         if (ok)
                         {
@@ -219,8 +224,8 @@ public partial class IntTools_FaceFace
                         }
                         if (ok)
                         {
-                            BSplineCurve2D? H1 = null;
-                            mySeqOfCurve.Append(new IntTools_Curve(newc, H1, H1));
+                            BSplineCurve2D? h1 = null;
+                            _seqOfCurve.Append(new IntersectionCurve(newc, h1, h1));
                         }
                     }
                 } // for (i=1; i<=aNbParts; i++) {
@@ -230,141 +235,141 @@ public partial class IntTools_FaceFace
             // ########################################
             //  Circle and Ellipse
             // ########################################
-            case IntPatch_Circle:
-            case IntPatch_Ellipse:
+            case PatchLineType.Circle:
+            case PatchLineType.Ellipse:
             {
 
-                if (typl == IntPatch_Circle)
+                if (typl == PatchLineType.Circle)
                 {
-                    newc = new CircleCurve3D((L as IntPatch_GLine)!.Circle());
+                    newc = new CircleCurve3D((l as GLine)!.Circle());
                 }
                 else
                 { // IntPatch_Ellipse
-                    newc = new EllipseCurve3D((L as IntPatch_GLine)!.Ellipse());
+                    newc = new EllipseCurve3D((l as GLine)!.Ellipse());
                 }
                 //
-                aNbParts = myLConstruct.NbParts();
+                nbParts = _lConstruct.PartCount;
                 //
-                double aPeriod, aNul;
-                NCollection_Sequence<double> aSeqFprm = new(), aSeqLprm = new();
+                double period, nul;
+                NCollection_Sequence<double> seqFprm = new(), seqLprm = new();
 
-                aNul = 0.0;
-                aPeriod = M_PI + M_PI;
+                nul = 0.0;
+                period = M_PI + M_PI;
 
-                for (i = 1; i <= aNbParts; i++)
+                for (i = 1; i <= nbParts; i++)
                 {
-                    myLConstruct.Part(i, out fprm, out lprm);
+                    _lConstruct.Part(i, out fprm, out lprm);
 
-                    if (fprm < aNul && lprm > aNul)
+                    if (fprm < nul && lprm > nul)
                     {
                         // interval that goes through 0. is divided on two intervals;
-                        while (fprm < aNul || fprm > aPeriod)
+                        while (fprm < nul || fprm > period)
                         {
-                            fprm = fprm + aPeriod;
+                            fprm = fprm + period;
                         }
-                        while (lprm < aNul || lprm > aPeriod)
+                        while (lprm < nul || lprm > period)
                         {
-                            lprm = lprm + aPeriod;
+                            lprm = lprm + period;
                         }
                         //
-                        if ((aPeriod - fprm) > Tolpc)
+                        if ((period - fprm) > tolpc)
                         {
-                            aSeqFprm.Append(fprm);
-                            aSeqLprm.Append(aPeriod);
+                            seqFprm.Append(fprm);
+                            seqLprm.Append(period);
                         }
                         else
                         {
                             Point3D P1 = newc.Value(fprm);
-                            Point3D P2 = newc.Value(aPeriod);
+                            Point3D P2 = newc.Value(period);
 
-                            if (P1.Distance(P2) > myTol)
+                            if (P1.Distance(P2) > _tol)
                             {
                                 double anewpar = fprm;
 
-                                if (ParameterOutOfBoundary(fprm, newc, myFace1, myFace2, lprm, false, myTol,
-                                                           out anewpar, myContext!))
+                                if (ParameterOutOfBoundary(fprm, newc, _face1, _face2, lprm, false, _tol,
+                                                           out anewpar, _context!))
                                 {
                                     fprm = anewpar;
                                 }
-                                aSeqFprm.Append(fprm);
-                                aSeqLprm.Append(aPeriod);
+                                seqFprm.Append(fprm);
+                                seqLprm.Append(period);
                             }
                         }
 
                         //
-                        if ((lprm - aNul) > Tolpc)
+                        if ((lprm - nul) > tolpc)
                         {
-                            aSeqFprm.Append(aNul);
-                            aSeqLprm.Append(lprm);
+                            seqFprm.Append(nul);
+                            seqLprm.Append(lprm);
                         }
                         else
                         {
-                            Point3D P1 = newc.Value(aNul);
+                            Point3D P1 = newc.Value(nul);
                             Point3D P2 = newc.Value(lprm);
 
-                            if (P1.Distance(P2) > myTol)
+                            if (P1.Distance(P2) > _tol)
                             {
                                 double anewpar = lprm;
 
-                                if (ParameterOutOfBoundary(lprm, newc, myFace1, myFace2, fprm, true, myTol,
-                                                           out anewpar, myContext!))
+                                if (ParameterOutOfBoundary(lprm, newc, _face1, _face2, fprm, true, _tol,
+                                                           out anewpar, _context!))
                                 {
                                     lprm = anewpar;
                                 }
-                                aSeqFprm.Append(aNul);
-                                aSeqLprm.Append(lprm);
+                                seqFprm.Append(nul);
+                                seqLprm.Append(lprm);
                             }
                         }
                     }
                     else
                     {
                         // usual interval
-                        aSeqFprm.Append(fprm);
-                        aSeqLprm.Append(lprm);
+                        seqFprm.Append(fprm);
+                        seqLprm.Append(lprm);
                     }
                 }
                 //
-                aNbParts = aSeqFprm.Length();
-                for (i = 1; i <= aNbParts; i++)
+                nbParts = seqFprm.Length();
+                for (i = 1; i <= nbParts; i++)
                 {
-                    fprm = aSeqFprm.Value(i);
-                    lprm = aSeqLprm.Value(i);
+                    fprm = seqFprm.Value(i);
+                    lprm = seqLprm.Value(i);
                     //
-                    double aRealEpsilon = RealEpsilon();
-                    if (Math.Abs(fprm) > aRealEpsilon || Math.Abs(lprm - 2.0 * M_PI) > aRealEpsilon)
+                    double realEpsilon = RealEpsilon();
+                    if (Math.Abs(fprm) > realEpsilon || Math.Abs(lprm - 2.0 * M_PI) > realEpsilon)
                     {
                         //==============================================
                         ////
-                        IntTools_Curve aCurve = new();
-                        TrimmedCurve3D aTC3D = new(newc, fprm, lprm);
-                        aCurve.SetCurve(aTC3D);
-                        fprm = aTC3D.FirstParameter();
-                        lprm = aTC3D.LastParameter();
+                        IntersectionCurve curve = new();
+                        TrimmedCurve3D tc3D = new(newc, fprm, lprm);
+                        curve.SetCurve(tc3D);
+                        fprm = tc3D.FirstParameter();
+                        lprm = tc3D.LastParameter();
                         ////
-                        if (typl == IntPatch_Circle || typl == IntPatch_Ellipse)
+                        if (typl == PatchLineType.Circle || typl == PatchLineType.Ellipse)
                         { ////
-                            if (myApprox1)
+                            if (_approx1)
                             {
-                                Curve2D? C2d = null;
-                                GeomInt_IntSS.BuildPCurves(fprm, lprm, myHS1.FirstUParameter(),
-                                                           myHS1.LastUParameter(), myHS1.FirstVParameter(),
-                                                           myHS1.LastVParameter(), ref Tolpc, myHS1.Surface(), newc,
-                                                           ref C2d);
-                                aCurve.SetFirstCurve2d(C2d);
+                                Curve2D? c2d = null;
+                                IntSS.BuildPCurves(fprm, lprm, _hs1.FirstUParameter(),
+                                                           _hs1.LastUParameter(), _hs1.FirstVParameter(),
+                                                           _hs1.LastVParameter(), ref tolpc, _hs1.Surface(), newc,
+                                                           ref c2d);
+                                curve.SetFirstCurve2d(c2d);
                             }
 
-                            if (myApprox2)
+                            if (_approx2)
                             {
-                                Curve2D? C2d = null;
-                                GeomInt_IntSS.BuildPCurves(fprm, lprm, myHS2.FirstUParameter(),
-                                                           myHS2.LastUParameter(), myHS2.FirstVParameter(),
-                                                           myHS2.LastVParameter(), ref Tolpc, myHS2.Surface(), newc,
-                                                           ref C2d);
-                                aCurve.SetSecondCurve2d(C2d);
+                                Curve2D? c2d = null;
+                                IntSS.BuildPCurves(fprm, lprm, _hs2.FirstUParameter(),
+                                                           _hs2.LastUParameter(), _hs2.FirstVParameter(),
+                                                           _hs2.LastVParameter(), ref tolpc, _hs2.Surface(), newc,
+                                                           ref c2d);
+                                curve.SetSecondCurve2d(c2d);
                             }
                         }
                         //
-                        mySeqOfCurve.Append(aCurve);
+                        _seqOfCurve.Append(curve);
                         //==============================================
                     } // if (std::abs(fprm) > RealEpsilon() || std::abs(lprm-2.*M_PI) > RealEpsilon())
 
@@ -372,47 +377,47 @@ public partial class IntTools_FaceFace
                     {
                         //  on regarde si on garde
                         //
-                        if (aNbParts == 1)
+                        if (nbParts == 1)
                         {
                             //           if (std::abs(fprm) < RealEpsilon() &&  std::abs(lprm-2.*M_PI) <
                             //           RealEpsilon()) {
-                            if (Math.Abs(fprm) <= aRealEpsilon && Math.Abs(lprm - 2.0 * M_PI) <= aRealEpsilon)
+                            if (Math.Abs(fprm) <= realEpsilon && Math.Abs(lprm - 2.0 * M_PI) <= realEpsilon)
                             {
-                                IntTools_Curve aCurve = new();
-                                TrimmedCurve3D aTC3D = new(newc, fprm, lprm);
-                                aCurve.SetCurve(aTC3D);
-                                fprm = aTC3D.FirstParameter();
-                                lprm = aTC3D.LastParameter();
+                                IntersectionCurve curve = new();
+                                TrimmedCurve3D tc3D = new(newc, fprm, lprm);
+                                curve.SetCurve(tc3D);
+                                fprm = tc3D.FirstParameter();
+                                lprm = tc3D.LastParameter();
 
-                                if (myApprox1)
+                                if (_approx1)
                                 {
-                                    Curve2D? C2d = null;
-                                    GeomInt_IntSS.BuildPCurves(fprm, lprm, ref Tolpc, myHS1.Surface(), newc, ref C2d);
-                                    aCurve.SetFirstCurve2d(C2d);
+                                    Curve2D? c2d = null;
+                                    IntSS.BuildPCurves(fprm, lprm, ref tolpc, _hs1.Surface(), newc, ref c2d);
+                                    curve.SetFirstCurve2d(c2d);
                                 }
 
-                                if (myApprox2)
+                                if (_approx2)
                                 {
-                                    Curve2D? C2d = null;
-                                    GeomInt_IntSS.BuildPCurves(fprm, lprm, ref Tolpc, myHS2.Surface(), newc, ref C2d);
-                                    aCurve.SetSecondCurve2d(C2d);
+                                    Curve2D? c2d = null;
+                                    IntSS.BuildPCurves(fprm, lprm, ref tolpc, _hs2.Surface(), newc, ref c2d);
+                                    curve.SetSecondCurve2d(c2d);
                                 }
                                 //
-                                mySeqOfCurve.Append(aCurve);
+                                _seqOfCurve.Append(curve);
                                 break;
                             }
                         }
                         //
-                        double aTwoPIdiv17, u1, v1, u2, v2, Tol;
+                        double twoPIdiv17, u1, v1, u2, v2, Tol;
 
-                        aTwoPIdiv17 = 2.0 * M_PI / 17.0;
+                        twoPIdiv17 = 2.0 * M_PI / 17.0;
 
                         for (j = 0; j <= 17; j++)
                         {
-                            Point3D ptref = newc.Value(j * aTwoPIdiv17);
+                            Point3D ptref = newc.Value(j * twoPIdiv17);
                             Tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-                            Parameters(myHS1, myHS2, ptref, out u1, out v1, out u2, out v2);
+                            Parameters(_hs1, _hs2, ptref, out u1, out v1, out u2, out v2);
                             ok = (dom1.Classify(new Point2D(u1, v1), Tol) != Out);
                             if (ok)
                             {
@@ -420,35 +425,35 @@ public partial class IntTools_FaceFace
                             }
                             if (ok)
                             {
-                                IntTools_Curve aCurve = new();
-                                aCurve.SetCurve(newc);
+                                IntersectionCurve curve = new();
+                                curve.SetCurve(newc);
                                 //==============================================
-                                if (typl == IntPatch_Circle || typl == IntPatch_Ellipse)
+                                if (typl == PatchLineType.Circle || typl == PatchLineType.Ellipse)
                                 {
 
-                                    if (myApprox1)
+                                    if (_approx1)
                                     {
-                                        Curve2D? C2d = null;
-                                        GeomInt_IntSS.BuildPCurves(fprm, lprm, myHS1.FirstUParameter(),
-                                                                   myHS1.LastUParameter(), myHS1.FirstVParameter(),
-                                                                   myHS1.LastVParameter(), ref Tolpc,
-                                                                   myHS1.Surface(), newc, ref C2d);
-                                        aCurve.SetFirstCurve2d(C2d);
+                                        Curve2D? c2d = null;
+                                        IntSS.BuildPCurves(fprm, lprm, _hs1.FirstUParameter(),
+                                                                   _hs1.LastUParameter(), _hs1.FirstVParameter(),
+                                                                   _hs1.LastVParameter(), ref tolpc,
+                                                                   _hs1.Surface(), newc, ref c2d);
+                                        curve.SetFirstCurve2d(c2d);
                                     }
 
-                                    if (myApprox2)
+                                    if (_approx2)
                                     {
-                                        Curve2D? C2d = null;
-                                        GeomInt_IntSS.BuildPCurves(fprm, lprm, myHS2.FirstUParameter(),
-                                                                   myHS2.LastUParameter(), myHS2.FirstVParameter(),
-                                                                   myHS2.LastVParameter(), ref Tolpc,
-                                                                   myHS2.Surface(), newc, ref C2d);
-                                        aCurve.SetSecondCurve2d(C2d);
+                                        Curve2D? c2d = null;
+                                        IntSS.BuildPCurves(fprm, lprm, _hs2.FirstUParameter(),
+                                                                   _hs2.LastUParameter(), _hs2.FirstVParameter(),
+                                                                   _hs2.LastVParameter(), ref tolpc,
+                                                                   _hs2.Surface(), newc, ref c2d);
+                                        curve.SetSecondCurve2d(c2d);
                                     }
                                 } //  end of if (typl == IntPatch_Circle || typl == IntPatch_Ellipse)
                                 //==============================================
                                 //
-                                mySeqOfCurve.Append(aCurve);
+                                _seqOfCurve.Append(curve);
                                 break;
 
                             } //  end of if (ok) {
@@ -458,118 +463,118 @@ public partial class IntTools_FaceFace
             } // IntPatch_Circle: IntPatch_Ellipse:
             break;
 
-            case IntPatch_Analytic:
+            case PatchLineType.Analytic:
                 // This case was processed earlier (in IntPatch_Intersection)
                 break;
 
-            case IntPatch_Walking:
+            case PatchLineType.Walking:
             {
-                IntPatch_WLine WL = (L as IntPatch_WLine)!;
+                WLine wl = (l as WLine)!;
 
                 // INTTOOLS_FACEFACE_DEBUG's WL->Dump(0) goes.
 
                 //
                 int ifprm, ilprm;
                 //
-                if (!myApprox)
+                if (!_approx)
                 {
-                    aNbParts = 1;
+                    nbParts = 1;
                     if (!bAvoidLineConstructor)
                     {
-                        aNbParts = myLConstruct.NbParts();
+                        nbParts = _lConstruct.PartCount;
                     }
-                    for (i = 1; i <= aNbParts; ++i)
+                    for (i = 1; i <= nbParts; ++i)
                     {
-                        BSplineCurve2D? H1 = null, H2 = null;
-                        Curve3D aBSp;
+                        BSplineCurve2D? h1 = null, h2 = null;
+                        Curve3D bSp;
                         //
                         if (bAvoidLineConstructor)
                         {
                             ifprm = 1;
-                            ilprm = WL.NbPnts();
+                            ilprm = wl.NbPnts();
                         }
                         else
                         {
-                            myLConstruct.Part(i, out fprm, out lprm);
+                            _lConstruct.Part(i, out fprm, out lprm);
                             ifprm = (int)fprm;
                             ilprm = (int)lprm;
                         }
                         //
-                        if (myApprox1)
+                        if (_approx1)
                         {
-                            H1 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, true);
+                            h1 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, true);
                         }
                         //
-                        if (myApprox2)
+                        if (_approx2)
                         {
-                            H2 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, false);
+                            h2 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, false);
                         }
                         //
-                        aBSp = GeomInt_IntSS.MakeBSpline(WL, ifprm, ilprm);
-                        IntTools_Curve aIC = new(aBSp, H1, H2);
-                        mySeqOfCurve.Append(aIC);
+                        bSp = IntSS.MakeBSpline(wl, ifprm, ilprm);
+                        IntersectionCurve ic = new(bSp, h1, h2);
+                        _seqOfCurve.Append(ic);
                     } // for (i=1; i<=aNbParts; ++i) {
                 } // if (!myApprox) {
                 //
                 else
                 { // X
                     bool bIsDecomposited;
-                    int nbiter, aNbSeqOfL;
-                    double tol2d, aTolApproxImp;
-                    NCollection_Sequence<IntPatch_Line> aSeqOfL = new();
-                    GeomInt_WLApprox theapp3d = new();
-                    ParametrizationType aParType = ParametrizationType.ChordLength;
+                    int nbiter, nbSeqOfL;
+                    double tol2d, tolApproxImp;
+                    NCollection_Sequence<PatchLine> seqOfL = new();
+                    WLApprox theapp3d = new();
+                    ParametrizationType parType = ParametrizationType.ChordLength;
                     //
-                    bool anApprox1 = myApprox1;
-                    bool anApprox2 = myApprox2;
+                    bool approx1 = _approx1;
+                    bool approx2 = _approx2;
                     //
-                    aTolApproxImp = 1.0e-5;
-                    tol2d = myTolApprox;
+                    tolApproxImp = 1.0e-5;
+                    tol2d = _tolApprox;
 
                     SurfaceKind typs1, typs2;
-                    typs1 = myHS1.GetType();
-                    typs2 = myHS2.GetType();
-                    bool anWithPC = true;
+                    typs1 = _hs1.GetType();
+                    typs2 = _hs2.GetType();
+                    bool withPC = true;
 
                     if (typs1 == SurfaceKind.Cylinder && typs2 == SurfaceKind.Sphere)
                     {
-                        anWithPC = ApproxWithPCurves(myHS1.Cylinder(), myHS2.Sphere());
+                        withPC = ApproxWithPCurves(_hs1.Cylinder(), _hs2.Sphere());
                     }
                     else if (typs1 == SurfaceKind.Sphere && typs2 == SurfaceKind.Cylinder)
                     {
-                        anWithPC = ApproxWithPCurves(myHS2.Cylinder(), myHS1.Sphere());
+                        withPC = ApproxWithPCurves(_hs2.Cylinder(), _hs1.Sphere());
                     }
                     //
-                    if (!anWithPC)
+                    if (!withPC)
                     {
                         // OCCT overwrites the member: 1e-5 stays for the following lines and Performs
-                        myTolApprox = aTolApproxImp; // 1.e-5;
-                        anApprox1 = false;
-                        anApprox2 = false;
+                        _tolApprox = tolApproxImp; // 1.e-5;
+                        approx1 = false;
+                        approx2 = false;
                         //
-                        tol2d = myTolApprox;
+                        tol2d = _tolApprox;
                     }
 
-                    bIsDecomposited = IntTools_WLineTool.DecompositionOfWLine(WL, myHS1, myHS2, myFace1, myFace2,
-                                                                              myLConstruct, bAvoidLineConstructor,
-                                                                              myTol, aSeqOfL, myContext!);
+                    bIsDecomposited = ToolWLineTool.DecompositionOfWLine(wl, _hs1, _hs2, _face1, _face2,
+                                                                              _lConstruct, bAvoidLineConstructor,
+                                                                              _tol, seqOfL, _context!);
                     //
-                    aNbSeqOfL = aSeqOfL.Length();
+                    nbSeqOfL = seqOfL.Length();
                     //
-                    double aTolC = 0.0;
+                    double tolC = 0.0;
                     if (bIsDecomposited)
                     {
-                        nbiter = aNbSeqOfL;
-                        aTolC = global::Kerf.Engine.Foundation.Precision.Confusion();
+                        nbiter = nbSeqOfL;
+                        tolC = global::Kerf.Engine.Foundation.Precision.Confusion();
                     }
                     else
                     {
                         nbiter = 1;
-                        aNbParts = 1;
+                        nbParts = 1;
                         if (!bAvoidLineConstructor)
                         {
-                            aNbParts = myLConstruct.NbParts();
-                            nbiter = aNbParts;
+                            nbParts = _lConstruct.PartCount;
+                            nbiter = nbParts;
                         }
                     }
                     //
@@ -577,55 +582,55 @@ public partial class IntTools_FaceFace
                     {
                         if (bIsDecomposited)
                         {
-                            WL = (aSeqOfL.Value(i) as IntPatch_WLine)!;
+                            wl = (seqOfL.Value(i) as WLine)!;
                             ifprm = 1;
-                            ilprm = WL.NbPnts();
+                            ilprm = wl.NbPnts();
                         }
                         else
                         {
                             if (bAvoidLineConstructor)
                             {
                                 ifprm = 1;
-                                ilprm = WL.NbPnts();
+                                ilprm = wl.NbPnts();
                             }
                             else
                             {
-                                myLConstruct.Part(i, out fprm, out lprm);
+                                _lConstruct.Part(i, out fprm, out lprm);
                                 ifprm = (int)fprm;
                                 ilprm = (int)lprm;
                             }
                         }
 
-                        bool anApprox = myApprox;
+                        bool approx = _approx;
                         if (typs1 == Plane)
                         {
-                            anApprox = false;
-                            anApprox1 = true;
+                            approx = false;
+                            approx1 = true;
                         }
                         else if (typs2 == Plane)
                         {
-                            anApprox = false;
-                            anApprox2 = true;
+                            approx = false;
+                            approx2 = true;
                         }
 
-                        aParType = ApproxInt_KnotTools.DefineParType(WL, ifprm, ilprm, anApprox, anApprox1, anApprox2);
-                        if (myHS1 == myHS2)
+                        parType = KnotTools.DefineParType(wl, ifprm, ilprm, approx, approx1, approx2);
+                        if (_hs1 == _hs2)
                         {
-                            theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, false, aParType);
+                            theapp3d.SetParameters(_tolApprox, tol2d, 4, 8, 0, 30, false, parType);
                             rejectSurface = true;
                         }
                         else
                         {
                             if (reApprox && !rejectSurface)
                             {
-                                theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, false, aParType);
+                                theapp3d.SetParameters(_tolApprox, tol2d, 4, 8, 0, 30, false, parType);
                             }
                             else
                             {
                                 int iDegMax, iDegMin, iNbIter;
                                 //
-                                ApproxParameters(myHS1, myHS2, out iDegMin, out iDegMax, out iNbIter);
-                                theapp3d.SetParameters(myTolApprox, tol2d, iDegMin, iDegMax, iNbIter, 30, true, aParType);
+                                ApproxParameters(_hs1, _hs2, out iDegMin, out iDegMax, out iNbIter);
+                                theapp3d.SetParameters(_tolApprox, tol2d, iDegMin, iDegMax, iNbIter, 30, true, parType);
                             }
                         }
 
@@ -634,58 +639,58 @@ public partial class IntTools_FaceFace
                         //-- sur cette surface et on remonte les points 2d en 3d.
                         if (typs1 == Plane)
                         {
-                            theapp3d.Perform(myHS1, myHS2, WL, false, true, myApprox2, ifprm, ilprm);
+                            theapp3d.Perform(_hs1, _hs2, wl, false, true, _approx2, ifprm, ilprm);
                         }
                         else if (typs2 == Plane)
                         {
-                            theapp3d.Perform(myHS1, myHS2, WL, false, myApprox1, true, ifprm, ilprm);
+                            theapp3d.Perform(_hs1, _hs2, wl, false, _approx1, true, ifprm, ilprm);
                         }
                         else
                         {
                             //
-                            if (myHS1 != myHS2)
+                            if (_hs1 != _hs2)
                             {
                                 if ((typs1 == SurfaceKind.BezierSurface || typs1 == SurfaceKind.BSplineSurface)
                                     && (typs2 == SurfaceKind.BezierSurface || typs2 == SurfaceKind.BSplineSurface))
                                 {
 
-                                    theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, true, aParType);
+                                    theapp3d.SetParameters(_tolApprox, tol2d, 4, 8, 0, 30, true, parType);
 
                                     bool bUseSurfaces;
-                                    bUseSurfaces = IntTools_WLineTool.NotUseSurfacesForApprox(myFace1, myFace2, WL,
+                                    bUseSurfaces = ToolWLineTool.NotUseSurfacesForApprox(_face1, _face2, wl,
                                                                                               ifprm, ilprm);
                                     if (bUseSurfaces)
                                     {
                                         // ######
                                         rejectSurface = true;
                                         // ######
-                                        theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, false, aParType);
+                                        theapp3d.SetParameters(_tolApprox, tol2d, 4, 8, 0, 30, false, parType);
                                     }
                                 }
                             }
                             //
-                            theapp3d.Perform(myHS1, myHS2, WL, true, anApprox1, anApprox2, ifprm, ilprm);
+                            theapp3d.Perform(_hs1, _hs2, wl, true, approx1, approx2, ifprm, ilprm);
                         }
                         //
                         if (!theapp3d.IsDone())
                         {
-                            BSplineCurve2D? H1 = null;
-                            BSplineCurve2D? H2 = null;
+                            BSplineCurve2D? h1 = null;
+                            BSplineCurve2D? h2 = null;
                             //
-                            Curve3D aBSp = GeomInt_IntSS.MakeBSpline(WL, ifprm, ilprm);
+                            Curve3D bSp = IntSS.MakeBSpline(wl, ifprm, ilprm);
                             //
-                            if (myApprox1)
+                            if (_approx1)
                             {
-                                H1 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, true);
+                                h1 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, true);
                             }
                             //
-                            if (myApprox2)
+                            if (_approx2)
                             {
-                                H2 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, false);
+                                h2 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, false);
                             }
                             //
-                            IntTools_Curve aIC = new(aBSp, H1, H2);
-                            mySeqOfCurve.Append(aIC);
+                            IntersectionCurve ic = new(bSp, h1, h2);
+                            _seqOfCurve.Append(ic);
                         }
                         else
                         {
@@ -694,16 +699,16 @@ public partial class IntTools_FaceFace
                                 //
                                 if (typs1 == SurfaceKind.Torus || typs2 == SurfaceKind.Torus)
                                 {
-                                    if (aTolC < 1.0e-6)
+                                    if (tolC < 1.0e-6)
                                     {
-                                        aTolC = 1.0e-6;
+                                        tolC = 1.0e-6;
                                     }
                                 }
                             }
                             //
-                            int aNbMultiCurves, nbpoles;
-                            aNbMultiCurves = theapp3d.NbMultiCurves();
-                            for (j = 1; j <= aNbMultiCurves; j++)
+                            int nbMultiCurves, nbpoles;
+                            nbMultiCurves = theapp3d.MultiCurveCount;
+                            for (j = 1; j <= nbMultiCurves; j++)
                             {
                                 if (typs1 == Plane)
                                 {
@@ -714,34 +719,34 @@ public partial class IntTools_FaceFace
                                     NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
 
                                     mbspc.Curve(1, tpoles2d);
-                                    Plane3D Pln = myHS1.Plane();
+                                    Plane3D pln = _hs1.Plane();
                                     //
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
                                         tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
-                                                                         Pln));
+                                                                         pln));
                                     }
                                     //
-                                    BSplineCurve3D BS = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
+                                    BSplineCurve3D bs = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
                                                                mbspc.Degree());
-                                    CheckBSplineCurve Check = new(BS, TOLCHECK, TOLANGCHECK);
-                                    Check.FixTangent(true, true);
+                                    CheckBSplineCurve check = new(bs, tolcheck, tolangcheck);
+                                    check.FixTangent(true, true);
                                     //
-                                    IntTools_Curve aCurve = new();
-                                    aCurve.SetCurve(BS);
+                                    IntersectionCurve curve = new();
+                                    curve.SetCurve(bs);
 
-                                    if (myApprox1)
+                                    if (_approx1)
                                     {
-                                        BSplineCurve2D BS1 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                        BSplineCurve2D bs1 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                       mbspc.Degree());
-                                        Check2dBSplineCurve Check1 = new(BS1, TOLCHECK, TOLANGCHECK);
-                                        Check1.FixTangent(true, true);
+                                        Check2dBSplineCurve check1 = new(bs1, tolcheck, tolangcheck);
+                                        check1.FixTangent(true, true);
                                         //
                                         // ############################################
                                         if (!rejectSurface && !reApprox)
                                         {
-                                            bool isValid = IsCurveValid(BS1);
+                                            bool isValid = IsCurveValid(bs1);
                                             if (!isValid)
                                             {
                                                 reApprox = true;
@@ -749,22 +754,22 @@ public partial class IntTools_FaceFace
                                             }
                                         }
                                         // ############################################
-                                        aCurve.SetFirstCurve2d(BS1);
+                                        curve.SetFirstCurve2d(bs1);
                                     }
 
-                                    if (myApprox2)
+                                    if (_approx2)
                                     {
                                         mbspc.Curve(2, tpoles2d);
 
-                                        BSplineCurve2D BS2 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                        BSplineCurve2D bs2 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                       mbspc.Degree());
-                                        Check2dBSplineCurve newCheck = new(BS2, TOLCHECK, TOLANGCHECK);
+                                        Check2dBSplineCurve newCheck = new(bs2, tolcheck, tolangcheck);
                                         newCheck.FixTangent(true, true);
 
                                         // ###########################################
                                         if (!rejectSurface && !reApprox)
                                         {
-                                            bool isValid = IsCurveValid(BS2);
+                                            bool isValid = IsCurveValid(bs2);
                                             if (!isValid)
                                             {
                                                 reApprox = true;
@@ -773,12 +778,12 @@ public partial class IntTools_FaceFace
                                         }
                                         // ###########################################
                                         //
-                                        aCurve.SetSecondCurve2d(BS2);
+                                        curve.SetSecondCurve2d(bs2);
                                     }
                                     //
-                                    aCurve.SetTolerance(aTolC);
+                                    curve.SetTolerance(tolC);
                                     //
-                                    mySeqOfCurve.Append(aCurve);
+                                    _seqOfCurve.Append(curve);
 
                                 } // if(typs1 == GeomAbs_Plane) {
 
@@ -789,36 +794,36 @@ public partial class IntTools_FaceFace
 
                                     NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
                                     NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
-                                    mbspc.Curve((myApprox1) ? 2 : 1, tpoles2d);
-                                    Plane3D Pln = myHS2.Plane();
+                                    mbspc.Curve((_approx1) ? 2 : 1, tpoles2d);
+                                    Plane3D pln = _hs2.Plane();
                                     //
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
                                         tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
-                                                                         Pln));
+                                                                         pln));
                                     }
                                     //
-                                    BSplineCurve3D BS = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
+                                    BSplineCurve3D bs = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
                                                                mbspc.Degree());
-                                    CheckBSplineCurve Check = new(BS, TOLCHECK, TOLANGCHECK);
-                                    Check.FixTangent(true, true);
+                                    CheckBSplineCurve check = new(bs, tolcheck, tolangcheck);
+                                    check.FixTangent(true, true);
                                     //
-                                    IntTools_Curve aCurve = new();
-                                    aCurve.SetCurve(BS);
-                                    aCurve.SetTolerance(aTolC);
+                                    IntersectionCurve curve = new();
+                                    curve.SetCurve(bs);
+                                    curve.SetTolerance(tolC);
 
-                                    if (myApprox2)
+                                    if (_approx2)
                                     {
-                                        BSplineCurve2D BS1 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                        BSplineCurve2D bs1 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                       mbspc.Degree());
-                                        Check2dBSplineCurve Check1 = new(BS1, TOLCHECK, TOLANGCHECK);
-                                        Check1.FixTangent(true, true);
+                                        Check2dBSplineCurve check1 = new(bs1, tolcheck, tolangcheck);
+                                        check1.FixTangent(true, true);
                                         //
                                         // ###########################################
                                         if (!rejectSurface && !reApprox)
                                         {
-                                            bool isValid = IsCurveValid(BS1);
+                                            bool isValid = IsCurveValid(bs1);
                                             if (!isValid)
                                             {
                                                 reApprox = true;
@@ -826,22 +831,22 @@ public partial class IntTools_FaceFace
                                             }
                                         }
                                         // ###########################################
-                                        bPCurvesOk = CheckPCurve(BS1, myFace2, myContext!);
-                                        aCurve.SetSecondCurve2d(BS1);
+                                        bPCurvesOk = CheckPCurve(bs1, _face2, _context!);
+                                        curve.SetSecondCurve2d(bs1);
                                     }
 
-                                    if (myApprox1)
+                                    if (_approx1)
                                     {
                                         mbspc.Curve(1, tpoles2d);
-                                        BSplineCurve2D BS2 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                        BSplineCurve2D bs2 = new(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                       mbspc.Degree());
-                                        Check2dBSplineCurve Check2 = new(BS2, TOLCHECK, TOLANGCHECK);
-                                        Check2.FixTangent(true, true);
+                                        Check2dBSplineCurve check2 = new(bs2, tolcheck, tolangcheck);
+                                        check2.FixTangent(true, true);
                                         //
                                         // ###########################################
                                         if (!rejectSurface && !reApprox)
                                         {
-                                            bool isValid = IsCurveValid(BS2);
+                                            bool isValid = IsCurveValid(bs2);
                                             if (!isValid)
                                             {
                                                 reApprox = true;
@@ -849,46 +854,46 @@ public partial class IntTools_FaceFace
                                             }
                                         }
                                         // ###########################################
-                                        bPCurvesOk = bPCurvesOk && CheckPCurve(BS2, myFace1, myContext!);
-                                        aCurve.SetFirstCurve2d(BS2);
+                                        bPCurvesOk = bPCurvesOk && CheckPCurve(bs2, _face1, _context!);
+                                        curve.SetFirstCurve2d(bs2);
                                     }
                                     //
                                     // if points of the pcurves are out of the faces bounds
                                     // create 3d and 2d curves without approximation
                                     if (!bPCurvesOk)
                                     {
-                                        BSplineCurve2D? H1 = null, H2 = null;
+                                        BSplineCurve2D? h1 = null, h2 = null;
                                         bPCurvesOk = true;
                                         //
-                                        Curve3D aBSp = GeomInt_IntSS.MakeBSpline(WL, ifprm, ilprm);
+                                        Curve3D bSp = IntSS.MakeBSpline(wl, ifprm, ilprm);
 
-                                        if (myApprox1)
+                                        if (_approx1)
                                         {
-                                            H1 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, true);
-                                            bPCurvesOk = CheckPCurve(H1, myFace1, myContext!);
+                                            h1 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, true);
+                                            bPCurvesOk = CheckPCurve(h1, _face1, _context!);
                                         }
 
-                                        if (myApprox2)
+                                        if (_approx2)
                                         {
-                                            H2 = GeomInt_IntSS.MakeBSpline2d(WL, ifprm, ilprm, false);
-                                            bPCurvesOk = bPCurvesOk && CheckPCurve(H2, myFace2, myContext!);
+                                            h2 = IntSS.MakeBSpline2d(wl, ifprm, ilprm, false);
+                                            bPCurvesOk = bPCurvesOk && CheckPCurve(h2, _face2, _context!);
                                         }
                                         //
                                         // if pcurves created without approximation are out of the
                                         // faces bounds, use approximated 3d and 2d curves
                                         if (bPCurvesOk)
                                         {
-                                            IntTools_Curve aIC = new(aBSp, H1, H2, aTolC);
-                                            mySeqOfCurve.Append(aIC);
+                                            IntersectionCurve ic = new(bSp, h1, h2, tolC);
+                                            _seqOfCurve.Append(ic);
                                         }
                                         else
                                         {
-                                            mySeqOfCurve.Append(aCurve);
+                                            _seqOfCurve.Append(curve);
                                         }
                                     }
                                     else
                                     {
-                                        mySeqOfCurve.Append(aCurve);
+                                        _seqOfCurve.Append(curve);
                                     }
 
                                 } // else if(typs2 == GeomAbs_Plane)
@@ -896,8 +901,8 @@ public partial class IntTools_FaceFace
                                 else
                                 { // typs2 != GeomAbs_Plane && typs1 != GeomAbs_Plane
                                     bool bIsValid1, bIsValid2;
-                                    BSplineCurve3D BS;
-                                    IntTools_Curve aCurve = new();
+                                    BSplineCurve3D bs;
+                                    IntersectionCurve curve = new();
                                     //
                                     bIsValid1 = true;
                                     bIsValid2 = true;
@@ -906,90 +911,90 @@ public partial class IntTools_FaceFace
                                     nbpoles = mbspc.NbPoles();
                                     NCollection_Array1<Point3D> tpoles = new(1, nbpoles);
                                     mbspc.Curve(1, tpoles);
-                                    BS = new BSplineCurve3D(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
+                                    bs = new BSplineCurve3D(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
                                                                mbspc.Degree());
-                                    CheckBSplineCurve Check = new(BS, TOLCHECK, TOLANGCHECK);
-                                    Check.FixTangent(true, true);
+                                    CheckBSplineCurve check = new(bs, tolcheck, tolangcheck);
+                                    check.FixTangent(true, true);
                                     //
-                                    aCurve.SetCurve(BS);
-                                    aCurve.SetTolerance(aTolC);
+                                    curve.SetCurve(bs);
+                                    curve.SetTolerance(tolC);
                                     //
-                                    if (myApprox1)
+                                    if (_approx1)
                                     {
-                                        if (anApprox1)
+                                        if (approx1)
                                         {
-                                            BSplineCurve2D BS1;
+                                            BSplineCurve2D bs1;
                                             NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
                                             mbspc.Curve(2, tpoles2d);
                                             //
-                                            BS1 = new BSplineCurve2D(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                            bs1 = new BSplineCurve2D(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                           mbspc.Degree());
-                                            Check2dBSplineCurve newCheck = new(BS1, TOLCHECK, TOLANGCHECK);
+                                            Check2dBSplineCurve newCheck = new(bs1, tolcheck, tolangcheck);
                                             newCheck.FixTangent(true, true);
                                             //
                                             if (!reApprox)
                                             {
-                                                bIsValid1 = CheckPCurve(BS1, myFace1, myContext!);
+                                                bIsValid1 = CheckPCurve(bs1, _face1, _context!);
                                             }
                                             //
-                                            aCurve.SetFirstCurve2d(BS1);
+                                            curve.SetFirstCurve2d(bs1);
                                         }
                                         else
                                         {
-                                            BSplineCurve2D? BS1;
-                                            fprm = BS.FirstParameter();
-                                            lprm = BS.LastParameter();
+                                            BSplineCurve2D? bs1;
+                                            fprm = bs.FirstParameter();
+                                            lprm = bs.LastParameter();
 
-                                            Curve2D? C2d = null;
-                                            double aTol = myTolApprox;
-                                            GeomInt_IntSS.BuildPCurves(fprm, lprm, ref aTol, myHS1.Surface(), BS, ref C2d);
-                                            BS1 = C2d as BSplineCurve2D;
-                                            aCurve.SetFirstCurve2d(BS1);
+                                            Curve2D? c2d = null;
+                                            double tol = _tolApprox;
+                                            IntSS.BuildPCurves(fprm, lprm, ref tol, _hs1.Surface(), bs, ref c2d);
+                                            bs1 = c2d as BSplineCurve2D;
+                                            curve.SetFirstCurve2d(bs1);
                                         }
                                     } // if(myApprox1) {
                                     //
-                                    if (myApprox2)
+                                    if (_approx2)
                                     {
-                                        if (anApprox2)
+                                        if (approx2)
                                         {
-                                            BSplineCurve2D BS2;
+                                            BSplineCurve2D bs2;
                                             NCollection_Array1<Point2D> tpoles2d = new(1, nbpoles);
-                                            mbspc.Curve((myApprox1) ? 3 : 2, tpoles2d);
-                                            BS2 = new BSplineCurve2D(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
+                                            mbspc.Curve((_approx1) ? 3 : 2, tpoles2d);
+                                            bs2 = new BSplineCurve2D(tpoles2d, mbspc.Knots(), mbspc.Multiplicities(),
                                                                           mbspc.Degree());
-                                            Check2dBSplineCurve newCheck = new(BS2, TOLCHECK, TOLANGCHECK);
+                                            Check2dBSplineCurve newCheck = new(bs2, tolcheck, tolangcheck);
                                             newCheck.FixTangent(true, true);
                                             //
                                             if (!reApprox)
                                             {
-                                                bIsValid2 = CheckPCurve(BS2, myFace2, myContext!);
+                                                bIsValid2 = CheckPCurve(bs2, _face2, _context!);
                                             }
-                                            aCurve.SetSecondCurve2d(BS2);
+                                            curve.SetSecondCurve2d(bs2);
                                         }
                                         else
                                         {
-                                            BSplineCurve2D? BS2;
-                                            fprm = BS.FirstParameter();
-                                            lprm = BS.LastParameter();
+                                            BSplineCurve2D? bs2;
+                                            fprm = bs.FirstParameter();
+                                            lprm = bs.LastParameter();
 
-                                            Curve2D? C2d = null;
-                                            double aTol = myTolApprox;
-                                            GeomInt_IntSS.BuildPCurves(fprm, lprm, ref aTol, myHS2.Surface(), BS, ref C2d);
-                                            BS2 = C2d as BSplineCurve2D;
-                                            aCurve.SetSecondCurve2d(BS2);
+                                            Curve2D? c2d = null;
+                                            double tol = _tolApprox;
+                                            IntSS.BuildPCurves(fprm, lprm, ref tol, _hs2.Surface(), bs, ref c2d);
+                                            bs2 = c2d as BSplineCurve2D;
+                                            curve.SetSecondCurve2d(bs2);
                                         }
                                     } // if(myApprox2) {
                                     if (!bIsValid1 || !bIsValid2)
                                     {
                                         // OCCT overwrites the member (it stays 1e-5), and restarts the whole line
                                         // although its earlier parts are already appended (they are appended again)
-                                        myTolApprox = aTolApproxImp; // 1.e-5;
-                                        tol2d = myTolApprox;
+                                        _tolApprox = tolApproxImp; // 1.e-5;
+                                        tol2d = _tolApprox;
                                         reApprox = true;
                                         goto reapprox;
                                     }
                                     //
-                                    mySeqOfCurve.Append(aCurve);
+                                    _seqOfCurve.Append(curve);
                                 }
                             }
                         }
@@ -998,104 +1003,104 @@ public partial class IntTools_FaceFace
             } // case IntPatch_Walking:{
             break;
 
-            case IntPatch_Restriction:
+            case PatchLineType.Restriction:
             {
-                IntPatch_RLine RL = (L as IntPatch_RLine)!;
+                RLine rl = (l as RLine)!;
 
                 // INTTOOLS_FACEFACE_DEBUG's RL->Dump(0) goes.
 
-                Curve3D? aC3d = null;
-                Curve2D? aC2d1 = null, aC2d2 = null;
-                double aTolReached = 0.0;
-                GeomInt_IntSS.TreatRLine(RL, myHS1, myHS2, ref aC3d, ref aC2d1, ref aC2d2, ref aTolReached);
+                Curve3D? c3d = null;
+                Curve2D? c2d1 = null, c2d2 = null;
+                double tolReached = 0.0;
+                IntSS.TreatRLine(rl, _hs1, _hs2, ref c3d, ref c2d1, ref c2d2, ref tolReached);
 
-                if (aC3d is null)
+                if (c3d is null)
                 {
                     break;
                 }
 
-                Box2d aBox1 = new(), aBox2 = new();
+                Box2d box1 = new(), box2 = new();
 
-                double aU1f = myHS1.FirstUParameter(), aV1f = myHS1.FirstVParameter(),
-                       aU1l = myHS1.LastUParameter(), aV1l = myHS1.LastVParameter();
-                double aU2f = myHS2.FirstUParameter(), aV2f = myHS2.FirstVParameter(),
-                       aU2l = myHS2.LastUParameter(), aV2l = myHS2.LastVParameter();
+                double u1f = _hs1.FirstUParameter(), v1f = _hs1.FirstVParameter(),
+                       u1l = _hs1.LastUParameter(), v1l = _hs1.LastVParameter();
+                double u2f = _hs2.FirstUParameter(), v2f = _hs2.FirstVParameter(),
+                       u2l = _hs2.LastUParameter(), v2l = _hs2.LastVParameter();
 
-                aBox1.Add(new Point2D(aU1f, aV1f));
-                aBox1.Add(new Point2D(aU1l, aV1l));
-                aBox2.Add(new Point2D(aU2f, aV2f));
-                aBox2.Add(new Point2D(aU2l, aV2l));
+                box1.Add(new Point2D(u1f, v1f));
+                box1.Add(new Point2D(u1l, v1l));
+                box2.Add(new Point2D(u2f, v2f));
+                box2.Add(new Point2D(u2l, v2l));
 
-                NCollection_DynamicArray<double> anArrayOfParameters = new();
+                NCollection_DynamicArray<double> arrayOfParameters = new();
 
                 // We consider here that the intersection line is same-parameter-line
-                anArrayOfParameters.Append(aC3d.FirstParameter());
-                anArrayOfParameters.Append(aC3d.LastParameter());
+                arrayOfParameters.Append(c3d.FirstParameter());
+                arrayOfParameters.Append(c3d.LastParameter());
 
-                GeomInt_IntSS.TrimILineOnSurfBoundaries(aC2d1, aC2d2, aBox1, aBox2, anArrayOfParameters);
+                IntSS.TrimILineOnSurfBoundaries(c2d1, c2d2, box1, box2, arrayOfParameters);
 
                 // Intersect with true boundaries. After that, enlarge bounding-boxes in order to
                 // correct definition, if point on curve is inscribed in the box.
-                aBox1.Enlarge(theToler);
-                aBox2.Enlarge(theToler);
+                box1.Enlarge(toler);
+                box2.Enlarge(toler);
 
-                int aNbIntersSolutionsm1 = anArrayOfParameters.Length() - 1;
+                int nbIntersSolutionsm1 = arrayOfParameters.Length() - 1;
 
                 // Trim RLine found.
-                for (int anInd = 0; anInd < aNbIntersSolutionsm1; anInd++)
+                for (int ind = 0; ind < nbIntersSolutionsm1; ind++)
                 {
-                    ref double aParF = ref anArrayOfParameters[anInd];
-                    ref double aParL = ref anArrayOfParameters[anInd + 1];
+                    ref double parF = ref arrayOfParameters[ind];
+                    ref double parL = ref arrayOfParameters[ind + 1];
 
-                    if ((aParL - aParF) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    if ((parL - parF) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // In order to more precise extending to the boundaries of source curves.
-                        if (anInd < aNbIntersSolutionsm1 - 1)
+                        if (ind < nbIntersSolutionsm1 - 1)
                         {
-                            aParL = aParF;
+                            parL = parF;
                         }
 
                         continue;
                     }
 
-                    double aPar = 0.5 * (aParF + aParL);
-                    Point2D aPt;
+                    double par = 0.5 * (parF + parL);
+                    Point2D pt;
 
-                    Curve2D? aCurv2d1 = null, aCurv2d2 = null;
-                    if (aC2d1 is not null)
+                    Curve2D? curv2d1 = null, curv2d2 = null;
+                    if (c2d1 is not null)
                     {
-                        aC2d1.D0(aPar, out aPt);
+                        c2d1.D0(par, out pt);
 
-                        if (aBox1.IsOut(aPt))
+                        if (box1.IsOut(pt))
                         {
                             continue;
                         }
 
-                        if (myApprox1)
+                        if (_approx1)
                         {
-                            aCurv2d1 = new TrimmedCurve2D(aC2d1, aParF, aParL);
+                            curv2d1 = new TrimmedCurve2D(c2d1, parF, parL);
                         }
                     }
 
-                    if (aC2d2 is not null)
+                    if (c2d2 is not null)
                     {
-                        aC2d2.D0(aPar, out aPt);
+                        c2d2.D0(par, out pt);
 
-                        if (aBox2.IsOut(aPt))
+                        if (box2.IsOut(pt))
                         {
                             continue;
                         }
 
-                        if (myApprox2)
+                        if (_approx2)
                         {
-                            aCurv2d2 = new TrimmedCurve2D(aC2d2, aParF, aParL);
+                            curv2d2 = new TrimmedCurve2D(c2d2, parF, parL);
                         }
                     }
 
-                    Curve3D aCurv3d = new TrimmedCurve3D(aC3d, aParF, aParL);
+                    Curve3D curv3d = new TrimmedCurve3D(c3d, parF, parL);
 
-                    IntTools_Curve aIC = new(aCurv3d, aCurv2d1, aCurv2d2);
-                    mySeqOfCurve.Append(aIC);
+                    IntersectionCurve ic = new(curv3d, curv2d1, curv2d2);
+                    _seqOfCurve.Append(ic);
                 }
             }
             break;

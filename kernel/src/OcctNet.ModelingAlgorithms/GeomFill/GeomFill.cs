@@ -5,9 +5,10 @@
 
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Geometry;
+using Occt;
 using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 
-namespace Occt;
+namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>Tools and data for filling and sweep surfaces: ruled surfaces and the circular sections of blends.</summary>
 public static class GeomFill
@@ -16,18 +17,18 @@ public static class GeomFill
     /// The ruled surface between Curve1 and Curve2: a plane, cylinder or cone where the curves allow, else a B-spline
     /// surface (GeomFill_Generator). The result is frozen.
     /// </summary>
-    public static Surface? Surface(Curve3D Curve1, Curve3D Curve2)
+    public static Surface? Surface(Curve3D curve1, Curve3D curve2)
     {
-        Surface? Surf = InternalSurface(Curve1, Curve2);
-        Surf?.Freeze();
-        return Surf;
+        Surface? surf = InternalSurface(curve1, curve2);
+        surf?.Freeze();
+        return surf;
     }
 
     /// <summary>The ruled surface, not frozen, for ported callers.</summary>
-    internal static Surface? InternalSurface(Curve3D Curve1, Curve3D Curve2)
+    internal static Surface? InternalSurface(Curve3D curve1, Curve3D curve2)
     {
-        Curve3D TheCurve1, TheCurve2;
-        Surface? Surf = null;
+        Curve3D theCurve1, theCurve2;
+        Surface? surf = null;
 
         // recherche du type de la surface resultat:
         // les surfaces reglees particulieres sont :
@@ -39,165 +40,165 @@ public static class GeomFill
         //     - ou 2 cercles
 
         double a1 = 0, a2 = 0, b1 = 0, b2 = 0;
-        bool Trim1 = false, Trim2 = false;
-        if (Curve1 is TrimmedCurve3D Ctrim1)
+        bool trim1 = false, trim2 = false;
+        if (curve1 is TrimmedCurve3D ctrim1)
         {
-            TheCurve1 = Ctrim1.BasisCurve();
-            a1 = Ctrim1.FirstParameter();
-            b1 = Ctrim1.LastParameter();
-            Trim1 = true;
+            theCurve1 = ctrim1.BasisCurve();
+            a1 = ctrim1.FirstParameter();
+            b1 = ctrim1.LastParameter();
+            trim1 = true;
         }
         else
         {
-            TheCurve1 = (Curve3D)Curve1.Copy();
+            theCurve1 = (Curve3D)curve1.Copy();
         }
-        if (Curve2 is TrimmedCurve3D Ctrim2)
+        if (curve2 is TrimmedCurve3D ctrim2)
         {
-            TheCurve2 = Ctrim2.BasisCurve();
-            a2 = Ctrim2.FirstParameter();
-            b2 = Ctrim2.LastParameter();
-            Trim2 = true;
+            theCurve2 = ctrim2.BasisCurve();
+            a2 = ctrim2.FirstParameter();
+            b2 = ctrim2.LastParameter();
+            trim2 = true;
         }
         else
         {
-            TheCurve2 = (Curve3D)Curve2.Copy();
+            theCurve2 = (Curve3D)curve2.Copy();
         }
 
-        bool IsDone = false;
+        bool isDone = false;
         // Les deux courbes sont des droites.
-        if (TheCurve1 is LineCurve3D aLine1 && TheCurve2 is LineCurve3D aLine2 && Trim1 && Trim2)
+        if (theCurve1 is LineCurve3D line1 && theCurve2 is LineCurve3D line2 && trim1 && trim2)
         {
-            Line3D L1 = aLine1.Lin();
-            Line3D L2 = aLine2.Lin();
-            Direction3D D1 = L1.Direction();
-            Direction3D D2 = L2.Direction();
+            Line3D l1 = line1.Lin();
+            Line3D l2 = line2.Lin();
+            Direction3D d1 = l1.Direction();
+            Direction3D d2 = l2.Direction();
 
-            if (D1.IsParallel(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
+            if (d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
-                Vector3D P1P2 = new Vector3D(L1.Location(), L2.Location());
-                double proj = P1P2.Dot(new Vector3D(D1));
+                Vector3D p1P2 = new Vector3D(l1.Location(), l2.Location());
+                double proj = p1P2.Dot(new Vector3D(d1));
 
-                if (D1.IsEqual(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
+                if (d1.IsEqual(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     if (Math.Abs(a1 - proj - a2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
                         && Math.Abs(b1 - proj - b2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
-                        PlaneSurface P = new PlaneSurface(Ax);
-                        double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
-                        Surf = new TrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
-                        IsDone = true;
+                        CoordinateSystem ax = new CoordinateSystem(l1.Location(), d1.Crossed(new Direction3D(p1P2)), d1);
+                        PlaneSurface p = new PlaneSurface(ax);
+                        double v = p1P2.Dot(new Vector3D(ax.YDirection()));
+                        surf = new TrimmedSurface(p, a1, b1, Min(0.0, v), Max(0.0, v));
+                        isDone = true;
                     }
                 }
-                if (D1.IsOpposite(D2, global::Kerf.Engine.Foundation.Precision.Angular()))
+                if (d1.IsOpposite(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     if (Math.Abs(a1 - proj + b2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
                         && Math.Abs(b1 - proj + a2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CoordinateSystem Ax = new CoordinateSystem(L1.Location(), D1.Crossed(new Direction3D(P1P2)), D1);
-                        PlaneSurface P = new PlaneSurface(Ax);
-                        double V = P1P2.Dot(new Vector3D(Ax.YDirection()));
-                        Surf = new TrimmedSurface(P, a1, b1, Min(0.0, V), Max(0.0, V));
-                        IsDone = true;
+                        CoordinateSystem ax = new CoordinateSystem(l1.Location(), d1.Crossed(new Direction3D(p1P2)), d1);
+                        PlaneSurface p = new PlaneSurface(ax);
+                        double v = p1P2.Dot(new Vector3D(ax.YDirection()));
+                        surf = new TrimmedSurface(p, a1, b1, Min(0.0, v), Max(0.0, v));
+                        isDone = true;
                     }
                 }
             }
         }
 
         // Les deux courbes sont des cercles.
-        else if (TheCurve1 is CircleCurve3D aCircle1 && TheCurve2 is CircleCurve3D aCircle2)
+        else if (theCurve1 is CircleCurve3D circle1 && theCurve2 is CircleCurve3D circle2)
         {
-            Circle3D C1 = aCircle1.Circ();
-            Circle3D C2 = aCircle2.Circ();
+            Circle3D c1 = circle1.Circ();
+            Circle3D c2 = circle2.Circ();
 
-            CoordinateSystem A1 = new CoordinateSystem(C1.Position());
-            CoordinateSystem A2 = new CoordinateSystem(C2.Position());
+            CoordinateSystem A1 = new CoordinateSystem(c1.Position());
+            CoordinateSystem A2 = new CoordinateSystem(c2.Position());
 
             // first, A1 & A2 must be coaxials
             if (A1.Axis().IsCoaxial(A2.Axis(), global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
-                double V = new Vector3D(A1.Location(), A2.Location()).Dot(new Vector3D(A1.Direction()));
-                if (!Trim1 && !Trim2)
+                double v = new Vector3D(A1.Location(), A2.Location()).Dot(new Vector3D(A1.Direction()));
+                if (!trim1 && !trim2)
                 {
-                    if (Math.Abs(C1.Radius() - C2.Radius()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (Math.Abs(c1.Radius() - c2.Radius()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CylindricalSurface C = new CylindricalSurface(A1, C1.Radius());
-                        Surf = new TrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
+                        CylindricalSurface c = new CylindricalSurface(A1, c1.Radius());
+                        surf = new TrimmedSurface(c, Min(0.0, v), Max(0.0, v), false);
                     }
                     else
                     {
-                        double Rad = C2.Radius() - C1.Radius();
-                        double Ang = Math.Atan(Rad / V);
-                        if (Ang < 0.0)
+                        double rad = c2.Radius() - c1.Radius();
+                        double ang = Math.Atan(rad / v);
+                        if (ang < 0.0)
                         {
                             A1.ZReverse();
-                            V = -V;
-                            Ang = -Ang;
+                            v = -v;
+                            ang = -ang;
                         }
-                        ConicalSurface C = new ConicalSurface(A1, Ang, C1.Radius());
-                        V /= Math.Cos(Ang);
-                        Surf = new TrimmedSurface(C, Min(0.0, V), Max(0.0, V), false);
+                        ConicalSurface c = new ConicalSurface(A1, ang, c1.Radius());
+                        v /= Math.Cos(ang);
+                        surf = new TrimmedSurface(c, Min(0.0, v), Max(0.0, v), false);
                     }
-                    IsDone = true;
+                    isDone = true;
                 }
-                else if (Trim1 && Trim2)
+                else if (trim1 && trim2)
                 {
                 }
             }
         }
 
-        if (!IsDone)
+        if (!isDone)
         {
-            GeomFill_Generator Generator = new GeomFill_Generator();
-            Generator.AddCurve(Curve1);
-            Generator.AddCurve(Curve2);
-            Generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Surf = Generator.InternalSurface();
+            SurfaceGenerator generator = new SurfaceGenerator();
+            generator.AddCurve(curve1);
+            generator.AddCurve(curve2);
+            generator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
+            surf = generator.InternalSurface();
         }
 
-        return Surf;
+        return surf;
     }
 
     /// <summary>
     /// The shape of the B-spline of an arc of angle MaxAng in the conversion TypeConv: Convert_TgtThetaOver2 becomes
     /// Convert_TgtThetaOver2_1 to _3 when the arc needs one to three spans.
     /// </summary>
-    public static void GetShape(double MaxAng, out int NbPoles, out int NbKnots, out int Degree,
-                                ref ParameterisationType TConv)
+    public static void GetShape(double maxAng, out int nbPoles, out int nbKnots, out int degree,
+                                ref ParameterisationType tConv)
     {
-        switch (TConv)
+        switch (tConv)
         {
             case QuasiAngular:
                 {
-                    NbPoles = 7;
-                    NbKnots = 2;
-                    Degree = 6;
+                    nbPoles = 7;
+                    nbKnots = 2;
+                    degree = 6;
                 }
                 break;
             case Polynomial:
                 {
-                    NbPoles = 8;
-                    NbKnots = 2;
-                    Degree = 7;
+                    nbPoles = 8;
+                    nbKnots = 2;
+                    degree = 7;
                 }
                 break;
             default:
                 {
-                    int NbSpan = (int)(Math.Ceiling(3.0 * Math.Abs(MaxAng) / 2.0 / M_PI));
-                    NbPoles = 2 * NbSpan + 1;
-                    NbKnots = NbSpan + 1;
-                    Degree = 2;
-                    if (NbSpan == 1)
+                    int nbSpan = (int)(Math.Ceiling(3.0 * Math.Abs(maxAng) / 2.0 / M_PI));
+                    nbPoles = 2 * nbSpan + 1;
+                    nbKnots = nbSpan + 1;
+                    degree = 2;
+                    if (nbSpan == 1)
                     {
-                        TConv = TgtThetaOver2_1;
+                        tConv = TgtThetaOver2_1;
                     }
-                    else if (NbSpan == 2)
+                    else if (nbSpan == 2)
                     {
-                        TConv = TgtThetaOver2_2;
+                        tConv = TgtThetaOver2_2;
                     }
-                    else if (NbSpan == 3)
+                    else if (nbSpan == 3)
                     {
-                        TConv = TgtThetaOver2_3;
+                        tConv = TgtThetaOver2_3;
                     }
                 }
                 break;
@@ -211,71 +212,71 @@ public static class GeomFill
     //=======================================================================
 
     /// <summary>The smallest weights of the arcs between MinAng and MaxAng in the conversion TConv.</summary>
-    public static void GetMinimalWeights(ParameterisationType TConv, double MinAng, double MaxAng,
-                                         NCollection_Array1<double> Weights)
+    public static void GetMinimalWeights(ParameterisationType tConv, double minAng, double maxAng,
+                                         NCollection_Array1<double> weights)
     {
-        if (TConv == Polynomial)
+        if (tConv == Polynomial)
         {
-            Weights.Init(1);
+            weights.Init(1);
         }
         else
         {
             Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-            Circle3D C = new Circle3D(popAx2, 1);
-            TrimmedCurve3D Sect1 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, MaxAng);
-            BSplineCurve3D CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect1, TConv);
-            Weights.Assign(CtoBspl.InternalWeightsArray());
+            Circle3D c = new Circle3D(popAx2, 1);
+            TrimmedCurve3D sect1 = new TrimmedCurve3D(new CircleCurve3D(c), 0.0, maxAng);
+            BSplineCurve3D ctoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(sect1, tConv);
+            weights.Assign(ctoBspl.InternalWeightsArray());
 
-            double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), MinAng);
-            TrimmedCurve3D Sect2 = new TrimmedCurve3D(new CircleCurve3D(C), 0.0, angle_min);
-            CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect2, TConv);
-            NCollection_Array1<double> poids = CtoBspl.InternalWeightsArray();
+            double angle_min = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), minAng);
+            TrimmedCurve3D sect2 = new TrimmedCurve3D(new CircleCurve3D(c), 0.0, angle_min);
+            ctoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(sect2, tConv);
+            NCollection_Array1<double> poids = ctoBspl.InternalWeightsArray();
 
-            for (int ii = Weights.Lower(); ii <= Weights.Upper(); ii++)
+            for (int ii = weights.Lower(); ii <= weights.Upper(); ii++)
             {
-                if (poids[ii] < Weights[ii])
+                if (poids[ii] < weights[ii])
                 {
-                    Weights[ii] = poids[ii];
+                    weights[ii] = poids[ii];
                 }
             }
         }
     }
 
     /// <summary>The knots of the circular sections in the conversion TConv.</summary>
-    public static void Knots(ParameterisationType TConv, NCollection_Array1<double> TKnots)
+    public static void Knots(ParameterisationType tConv, NCollection_Array1<double> tKnots)
     {
-        if ((TConv != QuasiAngular) && (TConv != Polynomial))
+        if ((tConv != QuasiAngular) && (tConv != Polynomial))
         {
             int i;
             double val = 0.0;
-            for (i = TKnots.Lower(); i <= TKnots.Upper(); i++)
+            for (i = tKnots.Lower(); i <= tKnots.Upper(); i++)
             {
-                TKnots[i] = val;
+                tKnots[i] = val;
                 val = val + 1.0;
             }
         }
         else
         {
-            TKnots[1] = 0.0;
-            TKnots[2] = 1.0;
+            tKnots[1] = 0.0;
+            tKnots[2] = 1.0;
         }
     }
 
     /// <summary>The multiplicities of the circular sections in the conversion TConv.</summary>
-    public static void Mults(ParameterisationType TConv, NCollection_Array1<int> TMults)
+    public static void Mults(ParameterisationType tConv, NCollection_Array1<int> tMults)
     {
-        switch (TConv)
+        switch (tConv)
         {
             case QuasiAngular:
                 {
-                    TMults[1] = 7;
-                    TMults[2] = 7;
+                    tMults[1] = 7;
+                    tMults[2] = 7;
                 }
                 break;
             case Polynomial:
                 {
-                    TMults[1] = 8;
-                    TMults[2] = 8;
+                    tMults[1] = 8;
+                    tMults[2] = 8;
                 }
                 break;
 
@@ -283,12 +284,12 @@ public static class GeomFill
                 {
                     // Cas rational classsique
                     int i;
-                    TMults[TMults.Lower()] = 3;
-                    for (i = TMults.Lower() + 1; i <= TMults.Upper() - 1; i++)
+                    tMults[tMults.Lower()] = 3;
+                    for (i = tMults.Lower() + 1; i <= tMults.Upper() - 1; i++)
                     {
-                        TMults[i] = 2;
+                        tMults[i] = 2;
                     }
-                    TMults[TMults.Upper()] = 3;
+                    tMults[tMults.Upper()] = 3;
                 }
                 break;
         }
@@ -301,19 +302,19 @@ public static class GeomFill
     //=======================================================================
 
     /// <summary>The 3D tolerance of the approximation that keeps the G1 tolerance AngularTol (blends).</summary>
-    public static double GetTolerance(ParameterisationType TConv, double AngleMin, double Radius,
-                                      double AngularTol, double SpatialTol)
+    public static double GetTolerance(ParameterisationType tConv, double angleMin, double radius,
+                                      double angularTol, double spatialTol)
     {
         Frame3D popAx2 = new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z));
-        Circle3D C = new Circle3D(popAx2, Radius);
-        CircleCurve3D popCircle = new CircleCurve3D(C);
-        TrimmedCurve3D Sect = new TrimmedCurve3D(popCircle, 0.0, Max(AngleMin, 0.02));
+        Circle3D c = new Circle3D(popAx2, radius);
+        CircleCurve3D popCircle = new CircleCurve3D(c);
+        TrimmedCurve3D sect = new TrimmedCurve3D(popCircle, 0.0, Max(angleMin, 0.02));
         // 0.02 est proche d'1 degree, en desous on ne se preocupe pas de la tngence
         // afin d'eviter des tolerances d'approximation tendant vers 0 !
-        BSplineCurve3D CtoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(Sect, TConv);
-        double Dist;
-        Dist = CtoBspl.Pole(1).Distance(CtoBspl.Pole(2)) + SpatialTol;
-        return Dist * AngularTol / 2;
+        BSplineCurve3D ctoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(sect, tConv);
+        double dist;
+        dist = ctoBspl.Pole(1).Distance(ctoBspl.Pole(2)) + spatialTol;
+        return dist * angularTol / 2;
     }
 
     //===========================================================================
@@ -329,67 +330,67 @@ public static class GeomFill
     /// The poles and weights of the arc of radius Rayon about Center from pts1 to pts2 (ns1, ns2: the inward normals
     /// at the ends; nplan: the normal to the plane), in the conversion TConv.
     /// </summary>
-    public static void GetCircle(ParameterisationType TConv,
+    public static void GetCircle(ParameterisationType tConv,
                                  in Vector3D ns1, // Normal rentrente au premier point
                                  in Vector3D ns2, // Normal rentrente au second point
                                  in Vector3D nplan, // Normal au plan
                                  in Point3D pts1,
                                  in Point3D pts2,
-                                 double Rayon, // Rayon (doit etre positif)
-                                 in Point3D Center,
-                                 NCollection_Array1<Point3D> Poles,
-                                 NCollection_Array1<double> Weights)
+                                 double rayon, // Rayon (doit etre positif)
+                                 in Point3D center,
+                                 NCollection_Array1<Point3D> poles,
+                                 NCollection_Array1<double> weights)
     {
         // La classe de convertion
 
         int i, jj;
-        double Cosa, Sina, Angle, Alpha, Cosas2, lambda;
+        double cosa, sina, angle, alpha, cosas2, lambda;
         Vector3D temp = new Vector3D(), np2;
-        int low = Poles.Lower();
-        int upp = Poles.Upper();
+        int low = poles.Lower();
+        int upp = poles.Upper();
 
-        Cosa = ns1.Dot(ns2);
-        Sina = nplan.Dot(ns1.Crossed(ns2));
+        cosa = ns1.Dot(ns2);
+        sina = nplan.Dot(ns1.Crossed(ns2));
 
-        if (Cosa < -1.0)
+        if (cosa < -1.0)
         {
-            Cosa = -1;
-            Sina = 0;
+            cosa = -1;
+            sina = 0;
         }
-        if (Cosa > 1.0)
+        if (cosa > 1.0)
         {
-            Cosa = 1;
-            Sina = 0;
+            cosa = 1;
+            sina = 0;
         }
-        Angle = Math.Acos(Cosa);
+        angle = Math.Acos(cosa);
         // Recadrage sur ]-pi/2, 3pi/2]
-        if (Sina < 0.0)
+        if (sina < 0.0)
         {
-            if (Cosa > 0.0)
+            if (cosa > 0.0)
             {
-                Angle = -Angle;
+                angle = -angle;
             }
             else
             {
-                Angle = 2.0 * M_PI - Angle;
+                angle = 2.0 * M_PI - angle;
             }
         }
 
-        switch (TConv)
+        switch (tConv)
         {
             case QuasiAngular:
                 {
-                    GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
-                    QConvertor.Init();
-                    QConvertor.Section(pts1, Center, nplan, Angle, Poles, Weights);
+                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
+                    qConvertor.Init();
+                    qConvertor.Section(pts1, center, nplan, angle, poles, weights);
                     break;
                 }
             case Polynomial:
                 {
-                    GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
-                    PConvertor.Init();
-                    PConvertor.Section(pts1, Center, nplan, Angle, Poles);
-                    Weights.Init(1);
+                    PolynomialConvertor pConvertor = new PolynomialConvertor();
+                    pConvertor.Init();
+                    pConvertor.Section(pts1, center, nplan, angle, poles);
+                    weights.Init(1);
                     break;
                 }
             default:
@@ -398,34 +399,34 @@ public static class GeomFill
                     // performente que GeomConvert
                     // OCCT: the interior poles below are on the circle for ns1 running from the centre to pts1, not
                     // for the inward normal the header documents (occt-issues.md).
-                    int NbSpan = (Poles.Length() - 1) / 2;
+                    int nbSpan = (poles.Length() - 1) / 2;
 
-                    Poles[low] = pts1;
-                    Poles[upp] = pts2;
-                    Weights[low] = 1;
-                    Weights[upp] = 1;
+                    poles[low] = pts1;
+                    poles[upp] = pts2;
+                    weights[low] = 1;
+                    weights[upp] = 1;
 
                     np2 = nplan.Crossed(ns1);
 
-                    Alpha = Angle / ((double)(NbSpan));
-                    Cosas2 = Math.Cos(Alpha / 2);
+                    alpha = angle / ((double)(nbSpan));
+                    cosas2 = Math.Cos(alpha / 2);
 
-                    for (i = 1, jj = low + 2; i <= NbSpan - 1; i++, jj += 2)
+                    for (i = 1, jj = low + 2; i <= nbSpan - 1; i++, jj += 2)
                     {
-                        lambda = ((double)(i)) * Alpha;
-                        Cosa = Math.Cos(lambda);
-                        Sina = Math.Sin(lambda);
-                        temp.SetLinearForm(Cosa - 1, ns1, Sina, np2);
-                        Poles[jj].SetXYZ(pts1.XYZ() + Rayon * temp.XYZ());
-                        Weights[jj] = 1;
+                        lambda = ((double)(i)) * alpha;
+                        cosa = Math.Cos(lambda);
+                        sina = Math.Sin(lambda);
+                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
+                        weights[jj] = 1;
                     }
 
-                    lambda = 1.0 / (2.0 * Cosas2 * Cosas2);
-                    for (i = 1, jj = low + 1; i <= NbSpan; i++, jj += 2)
+                    lambda = 1.0 / (2.0 * cosas2 * cosas2);
+                    for (i = 1, jj = low + 1; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(Poles[jj - 1].XYZ() + Poles[jj + 1].XYZ() - 2.0 * Center.XYZ());
-                        Poles[jj].SetXYZ(Center.XYZ() + lambda * temp.XYZ());
-                        Weights[jj] = Cosas2;
+                        temp.SetXYZ(poles[jj - 1].XYZ() + poles[jj + 1].XYZ() - 2.0 * center.XYZ());
+                        poles[jj].SetXYZ(center.XYZ() + lambda * temp.XYZ());
+                        weights[jj] = cosas2;
                     }
                     break;
                 }
@@ -433,7 +434,7 @@ public static class GeomFill
     }
 
     /// <summary>The poles and weights of the arc and their first derivatives.</summary>
-    public static bool GetCircle(ParameterisationType TConv,
+    public static bool GetCircle(ParameterisationType tConv,
                                  in Vector3D ns1,
                                  in Vector3D ns2,
                                  in Vector3D dn1w,
@@ -444,96 +445,96 @@ public static class GeomFill
                                  in Point3D pts2,
                                  in Vector3D tang1,
                                  in Vector3D tang2,
-                                 double Rayon,
-                                 double DRayon,
-                                 in Point3D Center,
-                                 in Vector3D DCenter,
-                                 NCollection_Array1<Point3D> Poles,
-                                 NCollection_Array1<Vector3D> DPoles,
-                                 NCollection_Array1<double> Weights,
-                                 NCollection_Array1<double> DWeights)
+                                 double rayon,
+                                 double dRayon,
+                                 in Point3D center,
+                                 in Vector3D dCenter,
+                                 NCollection_Array1<Point3D> poles,
+                                 NCollection_Array1<Vector3D> dPoles,
+                                 NCollection_Array1<double> weights,
+                                 NCollection_Array1<double> dWeights)
     {
-        double Cosa, Sina, Cosas2, Sinas2, Angle, DAngle, Alpha, lambda, Dlambda;
+        double cosa, sina, cosas2, sinas2, angle, dAngle, alpha, lambda, dlambda;
         Vector3D temp = new Vector3D(), np2, dnp2;
         int i, jj;
-        int NbSpan = (Poles.Length() - 1) / 2;
-        int low = Poles.Lower();
-        int upp = Poles.Upper();
+        int nbSpan = (poles.Length() - 1) / 2;
+        int low = poles.Lower();
+        int upp = poles.Upper();
 
-        Cosa = ns1.Dot(ns2);
-        Sina = nplan.Dot(ns1.Crossed(ns2));
+        cosa = ns1.Dot(ns2);
+        sina = nplan.Dot(ns1.Crossed(ns2));
 
-        if (Cosa < -1.0)
+        if (cosa < -1.0)
         {
-            Cosa = -1;
-            Sina = 0;
+            cosa = -1;
+            sina = 0;
         }
-        if (Cosa > 1.0)
+        if (cosa > 1.0)
         {
-            Cosa = 1;
-            Sina = 0;
+            cosa = 1;
+            sina = 0;
         }
-        Angle = Math.Acos(Cosa);
+        angle = Math.Acos(cosa);
         // Recadrage sur ]-pi/2, 3pi/2]
-        if (Sina < 0.0)
+        if (sina < 0.0)
         {
-            if (Cosa > 0.0)
+            if (cosa > 0.0)
             {
-                Angle = -Angle;
+                angle = -angle;
             }
             else
             {
-                Angle = 2.0 * M_PI - Angle;
+                angle = 2.0 * M_PI - angle;
             }
         }
 
-        if (Math.Abs(Sina) > Math.Abs(Cosa))
+        if (Math.Abs(sina) > Math.Abs(cosa))
         {
-            DAngle = -(dn1w.Dot(ns2) + ns1.Dot(dn2w)) / Sina;
+            dAngle = -(dn1w.Dot(ns2) + ns1.Dot(dn2w)) / sina;
         }
         else
         {
-            DAngle = (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(dn1w.Crossed(ns2) + ns1.Crossed(dn2w))) / Cosa;
+            dAngle = (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(dn1w.Crossed(ns2) + ns1.Crossed(dn2w))) / cosa;
         }
 
         // Aux Extremites.
-        Poles[low] = pts1;
-        Poles[upp] = pts2;
-        Weights[low] = 1;
-        Weights[upp] = 1;
+        poles[low] = pts1;
+        poles[upp] = pts2;
+        weights[low] = 1;
+        weights[upp] = 1;
 
-        DPoles[low] = tang1;
-        DPoles[upp] = tang2;
-        DWeights[low] = 0;
-        DWeights[upp] = 0;
+        dPoles[low] = tang1;
+        dPoles[upp] = tang2;
+        dWeights[low] = 0;
+        dWeights[upp] = 0;
 
-        switch (TConv)
+        switch (tConv)
         {
             case QuasiAngular:
                 {
-                    GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
-                    QConvertor.Init();
-                    QConvertor.Section(pts1,
+                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
+                    qConvertor.Init();
+                    qConvertor.Section(pts1,
                                        tang1,
-                                       Center,
-                                       DCenter,
+                                       center,
+                                       dCenter,
                                        nplan,
                                        dnplan,
-                                       Angle,
-                                       DAngle,
-                                       Poles,
-                                       DPoles,
-                                       Weights,
-                                       DWeights);
+                                       angle,
+                                       dAngle,
+                                       poles,
+                                       dPoles,
+                                       weights,
+                                       dWeights);
                     return true;
                 }
             case Polynomial:
                 {
-                    GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
-                    PConvertor.Init();
-                    PConvertor.Section(pts1, tang1, Center, DCenter, nplan, dnplan, Angle, DAngle, Poles, DPoles);
-                    Weights.Init(1);
-                    DWeights.Init(0);
+                    PolynomialConvertor pConvertor = new PolynomialConvertor();
+                    pConvertor.Init();
+                    pConvertor.Section(pts1, tang1, center, dCenter, nplan, dnplan, angle, dAngle, poles, dPoles);
+                    weights.Init(1);
+                    dWeights.Init(0);
                     return true;
                 }
 
@@ -543,48 +544,48 @@ public static class GeomFill
                     np2 = nplan.Crossed(ns1);
                     dnp2 = dnplan.Crossed(ns1).Added(nplan.Crossed(dn1w));
 
-                    Alpha = Angle / ((double)(NbSpan));
-                    Cosas2 = Math.Cos(Alpha / 2);
-                    Sinas2 = Math.Sin(Alpha / 2);
+                    alpha = angle / ((double)(nbSpan));
+                    cosas2 = Math.Cos(alpha / 2);
+                    sinas2 = Math.Sin(alpha / 2);
 
-                    for (i = 1, jj = low + 2; i <= NbSpan - 1; i++, jj += 2)
+                    for (i = 1, jj = low + 2; i <= nbSpan - 1; i++, jj += 2)
                     {
-                        lambda = ((double)(i)) * Alpha;
-                        Cosa = Math.Cos(lambda);
-                        Sina = Math.Sin(lambda);
-                        temp.SetLinearForm(Cosa - 1, ns1, Sina, np2);
-                        Poles[jj].SetXYZ(pts1.XYZ() + Rayon * temp.XYZ());
+                        lambda = ((double)(i)) * alpha;
+                        cosa = Math.Cos(lambda);
+                        sina = Math.Sin(lambda);
+                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
 
-                        DPoles[jj].SetLinearForm(DRayon, temp, tang1);
-                        temp.SetLinearForm(-Sina, ns1, Cosa, np2);
-                        temp.Multiply(((double)(i)) / ((double)(NbSpan)) * DAngle);
-                        temp.Add(((Cosa - 1) * dn1w).Added(Sina * dnp2));
-                        DPoles[jj] += Rayon * temp;
+                        dPoles[jj].SetLinearForm(dRayon, temp, tang1);
+                        temp.SetLinearForm(-sina, ns1, cosa, np2);
+                        temp.Multiply(((double)(i)) / ((double)(nbSpan)) * dAngle);
+                        temp.Add(((cosa - 1) * dn1w).Added(sina * dnp2));
+                        dPoles[jj] += rayon * temp;
                     }
 
-                    lambda = 1.0 / (2.0 * Cosas2 * Cosas2);
-                    Dlambda = (lambda * Sinas2 * DAngle) / (Cosas2 * NbSpan);
+                    lambda = 1.0 / (2.0 * cosas2 * cosas2);
+                    dlambda = (lambda * sinas2 * dAngle) / (cosas2 * nbSpan);
 
-                    for (i = 1, jj = low; i <= NbSpan; i++, jj += 2)
+                    for (i = 1, jj = low; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(Poles[jj].XYZ() + Poles[jj + 2].XYZ() - 2.0 * Center.XYZ());
-                        Poles[jj + 1].SetXYZ(Center.XYZ() + lambda * temp.XYZ());
-                        DPoles[jj + 1].SetLinearForm(Dlambda,
+                        temp.SetXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
+                        poles[jj + 1].SetXYZ(center.XYZ() + lambda * temp.XYZ());
+                        dPoles[jj + 1].SetLinearForm(dlambda,
                                                      temp,
                                                      1.0 - 2 * lambda,
-                                                     DCenter,
+                                                     dCenter,
                                                      lambda,
-                                                     (DPoles[jj] + DPoles[jj + 2]));
+                                                     (dPoles[jj] + dPoles[jj + 2]));
                     }
 
                     // Les poids
-                    Dlambda = -Sinas2 * DAngle / (2 * NbSpan);
+                    dlambda = -sinas2 * dAngle / (2 * nbSpan);
                     for (i = low; i < upp; i += 2)
                     {
-                        Weights[i] = 1.0;
-                        Weights[i + 1] = Cosas2;
-                        DWeights[i] = 0.0;
-                        DWeights[i + 1] = Dlambda;
+                        weights[i] = 1.0;
+                        weights[i + 1] = cosas2;
+                        dWeights[i] = 0.0;
+                        dWeights[i + 1] = dlambda;
                     }
                 }
                 return true;
@@ -593,7 +594,7 @@ public static class GeomFill
     }
 
     /// <summary>The poles and weights of the arc and their first and second derivatives.</summary>
-    public static bool GetCircle(ParameterisationType TConv,
+    public static bool GetCircle(ParameterisationType tConv,
                                  in Vector3D ns1,
                                  in Vector3D ns2,
                                  in Vector3D dn1w,
@@ -607,140 +608,140 @@ public static class GeomFill
                                  in Point3D pts2,
                                  in Vector3D tang1,
                                  in Vector3D tang2,
-                                 in Vector3D Dtang1,
-                                 in Vector3D Dtang2,
-                                 double Rayon,
-                                 double DRayon,
-                                 double D2Rayon,
-                                 in Point3D Center,
-                                 in Vector3D DCenter,
-                                 in Vector3D D2Center,
-                                 NCollection_Array1<Point3D> Poles,
-                                 NCollection_Array1<Vector3D> DPoles,
-                                 NCollection_Array1<Vector3D> D2Poles,
-                                 NCollection_Array1<double> Weights,
-                                 NCollection_Array1<double> DWeights,
-                                 NCollection_Array1<double> D2Weights)
+                                 in Vector3D dtang1,
+                                 in Vector3D dtang2,
+                                 double rayon,
+                                 double dRayon,
+                                 double d2Rayon,
+                                 in Point3D center,
+                                 in Vector3D dCenter,
+                                 in Vector3D d2Center,
+                                 NCollection_Array1<Point3D> poles,
+                                 NCollection_Array1<Vector3D> dPoles,
+                                 NCollection_Array1<Vector3D> d2Poles,
+                                 NCollection_Array1<double> weights,
+                                 NCollection_Array1<double> dWeights,
+                                 NCollection_Array1<double> d2Weights)
     {
-        double Cosa, Sina, Cosas2, Sinas2;
-        double Angle, DAngle, D2Angle, Alpha;
-        double lambda, Dlambda, D2lambda, aux;
+        double cosa, sina, cosas2, sinas2;
+        double angle, dAngle, d2Angle, alpha;
+        double lambda, dlambda, d2lambda, aux;
         Vector3D temp = new Vector3D(), dtemp = new Vector3D(), np2, dnp2, d2np2;
         int i, jj;
-        int NbSpan = (Poles.Length() - 1) / 2;
-        int low = Poles.Lower();
-        int upp = Poles.Upper();
+        int nbSpan = (poles.Length() - 1) / 2;
+        int low = poles.Lower();
+        int upp = poles.Upper();
 
-        Cosa = ns1.Dot(ns2);
-        Sina = nplan.Dot(ns1.Crossed(ns2));
+        cosa = ns1.Dot(ns2);
+        sina = nplan.Dot(ns1.Crossed(ns2));
 
-        if (Cosa < -1.0)
+        if (cosa < -1.0)
         {
-            Cosa = -1;
-            Sina = 0;
+            cosa = -1;
+            sina = 0;
         }
-        if (Cosa > 1.0)
+        if (cosa > 1.0)
         {
-            Cosa = 1;
-            Sina = 0;
+            cosa = 1;
+            sina = 0;
         }
-        Angle = Math.Acos(Cosa);
+        angle = Math.Acos(cosa);
         // Recadrage sur ]-pi/2, 3pi/2]
-        if (Sina < 0.0)
+        if (sina < 0.0)
         {
-            if (Cosa > 0.0)
+            if (cosa > 0.0)
             {
-                Angle = -Angle;
+                angle = -angle;
             }
             else
             {
-                Angle = 2.0 * M_PI - Angle;
+                angle = 2.0 * M_PI - angle;
             }
         }
 
-        if (Math.Abs(Sina) > Math.Abs(Cosa))
+        if (Math.Abs(sina) > Math.Abs(cosa))
         {
             aux = dn1w.Dot(ns2) + ns1.Dot(dn2w);
-            DAngle = -aux / Sina;
-            D2Angle = -(d2n1w.Dot(ns2) + 2 * dn1w.Dot(dn2w) + ns1.Dot(d2n2w)) / Sina
+            dAngle = -aux / sina;
+            d2Angle = -(d2n1w.Dot(ns2) + 2 * dn1w.Dot(dn2w) + ns1.Dot(d2n2w)) / sina
                       + aux * (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(dn1w.Crossed(ns2) + ns1.Crossed(dn2w)))
-                            / (Sina * Sina);
+                            / (sina * sina);
         }
         else
         {
             temp = dn1w.Crossed(ns2) + ns1.Crossed(dn2w);
-            DAngle = (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(temp)) / Cosa;
-            D2Angle = (d2nplan.Dot(ns1.Crossed(ns2)) + 2 * dnplan.Dot(temp)
+            dAngle = (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(temp)) / cosa;
+            d2Angle = (d2nplan.Dot(ns1.Crossed(ns2)) + 2 * dnplan.Dot(temp)
                        + nplan.Dot(d2n1w.Crossed(ns2) + 2 * dn1w.Crossed(dn2w) + ns1.Crossed(d2n2w)))
-                          / Cosa
+                          / cosa
                       - (dn1w.Dot(ns2) + ns1.Dot(dn2w)) * (dnplan.Dot(ns1.Crossed(ns2)) + nplan.Dot(temp))
-                            / (Cosa * Cosa);
+                            / (cosa * cosa);
         }
 
         // Aux Extremites.
-        Poles[low] = pts1;
-        Poles[upp] = pts2;
-        Weights[low] = 1;
-        Weights[upp] = 1;
+        poles[low] = pts1;
+        poles[upp] = pts2;
+        weights[low] = 1;
+        weights[upp] = 1;
 
-        DPoles[low] = tang1;
-        DPoles[upp] = tang2;
-        DWeights[low] = 0;
-        DWeights[upp] = 0;
+        dPoles[low] = tang1;
+        dPoles[upp] = tang2;
+        dWeights[low] = 0;
+        dWeights[upp] = 0;
 
-        D2Poles[low] = Dtang1;
-        D2Poles[upp] = Dtang2;
-        D2Weights[low] = 0;
-        D2Weights[upp] = 0;
+        d2Poles[low] = dtang1;
+        d2Poles[upp] = dtang2;
+        d2Weights[low] = 0;
+        d2Weights[upp] = 0;
 
-        switch (TConv)
+        switch (tConv)
         {
             case QuasiAngular:
                 {
-                    GeomFill_QuasiAngularConvertor QConvertor = new GeomFill_QuasiAngularConvertor();
-                    QConvertor.Init();
-                    QConvertor.Section(pts1,
+                    QuasiAngularConvertor qConvertor = new QuasiAngularConvertor();
+                    qConvertor.Init();
+                    qConvertor.Section(pts1,
                                        tang1,
-                                       Dtang1,
-                                       Center,
-                                       DCenter,
-                                       D2Center,
+                                       dtang1,
+                                       center,
+                                       dCenter,
+                                       d2Center,
                                        nplan,
                                        dnplan,
                                        d2nplan,
-                                       Angle,
-                                       DAngle,
-                                       D2Angle,
-                                       Poles,
-                                       DPoles,
-                                       D2Poles,
-                                       Weights,
-                                       DWeights,
-                                       D2Weights);
+                                       angle,
+                                       dAngle,
+                                       d2Angle,
+                                       poles,
+                                       dPoles,
+                                       d2Poles,
+                                       weights,
+                                       dWeights,
+                                       d2Weights);
                     return true;
                 }
             case Polynomial:
                 {
-                    GeomFill_PolynomialConvertor PConvertor = new GeomFill_PolynomialConvertor();
-                    PConvertor.Init();
-                    PConvertor.Section(pts1,
+                    PolynomialConvertor pConvertor = new PolynomialConvertor();
+                    pConvertor.Init();
+                    pConvertor.Section(pts1,
                                        tang1,
-                                       Dtang1,
-                                       Center,
-                                       DCenter,
-                                       D2Center,
+                                       dtang1,
+                                       center,
+                                       dCenter,
+                                       d2Center,
                                        nplan,
                                        dnplan,
                                        d2nplan,
-                                       Angle,
-                                       DAngle,
-                                       D2Angle,
-                                       Poles,
-                                       DPoles,
-                                       D2Poles);
-                    Weights.Init(1);
-                    DWeights.Init(0);
-                    D2Weights.Init(0);
+                                       angle,
+                                       dAngle,
+                                       d2Angle,
+                                       poles,
+                                       dPoles,
+                                       d2Poles);
+                    weights.Init(1);
+                    dWeights.Init(0);
+                    d2Weights.Init(0);
                     return true;
                 }
 
@@ -752,68 +753,68 @@ public static class GeomFill
                     d2np2 = d2nplan.Crossed(ns1).Added(nplan.Crossed(dn2w));
                     d2np2 += 2 * dnplan.Crossed(dn1w);
 
-                    Alpha = Angle / ((double)(NbSpan));
-                    Cosas2 = Math.Cos(Alpha / 2);
-                    Sinas2 = Math.Sin(Alpha / 2);
+                    alpha = angle / ((double)(nbSpan));
+                    cosas2 = Math.Cos(alpha / 2);
+                    sinas2 = Math.Sin(alpha / 2);
 
-                    for (i = 1, jj = low + 2; i <= NbSpan - 1; i++, jj += 2)
+                    for (i = 1, jj = low + 2; i <= nbSpan - 1; i++, jj += 2)
                     {
-                        lambda = ((double)(i)) * Alpha;
-                        Cosa = Math.Cos(lambda);
-                        Sina = Math.Sin(lambda);
-                        temp.SetLinearForm(Cosa - 1, ns1, Sina, np2);
-                        Poles[jj].SetXYZ(pts1.XYZ() + Rayon * temp.XYZ());
+                        lambda = ((double)(i)) * alpha;
+                        cosa = Math.Cos(lambda);
+                        sina = Math.Sin(lambda);
+                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
 
-                        DPoles[jj].SetLinearForm(DRayon, temp, tang1);
-                        dtemp.SetLinearForm(-Sina, ns1, Cosa, np2);
-                        aux = ((double)(i)) / ((double)(NbSpan));
-                        dtemp.Multiply(aux * DAngle);
-                        dtemp.Add(((Cosa - 1) * dn1w).Added(Sina * dnp2));
-                        DPoles[jj] += Rayon * dtemp;
+                        dPoles[jj].SetLinearForm(dRayon, temp, tang1);
+                        dtemp.SetLinearForm(-sina, ns1, cosa, np2);
+                        aux = ((double)(i)) / ((double)(nbSpan));
+                        dtemp.Multiply(aux * dAngle);
+                        dtemp.Add(((cosa - 1) * dn1w).Added(sina * dnp2));
+                        dPoles[jj] += rayon * dtemp;
 
-                        D2Poles[jj].SetLinearForm(D2Rayon, temp, 2 * DRayon, dtemp, Dtang1);
-                        temp.SetLinearForm(Cosa - 1, dn2w, Sina, d2np2);
-                        dtemp.SetLinearForm(-Sina, ns1, Cosa, np2);
-                        temp += (aux * aux * D2Angle) * dtemp;
-                        dtemp.SetLinearForm(-Sina, dn1w + np2, Cosa, dnp2, -Cosa, ns1);
-                        temp += (aux * DAngle) * dtemp;
-                        D2Poles[jj] += Rayon * temp;
+                        d2Poles[jj].SetLinearForm(d2Rayon, temp, 2 * dRayon, dtemp, dtang1);
+                        temp.SetLinearForm(cosa - 1, dn2w, sina, d2np2);
+                        dtemp.SetLinearForm(-sina, ns1, cosa, np2);
+                        temp += (aux * aux * d2Angle) * dtemp;
+                        dtemp.SetLinearForm(-sina, dn1w + np2, cosa, dnp2, -cosa, ns1);
+                        temp += (aux * dAngle) * dtemp;
+                        d2Poles[jj] += rayon * temp;
                     }
 
-                    lambda = 1.0 / (2.0 * Cosas2 * Cosas2);
-                    Dlambda = (lambda * Sinas2 * DAngle) / (Cosas2 * NbSpan);
-                    aux = Sinas2 / Cosas2;
-                    D2lambda = (Dlambda * aux * DAngle + D2Angle * aux * lambda
-                                + (1 + aux * aux) * (DAngle / (2 * NbSpan)) * DAngle * lambda)
-                               / NbSpan;
-                    for (i = 1, jj = low; i <= NbSpan; i++, jj += 2)
+                    lambda = 1.0 / (2.0 * cosas2 * cosas2);
+                    dlambda = (lambda * sinas2 * dAngle) / (cosas2 * nbSpan);
+                    aux = sinas2 / cosas2;
+                    d2lambda = (dlambda * aux * dAngle + d2Angle * aux * lambda
+                                + (1 + aux * aux) * (dAngle / (2 * nbSpan)) * dAngle * lambda)
+                               / nbSpan;
+                    for (i = 1, jj = low; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(Poles[jj].XYZ() + Poles[jj + 2].XYZ() - 2.0 * Center.XYZ());
-                        Poles[jj + 1].SetXYZ(Center.XYZ() + lambda * temp.XYZ());
+                        temp.SetXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
+                        poles[jj + 1].SetXYZ(center.XYZ() + lambda * temp.XYZ());
 
-                        dtemp.SetXYZ(DPoles[jj].XYZ() + DPoles[jj + 2].XYZ() - 2.0 * DCenter.XYZ());
-                        DPoles[jj + 1].SetLinearForm(Dlambda, temp, lambda, dtemp, DCenter);
-                        D2Poles[jj + 1].SetLinearForm(D2lambda,
+                        dtemp.SetXYZ(dPoles[jj].XYZ() + dPoles[jj + 2].XYZ() - 2.0 * dCenter.XYZ());
+                        dPoles[jj + 1].SetLinearForm(dlambda, temp, lambda, dtemp, dCenter);
+                        d2Poles[jj + 1].SetLinearForm(d2lambda,
                                                       temp,
-                                                      2 * Dlambda,
+                                                      2 * dlambda,
                                                       dtemp,
                                                       lambda,
-                                                      (D2Poles[jj] + D2Poles[jj + 2]));
-                        D2Poles[jj + 1] += (1 - 2 * lambda) * D2Center;
+                                                      (d2Poles[jj] + d2Poles[jj + 2]));
+                        d2Poles[jj + 1] += (1 - 2 * lambda) * d2Center;
                     }
 
                     // Les poids
-                    Dlambda = -Sinas2 * DAngle / (2 * NbSpan);
-                    D2lambda = -Sinas2 * D2Angle / (2 * NbSpan) - Cosas2 * Math.Pow(DAngle / (2 * NbSpan), 2);
+                    dlambda = -sinas2 * dAngle / (2 * nbSpan);
+                    d2lambda = -sinas2 * d2Angle / (2 * nbSpan) - cosas2 * Math.Pow(dAngle / (2 * nbSpan), 2);
 
                     for (i = low; i < upp; i += 2)
                     {
-                        Weights[i] = 1.0;
-                        Weights[i + 1] = Cosas2;
-                        DWeights[i] = 0.0;
-                        DWeights[i + 1] = Dlambda;
-                        D2Weights[i] = 0.0;
-                        D2Weights[i + 1] = D2lambda;
+                        weights[i] = 1.0;
+                        weights[i + 1] = cosas2;
+                        dWeights[i] = 0.0;
+                        dWeights[i + 1] = dlambda;
+                        d2Weights[i] = 0.0;
+                        d2Weights[i + 1] = d2lambda;
                     }
                 }
                 return true;

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -19,7 +20,7 @@ public class BRepClass3dTests
     private static Shape Box10() => TestShapes.Frozen(TestShapes.Box(10, 10, 10));
 
     private static Containment Classify(in Shape theShape, double x, double y, double z, double theTol = 1e-7)
-        => new BRepClass3d_SolidClassifier(theShape, new Point3D(x, y, z), theTol).State();
+        => new global::Kerf.Engine.Classification.SolidClassifier(theShape, new Point3D(x, y, z), theTol).State();
 
     [Theory]
     [InlineData(5, 5, 5, In)]
@@ -50,17 +51,17 @@ public class BRepClass3dTests
     public void Box_on_a_face_gives_the_face()
     {
         Shape aBox = Box10();
-        var aClassifier = new BRepClass3d_SolidClassifier(aBox);
+        var aClassifier = new global::Kerf.Engine.Classification.SolidClassifier(aBox);
         aClassifier.Perform(new Point3D(5, 5, 10), 1e-7);
         Assert.Equal(On, aClassifier.State());
-        Assert.True(aClassifier.IsOnAFace());
+        Assert.True(aClassifier.IsOnAFace);
         Assert.False(aClassifier.Rejected());
         Assert.True(aClassifier.Face().IsSame(BRepGPropTestShapes.Faces(aBox)[1])); // the top face
 
         // one classifier, many points
         aClassifier.Perform(new Point3D(5, 5, 5), 1e-7);
         Assert.Equal(In, aClassifier.State());
-        Assert.False(aClassifier.IsOnAFace());
+        Assert.False(aClassifier.IsOnAFace);
         aClassifier.Perform(new Point3D(50, 5, 5), 1e-7);
         Assert.Equal(Out, aClassifier.State());
     }
@@ -88,11 +89,11 @@ public class BRepClass3dTests
     [Fact]
     public void Infinite_point()
     {
-        var aClassifier = new BRepClass3d_SolidClassifier(Box10());
+        var aClassifier = new global::Kerf.Engine.Classification.SolidClassifier(Box10());
         aClassifier.PerformInfinitePoint(1e-7);
         Assert.Equal(Out, aClassifier.State());
 
-        var aHole = new BRepClass3d_SolidClassifier(Box10().Reversed());
+        var aHole = new global::Kerf.Engine.Classification.SolidClassifier(Box10().Reversed());
         aHole.PerformInfinitePoint(1e-7);
         Assert.Equal(In, aHole.State());
     }
@@ -132,7 +133,7 @@ public class BRepClass3dTests
         Assert.Equal(Out, Classify(aSolid, 11, 4, 4));
 
         // the outer shell is the one a point at infinity is outside of
-        Shell aFound = BRepClass3d.OuterShell(ShapeCasts.Solid(aSolid));
+        Shell aFound = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(ShapeCasts.Solid(aSolid));
         Assert.True(aFound.IsSame(anOuter));
     }
 
@@ -140,10 +141,10 @@ public class BRepClass3dTests
     public void OuterShell_of_simple_and_null_solids()
     {
         Solid aBox = ShapeCasts.Solid(Box10());
-        Shell aShell = BRepClass3d.OuterShell(aBox);
+        Shell aShell = global::Kerf.Engine.Classification.BRepClass3d.OuterShell(aBox);
         Assert.False(aShell.IsNull);
         Assert.True(aShell.IsSame(new Iterator(aBox).Value()));
-        Assert.True(BRepClass3d.OuterShell(new Solid()).IsNull);
+        Assert.True(global::Kerf.Engine.Classification.BRepClass3d.OuterShell(new Solid()).IsNull);
     }
 
     [Fact]
@@ -163,7 +164,7 @@ public class BRepClass3dTests
         Solid anEmpty = new();
         aB.MakeSolid(ref anEmpty);
         Shape aSolid = TestShapes.Frozen(anEmpty);
-        var aClassifier = new BRepClass3d_SolidClassifier(aSolid, new Point3D(1, 2, 3), 1e-7);
+        var aClassifier = new global::Kerf.Engine.Classification.SolidClassifier(aSolid, new Point3D(1, 2, 3), 1e-7);
         Assert.Equal(In, aClassifier.State());
         aClassifier.PerformInfinitePoint(1e-7);
         Assert.Equal(In, aClassifier.State());
@@ -175,13 +176,13 @@ public class BRepClass3dTests
         Face aFace = TestShapes.Frozen(ClassificationTestShapes.HoledSquare());
         Point3D aP = new();
         double u = 0, v = 0;
-        Assert.True(BRepClass3d_SolidExplorer.FindAPointInTheFace(aFace, ref aP, ref u, ref v));
+        Assert.True(global::Kerf.Engine.Classification.SolidExplorer.FindAPointInTheFace(aFace, ref aP, ref u, ref v));
         Assert.Equal(0.0, aP.Z(), 1e-12);
         Assert.Equal(u, aP.X(), 1e-12);
         Assert.Equal(v, aP.Y(), 1e-12);
-        Assert.Equal(In, new BRepClass_FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
+        Assert.Equal(In, new global::Kerf.Engine.Classification.FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
 
-        var anExplorer = new BRepClass3d_SolidExplorer(Box10());
+        var anExplorer = new global::Kerf.Engine.Classification.SolidExplorer(Box10());
         Assert.False(anExplorer.Reject(new Point3D()));
         Assert.Equal(20, anExplorer.GetMapEV().Extent()); // 12 edges and 8 vertices
         int aShells = 0, aFaces = 0;
@@ -210,7 +211,7 @@ public class BRepClass3dTests
     public void Passive_classifier_compares_faces_given_one_by_one()
     {
         Shape aBox = Box10();
-        var aClassifier = new BRepClass3d_SolidPassiveClassifier();
+        var aClassifier = new global::Kerf.Engine.Classification.SolidPassiveClassifier();
         aClassifier.Reset(new Line3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), RealLast(), 1e-7);
         foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
@@ -220,12 +221,12 @@ public class BRepClass3dTests
         Assert.Equal(In, aClassifier.State());
         Assert.Equal(5.0, aClassifier.Parameter(), 1e-9);
 
-        var anInter = new BRepClass3d_Intersector3d();
+        var anInter = new global::Kerf.Engine.Classification.Intersector3d();
         anInter.Perform(new Line3D(new Point3D(5, 5, -5), new Direction3D(0, 0, 1)), RealLast(), 1e-7, BRepGPropTestShapes.Faces(aBox)[0]);
-        Assert.True(anInter.IsDone());
-        Assert.True(anInter.HasAPoint());
+        Assert.True(anInter.IsDone);
+        Assert.True(anInter.HasAPoint);
         Assert.Equal(5.0, anInter.WParameter(), 1e-9);
         Assert.Equal(In, anInter.State());
-        Assert.Equal(IntCurveSurface_TransitionOnCurve.IntCurveSurface_In, anInter.Transition());
+        Assert.Equal(TransitionOnCurve.In, anInter.Transition());
     }
 }

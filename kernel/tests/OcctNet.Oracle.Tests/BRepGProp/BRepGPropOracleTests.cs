@@ -256,14 +256,14 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     using var aN = new N.GProp_GProps();
                     var aP = new Properties();
                     N.BRepGProp.LinearProperties(aNS, aN, aSkip, aTri);
-                    BRepGProp.LinearProperties(aPS, aP, aSkip, aTri);
+                    MassPropertiesBuilder.LinearProperties(aPS, aP, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + " linear");
                 }
                 {
                     using var aN = new N.GProp_GProps();
                     var aP = new Properties();
                     N.BRepGProp.SurfaceProperties(aNS, aN, aSkip, aTri);
-                    BRepGProp.SurfaceProperties(aPS, aP, aSkip, aTri);
+                    MassPropertiesBuilder.SurfaceProperties(aPS, aP, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + " surface");
                 }
                 foreach (bool aClosed in aBools)
@@ -271,7 +271,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     using var aN = new N.GProp_GProps();
                     var aP = new Properties();
                     N.BRepGProp.VolumeProperties(aNS, aN, aClosed, aSkip, aTri);
-                    BRepGProp.VolumeProperties(aPS, aP, aClosed, aSkip, aTri);
+                    MassPropertiesBuilder.VolumeProperties(aPS, aP, aClosed, aSkip, aTri);
                     SameProps(theOracle, aN, aP, aWhat + $" volume closed {aClosed}");
                 }
 
@@ -290,7 +290,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     using var aN = new N.GProp_GProps();
                     var aP = new Properties();
                     double aNE = N.BRepGProp.SurfaceProperties(aNS, aN, anEps, aSkip);
-                    double aPE = BRepGProp.SurfaceProperties(aPS, aP, anEps, aSkip);
+                    double aPE = MassPropertiesBuilder.SurfaceProperties(aPS, aP, anEps, aSkip);
                     theOracle.Same(aNE, aPE, aWhat + " surface error");
                     SameProps(theOracle, aN, aP, aWhat + " surface");
                 }
@@ -299,7 +299,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     using var aN = new N.GProp_GProps();
                     var aP = new Properties();
                     double aNE = N.BRepGProp.VolumeProperties(aNS, aN, anEps, aClosed, aSkip);
-                    double aPE = BRepGProp.VolumeProperties(aPS, aP, anEps, aClosed, aSkip);
+                    double aPE = MassPropertiesBuilder.VolumeProperties(aPS, aP, anEps, aClosed, aSkip);
                     theOracle.Same(aNE, aPE, aWhat + $" volume error closed {aClosed}");
                     SameProps(theOracle, aN, aP, aWhat + $" volume closed {aClosed}");
                 }
@@ -320,7 +320,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 if (k == 0)
                 {
                     aNE = N.BRepGProp.VolumePropertiesGK(aNS, aN, anEps, aClosed, aSpan, aCG, anI, aSkip);
-                    aPE = BRepGProp.VolumePropertiesGK(aPS, aP, anEps, aClosed, aSpan, aCG, anI, aSkip);
+                    aPE = MassPropertiesBuilder.VolumePropertiesGK(aPS, aP, anEps, aClosed, aSpan, aCG, anI, aSkip);
                 }
                 else
                 {
@@ -331,7 +331,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                     using var aNPln = new N.gp_Pln(aNPlnP, aNPlnD);
                     var aPln = new Plane3D(aPlnP, new Direction3D(aPlnD.X(), aPlnD.Y(), aPlnD.Z()));
                     aNE = N.BRepGProp.VolumePropertiesGK(aNS, aN, aNPln, anEps, aClosed, aSpan, aCG, anI, aSkip);
-                    aPE = BRepGProp.VolumePropertiesGK(aPS, aP, aPln, anEps, aClosed, aSpan, aCG, anI, aSkip);
+                    aPE = MassPropertiesBuilder.VolumePropertiesGK(aPS, aP, aPln, anEps, aClosed, aSpan, aCG, anI, aSkip);
                     aWhat += " plane";
                 }
 
@@ -346,7 +346,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
     {
         bool aSpan = theOracle.Bool();
         using var aNF = new N.BRepGProp_Face(theFace.N, aSpan);
-        var aPF = new BRepGProp_Face(theFace.P, aSpan);
+        var aPF = new FaceIntegrand(theFace.P, aSpan);
         theCounts.Faces++;
         string aWhat = $"{theScene} face {theCounts.Faces}";
 
@@ -410,7 +410,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
-    private static void CompareArc(Oracle theOracle, N.BRepGProp_Face theNF, BRepGProp_Face thePF, string theWhat)
+    private static void CompareArc(Oracle theOracle, N.BRepGProp_Face theNF, FaceIntegrand thePF, string theWhat)
     {
         double f = thePF.FirstParameter(), l = thePF.LastParameter();
         theOracle.Same(theNF.FirstParameter(), f, theWhat + " First");

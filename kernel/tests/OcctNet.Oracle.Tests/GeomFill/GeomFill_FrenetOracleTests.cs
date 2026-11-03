@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Xunit.Abstractions;
@@ -12,7 +13,7 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
     [Fact]
     public void RandomSpines()
     {
-        TrihedronOracle.Run(output, "GeomFill_Frenet", () => new N.GeomFill_Frenet(), () => new GeomFill_Frenet(), 40,
+        TrihedronOracle.Run(output, "GeomFill_Frenet", () => new N.GeomFill_Frenet(), () => new Frenet(), 40,
                             20261030);
     }
 
@@ -57,7 +58,7 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
             using var aNA = new N.GeomAdaptor_Curve(aNC);
             var aPA = new CurveAdaptor(aPC);
             using var aNLaw = new N.GeomFill_Frenet();
-            var aPLaw = new GeomFill_Frenet();
+            var aPLaw = new Frenet();
             TrihedronOracle.Compare(anOracle, aNLaw, aPLaw, aNA, aPA, $"planar #{i}");
             aPLaw.SetCurve(aPA);
             if (aPLaw.NbIntervals(Continuity.C0) > aPA.NbIntervals(Continuity.C2))

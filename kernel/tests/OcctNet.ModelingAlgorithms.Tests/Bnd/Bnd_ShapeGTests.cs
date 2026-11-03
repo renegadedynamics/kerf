@@ -3,8 +3,10 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -23,11 +25,11 @@ public class Bnd_BoundSortBox_Test
     public void BUC60729_InitializeWithFaceBoxes()
     {
         // Create a simple box solid
-        Shape aShape = new BRepPrimAPI_MakeBox(1.0, 1.0, 1.0).Solid();
+        Shape aShape = new MakeBox(1.0, 1.0, 1.0).Solid();
 
         // Create main bounding box for the shape
         Box aMainBox = new();
-        BRepBndLib.Add(aShape, ref aMainBox);
+        Bounds.Add(aShape, ref aMainBox);
 
         // Initialize BoundSortBox with 6 boxes (for 6 faces of the cube)
         const int aMaxNbrBox = 6;
@@ -42,7 +44,7 @@ public class Bnd_BoundSortBox_Test
         {
             Shape aFace = aExplorer.Current();
             Box aBox = new();
-            BRepBndLib.Add(aFace, ref aBox);
+            Bounds.Add(aFace, ref aBox);
             aBoundSortBox.Add(aBox, i);
         }
 
@@ -58,12 +60,12 @@ public class Bnd_OBB_Test
     public void OCC30704_AddBoundingBoxToVoidBox()
     {
         // Make a shape somewhere far from (0, 0, 0)
-        BRepPrimAPI_MakeBox aMkBox = new(new Point3D(100, 100, 100), 100, 100, 100);
+        MakeBox aMkBox = new(new Point3D(100, 100, 100), 100, 100, 100);
         Shape aBox = aMkBox.Shape();
 
         // Add a bounding box of a shape to a void bounding box
         OrientedBox aVoidBox = new(), aOBB = new();
-        BRepBndLib.AddOBB(aBox, ref aOBB, false, false, false);
+        Bounds.AddOBB(aBox, ref aOBB, false, false, false);
         aVoidBox.Add(aOBB);
 
         // Check the center point of the bounding box

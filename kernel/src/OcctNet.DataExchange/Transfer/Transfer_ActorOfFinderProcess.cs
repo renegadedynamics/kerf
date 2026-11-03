@@ -85,7 +85,7 @@ public class Transfer_ActorOfFinderProcess : Transfer_ActorOfProcessForFinder
     }
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
-    public void SetShapeProcessFlags(ShapeProcess.OperationsFlags theFlags)
+    public void SetShapeProcessFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags)
     {
         myShapeProcFlags = (theFlags, true);
     }
@@ -94,7 +94,7 @@ public class Transfer_ActorOfFinderProcess : Transfer_ActorOfProcessForFinder
     /// Returns flags defining operations to be performed on shapes: the flags, and whether they were set (OCCT's
     /// <c>std::pair</c>, <c>XSAlgo_ShapeProcessor::ProcessingFlags</c>).
     /// </summary>
-    public (ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
+    public (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) GetShapeProcessFlags()
     {
         return myShapeProcFlags;
     }
@@ -102,5 +102,5 @@ public class Transfer_ActorOfFinderProcess : Transfer_ActorOfProcessForFinder
     protected int themodetrans;
 
     private NCollection_DataMap<string, string> myShapeProcParams = new(StringComparer.Ordinal); // Parameters for shape processing.
-    private (ShapeProcess.OperationsFlags, bool) myShapeProcFlags; // Flags defining operations to be performed on shapes.
+    private (global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags, bool) myShapeProcFlags; // Flags defining operations to be performed on shapes.
 }

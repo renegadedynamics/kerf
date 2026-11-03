@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -105,10 +107,10 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         _ => null,
     };
 
-    private static readonly ShapeExtend_Status[] s_statuses = Enum.GetValues<ShapeExtend_Status>()
-        .Where(s => s is not ShapeExtend_Status.ShapeExtend_DONE and not ShapeExtend_Status.ShapeExtend_FAIL).ToArray();
+    private static readonly ExtendStatus[] s_statuses = Enum.GetValues<ExtendStatus>()
+        .Where(s => s is not ExtendStatus.Done and not ExtendStatus.Fail).ToArray();
 
-    private static int PortStatus(ShapeFix_Face theFix)
+    private static int PortStatus(FaceFixer theFix)
     {
         int aBits = 0;
         for (int i = 0; i < s_statuses.Length; i++)
@@ -177,7 +179,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
 
     private static Shape PortFix(in Face theFace, Mode theMode, out bool theDone, out int theStatus)
     {
-        var aFix = new ShapeFix_Face();
+        var aFix = new FaceFixer();
         theDone = false;
         switch (theMode)
         {

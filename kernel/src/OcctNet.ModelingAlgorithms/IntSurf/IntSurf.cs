@@ -5,77 +5,78 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using static Occt.IntSurf_Situation;
-using static Occt.IntSurf_TypeTrans;
+using Occt;
+using static Kerf.Engine.Intersection.Walking.WalkingSituation;
+using static Kerf.Engine.Intersection.Walking.WalkingTypeTrans;
 
-namespace Occt;
+namespace Kerf.Engine.Intersection.Walking;
 
 /// <summary>Resources for the packages of surface/surface intersections.</summary>
 public static class IntSurf
 {
     /// <summary>
-    /// The transitions at the intersection point of two lines: <paramref name="TgFirst"/> and
-    /// <paramref name="TgSecond"/> are their tangents, <paramref name="Normale"/> orients TgFirst ^ TgSecond (OCCT:
+    /// The transitions at the intersection point of two lines: <paramref name="tgFirst"/> and
+    /// <paramref name="tgSecond"/> are their tangents, <paramref name="normale"/> orients TgFirst ^ TgSecond (OCCT:
     /// the intersection line, the restriction and the surface normal).
     /// </summary>
     /// <remarks>
     /// The transitions are <c>ref</c>, as OCCT's references: an in or out transition keeps the situation and
     /// opposite flag the caller's object had.
     /// </remarks>
-    public static void MakeTransition(in Vector3D TgFirst, in Vector3D TgSecond, in Direction3D Normale,
-                                      ref IntSurf_Transition TFirst, ref IntSurf_Transition TSecond)
+    public static void MakeTransition(in Vector3D tgFirst, in Vector3D tgSecond, in Direction3D normale,
+                                      ref WalkingTransition tFirst, ref WalkingTransition tSecond)
     {
         // Compute the mixed product of normal, tangent 1, tangent 2
         // to get the type of transition.
 
-        Vector3D pvect = TgSecond.Crossed(TgFirst);
+        Vector3D pvect = tgSecond.Crossed(tgFirst);
 
-        double NTgSecond = TgSecond.Magnitude();
-        double NTgFirst = TgFirst.Magnitude();
-        double NTgSecondNTgFirstAngular = NTgSecond * NTgFirst * global::Kerf.Engine.Foundation.Precision.Angular();
+        double nTgSecond = tgSecond.Magnitude();
+        double nTgFirst = tgFirst.Magnitude();
+        double nTgSecondNTgFirstAngular = nTgSecond * nTgFirst * global::Kerf.Engine.Foundation.Precision.Angular();
 
-        if (NTgFirst <= global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (nTgFirst <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            TFirst.SetValue(true, IntSurf_Undecided);
-            TSecond.SetValue(true, IntSurf_Undecided);
+            tFirst.SetValue(true, WalkingTypeTrans.Undecided);
+            tSecond.SetValue(true, WalkingTypeTrans.Undecided);
         }
-        else if ((NTgSecond <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (pvect.Magnitude() <= NTgSecondNTgFirstAngular))
+        else if ((nTgSecond <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (pvect.Magnitude() <= nTgSecondNTgFirstAngular))
         {
-            TFirst.SetValue(true, IntSurf_Unknown, TgFirst.Dot(TgSecond) < 0.0);
-            TSecond.SetValue(true, IntSurf_Unknown, TgFirst.Dot(TgSecond) < 0.0);
+            tFirst.SetValue(true, WalkingSituation.Unknown, tgFirst.Dot(tgSecond) < 0.0);
+            tSecond.SetValue(true, WalkingSituation.Unknown, tgFirst.Dot(tgSecond) < 0.0);
         }
         else
         {
-            double yu = pvect.Dot(new Vector3D(Normale));
-            yu /= NTgSecond * NTgFirst;
+            double yu = pvect.Dot(new Vector3D(normale));
+            yu /= nTgSecond * nTgFirst;
             if (yu > 0.0001)
             {
-                TFirst.SetValue(false, IntSurf_In);
-                TSecond.SetValue(false, IntSurf_Out);
+                tFirst.SetValue(false, WalkingTypeTrans.In);
+                tSecond.SetValue(false, WalkingTypeTrans.Out);
             }
             else if (yu < -0.0001)
             {
-                TFirst.SetValue(false, IntSurf_Out);
-                TSecond.SetValue(false, IntSurf_In);
+                tFirst.SetValue(false, WalkingTypeTrans.Out);
+                tSecond.SetValue(false, WalkingTypeTrans.In);
             }
             else
             {
-                TFirst.SetValue(true, IntSurf_Undecided);
-                TSecond.SetValue(true, IntSurf_Undecided);
+                tFirst.SetValue(true, WalkingTypeTrans.Undecided);
+                tSecond.SetValue(true, WalkingTypeTrans.Undecided);
             }
         }
     }
 
     /// <summary>
-    /// Fills <paramref name="theArrOfPeriod"/> (four values) with the U and V periods of the first surface, then of the
+    /// Fills <paramref name="arrOfPeriod"/> (four values) with the U and V periods of the first surface, then of the
     /// second; 0 in a direction that is not periodic.
     /// </summary>
-    public static void SetPeriod(SurfaceAdaptorBase theFirstSurf, SurfaceAdaptorBase theSecondSurf,
-                                 Span<double> theArrOfPeriod)
+    public static void SetPeriod(SurfaceAdaptorBase firstSurf, SurfaceAdaptorBase secondSurf,
+                                 Span<double> arrOfPeriod)
     {
-        theArrOfPeriod[0] = theFirstSurf.IsUPeriodic ? theFirstSurf.UPeriod() : 0.0;
-        theArrOfPeriod[1] = theFirstSurf.IsVPeriodic ? theFirstSurf.VPeriod() : 0.0;
-        theArrOfPeriod[2] = theSecondSurf.IsUPeriodic ? theSecondSurf.UPeriod() : 0.0;
-        theArrOfPeriod[3] = theSecondSurf.IsVPeriodic ? theSecondSurf.VPeriod() : 0.0;
+        arrOfPeriod[0] = firstSurf.IsUPeriodic ? firstSurf.UPeriod() : 0.0;
+        arrOfPeriod[1] = firstSurf.IsVPeriodic ? firstSurf.VPeriod() : 0.0;
+        arrOfPeriod[2] = secondSurf.IsUPeriodic ? secondSurf.UPeriod() : 0.0;
+        arrOfPeriod[3] = secondSurf.IsVPeriodic ? secondSurf.VPeriod() : 0.0;
     }
 }

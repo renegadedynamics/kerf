@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Fillets;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -10,7 +13,7 @@ using static Kerf.Topology.Containment;
 namespace OcctNet.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// Unit tests of <see cref="ChFi3d_BOPReconstruction"/>'s queries (the members of <c>TopOpeBRepBuild_HBuilder</c>
+/// Unit tests of <see cref="BOPReconstruction"/>'s queries (the members of <c>TopOpeBRepBuild_HBuilder</c>
 /// ChFi3d calls) on native data structures (<see cref="ReconRecordings"/>), and of its writes.
 /// </summary>
 public class ReconstructionTests
@@ -21,8 +24,8 @@ public class ReconstructionTests
     [Fact]
     public void TheFactoryGivesTheReconstruction()
     {
-        ChFi3d_Reconstruction R = ChFi3d_Reconstruction.Create(new TopOpeBRepDS_BuildTool());
-        Assert.IsType<ChFi3d_BOPReconstruction>(R);
+        Reconstruction R = Reconstruction.Create(new DsBuildTool());
+        Assert.IsType<BOPReconstruction>(R);
         Assert.Null(R.DataStructure());
         Assert.Empty(R.NewFaces(1));
         Assert.Empty(R.NewEdges(1));
@@ -33,7 +36,7 @@ public class ReconstructionTests
     {
         // box_edge: one fillet surface bounded by four curves; two lines on the side faces, two arcs on the ends
         ReconComparison.Run aRun = Box();
-        TopOpeBRepDS_DataStructure aDS = aRun.HDS.DS();
+        DsDataStructure aDS = aRun.HDS.DS();
         Assert.Same(aRun.HDS, aRun.Builder.DataStructure());
         Assert.Single(aRun.Builder.NewFaces(1));
         Assert.Empty(aRun.Builder.NewFaces(2)); // a second copy of the surface, without interferences
@@ -62,7 +65,7 @@ public class ReconstructionTests
         Assert.Single(aRun.Builder.Splits(aShell, In));
         Assert.Empty(aRun.Builder.Merged(aSolid, Out));
         Assert.Empty(aRun.Builder.Merged(aSolid, On));
-        Assert.True(new BRepCheck_Analyzer(aRun.Result).IsValid());
+        Assert.True(new Analyzer(aRun.Result).IsValid());
     }
 
     [Fact]
@@ -70,7 +73,7 @@ public class ReconstructionTests
     {
         // each edge the fillet cuts keeps one part, 90 long (100 less the radius): the part OUT is under the fillet
         ReconComparison.Run aRun = Box();
-        TopOpeBRepDS_DataStructure aDS = aRun.HDS.DS();
+        DsDataStructure aDS = aRun.HDS.DS();
         int aNbEdges = 0;
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
@@ -133,8 +136,8 @@ public class ReconstructionTests
 
             Shape anInput = aCase.Input;
             string aBefore = BRepText(anInput);
-            TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
-            ChFi3d_BOPReconstruction R = new(new TopOpeBRepDS_BuildTool());
+            DsHDataStructure aHDS = TextDump.Read(aCase.DsText, anInput);
+            BOPReconstruction R = new(new DsBuildTool());
             R.Perform(aHDS);
             R.MergeSolid(aHDS.DS().Shape(1), In);
             Assert.Equal(aBefore, BRepText(anInput));
@@ -146,8 +149,8 @@ public class ReconstructionTests
     {
         ReconCase aCase = ReconRecordings.Cases["box_edge"];
         Shape anInput = aCase.Input;
-        TopOpeBRepDS_HDataStructure aHDS = TopOpeBRepDS_TextDump.Read(aCase.DsText, anInput);
-        ChFi3d_BOPReconstruction R = new(new TopOpeBRepDS_BuildTool());
+        DsHDataStructure aHDS = TextDump.Read(aCase.DsText, anInput);
+        BOPReconstruction R = new(new DsBuildTool());
         R.Perform(aHDS);
         Shape aSolid = aHDS.DS().Shape(1);
         R.MergeSolid(aSolid, In);
@@ -172,7 +175,7 @@ public class ReconstructionTests
         Edge aCircle = ShapeCasts.Edge(aRun.Builder.NewEdges(2).First());
         Exploration.Vertices(aCircle, out Vertex V1, out Vertex V2);
         Assert.True(V1.IsSame(V2));
-        Assert.True(new BRepCheck_Analyzer(aRun.Result).IsValid());
+        Assert.True(new Analyzer(aRun.Result).IsValid());
     }
 
     [Fact]

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -10,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>Unit tests of BRepAlgo_Image and BRepAlgo_AsDes, the offset algorithms' records of shapes (unit 5O1).</summary>
 public class BRepAlgo_ImageAsDesTests
 {
-    private static Shape V(double x) => new BRepBuilderAPI_MakeVertex(new Point3D(x, 0, 0)).Vertex();
+    private static Shape V(double x) => new MakeVertex(new Point3D(x, 0, 0)).Vertex();
 
     private static List<Shape> Items(NCollection_List<Shape> theList)
     {
@@ -26,7 +28,7 @@ public class BRepAlgo_ImageAsDesTests
     public void Image_BindAddLastImageAndRoot()
     {
         Shape a = V(0), b = V(1), c = V(2), d = V(3);
-        BRepAlgo_Image anImage = new();
+        ShapeImage anImage = new();
         anImage.SetRoot(a);
         anImage.Bind(a, b);
         anImage.Add(a, c);
@@ -54,7 +56,7 @@ public class BRepAlgo_ImageAsDesTests
     public void Image_RemoveAndReplaceRoot()
     {
         Shape a = V(0), b = V(1), c = V(2), r = V(4);
-        BRepAlgo_Image anImage = new();
+        ShapeImage anImage = new();
         anImage.SetRoot(a);
         anImage.Bind(a, b);
         anImage.Add(a, c);
@@ -73,7 +75,7 @@ public class BRepAlgo_ImageAsDesTests
         // OCCT: a function-level static list (occt-issues.md); per thread in the port
         Thread aThread = new(() =>
         {
-            BRepAlgo_Image anImage = new();
+            ShapeImage anImage = new();
             Shape a = V(0), b = V(1);
             Assert.Equal([a], Items(anImage.Image(a)));
             Assert.Equal([a, b], Items(anImage.Image(b)));
@@ -86,7 +88,7 @@ public class BRepAlgo_ImageAsDesTests
     public void AsDes_AddReplaceRemoveAndCommonDescendants()
     {
         Shape f1 = V(0), f2 = V(1), e1 = V(2), e2 = V(3), e3 = V(4);
-        BRepAlgo_AsDes anAsDes = new();
+        AsDes anAsDes = new();
         anAsDes.Add(f1, e1);
         anAsDes.Add(f1, e2);
         anAsDes.Add(f2, e2);

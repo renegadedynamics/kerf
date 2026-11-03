@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -119,7 +120,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         BrepTools.Read(out Shape anInput, new StringReader(theCase.ShapeText));
         var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
-        BRepAlgoAPI_Defeaturing aDF = new();
+        Defeaturing aDF = new();
         aDF.SetShape(anInput);
         foreach (int anIndex in theCase.Faces)
         {
@@ -140,7 +141,7 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         }
         string anOutcome = "errors" + Alerts(aDF.GetReport(), Gravity.Fail) + "\nwarnings"
                            + Alerts(aDF.GetReport(), Gravity.Warning) + "\n";
-        if (aDF.HasErrors())
+        if (aDF.HasErrors)
         {
             return (anOutcome, "", "no history", anInput);
         }

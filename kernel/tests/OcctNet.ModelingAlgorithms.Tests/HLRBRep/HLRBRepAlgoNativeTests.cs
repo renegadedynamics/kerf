@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.HiddenLines;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -11,7 +12,7 @@ using System.IO.Compression;
 using System.Text;
 using OcctNet.TestHarness;
 using Xunit.Abstractions;
-using static Occt.HLRBRep_TypeOfResultingEdge;
+using static Kerf.Engine.HiddenLines.TypeOfResultingEdge;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -147,7 +148,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             {
                 int aView = ViewIndex(theHead[3]);
                 int nbIso = int.Parse(theHead[4], CultureInfo.InvariantCulture);
-                HLRBRep_Algo anAlgo = new();
+                HiddenLineAlgo anAlgo = new();
                 foreach (Shape aS in theInputs)
                 {
                     anAlgo.Add(aS, nbIso);
@@ -155,7 +156,7 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 anAlgo.Projector(HlrDataRecorder.View(aView));
                 anAlgo.Update();
                 anAlgo.Hide();
-                HLRBRep_HLRToShape aToShape = new(anAlgo);
+                HlrToShape aToShape = new(anAlgo);
                 aResults.Add(("V", aToShape.VCompound()));
                 aResults.Add(("V1", aToShape.Rg1LineVCompound()));
                 aResults.Add(("VN", aToShape.RgNLineVCompound()));
@@ -167,8 +168,8 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 aResults.Add(("HO", aToShape.OutLineHCompound()));
                 aResults.Add(("HI", aToShape.IsoLineHCompound()));
                 aResults.Add(("VO3d", aToShape.OutLineVCompound3d()));
-                aResults.Add(("V3d", aToShape.CompoundOfEdges(HLRBRep_Sharp, true, true)));
-                aResults.Add(("H13d", aToShape.CompoundOfEdges(HLRBRep_Rg1Line, false, true)));
+                aResults.Add(("V3d", aToShape.CompoundOfEdges(TypeOfResultingEdge.Sharp, true, true)));
+                aResults.Add(("H13d", aToShape.CompoundOfEdges(TypeOfResultingEdge.Rg1Line, false, true)));
                 aResults.Add(("V-shape", aToShape.VCompound(theInputs[0])));
                 aResults.Add(("H-face", aToShape.HCompound(FirstFace(theInputs[0]))));
                 aResults.Add(("VO-face", aToShape.OutLineVCompound(FirstFace(theInputs[0]))));
@@ -177,14 +178,14 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
             case "poly":
             {
                 int aView = ViewIndex(theHead[3]);
-                HLRBRep_PolyAlgo anAlgo = new();
+                PolyAlgo anAlgo = new();
                 foreach (Shape aS in theInputs)
                 {
                     anAlgo.Load(aS);
                 }
                 anAlgo.Projector(HlrDataRecorder.View(aView));
                 anAlgo.Update();
-                HLRBRep_PolyHLRToShape aToShape = new();
+                PolyHlrToShape aToShape = new();
                 aToShape.Update(anAlgo);
                 aResults.Add(("V", aToShape.VCompound()));
                 aResults.Add(("V1", aToShape.Rg1LineVCompound()));
@@ -211,15 +212,15 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 double Nz = double.Parse(theHead[5], CultureInfo.InvariantCulture);
                 Frame3D aAxes = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Nx, Ny, Nz));
                 Direction3D aDX = aAxes.XDirection();
-                HLRAppli_ReflectLines aReflector = new(theInputs[0]);
+                ReflectLines aReflector = new(theInputs[0]);
                 aReflector.SetAxes(Nx, Ny, Nz, 0.0, 0.0, 0.0, aDX.X(), aDX.Y(), aDX.Z());
                 aReflector.Perform();
                 aResults.Add(("Result", aReflector.GetResult()));
-                aResults.Add(("Sharp3d", aReflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, true)));
-                aResults.Add(("Smooth3d", aReflector.GetCompoundOf3dEdges(HLRBRep_Rg1Line, true, true)));
-                aResults.Add(("Sharp2d", aReflector.GetCompoundOf3dEdges(HLRBRep_Sharp, true, false)));
-                aResults.Add(("OutLine2d", aReflector.GetCompoundOf3dEdges(HLRBRep_OutLine, true, false)));
-                aResults.Add(("Hidden3d", aReflector.GetCompoundOf3dEdges(HLRBRep_Sharp, false, true)));
+                aResults.Add(("Sharp3d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, true, true)));
+                aResults.Add(("Smooth3d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Rg1Line, true, true)));
+                aResults.Add(("Sharp2d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, true, false)));
+                aResults.Add(("OutLine2d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.OutLine, true, false)));
+                aResults.Add(("Hidden3d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, false, true)));
                 break;
             }
         }

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -40,7 +42,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     /// build123d.NET runs its splits.
     /// </summary>
     internal sealed record Run(string Name, string ArgsText, int NbObjects, Op Op, double Fuzzy = 0.0,
-                               BOPAlgo_GlueEnum Glue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff, bool UseOBB = false,
+                               GlueMode Glue = GlueMode.GlueOff, bool UseOBB = false,
                                bool Simplify = false, bool NonDestructive = true, bool CheckInverted = true, bool Api = false);
 
     internal sealed class Tally
@@ -190,7 +192,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Run theCase)
     {
         string aWhat = $"{theCase.Name} [{theCase.Op}{(theCase.Fuzzy > 0 ? $" fuzzy {theCase.Fuzzy:g}" : "")}"
-                       + $"{(theCase.Glue != BOPAlgo_GlueEnum.BOPAlgo_GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
+                       + $"{(theCase.Glue != GlueMode.GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
                        + $"{(theCase.Simplify ? " simplify" : "")}{(theCase.NonDestructive ? "" : " destructive")}"
                        + $"{(theCase.CheckInverted ? "" : " no-inverted-check")}]";
         if (ReadArgs(theRun, theCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<Shape> aPArgs))
@@ -586,8 +588,8 @@ public class BooleanOracleTests(ITestOutputHelper output)
             {
                 case Op.GeneralFuse or Op.Splitter when !theCase.Simplify && !theCase.Api:
                 {
-                    BOPAlgo_Builder aB = theCase.Op == Op.GeneralFuse ? new BOPAlgo_Builder() : new BOPAlgo_Splitter();
-                    if (aB is BOPAlgo_Splitter aSplitter)
+                    BooleanBuilder aB = theCase.Op == Op.GeneralFuse ? new BooleanBuilder() : new Splitter();
+                    if (aB is Splitter aSplitter)
                     {
                         aSplitter.SetArguments(anObjects);
                         aSplitter.SetTools(aTools);
@@ -603,7 +605,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     aB.SetGlue(theCase.Glue);
                     aB.SetUseOBB(theCase.UseOBB);
                     aB.Perform();
-                    if (aB.HasErrors())
+                    if (aB.HasErrors)
                     {
                         return (null, null, "errors");
                     }
@@ -611,26 +613,26 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
                 default:
                 {
-                    BRepAlgoAPI_BuilderAlgo aBop = theCase.Op switch
+                    BuilderAlgo aBop = theCase.Op switch
                     {
-                        Op.Fuse => new BRepAlgoAPI_Fuse(),
-                        Op.Cut or Op.Cut21 => new BRepAlgoAPI_Cut(),
-                        Op.Common => new BRepAlgoAPI_Common(),
-                        Op.GeneralFuse => new BRepAlgoAPI_BuilderAlgo(),
-                        Op.Splitter => new BRepAlgoAPI_Splitter(),
-                        _ => new BRepAlgoAPI_Section(),
+                        Op.Fuse => new Fuse(),
+                        Op.Cut or Op.Cut21 => new Cut(),
+                        Op.Common => new Common(),
+                        Op.GeneralFuse => new BuilderAlgo(),
+                        Op.Splitter => new SplitterOperation(),
+                        _ => new SectionOperation(),
                     };
-                    if (aBop is BRepAlgoAPI_BooleanOperation aBO && theCase.Op == Op.Cut21)
+                    if (aBop is BooleanOperation aBO && theCase.Op == Op.Cut21)
                     {
                         aBO.SetArguments(aTools);
                         aBO.SetTools(anObjects);
                     }
-                    else if (aBop is BRepAlgoAPI_BooleanOperation aBO2)
+                    else if (aBop is BooleanOperation aBO2)
                     {
                         aBO2.SetArguments(anObjects);
                         aBO2.SetTools(aTools);
                     }
-                    else if (aBop is BRepAlgoAPI_Splitter aSp)
+                    else if (aBop is SplitterOperation aSp)
                     {
                         aSp.SetArguments(anObjects);
                         aSp.SetTools(aTools);
@@ -646,7 +648,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     aBop.SetGlue(theCase.Glue);
                     aBop.SetUseOBB(theCase.UseOBB);
                     aBop.Build();
-                    if (aBop.HasErrors())
+                    if (aBop.HasErrors)
                     {
                         return (null, null, "errors");
                     }
@@ -898,7 +900,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             double b = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             double c = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             Op anOp = anOps[theO.Int(0, anOps.Length - 1)];
-            BOPAlgo_GlueEnum aGlue = BOPAlgo_GlueEnum.BOPAlgo_GlueOff;
+            GlueMode aGlue = GlueMode.GlueOff;
             bool isOBB = theO.Int(0, 5) == 0;
             double aFuzzy = theO.Int(0, 7) == 0 ? 1.0e-5 : 0.0;
             string aName;
@@ -913,7 +915,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     double dy = isAligned ? theO.Int(-1, 1) : b * theO.Real(-0.5, 0.5);
                     if (isTouching && theO.Int(0, 1) == 0)
                     {
-                        aGlue = dy == 0 ? BOPAlgo_GlueEnum.BOPAlgo_GlueFull : BOPAlgo_GlueEnum.BOPAlgo_GlueShift;
+                        aGlue = dy == 0 ? GlueMode.GlueFull : GlueMode.GlueShift;
                     }
                     aName = "boxes side by side";
                     anArgs = [Box(aF, a, b, c), Box(Moved(aF, dx, dy, 0), a, b, c)];

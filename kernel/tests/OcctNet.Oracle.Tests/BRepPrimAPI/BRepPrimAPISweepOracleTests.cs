@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -192,7 +193,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     private static (N.TopoDS_Wire, Wire) Polygon(Point3D[] thePoints, bool theClosed)
     {
         var aNP = new N.BRepBuilderAPI_MakePolygon();
-        var aPP = new BRepBuilderAPI_MakePolygon();
+        var aPP = new MakePolygon();
         foreach (Point3D aP in thePoints)
         {
             using var aN = Oracle.ToNative(aP);
@@ -222,14 +223,14 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             {
                 Point3D aP = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-theScale, theScale) * 0.7, theO.Real(-theScale, theScale) * 0.7, theAx);
                 using var aN = Oracle.ToNative(aP);
-                return (new N.BRepBuilderAPI_MakeVertex(aN).Shape(), new BRepBuilderAPI_MakeVertex(aP).Shape(), "vertex");
+                return (new N.BRepBuilderAPI_MakeVertex(aN).Shape(), new MakeVertex(aP).Shape(), "vertex");
             }
             case 1:
             {
                 Point3D[] aPts = StarPolygon(theO, theAx, 2, theScale);
                 using var aN1 = Oracle.ToNative(aPts[0]);
                 using var aN2 = Oracle.ToNative(aPts[1]);
-                return (new N.BRepBuilderAPI_MakeEdge(aN1, aN2).Shape(), new BRepBuilderAPI_MakeEdge(aPts[0], aPts[1]).Shape(), "line");
+                return (new N.BRepBuilderAPI_MakeEdge(aN1, aN2).Shape(), new MakeEdge(aPts[0], aPts[1]).Shape(), "line");
             }
             case 2:
             {
@@ -244,7 +245,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 var aCirc = new Circle3D(anAx2, r);
                 using var aNAx = Oracle.ToNative(anAx2);
                 using var aNC = new N.gp_Circ(aNAx, r);
-                return (new N.BRepBuilderAPI_MakeEdge(aNC, a1, a2).Shape(), new BRepBuilderAPI_MakeEdge(aCirc, a1, a2).Shape(), "arc");
+                return (new N.BRepBuilderAPI_MakeEdge(aNC, a1, a2).Shape(), new MakeEdge(aCirc, a1, a2).Shape(), "arc");
             }
             case 3:
             case 4:
@@ -263,13 +264,13 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 }
                 (N.TopoDS_Wire aNW, Wire aPW) = Polygon(aPts, true);
                 N.TopoDS_Face aNF = new N.BRepBuilderAPI_MakeFace(aNW, true).Face();
-                Face aPF = new BRepBuilderAPI_MakeFace(aPW, true).Face();
+                Face aPF = new MakeFace(aPW, true).Face();
                 if (theKind == 6)
                 {
                     Point3D[] aHole = StarPolygon(theO, theAx, theO.Int(3, 6), 0.2 * theScale);
                     (N.TopoDS_Wire aNH, Wire aPH) = Polygon(aHole, true);
                     aNF = new N.BRepBuilderAPI_MakeFace(aNF, N.TopoDS.Wire(aNH.Reversed())).Face();
-                    aPF = new BRepBuilderAPI_MakeFace(aPF, ShapeCasts.Wire(aPH.Reversed())).Face();
+                    aPF = new MakeFace(aPF, ShapeCasts.Wire(aPH.Reversed())).Face();
                 }
                 return (aNF, aPF, theKind == 6 ? "face with hole" : "polygon face");
             }
@@ -286,8 +287,8 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 using var aNAx = Oracle.ToNative(anAx2);
                 using var aNC = new N.gp_Circ(aNAx, r);
                 N.TopoDS_Wire aNW = new N.BRepBuilderAPI_MakeWire(new N.BRepBuilderAPI_MakeEdge(aNC).Edge()).Wire();
-                Wire aPW = new BRepBuilderAPI_MakeWire(new BRepBuilderAPI_MakeEdge(aCirc).Edge()).Wire();
-                return (new N.BRepBuilderAPI_MakeFace(aNW, true).Face(), new BRepBuilderAPI_MakeFace(aPW, true).Face(), "disk");
+                Wire aPW = new MakeWire(new MakeEdge(aCirc).Edge()).Wire();
+                return (new N.BRepBuilderAPI_MakeFace(aNW, true).Face(), new MakeFace(aPW, true).Face(), "disk");
             }
             case 8:
             {
@@ -298,7 +299,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 using var aNAx = Oracle.ToNative(theAx);
                 using var aNCyl = new N.gp_Cylinder(aNAx, r);
                 return (new N.BRepBuilderAPI_MakeFace(aNCyl, u1, u2, v1, v2).Face(),
-                        new BRepBuilderAPI_MakeFace(new Cylinder(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
+                        new MakeFace(new Cylinder(theAx, r), u1, u2, v1, v2).Face(), "cylinder patch");
             }
             case 9:
             {
@@ -306,7 +307,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 double v1 = theO.Real(-0.7, 0) * theScale, v2 = v1 + theO.Real(0.2, 0.7) * theScale;
                 using var aNAx = Oracle.ToNative(theAx);
                 return (new N.BRepBuilderAPI_MakeShell(new N.Geom_Plane(aNAx), u1, u2, v1, v2).Shape(),
-                        new BRepBuilderAPI_MakeShell(new PlaneSurface(theAx), u1, u2, v1, v2).Shape(), "shell");
+                        new MakeShell(new PlaneSurface(theAx), u1, u2, v1, v2).Shape(), "shell");
             }
             case 10:
             {
@@ -325,8 +326,8 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 aNB.MakeCompound(aNC);
                 aNB.Add(aNC, new N.BRepBuilderAPI_MakeFace(aNW1, true).Face());
                 aNB.Add(aNC, new N.BRepBuilderAPI_MakeFace(aNW2, true).Face());
-                Compound aPC = Builder.MakeCompound(new BRepBuilderAPI_MakeFace(aPW1, true).Face(),
-                                                                  new BRepBuilderAPI_MakeFace(aPW2, true).Face());
+                Compound aPC = Builder.MakeCompound(new MakeFace(aPW1, true).Face(),
+                                                                  new MakeFace(aPW2, true).Face());
                 return (aNC, aPC, "compound");
             }
             default:
@@ -343,7 +344,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 {
                     return (aNW, aPW, "triangle wire on axis");
                 }
-                return (new N.BRepBuilderAPI_MakeFace(aNW, true).Face(), new BRepBuilderAPI_MakeFace(aPW, true).Face(),
+                return (new N.BRepBuilderAPI_MakeFace(aNW, true).Face(), new MakeFace(aPW, true).Face(),
                         "triangle on axis");
             }
         }
@@ -367,7 +368,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         (N.TopoDS_Shape, Shape) Last();
     }
 
-    private sealed class PrismPair(N.BRepPrimAPI_MakePrism theN, BRepPrimAPI_MakePrism theP) : ISweepPair
+    private sealed class PrismPair(N.BRepPrimAPI_MakePrism theN, ApiMakePrism theP) : ISweepPair
     {
         public bool IsDeleted(N.TopoDS_Shape theNS, in Shape thePS, out bool thePort)
         {
@@ -389,7 +390,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         public (N.TopoDS_Shape, Shape) Last() => (theN.LastShape(), theP.LastShape());
     }
 
-    private sealed class RevolPair(N.BRepPrimAPI_MakeRevol theN, BRepPrimAPI_MakeRevol theP) : ISweepPair
+    private sealed class RevolPair(N.BRepPrimAPI_MakeRevol theN, ApiMakeRevol theP) : ISweepPair
     {
         public bool IsDeleted(N.TopoDS_Shape theNS, in Shape thePS, out bool thePort)
         {
@@ -480,7 +481,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             bool aCanonize = anO.Int(0, 3) != 0;
 
             N.BRepPrimAPI_MakePrism aNM;
-            BRepPrimAPI_MakePrism aPM;
+            ApiMakePrism aPM;
             int aMode = anO.Int(0, 3);
             if (aMode == 0)
             {
@@ -489,7 +490,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 bool anInf = anO.Bool();
                 using var aND = Oracle.ToNative(aD);
                 aNM = new N.BRepPrimAPI_MakePrism(aNS, aND, anInf, aCopy, aCanonize);
-                aPM = new BRepPrimAPI_MakePrism(aPS, aD, anInf, aCopy, aCanonize);
+                aPM = new ApiMakePrism(aPS, aD, anInf, aCopy, aCanonize);
                 aWhat += anInf ? ", infinite" : ", semi-infinite";
             }
             else
@@ -500,10 +501,10 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                               : new Vector3D(anO.Real(-10, 10), anO.Real(-10, 10), anO.Real(-10, 10));
                 using var aNV = Oracle.ToNative(aV);
                 aNM = new N.BRepPrimAPI_MakePrism(aNS, aNV, aCopy, aCanonize);
-                aPM = new BRepPrimAPI_MakePrism(aPS, aV, aCopy, aCanonize);
+                aPM = new ApiMakePrism(aPS, aV, aCopy, aCanonize);
             }
             aWhat += (aCopy ? ", copy" : "") + (aCanonize ? "" : ", not canonized");
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             N.TopoDS_Shape aNR = aNM.Shape();
             Shape aPR = aPM.Shape();
             Compare(aT, aWhat, aNR, aPR);
@@ -572,23 +573,23 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             using var aNAxis = Oracle.ToNative(anAxis);
 
             N.BRepPrimAPI_MakeRevol aNM;
-            BRepPrimAPI_MakeRevol aPM;
+            ApiMakeRevol aPM;
             int aMode = anO.Int(0, 3);
             if (aMode == 0)
             {
                 aNM = new N.BRepPrimAPI_MakeRevol(aNS, aNAxis, aCopy);
-                aPM = new BRepPrimAPI_MakeRevol(aPS, anAxis, aCopy);
+                aPM = new ApiMakeRevol(aPS, anAxis, aCopy);
                 aWhat += ", whole turn";
             }
             else
             {
                 double anAngle = aMode == 1 ? anO.Real(0.05, 2 * Math.PI) : aMode == 2 ? -anO.Real(0.05, 2 * Math.PI) : anO.Real(2 * Math.PI, 9);
                 aNM = new N.BRepPrimAPI_MakeRevol(aNS, aNAxis, anAngle, aCopy);
-                aPM = new BRepPrimAPI_MakeRevol(aPS, anAxis, anAngle, aCopy);
+                aPM = new ApiMakeRevol(aPS, anAxis, anAngle, aCopy);
                 aWhat += $", angle {anAngle:R}";
             }
             aWhat += aCopy ? ", copy" : "";
-            Assert.Equal(aNM.IsDone(), aPM.IsDone());
+            Assert.Equal(aNM.IsDone(), aPM.IsDone);
             Count(aT, aWhat.Split(',')[0]);
             if (!aNM.IsDone())
             {
@@ -598,7 +599,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             N.TopoDS_Shape aNR = aNM.Shape();
             Shape aPR = aPM.Shape();
             Compare(aT, aWhat, aNR, aPR);
-            Assert.Equal(aNM.HasDegenerated(), aPM.HasDegenerated());
+            Assert.Equal(aNM.HasDegenerated(), aPM.HasDegenerated);
             CompareHistories(aT, aWhat, new RevolPair(aNM, aPM), aNS, aPS, aNR, aPR);
         }
         Finish(aT);
@@ -623,11 +624,11 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         var aFaces = new List<(Func<N.TopoDS_Shape>, Func<Shape>, string)>
         {
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Cylinder(aNAx, 15), 0, 2 * Math.PI, 0, 40).Face(),
-             () => new BRepBuilderAPI_MakeFace(new Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
+             () => new MakeFace(new Cylinder(anAx, 15), 0, 2 * Math.PI, 0, 40).Face(), "cylinder"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(),
-             () => new BRepBuilderAPI_MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
+             () => new MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, -0.5, 0.7).Face(), "sphere band"),
             (() => new N.BRepBuilderAPI_MakeFace(new N.gp_Sphere(aNAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(),
-             () => new BRepBuilderAPI_MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
+             () => new MakeFace(new Sphere(anAx, 20), 0, 2 * Math.PI, 0.4, Math.PI / 2).Face(), "sphere cap"),
         };
         using var aNZ = Oracle.ToNative(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         var aZ = new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
@@ -643,8 +644,8 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                     N.TopoDS_Shape aNS = aNF();
                     Shape aPS = aPF();
                     var aNM = new N.BRepPrimAPI_MakeRevol(aNS, aNZ, anAngle, aCopy);
-                    var aPM = new BRepPrimAPI_MakeRevol(aPS, aZ, anAngle, aCopy);
-                    Assert.True(aNM.IsDone() && aPM.IsDone(), aWhat);
+                    var aPM = new ApiMakeRevol(aPS, aZ, anAngle, aCopy);
+                    Assert.True(aNM.IsDone() && aPM.IsDone, aWhat);
                     N.TopoDS_Shape aNR = aNM.Shape();
                     Shape aPR = aPM.Shape();
                     Compare(aT, aWhat, aNR, aPR);
@@ -656,7 +657,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 N.TopoDS_Shape aNPS = aNF();
                 Shape aPPS = aPF();
                 var aNP = new N.BRepPrimAPI_MakePrism(aNPS, aNV, aCopy, true);
-                var aPP = new BRepPrimAPI_MakePrism(aPPS, aV, aCopy, true);
+                var aPP = new ApiMakePrism(aPPS, aV, aCopy, true);
                 N.TopoDS_Shape aNPR = aNP.Shape();
                 Shape aPPR = aPP.Shape();
                 Compare(aT, aPrism, aNPR, aPPR);

@@ -1,3 +1,4 @@
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -252,7 +253,7 @@ internal static partial class Extras
         if (!products.ByKey.TryGetValue(key, out var product))
         {
             if (!products.Shapes.Add(key.TShape))
-                origin = new BRepBuilderAPI_Copy(origin).Shape();
+                origin = new Copy(origin).Shape();
             product = XdeDoc_Product.Part(origin, node.Name);
             if (node.Color is { } c)
             {

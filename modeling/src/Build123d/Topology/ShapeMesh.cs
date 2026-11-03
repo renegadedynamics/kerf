@@ -72,7 +72,7 @@ public sealed class ShapeMesh
         var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
         var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
         var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
-        var buffers = OcctNet.MeshExtraction.Extract(copy, faces, edges, deflection, tolerances.Angular);
+        var buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(copy, faces, edges, deflection, tolerances.Angular);
 
         var faceMeshes = new FaceMesh[faces.Count];
         for (int i = 0; i < faceMeshes.Length; i++)

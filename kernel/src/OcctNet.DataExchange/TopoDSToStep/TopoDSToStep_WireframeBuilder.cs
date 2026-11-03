@@ -28,7 +28,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
 
     public TopoDSToStep_WireframeBuilder()
     {
-        myError = TopoDSToStep_BuilderOther;
+        myError = TopoDSToStep_BuilderError.TopoDSToStep_BuilderOther;
         done = false;
     }
 
@@ -83,7 +83,7 @@ public sealed class TopoDSToStep_WireframeBuilder : TopoDSToStep_Root
 
         var empty = new TCollection_HAsciiString("");
         var pmsTC = new StepGeom_TrimmedCurve();
-        pmsTC.Init(empty, C, aSTS1, aSTS2, sense, StepGeom_tpParameter);
+        pmsTC.Init(empty, C, aSTS1, aSTS2, sense, StepGeom_TrimmingPreference.StepGeom_tpParameter);
         return pmsTC;
     }
 

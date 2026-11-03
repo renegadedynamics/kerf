@@ -87,7 +87,7 @@ public class StepData_UndefinedEntity : Transient
             string val = SR.ParamCValue(num, i);
             Interface_ParamType partyp = SR.ParamType(num, i);
             int nume = 0;
-            if (partyp == Interface_ParamIdent)
+            if (partyp == Interface_ParamType.Interface_ParamIdent)
             {
                 nume = SR.ParamNumber(num, i);
                 if (nume > 0)
@@ -101,17 +101,17 @@ public class StepData_UndefinedEntity : Transient
                 if (nume <= 0)
                 {
                     ach.AddFail("A reference to another entity is unresolved");
-                    partyp = Interface_ParamVoid;
+                    partyp = Interface_ParamType.Interface_ParamVoid;
                 }
             }
-            else if (partyp == Interface_ParamSub)
+            else if (partyp == Interface_ParamType.Interface_ParamSub)
             {
                 nume = SR.ParamNumber(num, i);
                 StepData_UndefinedEntity und = new StepData_UndefinedEntity(true);
                 anent = und;
                 und.ReadRecord(SR, nume, ach);
             }
-            else if (partyp == Interface_ParamText)
+            else if (partyp == Interface_ParamType.Interface_ParamText)
             {
                 //    Return integre a supprimer silya
                 int lval = val.Length;
@@ -165,7 +165,7 @@ public class StepData_UndefinedEntity : Transient
         for (int i = 1; i <= nb; i++)
         {
             Interface_ParamType partyp = thecont.ParamType(i);
-            if (partyp == Interface_ParamSub)
+            if (partyp == Interface_ParamType.Interface_ParamSub)
             {
                 StepData_UndefinedEntity und = thecont.ParamEntity(i) as StepData_UndefinedEntity;
                 und.StepType(); // svv #2
@@ -179,7 +179,7 @@ public class StepData_UndefinedEntity : Transient
                     SW.CloseSub();
                 }
             }
-            else if (partyp == Interface_ParamIdent)
+            else if (partyp == Interface_ParamType.Interface_ParamIdent)
             {
                 anent = thecont.ParamEntity(i);
                 SW.Send(anent);
@@ -222,12 +222,12 @@ public class StepData_UndefinedEntity : Transient
         for (i = 1; i <= nb; i++)
         {
             Interface_ParamType ptype = thecont.ParamType(i);
-            if (ptype == Interface_ParamSub)
+            if (ptype == Interface_ParamType.Interface_ParamSub)
             {
                 StepData_UndefinedEntity subent = thecont.ParamEntity(i) as StepData_UndefinedEntity;
                 subent.FillShared(list);
             }
-            else if (ptype == Interface_ParamIdent)
+            else if (ptype == Interface_ParamType.Interface_ParamIdent)
             {
                 list.AddItem(thecont.ParamEntity(i));
             }

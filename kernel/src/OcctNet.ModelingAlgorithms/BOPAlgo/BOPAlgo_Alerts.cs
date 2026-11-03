@@ -9,210 +9,211 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
+using Occt;
 
-namespace Occt;
+namespace Kerf.Engine.Booleans;
 
 /// <summary>Boolean operation was stopped by user.</summary>
-public sealed class BOPAlgo_AlertUserBreak : Alert
+public sealed class AlertUserBreak : Alert
 {
 }
 
 /// <summary>Boolean operation of given type is not allowed on the given inputs.</summary>
-public sealed class BOPAlgo_AlertBOPNotAllowed : Alert
+public sealed class AlertBopNotAllowed : Alert
 {
 }
 
 /// <summary>The type of Boolean Operation is not set.</summary>
-public sealed class BOPAlgo_AlertBOPNotSet : Alert
+public sealed class AlertBopNotSet : Alert
 {
 }
 
 /// <summary>Building of the result shape has failed.</summary>
-public sealed class BOPAlgo_AlertBuilderFailed : Alert
+public sealed class AlertBuilderFailed : Alert
 {
 }
 
 /// <summary>The intersection of the arguments has failed.</summary>
-public sealed class BOPAlgo_AlertIntersectionFailed : Alert
+public sealed class AlertIntersectionFailed : Alert
 {
 }
 
 /// <summary>More than one argument is provided.</summary>
-public sealed class BOPAlgo_AlertMultipleArguments : Alert
+public sealed class AlertMultipleArguments : Alert
 {
 }
 
 /// <summary>The Pave Filler (the intersection tool) has not been created.</summary>
-public sealed class BOPAlgo_AlertNoFiller : Alert
+public sealed class AlertNoFiller : Alert
 {
 }
 
 /// <summary>Null input shapes.</summary>
-public sealed class BOPAlgo_AlertNullInputShapes : Alert
+public sealed class AlertNullInputShapes : Alert
 {
 }
 
 /// <summary>Cannot connect face intersection curves.</summary>
-public sealed class BOPAlgo_AlertPostTreatFF : Alert
+public sealed class AlertPostTreatFF : Alert
 {
 }
 
 /// <summary>The BuilderSolid algorithm has failed.</summary>
-public sealed class BOPAlgo_AlertSolidBuilderFailed : Alert
+public sealed class AlertSolidBuilderFailed : Alert
 {
 }
 
 /// <summary>There are no enough arguments to perform the operation.</summary>
-public sealed class BOPAlgo_AlertTooFewArguments : Alert
+public sealed class AlertTooFewArguments : Alert
 {
 }
 
 /// <summary>The positioning of the shapes leads to creation of the small edges without valid range.</summary>
-public sealed class BOPAlgo_AlertBadPositioning(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertBadPositioning(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the arguments are empty shapes.</summary>
-public sealed class BOPAlgo_AlertEmptyShape(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertEmptyShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some edges are very small and have such a small valid range, that they cannot be split.</summary>
-public sealed class BOPAlgo_AlertNotSplittableEdge(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertNotSplittableEdge(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Edges has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForEdgesFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertRemovalOfIBForEdgesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Faces has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForFacesFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertRemovalOfIBForFacesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among the multi-dimensional shapes is not supported yet.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForMDimShapes(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertRemovalOfIBForMDimShapes(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Removal of internal boundaries among Solids has failed.</summary>
-public sealed class BOPAlgo_AlertRemovalOfIBForSolidsFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertRemovalOfIBForSolidsFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the arguments are self-interfering shapes.</summary>
-public sealed class BOPAlgo_AlertSelfInterferingShape(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertSelfInterferingShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>The positioning of the shapes leads to creation of the small edges without valid range.</summary>
-public sealed class BOPAlgo_AlertShellSplitterFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertShellSplitterFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some edges are too small and have no valid range.</summary>
-public sealed class BOPAlgo_AlertTooSmallEdge(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertTooSmallEdge(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Intersection of pair of shapes has failed.</summary>
-public sealed class BOPAlgo_AlertIntersectionOfPairOfShapesFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertIntersectionOfPairOfShapesFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Building 2D curve of edge on face has failed.</summary>
-public sealed class BOPAlgo_AlertBuildingPCurveFailed(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertBuildingPCurveFailed(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some sub-shapes of some of the argument become connected through other shapes and the argument became self-interfered.</summary>
-public sealed class BOPAlgo_AlertAcquiredSelfIntersection(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertAcquiredSelfIntersection(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unsupported type of input shape.</summary>
-public sealed class BOPAlgo_AlertUnsupportedType(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnsupportedType(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>No faces have been found for removal.</summary>
-public sealed class BOPAlgo_AlertNoFacesToRemove : Alert
+public sealed class AlertNoFacesToRemove : Alert
 {
 }
 
 /// <summary>Unable to remove the feature.</summary>
-public sealed class BOPAlgo_AlertUnableToRemoveTheFeature(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToRemoveTheFeature(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>The Feature Removal algorithm has failed.</summary>
-public sealed class BOPAlgo_AlertRemoveFeaturesFailed : Alert
+public sealed class AlertRemoveFeaturesFailed : Alert
 {
 }
 
 /// <summary>Some of the faces passed to the Solid Builder algorithm have not been classified and not used for solids creation.</summary>
-public sealed class BOPAlgo_AlertSolidBuilderUnusedFaces(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertSolidBuilderUnusedFaces(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Some of the edges passed to the Face Builder algorithm have not been classified and not used for faces creation.</summary>
-public sealed class BOPAlgo_AlertFaceBuilderUnusedEdges(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertFaceBuilderUnusedEdges(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to orient the shape correctly.</summary>
-public sealed class BOPAlgo_AlertUnableToOrientTheShape(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToOrientTheShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Shape is unknown for operation.</summary>
-public sealed class BOPAlgo_AlertUnknownShape(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnknownShape(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>No periodicity has been requested for the shape.</summary>
-public sealed class BOPAlgo_AlertNoPeriodicityRequired : Alert
+public sealed class AlertNoPeriodicityRequired : Alert
 {
 }
 
 /// <summary>Unable to trim the shape for making it periodic (BOP Common fails).</summary>
-public sealed class BOPAlgo_AlertUnableToTrim(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToTrim(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to make the shape to look identical on opposite sides (Splitter fails).</summary>
-public sealed class BOPAlgo_AlertUnableToMakeIdentical(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToMakeIdentical(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to repeat the shape (Gluer fails).</summary>
-public sealed class BOPAlgo_AlertUnableToRepeat(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToRepeat(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Multi-dimensional arguments.</summary>
-public sealed class BOPAlgo_AlertMultiDimensionalArguments : Alert
+public sealed class AlertMultiDimensionalArguments : Alert
 {
 }
 
 /// <summary>Unable to make the shape periodic.</summary>
-public sealed class BOPAlgo_AlertUnableToMakePeriodic(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToMakePeriodic(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to glue the shapes.</summary>
-public sealed class BOPAlgo_AlertUnableToGlue(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToGlue(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>The shape is not periodic.</summary>
-public sealed class BOPAlgo_AlertShapeIsNotPeriodic(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertShapeIsNotPeriodic(in Shape theShape) : AlertWithShape(theShape)
 {
 }
 
 /// <summary>Unable to make closed edge on face (to make a seam).</summary>
-public sealed class BOPAlgo_AlertUnableToMakeClosedEdgeOnFace(in Shape theShape) : AlertWithShape(theShape)
+public sealed class AlertUnableToMakeClosedEdgeOnFace(in Shape theShape) : AlertWithShape(theShape)
 {
 }

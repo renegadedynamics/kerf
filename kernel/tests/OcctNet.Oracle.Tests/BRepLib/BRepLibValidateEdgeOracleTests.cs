@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -124,11 +125,11 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
                 var aRef = new CurveAdaptor(aLine, 0.0, aLength);
                 var anACS = new CurveOnSurface(new CurveAdaptor2D(aPCurve, 0.0, aLength),
                                                          new SurfaceAdaptor(aPlane));
-                var aValidate = new BRepLib_ValidateEdge(aRef, anACS, true);
+                var aValidate = new ValidateEdge(aRef, anACS, true);
                 aValidate.SetExitIfToleranceExceeded(anEdgeTol);
                 aValidate.SetExactMethod(isExact);
                 aValidate.Process();
-                bool isEdgeValid = aValidate.IsDone() && aValidate.CheckTolerance(anEdgeTol);
+                bool isEdgeValid = aValidate.IsDone && aValidate.CheckTolerance(anEdgeTol);
                 anEdges++;
                 if (!isEdgeValid)
                 {

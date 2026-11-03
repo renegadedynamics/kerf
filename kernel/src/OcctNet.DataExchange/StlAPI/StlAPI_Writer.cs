@@ -15,7 +15,7 @@ using static Kerf.Topology.ShapeType;
 namespace Occt;
 
 /// <summary>
-/// Writes the triangulations of a shape's faces (as <see cref="BRepMesh_IncrementalMesh"/> makes them) to STL, ASCII
+/// Writes the triangulations of a shape's faces (as <see cref="IncrementalMesh"/> makes them) to STL, ASCII
 /// (the default) or binary: one triangulation of all the faces, placed by the faces' locations, triangles of reversed
 /// faces turned over. Faces without a triangulation are skipped, with a warning.
 /// </summary>

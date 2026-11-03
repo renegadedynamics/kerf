@@ -2,6 +2,8 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -21,7 +23,7 @@ public class IntTools_FaceFace_Test
         CylindricalSurface aCylSurf = new(anAx3, theRadius);
 
         // Create face with parameter bounds
-        BRepBuilderAPI_MakeFace aFaceMaker = new(aCylSurf, theUMin, theUMax, theVMin, theVMax, 1e-7);
+        MakeFace aFaceMaker = new(aCylSurf, theUMin, theUMax, theVMin, theVMax, 1e-7);
         return aFaceMaker.Face();
     }
 
@@ -41,15 +43,15 @@ public class IntTools_FaceFace_Test
         Frame3D aCircAx = new(theCenter, theNormal);
         Circle3D aCirc = new(aCircAx, theRadius);
 
-        BRepBuilderAPI_MakeEdge anEdgeMaker = new(aCirc);
+        MakeEdge anEdgeMaker = new(aCirc);
         Edge aCircEdge = anEdgeMaker.Edge();
 
         // Create wire from circular edge
-        BRepBuilderAPI_MakeWire aWireMaker = new(aCircEdge);
+        MakeWire aWireMaker = new(aCircEdge);
         Wire aWire = aWireMaker.Wire();
 
         // Create face from plane with circular wire
-        BRepBuilderAPI_MakeFace aFaceMaker = new(aPlane, aWire, true);
+        MakeFace aFaceMaker = new(aPlane, aWire, true);
         return aFaceMaker.Face();
     }
 
@@ -78,15 +80,15 @@ public class IntTools_FaceFace_Test
         Assert.False(aFace1.IsNull, "Failed to create first cylinder face");
         Assert.False(aFace2.IsNull, "Failed to create second cylinder face");
 
-        IntTools_FaceFace aFF12 = new();
+        FaceFace aFF12 = new();
         aFF12.SetParameters(true, true, true, 1.0e-7);
         aFF12.Perform(aFace1, aFace2);
-        Assert.True(aFF12.IsDone(), "Intersection failed for (face1, face2)");
+        Assert.True(aFF12.IsDone, "Intersection failed for (face1, face2)");
 
-        IntTools_FaceFace aFF21 = new();
+        FaceFace aFF21 = new();
         aFF21.SetParameters(true, true, true, 1.0e-7);
         aFF21.Perform(aFace2, aFace1);
-        Assert.True(aFF21.IsDone(), "Intersection failed for (face2, face1)");
+        Assert.True(aFF21.IsDone, "Intersection failed for (face2, face1)");
 
         int aNbCurves12 = aFF12.Lines().Length();
         int aNbPoints12 = aFF12.Points().Length();
@@ -120,11 +122,11 @@ public class IntTools_FaceFace_Test
         Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
         Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
         aFF.Perform(aCircularPlane, aHalfCylinder);
 
-        Assert.True(aFF.IsDone(), "IntTools_FaceFace::Perform() failed");
+        Assert.True(aFF.IsDone, "IntTools_FaceFace::Perform() failed");
 
         // The intersection should be empty because the cylinder is outside the circular boundary
         Assert.Equal(0, aFF.Lines().Length());
@@ -152,11 +154,11 @@ public class IntTools_FaceFace_Test
         Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
         Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
         aFF.Perform(aCircularPlane, aHalfCylinder);
 
-        Assert.True(aFF.IsDone(), "IntTools_FaceFace::Perform() failed");
+        Assert.True(aFF.IsDone, "IntTools_FaceFace::Perform() failed");
 
         // The intersection should exist - a semicircular arc
         Assert.True(aFF.Lines().Length() >= 1, "Expected at least one intersection curve (semicircular arc)");
@@ -184,11 +186,11 @@ public class IntTools_FaceFace_Test
         Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
         Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
         aFF.Perform(aCircularPlane, aHalfCylinder);
 
-        Assert.True(aFF.IsDone(), "IntTools_FaceFace::Perform() failed");
+        Assert.True(aFF.IsDone, "IntTools_FaceFace::Perform() failed");
 
         // This intersection SHOULD exist - the semicircle is partially inside the plane circle
         Assert.True(aFF.Lines().Length() >= 1, "Expected intersection for opposite half that bulges toward plane center.");
@@ -215,11 +217,11 @@ public class IntTools_FaceFace_Test
         Assert.False(aCircularPlane.IsNull, "Failed to create circular plane face");
         Assert.False(aHalfCylinder.IsNull, "Failed to create half-cylinder face");
 
-        IntTools_FaceFace aFF = new();
+        FaceFace aFF = new();
         aFF.SetParameters(true, true, true, 1.0e-7);
         aFF.Perform(aCircularPlane, aHalfCylinder);
 
-        Assert.True(aFF.IsDone(), "IntTools_FaceFace::Perform() failed");
+        Assert.True(aFF.IsDone, "IntTools_FaceFace::Perform() failed");
 
         Assert.True(aFF.Lines().Length() >= 1,
                     "Wire-aware classification should produce trimmed intersection curve for partial overlap");
@@ -247,11 +249,11 @@ public class IntTools_FaceFace_Test
         Assert.False(aCircularPlane.IsNull);
         Assert.False(aHalfCylinder1.IsNull);
 
-        IntTools_FaceFace aFF1 = new();
+        FaceFace aFF1 = new();
         aFF1.SetParameters(true, true, true, 1.0e-7);
         aFF1.Perform(aCircularPlane, aHalfCylinder1);
 
-        Assert.True(aFF1.IsDone());
+        Assert.True(aFF1.IsDone);
         Assert.Equal(0, aFF1.Lines().Length()); // First half should have no intersection
         Assert.Equal(0, aFF1.Points().Length());
 
@@ -261,11 +263,11 @@ public class IntTools_FaceFace_Test
 
         Assert.False(aHalfCylinder2.IsNull);
 
-        IntTools_FaceFace aFF2 = new();
+        FaceFace aFF2 = new();
         aFF2.SetParameters(true, true, true, 1.0e-7);
         aFF2.Perform(aCircularPlane, aHalfCylinder2);
 
-        Assert.True(aFF2.IsDone());
+        Assert.True(aFF2.IsDone);
         Assert.Equal(0, aFF2.Lines().Length()); // Opposite half should also have no intersection
         Assert.Equal(0, aFF2.Points().Length());
     }
@@ -291,15 +293,15 @@ public class IntTools_FaceFace_Test
         aBuilder.MakeFace(ref aFace1, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.MakeFace(ref aFace2, aCylinder, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        IntTools_FaceFace anInters = new();
+        FaceFace anInters = new();
         anInters.SetParameters(false, true, true, global::Kerf.Engine.Foundation.Precision.Confusion());
         anInters.Perform(aFace1, aFace2);
 
-        Assert.True(anInters.IsDone(), "IntTools_FaceFace::Perform did not complete");
+        Assert.True(anInters.IsDone, "IntTools_FaceFace::Perform did not complete");
 
         // The original test verified that intersection completes without hanging.
         // Check that we get at least one intersection curve.
-        NCollection_Sequence<IntTools_Curve> aCurves = anInters.Lines();
+        NCollection_Sequence<IntersectionCurve> aCurves = anInters.Lines();
         Assert.True(aCurves.Length() + anInters.Points().Length() >= 1,
                     "Expected at least one intersection result (curve or point)");
     }

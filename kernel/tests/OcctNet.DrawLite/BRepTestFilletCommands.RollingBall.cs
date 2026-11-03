@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Offsets.Blend;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
@@ -45,7 +46,7 @@ internal static partial class BRepTestFilletCommands
 
         double Tol = T3d(theDI); // the same as blend ! 1.e-7;
 
-        BiTgte_Blend Roll = new();
+        OffsetBlend Roll = new();
         Roll.Init(S, Rad, Tol, false);
 
         int Nb = 0;

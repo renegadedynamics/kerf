@@ -1,3 +1,5 @@
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -28,7 +30,7 @@ public sealed class Vertex : Shape
     private static global::Kerf.Topology.Vertex Make(Vector point)
     {
         var pnt = point.ToGpPnt();
-        var maker = new BRepBuilderAPI_MakeVertex(pnt);
+        var maker = new MakeVertex(pnt);
         return maker.Vertex();
     }
 
@@ -244,7 +246,7 @@ public sealed class Vertex : Shape
         var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
         var here = Tool.Parameters(TopoVertex, face);
         var probe = new Point2D(here.X() + bisector.U * step, here.Y() + bisector.V * step);
-        var classifier = new IntTools_FClass2d(face, Constants.Tolerance);
+        var classifier = new FaceClassifier2D(face, Constants.Tolerance);
         return classifier.Perform(probe) == Containment.In ? Convexity.Convex : Convexity.Concave;
     }
 

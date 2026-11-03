@@ -139,18 +139,18 @@ public class STEPControl_Reader : XSControl_Reader
         Interface_Protocol aProtocol = WS().Protocol();
         if (aLibrary is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         if (aProtocol is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
         StepData_StepModel aStepModel = new StepData_StepModel();
         aStepModel.InternalParameters = theParams;
         aStepModel.SetSourceCodePage(aStepModel.InternalParameters.ReadCodePage);
         APIHeaderSection_MakeHeader aHeaderMaker = new APIHeaderSection_MakeHeader();
         aHeaderMaker.Apply(aStepModel);
-        IFSelect_ReturnStatus status = IFSelect_RetVoid;
+        IFSelect_ReturnStatus status = IFSelect_ReturnStatus.IFSelect_RetVoid;
         try
         {
             int stat;
@@ -169,15 +169,15 @@ public class STEPControl_Reader : XSControl_Reader
             }
             if (stat == 0)
             {
-                status = IFSelect_RetDone;
+                status = IFSelect_ReturnStatus.IFSelect_RetDone;
             }
             else if (stat < 0)
             {
-                status = IFSelect_RetError;
+                status = IFSelect_ReturnStatus.IFSelect_RetError;
             }
             else
             {
-                status = IFSelect_RetFail;
+                status = IFSelect_ReturnStatus.IFSelect_RetFail;
             }
         }
         catch (Exception anException) when (anException is FailureException || StepToTopoDS_Root.CaughtBySignals(anException))
@@ -186,9 +186,9 @@ public class STEPControl_Reader : XSControl_Reader
             sout.Append("    ****    Interruption ReadFile par Exception :   ****\n");
             sout.Append(anException.Message);
             sout.Append("\n    Abandon").Append('\n');
-            status = IFSelect_RetFail;
+            status = IFSelect_ReturnStatus.IFSelect_RetFail;
         }
-        if (status != IFSelect_RetDone)
+        if (status != IFSelect_ReturnStatus.IFSelect_RetDone)
         {
             return status;
         }
@@ -607,54 +607,54 @@ public class STEPControl_Reader : XSControl_Reader
         {
             switch (theUnit.Prefix())
             {
-                case StepBasic_spExa:
+                case StepBasic_SiPrefix.StepBasic_spExa:
                     aName += "exa";
                     break;
-                case StepBasic_spPeta:
+                case StepBasic_SiPrefix.StepBasic_spPeta:
                     aName += "peta";
                     break;
-                case StepBasic_spTera:
+                case StepBasic_SiPrefix.StepBasic_spTera:
                     aName += "tera";
                     break;
-                case StepBasic_spGiga:
+                case StepBasic_SiPrefix.StepBasic_spGiga:
                     aName += "giga";
                     break;
-                case StepBasic_spMega:
+                case StepBasic_SiPrefix.StepBasic_spMega:
                     aName += "mega";
                     break;
-                case StepBasic_spHecto:
+                case StepBasic_SiPrefix.StepBasic_spHecto:
                     aName += "hecto";
                     break;
-                case StepBasic_spDeca:
+                case StepBasic_SiPrefix.StepBasic_spDeca:
                     aName += "deca";
                     break;
-                case StepBasic_spDeci:
+                case StepBasic_SiPrefix.StepBasic_spDeci:
                     aName += "deci";
                     break;
 
-                case StepBasic_spPico:
+                case StepBasic_SiPrefix.StepBasic_spPico:
                     aName += "pico";
                     break;
-                case StepBasic_spFemto:
+                case StepBasic_SiPrefix.StepBasic_spFemto:
                     aName += "femto";
                     break;
-                case StepBasic_spAtto:
+                case StepBasic_SiPrefix.StepBasic_spAtto:
                     aName += "atto";
                     break;
 
-                case StepBasic_spKilo:
+                case StepBasic_SiPrefix.StepBasic_spKilo:
                     aName += "kilo";
                     break;
-                case StepBasic_spCenti:
+                case StepBasic_SiPrefix.StepBasic_spCenti:
                     aName += "centi";
                     break;
-                case StepBasic_spMilli:
+                case StepBasic_SiPrefix.StepBasic_spMilli:
                     aName += "milli";
                     break;
-                case StepBasic_spMicro:
+                case StepBasic_SiPrefix.StepBasic_spMicro:
                     aName += "micro";
                     break;
-                case StepBasic_spNano:
+                case StepBasic_SiPrefix.StepBasic_spNano:
                     aName += "nano";
                     break;
                 default:
@@ -664,13 +664,13 @@ public class STEPControl_Reader : XSControl_Reader
 
         switch (theUnit.Name())
         {
-            case StepBasic_sunMetre:
+            case StepBasic_SiUnitName.StepBasic_sunMetre:
                 aName += "metre";
                 break;
-            case StepBasic_sunRadian:
+            case StepBasic_SiUnitName.StepBasic_sunRadian:
                 aName += "radian";
                 break;
-            case StepBasic_sunSteradian:
+            case StepBasic_SiUnitName.StepBasic_sunSteradian:
                 aName += "steradian";
                 break;
             default:
@@ -684,9 +684,9 @@ public class STEPControl_Reader : XSControl_Reader
         return DESTEP_Parameters.GetDefaultShapeFixParameters();
     }
 
-    protected override ShapeProcess.OperationsFlags GetDefaultShapeProcessFlags()
+    protected override global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags GetDefaultShapeProcessFlags()
     {
-        return new ShapeProcess.OperationsFlags(ShapeProcess.Operation.FixShape);
+        return new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.FixShape);
     }
 
     // OCCT's 1-based arrays of 3 units (length, plane angle, solid angle): 0-based here

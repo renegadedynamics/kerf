@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Geometry;
+using Kerf.Engine.Meshing;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -63,7 +64,7 @@ public class BRepMesh_CircleTool_Test
 
             ++i;
 
-            if (!BRepMesh_CircleTool.MakeCircle(p[0], p[1], p[2], out Xy aCenter, out double aRadius))
+            if (!CircleTool.MakeCircle(p[0], p[1], p[2], out Xy aCenter, out double aRadius))
             {
                 continue;
             }

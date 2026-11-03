@@ -46,19 +46,19 @@ public static class TopoDSToStep_FacetedTool
                         nVPol = aBsplS.VPoleCount;
                         if (nUPol != 2 || nVPol != 2)
                         {
-                            return TopoDSToStep_SurfaceNotPlane;
+                            return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                         }
                     }
                     else
                     {
                         // Degree in v != 1
-                        return TopoDSToStep_SurfaceNotPlane;
+                        return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                     }
                 }
                 else
                 {
                     // Degree in u != 1
-                    return TopoDSToStep_SurfaceNotPlane;
+                    return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                 }
             }
             else if (Su is BezierSurface)
@@ -75,25 +75,25 @@ public static class TopoDSToStep_FacetedTool
                         nVPol = aBzS.VPoleCount;
                         if (nUPol != 2 || nVPol != 2)
                         {
-                            return TopoDSToStep_SurfaceNotPlane;
+                            return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                         }
                     }
                     else
                     {
                         // Degree in v != 1
-                        return TopoDSToStep_SurfaceNotPlane;
+                        return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                     }
                 }
                 else
                 {
                     // Degree in u != 1
-                    return TopoDSToStep_SurfaceNotPlane;
+                    return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
                 }
             }
             else
             {
                 // the surface is neither a Plane nor a flat BSpline or Beziersurface
-                return TopoDSToStep_SurfaceNotPlane;
+                return TopoDSToStep_FacetedError.TopoDSToStep_SurfaceNotPlane;
             }
 
             // surface is flat; now check, if the PCurves are linear
@@ -108,14 +108,14 @@ public static class TopoDSToStep_FacetedTool
 
                 if (C2d is LineCurve2D)
                 {
-                    return TopoDSToStep_FacetedDone; // OCCT: the first linear pcurve accepts the whole shape
+                    return TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone; // OCCT: the first linear pcurve accepts the whole shape
                 }
                 else if (C2d is BSplineCurve2D)
                 {
                     BSplineCurve2D aBspl2d = C2d as BSplineCurve2D;
                     if ((aBspl2d.Degree() != 1) || (aBspl2d.PoleCount != 2))
                     {
-                        return TopoDSToStep_PCurveNotLinear;
+                        return TopoDSToStep_FacetedError.TopoDSToStep_PCurveNotLinear;
                     }
                 }
                 else if (C2d is BezierCurve2D)
@@ -123,16 +123,16 @@ public static class TopoDSToStep_FacetedTool
                     BezierCurve2D aBzC2d = C2d as BezierCurve2D;
                     if ((aBzC2d.Degree() != 1) || (aBzC2d.PoleCount != 2))
                     {
-                        return TopoDSToStep_PCurveNotLinear;
+                        return TopoDSToStep_FacetedError.TopoDSToStep_PCurveNotLinear;
                     }
                 }
                 else
                 {
-                    return TopoDSToStep_PCurveNotLinear;
+                    return TopoDSToStep_FacetedError.TopoDSToStep_PCurveNotLinear;
                 }
             } // end while (EdgeExp.More())
         } // end while (FaceExp.More())
 
-        return TopoDSToStep_FacetedDone;
+        return TopoDSToStep_FacetedError.TopoDSToStep_FacetedDone;
     }
 }

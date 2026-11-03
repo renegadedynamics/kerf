@@ -6,6 +6,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Topology;
 using static Occt.IFSelect_ReturnStatus;
 
@@ -144,14 +145,14 @@ public class XSControl_TransferWriter : Transient
     /// </summary>
     public IFSelect_ReturnStatus TransferWriteTransient(Interface_InterfaceModel? model, Transient? obj, ProgressRange theProgress = default)
     {
-        IFSelect_ReturnStatus status = IFSelect_RetVoid;
+        IFSelect_ReturnStatus status = IFSelect_ReturnStatus.IFSelect_RetVoid;
         if (myController is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         if (model is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         if (myTransferWriter is null)
@@ -170,12 +171,12 @@ public class XSControl_TransferWriter : Transient
             sout.Append('\n');
             status = myController.TransferWriteTransient(obj, myTransferWriter, model, myTransferMode, theProgress);
         }
-        catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+        catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
         {
             sout.Append("****  ****  TransferWriteShape, EXCEPTION : ");
             sout.Append(Transfer_ProcessForTransient.What(anException));
             sout.Append('\n');
-            status = IFSelect_RetFail;
+            status = IFSelect_ReturnStatus.IFSelect_RetFail;
         }
         return status;
     }
@@ -203,14 +204,14 @@ public class XSControl_TransferWriter : Transient
     /// </summary>
     public IFSelect_ReturnStatus TransferWriteShape(Interface_InterfaceModel? theModel, Shape theShape, ProgressRange theProgress = default)
     {
-        IFSelect_ReturnStatus status = IFSelect_RetVoid;
+        IFSelect_ReturnStatus status = IFSelect_ReturnStatus.IFSelect_RetVoid;
         if (myController is null)
         {
-            return IFSelect_RetError;
+            return IFSelect_ReturnStatus.IFSelect_RetError;
         }
         if (theModel is null)
         {
-            return IFSelect_RetVoid;
+            return IFSelect_ReturnStatus.IFSelect_RetVoid;
         }
 
         Shape aShape = theShape;
@@ -232,12 +233,12 @@ public class XSControl_TransferWriter : Transient
             sout.Append('\n');
             status = myController.TransferWriteShape(aShape, myTransferWriter, theModel, myTransferMode, theProgress);
         }
-        catch (Exception anException) when (IMeshTools_ModelAlgo.IsCaughtFailure(anException))
+        catch (Exception anException) when (ModelAlgo.IsCaughtFailure(anException))
         {
             sout.Append("****  ****  TransferWriteShape, EXCEPTION : ");
             sout.Append(Transfer_ProcessForTransient.What(anException));
             sout.Append('\n');
-            status = IFSelect_RetFail;
+            status = IFSelect_ReturnStatus.IFSelect_RetFail;
         }
         return status;
     }

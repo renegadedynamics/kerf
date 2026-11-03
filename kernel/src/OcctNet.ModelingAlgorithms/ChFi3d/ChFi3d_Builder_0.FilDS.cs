@@ -2,22 +2,25 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Occt;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
-using static Occt.TopOpeBRepDS_Kind;
+using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 
-namespace Occt;
+namespace Kerf.Engine.Fillets;
 
-internal static partial class ChFi3d_Builder_0
+internal static partial class Builder_0
 {
     //=================================================================================================
 
     /// <summary>
-    /// Writes the stripe <paramref name="CorDat"/> into the data structure: the solid's interferences with the fillet
+    /// Writes the stripe <paramref name="corDat"/> into the data structure: the solid's interferences with the fillet
     /// surfaces, the curves between the fillets and on the faces with their pcurves and points, the points on the
     /// edges they cut; the regularities found go into <paramref name="reglist"/>.
     /// </summary>
@@ -26,308 +29,308 @@ internal static partial class ChFi3d_Builder_0
     /// interferences) and, through <see cref="ChFi3d_IndexPointInDS"/>, raises the tolerance of the working shape's
     /// vertices (decision 1087).
     /// </remarks>
-    internal static void ChFi3d_FilDS(int SolidIndex, ChFiDS_Stripe CorDat, TopOpeBRepDS_DataStructure DStr,
-                                      NCollection_List<ChFiDS_Regul> reglist, double tol3d, double tol2d)
+    internal static void ChFi3d_FilDS(int solidIndex, Stripe corDat, DsDataStructure dStr,
+                                      NCollection_List<Regul> reglist, double tol3d, double tol2d)
     {
         //  BRep_Tool Outil;
         Explorer ex = new();
-        ChFiDS_Spine? spine = CorDat.Spine();
-        bool Closed = false;
-        bool Degene = false, isVertex1 = false, isVertex2 = false, Singulier_en_Bout = false;
+        Spine? spine = corDat.Spine();
+        bool closed = false;
+        bool degene = false, isVertex1 = false, isVertex2 = false, Singulier_en_Bout = false;
         if (spine is not null)
         {
-            Closed = spine.IsPeriodic();
+            closed = spine.IsPeriodic;
         }
-        NCollection_Sequence<ChFiDS_SurfData> SeqFil = CorDat.SetOfSurfData()!;
-        int Ipoin1 = CorDat.IndexFirstPointOnS1();
-        int Ipoin2 = CorDat.IndexFirstPointOnS2();
-        int NumEdge = 1;
-        Vertex BoutdeVtx = new();
-        int Icurv = 0;
-        int Iarc1 = 0, Iarc2 = 0;
+        NCollection_Sequence<SurfData> seqFil = corDat.SetOfSurfData()!;
+        int ipoin1 = corDat.IndexFirstPointOnS1();
+        int ipoin2 = corDat.IndexFirstPointOnS2();
+        int numEdge = 1;
+        Vertex boutdeVtx = new();
+        int icurv = 0;
+        int iarc1 = 0, iarc2 = 0;
         Orientation trafil1 = Forward, trafil2 = Forward;
-        int IcFil1, IcFil2, Isurf, Ishape1, Ishape2;
-        double Pardeb = 0.0, Parfin = 0.0;
-        Orientation ET1;
-        TopOpeBRepDS_CurvePointInterference Interfp1, Interfp2;
-        TopOpeBRepDS_SurfaceCurveInterference Interfc1, Interfc2;
-        TopOpeBRepDS_SurfaceCurveInterference Interfc3, Interfc4;
-        TopOpeBRepDS_CurvePointInterference Interfp3, Interfp4;
-        TopOpeBRepDS_CurvePointInterference Interfp5, Interfp6;
+        int icFil1, icFil2, isurf, ishape1, ishape2;
+        double pardeb = 0.0, parfin = 0.0;
+        Orientation et1;
+        DsCurvePointInterference interfp1, interfp2;
+        DsSurfaceCurveInterference interfc1, interfc2;
+        DsSurfaceCurveInterference interfc3, interfc4;
+        DsCurvePointInterference interfp3, interfp4;
+        DsCurvePointInterference interfp5, interfp6;
         Curve2D? PCurv = null;
-        TopOpeBRepDS_Curve Crv;
+        DsCurve crv;
 
-        NCollection_List<TopOpeBRepDS_Interference> SolidInterfs = DStr.ChangeShapeInterferences(SolidIndex);
+        NCollection_List<DsInterference> solidInterfs = dStr.ChangeShapeInterferences(solidIndex);
 
-        ChFiDS_Regul regcout = new();   // for closed and tangent CD
-        ChFiDS_Regul regfilfil = new(); // for connections Surf/Surf
+        Regul regcout = new();   // for closed and tangent CD
+        Regul regfilfil = new(); // for connections Surf/Surf
 
-        ChFiDS_CommonPoint V3 = new();
-        ChFiDS_CommonPoint V4 = new();
+        CommonPoint v3 = new();
+        CommonPoint v4 = new();
 
         // Nullify degenerated ChFi/Faces interferences, eap occ293
         int j;
-        if (SeqFil.Length() > 1)
+        if (seqFil.Length() > 1)
         {
-            for (j = 1; j <= SeqFil.Length(); j++)
+            for (j = 1; j <= seqFil.Length(); j++)
             {
-                ChFiDS_SurfData Fd = SeqFil.Value(j);
+                SurfData fd = seqFil.Value(j);
                 int onS;
                 for (onS = 1; onS <= 2; onS++)
                 {
-                    ChFiDS_FaceInterference Fi = Fd.Interference(onS);
-                    IcFil1 = Fi.LineIndex();
-                    if (IcFil1 == 0)
+                    FaceInterference fi = fd.Interference(onS);
+                    icFil1 = fi.LineIndex();
+                    if (icFil1 == 0)
                     {
                         continue;
                     }
-                    double FiLen = Math.Abs(Fi.FirstParameter() - Fi.LastParameter());
-                    if (FiLen > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    double fiLen = Math.Abs(fi.FirstParameter() - fi.LastParameter());
+                    if (fiLen > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         continue;
                     }
-                    ref TopOpeBRepDS_Curve cc = ref DStr.ChangeCurve(IcFil1);
+                    ref DsCurve cc = ref dStr.ChangeCurve(icFil1);
                     cc.ChangeCurve() = null;
 
                     // care of CommonPoint, eap occ354
-                    if (j != 1 && j != SeqFil.Length())
+                    if (j != 1 && j != seqFil.Length())
                     {
                         continue;
                     }
                     bool isfirst = (j == 1);
                     int i = isfirst ? j + 1 : j - 1;
-                    ref ChFiDS_CommonPoint CP1 = ref SeqFil.Value(i).ChangeVertex(isfirst, onS);
-                    if (Fd.Vertex(isfirst, onS).IsOnArc() && CP1.IsOnArc())
+                    ref CommonPoint cp1 = ref seqFil.Value(i).ChangeVertex(isfirst, onS);
+                    if (fd.Vertex(isfirst, onS).IsOnArc && cp1.IsOnArc)
                     {
-                        ref ChFiDS_CommonPoint CP2 = ref Fd.ChangeVertex(!isfirst, onS);
-                        CP1.Reset();
-                        CP1.SetPoint(CP2.Point());
-                        CP2.Reset();
-                        CP2.SetPoint(CP1.Point());
+                        ref CommonPoint cp2 = ref fd.ChangeVertex(!isfirst, onS);
+                        cp1.Reset();
+                        cp1.SetPoint(cp2.Point());
+                        cp2.Reset();
+                        cp2.SetPoint(cp1.Point());
                     }
                 }
             }
         }
 
-        for (j = 1; j <= SeqFil.Length(); j++)
+        for (j = 1; j <= seqFil.Length(); j++)
         {
-            ChFiDS_SurfData Fd = SeqFil.Value(j);
-            Isurf = Fd.Surf();
-            Ishape1 = Fd.IndexOfS1();
-            Ishape2 = Fd.IndexOfS2();
+            SurfData fd = seqFil.Value(j);
+            isurf = fd.Surf();
+            ishape1 = fd.IndexOfS1();
+            ishape2 = fd.IndexOfS2();
 
             // eap, Apr 29 2002, occ 293
             // now IsInDS() returns nb of surfaces at end being in DS;
             // vars showing which end is in DS
             bool isInDS1 = false, isInDS2 = false;
-            if (j <= CorDat.IsInDS(true))
+            if (j <= corDat.IsInDS(true))
             {
                 isInDS1 = true;
-                isInDS2 = (j + 1 <= CorDat.IsInDS(true));
+                isInDS2 = (j + 1 <= corDat.IsInDS(true));
             }
-            if (SeqFil.Length() - j < CorDat.IsInDS(false))
+            if (seqFil.Length() - j < corDat.IsInDS(false))
             {
                 isInDS2 = true;
-                isInDS1 = isInDS1 || SeqFil.Length() - j + 1 < CorDat.IsInDS(false);
+                isInDS1 = isInDS1 || seqFil.Length() - j + 1 < corDat.IsInDS(false);
             }
 
             // creation of SolidSurfaceInterference
 
-            TopOpeBRepDS_SolidSurfaceInterference SSI =
-                new(new TopOpeBRepDS_Transition(Fd.Orientation()), TopOpeBRepDS_SOLID, SolidIndex,
-                    TopOpeBRepDS_SURFACE, Isurf);
+            DsSolidSurfaceInterference ssi =
+                new(new DsTransition(fd.Orientation()), DsKind.Solid, solidIndex,
+                    DsKind.Surface, isurf);
 
-            SolidInterfs.Append(SSI);
+            solidInterfs.Append(ssi);
 
-            ChFiDS_FaceInterference Fi1 = Fd.InterferenceOnS1();
-            ChFiDS_FaceInterference Fi2 = Fd.InterferenceOnS2();
-            ChFiDS_CommonPoint V1 = Fd.VertexFirstOnS1();
-            ChFiDS_CommonPoint V2 = Fd.VertexFirstOnS2();
+            FaceInterference fi1 = fd.InterferenceOnS1();
+            FaceInterference fi2 = fd.InterferenceOnS2();
+            CommonPoint v1 = fd.VertexFirstOnS1();
+            CommonPoint v2 = fd.VertexFirstOnS2();
 
             // Processing to manage double interferences
             if (j > 1)
             {
-                if (V1.IsOnArc() && V3.IsOnArc() && V1.Arc().IsSame(V3.Arc()))
+                if (v1.IsOnArc && v3.IsOnArc && v1.Arc().IsSame(v3.Arc()))
                 {
                     // Iarc1 is initialized
                     // Iarc1 = DStr.AddShape(V1.Arc());
-                    if (ChFi3d_Contains(DStr.ShapeInterferences(Iarc1), Iarc1, Ipoin1)
-                        && (V1.TransitionOnArc() != V3.TransitionOnArc()))
+                    if (ChFi3d_Contains(dStr.ShapeInterferences(iarc1), iarc1, ipoin1)
+                        && (v1.TransitionOnArc() != v3.TransitionOnArc()))
                     {
-                        Interfp1 = ChFi3d_FilPointInDS(V1.TransitionOnArc(), Iarc1, Ipoin1, V1.ParameterOnArc());
-                        DStr.ChangeShapeInterferences(V1.Arc()).Append(Interfp1);
+                        interfp1 = ChFi3d_FilPointInDS(v1.TransitionOnArc(), iarc1, ipoin1, v1.ParameterOnArc());
+                        dStr.ChangeShapeInterferences(v1.Arc()).Append(interfp1);
                     }
                 }
 
-                if (V2.IsOnArc() && V4.IsOnArc() && V2.Arc().IsSame(V4.Arc()))
+                if (v2.IsOnArc && v4.IsOnArc && v2.Arc().IsSame(v4.Arc()))
                 {
                     // Iarc2 is initialized
                     // Iarc2 = DStr.AddShape(V2.Arc());
-                    if (ChFi3d_Contains(DStr.ShapeInterferences(Iarc2), Iarc2, Ipoin2)
-                        && (V2.TransitionOnArc() != V4.TransitionOnArc()))
+                    if (ChFi3d_Contains(dStr.ShapeInterferences(iarc2), iarc2, ipoin2)
+                        && (v2.TransitionOnArc() != v4.TransitionOnArc()))
                     {
-                        Interfp2 = ChFi3d_FilPointInDS(V2.TransitionOnArc(), Iarc2, Ipoin2, V2.ParameterOnArc());
-                        DStr.ChangeShapeInterferences(V2.Arc()).Append(Interfp2);
+                        interfp2 = ChFi3d_FilPointInDS(v2.TransitionOnArc(), iarc2, ipoin2, v2.ParameterOnArc());
+                        dStr.ChangeShapeInterferences(v2.Arc()).Append(interfp2);
                     }
                 }
             }
 
-            V3 = Fd.VertexLastOnS1();
-            V4 = Fd.VertexLastOnS2();
+            v3 = fd.VertexLastOnS1();
+            v4 = fd.VertexLastOnS2();
 
-            if (Ishape1 != 0)
+            if (ishape1 != 0)
             {
-                if (Ishape1 > 0)
+                if (ishape1 > 0)
                 {
-                    trafil1 = DStr.Shape(Ishape1).Orientation();
+                    trafil1 = dStr.Shape(ishape1).Orientation();
                 }
                 else
                 {
-                    ChFi3d_Orientation(SolidInterfs, SolidIndex, -Ishape1, ref trafil1);
+                    ChFi3d_Orientation(solidInterfs, solidIndex, -ishape1, ref trafil1);
                 }
-                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil1, Fd.Orientation());
-                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(Fi1.Transition()), trafil1);
+                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil1, fd.Orientation());
+                trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(fi1.Transition()), trafil1);
                 trafil2 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
             }
             else
             {
-                if (Ishape2 > 0)
+                if (ishape2 > 0)
                 {
-                    trafil2 = DStr.Shape(Ishape2).Orientation();
+                    trafil2 = dStr.Shape(ishape2).Orientation();
                 }
                 else
                 {
-                    ChFi3d_Orientation(SolidInterfs, SolidIndex, -Ishape2, ref trafil2);
+                    ChFi3d_Orientation(solidInterfs, solidIndex, -ishape2, ref trafil2);
                 }
-                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil2, Fd.Orientation());
-                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(Fi2.Transition()), trafil2);
+                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil2, fd.Orientation());
+                trafil2 = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(fi2.Transition()), trafil2);
                 trafil1 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil2);
             }
 
-            ET1 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
+            et1 = global::Kerf.Engine.Topology.TopAbs.Reverse(trafil1);
 
             // A small paragraph to process contacts of edges, which touch
             // a vertex of the obstacle.
-            if (V1.IsVertex() && Fd.IsOnCurve1())
+            if (v1.IsVertex && fd.IsOnCurve1)
             {
-                Vertex vv1 = V1.Vertex();
-                CutEdge(vv1, Fd, DStr, true, 1);
+                Vertex vv1 = v1.Vertex();
+                CutEdge(vv1, fd, dStr, true, 1);
             }
-            if (V2.IsVertex() && Fd.IsOnCurve2())
+            if (v2.IsVertex && fd.IsOnCurve2)
             {
-                Vertex vv2 = V2.Vertex();
-                CutEdge(vv2, Fd, DStr, true, 2);
+                Vertex vv2 = v2.Vertex();
+                CutEdge(vv2, fd, dStr, true, 2);
             }
-            if (V3.IsVertex() && Fd.IsOnCurve1())
+            if (v3.IsVertex && fd.IsOnCurve1)
             {
-                Vertex vv3 = V3.Vertex();
-                CutEdge(vv3, Fd, DStr, false, 1);
+                Vertex vv3 = v3.Vertex();
+                CutEdge(vv3, fd, dStr, false, 1);
             }
-            if (V4.IsVertex() && Fd.IsOnCurve2())
+            if (v4.IsVertex && fd.IsOnCurve2)
             {
-                Vertex vv4 = V4.Vertex();
-                CutEdge(vv4, Fd, DStr, false, 2);
+                Vertex vv4 = v4.Vertex();
+                CutEdge(vv4, fd, dStr, false, 2);
             }
 
             if (j == 1)
             {
-                isVertex1 = V1.IsVertex();
-                isVertex2 = V2.IsVertex();
-                Singulier_en_Bout = (V1.Point().IsEqual(V2.Point(), 0));
+                isVertex1 = v1.IsVertex;
+                isVertex2 = v2.IsVertex;
+                Singulier_en_Bout = (v1.Point().IsEqual(v2.Point(), 0));
 
                 if (Singulier_en_Bout)
                 {
                     // Queue de Billard
-                    if ((!V1.IsVertex()) || (!V2.IsVertex()))
+                    if ((!v1.IsVertex) || (!v2.IsVertex))
                     {
                     }
                     else
                     {
                         isVertex1 = isVertex2 = true; // caution...
                         // The edge is removed from spine starting on this vertex.
-                        Edge Arcspine = spine!.Edges(1);
-                        BoutdeVtx = V1.Vertex();
-                        int IArcspine = DStr.AddShape(Arcspine);
-                        int IVtx = CorDat.IndexFirstPointOnS1();
+                        Edge arcspine = spine!.Edges(1);
+                        boutdeVtx = v1.Vertex();
+                        int iArcspine = dStr.AddShape(arcspine);
+                        int iVtx = corDat.IndexFirstPointOnS1();
 
-                        Orientation OVtx = Forward;
+                        Orientation oVtx = Forward;
 
-                        for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
+                        for (ex.Init(arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
                         {
-                            if (BoutdeVtx.IsSame(ex.Current()))
+                            if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                OVtx = ex.Current().Orientation();
+                                oVtx = ex.Current().Orientation();
                                 break;
                             }
                         }
-                        OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
-                        double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
-                        TopOpeBRepDS_CurvePointInterference interfv =
-                            ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
-                        DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
+                        oVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(oVtx);
+                        double parVtx = Tool.Parameter(boutdeVtx, arcspine);
+                        DsCurvePointInterference interfv =
+                            ChFi3d_FilVertexInDS(oVtx, iArcspine, iVtx, parVtx);
+                        dStr.ChangeShapeInterferences(iArcspine).Append(interfv);
                     }
                 }
                 else
                 {
-                    if (V1.IsOnArc())
+                    if (v1.IsOnArc)
                     {
-                        Iarc1 = DStr.AddShape(V1.Arc());
-                        if (!ChFi3d_Contains(DStr.ShapeInterferences(Iarc1), Iarc1, Ipoin1))
+                        iarc1 = dStr.AddShape(v1.Arc());
+                        if (!ChFi3d_Contains(dStr.ShapeInterferences(iarc1), iarc1, ipoin1))
                         {
-                            Interfp1 = ChFi3d_FilPointInDS(V1.TransitionOnArc(), Iarc1, Ipoin1, V1.ParameterOnArc(),
+                            interfp1 = ChFi3d_FilPointInDS(v1.TransitionOnArc(), iarc1, ipoin1, v1.ParameterOnArc(),
                                                            isVertex1);
-                            DStr.ChangeShapeInterferences(V1.Arc()).Append(Interfp1);
+                            dStr.ChangeShapeInterferences(v1.Arc()).Append(interfp1);
                         }
                     }
 
-                    if (V2.IsOnArc())
+                    if (v2.IsOnArc)
                     {
-                        Iarc2 = DStr.AddShape(V2.Arc());
-                        if (!ChFi3d_Contains(DStr.ShapeInterferences(Iarc2), Iarc2, Ipoin2))
+                        iarc2 = dStr.AddShape(v2.Arc());
+                        if (!ChFi3d_Contains(dStr.ShapeInterferences(iarc2), iarc2, ipoin2))
                         {
-                            Interfp2 = ChFi3d_FilPointInDS(V2.TransitionOnArc(), Iarc2, Ipoin2, V2.ParameterOnArc(),
+                            interfp2 = ChFi3d_FilPointInDS(v2.TransitionOnArc(), iarc2, ipoin2, v2.ParameterOnArc(),
                                                            isVertex2);
-                            DStr.ChangeShapeInterferences(V2.Arc()).Append(Interfp2);
+                            dStr.ChangeShapeInterferences(v2.Arc()).Append(interfp2);
                         }
                     }
                 }
 
                 if (!isInDS1)
                 {
-                    ET1 = global::Kerf.Engine.Topology.TopAbs.Compose(ET1, CorDat.FirstPCurveOrientation());
-                    Icurv = CorDat.FirstCurve();
-                    if (Closed && !Singulier_en_Bout)
+                    et1 = global::Kerf.Engine.Topology.TopAbs.Compose(et1, corDat.FirstPCurveOrientation());
+                    icurv = corDat.FirstCurve();
+                    if (closed && !Singulier_en_Bout)
                     {
-                        regcout.SetCurve(Icurv);
-                        regcout.SetS1(Isurf, false);
+                        regcout.SetCurve(icurv);
+                        regcout.SetS1(isurf, false);
                     }
-                    PCurv = CorDat.FirstPCurve();
-                    CorDat.FirstParameters(out Pardeb, out Parfin);
+                    PCurv = corDat.FirstPCurve();
+                    corDat.FirstParameters(out pardeb, out parfin);
 
-                    NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(Icurv);
-                    if (Li.IsEmpty())
+                    NCollection_List<DsInterference> li = dStr.ChangeCurveInterferences(icurv);
+                    if (li.IsEmpty())
                     {
-                        if (CorDat.FirstPCurveOrientation() == Reversed)
+                        if (corDat.FirstPCurveOrientation() == Reversed)
                         {
-                            Interfp1 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin1, Parfin, isVertex1);
-                            Interfp2 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin2, Pardeb, isVertex2);
+                            interfp1 = ChFi3d_FilPointInDS(Reversed, icurv, ipoin1, parfin, isVertex1);
+                            interfp2 = ChFi3d_FilPointInDS(Forward, icurv, ipoin2, pardeb, isVertex2);
                         }
                         else
                         {
-                            Interfp1 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
-                            Interfp2 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
+                            interfp1 = ChFi3d_FilPointInDS(Forward, icurv, ipoin1, pardeb, isVertex1);
+                            interfp2 = ChFi3d_FilPointInDS(Reversed, icurv, ipoin2, parfin, isVertex2);
                         }
-                        Li.Append(Interfp1);
-                        Li.Append(Interfp2);
+                        li.Append(interfp1);
+                        li.Append(interfp2);
                     }
-                    Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
-                    DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
-                    if (Ipoin1 == Ipoin2)
+                    interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                    dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
+                    if (ipoin1 == ipoin2)
                     {
-                        ref TopOpeBRepDS_Curve TCurv = ref DStr.ChangeCurve(Icurv);
-                        TCurv.ChangeCurve() = null;
-                        TopOpeBRepDS_Interference? bidinterf = null;
-                        TCurv.SetSCI(Interfc1, bidinterf);
+                        ref DsCurve tCurv = ref dStr.ChangeCurve(icurv);
+                        tCurv.ChangeCurve() = null;
+                        DsInterference? bidinterf = null;
+                        tCurv.SetSCI(interfc1, bidinterf);
                     }
                 }
             } // End of the Initial Processing (j==1)
@@ -338,294 +341,294 @@ internal static partial class ChFi3d_Builder_0
                 if (!isInDS1)
                 { // eap, Apr 29 2002, occ 293
 
-                    if (Degene && isVertex1)
+                    if (degene && isVertex1)
                     {
                         // The edge is removed from the spine starting on this vertex.
-                        NumEdge++; // The previous edge of the vertex has already been found.
-                        Edge Arcspine = spine!.Edges(NumEdge);
-                        int IArcspine = DStr.AddShape(Arcspine);
-                        int IVtx = DStr.AddShape(BoutdeVtx);
-                        Orientation OVtx = Forward;
-                        for (ex.Init(Arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
+                        numEdge++; // The previous edge of the vertex has already been found.
+                        Edge arcspine = spine!.Edges(numEdge);
+                        int iArcspine = dStr.AddShape(arcspine);
+                        int iVtx = dStr.AddShape(boutdeVtx);
+                        Orientation oVtx = Forward;
+                        for (ex.Init(arcspine.Oriented(Forward), ShapeType.Vertex); ex.More(); ex.Next())
                         {
-                            if (BoutdeVtx.IsSame(ex.Current()))
+                            if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                OVtx = ex.Current().Orientation();
+                                oVtx = ex.Current().Orientation();
                                 break;
                             }
                         }
-                        OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
-                        double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
-                        TopOpeBRepDS_CurvePointInterference interfv =
-                            ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
-                        DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
+                        oVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(oVtx);
+                        double parVtx = Tool.Parameter(boutdeVtx, arcspine);
+                        DsCurvePointInterference interfv =
+                            ChFi3d_FilVertexInDS(oVtx, iArcspine, iVtx, parVtx);
+                        dStr.ChangeShapeInterferences(iArcspine).Append(interfv);
                     } // End of the removal
 
-                    Point2D UV1 =
-                        Fd.InterferenceOnS1().PCurveOnSurf()!.Value(Fd.InterferenceOnS1().FirstParameter());
-                    Point2D UV2 =
-                        Fd.InterferenceOnS2().PCurveOnSurf()!.Value(Fd.InterferenceOnS2().FirstParameter());
-                    ref TopOpeBRepDS_Curve TCurv = ref DStr.ChangeCurve(Icurv);
-                    if (Degene)
+                    Point2D uv1 =
+                        fd.InterferenceOnS1().PCurveOnSurf()!.Value(fd.InterferenceOnS1().FirstParameter());
+                    Point2D uv2 =
+                        fd.InterferenceOnS2().PCurveOnSurf()!.Value(fd.InterferenceOnS2().FirstParameter());
+                    ref DsCurve tCurv = ref dStr.ChangeCurve(icurv);
+                    if (degene)
                     {
                         // pcurve is associated via SCI to TopOpeBRepDSCurve.
-                        ChFi3d_ComputePCurv(UV1, UV2, out Curve2D aPCurv, Pardeb, Parfin);
-                        PCurv = aPCurv;
-                        Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
-                        DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
-                        TCurv.ChangeCurve() = null;
-                        TopOpeBRepDS_Interference? bidinterf = null;
-                        TCurv.SetSCI(Interfc1, bidinterf);
+                        ChFi3d_ComputePCurv(uv1, uv2, out Curve2D pCurv, pardeb, parfin);
+                        PCurv = pCurv;
+                        interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                        dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
+                        tCurv.ChangeCurve() = null;
+                        DsInterference? bidinterf = null;
+                        tCurv.SetSCI(interfc1, bidinterf);
                     }
                     else
                     {
-                        regfilfil.SetS2(Isurf, false);
+                        regfilfil.SetS2(isurf, false);
                         reglist.Append(regfilfil);
                         double tolreached;
-                        ChFi3d_ComputePCurv(TCurv.ChangeCurve()!, UV1, UV2, out Curve2D aPCurv,
-                                            DStr.Surface(Fd.Surf()).Surface()!, Pardeb, Parfin, tol3d,
+                        ChFi3d_ComputePCurv(tCurv.ChangeCurve()!, uv1, uv2, out Curve2D pCurv,
+                                            dStr.Surface(fd.Surf()).Surface()!, pardeb, parfin, tol3d,
                                             out tolreached);
-                        PCurv = aPCurv;
-                        TCurv.Tolerance(Math.Max(TCurv.Tolerance(), tolreached));
-                        Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
-                        DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
+                        PCurv = pCurv;
+                        tCurv.Tolerance(Math.Max(tCurv.Tolerance(), tolreached));
+                        interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                        dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
                     }
                 }
             } // End of Interference between fillets
 
             // ---- Interference Fillets / Faces
-            IcFil1 = Fi1.LineIndex();
+            icFil1 = fi1.LineIndex();
 
-            if (IcFil1 != 0)
+            if (icFil1 != 0)
             {
-                Interfc3 = ChFi3d_FilCurveInDS(IcFil1, Isurf, Fi1.PCurveOnSurf(), trafil1);
-                DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc3);
-                Ishape1 = Fd.IndexOfS1();
+                interfc3 = ChFi3d_FilCurveInDS(icFil1, isurf, fi1.PCurveOnSurf(), trafil1);
+                dStr.ChangeSurfaceInterferences(isurf).Append(interfc3);
+                ishape1 = fd.IndexOfS1();
                 // Case of degenerated edge : pcurve is associated via SCI
                 // to TopOpeBRepDSCurve.
-                ref TopOpeBRepDS_Curve cc = ref DStr.ChangeCurve(IcFil1);
+                ref DsCurve cc = ref dStr.ChangeCurve(icFil1);
                 if (cc.Curve() is null)
                 {
-                    TopOpeBRepDS_Interference? bidinterf = null;
-                    cc.SetSCI(Interfc3, bidinterf);
+                    DsInterference? bidinterf = null;
+                    cc.SetSCI(interfc3, bidinterf);
                 }
                 else
                 {
-                    ChFiDS_Regul regon1 = new();
-                    regon1.SetCurve(IcFil1);
-                    regon1.SetS1(Isurf, false);
-                    if (Ishape1 < 0)
+                    Regul regon1 = new();
+                    regon1.SetCurve(icFil1);
+                    regon1.SetS1(isurf, false);
+                    if (ishape1 < 0)
                     {
-                        Ishape1 = -Ishape1;
-                        regon1.SetS2(Ishape1, false);
-                        Interfc1 = ChFi3d_FilCurveInDS(IcFil1, Ishape1, Fi1.PCurveOnFace(), Fi1.Transition());
-                        DStr.ChangeSurfaceInterferences(Ishape1).Append(Interfc1);
+                        ishape1 = -ishape1;
+                        regon1.SetS2(ishape1, false);
+                        interfc1 = ChFi3d_FilCurveInDS(icFil1, ishape1, fi1.PCurveOnFace(), fi1.Transition());
+                        dStr.ChangeSurfaceInterferences(ishape1).Append(interfc1);
                     }
-                    else if (Ishape1 > 0)
+                    else if (ishape1 > 0)
                     {
-                        regon1.SetS2(Ishape1, true);
-                        Interfc1 = ChFi3d_FilCurveInDS(IcFil1, Ishape1, Fi1.PCurveOnFace(), Fi1.Transition());
-                        DStr.ChangeShapeInterferences(Ishape1).Append(Interfc1);
+                        regon1.SetS2(ishape1, true);
+                        interfc1 = ChFi3d_FilCurveInDS(icFil1, ishape1, fi1.PCurveOnFace(), fi1.Transition());
+                        dStr.ChangeShapeInterferences(ishape1).Append(interfc1);
                     }
                     reglist.Append(regon1);
                 }
                 // Indice and type of the point at End
                 int ipoin;
-                bool isVertex = Fd.VertexLastOnS1().IsVertex();
-                if (j == SeqFil.Length())
+                bool isVertex = fd.VertexLastOnS1().IsVertex;
+                if (j == seqFil.Length())
                 {
-                    ipoin = CorDat.IndexLastPointOnS1();
+                    ipoin = corDat.IndexLastPointOnS1();
                 }
-                else if (j == (SeqFil.Length() - 1) && /*Closed &&*/
-                         (DStr.Curve(SeqFil.Last().InterferenceOnS1().LineIndex()).Curve() is null))
+                else if (j == (seqFil.Length() - 1) && /*Closed &&*/
+                         (dStr.Curve(seqFil.Last().InterferenceOnS1().LineIndex()).Curve() is null))
                 {
-                    if (Closed)
+                    if (closed)
                     {
-                        ipoin = CorDat.IndexFirstPointOnS1();
-                        isVertex = SeqFil.Value(1).VertexFirstOnS1().IsVertex();
+                        ipoin = corDat.IndexFirstPointOnS1();
+                        isVertex = seqFil.Value(1).VertexFirstOnS1().IsVertex;
                     }
                     else
                     {
-                        ipoin = CorDat.IndexLastPointOnS1();
-                        isVertex = SeqFil.Last().VertexLastOnS1().IsVertex();
+                        ipoin = corDat.IndexLastPointOnS1();
+                        isVertex = seqFil.Last().VertexLastOnS1().IsVertex;
                     }
                 }
-                else if (DStr.Curve(IcFil1).Curve() is null)
+                else if (dStr.Curve(icFil1).Curve() is null)
                 { // Rotation !!
-                    ipoin = Ipoin1;
+                    ipoin = ipoin1;
                     isVertex = isVertex1;
                 }
-                else if (((j == 1) || (j == SeqFil.Length() - 1))
-                         && ((Fd.VertexLastOnS1().Point().IsEqual(SeqFil.Value(1).VertexFirstOnS1().Point(), 1.0e-7))
-                             || (Fd.VertexLastOnS1().Point().IsEqual(
-                                 SeqFil.Value(SeqFil.Length()).VertexLastOnS1().Point(), 1.0e-7))))
+                else if (((j == 1) || (j == seqFil.Length() - 1))
+                         && ((fd.VertexLastOnS1().Point().IsEqual(seqFil.Value(1).VertexFirstOnS1().Point(), 1.0e-7))
+                             || (fd.VertexLastOnS1().Point().IsEqual(
+                                 seqFil.Value(seqFil.Length()).VertexLastOnS1().Point(), 1.0e-7))))
                 {
                     // Case of SurfData cut in "Triangular" way.
-                    ipoin = CorDat.IndexLastPointOnS1();
+                    ipoin = corDat.IndexLastPointOnS1();
                     // eap, Apr 29 2002, occ 293
                 }
-                else if (isInDS2 && findIndexPoint(DStr, Fd, 1, out ipoin))
+                else if (isInDS2 && FindIndexPoint(dStr, fd, 1, out ipoin))
                 {
                 }
                 else
                 {
-                    ipoin = ChFi3d_IndexPointInDS(Fd.VertexLastOnS1(), DStr);
+                    ipoin = ChFi3d_IndexPointInDS(fd.VertexLastOnS1(), dStr);
                 }
 
-                NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(IcFil1);
+                NCollection_List<DsInterference> li = dStr.ChangeCurveInterferences(icFil1);
 
-                if (!ChFi3d_Contains(Li, IcFil1, Ipoin1))
+                if (!ChFi3d_Contains(li, icFil1, ipoin1))
                 {
-                    Interfp1 = ChFi3d_FilPointInDS(Forward, IcFil1, Ipoin1, Fi1.FirstParameter(), isVertex1);
-                    DStr.ChangeCurveInterferences(IcFil1).Append(Interfp1);
+                    interfp1 = ChFi3d_FilPointInDS(Forward, icFil1, ipoin1, fi1.FirstParameter(), isVertex1);
+                    dStr.ChangeCurveInterferences(icFil1).Append(interfp1);
                 }
 
-                if (ipoin == Ipoin1 || !ChFi3d_Contains(Li, IcFil1, ipoin))
+                if (ipoin == ipoin1 || !ChFi3d_Contains(li, icFil1, ipoin))
                 {
-                    Interfp3 = ChFi3d_FilPointInDS(Reversed, IcFil1, ipoin, Fi1.LastParameter(), isVertex);
-                    DStr.ChangeCurveInterferences(IcFil1).Append(Interfp3);
+                    interfp3 = ChFi3d_FilPointInDS(Reversed, icFil1, ipoin, fi1.LastParameter(), isVertex);
+                    dStr.ChangeCurveInterferences(icFil1).Append(interfp3);
                 }
-                Ipoin1 = ipoin;
+                ipoin1 = ipoin;
                 isVertex1 = isVertex;
             }
 
-            IcFil2 = Fi2.LineIndex();
-            if (IcFil2 != 0)
+            icFil2 = fi2.LineIndex();
+            if (icFil2 != 0)
             {
-                Interfc4 = ChFi3d_FilCurveInDS(IcFil2, Isurf, Fi2.PCurveOnSurf(), trafil2);
-                DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc4);
-                Ishape2 = Fd.IndexOfS2();
+                interfc4 = ChFi3d_FilCurveInDS(icFil2, isurf, fi2.PCurveOnSurf(), trafil2);
+                dStr.ChangeSurfaceInterferences(isurf).Append(interfc4);
+                ishape2 = fd.IndexOfS2();
                 // Case of degenerated edge : pcurve is associated via SCI
                 // to TopOpeBRepDSCurve.
-                ref TopOpeBRepDS_Curve cc = ref DStr.ChangeCurve(IcFil2);
+                ref DsCurve cc = ref dStr.ChangeCurve(icFil2);
                 if (cc.Curve() is null)
                 {
-                    TopOpeBRepDS_Interference? bidinterf = null;
-                    cc.SetSCI(Interfc4, bidinterf);
+                    DsInterference? bidinterf = null;
+                    cc.SetSCI(interfc4, bidinterf);
                 }
                 else
                 {
-                    ChFiDS_Regul regon2 = new();
-                    regon2.SetCurve(IcFil2);
-                    regon2.SetS1(Isurf, false);
-                    if (Ishape2 < 0)
+                    Regul regon2 = new();
+                    regon2.SetCurve(icFil2);
+                    regon2.SetS1(isurf, false);
+                    if (ishape2 < 0)
                     {
-                        Ishape2 = -Ishape2;
-                        regon2.SetS2(Ishape2, false);
-                        Interfc2 = ChFi3d_FilCurveInDS(IcFil2, Ishape2, Fi2.PCurveOnFace(), Fi2.Transition());
-                        DStr.ChangeSurfaceInterferences(Ishape2).Append(Interfc2);
+                        ishape2 = -ishape2;
+                        regon2.SetS2(ishape2, false);
+                        interfc2 = ChFi3d_FilCurveInDS(icFil2, ishape2, fi2.PCurveOnFace(), fi2.Transition());
+                        dStr.ChangeSurfaceInterferences(ishape2).Append(interfc2);
                     }
-                    else if (Ishape2 > 0)
+                    else if (ishape2 > 0)
                     {
-                        regon2.SetS2(Ishape2, true);
-                        Interfc2 = ChFi3d_FilCurveInDS(IcFil2, Ishape2, Fi2.PCurveOnFace(), Fi2.Transition());
-                        DStr.ChangeShapeInterferences(Ishape2).Append(Interfc2);
+                        regon2.SetS2(ishape2, true);
+                        interfc2 = ChFi3d_FilCurveInDS(icFil2, ishape2, fi2.PCurveOnFace(), fi2.Transition());
+                        dStr.ChangeShapeInterferences(ishape2).Append(interfc2);
                     }
                     reglist.Append(regon2);
                 }
                 // Indice and type of the point in End
                 int ipoin;
-                bool isVertex = Fd.VertexLastOnS2().IsVertex();
-                if (j == SeqFil.Length())
+                bool isVertex = fd.VertexLastOnS2().IsVertex;
+                if (j == seqFil.Length())
                 {
-                    ipoin = CorDat.IndexLastPointOnS2();
+                    ipoin = corDat.IndexLastPointOnS2();
                 }
-                else if (j == (SeqFil.Length() - 1) && /*Closed &&*/
-                         (DStr.Curve(SeqFil.Last().InterferenceOnS2().LineIndex()).Curve() is null))
+                else if (j == (seqFil.Length() - 1) && /*Closed &&*/
+                         (dStr.Curve(seqFil.Last().InterferenceOnS2().LineIndex()).Curve() is null))
                 {
-                    if (Closed)
+                    if (closed)
                     {
-                        ipoin = CorDat.IndexFirstPointOnS2();
-                        isVertex = SeqFil.Value(1).VertexFirstOnS2().IsVertex();
+                        ipoin = corDat.IndexFirstPointOnS2();
+                        isVertex = seqFil.Value(1).VertexFirstOnS2().IsVertex;
                     }
                     else
                     {
-                        ipoin = CorDat.IndexLastPointOnS2();
-                        isVertex = SeqFil.Last().VertexLastOnS2().IsVertex();
+                        ipoin = corDat.IndexLastPointOnS2();
+                        isVertex = seqFil.Last().VertexLastOnS2().IsVertex;
                     }
                 }
-                else if (DStr.Curve(IcFil2).Curve() is null)
+                else if (dStr.Curve(icFil2).Curve() is null)
                 { // Rotation !!
-                    ipoin = Ipoin2;
+                    ipoin = ipoin2;
                     isVertex = isVertex2;
                 }
-                else if (Fd.VertexLastOnS2().Point().IsEqual(Fd.VertexLastOnS1().Point(), 0))
+                else if (fd.VertexLastOnS2().Point().IsEqual(fd.VertexLastOnS1().Point(), 0))
                 { // Pinch !!
-                    ipoin = Ipoin1;
+                    ipoin = ipoin1;
                     isVertex = isVertex1;
                 }
-                else if (((j == 1) || (j == SeqFil.Length() - 1))
-                         && ((Fd.VertexLastOnS2().Point().IsEqual(SeqFil.Value(1).VertexFirstOnS2().Point(), 1.0e-7))
-                             || (Fd.VertexLastOnS2().Point().IsEqual(
-                                 SeqFil.Value(SeqFil.Length()).VertexLastOnS2().Point(), 1.0e-7))))
+                else if (((j == 1) || (j == seqFil.Length() - 1))
+                         && ((fd.VertexLastOnS2().Point().IsEqual(seqFil.Value(1).VertexFirstOnS2().Point(), 1.0e-7))
+                             || (fd.VertexLastOnS2().Point().IsEqual(
+                                 seqFil.Value(seqFil.Length()).VertexLastOnS2().Point(), 1.0e-7))))
                 {
                     // Case of SurfData cut in "Triangular" way.
-                    ipoin = CorDat.IndexLastPointOnS2();
+                    ipoin = corDat.IndexLastPointOnS2();
                     // eap, Apr 29 2002, occ 293
                 }
-                else if (isInDS2 && findIndexPoint(DStr, Fd, 2, out ipoin))
+                else if (isInDS2 && FindIndexPoint(dStr, fd, 2, out ipoin))
                 {
                 }
                 else
                 {
-                    ipoin = ChFi3d_IndexPointInDS(Fd.VertexLastOnS2(), DStr);
+                    ipoin = ChFi3d_IndexPointInDS(fd.VertexLastOnS2(), dStr);
                 }
 
-                NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(IcFil2);
+                NCollection_List<DsInterference> li = dStr.ChangeCurveInterferences(icFil2);
 
-                if (!ChFi3d_Contains(Li, IcFil2, Ipoin2))
+                if (!ChFi3d_Contains(li, icFil2, ipoin2))
                 {
-                    Interfp2 = ChFi3d_FilPointInDS(Forward, IcFil2, Ipoin2, Fi2.FirstParameter(), isVertex2);
-                    DStr.ChangeCurveInterferences(IcFil2).Append(Interfp2);
+                    interfp2 = ChFi3d_FilPointInDS(Forward, icFil2, ipoin2, fi2.FirstParameter(), isVertex2);
+                    dStr.ChangeCurveInterferences(icFil2).Append(interfp2);
                 }
 
-                if (ipoin == Ipoin2 || !ChFi3d_Contains(Li, IcFil2, ipoin))
+                if (ipoin == ipoin2 || !ChFi3d_Contains(li, icFil2, ipoin))
                 {
-                    Interfp4 = ChFi3d_FilPointInDS(Reversed, IcFil2, ipoin, Fi2.LastParameter(), isVertex);
-                    DStr.ChangeCurveInterferences(IcFil2).Append(Interfp4);
+                    interfp4 = ChFi3d_FilPointInDS(Reversed, icFil2, ipoin, fi2.LastParameter(), isVertex);
+                    dStr.ChangeCurveInterferences(icFil2).Append(interfp4);
                 }
-                Ipoin2 = ipoin;
+                ipoin2 = ipoin;
                 isVertex2 = isVertex;
             }
 
-            ET1 = trafil1;
-            if (j == SeqFil.Length())
+            et1 = trafil1;
+            if (j == seqFil.Length())
             {
                 if (!isInDS2)
                 {
-                    Icurv = CorDat.LastCurve();
-                    if (Closed && !Singulier_en_Bout && (Ipoin1 != Ipoin2))
+                    icurv = corDat.LastCurve();
+                    if (closed && !Singulier_en_Bout && (ipoin1 != ipoin2))
                     {
-                        regcout.SetS2(Isurf, false);
+                        regcout.SetS2(isurf, false);
                         reglist.Append(regcout);
                     }
-                    PCurv = CorDat.LastPCurve();
-                    ET1 = global::Kerf.Engine.Topology.TopAbs.Compose(ET1, CorDat.LastPCurveOrientation());
-                    CorDat.LastParameters(out Pardeb, out Parfin);
-                    NCollection_List<TopOpeBRepDS_Interference> Li = DStr.ChangeCurveInterferences(Icurv);
-                    if (Li.IsEmpty())
+                    PCurv = corDat.LastPCurve();
+                    et1 = global::Kerf.Engine.Topology.TopAbs.Compose(et1, corDat.LastPCurveOrientation());
+                    corDat.LastParameters(out pardeb, out parfin);
+                    NCollection_List<DsInterference> li = dStr.ChangeCurveInterferences(icurv);
+                    if (li.IsEmpty())
                     {
-                        if (CorDat.LastPCurveOrientation() == Reversed)
+                        if (corDat.LastPCurveOrientation() == Reversed)
                         {
-                            Interfp5 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin1, Parfin, isVertex1);
-                            Interfp6 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin2, Pardeb, isVertex2);
+                            interfp5 = ChFi3d_FilPointInDS(Reversed, icurv, ipoin1, parfin, isVertex1);
+                            interfp6 = ChFi3d_FilPointInDS(Forward, icurv, ipoin2, pardeb, isVertex2);
                         }
                         else
                         {
-                            Interfp5 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
-                            Interfp6 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
+                            interfp5 = ChFi3d_FilPointInDS(Forward, icurv, ipoin1, pardeb, isVertex1);
+                            interfp6 = ChFi3d_FilPointInDS(Reversed, icurv, ipoin2, parfin, isVertex2);
                         }
-                        Li.Append(Interfp5);
-                        Li.Append(Interfp6);
+                        li.Append(interfp5);
+                        li.Append(interfp6);
                     }
-                    Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
-                    DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
-                    if (Ipoin1 == Ipoin2)
+                    interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                    dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
+                    if (ipoin1 == ipoin2)
                     {
-                        ref TopOpeBRepDS_Curve TCurv = ref DStr.ChangeCurve(Icurv);
-                        TCurv.ChangeCurve() = null;
-                        TopOpeBRepDS_Interference? bidinterf = null;
-                        TCurv.SetSCI(Interfc1, bidinterf);
+                        ref DsCurve tCurv = ref dStr.ChangeCurve(icurv);
+                        tCurv.ChangeCurve() = null;
+                        DsInterference? bidinterf = null;
+                        tCurv.SetSCI(interfc1, bidinterf);
                         //         bidinterf = TCurv.GetSCI1();
                         //	  TCurv.SetSCI(bidinterf, Interfc1);
                     }
@@ -639,116 +642,116 @@ internal static partial class ChFi3d_Builder_0
                 // eap, Apr 29 2002, occ 293
                 if (!isInDS2)
                 {
-                    Curve3D? C3d = null;
+                    Curve3D? c3d = null;
                     double tolreached;
-                    ChFi3d_ComputeArete(Fd.VertexLastOnS1(),
-                                        Fd.InterferenceOnS1().PCurveOnSurf()!.Value(
-                                            Fd.InterferenceOnS1().LastParameter()),
-                                        Fd.VertexLastOnS2(),
-                                        Fd.InterferenceOnS2().PCurveOnSurf()!.Value(
-                                            Fd.InterferenceOnS2().LastParameter()),
-                                        DStr.Surface(Fd.Surf()).Surface()!, ref C3d, ref PCurv, ref Pardeb,
-                                        ref Parfin, tol3d, tol2d, out tolreached, 0);
-                    Crv = new TopOpeBRepDS_Curve(C3d, tolreached);
-                    Icurv = DStr.AddCurve(ref Crv);
-                    regfilfil.SetCurve(Icurv);
-                    regfilfil.SetS1(Isurf, false);
-                    Interfp5 = ChFi3d_FilPointInDS(Forward, Icurv, Ipoin1, Pardeb, isVertex1);
-                    DStr.ChangeCurveInterferences(Icurv).Append(Interfp5);
-                    Interfp6 = ChFi3d_FilPointInDS(Reversed, Icurv, Ipoin2, Parfin, isVertex2);
-                    DStr.ChangeCurveInterferences(Icurv).Append(Interfp6);
-                    Interfc1 = ChFi3d_FilCurveInDS(Icurv, Isurf, PCurv, ET1);
-                    DStr.ChangeSurfaceInterferences(Isurf).Append(Interfc1);
+                    ChFi3d_ComputeArete(fd.VertexLastOnS1(),
+                                        fd.InterferenceOnS1().PCurveOnSurf()!.Value(
+                                            fd.InterferenceOnS1().LastParameter()),
+                                        fd.VertexLastOnS2(),
+                                        fd.InterferenceOnS2().PCurveOnSurf()!.Value(
+                                            fd.InterferenceOnS2().LastParameter()),
+                                        dStr.Surface(fd.Surf()).Surface()!, ref c3d, ref PCurv, ref pardeb,
+                                        ref parfin, tol3d, tol2d, out tolreached, 0);
+                    crv = new DsCurve(c3d, tolreached);
+                    icurv = dStr.AddCurve(ref crv);
+                    regfilfil.SetCurve(icurv);
+                    regfilfil.SetS1(isurf, false);
+                    interfp5 = ChFi3d_FilPointInDS(Forward, icurv, ipoin1, pardeb, isVertex1);
+                    dStr.ChangeCurveInterferences(icurv).Append(interfp5);
+                    interfp6 = ChFi3d_FilPointInDS(Reversed, icurv, ipoin2, parfin, isVertex2);
+                    dStr.ChangeCurveInterferences(icurv).Append(interfp6);
+                    interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                    dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
                 }
             }
 
-            Degene = V3.Point().IsEqual(V4.Point(), 0);
+            degene = v3.Point().IsEqual(v4.Point(), 0);
 
             // Processing of degenerated case
-            if (Degene)
+            if (degene)
             {
                 // Queue de Billard
-                bool Vertex = (V3.IsVertex()) && (V4.IsVertex());
-                if (!Vertex)
+                bool vertex = (v3.IsVertex) && (v4.IsVertex);
+                if (!vertex)
                 {
                 }
                 else
                 {
                     // The edge of the spine starting on this vertex is removed.
-                    bool Trouve = false;
-                    Edge Arcspine = new();
-                    Orientation OVtx = Forward;
-                    BoutdeVtx = V3.Vertex();
+                    bool trouve = false;
+                    Edge arcspine = new();
+                    Orientation oVtx = Forward;
+                    boutdeVtx = v3.Vertex();
 
-                    while (NumEdge <= spine!.NbEdges() && !Trouve)
+                    while (numEdge <= spine!.EdgeCount && !trouve)
                     {
-                        Arcspine = spine.Edges(NumEdge);
-                        for (ex.Init(Arcspine.Oriented(Forward), global::Kerf.Topology.ShapeType.Vertex); ex.More() && (!Trouve);
+                        arcspine = spine.Edges(numEdge);
+                        for (ex.Init(arcspine.Oriented(Forward), global::Kerf.Topology.ShapeType.Vertex); ex.More() && (!trouve);
                              ex.Next())
                         {
-                            if (BoutdeVtx.IsSame(ex.Current()))
+                            if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                OVtx = ex.Current().Orientation();
-                                if (Closed && (NumEdge == 1))
+                                oVtx = ex.Current().Orientation();
+                                if (closed && (numEdge == 1))
                                 {
-                                    Trouve = (spine.NbEdges() == 1);
+                                    trouve = (spine.EdgeCount == 1);
                                 }
                                 else
                                 {
-                                    Trouve = true;
+                                    trouve = true;
                                 }
                             }
                         }
-                        if (!Trouve)
+                        if (!trouve)
                         {
-                            NumEdge++; // Go to the next edge
+                            numEdge++; // Go to the next edge
                         }
                     }
-                    int IArcspine = DStr.AddShape(Arcspine);
-                    int IVtx;
-                    if (j == SeqFil.Length())
+                    int iArcspine = dStr.AddShape(arcspine);
+                    int iVtx;
+                    if (j == seqFil.Length())
                     {
-                        IVtx = CorDat.IndexLastPointOnS1();
+                        iVtx = corDat.IndexLastPointOnS1();
                     }
                     else
                     {
-                        IVtx = DStr.AddShape(BoutdeVtx);
+                        iVtx = dStr.AddShape(boutdeVtx);
                     }
-                    OVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(OVtx);
-                    double parVtx = Tool.Parameter(BoutdeVtx, Arcspine);
-                    TopOpeBRepDS_CurvePointInterference interfv = ChFi3d_FilVertexInDS(OVtx, IArcspine, IVtx, parVtx);
-                    DStr.ChangeShapeInterferences(IArcspine).Append(interfv);
+                    oVtx = global::Kerf.Engine.Topology.TopAbs.Reverse(oVtx);
+                    double parVtx = Tool.Parameter(boutdeVtx, arcspine);
+                    DsCurvePointInterference interfv = ChFi3d_FilVertexInDS(oVtx, iArcspine, iVtx, parVtx);
+                    dStr.ChangeShapeInterferences(iArcspine).Append(interfv);
                 }
             } // end of degenerated case
-            else if (!Closed || j != SeqFil.Length())
+            else if (!closed || j != seqFil.Length())
             {
                 // Processing of interference Point / Edges
-                if (V3.IsOnArc())
+                if (v3.IsOnArc)
                 {
-                    if (!(V3.IsVertex() && Fd.IsOnCurve1()))
+                    if (!(v3.IsVertex && fd.IsOnCurve1))
                     {
-                        Iarc1 = DStr.AddShape(V3.Arc());
-                        if (!ChFi3d_Contains(DStr.ShapeInterferences(Iarc1), Iarc1, Ipoin1, V3.IsVertex(), true))
+                        iarc1 = dStr.AddShape(v3.Arc());
+                        if (!ChFi3d_Contains(dStr.ShapeInterferences(iarc1), iarc1, ipoin1, v3.IsVertex, true))
                         {
-                            TopOpeBRepDS_CurvePointInterference Interfpp =
-                                ChFi3d_FilPointInDS(V3.TransitionOnArc(), Iarc1, Ipoin1, V3.ParameterOnArc(),
-                                                    V3.IsVertex());
-                            DStr.ChangeShapeInterferences(V3.Arc()).Append(Interfpp);
+                            DsCurvePointInterference interfpp =
+                                ChFi3d_FilPointInDS(v3.TransitionOnArc(), iarc1, ipoin1, v3.ParameterOnArc(),
+                                                    v3.IsVertex);
+                            dStr.ChangeShapeInterferences(v3.Arc()).Append(interfpp);
                         }
                     }
                 }
 
-                if (V4.IsOnArc())
+                if (v4.IsOnArc)
                 {
-                    if (!(V4.IsVertex() && Fd.IsOnCurve2()))
+                    if (!(v4.IsVertex && fd.IsOnCurve2))
                     {
-                        Iarc2 = DStr.AddShape(V4.Arc());
-                        if (!ChFi3d_Contains(DStr.ShapeInterferences(Iarc2), Iarc2, Ipoin2, V4.IsVertex(), true))
+                        iarc2 = dStr.AddShape(v4.Arc());
+                        if (!ChFi3d_Contains(dStr.ShapeInterferences(iarc2), iarc2, ipoin2, v4.IsVertex, true))
                         {
-                            TopOpeBRepDS_CurvePointInterference Intfpp =
-                                ChFi3d_FilPointInDS(V4.TransitionOnArc(), Iarc2, Ipoin2, V4.ParameterOnArc(),
-                                                    V4.IsVertex());
-                            DStr.ChangeShapeInterferences(V4.Arc()).Append(Intfpp);
+                            DsCurvePointInterference intfpp =
+                                ChFi3d_FilPointInDS(v4.TransitionOnArc(), iarc2, ipoin2, v4.ParameterOnArc(),
+                                                    v4.IsVertex);
+                            dStr.ChangeShapeInterferences(v4.Arc()).Append(intfpp);
                         }
                     }
                 }

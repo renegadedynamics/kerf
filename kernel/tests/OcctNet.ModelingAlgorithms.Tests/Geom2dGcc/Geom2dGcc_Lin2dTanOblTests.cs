@@ -1,9 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Constraints.Analytic;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
-using static Occt.GccEnt_Position;
+using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
 
@@ -20,11 +21,11 @@ public class Geom2dGcc_Lin2dTanOblTests
     {
         Circle2D             c1    = new(new Axis2D(new Point2D(1, 2), DX), 3);
         Line2D              aLine = new(new Point2D(0, -4), new Direction2D(1, 0.5));
-        Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))), aLine,
+        global::Kerf.Engine.Construction.Constraints.Lin2dTanObl aLin  = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(new CircleCurve2D(c1))), aLine,
                                           1e-9, 0.7);
-        GccAna_Lin2dTanObl    anAna = new(GccEnt.Unqualified(c1), aLine, 0.7);
-        Assert.True(aLin.IsDone());
-        Assert.Equal(2, aLin.NbSolutions());
+        AnalyticLin2dTanObl    anAna = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(c1), aLine, 0.7);
+        Assert.True(aLin.IsDone);
+        Assert.Equal(2, aLin.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             Assert.Equal(anAna.ThisSolution(i), aLin.ThisSolution(i));
@@ -34,8 +35,8 @@ public class Geom2dGcc_Lin2dTanOblTests
             aLin.Intersection2(i, out double p2, out double a2, out Point2D t2);
             anAna.Intersection2(i, out double q2, out double b2, out Point2D u2);
             Assert.Equal((q2, b2, u2), (p2, a2, t2));
-            aLin.WhichQualifier(i, out GccEnt_Position aQ);
-            anAna.WhichQualifier(i, out GccEnt_Position aR);
+            aLin.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
+            anAna.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aR);
             Assert.Equal(aR, aQ);
         }
     }
@@ -45,9 +46,9 @@ public class Geom2dGcc_Lin2dTanOblTests
     {
         CurveAdaptor2D   anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D              aLine = new(new Point2D(0, -4), DX);
-        Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
-        Assert.True(aLin.IsDone());
-        Assert.Equal(2, aLin.NbSolutions());
+        global::Kerf.Engine.Construction.Constraints.Lin2dTanObl aLin  = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
+        Assert.True(aLin.IsDone);
+        Assert.Equal(2, aLin.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = aLin.ThisSolution(i);
@@ -69,7 +70,7 @@ public class Geom2dGcc_Lin2dTanOblTests
         // solution found, so the constructor throws
         CurveAdaptor2D anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D            aLine = new(new Point2D(0, -4), DX);
-        Assert.Throws<Geom2dGcc_IsParallel>(() => new Geom2dGcc_Lin2dTanObl(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, 0.0));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.IsParallelException>(() => new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, 0.0));
     }
 
     [Fact]
@@ -77,12 +78,12 @@ public class Geom2dGcc_Lin2dTanOblTests
     {
         CurveAdaptor2D   anEll = new(new EllipseCurve2D(new Axis2D(new Point2D(0, 0), DX), 3, 1));
         Line2D              aLine = new(new Point2D(0, -4), DX);
-        Geom2dGcc_Lin2dTanObl aLin  = new(Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
+        global::Kerf.Engine.Construction.Constraints.Lin2dTanObl aLin  = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), aLine, 1e-6, M_PI / 4);
         Assert.Throws<OutOfRangeException>(() => aLin.ThisSolution(3));
         Assert.Throws<OutOfRangeException>(() => aLin.Tangency1(0, out _, out _, out _));
         Assert.Throws<OutOfRangeException>(() => aLin.Intersection2(3, out _, out _, out _));
         Assert.Throws<OutOfRangeException>(() => aLin.WhichQualifier(3, out _));
-        Assert.Throws<GccEnt_BadQualifier>(
-            () => new Geom2dGcc_Lin2dTanObl(new Geom2dGcc_QualifiedCurve(anEll, GccEnt_noqualifier), aLine, 1e-6, M_PI / 4));
+        Assert.Throws<global::Kerf.Engine.Construction.Constraints.BadQualifierException>(
+            () => new global::Kerf.Engine.Construction.Constraints.Lin2dTanObl(new global::Kerf.Engine.Construction.Constraints.QualifiedCurve(anEll, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), aLine, 1e-6, M_PI / 4));
     }
 }

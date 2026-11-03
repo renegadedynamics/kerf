@@ -7,12 +7,13 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
-using static Occt.BRepCheck_Status;
+using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.TransformForm;
 using static Kerf.Topology.ShapeType;
 
@@ -2214,9 +2215,9 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
         }
 
         // Check if the result is closed
-        BRepCheck_Shell checker = new BRepCheck_Shell(ShapeCasts.Shell(result));
-        BRepCheck_Status checkStatus = checker.Closed();
-        if (checkStatus == BRepCheck_NoError)
+        ShellCheck checker = new ShellCheck(ShapeCasts.Shell(result));
+        StatusCheck checkStatus = checker.Closed();
+        if (checkStatus == StatusCheck.NoError)
         {
             result.Closed(true);
         }
@@ -2231,10 +2232,10 @@ public class STEPControl_ActorRead : Transfer_ActorOfTransientProcess, StepToTop
             Face currentFace = ShapeCasts.Face(aClosingFace);
             // Remove face to see if Shell is still closed
             brepBuilder.Remove(result, currentFace);
-            BRepCheck_Shell subChecker = new BRepCheck_Shell(ShapeCasts.Shell(result));
-            BRepCheck_Status subCheckStatus = subChecker.Closed();
+            ShellCheck subChecker = new ShellCheck(ShapeCasts.Shell(result));
+            StatusCheck subCheckStatus = subChecker.Closed();
             // If Shell becomes open, just put the deleted face back
-            if (subCheckStatus != BRepCheck_NoError)
+            if (subCheckStatus != StatusCheck.NoError)
             {
                 brepBuilder.Add(result, currentFace);
             }

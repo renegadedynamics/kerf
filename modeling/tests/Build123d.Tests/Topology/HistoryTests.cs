@@ -7,6 +7,8 @@
 // - ShapeHistory.deep_copy_drops_the_record: copy.deepcopy has no counterpart.
 // - ShapeHistory.merge_returns_self_and_tolerates_none: records are immutable, so merging an empty record returns a
 //   new record rather than self; only the None case returns the same record.
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Occt;
@@ -110,7 +112,7 @@ public class ShapeHistoryTests
     {
         var square = Face.MakeRect(4, 4);
         var vec = new Vector3D(0, 0, 5);
-        var prism = new BRepPrimAPI_MakePrism(square.Wrapped, vec);
+        var prism = new ApiMakePrism(square.Wrapped, vec);
         prism.Build();
         var history = ShapeHistory.FromAlgorithm(prism, [square.Wrapped], prism.Shape());
         foreach (var edge in square.Edges())
@@ -126,7 +128,7 @@ public class ShapeHistoryTests
     {
         var left = Face.MakeRect(4, 4);
         var right = Face.MakeRect(4, 4, new Plane((4, 0, 0)));
-        var sewing = new BRepBuilderAPI_Sewing(1e-6);
+        var sewing = new Sewing(1e-6);
         sewing.Add(left.Wrapped);
         sewing.Add(right.Wrapped);
         sewing.Perform();
@@ -230,7 +232,7 @@ public class ShapeHistoryTests
         var expected = Answers(original);
         var actual = Answers(placed, s =>
         {
-            var transform = new BRepBuilderAPI_Transform(s.Wrapped, inverse, true);
+            var transform = new Transform(s.Wrapped, inverse, true);
             return Shape.Cast(transform.Shape());
         });
         foreach (var key in expected.Keys)

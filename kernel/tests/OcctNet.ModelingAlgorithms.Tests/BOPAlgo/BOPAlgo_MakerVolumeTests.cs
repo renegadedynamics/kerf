@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -16,9 +18,9 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 public class BOPAlgo_MakerVolumeTests
 {
     // A = [0, 10]^3 and B = [5, 15]^3
-    internal static Shape BoxA() => new BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
+    internal static Shape BoxA() => new MakeBox(10.0, 10.0, 10.0).Shape();
 
-    internal static Shape BoxB() => new BRepPrimAPI_MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
+    internal static Shape BoxB() => new MakeBox(new Point3D(5, 5, 5), 10.0, 10.0, 10.0).Shape();
 
     internal static NCollection_List<Shape> Faces(params Shape[] theShapes)
     {
@@ -36,7 +38,7 @@ public class BOPAlgo_MakerVolumeTests
     internal static double Volume(in Shape theShape)
     {
         var aProps = new Properties();
-        BRepGProp.VolumeProperties(theShape, aProps);
+        MassPropertiesBuilder.VolumeProperties(theShape, aProps);
         return aProps.Mass();
     }
 
@@ -47,10 +49,10 @@ public class BOPAlgo_MakerVolumeTests
         return aMap.Extent();
     }
 
-    private static BOPAlgo_MakerVolume Make(NCollection_List<Shape> theArgs, bool theIntersect = true,
+    private static MakerVolume Make(NCollection_List<Shape> theArgs, bool theIntersect = true,
                                             bool theAvoidInternal = false, bool theParallel = false)
     {
-        BOPAlgo_MakerVolume aMV = new();
+        MakerVolume aMV = new();
         aMV.SetArguments(theArgs);
         aMV.SetIntersect(theIntersect);
         aMV.SetAvoidInternalShapes(theAvoidInternal);
@@ -62,8 +64,8 @@ public class BOPAlgo_MakerVolumeTests
     [Fact]
     public void Faces_of_two_overlapping_boxes_make_three_solids()
     {
-        BOPAlgo_MakerVolume aMV = Make(Faces(BoxA(), BoxB()));
-        Assert.False(aMV.HasErrors());
+        MakerVolume aMV = Make(Faces(BoxA(), BoxB()));
+        Assert.False(aMV.HasErrors);
         Shape aR = aMV.Shape();
         Assert.Equal(ShapeType.Compound, aR.ShapeType());
         Assert.Equal(3, Count(aR, ShapeType.Solid));
@@ -74,7 +76,7 @@ public class BOPAlgo_MakerVolumeTests
     [Fact]
     public void One_box_s_faces_make_one_solid()
     {
-        BOPAlgo_MakerVolume aMV = Make(Faces(BoxA()));
+        MakerVolume aMV = Make(Faces(BoxA()));
         Shape aR = aMV.Shape();
         Assert.Equal(ShapeType.Solid, aR.ShapeType());
         Assert.Equal(1000.0, Volume(aR), 1.0e-6);
@@ -85,16 +87,16 @@ public class BOPAlgo_MakerVolumeTests
     public void Without_intersection_the_arguments_must_share_their_faces()
     {
         // the faces of one box share their edges: no intersection is needed
-        BOPAlgo_MakerVolume aMV = Make(Faces(BoxA()), theIntersect: false);
-        Assert.False(aMV.HasErrors());
+        MakerVolume aMV = Make(Faces(BoxA()), theIntersect: false);
+        Assert.False(aMV.HasErrors);
         Assert.Equal(1000.0, Volume(aMV.Shape()), 1.0e-6);
-        Assert.False(aMV.IsIntersect());
+        Assert.False(aMV.IsIntersect);
     }
 
     [Fact]
     public void An_edge_inside_becomes_internal_unless_avoided()
     {
-        Shape anEdge = new BRepBuilderAPI_MakeEdge(new Point3D(2, 2, 2), new Point3D(8, 8, 8)).Shape();
+        Shape anEdge = new MakeEdge(new Point3D(2, 2, 2), new Point3D(8, 8, 8)).Shape();
         NCollection_List<Shape> anArgs = Faces(BoxA());
         anArgs.Append(anEdge);
 
@@ -109,8 +111,8 @@ public class BOPAlgo_MakerVolumeTests
     [Fact]
     public void No_arguments_is_an_error()
     {
-        BOPAlgo_MakerVolume aMV = Make(new NCollection_List<Shape>());
-        Assert.True(aMV.GetReport().HasAlert(typeof(BOPAlgo_AlertTooFewArguments)));
+        MakerVolume aMV = Make(new NCollection_List<Shape>());
+        Assert.True(aMV.GetReport().HasAlert(typeof(AlertTooFewArguments)));
     }
 
     [Fact]
@@ -119,7 +121,7 @@ public class BOPAlgo_MakerVolumeTests
         Shape aA = BoxA(), aB = BoxB();
         string aTextA = BRepTextComparison.Write(aA), aTextB = BRepTextComparison.Write(aB);
         NCollection_List<Shape> anArgs = Faces(aA, aB);
-        BOPAlgo_MakerVolume aMV = Make(anArgs);
+        MakerVolume aMV = Make(anArgs);
         Assert.Equal(aTextA, BRepTextComparison.Write(aA));
         Assert.Equal(aTextB, BRepTextComparison.Write(aB));
         // the face of A at x = 10 is split by B

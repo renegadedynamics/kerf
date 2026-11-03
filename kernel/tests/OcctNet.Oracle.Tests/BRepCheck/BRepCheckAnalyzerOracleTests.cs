@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
@@ -107,7 +108,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     {
         try
         {
-            var anAnalyzer = new BRepCheck_Analyzer(theShape, theGeom, theParallel);
+            var anAnalyzer = new Analyzer(theShape, theGeom, theParallel);
             NCollection_IndexedMap<Shape> aMap = PortMap(theShape);
             var aVerdicts = new bool[aMap.Extent()];
             for (int i = 1; i <= aMap.Extent(); i++)
@@ -123,17 +124,17 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
     }
 
-    private static string Statuses(NCollection_List<BRepCheck_Status> theList)
+    private static string Statuses(NCollection_List<StatusCheck> theList)
         => string.Join(",", theList.Select(s => Kerf.Engine.Foundation.OcctTypeNames.Of(s).Replace("BRepCheck_", "", StringComparison.Ordinal)));
 
     /// <summary>Every status of every result; with <paramref name="theFaultsOnly"/>, only of the results with a fault.</summary>
-    private static string Dump(BRepCheck_Analyzer theAnalyzer, NCollection_IndexedMap<Shape> theMap, bool theFaultsOnly)
+    private static string Dump(Analyzer theAnalyzer, NCollection_IndexedMap<Shape> theMap, bool theFaultsOnly)
     {
         var aText = new StringBuilder();
         for (int i = 1; i <= theMap.Extent(); i++)
         {
             Shape aSub = theMap.FindKey(i);
-            BRepCheck_Result? aResult = theAnalyzer.Result(aSub);
+            ResultCheck? aResult = theAnalyzer.Result(aSub);
             if (aResult is null)
             {
                 continue;
@@ -162,7 +163,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     {
         try
         {
-            return Dump(new BRepCheck_Analyzer(theShape, theGeom), PortMap(theShape), true);
+            return Dump(new Analyzer(theShape, theGeom), PortMap(theShape), true);
         }
         catch (Exception anException)
         {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -14,7 +15,7 @@ public sealed class STEPCAFControlTests
 {
     private static Shape Box(double theSize)
     {
-        var aMaker = new BRepPrimAPI_MakeBox(theSize, theSize, theSize);
+        var aMaker = new MakeBox(theSize, theSize, theSize);
         return aMaker.Shape();
     }
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using System.Globalization;
@@ -11,7 +12,7 @@ namespace OcctNet.ModelingAlgorithms.Tests;
 /// <summary>
 /// The recordings of <c>tools/dsrec --recon</c> (unit 7R): for each case (a native fillet or chamfer), the input as
 /// BRep text, native's data structure as <c>ChFi3d_Builder::Compute</c> hands it to the HBuilder's <c>Perform</c>
-/// (<see cref="TopOpeBRepDS_TextDump"/>'s format), and native's result and history after <c>Build</c>: the result as
+/// (<see cref="TextDump"/>'s format), and native's result and history after <c>Build</c>: the result as
 /// BRep text, the faces of each surface (<c>Builder()->NewFaces</c>), the lengths of the edges of each curve
 /// (<c>Builder()->NewEdges</c>), <c>IsDeleted</c> and <c>Modified</c> of each
 /// input face, <c>Generated</c> of each input edge and vertex, as indices in <c>TopExp::MapShapes(result, FACE)</c>.

@@ -22,7 +22,7 @@ public sealed class Interface_FileParameter
     /// <summary>An empty parameter (type Misc, no text, entity number 0).</summary>
     public Interface_FileParameter()
     {
-        thetype = Interface_ParamMisc;
+        thetype = Interface_ParamType.Interface_ParamMisc;
         thenum = 0;
     }
 

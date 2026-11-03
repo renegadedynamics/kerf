@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Fairing;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
@@ -141,7 +142,7 @@ internal static class FairCurveRecordings
         }
     }
 
-    private static void State(Writer w, FairCurve_Batten theB, string p, FairCurve_MinimalVariation? theMV)
+    private static void State(Writer w, Batten theB, string p, MinimalVariation? theMV)
     {
         w.Tok(p + "a1", () => Hex(theB.GetAngle1()));
         w.Tok(p + "a2", () => Hex(theB.GetAngle2()));
@@ -160,11 +161,11 @@ internal static class FairCurveRecordings
         w.Tok(p + "curve", () => Curve(theB.Curve()));
     }
 
-    private static void Compute(Writer w, FairCurve_Batten theB, string thePrefix, int theNbIter, double theTol)
+    private static void Compute(Writer w, Batten theB, string thePrefix, int theNbIter, double theTol)
     {
         w.Tok(thePrefix, () =>
         {
-            bool anOk = theB.Compute(out FairCurve_AnalysisCode aCode, theNbIter, theTol);
+            bool anOk = theB.Compute(out AnalysisCode aCode, theNbIter, theTol);
             return Str(anOk ? 1 : 0) + "," + Str((int)aCode);
         });
     }
@@ -175,18 +176,18 @@ internal static class FairCurveRecordings
         double h = r.D(), s = r.D();
         double ratio = theMV ? r.D() : 0.0;
 
-        FairCurve_Batten aB;
-        FairCurve_MinimalVariation? aMV = null;
+        Batten aB;
+        MinimalVariation? aMV = null;
         try
         {
             if (theMV)
             {
-                aMV = new FairCurve_MinimalVariation(P1, P2, h, s, ratio);
+                aMV = new MinimalVariation(P1, P2, h, s, ratio);
                 aB = aMV;
             }
             else
             {
-                aB = new FairCurve_Batten(P1, P2, h, s);
+                aB = new Batten(P1, P2, h, s);
             }
         }
         catch (FailureException anExc)
@@ -255,18 +256,18 @@ internal static class FairCurveRecordings
         double a1 = r.D(), a2 = r.D();
         double h = r.D();
 
-        FairCurve_Batten aB;
-        FairCurve_MinimalVariation? aMV = null;
+        Batten aB;
+        MinimalVariation? aMV = null;
         try
         {
             if (theMV)
             {
-                aMV = new FairCurve_MinimalVariation(P1, P2, h);
+                aMV = new MinimalVariation(P1, P2, h);
                 aB = aMV;
             }
             else
             {
-                aB = new FairCurve_Batten(P1, P2, h);
+                aB = new Batten(P1, P2, h);
             }
         }
         catch (FailureException anExc)
@@ -364,7 +365,7 @@ internal static class FairCurveRecordings
                         aMV!.SetPhysicalRatio(Math.Abs(aValue) / 40.0);
                         break;
                 }
-                bool anOk = aB.Compute(out FairCurve_AnalysisCode aCode, 50, 1.0e-2);
+                bool anOk = aB.Compute(out AnalysisCode aCode, 50, 1.0e-2);
                 return Str(anOk ? 1 : 0) + "," + Str((int)aCode);
             });
             State(w, aB, aName + ".", aMV);
@@ -399,20 +400,20 @@ internal static class FairCurveRecordings
         double a1 = r.Angle(), a2 = r.Angle();
         double h = r.D(), s = r.D();
         double aSliding = r.D();
-        FairCurve_BattenLaw aLaw = new(h, s, aSliding);
+        BattenLaw aLaw = new(h, s, aSliding);
 
-        FairCurve_Energy anE;
+        Energy anE;
         try
         {
             if (theMVC)
             {
                 double ratio = r.D();
                 double c1 = r.D(), c2 = r.D();
-                anE = new FairCurve_EnergyOfMVC(Degree + 1, aFlat, aPoles, o1, o2, aLaw, ratio, aSliding, fs, a1, a2, c1, c2);
+                anE = new EnergyOfMvc(Degree + 1, aFlat, aPoles, o1, o2, aLaw, ratio, aSliding, fs, a1, a2, c1, c2);
             }
             else
             {
-                anE = new FairCurve_EnergyOfBatten(Degree + 1, aFlat, aPoles, o1, o2, aLaw, aSliding, fs, a1, a2);
+                anE = new EnergyOfBatten(Degree + 1, aFlat, aPoles, o1, o2, aLaw, aSliding, fs, a1, a2);
             }
         }
         catch (FailureException anExc)

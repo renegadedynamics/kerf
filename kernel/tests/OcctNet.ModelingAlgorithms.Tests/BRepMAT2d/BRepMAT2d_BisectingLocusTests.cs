@@ -4,6 +4,8 @@ using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Offsets.Bisectors;
+using Kerf.Engine.Offsets.MedialAxis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -11,7 +13,7 @@ using Kerf.Topology;
 using Xunit.Abstractions;
 
 using static Kerf.Geometry.JoinKind;
-using static Occt.MAT_Side;
+using static Kerf.Engine.Offsets.MedialAxis.MedialSide;
 using static Kerf.Topology.ShapeType;
 
 namespace OcctNet.ModelingAlgorithms.Tests;
@@ -34,12 +36,12 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     private const string Bow = "1 W 1 4 0 0 S 3 -2 7 -2 10 0 L 10 10 L 0 10 L";
     private const string OpenPolyline = "1 W 0 3 0 0 L 10 0 L 10 10 -";
 
-    private static (BRepMAT2d_Explorer, BRepMAT2d_BisectingLocus, Face) Compute(string theFace,
-        MAT_Side theSide = MAT_Left, JoinKind theJoin = Arc, bool theOpen = false)
+    private static (MedialAxisExplorer, BisectingLocus, Face) Compute(string theFace,
+        MedialSide theSide = MedialSide.Left, JoinKind theJoin = Arc, bool theOpen = false)
     {
         Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
-        BRepMAT2d_Explorer anExplo = new(aFace);
-        BRepMAT2d_BisectingLocus aLocus = new();
+        MedialAxisExplorer anExplo = new(aFace);
+        BisectingLocus aLocus = new();
         aLocus.Compute(anExplo, 1, theSide, theJoin, theOpen);
         return (anExplo, aLocus, aFace);
     }
@@ -56,9 +58,9 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [InlineData(Bow, 6, 7, 5, 0)]
     public void GraphCounts_Inside(string theFace, int theNbArcs, int theNbNodes, int theNbElts, int theNbInfinite)
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(theFace);
-        Assert.True(aLocus.IsDone());
-        MAT_Graph aG = aLocus.Graph();
+        (_, BisectingLocus aLocus, _) = Compute(theFace);
+        Assert.True(aLocus.IsDone);
+        MedialGraph aG = aLocus.Graph();
         Assert.Equal(theNbArcs, aG.NumberOfArcs());
         Assert.Equal(theNbNodes, aG.NumberOfNodes());
         Assert.Equal(theNbElts, aG.NumberOfBasicElts());
@@ -68,8 +70,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void GraphCounts_OpenWire()
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(OpenPolyline);
-        MAT_Graph aG = aLocus.Graph();
+        (_, BisectingLocus aLocus, _) = Compute(OpenPolyline);
+        MedialGraph aG = aLocus.Graph();
         Assert.Equal((8, 13, 7, 5),
             (aG.NumberOfArcs(), aG.NumberOfNodes(), aG.NumberOfBasicElts(), aG.NumberOfInfiniteNodes()));
     }
@@ -86,12 +88,12 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [InlineData(Bow)]
     public void Inside_IsATree_WithEquidistantNodes(string theFace)
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(theFace);
-        MAT_Graph aG = aLocus.Graph();
+        (_, BisectingLocus aLocus, _) = Compute(theFace);
+        MedialGraph aG = aLocus.Graph();
         Assert.Equal(aG.NumberOfArcs() + 1, aG.NumberOfNodes());
         for (int i = 1; i <= aG.NumberOfArcs(); i++)
         {
-            MAT_Arc anArc = aG.Arc(i);
+            MedialArc anArc = aG.Arc(i);
             Assert.Equal(i, anArc.Index());
             Assert.NotSame(anArc.FirstElement(), anArc.SecondElement());
             Assert.Same(anArc.FirstNode(), aG.Node(anArc.FirstNode().Index()));
@@ -100,13 +102,13 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         }
         for (int i = 1; i <= aG.NumberOfNodes(); i++)
         {
-            MAT_Node aN = aG.Node(i);
+            MedialNode aN = aG.Node(i);
             Assert.False(aN.Infinite());
             Assert.Equal(aN.PendingNode(), aN.OnBasicElt());
             Point2D aP = aLocus.GeomElt(aN);
-            NCollection_Sequence<MAT_BasicElt> aNear = new();
+            NCollection_Sequence<MedialBasicElt> aNear = new();
             aN.NearElts(aNear);
-            foreach (MAT_BasicElt aBE in aNear)
+            foreach (MedialBasicElt aBE in aNear)
             {
                 Assert.Equal(aN.Distance(), DistanceTo(aLocus.GeomElt(aBE), aP), 1.0e-6);
             }
@@ -133,8 +135,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void Square_ArcsMeetAtTheCentre()
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(Square);
-        MAT_Graph aG = aLocus.Graph();
+        (_, BisectingLocus aLocus, _) = Compute(Square);
+        MedialGraph aG = aLocus.Graph();
         int aNbCentre = 0;
         for (int i = 1; i <= aG.NumberOfNodes(); i++)
         {
@@ -143,7 +145,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
             {
                 aNbCentre++;
                 Assert.Equal(5.0, aG.Node(i).Distance(), 1.0e-9);
-                NCollection_Sequence<MAT_Arc> anArcs = new();
+                NCollection_Sequence<MedialArc> anArcs = new();
                 aG.Node(i).LinkedArcs(anArcs);
                 Assert.Equal(4, anArcs.Length());
             }
@@ -151,8 +153,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         Assert.Equal(1, aNbCentre);
         for (int i = 1; i <= aG.NumberOfArcs(); i++)
         {
-            Bisector_Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aReverse);
-            Assert.IsType<Bisector_BisecAna>(aB.Value().ChangeBasisCurve());
+            Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aReverse);
+            Assert.IsType<BisecAna>(aB.Value().ChangeBasisCurve());
             Point2D aStart = aB.Value().Value(aReverse ? aB.Value().LastParameter() : aB.Value().FirstParameter());
             Assert.Equal(0.0, aStart.Distance(aLocus.GeomElt(aG.Arc(i).FirstNode())), 1.0e-9);
         }
@@ -161,8 +163,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void Outside_HasInfiniteNodes()
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(Square, MAT_Right);
-        MAT_Graph aG = aLocus.Graph();
+        (_, BisectingLocus aLocus, _) = Compute(Square, MedialSide.Right);
+        MedialGraph aG = aLocus.Graph();
         Assert.Equal((8, 16, 8, 8),
             (aG.NumberOfArcs(), aG.NumberOfNodes(), aG.NumberOfBasicElts(), aG.NumberOfInfiniteNodes()));
         int aNbInfinite = 0;
@@ -180,7 +182,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void Contours_ElementsAndSections()
     {
-        (BRepMAT2d_Explorer anExplo, BRepMAT2d_BisectingLocus aLocus, _) = Compute(SquareWithHole);
+        (MedialAxisExplorer anExplo, BisectingLocus aLocus, _) = Compute(SquareWithHole);
         Assert.Equal(2, anExplo.NumberOfContours());
         Assert.Equal(2, aLocus.NumberOfContours());
         int aSum = 0;
@@ -203,13 +205,13 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void BezierSides_AreCutAtTheirCurvatureExtrema()
     {
-        (_, BRepMAT2d_BisectingLocus aLocus, _) = Compute(Bow);
+        (_, BisectingLocus aLocus, _) = Compute(Bow);
         Assert.True(aLocus.NumberOfSections(1, 1) > 1);
         bool aHasCC = false;
-        MAT_Graph aG = aLocus.Graph();
+        MedialGraph aG = aLocus.Graph();
         for (int i = 1; i <= aG.NumberOfArcs(); i++)
         {
-            aHasCC |= aLocus.GeomBis(aG.Arc(i), out _).Value().ChangeBasisCurve() is Bisector_BisecCC or Bisector_BisecPC;
+            aHasCC |= aLocus.GeomBis(aG.Arc(i), out _).Value().ChangeBasisCurve() is BisecCC or BisecPC;
         }
         Assert.True(aHasCC);
     }
@@ -217,8 +219,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     [Fact]
     public void LinkTopoBilo_EveryEdgeHasItsElements()
     {
-        (BRepMAT2d_Explorer anExplo, BRepMAT2d_BisectingLocus aLocus, Face aFace) = Compute(LShape);
-        BRepMAT2d_LinkTopoBilo aLink = new(anExplo, aLocus);
+        (MedialAxisExplorer anExplo, BisectingLocus aLocus, Face aFace) = Compute(LShape);
+        LinkTopoBilo aLink = new(anExplo, aLocus);
         NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aFace, ShapeType.Edge, anEdges);
         int aNb = 0;
@@ -244,8 +246,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     {
         // An explorer that read nothing has a null shape: OCCT dereferences its null TShape, the port throws
         // Standard_NullObject (TopoDS_Shape.ShapeType).
-        BRepMAT2d_Explorer anExplo = new();
-        Assert.Throws<NullObjectException>(() => new BRepMAT2d_LinkTopoBilo(anExplo, new BRepMAT2d_BisectingLocus()));
+        MedialAxisExplorer anExplo = new();
+        Assert.Throws<NullObjectException>(() => new LinkTopoBilo(anExplo, new BisectingLocus()));
     }
 
     [Fact]
@@ -255,7 +257,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         Assert.True(aFace.TShape()!.IsFrozen);
         string aBefore = Brep(aFace);
         List<string> aFirst = MatRecordings.Run("M L 0 0 " + Stadium);
-        BRepMAT2d_Explorer anExplo = new(aFace);
+        MedialAxisExplorer anExplo = new(aFace);
         Assert.True(anExplo.IsModified(aFace));
         Shape aNew = anExplo.ModifiedShape(aFace);
         Assert.False(aNew.IsSame(aFace));
@@ -279,8 +281,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     public void Throws_WhereNativeCrashes(string theFace)
     {
         Face aFace = MatRecordings.Face("M L 0 0 " + theFace);
-        BRepMAT2d_Explorer anExplo = new(aFace);
-        BRepMAT2d_BisectingLocus aLocus = new();
+        MedialAxisExplorer anExplo = new(aFace);
+        BisectingLocus aLocus = new();
         Exception anE = Assert.ThrowsAny<Exception>(() => aLocus.Compute(anExplo));
         theOutput.WriteLine(global::Kerf.Engine.Foundation.OcctTypeNames.Of(anE.GetType()) + ": " + anE.Message);
         theOutput.WriteLine(anE.StackTrace);
