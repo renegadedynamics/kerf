@@ -14692,3 +14692,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        shorter edge's length; for a zero-length edge it was 0 and the loop never ended. A step that no longer advances
        ends the sampling, so the edge's one point is checked once. Test with a time limit (`HangGuard`, new in the
        ModelingAlgorithms tests): a zero-length edge on another overlaps it, one off it doesn't.
+16505. **ShapeConstruct::ConvertSurfaceToBSpline gives up after C0** (row 702). When GeomConvert_ApproxSurface threw at
+       C0, OCCT retried C0 without end; it now returns the last result (null if none). Test: a surface whose evaluation
+       always fails returns null within the time limit.

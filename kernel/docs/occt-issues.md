@@ -699,7 +699,7 @@ showed no difference from native.
 |---|---|---|---|
 | `ShapeExtend_CompositeSurface::Copy` | Initializes the copy with `Init(patches)`, whose parametrisation defaults to natural | A copy (and so `Transformed`, `Translated`, ...) loses uniform, unitary or custom joint values. Pinned by `CompositeSurface_Copy_LosesJointValues`; the port's `With*` twins keep them | touch |
 | `ShapeConstruct::JoinPCurves` | Returns `i <= edges->Length()`: false when every pcurve was joined, true when the loop broke early (or on a plane) | The inverse of its documentation. No OCCT caller reads it. Pinned by `JoinPCurves_TwinJoinsTwoEdgesOnACylinder` | leave |
-| `ShapeConstruct::ConvertSurfaceToBSpline`, the continuity-lowering loop | `if (cnt > 0) cnt--; continue;` retries C0 as long as GeomConvert_ApproxSurface throws | Can loop forever. By reading | fix K2 |
+| `ShapeConstruct::ConvertSurfaceToBSpline`, the continuity-lowering loop | `if (cnt > 0) cnt--; continue;` retries C0 as long as GeomConvert_ApproxSurface throws | Can loop forever. By reading | fixed (decision 16505) |
 | `ShapeAnalysis_ShapeTolerance::InTolerance` | Tests vertices with `tol >= valmax` where faces and edges test `<=` | `OverTolerance(s, 0)` returns every vertex and nothing else; a vertex inside [min, max] isn't found. Pinned | touch |
 | `ShapeAnalysis_Geom::PositionTrsf` | `SetScale` resets the whole transformation | Any scale other than 1 discards the rotation computed before it. Pinned | touch |
 | `ShapeAnalysis_WireVertex::Analyze` | Compares vertices with `V1 == V2`, orientation included | An edge's REVERSED last vertex never equals the next edge's FORWARD first one: status 0 ("same vertex") is never recorded, shared vertices get 1. Pinned | touch |
