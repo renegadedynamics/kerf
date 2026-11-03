@@ -14990,3 +14990,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        3.2's third level: a difference is intended when the port's first value is the one it gives after
        IsCurvatureDefined, which is then compared with native's; `Curvature_asked_first_returns_the_stale_value` keeps
        native's stale value and asserts the port's.
+16709. **BRepGProp_Vinert by a plane reports its volume and centre** (unit 3H's BRepGProp_Gauss::convert row). The
+       test `|Mass| >= EPS_DIM && IsByPoint` sent every region bounded by a plane to the branch that clears the mass and
+       centre. The plane branch is reached now. Test: the region between a unit cube's top face and the plane z = 0 is
+       the cube, mass 1, centre (0.5, 0.5, 0.5), central inertia 1/6, for two location points (the pinned test
+       rewritten). Found on the way, left as it is: Vinert and VinertGK by plane both measure from the plane's mirror
+       image through the origin (they take a x + b y + c z − d where the plane is a x + b y + c z + d = 0), which a
+       closed shell doesn't notice (its volume by any plane is the solid's) and an open one does; not a listed row, so
+       it is recorded here for the module's rewrite. BRepGProp's statics by plane use VinertGK on shells.

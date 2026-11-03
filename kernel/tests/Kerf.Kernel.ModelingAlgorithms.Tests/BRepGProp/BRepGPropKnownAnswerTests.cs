@@ -584,15 +584,25 @@ public class BRepGPropKnownAnswerTests
     }
 
     [Fact]
-    public void Vinert_by_plane_returns_a_null_mass_as_OCCT_does()
+    public void Vinert_by_plane_is_the_prism_down_to_the_plane()
     {
-        // OCCT: BRepGProp_Gauss::convert clears the mass and centre of a region bounded by a plane (occt-issues.md)
+        // The region between the box's top face and the plane z = 0 is the unit cube, whatever the location point.
+        // OCCT's BRepGProp_Gauss::convert cleared the mass and centre of a region bounded by a plane (occt-issues.md,
+        // decision 16709). The central inertia is a cube's, m (b^2 + c^2) / 12.
         Face aTop = BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(1, 1, 1)))[1];
         var aBF = new FaceIntegrand(aTop);
         var aBD = new Domain(aTop);
         var aPln = new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         var aV = new Vinert(aBF, aBD, aPln, new Point3D(0, 0, 0));
-        Assert.Equal(0.0, aV.Mass());
+        Assert.Equal(1.0, aV.Mass(), 1e-12);
+        AssertPnt(new Point3D(0.5, 0.5, 0.5), aV.CentreOfMass(), 1e-12);
+        AssertMat(Diag(1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0), aV.MatrixOfInertia(), 1e-12);
+
+        aBD.Init();
+        var aV2 = new Vinert(aBF, aBD, aPln, new Point3D(0.2, 0.1, -0.5));
+        Assert.Equal(1.0, aV2.Mass(), 1e-12);
+        AssertPnt(new Point3D(0.5, 0.5, 0.5), aV2.CentreOfMass(), 1e-12);
+        AssertMat(Diag(1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0), aV2.MatrixOfInertia(), 1e-12);
 
         // by point it is the pyramid on the face: base 1, height 1
         aBD.Init();
