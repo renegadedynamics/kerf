@@ -1702,3 +1702,10 @@ Phase 10 (part): the rename (unit 10E). **Breaking: every name changes.**
 - The analyzers are `Kerf.Analyzers`, with ids `KERF0001` and `KERF0002`; .NET naming (IDE1006) is an error in the
   build where the code obeys it.
 - No behaviour changes: every test passes as before.
+Phase 10 (part): the working overlay (unit 10H1).
+- An operation can now run OCCT's in-place code on a caller's frozen shape without copying it: its writes go to working
+  copies of the TShapes it changes, which it reads back, and its result shares every sub-shape it didn't change, with a
+  direct history (`WorkingOverlay`, internal; docs/overlay-survey.md lists the 110 copy-at-entry sites 10H2 to 10H6
+  convert). Without an open overlay nothing changes.
+- ShapeFix_Edge's and ShapeFix_ShapeTolerance's twins (`AddPCurveFixed`, `VertexToleranceFixed`, `ToleranceLimited`, …)
+  run on it instead of a copy of their input: the same results, faster.

@@ -157,8 +157,9 @@ public static partial class BrepTools
         return copy;
     }
 
-    // A new TShape with the BRep data of theTShape (its geometry shared), without its children and flags.
-    private static TShape CopyData(TShape tShape)
+    // A new TShape with the BRep data of theTShape (its geometry shared), without its children and flags (also the
+    // working overlay's working copies).
+    internal static TShape CopyData(TShape tShape)
     {
         TShape copy;
         switch (tShape)
@@ -221,7 +222,7 @@ public static partial class BrepTools
         return copy;
     }
 
-    private static void CopyFlags(TShape theFrom, TShape to)
+    internal static void CopyFlags(TShape theFrom, TShape to)
     {
         to.Free(theFrom.Free());
         to.Modified(theFrom.Modified());
@@ -361,7 +362,7 @@ public static partial class BrepTools
     }
 
     // The same type, flags (but the cache bits) and BRep data, the geometry by identity.
-    private static bool IsSameData(TShape a, TShape b, bool ignoreToleranceGuard)
+    internal static bool IsSameData(TShape a, TShape b, bool ignoreToleranceGuard)
     {
         if (a.GetType() != b.GetType()
             || a.Orientable() != b.Orientable() || a.Closed() != b.Closed()

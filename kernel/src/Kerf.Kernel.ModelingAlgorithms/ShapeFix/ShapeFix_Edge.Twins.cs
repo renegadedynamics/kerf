@@ -1,5 +1,5 @@
 // OCCT.NET: the functional twins of ShapeFix_Edge's in-place fixes (docs/phase5-6-plan.md, section 2.7; decision
-// 583). Not a port of an OCCT file.
+// 583), on the working overlay since Kerf unit 10H1. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Healing.Analysis;
@@ -13,19 +13,20 @@ namespace Kerf.Engine.Healing.Fixes;
 
 public partial class EdgeFixer
 {
-    // The twin of an in-place fix: the fix on a copy of the edge if it holds a frozen shape (the context's requests for
-    // the edge's sub-shapes moved onto the copy and back), the copy's unchanged parts the caller's own again, frozen.
-    // A fix that changes nothing gives back the edge itself.
-    private Edge FixedOnCopy(in Edge edge, Func<Edge, bool> fix, out bool isDone)
+    // The twin of an in-place fix (Kerf unit 10H1, the working overlay's pilot): the fix runs on the caller's edge in a
+    // working overlay, which takes its writes into frozen TShapes; the result holds new TShapes for what the fix changed
+    // and the caller's own for the rest, frozen. The context's requests stay keyed by the caller's sub-shapes, and a
+    // sub-shape changed without a request is recorded in it. A fix that changes nothing gives back the edge itself.
+    private Edge FixedInOverlay(in Edge edge, Func<Edge, bool> fix, out bool isDone)
     {
         if (edge.IsNull)
         {
             isDone = fix(edge);
             return edge;
         }
-        var entry = new CopyAtEntry(edge, _context);
-        isDone = fix(ShapeCasts.Edge(entry.Shape()));
-        Shape result = entry.Finish(entry.Shape());
+        using var overlay = WorkingOverlay.Begin(edge, _context);
+        isDone = fix(edge);
+        Shape result = overlay.Finish(edge);
         result.TShape()!.FreezeGraph();
         return ShapeCasts.Edge(result);
     }
@@ -37,7 +38,7 @@ public partial class EdgeFixer
     public Edge RemovePCurveFixed(in Edge edge, in Face face, out bool isDone)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixRemovePCurve(e, aFace), out isDone);
+        return FixedInOverlay(edge, e => FixRemovePCurve(e, aFace), out isDone);
     }
 
     /// <summary>The edge without its pcurve on the surface if inconsistent (<c>FixRemovePCurve</c>), frozen.</summary>
@@ -45,12 +46,12 @@ public partial class EdgeFixer
                                          out bool isDone)
     {
         Placement loc = location;
-        return FixedOnCopy(edge, e => FixRemovePCurve(e, surface, loc), out isDone);
+        return FixedInOverlay(edge, e => FixRemovePCurve(e, surface, loc), out isDone);
     }
 
     /// <summary>The edge without its 3D curve if inconsistent with the vertices (<c>FixRemoveCurve3d</c>), frozen.</summary>
     public Edge RemoveCurve3dFixed(in Edge edge, out bool isDone) =>
-        FixedOnCopy(edge, e => FixRemoveCurve3d(e), out isDone);
+        FixedInOverlay(edge, e => FixRemoveCurve3d(e), out isDone);
 
     /// <summary>
     /// The edge with its missing pcurve(s) on the face added by projection (<c>FixAddPCurve</c>), frozen; the status
@@ -60,7 +61,7 @@ public partial class EdgeFixer
                                       double prec = 0.0)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixAddPCurve(e, aFace, isSeam, prec), out isDone);
+        return FixedInOverlay(edge, e => FixAddPCurve(e, aFace, isSeam, prec), out isDone);
     }
 
     /// <summary>The edge with its missing pcurve(s) on the surface added (<c>FixAddPCurve</c>), frozen.</summary>
@@ -68,7 +69,7 @@ public partial class EdgeFixer
                                       out bool isDone, double prec = 0.0)
     {
         Placement loc = location;
-        return FixedOnCopy(edge, e => FixAddPCurve(e, surface, loc, isSeam, prec), out isDone);
+        return FixedInOverlay(edge, e => FixAddPCurve(e, surface, loc, isSeam, prec), out isDone);
     }
 
     /// <summary>
@@ -79,7 +80,7 @@ public partial class EdgeFixer
                                       out bool isDone, double prec = 0.0)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixAddPCurve(e, aFace, isSeam, surfana, prec), out isDone);
+        return FixedInOverlay(edge, e => FixAddPCurve(e, aFace, isSeam, surfana, prec), out isDone);
     }
 
     /// <summary>
@@ -90,12 +91,12 @@ public partial class EdgeFixer
                                       SurfaceAnalysis surfana, out bool isDone, double prec = 0.0)
     {
         Placement loc = location;
-        return FixedOnCopy(edge, e => FixAddPCurve(e, surface, loc, isSeam, surfana, prec), out isDone);
+        return FixedInOverlay(edge, e => FixAddPCurve(e, surface, loc, isSeam, surfana, prec), out isDone);
     }
 
     /// <summary>The edge with its missing 3D curve built (<c>FixAddCurve3d</c>), frozen.</summary>
     public Edge AddCurve3dFixed(in Edge edge, out bool isDone) =>
-        FixedOnCopy(edge, e => FixAddCurve3d(e), out isDone);
+        FixedInOverlay(edge, e => FixAddCurve3d(e), out isDone);
 
     /// <summary>
     /// The edge with its vertices' tolerances raised to cover its curves on the face (<c>FixVertexTolerance</c>),
@@ -105,18 +106,18 @@ public partial class EdgeFixer
     public Edge VertexToleranceFixed(in Edge edge, in Face face, out bool isDone)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixVertexTolerance(e, aFace), out isDone);
+        return FixedInOverlay(edge, e => FixVertexTolerance(e, aFace), out isDone);
     }
 
     /// <summary>The edge with its vertices' tolerances raised (<c>FixVertexTolerance</c>), frozen; see the face form.</summary>
     public Edge VertexToleranceFixed(in Edge edge, out bool isDone) =>
-        FixedOnCopy(edge, e => FixVertexTolerance(e), out isDone);
+        FixedInOverlay(edge, e => FixVertexTolerance(e), out isDone);
 
     /// <summary>The edge with its pcurve on the face reversed if against the 3D curve (<c>FixReversed2d</c>), frozen.</summary>
     public Edge Reversed2dFixed(in Edge edge, in Face face, out bool isDone)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixReversed2d(e, aFace), out isDone);
+        return FixedInOverlay(edge, e => FixReversed2d(e, aFace), out isDone);
     }
 
     /// <summary>The edge with its pcurve on the surface reversed if needed (<c>FixReversed2d</c>), frozen.</summary>
@@ -124,18 +125,18 @@ public partial class EdgeFixer
                                        out bool isDone)
     {
         Placement loc = location;
-        return FixedOnCopy(edge, e => FixReversed2d(e, surface, loc), out isDone);
+        return FixedInOverlay(edge, e => FixReversed2d(e, surface, loc), out isDone);
     }
 
     /// <summary>The edge made SameParameter (<c>FixSameParameter</c>), frozen.</summary>
     public Edge SameParameterFixed(in Edge edge, out bool isDone, double tolerance = 0.0) =>
-        FixedOnCopy(edge, e => FixSameParameter(e, tolerance), out isDone);
+        FixedInOverlay(edge, e => FixSameParameter(e, tolerance), out isDone);
 
     /// <summary>The edge made SameParameter, checking its pcurve on the face (<c>FixSameParameter</c>), frozen.</summary>
     public Edge SameParameterFixed(in Edge edge, in Face face, out bool isDone,
                                           double tolerance = 0.0)
     {
         Face aFace = face;
-        return FixedOnCopy(edge, e => FixSameParameter(e, aFace, tolerance), out isDone);
+        return FixedInOverlay(edge, e => FixSameParameter(e, aFace, tolerance), out isDone);
     }
 }

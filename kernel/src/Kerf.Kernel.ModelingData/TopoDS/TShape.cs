@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using System.Runtime.InteropServices;
@@ -59,34 +60,52 @@ public abstract class TShape : Transient
     }
 
     /// <summary>The free flag: false once the TShape is a child of another one (its child list can't change).</summary>
-    public bool Free() => (_state & (ushort)BitLayout.Bit_Free) != 0;
+    public bool Free() => (State & (ushort)BitLayout.Bit_Free) != 0;
 
     internal void Free(bool isFree)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Free(isFree);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Free, isFree);
     }
 
     /// <summary>The locked flag. A frozen TShape is always locked (docs/phase3-design.md, section 4.3).</summary>
-    public bool Locked() => (_state & (ushort)BitLayout.Bit_Locked) != 0 || IsFrozen;
+    public bool Locked() => (State & (ushort)BitLayout.Bit_Locked) != 0 || IsFrozen;
 
     /// <summary>
     /// The stored locked bit, without the frozen state: what the shape sets write to files, so files carry OCCT's
     /// flags (OCCT.NET addition).
     /// </summary>
-    internal bool LockedFlag() => (_state & (ushort)BitLayout.Bit_Locked) != 0;
+    internal bool LockedFlag() => (State & (ushort)BitLayout.Bit_Locked) != 0;
 
     internal void Locked(bool isLocked)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Locked(isLocked);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Locked, isLocked);
     }
 
     /// <summary>The modification flag.</summary>
-    public bool Modified() => (_state & (ushort)BitLayout.Bit_Modified) != 0;
+    public bool Modified() => (State & (ushort)BitLayout.Bit_Modified) != 0;
 
     internal void Modified(bool isModified)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Modified(isModified);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Modified, isModified);
         if (isModified)
@@ -97,46 +116,76 @@ public abstract class TShape : Transient
     }
 
     /// <summary>The checked flag.</summary>
-    public bool Checked() => (_state & (ushort)BitLayout.Bit_Checked) != 0;
+    public bool Checked() => (State & (ushort)BitLayout.Bit_Checked) != 0;
 
     internal void Checked(bool isChecked)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Checked(isChecked);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Checked, isChecked);
     }
 
     /// <summary>The orientability flag.</summary>
-    public bool Orientable() => (_state & (ushort)BitLayout.Bit_Orientable) != 0;
+    public bool Orientable() => (State & (ushort)BitLayout.Bit_Orientable) != 0;
 
     internal void Orientable(bool isOrientable)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Orientable(isOrientable);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Orientable, isOrientable);
     }
 
     /// <summary>The closedness flag.</summary>
-    public bool Closed() => (_state & (ushort)BitLayout.Bit_Closed) != 0;
+    public bool Closed() => (State & (ushort)BitLayout.Bit_Closed) != 0;
 
     internal void Closed(bool isClosed)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Closed(isClosed);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Closed, isClosed);
     }
 
     /// <summary>The infinity flag.</summary>
-    public bool Infinite() => (_state & (ushort)BitLayout.Bit_Infinite) != 0;
+    public bool Infinite() => (State & (ushort)BitLayout.Bit_Infinite) != 0;
 
     internal void Infinite(bool isInfinite)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Infinite(isInfinite);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Infinite, isInfinite);
     }
 
     /// <summary>The convexness flag.</summary>
-    public bool Convex() => (_state & (ushort)BitLayout.Bit_Convex) != 0;
+    public bool Convex() => (State & (ushort)BitLayout.Bit_Convex) != 0;
 
     internal void Convex(bool isConvex)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            working.Convex(isConvex);
+            return;
+        }
+
         CheckMutable();
         SetBit(BitLayout.Bit_Convex, isConvex);
     }
@@ -148,7 +197,10 @@ public abstract class TShape : Transient
     public abstract TShape EmptyCopy();
 
     /// <summary>The number of direct sub-shapes (children).</summary>
-    public int ChildCount => _shapes.Extent();
+    public int ChildCount => WorkingOverlay.View(this)._shapes.Extent();
+
+    // The flags as the current working overlay sees them (WorkingOverlay; the shape type never changes).
+    private ushort State => WorkingOverlay.TryView(this, out TShape? view) ? view._state : _state;
 
     private void SetBit(BitLayout bit, bool isOn)
     {

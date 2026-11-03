@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.Orientation;
@@ -214,7 +215,8 @@ public class Builder
                 }
 
                 // Add to the subshapes list
-                TShape tShape = aShape.TShape()!;
+                // Kerf: a frozen shape takes the child in the working overlay's copy of it, if one is open
+                TShape tShape = WorkingOverlay.ForWrite(aShape.TShape()!);
                 tShape.CheckMutable(); // OCCT.NET: frozen
                 tShape._shapes.Append(child);
                 tShape.Modified(true);
@@ -273,7 +275,12 @@ public class Builder
 
         s.Location(s.Location().Predivided(aShape.Location()), false);
 
+        // Kerf: a frozen shape loses the child in the working overlay's copy of it, if one is open
         TShape tShape = aShape.TShape()!;
+        if (tShape.IsFrozen && WorkingOverlay.TryWritable(tShape, out TShape? working))
+        {
+            tShape = working;
+        }
         NCollection_List<Shape> list = tShape._shapes;
         var iter = new NCollection_List<Shape>.Iterator(list);
         while (iter.More())

@@ -4,8 +4,9 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
-
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
+
 using Occt;
 
 namespace Kerf.Engine.Topology;
@@ -75,7 +76,7 @@ public sealed class Iterator
         }
         else
         {
-            _iterator.Initialize(s.TShape()!._shapes);
+            _iterator.Initialize(WorkingOverlay.View(s.TShape()!)._shapes);
         }
 
         if (More())
