@@ -13,14 +13,56 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 {
     private static readonly int Cases = Tape.Cases(300, 70);
 
-    /// <summary>Structure, then evaluation at a few parameters (and slightly outside the range).</summary>
-    private static void CheckAll(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat)
+    /// <summary>
+    /// Structure, then evaluation at a few parameters (and slightly outside the range). With
+    /// <paramref name="thePolesFromNative"/>, native's poles are read rather than compared, and the evaluation is of the
+    /// curve they make, which is returned (<see cref="Geom2dOracle.SameStructure"/>).
+    /// </summary>
+    private static BSplineCurve2D CheckAll(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat,
+                                           bool thePolesFromNative = false)
     {
-        Geom2dOracle.SameStructure(theOracle, theNative, thePort, theWhat);
+        thePort = Geom2dOracle.SameStructure(theOracle, theNative, thePort, theWhat, thePolesFromNative);
         for (int k = 0; k < 3; k++)
         {
             double U = Geom2dOracle.Param(theOracle, thePort, k == 2 ? 0.2 : 0.0);
             Geom2dOracle.SameEval(theOracle, theNative, thePort, U, theWhat, 5);
+        }
+        return thePort;
+    }
+
+    // Plan 3.2's third level (occt-issues.md, BSplCLib::IncreaseDegree on periodic curves; Kerf unit 10K3, decision
+    // 16801): OCCT's raised periodic curve is another curve when the multiplicities at its two ends differ, which the
+    // port's isn't. Such a raise is checked against the curve before it, and native's curve, as recorded, goes on to
+    // the chain's later edits, which then ask native what they asked it when recorded.
+    private static bool RaisedOtherwiseByOcct(BSplineCurve2D theCurve)
+    {
+        if (!theCurve.IsPeriodic)
+        {
+            return false;
+        }
+        NCollection_Array1<int> aMults = theCurve.InternalMultiplicities();
+        int f = global::Kerf.Engine.Geometry.Splines.BSplCLib.FirstUKnotIndex(theCurve.Degree, aMults);
+        int l = global::Kerf.Engine.Geometry.Splines.BSplCLib.LastUKnotIndex(theCurve.Degree, aMults);
+        int aFirst = 0, aLast = 0;
+        for (int i = aMults.Lower(); i <= f; i++)
+        {
+            aFirst += aMults[i];
+        }
+        for (int i = l; i <= aMults.Upper(); i++)
+        {
+            aLast += aMults[i];
+        }
+        return aFirst != aLast;
+    }
+
+    private static void SameCurve(BSplineCurve2D theBefore, BSplineCurve2D theAfter, string theWhat)
+    {
+        double aF = theBefore.FirstParameter, aL = theBefore.LastParameter;
+        for (int i = 0; i <= 20; i++)
+        {
+            double u = aF + (aL - aF) * i / 20;
+            Point2D aP = theBefore.Value(u);
+            Assert.True(aP.DistanceTo(theAfter.Value(u)) <= 1e-9 * Math.Max(1.0, aP.XY().Modulus()), $"{theWhat}: the curve moved at {u}");
         }
     }
 
@@ -423,7 +465,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
         var anOracle = new Oracle(output);
         const int aKinds = 14;
         int[] aDone = new int[aKinds];
-        int aBothThrew = 0, aPortOnlyThrew = 0;
+        int aBothThrew = 0, aPortOnlyThrew = 0, anIntendedRaises = 0;
         var anInconsistent = new Dictionary<string, int>();
         for (int i = 0; i < Cases * 2; i++)
         {
@@ -482,9 +524,15 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                 {
                     anOracle.Same(aNativeRes![k], aPortRes[k], $"{aWhat} result {k}");
                 }
+                bool anIntended = aThisKind == 4 && RaisedOtherwiseByOcct(aPort);
+                if (anIntended)
+                {
+                    SameCurve(aPort, aEdited, aWhat);
+                    anIntendedRaises++;
+                }
                 aPort = aEdited;
                 aDone[aThisKind]++;
-                CheckAll(anOracle, aNative, aPort, aWhat);
+                aPort = CheckAll(anOracle, aNative, aPort, aWhat, anIntended);
 
                 // Some edits of unclamped curves leave a pole count that doesn't match the multiplicities, natively
                 // as in the port (compared just above); later edits would then read past the arrays. Stop there.
@@ -500,7 +548,8 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                          + "IncreaseDegree, IncreaseMultiplicity, Segment, Set(Not)Periodic/SetOrigin, Reverse, "
                          + "SetPole/SetWeight, InsertPoleAfter/RemovePole, MovePoint, MovePointAndTangent, Transform): "
                          + string.Join(", ", aDone));
-        output.WriteLine($"Invalid edits thrown by both sides: {aBothThrew}; singular MovePointAndTangent skipped: {aPortOnlyThrew}");
+        output.WriteLine($"Invalid edits thrown by both sides: {aBothThrew}; singular MovePointAndTangent skipped: {aPortOnlyThrew}; "
+                         + $"periodic raises differing from OCCT's on purpose: {anIntendedRaises}");
         output.WriteLine("Edits leaving inconsistent curves (both sides): "
                          + string.Join(", ", anInconsistent.Select(p => $"{p.Key} {p.Value}")));
         anOracle.Report("Geom2d_BSplineCurve edits");

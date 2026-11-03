@@ -237,8 +237,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         Xyz xyz = a1.Direction._coord;
         double a = xyz.X();
         double b = xyz.Y();
-        // OCCT takes C from Y here, not Z (docs/occt-issues.md); kept so results match OCCT
-        double c = xyz.Y();
+        double c = xyz.Z();
         double x = coord.X();
         double y = coord.Y();
         double z = coord.Z();

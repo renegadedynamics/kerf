@@ -181,23 +181,33 @@ public class Geom_OffsetSurfacePortTests
     }
 
     [Fact]
-    public void TransformParameters_Transforms_Twice_With_An_Equivalent_Surface()
+    public void TransformParameters_Are_The_Parameters_Of_The_Transformed_Point()
     {
-        // OCCT (occt-issues.md): the parameters are transformed by the basis surface, then again by the
-        // equivalent surface. For a plane and a scale of 2, U and V are scaled by 4; without the equivalent
-        // surface (after a reversal drops it), by 2.
-        PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)));
-        OffsetSurface anOff = new(aPlane, 1.0);
-        Transform3D aScale = new Transform3D().WithScale(new Point3D(), 2.0);
-        double U = 1.5, V = -0.5;
-        anOff.TransformParameters(ref U, ref V, aScale);
-        Assert.Equal((6.0, -2.0), (U, V));
-
-        var aRev = (OffsetSurface)anOff.UReversed().UReversed();
-        Assert.False(aRev.HasEvalRepresentation);
-        U = 1.5;
-        V = -0.5;
-        aRev.TransformParameters(ref U, ref V, aScale);
-        Assert.Equal((3.0, -1.0), (U, V));
+        // occt-issues.md, Geom_OffsetSurface::TransformParameters (Kerf decision 1489): OCCT transformed the parameters
+        // by the basis surface, then again by the equivalent surface (U and V scaled by 4 for a plane and a scale of
+        // 2). They are the basis's: the transformed surface's point at them is the transformed point, with or without
+        // the equivalent surface (a reversal drops it), as ParametricTransformation says.
+        Transform3D aScale = new Transform3D().WithScale(new Point3D(1, -2, 0.5), 2.0);
+        Surface[] aBases =
+        [
+            new PlaneSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1))),
+            new CylindricalSurface(new CoordinateSystem(new Point3D(0, 1, 0), new Direction3D(1, 1, 1)), 3.0),
+            new SphericalSurface(new CoordinateSystem(new Point3D(2, 0, 0), new Direction3D(0, 1, 0)), 2.0),
+        ];
+        foreach (Surface aBase in aBases)
+        {
+            OffsetSurface anOff = new(aBase, 1.0);
+            foreach (OffsetSurface aSurface in new[] { anOff, (OffsetSurface)anOff.UReversed().UReversed() })
+            {
+                var aMoved = (OffsetSurface)aSurface.Transformed(aScale);
+                double U = 1.5, V = -0.5;
+                Point3D anExpected = aSurface.Value(U, V).Transformed(aScale);
+                aSurface.TransformParameters(ref U, ref V, aScale);
+                Assert.True(anExpected.DistanceTo(aMoved.Value(U, V)) < 1e-12, $"{aBase.GetType().Name}: {U}, {V}");
+                var aUV = new global::Kerf.Engine.Geometry.Xy(1.5, -0.5);
+                aSurface.ParametricTransformation(aScale).Transforms(ref aUV);
+                Assert.Equal((aUV.X(), aUV.Y()), (U, V));
+            }
+        }
     }
 }

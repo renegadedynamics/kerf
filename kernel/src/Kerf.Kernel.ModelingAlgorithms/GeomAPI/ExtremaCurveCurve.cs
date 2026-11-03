@@ -92,10 +92,9 @@ internal class ExtremaCurveCurve
         _totalExt = false;
 
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        // OCCT loads the whole curves, not the ranges: the Total methods then report the curves' natural end
-        // parameters (u11, u12, ...) with the ranges' end points, and project onto the whole curves
-        _c1.Load(c1);
-        _c2.Load(c2);
+        // the ranges, for the Total methods' ends and projections (OCCT loaded the whole curves: decision 1463)
+        _c1.Load(c1, u1min, u1max);
+        _c2.Load(c2, u2min, u2max);
         _extCC.Initialize(_c1, _c2, u1min, u1max, u2min, u2max, tol, tol);
         _extCC.Perform();
 
@@ -297,11 +296,8 @@ internal class ExtremaCurveCurve
         _extCC.TrimmedSquareDistances(out double d11, out double d12, out double d21, out double d22,
                                        out Point3D p11, out Point3D p12, out Point3D p21, out Point3D p22);
 
-        // OCCT compares every end distance with this first total distance, never updated, so a later end pair
-        // nearer than it but farther than an earlier one replaces the better pair
-        double totalDist2 = _totalDist * _totalDist;
-
-        if (totalDist2 > d11)
+        // each end pair is compared with the best distance so far (OCCT kept the first one: decision 1462)
+        if (_totalDist * _totalDist > d11)
         {
             _totalDist = Math.Sqrt(d11);
             _totalPoints[0] = p11;
@@ -315,7 +311,7 @@ internal class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d12)
+        if (_totalDist * _totalDist > d12)
         {
             _totalDist = Math.Sqrt(d12);
             _totalPoints[0] = p11;
@@ -329,7 +325,7 @@ internal class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d21)
+        if (_totalDist * _totalDist > d21)
         {
             _totalDist = Math.Sqrt(d21);
             _totalPoints[0] = p12;
@@ -343,7 +339,7 @@ internal class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d22)
+        if (_totalDist * _totalDist > d22)
         {
             _totalDist = Math.Sqrt(d22);
             _totalPoints[0] = p12;

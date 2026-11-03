@@ -531,9 +531,16 @@ internal static class AdaptorOracleInputs
     // Evaluation through Adaptor3d
 
     /// <summary>D0 to D3 and DN (orders 1 to theMaxN) of two curve adaptors at theU; each throws on both sides or on neither.</summary>
+    /// <remarks>
+    /// Plan 3.2's third level for an offset curve (occt-issues.md, the offset curves' CalculateD3 and EvaluateDN; Kerf
+    /// decision 1487): the port's D3 is compared with its own D2 (V2) and its DN(3) with D3's V3, native's values read
+    /// as recorded; native's DN(3) could throw (its basis D1 overwritten by D2), the port's doesn't.
+    /// </remarks>
     internal static void SameCurveEval(Oracle theO, N.Adaptor3d_Curve theN, CurveAdaptorBase theP, double theU, int theMaxN,
                                        string theWhat, double theTol = Oracle.Tolerance)
     {
+        bool anOffset = theP.GetType() == CurveKind.OffsetCurve;
+        Vector3D aD2V2 = new();
         using var aNP = new N.gp_Pnt(0, 0, 0);
         using var aNV1 = new N.gp_Vec(0, 0, 0);
         using var aNV2 = new N.gp_Vec(0, 0, 0);
@@ -555,20 +562,49 @@ internal static class AdaptorOracleInputs
             theO.Same(aNP, P, theWhat + " D2 P", theTol);
             theO.Same(aNV1, V1, theWhat + " D2 V1", theTol);
             theO.Same(aNV2, V2, theWhat + " D2", theTol);
+            aD2V2 = V2;
         }
+        bool aD3Done = false;
         if (SameOutcome(Catch(() => theN.D3(theU, aNP, aNV1, aNV2, aNV3)),
                         Catch(() => theP.D3(theU, out P, out V1, out V2, out V3)), theWhat + " D3"))
         {
+            aD3Done = true;
             theO.Same(aNP, P, theWhat + " D3 P", theTol);
             theO.Same(aNV1, V1, theWhat + " D3 V1", theTol);
-            theO.Same(aNV2, V2, theWhat + " D3 V2", theTol);
-            theO.Same(aNV3, V3, theWhat + " D3", theTol);
+            if (anOffset)
+            {
+                _ = (aNV2.X(), aNV2.Y(), aNV2.Z(), aNV3.X(), aNV3.Y(), aNV3.Z());
+                theO.Same(aD2V2.XYZ(), V2.XYZ(), theWhat + " D3 V2 against D2's", theTol);
+            }
+            else
+            {
+                theO.Same(aNV2, V2, theWhat + " D3 V2", theTol);
+                theO.Same(aNV3, V3, theWhat + " D3", theTol);
+            }
         }
         for (int n = 1; n <= theMaxN; n++)
         {
             N.gp_Vec? aNDN = null;
             Vector3D aDN = new();
             int aN = n;
+            if (anOffset && n == 3)
+            {
+                Exception? aNE = Catch(() => aNDN = theN.DN(theU, aN));
+                Exception? aPE = Catch(() => aDN = theP.DN(theU, aN));
+                Assert.True(aPE is null || aNE is not null, $"{theWhat} DN(3): the port threw where native didn't");
+                using (aNDN)
+                {
+                    if (aNDN is not null)
+                    {
+                        _ = (aNDN.X(), aNDN.Y(), aNDN.Z());
+                    }
+                }
+                if (aPE is null && aD3Done)
+                {
+                    theO.Same(V3.XYZ(), aDN.XYZ(), $"{theWhat} DN(3) against D3's", theTol);
+                }
+                continue;
+            }
             if (SameOutcome(Catch(() => aNDN = theN.DN(theU, aN)), Catch(() => aDN = theP.DN(theU, aN)), $"{theWhat} DN({n})"))
             {
                 using (aNDN)

@@ -188,7 +188,7 @@ public class ShapeWriter : ShapeSetBase
                         }
                         else if (pr.IsPointOnSurface())
                         {
-                            // OCCT: the second parameter first, read back as the first (occt-issues.md)
+                            // the second parameter first, as OCCT writes it (the readers take it so; Kerf decision 1500)
                             stream = stream << (byte)3; // 3
                             stream = stream << pr.Parameter2() << pr.Parameter();
                             WriteSurface(stream, pr.Surface());

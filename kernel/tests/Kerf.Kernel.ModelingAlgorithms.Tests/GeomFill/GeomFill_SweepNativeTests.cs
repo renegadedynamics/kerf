@@ -29,7 +29,7 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
             {
                 return;
             }
-            if (IsPipeBetweenTwoSections(theKind, aNative, aPort))
+            if (IsPipeBetweenTwoSections(theKind, aNative, aPort) || IsSectionMoved(theKind, aNative, aPort))
             {
                 Interlocked.Increment(ref anIntended);
             }
@@ -69,6 +69,20 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
         }
         return theKind == "pipe-2sect" && i < aN.Length && i < aP.Length
                && aN[i].StartsWith("PIPE 0 3 ", StringComparison.Ordinal) && aP[i].StartsWith("PIPE 1 0 ", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Plan 3.2's third level (occt-issues.md, unit 5L2's GeomFill_SweepSectionGenerator::Perform row; Kerf unit 10K2,
+    /// decision 1481): the generator's sections of types 1 to 3, which native left at the first one's place, are moved
+    /// along the path: only the sections' poles and derivatives (SP and SDV lines) differ, as many of them.
+    /// </summary>
+    private static bool IsSectionMoved(string theKind, string theNative, string thePort)
+    {
+        string[] aN = theNative.Split('\n'), aP = thePort.Split('\n');
+        return theKind == "secgen" && aN.Length == aP.Length
+               && Enumerable.Range(0, aN.Length).All(i => aN[i] == aP[i] || (aN[i].Split(' ')[0] is "SP" or "SDV"
+                                                                             && aN[i].Split(' ')[0] == aP[i].Split(' ')[0]
+                                                                             && aN[i].Split(' ').Length == aP[i].Split(' ').Length));
     }
 
     private static string Trim(string theLine) => theLine.Length > 300 ? theLine[..300] + "..." : theLine;

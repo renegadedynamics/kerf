@@ -51,10 +51,18 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         return theNative is null;
     }
 
-    /// <summary>D0 to D3 and DN (1 to theMaxN) at theU.</summary>
+    /// <summary>
+    /// D0 to D3 and DN (1 to theMaxN) at theU. Plan 3.2's third level for an offset curve (occt-issues.md, the offset
+    /// curves' CalculateD3 and EvaluateDN; Kerf decision 1487): OCCT's D3 gives a D2 other than D2's and a D3 that
+    /// isn't its derivative, where the basis's speed varies. There the port's D3 is compared with its own D2 (V2) and
+    /// its DN(3) with D3's V3 (the unit tests check V3 against a finite difference); native's values are read as
+    /// recorded.
+    /// </summary>
     private static void SameEval(Oracle theO, N.Geom_Curve theN, Curve3D theP, double theU, int theMaxN, string theWhat,
                                  double theTol = Oracle.Tolerance)
     {
+        bool anOffset = theP is OffsetCurve3D;
+        Vector3D aD2V2 = new();
         using var aNP = new N.gp_Pnt();
         using var aNV1 = new N.gp_Vec();
         using var aNV2 = new N.gp_Vec();
@@ -77,14 +85,30 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             theO.Same(Oracle.FromNative(aNP).XYZ(), aP.XYZ(), $"{theWhat} D2({theU}) P", theTol);
             theO.Same(FromNative(aNV1), aV1.XYZ(), $"{theWhat} D2({theU}) V1", theTol);
             theO.Same(FromNative(aNV2), aV2.XYZ(), $"{theWhat} D2({theU}) V2", theTol);
+            aD2V2 = aV2;
         }
+        bool aD3Done = false;
         if (SameOutcome(Catch(() => theN.D3(theU, aNP, aNV1, aNV2, aNV3)),
                         Catch(() => theP.D3(theU, out aP, out aV1, out aV2, out aV3)), $"{theWhat} D3({theU})"))
         {
+            aD3Done = true;
             theO.Same(Oracle.FromNative(aNP).XYZ(), aP.XYZ(), $"{theWhat} D3({theU}) P", theTol);
             theO.Same(FromNative(aNV1), aV1.XYZ(), $"{theWhat} D3({theU}) V1", theTol);
-            theO.Same(FromNative(aNV2), aV2.XYZ(), $"{theWhat} D3({theU}) V2", theTol);
-            theO.Same(FromNative(aNV3), aV3.XYZ(), $"{theWhat} D3({theU}) V3", theTol);
+            if (anOffset)
+            {
+                _ = FromNative(aNV2);
+                _ = FromNative(aNV3);
+                if (((OffsetCurve3D)theP).BasisCurve.DN(theU, 1).Magnitude > 1e-6)
+                {
+                    // (beside a cusp of the basis the two are as ill-conditioned as OCCT's)
+                    theO.Same(aD2V2.XYZ(), aV2.XYZ(), $"{theWhat} D3({theU}) V2 against D2's", theTol);
+                }
+            }
+            else
+            {
+                theO.Same(FromNative(aNV2), aV2.XYZ(), $"{theWhat} D3({theU}) V2", theTol);
+                theO.Same(FromNative(aNV3), aV3.XYZ(), $"{theWhat} D3({theU}) V3", theTol);
+            }
         }
         for (int k = 1; k <= theMaxN; k++)
         {
@@ -92,7 +116,18 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             Vector3D aVN = new();
             if (SameOutcome(Catch(() => aNVN = theN.DN(theU, k)), Catch(() => aVN = theP.DN(theU, k)), $"{theWhat} DN({theU}, {k})"))
             {
-                theO.Same(FromNative(aNVN!), aVN.XYZ(), $"{theWhat} DN({theU}, {k})", theTol);
+                if (anOffset && k == 3)
+                {
+                    _ = FromNative(aNVN!);
+                    if (aD3Done)
+                    {
+                        theO.Same(aV3.XYZ(), aVN.XYZ(), $"{theWhat} DN({theU}, 3) against D3's", theTol);
+                    }
+                }
+                else
+                {
+                    theO.Same(FromNative(aNVN!), aVN.XYZ(), $"{theWhat} DN({theU}, {k})", theTol);
+                }
             }
             aNVN?.Dispose();
         }

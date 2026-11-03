@@ -56,7 +56,27 @@ public class StepWorkLibrary : WorkLibrary
     public override int ReadFile(string name, ref InterfaceModel model, Protocol protocol,
                                  ProgressRange progress = default)
     {
-        return ReadFile(name, model, protocol, progress, null);
+        StepModel aModel = ModelFor(model, protocol);
+        int status = ReadFile(name, aModel, protocol, progress, null);
+        if (status == 0)
+        {
+            model = aModel;
+        }
+        return status;
+    }
+
+    // The model to read into: the one given, or a new one for the protocol when there is none, as IFSelect_WorkSession
+    // gives (OCCT 8's library read into the null model, so XSControl_Reader::ReadFile failed on STEP; Kerf decision
+    // 16822)
+    private static StepModel ModelFor(InterfaceModel model, Protocol protocol)
+    {
+        if (model is StepModel || protocol is not StepProtocol aProtocol)
+        {
+            return model as StepModel;
+        }
+        var aModel = new StepModel();
+        aModel.SetProtocol(aProtocol);
+        return aModel;
     }
 
     /// <summary>As <see cref="ReadFile(string, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>
@@ -79,7 +99,13 @@ public class StepWorkLibrary : WorkLibrary
     public override int ReadStream(string name, Stream iStream, ref InterfaceModel model, Protocol protocol,
                                    ProgressRange progress = default)
     {
-        return ReadStream(name, iStream, model, protocol, progress, null);
+        StepModel aModel = ModelFor(model, protocol);
+        int status = ReadStream(name, iStream, aModel, protocol, progress, null);
+        if (status == 0)
+        {
+            model = aModel;
+        }
+        return status;
     }
 
     /// <summary>As <see cref="ReadStream(string, Stream, ref InterfaceModel, Protocol, ProgressRange)"/>, with the parser's limits (OCCT.NET).</summary>

@@ -14933,6 +14933,400 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
 
+## Phase 10: unit 10K2, OCCT's bugs: construction, properties, extrema and projection
+
+1459. **The pcurve of a curve winding more than a turn follows it** (occt-issues.md, unit 6A's ProjLib_ComputeApprox
+       row). Function_SetUVBounds unwraps the curve's angular parameter along samples; when the range came out wider than
+       a period OCCT still kept a window of 2π about its middle, so the image wrapped inside the curve and the
+       approximation bridged the jump: a helix of more than a turn on a cylinder (threads) got a pcurve off by up to the
+       diameter, with a tiny reported tolerance. The sampled, unwrapped parameters are now kept (`Winding`) when they span
+       more than a turn (by more than half a sampling step, so a closed curve, whose samples span one turn, keeps its
+       window), for the cylinder, the cone, the sphere and both directions of the torus, and a point's parameter,
+       known modulo 2π, is taken at the turn the samples predict. Curves within a turn are as before. The
+       cone's sampling also added the old turn to the new one at a second crossing of the seam; it now replaces it, as
+       the cylinder's does. Tests: helices of 1.3 to 3.5 turns on cylinders either way round, a conical spiral and two
+       toroidal coils, each pcurve on the curve within the reached tolerance and its parametric span the analytic one
+       (the pinned `Cylinder_HelixOfMoreThanATurn_WrongResult_OcctBug` rewritten). No recording moved.
+1460. **A free part of a projection after an isoparametric one gets its own pcurve** (unit 6A's
+       ProjLib_CompProjectedCurve::Perform row). Perform cleared its 2D approximation flag for an isoparametric part and
+       never restored it, so every later free part got the iso line again. Each part now starts from the requested
+       flags. The pinned test asserts the free part's pcurve is the polyline's projection.
+1461. **Curve-curve extrema replace their solutions on a second Perform** (unit 3B's Extrema_GGenExtCC row). The 3D
+       and 2D ECC appended a run's solutions to the previous run's, so an Extrema_ExtCC reused on other curves reported
+       the old curves' solutions too. Perform clears them. The pinned test asserts a second run gives the first run's
+       solutions only, and a reused ExtCC what a new one gives.
+1462. **GeomAPI_ExtremaCurveCurve's total distance keeps the nearest end pair** (unit 3F's TotalPerform row). Each end
+       pair was compared with the first total distance, never updated, so a later, farther pair could replace a nearer
+       one (√8 for √2 on two perpendicular segments). The comparison is with the best so far; the pinned test asserts √2
+       between (1, 0, 0) and (0, 1, 0).
+1463. **GeomAPI_ExtremaCurveCurve on ranges keeps the ranges for the total distance** (unit 3F's Init row). Init with
+       ranges loaded the whole curves, so the total methods paired the ranges' end points with the curves' own end
+       parameters and projected onto the whole curves. The adaptors are loaded on the ranges; the pinned test asserts √2
+       at parameters (1, 1) on ranges [1, 2] of segments [0, 3].
+1464. **2D circle intersections give each circle's own parameters** (occt-issues.md, phase 1's IntAna2d row).
+       IntAna2d_AnaIntersection measured both parameters counterclockwise from each X axis whatever the circle's sense,
+       and left an external tangency's parameter on the second circle at 2π. The parameter on an indirect circle is
+       now 2π − a, in [0, 2π[, and 2π becomes 0. Tests: random circle pairs of both senses, each parameter giving the
+       point on its circle (the pinned test rewritten); an indirect tangency. The IntAna2d oracle's circle pairs move to
+       plan 3.2's third level for those parameters: native's a is accepted where the port's is 2π − a on an indirect
+       circle, or 0 for native's 2π.
+1465. **A parabola projected on a plane gets the right focal** (unit 6A's ProjLib_ProjectOnPlane::Load row). The
+       image of the parabola u ↦ O + u²/(4f) Xc + u Yc is O' + u²/(4f) f(Xc) + u f(Yc), a parabola of focal
+       f |f(Yc)|² / |f(Xc)| in the parameter u |f(Yc)|; OCCT dropped |f(Yc)|². The focal is now right, and where the
+       parameter must be kept (`KeepParam`) and |f(Yc)| isn't 1 the projection is approximated, as for a skew projection.
+       The pinned test asserts focal 0.5 cos² on a plane tilted about the parabola's axis, the image of sampled points,
+       and the kept parameter.
+1466. **GeomLProp::Continuity reports a junction at a B-spline knot at its order** (unit 3C's GeomLProp::Continuity
+       row). At an inner knot Degree − Multiplicity is the order of continuity, which OCCT compared with
+       GeomAbsToInteger's scale (2 for C1, 4 for C2), so a C2 knot compared first derivatives only and a C1 knot nothing.
+       The order is taken to that scale. Concatenation (GeomConvert, BRepAlgo) joins curves at their ends, never at an
+       inner knot, so its results don't move. The pinned test asserts C2, C1 and C0 at a cubic's simple, double and
+       triple knots.
+1467. **Curvatures asked before IsCurvatureDefined are the point's** (unit 3C's LProp_SurfaceUtils row).
+       MaxCurvature, MinCurvature, MeanCurvature, GaussianCurvature and IsUmbilic read the curvature fields before calling
+       IsCurvatureDefined, which computes them, so a first call returned the previous point's values (0 on a new object).
+       They compute first, in GeomLProp's SLProps, LProp's SLProps3d (BRepLProp's) and HLRBRep's copy. Test: a sphere's
+       and a cylinder's curvatures asked first (the pinned test rewritten). The SLProps oracle's first calls move to plan
+       3.2's third level: a difference is intended when the port's first value is the one it gives after
+       IsCurvatureDefined, which is then compared with native's; `Curvature_asked_first_returns_the_stale_value` keeps
+       native's stale value and asserts the port's.
+1468. **BRepGProp_Vinert by a plane reports its volume and centre** (unit 3H's BRepGProp_Gauss::convert row). The
+       test `|Mass| >= EPS_DIM && IsByPoint` sent every region bounded by a plane to the branch that clears the mass and
+       centre. The plane branch is reached now. Test: the region between a unit cube's top face and the plane z = 0 is
+       the cube, mass 1, centre (0.5, 0.5, 0.5), central inertia 1/6, for two location points (the pinned test
+       rewritten). Found on the way, left as it is: Vinert and VinertGK by plane both measure from the plane's mirror
+       image through the origin (they take a x + b y + c z − d where the plane is a x + b y + c z + d = 0), which a
+       closed shell doesn't notice (its volume by any plane is the solid's) and an open one does; not a listed row, so
+       it is recorded here for the module's rewrite. BRepGProp's statics by plane use VinertGK on shells.
+1469. **A natural face's V knots are its V bounds** (unit 3H's BRepGProp_Face::VKnots row). For planes, cylinders,
+       cones and the default case OCCT wrote the U bounds as the V knots, so the adaptive (Eps) integration of a natural
+       face started its V subdivision at U values. The V bounds are written. Test: natural cylinder and cone faces'
+       knots, and their adaptive areas against the closed forms. The BRepGProp face-tool oracle moves to plan 3.2's third
+       level for those knots (native's are its U bounds, the port's its V bounds); the properties' recordings didn't
+       move.
+1470. **A continuous least-squares approximation with free ends is done** (unit 2D's AppCont_LeastSquare row). The
+       constructor set `myDone` only after solving a constrained system, so with both ends free Approx_ComputeCLine
+       (FitAndDivide) reported "not done" though the poles were computed. It is done. The row's other case, constraints
+       that fix every pole (tangency at both ends of a cubic), is left: FitAndDivide then goes on to degree 4, a valid
+       result, and accepting degree 3 would move every tangent-constrained approximation of the default degrees with no
+       error to correct. Tests: the pinned polynomial test asserts IsDone for every pair of constraints; a cubic with
+       free ends is approximated by FitAndDivide.
+1471. **GProp's elementary curves, surfaces and solids get closed-form properties** (phase 1's GProp_CelGProps,
+       SelGProps and VelGProps rows, eight). OCCT built their matrices of inertia as P V Λ (each eigenvector scaled by its
+       value) where P V Λ Vᵀ Pᵀ was meant, kept the centre of mass absolute where GProp_GProps reads it relative to the
+       location point, computed a line's Izz with Ixx's coefficients, a cone's area with an extra cos t and its volume
+       not the frustum's, a cylinder's axial moment twice, the sin·cos terms of cones with the wrong sign, and a torus'
+       centre from cos and sin of alpha2. No OCCT algorithm uses them; they are public API, so they are fixed rather than
+       hidden. Each Perform now gives the item's mass, first moment and second moments in its own frame in closed form
+       (GProp.FromRevolution, FromLocalMoments: items of revolution about the frame's axis, with the meridian's six
+       integrals; TrigMoment, PolyMoment and TorusMoment for those), and turns them into the centre relative to the
+       location point and the matrix of inertia there. The solids are the sectors between the patch and the axis (the
+       cylinder, the cone), the centre (the sphere) or the tube's axis circle (the torus). The tests check full shapes in
+       a tilted frame, located elsewhere, against the textbook values (ring, rod, cylindrical shell and solid, cone
+       shell and solid, spherical shell and ball, torus shell and solid, half tori's centres) and partial patches
+       against the integrals by Simpson's rule; GProp_ElementaryTests' twelve tests that checked the right values
+       where OCCT had them and pinned its errors elsewhere are replaced by six.
+1472. **A 2D fillet of a moved arc goes the right way** (unit 5R's ChFi2d_AnaFilletAlgo isCW row). isCW took the
+       arc's middle point on the curve without the edge's location and its ends with it, so a moved arc's sense came out
+       at random; the shrinking of the neighbours then projected their located ends onto their curves without the
+       location, so it failed for any moved edge. The middle point is the adaptor's, and the shrunk edges are made on the
+       placed curves. Test: a quarter arc moved by (10, 0, 0) and a segment, filleted: an arc of the radius tangent to
+       both, the shrunk edges ending where it does; the same arc built in place gives the same.
+1473. **The right neighbour of a 2D fillet is trimmed by its own orientation** (unit 5R's ChFi2d_AnaFilletAlgo::Perform
+       row). The second edge's kept end was chosen by the first edge's orientation, so a reversed second edge kept the
+       corner's part. Test: a forward segment and a reversed one: the second is shrunk to (10, 2)–(10, 10).
+1474. **A 2D fillet or chamfer of a face with holes keeps its wires** (unit 5R's ChFi2d_Builder BuildNewWire row).
+       BuildNewWire, and the removal of a fillet or chamfer, put every edge of the face into one wire, closed as the
+       face's first wire, so a face with holes came back with one wire of outer and inner edges. The face is rebuilt wire
+       by wire, the outer wire first (`RebuildFace`), each keeping its closed flag. Test: a square with a square hole, a
+       fillet on an outer corner, its removal, and a chamfer on a hole's corner: two closed wires, a valid face, the
+       areas of the cut corners. build123d.NET chamfered each wire of a face alone to avoid it (`Face.Chamfer2D` over
+       `EditWires`); it now chamfers the face with MakeFillet2d, as build123d did before its own workaround.
+       `Face.Fillet2D` keeps its wire-by-wire construction, which is build123d's own wire fillet, not a workaround.
+       Each wire's closed flag is set as OCCT set its one wire's (the reference face's first wire's after a fillet or
+       chamfer, unset after a removal), so faces without holes come out as before. The MakeFillet2d oracle's
+       rectangles with a hole (30 of 120) move to plan 3.2's third level: two wires where native has one, with as many
+       edges and the same area.
+1475. **A distance-angle chamfer between a plane and a cylinder doesn't depend on the axis direction** (unit 7N1's
+       ChFiKPart_ComputeData_ChAsymPlnCyl row). MakeChAsym projected the guide's point on the cylinder's axis with
+       gp_XYZ::Multiplied(gp_XYZ), a product coordinate by coordinate, where the dot product is meant; right only for an
+       axis along X, Y or Z. Test: half a cylinder chamfered by 1 at 30° on a generatrix edge, about Z and about a tilted
+       axis: the same volume.
+1476. **NurbsConvert and GTransform of a meshed face keep its surface** (unit 3K's BRepTools_Modifier::Rebuild row).
+       When a modification kept a face's surface (NurbsConvert on a B-spline or Bezier face) but gave it a new
+       triangulation, the modifier made the face a bare triangulation, so a meshed shape (as Bento's are, for display)
+       lost its B-spline and Bezier faces' surfaces. The face is made on its own surface with the new triangulation; a
+       face that had no surface stays bare. The pinned test asserts the converted face's surface, mesh, area and
+       validity. The GTransform oracle on native shapes moves to plan 3.2's third level for those faces: native's have
+       no surface, the port's do; their geometry wasn't compared before either.
+1477. **BRepLib::ExtendFace keeps a located face's place: not a bug** (unit 3I's ExtendFace general-branch row,
+       settled). The row read `BRep_Tool::Surface(theF)` as the surface without the face's location; that overload
+       returns the surface transformed by it (a copy when the location isn't the identity), in OCCT and in the port, so
+       the extended face of a moved Bezier face contains it in place. The test written for the row passes before and
+       after; it stays (`ExtendFace_of_a_located_Bezier_face_keeps_its_place`), and the marker's first sentence goes.
+1478. **BRepLib::ExtendFace tests the VMin bound for the VMin extension** (unit 3I's ExtendFace row). It tested aSVMax,
+       so a bounded surface infinite at VMin (a trimmed extrusion) was extended on its infinite side, which threw, and
+       one infinite at VMax only wasn't extended at VMin. A surface bounded at both ends, the usual case, is as before.
+       Test: an extrusion trimmed to v in ]-∞, 1], extended at VMin: unchanged, no exception.
+1479. **Rational Coons fillings keep their boundaries' weights** (unit 5L3's GeomFill_Coons::Init row). The poles put
+       P2 in the first column and P4 in the last, the weights W4 and W2, and blended the inner weights so; through
+       GeomFill_BSplineCurves and BezierCurves the left and right boundaries of a rational filling left their curves.
+       The weights follow the poles. Tests: the pinned column test asserts W2 first; four rational cubics filled in
+       the Coons style lie on the surface. The filling recordings (COONS and the BSC and BZC Coons cases, 109 of 400)
+       move to plan 3.2's third level: only the weights and the derivatives evaluated with them differ, the poles are
+       native's.
+1480. **A revolved feature up to a face at an angle chooses as Perform(Until) does** (unit 7I's BRepFeat_MakeRevol
+       PerformUntilAngle row). Its branches were the other way round from Perform(Until): a bounded face went to the
+       cut, an infinite face (a plane, cylinder or cone without wires) to the gluing, which left the support as it was.
+       Test: a groove turned about the box's top back edge, a quarter annulus, the same with Perform(Until) on the back
+       face, and with PerformUntilAngle at 135° up to the back face and up to the infinite plane through it (OCCT: no
+       groove for the plane).
+1481. **GeomFill_SweepSectionGenerator moves its sections along the path** (unit 5L2's Perform row, types 1 to 3).
+       `TR = Rot * Trans` sat in the branch for opposite tangents, so every section of a circle, a constant or an
+       evolving section along a non-circular path stayed at the first one's place. It is set at each section (opposite
+       tangents, where no rotation is defined, translate). GeomFill_Pipe uses only type 0. Test: a circle of radius 1.5
+       along a 3D B-spline: each section is the circle about the path's point at its parameter, across the tangent.
+       The sweep recordings' secgen cases of those types (18 of 40) move to plan 3.2's third level: only the sections'
+       poles and derivatives differ.
+1482. **AdvApp2Var's error estimate: reclassified to touch** (unit 2D's AdvApp2Var_ApproxF2var::mma2ce1_ row). The fix
+       is one line (the U Jacobi maxima written at ipt4, not over the V ones at ipt5), and it does what the row says on
+       the row's own case: sin(u)cos(v) at C0 is approximated within its tolerance instead of degree 1 in V a unit off.
+       It was tried and left out of this unit. It moves every surface approximated through AdvApp2Var: six native
+       suites (pipes, evolved sweeps, two fillet corner patches through GeomPlate, ShapeCustom's BSplineRestriction,
+       ShapeProcess's operators), two oracle suites (GeomConvert's offsets, BSplineRestriction), each by a few cases;
+       the Draw-lite groups this unit runs didn't move. Checked against the surfaces they approximate (points of the
+       result projected back), the trimmed offsets' approximations are no better with it: of three, one stays at
+       1.3e-3, one at 2e-6, and the third went from 0.3 off with OCCT's estimate to 1.5 off with the corrected one, at
+       degree 14 and 106 × 132 poles. So the estimate isn't the only fault on that path, and a fix that moves results
+       broadly without a shown benefit waits for AdvApp2Var's own review (with a geometric check of its results, as
+       here, rather than recordings). The pinned `SinCos_C0_ReproducesOcctsUnderestimatedError` stays as it was.
+1483. **The tests.** ModelingData 3,149 → 3,146 (GProp_ElementaryTests' twelve replaced by six; three new),
+       ModelingAlgorithms 4,814 → 4,824 (9 skipped; ten new), the oracle 383, DataExchange 276 (1 skipped), the modelling
+       layer 1,884: all pass. The tests rewritten to the corrected behaviour are the ones the decisions above name. The
+       recordings moved to plan 3.2's third level, each with its reason: IntAna2d's circle pairs (1464), SLProps' first
+       calls (1467), BRepGProp's face tool (1469), the GTransform oracle on native shapes (1476), the MakeFillet2d
+       oracle's rectangles with a hole (1474), the filling recordings' rational Coons cases (1479) and the sweep
+       recordings' secgen cases (1481). Draw-lite's cases for these rows (the fillet2d, chamfer, feat, nproject and
+       mkface groups, geometry/project, lowalgos' extcc, extcs, 2dinter and 2dapprox grids, bugs/filling, and the bugs
+       cases using the fillet, chamfer, feature, filling, projection, extrema, properties and continuity commands:
+       2,833 cases, 1,552 OK) were run before and after: no case's status changed, and no override was needed. Working
+       across worktrees, one `git stash` of this unit's crossed with 10K3's (stashes are shared between worktrees):
+       each got its own back; the units avoid `git stash` from here.
+## Phase 10: unit 10K3, OCCT's bugs: curve and surface evaluation, conversion, gp and data exchange
+
+1484. **Raising the degree of a periodic B-spline keeps the curve** (occt-issues.md, BSplCLib::IncreaseDegree on
+       periodic curves). `BSplCLib::IncreaseDegree` makes a periodic curve non-periodic by prefixing the knots l to
+       Upper − 1 less the period and appending Lower + 1 to f plus the period, with null poles before and after the
+       curve's own. It counted the null poles before from the multiplicities of Lower to f, and those after from l to
+       Upper: each from the other end. When the two sums differ (most periodic curves whose multiplicities aren't all
+       1), the poles were shifted against the knots and the raised curve was another curve; now each end counts its
+       own. `Geom_BSplineCurve::IncreaseDegree` and the 2D curve inherit it, and through them lofts' section
+       unification and fillets' spines. Tests (`BSplineCurveDegreeElevationTests`): 200 random periodic curves, 3D
+       rational or not and 2D, raised by 1 to 3, equal to the original at 41 parameters within 1e-9; and a quadratic
+       with a double knot raised to cubic. One oracle replay moves to plan 3.2's third level: the 2D B-spline curve's
+       edit chains (`Geom2dBSplineCurveOracleTests.Edits`), where one raise of 30 has unequal ends; the port's raised
+       curve is checked against the curve before the raise, and native's recorded poles make the curve the chain's
+       later edits work on (`Geom2dOracle.SameStructure`'s `thePolesFromNative`), so they ask native what they asked
+       when recorded. No other recording moved.
+1485. **gp's seven rows** (occt-issues.md, unit 1's gp table; one commit, as the brief allows). Each is tested against an
+       independent reference (`GpFixedBugsTests`, eight tests, all failing before):
+       - `Direction3D.Mirrored(Axis3D)` takes the axis direction's Z for its third component: the reflection
+         2(d·a)a − d, the vector's mirror.
+       - `Matrix2x2.Multiply` reads the other matrix before writing, so squaring in place (`M.Multiply(M)`) squares:
+         the matrix, 2D transformation and 2D affinity powers of 2 or more, against products of the factor.
+       - `Transform2D.Multiplied`, rotation by rotation, adds the other rotation's translation when the other has one
+         (OCCT tested this one's), as gp_Trsf does: (T1 T2)(p) = T1(T2(p)).
+       - `Transform2D.Powered`'s compound branch no longer folds the scale into the matrix's diagonal, and, like
+         `Transform3D.Powered`'s, scales the square's translation by the scale before squaring it. The 3D branch had
+         the same mistake, which the 2D row's tests found: a new row, fixed here too (OCCT's gp_Trsf::Power).
+       - `Hyperbola2D.Asymptote1` and `Asymptote2` point along X ± (b/a)Y (the far points of the branches), and the
+         second no longer throws for equal radii; `Directrix2` is at the centre less (a/e)X, where the second branch's
+         points are e times as far from the second focus as from it.
+       - `GeneralTransform3D.Powered` inverts an affinity raised to a power below −1.
+       One oracle replay moves to plan 3.2's third level: `GpOracleTests.Trsf_composition`'s powers of scaled compound
+       transformations from the cube on (`SamePowerOfScaled`: form and matrix against native's, the translation
+       against the transformation applied |N| times). The 2D rows reach no recording.
+1486. **A torus's mixed derivatives change sign with their order** (occt-issues.md, ElSLib::TorusDN). The odd/odd and
+       even/even branches of `ElSLib.TorusDN` now reverse when (Nu + Nv) mod 4 is 0 and 2 respectively, as the closed
+       form's do; OCCT reversed neither, so (1, 3), (3, 1) and (2, 4) had the wrong sign. `DN_matches_closed_form`
+       loses its exception for those orders; the test that pinned OCCT's sign checks d⁴P/du dv³ = −d²P/du dv and
+       d⁶P/du² dv⁴ = −d⁴P/du² dv². One oracle replay moves to plan 3.2's third level: `Geom_SurfacesOracleTests`'s
+       torus DN of those orders compares native's with the port's reversed.
+1487. **An offset curve's third derivative is the derivative of its second** (occt-issues.md, the offset curves'
+       CalculateD3 and EvaluateDN; one commit, the rows sharing their site). With N = p′ × V (or p′ turned in 2D),
+       R = |N|, D = N·N′, E = N·N″ + N′·N′ and F = N·N‴ + 3N′·N″, the offset's D3 adds
+       offset·(N‴/R − 3D/R³ N″ − 3(E/R³ − 3D²/R⁵) N′ + (9DE/R⁵ − 15D³/R⁷ − F/R³) N), the derivative of D2's
+       term, and CalculateD3's D2 now adds D2's N term (3D²/R⁵ − E/R³) as CalculateD2 does, in both branches (R⁷ above
+       or below the resolution). `EvaluateDN(3)`, through GeomAdaptor_Curve's and Geom2dAdaptor_Curve's offsets,
+       passes D1 and D2 in separate variables, so the basis's D2 no longer overwrites its D1. Offset curves' `D3` and
+       `DN(u, 3)`, Adaptor2d_OffsetCurve's D3 and the adaptors' DN(3) agree with each other and with a finite
+       difference of D2. The two port tests that pinned OCCT's values check exactly that (offset 0.5 of the ellipse
+       (3, 1) at 0.7); the grid consistency tests no longer allow the adaptor's DN(3) to throw. The trihedron laws use
+       the spine's D3, so on offset spines their frames' derivatives change too, and CorrectedFrenet's angle law, built
+       from them: `Laws_on_an_offset_spine_have_the_derivatives_of_their_frames` (Frenet and CorrectedFrenet on an
+       offset of a helix: D1's frame is D0's, its derivative a finite difference of D0's; it failed before). Eight oracle
+       replays move to plan 3.2's third level:
+       - the offset curves' evaluations (`GeomCurveOracleTests.Offset_curves`, `Offset_at_singular_points`;
+         `GeomAdaptor_CurveOracleTests.Curves` through `AdaptorOracleInputs.SameCurveEval`): D3's V2 against the port's
+         D2 (away from the basis's cusp), DN(3) against D3's V3, native's values read as recorded, and native's DN(3)
+         allowed to throw where the port's doesn't;
+       - the trihedron laws on offset spines (`TrihedronOracle`, for Frenet's and CorrectedFrenet's three random
+         runs and OffsetSpines_Short): D0 compared, D1's and D2's frames against D0's; for CorrectedFrenet only D0's
+         tangent, its frame checked orthonormal, its intervals increasing over the range (19 where OCCT's law, sampled
+         with the wrong derivatives, has 723, on one trimmed offset), its average law finite;
+       - MakePipeShell's corrected Frenet on an offset spine (`CorrectedFrenet_on_an_offset_free_form_spine_timing`):
+         that spine has cusps where the tube isn't defined, and the two sweeps differ by up to 0.09 (area 210.5
+         natively, 204.8 in the port, 2πrL 198.7): the same topology, both valid.
+       The modelling layer's lofts and sweeps and ModelingAlgorithms' sweep recordings don't move.
+1488. **A curve on a surface has the chain rule's third derivative** (occt-issues.md,
+       Adaptor3d_CurveOnSurface::EvalD3). The general path's linear form weights D1U by u‴ (OCCT: u′) and gives
+       D3UVV 3u′v′² (OCCT: 5u′v′², its second V32 line repeating the term). `Adaptor3d_CurveOnSurfaceTests` drops the
+       OCCT formula from its reference: the six evaluations that compared D3 with it compare with the chain rule, and
+       the test that pinned the difference (a line of slope (1, 2) on a cylinder of radius 2, off by about 0.9) checks
+       D3 against the chain rule and a finite difference of D2.
+1489. **An offset surface transforms its parameters once** (occt-issues.md, Geom_OffsetSurface::TransformParameters).
+       They are the basis surface's, as `ParametricTransformation` already said; the second transformation by the
+       equivalent surface is gone. The test that pinned the double scale checks, for offsets of a plane, a cylinder
+       and a sphere, with and without the equivalent surface, that the transformed surface's point at the transformed
+       parameters is the transformed point, and that the parameters are ParametricTransformation's.
+1490. **A B-spline surface split in V, from the larger parameter, is reversed in V** (occt-issues.md,
+       GeomConvert::SplitBSplineSurface). The V branch tests V's periodicity and calls `VReverse`, where OCCT tested U's
+       and reversed U. The test that pinned the U reversal checks the split's corners and an inner point against the
+       surface with V reversed. One oracle replay moves to plan 3.2's third level: `GeomConvertOracleTests`'s splits by
+       parameters in V that either reverses (`SameBSplineSurface` reads native's poles and knots without comparing; the
+       port's U range is the surface's and its V ends are the isos at the two parameters).
+1491. **The knot splitting of a surface smooth enough in V keeps its U splits** (occt-issues.md,
+       GeomConvert_BSplineSurfaceKnotSplitting). When V needs no inner split, its first and last knot indices go to the
+       V split indices; OCCT wrote them over the U ones and left V's null, so `VSplitCount`, `VSplitValue` and
+       `Splitting` threw. The test that pinned the NullReferenceException checks the U splits (those computed with V's
+       range 0) and V's two ends.
+1492. **Canonical recognition finds ellipses at any angle** (occt-issues.md,
+       GeomConvert_CurveToAnaCurve::ComputeEllipse). `ConicDefinition` takes the rotation of the conic's axes with its
+       sign, cos 2t = (a − c)/√((a − c)² + 4b²) and sin 2t = 2b/√(…), and the longer semi-axis for the main axis;
+       OCCT took cos 2t and sin t positive, so its axes were within 45° of the fitting frame's X, and gave up where
+       a = c (45°). The test that pinned the rejection at 60° checks the arc turned in 15° steps all round: recognised
+       at every step with its radii, centre and major axis (OCCT: 0 to 30° and 180 to 210° only). One case of
+       `ComputeCurve_ConversionTypes` had relied on the bug: a rational quadratic arc with an end pole moved, meant
+       not to be an ellipse, is one (any rational quadratic is a conic), now recognised; the failing case is now an
+       inner pole of a two-span arc. ShapeAnalysis's canonical recognition tests pass unchanged.
+1493. **GeomConvert_SurfToAnaSurf::TryCylinerCone's half-range point is left** (occt-issues.md; reclassified from fix
+       K7 to leave). The point is taken on an end iso only when it isn't a circle: on a cone that is the apex's iso, a
+       point, the same at any parameter (inside the range or not, its poles being one point). An iso that is neither
+       makes the surface no cone, and the cone built through it fails the conversion's gap test, as it would through
+       the middle point. No case shows a user the difference, so no test can fail first; the marker stays.
+1494. **A cone's implicit equation holds away from the origin** (occt-issues.md, Geom_ConicalSurface::Coefficients).
+       C1 to C3 and D are gp_Cone's, −T3j(radius + T34) and −2·radius·T34, where OCCT added radius·T3j and
+       2·radius·T34. The test that pinned the wrong terms checks that a cone's points, off the origin with a reference
+       radius, satisfy its equation and gp_Cone's. `Geom_SurfacesOracleTests.Elementary_surfaces` moves to plan 3.2's
+       third level for the cone's linear and constant terms, compared with gp_Cone's.
+1495. **The grid evaluation of an indirect 2D parabola follows its frame** (occt-issues.md, Geom2dGridEval_Parabola).
+       The five evaluators take the frame's Y direction, where OCCT turned X by +90° whatever the frame's sense. The
+       test that pinned the mirroring checks the indirect parabola's grid against its own evaluation, its points
+       equidistant from focus and directrix, on the side of the mirror axis the frame's Y says.
+1496. **An extrusion adaptor trims the direction it is asked to** (occt-issues.md,
+       GeomAdaptor_SurfaceOfLinearExtrusion::VTrim, UTrim). The adaptor keeps V bounds (unbounded until `VTrim` sets
+       them; OCCT had none); `VTrim` sets them and `UTrim` trims the curve, each keeping the other's. The test that
+       pinned the swap checks the bounds of each trim and of both, and their evaluation against the extrusion surface.
+       No recording moved: OCCT's algorithms reach extrusions through GeomAdaptor_Surface, not these trims.
+1497. **A rational bilinear patch's cached second derivatives are right** (occt-issues.md, BSplSLib::CacheD2). The
+       rows above MinIndMax of the work array are zeroed again for the weights' smaller dimension, so a max degree
+       below 2 no longer leaves pole values where the weights' second derivative is read. (The triage found no marker:
+       it was a comment in CacheD2's weights branch.) `CacheD0ToD2_MatchD0ToD2` drops its exception for rational
+       surfaces of degrees (1, 1): their cached second derivatives match BSplSLib::D2's. No recording moved:
+       BSplSLib_Cache, which the evaluators use, never had the bug.
+1498. **STL read from a stream is recognised as from a file** (occt-issues.md, RWStl::ReadStream and
+       StlAPI_Reader::Read(stream)). The stream is ASCII if shorter than a binary file of one facet or if its first 134
+       bytes are all at most `~`, as RWStl_Reader::Read decides for files; OCCT took it for ASCII only if it began
+       "solid", so a binary header starting "solid " (common from other tools), and ASCII starting "SOLID" or with a
+       blank, failed. Tests (`RWStlFixedBugsTests`): a binary stream with such a header reads as the binary reader
+       reads it, through StlAPI too; ASCII in capitals reads. RWStlNativeTests' eight stream lines where native gave
+       NULL or FAIL (leadingblank.stl, upper.stl, and the binary files given a "solid " header) move to plan 3.2's
+       third level: the port's stream read equals native's file read of the same data.
+1499. **Every domain of a multi-domain ASCII STL is read** (occt-issues.md, RWStl_Reader::Read, multi-domain ASCII).
+       The line buffer reads ahead in 1 KB blocks; after a domain, the reader now puts the stream back where its lines
+       end (`ReadLineBuffer.UnreadCount`, an addition) before skipping the blanks to the next domain. OCCT went on from
+       the stream's position, past the buffered data or at its end, so files under a block lost the domains after the
+       first (twosolids.stl), and blanks skipped there could join lines at a block's end. Tests: a two-domain file
+       under 1 KB gives both domains, and three domains read with the blanks between them moved across the blocks' ends
+       (80 placements). RWStlNativeTests' five blocks of such files (twosolids.stl, as recorded, doubled, with blanks and
+       with CR LF; OMF6391_box.stl with blanks) move to plan 3.2's third level: native's domains are the port's first,
+       the whole-file reads hold all the domains' triangles, the stream readers are native's. The reader's return
+       value is OCCT's: false after an ASCII file's last short block, whether its domains were all read or not.
+1500. **A point on a surface keeps its parameters through binary BRep** (occt-issues.md, BinTools_ShapeSet's point on
+       a surface). OCCT's writers put the second parameter first and its readers took the first for the first, so the
+       two were swapped on every round trip. The readers (`BinaryShapeSet`, the table format, and `ShapeReader`, the
+       position format) now take the first value written for the second parameter; the writers are unchanged. So
+       binary BRep files don't change, byte for byte (BinToolsFormatTests, which check the bytes against OCCT's
+       sources, pass as they were, and the round trip test finds the second parameter written first), and every file
+       written before, by OCCT or by the port, reads right: its first value is the second parameter, as OCCT has always
+       written it. OCCT itself still reads the port's files swapped, as it reads its own.
+       The test that pinned the swap (`Point_representations_round_trip`) checks both parameters in place for the
+       table format's versions 2 to 4 and the position format.
+1501. **STEP rendering methods are read as written** (occt-issues.md, RWStepVisual_RWSurfaceStyleRenderingWithProperties).
+       Its reader, and RWSurfaceStyleRendering's, which had the same tests (a new row), take the method whose name the
+       text is; OCCT's `strcmp(...)` tests were true for every other name, so .CONSTANT_SHADING. was read for
+       anything else and .COLOUR_SHADING. for itself (545 records of the corpus).
+1502. **A styled item is written with its target, whatever its type** (occt-issues.md, StepVisual_StyledItem::Item).
+       `StyledItem.Target()` (an addition) returns the item read or set; the writers of StyledItem and its eight
+       subclasses send it, where OCCT's sent `Item()`, null unless a representation item, so a styled representation
+       was written `$` and its colour lost (68 records). `Share` still names the representation items only, as OCCT:
+       a styled representation stays a root of the model's graph, so XSControl's root lists and transfers don't move.
+1503. **IsComplex lists every complex case** (occt-issues.md, RWStepAP214_ReadWriteModule::IsComplex): 800 and 802 added,
+       so ActuatedKinPairAndOrderKinPair and RepositionedTessellatedGeometricSet are written as complex records, not
+       `?()` followed by their components (30 records). The test that pinned the two checks IsComplex against
+       ComplexType for every case.
+1504. **BOOLEAN_REPRESENTATION_ITEM's value is written .T. or .F.** (occt-issues.md, two rows): `SendBoolean`, where
+       OCCT's C++ promoted the bool to an int and wrote 1 or 0, which its reader rejects.
+       The four rows above are checked by the STEP corpus round trip (`StepRoundTripTests.CorpusRoundTrips`: 338 files,
+       1.5 million records read and written back): the causes they had there (NotComplex, BoolAsInt, StyledItemTarget,
+       RenderingMethod) are no longer explained, and none occurs; every record they covered is written back as read.
+1505. **Two reflectance styles and TESSELLATED_ITEM are named and read** (occt-issues.md, RWStepAP214_ReadWriteModule,
+       cases 825, 826 and 708). SURFACE_STYLE_REFLECTANCE_AMBIENT_DIFFUSE(_SPECULAR) get their names in StepType, the
+       type map and the writer's cases (OCCT had their readers only); TESSELLATED_ITEM, named by StepType, joins the
+       type map. `StepAP214ProtocolTests` no longer lists them among OCCT's disagreements: every case of the protocol
+       now names its type and reads back its case. The corpus has none of these records.
+1506. **XSControl_Reader reads STEP** (occt-issues.md, IFSelect_WorkSession::ReadFile with StepSelect_WorkLibrary).
+       The session gives the library no model; `StepWorkLibrary` now makes one for its protocol when none is given
+       (and hands it back only on success), where OCCT 8's read into the null model and failed (RetFail).
+       STEPControl_Reader, which makes its model itself, is unchanged. The test that pinned the failure now reads
+       screw.step through a generic reader on a STEP session: RetDone, as many entities as STEPControl_Reader.
+1507. **A 2D trimmed curve can be written to STEP** (occt-issues.md, GeomToStep_MakeCurve, Geom2d): the trimmed-curve
+       branch now comes before the bounded curves', so the curve is written as its basis, as OCCT's unreachable branch
+       meant; OCCT sent it to MakeBoundedCurve, which refused it (StdFail_NotDone).
+1508. **A rational 2D Bezier curve keeps its weights in STEP** (occt-issues.md, GeomToStep_MakeBoundedCurve, Geom2d):
+       written as a rational B-spline, as the 3D case and 2D B-splines are. Tests (`GeomToStepTests`): a 2D trimmed
+       line and arc written and read back; a rational quadratic Bezier read back equal at four parameters.
+1509. **GeomToStep_MakeAxis2Placement2d(gp_Ax2) is left** (occt-issues.md; reclassified from fix K8 to leave). Nothing in
+       OCCT calls it (the conics' writers use the gp_Ax22d form), and a 2D placement from a 3D frame has no one
+       meaning (which plane, which direction) to fix it to; 10L's public API decides whether it stays.
+1510. **Angles are written in the file's plane angle unit** (occt-issues.md, GeomToStep_MakeRectangularTrimmedSurface,
+       MakeConicalSurface). A rectangular trimmed surface's angular bounds and a cone's semi-angle are divided by the
+       plane angle factor, which StepToGeom multiplies them by; OCCT wrote the bounds in degrees and the semi-angle in
+       radians whatever the unit, so with the default radians the bounds read back 57 times too large, and with
+       degrees the semi-angle read back wrong. `GeomToStepTests` writes and reads back both with radians and with
+       inches and degrees. Three native comparisons move to plan 3.2's third level: GeomStepNativeTests' cases (now
+       compared case by case: the 2D trimmed curves, 4; the rational 2D Beziers, 2; the cones and rectangular trimmed
+       surfaces, 7, are intended) and its data/occ shapes holding such geometry (19 sets in each unit, compared by
+       hash); TopoStepNativeTests' conversions in inches and degrees that write a cone, with native's entity count (17).
+1511. **STEP strings and names of any length are read** (occt-issues.md, step.lex, 16,383 bytes). The scanner's buffer
+       grows as a token needs (within ParserReadLimits.MaxFileSize), where OCCT's flex scanner, unable to grow its
+       buffer, failed on a token of 16,384 bytes or more. The test that pinned the failure reads strings and names of
+       16,380 to 600,000 bytes whole. StepFileNativeTests' 101 long inputs where native failed move to plan 3.2's
+       third level: the port parses them (or reports the syntax error of a string run to the end), also through a
+       stream returning 997 bytes at a time, as from memory.
+1512. **A tab ends a STEP string as a space does** (occt-issues.md, step.lex, the end of a string): a quote followed by
+       blanks, the tab now among them, and `)` or `,` ends the string; OCCT's rule left the tab out, so `'a'`, a tab
+       and a comma ran on to a later quote. Its class's double quote stays: it decides only malformed input. The
+       scanner test that pinned the run-on reads `'a'` there; StepFileNativeTests' one such input (string/003) moves to
+       the third level: it parses as with a space in place of the tab.
+1513. **The tests and the corpus.** Foundation 2,297 → 2,305, ModelingData 3,149 → 3,152, ModelingAlgorithms 4,814 →
+       4,815 (9 skipped), DataExchange 276 → 282 (1 skipped), the oracle 383, the modelling layer 1,884: all pass. The
+       new tests are the fixes'; the rewritten ones are those the decisions above name. The moved comparisons are at
+       plan 3.2's third level, each with its reason. Draw-lite's corpus tests for STL, STEP, STEP with documents, XDE,
+       data exchange, construction (lofts), surfaces from curves and the cheap gaps (B-spline commands) pass with their
+       recorded status counts, so no case's status changed; no Draw-lite override was needed. The "before" run was
+       those tests' recorded expectations, not a fresh run of the base commit.
+
 ## Phase 10: unit 10L1, the public API, part 1: the shared types, geometry and topology
 
 16601. **The gp values take their public shape by kerf-rename** (docs/api/kerf-10l1.map, block 1; applied to Kerf.slnx

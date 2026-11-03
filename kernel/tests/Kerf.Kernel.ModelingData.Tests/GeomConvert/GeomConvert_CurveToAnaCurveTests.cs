@@ -16,8 +16,8 @@ public class GeomConvert_CurveToAnaCurveTests
 {
     private static readonly Frame3D s_Ax2 = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(0.3, 0.4, 1.0), new Direction3D(1.0, 0.0, -0.3));
 
-    // An ellipse whose major axis is at 15 degrees from the X axis of the frame ComputeEllipse builds: OCCT
-    // recognises it (see ComputeEllipse_MajorAxisAt60Degrees_ReproducesOcctError)
+    // An ellipse whose major axis is at an angle from the X axis of the frame ComputeEllipse builds (15 degrees by
+    // default; see ComputeEllipse_RecognisesEllipsesAtAnyAngle)
     private static Frame3D EllipseAx2(double theAngle)
         => new(new Point3D(1.0, -2.0, 0.5), new Direction3D(0.0, 0.0, 1.0), new Direction3D(Math.Cos(theAngle), Math.Sin(theAngle), 0.0));
 
@@ -155,16 +155,28 @@ public class GeomConvert_CurveToAnaCurveTests
     }
 
     [Fact]
-    public void ComputeEllipse_MajorAxisAt60Degrees_ReproducesOcctError()
+    public void ComputeEllipse_RecognisesEllipsesAtAnyAngle()
     {
-        // ConicDefinition loses the sign of the rotation and takes the axis within 45 degrees of the frame's X axis
-        // (occt-issues.md): the same arc rotated by 60 degrees is not recognised
-        BSplineCurve3D anArc = EllipseArc(3.0, 1.2, 0.3, 2.5, Math.PI / 3);
-        double cf = 0, cl = 0, aDev = -1;
-        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter, anArc.LastParameter,
-                                                               ref cf, ref cl, ref aDev));
-        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-1, anArc.FirstParameter, anArc.LastParameter,
-                                                               ref cf, ref cl, ref aDev));
+        // ConicDefinition keeps the sign of the rotation and takes the longer axis for the main one (OCCT recognised
+        // the arc at 0 to 30 and 180 to 210 degrees only: occt-issues.md, GeomConvert_CurveToAnaCurve::ComputeEllipse;
+        // Kerf decision 1492). The arc turned in 15-degree steps is recognised at every one, with its radii, centre
+        // and major axis.
+        for (int aStep = 0; aStep < 24; aStep++)
+        {
+            double anAngle = aStep * Math.PI / 12;
+            BSplineCurve3D anArc = EllipseArc(3.0, 1.2, 0.3, 2.5, anAngle);
+            double cf = 0, cl = 0, aDev = -1;
+            Curve3D? aRes = CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter, anArc.LastParameter,
+                                                           ref cf, ref cl, ref aDev);
+            EllipseCurve3D anEllipse = Assert.IsType<EllipseCurve3D>(aRes);
+            Assert.Equal(3.0, anEllipse.MajorRadius, 7);
+            Assert.Equal(1.2, anEllipse.MinorRadius, 7);
+            Assert.True(anEllipse.Location.DistanceTo(new Point3D(1.0, -2.0, 0.5)) < 1e-7, $"{aStep * 15} degrees");
+            Assert.True(Math.Abs(anEllipse.Position.XDirection.Dot(EllipseAx2(anAngle).XDirection)) > 1 - 1e-9, $"{aStep * 15} degrees");
+            Assert.True(aDev < 1e-6);
+            Assert.True(anEllipse.Value(cf).DistanceTo(anArc.Value(anArc.FirstParameter)) < 1e-6);
+            Assert.True(anEllipse.Value(cl).DistanceTo(anArc.Value(anArc.LastParameter)) < 1e-6);
+        }
     }
 
     [Fact]
@@ -187,8 +199,15 @@ public class GeomConvert_CurveToAnaCurveTests
                                                              Target, Circle));
         Assert.Equal(RealLast(), aGap);
 
-        // MinGap failing: gap -1 and the input parameters
-        BSplineCurve3D aWavy = anEllipse.WithPole(3, anEllipse.Pole(3).Translated(new Vector3D(0.1, 0.0, 0.3)));
+        // A rational quadratic arc with an end pole moved is still a conic, an ellipse here, now recognised (OCCT
+        // rejected it, its axis being beyond 45 degrees of the fitting frame's X: Kerf decision 1492)
+        BSplineCurve3D aMoved = anEllipse.WithPole(3, anEllipse.Pole(3).Translated(new Vector3D(0.1, 0.0, 0.3)));
+        Assert.IsType<EllipseCurve3D>(CurveToAnaCurve.ComputeCurve(aMoved, 1e-6, aU1, aU2, out cf, out cl, ref aGap));
+        Assert.True(aGap < 1e-9);
+
+        // MinGap failing: gap -1 and the input parameters (two spans, an inner pole moved: no single conic)
+        BSplineCurve3D aTwoSpans = anEllipse.KnotInserted(0.5 * (aU1 + aU2), 1, 0.0, false);
+        BSplineCurve3D aWavy = aTwoSpans.WithPole(2, aTwoSpans.Pole(2).Translated(new Vector3D(0.1, 0.0, 0.3)));
         Assert.Null(CurveToAnaCurve.ComputeCurve(aWavy, 1e-6, aU1, aU2, out cf, out cl, ref aGap));
         Assert.Equal(-1.0, aGap);
         Assert.Equal(aU1, cf);

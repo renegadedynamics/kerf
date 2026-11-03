@@ -1032,8 +1032,9 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
                             break;
                         }
 
-                        tempscale = tempscale * tempscale;
+                        // the square's translation takes the scale before it is squared (decision 1485)
                         temploc.Add(temploc.Multiplied(tempmatrix).Multiplied(tempscale));
+                        tempscale = tempscale * tempscale;
                         tempmatrix = tempmatrix.Multiplied(tempmatrix);
                         npower = npower / 2;
                     }

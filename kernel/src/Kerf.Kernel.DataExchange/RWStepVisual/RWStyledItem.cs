@@ -83,7 +83,7 @@ internal class RWStyledItem
 
         // --- own field : item ---
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
     }
 
     public void Share(StyledItem ent, EntityIterator iter)
@@ -94,6 +94,8 @@ internal class RWStyledItem
             iter.GetOneItem(ent.StylesValue(is1));
         }
 
+        // a representation item only, as OCCT, so the graph's roots stay OCCT's (the writer sends any target;
+        // Kerf decision 1502)
         iter.GetOneItem(ent.Item());
     }
 }

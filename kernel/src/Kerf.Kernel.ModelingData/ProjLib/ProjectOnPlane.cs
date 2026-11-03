@@ -754,12 +754,14 @@ internal class ProjectOnPlane : CurveAdaptorBase
                     line = new Line3D(p, new Direction3D(yc));
                     geomLinePtr = new LineCurve3D(line);
                 }
-                else if (xc.IsNormal(yc, global::Kerf.Engine.Foundation.Precision.Angular()))
+                else if (xc.IsNormal(yc, global::Kerf.Engine.Foundation.Precision.Angular())
+                         && (!_keepParam || Math.Abs(yc.Magnitude - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     _type = global::Kerf.Geometry.CurveKind.Parabola;
-                    // OCCT: the focal of the image is Focal * |f(Yc)|^2 / |f(Xc)|; this ignores |f(Yc)|, so the
-                    // parabola is wrong unless f(Yc) stays unit (ProjLib_ProjectOnPlaneTests).
-                    double f = parab.Focal / xc.Magnitude;
+                    // Q(s) = f(O) + s^2 |f(Xc)| / (4 Focal |f(Yc)|^2) * Xc' + s * Yc' with s = u |f(Yc)|: the focal is
+                    // Focal * |f(Yc)|^2 / |f(Xc)|, and the parameter is kept only where f(Yc) stays unit; otherwise a
+                    // kept parameter needs the approximation below (decision 1465; OCCT's focal ignored |f(Yc)|).
+                    double f = parab.Focal * yc.SquareMagnitude / xc.Magnitude;
                     Parabola3D projParab = new(new Frame3D(p, new Direction3D(xc ^ yc), new Direction3D(xc)), f);
                     geomParabolaPtr = new ParabolaCurve3D(projParab);
                 }

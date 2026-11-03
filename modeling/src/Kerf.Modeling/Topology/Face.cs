@@ -1,6 +1,8 @@
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
+using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Library;
@@ -941,16 +943,40 @@ public partial class Face : Shape2D
     /// This face with the given corners chamfered: <paramref name="distance"/> along the first edge at each corner
     /// (along <paramref name="edge"/> if given) and <paramref name="distance2"/> along the other.
     /// </summary>
-    public Face Chamfer2D(double distance, double distance2, IEnumerable<Vertex> vertices, Edge? edge = null) =>
-        EditWires(vertices, (wire, inWire) => wire.Chamfer2D(distance, distance2, inWire, edge));
+    public Face Chamfer2D(double distance, double distance2, IEnumerable<Vertex> vertices, Edge? edge = null)
+    {
+        // The face's own MakeFillet2d, as build123d chamfered before it worked around OCCT's merging of a face's wires
+        // (kernel decision 16717 keeps them apart)
+        var list = vertices.Where(v => !v.IsEmpty).ToList();
+        if (list.Count == 0)
+            return this;
+        var builder = new MakeFillet2D(TopoFace);
+        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(TopoFace, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
+        foreach (var v in list)
+        {
+            var edges = map.GetValue(v.TopoShape);
+            var (edge1, edge2) = Wire.OrderChamferEdges(edge, (new Edge(ShapeCasts.Edge(edges.First())), new Edge(ShapeCasts.Edge(edges.Last()))));
+            if (!edge1.IsEmpty && !edge2.IsEmpty)
+                builder.AddChamfer(edge1.TopoEdge, edge2.TopoEdge, distance, distance2);
+        }
+        builder.Build();
+        var face = new Face(ShapeCasts.Face(builder.Shape())).Fix();
+        if (NormalAt() != face.NormalAt())
+            face = (Face)(-face);
+        // The builder answers Modified only for an edge it trimmed and throws for anything else (OCCT's DescendantEdge)
+        IEnumerable<global::Kerf.Topology.Shape> Modified(global::Kerf.Topology.Shape s) =>
+            s.IsEdge() && builder.IsModified(ShapeCasts.Edge(s)) ? builder.Modified(s) : [];
+        var record = ShapeHistory.FromAlgorithm(Modified, s => builder.Generated(s), [TopoShape], face.TopoShape);
+        return (Face)face.MadeBy(record.AddModified(TopoShape, face.TopoShape));
+    }
 
     /// <summary>This face with the given corners filleted.</summary>
     public Face Fillet2D(double radius, IEnumerable<Vertex> vertices) =>
         EditWires(vertices, (wire, inWire) => wire.Fillet2D(radius, inWire));
 
     /// <summary>
-    /// Chamfers or fillets each wire on its own and rebuilds the face (OCCT's MakeFillet2d merges the wires of a face
-    /// with holes), recording the face as modified.
+    /// Fillets each wire on its own, with build123d's wire fillet, and rebuilds the face, recording the face as modified.
     /// </summary>
     private Face EditWires(IEnumerable<Vertex> vertices, Func<Wire, List<Vertex>, Wire> edit)
     {

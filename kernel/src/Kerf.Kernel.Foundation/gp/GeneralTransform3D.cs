@@ -392,7 +392,11 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         {
             if (shape == Other)
             {
-                // OCCT: a negative N other than -1 is treated as |N|; the inverse is never taken.
+                if (n < 0)
+                {
+                    (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).Inverted();
+                }
+
                 int npower = Math.Abs(n) - 1;
                 Xyz temploc = loc;
                 Matrix3x3 tempmatrix = matrix;

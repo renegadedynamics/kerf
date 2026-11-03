@@ -23,7 +23,8 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
         return new N.gp_Circ2d(anAx, theC.Radius);
     }
 
-    private static void Compare(Oracle theOracle, N.IntAna2d_AnaIntersection theNative, AnalyticIntersection thePort, string theWhat)
+    private static void Compare(Oracle theOracle, N.IntAna2d_AnaIntersection theNative, AnalyticIntersection thePort, string theWhat,
+                                Circle2D? theFirst = null, Circle2D? theSecond = null)
     {
         theOracle.Same(theNative.IsDone(), thePort.IsDone, $"{theWhat} IsDone");
         if (!theNative.IsDone())
@@ -42,9 +43,33 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             IntPoint aPoint = thePort.Point(i);
             theOracle.Same(Oracle.FromNative(aNValue), aPoint.Value(), $"{theWhat} point {i}");
             theOracle.Same(aNPoint.SecondIsImplicit(), aPoint.SecondIsImplicit(), $"{theWhat} SecondIsImplicit {i}");
-            theOracle.Same(aNPoint.ParamOnFirst(), aPoint.ParamOnFirst(), $"{theWhat} ParamOnFirst {i}");
-            theOracle.Same(aNPoint.ParamOnSecond(), aPoint.ParamOnSecond(), $"{theWhat} ParamOnSecond {i}");
+            SameParameter(theOracle, aNPoint.ParamOnFirst(), aPoint.ParamOnFirst(), theFirst, $"{theWhat} ParamOnFirst {i}");
+            SameParameter(theOracle, aNPoint.ParamOnSecond(), aPoint.ParamOnSecond(), theSecond, $"{theWhat} ParamOnSecond {i}");
         }
+    }
+
+    private static int s_intended;
+
+    // Plan 3.2's third level (occt-issues.md, unit 2E's IntAna2d_AnaIntersection row; Kerf decision 1464): native
+    // measured the parameter on a circle counterclockwise from its X axis whatever its sense, and left an external
+    // tangency's 2PI unreduced; the port's parameter is the circle's own, in [0, 2PI[. On an indirect circle native's
+    // a is the port's 2PI - a; native's 2PI is the port's 0.
+    private static void SameParameter(Oracle theOracle, double theNative, double thePort, Circle2D? theCircle, string theWhat)
+    {
+        if (theCircle is Circle2D aC && theNative != thePort)
+        {
+            double anExpected = aC.IsDirect ? theNative : 2 * Math.PI - theNative;
+            if (anExpected >= 2 * Math.PI)
+            {
+                anExpected -= 2 * Math.PI;
+            }
+            if (Math.Abs(anExpected - thePort) <= 1e-9)
+            {
+                s_intended++;
+                return;
+            }
+        }
+        theOracle.Same(theNative, thePort, theWhat);
     }
 
     [Fact]
@@ -87,9 +112,10 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             using var aN2 = ToNative(aC2);
             using var aNative = new N.IntAna2d_AnaIntersection(aN1, aN2);
             // Tangency and angle parameters go through acos/asin and Angle (atan2), which MSVC and .NET may round differently
-            Compare(anOracle, aNative, new AnalyticIntersection(aC1, aC2), "circles");
+            Compare(anOracle, aNative, new AnalyticIntersection(aC1, aC2), "circles", aC1, aC2);
         }
 
+        output.WriteLine($"{s_intended} parameters on indirect circles or at 2PI (intended differences)");
         anOracle.Report("IntAna2d_AnaIntersection(gp_Circ2d, gp_Circ2d)");
     }
 

@@ -333,15 +333,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                 }
                 else
                 {
-                    try
-                    {
-                        anAdaptorDN = theAdaptor.EvalDN(aU, aN).XY();
-                    }
-                    catch (global::Kerf.Engine.Foundation.FailureException)
-                    {
-                        // Geom2dAdaptor_Curve's offset DN3 can throw (Geom2d_OffsetCurveUtils::EvaluateDN)
-                        anAdaptorDN = aCurveDN!.Value;
-                    }
+                    anAdaptorDN = theAdaptor.EvalDN(aU, aN).XY();
                 }
                 Compare(theKind + " DN" + aN, aDN.Value(i).XY(), aCurveDN, anAdaptorDN);
             }
@@ -531,30 +523,34 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     // OCCT's Geom2dGridEval_Parabola builds YDir as the mirror axis turned by +90 degrees: on a parabola whose
     // frame is indirect, the grid is the parabola of the direct frame, mirrored across the axis.
     [Fact]
-    public void IndirectParabola_GridIsMirrored()
+    public void IndirectParabola_GridFollowsTheFrame()
     {
+        // occt-issues.md, Geom2dGridEval_Parabola (Kerf decision 1495): the grid took the Y direction as X turned by
+        // +90 degrees, so an indirect parabola came out as the direct one. Now the grid evaluates the curve, whose
+        // points are at the focal distance from the focus and from the directrix.
         Random aRnd = new(11);
         for (int aTry = 0; aTry < 20; ++aTry)
         {
             Frame2D anAxes = RandomAx22d(aRnd, false);
             double aFocal = 0.1 + 5 * aRnd.NextDouble();
             ParabolaCurve2D anIndirect = new(anAxes, aFocal);
-            ParabolaCurve2D aDirect = new(new Frame2D(anAxes.Location, anAxes.XDirection, true), aFocal);
             NCollection_Array1<double> aParams = SortedParams(aRnd, -10, 10, 20, null);
 
             NCollection_Array1<Curve2D.ResD3> aGrid = new ParabolaGrid2D(anIndirect).EvaluateGridD3(aParams);
+            Point2D aFocus = anIndirect.Parabola.Focus;
+            var aDirectrix = new Line2D(anIndirect.Parabola.Directrix);
             for (int i = 1; i <= aParams.Length(); ++i)
             {
                 double aU = aParams.Value(i);
-                Curve2D.ResD3 aRef = aDirect.EvalD3(aU);
+                Curve2D.ResD3 aRef = anIndirect.EvalD3(aU);
                 double aScale = Math.Max(1.0, aRef.Point.XY().Modulus());
                 Assert.True(aGrid.Value(i).Point.DistanceTo(aRef.Point) <= 1e-12 * aScale);
                 Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude));
                 Assert.True((aGrid.Value(i).D2 - aRef.D2).Magnitude <= 1e-12);
-                if (Math.Abs(aU) > 1e-3)
-                {
-                    Assert.True(aGrid.Value(i).Point.DistanceTo(anIndirect.EvalD0(aU)) > 1e-6);
-                }
+                Point2D aP = aGrid.Value(i).Point;
+                Assert.Equal(aDirectrix.DistanceTo(aP), aP.DistanceTo(aFocus), 1e-9 * aScale);
+                // the side of the mirror axis the frame's Y direction says
+                Assert.Equal(Math.Sign(aU), Math.Sign((aP.XY() - anAxes.Location.XY()).Dot(anAxes.YDirection.XY())));
             }
         }
     }

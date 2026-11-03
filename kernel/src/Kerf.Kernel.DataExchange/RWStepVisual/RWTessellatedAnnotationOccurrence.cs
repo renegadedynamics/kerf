@@ -74,7 +74,7 @@ internal class RWTessellatedAnnotationOccurrence
 
         // Inherited field : item
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
     }
 
     public void Share(TessellatedAnnotationOccurrence ent, EntityIterator iter)

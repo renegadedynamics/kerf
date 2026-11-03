@@ -43,7 +43,12 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         }
     }
 
-    internal static void SameBSplineSurface(Oracle theO, N.Geom_BSplineSurface theN, BSplineSurface theP, string theWhat)
+    /// <remarks>
+    /// Without <paramref name="theComparePoles"/>, the poles, weights, knots and multiplicities are read as recorded but
+    /// not compared (a result that differs on purpose, which the caller checks otherwise).
+    /// </remarks>
+    internal static void SameBSplineSurface(Oracle theO, N.Geom_BSplineSurface theN, BSplineSurface theP, string theWhat,
+                                            bool theComparePoles = true)
     {
         theO.Same(theN.UDegree(), theP.UDegree, theWhat + " UDegree");
         theO.Same(theN.VDegree(), theP.VDegree, theWhat + " VDegree");
@@ -66,6 +71,11 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             for (int j = 1; j <= theP.VPoleCount; j++)
             {
                 using N.gp_Pnt aNP = theN.Pole(i, j);
+                if (!theComparePoles)
+                {
+                    _ = (aNP.X(), aNP.Y(), aNP.Z(), theN.Weight(i, j));
+                    continue;
+                }
                 theO.Same(aNP, theP.Pole(i, j), theWhat + " pole");
                 theO.Same(theN.Weight(i, j), theP.Weight(i, j), theWhat + " weight");
             }
@@ -73,12 +83,22 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 
         for (int k = 1; k <= theP.UKnotCount; k++)
         {
+            if (!theComparePoles)
+            {
+                _ = (theN.UKnot(k), theN.UMultiplicity(k));
+                continue;
+            }
             theO.Same(theN.UKnot(k), theP.UKnot(k), theWhat + " UKnot");
             theO.Same(theN.UMultiplicity(k), theP.UMultiplicity(k), theWhat + " UMult");
         }
 
         for (int k = 1; k <= theP.VKnotCount; k++)
         {
+            if (!theComparePoles)
+            {
+                _ = (theN.VKnot(k), theN.VMultiplicity(k));
+                continue;
+            }
             theO.Same(theN.VKnot(k), theP.VKnot(k), theWhat + " VKnot");
             theO.Same(theN.VMultiplicity(k), theP.VMultiplicity(k), theWhat + " VMult");
         }
@@ -240,6 +260,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             string aWhat;
             Exception? aNErr, aPErr;
             int aUF = aPS.FirstUKnotIndex(), aUL = aPS.LastUKnotIndex(), aVF = aPS.FirstVKnotIndex(), aVL = aPS.LastVKnotIndex();
+            (double V1, double V2)? aSplitInV = null;
             aPS.ParameterBounds(out double aU0, out double aU9, out double aV0, out double aV9);
             (double, double) Params(double theF, double theL)
             {
@@ -289,6 +310,10 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
                     aWhat = $"parameters {(isU ? "U" : "V")} {a1} {a2}";
                     aNErr = Catch(() => aN = N.GeomConvert.SplitBSplineSurface(aNS, a1, a2, isU, 1e-9, aSameU));
                     aPErr = Catch(() => aP = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aPS, a1, a2, isU, 1e-9, aSameU));
+                    if (!isU && ((aPS.IsUPeriodic ? !aSameU : a1 > a2) || (aPS.IsVPeriodic ? !aSameU : a1 > a2)))
+                    {
+                        aSplitInV = (a1, a2);
+                    }
                     break;
                 }
             }
@@ -301,7 +326,24 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             }
 
             using N.Geom_BSplineSurface aNOwned = aN!;
-            SameBSplineSurface(anOracle, aN!, aP!, aWhat);
+            SameBSplineSurface(anOracle, aN!, aP!, aWhat, aSplitInV is null);
+            if (aSplitInV is (double aSplitV1, double aSplitV2))
+            {
+                // Plan 3.2's third level (occt-issues.md, GeomConvert::SplitBSplineSurface; Kerf decision 1490): OCCT's
+                // split in V reversed U where the port reverses V. The port's U is the surface's, its V ends the isos
+                // at the two parameters.
+                aP!.ParameterBounds(out double aPU1, out double aPU2, out double aPV1, out double aPV2);
+                anOracle.Same(aU0, aPU1, aWhat + " U first");
+                anOracle.Same(aU9, aPU2, aWhat + " U last");
+                foreach (double u in new[] { aU0, 0.5 * (aU0 + aU9), aU9 })
+                {
+                    Point3D aStart = aP.Value(u, aPV1), anEnd = aP.Value(u, aPV2);
+                    Point3D aS1 = aPS.Value(u, aSplitV1), aS2 = aPS.Value(u, aSplitV2);
+                    double aTol = 1e-9 * Math.Max(1.0, aS1.XYZ().Modulus() + aS2.XYZ().Modulus());
+                    Assert.True((aStart.DistanceTo(aS1) < aTol && anEnd.DistanceTo(aS2) < aTol)
+                                || (aStart.DistanceTo(aS2) < aTol && anEnd.DistanceTo(aS1) < aTol), aWhat + ": the V ends");
+                }
+            }
         }
 
         output.WriteLine($"Native and port threw for the same {aNbThrows} splits");

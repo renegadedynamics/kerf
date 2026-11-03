@@ -23,8 +23,8 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
     //=============================================================================
 
     /// <summary>
-    /// A rectangular trimmed surface: its basis surface, and its bounds with angles in degrees (OCCT writes 180/π,
-    /// not the plane angle factor) and lengths divided by the length factor. Not done if the basis isn't mapped.
+    /// A rectangular trimmed surface: its basis surface, and its bounds with angles and lengths divided by the plane
+    /// angle and length factors. Not done if the basis isn't mapped.
     /// </summary>
     public MakeRectangularTrimmedSurface(TrimmedSurface rtSurf, in Factors localFactors)
     {
@@ -46,8 +46,9 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
         // Modification of the Trimming Parameters ?
         // -----------------------------------------
 
-        // OCCT: degrees whatever the plane angle factor, which StepToGeom reads them with (occt-issues.md, 8D)
-        double angleFact = 180.0 / M_PI;
+        // in the plane angle unit, which StepToGeom reads them with (OCCT wrote degrees whatever the unit; Kerf decision
+        // 16826)
+        double angleFact = 1.0 / localFactors.PlaneAngleFactor();
         double uFact = 1.0;
         double vFact = 1.0;
         double lengthFact = localFactors.LengthFactor();

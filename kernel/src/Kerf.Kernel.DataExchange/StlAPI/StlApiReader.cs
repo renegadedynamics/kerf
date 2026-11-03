@@ -28,8 +28,8 @@ public class StlApiReader
     }
 
     /// <summary>
-    /// Reads STL from a stream into the shape (left unchanged on failure): ASCII if the data start with "solid",
-    /// binary otherwise, as OCCT's <see cref="RWStl.ReadStream"/>. True on success.
+    /// Reads STL from a stream into the shape (left unchanged on failure): ASCII or binary as
+    /// <see cref="RWStl.ReadStream"/> recognises them. True on success.
     /// </summary>
     public bool Read(ref Shape shape, Stream stream, ProgressRange progress = default, StlReadLimits? limits = null)
     {

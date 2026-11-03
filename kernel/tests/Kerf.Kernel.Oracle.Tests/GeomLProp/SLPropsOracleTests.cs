@@ -93,7 +93,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
     {
         var anOracle = new Oracle(output);
         var aGeomOracle = new Oracle(output);
-        int aCurvatureFirst = 0;
+        int aCurvatureFirst = 0, aStale = 0;
         using var aBuilder = new N.BRep_Builder();
         foreach (int i in Tape.Budget(1100))
         {
@@ -125,7 +125,10 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                     int aN = anOracle.Int(0, 2);
                     double aTol = anOracle.Bool() ? 1e-7 : 1e-3;
 
-                    // the curvatures asked first, before IsCurvatureDefined: OCCT returns the stale value
+                    // the curvatures asked first, before IsCurvatureDefined: native returns the stale value, the port
+                    // the point's (plan 3.2's third level: occt-issues.md, unit 3J's LProp_SurfaceUtils row; Kerf
+                    // decision 1467). A difference is intended when the port's value is the one it gives after
+                    // IsCurvatureDefined, which Compare then checks against native's.
                     N.BRepLProp_SLProps? aNProps = null;
                     SLProps3d? aPProps = null;
                     Exception? aNE = Try(() => aNProps = new N.BRepLProp_SLProps(aNAdaptor, aU, aV, aN, aTol));
@@ -142,7 +145,14 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                         aPE = Try(() => aPMax = aPProps!.MaxCurvature());
                         if (SameOutcome(aNE, aPE, aWhat + " MaxCurvature first"))
                         {
-                            anOracle.Same(aNMax, aPMax, aWhat + " MaxCurvature first");
+                            if (aNMax != aPMax && aPProps!.IsCurvatureDefined() && aPMax == aPProps.MaxCurvature())
+                            {
+                                aStale++;
+                            }
+                            else
+                            {
+                                anOracle.Same(aNMax, aPMax, aWhat + " MaxCurvature first");
+                            }
                             aCurvatureFirst++;
                         }
 
@@ -163,7 +173,14 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                             aPE = Try(() => aPMax = aPProps!.GaussianCurvature());
                             if (SameOutcome(aNE, aPE, aWhat + " GaussianCurvature first"))
                             {
-                                anOracle.Same(aNMax, aPMax, aWhat + " GaussianCurvature first");
+                                if (aNMax != aPMax && aPProps!.IsCurvatureDefined() && aPMax == aPProps.GaussianCurvature())
+                                {
+                                    aStale++;
+                                }
+                                else
+                                {
+                                    anOracle.Same(aNMax, aPMax, aWhat + " GaussianCurvature first");
+                                }
                             }
 
                             bool aNU = false, aPU = false;
@@ -171,7 +188,14 @@ public class SLPropsOracleTests(ITestOutputHelper output)
                             aPE = Try(() => aPU = aPProps!.IsUmbilic());
                             if (SameOutcome(aNE, aPE, aWhat + " IsUmbilic first"))
                             {
-                                anOracle.Same(aNU, aPU, aWhat + " IsUmbilic first");
+                                if (aNU != aPU && aPU == aPProps!.IsUmbilic())
+                                {
+                                    aStale++;
+                                }
+                                else
+                                {
+                                    anOracle.Same(aNU, aPU, aWhat + " IsUmbilic first");
+                                }
                             }
                         }
                     }
@@ -179,14 +203,14 @@ public class SLPropsOracleTests(ITestOutputHelper output)
             }
         }
 
-        output.WriteLine($"{aCurvatureFirst} first calls of MaxCurvature (before IsCurvatureDefined) compared");
+        output.WriteLine($"{aCurvatureFirst} first calls of MaxCurvature (before IsCurvatureDefined) compared; {aStale} native stale values (intended differences)");
         anOracle.Report("LProp_SLProps3d on GeomAdaptor_Surface vs BRepLProp_SLProps");
         aGeomOracle.Report("GeomLProp_SLProps on Geom_Surface vs BRepLProp_SLProps (tolerance 1e-9)");
     }
 
     /// <summary>
     /// OCCT's MaxCurvature, MinCurvature, MeanCurvature and GaussianCurvature return the previous value when they are
-    /// called before IsCurvatureDefined (occt-issues.md): native OCCT and the port alike.
+    /// called before IsCurvatureDefined; the port's return the point's (occt-issues.md; Kerf decision 1467).
     /// </summary>
     [Fact]
     public void Curvature_asked_first_returns_the_stale_value()
@@ -205,7 +229,7 @@ public class SLPropsOracleTests(ITestOutputHelper output)
         var aPProps = new SLProps(aPSphere, 0.3, 0.2, 2, 1e-7);
 
         Assert.Equal(0.0, aNProps.MaxCurvature());
-        Assert.Equal(0.0, aPProps.MaxCurvature());
+        Assert.Equal(-0.5, aPProps.MaxCurvature(), 1e-15);
         Assert.Equal(aNProps.MaxCurvature(), aPProps.MaxCurvature());
         Assert.Equal(-0.5, aPProps.MaxCurvature(), 1e-15);
     }

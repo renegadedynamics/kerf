@@ -154,15 +154,16 @@ public class Coons : Filling
         {
             pv = (j - 1) / nv;
             pv1 = 1 - pv;
-            // OCCT: W4 in the first column and W2 in the last, where the poles have P2 and P4 (occt-issues.md)
-            _weights[1, j] = w4[j];
-            _weights[nPolU, j] = w2[j];
+            // W2 in the first column and W4 in the last, as the poles have P2 and P4 (decision 1479; OCCT put W4
+            // first and W2 last, and blended them so)
+            _weights[1, j] = w2[j];
+            _weights[nPolU, j] = w4[j];
             for (i = 2; i <= nPolU - 1; i++)
             {
                 pu = (i - 1) / nu;
                 pu1 = 1 - pu;
-                double w = pv1 * w1[i] + pv * w3[i] + pu * w2[j] + pu1 * w4[j]
-                           - (pu1 * pv1 * w1[1] + pu * pv1 * w2[1] + pu * pv * w3[nPolU] + pu1 * pv * w4[nPolV]);
+                double w = pv1 * w1[i] + pv * w3[i] + pu1 * w2[j] + pu * w4[j]
+                           - (pu1 * pv1 * w1[1] + pu * pv1 * w4[1] + pu * pv * w3[nPolU] + pu1 * pv * w2[nPolV]);
                 _weights[i, j] = w;
             }
         }

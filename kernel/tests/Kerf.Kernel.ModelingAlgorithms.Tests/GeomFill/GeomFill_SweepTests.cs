@@ -557,6 +557,39 @@ public class GeomFill_SweepTests
         Assert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));
     }
 
+    [Fact]
+    public void SweepSectionGenerator_puts_the_circles_across_the_path()
+    {
+        // a circle of radius 1.5 along a 3D B-spline path: each section is the circle about the path's point at its
+        // parameter, across the path's tangent (OCCT left every section at the first one's place: occt-issues.md, unit
+        // 5L2's GeomFill_SweepSectionGenerator::Perform row; decision 1481)
+        BSplineCurve3D aPath = Path3d();
+        global::Kerf.Engine.Construction.Surfaces.SweepSectionGenerator aGen = new(aPath, 1.5);
+        aGen.Perform();
+        aGen.GetShape(out int aNbP, out int aNbK, out int aDeg, out _);
+        NCollection_Array1<double> aK = new(1, aNbK);
+        NCollection_Array1<int> aM = new(1, aNbK);
+        aGen.Knots(aK);
+        aGen.Mults(aM);
+        Assert.True(aGen.SectionCount > 2);
+        for (int s = 1; s <= aGen.SectionCount; s++)
+        {
+            NCollection_Array1<Point3D> aP = new(1, aNbP);
+            NCollection_Array1<double> aW = new(1, aNbP);
+            NCollection_Array1<Point2D> aP2 = new(1, 1);
+            aGen.Section(s, aP, aP2, aW);
+            BSplineCurve3D aCircle = new(aP, aW, aK, aM, aDeg);
+            aPath.D1(aGen.Parameter(s), out Point3D aCentre, out Vector3D aTangent);
+            for (int k = 0; k < 8; k++)
+            {
+                double t = aCircle.FirstParameter + (aCircle.LastParameter - aCircle.FirstParameter) * k / 8;
+                Vector3D aRadius = new(aCentre, aCircle.Value(t));
+                Assert.Equal(1.5, aRadius.Magnitude, 1e-6);
+                Assert.Equal(0.0, aRadius.Dot(aTangent) / aTangent.Magnitude, 1e-6);
+            }
+        }
+    }
+
     //==================================================================================================
     // GeomFill_Pipe
     //==================================================================================================

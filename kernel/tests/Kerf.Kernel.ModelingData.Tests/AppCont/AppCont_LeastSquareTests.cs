@@ -101,9 +101,9 @@ public class AppCont_LeastSquareTests
             {
                 PolynomialFunction aFunc = new(U0, U1, true);
                 LeastSquare aLSQ = new(aFunc, U0, U1, aFirst, aLast, 5, 12);
-                // OCCT sets IsDone only when it solves a constrained system (occt-issues.md)
-                bool aFree = aFirst == NoConstraint && aLast == NoConstraint;
-                Assert.Equal(!aFree, aLSQ.IsDone);
+                // done with free ends too (OCCT set IsDone only when it solved a constrained system: occt-issues.md,
+                // decision 1470)
+                Assert.True(aLSQ.IsDone);
 
                 MultiCurve aCurve = aLSQ.Value();
                 Assert.Equal(6, aCurve.NbPoles());

@@ -196,7 +196,7 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         var anOracle = new Oracle(output, 31013);
         var aCounts = new TopologyOracleTests.Counts();
         const int Shapes = 60;
-        int aSurfaceless = 0;
+        int aSurfaceless = 0, aKeptSurfaces = 0;
         foreach (int k in Tape.Budget(Shapes))
         {
             Twin<N.TopoDS_Shape, Shape> aShape = ReadBoth(BRepToolsIOOracleTests.NativeShape(anOracle, k, out _));
@@ -238,13 +238,23 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
                     {
                         using var aN = new N.BRepBuilderAPI_GTransform(aShape.N, aNG, false);
                         var aP = new GTransform(aShape.P, aG);
-                        // OCCT: a meshed face on a B-spline or Bezier surface comes out of the NURBS conversion without
-                        // its surface (occt-issues.md), on both sides; native BRepTools::UVBounds can't read such a face
+                        // Plan 3.2's third level (occt-issues.md, unit 4H's BRepTools_Modifier::Rebuild row; Kerf decision
+                        // 16719): native's NURBS conversion leaves a meshed face on a B-spline or Bezier surface without
+                        // its surface, the port's keeps it; native BRepTools::UVBounds can't read such a face, so the
+                        // geometry isn't compared
                         bool aGeometry = true;
                         foreach (Twin<N.TopoDS_Shape, Shape> aF in TopologyOracleTests.Explore(new(aN.Shape(), aP.InternalShape()), ShapeType.Face))
                         {
                             bool aNNull = N.BRep_Tool.Surface(N.TopoDS.Face(aF.N)) is null;
-                            anOracle.Same(aNNull, Tool.Surface(ShapeCasts.Face(aF.P)) is null, "face without surface");
+                            bool aPNull = Tool.Surface(ShapeCasts.Face(aF.P)) is null;
+                            if (aNNull && !aPNull)
+                            {
+                                aKeptSurfaces++;
+                            }
+                            else
+                            {
+                                anOracle.Same(aNNull, aPNull, "face without surface");
+                            }
                             aGeometry &= !aNNull;
                         }
                         if (!aGeometry)
@@ -261,7 +271,8 @@ public sealed class BRepBuilderAPIModificationsOracleTests(ITestOutputHelper out
         }
 
         output.WriteLine($"{Shapes} native shapes: {aCounts.Shapes} explored sub-shapes, {aCounts.Edges} edges, {aCounts.Faces} faces; "
-                         + $"{aSurfaceless} GTransform results with faces left without surfaces (geometry not compared)");
+                         + $"{aSurfaceless} GTransform results with faces left without surfaces natively (geometry not compared), "
+                         + $"{aKeptSurfaces} such faces with their surfaces in the port (intended differences)");
         anOracle.Report("BRepBuilderAPI_Transform, Copy and GTransform on native shapes against native OCCT");
     }
 }

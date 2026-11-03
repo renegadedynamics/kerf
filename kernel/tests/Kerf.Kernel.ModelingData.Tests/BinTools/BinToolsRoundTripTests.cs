@@ -327,7 +327,7 @@ public class BinToolsRoundTripTests
     }
 
     [Fact]
-    public void Point_representations_follow_OCCT()
+    public void Point_representations_round_trip()
     {
         Shape aShape = BinTestShapes.VertexRepresentations(includePointOnSurface: true);
         var anOriginal = ((BrepTVertex)FindFreeVertex(aShape).TShape()!).PointRepresentations();
@@ -335,10 +335,16 @@ public class BinToolsRoundTripTests
         Assert.Contains(anOriginal, theRep => theRep.IsPointOnCurveOnSurface());
         Assert.Contains(anOriginal, theRep => theRep.IsPointOnSurface());
 
-        // the table-based format keeps them all, but swaps the parameters of a point on a surface (occt-issues.md)
+        // the table-based format keeps them all, the parameters of a point on a surface in their order (OCCT's readers
+        // swapped them: occt-issues.md, BinTools_ShapeSet's point on a surface; Kerf decision 1500)
+        PointRepresentation aOnSurface = anOriginal.First(theRep => theRep.IsPointOnSurface());
+        byte[] aSecondFirst = [.. BitConverter.GetBytes(aOnSurface.Parameter2()), .. BitConverter.GetBytes(aOnSurface.Parameter())];
         foreach (int aVersion in new[] { 2, 3, 4 })
         {
-            Shape aRead = ReadSet(WriteSet(aShape, aVersion));
+            byte[] aWritten = WriteSet(aShape, aVersion);
+            // the file is OCCT's, the second parameter written first, so files written before read right
+            Assert.True(aWritten.AsSpan().IndexOf(aSecondFirst) >= 0);
+            Shape aRead = ReadSet(aWritten);
             var aReps = ((BrepTVertex)FindFreeVertex(aRead).TShape()!).PointRepresentations();
             Assert.Equal(anOriginal.Count, aReps.Count);
             for (int i = 0; i < aReps.Count; i++)
@@ -348,7 +354,7 @@ public class BinToolsRoundTripTests
         }
 
         // the position-based reader drops a point on a curve on a surface (it tests the surface for null the wrong way
-        // round) and swaps the parameters of a point on a surface too
+        // round) and keeps a point on a surface's parameters in their order too
         Shape aRead4 = ReadShapes(WriteShapes(true, false, aShape), 1)[0];
         var aReps4 = ((BrepTVertex)FindFreeVertex(aRead4).TShape()!).PointRepresentations();
         var anExpected4 = anOriginal.Where(theRep => !theRep.IsPointOnCurveOnSurface()).ToList();
@@ -362,14 +368,10 @@ public class BinToolsRoundTripTests
     private static void AssertSameRepresentation(PointRepresentation theOriginal, PointRepresentation theRead)
     {
         Assert.Equal(theOriginal.GetType(), theRead.GetType());
+        Assert.Equal(theOriginal.Parameter(), theRead.Parameter());
         if (theOriginal.IsPointOnSurface())
         {
-            Assert.Equal(theOriginal.Parameter2(), theRead.Parameter());
-            Assert.Equal(theOriginal.Parameter(), theRead.Parameter2());
-        }
-        else
-        {
-            Assert.Equal(theOriginal.Parameter(), theRead.Parameter());
+            Assert.Equal(theOriginal.Parameter2(), theRead.Parameter2());
         }
     }
 

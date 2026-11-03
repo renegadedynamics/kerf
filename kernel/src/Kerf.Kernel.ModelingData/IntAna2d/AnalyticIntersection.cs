@@ -260,10 +260,14 @@ public class AnalyticIntersection
 
     // IntAna2d_AnaIntersection_2.cxx
 
+    // The parameter on a circle of the angle a in [0, 2PI[ measured counterclockwise from its X axis: -a on an indirect
+    // circle, in [0, 2PI[ (decision 1464; OCCT kept a, wrong on an indirect circle).
+    private static double CircleParameter(double a, in Circle2D c)
+        => c.IsDirect || a == 0.0 ? a : 2 * M_PI - a;
+
     /// <summary>Intersection between two circles.</summary>
     public void Perform(in Circle2D c1, in Circle2D c2)
     {
-        // OCCT: the parameters are angles from each X axis counterclockwise, wrong on an indirect circle
         _done = false;
         double d = c1.Location.DistanceTo(c2.Location);
         double r1 = c1.Radius;
@@ -312,7 +316,11 @@ public class AnalyticIntersection
             {
                 ang1 = 2 * M_PI + ang1;
             } // Normalize to range [0, 2PI]
-            _lpnt[0].SetValue(xs, ys, ang1, ang2);
+            if (ang2 >= 2 * M_PI)
+            {
+                ang2 -= 2 * M_PI;
+            }
+            _lpnt[0].SetValue(xs, ys, CircleParameter(ang1, c1), CircleParameter(ang2, c2));
         }
         else if (((sum - d) > Epsilon(sum)) && ((d - dif) > Epsilon(d + dif)))
         {
@@ -411,8 +419,8 @@ public class AnalyticIntersection
             {
                 ang22 = ang22 - 2 * M_PI;
             }
-            _lpnt[0].SetValue(xs1, ys1, ang11, ang21);
-            _lpnt[1].SetValue(xs2, ys2, ang12, ang22);
+            _lpnt[0].SetValue(xs1, ys1, CircleParameter(ang11, c1), CircleParameter(ang21, c2));
+            _lpnt[1].SetValue(xs2, ys2, CircleParameter(ang12, c1), CircleParameter(ang22, c2));
         }
         else if (Math.Abs(d - dif) <= Epsilon(sum))
         { // Internally tangent circles
@@ -440,7 +448,7 @@ public class AnalyticIntersection
             } // Normalize to range [0, 2PI]
             double xs = (c1.Location.X * r2 - c2.Location.X * r1) / (r2 - r1);
             double ys = (c1.Location.Y * r2 - c2.Location.Y * r1) / (r2 - r1);
-            _lpnt[0].SetValue(xs, ys, ang1, ang2);
+            _lpnt[0].SetValue(xs, ys, CircleParameter(ang1, c1), CircleParameter(ang2, c2));
         }
         else
         { // We must have d<dif-Resol and d<>0, therefore

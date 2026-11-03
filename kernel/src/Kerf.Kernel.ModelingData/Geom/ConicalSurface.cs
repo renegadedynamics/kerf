@@ -199,12 +199,11 @@ public sealed class ConicalSurface : ElementarySurface
         b1 = t11 * t12 + t21 * t22 - t31 * t32;
         b2 = t11 * t13 + t21 * t23 - t31 * t33;
         b3 = t12 * t13 + t22 * t23 - t32 * t33;
-        // OCCT: C1-C3 and D are wrong unless the local origin is the global one and the radius is 0 (gp_Cone's
-        // Coefficients has -T31 * (radius + T34) and -2.0 * radius * T34); kept as OCCT computes them.
-        c1 = t11 * t14 + t21 * t24 + _radius * t31;
-        c2 = t12 * t14 + t22 * t24 + _radius * t32;
-        c3 = t13 * t14 + t23 * t24 + _radius * t33;
-        d = t14 * t14 + t24 * t24 - _radius * _radius - t34 * t34 + 2.0 * _radius * t34;
+        // as gp_Cone's (OCCT's C1-C3 and D were right only at the global origin with radius 0; Kerf decision 1494)
+        c1 = t11 * t14 + t21 * t24 - t31 * (_radius + t34);
+        c2 = t12 * t14 + t22 * t24 - t32 * (_radius + t34);
+        c3 = t13 * t14 + t23 * t24 - t33 * (_radius + t34);
+        d = t14 * t14 + t24 * t24 - _radius * _radius - t34 * t34 - 2.0 * _radius * t34;
     }
 
     internal sealed override Point3D EvalD0(double u, double v) => global::Kerf.Engine.Geometry.ElSLib.ConeValue(u, v, _pos, _radius, _semiAngle);

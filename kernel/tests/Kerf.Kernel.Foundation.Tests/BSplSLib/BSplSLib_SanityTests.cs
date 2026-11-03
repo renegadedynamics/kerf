@@ -321,14 +321,11 @@ public class BSplSLib_SanityTest
                 AssertNear(CP2.XYZ(), P.XYZ(), 1e-11, "CacheD2.P " + aWhat);
                 AssertNear(CDu.XYZ(), Du.XYZ(), 1e-10, "CacheD2.U " + aWhat);
                 AssertNear(CDv.XYZ(), Dv.XYZ(), 1e-10, "CacheD2.V " + aWhat);
-                // OCCT: CacheD2 reads stale values as the second derivative of the weights when both degrees are
-                // below 2 (occt-issues.md), so the second derivatives of a rational bilinear surface are wrong
-                if (!s.Rational || Math.Max(s.UDegree, s.VDegree) >= 2)
-                {
-                    AssertNear(CDuu.XYZ(), Duu.XYZ(), 1e-9, "CacheD2.UU " + aWhat);
-                    AssertNear(CDuv.XYZ(), Duv.XYZ(), 1e-9, "CacheD2.UV " + aWhat);
-                    AssertNear(CDvv.XYZ(), Dvv.XYZ(), 1e-9, "CacheD2.VV " + aWhat);
-                }
+                // rational bilinear surfaces included (OCCT's CacheD2 read stale values as the weights' second
+                // derivative when both degrees are below 2: occt-issues.md, BSplSLib::CacheD2; Kerf decision 1497)
+                AssertNear(CDuu.XYZ(), Duu.XYZ(), 1e-9, "CacheD2.UU " + aWhat);
+                AssertNear(CDuv.XYZ(), Duv.XYZ(), 1e-9, "CacheD2.UV " + aWhat);
+                AssertNear(CDvv.XYZ(), Dvv.XYZ(), 1e-9, "CacheD2.VV " + aWhat);
             }
         }
     }

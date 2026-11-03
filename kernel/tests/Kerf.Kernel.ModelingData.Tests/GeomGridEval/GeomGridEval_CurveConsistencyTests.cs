@@ -347,16 +347,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 }
                 else
                 {
-                    try
-                    {
-                        anAdaptorDN = theAdaptor.EvalDN(aU, aN).XYZ();
-                    }
-                    catch (global::Kerf.Engine.Foundation.FailureException) when (aCurveDN is not null)
-                    {
-                        // GeomAdaptor_Curve's offset DN3 can throw (Geom_OffsetCurveUtils::EvaluateDN passes one
-                        // variable as both D1 and D2 to EvaluateD3)
-                        anAdaptorDN = aCurveDN.Value;
-                    }
+                    anAdaptorDN = theAdaptor.EvalDN(aU, aN).XYZ();
                 }
                 Compare(theKind + " DN" + aN, aDN.Value(i).XYZ(), aCurveDN, anAdaptorDN);
             }

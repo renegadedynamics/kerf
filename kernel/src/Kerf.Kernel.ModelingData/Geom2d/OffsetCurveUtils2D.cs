@@ -173,10 +173,9 @@ internal static class OffsetCurveUtils2D
         // P"(u)  = p"(u) + (Offset / R) * (D2Ndir/DU - DNdir * (2.0 * Dr/ R**2) +
         //          Ndir * ( (3.0 * Dr**2 / R**4) - (D2r / R**2)))
 
-        // P"'(u) = p"'(u) + (Offset / R) * (D3Ndir - (3.0 * Dr/R**2 ) * D2Ndir -
-        //          (3.0 * D2r / R2) * DNdir) + (3.0 * Dr * Dr / R4) * DNdir -
-        //          (D3r/R2) * Ndir + (6.0 * Dr * Dr / R4) * Ndir +
-        //          (6.0 * Dr * D2r / R4) * Ndir - (15.0 * Dr* Dr* Dr /R6) * Ndir
+        // P"'(u) = p"'(u) + (Offset / R) * (D3Ndir - (3.0 * Dr/R**2) * D2Ndir -
+        //          (3.0 * D2r / R2) * DNdir + (9.0 * Dr * Dr / R4) * DNdir -
+        //          (D3r/R2) * Ndir + (9.0 * Dr * D2r / R4) * Ndir - (15.0 * Dr* Dr* Dr /R6) * Ndir)
 
         Xy ndir = new Xy(d1.Y, -d1.X);
         Xy dNdir = new Xy(d2.Y, -d2.X);
@@ -200,19 +199,18 @@ internal static class OffsetCurveUtils2D
                 return false;
             }
             // We try another computation but the stability is not very good dixit ISG.
-            // OCCT: the DNdir and Ndir coefficients of V3 below don't match the derivative of V2 (see
-            // occt-issues.md); V3 is right only where |p'| is constant (Dr = D2r = D3r = 0, e.g. a circle).
+            // V3 is the derivative of V2 (OCCT's DNdir and Ndir coefficients weren't, and its V2 subtracted the Ndir
+            // term; Kerf decision 1487)
             // V3 = P"' (U) :
             d3Ndir.Subtract(d2Ndir.Multiplied(3.0 * dr / r2));
-            d3Ndir.Subtract(dNdir.Multiplied(3.0 * ((d2r / r2) + (dr * dr / r4))));
+            d3Ndir.Subtract(dNdir.Multiplied(3.0 * ((d2r / r2) - (3.0 * dr * dr / r4))));
             d3Ndir.Add(
-                ndir.Multiplied(6.0 * dr * dr / r4 + 6.0 * dr * d2r / r4 - 15.0 * dr * dr * dr / r6 - d3r));
+                ndir.Multiplied(9.0 * dr * d2r / r4 - 15.0 * dr * dr * dr / r6 - d3r / r2));
             d3Ndir.Multiply(offset / r);
             // V2 = P" (U) :
             r4 = r2 * r2;
-            // OCCT: subtracts the Ndir term that CalculateD2 adds (see occt-issues.md).
             d2Ndir.Subtract(dNdir.Multiplied(2.0 * dr / r2));
-            d2Ndir.Subtract(ndir.Multiplied((3.0 * dr * dr / r4) - (d2r / r2)));
+            d2Ndir.Add(ndir.Multiplied((3.0 * dr * dr / r4) - (d2r / r2)));
             d2Ndir.Multiply(offset / r);
             // V1 = P' (U) :
             dNdir.Multiply(r);
@@ -222,19 +220,18 @@ internal static class OffsetCurveUtils2D
         else
         {
             // Same computation as IICURV in EUCLID-IS because the stability is better.
-            // OCCT: the DNdir and Ndir coefficients of V3 below don't match the derivative of V2 (see
-            // occt-issues.md); V3 is right only where |p'| is constant (Dr = D2r = D3r = 0, e.g. a circle).
+            // V3 is the derivative of V2 (OCCT's DNdir and Ndir coefficients weren't, and its V2 subtracted the Ndir
+            // term; Kerf decision 1487)
             // V3 = P"' (U) :
             d3Ndir.Multiply(offset / r);
             d3Ndir.Subtract(d2Ndir.Multiplied(3.0 * offset * dr / r3));
-            d3Ndir.Subtract(dNdir.Multiplied(((3.0 * offset) * ((d2r / r3) + (dr * dr) / r5))));
+            d3Ndir.Subtract(dNdir.Multiplied(((3.0 * offset) * ((d2r / r3) - (3.0 * dr * dr) / r5))));
             d3Ndir.Add(ndir.Multiplied(
-                (offset * (6.0 * dr * dr / r5 + 6.0 * dr * d2r / r5 - 15.0 * dr * dr * dr / r7 - d3r))));
+                (offset * (9.0 * dr * d2r / r5 - 15.0 * dr * dr * dr / r7 - d3r / r3))));
             // V2 = P" (U) :
             d2Ndir.Multiply(offset / r);
             d2Ndir.Subtract(dNdir.Multiplied(2.0 * offset * dr / r3));
-            // OCCT: subtracts the Ndir term that CalculateD2 adds (see occt-issues.md).
-            d2Ndir.Subtract(ndir.Multiplied(offset * (((3.0 * dr * dr) / r5) - (d2r / r3))));
+            d2Ndir.Add(ndir.Multiplied(offset * (((3.0 * dr * dr) / r5) - (d2r / r3))));
             // V1 = P' (U) :
             dNdir.Multiply(offset / r);
             dNdir.Subtract(ndir.Multiplied(offset * dr / r3));
@@ -503,8 +500,7 @@ internal static class OffsetCurveUtils2D
             case 2:
                 return EvaluateD2(u, basisCurve, offset, out pnt, out dummy, out dn);
             case 3:
-                // OCCT: one variable receives both D1 and D2, which EvaluateD3 uses while computing D3
-                return EvaluateD3(u, basisCurve, offset, out pnt, out dummy, out dummy, out dn);
+                return EvaluateD3(u, basisCurve, offset, out pnt, out dummy, out Vector2D dummy2, out dn);
             default:
             {
                 // For derivatives > 3, return basis curve derivative (no offset contribution)
@@ -604,8 +600,7 @@ internal static class OffsetCurveUtils2D
             case 2:
                 return EvaluateD2(u, basisCurve, offset, out pnt, out dummy, out dn);
             case 3:
-                // OCCT: one variable receives both D1 and D2, which EvaluateD3 uses while computing D3
-                return EvaluateD3(u, basisCurve, offset, out pnt, out dummy, out dummy, out dn);
+                return EvaluateD3(u, basisCurve, offset, out pnt, out dummy, out Vector2D dummy2, out dn);
             default:
             {
                 // For derivatives > 3, return basis curve derivative (no offset contribution)

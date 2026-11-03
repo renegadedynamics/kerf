@@ -297,7 +297,6 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
                     }
 
                     temploc.Add(temploc.Multiplied(tempmatrix));
-                    // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
                     tempmatrix.Multiply(tempmatrix);
                     npower = npower / 2;
                 }

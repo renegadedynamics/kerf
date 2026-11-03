@@ -259,7 +259,8 @@ public class LeastSquare
                     }
                 }
             }
-            // OCCT: myDone stays false here although the poles are computed (occt-issues.md).
+            // the poles are computed (OCCT left myDone false here: decision 1470)
+            _done = true;
         }
         else
         {

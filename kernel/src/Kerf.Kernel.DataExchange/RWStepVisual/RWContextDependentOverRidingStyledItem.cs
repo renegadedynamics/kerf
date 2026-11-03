@@ -112,7 +112,7 @@ internal class RWContextDependentOverRidingStyledItem
 
         // --- inherited field item ---
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
 
         // --- inherited field overRiddenStyle ---
 

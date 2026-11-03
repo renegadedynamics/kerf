@@ -115,6 +115,10 @@ The first packages, for Bento's 3D-models extension.
   failed on loaded machines. Results are as before.
 - Kerf's unit 10J2: the kernel's `NCollection_DataMap`, `NCollection_DynamicArray` and indexed maps are `Dictionary`,
   `List`, `IndexedSet` and `IndexedMap`; the layer's uses (`Vertex`, `OneD`, among others) follow. No behaviour changes.
+- Kerf's unit 10K2: `Face.Chamfer2D` chamfers the face with the kernel's MakeFillet2d again, as build123d did before it
+  worked around OCCT's merging of a holed face's wires into one (the kernel keeps them apart now): a chamfer on a face
+  with holes is one operation, and its history comes from the kernel. `Face.Fillet2D` keeps build123d's wire-by-wire
+  fillet.
 - Kerf's unit 10L1: the kernel's geometry and topology getters became properties (`X`, `Direction`, `Type`,
   `Placement`…) and `Distance`/`Angle` became `DistanceTo`/`AngleTo`; the layer's call sites follow, rewritten by
   the same tool. The layer reaches the kernel's now-internal engine through `InternalsVisibleTo` until 10M. No

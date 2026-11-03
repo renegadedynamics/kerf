@@ -1860,6 +1860,48 @@ Phase 10 (part): heap and collections, the rest (unit 10J2).
 - `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
   (docs/collections-plan.md). Results are unchanged.
 
+Phase 10 (part): OCCT's bugs in construction, properties, extrema and projection (unit 10K2, batches K3, K5 and K6 of
+the triage).
+- Projection: the pcurve of a helix of more than a turn on a cylinder (a thread), a spiral on a cone or a coil on a
+  torus follows the curve (it was off by up to the diameter); a projection's free part after an isoparametric one gets
+  its own pcurve; a parabola projected on a plane gets the right focal.
+- Extrema: curve-curve extrema run twice report the second run's solutions only; GeomAPI's total curve-curve distance
+  keeps the nearest end pair and, on ranges, stays on the ranges; 2D circle intersections give an indirect circle's
+  own parameters.
+- Properties: BRepGProp's volume by a plane (Vinert) reports its volume and centre; natural faces' adaptive
+  integration splits V at the V bounds; curvatures asked before IsCurvatureDefined are the point's; GeomLProp's
+  continuity at a B-spline knot is the knot's; a continuous approximation with free ends is done; GProp's elementary
+  curves, surfaces and solids (lines, circles, cylinders, cones, spheres, tori) have right centres and inertia.
+- Construction: 2D fillets and chamfers keep a face's holes as their own wires, fillet a moved arc the right way and
+  trim a reversed neighbour correctly; a distance-angle chamfer between a plane and a cylinder no longer depends on the
+  axis direction; NurbsConvert and GTransform keep a meshed face's surface; rational Coons fillings keep their
+  boundaries; a revolved feature up to a face at an angle chooses as Perform(Until) does; the sweep section generator
+  moves its sections along the path; ExtendFace no longer extends an infinite side.
+- Left, with reasons: AdvApp2Var's error estimate (decision 1482), and the row about ExtendFace losing a location,
+  which wasn't a bug (1477).
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
+Phase 10 (part): OCCT's bugs, curve and surface evaluation, conversion, gp and data exchange (unit 10K3, batches K7
+and K8).
+- Raising the degree of a periodic B-spline keeps the curve (lofts' and fillets' periodic sections and spines).
+- Offset curves' third derivatives are right, through the curves and their adaptors, and so the Frenet and corrected
+  Frenet frames' derivatives on offset spines; a curve on a surface has the chain rule's third derivative; a torus's
+  mixed derivatives have the right signs; a rational bilinear patch's cached second derivatives are right.
+- gp: a direction mirrored about an axis, 2D and 3D transformation powers, 2D rotation products, 2D hyperbolas'
+  asymptotes and second directrix, and affinities' negative powers are right.
+- An offset surface transforms its parameters once; a B-spline surface split in V is reversed in V; a surface's knot
+  splitting keeps its U splits when V needs none; canonical recognition finds ellipses at any angle; a cone's implicit
+  equation holds away from the origin; an indirect 2D parabola's grid follows its frame; an extrusion adaptor trims
+  the direction it is asked to.
+- STL: a stream is recognised as a file is (binary files whose header starts "solid" read), and every domain of a
+  multi-domain ASCII file is read.
+- STEP: rendering methods read as written; styled representations, two complex record kinds and booleans written
+  validly; two reflectance styles and TESSELLATED_ITEM read and written; XSControl_Reader reads STEP; 2D trimmed
+  curves and rational 2D Bezier curves written; angles written in the file's unit; strings of any length read, and a
+  tab ends a string as a space does.
+- Binary BRep: a point on a surface keeps its parameters; the files are unchanged, and old ones read right.
+- Two rows reclassified to leave (decisions 1493, 1509). The oracle and native comparisons these fixes move compare
+  at plan 3.2's third level, each with its reason; occt-issues.md marks the rows fixed.
+
 Phase 10 (part): the public API, part 1: the shared types, geometry and topology (unit 10L1).
 - Kerf.Geometry's values read as .NET: `X`, `Y`, `Z`, `Direction`, `Location`, `Radius`… are properties;
   `DistanceTo`, `SquareDistanceTo` and `AngleTo` replace `Distance`, `SquareDistance` and `Angle`; gp's constants are

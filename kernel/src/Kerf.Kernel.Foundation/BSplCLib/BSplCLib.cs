@@ -2587,15 +2587,18 @@ internal static partial class BSplCLib
 
         if (periodic)
         {
-            // OCCT: for most periodic curves whose multiplicities are not all 1, the raised curve is not the
-            // input curve (found against native OCCT, whose poles the port reproduces exactly; not analysed)
             // Periodic curves are transformed in non-periodic curves
+
+            // The working curve starts with the knots l to Upper - 1 less the period, so the null poles before the
+            // first pole are counted from the multiplicities of l to Upper, and those after the last from Lower to f.
+            // (OCCT counts each from the other end, which differs unless the two ends' multiplicities match, and
+            // then changes the curve; Kerf decision 1484.)
 
             nbwknots += f - mults.Lower();
 
             pf = -degree - 1;
 
-            for (i = mults.Lower(); i <= f; i++)
+            for (i = l; i <= mults.Upper(); i++)
             {
                 pf += mults[i];
             }
@@ -2604,7 +2607,7 @@ internal static partial class BSplCLib
 
             pl = -degree - 1;
 
-            for (i = l; i <= mults.Upper(); i++)
+            for (i = mults.Lower(); i <= f; i++)
             {
                 pl += mults[i];
             }

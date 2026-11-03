@@ -75,6 +75,12 @@ public class StyledItem : RepresentationItem
         return _reprItem;
     }
 
+    /// <summary>
+    /// The styled item, whatever its type: <see cref="Item"/> returns it only if it is a representation item. The
+    /// writers send this one (OCCT's sent Item(), so a styled representation was written $; Kerf decision 1502).
+    /// </summary>
+    public Transient Target() => _item;
+
     public void SetItem(StyledItemTarget item)
     {
         _item = item.Value();

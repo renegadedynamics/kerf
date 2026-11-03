@@ -1239,9 +1239,9 @@ internal class CompProjectedCurve : Curve2DAdaptorBase
                 Bounds(k, out udeb, out ufin);
                 Direction2D dir; // Only for isoparametric projection
 
-                // OCCT: approx2d is cleared for good by an isoparametric part, so a later part that isn't
-                // isoparametric is not approximated in 2D and gets the previous part's PCur2d (occt-issues.md;
-                // ProjLib_CompProjectedCurveTests.Perform_IsoThenFreePart_ReusesIsoLine_OcctBug).
+                // An isoparametric part needs no 2D approximation; each part starts from the requested ones (OCCT
+                // cleared approx2d for good, so a later free part got the iso line: decision 1460).
+                approx2d = _proj2d;
                 if (IsUIso(k, out uIso)) // Part k of the projection is U-isoparametric curve
                 {
                     approx2d = false;

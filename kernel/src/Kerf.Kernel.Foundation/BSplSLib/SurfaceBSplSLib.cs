@@ -3160,10 +3160,11 @@ internal static partial class SurfaceBSplSLib
 
         if (weightsArray != null)
         {
-            // OCCT: locpoles is zeroed above row MinIndMax for the poles' dimension only; with the weights' smaller
-            // dimension, a max degree below 2 leaves row 2 holding pole values, which are then taken as the second
-            // derivative of the weights: the second derivatives of a rational surface of degrees (1, 1) are wrong
             dimension = min_degree + 1;
+            // the rows above MinIndMax zeroed again for the weights' smaller dimension (OCCT zeroed them for the
+            // poles' only, so with a max degree below 2 row 2 held pole values, taken as the weights' second
+            // derivative; Kerf decision 1497)
+            locpoles[(minIndMax * dimension)..(3 * dimension)].Clear();
             NCollection_Array2<double> refWeights = weightsArray;
             // OCCT: row and column swapped (see CacheD0)
             ReadOnlySpan<double> wArray = ValuesFrom(refWeights, refWeights.LowerCol(), refWeights.LowerRow());

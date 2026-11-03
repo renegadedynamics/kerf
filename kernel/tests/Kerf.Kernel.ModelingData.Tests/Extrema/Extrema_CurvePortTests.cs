@@ -414,16 +414,35 @@ public class Extrema_CurvePortTests
     }
 
     [Fact]
-    public void ECC_PerformTwice_AccumulatesSolutions_AsInOcct()
+    public void ECC_PerformTwice_ReplacesTheSolutions()
     {
-        // Extrema_GGenExtCC::Perform doesn't clear the solutions of a previous Perform (occt-issues.md)
+        // OCCT's Extrema_GGenExtCC::Perform didn't clear the solutions of a previous Perform (occt-issues.md;
+        // decision 1461): the second run reports the first's solutions, and only them
         TestGeomAdaptor_Curve aA = new(BSpline3d()), aB = new(BSpline3d(3, 2.5));
         Ecc anECC = new(aA, aB);
         anECC.Perform();
         int aNb = anECC.ExtCount;
         Assert.True(aNb > 0);
+        double aFirst = anECC.SquareDistance(1);
         anECC.Perform();
-        Assert.Equal(2 * aNb, anECC.ExtCount);
+        Assert.Equal(aNb, anECC.ExtCount);
+        Assert.Equal(aFirst, anECC.SquareDistance(1));
+
+        // Extrema_ExtCC reused on other curves keeps one ECC: it reports what a new ExtCC on those curves reports
+        TestGeomAdaptor_Curve aC = new(BSpline3d(3, 4.0));
+        ExtCC anExtCC = new(aA, aB);
+        anExtCC.Perform();
+        Assert.True(anExtCC.IsDone);
+        anExtCC.Initialize(aA, aC);
+        anExtCC.Perform();
+        ExtCC aFresh = new(aA, aC);
+        aFresh.Perform();
+        Assert.True(aFresh.IsDone && anExtCC.IsDone);
+        Assert.Equal(aFresh.ExtCount, anExtCC.ExtCount);
+        for (int i = 1; i <= aFresh.ExtCount; i++)
+        {
+            Assert.Equal(aFresh.SquareDistance(i), anExtCC.SquareDistance(i));
+        }
     }
 
     [Fact]
