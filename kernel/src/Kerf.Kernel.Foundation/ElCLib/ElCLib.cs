@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry;
 /// parabola <c>X(U) = U * U / (4 * Focal), Y(U) = U</c>.
 /// Output points and vectors (OCCT's <c>gp_Pnt&amp;</c>, <c>gp_Vec&amp;</c>) are <c>out</c> parameters.
 /// </remarks>
-public static class ElCLib
+internal static class ElCLib
 {
     private const double Pipi = M_PI + M_PI;
 

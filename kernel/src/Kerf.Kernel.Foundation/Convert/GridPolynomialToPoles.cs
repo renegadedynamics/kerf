@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// interpolation at the Schoenberg points.
 /// </summary>
 /// <remarks>The batch accessors return copies, where OCCT returns references to its fields.</remarks>
-public class GridPolynomialToPoles
+internal class GridPolynomialToPoles
 {
     private NCollection_Array1<double> _uFlatKnots = new();
     private NCollection_Array1<double> _vFlatKnots = new();

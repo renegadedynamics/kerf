@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// curve is neither periodic nor closed, and is CN. Reversal and transformation are not supported (they throw
 /// <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class CircularHelixCurve : Curve3D
+internal sealed class CircularHelixCurve : Curve3D
 {
     private Frame3D _position; // Local coordinate system
     private double _radius;   // Helix radius (> 0)

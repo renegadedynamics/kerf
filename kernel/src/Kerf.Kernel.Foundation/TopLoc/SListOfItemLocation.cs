@@ -26,7 +26,7 @@ namespace Kerf.Engine.Topology;
 /// non-mutating twins are the constructor, <see cref="Tail"/> and <c>new TopLoc_SListOfItemLocation()</c>.
 /// </para>
 /// </remarks>
-public partial struct SListOfItemLocation : IEquatable<SListOfItemLocation>
+internal partial struct SListOfItemLocation : IEquatable<SListOfItemLocation>
 {
     // Internal: TopLoc_Location::IsEqual compares the node pointers through a cast in OCCT.
     internal SListNodeOfItemLocation? _node;

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// <remarks>
 /// An algorithm object (decision 117). It keeps copies of the curves, as OCCT does, for <see cref="Segment"/>.
 /// </remarks>
-public class CurveCurveIntersection2D
+internal class CurveCurveIntersection2D
 {
     private bool _isDone;
     private Curve2D? _curve1;

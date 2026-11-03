@@ -16,7 +16,7 @@ namespace Kerf.Engine.Topology;
 /// the shape's and its location multiplied by the shape's, unless asked otherwise.
 /// </summary>
 /// <remarks>A class (a working object), where OCCT's is used by value. OCCT's range-for support is left out.</remarks>
-public sealed class Iterator
+internal sealed class Iterator
 {
     private static readonly NCollection_List<Shape> EmptyList = new();
 

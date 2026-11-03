@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Keeps a reference to the adaptor, as OCCT does. Unlike the 3D GeomBndLib_OtherCurve, OCCT's file has its own
 /// optimizer (<c>AdjustExtr2dCurve</c>) over the legacy math_BrentMinimum and math_PSO, ported here as it is.
 /// </remarks>
-public sealed class OtherCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class OtherCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly Curve2DAdaptorBase _curve;
 

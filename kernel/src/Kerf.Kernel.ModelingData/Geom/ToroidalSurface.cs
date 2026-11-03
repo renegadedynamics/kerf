@@ -19,7 +19,7 @@ namespace Kerf.Geometry;
 /// P(U, V) = O + (R1 + R2 * cos(V)) * (cos(U) * XDir + sin(U) * YDir) + R2 * sin(V) * ZDir;
 /// U and V in [0, 2*PI].
 /// </summary>
-public class ToroidalSurface : ElementarySurface
+public sealed class ToroidalSurface : ElementarySurface
 {
     private double _majorRadius;
     private double _minorRadius;

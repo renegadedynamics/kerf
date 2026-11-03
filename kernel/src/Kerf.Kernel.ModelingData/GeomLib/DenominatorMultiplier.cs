@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// direction: for a rational surface N/D, the surface (a·N)/(a·D) has a denominator whose first derivative in U
 /// vanishes on the boundaries.
 /// </summary>
-public sealed class DenominatorMultiplier
+internal sealed class DenominatorMultiplier
 {
     // OCCT keeps the handle; the surface is only read.
     private readonly BSplineSurface _surface;

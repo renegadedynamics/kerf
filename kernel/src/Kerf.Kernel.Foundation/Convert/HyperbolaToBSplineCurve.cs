@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts an arc of a 2D hyperbola into a rational B-spline curve (degree 2, 3 poles). The hyperbola's
 /// parametrisation is P(U) = Loc + MajorRadius * cosh(U) * XDir + MinorRadius * sinh(U) * YDir.
 /// </summary>
-public class HyperbolaToBSplineCurve : ConicToBSplineCurve
+internal class HyperbolaToBSplineCurve : ConicToBSplineCurve
 {
     private const int TheDegree = 2;
     private const int MaxNbKnots = 2;

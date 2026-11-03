@@ -17,7 +17,7 @@ namespace Kerf.Geometry;
 /// An infinite cylinder of given radius whose axis is the main axis of its local coordinate system.
 /// P(U, V) = O + R * (cos(U) * XDir + sin(U) * YDir) + V * ZDir; U in [0, 2*PI], V infinite.
 /// </summary>
-public class CylindricalSurface : ElementarySurface
+public sealed class CylindricalSurface : ElementarySurface
 {
     private double _radius;
 

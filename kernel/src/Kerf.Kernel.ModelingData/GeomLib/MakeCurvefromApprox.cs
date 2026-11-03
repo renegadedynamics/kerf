@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// subspace divided by a 1D subspace (the weights), or a 2D curve from two 1D subspaces. Each call builds a new curve,
 /// which the caller owns.
 /// </summary>
-public sealed class MakeCurvefromApprox
+internal sealed class MakeCurvefromApprox
 {
     // OCCT copies the approximation by value; it is never changed, so the port keeps the caller's object.
     private readonly ApproxAFunction _approx;

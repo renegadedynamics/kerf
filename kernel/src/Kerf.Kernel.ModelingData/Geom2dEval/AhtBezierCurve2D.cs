@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// basis functions, algDegree + 1 + 2*(alpha&gt;0) + 2*(beta&gt;0). The parameter range is [0, 1].
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class AhtBezierCurve2D : BoundedCurve2D
+internal sealed class AhtBezierCurve2D : BoundedCurve2D
 {
     // The numerators (N) and denominators (W) of the derivatives up to the order evaluated.
     private struct PolyEvalData

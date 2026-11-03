@@ -26,7 +26,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// are <c>out</c> parameters. <see cref="SetUVPoints(in Edge, Surface?, in Placement, in Point2D, in Point2D)"/>
 /// changes an edge and is internal.
 /// </remarks>
-public static class Tool
+internal static class Tool
 {
     // Checks trim range against the effective basis curve.
     private static bool IsValidTrimRange(Curve3D curve, double first, double last)

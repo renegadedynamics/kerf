@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Splines;
 
 // methods for 1 dimensional BSplines
-public static partial class BSplCLib
+internal static partial class BSplCLib
 {
     // Note: OCCT's BSplCLib_DataContainer (BSplCLib_DataContainer_T<1> of BSplCLib_CurveComputation.pxx): stack
     // buffers for the poles, knots and derivatives of one span. The port allocates them with stackalloc.

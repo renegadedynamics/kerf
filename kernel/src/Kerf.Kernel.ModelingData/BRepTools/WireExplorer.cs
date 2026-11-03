@@ -33,7 +33,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// first one can differ.
 /// </para>
 /// </remarks>
-public sealed class WireExplorer
+internal sealed class WireExplorer
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);

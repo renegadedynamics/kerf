@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// </summary>
 public abstract class GeometryVector2D : Geometry2D
 {
-    protected Vector2D _gpVec2d;
+    private protected Vector2D _gpVec2d;
 
     /// <summary>Reverses the vector in place.</summary>
     internal void Reverse()

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// of the two degrees is above 9 (13 for a non-rational surface), where the derivatives' work array outgrows
 /// NCollection_LocalArray's 128-value stack buffer and goes to the heap, in OCCT as here.
 /// </remarks>
-public class SurfaceCache : Transient
+internal class SurfaceCache : Transient
 {
     private readonly bool _isRational;                                 //!< identifies the rationality of Bezier/B-spline surface
     private readonly CacheParams _paramsU, _paramsV;         //!< cache parameters by U and V directions

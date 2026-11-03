@@ -234,7 +234,7 @@ public partial struct Box<T, TVec> : IEquatable<Box<T, TVec>>
 /// OCCT's <c>BVH_BaseBox&lt;T, 3, BVH_Box&gt;</c>: the members OCCT gives only three-dimensional boxes, as
 /// extension methods.
 /// </summary>
-public static class BaseBox
+internal static class BaseBox
 {
     /// <summary>Transforms this box with the given transformation.</summary>
     internal static void Transform<T>(ref this Box<T, NCollection_Vec3<T>> box, in NCollection_Mat4<T> transform)
@@ -299,7 +299,7 @@ public static class BaseBox
     }
 }
 
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     /// <summary>The centre of the box along the given axis (<c>BVH::CenterAxis</c>).</summary>
     public static T CenterAxis<T, TVec>(in Box<T, TVec> box, int axis)

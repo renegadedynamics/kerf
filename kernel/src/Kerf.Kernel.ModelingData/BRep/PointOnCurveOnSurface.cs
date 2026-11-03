@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of a vertex by a parameter on a curve on a surface.</summary>
-public class PointOnCurveOnSurface : PointsOnSurface
+internal class PointOnCurveOnSurface : PointsOnSurface
 {
     private Curve2D? _pCurve;
 

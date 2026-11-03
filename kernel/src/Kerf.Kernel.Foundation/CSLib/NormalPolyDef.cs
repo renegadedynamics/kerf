@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry;
 /// The polynomial F(X) = Sum_{i=0}^{k0} C(k0,i) * cos^i(X) * sin^(k0-i)(X) * li(i), whose sign tells whether the
 /// normal at a singular point of a surface is defined (used by <see cref="CSLib"/>).
 /// </summary>
-public class NormalPolyDef : FunctionWithDerivative
+internal class NormalPolyDef : FunctionWithDerivative
 {
     private readonly int                        _k0;    // Polynomial degree
     private readonly NCollection_Array1<double> _taBli; // Coefficients li(i) for i = 0..myK0

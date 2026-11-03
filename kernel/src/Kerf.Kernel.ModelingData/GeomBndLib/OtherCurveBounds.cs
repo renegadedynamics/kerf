@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// <c>Box</c>, sampling + PSO/Brent numerical optimization for <c>BoxOptimal</c>.
 /// </summary>
 /// <remarks>Keeps a reference to the adaptor, as OCCT does (its <c>std::reference_wrapper</c>).</remarks>
-public sealed class OtherCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class OtherCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly CurveAdaptorBase _curve;
 

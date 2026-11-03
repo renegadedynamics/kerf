@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a 2D curve to a B-spline curve by approximation (AdvApprox) within a tolerance, a continuity, a maximum
 /// number of segments and a maximum degree. The approximation is made by the constructor.
 /// </summary>
-public sealed class ApproxCurve2D
+internal sealed class ApproxCurve2D
 {
     private sealed class Geom2dConvert_ApproxCurve_Eval : EvaluatorFunction
     {

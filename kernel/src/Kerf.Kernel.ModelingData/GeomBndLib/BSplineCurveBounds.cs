@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D B-spline curve (Geom_BSplineCurve): the curve is segmented to the range, sampled
 /// span by span with a deflection estimate, and the result reduced by the poles' convex hull.
 /// </summary>
-public sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly BSplineCurve3D _geom;
 

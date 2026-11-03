@@ -9,7 +9,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A pair of Morton code and primitive ID (OCCT's <c>std::pair&lt;unsigned int, int&gt;</c>).</summary>
-public struct EncodedLink : IEquatable<EncodedLink>
+internal struct EncodedLink : IEquatable<EncodedLink>
 {
     public uint first;
     public int second;
@@ -33,7 +33,7 @@ public struct EncodedLink : IEquatable<EncodedLink>
     public override readonly string ToString() => $"({first}, {second})";
 }
 
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     /// <summary>Lookup table expanding an 8-bit value to a 24-bit Morton code component (every bit to every third position).</summary>
     public static ReadOnlySpan<uint> THE_MORTON_LUT =>
@@ -153,7 +153,7 @@ public static partial class BvhTools
 }
 
 /// <summary>Radix sort of a BVH primitive set by 10-bit Morton codes (a 1024 x 1024 x 1024 grid).</summary>
-public class RadixSorter<T, TVec> : Sorter<T, TVec>
+internal class RadixSorter<T, TVec> : Sorter<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

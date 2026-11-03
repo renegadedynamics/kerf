@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// the geometry, signed (negative inside) if asked.
 /// </summary>
 /// <remarks>For three or four dimensions (OCCT asserts N = 3 or 4 statically); the port checks at construction.</remarks>
-public class DistanceField<T, TVec>
+internal class DistanceField<T, TVec>
     where T : unmanaged, IFloatingPointIeee754<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -154,7 +154,7 @@ public class DistanceField<T, TVec>
 }
 
 /// <summary>The helpers of <see cref="DistanceField{T, TVec}"/> (OCCT's <c>BVH</c> namespace in BVH_DistanceField.lxx).</summary>
-public static class DistanceFieldTools<T, TVec>
+internal static class DistanceFieldTools<T, TVec>
     where T : unmanaged, IFloatingPointIeee754<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

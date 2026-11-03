@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// <see cref="NCollection_LinearVector{T}"/> directly. The one-dimensional case (<c>N = 1</c>), which OCCT
 /// declares but never instantiates, is not ported.
 /// </remarks>
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     // ToBndBox (the N = 1 overload is not ported)
 

@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// P(U, V) = O + R * cos(V) * (cos(U) * XDir + sin(U) * YDir) + R * sin(V) * ZDir;
 /// U in [0, 2*PI], V in [-PI/2, PI/2].
 /// </summary>
-public class SphericalSurface : ElementarySurface
+public sealed class SphericalSurface : ElementarySurface
 {
     private double _radius;
 

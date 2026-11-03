@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D parabola (Geom_Parabola): the arc ends and the vertex, opened for infinite
 /// parameters. The static method accepting gp_Parab can be used directly.
 /// </summary>
-public sealed class ParabolaBounds : CurveBounds.ICurveEvaluator
+internal sealed class ParabolaBounds : CurveBounds.ICurveEvaluator
 {
     private readonly ParabolaCurve3D _geom;
 

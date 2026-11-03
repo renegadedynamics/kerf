@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D hyperbola (Geom2d_Hyperbola): the arc ends and the per-coordinate extrema, opened
 /// for infinite parameters. The static method accepting gp_Hypr2d can be used directly.
 /// </summary>
-public sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly HyperbolaCurve2D _geom;
 

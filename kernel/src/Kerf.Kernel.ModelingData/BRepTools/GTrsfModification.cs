@@ -23,7 +23,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// Any other surface or curve throws <see cref="NoSuchObjectException"/>, as in OCCT (BRepBuilderAPI_GTransform
 /// converts the shape to NURBS first).
 /// </remarks>
-public class GTrsfModification : Modification
+internal class GTrsfModification : Modification
 {
     private GeneralTransform3D _gTrsf;
     private readonly double _gScale;

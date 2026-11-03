@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// the patch (selected through the knots), grid sampling outside the surface's bounds, sampling + PSO/Powell
 /// optimization for <c>BoxOptimal</c>.
 /// </summary>
-public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly BSplineSurface _geom;
 

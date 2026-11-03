@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The continuity of an edge between two surfaces.</summary>
-public class CurveOn2Surfaces : CurveRepresentation
+internal class CurveOn2Surfaces : CurveRepresentation
 {
     private readonly Surface? _surface;
     private readonly Surface? _surface2;

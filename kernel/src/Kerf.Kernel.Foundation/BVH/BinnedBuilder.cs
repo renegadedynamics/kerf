@@ -10,7 +10,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>The parameters of a single bin (slice of an AABB).</summary>
 /// <remarks><c>default(BVH_Bin)</c> has a valid box at the origin; write <c>new()</c>, which makes an empty bin.</remarks>
-public struct Bin<T, TVec>
+internal struct Bin<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -30,7 +30,7 @@ public struct Bin<T, TVec>
 /// is best; 4 to 8 is only 10-20% worse). Several threads can only be used with thread-safe primitive sets.
 /// </summary>
 /// <remarks>OCCT's template argument <c>Bins</c> is the constructor's last argument.</remarks>
-public class BinnedBuilder<T, TVec> : QueueBuilder<T, TVec>
+internal class BinnedBuilder<T, TVec> : QueueBuilder<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -210,7 +210,7 @@ public class BinnedBuilder<T, TVec> : QueueBuilder<T, TVec>
     }
 }
 
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     /// <summary>Partitions the node's primitives about the given bin along the axis; returns the first of the right part.</summary>
     public static int SplitPrimitives<T, TVec>(global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> set,

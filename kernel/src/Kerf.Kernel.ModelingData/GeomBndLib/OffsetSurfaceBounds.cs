@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for an offset surface (Geom_OffsetSurface): through its analytic equivalent surface when
 /// it has one, otherwise the basis surface's box enlarged by |offset|.
 /// </summary>
-public sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly global::Kerf.Geometry.OffsetSurface _geom;
 

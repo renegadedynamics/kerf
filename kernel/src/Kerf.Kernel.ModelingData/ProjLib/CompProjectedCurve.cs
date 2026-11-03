@@ -35,7 +35,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// projection. OCCT's <c>ProjLib_HCompProjectedCurve</c> is a typedef of this class. Evaluating one projection from
 /// several threads at once is not safe (the intervals are cached).
 /// </remarks>
-public class CompProjectedCurve : Curve2DAdaptorBase
+internal class CompProjectedCurve : Curve2DAdaptorBase
 {
     private const double FuncTol = 1.0e-10;
 

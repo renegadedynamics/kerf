@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// the object it builds (decision 224). OCCT's implicit conversions to int, gp_Pnt2d and double are explicit
 /// operators (decision 327).
 /// </remarks>
-public class ProjectPointOnCurve2D
+internal class ProjectPointOnCurve2D
 {
     private bool _isDone;
     private int _index;

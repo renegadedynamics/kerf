@@ -17,6 +17,11 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract partial class Curve2D : Geometry2D
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected Curve2D()
+    {
+    }
+
     // Results with public fields, written through out parameters across the engine: 10L replaces them (geometry.md,
     // CurveDerivatives), so KERF0003 is off for them until then.
 #pragma warning disable KERF0003

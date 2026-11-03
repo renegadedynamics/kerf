@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a bounded cylinder into a rational B-spline surface. The cylinder's parametrisation is
 /// P(U, V) = Loc + V * ZDir + Radius * (XDir * cos(U) + YDir * sin(U)), U in [0, 2 Pi].
 /// </summary>
-public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
+internal class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
 {
     private const int TheUDegree = 2;
     private const int TheVDegree = 1;

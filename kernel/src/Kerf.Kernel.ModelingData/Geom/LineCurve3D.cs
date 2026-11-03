@@ -14,7 +14,7 @@ namespace Kerf.Geometry;
 /// An infinite line, defined by an axis (gp_Ax1): its origin is the origin of the parameter, its unit vector
 /// the direction of the parametrization, P(u) = O + u * Dir. The parameter range is ]-infinite, +infinite[.
 /// </summary>
-public class LineCurve3D : Curve3D
+public sealed class LineCurve3D : Curve3D
 {
     private Axis3D _pos;
 

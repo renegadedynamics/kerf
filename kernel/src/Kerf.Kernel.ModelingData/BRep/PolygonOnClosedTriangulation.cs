@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by two arrays of nodes of a triangulation (a seam).</summary>
-public class PolygonOnClosedTriangulation : PolygonOnTriangulationRepresentation
+internal class PolygonOnClosedTriangulation : PolygonOnTriangulationRepresentation
 {
     private PolygonOnTriangulation? _polygon2;
 

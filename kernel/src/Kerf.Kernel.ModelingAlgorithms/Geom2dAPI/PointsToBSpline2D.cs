@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// explicit conversion (decision 28). <see cref="Curve"/> returns the computed curve itself, as OCCT returns its
 /// handle, frozen (decision 243).
 /// </remarks>
-public class PointsToBSpline2D
+internal class PointsToBSpline2D
 {
     private bool _isDone;
     private BSplineCurve2D? _curve;

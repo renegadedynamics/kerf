@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// <paramref name="result"/> (two values).
 /// </summary>
 /// <remarks>A C++ function type; <c>double Result[2]</c> is a span. The multiplicities may be null (flat knots).</remarks>
-public delegate void CosAndSinEvalFunction(double parameter,
+internal delegate void CosAndSinEvalFunction(double parameter,
                                                    int evalDegree,
                                                    NCollection_Array1<Point2D> evalPoles,
                                                    NCollection_Array1<double> evalKnots,

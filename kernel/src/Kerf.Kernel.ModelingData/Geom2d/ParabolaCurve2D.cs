@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// axis of symmetry. P(U) = O + U^2/(4*F)*XDir + U*YDir, where F is the focal length; U in ]-infinite,
 /// +infinite[. A focal length of 0 is accepted.
 /// </summary>
-public class ParabolaCurve2D : ConicCurve2D
+public sealed class ParabolaCurve2D : ConicCurve2D
 {
     private double _focalLength;
 

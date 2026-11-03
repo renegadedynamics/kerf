@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <summary>
 /// The continuity at the junction of two 3D curves (or portions of curves) built by concatenation.
 /// </summary>
-public static class GeomLProp
+internal static class GeomLProp
 {
     private static int GeomAbsToInteger(Continuity gcont)
     {

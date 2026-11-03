@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D line (Geom2d_Line). Handles infinite parameters by opening the box in appropriate
 /// directions. The static method accepting gp_Lin2d can be used directly without constructing a Geom2d_Line.
 /// </summary>
-public sealed class Line2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Line2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly LineCurve2D _geom;
 

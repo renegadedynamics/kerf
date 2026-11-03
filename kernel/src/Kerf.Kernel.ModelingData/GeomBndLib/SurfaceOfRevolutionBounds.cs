@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a surface of revolution (Geom_SurfaceOfRevolution): the basis curve's box is computed,
 /// and the eight corners of that box are revolved about the axis, each circle arc bounded by GeomBndLib_Circle.
 /// </summary>
-public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly RevolutionSurface _geom;
 

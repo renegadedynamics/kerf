@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// The functions return new curves the caller owns, unfrozen (decision 244), or null when the projection fails. The
 /// caller's curves and surfaces are never changed.
 /// </remarks>
-public static class GeomProjLib
+internal static class GeomProjLib
 {
     /// <summary>
     /// The 2D curve of a 3D curve lying on a surface (ProjLib_ProjectedCurve), the 3D curve taken between

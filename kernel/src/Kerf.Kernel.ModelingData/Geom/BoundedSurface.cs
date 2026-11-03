@@ -13,4 +13,9 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class BoundedSurface : Surface
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected BoundedSurface()
+    {
+    }
+
 }

@@ -30,7 +30,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// The pcurves are recomputed with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface. The maps
 /// of converted geometry compare handles by reference, as OCCT's do.
 /// </remarks>
-public class NurbsConvertModification : CopyModification
+internal class NurbsConvertModification : CopyModification
 {
     private readonly NCollection_List<Shape> _myled = new();
     private readonly NCollection_List<Transient?> _mylcu = new();

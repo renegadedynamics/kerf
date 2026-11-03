@@ -10,7 +10,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a plane.</summary>
-public class PlaneProjector : Projector
+internal class PlaneProjector : Projector
 {
     private Plane3D _plane = new();
 

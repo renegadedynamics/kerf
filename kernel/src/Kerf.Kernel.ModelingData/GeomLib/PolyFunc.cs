@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// The derivative of a polynomial, as a function with its derivative: built from the coefficients of the
 /// polynomial (constant term first), it evaluates the derivative polynomial and its own derivative.
 /// </summary>
-public sealed class PolyFunc : FunctionWithDerivative
+internal sealed class PolyFunc : FunctionWithDerivative
 {
     private readonly math_Vector _coeffs;
 

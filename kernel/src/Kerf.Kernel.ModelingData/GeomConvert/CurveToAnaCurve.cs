@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// The static Compute* functions return the input curve itself when it already is of the requested type (as OCCT
 /// returns the handle), and a new curve otherwise; ConvertToAnalytical works on the basis of a trimmed curve.
 /// </remarks>
-public sealed class CurveToAnaCurve
+internal sealed class CurveToAnaCurve
 {
     private Curve3D? _curve;
     private double _gap;

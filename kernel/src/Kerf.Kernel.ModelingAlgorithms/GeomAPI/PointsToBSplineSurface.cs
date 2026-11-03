@@ -26,7 +26,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// and 5805). As in OCCT, the methods on points index the multi-points by the arrays' own row and column indices, so
 /// arrays must start at 1 (occt-issues.md).
 /// </remarks>
-public class PointsToBSplineSurface
+internal class PointsToBSplineSurface
 {
     private bool _isDone;
     private BSplineSurface? _surface;

@@ -8,7 +8,7 @@ namespace Kerf.Engine.Geometry.Splines;
 
 /// <summary>The knot distribution of a B-spline: whether the knots are evenly spaced.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.BSplCLib_KnotDistribution;</c>.</remarks>
-public enum KnotDistribution
+internal enum KnotDistribution
 {
     NonUniform,
     Uniform,

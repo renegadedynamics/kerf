@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// and whose X axis is the major axis. P(U) = O + MajorRadius*cosh(U)*XDir + MinorRadius*sinh(U)*YDir, U in
 /// ]-infinite, +infinite[. The radii may be 0, and the major radius may be less than the minor one.
 /// </summary>
-public class HyperbolaCurve2D : ConicCurve2D
+public sealed class HyperbolaCurve2D : ConicCurve2D
 {
     private double _majorRadius;
     private double _minorRadius;

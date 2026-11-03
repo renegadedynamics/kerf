@@ -11,7 +11,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Topology;
 
 /// <summary>Operations on the topological enumerations: composing and reversing orientations, names of types.</summary>
-public static class TopAbs
+internal static class TopAbs
 {
     private static readonly Orientation[,] ComposeTable =
     {

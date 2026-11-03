@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by a curve in the parametric space of a surface.</summary>
-public class CurveOnSurfaceRepresentation : GCurve
+internal class CurveOnSurfaceRepresentation : GCurve
 {
     protected Point2D _uv1;
     protected Point2D _uv2;

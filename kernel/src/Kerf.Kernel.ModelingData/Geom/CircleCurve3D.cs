@@ -15,7 +15,7 @@ namespace Kerf.Geometry;
 /// A circle in 3D space, placed by a right-handed coordinate system (gp_Ax2) whose origin is its centre:
 /// P(u) = O + R * cos(u) * XDir + R * sin(u) * YDir, u in [0, 2 * PI[, periodic.
 /// </summary>
-public class CircleCurve3D : ConicCurve3D
+public sealed class CircleCurve3D : ConicCurve3D
 {
     private double _radius;
 

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// advance per 2*Pi turn). u and v in (-inf, +inf); neither periodic nor closed; CN. Reversal, transformation and
 /// iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class CircularHelicoidSurface : ElementarySurface
+internal sealed class CircularHelicoidSurface : ElementarySurface
 {
     private double _pitch; // Axial advance per 2*Pi turn
 

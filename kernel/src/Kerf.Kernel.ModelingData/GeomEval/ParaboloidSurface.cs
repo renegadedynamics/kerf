@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// v in (-inf, +inf). Implicit equation in local coordinates: <c>X^2 + Y^2 - 4*F*Z = 0</c>.
 /// Reversal, transformation and iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class ParaboloidSurface : ElementarySurface
+internal sealed class ParaboloidSurface : ElementarySurface
 {
     private double _focal; // Focal distance (> 0)
 

@@ -33,7 +33,7 @@ namespace Kerf.Geometry;
 /// which stores a copy of the descriptor.
 /// </para>
 /// </remarks>
-public class BezierCurve3D : BoundedCurve3D
+public sealed partial class BezierCurve3D : BoundedCurve3D
 {
     private NCollection_Array1<Point3D> _poles = new NCollection_Array1<Point3D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -93,7 +93,7 @@ public class BezierCurve3D : BoundedCurve3D
 
     /// <summary>A non-rational Bezier curve with the given poles.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
-    public BezierCurve3D(NCollection_Array1<Point3D> poles)
+    internal BezierCurve3D(NCollection_Array1<Point3D> poles)
     {
         int nbpoles = poles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree + 1))
@@ -108,7 +108,7 @@ public class BezierCurve3D : BoundedCurve3D
     /// <exception cref="ConstructionErrorException">
     /// Fewer than 2 or more than MaxDegree() + 1 poles, as many weights as poles, or a weight at most gp::Resolution().
     /// </exception>
-    public BezierCurve3D(NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights)
+    internal BezierCurve3D(NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights)
     {
         // copy the poles
         int nbpoles = poles.Length();
@@ -709,7 +709,7 @@ public class BezierCurve3D : BoundedCurve3D
     public sealed override Geometry3D Copy() => new BezierCurve3D(this);
 
     /// <summary>Sets poles and weights (null: non-rational); updates the rational and closed flags.</summary>
-    protected void Init(NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights)
+    private void Init(NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights)
     {
         int nbpoles = poles.Length();
         // closed ?

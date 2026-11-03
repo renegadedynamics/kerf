@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// Reversal, transformation and iso-curves are not supported (they throw <see cref="MethodNotImplementedException"/>),
 /// nor are rational derivatives of order above 3 (<see cref="UndefinedDerivative3DException"/>).
 /// </summary>
-public sealed class TBezierSurface : BoundedSurface
+internal sealed class TBezierSurface : BoundedSurface
 {
     // Validate that a dimension count is odd and >= 3.
     private static void ValidateDimension(int size, string name)

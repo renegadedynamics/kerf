@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry;
 /// OCCT's class is movable but not copyable, so it is a class here. The default constructor makes an empty
 /// classifier, for which every point is <see cref="Result.Result_Uncertain"/>.
 /// </remarks>
-public sealed class Class2d
+internal sealed class Class2d
 {
     /// <summary>Classification result for point-in-polygon tests.</summary>
     public enum Result

@@ -43,7 +43,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public Direction2D(in Vector2D v) : this(v.XY()) { }
 
-    public Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
+    internal Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
 
     public Direction2D(double xv, double yv)
     {

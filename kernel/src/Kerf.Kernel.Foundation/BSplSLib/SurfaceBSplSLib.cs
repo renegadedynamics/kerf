@@ -33,7 +33,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// rows of Poles are the U direction, the columns the V direction. Optional arguments are nullable: no weights
 /// (<see cref="NoWeights"/>) is a non-rational surface, no multiplicities means flat knots.
 /// </remarks>
-public static partial class SurfaceBSplSLib
+internal static partial class SurfaceBSplSLib
 {
     // for null derivatives
     private static ReadOnlySpan<double> BSplSLib_zero => [0.0, 0.0, 0.0];

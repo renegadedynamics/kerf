@@ -14,7 +14,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Engine.Topology.Properties;
 
 /// <summary>The continuity of a curve built by concatenating two edges, at their junction.</summary>
-public static class BRepLProp
+internal static class BRepLProp
 {
     /// <summary>
     /// The regularity at the junction of C1 and C2, whose points u1 on C1 and u2 on C2 must coincide; tl and ta are the

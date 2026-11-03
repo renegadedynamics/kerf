@@ -41,7 +41,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// the result curve and return the same object at each call. OCCT's <c>ProjLib_HProjectedCurve</c> is a typedef of
 /// this class.
 /// </remarks>
-public class ProjectedCurve : Curve2DAdaptorBase
+internal class ProjectedCurve : Curve2DAdaptorBase
 {
     private double _tolerance;
     private SurfaceAdaptorBase? _surface;

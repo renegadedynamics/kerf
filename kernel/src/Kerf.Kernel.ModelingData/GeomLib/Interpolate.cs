@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// degree is odd (an even degree gives a curve of degree - 1), and the derivatives from degree - 1 down to
 /// (degree + 1) / 2 are null at both ends.
 /// </summary>
-public sealed class Interpolate
+internal sealed class Interpolate
 {
     private readonly BSplineCurve3D? _curve;
     private readonly bool _isDone;

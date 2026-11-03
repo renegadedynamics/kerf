@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A topological point in two or three dimensions. A TVertex has no children; BRep_TVertex adds its geometry.</summary>
-public abstract class TVertex : TShape
+internal abstract class TVertex : TShape
 {
     /// <summary>An empty TVertex.</summary>
     protected TVertex() : base(global::Kerf.Topology.ShapeType.Vertex)

@@ -15,7 +15,7 @@ namespace Kerf.Geometry;
 /// unit direction the positive sense, so the parameter of a point is its distance along the line from the origin.
 /// The parameter range is ]-infinite, +infinite[.
 /// </summary>
-public class LineCurve2D : Curve2D
+public sealed class LineCurve2D : Curve2D
 {
     private Axis2D _pos;
 

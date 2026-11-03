@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Approximation of a free-form 2D curve by a sequence of arcs of circle and line segments, within a distance
 /// tolerance and an angular tolerance at the junctions. The approximation is made by the constructor.
 /// </summary>
-public sealed class ApproxArcsSegments2D
+internal sealed class ApproxArcsSegments2D
 {
     /// <summary>The state of the approximation.</summary>
     public enum Status

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// The function U(t) - FixVal (Fix = 1) or V(t) - FixVal (Fix = 2) of a 2D curve, whose roots locate the
 /// parameters where an Adaptor3d_CurveOnSurface crosses a discontinuity of its surface.
 /// </summary>
-public class InterFunc : FunctionWithDerivative
+internal class InterFunc : FunctionWithDerivative
 {
     private readonly Curve2DAdaptorBase _curve2d;
     private readonly double _fixVal;

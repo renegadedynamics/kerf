@@ -18,7 +18,7 @@ namespace Kerf.Engine.Topology;
 /// Its fields are read by TopLoc_Location and TopLoc_SListOfItemLocation, OCCT's friends of this class.
 /// <c>default(TopLoc_ItemLocation)</c> has no datum; OCCT has no default constructor.
 /// </remarks>
-public partial struct ItemLocation : IEquatable<ItemLocation>
+internal partial struct ItemLocation : IEquatable<ItemLocation>
 {
     internal Datum3D _datum;
     internal int _power;

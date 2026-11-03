@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a plane (Geom_Plane). Handles infinite parameters by opening box sides based on the
 /// plane normal direction.
 /// </summary>
-public sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly PlaneSurface _geom;
 

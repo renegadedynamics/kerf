@@ -35,7 +35,7 @@ namespace Kerf.Geometry;
 /// which stores a copy of the descriptor. Modifications of the curve drop it, as in OCCT.
 /// </para>
 /// </remarks>
-public class BSplineCurve3D : BoundedCurve3D
+public sealed partial class BSplineCurve3D : BoundedCurve3D
 {
     private NCollection_Array1<Point3D> _poles = new NCollection_Array1<Point3D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -151,7 +151,7 @@ public class BSplineCurve3D : BoundedCurve3D
     /// Degree not in [1, MaxDegree()], fewer than 2 poles, knots and multiplicities of different lengths, knots
     /// not increasing (by more than Epsilon), or a number of poles that doesn't match the multiplicities.
     /// </exception>
-    public BSplineCurve3D(NCollection_Array1<Point3D> poles,
+    internal BSplineCurve3D(NCollection_Array1<Point3D> poles,
                              NCollection_Array1<double> knots,
                              NCollection_Array1<int> mults,
                              int degree,
@@ -187,7 +187,7 @@ public class BSplineCurve3D : BoundedCurve3D
     /// As the non-rational constructor, or the weights are not as many as the poles, or a weight is at most
     /// gp::Resolution().
     /// </exception>
-    public BSplineCurve3D(NCollection_Array1<Point3D> poles,
+    internal BSplineCurve3D(NCollection_Array1<Point3D> poles,
                              NCollection_Array1<double> weights,
                              NCollection_Array1<double> knots,
                              NCollection_Array1<int> mults,
@@ -1228,7 +1228,7 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>Recomputes the flat knots, the knot distribution and the continuity.</summary>
-    protected void UpdateKnots()
+    private void UpdateKnots()
     {
         _maxDerivInvOk = false;
 

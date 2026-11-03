@@ -28,7 +28,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// C0BSplineToArrayOfC1BSplineCurve). The caller's curves are never modified: where OCCT changes a curve of the
 /// input array (the weight normalisation of ConcatG1 and ConcatC1), the port puts a modified copy in the array.
 /// </remarks>
-public static class GeomConvert
+internal static class GeomConvert
 {
     private static BSplineCurve3D BSplineCurveBuilder(ConicCurve3D theConic, ConicToBSplineCurve convert)
     {

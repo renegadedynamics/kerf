@@ -64,7 +64,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
     public static Transform3D Rotation(in Axis3D a1, double ang) => new Transform3D().WithRotation(a1, ang);
 
-    public static Transform3D Rotation(in Quaternion3 r) => new Transform3D().WithRotation(r);
+    internal static Transform3D Rotation(in Quaternion3 r) => new Transform3D().WithRotation(r);
 
     public static Transform3D Scale(in Point3D p, double s) => new Transform3D().WithScale(p, s);
 
@@ -76,7 +76,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
     public static Transform3D Transformation(in CoordinateSystem toSystem) => new Transform3D().WithTransformation(toSystem);
 
-    public static Transform3D Transformation(in Quaternion3 r, in Vector3D t) => new Transform3D().WithTransformation(r, t);
+    internal static Transform3D Transformation(in Quaternion3 r, in Vector3D t) => new Transform3D().WithTransformation(r, t);
 
     public static Transform3D Translation(in Vector3D v) => new Transform3D().WithTranslation(v);
 
@@ -154,7 +154,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
-    public readonly Transform3D WithRotation(in Quaternion3 r)
+    internal readonly Transform3D WithRotation(in Quaternion3 r)
     {
         double scale = _scale;
         TransformForm shape = _shape;
@@ -167,7 +167,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
-    public readonly Transform3D WithRotationPart(in Quaternion3 r)
+    internal readonly Transform3D WithRotationPart(in Quaternion3 r)
     {
         TransformForm shape = _shape;
         Matrix3x3 matrix = _matrix;
@@ -305,7 +305,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
-    public readonly Transform3D WithTransformation(in Quaternion3 r, in Vector3D t)
+    internal readonly Transform3D WithTransformation(in Quaternion3 r, in Vector3D t)
     {
         double scale = _scale;
         TransformForm shape = _shape;
@@ -528,7 +528,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
     public readonly double ScaleFactor => _scale;
 
-    public readonly Xyz TranslationXyz() => _loc;
+    internal readonly Xyz TranslationXyz() => _loc;
 
     /// <summary>The rotation as an axis and an angle. Always true, as in OCCT.</summary>
     internal readonly bool GetRotation(out Xyz axis, out double angle)
@@ -1070,7 +1070,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     }
 
     /// <summary>The coordinates transformed: the non-ref form of <see cref="Transforms(ref Xyz)"/>.</summary>
-    public readonly Xyz Transformed(in Xyz coord)
+    internal readonly Xyz Transformed(in Xyz coord)
     {
         Xyz aCoord = coord;
         Transforms(ref aCoord);

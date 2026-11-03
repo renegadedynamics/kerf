@@ -32,7 +32,7 @@ namespace Kerf.Geometry;
 /// Geom_BSplineCurve drops it (occt-issues.md); the port does the same as Geom2d.
 /// </para>
 /// </remarks>
-public class BSplineCurve2D : BoundedCurve2D
+public sealed partial class BSplineCurve2D : BoundedCurve2D
 {
     private NCollection_Array1<Point2D> _poles = new NCollection_Array1<Point2D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -145,7 +145,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// Degree outside [1, MaxDegree()], fewer than 2 poles, knots and multiplicities of different lengths, knots
     /// not increasing (by more than Epsilon), or a pole count inconsistent with the degree and multiplicities.
     /// </exception>
-    public BSplineCurve2D(NCollection_Array1<Point2D> poles,
+    internal BSplineCurve2D(NCollection_Array1<Point2D> poles,
                                NCollection_Array1<double> knots,
                                NCollection_Array1<int> multiplicities,
                                int degree,
@@ -179,7 +179,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// As the non-rational constructor, or weights of a different length than the poles, or a weight not above
     /// gp::Resolution().
     /// </exception>
-    public BSplineCurve2D(NCollection_Array1<Point2D> poles,
+    internal BSplineCurve2D(NCollection_Array1<Point2D> poles,
                                NCollection_Array1<double> weights,
                                NCollection_Array1<double> knots,
                                NCollection_Array1<int> multiplicities,
@@ -1352,7 +1352,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>Recomputes the knot distribution, flat knots and continuity after a change of knots.</summary>
-    protected void UpdateKnots()
+    private void UpdateKnots()
     {
         _maxDerivInvOk = false;
         int maxKnotMult = 0;

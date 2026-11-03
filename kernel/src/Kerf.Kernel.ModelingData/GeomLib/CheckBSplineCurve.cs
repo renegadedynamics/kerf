@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// Checks the end tangents of a B-spline curve: whether they are reversed with respect to the third or n-3rd pole,
 /// and builds a curve with fixed tangents.
 /// </summary>
-public sealed class CheckBSplineCurve
+internal sealed class CheckBSplineCurve
 {
     private readonly BSplineCurve3D _curve;
     private bool _done;

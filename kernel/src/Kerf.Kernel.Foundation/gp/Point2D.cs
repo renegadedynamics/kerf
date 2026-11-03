@@ -15,7 +15,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 {
     private readonly Xy _coord;
 
-    public Point2D(in Xy coord) => _coord = coord;
+    internal Point2D(in Xy coord) => _coord = coord;
 
     public Point2D(double xp, double yp) => _coord = new Xy(xp, yp);
 

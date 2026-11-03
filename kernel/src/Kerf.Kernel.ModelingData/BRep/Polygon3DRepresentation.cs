@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by a 3D polygon.</summary>
-public class Polygon3DRepresentation : CurveRepresentation
+internal class Polygon3DRepresentation : CurveRepresentation
 {
     private Polygon3D? _polygon3D;
 

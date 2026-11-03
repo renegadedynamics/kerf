@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <see cref="CLProps2d"/> and <see cref="CLProps3d"/>, with identical bodies). A working object: its
 /// setters are public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class CLProps
+internal class CLProps
 {
     private Curve3D? _curve;
     private double _u;

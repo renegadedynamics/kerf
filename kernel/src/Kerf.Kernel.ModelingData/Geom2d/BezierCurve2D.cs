@@ -30,7 +30,7 @@ namespace Kerf.Geometry;
 /// filled at most once per value and is safe to read from several threads.
 /// </para>
 /// </remarks>
-public class BezierCurve2D : BoundedCurve2D
+public sealed partial class BezierCurve2D : BoundedCurve2D
 {
     private NCollection_Array1<Point2D> _poles = new NCollection_Array1<Point2D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -79,7 +79,7 @@ public class BezierCurve2D : BoundedCurve2D
 
     /// <summary>The non-rational Bezier curve of poles CurvePoles.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
-    public BezierCurve2D(NCollection_Array1<Point2D> curvePoles)
+    internal BezierCurve2D(NCollection_Array1<Point2D> curvePoles)
     {
         int nbpoles = curvePoles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
@@ -98,7 +98,7 @@ public class BezierCurve2D : BoundedCurve2D
     /// Fewer than 2 or more than MaxDegree() + 1 poles, a weight count different from the pole count, or a
     /// weight not above gp::Resolution().
     /// </exception>
-    public BezierCurve2D(NCollection_Array1<Point2D> curvePoles, NCollection_Array1<double> poleWeights)
+    internal BezierCurve2D(NCollection_Array1<Point2D> curvePoles, NCollection_Array1<double> poleWeights)
     {
         int nbpoles = curvePoles.Length();
         if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
@@ -736,7 +736,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>Sets the poles and weights (null: non-rational), resetting the caches and the evaluation representation.</summary>
-    protected void Init(NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights)
+    private void Init(NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights)
     {
         int nbpoles = poles.Length();
         // closed ?

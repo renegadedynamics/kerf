@@ -11,7 +11,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a torus: circles that are U or V isolines.</summary>
-public class TorusProjector : Projector
+internal class TorusProjector : Projector
 {
     private Torus _torus = new();
 

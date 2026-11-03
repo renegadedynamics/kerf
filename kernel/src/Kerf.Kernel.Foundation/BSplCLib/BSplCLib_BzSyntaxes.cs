@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Splines;
 // Bezier curves as B-splines: the knots {0, 1} with multiplicities {Degree + 1, Degree + 1}.
 // Note: OCCT's file defines No_Standard_RangeError and No_Standard_OutOfRange; the port keeps its checks.
 
-public static partial class BSplCLib
+internal static partial class BSplCLib
 {
     /// <summary>
     /// Raises the degree of the Bezier curve <paramref name="poles"/> (weights or null) to

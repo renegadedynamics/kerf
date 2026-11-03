@@ -15,7 +15,7 @@ namespace Kerf.Engine.Topology;
 /// Nodes are shared between lists. OCCT hands out mutable references to the value and the tail from const
 /// methods; the port keeps them internal, so a node is immutable outside OCCT.NET.
 /// </remarks>
-public class SListNodeOfItemLocation : Transient
+internal class SListNodeOfItemLocation : Transient
 {
     private SListOfItemLocation _tail;
     private ItemLocation _value;

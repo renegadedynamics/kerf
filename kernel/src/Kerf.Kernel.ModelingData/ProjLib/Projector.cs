@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// a Bezier or a B-spline curve) and its type.
 /// </summary>
 /// <remarks>A working object (decision 21): its setters are public, as in OCCT.</remarks>
-public class Projector
+internal class Projector
 {
     protected CurveKind _type;
     protected Line2D _lin = new();

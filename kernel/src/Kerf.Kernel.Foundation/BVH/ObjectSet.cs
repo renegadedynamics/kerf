@@ -8,7 +8,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>An array of abstract objects bounded by BVH boxes, to build a BVH from.</summary>
-public class ObjectSet<T, TVec> : global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec>
+internal class ObjectSet<T, TVec> : global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

@@ -29,7 +29,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// adaptors after <see cref="Perform"/>. <see cref="BSpline"/> and <see cref="Bezier"/> freeze the stored curve and
 /// return the same object at each call (decision 243).
 /// </remarks>
-public class ComputeApprox
+internal class ComputeApprox
 {
     private BSplineCurve2D? _bSpline;
     private BezierCurve2D? _bezier;

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// OCCT keeps the handle. The curves it builds are frozen when handed out through <see cref="Bezier"/>,
 /// <see cref="BSpline"/> or <see cref="GetResult"/> (decision 243): the same objects at every call.
 /// </remarks>
-public class ProjectOnPlane : CurveAdaptorBase
+internal class ProjectOnPlane : CurveAdaptorBase
 {
     private const double AParabolaLimit = 20000.0;
     private const double AHyperbolaLimit = 10.0;

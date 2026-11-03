@@ -32,7 +32,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// passes edges it built itself.
 /// </para>
 /// </remarks>
-public sealed class Quilt
+internal sealed class Quilt
 {
     private readonly IndexedMap<Shape, Shape> _bounds = new(ShapeHasher.Instance);
     private bool _hasCopy;

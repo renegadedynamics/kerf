@@ -10,7 +10,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a cone: lines along a generatrix and circles normal to the axis.</summary>
-public class ConeProjector : Projector
+internal class ConeProjector : Projector
 {
     private Cone _cone = new();
 

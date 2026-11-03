@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// P(U) = Loc + R * (cos(U) * XDir + sin(U) * YDir), U in [0, 2 Pi]; the B-spline's parametrisation range is not
 /// [0, 2 Pi].
 /// </summary>
-public class CircleToBSplineCurve : ConicToBSplineCurve
+internal class CircleToBSplineCurve : ConicToBSplineCurve
 {
     /// <summary>
     /// The periodic B-spline curve equivalent to the whole circle, with its orientation. Parameterisations other

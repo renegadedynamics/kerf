@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// parametrized by U) of an <see cref="SurfaceAdaptorBase"/>, restricted to a parameter range.
 /// </summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(SurfaceAdaptorBase)"/> is public, as in OCCT.</remarks>
-public class IsoCurve : CurveAdaptorBase
+internal class IsoCurve : CurveAdaptorBase
 {
     private SurfaceAdaptorBase? _surface;
     private IsoType _iso;

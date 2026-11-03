@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Hashing;
 /// <see cref="GetHashCode(Triangulation)"/> and <c>aHasher(a, b)</c> is
 /// <see cref="Equals(Triangulation, Triangulation)"/>. The hash values are not OCCT's.
 /// </remarks>
-public sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
+internal sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
 {
     /// <summary>The tolerance of the comparison of numeric fields.</summary>
     public readonly double CompTolerance;

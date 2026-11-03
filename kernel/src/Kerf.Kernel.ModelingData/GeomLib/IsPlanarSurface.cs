@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// <summary>
 /// Finds whether a surface is planar within a tolerance, and its plane. The test is made by the constructor.
 /// </summary>
-public sealed class IsPlanarSurface
+internal sealed class IsPlanarSurface
 {
     private readonly Plane3D _plan = new();
     private readonly bool _isPlan;

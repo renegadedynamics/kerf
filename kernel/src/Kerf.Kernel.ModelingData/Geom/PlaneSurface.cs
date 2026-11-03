@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// parameters and whose X and Y directions are the U and V parametric directions. The main direction is the
 /// normal. P(U, V) = O + U * XDir + V * YDir.
 /// </summary>
-public class PlaneSurface : ElementarySurface
+public sealed class PlaneSurface : ElementarySurface
 {
     /// <summary>A plane located by A3: its origin, XDirection and YDirection, and normal.</summary>
     public PlaneSurface(in CoordinateSystem a3)

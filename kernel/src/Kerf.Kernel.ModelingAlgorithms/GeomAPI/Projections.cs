@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// (projections, extrema, intersections, interpolation and approximation) with simple constructors, and keep the
 /// low-level tools they use.
 /// </summary>
-public static partial class Projections
+internal static partial class Projections
 {
     /// <summary>
     /// Builds the 2D curve of the projection of <paramref name="c"/> on the plane <paramref name="p"/>, in the

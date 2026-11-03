@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by an array of nodes of a triangulation.</summary>
-public class PolygonOnTriangulationRepresentation : CurveRepresentation
+internal class PolygonOnTriangulationRepresentation : CurveRepresentation
 {
     private PolygonOnTriangulation? _polygon;
     private readonly Triangulation? _triangulation;

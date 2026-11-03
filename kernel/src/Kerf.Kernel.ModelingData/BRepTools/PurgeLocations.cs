@@ -22,7 +22,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// A working object. <see cref="GetResult"/> and <see cref="ModifiedShape"/> are publication points: they freeze the
 /// shapes they return (docs/phase3-design.md, section 4.2). The input is never written into.
 /// </remarks>
-public sealed class PurgeLocations
+internal sealed class PurgeLocations
 {
     private bool _done;
     private Shape _shape = new();

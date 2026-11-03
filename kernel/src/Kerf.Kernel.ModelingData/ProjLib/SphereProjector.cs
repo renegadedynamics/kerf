@@ -14,7 +14,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a sphere: circles that are U or V isolines.</summary>
-public class SphereProjector : Projector
+internal class SphereProjector : Projector
 {
     private Sphere _sphere = new();
 

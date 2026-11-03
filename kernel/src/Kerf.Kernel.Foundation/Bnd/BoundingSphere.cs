@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Bounds;
 
 /// <summary>A bounding sphere of a geometric entity (triangle, line segment, ...), with the entity's U and V indices.</summary>
-public partial struct BoundingSphere : IEquatable<BoundingSphere>, ISpatialTreeBox<BoundingSphere>
+internal partial struct BoundingSphere : IEquatable<BoundingSphere>, ISpatialTreeBox<BoundingSphere>
 {
     private Xyz _center;
     private double _radius;

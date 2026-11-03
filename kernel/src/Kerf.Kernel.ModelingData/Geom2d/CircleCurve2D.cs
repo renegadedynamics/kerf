@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// angle from the X axis, in [0, 2*PI[, in the sense of the coordinate system: P(U) = O + R*cos(U)*XDir +
 /// R*sin(U)*YDir. The curve is closed and periodic, of period 2*PI.
 /// </summary>
-public class CircleCurve2D : ConicCurve2D
+public sealed class CircleCurve2D : ConicCurve2D
 {
     private double _radius;
 

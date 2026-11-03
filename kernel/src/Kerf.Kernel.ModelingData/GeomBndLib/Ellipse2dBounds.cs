@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D ellipse (Geom2d_Ellipse), with analytical per-coordinate extrema. The static
 /// methods accepting gp_Elips2d can be used directly without constructing a Geom2d_Ellipse.
 /// </summary>
-public sealed class Ellipse2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Ellipse2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly EllipseCurve2D _geom;
 

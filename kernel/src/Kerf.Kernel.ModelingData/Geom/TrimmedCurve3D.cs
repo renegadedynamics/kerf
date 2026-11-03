@@ -20,7 +20,7 @@ namespace Kerf.Geometry;
 /// <see cref="BasisCurve"/> returns the stored copy frozen, as OCCT returns its handle; this curve's internal
 /// mutators then copy the basis curve again before changing it (decision 127).
 /// </remarks>
-public class TrimmedCurve3D : BoundedCurve3D
+public sealed class TrimmedCurve3D : BoundedCurve3D
 {
     private Curve3D _basisCurve;
     private double _uTrim1;

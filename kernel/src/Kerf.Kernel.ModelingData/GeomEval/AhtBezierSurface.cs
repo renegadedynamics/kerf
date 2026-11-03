@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// basis function. The domain is [0, 1] x [0, 1]. Reversal, transformation and iso-curves are not supported
 /// (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class AhtBezierSurface : BoundedSurface
+internal sealed class AhtBezierSurface : BoundedSurface
 {
     // The number of basis functions for the given parameters.
     private static int BasisDimension(int algDegree, double alpha, double beta) =>

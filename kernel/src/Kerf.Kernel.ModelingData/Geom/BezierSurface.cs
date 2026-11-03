@@ -32,7 +32,7 @@ namespace Kerf.Geometry;
 /// UReverse and VReverse drop it.
 /// </para>
 /// </remarks>
-public class BezierSurface : BoundedSurface
+public sealed partial class BezierSurface : BoundedSurface
 {
     private NCollection_Array2<Point3D> _poles = new NCollection_Array2<Point3D>();
     private NCollection_Array2<double> _weights = new NCollection_Array2<double>();
@@ -374,7 +374,7 @@ public class BezierSurface : BoundedSurface
 
     /// <summary>A non-rational Bezier surface on the given poles.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles in a direction.</exception>
-    public BezierSurface(NCollection_Array2<Point3D> surfacePoles)
+    internal BezierSurface(NCollection_Array2<Point3D> surfacePoles)
     {
         _maxDerivInvOk = false;
         int nbUPoles = surfacePoles.ColLength();
@@ -396,7 +396,7 @@ public class BezierSurface : BoundedSurface
     /// Fewer than 2 or more than MaxDegree() + 1 poles in a direction, weights of a different size, or a weight not
     /// greater than gp::Resolution().
     /// </exception>
-    public BezierSurface(NCollection_Array2<Point3D> surfacePoles, NCollection_Array2<double> poleWeights)
+    internal BezierSurface(NCollection_Array2<Point3D> surfacePoles, NCollection_Array2<double> poleWeights)
     {
         _maxDerivInvOk = false;
         int nbUPoles = surfacePoles.ColLength();
@@ -1971,7 +1971,7 @@ public class BezierSurface : BoundedSurface
     public sealed override Geometry3D Copy() => new BezierSurface(this);
 
     /// <summary>Sets the poles and weights (null: non-rational) of a new surface.</summary>
-    protected void Init(NCollection_Array2<Point3D> poles, NCollection_Array2<double>? weights)
+    private void Init(NCollection_Array2<Point3D> poles, NCollection_Array2<double>? weights)
     {
         CheckMutable();
         int nbUPoles = poles.ColLength();

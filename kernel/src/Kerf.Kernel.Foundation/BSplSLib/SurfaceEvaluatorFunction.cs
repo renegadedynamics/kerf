@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// A function of two parameters (u, v) for <see cref="SurfaceBSplSLib.FunctionMultiply"/>, to be defined by a descendant.
 /// </summary>
 /// <remarks>OCCT's function-call <c>operator()</c> is left out: call <see cref="Evaluate"/>.</remarks>
-public abstract class SurfaceEvaluatorFunction
+internal abstract class SurfaceEvaluatorFunction
 {
     /// <summary>Evaluates the function (or its derivative of the requested order) at (u, v).</summary>
     public abstract void Evaluate(int derivativeRequest, double uParameter, double vParameter,

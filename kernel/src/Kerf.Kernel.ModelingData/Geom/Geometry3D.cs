@@ -23,6 +23,11 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class Geometry3D : Transient
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected Geometry3D()
+    {
+    }
+
     /// <summary>Mirrors this geometry about the point P.</summary>
     internal void Mirror(in Point3D p)
     {

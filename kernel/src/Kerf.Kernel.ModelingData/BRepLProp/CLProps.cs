@@ -20,7 +20,7 @@ namespace Kerf.Engine.Topology.Properties;
 /// the constructors and <see cref="SetCurve(EdgeCurveAdaptor)"/> keep a shallow copy of it: changing the caller's
 /// adaptor afterwards changes nothing here.
 /// </remarks>
-public class CLProps : CLProps3d
+internal class CLProps : CLProps3d
 {
     /// <summary>
     /// The properties of the curve C, computing derivatives up to order N (0 to 3) when a parameter is set, with the

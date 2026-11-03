@@ -11,7 +11,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>The geometric definition of 2D curves compatible with the Adaptor package.</summary>
-public static class Geom2dAdaptor
+internal static class Geom2dAdaptor
 {
     /// <summary>
     /// A Geom2d curve equivalent to the adaptor HC, trimmed to its parameter range where that differs from the

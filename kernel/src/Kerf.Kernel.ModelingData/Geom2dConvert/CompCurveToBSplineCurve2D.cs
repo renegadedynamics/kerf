@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts bounded 2D curves to B-splines and concatenates them into one B-spline curve, reparametrised for C1
 /// continuity where the tangents allow it. A working object: <c>Add</c> appends curves.
 /// </summary>
-public sealed class CompCurveToBSplineCurve2D
+internal sealed class CompCurveToBSplineCurve2D
 {
     private BSplineCurve2D? _curve;
     private double _tol;

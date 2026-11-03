@@ -100,14 +100,15 @@ public class TopLocOracleTests(ITestOutputHelper output)
                     CompareLocation(anOracle, aNatives[i], aPorts[i], $"round {aRound}, location {i}");
                 }
 
-                // Equality is by datum identity: native and port must agree on every pair.
+                // The engine's equality is by datum identity (the public == compares the transformations, decision
+                // 1349, 62): native and port must agree on every pair.
                 for (int i = 0; i < aPorts.Count; i++)
                 {
                     for (int j = 0; j < aPorts.Count; j++)
                     {
                         bool aNativeEqual = aNatives[i].IsEqual(aNatives[j]);
                         anOracle.Same(aNativeEqual, aPorts[i].IsEqual(aPorts[j]), $"round {aRound}: IsEqual({i}, {j})");
-                        anOracle.Same(aNatives[i].IsDifferent(aNatives[j]), aPorts[i] != aPorts[j], $"round {aRound}: IsDifferent({i}, {j})");
+                        anOracle.Same(aNatives[i].IsDifferent(aNatives[j]), aPorts[i].IsDifferent(aPorts[j]), $"round {aRound}: IsDifferent({i}, {j})");
                         if (aNativeEqual)
                         {
                             Assert.Equal(aNatives[i].HashCode(), aNatives[j].HashCode());

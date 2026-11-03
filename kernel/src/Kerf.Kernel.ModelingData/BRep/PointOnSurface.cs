@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of a vertex by parameters (U, V) on a surface.</summary>
-public class PointOnSurface : PointsOnSurface
+internal class PointOnSurface : PointsOnSurface
 {
     private double _parameter2;
 

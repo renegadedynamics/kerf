@@ -21,7 +21,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// A working object (decision 21). <see cref="Copy"/> hands out the shapes built here, so it freezes them
 /// (docs/phase3-design.md, section 4.2); ported code that keeps building on them reads <see cref="InternalCopy"/>.
 /// </remarks>
-public sealed class Substitution
+internal sealed class Substitution
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
 

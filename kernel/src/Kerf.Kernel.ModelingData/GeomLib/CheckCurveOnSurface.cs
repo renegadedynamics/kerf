@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// Computes the maximal distance between a 3D curve and a 2D curve on a surface (an Adaptor3d_CurveOnSurface)
 /// over the 3D curve's range. A working object (decision 21); the adaptors given must outlive it.
 /// </summary>
-public sealed class CheckCurveOnSurface
+internal sealed class CheckCurveOnSurface
 {
     private CurveAdaptorBase? _curve;
     private int _errorStatus;

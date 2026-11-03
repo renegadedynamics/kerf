@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// <remarks>
 /// The grid's patches are not modified: OCCT raises their degrees in place to the grid's, the port raises copies.
 /// </remarks>
-public sealed class CompBezierSurfacesToBSplineSurface
+internal sealed class CompBezierSurfacesToBSplineSurface
 {
     private int _uDegree;
     private int _vDegree;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// <summary>
 /// Projection of elementary 3D points and curves on elementary surfaces, giving their parametric (2D) form.
 /// </summary>
-public static partial class ProjLib
+internal static partial class ProjLib
 {
     public static Point2D Project(in Plane3D pl, in Point3D p)
     {

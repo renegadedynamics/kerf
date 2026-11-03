@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Conversion;
 
 /// <summary>How GeomConvert_CurveToAnaCurve (and GeomConvert_SurfToAnaSurf) choose the analytical result.</summary>
-public enum ConvType
+internal enum ConvType
 {
     /// <summary>Only the target type is tried.</summary>
     Target,

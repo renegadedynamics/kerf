@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D ellipse (Geom_Ellipse), with analytical per-coordinate extrema. The static methods
 /// accepting gp_Elips can be used directly without constructing a Geom_Ellipse.
 /// </summary>
-public sealed class EllipseBounds : CurveBounds.ICurveEvaluator
+internal sealed class EllipseBounds : CurveBounds.ICurveEvaluator
 {
     private readonly EllipseCurve3D _geom;
 

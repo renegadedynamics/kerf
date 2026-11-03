@@ -17,7 +17,12 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class ConicCurve3D : Curve3D
 {
-    protected Frame3D _pos = new Frame3D();
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected ConicCurve3D()
+    {
+    }
+
+    private protected Frame3D _pos = new Frame3D();
 
     /// <summary>Changes the main axis (the normal to the plane); X and Y axes are recomputed.</summary>
     /// <exception cref="ConstructionErrorException">theA1 is parallel to the X axis of the conic.</exception>

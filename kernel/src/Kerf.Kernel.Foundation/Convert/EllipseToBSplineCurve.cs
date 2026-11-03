@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a 2D ellipse into a rational B-spline curve. The ellipse's parametrisation is
 /// P(U) = Loc + MajorRadius * cos(U) * XDir + MinorRadius * sin(U) * YDir, U in [0, 2 Pi].
 /// </summary>
-public class EllipseToBSplineCurve : ConicToBSplineCurve
+internal class EllipseToBSplineCurve : ConicToBSplineCurve
 {
     /// <summary>
     /// The periodic B-spline curve equivalent to the whole ellipse, with its orientation. Parameterisations other

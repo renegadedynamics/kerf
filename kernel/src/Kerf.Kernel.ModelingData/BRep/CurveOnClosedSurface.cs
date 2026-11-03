@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by two pcurves on a closed surface (a seam).</summary>
-public class CurveOnClosedSurface : CurveOnSurfaceRepresentation
+internal class CurveOnClosedSurface : CurveOnSurfaceRepresentation
 {
     private Curve2D? _pCurve2;
     private Continuity _continuity;

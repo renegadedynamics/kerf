@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// Adds the bounding box of a 2D curve to a box (through <see cref="Curve2dBounds"/>). The box is enlarged by
 /// the tolerance; an infinite curve opens it.
 /// </summary>
-public static class Add2dCurve
+internal static class Add2dCurve
 {
     /// <summary>Adds the bounding box of the curve C, over its own range, enlarged by Tol, to B.</summary>
     public static void Add(Curve2DAdaptorBase aC, double aTol, ref Box2d aBox2D)

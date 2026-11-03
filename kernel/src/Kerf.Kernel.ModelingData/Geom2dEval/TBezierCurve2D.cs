@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// curve weights each pole: <c>C(t) = sum(w_i*P_i*T_i(t)) / sum(w_i*T_i(t))</c>.
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class TBezierCurve2D : BoundedCurve2D
+internal sealed class TBezierCurve2D : BoundedCurve2D
 {
     // The numerators (N) and denominators (W) of the derivatives up to the order evaluated.
     // The C++ CurveBasisEval<theMaxOrder>.

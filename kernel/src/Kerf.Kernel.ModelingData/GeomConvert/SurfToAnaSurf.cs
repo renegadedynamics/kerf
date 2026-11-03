@@ -24,7 +24,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// conversion is made for B-spline and Bezier surfaces, and for other surfaces that some analytical surface
 /// approximates within that tolerance. The surfaces returned are new, and the caller owns them.
 /// </summary>
-public sealed class SurfToAnaSurf
+internal sealed class SurfToAnaSurf
 {
     private Surface? _surf;
     private double _gap;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// of B-spline curves and surfaces", CAD 13(6), 1981). The constructor prepares a copy of the curve; Arc(i) builds
 /// each arc.
 /// </summary>
-public sealed class BSplineCurveToBezierCurve
+internal sealed class BSplineCurveToBezierCurve
 {
     private readonly BSplineCurve3D _curve;
 

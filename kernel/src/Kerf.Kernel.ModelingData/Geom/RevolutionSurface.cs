@@ -24,7 +24,7 @@ namespace Kerf.Geometry;
 /// (shared, as in OCCT; callers can't change it). The evaluation representation (<see cref="HasEvalRepresentation"/>)
 /// is set by <see cref="WithEvalRepresentation"/>, which stores a copy of the descriptor; every modification drops it.
 /// </remarks>
-public class RevolutionSurface : SweptSurface
+public sealed class RevolutionSurface : SweptSurface
 {
     private RepSurfaceDesc.Base? _evalRep;
     private Point3D _loc;

@@ -66,9 +66,9 @@ public readonly struct BoundingBox : IEquatable<BoundingBox>
         ? new Point3D(0.5 * (_min.X + _max.X), 0.5 * (_min.Y + _max.Y), 0.5 * (_min.Z + _max.Z))
         : throw EmptyBox();
 
-    /// <summary>True if a bound is infinite.</summary>
-    public bool IsInfinite => _isSet && (double.IsInfinity(_min.X) || double.IsInfinity(_min.Y) || double.IsInfinity(_min.Z)
-                                         || double.IsInfinity(_max.X) || double.IsInfinity(_max.Y) || double.IsInfinity(_max.Z));
+    /// <summary>True if a bound is infinite: beyond half of <see cref="Tolerances.Infinite"/>, as OCCT's
+    /// <c>Precision::IsInfinite</c>.</summary>
+    public bool IsInfinite => _isSet && (Far(_min.X) || Far(_min.Y) || Far(_min.Z) || Far(_max.X) || Far(_max.Y) || Far(_max.Z));
 
     /// <summary>The smallest box containing this one and <paramref name="other"/>.</summary>
     public BoundingBox Union(in BoundingBox other)
@@ -154,6 +154,8 @@ public readonly struct BoundingBox : IEquatable<BoundingBox>
     /// <inheritdoc/>
     public override string ToString()
         => _isSet ? $"BoundingBox({_min.X}, {_min.Y}, {_min.Z} .. {_max.X}, {_max.Y}, {_max.Z})" : "BoundingBox(empty)";
+
+    private static bool Far(double value) => Math.Abs(value) >= 0.5 * Tolerances.Infinite;
 
     private static InvalidOperationException EmptyBox() => new("The box is empty.");
 }

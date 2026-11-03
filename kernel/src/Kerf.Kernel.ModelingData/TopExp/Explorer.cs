@@ -24,7 +24,7 @@ namespace Kerf.Engine.Topology;
 /// where OCCT's is used by value; its stack of iterators is reused across <see cref="Init"/>. OCCT's range-for support
 /// is left out.
 /// </remarks>
-public sealed class Explorer
+internal sealed class Explorer
 {
     // The DFS stack: iterators are kept when popped and reused when pushed again
     private readonly List<Iterator> _stack = [];

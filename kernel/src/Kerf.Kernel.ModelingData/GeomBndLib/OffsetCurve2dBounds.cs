@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D offset curve (Geom2d_OffsetCurve): exactly for offsets of lines and circles,
 /// otherwise by sampling the offset curve itself (GeomBndLib_OtherCurve2d).
 /// </summary>
-public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly OffsetCurve2D _geom;
 

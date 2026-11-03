@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// conversions (decision 28); OCCT's <c>operator int</c> reads <c>myExtCC.NbExt()</c> directly, so it throws when
 /// the computation failed where <see cref="NbExtrema"/> returns 0.
 /// </remarks>
-public class ExtremaCurveCurve
+internal class ExtremaCurveCurve
 {
     private bool _isDone;
     private int _index;

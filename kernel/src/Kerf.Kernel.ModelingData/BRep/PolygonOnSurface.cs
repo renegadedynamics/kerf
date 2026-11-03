@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by a 2D polygon in the parametric space of a surface.</summary>
-public class PolygonOnSurface : CurveRepresentation
+internal class PolygonOnSurface : CurveRepresentation
 {
     private Polygon2D? _polygon2D;
     private readonly Surface? _surface;

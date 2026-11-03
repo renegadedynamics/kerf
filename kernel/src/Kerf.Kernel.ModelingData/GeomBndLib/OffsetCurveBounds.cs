@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D offset curve (Geom_OffsetCurve): exactly for offsets of lines and of circles
 /// offset in their plane, otherwise the basis curve's box enlarged per coordinate by the offset.
 /// </summary>
-public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly OffsetCurve3D _geom;
 

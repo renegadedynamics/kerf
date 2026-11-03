@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// <summary>
 /// Conversions from adaptors back to Geom curves and surfaces.
 /// </summary>
-public static class GeomAdaptor
+internal static class GeomAdaptor
 {
     /// <summary>
     /// Builds a Geom curve from a curve adaptor: a new line, conic, or a copy of the Bezier or B-spline curve,

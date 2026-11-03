@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D line (Geom_Line). Handles infinite parameters by opening the box in appropriate
 /// directions. The static method accepting gp_Lin can be used directly without constructing a Geom_Line.
 /// </summary>
-public sealed class LineBounds : CurveBounds.ICurveEvaluator
+internal sealed class LineBounds : CurveBounds.ICurveEvaluator
 {
     private readonly LineCurve3D _geom;
 

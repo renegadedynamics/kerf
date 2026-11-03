@@ -20,7 +20,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// The queries are public; the setters are internal and throw <see cref="ImmutableObjectException"/> once the
 /// representation is frozen, with its vertex. The geometry it holds is frozen when it takes it.
 /// </remarks>
-public abstract class PointRepresentation : Transient
+internal abstract class PointRepresentation : Transient
 {
     private Placement _location;
     private double _parameter;

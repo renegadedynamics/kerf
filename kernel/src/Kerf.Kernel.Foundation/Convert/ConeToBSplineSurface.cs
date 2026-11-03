@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// P(U, V) = Loc + V * ZDir + (R + V * tan(Ang)) * (cos(U) * XDir + sin(U) * YDir), U in [0, 2 Pi], Ang the
 /// semi-angle.
 /// </summary>
-public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
+internal class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
 {
     private const int TheUDegree = 2;
     private const int TheVDegree = 1;

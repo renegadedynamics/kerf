@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Geometry;
 
 // The 2D constants of the gp package; the 3D ones are in gp.cs.
-public static partial class Constants
+internal static partial class Constants
 {
     private static readonly Point2D OriginPoint2d = new(0, 0);
     private static readonly Direction2D Dx2d = new(Direction2D.D.X);

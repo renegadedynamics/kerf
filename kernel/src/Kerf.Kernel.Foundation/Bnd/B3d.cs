@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// OCCT's default (and <c>new Bnd_B3d()</c>) is a void box. <c>default(Bnd_B3d)</c> is not: it is a box reduced to
 /// the origin. Ported code must write <c>new Bnd_B3d()</c>.
 /// </remarks>
-public partial struct B3d : IEquatable<B3d>
+internal partial struct B3d : IEquatable<B3d>
 {
     /// <summary>Three reals, as OCCT's <c>std::array&lt;RealType, 3&gt;</c>.</summary>
     [InlineArray(3)]

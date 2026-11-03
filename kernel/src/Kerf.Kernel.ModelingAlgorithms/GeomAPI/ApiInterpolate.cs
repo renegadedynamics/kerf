@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// frozen (decision 243). OCCT declares <c>ClearTangents</c> but never defines it: left out. The static helpers
 /// assume arrays indexed from 1 in places, as OCCT's do.
 /// </remarks>
-public class ApiInterpolate
+internal class ApiInterpolate
 {
     private readonly double _tolerance;
     private readonly NCollection_HArray1<Point3D> _points;

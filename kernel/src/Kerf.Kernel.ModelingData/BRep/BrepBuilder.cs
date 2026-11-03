@@ -32,7 +32,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// Update methods change only the TShape and take it by <c>in</c>.
 /// </para>
 /// </remarks>
-public sealed class BrepBuilder : Builder
+internal sealed class BrepBuilder : Builder
 {
     public BrepBuilder()
     {

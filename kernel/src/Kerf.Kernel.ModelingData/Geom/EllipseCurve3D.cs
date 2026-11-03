@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// whose X direction is its major axis: P(u) = O + MajorRad * cos(u) * XDir + MinorRad * sin(u) * YDir,
 /// u in [0, 2 * PI[, periodic. The major radius may equal the minor radius.
 /// </summary>
-public class EllipseCurve3D : ConicCurve3D
+public sealed class EllipseCurve3D : ConicCurve3D
 {
     private double _majorRadius;
     private double _minorRadius;

@@ -24,7 +24,7 @@ namespace Kerf.Geometry;
 /// which stores a copy of the descriptor. <see cref="BasisCurve"/> returns the stored basis curve frozen, as OCCT
 /// returns its handle; this curve's internal mutators then copy the basis curve before changing it (decision 127).
 /// </remarks>
-public class OffsetCurve3D : Curve3D
+public sealed class OffsetCurve3D : Curve3D
 {
     private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 

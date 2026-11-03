@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Conversion;
 
 /// <summary>Converts a sequence of adjacent non-rational 3D Bezier curves into a B-spline curve.</summary>
-public class CompBezierCurvesToBSplineCurve
+internal class CompBezierCurvesToBSplineCurve
     : CompBezierCurvesToBSplineCurveBase<Point3D, Vector3D, CompBezierCurvesTraits3d>
 {
     /// <summary>

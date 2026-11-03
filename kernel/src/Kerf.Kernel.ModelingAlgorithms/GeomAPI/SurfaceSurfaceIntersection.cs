@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// A working object, as OCCT's. The curves <see cref="Line"/> returns are frozen (design 4.2): they are the
 /// algorithm's results handed to the caller.
 /// </remarks>
-public class SurfaceSurfaceIntersection
+internal class SurfaceSurfaceIntersection
 {
     private readonly IntSS _intersec = new();
 

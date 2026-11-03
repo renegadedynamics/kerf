@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Splines;
 
 // Explicit template instantiations for 3D types (BSplCLib_CurveComputation.cs)
 
-public static partial class BSplCLib
+internal static partial class BSplCLib
 {
     /// <summary>
     /// Reverses the array of poles. <paramref name="l"/> is the index of the new first pole: Poles.Upper() on a

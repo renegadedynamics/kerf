@@ -421,10 +421,10 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
 
     public readonly double ScaleFactor => _scale;
 
-    public readonly Xy TranslationXy() => _loc;
+    internal readonly Xy TranslationXy() => _loc;
 
     /// <summary>The matrix multiplied by the scale factor.</summary>
-    public readonly Matrix2x2 VectorialPart
+    internal readonly Matrix2x2 VectorialPart
     {
         get
         {
@@ -448,7 +448,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     }
 
     /// <summary>The matrix without the scale factor.</summary>
-    public readonly Matrix2x2 RotationPart => _matrix;
+    internal readonly Matrix2x2 RotationPart => _matrix;
 
     /// <summary>The angle of the rotation part, in ]-PI, PI].</summary>
     public readonly double RotationAngle => Math.Atan2(_matrix.Value(2, 1), _matrix.Value(1, 1));
@@ -990,7 +990,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     }
 
     /// <summary>The coordinates transformed: the non-ref form of <see cref="Transforms(ref Xy)"/>.</summary>
-    public readonly Xy Transformed(in Xy coord)
+    internal readonly Xy Transformed(in Xy coord)
     {
         Xy aCoord = coord;
         Transforms(ref aCoord);

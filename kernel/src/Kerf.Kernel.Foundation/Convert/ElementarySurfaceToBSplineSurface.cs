@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// OCCT returns references to its fields: the converter's result can't be changed through them. The per-index
 /// accessors (<see cref="Pole"/>, ...) are deprecated in OCCT in favour of the batch accessors.
 /// </remarks>
-public class ElementarySurfaceToBSplineSurface
+internal class ElementarySurfaceToBSplineSurface
 {
     protected NCollection_Array2<Point3D> _poles;
     protected NCollection_Array2<double> _weights;

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a conical surface (Geom_ConicalSurface) from the boundary circle arcs, opened along the
 /// axis for infinite V.
 /// </summary>
-public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly ConicalSurface _geom;
 

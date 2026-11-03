@@ -33,7 +33,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// call; the public <c>Perform</c> overload that returns a curve and <see cref="ProjectUsingInitialCurve2d"/> return
 /// new curves the caller owns, unfrozen.</para>
 /// </remarks>
-public class ComputeApproxOnPolarSurface
+internal class ComputeApproxOnPolarSurface
 {
     private bool _projIsDone;
     private double _tolerance;

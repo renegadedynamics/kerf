@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// v in [-Pi/2, Pi/2]. Implicit equation in local coordinates: <c>X^2/A^2 + Y^2/B^2 + Z^2/C^2 - 1 = 0</c>.
 /// Reversal, transformation and iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class EllipsoidSurface : ElementarySurface
+internal sealed class EllipsoidSurface : ElementarySurface
 {
     private double _a; // Semi-axis along XDir
     private double _b; // Semi-axis along YDir

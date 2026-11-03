@@ -21,7 +21,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// into its working copy of the edge, which the getters read while it is open (<see cref="WorkingOverlay"/>, Kerf unit
 /// 10H1). <see cref="CurveRepresentations"/> is the public, read-only view of the list.
 /// </remarks>
-public class BrepTEdge : TEdge
+internal class BrepTEdge : TEdge
 {
     private const int ParameterMask = 1;
     private const int RangeMask = 2;

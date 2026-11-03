@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// <c>X^2/A^2 - Y^2/B^2 - Z = 0</c>. Reversal, transformation and iso curves are not supported (they throw
 /// <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class HypParaboloidSurface : ElementarySurface
+internal sealed class HypParaboloidSurface : ElementarySurface
 {
     private double _a; // Semi-axis length A (> 0)
     private double _b; // Semi-axis length B (> 0)

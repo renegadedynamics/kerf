@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// origin is its centre and whose X direction is its major axis: P(u) = O + MajRad * cosh(u) * XDir +
 /// MinRad * sinh(u) * YDir, u in ]-infinite, +infinite[. The major radius may be less than the minor radius.
 /// </summary>
-public class HyperbolaCurve3D : ConicCurve3D
+public sealed class HyperbolaCurve3D : ConicCurve3D
 {
     private double _majorRadius;
     private double _minorRadius;

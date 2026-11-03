@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D parabola (Geom2d_Parabola): the arc ends and the vertex, opened for infinite
 /// parameters. The static method accepting gp_Parab2d can be used directly.
 /// </summary>
-public sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly ParabolaCurve2D _geom;
 

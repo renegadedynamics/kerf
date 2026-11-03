@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// the major axis. P(U) = O + MajorRadius*cos(U)*XDir + MinorRadius*sin(U)*YDir, U in [0, 2*PI[; the curve is
 /// closed and periodic. The major radius may equal the minor radius (a circle) and the minor radius may be 0.
 /// </summary>
-public class EllipseCurve2D : ConicCurve2D
+public sealed class EllipseCurve2D : ConicCurve2D
 {
     private double _majorRadius;
     private double _minorRadius;

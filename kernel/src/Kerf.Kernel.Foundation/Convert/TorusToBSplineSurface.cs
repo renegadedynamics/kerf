@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// P(U, V) = Loc + MinorRadius * sin(V) * ZDir + (MajorRadius + MinorRadius * cos(V)) * (cos(U) * XDir +
 /// sin(U) * YDir), U and V in [0, 2 Pi].
 /// </summary>
-public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
+internal class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
 {
     private const int TheUDegree = 2;
     private const int TheVDegree = 2;

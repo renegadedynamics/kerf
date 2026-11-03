@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>A 2D line segment as an adapted curve; used by Adaptor3d_TopolTool to trim a surface.</summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(in Line2D)"/> is public, as in OCCT.</remarks>
-public class Line2d : Curve2DAdaptorBase
+internal class Line2d : Curve2DAdaptorBase
 {
     private double _ufirst;
     private double _ulast;

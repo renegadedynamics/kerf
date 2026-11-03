@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry;
 /// <c>theNormal</c> is a <c>ref</c> parameter: as in OCCT, it is left unchanged when the status says that no
 /// normal was computed.
 /// </remarks>
-public static class CSLib
+internal static class CSLib
 {
     // Angular tolerance for parallel/opposite vector detection (radians).
     private const double THE_PARALLEL_ANGULAR_TOL = 1e-6;

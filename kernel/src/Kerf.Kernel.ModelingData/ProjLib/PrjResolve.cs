@@ -24,7 +24,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// A working object (decision 21). It keeps the caller's adaptors, as OCCT keeps its pointers: they must outlive
 /// the solver.
 /// </remarks>
-public class PrjResolve
+internal class PrjResolve
 {
     private readonly CurveAdaptorBase _curve;
     private readonly SurfaceAdaptorBase _surface;

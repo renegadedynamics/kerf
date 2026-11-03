@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Hashing;
 /// OCCT's functor is an <see cref="IEqualityComparer{T}"/>: <c>aHasher(x)</c> is <see cref="GetHashCode(Polygon2D)"/>
 /// and <c>aHasher(a, b)</c> is <see cref="Equals(Polygon2D, Polygon2D)"/>. The hash values are not OCCT's.
 /// </remarks>
-public sealed class Polygon2DHasher : IEqualityComparer<Polygon2D?>
+internal sealed class Polygon2DHasher : IEqualityComparer<Polygon2D?>
 {
     /// <summary>The tolerance of the comparison of numeric fields.</summary>
     public readonly double CompTolerance;

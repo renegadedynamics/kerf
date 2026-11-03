@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// its own basis, and a trimmed one rebuilt). The shared basis curve is frozen; this curve's internal mutators
 /// copy it before changing it (decision 132).
 /// </remarks>
-public class OffsetCurve2D : Curve2D
+public sealed class OffsetCurve2D : Curve2D
 {
     private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// A non-copyable struct in OCCT, so a class here. The span data changes as the cache moves from span to span;
 /// only OCCT.NET's caches change it.
 /// </remarks>
-public sealed class CacheParams
+internal sealed class CacheParams
 {
     /// <summary>Degree of the Bezier or B-spline.</summary>
     public readonly int Degree;

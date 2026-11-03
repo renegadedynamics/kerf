@@ -50,7 +50,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     }
 
     /// <summary>A matrix whose columns are the three triples.</summary>
-    public Matrix3x3(in Xyz col1, in Xyz col2, in Xyz col3)
+    internal Matrix3x3(in Xyz col1, in Xyz col2, in Xyz col3)
     {
         _m00 = col1.X();
         _m10 = col1.Y();

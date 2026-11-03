@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>A quaternion, mostly used to represent a rotation in 3D space.</summary>
 /// <remarks><c>new gp_Quaternion()</c> is the identity (0, 0, 0, 1), as in OCCT; <c>default(gp_Quaternion)</c> is zero.</remarks>
-public partial struct Quaternion3 : IEquatable<Quaternion3>
+internal partial struct Quaternion3 : IEquatable<Quaternion3>
 {
     private double _x;
     private double _y;

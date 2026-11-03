@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// omega &gt; 0 and phase phi. The parameter range is (-inf, +inf); the curve is not periodic.
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class SineWaveCurve : Curve3D
+internal sealed class SineWaveCurve : Curve3D
 {
     private Frame3D _position;  // Local coordinate system
     private double _amplitude; // Wave amplitude (> 0)

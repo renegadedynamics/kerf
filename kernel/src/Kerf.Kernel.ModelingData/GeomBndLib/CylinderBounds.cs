@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a cylindrical surface (Geom_CylindricalSurface) from the boundary circle arcs, opened
 /// along the axis for infinite V.
 /// </summary>
-public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly CylindricalSurface _geom;
 

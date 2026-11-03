@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D Bezier curve (Geom_BezierCurve): the poles' convex hull reduced by sampling with a
 /// deflection estimate.
 /// </summary>
-public sealed class BezierCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class BezierCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly BezierCurve3D _geom;
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Topology;
 /// The maps are filled, not created: the caller passes a map with the comparer it wants, normally
 /// <see cref="ShapeHasher.Instance"/> (OCCT's maps here are typed with TopTools_ShapeMapHasher).
 /// </remarks>
-public static class Exploration
+internal static class Exploration
 {
     /// <summary>Adds the sub-shapes of <paramref name="s"/> of type <paramref name="t"/> to <paramref name="m"/>.</summary>
     public static void MapShapes(in Shape s, ShapeType t, IndexedSet<Shape> m)

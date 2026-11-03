@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// [0, +inf). The curve starts on the base circle with a cusp (D1(0) = 0), and |D1(t)| = R*t.
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class CircleInvoluteCurve2D : Curve2D
+internal sealed class CircleInvoluteCurve2D : Curve2D
 {
     private Axis2D _position; // Local coordinate system
     private double _radius;    // Base circle radius (> 0)

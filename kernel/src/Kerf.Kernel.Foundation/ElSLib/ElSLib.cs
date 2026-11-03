@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry;
 /// sphere <c>P(U, V) = O + Radius * cos(V) * (cos(U) * XDir + sin(U) * YDir) + Radius * sin(V) * ZDir</c>;
 /// torus <c>P(U, V) = O + (MajorRadius + MinorRadius * cos(V)) * (cos(U) * XDir + sin(U) * YDir) + MinorRadius * sin(V) * ZDir</c>.
 /// </remarks>
-public static class ElSLib
+internal static class ElSLib
 {
     // ElSLib.lxx: the gp surface overloads
 

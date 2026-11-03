@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts bounded 3D curves to B-splines and concatenates them into one B-spline curve, reparametrised for C1
 /// continuity where the tangents allow it. A working object: <c>Add</c> appends curves.
 /// </summary>
-public sealed class CompCurveToBSplineCurve
+internal sealed class CompCurveToBSplineCurve
 {
     private BSplineCurve3D? _curve;
     private double _tol;

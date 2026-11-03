@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// Adds elementary geometric primitives of gp (lines, conics, elementary surfaces), optionally limited by parameter
 /// values, to a bounding box. The gp objects are parameterised as the equivalent Geom and Geom2d objects.
 /// </summary>
-public static class BndLib
+internal static class BndLib
 {
     // Cosine of M_PI/8 (22.5 degrees) - used for 8-point polygon approximation.
     private const double THE_COS_PI8 = 0.92387953251128674;

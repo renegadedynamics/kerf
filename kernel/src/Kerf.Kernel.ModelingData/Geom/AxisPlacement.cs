@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Objects;
 /// </summary>
 public abstract class AxisPlacement : Geometry3D
 {
-    protected Axis3D _axis = new Axis3D();
+    private protected Axis3D _axis = new Axis3D();
 
     /// <summary>Assigns A1 as the main axis (origin and main direction).</summary>
     /// <remarks>

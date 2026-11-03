@@ -59,7 +59,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>The transformation with vectorial part <paramref name="m"/> and translation part <paramref name="v"/>.</summary>
-    public GeneralTransform3D(in Matrix3x3 m, in Xyz v)
+    internal GeneralTransform3D(in Matrix3x3 m, in Xyz v)
     {
         _matrix = m;
         _loc = v;
@@ -160,7 +160,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(newMatrix, _loc, shape, scale);
     }
 
-    public readonly GeneralTransform3D WithTranslationPart(in Xyz coord)
+    internal readonly GeneralTransform3D WithTranslationPart(in Xyz coord)
     {
         Xyz loc = _loc;
         TransformForm shape = _shape;
@@ -270,7 +270,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     public readonly TransformForm Form => _shape;
 
-    public readonly Xyz TranslationXyz() => _loc;
+    internal readonly Xyz TranslationXyz() => _loc;
 
     /// <summary>The 3x3 vectorial part, without the scale factor of a non-<c>gp_Other</c> form.</summary>
     public readonly Matrix3x3 VectorialPart => _matrix;
@@ -449,7 +449,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>The coordinates transformed: the non-ref form of <see cref="Transforms(ref Xyz)"/>.</summary>
-    public readonly Xyz Transformed(in Xyz coord)
+    internal readonly Xyz Transformed(in Xyz coord)
     {
         Xyz aCoord = coord;
         Transforms(ref aCoord);

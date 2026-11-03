@@ -30,7 +30,7 @@ namespace Kerf.Geometry;
 /// <see cref="BasisSurface"/> returns the stored basis surface frozen, as OCCT returns its handle; this surface's
 /// internal mutators then copy it before changing it (decision 211).</para>
 /// </remarks>
-public class OffsetSurface : Surface
+public sealed class OffsetSurface : Surface
 {
     private static readonly double MyAngularToleranceForG1 = global::Kerf.Engine.Foundation.Precision.Angular();
 

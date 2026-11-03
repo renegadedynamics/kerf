@@ -7,7 +7,7 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>The result of computing a surface normal from the first derivatives D1U and D1V.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.CSLib_DerivativeStatus;</c>.</remarks>
-public enum DerivativeStatus
+internal enum DerivativeStatus
 {
     /// <summary>Normal computed successfully.</summary>
     Done,

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// See C. Lauterbach, M. Garland, S. Sengupta, D. Luebke, and D. Manocha, Fast BVH construction on GPUs,
 /// Eurographics, 2009.
 /// </summary>
-public class LinearBuilder<T, TVec> : Builder<T, TVec>
+internal class LinearBuilder<T, TVec> : Builder<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -121,7 +121,7 @@ public class LinearBuilder<T, TVec> : Builder<T, TVec>
     }
 }
 
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     /// <summary>Calculates the bounding boxes of the given tree's nodes from the node down; returns the height.</summary>
     public static int UpdateBounds<T, TVec>(global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> set, Tree<T, TVec> tree, int node = 0)

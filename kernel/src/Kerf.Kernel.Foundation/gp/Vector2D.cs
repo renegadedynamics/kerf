@@ -17,7 +17,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     public Vector2D(in Direction2D v) => _coord = v.XY();
 
-    public Vector2D(in Xy coord) => _coord = coord;
+    internal Vector2D(in Xy coord) => _coord = coord;
 
     public Vector2D(double xv, double yv) => _coord = new Xy(xv, yv);
 

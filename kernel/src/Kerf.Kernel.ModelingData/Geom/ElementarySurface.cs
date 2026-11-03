@@ -20,7 +20,12 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class ElementarySurface : Surface
 {
-    protected CoordinateSystem _pos = new CoordinateSystem();
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected ElementarySurface()
+    {
+    }
+
+    private protected CoordinateSystem _pos = new CoordinateSystem();
 
     /// <summary>Changes the main axis (Z axis).</summary>
     /// <exception cref="ConstructionErrorException">theA1 is parallel to the X axis of the coordinate system.</exception>

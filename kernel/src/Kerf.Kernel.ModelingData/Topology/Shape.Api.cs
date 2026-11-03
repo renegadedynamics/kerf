@@ -14,6 +14,13 @@ public partial struct Shape : IShape<Shape>
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
 
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
+
     /// <summary>This shape as a <typeparamref name="TShape"/>, if it is one (a null shape is any type).</summary>
     public readonly bool TryAs<TShape>(out TShape shape) where TShape : struct, IShape<TShape>
     {
@@ -40,6 +47,13 @@ public partial struct Vertex : IShape<Vertex>
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
 
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
+
     /// <summary>The shape as a vertex.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a vertex (or null).</exception>
     public static explicit operator Vertex(in Shape shape) => shape.As<Vertex>();
@@ -51,6 +65,13 @@ public partial struct Edge : IShape<Edge>
 
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
+
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
 
     /// <summary>The shape as an edge.</summary>
     /// <exception cref="InvalidCastException">The shape isn't an edge (or null).</exception>
@@ -64,6 +85,13 @@ public partial struct Wire : IShape<Wire>
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
 
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
+
     /// <summary>The shape as a wire.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a wire (or null).</exception>
     public static explicit operator Wire(in Shape shape) => shape.As<Wire>();
@@ -75,6 +103,13 @@ public partial struct Face : IShape<Face>
 
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
+
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
 
     /// <summary>The shape as a face.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a face (or null).</exception>
@@ -88,6 +123,13 @@ public partial struct Shell : IShape<Shell>
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
 
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
+
     /// <summary>The shape as a shell.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a shell (or null).</exception>
     public static explicit operator Shell(in Shape shape) => shape.As<Shell>();
@@ -99,6 +141,13 @@ public partial struct Solid : IShape<Solid>
 
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
+
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
 
     /// <summary>The shape as a solid.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a solid (or null).</exception>
@@ -112,6 +161,13 @@ public partial struct CompSolid : IShape<CompSolid>
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
 
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
+
     /// <summary>The shape as a composite solid.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a composite solid (or null).</exception>
     public static explicit operator CompSolid(in Shape shape) => shape.As<CompSolid>();
@@ -123,6 +179,13 @@ public partial struct Compound : IShape<Compound>
 
     /// <inheritdoc/>
     public readonly Shape AsShape() => this;
+
+    /// <summary>
+    /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is reached;
+    /// those inside a sub-shape of type <paramref name="avoid"/> are skipped (OCCT's <c>TopExp_Explorer</c>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><typeparamref name="T"/> is <see cref="Shape"/>.</exception>
+    public readonly SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T> => ShapeTraversal.Explore<T>(this, avoid);
 
     /// <summary>The shape as a compound.</summary>
     /// <exception cref="InvalidCastException">The shape isn't a compound (or null).</exception>

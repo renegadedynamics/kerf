@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts an arc of a 2D parabola into a non-rational B-spline curve (degree 2, 3 poles of weight 1). The
 /// parabola's parametrisation is P(U) = Loc + F * (U * U * XDir + 2 * U * YDir), F the focal length.
 /// </summary>
-public class ParabolaToBSplineCurve : ConicToBSplineCurve
+internal class ParabolaToBSplineCurve : ConicToBSplineCurve
 {
     private const int TheDegree = 2;
     private const int MaxNbKnots = 2;

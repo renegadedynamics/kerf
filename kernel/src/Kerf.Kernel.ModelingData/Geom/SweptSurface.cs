@@ -13,9 +13,14 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class SweptSurface : Surface
 {
-    protected Curve3D? _basisCurve;
-    protected Direction3D _direction = new Direction3D();
-    protected Continuity _smooth;
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected SweptSurface()
+    {
+    }
+
+    private protected Curve3D? _basisCurve;
+    private protected Direction3D _direction = new Direction3D();
+    private protected Continuity _smooth;
 
     /// <summary>The continuity of the surface.</summary>
     public override Continuity Continuity => _smooth;

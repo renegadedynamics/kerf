@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a surface of linear extrusion (Geom_SurfaceOfLinearExtrusion) analytically:
 /// P(U, V) = BasisCurve(U) + V * Direction, so the box is the basis curve box swept along the direction.
 /// </summary>
-public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly ExtrusionSurface _geom;
 

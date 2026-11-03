@@ -18,7 +18,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// <see cref="ImmutableObjectException"/> once the vertex is frozen. <see cref="PointRepresentations"/> is the public,
 /// read-only view of the list.
 /// </remarks>
-public class BrepTVertex : TVertex
+internal class BrepTVertex : TVertex
 {
     private Point3D _pnt;
     private double _tolerance;

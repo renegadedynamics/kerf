@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D B-spline curve (Geom2d_BSplineCurve): the poles of the curve, segmented to the
 /// range when it is a strict sub-range.
 /// </summary>
-public sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly BSplineCurve2D _geom;
 

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// its member; the port keeps the constructed object (decision 224). OCCT's implicit conversions to <c>int</c> and
 /// <c>double</c> are explicit conversions (decision 28).
 /// </remarks>
-public class ExtremaSurfaceSurface
+internal class ExtremaSurfaceSurface
 {
     private bool _isDone;
     private int _index;

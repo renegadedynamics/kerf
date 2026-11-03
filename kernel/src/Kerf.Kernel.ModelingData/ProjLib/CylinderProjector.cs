@@ -10,7 +10,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a cylinder: lines parallel to the axis and circles normal to it.</summary>
-public class CylinderProjector : Projector
+internal class CylinderProjector : Projector
 {
     private Cylinder _cylinder = new();
 

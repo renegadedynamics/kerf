@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// OCCT: <see cref="Gradient"/> scales G(6) instead of G(4) (occt-issues.md). OCCT's release build writes past
 /// the 4-element vector and returns an unscaled radius derivative; the port throws. <see cref="Values"/> is right.
 /// </remarks>
-public sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
+internal sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
 {
     private NCollection_HArray1<Xyz>? _points;
     private Direction3D _dir = new Direction3D();

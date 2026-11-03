@@ -15,7 +15,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 
 /// <summary>A vertex of a face's edge, seen by the intersection algorithms through BRepTopAdaptor_TopolTool.</summary>
 /// <remarks>A working object (decision 101), keeping the vertex and the edge's 2D adaptor.</remarks>
-public class TopologyHVertex : HVertex
+internal class TopologyHVertex : HVertex
 {
     private Vertex _vtx;
     private readonly EdgeCurve2DAdaptor _curve;

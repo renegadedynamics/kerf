@@ -31,7 +31,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// <c>AdjustExtremity</c>, <c>ExtendCurveToPoint</c>, <c>ExtendSurfByLength</c>, <c>CancelDenominatorDerivative</c>)
 /// take it by <c>ref</c> and give it a new object the caller owns; they never change the caller's geometry.
 /// </remarks>
-public static partial class GeomLib
+internal static partial class GeomLib
 {
     //=================================================================================================
 

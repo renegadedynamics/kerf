@@ -21,7 +21,7 @@ namespace Kerf.Geometry;
 /// curve is replaced by its own basis). <see cref="BasisCurve"/> returns that copy frozen, as OCCT returns its
 /// handle; this curve's internal mutators then copy the basis curve again before changing it (decision 132).
 /// </remarks>
-public class TrimmedCurve2D : BoundedCurve2D
+public sealed class TrimmedCurve2D : BoundedCurve2D
 {
     private Curve2D _basisCurve;
     private double _uTrim1;

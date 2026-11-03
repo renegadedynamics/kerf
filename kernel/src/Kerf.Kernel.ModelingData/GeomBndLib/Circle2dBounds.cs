@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D circle (Geom2d_Circle), with analytical per-coordinate extrema. The static methods
 /// accepting gp_Circ2d can be used directly without constructing a Geom2d_Circle.
 /// </summary>
-public sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly CircleCurve2D _geom;
 

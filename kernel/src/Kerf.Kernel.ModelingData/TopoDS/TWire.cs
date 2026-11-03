@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A set of edges connected by their vertices.</summary>
-public class TWire : TShape
+internal class TWire : TShape
 {
     /// <summary>An empty TWire.</summary>
     public TWire() : base(global::Kerf.Topology.ShapeType.Wire)

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// GeomAdaptor_Surface for a rectangular trimmed surface or an unknown type. OCCT's <c>std::variant</c> of
 /// evaluators is an interface field, null for <c>std::monostate</c> (decision 236's pattern).
 /// </remarks>
-public sealed class SurfaceBounds
+internal sealed class SurfaceBounds
 {
     /// <summary>The members of the per-type evaluators that the dispatcher calls through OCCT's <c>std::visit</c>.</summary>
     internal interface ISurfaceEvaluator

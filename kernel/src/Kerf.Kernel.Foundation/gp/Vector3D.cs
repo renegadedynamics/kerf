@@ -16,7 +16,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 
     public Vector3D(in Direction3D v) => _coord = v.XYZ();
 
-    public Vector3D(in Xyz coord) => _coord = coord;
+    internal Vector3D(in Xyz coord) => _coord = coord;
 
     public Vector3D(double xv, double yv, double zv) => _coord = new Xyz(xv, yv, zv);
 

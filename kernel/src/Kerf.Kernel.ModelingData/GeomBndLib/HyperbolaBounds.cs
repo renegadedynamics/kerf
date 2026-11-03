@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D hyperbola (Geom_Hyperbola): the arc ends and the per-coordinate extrema, opened
 /// for infinite parameters. The static method accepting gp_Hypr can be used directly.
 /// </summary>
-public sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
+internal sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
 {
     private readonly HyperbolaCurve3D _geom;
 

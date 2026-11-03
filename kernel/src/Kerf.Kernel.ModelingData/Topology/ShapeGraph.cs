@@ -10,7 +10,7 @@ namespace Kerf.Topology;
 
 /// <summary>
 /// A shape's sub-shapes, indexed, with their ancestors: built once per shape, then queried (OCCT's
-/// <c>TopExp::MapShapes</c> and <c>MapShapesAndAncestors</c>). Sub-shapes are compared with <see cref="Shape.IsSame"/>.
+/// <c>TopExp::MapShapes</c> and <c>MapShapesAndUniqueAncestors</c>). Sub-shapes are compared with <see cref="Shape.IsSame"/>.
 /// </summary>
 /// <remarks>Safe to use from several threads: the ancestor tables are built on first use.</remarks>
 public sealed class ShapeGraph
@@ -57,7 +57,7 @@ public sealed class ShapeGraph
 
     /// <summary>
     /// The sub-shapes of type <paramref name="ancestorType"/> that contain <paramref name="shape"/> (the faces of an
-    /// edge); empty if it has none or isn't in the graph.
+    /// edge), each once; empty if it has none or isn't in the graph.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="ancestorType"/> isn't a type that contains
     /// <paramref name="shape"/>'s.</exception>
@@ -77,7 +77,7 @@ public sealed class ShapeGraph
         IndexedMap<Shape, NCollection_List<Shape>> map = _ancestors.GetOrAdd((type, ancestorType), static (key, root) =>
         {
             var built = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-            Exploration.MapShapesAndAncestors(root, key.Item1, key.Item2, built);
+            Exploration.MapShapesAndUniqueAncestors(root, key.Item1, key.Item2, built);
             return built;
         }, _root);
         return map.TryGetValue(shape, out NCollection_List<Shape>? ancestors) && ancestors is not null ? [.. ancestors] : [];

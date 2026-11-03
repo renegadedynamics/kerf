@@ -29,7 +29,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// A working object (decision 21) built once for a face; its queries don't change it. OCCT forbids copies (Copy and
 /// the assignment throw Standard_ConstructionError): the port has neither.
 /// </remarks>
-public sealed class FClass2d
+internal sealed class FClass2d
 {
     private readonly NCollection_Sequence<Class2d> _tabClass = new();
     private readonly NCollection_Sequence<int> _tabOrien = new();

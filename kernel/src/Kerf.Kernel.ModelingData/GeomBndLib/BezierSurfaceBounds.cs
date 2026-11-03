@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a Bezier surface (Geom_BezierSurface): the poles' convex hull for the full surface, grid
 /// sampling for trimmed patches, sampling + PSO/Powell optimization for <c>BoxOptimal</c>.
 /// </summary>
-public sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly BezierSurface _geom;
 

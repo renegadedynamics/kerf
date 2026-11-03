@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of a vertex by a parameter on a 3D curve.</summary>
-public class PointOnCurve : PointRepresentation
+internal class PointOnCurve : PointRepresentation
 {
     private Curve3D? _curve;
 

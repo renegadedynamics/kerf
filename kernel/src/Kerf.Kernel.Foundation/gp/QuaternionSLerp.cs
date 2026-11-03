@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry;
 /// <c>new gp_QuaternionSLerp()</c> holds identities and a zero angle (OCCT's default constructor leaves the angle
 /// uninitialised); <c>default(gp_QuaternionSLerp)</c> is not valid.
 /// </remarks>
-public partial struct QuaternionSLerp : IEquatable<QuaternionSLerp>
+internal partial struct QuaternionSLerp : IEquatable<QuaternionSLerp>
 {
     private Quaternion3 _qStart;
     private Quaternion3 _qEnd;

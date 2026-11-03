@@ -15,7 +15,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 {
     private readonly Xyz _coord;
 
-    public Point3D(in Xyz coord) => _coord = coord;
+    internal Point3D(in Xyz coord) => _coord = coord;
 
     public Point3D(double xp, double yp, double zp) => _coord = new Xyz(xp, yp, zp);
 

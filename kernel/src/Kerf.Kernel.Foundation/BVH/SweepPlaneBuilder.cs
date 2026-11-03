@@ -9,7 +9,7 @@ using static Kerf.Engine.Geometry.Bvh.Constants;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>Builds a BVH tree with the sweep plane SAH algorithm.</summary>
-public class SweepPlaneBuilder<T, TVec> : QueueBuilder<T, TVec>
+internal class SweepPlaneBuilder<T, TVec> : QueueBuilder<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

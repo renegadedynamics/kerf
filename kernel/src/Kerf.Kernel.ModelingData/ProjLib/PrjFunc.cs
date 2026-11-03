@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// the function. <see cref="Values"/> remembers the last point it was evaluated at, which
 /// <see cref="Solution"/> returns.
 /// </remarks>
-public class PrjFunc : FunctionSetWithDerivatives
+internal class PrjFunc : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptorBase _curve;
     private readonly SurfaceAdaptorBase _surface;

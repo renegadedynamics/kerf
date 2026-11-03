@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// its radius in the reference plane (the XOY plane of the local system).
 /// P(U, V) = O + (R + V * sin(Ang)) * (cos(U) * XDir + sin(U) * YDir) + V * cos(Ang) * ZDir.
 /// </summary>
-public class ConicalSurface : ElementarySurface
+public sealed class ConicalSurface : ElementarySurface
 {
     private double _radius;
     private double _semiAngle;

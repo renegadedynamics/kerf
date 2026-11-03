@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a spherical surface (Geom_SphericalSurface): the six axis-aligned extremal points that
 /// lie in the patch, and the boundary iso-circles.
 /// </summary>
-public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly SphericalSurface _geom;
 

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// limited in derivative order, domain and through a diagonal affine parameter map with an optional UV swap.
 /// A C++ namespace in OCCT.
 /// </summary>
-public static class RepSurfaceDesc
+internal static class RepSurfaceDesc
 {
     /// <summary>
     /// 2D diagonal affine parameter map with optional UV swap. Without swap: uRep = ScaleU*u + OffsetU,

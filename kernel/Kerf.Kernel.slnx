@@ -20,5 +20,6 @@
     <Project Path="tests/Kerf.Kernel.ModelingAlgorithms.Tests/Kerf.Kernel.ModelingAlgorithms.Tests.csproj" />
     <Project Path="tests/Kerf.Kernel.ModelingData.Tests/Kerf.Kernel.ModelingData.Tests.csproj" />
     <Project Path="tests/Kerf.Kernel.Oracle.Tests/Kerf.Kernel.Oracle.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.PublicApi.Tests/Kerf.Kernel.PublicApi.Tests.csproj" />
   </Folder>
 </Solution>

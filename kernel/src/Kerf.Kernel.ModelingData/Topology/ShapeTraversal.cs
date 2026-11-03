@@ -21,20 +21,6 @@ public static class ShapeTraversal
         /// <summary>The direct sub-shapes, with the shape's placement and orientation composed into theirs.</summary>
         public SubShapes<Shape> Children => new(shape.AsShape(), ShapeType.Shape, ShapeType.Shape, children: true);
 
-        /// <summary>
-        /// The sub-shapes of type <typeparamref name="T"/>, depth first, in OCCT's order, each as often as it is
-        /// reached; those inside a sub-shape of type <paramref name="avoid"/> are skipped.
-        /// </summary>
-        public SubShapes<T> Explore<T>(ShapeType? avoid = null) where T : struct, IShape<T>
-        {
-            if (T.Type == ShapeType.Shape)
-            {
-                throw new ArgumentException("Explore needs a shape type: Vertex, Edge, Wire, Face, Shell, Solid, CompSolid or Compound.");
-            }
-
-            return new(shape.AsShape(), T.Type, avoid ?? ShapeType.Shape, children: false);
-        }
-
         /// <summary>The distinct vertices (<see cref="Shape.IsSame"/>), in the order they are first explored.</summary>
         public ImmutableArray<Vertex> Vertices() => Unique<Vertex>(shape.AsShape());
 
@@ -113,6 +99,18 @@ public static class ShapeTraversal
 
             return found ? Rebuilt(self, kept) : throw new ArgumentException("The shape has no such child.", nameof(child));
         }
+    }
+
+    // Shape's and the typed shapes' Explore<T>: an instance method of each, since a generic extension method would need
+    // the receiver's type spelt out beside T (shape.Explore<Solid, Face>())
+    internal static SubShapes<T> Explore<T>(in Shape shape, ShapeType? avoid) where T : struct, IShape<T>
+    {
+        if (T.Type == ShapeType.Shape)
+        {
+            throw new ArgumentException("Explore needs a shape type: Vertex, Edge, Wire, Face, Shell, Solid, CompSolid or Compound.");
+        }
+
+        return new(shape, T.Type, avoid ?? ShapeType.Shape, children: false);
     }
 
     private static ImmutableArray<T> Unique<T>(in Shape shape) where T : struct, IShape<T>

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// The parameter range is [0, +inf); the curve is neither periodic nor closed.
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class ArchimedeanSpiralCurve2D : Curve2D
+internal sealed class ArchimedeanSpiralCurve2D : Curve2D
 {
     private Axis2D _position;     // Local coordinate system
     private double _initialRadius; // Initial radius (>= 0)

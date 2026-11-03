@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// A working object, as in OCCT. Each Perform method clears the previous results. As in OCCT, <see cref="Perform"/>
 /// reports the status of the inflection search for B-spline curves, which can hide a failure of the curvature search.
 /// </remarks>
-public class CurAndInf2d : CurAndInf
+internal class CurAndInf2d : CurAndInf
 {
     private bool _isDone;
 

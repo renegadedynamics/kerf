@@ -20,7 +20,7 @@ namespace Kerf.Geometry;
 /// <see cref="BasisSurface"/> returns the stored copy frozen, as OCCT returns its handle; this surface's internal
 /// mutators then copy the basis surface again before changing it (decision 159).
 /// </remarks>
-public class TrimmedSurface : BoundedSurface
+public sealed class TrimmedSurface : BoundedSurface
 {
     private Surface _basisSurf;
     private double _utrim1;

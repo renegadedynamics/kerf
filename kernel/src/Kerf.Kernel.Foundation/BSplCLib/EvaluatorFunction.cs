@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// OCCT's <c>operator()</c> shortcut is left out: call <see cref="Evaluate"/>. As for math's functions
 /// (docs/decisions.md), an implementation must assign <c>theResult</c> even when it fails.
 /// </remarks>
-public abstract class EvaluatorFunction
+internal abstract class EvaluatorFunction
 {
     /// <summary>
     /// Evaluates the function, or its derivative of order <paramref name="derivativeRequest"/>, at

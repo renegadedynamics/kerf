@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D circle (Geom_Circle), with analytical per-coordinate extrema. The static methods
 /// accepting gp_Circ can be used directly without constructing a Geom_Circle.
 /// </summary>
-public sealed class CircleBounds : CurveBounds.ICurveEvaluator
+internal sealed class CircleBounds : CurveBounds.ICurveEvaluator
 {
     private readonly CircleCurve3D _geom;
 

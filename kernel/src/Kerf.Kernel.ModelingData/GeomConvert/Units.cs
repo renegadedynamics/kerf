@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Conversions of 2D curves (pcurves) between angle units (radians and degrees) and length units, according to
 /// the parameterisation of the surface they lie on. Each function returns a new curve; the input is not modified.
 /// </summary>
-public static class Units
+internal static class Units
 {
     /// <summary>
     /// The pcurve theCurve2d on theSurf converted from radians to degrees (theFactorRadianDegree, for example

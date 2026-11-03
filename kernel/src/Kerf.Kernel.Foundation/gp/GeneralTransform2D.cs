@@ -58,7 +58,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     }
 
     /// <summary>The transformation <c>theM * P + theV</c>.</summary>
-    public GeneralTransform2D(in Matrix2x2 m, in Xy v)
+    internal GeneralTransform2D(in Matrix2x2 m, in Xy v)
     {
         _matrix = m;
         _loc = v;
@@ -113,7 +113,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new GeneralTransform2D(matrix, loc, shape, _scale);
     }
 
-    public readonly GeneralTransform2D WithTranslationPart(in Xy coord)
+    internal readonly GeneralTransform2D WithTranslationPart(in Xy coord)
     {
         Xy loc = _loc;
         TransformForm shape = _shape;
@@ -134,7 +134,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public readonly GeneralTransform2D WithTrsf2d(in Transform2D t) => new(t);
 
-    public readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
+    internal readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
     {
         Matrix2x2 newMatrix = _matrix;
         TransformForm shape = _shape;
@@ -153,9 +153,9 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public readonly TransformForm Form => _shape;
 
-    public readonly Xy TranslationXy() => _loc;
+    internal readonly Xy TranslationXy() => _loc;
 
-    public readonly Matrix2x2 VectorialPart => _matrix;
+    internal readonly Matrix2x2 VectorialPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 2) and column (1 to 3) of the 2x3 matrix.</summary>
     internal readonly double Value(int row, int col)
@@ -323,7 +323,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         coord.Add(_loc);
     }
 
-    public readonly Xy Transformed(in Xy coord)
+    internal readonly Xy Transformed(in Xy coord)
     {
         Xy newCoord = coord;
         Transforms(ref newCoord);

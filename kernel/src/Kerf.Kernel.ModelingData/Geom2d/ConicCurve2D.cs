@@ -16,7 +16,12 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class ConicCurve2D : Curve2D
 {
-    protected Frame2D _pos = new Frame2D();
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected ConicCurve2D()
+    {
+    }
+
+    private protected Frame2D _pos = new Frame2D();
 
     internal void SetAxis(in Frame2D a)
     {

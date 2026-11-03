@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a sequence of adjacent non-rational 2D Bezier curves into a B-spline curve; where possible, the
 /// continuity of the B-spline is raised above C0.
 /// </summary>
-public class CompBezierCurves2dToBSplineCurve2d
+internal class CompBezierCurves2dToBSplineCurve2d
     : CompBezierCurvesToBSplineCurveBase<Point2D, Vector2D, CompBezierCurvesTraits2d>
 {
     /// <summary>

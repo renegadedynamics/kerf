@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Library;
 
 /// <summary>What went wrong when a GeomLib_Interpolate failed.</summary>
-public enum InterpolationErrors
+internal enum InterpolationErrors
 {
     NoError,
     NotEnoughtPoints,

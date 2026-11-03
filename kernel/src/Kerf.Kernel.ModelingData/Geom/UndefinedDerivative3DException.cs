@@ -9,7 +9,7 @@ namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>Thrown when a derivative of a Geom object is undefined (not continuous enough, or singular).</summary>
 /// <remarks>OCCT's <c>Geom_UndefinedDerivative_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
-public class UndefinedDerivative3DException : DomainErrorException
+internal class UndefinedDerivative3DException : DomainErrorException
 {
     public UndefinedDerivative3DException() { }
     public UndefinedDerivative3DException(string? message) : base(message) { }

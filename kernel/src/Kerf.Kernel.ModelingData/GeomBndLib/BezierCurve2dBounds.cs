@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D Bezier curve (Geom2d_BezierCurve): the poles of the curve, segmented to the range
 /// when it is a strict sub-range.
 /// </summary>
-public sealed class BezierCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class BezierCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly BezierCurve2D _geom;
 

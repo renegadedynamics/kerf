@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// along its normal (the tangent rotated by -90 degrees).
 /// </summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(Curve2DAdaptorBase)"/> is public, as in OCCT.</remarks>
-public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
+internal class OffsetCurveAdaptor2D : Curve2DAdaptorBase
 {
     private Curve2DAdaptorBase? _curve;
     private double _offset;

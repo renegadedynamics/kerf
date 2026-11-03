@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by a 3D curve.</summary>
-public class Curve3DRepresentation : GCurve
+internal class Curve3DRepresentation : GCurve
 {
     private Curve3D? _curve;
 

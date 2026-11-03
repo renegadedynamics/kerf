@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a surface to a B-spline surface by approximation (AdvApp2Var) within a tolerance, continuities in U and
 /// V, maximum degrees and a maximum number of patches. The approximation is made by the constructor.
 /// </summary>
-public sealed class ApproxSurface
+internal sealed class ApproxSurface
 {
     private sealed class GeomConvert_ApproxSurface_Eval : EvaluatorFunc2Var
     {

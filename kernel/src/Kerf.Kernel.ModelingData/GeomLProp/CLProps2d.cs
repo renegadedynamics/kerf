@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// substituting the types). A working object: its
 /// setters are public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class CLProps2d
+internal class CLProps2d
 {
     private Curve2D? _curve;
     private double _u;

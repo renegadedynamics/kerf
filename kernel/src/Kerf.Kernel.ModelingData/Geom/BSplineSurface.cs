@@ -36,7 +36,7 @@ namespace Kerf.Geometry;
 /// <see cref="WithEvalRepresentation"/>, which stores a copy of the descriptor. Modifications drop it, as in OCCT.
 /// </para>
 /// </remarks>
-public class BSplineSurface : BoundedSurface
+public sealed partial class BSplineSurface : BoundedSurface
 {
     private NCollection_Array2<Point3D> _poles = new NCollection_Array2<Point3D>();
     private NCollection_Array2<double> _weights = new NCollection_Array2<double>();
@@ -210,7 +210,7 @@ public class BSplineSurface : BoundedSurface
     /// A degree not in [1, MaxDegree()], fewer than 2 poles in a direction, knots and multiplicities of different
     /// lengths, knots not increasing, or numbers of poles that don't match the multiplicities.
     /// </exception>
-    public BSplineSurface(NCollection_Array2<Point3D> poles,
+    internal BSplineSurface(NCollection_Array2<Point3D> poles,
                                NCollection_Array1<double> uKnots,
                                NCollection_Array1<double> vKnots,
                                NCollection_Array1<int> uMults,
@@ -256,7 +256,7 @@ public class BSplineSurface : BoundedSurface
     /// As the non-rational constructor, or weights of a different size from the poles, or a weight not greater
     /// than gp::Resolution().
     /// </exception>
-    public BSplineSurface(NCollection_Array2<Point3D> poles,
+    internal BSplineSurface(NCollection_Array2<Point3D> poles,
                                NCollection_Array2<double> weights,
                                NCollection_Array1<double> uKnots,
                                NCollection_Array1<double> vKnots,
@@ -567,7 +567,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The common part of <see cref="Segment"/> and <see cref="CheckAndSegment"/>.</summary>
-    protected void SegmentCore(double u1,
+    private void SegmentCore(double u1,
                            double u2,
                            double v1,
                            double v2,
@@ -1090,7 +1090,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>Recomputes the U flat knots, the U knot distribution and the U continuity.</summary>
-    protected void UpdateUKnots()
+    private void UpdateUKnots()
     {
         _maxDerivInvOk = false;
         int maxKnotMult;
@@ -1135,7 +1135,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>Recomputes the V flat knots, the V knot distribution and the V continuity.</summary>
-    protected void UpdateVKnots()
+    private void UpdateVKnots()
     {
         _maxDerivInvOk = false;
         int maxKnotMult;

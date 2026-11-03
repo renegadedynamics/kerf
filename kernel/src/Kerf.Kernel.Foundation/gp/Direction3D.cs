@@ -48,7 +48,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public Direction3D(in Vector3D v) : this(v.XYZ()) { }
 
-    public Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
+    internal Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
     public Direction3D(double xv, double yv, double zv)
     {

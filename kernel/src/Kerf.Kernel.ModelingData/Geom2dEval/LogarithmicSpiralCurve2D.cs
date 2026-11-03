@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// range is (-inf, +inf). The angle between the tangent and the radial direction is constant, atan(1/b).
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class LogarithmicSpiralCurve2D : Curve2D
+internal sealed class LogarithmicSpiralCurve2D : Curve2D
 {
     private Axis2D _position;      // Local coordinate system
     private double _scale;          // Scale factor (> 0)

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A set of faces connected by their edges.</summary>
-public class TShell : TShape
+internal class TShell : TShape
 {
     /// <summary>An empty TShell.</summary>
     public TShell() : base(global::Kerf.Topology.ShapeType.Shell)

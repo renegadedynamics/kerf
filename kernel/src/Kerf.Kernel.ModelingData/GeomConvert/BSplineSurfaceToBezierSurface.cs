@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Bezier points of B-spline curves and surfaces", CAD 13(6), 1981). A row of the grid is the series of patches
 /// between two U knots, a column the series between two V knots.
 /// </summary>
-public sealed class BSplineSurfaceToBezierSurface
+internal sealed class BSplineSurfaceToBezierSurface
 {
     private readonly BSplineSurface _surface;
 

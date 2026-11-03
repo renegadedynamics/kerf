@@ -13,7 +13,7 @@ namespace Kerf.Engine.Topology;
 /// Narrows a <see cref="Shape"/> to one of the eight shape types, checking the type: <c>TopoDS.Edge(S)</c>
 /// throws <see cref="TypeMismatchException"/> unless S is null or an edge.
 /// </summary>
-public static class ShapeCasts
+internal static class ShapeCasts
 {
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Vertex.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type VERTEX.</exception>

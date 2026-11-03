@@ -48,7 +48,7 @@ public readonly partial struct Placement : IEquatable<Placement>
     }
 
     /// <summary>The location of the datum D.</summary>
-    public Placement(Datum3D d)
+    internal Placement(Datum3D d)
     {
         _items = new SListOfItemLocation();
         _items.Construct(new ItemLocation(d, 1));
