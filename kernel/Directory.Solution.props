@@ -1,9 +1,0 @@
-<Project>
-  <!--
-    The solution restores by the project graph, as each project does (Directory.Build.props): build123d.NET's projects,
-    the oracle, restore on its native backend
-  -->
-  <PropertyGroup>
-    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
-  </PropertyGroup>
-</Project>
