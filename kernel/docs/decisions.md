@@ -15011,3 +15011,18 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        result, and accepting degree 3 would move every tangent-constrained approximation of the default degrees with no
        error to correct. Tests: the pinned polynomial test asserts IsDone for every pair of constraints; a cubic with
        free ends is approximated by FitAndDivide.
+16714. **GProp's elementary curves, surfaces and solids get closed-form properties** (phase 1's GProp_CelGProps,
+       SelGProps and VelGProps rows, eight). OCCT built their matrices of inertia as P V Λ (each eigenvector scaled by its
+       value) where P V Λ Vᵀ Pᵀ was meant, kept the centre of mass absolute where GProp_GProps reads it relative to the
+       location point, computed a line's Izz with Ixx's coefficients, a cone's area with an extra cos t and its volume
+       not the frustum's, a cylinder's axial moment twice, the sin·cos terms of cones with the wrong sign, and a torus'
+       centre from cos and sin of alpha2. No OCCT algorithm uses them; they are public API, so they are fixed rather than
+       hidden. Each Perform now gives the item's mass, first moment and second moments in its own frame in closed form
+       (GProp.FromRevolution, FromLocalMoments: items of revolution about the frame's axis, with the meridian's six
+       integrals; TrigMoment, PolyMoment and TorusMoment for those), and turns them into the centre relative to the
+       location point and the matrix of inertia there. The solids are the sectors between the patch and the axis (the
+       cylinder, the cone), the centre (the sphere) or the tube's axis circle (the torus). The tests check full shapes in
+       a tilted frame, located elsewhere, against the textbook values (ring, rod, cylindrical shell and solid, cone
+       shell and solid, spherical shell and ball, torus shell and solid, half tori's centres) and partial patches
+       against the integrals by Simpson's rule; GProp_ElementaryTests' twelve tests that checked the right values
+       where OCCT had them and pinned its errors elsewhere are replaced by six.
