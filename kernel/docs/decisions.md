@@ -13975,3 +13975,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 15507. **Out of 10G's scope, by decision 1349:** STEP's 1,556 entity setters (63: the entities become internal) and
        `InternalsVisibleTo`, which stays between the four kernel assemblies (54); `Placement`'s value equality is 10L's
        (62).
+15508. **Performance, measured back to back with main** (9E's benchmarks, Release, on a machine shared with other
+       helpers): Bento's examples, median recalculation of nine passes, 1,258 and 1,245 ms on main, 1,275 and 1,233 ms
+       after, the same volumes, faces and triangles, and the same allocation to 0.2 MB in each example; the Booleans
+       suite's 407 simple cases, serial, 2,256, 2,305 and 3,494 ms on main, 2,408, 2,574, 2,940 and 2,662 ms after, 8.25
+       MB per Boolean either way (parallel timings ranged 1.7 to 3.8 s on both, all noise). Copies of the values cost no
+       allocation; the Booleans' serial medians differ by about 13%, inside the machine's spread but on the slow side
+       in every run after, so 10J should profile the transforms' returning forms (`Transform3D` is 112 bytes, and its
+       forms copy every field) when it measures with 9E's benchmarks on a quiet machine.
