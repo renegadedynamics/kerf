@@ -298,8 +298,29 @@ public sealed class DrawCorpus(string theTestsDirectory)
             aStatus = "FAILED (_check_log: " + anError.Reason + ")";
         }
 
+        if (aStatus.StartsWith("FAILED", StringComparison.Ordinal) && IntendedDifferences.TryGetValue(theCase.Id, out var anIntended)
+            && anIntended.IsPortsBehaviour(aText))
+        {
+            aStatus = "OK (intended difference: " + anIntended.Reason + ")";
+        }
+
         return new DrawCaseRun(theCase, aStatus, aText);
     }
+
+    /// <summary>
+    /// The cases whose OCCT reference a deliberate fix changes (phase10-plan.md 3.3): OCCT's check fails on the port's
+    /// log, which shows the corrected behaviour instead; such a case is OK, with the reason.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (string Reason, Func<string, bool> IsPortsBehaviour)> IntendedDifferences =
+        new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
+        {
+            // OCCT's script requires tuyau's "cannot make a surface": GeomFill_Pipe gave up between two sections on a
+            // path the corrected Frenet trihedron corrects; the pipe is built, and tuyau reports its accuracy
+            // (occt-issues.md, unit 5L2's GeomFill_Pipe::Init row; Kerf decision 16509)
+            ["bugs/modalg_7/bug31361"] = ("GeomFill_Pipe between two sections builds (decision 16509)",
+                                          theLog => theLog.Contains("Accuracy of approximation = ", StringComparison.Ordinal)
+                                                    && !theLog.Contains("Tcl Exception", StringComparison.Ordinal)),
+        };
 
     /// <summary>
     /// The commands a case calls, found without running it, and those of them the interpreter lacks. Commands

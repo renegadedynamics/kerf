@@ -14722,7 +14722,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        correction; the pipe gave up with ImpossibleContact on most 3D paths. The result is ignored, as the other `Init`s
        do. Test: on a 3D B-spline path the surface's iso at the end is the iso at the start scaled by 2 about the path's
        end (the sections' radii are 1 and 2). The sweep recordings' pipe-2sect (27 of 30; native ImpossibleContact)
-       move to the third level.
+       move to the third level. The corpus case bugs/modalg_7/bug31361, whose script requires tuyau's "cannot make a
+       surface", gets Draw-lite's first override of an OCCT reference (plan 3.3; `DrawCorpus.IntendedDifferences`): the
+       pipe is built. Its sections lie in the path's plane, not across it, so the surface's approximation error is 301;
+       GeomFill_Pipe reports its error and leaves the judgement to the caller, as its other constructions do.
 16510. **ShapeCustom_SweptToElementary handles the modifier's null face and faces not swept** (rows 1389, 1390).
        `NewCurve2d` read the surface of the null face BRepTools_Modifier passes when it asks whether to copy an edge's
        vertices, and the swept surface of a face that has none; both now skip the pcurve's shift, which applies only to
