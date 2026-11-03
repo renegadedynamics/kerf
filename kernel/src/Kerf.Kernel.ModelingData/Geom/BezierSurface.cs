@@ -2068,22 +2068,22 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The U knots of the equivalent B-spline surface: (0, 1).</summary>
-    public PackedList<double> UKnots() => InternalUKnots().ToPackedList();
+    public IReadOnlyList<double> UKnots() => InternalUKnots().ToPackedList();
 
     /// <summary>The V knots of the equivalent B-spline surface: (0, 1).</summary>
-    public PackedList<double> VKnots() => InternalVKnots().ToPackedList();
+    public IReadOnlyList<double> VKnots() => InternalVKnots().ToPackedList();
 
     /// <summary>The U multiplicities of the equivalent B-spline surface: (UDegree + 1, UDegree + 1).</summary>
-    public PackedList<int> UMultiplicities() => InternalUMultiplicities().ToPackedList();
+    public IReadOnlyList<int> UMultiplicities() => InternalUMultiplicities().ToPackedList();
 
     /// <summary>The V multiplicities of the equivalent B-spline surface: (VDegree + 1, VDegree + 1).</summary>
-    public PackedList<int> VMultiplicities() => InternalVMultiplicities().ToPackedList();
+    public IReadOnlyList<int> VMultiplicities() => InternalVMultiplicities().ToPackedList();
 
     /// <summary>The U flat knots of the equivalent B-spline surface.</summary>
-    public PackedList<double> UKnotSequence() => InternalUKnotSequence().ToPackedList();
+    public IReadOnlyList<double> UKnotSequence() => InternalUKnotSequence().ToPackedList();
 
     /// <summary>The V flat knots of the equivalent B-spline surface.</summary>
-    public PackedList<double> VKnotSequence() => InternalVKnotSequence().ToPackedList();
+    public IReadOnlyList<double> VKnotSequence() => InternalVKnotSequence().ToPackedList();
 
     //=============================================================================================
     // Internal access to the stored arrays and non-mutating twins (OCCT.NET)

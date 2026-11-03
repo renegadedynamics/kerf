@@ -59,13 +59,13 @@ public class Geom_CurvePortTests
     public void Returned_arrays_are_copies()
     {
         BSplineCurve3D aC = Cubic(true);
-        PackedList<Point3D> aPoles = aC.Poles();
+        IReadOnlyList<Point3D> aPoles = aC.Poles();
         Assert.Equal(5, aPoles.Count);
         Assert.Equal(aC.Pole(2), aPoles[1]);
-        PackedList<double>? aWeights = aC.Weights();
+        IReadOnlyList<double>? aWeights = aC.Weights();
         Assert.NotNull(aWeights);
         Assert.Equal(2.0, aWeights[1]);
-        Assert.Equal(new[] { 4, 1, 4 }, aC.Multiplicities().AsSpan().ToArray());
+        Assert.Equal(new[] { 4, 1, 4 }, aC.Multiplicities().ToArray());
         Assert.Equal(9, aC.KnotSequence().Count);
 
         BSplineCurve3D aChanged = aC.WithPole(2, new Point3D(9, 9, 9));

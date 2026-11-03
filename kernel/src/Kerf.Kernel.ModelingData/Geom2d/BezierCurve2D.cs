@@ -585,7 +585,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public PackedList<Point2D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles() => _poles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
@@ -628,13 +628,13 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), or null if the curve is not rational (OCCT's <c>BSplCLib::NoWeights()</c>).</summary>
-    public PackedList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
+    public IReadOnlyList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
     internal NCollection_Array1<double>? InternalWeights() => _rational ? _weights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights();
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
-    public PackedList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
@@ -681,13 +681,13 @@ public class BezierCurve2D : BoundedCurve2D
     public sealed override Geometry2D Copy() => new BezierCurve2D(this);
 
     /// <summary>The knots {0, 1} of the curve seen as a B-spline (a copy).</summary>
-    public PackedList<double> Knots() => InternalKnots().ToPackedList();
+    public IReadOnlyList<double> Knots() => InternalKnots().ToPackedList();
 
     /// <summary>The multiplicities {Degree() + 1, Degree() + 1} of the curve seen as a B-spline (a copy).</summary>
-    public PackedList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
+    public IReadOnlyList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
 
     /// <summary>The flat knots of the curve seen as a B-spline: Degree() + 1 zeros then Degree() + 1 ones (a copy).</summary>
-    public PackedList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
+    public IReadOnlyList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
 
     private static readonly NCollection_Array1<double> THE_KNOTS = NCollection_Array1<double>.From([0.0, 1.0]);
 

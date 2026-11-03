@@ -618,7 +618,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The poles (a copy; index 0 is pole 1).</summary>
-    public PackedList<Point3D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point3D> Poles() => _poles.ToPackedList();
 
     /// <summary>The weight of the pole Index (1 for a non-rational curve).</summary>
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
@@ -661,10 +661,10 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The weights (a copy), or null for a non-rational curve (OCCT returns a null pointer).</summary>
-    public PackedList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
+    public IReadOnlyList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
 
     /// <summary>The weights, always NbPoles of them (1s for a non-rational curve); a copy.</summary>
-    public PackedList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
 
     /// <summary>Applies T to the poles.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -797,13 +797,13 @@ public class BezierCurve3D : BoundedCurve3D
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
 
     /// <summary>The Bezier knots {0, 1} (a copy).</summary>
-    public PackedList<double> Knots() => THE_KNOTS.ToPackedList();
+    public IReadOnlyList<double> Knots() => THE_KNOTS.ToPackedList();
 
     /// <summary>The Bezier multiplicities {Degree + 1, Degree + 1} (a copy).</summary>
-    public PackedList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
+    public IReadOnlyList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
 
     /// <summary>The Bezier flat knots (a copy).</summary>
-    public PackedList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
+    public IReadOnlyList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
 
     // Non-mutating twins (OCCT.NET)
 

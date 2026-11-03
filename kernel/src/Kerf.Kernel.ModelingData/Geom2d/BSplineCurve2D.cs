@@ -1707,7 +1707,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The knots (a copy; OCCT returns a reference to its array).</summary>
-    public PackedList<double> Knots() => _knots.ToPackedList();
+    public IReadOnlyList<double> Knots() => _knots.ToPackedList();
 
     /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnots() => _knots;
@@ -1725,7 +1725,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The flat knots, each knot repeated by its multiplicity (a copy).</summary>
-    public PackedList<double> KnotSequence() => _flatKnots.ToPackedList();
+    public IReadOnlyList<double> KnotSequence() => _flatKnots.ToPackedList();
 
     /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnotSequence() => _flatKnots;
@@ -1901,7 +1901,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The multiplicities (a copy).</summary>
-    public PackedList<int> Multiplicities() => _mults.ToPackedList();
+    public IReadOnlyList<int> Multiplicities() => _mults.ToPackedList();
 
     /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<int> InternalMultiplicities() => _mults;
@@ -1929,7 +1929,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public PackedList<Point2D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles() => _poles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
@@ -1984,7 +1984,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), or null if the curve is not rational (OCCT's <c>BSplCLib::NoWeights()</c>).</summary>
-    public PackedList<double>? Weights() => IsRational ? _weights.ToPackedList() : null;
+    public IReadOnlyList<double>? Weights() => IsRational ? _weights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
     internal NCollection_Array1<double>? InternalWeights()
@@ -1997,7 +1997,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
-    public PackedList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;

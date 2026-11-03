@@ -396,7 +396,7 @@ internal static class GeometryTestCurveCommands
         theImax = 0;
 
         // take knots
-        PackedList<double> aKnots = thePnts.Knots();
+        IReadOnlyList<double> aKnots = thePnts.Knots();
         int nbp = aKnots.Count;
 
         for (int i = 1; i < nbp; ++i)

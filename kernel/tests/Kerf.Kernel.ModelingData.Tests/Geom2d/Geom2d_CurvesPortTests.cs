@@ -369,18 +369,18 @@ public class Geom2d_CurvesPortTest
     {
         BSplineCurve2D aCurve = RationalBSpline();
 
-        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
-        Assert.Equal(aCurve.InternalKnots().AsSpan().ToArray(), aCurve.Knots().AsSpan().ToArray());
-        Assert.Equal(aCurve.InternalMultiplicities().AsSpan().ToArray(), aCurve.Multiplicities().AsSpan().ToArray());
-        Assert.Equal(aCurve.InternalKnotSequence().AsSpan().ToArray(), aCurve.KnotSequence().AsSpan().ToArray());
-        PackedList<double>? aWeights = aCurve.Weights();
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().ToArray());
+        Assert.Equal(aCurve.InternalKnots().AsSpan().ToArray(), aCurve.Knots().ToArray());
+        Assert.Equal(aCurve.InternalMultiplicities().AsSpan().ToArray(), aCurve.Multiplicities().ToArray());
+        Assert.Equal(aCurve.InternalKnotSequence().AsSpan().ToArray(), aCurve.KnotSequence().ToArray());
+        IReadOnlyList<double>? aWeights = aCurve.Weights();
         Assert.NotNull(aWeights);
-        Assert.Equal(aCurve.InternalWeights()!.AsSpan().ToArray(), aWeights.AsSpan().ToArray());
-        Assert.Equal(aCurve.InternalWeightsArray().AsSpan().ToArray(), aCurve.WeightsArray().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalWeights()!.AsSpan().ToArray(), aWeights.ToArray());
+        Assert.Equal(aCurve.InternalWeightsArray().AsSpan().ToArray(), aCurve.WeightsArray().ToArray());
 
         // A later internal change doesn't reach a list handed out before it
-        PackedList<Point2D> aPoles = aCurve.Poles();
-        PackedList<double> aKnots = aCurve.Knots();
+        IReadOnlyList<Point2D> aPoles = aCurve.Poles();
+        IReadOnlyList<double> aKnots = aCurve.Knots();
         aCurve.SetPole(2, new Point2D(42, 42));
         aCurve.SetKnot(2, 1.25);
         Assert.Equal(new Point2D(1, 2), aPoles[1]);
@@ -391,7 +391,7 @@ public class Geom2d_CurvesPortTest
         BSplineCurve2D aPlain = CubicBSpline();
         Assert.Null(aPlain.Weights());
         Assert.Null(aPlain.InternalWeights());
-        Assert.All(aPlain.WeightsArray().AsSpan().ToArray(), w => Assert.Equal(1.0, w));
+        Assert.All(aPlain.WeightsArray().ToArray(), w => Assert.Equal(1.0, w));
         Assert.Equal(aPlain.PoleCount, aPlain.WeightsArray().Count);
     }
 
@@ -400,14 +400,14 @@ public class Geom2d_CurvesPortTest
     {
         BezierCurve2D aCurve = new BezierCurve2D(Arr(new Point2D(0, 0), new Point2D(1, 1), new Point2D(2, 0)),
                                                            Arr(1.0, 2.0, 1.0));
-        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().AsSpan().ToArray());
-        Assert.Equal(new[] { 0.0, 1.0 }, aCurve.Knots().AsSpan().ToArray());
-        Assert.Equal(new[] { 3, 3 }, aCurve.Multiplicities().AsSpan().ToArray());
-        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, aCurve.KnotSequence().AsSpan().ToArray());
-        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.Weights()!.AsSpan().ToArray());
-        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.WeightsArray().AsSpan().ToArray());
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().ToArray());
+        Assert.Equal(new[] { 0.0, 1.0 }, aCurve.Knots().ToArray());
+        Assert.Equal(new[] { 3, 3 }, aCurve.Multiplicities().ToArray());
+        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, aCurve.KnotSequence().ToArray());
+        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.Weights()!.ToArray());
+        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.WeightsArray().ToArray());
 
-        PackedList<Point2D> aPoles = aCurve.Poles();
+        IReadOnlyList<Point2D> aPoles = aCurve.Poles();
         aCurve.SetPole(2, new Point2D(5, 5));
         Assert.Equal(new Point2D(1, 1), aPoles[1]);
 

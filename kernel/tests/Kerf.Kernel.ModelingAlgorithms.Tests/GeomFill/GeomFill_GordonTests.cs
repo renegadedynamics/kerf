@@ -26,8 +26,8 @@ public class GeomFill_GordonTests
     }
 
     private static string Snapshot(BSplineCurve3D theCurve) =>
-        string.Join(";", theCurve.Poles().AsSpan().ToArray().Select(p => p.ToString()))
-        + "|" + string.Join(";", theCurve.Knots().AsSpan().ToArray()) + "|" + theCurve.Degree() + "|" + theCurve.IsPeriodic;
+        string.Join(";", theCurve.Poles().ToArray().Select(p => p.ToString()))
+        + "|" + string.Join(";", theCurve.Knots().ToArray()) + "|" + theCurve.Degree() + "|" + theCurve.IsPeriodic;
 
     [Fact]
     public void CompactParameters_sorts_and_merges_values_within_the_resolution()

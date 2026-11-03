@@ -80,7 +80,7 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
 
         using (N.TColStd_Array1OfReal aNK = theN.VKnotSequence())
         {
-            PackedList<double> aK = theP.VKnotSequence();
+            IReadOnlyList<double> aK = theP.VKnotSequence();
             theOracle.Same(aNK.Length(), aK.Count, theWhat + " VKnotSequence length");
             for (int k = 0; k < aK.Count; k++)
             {

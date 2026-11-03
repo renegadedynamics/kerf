@@ -268,7 +268,7 @@ public class Geom2d_BezierCurve_Test
     public void PolesAccess()
     {
         // OCCT returns a reference to its array; the port returns a PackedList (indexed from 0)
-        PackedList<Point2D> aPoles = myOriginalCurve.Poles();
+        IReadOnlyList<Point2D> aPoles = myOriginalCurve.Poles();
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point2D(0, 0), 1e-10));
     }
@@ -276,7 +276,7 @@ public class Geom2d_BezierCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        PackedList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
         Assert.Null(aWeights);
     }
 

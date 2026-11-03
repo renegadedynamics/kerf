@@ -361,13 +361,13 @@ public class Geom_BSplineCurve_Test
         Assert.Equal(2, myOriginalCurve.LastUKnotIndex());
 
         // The public arrays are immutable copies indexed from 0 (OCCT: references indexed from 1)
-        PackedList<double> aKnots = myOriginalCurve.Knots();
+        IReadOnlyList<double> aKnots = myOriginalCurve.Knots();
         Assert.Equal(2, aKnots.Count);
 
-        PackedList<double> aFlatKnots = myOriginalCurve.KnotSequence();
+        IReadOnlyList<double> aFlatKnots = myOriginalCurve.KnotSequence();
         Assert.Equal(8, aFlatKnots.Count);
 
-        PackedList<int> aMults = myOriginalCurve.Multiplicities();
+        IReadOnlyList<int> aMults = myOriginalCurve.Multiplicities();
         Assert.Equal(2, aMults.Count);
         Assert.Equal(4, aMults[0]);
         Assert.Equal(4, aMults[1]);
@@ -376,7 +376,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void PolesAccess()
     {
-        PackedList<Point3D> aPoles = myOriginalCurve.Poles();
+        IReadOnlyList<Point3D> aPoles = myOriginalCurve.Poles();
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point3D(0, 0, 0), 1e-10));
     }
@@ -384,7 +384,7 @@ public class Geom_BSplineCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        PackedList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
         Assert.Null(aWeights);
         Assert.Null(myOriginalCurve.InternalWeights());
     }
@@ -393,7 +393,7 @@ public class Geom_BSplineCurve_Test
     public void WeightsAccess_Rational()
     {
         BSplineCurve3D aCurve = RationalQuadratic(2.0);
-        PackedList<double>? aW = aCurve.Weights();
+        IReadOnlyList<double>? aW = aCurve.Weights();
         Assert.NotNull(aW);
         Assert.Equal(2.0, aW[1]);
         Assert.Equal(2.0, aCurve.InternalWeights()![2]);
@@ -563,7 +563,7 @@ public class Geom_BSplineCurve_Test
         }
         // Verify that the reference is stable
         Assert.Same(aWeights, myOriginalCurve.InternalWeightsArray());
-        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.WeightsArray().AsSpan().ToArray());
+        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.WeightsArray().ToArray());
     }
 
     [Fact]
@@ -583,6 +583,6 @@ public class Geom_BSplineCurve_Test
         Assert.Equal(1.0, aWeights[4]);
         // Verify that the reference is stable
         Assert.Same(aWeights, aRational.InternalWeightsArray());
-        Assert.Equal([1.0, 2.0, 3.0, 1.0], aRational.WeightsArray().AsSpan().ToArray());
+        Assert.Equal([1.0, 2.0, 3.0, 1.0], aRational.WeightsArray().ToArray());
     }
 }

@@ -224,8 +224,8 @@ internal static class Geom2dOracle
         using (var aNPoles = theNative.Poles())
         using (var aNWeights = theNative.WeightsArray())
         {
-            PackedList<Point2D> aPoles = thePort.Poles();
-            PackedList<double> aWeights = thePort.WeightsArray();
+            IReadOnlyList<Point2D> aPoles = thePort.Poles();
+            IReadOnlyList<double> aWeights = thePort.WeightsArray();
             for (int i = 1; i <= thePort.PoleCount; i++)
             {
                 using var aNP = aNPoles.Value(i);
@@ -240,8 +240,8 @@ internal static class Geom2dOracle
         using (var aNKnots = theNative.Knots())
         using (var aNMults = theNative.Multiplicities())
         {
-            PackedList<double> aKnots = thePort.Knots();
-            PackedList<int> aMults = thePort.Multiplicities();
+            IReadOnlyList<double> aKnots = thePort.Knots();
+            IReadOnlyList<int> aMults = thePort.Multiplicities();
             for (int i = 1; i <= thePort.KnotCount; i++)
             {
                 theOracle.Same(aNKnots.Value(i), aKnots[i - 1], $"{theWhat} Knots({i})");
@@ -253,7 +253,7 @@ internal static class Geom2dOracle
 
         using (var aNSeq = theNative.KnotSequence())
         {
-            PackedList<double> aSeq = thePort.KnotSequence();
+            IReadOnlyList<double> aSeq = thePort.KnotSequence();
             theOracle.Same(aNSeq.Length(), aSeq.Count, $"{theWhat} KnotSequence length");
             theOracle.Same(aNSeq.Lower(), thePort.InternalKnotSequence().Lower(), $"{theWhat} KnotSequence lower");
             for (int i = 0; i < aSeq.Count; i++)

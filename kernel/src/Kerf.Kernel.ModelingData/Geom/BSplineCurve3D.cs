@@ -1634,7 +1634,7 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>The knots (a copy; index 0 is knot 1).</summary>
-    public PackedList<double> Knots() => _knots.ToPackedList();
+    public IReadOnlyList<double> Knots() => _knots.ToPackedList();
 
     /// <summary>Copies the flat knots K.Lower() to K.Upper() into K (OCCT's deprecated overload).</summary>
     /// <exception cref="DomainErrorException">K's bounds are outside the knot sequence's.</exception>
@@ -1649,7 +1649,7 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>The knots repeated by their multiplicities (a copy).</summary>
-    public PackedList<double> KnotSequence() => _flatKnots.ToPackedList();
+    public IReadOnlyList<double> KnotSequence() => _flatKnots.ToPackedList();
 
     /// <summary>The index of the knot giving the last parameter (NbKnots for a periodic curve).</summary>
     public int LastUKnotIndex()
@@ -1805,7 +1805,7 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>The multiplicities (a copy; index 0 is knot 1's).</summary>
-    public PackedList<int> Multiplicities() => _mults.ToPackedList();
+    public IReadOnlyList<int> Multiplicities() => _mults.ToPackedList();
 
     public int KnotCount => _knots.Length();
 
@@ -1828,7 +1828,7 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>The poles (a copy; index 0 is pole 1).</summary>
-    public PackedList<Point3D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point3D> Poles() => _poles.ToPackedList();
 
     /// <summary>The start point: the first pole when the first multiplicity is Degree + 1.</summary>
     public sealed override Point3D StartPoint()
@@ -1879,10 +1879,10 @@ public class BSplineCurve3D : BoundedCurve3D
     }
 
     /// <summary>The weights (a copy), or null for a non-rational curve (OCCT returns a null pointer).</summary>
-    public PackedList<double>? Weights() => IsRational ? _weights.ToPackedList() : null;
+    public IReadOnlyList<double>? Weights() => IsRational ? _weights.ToPackedList() : null;
 
     /// <summary>The weights, always NbPoles of them (1s for a non-rational curve); a copy.</summary>
-    public PackedList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
 
     public bool IsRational => _rational;
 

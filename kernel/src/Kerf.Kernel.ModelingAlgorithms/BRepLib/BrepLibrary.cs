@@ -1383,7 +1383,7 @@ public static partial class BrepLibrary
                                 || Math.Abs(originPoint.Y() - newOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
 
-                                PackedList<double> knotbs2d = bs2d.Knots();
+                                IReadOnlyList<double> knotbs2d = bs2d.Knots();
 
                                 for (int index = 1; index <= bs2d.KnotCount; index++)
                                 {
@@ -1432,7 +1432,7 @@ public static partial class BrepLibrary
                                         || Math.Abs(originPoint.Y() - newOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
 
-                                        PackedList<double> knotbs2d = bs2d.Knots();
+                                        IReadOnlyList<double> knotbs2d = bs2d.Knots();
 
                                         for (int index = 1; index <= bs2d.KnotCount; index++)
                                         {

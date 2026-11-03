@@ -126,7 +126,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
 
         using (N.TColStd_Array1OfReal aNSeq = theN.UKnotSequence())
         {
-            PackedList<double> aSeq = theP.UKnotSequence();
+            IReadOnlyList<double> aSeq = theP.UKnotSequence();
             theOracle.Same(aNSeq.Length(), aSeq.Count, theWhat + " UKnotSequence length");
             for (int i = 0; i < aSeq.Count; i++)
             {
@@ -136,7 +136,7 @@ public class Geom_BSplineSurfaceOracleTests(ITestOutputHelper output)
 
         using (N.TColStd_Array1OfReal aNSeq = theN.VKnotSequence())
         {
-            PackedList<double> aSeq = theP.VKnotSequence();
+            IReadOnlyList<double> aSeq = theP.VKnotSequence();
             theOracle.Same(aNSeq.Length(), aSeq.Count, theWhat + " VKnotSequence length");
             for (int i = 0; i < aSeq.Count; i++)
             {
