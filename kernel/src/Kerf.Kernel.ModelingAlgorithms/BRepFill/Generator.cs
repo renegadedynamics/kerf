@@ -29,10 +29,10 @@ namespace Kerf.Engine.Construction.Filling;
 /// <para>
 /// A working object (decision 21). As in OCCT, the faces are bounded by the sections' own edges: by default
 /// (<see cref="IsMutableInput"/> true) the algorithm gives them pcurves on the new faces, ranges, flags and tolerances
-/// in place. The wires a caller gives (whose TShapes are frozen) are therefore copied at <see cref="Perform"/>, all at
-/// once so that shared sub-shapes stay shared, and the caller's sub-shapes the construction left unchanged are given
-/// back in the shell (decision 936); the history answers for the caller's shapes. Unfrozen wires (ported callers:
-/// ThruSections, BRepProj_Projection) are used in place, as in OCCT.
+/// in place. <see cref="Perform"/> runs in a working overlay (unit 10H3): the writes into the caller's frozen wires go
+/// to working copies, and the shell holds the caller's sub-shapes wherever the construction left them unchanged; the
+/// history answers for the caller's shapes directly. Inside an operation's own overlay (ThruSections',
+/// BRepProj_Projection's) the writes are that operation's, as in OCCT.
 /// </para>
 /// <para>
 /// <see cref="Shell"/>, <see cref="Generated"/>, <see cref="GeneratedShapes"/> and <see cref="ResultShape"/> hand out
@@ -48,7 +48,7 @@ public sealed class Generator
     private readonly ReShape _reshaper = new();
     private bool _mutableInput;
     private ThruSectionErrorStatus _status;
-    private CopyAtEntry? _copy; // OCCT.NET: the copy of frozen sections (decision 936)
+    private WorkingOverlay? _overlay; // Kerf: the overlay the sections were written in, finished (unit 10H3)
 
     //=================================================================================================
 
@@ -598,42 +598,22 @@ public sealed class Generator
     /// <summary>Computes the shell.</summary>
     public void Perform()
     {
-        // OCCT.NET: the sections a caller holds are written into: copy them at once (decision 936)
-        _copy = null;
-        bool isFrozen = false;
-        for (int i = 1; i <= _wires.Length() && !isFrozen; i++)
-        {
-            isFrozen = BrepTools.HoldsFrozen(_wires.Value(i));
-        }
-        NCollection_Sequence<Shape> callerWires = _wires;
-        if (isFrozen)
-        {
-            BrepBuilder b = new();
-            Compound holder = new();
-            b.MakeCompound(ref holder);
-            for (int i = 1; i <= _wires.Length(); i++)
-            {
-                b.Add(holder, _wires.Value(i));
-            }
-            _copy = new CopyAtEntry(holder);
-            callerWires = new NCollection_Sequence<Shape>(_wires);
-            int k = 1;
-            for (Iterator it = new(_copy.Shape(), false, false); it.More(); it.Next(), k++)
-            {
-                _wires.ChangeValue(k) = it.Value();
-            }
-        }
+        // Kerf: the sections a caller holds are written into: in a working overlay (unit 10H3), unless the generator
+        // runs inside an operation's own (ThruSections'), whose writes these are and which reads them back
+        _overlay = null;
+        WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
         try
         {
             PerformCore();
         }
         finally
         {
-            if (_copy is not null)
+            if (overlay is not null)
             {
-                // the sections are the caller's again; the shell holds its unchanged sub-shapes
-                _shell = ShapeCasts.Shell(_copy.Finish(_shell));
-                _wires.Assign(callerWires);
+                // the shell holds the caller's sub-shapes the construction left unchanged
+                _shell = ShapeCasts.Shell(overlay.Finish(_shell));
+                _overlay = overlay;
+                overlay.Dispose();
             }
         }
     }
@@ -1225,10 +1205,9 @@ public sealed class Generator
     /// <summary>The algorithm's own list behind <see cref="GeneratedShapes"/>, for ported callers.</summary>
     internal NCollection_List<Shape> InternalGeneratedShapes(in Shape sSection)
     {
-        Shape key = _copy is null ? sSection : _copy.Copied(sSection);
-        if (_map.IsBound(key))
+        if (_map.IsBound(sSection))
         {
-            return _map.Find(key);
+            return _map.Find(sSection);
         }
         else
         {
@@ -1243,14 +1222,14 @@ public sealed class Generator
         int i = 0;
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> it in _map)
         {
-            Shape key = _copy is null ? it.Key : _copy.Original(it.Key);
+            Shape key = it.Key;
             key.TShape()?.FreezeGraph();
             pairs[i++] = new KeyValuePair<Shape, ISchematiqList<Shape>>(key, Published(it.Value));
         }
         return PackedList.Own(pairs);
     }
 
-    /// <summary>The algorithm's own map behind <see cref="Generated"/> (on the copies when the sections were copied).</summary>
+    /// <summary>The algorithm's own map behind <see cref="Generated"/>.</summary>
     internal NCollection_DataMap<Shape, NCollection_List<Shape>> InternalGenerated() => _map;
 
     private static ISchematiqList<Shape> Published(NCollection_List<Shape> list)
@@ -1286,11 +1265,8 @@ public sealed class Generator
     /// <summary><see cref="ResultShape"/> without freezing, for ported callers.</summary>
     internal Shape InternalResultShape(in Shape shape)
     {
-        if (_copy is null)
-        {
-            return ResultShapeCore(shape);
-        }
-        return _copy.Final(ResultShapeCore(_copy.Copied(shape)));
+        Shape result = ResultShapeCore(shape);
+        return _overlay is null ? result : _overlay.Final(result);
     }
 
     private Shape ResultShapeCore(in Shape shape)
@@ -1309,7 +1285,7 @@ public sealed class Generator
 
     /// <summary>
     /// Sets the mutable input state: when true (the default), the sections' edges are given the pcurves and ranges
-    /// on the new faces in place (on copies of a caller's frozen sections); when false, on copies of them.
+    /// on the new faces in place (in a working overlay for a caller's frozen sections); when false, on copies of them.
     /// </summary>
     public void SetMutableInput(bool isMutableInput)
     {

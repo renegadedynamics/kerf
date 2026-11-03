@@ -424,11 +424,11 @@ public sealed class AdvancedEvolved
             _fuzzyValue = tolerance;
         }
 
-        // OCCT.NET: frozen inputs are copied at the entry (decision 1047).
-        CopyAtEntry spineEntry = new(spine);
-        CopyAtEntry profileEntry = new(profile);
+        // Kerf: the algorithm writes into the caller's spine and profile in a working overlay (unit 10H3, in place of
+        // decision 1047's copies)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
 
-        GetSpineAndProfile(ShapeCasts.Wire(spineEntry.Shape()), ShapeCasts.Wire(profileEntry.Shape()));
+        GetSpineAndProfile(spine, profile);
 
         _pipeShell = new Shape();
         _topBottom = new Compound();
@@ -482,8 +482,11 @@ public sealed class AdvancedEvolved
         }
         finally
         {
-            // OCCT.NET: the caller's sub-shapes left unchanged stand in the result again.
-            _result = profileEntry.Finish(spineEntry.Finish(_result));
+            // Kerf: the result holds the caller's sub-shapes wherever the algorithm left them unchanged
+            if (overlay is not null)
+            {
+                _result = overlay.Finish(_result);
+            }
         }
     }
 

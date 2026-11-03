@@ -37,10 +37,10 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>
 /// OCCT's loft writes into the sections it is given: pcurves, ranges and flags into their edges, tolerances into their
 /// vertices (by default, <see cref="IsMutableInput"/> true). The sections a caller gives (whose TShapes are frozen)
-/// are copied at <see cref="Build"/>, all at once so that the sub-shapes they share stay shared; the result holds the
-/// caller's sub-shapes wherever the loft left them unchanged, and the history (<see cref="MakeShape.Generated"/>,
-/// <see cref="GeneratedFace"/>) answers for the caller's edges and vertices (decision 937). The caller's shapes are
-/// never written.
+/// are written into in a working overlay at <see cref="Build"/> (unit 10H3); the result holds the caller's sub-shapes
+/// wherever the loft left them unchanged, and the history (<see cref="MakeShape.Generated"/>,
+/// <see cref="GeneratedFace"/>) answers for the caller's edges and vertices directly. The caller's shapes are never
+/// written.
 /// </para>
 /// <para>
 /// The result, <see cref="FirstShape"/>, <see cref="LastShape"/>, <see cref="GeneratedFace"/> and the history are
@@ -72,7 +72,7 @@ public class ThruSections : MakeShape
     private bool _mutableInput;
     private Generator? _bfGenerator;
     private ThruSectionErrorStatus _status;
-    private CopyAtEntry? _copy; // OCCT.NET: the copy of frozen sections (decision 937)
+    private WorkingOverlay? _overlay; // Kerf: the overlay the sections were written in, finished (unit 10H3)
 
     //=======================================================================
     // function : PreciseUpar
@@ -309,6 +309,12 @@ public class ThruSections : MakeShape
         bb.MakeWire(ref degWire);
         bb.Add(degWire, degEdge);
         degWire.Closed(true);
+        if (aVertex.TShape()!.IsFrozen)
+        {
+            // Kerf: the point section of a caller's vertex is the caller's too (unit 10H3): frozen, so the loft's
+            // writes into its edge go to the working overlay and the section Wires() hands out stays as it was given
+            degWire.TShape()!.FreezeGraph();
+        }
 
         _sections.Append(degWire);
         _inputWires.Append(degWire);
@@ -330,52 +336,33 @@ public class ThruSections : MakeShape
     /// <summary>Builds the loft.</summary>
     public override void Build(ProgressRange range = default)
     {
-        // OCCT.NET: the working sections are the caller's, copied at once when they hold frozen shapes (decision 937)
-        _copy = null;
+        // Kerf: the working sections are the caller's, written into in a working overlay (unit 10H3)
+        _overlay = null;
         _wires = new NCollection_Sequence<Shape>(_sections);
-        bool isFrozen = false;
-        for (int k = 1; k <= _wires.Length() && !isFrozen; k++)
-        {
-            isFrozen = BrepTools.HoldsFrozen(_wires.Value(k));
-        }
-        if (isFrozen)
-        {
-            BrepBuilder b = new();
-            Compound holder = new();
-            b.MakeCompound(ref holder);
-            for (int k = 1; k <= _wires.Length(); k++)
-            {
-                b.Add(holder, _wires.Value(k));
-            }
-            _copy = new CopyAtEntry(holder);
-            int j = 1;
-            for (Iterator it = new(_copy.Shape(), false, false); it.More(); it.Next(), j++)
-            {
-                _wires.ChangeValue(j) = it.Value();
-            }
-        }
         _first = new Face();
         _last = new Face();
         _shape = new Shape();
 
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
         try
         {
             BuildCore();
         }
         finally
         {
-            if (_copy is not null)
+            if (overlay is not null)
             {
-                // the result holds the caller's sub-shapes the loft left unchanged; so do the working sections, whose
-                // edges keep sharing their vertices with the result's (Generated reads them)
+                // the result holds the caller's sub-shapes the loft left unchanged; so do the working sections,
+                // whose edges keep sharing their vertices with the result's (Generated reads them)
                 List<Shape> others = [_first, _last];
                 for (int k = 1; k <= _wires.Length(); k++)
                 {
                     others.Add(_wires.Value(k));
                 }
-                _shape = _copy.Finish(_shape, others);
-                _first = ShapeCasts.Face(_copy.Final(_first));
-                _last = ShapeCasts.Face(_copy.Final(_last));
+                _shape = overlay.Finish(_shape, others);
+                _first = ShapeCasts.Face(overlay.Final(_first));
+                _last = ShapeCasts.Face(overlay.Final(_last));
+                _overlay = overlay;
             }
         }
     }
@@ -1383,13 +1370,10 @@ public class ThruSections : MakeShape
         return shape;
     }
 
-    // OCCT.NET: a shape of the caller as the loft worked on it (its copy), and a shape the loft worked on as it stands
-    // in the result (the caller's own where the loft left it unchanged), decision 937
-    private Shape Working(in Shape shape) => _copy is null ? shape : _copy.Copied(shape);
+    // Kerf: a shape the loft worked on (the caller's own) as it stands in the result (unit 10H3)
+    private Shape Final(in Shape shape) => _overlay is null ? shape : _overlay.Final(shape);
 
-    private Shape Final(in Shape shape) => _copy is null ? shape : _copy.Final(shape);
-
-    private Shape ResultShape(in Shape shape) => Final(_bfGenerator!.InternalResultShape(Working(shape)));
+    private Shape ResultShape(in Shape shape) => Final(_bfGenerator!.InternalResultShape(shape));
 
     private protected override void BeforePublishingLists() => _shape.TShape()?.FreezeGraph();
 
@@ -1410,8 +1394,8 @@ public class ThruSections : MakeShape
             allFaces.Append(explo.Current());
         }
 
-        Shape sw = Working(s); // OCCT.NET: the key of the maps
-        Shape sf = Final(sw);  // OCCT.NET: as it stands in the result
+        Shape sw = s;         // the key of the maps
+        Shape sf = Final(sw); // Kerf: as it stands in the result
 
         if (s.ShapeType() == ShapeType.Edge)
         {
@@ -1540,9 +1524,9 @@ public class ThruSections : MakeShape
                                 wireSection = ResultShape(_wires.Value(indOfSec));
                             }
                             Exploration.MapShapes(wireSection, ShapeType.Edge, emapOfSection);
-                            if (_copy is not null)
+                            if (_overlay is not null)
                             {
-                                // OCCT.NET: the section's edges as they stand in the result
+                                // Kerf: the section's edges as they stand in the result
                                 NCollection_IndexedMap<Shape> finalEdges = new(ShapeHasher.Instance);
                                 for (int e = 1; e <= emapOfSection.Extent(); e++)
                                 {
@@ -1697,7 +1681,7 @@ public class ThruSections : MakeShape
     internal Shape InternalGeneratedFace(in Shape edge)
     {
         Shape bid = new();
-        Shape key = Working(edge);
+        Shape key = edge;
         if (_edgeFace.IsBound(key))
         {
             return _edgeFace.Find(key);
