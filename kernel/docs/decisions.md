@@ -14702,3 +14702,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        as it does pairs given directly (`FilSpine.LawSamples`; IinC unused, as in OCCT). `TheEvolvingRadii` checks the
        fillets against the volume they remove, (1 − π/4)·∫r² along the edge: a linear law within 0.01, a sine law within
        0.5. OCCT's own linear `Add(R1, R2, E)` differs from that integral by 0.18, as before.
+16507. **MakeFilling's continuities map to the plate's orders** (row 1240). BRepFill_Filling passed the GeomAbs_Shape
+       value as the plate's order: C1 (2) gave a G2 constraint and G2 (3) threw "The continuity is not G0 G1 or G2".
+       Now C0 is order 0, G1 and C1 are 1, G2 and above are 2, for edge constraints and for point constraints on faces
+       (`Add(u, v, face, order)`, the same mistake). Test: a half cylinder's filling for G1, C1, G2 and C2, its G0 and
+       G1 errors small, C1 the same face as G1, C2 as G2, G2 a different face. The MakeFilling oracle's cases with a C1,
+       G2 or C2 constraint move to the third level (their differences counted as intended). build123d.NET's
+       `MakeSurfacePatch` already mapped its C2 level to G2, which now builds; nothing there to remove. Its test patch
+       at C2 is valid and bounded by the same edges, but bulges (area 282 against 153 at C1): an order-2 plate against
+       ruled supports, worth a look when the modelling layer's patch is reviewed (10M).
