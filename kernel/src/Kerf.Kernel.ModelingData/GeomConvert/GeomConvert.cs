@@ -1573,19 +1573,19 @@ public static class GeomConvert
 
             newSurface.Segment(firstU, lastU, firstV, lastV);
 
-            // OCCT: a split in V tests the U periodicity and reverses U, where V is meant
-            if (s.IsUPeriodic)
+            // V's periodicity and V reversed (OCCT tested U's and reversed U; Kerf decision 1490)
+            if (s.IsVPeriodic)
             {
                 if (!sameOrientation)
                 {
-                    newSurface.UReverse();
+                    newSurface.VReverse();
                 }
             }
             else
             {
                 if (fromParam1 > toParam2)
                 {
-                    newSurface.UReverse();
+                    newSurface.VReverse();
                 }
             }
         }

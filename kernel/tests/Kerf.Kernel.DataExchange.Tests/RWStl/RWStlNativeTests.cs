@@ -327,6 +327,70 @@ public class RWStlNativeTests(ITestOutputHelper output)
         }
     }
 
+    // Plan 3.2's third level (occt-issues.md, RWStl::ReadStream; Kerf decision 1498): native read a stream as ASCII
+    // only if it started "solid", so a binary header starting "solid " (and ASCII data starting otherwise) gave NULL; the
+    // port recognises them as the file reader does, so its stream read is native's file read of the same data.
+    private static bool StreamRecognised(string thePort, string theNative, List<string> theNativeBlock)
+    {
+        if (theNative == "STREAM NULL" && thePort.StartsWith("STREAM ", StringComparison.Ordinal))
+        {
+            return theNativeBlock.Contains("FILE 90 " + thePort["STREAM ".Length..]);
+        }
+        if (theNative == "SHAPES FAIL" && thePort.StartsWith("SHAPES ", StringComparison.Ordinal))
+        {
+            return theNativeBlock.Contains("SHAPE " + thePort["SHAPES ".Length..]);
+        }
+        return false;
+    }
+
+    // The domains a block lists after MULTI, with the line that follows them
+    private static (List<string> Domains, int Next) Multi(List<string> theBlock)
+    {
+        int i = theBlock.FindIndex(l => l.StartsWith("MULTI ", StringComparison.Ordinal));
+        int n = int.Parse(theBlock[i]["MULTI ".Length..], CultureInfo.InvariantCulture);
+        return (theBlock.GetRange(i + 1, n), i + 1 + n);
+    }
+
+    private static int Triangles(string theTri) => int.Parse(theTri.Split(' ')[1], CultureInfo.InvariantCulture);
+
+    // Plan 3.2's third level (occt-issues.md, RWStl_Reader::Read, multi-domain ASCII; Kerf decision 1499): native lost
+    // the domains after the first in files under its 1 KB block, and after ws's blank run. The port reads more: native's
+    // domains are its first ones; the whole-file reads (FILE, READER, SHAPE) hold the domains' triangles together; the
+    // stream readers (one domain) are native's.
+    private static bool MoreDomains(List<string> thePort, List<string> theNative)
+    {
+        if (!thePort.Exists(l => l.StartsWith("MULTI ", StringComparison.Ordinal)) || !theNative.Exists(l => l.StartsWith("MULTI ", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+        (List<string> aPD, int aPNext) = Multi(thePort);
+        (List<string> aND, int aNNext) = Multi(theNative);
+        if (aPD.Count <= aND.Count || !aPD.GetRange(0, aND.Count).SequenceEqual(aND))
+        {
+            return false;
+        }
+        int aTris = aPD.Sum(Triangles);
+        foreach (string aLine in thePort.Take(3))
+        {
+            // FILE 90/45/0: one triangulation of every domain
+            if (!aLine.StartsWith("FILE ", StringComparison.Ordinal) || int.Parse(aLine.Split(' ')[3], CultureInfo.InvariantCulture) != aTris)
+            {
+                return false;
+            }
+        }
+        string[] aReader = thePort[aPNext].Split(' ');
+        if (aReader[0] != "READER" || int.Parse(aReader[3], CultureInfo.InvariantCulture) != aTris
+            || int.Parse(aReader[4], CultureInfo.InvariantCulture) != aPD.Count)
+        {
+            return false;
+        }
+        // the stream readers, as native's (SHAPE reads the whole file: its triangles differ)
+        List<string> aPRest = thePort.Skip(aPNext + 1).Where(l => !l.StartsWith("SHAPE ", StringComparison.Ordinal)).ToList();
+        List<string> aNRest = theNative.Skip(aNNext + 1).Where(l => !l.StartsWith("SHAPE ", StringComparison.Ordinal)).ToList();
+        return aPRest.Count == aNRest.Count
+               && aPRest.Zip(aNRest).All(p => p.First == p.Second || (p.Second == "THROW class Standard_OutOfMemory" && p.First == "BINS NULL"));
+    }
+
     [Fact]
     public void The_port_writes_and_reads_STL_as_native_OCCT()
     {
@@ -334,7 +398,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         string aScratch = Directory.CreateTempSubdirectory("p8h1-stl").FullName;
         try
         {
-            int aDerived = 0, aCompared = 0, anAbsent = 0, anAttributed = 0;
+            int aDerived = 0, aCompared = 0, anAbsent = 0, anAttributed = 0, anIntendedStream = 0, anIntendedDomains = 0;
             var aDifferent = new List<string>();
             foreach ((string aHead, List<string> aNative) in aBlocks)
             {
@@ -345,6 +409,11 @@ public class RWStlNativeTests(ITestOutputHelper output)
                     continue;
                 }
                 aCompared++;
+                if (MoreDomains(aPort, aNative))
+                {
+                    anIntendedDomains++;
+                    continue;
+                }
                 if (aPort.Count != aNative.Count)
                 {
                     aDifferent.Add($"{aHead}: {aPort.Count} lines, native {aNative.Count}");
@@ -362,10 +431,16 @@ public class RWStlNativeTests(ITestOutputHelper output)
                         anAttributed++;
                         continue;
                     }
+                    if (StreamRecognised(aPort[i], aNative[i], aNative))
+                    {
+                        anIntendedStream++;
+                        continue;
+                    }
                     aDifferent.Add($"{aHead}: port '{aPort[i]}', native '{aNative[i]}'");
                 }
             }
-            output.WriteLine($"{aCompared} blocks compared, {anAbsent} absent (no dataset), {anAttributed} attributed lines");
+            output.WriteLine($"{aCompared} blocks compared, {anAbsent} absent (no dataset), {anAttributed} attributed lines; "
+                             + $"intended differences: {anIntendedStream} lines read from streams, {anIntendedDomains} blocks with more domains");
             foreach (string aLine in aDifferent)
             {
                 output.WriteLine(aLine);
@@ -375,7 +450,10 @@ public class RWStlNativeTests(ITestOutputHelper output)
             if (Directory.Exists(OcctTestDataDir))
             {
                 Assert.Equal(0, anAbsent);
-                Assert.Equal(2, anAttributed);
+                // the second of decision 1170's two lines is in ws OMF6391_box.stl, a block with more domains now
+                Assert.Equal(1, anAttributed);
+                Assert.Equal(8, anIntendedStream);
+                Assert.Equal(5, anIntendedDomains);
             }
         }
         finally

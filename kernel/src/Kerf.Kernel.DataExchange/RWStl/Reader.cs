@@ -164,6 +164,17 @@ public abstract class Reader : Transient
                 {
                     break;
                 }
+
+                // the buffer reads ahead in blocks: the next domain starts where its lines end, not at the stream's
+                // position, which may be past it, or at the end (OCCT went on from there, so it lost the domains after
+                // the first in files under a block, and could join numbers at a block's end; Kerf decision 1499)
+                int anUnread = buffer.UnreadCount;
+                if (anUnread > 0)
+                {
+                    aStream.Clear();
+                    aStream.SeekG(aStream.TellG() - anUnread);
+                    buffer.Clear();
+                }
             }
             else
             {

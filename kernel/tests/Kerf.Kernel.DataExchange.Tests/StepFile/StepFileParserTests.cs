@@ -82,7 +82,10 @@ public class StepFileParserTests
     [InlineData("T.", "A 6 T.")]
     [InlineData("1.", "A 2 1.")]
     [InlineData("\"0f\"", "A 9 \"0f\"")]
-    [InlineData("'a' \t,'b')", "A 5 'a' \\x09,'b'")]
+    // a string ends at a quote followed by blanks, the tab among them, and ) or , (OCCT's class left the tab out, so
+    // the first ran on to the next quote: occt-issues.md, step.lex; Kerf decision 1512)
+    [InlineData("'a' \t,'b')", "A 5 'a'")]
+    [InlineData("'a'\t\r\n )", "A 5 'a'")]
     [InlineData("'a\0b'", "A 5 'a")]
     public void The_scanner_reproduces_OCCTs_rules(string theArg, string theFirstArg)
     {
@@ -108,14 +111,16 @@ public class StepFileParserTests
     }
 
     [Fact]
-    public void A_token_of_16384_bytes_throws_as_OCCTs_scanner_does()
+    public void Strings_and_names_of_any_length_are_read()
     {
-        // The string with its quotes, and the ')' the scanner looks at to end it: 16,383 bytes at most
-        string aShort = Head + "#1=A('" + new string('x', Scanner.MaxToken - 3) + "');\n" + Tail;
-        Assert.Equal(0, Parse(aShort).Result);
-        string aLong = Head + "#1=A('" + new string('x', Scanner.MaxToken - 2) + "');\n" + Tail;
-        FailureException anEx = Assert.Throws<FailureException>(() => Parse(aLong));
-        Assert.Equal("input buffer overflow, can't enlarge buffer because scanner uses REJECT", anEx.Message);
+        // OCCT's scanner failed on a token of 16,384 bytes or more ("input buffer overflow": occt-issues.md, step.lex;
+        // Kerf decision 1511): strings and names around that length and far beyond, past the buffer's first 256 KB
+        foreach (int aLength in new[] { 16380, 16381, 16382, 16383, 100_000, 600_000 })
+        {
+            string aText = Head + "#1=A('" + new string('x', aLength) + "',B" + new string('Y', aLength) + "(1));\n" + Tail;
+            Assert.Equal(0, Parse(aText).Result);
+            Assert.Contains("A 5 '" + new string('x', aLength) + "'", Lines(aText));
+        }
     }
 
     [Fact]

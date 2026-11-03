@@ -210,8 +210,15 @@ internal static class Geom2dOracle
                              theSpec.Degree,
                              theSpec.Periodic);
 
-    /// <summary>Compares the whole definition: degree, flags, poles, weights, knots, multiplicities, flat knots.</summary>
-    public static void SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat)
+    /// <summary>
+    /// Compares the whole definition: degree, flags, poles, weights, knots, multiplicities, flat knots. With
+    /// <paramref name="thePolesFromNative"/>, native's poles and weights aren't compared but read, with the same calls,
+    /// into a curve of the port's knots that the rest is compared with and that is returned: the curve native has,
+    /// for an edit whose result differs on purpose (plan 3.2's third level), so that later edits ask native what they
+    /// asked it when recorded.
+    /// </summary>
+    public static BSplineCurve2D SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat,
+                                               bool thePolesFromNative = false)
     {
         theOracle.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} Degree");
         theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
@@ -226,7 +233,27 @@ internal static class Geom2dOracle
         {
             IReadOnlyList<Point2D> aPoles = thePort.Poles();
             IReadOnlyList<double> aWeights = thePort.WeightsArray();
-            for (int i = 1; i <= thePort.PoleCount; i++)
+            if (thePolesFromNative)
+            {
+                var aNativePoles = new NCollection_Array1<Point2D>(1, thePort.PoleCount);
+                var aNativeWeights = new NCollection_Array1<double>(1, thePort.PoleCount);
+                for (int i = 1; i <= thePort.PoleCount; i++)
+                {
+                    using var aNP = aNPoles.Value(i);
+                    aNativePoles[i] = Oracle.FromNative(aNP);
+                    using var aNPi = theNative.Pole(i);
+                    theOracle.Same(aNativePoles[i].XY(), Oracle.FromNative(aNPi).XY(), $"{theWhat} Pole({i})");
+                    aNativeWeights[i] = aNWeights.Value(i);
+                    theOracle.Same(theNative.Weight(i), aNativeWeights[i], $"{theWhat} Weight({i})");
+                }
+                thePort = thePort.IsRational
+                              ? new BSplineCurve2D(aNativePoles, aNativeWeights, thePort.InternalKnots(), thePort.InternalMultiplicities(),
+                                                   thePort.Degree(), thePort.IsPeriodic)
+                              : new BSplineCurve2D(aNativePoles, thePort.InternalKnots(), thePort.InternalMultiplicities(),
+                                                   thePort.Degree(), thePort.IsPeriodic);
+                aPoles = [];
+            }
+            for (int i = 1; i <= aPoles.Count; i++)
             {
                 using var aNP = aNPoles.Value(i);
                 theOracle.Same(Oracle.FromNative(aNP), aPoles[i - 1].XY(), $"{theWhat} Pole({i})");
@@ -271,6 +298,7 @@ internal static class Geom2dOracle
         using var aNEnd = theNative.EndPoint();
         theOracle.Same(Oracle.FromNative(aNStart), thePort.StartPoint().XY(), $"{theWhat} StartPoint");
         theOracle.Same(Oracle.FromNative(aNEnd), thePort.EndPoint().XY(), $"{theWhat} EndPoint");
+        return thePort;
     }
 
     /// <summary>A random parameter in the curve's range (or slightly outside, for extrapolation).</summary>

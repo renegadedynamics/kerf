@@ -99,31 +99,27 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     // Queries
 
-    /// <summary>The first asymptote, meant to have direction X + (MinorRadius / MajorRadius) * Y.</summary>
+    /// <summary>The first asymptote, of direction X + (MinorRadius / MajorRadius) * Y.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
     public readonly Axis2D Asymptote1()
     {
         Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote1() - major radius is zero");
         Direction2D vdir = _pos.XDirection();
-        // OCCT builds the direction from the Y direction alone (Y + (b/a) Y), where gp_Hypr adds the X direction,
-        // so the result is along Y (docs/occt-issues.md); kept so results match OCCT
-        Xy coord1 = _pos.YDirection().XY();
-        Xy coord2 = coord1.Multiplied(_minorRadius / _majorRadius);
+        Xy coord1 = _pos.XDirection().XY();
+        Xy coord2 = _pos.YDirection().XY().Multiplied(_minorRadius / _majorRadius);
         coord1.Add(coord2);
         vdir = vdir.WithXY(coord1);
         return new Axis2D(_pos.Location(), vdir);
     }
 
-    /// <summary>The second asymptote, meant to have direction X - (MinorRadius / MajorRadius) * Y.</summary>
+    /// <summary>The second asymptote, of direction X - (MinorRadius / MajorRadius) * Y.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
     public readonly Axis2D Asymptote2()
     {
         Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote2() - major radius is zero");
         Vector2D vdir = new(_pos.XDirection());
-        // OCCT builds the direction from the Y direction alone (Y - (b/a) Y), where gp_Hypr adds the X direction,
-        // so the result is along Y, or throws when the radii are equal (docs/occt-issues.md); kept so results match OCCT
-        Xy coord1 = _pos.YDirection().XY();
-        Xy coord2 = coord1.Multiplied(-_minorRadius / _majorRadius);
+        Xy coord1 = _pos.XDirection().XY();
+        Xy coord2 = _pos.YDirection().XY().Multiplied(-_minorRadius / _majorRadius);
         coord1.Add(coord2);
         vdir = vdir.WithXY(coord1);
         return new Axis2D(_pos.Location(), new Direction2D(vdir));
@@ -198,16 +194,14 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         return new Axis2D(new Point2D(orig), _pos.YDirection());
     }
 
-    /// <summary>The second directrix.</summary>
+    /// <summary>The directrix on the negative side of the major axis, at distance MajorRadius / e from the centre.</summary>
     /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
     public readonly Axis2D Directrix2()
     {
         double e = Eccentricity();
         Xy orig = _pos.XDirection().XY();
-        // OCCT places it at Focus1 + (Parameter / e) X, where gp_Hypr uses Location - (MajorRadius / e) X
-        // (docs/occt-issues.md); kept so results match OCCT
-        orig.Multiply(Parameter() / e);
-        orig.Add(Focus1().XY());
+        orig.Multiply(-_majorRadius / e);
+        orig.Add(_pos.Location().XY());
         return new Axis2D(new Point2D(orig), _pos.YDirection());
     }
 

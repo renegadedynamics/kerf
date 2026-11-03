@@ -259,8 +259,9 @@ public class ShapeReader : ShapeSetBase
                                 Surface? surface = ReadSurface(stream);
                                 if (surface is not null)
                                 {
-                                    // OCCT: aParam is the second parameter written (see BinTools_ShapeWriter)
-                                    pr = new PointOnSurface(param, param2, surface, emptyLoc);
+                                    // the second parameter is written first (see BinTools_ShapeWriter; OCCT read it as the
+                                    // first)
+                                    pr = new PointOnSurface(param2, param, surface, emptyLoc);
                                 }
                             }
                                 break;

@@ -559,9 +559,8 @@ public static class ElSLib
         }
         else
         {
-            // OCCT: the odd/odd and even/even branches below never change sign, so the mixed derivatives with
-            // (Nu + Nv) % 4 == 0 (odd/odd, e.g. Nu = 1, Nv = 3) or (Nu + Nv) % 4 == 2 (even/even, e.g. Nu = 2,
-            // Nv = 4) come out reversed. The other orders, (1, 1) and (2, 2) among them, are right.
+            // the odd/odd and even/even branches change sign with (Nu + Nv) mod 4, as the others do (OCCT didn't, so
+            // (1, 3) and (2, 4) came out reversed; Kerf decision 1486)
             if (IsOdd(nu) && IsOdd(nv))
             {
                 double rSinV = minorRadius * Math.Sin(v);
@@ -580,6 +579,12 @@ public static class ElSLib
                 x = a1 * xDir.X() + a2 * yDir.X();
                 y = a1 * xDir.Y() + a2 * yDir.Y();
                 z = a1 * xDir.Z() + a2 * yDir.Z();
+                if ((nu + nv) % 4 == 0)
+                {
+                    x = -x;
+                    y = -y;
+                    z = -z;
+                }
             }
             else if (IsEven(nu) && IsEven(nv))
             {
@@ -599,6 +604,12 @@ public static class ElSLib
                 x = a1 * xDir.X() + a2 * yDir.X();
                 y = a1 * xDir.Y() + a2 * yDir.Y();
                 z = a1 * xDir.Z() + a2 * yDir.Z();
+                if ((nu + nv) % 4 == 2)
+                {
+                    x = -x;
+                    y = -y;
+                    z = -z;
+                }
             }
             else if (IsEven(nv) && IsOdd(nu))
             {

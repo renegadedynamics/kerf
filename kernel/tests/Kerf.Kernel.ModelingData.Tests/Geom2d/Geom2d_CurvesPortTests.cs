@@ -423,12 +423,12 @@ public class Geom2d_CurvesPortTest
     // (4) Reproductions of OCCT issues
 
     /// <summary>
-    /// occt-issues.md, Geom2d_OffsetCurveUtils::CalculateD3: the D2 it returns subtracts the Ndir term that
-    /// CalculateD2 adds, and its D3 has wrong DNdir and Ndir coefficients, so EvalD3 disagrees with EvalD2 (and with
-    /// the derivative of EvalD2) wherever the basis curve's speed varies. On a circle (constant speed) they agree.
+    /// occt-issues.md, Geom2d_OffsetCurveUtils::CalculateD3 and EvaluateDN (Kerf decision 1487): OCCT's EvalD3
+    /// disagreed with EvalD2 (and with the derivative of EvalD2) wherever the basis curve's speed varies. Now its D2 is
+    /// EvalD2's and its D3 the derivative of D2, through the curve, Adaptor2d_OffsetCurve and the adaptor's DN(3).
     /// </summary>
     [Fact]
-    public void OcctIssue_OffsetCurveEvalD3_WrongWhereBasisSpeedVaries()
+    public void OffsetCurveEvalD3_IsTheDerivativeOfEvalD2()
     {
         EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 1.0);
         OffsetCurve2D anOffset = new OffsetCurve2D(anEllipse, 0.5);
@@ -445,9 +445,10 @@ public class Geom2d_CurvesPortTest
         AssertSameVec(aFdD2, aD2.D2, 1e-6);
         AssertSamePoint(aD2.Point, aD3.Point, 1e-15);
         AssertSameVec(aD2.D1, aD3.D1, 1e-15);
-        // OCCT: EvalD3's D2 and D3 are wrong
-        Assert.True((aD3.D2 - aD2.D2).Magnitude() > 1e-3);
-        Assert.True((aD3.D3 - aFdD3).Magnitude() > 1e-3);
+        // EvalD3's D2 is EvalD2's, its D3 the finite difference of D2
+        AssertSameVec(aD2.D2, aD3.D2, 1e-12);
+        AssertSameVec(aFdD3, aD3.D3, 1e-6);
+        AssertSameVec(aD3.D3, new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(anOffset).EvalDN(aU, 3), 1e-12);
 
         // On a circle they agree
         CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0);
@@ -459,7 +460,7 @@ public class Geom2d_CurvesPortTest
         AssertSameVec(aCD2.D2, aCD3.D2, 1e-12);
         AssertSameVec(aCFdD3, aCD3.D3, 1e-6);
 
-        // Adaptor2d_OffsetCurve uses the same formulas
+        // Adaptor2d_OffsetCurve uses the same ones
         OffsetCurveAdaptor2D anAdaptor = new OffsetCurveAdaptor2D(new TestCurveAdaptor(anEllipse), 0.5);
         anAdaptor.D3(aU, out Point2D aAP, out Vector2D aAV1, out Vector2D aAV2, out Vector2D aAV3);
         AssertSamePoint(aD3.Point, aAP, 1e-15);

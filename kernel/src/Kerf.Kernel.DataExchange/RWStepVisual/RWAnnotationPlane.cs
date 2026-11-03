@@ -92,7 +92,7 @@ internal class RWAnnotationPlane
         sw.CloseSub();
 
         // Inherited field : item
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
 
         // Own field: elements
         sw.OpenSub();

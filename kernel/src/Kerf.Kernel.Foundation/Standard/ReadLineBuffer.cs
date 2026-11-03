@@ -254,6 +254,13 @@ public class ReadLineBuffer
     }
 
     /// <summary>
+    /// The bytes read from the stream that no line returned yet: the stream's position less this is where the next
+    /// line starts (an addition, for readers that go on reading the stream themselves).
+    /// </summary>
+    public int UnreadCount => (_bufferPos < _bytesLastRead ? _bytesLastRead - _bufferPos : 0)
+                              + (_useReadBufferLastStr ? _readBufferLastStrSize : 0);
+
+    /// <summary>
     /// True when the multi-line mode is on (false by default): lines ending with <c>\</c> are joined with the next.
     /// </summary>
     public bool IsMultilineMode => _isMultilineMode;

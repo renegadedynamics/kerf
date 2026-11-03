@@ -514,9 +514,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         }
         else if (shape == global::Kerf.Geometry.TransformForm.Rotation && t._shape == global::Kerf.Geometry.TransformForm.Rotation)
         {
-            // OCCT tests this loc, where gp_Trsf tests T.loc: when this rotation has no translation, T's is
-            // dropped (docs/occt-issues.md); kept so results match OCCT
-            if (newLoc.X() != 0.0 || newLoc.Y() != 0.0)
+            if (t._loc.X() != 0.0 || t._loc.Y() != 0.0)
             {
                 newLoc.Add(t._loc.Multiplied(matrix));
             }
@@ -882,7 +880,6 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
                                 break;
                             }
 
-                            // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
                             tempmatrix.Multiply(tempmatrix);
                             npower = npower / 2;
                         }
@@ -904,7 +901,6 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
                             }
 
                             temploc.Add(temploc.Multiplied(tempmatrix));
-                            // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
                             tempmatrix.Multiply(tempmatrix);
                             npower = npower / 2;
                         }
@@ -930,9 +926,6 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
                     }
 
                     npower--;
-                    // OCCT folds the scale into the diagonal only, then scales again in the loop
-                    // (docs/occt-issues.md); kept so results match OCCT
-                    matrix.SetDiagonal(newScale * matrix.Value(1, 1), newScale * matrix.Value(2, 2));
                     Xy temploc = loc;
                     double tempscale = newScale;
                     Matrix2x2 tempmatrix = matrix;
@@ -950,9 +943,9 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
                             break;
                         }
 
-                        tempscale = tempscale * tempscale;
+                        // the square's translation takes the scale before it is squared (decision 1485)
                         temploc.Add((temploc.Multiplied(tempmatrix)).Multiplied(tempscale));
-                        // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
+                        tempscale = tempscale * tempscale;
                         tempmatrix.Multiply(tempmatrix);
                         npower = npower / 2;
                     }

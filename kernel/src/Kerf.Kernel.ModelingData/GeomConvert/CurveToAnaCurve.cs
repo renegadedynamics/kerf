@@ -476,30 +476,31 @@ public sealed class CurveToAnaCurve
 
             double term1 = a - c;
             double term2 = 2 * b;
-            double cos2t;
+            double cos2t, sin2t;
             double auxil;
 
             if (Math.Abs(term2) <= eps && Math.Abs(term1) <= eps)
             {
                 cos2t = 1.0;
+                sin2t = 0.0;
                 auxil = 0.0;
             }
             else
             {
-                if (Math.Abs(term1) < eps)
-                {
-                    return false;
-                }
-
-                double t2d = term2 / term1; // skl 21.11.2001
-                cos2t = 1.0 / Math.Sqrt(1 + t2d * t2d);
+                // the rotation t of the axes, with its sign: cos 2t = (a - c) / auxil and sin 2t = 2b / auxil, t in
+                // (-90, 90] degrees (OCCT took cos 2t = 1 / sqrt(1 + tan^2 2t) and sin t positive, so the axes came out
+                // within 45 degrees of X, and gave up where a = c; Kerf decision 1492)
                 auxil = Math.Sqrt(term1 * term1 + term2 * term2);
+                cos2t = term1 / auxil;
+                sin2t = term2 / auxil;
             }
 
-            // OCCT: cos2t and sint are taken positive, so the sign of the rotation is lost and the axis is
-            // always within [0, 45] degrees of X: ellipses rotated otherwise in the fitting frame are rejected
             double cost = Math.Sqrt((1 + cos2t) / 2.0);
             double sint = Math.Sqrt((1 - cos2t) / 2.0);
+            if (sin2t < 0.0)
+            {
+                sint = -sint;
+            }
 
             double aprim = (a + c + auxil) / 2.0;
             double cprim = (a + c - auxil) / 2.0;
@@ -519,14 +520,21 @@ public sealed class CurveToAnaCurve
                     return false;
                 }
 
-                xax = cost;
-                yax = sint;
-                rmin = Math.Sqrt(term1);
-                rmax = Math.Sqrt(term2);
-                if (rmax < rmin)
+                // term1 is the squared semi-axis along (cos t, sin t), term2 the one across: the main axis is the
+                // longer one's
+                if (term1 >= term2)
                 {
+                    xax = cost;
+                    yax = sint;
                     rmax = Math.Sqrt(term1);
                     rmin = Math.Sqrt(term2);
+                }
+                else
+                {
+                    xax = -sint;
+                    yax = cost;
+                    rmax = Math.Sqrt(term2);
+                    rmin = Math.Sqrt(term1);
                 }
             }
             else if (term1 <= eps)

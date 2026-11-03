@@ -86,7 +86,7 @@ public sealed class MakeBoundedCurve : GeometryRoot
     // Geom2d
     //=============================================================================
 
-    /// <summary>A 2D bounded curve (a 2D Bezier curve is converted without its weights, as OCCT does).</summary>
+    /// <summary>A 2D bounded curve.</summary>
     public MakeBoundedCurve(BoundedCurve2D c, in Factors localFactors)
     {
         _done = true;
@@ -116,9 +116,18 @@ public sealed class MakeBoundedCurve : GeometryRoot
         {
             BezierCurve2D cur = c as BezierCurve2D;
             BSplineCurve2D bspli = Geom2dConvert2D.CurveToBSplineCurve(cur);
-            // OCCT: the rational case isn't distinguished here (the weights are lost; occt-issues.md, 8D)
-            MakeBSplineCurveWithKnots mkBSplineC = new MakeBSplineCurveWithKnots(bspli, localFactors);
-            _boundedCurve = mkBSplineC.Value();
+            // a rational one with its weights, as the 3D case and the 2D B-splines (OCCT lost them; Kerf decision 1508)
+            if (bspli.IsRational)
+            {
+                MakeBSplineCurveWithKnotsAndRationalBSplineCurve mkRatBSplineC =
+                    new MakeBSplineCurveWithKnotsAndRationalBSplineCurve(bspli, localFactors);
+                _boundedCurve = mkRatBSplineC.Value();
+            }
+            else
+            {
+                MakeBSplineCurveWithKnots mkBSplineC = new MakeBSplineCurveWithKnots(bspli, localFactors);
+                _boundedCurve = mkBSplineC.Value();
+            }
         }
         else
         {

@@ -678,8 +678,8 @@ public class BinaryShapeSet : ShapeSetBase
                     }
                     else if (pr.IsPointOnSurface())
                     {
-                        // OCCT writes the second parameter first, and the readers take it as the first: the parameters
-                        // of a point on a surface are swapped on each round trip (occt-issues.md)
+                        // the second parameter first, as OCCT writes it: the readers take it so (OCCT's took it for the
+                        // first, swapping the parameters on each round trip; Kerf decision 1500)
                         os.WriteByte(3); // 3
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pr.Parameter2());
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pr.Parameter());
@@ -976,8 +976,8 @@ public class BinaryShapeSet : ShapeSetBase
                                     break;
                                 }
 
-                                // OCCT: p1 is the second parameter written (see WriteShape)
-                                PointOnSurface poc = new(p1, p2, _surfaces.Surface(s), L);
+                                // the second parameter is written first (see WriteShape; OCCT read it as the first)
+                                PointOnSurface poc = new(p2, p1, _surfaces.Surface(s), L);
                                 pr = poc;
                             }
                                 break;

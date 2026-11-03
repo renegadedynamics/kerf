@@ -1880,3 +1880,24 @@ the triage).
 - Left, with reasons: AdvApp2Var's error estimate (decision 1482), and the row about ExtendFace losing a location,
   which wasn't a bug (1477).
 - Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
+Phase 10 (part): OCCT's bugs, curve and surface evaluation, conversion, gp and data exchange (unit 10K3, batches K7
+and K8).
+- Raising the degree of a periodic B-spline keeps the curve (lofts' and fillets' periodic sections and spines).
+- Offset curves' third derivatives are right, through the curves and their adaptors, and so the Frenet and corrected
+  Frenet frames' derivatives on offset spines; a curve on a surface has the chain rule's third derivative; a torus's
+  mixed derivatives have the right signs; a rational bilinear patch's cached second derivatives are right.
+- gp: a direction mirrored about an axis, 2D and 3D transformation powers, 2D rotation products, 2D hyperbolas'
+  asymptotes and second directrix, and affinities' negative powers are right.
+- An offset surface transforms its parameters once; a B-spline surface split in V is reversed in V; a surface's knot
+  splitting keeps its U splits when V needs none; canonical recognition finds ellipses at any angle; a cone's implicit
+  equation holds away from the origin; an indirect 2D parabola's grid follows its frame; an extrusion adaptor trims
+  the direction it is asked to.
+- STL: a stream is recognised as a file is (binary files whose header starts "solid" read), and every domain of a
+  multi-domain ASCII file is read.
+- STEP: rendering methods read as written; styled representations, two complex record kinds and booleans written
+  validly; two reflectance styles and TESSELLATED_ITEM read and written; XSControl_Reader reads STEP; 2D trimmed
+  curves and rational 2D Bezier curves written; angles written in the file's unit; strings of any length read, and a
+  tab ends a string as a space does.
+- Binary BRep: a point on a surface keeps its parameters; the files are unchanged, and old ones read right.
+- Two rows reclassified to leave (decisions 16810, 16825). The oracle and native comparisons these fixes move compare
+  at plan 3.2's third level, each with its reason; occt-issues.md marks the rows fixed.

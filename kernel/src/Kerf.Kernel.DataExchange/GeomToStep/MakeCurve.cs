@@ -149,18 +149,18 @@ public sealed class MakeCurve : GeometryRoot
                 _curve = mkConic.Value();
             }
         }
+        else if (c is TrimmedCurve2D)
+        {
+            // before the bounded curves, which a trimmed curve is (OCCT tested it after them, so it was never reached
+            // and MakeBoundedCurve refused a trimmed curve; Kerf decision 1507)
+            MakeCurve maker = new MakeCurve((c as TrimmedCurve2D).BasisCurve(), localFactors);
+            _curve = maker.Value();
+        }
         else if (c is BoundedCurve2D)
         {
-            // OCCT: Geom2d_TrimmedCurve is a bounded curve, so the branch below is never reached and a trimmed
-            // curve goes to MakeBoundedCurve, which doesn't map it (occt-issues.md, 8D)
             BoundedCurve2D l = c as BoundedCurve2D;
             MakeBoundedCurve mkBoundedC = new MakeBoundedCurve(l, localFactors);
             _curve = mkBoundedC.Value();
-        }
-        else if (c is TrimmedCurve2D)
-        {
-            MakeCurve maker = new MakeCurve((c as TrimmedCurve2D).BasisCurve(), localFactors);
-            _curve = maker.Value();
         }
         else
         {

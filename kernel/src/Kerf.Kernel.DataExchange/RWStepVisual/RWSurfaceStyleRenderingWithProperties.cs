@@ -37,19 +37,20 @@ internal class RWSurfaceStyleRenderingWithProperties
         if (data.ParamType(num, 1) == ParamType.ParamEnum)
         {
             string text = data.ParamCValue(num, 1);
-            if (string.CompareOrdinal(text, ".CONSTANT_SHADING.") != 0)
+            // the method whose name the text is (OCCT tested strcmp != 0, taking every other name for it; Kerf decision 1501)
+            if (string.CompareOrdinal(text, ".CONSTANT_SHADING.") == 0)
             {
                 surfaceStyleRendering_RenderingMethod = ShadingSurfaceMethod.SsmConstantShading;
             }
-            else if (string.CompareOrdinal(text, ".COLOUR_SHADING.") != 0)
+            else if (string.CompareOrdinal(text, ".COLOUR_SHADING.") == 0)
             {
                 surfaceStyleRendering_RenderingMethod = ShadingSurfaceMethod.SsmColourShading;
             }
-            else if (string.CompareOrdinal(text, ".DOT_SHADING.") != 0)
+            else if (string.CompareOrdinal(text, ".DOT_SHADING.") == 0)
             {
                 surfaceStyleRendering_RenderingMethod = ShadingSurfaceMethod.SsmDotShading;
             }
-            else if (string.CompareOrdinal(text, ".NORMAL_SHADING.") != 0)
+            else if (string.CompareOrdinal(text, ".NORMAL_SHADING.") == 0)
             {
                 surfaceStyleRendering_RenderingMethod = ShadingSurfaceMethod.SsmNormalShading;
             }

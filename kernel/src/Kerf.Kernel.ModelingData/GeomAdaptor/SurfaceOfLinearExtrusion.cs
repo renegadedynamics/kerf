@@ -14,7 +14,8 @@ namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>
 /// The surface of linear extrusion of an adapted curve along a direction: U is the curve's parameter, V the
-/// distance along the direction (unbounded). <see cref="GetType"/> recognises planes and cylinders.
+/// distance along the direction (unbounded unless trimmed by <see cref="VTrim"/>). <see cref="GetType"/> recognises
+/// planes and cylinders.
 /// </summary>
 /// <remarks>Evaluation is the base adaptor's (Geom_ExtrusionUtils over the curve adaptor).</remarks>
 public class SurfaceOfLinearExtrusion : SurfaceAdaptor
@@ -22,6 +23,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
     private CurveAdaptorBase? _basisCurve; // extruded curve
     private Direction3D _direction; // direction of extrusion
     private bool _haveDir; // whether the direction of extrusion is initialized
+    private double _vMin = RealFirst(), _vMax = RealLast(); // V's bounds (Kerf decision 1496: OCCT had none)
 
     /// <summary>An adaptor without a curve or direction.</summary>
     public SurfaceOfLinearExtrusion()
@@ -58,6 +60,8 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
         }
         copy._direction = _direction;
         copy._haveDir = _haveDir;
+        copy._vMin = _vMin;
+        copy._vMax = _vMax;
 
         copy._surface = _surface;
         copy._uFirst = _uFirst;
@@ -109,9 +113,9 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
 
     public override double LastUParameter() => _basisCurve!.LastParameter();
 
-    public override double FirstVParameter() => RealFirst();
+    public override double FirstVParameter() => _vMin;
 
-    public override double LastVParameter() => RealLast();
+    public override double LastVParameter() => _vMax;
 
     public override Continuity UContinuity() => _basisCurve!.Continuity();
 
@@ -130,21 +134,24 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
     }
 
     /// <summary>
-    /// The extrusion of the curve trimmed between First and Last: OCCT trims the curve, which is the U direction
-    /// (occt-issues.md).
+    /// The same extrusion with V between First and Last (OCCT trimmed the curve, which carries U, and UTrim trimmed
+    /// nothing; Kerf decision 1496).
     /// </summary>
     public override SurfaceAdaptorBase VTrim(double first, double last, double tol)
     {
-        // OCCT: VTrim trims the basis curve, which carries U, and UTrim (below) trims nothing.
-        CurveAdaptorBase hc = BasisCurve().Trim(first, last, tol);
-        SurfaceOfLinearExtrusion hr = new SurfaceOfLinearExtrusion(hc, _direction);
+        SurfaceOfLinearExtrusion hr = new SurfaceOfLinearExtrusion(_basisCurve!, _direction);
+        hr._vMin = first;
+        hr._vMax = last;
         return hr;
     }
 
-    /// <summary>The same extrusion, untrimmed (OCCT ignores the parameters: occt-issues.md).</summary>
+    /// <summary>The extrusion of the curve trimmed between First and Last, V's bounds kept.</summary>
     public override SurfaceAdaptorBase UTrim(double first, double last, double tol)
     {
-        SurfaceOfLinearExtrusion hr = new SurfaceOfLinearExtrusion(_basisCurve!, _direction);
+        CurveAdaptorBase hc = BasisCurve().Trim(first, last, tol);
+        SurfaceOfLinearExtrusion hr = new SurfaceOfLinearExtrusion(hc, _direction);
+        hr._vMin = _vMin;
+        hr._vMax = _vMax;
         return hr;
     }
 

@@ -144,8 +144,10 @@ internal sealed class StepRoundTrip
                 continue;
             }
 
+            // NotComplex, BoolAsInt, StyledItemTarget and RenderingMethod were OCCT's too, fixed by Kerf unit 10K3
+            // (decisions 1501 to 1504): they would be unexplained now
             bool isExplained = aCause is ParameterValue or IntegerAsReal or Text or LostReference or DerivedDimensions or ComplexUncertainty or NormalsOutOfRange
-                               or SizeMember or NestedSize or DerivedCharacterized or NotComplex or BoolAsInt or StyledItemTarget or RenderingMethod or ElementPurpose;
+                               or SizeMember or NestedSize or DerivedCharacterized or ElementPurpose;
             var aDict = isExplained ? Explained : Unexplained;
             string aKey = isExplained ? aCause : (aRec.Type ?? "(complex)") + ": " + aCause;
             var e = aDict.GetValueOrDefault(aKey);

@@ -58,6 +58,7 @@ public class StepFileNativeTests(ITestOutputHelper output)
         Assert.Equal(anInputs.Count, anEntries.Count);
         var aDiffs = new List<string>();
         var aResults = new Dictionary<string, int>();
+        var anIntended = new SortedDictionary<string, int>(StringComparer.Ordinal);
         for (int i = 0; i < anInputs.Count; i++)
         {
             StepFileDump.Entry anEntry = anEntries[i];
@@ -72,15 +73,46 @@ public class StepFileNativeTests(ITestOutputHelper output)
             }
 
             string? aDiff = StepFileDump.Compare(anEntry, aDump);
-            if (aDiff is not null)
+            if (aDiff is not null && IntendedDifference(anEntry, anInputs[i].Data, aDump) is { } aReason)
+            {
+                anIntended[aReason] = anIntended.GetValueOrDefault(aReason) + 1;
+            }
+            else if (aDiff is not null)
             {
                 aDiffs.Add(aDiff);
             }
         }
 
         output.WriteLine($"{anInputs.Count} inputs: " + string.Join(", ", aResults.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}")));
+        output.WriteLine("intended: " + string.Join(", ", anIntended.Select(p => $"{p.Value} {p.Key}")));
         Assert.Equal(1329, anInputs.Count);
         Assert.Empty(aDiffs);
+    }
+
+    // Plan 3.2's third level (Kerf unit 10K3): the reason the port's parse differs from native's on purpose, or null
+    private static string? IntendedDifference(StepFileDump.Entry theEntry, byte[] theInput, List<string> thePort)
+    {
+        // occt-issues.md, step.lex, 16,383 bytes (decision 1511): native's scanner gave up on the long token, the
+        // port's reads it (StepFileParserTests checks the token read whole), and parses the file, or reports its error
+        // (a string running to the end of the input: RESULT 1)
+        if (theEntry.Lines[0] == "RESULT FATAL" && theEntry.Lines[1].Contains("input buffer overflow", StringComparison.Ordinal)
+            && thePort[0] is "RESULT 0" or "RESULT 1" && !thePort.Exists(l => l.StartsWith("FATAL", StringComparison.Ordinal)))
+        {
+            return "long tokens read (decision 1511)";
+        }
+        // occt-issues.md, step.lex, the end of a string (decision 1512): a string's end followed by a tab parses as
+        // followed by a space, which OCCT's class held
+        int aTab = Array.IndexOf(theInput, (byte)'\t');
+        if (aTab > 0)
+        {
+            byte[] aSpaced = [.. theInput];
+            aSpaced[aTab] = (byte)' ';
+            if (Array.IndexOf(aSpaced, (byte)'\t') < 0 && StepFileDump.Dump(new MemoryStream(aSpaced)).SequenceEqual(thePort))
+            {
+                return "a tab after a string's end (decision 1512)";
+            }
+        }
+        return null;
     }
 
     [Fact]
@@ -112,7 +144,13 @@ public class StepFileNativeTests(ITestOutputHelper output)
             if (anInputs[i].Name.StartsWith("long/", StringComparison.Ordinal))
             {
                 using var aStream = new TrickleStream(anInputs[i].Data, 997);
-                Assert.Null(StepFileDump.Compare(anEntries[i], StepFileDump.Dump(aStream)));
+                List<string> aDump = StepFileDump.Dump(aStream);
+                if (StepFileDump.Compare(anEntries[i], aDump) is not null)
+                {
+                    // the long tokens native gave up on (decision 1511): as read from memory
+                    Assert.NotNull(IntendedDifference(anEntries[i], anInputs[i].Data, aDump));
+                    Assert.Equal(StepFileDump.Dump(new MemoryStream(anInputs[i].Data)), aDump);
+                }
             }
         }
     }

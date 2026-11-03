@@ -75,7 +75,7 @@ internal class RWAnnotationOccurrence
 
         // Inherited field : item
 
-        sw.Send(ent.Item());
+        sw.Send(ent.Target());
     }
 
     public void Share(AnnotationOccurrence ent, EntityIterator iter)

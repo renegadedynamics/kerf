@@ -737,19 +737,12 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>
-    /// The basis surface's transformed parameters, transformed again by the equivalent surface when there is one
-    /// (OCCT's error: see occt-issues.md).
+    /// The basis surface's transformed parameters: the offset surface has its parametrization (OCCT transformed them
+    /// again by the equivalent surface when there is one; Kerf decision 1489).
     /// </summary>
     public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         _basisSurf.TransformParameters(ref u, ref v, t);
-        Surface? equivSurface = DirectRepSurface(this);
-        if (equivSurface is not null)
-        {
-            // OCCT: the parameters are transformed a second time by the equivalent surface (scaled twice for a
-            // plane, a cylinder's V, ...), although its parametrization is the basis surface's.
-            equivSurface.TransformParameters(ref u, ref v, t);
-        }
     }
 
     /// <summary>The basis surface's parametric transformation.</summary>
