@@ -41,8 +41,9 @@ namespace Kerf.Engine.Topology.Tools;
 /// <para>
 /// Overlays nest: an operation inside another sees the outer one's working copies, and its own writes go to its own
 /// overlay (an inner operation's result is its own; it doesn't write into the outer operation's state). An overlay is
-/// held in an <see cref="AsyncLocal{T}"/>, so tasks and <c>Parallel.For</c> bodies started inside the operation see it;
-/// operations on other threads, on the same frozen inputs, have overlays of their own. The working copies are made under
+/// held in an <see cref="AsyncLocal{T}"/> (mirrored in a thread static, which the accessors read), so tasks and
+/// <c>Parallel.For</c> bodies started inside the operation see it; operations on other threads, on the same frozen
+/// inputs, have overlays of their own. The working copies are made under
 /// a lock, so parallel bodies of one operation may write; what they write into one TShape is the algorithm's affair, as
 /// in OCCT.
 /// </para>
@@ -62,7 +63,16 @@ internal sealed class WorkingOverlay : IDisposable
 {
     // the number of overlays open in the process: zero means no accessor needs to look further
     private static int s_openCount;
-    private static readonly AsyncLocal<WorkingOverlay?> s_current = new();
+    private static readonly AsyncLocal<WorkingOverlay?> s_current = new(OnCurrentChanged);
+
+    // The current overlay as a thread static, which the accessors read: an AsyncLocal's value costs a lookup in the
+    // execution context, a thread static a field read. The AsyncLocal's change handler keeps the two equal on every
+    // thread, whenever the value changes or a thread changes execution context (a task starting, a pool thread
+    // returning).
+    [ThreadStatic]
+    private static WorkingOverlay? t_current;
+
+    private static void OnCurrentChanged(AsyncLocalValueChangedArgs<WorkingOverlay?> args) => t_current = args.CurrentValue;
 
     private readonly WorkingOverlay? _parent;
     private readonly Shape _input;
@@ -70,6 +80,7 @@ internal sealed class WorkingOverlay : IDisposable
     private readonly ConcurrentDictionary<TShape, TShape> _working = new(ReferenceEqualityComparer.Instance);
     private readonly Lock _lock = new();
     private volatile int _workingCount;
+    private readonly long[] _filter = new long[FilterWords]; // a bit per hash of the written TShapes: most reads miss
     private volatile bool _isAssembling; // Finish reads the state before this overlay's writes
     private Dictionary<TShape, TShape>? _final;
     private History _history = new();
@@ -97,7 +108,7 @@ internal sealed class WorkingOverlay : IDisposable
     }
 
     /// <summary>The overlay current here, or null.</summary>
-    public static WorkingOverlay? Current => Volatile.Read(ref s_openCount) == 0 ? null : s_current.Value;
+    public static WorkingOverlay? Current => Volatile.Read(ref s_openCount) == 0 ? null : t_current;
 
     /// <summary>The input given to <see cref="Begin"/>.</summary>
     public Shape Input() => _input;
@@ -143,13 +154,15 @@ internal sealed class WorkingOverlay : IDisposable
     private static bool TryViewSlow(TShape tShape, [NotNullWhen(true)] out TShape? view)
     {
         view = null;
-        if (!tShape.IsFrozen)
+        WorkingOverlay? current = t_current;
+        if (current is null || !tShape.IsFrozen)
         {
             return false;
         }
-        for (WorkingOverlay? overlay = s_current.Value; overlay is not null; overlay = overlay._parent)
+        for (WorkingOverlay? overlay = current; overlay is not null; overlay = overlay._parent)
         {
-            if (!overlay._isAssembling && overlay._workingCount != 0 && overlay._working.TryGetValue(tShape, out view))
+            if (!overlay._isAssembling && overlay._workingCount != 0 && overlay.MayHold(tShape)
+                && overlay._working.TryGetValue(tShape, out view))
             {
                 return true;
             }
@@ -174,7 +187,7 @@ internal sealed class WorkingOverlay : IDisposable
             working = null;
             return false;
         }
-        WorkingOverlay? overlay = s_current.Value;
+        WorkingOverlay? overlay = t_current;
         if (overlay is null || overlay._isFinished)
         {
             working = null;
@@ -226,10 +239,26 @@ internal sealed class WorkingOverlay : IDisposable
                 working._shapes.Append(it.Value());
             }
             BrepTools.CopyFlags(source, working);
+            (int word, long bit) = FilterBit(tShape);
+            Interlocked.Or(ref _filter[word], bit);
             _working[tShape] = working;
             _workingCount++;
             return working;
         }
+    }
+
+    private const int FilterWords = 32;
+
+    private static (int Word, long Bit) FilterBit(TShape tShape)
+    {
+        int hash = RuntimeHelpers.GetHashCode(tShape) & (FilterWords * 64 - 1);
+        return (hash >> 6, 1L << (hash & 63));
+    }
+
+    private bool MayHold(TShape tShape)
+    {
+        (int word, long bit) = FilterBit(tShape);
+        return (Volatile.Read(ref _filter[word]) & bit) != 0;
     }
 
     // What the overlays this one is nested in make of the TShape (itself when none wrote into it).
