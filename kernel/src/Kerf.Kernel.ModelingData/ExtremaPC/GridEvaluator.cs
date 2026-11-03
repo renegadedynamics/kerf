@@ -57,9 +57,9 @@ public sealed class GridEvaluator
 
     // Cached temporaries (reused via Clear())
     private readonly global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result _result = new();                            // Reusable result
-    private readonly NCollection_DynamicArray<Candidate> _candidates = new();     // Candidates from grid scan
-    private readonly NCollection_DynamicArray<double> _foundRoots = new();        // Found roots for dedup
-    private readonly NCollection_DynamicArray<(int first, double second)> _sortedIndices = new(); // Sorted candidate indices
+    private readonly List<Candidate> _candidates = new();     // Candidates from grid scan
+    private readonly List<double> _foundRoots = new();        // Found roots for dedup
+    private readonly List<(int first, double second)> _sortedIndices = new(); // Sorted candidate indices
     private NCollection_Array1<bool> _processed = new();                          // Processed flags for grid scan
 
     public GridEvaluator()
@@ -111,7 +111,7 @@ public sealed class GridEvaluator
         ScanGrid(p, tol, mode);
         RefineCandidates(curve, p, domain, tol, mode);
 
-        if (!_result._extrema.IsEmpty())
+        if (_result._extrema.Count != 0)
         {
             _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;
         }
@@ -177,7 +177,7 @@ public sealed class GridEvaluator
                 double uLo = _grid[i - 1].Param;
                 double uHi = gp.Param;
                 cand.StartU = uLo - fLo * (uHi - uLo) / (fHi - fLo);
-                _candidates.Append(cand);
+                _candidates.Add(cand);
                 _processed[i - 1] = true;
                 _processed[i] = true;
             }
@@ -190,7 +190,7 @@ public sealed class GridEvaluator
                 cand.IdxLo = i;
                 cand.IdxHi = i;
                 cand.StartU = gp.Param;
-                _candidates.Append(cand);
+                _candidates.Add(cand);
                 _processed[i] = true;
             }
 
@@ -212,7 +212,7 @@ public sealed class GridEvaluator
                     cand.IdxLo = i;
                     cand.IdxHi = i;
                     cand.StartU = gp.Param;
-                    _candidates.Append(cand);
+                    _candidates.Add(cand);
                     _processed[i] = true;
                 }
                 else if ((mode == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.SearchMode.Max || mode == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.SearchMode.MinMax)
@@ -223,7 +223,7 @@ public sealed class GridEvaluator
                     cand.IdxLo = i;
                     cand.IdxHi = i;
                     cand.StartU = gp.Param;
-                    _candidates.Append(cand);
+                    _candidates.Add(cand);
                     _processed[i] = true;
                 }
             }
@@ -254,11 +254,11 @@ public sealed class GridEvaluator
         config.MaxIterations = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_MAX_NEWTON_ITERATIONS;
 
         // Build sorted indices by estimated distance
-        for (int c = 0; c < _candidates.Length(); ++c)
+        for (int c = 0; c < _candidates.Count; ++c)
         {
-            Candidate cand = _candidates.Value(c);
+            Candidate cand = _candidates[c];
             double estDist = p.SquareDistance(_grid[cand.IdxLo].Point);
-            _sortedIndices.Append((c, estDist));
+            _sortedIndices.Add((c, estDist));
         }
 
         // Sort by estimated distance for Min mode (ascending), Max mode (descending)
@@ -276,11 +276,11 @@ public sealed class GridEvaluator
                                ? double.MaxValue
                                : -double.MaxValue;
 
-        for (int s = 0; s < _sortedIndices.Length(); ++s)
+        for (int s = 0; s < _sortedIndices.Count; ++s)
         {
-            int c = _sortedIndices.Value(s).first;
-            double estDist = _sortedIndices.Value(s).second;
-            Candidate cand = _candidates.Value(c);
+            int c = _sortedIndices[s].first;
+            double estDist = _sortedIndices[s].second;
+            Candidate cand = _candidates[c];
 
             // Early termination: skip candidates that are clearly worse than the best found.
             // For Min mode: skip if estimated distance > best * (2.0 - threshold), i.e., ~1.1x best.
@@ -298,9 +298,9 @@ public sealed class GridEvaluator
 
             // Skip if too close to already found root
             bool skip = false;
-            for (int r = 0; r < _foundRoots.Length(); ++r)
+            for (int r = 0; r < _foundRoots.Count; ++r)
             {
-                if (Math.Abs(cand.StartU - _foundRoots.Value(r)) < tol)
+                if (Math.Abs(cand.StartU - _foundRoots[r]) < tol)
                 {
                     skip = true;
                     break;
@@ -399,9 +399,9 @@ public sealed class GridEvaluator
 
             // Check for duplicate
             bool duplicate = false;
-            for (int r = 0; r < _foundRoots.Length(); ++r)
+            for (int r = 0; r < _foundRoots.Count; ++r)
             {
-                if (Math.Abs(rootU - _foundRoots.Value(r)) < tol)
+                if (Math.Abs(rootU - _foundRoots[r]) < tol)
                 {
                     duplicate = true;
                     break;
@@ -443,9 +443,9 @@ public sealed class GridEvaluator
                 ext.Point = pt;
                 ext.SquareDistance = sqDist;
                 ext.IsMinimum = isMin;
-                _result._extrema.Append(ext);
+                _result._extrema.Add(ext);
 
-                _foundRoots.Append(rootU);
+                _foundRoots.Add(rootU);
 
                 // Update best distance for early termination
                 if (mode == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.SearchMode.Min && sqDist < bestSqDist)
@@ -459,7 +459,7 @@ public sealed class GridEvaluator
             }
         }
 
-        if (_result._extrema.IsEmpty() && _candidates.IsEmpty())
+        if (_result._extrema.Count == 0 && _candidates.Count == 0)
         {
             _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.NoSolution;
         }
@@ -468,11 +468,11 @@ public sealed class GridEvaluator
     // std::sort of mySortedIndices (decision 59: an unstable sort, as std::sort)
     private void SortIndices(Comparison<(int first, double second)> compare)
     {
-        int nb = _sortedIndices.Length();
+        int nb = _sortedIndices.Count;
         (int, double)[] tmp = new (int, double)[nb];
         for (int i = 0; i < nb; ++i)
         {
-            tmp[i] = _sortedIndices.Value(i);
+            tmp[i] = _sortedIndices[i];
         }
         tmp.AsSpan().Sort(compare);
         for (int i = 0; i < nb; ++i)

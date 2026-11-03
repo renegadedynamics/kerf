@@ -3213,14 +3213,14 @@ public class WorkSession : Transient
     /// (no Transfer) xst-params-send 3 SendFile (Write, no Transfer) xst-params-split 4 Split xst-param-read 5
     /// Transfer on Reading xst-param-write 6 Transfer on Writing
     /// </summary>
-    public void SetParams(NCollection_DynamicArray<Transient> @params, NCollection_DynamicArray<int> uselist)
+    public void SetParams(List<Transient> @params, List<int> uselist)
     {
-        int i, nbp = @params.Length(), nbu = uselist.Length();
+        int i, nbp = @params.Count, nbu = uselist.Count;
         ParamEditor editor =
             new ParamEditor(nbp + nbu + 50, "Parameter Editor");
-        for (i = @params.Lower(); i <= @params.Upper(); i++)
+        for (i = 0; i <= (@params.Count - 1); i++)
         {
-            InterfaceTypedValue val = @params.Value(i) as InterfaceTypedValue;
+            InterfaceTypedValue val = @params[i] as InterfaceTypedValue;
             if (val is null)
             {
                 continue;
@@ -3236,9 +3236,9 @@ public class WorkSession : Transient
         NCollection_Sequence<int> listgen = new NCollection_Sequence<int>(), listload = new NCollection_Sequence<int>(),
             listsend = new NCollection_Sequence<int>(), listsplit = new NCollection_Sequence<int>(),
             listread = new NCollection_Sequence<int>(), listwrite = new NCollection_Sequence<int>();
-        for (i = uselist.Lower(); i <= uselist.Upper(); i++)
+        for (i = 0; i <= (uselist.Count - 1); i++)
         {
-            int use = uselist.Value(i);
+            int use = uselist[i];
             switch (use)
             {
                 case 1:

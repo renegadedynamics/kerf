@@ -60,10 +60,10 @@ internal static class BooleanParallel
     }
 
     /// <summary>Pure version over an NCollection vector.</summary>
-    internal static void Perform<TSolver>(bool isRunParallel, NCollection_DynamicArray<TSolver> solverVector)
+    internal static void Perform<TSolver>(bool isRunParallel, List<TSolver> solverVector)
         where TSolver : ISolver
     {
-        OsdParallel.For(0, solverVector.Length(), index => solverVector.Value(index).Perform(), !isRunParallel);
+        OsdParallel.For(0, solverVector.Count, index => solverVector[index].Perform(), !isRunParallel);
     }
 
     /// <summary>
@@ -85,16 +85,16 @@ internal static class BooleanParallel
     }
 
     /// <summary>Context-dependent version over an NCollection vector.</summary>
-    internal static void Perform<TSolver, TContext>(bool isRunParallel, NCollection_DynamicArray<TSolver> solverVector,
+    internal static void Perform<TSolver, TContext>(bool isRunParallel, List<TSolver> solverVector,
                                                    TContext context)
         where TSolver : IContextSolver<TContext>
         where TContext : class, new()
     {
         ContextFunctor<TContext> functor = new();
         functor.SetContext(context);
-        OsdParallel.For(0, solverVector.Length(), index =>
+        OsdParallel.For(0, solverVector.Count, index =>
         {
-            TSolver solver = solverVector.Value(index);
+            TSolver solver = solverVector[index];
             solver.SetContext(functor.GetThreadContext());
             solver.Perform();
         }, !isRunParallel);

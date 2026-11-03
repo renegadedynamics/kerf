@@ -387,10 +387,10 @@ public class BRepExtremaTests
     [Fact]
     public void TriangleSet_Indices()
     {
-        var aShapes = new NCollection_DynamicArray<Shape>();
-        aShapes.Append(MeshSquare(0));
-        aShapes.Append(MeshSquare(1));
-        aShapes.Append(TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(0, 0, 2), new Point3D(1, 0, 2), new Point3D(2, 0, 2))));
+        var aShapes = new List<Shape>();
+        aShapes.Add(MeshSquare(0));
+        aShapes.Add(MeshSquare(1));
+        aShapes.Add(TestShapes.Frozen(BRepGPropTestShapes.PolygonEdge(new Point3D(0, 0, 2), new Point3D(1, 0, 2), new Point3D(2, 0, 2))));
         var aSet = new TriangleSet(aShapes);
         Assert.Equal(6, aSet.Size()); // 2 + 2 triangles, 2 segments
         Assert.Equal(11, aSet.GetVertices().Size());
@@ -576,10 +576,10 @@ public class BRepExtremaTests
         Assert.Equal(0.5, aProx.Proximity(), Tol);
 
         var aTool = new ProximityValueTool();
-        var aList1 = new NCollection_DynamicArray<Shape>();
-        aList1.Append(aCoarse);
-        var aList2 = new NCollection_DynamicArray<Shape>();
-        aList2.Append(aFine);
+        var aList1 = new List<Shape>();
+        aList1.Add(aCoarse);
+        var aList2 = new List<Shape>();
+        aList2.Add(aFine);
         aTool.LoadTriangleSets(new TriangleSet(aList1), new TriangleSet(aList2));
         aTool.LoadShapeLists(aList1, aList2);
         double aTol = 0;
@@ -615,15 +615,15 @@ public class BRepExtremaTests
     [Fact]
     public void OcctIssue_TriangleSet_InitAgainKeepsTheFirstShapesVertexIds()
     {
-        var aFirst = new NCollection_DynamicArray<Shape>();
-        aFirst.Append(MeshTriangle(0)); // 3 nodes
-        aFirst.Append(MeshSquare(1)); // 4 nodes
+        var aFirst = new List<Shape>();
+        aFirst.Add(MeshTriangle(0)); // 3 nodes
+        aFirst.Add(MeshSquare(1)); // 4 nodes
         var aSet = new TriangleSet(aFirst);
         Assert.Equal(1, aSet.GetShapeIDOfVtx(3));
 
-        var aSecond = new NCollection_DynamicArray<Shape>();
-        aSecond.Append(MeshSquare(1));
-        aSecond.Append(MeshTriangle(0));
+        var aSecond = new List<Shape>();
+        aSecond.Add(MeshSquare(1));
+        aSecond.Add(MeshTriangle(0));
         Assert.True(aSet.Init(aSecond));
         Assert.Equal(7, aSet.GetVertices().Size());
         // vertex 3 is the square's (shape 0), but OCCT reads the first Init's entry
@@ -633,9 +633,9 @@ public class BRepExtremaTests
     [Fact]
     public void OcctIssue_TriangleSet_InitIsTrueWithoutMeshes()
     {
-        var aShapes = new NCollection_DynamicArray<Shape>();
-        aShapes.Append(Square(0, 0, 0, 1)); // no triangulation
-        aShapes.Append(MeshSquare(1));
+        var aShapes = new List<Shape>();
+        aShapes.Add(Square(0, 0, 0, 1)); // no triangulation
+        aShapes.Add(MeshSquare(1));
         var aSet = new TriangleSet();
         Assert.True(aSet.Init(aShapes));
         Assert.Equal(0, aSet.Size()); // stopped at the first shape

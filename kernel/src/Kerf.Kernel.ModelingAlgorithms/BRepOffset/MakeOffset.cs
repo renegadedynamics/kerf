@@ -4146,14 +4146,14 @@ public sealed partial class MakeOffset
             }
 
             // Get degenerated points, to avoid check them.
-            NCollection_DynamicArray<Point3D> bad3dPnts = new();
+            List<Point3D> bad3dPnts = new();
             Explorer expFE = new(f, ShapeType.Edge);
             for (; expFE.More(); expFE.Next())
             {
                 Edge e = ShapeCasts.Edge(expFE.Current());
                 if (Tool.Degenerated(e))
                 {
-                    bad3dPnts.Append(Tool.Pnt((Exploration.FirstVertex(e))));
+                    bad3dPnts.Add(Tool.Pnt((Exploration.FirstVertex(e))));
                 }
             }
 
@@ -4277,14 +4277,14 @@ public sealed partial class MakeOffset
     // purpose  : Check single point on surface for bad normals
     //=======================================================================
     private static Error CheckSinglePoint(double uParam, double vParam, Surface surf,
-                                                     NCollection_DynamicArray<Point3D> badPoints)
+                                                     List<Point3D> badPoints)
     {
         surf.D1(uParam, vParam, out Point3D pnt, out Vector3D d1U, out Vector3D d1V);
 
         if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion() || d1V.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             bool isKnownBadPnt = false;
-            for (int idx = badPoints.Lower(); idx <= badPoints.Upper(); ++idx)
+            for (int idx = 0; idx <= (badPoints.Count - 1); ++idx)
             {
                 if (pnt.SquareDistance(badPoints[idx]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {

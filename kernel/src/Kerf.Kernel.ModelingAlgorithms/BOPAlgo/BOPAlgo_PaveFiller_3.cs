@@ -132,7 +132,7 @@ public partial class PaveFiller
         Span<int> nV = stackalloc int[4];
         Span<int> nVS = stackalloc int[2];
         NCollection_List<PaveBlock>.Iterator it1 = new(), it2 = new();
-        NCollection_DynamicArray<EdgeEdgeJob> vEdgeEdge = new();
+        List<EdgeEdgeJob> vEdgeEdge = new();
         // keep modified edges for further update
         NCollection_IntMap mEdges = new();
         //
@@ -141,7 +141,7 @@ public partial class PaveFiller
         NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
         Dictionary<PaveBlock, Box> dmpbBox = new();
         //
-        NCollection_DynamicArray<InterfEE> eEs = _ds!.InterfEE();
+        List<InterfEE> eEs = _ds!.InterfEE();
         //
         for (; _iterator.More(); _iterator.Next())
         {
@@ -216,7 +216,8 @@ public partial class PaveFiller
                     //
                     bExpressCompute = ((nV11 == nV21 && nV12 == nV22) || (nV12 == nV21 && nV11 == nV22));
                     //
-                    EdgeEdgeJob edgeEdge = vEdgeEdge.Append(new EdgeEdgeJob());
+                    EdgeEdgeJob edgeEdge =  new EdgeEdgeJob();
+                    vEdgeEdge.Add(edgeEdge);
                     //
                     edgeEdge.UseQuickCoincidenceCheck(bExpressCompute);
                     //
@@ -231,13 +232,13 @@ public partial class PaveFiller
             } // for (; aIt1.More(); aIt1.Next()) {
         } // for (; myIterator->More(); myIterator->Next()) {
         //
-        nbEdgeEdge = vEdgeEdge.Length();
+        nbEdgeEdge = vEdgeEdge.Count;
 
         using (var ps = new ProgressScope(psOuter.Next(9), "Performing Edge-edge intersection", nbEdgeEdge))
         {
             for (k = 0; k < nbEdgeEdge; k++)
             {
-                EdgeEdgeJob edgeEdge = vEdgeEdge.ChangeValue(k);
+                EdgeEdgeJob edgeEdge = vEdgeEdge[k];
                 edgeEdge.SetProgressRange(ps.Next());
             }
             //======================================================
@@ -477,8 +478,9 @@ public partial class PaveFiller
                         }
                         //
                         // 1
-                        InterfEE ee = eEs.Append(new InterfEE());
-                        iX = eEs.Length() - 1;
+                        InterfEE ee =  new InterfEE();
+                        eEs.Add(ee);
+                        iX = eEs.Count - 1;
                         ee.SetIndices(nE1, nE2);
                         ee.SetCommonPart(cPart);
                         // 2
@@ -507,8 +509,9 @@ public partial class PaveFiller
                             break;
                         }
                         // 1
-                        InterfEE ee = eEs.Append(new InterfEE());
-                        iX = eEs.Length() - 1;
+                        InterfEE ee =  new InterfEE();
+                        eEs.Add(ee);
+                        iX = eEs.Count - 1;
                         ee.SetIndices(nE1, nE2);
                         ee.SetCommonPart(cPart);
                         // 2
@@ -577,8 +580,8 @@ public partial class PaveFiller
         TreatNewVertices(mvcpb, images);
         //
         // 2. Add new vertices to myDS and connect indices to CPB structure
-        NCollection_DynamicArray<InterfEE> eEs = _ds!.InterfEE();
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
+        List<InterfEE> eEs = _ds!.InterfEE();
+        List<InterfEF> eFs = _ds.InterfEF();
         //
         // 4. Compute Extra Paves and split Pave blocks by the Extra paves
         using var ps = new ProgressScope(range, null, 2);
@@ -820,9 +823,10 @@ public partial class PaveFiller
             Pave pave = new();
             //
             //
-            NCollection_DynamicArray<InterfVE> vEs = _ds.InterfVE();
+            List<InterfVE> vEs = _ds.InterfVE();
             // 1
-            InterfVE ve = vEs.Append(new InterfVE());
+            InterfVE ve =  new InterfVE();
+            vEs.Add(ve);
             ve.SetIndices(nV, nE);
             ve.SetParameter(t);
             // 2
@@ -904,8 +908,8 @@ public partial class PaveFiller
         // Fence map to avoid checking same Common block twice
         HashSet<PaveBlock> mpbFence = new();
 
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
-        int nbPBP = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Count;
         for (int i = 0; i < nbPBP; ++i)
         {
             NCollection_List<PaveBlock> lpb = pbp[i];
@@ -1027,7 +1031,7 @@ public partial class PaveFiller
         bool bSICheckMode = (_arguments.Extent() == 1);
 
         // Prepare pave blocks with the same vertices for intersection.
-        NCollection_DynamicArray<EdgeEdgeJob> vEdgeEdge = new();
+        List<EdgeEdgeJob> vEdgeEdge = new();
 
         for (int i = 1; i <= nbPB; ++i)
         {
@@ -1137,7 +1141,8 @@ public partial class PaveFiller
                     }
 
                     // Add pair for intersection
-                    EdgeEdgeJob edgeEdge = vEdgeEdge.Append(new EdgeEdgeJob());
+                    EdgeEdgeJob edgeEdge =  new EdgeEdgeJob();
+                    vEdgeEdge.Add(edgeEdge);
                     edgeEdge.UseQuickCoincidenceCheck(true);
                     edgeEdge.SetPaveBlock1(pb1);
                     edgeEdge.SetPaveBlock2(pb2);
@@ -1156,7 +1161,7 @@ public partial class PaveFiller
             }
         }
 
-        int nbPairs = vEdgeEdge.Length();
+        int nbPairs = vEdgeEdge.Count;
         if (nbPairs == 0)
         {
             return;
@@ -1172,7 +1177,7 @@ public partial class PaveFiller
         {
             for (int i = 0; i < nbPairs; i++)
             {
-                EdgeEdgeJob edgeEdge = vEdgeEdge.ChangeValue(i);
+                EdgeEdgeJob edgeEdge = vEdgeEdge[i];
                 edgeEdge.SetProgressRange(ps.Next());
             }
 
@@ -1183,7 +1188,7 @@ public partial class PaveFiller
         {
             return;
         }
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
+        List<InterfEE> eEs = _ds.InterfEE();
 
         // Analyze the results of intersection looking for TopAbs_EDGE
         // intersection type only.
@@ -1231,7 +1236,8 @@ public partial class PaveFiller
                 AddWarning(new AlertAcquiredSelfIntersection(wc));
             }
 
-            InterfEE ee = eEs.Append(new InterfEE());
+            InterfEE ee =  new InterfEE();
+            eEs.Add(ee);
             ee.SetIndices(nE1, nE2);
             ee.SetCommonPart(cp);
             _ds.AddInterf(nE1, nE2);

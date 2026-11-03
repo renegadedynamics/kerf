@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Geometry;
+using System.Runtime.InteropServices;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BOPDS;
@@ -93,10 +95,12 @@ public class BOPDS_ValueTests
         Assert.Equal(-1, aPoint.Index());
 
         // a vector of points default-constructs as OCCT's
-        NCollection_DynamicArray<DataPoint> aPoints = new();
-        aPoints.Appended().SetIndex(4);
-        Assert.Equal(4, aPoints.Value(0).Index());
-        Assert.Equal(new Point3D(99, 99, 99), aPoints.Value(0).Pnt());
+        List<DataPoint> aPoints = new();
+        aPoints.SetAt(1, new DataPoint()); // grows with a default-constructed element at 0
+        ref DataPoint aFirst = ref CollectionsMarshal.AsSpan(aPoints)[0];
+        aFirst.SetIndex(4);
+        Assert.Equal(4, aPoints[0].Index());
+        Assert.Equal(new Point3D(99, 99, 99), aPoints[0].Pnt());
     }
 
     [Fact]

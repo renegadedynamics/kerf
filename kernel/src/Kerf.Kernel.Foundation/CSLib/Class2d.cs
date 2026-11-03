@@ -62,10 +62,10 @@ public sealed class Class2d
     }
 
     /// <summary>Constructs a 2D classifier from a vector of polygon vertices (see the array constructor).</summary>
-    public Class2d(NCollection_DynamicArray<Point2D> pnts2d, double tolU, double tolV,
+    public Class2d(List<Point2D> pnts2d, double tolU, double tolV,
                          double uMin, double vMin, double uMax, double vMax)
     {
-        Init(pnts2d.Lower(), pnts2d.Length(), i => pnts2d.Value(i), tolU, tolV, uMin, vMin, uMax, vMax);
+        Init(0, pnts2d.Count, i => pnts2d[i], tolU, tolV, uMin, vMin, uMax, vMax);
     }
 
     // Transforms a coordinate from original space to normalized [0,1] space,

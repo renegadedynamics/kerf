@@ -48,7 +48,7 @@ public sealed class PurgeLocations
 
         // Check locations;
         int ind;
-        var badTrsfInds = new NCollection_DynamicArray<int>();
+        var badTrsfInds = new List<int>();
         for (ind = 1; ; ++ind)
         {
             Placement loc = _locations.Location(ind);
@@ -64,11 +64,11 @@ public sealed class PurgeLocations
                 || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
             if (isBadTrsf)
             {
-                badTrsfInds.Append(ind);
+                badTrsfInds.Add(ind);
             }
         }
 
-        if (badTrsfInds.IsEmpty())
+        if (badTrsfInds.Count == 0)
         {
             return _done;
         }
@@ -85,7 +85,7 @@ public sealed class PurgeLocations
                 continue;
             }
             int il;
-            for (il = 0; il < badTrsfInds.Length(); ++il)
+            for (il = 0; il < badTrsfInds.Count; ++il)
             {
                 if (badTrsfInds[il] == locInd)
                 {

@@ -152,15 +152,15 @@ public class GeomIntTests
         aBox1.Add(new Point2D(1, 1));
         aBox2.Add(new Point2D(5, 5));
         aBox2.Add(new Point2D(6, 6));
-        NCollection_DynamicArray<double> aPars = new();
-        aPars.Append(5.0);
-        aPars.Append(0.0);
+        List<double> aPars = new();
+        aPars.Add(5.0);
+        aPars.Add(0.0);
         global::Kerf.Engine.Intersection.Surfaces.IntSS.TrimILineOnSurfBoundaries(aL, null, aBox1, aBox2, aPars);
-        Assert.Equal(4, aPars.Length());
+        Assert.Equal(4, aPars.Count);
         double[] anExpected = [0.0, 1.0, 2.0, 5.0];
         for (int i = 0; i < 4; i++)
         {
-            Assert.Equal(anExpected[i], aPars.Value(i), 1.0e-9);
+            Assert.Equal(anExpected[i], aPars[i], 1.0e-9);
         }
     }
 

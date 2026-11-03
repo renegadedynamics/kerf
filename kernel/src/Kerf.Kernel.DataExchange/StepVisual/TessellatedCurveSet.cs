@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 public class TessellatedCurveSet : TessellatedItem
 {
     private CoordinatesList _coordList;
-    private NCollection_DynamicArray<NCollection_HSequence<int>> _curves;
+    private List<NCollection_HSequence<int>> _curves;
 
     /// <summary>
     /// Returns a DraughtingCalloutElement select type
@@ -22,7 +22,7 @@ public class TessellatedCurveSet : TessellatedItem
     {
     }
 
-    public void Init(TCollection_HAsciiString name, CoordinatesList coordList, NCollection_DynamicArray<NCollection_HSequence<int>> curves)
+    public void Init(TCollection_HAsciiString name, CoordinatesList coordList, List<NCollection_HSequence<int>> curves)
     {
         base.Init(name);
         _coordList = coordList;
@@ -34,7 +34,7 @@ public class TessellatedCurveSet : TessellatedItem
         return _coordList;
     }
 
-    public NCollection_DynamicArray<NCollection_HSequence<int>> Curves()
+    public List<NCollection_HSequence<int>> Curves()
     {
         return _curves;
     }

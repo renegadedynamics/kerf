@@ -118,7 +118,7 @@ public class InterferencePolyhedron : PolygonInterference
         traversal.Perform(set1, set2, _selfIntf);
 
         // Process each candidate pair
-        NCollection_DynamicArray<BvhTraversal.TrianglePair> pairs = traversal.Pairs();
+        List<BvhTraversal.TrianglePair> pairs = traversal.Pairs();
         foreach (BvhTraversal.TrianglePair pair in pairs)
         {
             Intersect(pair.First, firstPol, pair.Second, secondPol);

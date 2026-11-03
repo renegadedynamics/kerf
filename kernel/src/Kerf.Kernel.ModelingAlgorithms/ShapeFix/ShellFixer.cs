@@ -220,7 +220,7 @@ public class ShellFixer : RootFixer
     /// Groups are sorted by size with the largest group first.
     private static NCollection_List<NCollection_Sequence<Shape>> GetConnectedFaceGroups(
         NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> faceEdges,
-        Dictionary<Shape, NCollection_DynamicArray<Shape>> edgeFaces)
+        Dictionary<Shape, List<Shape>> edgeFaces)
     {
         var connectedGroups = new NCollection_List<NCollection_Sequence<Shape>>();
 
@@ -260,11 +260,11 @@ public class ShellFixer : RootFixer
                     {
                         Shape edge = faceEdgesArray.Value(edgeIdx);
 
-                        if (edgeFaces.TryGetValue(edge, out NCollection_DynamicArray<Shape>? connectedFaces))
+                        if (edgeFaces.TryGetValue(edge, out List<Shape>? connectedFaces))
                         {
-                            for (int faceIdx = 0; faceIdx < connectedFaces.Length(); ++faceIdx)
+                            for (int faceIdx = 0; faceIdx < connectedFaces.Count; ++faceIdx)
                             {
-                                Shape neighborFace = connectedFaces.Value(faceIdx);
+                                Shape neighborFace = connectedFaces[faceIdx];
 
                                 if (!visitedFaces.Contains(neighborFace))
                                 {
@@ -324,25 +324,25 @@ public class ShellFixer : RootFixer
 
         NCollection_IndexedDataMap<Shape, NCollection_Array1<Shape>> faceEdges = NewFaceEdgesMap();
         int numberOfEdges = 0;
-        var tempEdges     = new NCollection_DynamicArray<Shape>();
+        var tempEdges     = new List<Shape>();
         for (int lfaceIdx = 1; lfaceIdx <= lfaces.Length(); lfaceIdx++)
         {
             tempEdges.Clear();
             Face face = ShapeCasts.Face(lfaces.Value(lfaceIdx));
             for (var edgeExp = new Explorer(face, ShapeType.Edge); edgeExp.More(); edgeExp.Next())
             {
-                tempEdges.Append(ShapeCasts.Edge(edgeExp.Current()));
+                tempEdges.Add(ShapeCasts.Edge(edgeExp.Current()));
                 numberOfEdges++;
             }
-            var faceEdgesArray = new NCollection_Array1<Shape>(1, tempEdges.Length());
-            for (int idx = 0; idx < tempEdges.Length(); ++idx)
+            var faceEdgesArray = new NCollection_Array1<Shape>(1, tempEdges.Count);
+            for (int idx = 0; idx < tempEdges.Count; ++idx)
             {
-                faceEdgesArray.SetValue(idx + 1, tempEdges.Value(idx));
+                faceEdgesArray.SetValue(idx + 1, tempEdges[idx]);
             }
             faceEdges.Add(face, faceEdgesArray);
         }
 
-        var edgeFaces = new Dictionary<Shape, NCollection_DynamicArray<Shape>>(ShapeHasher.Instance);
+        var edgeFaces = new Dictionary<Shape, List<Shape>>(ShapeHasher.Instance);
 
         for (int faceInd = 1; faceInd <= faceEdges.Extent(); ++faceInd)
         {
@@ -355,15 +355,15 @@ public class ShellFixer : RootFixer
 
                 if (!edgeFaces.ContainsKey(anEdge))
                 {
-                    edgeFaces[anEdge] = new NCollection_DynamicArray<Shape>();
+                    edgeFaces[anEdge] = new List<Shape>();
                 }
-                NCollection_DynamicArray<Shape> facesArray = edgeFaces.GetValue(anEdge);
+                List<Shape> facesArray = edgeFaces.GetValue(anEdge);
 
                 // Check if face already exists in the array
                 bool faceExists = false;
-                for (int faceCheckIdx = 0; faceCheckIdx < facesArray.Length(); ++faceCheckIdx)
+                for (int faceCheckIdx = 0; faceCheckIdx < facesArray.Count; ++faceCheckIdx)
                 {
-                    if (facesArray.Value(faceCheckIdx).IsSame(face))
+                    if (facesArray[faceCheckIdx].IsSame(face))
                     {
                         faceExists = true;
                         break;
@@ -375,7 +375,7 @@ public class ShellFixer : RootFixer
 
                 if (!faceExists)
                 {
-                    facesArray.Append(face);
+                    facesArray.Add(face);
                 }
             }
         }

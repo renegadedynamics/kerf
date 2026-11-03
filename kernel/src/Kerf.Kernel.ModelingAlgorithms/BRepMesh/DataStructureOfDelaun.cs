@@ -13,6 +13,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using System.Collections;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 
 namespace Kerf.Engine.Meshing;
@@ -42,7 +43,7 @@ public sealed class DataStructureOfDelaun : Transient
     // OCCT's NCollection_List<int>, used only as a first-in first-out queue: a .NET queue, whose RemoveFirst
     // doesn't move the rest (unit 9E)
     private readonly Queue<int> _delLinks;
-    private readonly NCollection_DynamicArray<Triangle> _elements;
+    private readonly List<Triangle> _elements;
     private readonly NCollection_PackedMapOfInteger _elementsOfDomain;
     private readonly NCollection_PackedMapOfInteger _linksOfDomain;
 
@@ -53,7 +54,7 @@ public sealed class DataStructureOfDelaun : Transient
         _nodeLinks = new Dictionary<int, LinkedListOfInteger>();
         _links = new LinkMap(reservedNodeSize * 3);
         _delLinks = new Queue<int>();
-        _elements = new NCollection_DynamicArray<Triangle>(reservedNodeSize * 2);
+        _elements = new List<Triangle>(reservedNodeSize * 2);
         _elementsOfDomain = new NCollection_PackedMapOfInteger();
         _linksOfDomain = new NCollection_PackedMapOfInteger();
     }
@@ -220,13 +221,13 @@ public sealed class DataStructureOfDelaun : Transient
     // Elements
 
     /// <summary>The number of triangles (deleted ones included).</summary>
-    public int ElementCount => _elements.Length();
+    public int ElementCount => _elements.Count;
 
     /// <summary>Adds a triangle; returns its index.</summary>
     public int AddElement(in Triangle element)
     {
-        _elements.Append(element);
-        int elementIndex = _elements.Length();
+        _elements.Add(element);
+        int elementIndex = _elements.Count;
         _elementsOfDomain.Add(elementIndex);
 
         Triangle.Int3 e = element._edges;
@@ -239,10 +240,10 @@ public sealed class DataStructureOfDelaun : Transient
     }
 
     /// <summary>The triangle of the given index.</summary>
-    public Triangle GetElement(int index) => _elements.Value(index - 1);
+    public Triangle GetElement(int index) => _elements[index - 1];
 
     /// <summary>The triangle of the given index, for writing in place (valid until the next <see cref="AddElement"/>).</summary>
-    internal ref Triangle ChangeElement(int index) => ref _elements.ChangeValue(index - 1);
+    internal ref Triangle ChangeElement(int index) => ref CollectionsMarshal.AsSpan(_elements)[index - 1];
 
     /// <summary>The indices of the triangles of the domain.</summary>
     public NCollection_PackedMapOfInteger ElementsOfDomain() => _elementsOfDomain;
@@ -275,7 +276,7 @@ public sealed class DataStructureOfDelaun : Transient
     /// <summary>Removes the triangle of the given index: it is marked deleted and leaves the domain.</summary>
     public void RemoveElement(int index)
     {
-        ref Triangle element = ref _elements.ChangeValue(index - 1);
+        ref Triangle element = ref CollectionsMarshal.AsSpan(_elements)[index - 1];
         if (element.Movability() == DegreeOfFreedom.Deleted)
         {
             return;
@@ -334,7 +335,7 @@ public sealed class DataStructureOfDelaun : Transient
         for (; elementIt.More(); elementIt.Next())
         {
             int elementId = elementIt.Key();
-            ref Triangle element = ref _elements.ChangeValue(elementId - 1);
+            ref Triangle element = ref CollectionsMarshal.AsSpan(_elements)[elementId - 1];
 
             Triangle.Int3 e = element._edges;
 
@@ -507,7 +508,7 @@ public sealed class DataStructureOfDelaun : Transient
     // a missing block); the port drops that write.
     private void SetElementAt0(int index, in Triangle element)
     {
-        if (index < _elements.Length())
+        if (index < _elements.Count)
         {
             _elements[index] = element;
         }

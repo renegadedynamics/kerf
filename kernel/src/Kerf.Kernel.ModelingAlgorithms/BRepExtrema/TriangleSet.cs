@@ -34,13 +34,13 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     protected NCollection_LinearVector<NCollection_Vec3<double>> _vertexArray = new();
 
     /// <summary>The index of the shape of each vertex.</summary>
-    protected NCollection_DynamicArray<int> _shapeIdxOfVtxVec = new();
+    protected List<int> _shapeIdxOfVtxVec = new();
 
     /// <summary>The number of vertices of each shape.</summary>
-    protected NCollection_DynamicArray<int> _numVtxInShapeVec = new();
+    protected List<int> _numVtxInShapeVec = new();
 
     /// <summary>The number of triangles of each shape.</summary>
-    protected NCollection_DynamicArray<int> _numTrgInShapeVec = new();
+    protected List<int> _numTrgInShapeVec = new();
 
     /// <summary>The triangles' indices after (key) and before (value) swapping.</summary>
     protected Dictionary<int, int> _trgIdxMap = new();
@@ -53,7 +53,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     }
 
     /// <summary>A triangle set of the given shapes.</summary>
-    public TriangleSet(NCollection_DynamicArray<Shape> faces)
+    public TriangleSet(List<Shape> faces)
         : base(new LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         // Set default builder - linear BVH (LBVH)
@@ -112,17 +112,17 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     public int GetFaceID(int index) => _triangles[index].W();
 
     /// <summary>The shape index of the given vertex.</summary>
-    public int GetShapeIDOfVtx(int index) => _shapeIdxOfVtxVec.Value(index);
+    public int GetShapeIDOfVtx(int index) => _shapeIdxOfVtxVec[index];
 
     /// <summary>The index of a vertex of the whole set in the triangulation of its shape.</summary>
     public int GetVtxIdxInShape(int index)
     {
-        int shID = _shapeIdxOfVtxVec.Value(index);
+        int shID = _shapeIdxOfVtxVec[index];
         int numVertices = 0;
 
         for (int sIdx = 0; sIdx < shID; sIdx++)
         {
-            numVertices += _numVtxInShapeVec.Value(sIdx);
+            numVertices += _numVtxInShapeVec[sIdx];
         }
 
         return index - numVertices;
@@ -138,7 +138,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 
         for (int sIdx = 0; sIdx < shID; sIdx++)
         {
-            numTriangles += _numTrgInShapeVec.Value(sIdx);
+            numTriangles += _numTrgInShapeVec[sIdx];
         }
 
         return _trgIdxMap.GetValue(index) - numTriangles;
@@ -183,12 +183,12 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     /// Initialises the set from the shapes (faces with triangulations, edges with 3D polygons) and builds its BVH.
     /// As in OCCT, it stops at the first shape without a mesh and still returns true.
     /// </summary>
-    public bool Init(NCollection_DynamicArray<Shape> shapes)
+    public bool Init(List<Shape> shapes)
     {
         Clear();
 
         bool isOK = true; // OCCT: isOK stops the loop at a shape without a mesh, but Init returns true regardless
-        for (int shapeIdx = 0; shapeIdx < shapes.Length() && isOK; ++shapeIdx)
+        for (int shapeIdx = 0; shapeIdx < shapes.Count && isOK; ++shapeIdx)
         {
             if (shapes[shapeIdx].ShapeType() == ShapeType.Face)
             {
@@ -240,7 +240,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
                                                          index));
         }
 
-        _numTrgInShapeVec.SetValue(index, triangulation.TriangleCount);
+        _numTrgInShapeVec.SetAt(index, triangulation.TriangleCount);
 
         return true;
     }
@@ -277,9 +277,9 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
             vertex = vertex.Transformed(trsf);
 
             _vertexArray.Append(new NCollection_Vec3<double>(vertex.X(), vertex.Y(), vertex.Z()));
-            _shapeIdxOfVtxVec.Append(index);
+            _shapeIdxOfVtxVec.Add(index);
         }
 
-        _numVtxInShapeVec.SetValue(index, nodes.Length());
+        _numVtxInShapeVec.SetAt(index, nodes.Length());
     }
 }

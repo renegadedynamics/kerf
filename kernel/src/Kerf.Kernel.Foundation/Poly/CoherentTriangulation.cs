@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2007-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
@@ -33,7 +34,7 @@ public class CoherentTriangulation : Transient
     /// <summary>Iterates the triangles, skipping removed ones. Triangles added during the iteration aren't visited.</summary>
     public sealed class IteratorOfTriangle
     {
-        private NCollection_DynamicArray<CoherentTriangle>? _array;
+        private List<CoherentTriangle>? _array;
         private int _index;
         private int _last;
 
@@ -43,7 +44,7 @@ public class CoherentTriangulation : Transient
             {
                 _array = tri._triangles;
                 _index = 0;
-                _last = _array.Length();
+                _last = _array.Count;
                 while (More())
                 {
                     CoherentTriangle aTri = Value();
@@ -74,15 +75,15 @@ public class CoherentTriangulation : Transient
             }
         }
 
-        public CoherentTriangle Value() => _array!.Value(_index);
+        public CoherentTriangle Value() => _array![_index];
 
-        public CoherentTriangle ChangeValue() => _array!.Value(_index);
+        public CoherentTriangle ChangeValue() => _array![_index];
     }
 
     /// <summary>Iterates the nodes, skipping free ones.</summary>
     public sealed class IteratorOfNode
     {
-        private NCollection_DynamicArray<CoherentNode>? _array;
+        private List<CoherentNode>? _array;
         private int _index;
         private int _last;
 
@@ -92,7 +93,7 @@ public class CoherentTriangulation : Transient
             {
                 _array = tri._nodes;
                 _index = 0;
-                _last = _array.Length();
+                _last = _array.Count;
                 while (More())
                 {
                     if (!Value().IsFreeNode)
@@ -121,9 +122,9 @@ public class CoherentTriangulation : Transient
             }
         }
 
-        public CoherentNode Value() => _array!.Value(_index);
+        public CoherentNode Value() => _array![_index];
 
-        public CoherentNode ChangeValue() => _array!.Value(_index);
+        public CoherentNode ChangeValue() => _array![_index];
 
         /// <summary>The index of the current node.</summary>
         public int Index() => _index;
@@ -132,7 +133,7 @@ public class CoherentTriangulation : Transient
     /// <summary>Iterates the links, skipping removed ones.</summary>
     public sealed class IteratorOfLink
     {
-        private NCollection_DynamicArray<CoherentLink>? _array;
+        private List<CoherentLink>? _array;
         private int _index;
         private int _last;
 
@@ -142,7 +143,7 @@ public class CoherentTriangulation : Transient
             {
                 _array = tri._links;
                 _index = 0;
-                _last = _array.Length();
+                _last = _array.Count;
                 while (More())
                 {
                     if (!Value().IsEmpty)
@@ -171,17 +172,17 @@ public class CoherentTriangulation : Transient
             }
         }
 
-        public CoherentLink Value() => _array!.Value(_index);
+        public CoherentLink Value() => _array![_index];
 
-        public CoherentLink ChangeValue() => _array!.Value(_index);
+        public CoherentLink ChangeValue() => _array![_index];
     }
 
     /// <summary>A pair of node indices (used by <see cref="RemoveDegenerated"/>: the removed node, then the one kept).</summary>
     public readonly record struct TwoIntegers(int Value0, int Value1);
 
-    protected readonly NCollection_DynamicArray<CoherentTriangle> _triangles = new();
-    protected readonly NCollection_DynamicArray<CoherentNode> _nodes = new();
-    protected readonly NCollection_DynamicArray<CoherentLink> _links = new();
+    protected readonly List<CoherentTriangle> _triangles = new();
+    protected readonly List<CoherentNode> _nodes = new();
+    protected readonly List<CoherentLink> _links = new();
     protected double _deflection;
 
     /// <summary>An empty triangulation.</summary>
@@ -260,20 +261,20 @@ public class CoherentTriangulation : Transient
 
         var result = new Triangulation(nNodes, nTriangles, false);
 
-        var vecNodeId = new NCollection_DynamicArray<int>();
+        var vecNodeId = new List<int>();
         int count = 0;
 
         // Copy the nodes (3D and 2D coordinates)
-        for (int i = 0; i < _nodes.Length(); i++)
+        for (int i = 0; i < _nodes.Count; i++)
         {
             CoherentNode node = _nodes[i];
             if (node.IsFreeNode)
             {
-                vecNodeId.SetValue(i, 0);
+                vecNodeId.SetAt(i, 0);
                 continue;
             }
 
-            vecNodeId.SetValue(i, ++count);
+            vecNodeId.SetAt(i, ++count);
             Xyz normal = node.GetNormal();
             if (normal.SquareModulus() > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -291,7 +292,7 @@ public class CoherentTriangulation : Transient
 
         // Copy the triangles
         count = 0;
-        for (int iterT = 0, last = _triangles.Length(); iterT < last; iterT++)
+        for (int iterT = 0, last = _triangles.Count; iterT < last; iterT++)
         {
             CoherentTriangle tri = _triangles[iterT];
             if (!tri.IsEmpty)
@@ -397,7 +398,7 @@ public class CoherentTriangulation : Transient
     {
         lstNodes.Clear();
         int i;
-        for (i = 0; i < _nodes.Length(); i++)
+        for (i = 0; i < _nodes.Count; i++)
         {
             CoherentNode node = _nodes[i];
             if (node.IsFreeNode)
@@ -410,10 +411,10 @@ public class CoherentTriangulation : Transient
     }
 
     /// <summary>The index of the last node.</summary>
-    public int MaxNode() => _nodes.Length() - 1;
+    public int MaxNode() => _nodes.Count - 1;
 
     /// <summary>The index of the last triangle.</summary>
-    public int MaxTriangle() => _triangles.Length() - 1;
+    public int MaxTriangle() => _triangles.Count - 1;
 
     /// <summary>Sets the deflection.</summary>
     public void SetDeflection(double defl) => _deflection = defl;
@@ -427,20 +428,20 @@ public class CoherentTriangulation : Transient
     /// </summary>
     public int SetNode(in Xyz pnt, int iN = -1)
     {
-        int result = _nodes.Length();
+        int result = _nodes.Count;
         if (iN < 0)
         {
-            _nodes.Append(new CoherentNode(pnt));
+            _nodes.Add(new CoherentNode(pnt));
         }
         else
         {
             // NCollection_DynamicArray::SetValue default-constructs the elements up to iN
-            while (_nodes.Length() < iN)
+            while (_nodes.Count < iN)
             {
-                _nodes.Append(new CoherentNode());
+                _nodes.Add(new CoherentNode());
             }
 
-            _nodes.SetValue(iN, new CoherentNode(pnt));
+            _nodes.SetAt(iN, new CoherentNode(pnt));
             result = iN;
         }
 
@@ -448,10 +449,10 @@ public class CoherentTriangulation : Transient
     }
 
     /// <summary>The node at an index.</summary>
-    public CoherentNode Node(int i) => _nodes.Value(i);
+    public CoherentNode Node(int i) => _nodes[i];
 
     /// <summary>The node at an index, for writing.</summary>
-    public CoherentNode ChangeNode(int i) => _nodes.Value(i);
+    public CoherentNode ChangeNode(int i) => _nodes[i];
 
     /// <summary>The number of nodes used by triangles.</summary>
     public int NNodes()
@@ -469,7 +470,7 @@ public class CoherentTriangulation : Transient
     }
 
     /// <summary>The triangle at an index.</summary>
-    public CoherentTriangle Triangle(int i) => _triangles.Value(i);
+    public CoherentTriangle Triangle(int i) => _triangles[i];
 
     /// <summary>The number of triangles not removed.</summary>
     public int NTriangles()
@@ -600,7 +601,8 @@ public class CoherentTriangulation : Transient
         CoherentTriangle? pTriangle = null;
         if (iNode0 >= 0 && iNode1 >= 0 && iNode2 >= 0)
         {
-            pTriangle = _triangles.Append(new CoherentTriangle());
+            pTriangle =  new CoherentTriangle();
+            _triangles.Add(pTriangle);
             ReplaceNodes(pTriangle, iNode0, iNode1, iNode2);
         }
 
@@ -631,7 +633,7 @@ public class CoherentTriangulation : Transient
             }
 
             // If Links exist in this Triangulation, create or update a Link
-            if (_links.Length() > 0)
+            if (_links.Count > 0)
             {
                 for (int i = 0; i < 3; i++)
                 {
@@ -686,7 +688,8 @@ public class CoherentTriangulation : Transient
         CoherentLink? pLink = null;
         if (!tri.IsEmpty)
         {
-            pLink = _links.Append(new CoherentLink(tri, conn));
+            pLink =  new CoherentLink(tri, conn);
+            _links.Add(pLink);
             tri._mypLink[conn] = pLink;
             CoherentTriangle? pTriOpp = tri.GetConnectedTri(conn);
             if (pTriOpp is null)
@@ -729,7 +732,7 @@ public class CoherentTriangulation : Transient
         pTri[0] = null;
         pTri[1] = null;
         int iNode0 = link.Node(0);
-        if (!link.IsEmpty && iNode0 < _nodes.Length() && link.Node(1) < _nodes.Length())
+        if (!link.IsEmpty && iNode0 < _nodes.Count && link.Node(1) < _nodes.Count)
         {
             CoherentTriPtr.Iterator iter0 = _nodes[iNode0].TriangleIterator();
             for (; iter0.More(); iter0.Next())
@@ -791,7 +794,7 @@ public class CoherentTriangulation : Transient
     public int ComputeLinks()
     {
         _links.Clear(); // OCCT: the triangles keep (dangling) pointers to the cleared links
-        int last = _triangles.Length();
+        int last = _triangles.Count;
         for (int iter = 0; iter < last; iter++)
         {
             CoherentTriangle triangle = _triangles[iter];
@@ -818,7 +821,7 @@ public class CoherentTriangulation : Transient
 
         // Above algorithm does not create all boundary links, so
         // it is necessary to check triangles and add absentee links
-        last = _triangles.Length();
+        last = _triangles.Count;
         int i;
         for (int iter = 0; iter < last; iter++)
         {
@@ -837,7 +840,7 @@ public class CoherentTriangulation : Transient
             }
         }
 
-        return _links.Length();
+        return _links.Count;
     }
 
     /// <summary>Removes all the links, and the triangles' references to them.</summary>
@@ -873,7 +876,7 @@ public class CoherentTriangulation : Transient
     /// <summary>Writes the non-free nodes and their triangles (debugging output).</summary>
     public void Dump(TextWriter stream)
     {
-        for (int iNode = 0; iNode < _nodes.Length(); iNode++)
+        for (int iNode = 0; iNode < _nodes.Count; iNode++)
         {
             CoherentNode node = _nodes[iNode];
             if (node.IsFreeNode)

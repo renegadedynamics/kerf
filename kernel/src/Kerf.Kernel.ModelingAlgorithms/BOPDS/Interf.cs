@@ -167,8 +167,8 @@ public class InterfEF : Interf
 public class InterfFF : Interf
 {
     protected bool _tangentFaces;
-    protected NCollection_DynamicArray<SectionCurve> _curves = new(0);
-    protected NCollection_DynamicArray<DataPoint> _points = new(0);
+    protected List<SectionCurve> _curves = new();
+    protected List<DataPoint> _points = new();
 
     public InterfFF()
     {
@@ -189,14 +189,14 @@ public class InterfFF : Interf
     public bool TangentFaces() => _tangentFaces;
 
     /// <summary>The intersection curves (the interference's own vector; read only for callers).</summary>
-    public NCollection_DynamicArray<SectionCurve> Curves() => _curves;
+    public List<SectionCurve> Curves() => _curves;
 
-    internal NCollection_DynamicArray<SectionCurve> ChangeCurves() => _curves;
+    internal List<SectionCurve> ChangeCurves() => _curves;
 
     /// <summary>The intersection points (the interference's own vector; read only for callers).</summary>
-    public NCollection_DynamicArray<DataPoint> Points() => _points;
+    public List<DataPoint> Points() => _points;
 
-    internal NCollection_DynamicArray<DataPoint> ChangePoints() => _points;
+    internal List<DataPoint> ChangePoints() => _points;
 }
 
 /// <summary>A vertex/solid interference.</summary>

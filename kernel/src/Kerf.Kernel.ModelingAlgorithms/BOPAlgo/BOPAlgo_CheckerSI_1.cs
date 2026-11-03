@@ -200,7 +200,7 @@ public partial class CheckerSI
             return;
         }
         //
-        NCollection_DynamicArray<InterfVZ> vZs = _ds!.InterfVZ();
+        List<InterfVZ> vZs = _ds!.InterfVZ();
         //
         List<VertexSolid> vvs = [];
         //
@@ -259,7 +259,8 @@ public partial class CheckerSI
             {
                 vertexSolid.Indices(out nV, out nZ);
                 //
-                InterfVZ vz = vZs.Append(new InterfVZ());
+                InterfVZ vz =  new InterfVZ();
+                vZs.Add(vz);
                 vz.SetIndices(nV, nZ);
                 //
                 _ds.AddInterf(nV, nZ);
@@ -321,7 +322,7 @@ public partial class CheckerSI
             return;
         }
         //
-        NCollection_DynamicArray<InterfZZ> zZs = _ds!.InterfZZ();
+        List<InterfZZ> zZs = _ds!.InterfZZ();
         //
         for (k = 0; k < nbSolidSolid; ++k)
         {
@@ -331,7 +332,8 @@ public partial class CheckerSI
             {
                 solidSolid.Indices(out nZ1, out nZ);
                 //
-                InterfZZ zz = zZs.Append(new InterfZZ());
+                InterfZZ zz =  new InterfZZ();
+                zZs.Add(zz);
                 zz.SetIndices(nZ1, nZ);
                 //
                 _ds.AddInterf(nZ1, nZ);
@@ -384,8 +386,8 @@ public partial class CheckerSI
             return;
         }
         //
-        NCollection_DynamicArray<InterfEZ> eZs = _ds!.InterfEZ();
-        NCollection_DynamicArray<InterfFZ> fZs = _ds.InterfFZ();
+        List<InterfEZ> eZs = _ds!.InterfEZ();
+        List<InterfFZ> fZs = _ds.InterfFZ();
         //
         for (k = 0; k < nbShapeSolid; ++k)
         {
@@ -397,12 +399,14 @@ public partial class CheckerSI
                 //
                 if (ts == ShapeType.Edge)
                 {
-                    InterfEZ ez = eZs.Append(new InterfEZ());
+                    InterfEZ ez =  new InterfEZ();
+                    eZs.Add(ez);
                     ez.SetIndices(nS, nZ);
                 }
                 else
                 { // if (aTS==TopAbs_FACE)
-                    InterfFZ fz = fZs.Append(new InterfFZ());
+                    InterfFZ fz =  new InterfFZ();
+                    fZs.Add(fz);
                     fz.SetIndices(nS, nZ);
                 }
                 //

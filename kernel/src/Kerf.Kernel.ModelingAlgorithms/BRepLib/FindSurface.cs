@@ -158,10 +158,10 @@ public class FindSurface
                                    int degree,
                                    double parMin,
                                    double parMax,
-                                   NCollection_DynamicArray<double> theParams)
+                                   List<double> theParams)
     {
         double prevPar = parMin;
-        theParams.Append(prevPar);
+        theParams.Add(prevPar);
 
         int nbP = Max(degree, 1);
 
@@ -183,25 +183,25 @@ public class FindSurface
 
                 if (par > prevPar + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    theParams.Append(par);
+                    theParams.Add(par);
                     prevPar = par;
                 }
             }
         }
-        theParams.Append(parMax);
+        theParams.Add(parMax);
     }
 
     private static void FillPoints(EdgeCurveAdaptor curve,
-                                   NCollection_DynamicArray<double> theParams,
+                                   List<double> theParams,
                                    NCollection_Sequence<Point3D> points,
                                    NCollection_Sequence<double> weights)
     {
         double distPrev = 0.0, distNext;
         Point3D pPrev = curve.Value(theParams[0]), pNext = new();
 
-        for (int iP = 1; iP <= theParams.Length(); ++iP)
+        for (int iP = 1; iP <= theParams.Count; ++iP)
         {
-            if (iP < theParams.Length())
+            if (iP < theParams.Count)
             {
                 double param = theParams[iP];
                 pNext = curve.Value(param);
@@ -349,7 +349,7 @@ public class FindSurface
             int iNbPoints = 0;
 
             // Fill the parameters of the sampling points
-            var aParams = new NCollection_DynamicArray<double>();
+            var aParams = new List<double>();
             switch (c.GetType())
             {
                 case BezierCurve:
@@ -371,8 +371,8 @@ public class FindSurface
                 case Line:
                 {
                     // Two points on a straight segment
-                    aParams.Append(dfUf);
-                    aParams.Append(dfUl);
+                    aParams.Add(dfUf);
+                    aParams.Add(dfUl);
                     break;
                 }
                 case Circle:

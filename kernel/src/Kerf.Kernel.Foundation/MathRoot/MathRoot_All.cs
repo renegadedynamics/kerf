@@ -26,11 +26,11 @@ public static partial class MathRoot
     {
         public global::Kerf.Engine.Numerics.Utilities.MathUtils.Status Status = global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.NotConverged;
         /// <summary>Isolated root locations.</summary>
-        public NCollection_DynamicArray<double> Roots = new();
+        public List<double> Roots = new();
         /// <summary>State numbers for roots.</summary>
-        public NCollection_DynamicArray<int> RootStates = new();
+        public List<int> RootStates = new();
         /// <summary>Intervals where function is null.</summary>
-        public NCollection_DynamicArray<NullInterval> NullIntervals = new();
+        public List<NullInterval> NullIntervals = new();
 
         public AllRootsResult()
         {
@@ -44,9 +44,9 @@ public static partial class MathRoot
 
         public static bool operator false(AllRootsResult result) => !result.IsDone;
 
-        public readonly int RootCount => Roots.Length();
+        public readonly int RootCount => Roots.Count;
 
-        public readonly int IntervalCount => NullIntervals.Length();
+        public readonly int IntervalCount => NullIntervals.Count;
     }
 
     /// <summary>Find multiple roots of f(x) - theOffset = 0 in [theA, theB] (FindAllRoots with these settings).</summary>
@@ -108,7 +108,7 @@ public static partial class MathRoot
         double debNul = 0.0, finNul = 0.0;
         double valSav = prevVal;
 
-        NCollection_DynamicArray<double> intervalStarts = new(), intervalEnds = new();
+        List<double> intervalStarts = new(), intervalEnds = new();
 
         // Scan through samples to find null intervals
         for (int i = 1; i < nbp; ++i)
@@ -129,7 +129,7 @@ public static partial class MathRoot
             {
                 // End of null interval
                 inInterval = false;
-                intervalStarts.Append(debNul);
+                intervalStarts.Add(debNul);
 
                 // Refine end of null interval
                 double cst = (val > 0.0) ? epsNul : -epsNul;
@@ -168,7 +168,7 @@ public static partial class MathRoot
                     }
                 }
 
-                intervalEnds.Append(finNul);
+                intervalEnds.Add(finNul);
             }
             else if (!inInterval && prevNul && curNul)
             {
@@ -225,26 +225,26 @@ public static partial class MathRoot
         // Handle interval ending at last sample
         if (inInterval)
         {
-            intervalStarts.Append(debNul);
+            intervalStarts.Add(debNul);
             finNul = samples[lower + nbp - 1];
-            intervalEnds.Append(finNul);
+            intervalEnds.Add(finNul);
             nulEnd = true;
         }
 
         // Store null intervals
-        for (int k = 0; k < intervalStarts.Length(); ++k)
+        for (int k = 0; k < intervalStarts.Count; ++k)
         {
             NullInterval anInt = new();
-            anInt.A = intervalStarts.Value(k);
-            anInt.B = intervalEnds.Value(k);
-            result.NullIntervals.Append(anInt);
+            anInt.A = intervalStarts[k];
+            anInt.B = intervalEnds[k];
+            result.NullIntervals.Add(anInt);
         }
 
         double sampleFirst = samples[lower];
         double sampleLast = samples[lower + nbp - 1];
 
         // Find isolated roots between null intervals
-        if (intervalStarts.IsEmpty())
+        if (intervalStarts.Count == 0)
         {
             // No null intervals - find all roots in entire range
             MultipleResult res =
@@ -253,8 +253,8 @@ public static partial class MathRoot
             {
                 for (int j = 0; j < res.RootCount; ++j)
                 {
-                    result.Roots.Append(res.Roots[j]);
-                    result.RootStates.Append(0);
+                    result.Roots.Add(res.Roots[j]);
+                    result.RootStates.Add(0);
                 }
             }
         }
@@ -264,7 +264,7 @@ public static partial class MathRoot
             if (!nulStart)
             {
                 double start = sampleFirst;
-                double end = intervalStarts.Value(0);
+                double end = intervalStarts[0];
                 int nbrpt =
                   Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
 
@@ -273,17 +273,17 @@ public static partial class MathRoot
                 {
                     for (int j = 0; j < res.RootCount; ++j)
                     {
-                        result.Roots.Append(res.Roots[j]);
-                        result.RootStates.Append(0);
+                        result.Roots.Add(res.Roots[j]);
+                        result.RootStates.Add(0);
                     }
                 }
             }
 
             // Find roots between null intervals
-            for (int k = 1; k < intervalStarts.Length(); ++k)
+            for (int k = 1; k < intervalStarts.Count; ++k)
             {
-                double start = intervalEnds.Value(k - 1);
-                double end = intervalStarts.Value(k);
+                double start = intervalEnds[k - 1];
+                double end = intervalStarts[k];
                 int nbrpt =
                   Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
 
@@ -292,8 +292,8 @@ public static partial class MathRoot
                 {
                     for (int j = 0; j < res.RootCount; ++j)
                     {
-                        result.Roots.Append(res.Roots[j]);
-                        result.RootStates.Append(0);
+                        result.Roots.Add(res.Roots[j]);
+                        result.RootStates.Add(0);
                     }
                 }
             }
@@ -301,7 +301,7 @@ public static partial class MathRoot
             // Find roots after last null interval
             if (!nulEnd)
             {
-                double start = intervalEnds.Value(intervalEnds.Length() - 1);
+                double start = intervalEnds[intervalEnds.Count - 1];
                 double end = sampleLast;
                 int nbrpt =
                   Max(3, (int)(Math.Abs((end - start) / (sampleLast - sampleFirst)) * nbp));
@@ -311,8 +311,8 @@ public static partial class MathRoot
                 {
                     for (int j = 0; j < res.RootCount; ++j)
                     {
-                        result.Roots.Append(res.Roots[j]);
-                        result.RootStates.Append(0);
+                        result.Roots.Add(res.Roots[j]);
+                        result.RootStates.Add(0);
                     }
                 }
             }

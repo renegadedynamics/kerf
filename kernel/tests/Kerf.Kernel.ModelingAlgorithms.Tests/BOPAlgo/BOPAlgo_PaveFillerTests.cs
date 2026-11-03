@@ -284,11 +284,11 @@ public class BOPAlgo_PaveFillerTests
         Assert.True(aPF.NonDestructive()); // the arguments are frozen, so locked
         DS aDS = aPF.DS();
         // b's four edges along X cross a's face x = 1; the section of that face with b's four side faces
-        Assert.Equal(4, aDS.InterfEF().Length());
+        Assert.Equal(4, aDS.InterfEF().Count);
         int aNbSection = 0;
         foreach (InterfFF aFF in aDS.InterfFF())
         {
-            aNbSection += aFF.Curves().Length();
+            aNbSection += aFF.Curves().Count;
         }
         Assert.Equal(4, aNbSection);
         Assert.True(aDS.ShapeCount > aDS.SourceShapeCount);

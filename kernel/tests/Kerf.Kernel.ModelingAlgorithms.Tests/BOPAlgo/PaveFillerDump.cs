@@ -221,10 +221,10 @@ internal static class PaveFillerDump
         }
         foreach (InterfFF aI in theDS.InterfFF())
         {
-            NCollection_DynamicArray<SectionCurve> aVC = aI.Curves();
-            NCollection_DynamicArray<DataPoint> aVP = aI.Points();
+            List<SectionCurve> aVC = aI.Curves();
+            List<DataPoint> aVP = aI.Points();
             aB.Append("ff ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.TangentFaces() ? 1 : 0)
-              .Append(' ').Append(aVC.Length()).Append(' ').Append(aVP.Length()).Append('\n');
+              .Append(' ').Append(aVC.Count).Append(' ').Append(aVP.Count).Append('\n');
             foreach (SectionCurve aNC in aVC)
             {
                 aB.Append(" c ").Append(H(aNC.Tolerance())).Append(' ').Append(H(aNC.TangentialTolerance()))

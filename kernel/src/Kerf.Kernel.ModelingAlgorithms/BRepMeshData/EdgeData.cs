@@ -14,19 +14,19 @@ namespace Kerf.Engine.Meshing.Data;
 /// <remarks>The pcurves of a face are found by the discrete face's reference (OCCT: its address).</remarks>
 public class EdgeData : EdgeModel
 {
-    private readonly NCollection_DynamicArray<PCurveModel> _pCurves;
+    private readonly List<PCurveModel> _pCurves;
     private readonly Dictionary<FaceModel, NCollection_List<int>> _pCurvesMap;
 
     /// <summary>A discrete edge of the edge, with an empty 3D curve.</summary>
     public EdgeData(in Edge edge) : base(edge)
     {
-        _pCurves = new NCollection_DynamicArray<PCurveModel>(256);
+        _pCurves = new List<PCurveModel>();
         _pCurvesMap = new Dictionary<FaceModel, NCollection_List<int>>(ReferenceEqualityComparer.Instance);
         SetCurve(new CurveData());
     }
 
     /// <inheritdoc/>
-    public override int PCurvesNb() => _pCurves.Length();
+    public override int PCurvesNb() => _pCurves.Count;
 
     /// <inheritdoc/>
     public override PCurveModel AddPCurve(FaceModel dFace, Orientation orientation)
@@ -34,7 +34,7 @@ public class EdgeData : EdgeModel
         int pCurveIndex = PCurvesNb();
         // Add pcurve to list of pcurves
         PCurveModel pCurve = new PCurveData(dFace, orientation);
-        _pCurves.Append(pCurve);
+        _pCurves.Add(pCurve);
 
         // Map pcurve to faces.
         if (!_pCurvesMap.ContainsKey(dFace))
@@ -52,12 +52,12 @@ public class EdgeData : EdgeModel
     public override PCurveModel GetPCurve(FaceModel dFace, Orientation orientation)
     {
         NCollection_List<int> listOfPCurves = _pCurvesMap.GetValue(dFace);
-        PCurveModel pCurve1 = _pCurves.Value(listOfPCurves.First());
-        return (pCurve1.GetOrientation() == orientation) ? pCurve1 : _pCurves.Value(listOfPCurves.Last());
+        PCurveModel pCurve1 = _pCurves[listOfPCurves.First()];
+        return (pCurve1.GetOrientation() == orientation) ? pCurve1 : _pCurves[listOfPCurves.Last()];
     }
 
     /// <inheritdoc/>
-    public override PCurveModel GetPCurve(int index) => _pCurves.Value(index);
+    public override PCurveModel GetPCurve(int index) => _pCurves[index];
 
     /// <inheritdoc/>
     public override NCollection_List<int> GetPCurves(FaceModel dFace) => _pCurvesMap.GetValue(dFace);

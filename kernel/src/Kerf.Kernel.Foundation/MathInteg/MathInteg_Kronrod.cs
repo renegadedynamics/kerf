@@ -183,8 +183,8 @@ public static partial class MathInteg
             return initResult;
         }
 
-        NCollection_DynamicArray<KronrodInterval> heap = new();
-        heap.Append(new KronrodInterval(lower, upper, initResult.Value!.Value, initResult.AbsoluteError!.Value));
+        List<KronrodInterval> heap = new();
+        heap.Add(new KronrodInterval(lower, upper, initResult.Value!.Value, initResult.AbsoluteError!.Value));
 
         double totalValue = initResult.Value.Value;
         double totalError = initResult.AbsoluteError.Value;
@@ -200,11 +200,11 @@ public static partial class MathInteg
 
             int maxIdx = 0;
             double maxError = 0.0;
-            for (int i = 0; i < heap.Length(); ++i)
+            for (int i = 0; i < heap.Count; ++i)
             {
-                if (heap.Value(i).Error > maxError)
+                if (heap[i].Error > maxError)
                 {
-                    maxError = heap.Value(i).Error;
+                    maxError = heap[i].Error;
                     maxIdx = i;
                 }
             }
@@ -214,7 +214,7 @@ public static partial class MathInteg
                 break; // No more refinement needed
             }
 
-            KronrodInterval worst = heap.Value(maxIdx);
+            KronrodInterval worst = heap[maxIdx];
             double bisMid = 0.5 * (worst.Lower + worst.Upper);
 
             IntegResult leftResult = KronrodRule(func, worst.Lower, bisMid, config.NbGaussPoints);
@@ -237,8 +237,8 @@ public static partial class MathInteg
             totalPoints += leftResult.NbPoints + rightResult.NbPoints;
             ++iterations;
 
-            heap.ChangeValue(maxIdx) = new KronrodInterval(worst.Lower, bisMid, leftResult.Value.Value, leftResult.AbsoluteError.Value);
-            heap.Append(new KronrodInterval(bisMid, worst.Upper, rightResult.Value.Value, rightResult.AbsoluteError.Value));
+            heap[maxIdx] = new KronrodInterval(worst.Lower, bisMid, leftResult.Value.Value, leftResult.AbsoluteError.Value);
+            heap.Add(new KronrodInterval(bisMid, worst.Upper, rightResult.Value.Value, rightResult.AbsoluteError.Value));
         }
 
         result.Status = Status.OK;

@@ -1281,7 +1281,7 @@ public partial class PatchIntersection
     //=================================================================================================
 
     private static void SplitCone(SurfaceAdaptorBase s, TopolTool d, double tol,
-                                  NCollection_DynamicArray<SurfaceAdaptorBase> vecHS)
+                                  List<SurfaceAdaptorBase> vecHS)
     {
         if (s.GetType() != global::Kerf.Geometry.SurfaceKind.Cone)
         {
@@ -1299,12 +1299,12 @@ public partial class PatchIntersection
             SurfaceAdaptorBase hsDn = s.VTrim(s.FirstVParameter(), v0, global::Kerf.Engine.Foundation.Precision.PConfusion());
             SurfaceAdaptorBase hsUp = s.VTrim(v0, s.LastVParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-            vecHS.Append(hsDn);
-            vecHS.Append(hsUp);
+            vecHS.Add(hsDn);
+            vecHS.Add(hsUp);
         }
         else
         {
-            vecHS.Append(s);
+            vecHS.Add(s);
         }
     }
 
@@ -1318,8 +1318,8 @@ public partial class PatchIntersection
     /// </summary>
     public static void PrepareSurfaces(SurfaceAdaptorBase s1, TopolTool d1, SurfaceAdaptorBase s2,
                                        TopolTool d2, double tol,
-                                       NCollection_DynamicArray<SurfaceAdaptorBase> vecHS1,
-                                       NCollection_DynamicArray<SurfaceAdaptorBase> vecHS2)
+                                       List<SurfaceAdaptorBase> vecHS1,
+                                       List<SurfaceAdaptorBase> vecHS2)
     {
         if ((s1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s1.Cone().SemiAngle())) < tol))
         {
@@ -1327,7 +1327,7 @@ public partial class PatchIntersection
         }
         else
         {
-            vecHS1.Append(s1);
+            vecHS1.Add(s1);
         }
 
         if ((s2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s2.Cone().SemiAngle())) < tol))
@@ -1336,7 +1336,7 @@ public partial class PatchIntersection
         }
         else
         {
-            vecHS2.Append(s2);
+            vecHS2.Add(s2);
         }
     }
 }

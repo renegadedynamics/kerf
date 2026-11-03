@@ -41,7 +41,7 @@ public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     }
 
     private readonly SpatialTree<TheObjType, TheBndType> _tree;
-    private readonly NCollection_DynamicArray<ObjBnd> _seqPtr;
+    private readonly List<ObjBnd> _seqPtr;
     private readonly Mt19937 _randGen; // random number generator
     private readonly bool _isFullRandom;
 
@@ -54,7 +54,7 @@ public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     public SpatialTreeFiller(SpatialTree<TheObjType, TheBndType> tree, bool isFullRandom = true)
     {
         _tree = tree;
-        _seqPtr = new NCollection_DynamicArray<ObjBnd>(256);
+        _seqPtr = new List<ObjBnd>();
         _randGen = new Mt19937(5489u /* == std::mt19937::default_seed */);
         _isFullRandom = isFullRandom;
     }
@@ -62,7 +62,7 @@ public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     /// <summary>Adds an object to the buffer of the filler.</summary>
     public void Add(in TheObjType obj, in TheBndType bnd)
     {
-        _seqPtr.Append(new ObjBnd(obj, bnd));
+        _seqPtr.Add(new ObjBnd(obj, bnd));
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     /// </summary>
     public int Fill()
     {
-        int i, nbAdd = _seqPtr.Length();
+        int i, nbAdd = _seqPtr.Count;
         if (_isFullRandom)
         {
             for (i = nbAdd; i > 0; i--)
@@ -120,7 +120,7 @@ public sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     /// <summary>Fills the tree with the objects not yet added (OCCT's destructor).</summary>
     public void Dispose()
     {
-        if (_seqPtr.Length() > 0)
+        if (_seqPtr.Count > 0)
         {
             Fill();
         }

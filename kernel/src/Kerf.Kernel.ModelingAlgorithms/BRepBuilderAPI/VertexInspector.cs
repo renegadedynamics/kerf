@@ -19,7 +19,7 @@ public sealed class VertexInspector : ICellFilterInspector<int, Xyz>
 {
     private readonly double _tol;
     private readonly NCollection_List<int> _resInd = new();
-    private readonly NCollection_DynamicArray<Xyz> _points = new();
+    private readonly List<Xyz> _points = new();
     private Xyz _current;
 
     public static int Dimension => 3;
@@ -38,7 +38,7 @@ public sealed class VertexInspector : ICellFilterInspector<int, Xyz>
     }
 
     /// <summary>Keeps a point used for comparison.</summary>
-    public void Add(in Xyz pnt) => _points.Append(pnt);
+    public void Add(in Xyz pnt) => _points.Add(pnt);
 
     /// <summary>Clears the list of adjacent points.</summary>
     public void ClearResList() => _resInd.Clear();
@@ -52,7 +52,7 @@ public sealed class VertexInspector : ICellFilterInspector<int, Xyz>
     /// <summary>Keeps the target if it is within the tolerance of the current point along each axis.</summary>
     public CellFilterAction Inspect(int target)
     {
-        Xyz pnt = _points.Value(target - 1);
+        Xyz pnt = _points[target - 1];
         double dx, dy, dz;
         dx = _current.X() - pnt.X();
         dy = _current.Y() - pnt.Y();

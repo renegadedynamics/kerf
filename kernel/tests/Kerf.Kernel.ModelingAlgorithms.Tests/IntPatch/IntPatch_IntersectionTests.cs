@@ -329,26 +329,26 @@ public class IntPatch_IntersectionTests
         var aCone = new SurfaceAdaptor(new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                     M_PI / 2 - 1.0e-9, 0), 0, 2 * M_PI, -1, 1);
         SurfaceAdaptor aPln = Plane(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
-        var aV1 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
-        var aV2 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
+        var aV1 = new List<SurfaceAdaptorBase>();
+        var aV2 = new List<SurfaceAdaptorBase>();
         PatchIntersection.PrepareSurfaces(aCone, new TopolTool(aCone), aPln, new TopolTool(aPln),
                                               1.0e-7, aV1, aV2);
-        Assert.Equal(2, aV1.Length());
+        Assert.Equal(2, aV1.Count);
         Assert.Equal(-1.0, aV1[0].FirstVParameter());
         Assert.Equal(0.0, aV1[0].LastVParameter(), 1.0e-12);
         Assert.Equal(0.0, aV1[1].FirstVParameter(), 1.0e-12);
         Assert.Equal(1.0, aV1[1].LastVParameter());
-        Assert.Equal(1, aV2.Length());
+        Assert.Single(aV2);
         Assert.Same(aPln, aV2[0]);
 
         // A cone of ordinary angle is kept whole.
         var aCone2 = new SurfaceAdaptor(new ConicalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)),
                                                                      M_PI / 6, 0), 0, 2 * M_PI, -1, 1);
-        var aV3 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
-        var aV4 = new NCollection_DynamicArray<SurfaceAdaptorBase>();
+        var aV3 = new List<SurfaceAdaptorBase>();
+        var aV4 = new List<SurfaceAdaptorBase>();
         PatchIntersection.PrepareSurfaces(aCone2, new TopolTool(aCone2), aPln,
                                               new TopolTool(aPln), 1.0e-7, aV3, aV4);
-        Assert.Equal(1, aV3.Length());
+        Assert.Single(aV3);
         Assert.Same(aCone2, aV3[0]);
     }
 

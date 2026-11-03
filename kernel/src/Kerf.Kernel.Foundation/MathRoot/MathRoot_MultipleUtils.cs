@@ -29,9 +29,9 @@ public static partial class MathRoot
         /// <summary>Total iterations across all roots.</summary>
         public int NbIterations = 0;
         /// <summary>Found roots (sorted).</summary>
-        public NCollection_DynamicArray<double> Roots = new();
+        public List<double> Roots = new();
         /// <summary>Function values at roots.</summary>
-        public NCollection_DynamicArray<double> Values = new();
+        public List<double> Values = new();
         /// <summary>True if function is essentially zero in range.</summary>
         public bool IsAllNull = false;
 
@@ -48,10 +48,10 @@ public static partial class MathRoot
         public static bool operator false(MultipleResult result) => !result.IsDone;
 
         /// <summary>Returns the number of roots found.</summary>
-        public readonly int RootCount => Roots.Length();
+        public readonly int RootCount => Roots.Count;
 
         /// <summary>Access root by index (0-based).</summary>
-        public readonly double this[int index] => Roots.Value(index);
+        public readonly double this[int index] => Roots[index];
     }
 
     /// <summary>Configuration for multiple root finding.</summary>
@@ -121,7 +121,7 @@ public static partial class MathRoot
     /// <summary>In-place insertion sort of roots and corresponding values by ascending root value.</summary>
     public static void SortRoots(ref MultipleResult result)
     {
-        for (int i = 1; i < result.Roots.Length(); ++i)
+        for (int i = 1; i < result.Roots.Count; ++i)
         {
             double keyRoot = result.Roots[i];
             double keyVal = result.Values[i];
@@ -140,15 +140,15 @@ public static partial class MathRoot
     /// <summary>Helper to add a root if it is not a duplicate of an already found root.</summary>
     public static void AddRoot(ref MultipleResult result, double epsX, double root, double value)
     {
-        for (int k = 0; k < result.Roots.Length(); ++k)
+        for (int k = 0; k < result.Roots.Count; ++k)
         {
-            if (Math.Abs(root - result.Roots.Value(k)) < epsX)
+            if (Math.Abs(root - result.Roots[k]) < epsX)
             {
                 return;
             }
         }
-        result.Roots.Append(root);
-        result.Values.Append(value);
+        result.Roots.Add(root);
+        result.Values.Add(value);
     }
 
     /// <summary>Compute the minimal X tolerance compatible with the established multi-root behavior.</summary>

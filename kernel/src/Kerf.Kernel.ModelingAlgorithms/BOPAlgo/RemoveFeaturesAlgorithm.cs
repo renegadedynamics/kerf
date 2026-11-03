@@ -783,24 +783,25 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         // Tool for reconstruction of the faces adjacent to the feature
         // in parallel threads if necessary.
-        NCollection_DynamicArray<FillGap> vfg = new();
+        List<FillGap> vfg = new();
         // Fill the vector
         NCollection_List<Shape>.Iterator itF = new(_features);
         for (; itF.More(); itF.Next())
         {
             Shape feature = itF.Value();
-            FillGap fg = vfg.Append(new FillGap());
+            FillGap fg =  new FillGap();
+            vfg.Add(fg);
             fg.SetFeature(feature);
             fg.SetEFConnectionMap(efMap);
             fg.SetFSConnectionMap(fsMap);
             fg.SetRunParallel(_runParallel);
         }
 
-        int nbF = vfg.Length();
+        int nbF = vfg.Count;
         using var ps = new ProgressScope(psOuter.Next(), "Filling gaps", nbF);
         for (int i = 0; i < nbF; ++i)
         {
-            FillGap fg = vfg.Value(i);
+            FillGap fg = vfg[i];
             fg.SetRange(ps.Next());
         }
         // Perform the reconstruction of the adjacent faces
@@ -826,7 +827,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             {
                 return;
             }
-            FillGap fg = vfg.Value(i);
+            FillGap fg = vfg[i];
 
             // No need to fill the history for solids if the history is not
             // requested and the current feature is the last one.

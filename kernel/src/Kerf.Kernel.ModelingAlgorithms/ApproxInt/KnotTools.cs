@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Geometry;
@@ -314,7 +315,7 @@ public static class KnotTools
     //!
     //! III: Fill Last Knot.
     private static void FilterKnots(NCollection_Sequence<int> inds, int minNbPnts,
-                                    NCollection_DynamicArray<int> lKnots)
+                                    List<int> lKnots)
     {
         // Maximum number of points per knot interval.
         int maxNbPnts = AMaxPntCoeff * minNbPnts;
@@ -339,7 +340,7 @@ public static class KnotTools
 
         // II: Filter points with too small amount of points per knot interval.
         i = 1;
-        lKnots.Append(inds[i]);
+        lKnots.Add(inds[i]);
         int indsPrev = inds[i];
         for (i = 2; i <= inds.Length(); ++i)
         {
@@ -364,7 +365,7 @@ public static class KnotTools
                         if (inds[idx] - indsPrev > 2 * minNbPnts)
                         {
                             // Bad distribution points merge into one knot interval.
-                            lKnots.Append(indsPrev + minNbPnts);
+                            lKnots.Add(indsPrev + minNbPnts);
                             indsPrev = indsPrev + minNbPnts;
                             i = idx - 1;
                         }
@@ -373,12 +374,12 @@ public static class KnotTools
                             if (inds[idx - 1] - indsPrev >= minNbPnts / 2)
                             {
                                 // Bad distribution points merge into one knot interval.
-                                lKnots.Append(inds[idx - 1]);
+                                lKnots.Add(inds[idx - 1]);
                                 indsPrev = inds[idx - 1];
                                 i = idx - 1;
                                 if (inds[idx] - inds[idx - 1] <= minNbPnts / 2)
                                 {
-                                    lKnots.SetValue(lKnots.Upper(), inds[idx]);
+                                    lKnots.SetAt(lKnots.Count - 1, inds[idx]);
                                     indsPrev = inds[idx];
                                     i = idx;
                                 }
@@ -386,23 +387,23 @@ public static class KnotTools
                             else
                             {
                                 // Bad distribution points merge into one knot interval.
-                                lKnots.Append(inds[idx]);
+                                lKnots.Add(inds[idx]);
                                 indsPrev = inds[idx];
                                 i = idx;
                             }
                         }
                     }
                     else if (idx == inds.Upper() && // Last point obtained.
-                             lKnots.Length() >= 2)    // It is possible to modify last item.
+                             lKnots.Count >= 2)    // It is possible to modify last item.
                     {
                         // Current bad interval from i to last.
                         // Trying to add knot to divide sequence on two parts:
                         // Last good index -> Last index - theMinNbPnts -> Last index
-                        int lastGoodIdx = lKnots.Value(lKnots.Upper() - 1);
+                        int lastGoodIdx = lKnots[(lKnots.Count - 1) - 1];
                         if (inds.Last() - 2 * minNbPnts >= lastGoodIdx)
                         {
-                            lKnots[lKnots.Upper()] = inds.Last() - minNbPnts;
-                            lKnots.Append(inds.Last());
+                            lKnots[lKnots.Count - 1] = inds.Last() - minNbPnts;
+                            lKnots.Add(inds.Last());
                             indsPrev = inds[idx];
                             i = idx;
                         }
@@ -412,21 +413,21 @@ public static class KnotTools
             }
             else
             {
-                lKnots.Append(inds[i]);
+                lKnots.Add(inds[i]);
                 indsPrev = inds[i];
             }
         }
 
         // III: Fill Last Knot.
-        if (lKnots.Length() < 2)
+        if (lKnots.Count < 2)
         {
-            lKnots.Append(inds.Last());
+            lKnots.Add(inds.Last());
         }
         else
         {
-            if (lKnots.Last() < inds.Last())
+            if (lKnots[^1] < inds.Last())
             {
-                lKnots[lKnots.Upper()] = inds.Last();
+                lKnots[lKnots.Count - 1] = inds.Last();
             }
         }
     }
@@ -547,7 +548,7 @@ public static class KnotTools
     public static void BuildKnots(NCollection_Array1<Point3D> pntsXYZ, NCollection_Array1<Point2D> pntsU1V1,
                                   NCollection_Array1<Point2D> pntsU2V2, math_Vector pars, bool approxXYZ,
                                   bool approxU1V1, bool approxU2V2, int minNbPnts,
-                                  NCollection_DynamicArray<int> knots)
+                                  List<int> knots)
     {
         NCollection_Sequence<int> aKnots = new();
         int dim = 0;

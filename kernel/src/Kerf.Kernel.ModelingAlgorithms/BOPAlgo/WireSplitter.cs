@@ -94,7 +94,7 @@ public partial class WireSplitter : BooleanAlgorithm
         Wire w;
         NCollection_List<ConnexityBlock>.Iterator itCB = new(_lcb);
         NCollection_List<Shape>.Iterator it;
-        NCollection_DynamicArray<WS_ConnexityBlock> vcb = new();
+        List<WS_ConnexityBlock> vcb = new();
         //
         using var psOuter = new ProgressScope(range, null, 1);
         //
@@ -119,23 +119,23 @@ public partial class WireSplitter : BooleanAlgorithm
             else
             {
                 WS_ConnexityBlock wscb = new();
-                vcb.Append(wscb);
+                vcb.Add(wscb);
                 wscb.SetFace(f);
                 wscb.SetConnexityBlock(cb);
             }
         }
-        nbVCB = vcb.Length();
+        nbVCB = vcb.Count;
         using var psParallel = new ProgressScope(psOuter.Next(), null, nbVCB);
         for (int iW = 0; iW < nbVCB; ++iW)
         {
-            vcb.Value(iW).SetProgressRange(psParallel.Next());
+            vcb[iW].SetProgressRange(psParallel.Next());
         }
         //===================================================
         BooleanParallel.Perform(_runParallel, vcb, _context!);
         //===================================================
         for (k = 0; k < nbVCB; ++k)
         {
-            WS_ConnexityBlock cb = vcb.Value(k);
+            WS_ConnexityBlock cb = vcb[k];
             NCollection_List<Shape> lw = cb.ConnexityBlock().Loops();
             it = new NCollection_List<Shape>.Iterator(lw);
             for (; it.More(); it.Next())

@@ -138,43 +138,43 @@ public class Tree<T, TVec> : TreeBase<T, TVec>
             }
             else
             {
-                NCollection_DynamicArray<int> grandChildNodes = new();
+                List<int> grandChildNodes = new();
 
                 int lftChild = Child(0, node.Node);
                 int rghChild = Child(1, node.Node);
                 if (IsOuter(lftChild)) // is leaf node
                 {
-                    grandChildNodes.Append(lftChild);
+                    grandChildNodes.Add(lftChild);
                 }
                 else
                 {
-                    grandChildNodes.Append(Child(0, lftChild));
-                    grandChildNodes.Append(Child(1, lftChild));
+                    grandChildNodes.Add(Child(0, lftChild));
+                    grandChildNodes.Add(Child(1, lftChild));
                 }
 
                 if (IsOuter(rghChild)) // is leaf node
                 {
-                    grandChildNodes.Append(rghChild);
+                    grandChildNodes.Add(rghChild);
                 }
                 else
                 {
-                    grandChildNodes.Append(Child(0, rghChild));
-                    grandChildNodes.Append(Child(1, rghChild));
+                    grandChildNodes.Add(Child(0, rghChild));
+                    grandChildNodes.Add(Child(1, rghChild));
                 }
 
-                for (int nodeIdx = 0; nodeIdx < grandChildNodes.Length(); ++nodeIdx)
+                for (int nodeIdx = 0; nodeIdx < grandChildNodes.Count; ++nodeIdx)
                 {
-                    queue.Enqueue((grandChildNodes.Value(nodeIdx), node.Level + 1));
+                    queue.Enqueue((grandChildNodes[nodeIdx], node.Level + 1));
                 }
 
                 nodeInfo = new NCollection_Vec4<int>(0 /* inner flag */,
                                                       nbNodes,
-                                                      grandChildNodes.Length() - 1,
+                                                      grandChildNodes.Count - 1,
                                                       node.Level /* level */);
 
                 qbvh._depth = Max(qbvh._depth, node.Level + 1);
 
-                nbNodes += grandChildNodes.Length();
+                nbNodes += grandChildNodes.Count;
             }
 
             qbvh._nodeInfoBuffer.Append(nodeInfo);

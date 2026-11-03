@@ -179,8 +179,8 @@ internal sealed class TrimShellCorner
         //
         DS theDS = pf.PDS()!;
         //
-        NCollection_DynamicArray<InterfFF> fFs = theDS.InterfFF();
-        int nbFFs = fFs.Length();
+        List<InterfFF> fFs = theDS.InterfFF();
+        int nbFFs = fFs.Count;
 
         if (!SplitUEdges(_uEdges!, theDS, _intPointCrossDir, _histMap))
         {
@@ -205,10 +205,10 @@ internal sealed class TrimShellCorner
                 InterfFF fFi = fFs[i];
                 fFi.Indices(out nF1, out nF2);
                 //
-                NCollection_DynamicArray<DataPoint> vp = fFi.ChangePoints();
-                nbP = vp.Length();
-                NCollection_DynamicArray<SectionCurve> vc = fFi.Curves();
-                nbC = vc.Length();
+                List<DataPoint> vp = fFi.ChangePoints();
+                nbP = vp.Count;
+                List<SectionCurve> vc = fFi.Curves();
+                nbC = vc.Count;
                 if (nbP == 0 && nbC == 0)
                 {
                     if (!theDS.HasInterfSubShapes(nF1, nF2))
@@ -630,9 +630,9 @@ internal sealed class TrimShellCorner
     // ----------------------------------------------------------------------------------------------------
     private bool MakeFacesSec(int index, DS ds, int faceIndex1, int faceIndex2, int ssInterfIndex)
     {
-        NCollection_DynamicArray<InterfFF> fFs = ds.InterfFF();
+        List<InterfFF> fFs = ds.InterfFF();
         InterfFF fFi = fFs[ssInterfIndex];
-        NCollection_DynamicArray<SectionCurve> bCurves = fFi.Curves();
+        List<SectionCurve> bCurves = fFi.Curves();
 
         Face aSecPlane = new();
 
@@ -1110,7 +1110,7 @@ internal sealed class TrimShellCorner
                                     in Vector3D crossDirection,
                                     Dictionary<Shape, NCollection_List<Shape>> histMap)
     {
-        NCollection_DynamicArray<InterfVV> vVs = ds.InterfVV();
+        List<InterfVV> vVs = ds.InterfVV();
 
         BrepBuilder bb = new();
         int ueit = 0, upRow, lowCol, upCol;
@@ -1147,7 +1147,7 @@ internal sealed class TrimShellCorner
                 int vindex1 = ds.Index(V1);
                 int vindex2 = ds.Index(V2);
                 int vvit = 0;
-                int nbVVs = vVs.Length();
+                int nbVVs = vVs.Count;
 
                 for (vvit = 0; !bvertexfound && (vvit < nbVVs); vvit++)
                 {
@@ -1261,7 +1261,7 @@ internal sealed class TrimShellCorner
         paramOnE1 = 0.0;
         paramOnE2 = 0.0;
 
-        NCollection_DynamicArray<InterfEE> eEs = ds.InterfEE();
+        List<InterfEE> eEs = ds.InterfEE();
 
         bool bvertexfound = false;
         int eeit = 0;
@@ -1271,7 +1271,7 @@ internal sealed class TrimShellCorner
         EdgeCurveAdaptor bc1 = new(theE1), bc2 = new(theE2);
 
         int nbEEs;
-        nbEEs = eEs.Length();
+        nbEEs = eEs.Count;
         for (eeit = 0; eeit < nbEEs; ++eeit)
         {
             InterfEE ee = eEs[eeit];
@@ -2292,7 +2292,7 @@ internal sealed class TrimShellCorner
 
     //=================================================================================================
 
-    private static bool FilterSectionEdges(NCollection_DynamicArray<SectionCurve> bCurves,
+    private static bool FilterSectionEdges(List<SectionCurve> bCurves,
                                            in Face secPlane,
                                            DS ds,
                                            out Compound result)
@@ -2302,7 +2302,7 @@ internal sealed class TrimShellCorner
 
         BrepBuilder bb = new();
         bb.MakeCompound(ref result);
-        int nbCurves = bCurves.Length();
+        int nbCurves = bCurves.Count;
         int cit = 0;
         NCollection_List<PaveBlock>.Iterator pbIt = new();
 

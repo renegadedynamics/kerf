@@ -524,7 +524,7 @@ public class ShellSplitter : BooleanAlgorithm
         int nbVCBK, k;
         NCollection_List<ConnexityBlock>.Iterator itCB = new();
         NCollection_List<Shape>.Iterator it = new();
-        NCollection_DynamicArray<CBK> vcbk = new();
+        List<CBK> vcbk = new();
         //
         using var psOuter = new ProgressScope(range, null, 1);
         _shells.Clear();
@@ -549,16 +549,17 @@ public class ShellSplitter : BooleanAlgorithm
             }
             else
             {
-                CBK cbk = vcbk.Append(new CBK());
+                CBK cbk =  new CBK();
+                vcbk.Add(cbk);
                 cbk.SetConnexityBlock(cb);
             }
         }
         //
-        nbVCBK = vcbk.Length();
+        nbVCBK = vcbk.Count;
         using var psParallel = new ProgressScope(psOuter.Next(), null, nbVCBK);
         for (int iS = 0; iS < nbVCBK; ++iS)
         {
-            vcbk.ChangeValue(iS).SetProgressRange(psParallel.Next());
+            vcbk[iS].SetProgressRange(psParallel.Next());
         }
         //===================================================
         BooleanParallel.Perform(_runParallel, vcbk);

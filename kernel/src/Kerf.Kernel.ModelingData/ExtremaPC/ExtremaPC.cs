@@ -141,7 +141,7 @@ public static partial class ExtremaPC
         public global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status Status { get; internal set; } = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.NotDone;
 
         /// <summary>Collection of found extrema (0-based).</summary>
-        internal readonly NCollection_DynamicArray<ExtremumResult> _extrema = new(8);
+        internal readonly List<ExtremumResult> _extrema = new(8);
 
         /// <summary>For infinite solutions, the constant squared distance.</summary>
         public double InfiniteSquareDistance { get; internal set; } = 0.0;
@@ -153,24 +153,24 @@ public static partial class ExtremaPC
         public bool IsInfinite => Status == global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.InfiniteSolutions;
 
         /// <summary>Returns number of extrema found (0 if infinite or failed).</summary>
-        public int ExtCount => _extrema.Length();
+        public int ExtCount => _extrema.Count;
 
         /// <summary>Access extremum by 0-based index.</summary>
-        public ExtremumResult this[int index] => _extrema.Value(index);
+        public ExtremumResult this[int index] => _extrema[index];
 
         /// <summary>Returns the squared distance of the closest extremum, or infinity if no extrema found.</summary>
         public double MinSquareDistance()
         {
-            if (_extrema.IsEmpty())
+            if (_extrema.Count == 0)
             {
                 return double.PositiveInfinity;
             }
-            double minSqDist = _extrema.Value(0).SquareDistance;
-            for (int i = 1; i < _extrema.Length(); ++i)
+            double minSqDist = _extrema[0].SquareDistance;
+            for (int i = 1; i < _extrema.Count; ++i)
             {
-                if (_extrema.Value(i).SquareDistance < minSqDist)
+                if (_extrema[i].SquareDistance < minSqDist)
                 {
-                    minSqDist = _extrema.Value(i).SquareDistance;
+                    minSqDist = _extrema[i].SquareDistance;
                 }
             }
             return minSqDist;
@@ -179,17 +179,17 @@ public static partial class ExtremaPC
         /// <summary>Returns the index of the closest extremum (0-based), or -1 if no extrema found.</summary>
         public int MinIndex()
         {
-            if (_extrema.IsEmpty())
+            if (_extrema.Count == 0)
             {
                 return -1;
             }
             int minIdx = 0;
-            double minSqDist = _extrema.Value(0).SquareDistance;
-            for (int i = 1; i < _extrema.Length(); ++i)
+            double minSqDist = _extrema[0].SquareDistance;
+            for (int i = 1; i < _extrema.Count; ++i)
             {
-                if (_extrema.Value(i).SquareDistance < minSqDist)
+                if (_extrema[i].SquareDistance < minSqDist)
                 {
-                    minSqDist = _extrema.Value(i).SquareDistance;
+                    minSqDist = _extrema[i].SquareDistance;
                     minIdx = i;
                 }
             }
@@ -199,16 +199,16 @@ public static partial class ExtremaPC
         /// <summary>Returns the squared distance of the farthest extremum, or 0 if no extrema found.</summary>
         public double MaxSquareDistance()
         {
-            if (_extrema.IsEmpty())
+            if (_extrema.Count == 0)
             {
                 return 0.0;
             }
-            double maxSqDist = _extrema.Value(0).SquareDistance;
-            for (int i = 1; i < _extrema.Length(); ++i)
+            double maxSqDist = _extrema[0].SquareDistance;
+            for (int i = 1; i < _extrema.Count; ++i)
             {
-                if (_extrema.Value(i).SquareDistance > maxSqDist)
+                if (_extrema[i].SquareDistance > maxSqDist)
                 {
-                    maxSqDist = _extrema.Value(i).SquareDistance;
+                    maxSqDist = _extrema[i].SquareDistance;
                 }
             }
             return maxSqDist;
@@ -217,17 +217,17 @@ public static partial class ExtremaPC
         /// <summary>Returns the index of the farthest extremum (0-based), or -1 if no extrema found.</summary>
         public int MaxIndex()
         {
-            if (_extrema.IsEmpty())
+            if (_extrema.Count == 0)
             {
                 return -1;
             }
             int maxIdx = 0;
-            double maxSqDist = _extrema.Value(0).SquareDistance;
-            for (int i = 1; i < _extrema.Length(); ++i)
+            double maxSqDist = _extrema[0].SquareDistance;
+            for (int i = 1; i < _extrema.Count; ++i)
             {
-                if (_extrema.Value(i).SquareDistance > maxSqDist)
+                if (_extrema[i].SquareDistance > maxSqDist)
                 {
-                    maxSqDist = _extrema.Value(i).SquareDistance;
+                    maxSqDist = _extrema[i].SquareDistance;
                     maxIdx = i;
                 }
             }
@@ -355,7 +355,7 @@ public static partial class ExtremaPC
                 ext.Point = ptMin;
                 ext.SquareDistance = sqDistMin;
                 ext.IsMinimum = true;
-                result._extrema.Append(ext);
+                result._extrema.Add(ext);
             }
             // Add UMax if it's a local minimum (and not same point as UMin)
             if (isMinAtUMax && !endpointsAreSame && !IsDuplicate(result, tol, theUMax, ptMax))
@@ -365,7 +365,7 @@ public static partial class ExtremaPC
                 ext.Point = ptMax;
                 ext.SquareDistance = sqDistMax;
                 ext.IsMinimum = true;
-                result._extrema.Append(ext);
+                result._extrema.Add(ext);
             }
         }
 
@@ -379,7 +379,7 @@ public static partial class ExtremaPC
                 ext.Point = ptMin;
                 ext.SquareDistance = sqDistMin;
                 ext.IsMinimum = false;
-                result._extrema.Append(ext);
+                result._extrema.Add(ext);
             }
             // Add UMax if it's a local maximum (and not same point as UMin)
             if (isMaxAtUMax && !isMinAtUMax && !endpointsAreSame && !IsDuplicate(result, tol, theUMax, ptMax))
@@ -389,7 +389,7 @@ public static partial class ExtremaPC
                 ext.Point = ptMax;
                 ext.SquareDistance = sqDistMax;
                 ext.IsMinimum = false;
-                result._extrema.Append(ext);
+                result._extrema.Add(ext);
             }
         }
     }
@@ -397,15 +397,15 @@ public static partial class ExtremaPC
     // AddEndpointExtrema's lambda: whether a parameter or point already exists in the result
     private static bool IsDuplicate(Result result, double tol, double u, in Point3D pt)
     {
-        for (int i = 0; i < result._extrema.Length(); ++i)
+        for (int i = 0; i < result._extrema.Count; ++i)
         {
             // Check parameter proximity
-            if (Math.Abs(result._extrema.Value(i).Parameter - u) < tol)
+            if (Math.Abs(result._extrema[i].Parameter - u) < tol)
             {
                 return true;
             }
             // Check point proximity (handles periodic curves where different params map to same point)
-            double sqDist = result._extrema.Value(i).Point.SquareDistance(pt);
+            double sqDist = result._extrema[i].Point.SquareDistance(pt);
             if (sqDist < tol * tol)
             {
                 return true;

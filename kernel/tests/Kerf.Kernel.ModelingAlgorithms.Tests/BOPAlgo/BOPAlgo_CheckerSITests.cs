@@ -82,8 +82,8 @@ public class BOPAlgo_CheckerSITests
     {
         CheckerSI aChecker = Check(Compound(Box(0, 0, 0, 10, 10, 10), Box(2, 2, 2, 1, 1, 1)));
         DS aDS = aChecker.PDS()!;
-        Assert.True(aDS.InterfVZ().Length() > 0);
-        Assert.True(aDS.InterfZZ().Length() > 0);
+        Assert.True(aDS.InterfVZ().Count > 0);
+        Assert.True(aDS.InterfZZ().Count > 0);
         // below the solid levels, nothing is found
         Assert.Empty(Kinds(Check(Compound(Box(0, 0, 0, 10, 10, 10), Box(2, 2, 2, 1, 1, 1)), 5)));
     }

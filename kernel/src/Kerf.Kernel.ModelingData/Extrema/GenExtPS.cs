@@ -270,10 +270,10 @@ public class GenExtPS
     private static void FillParams(NCollection_Array1<double> knots, int degree, double parMin,
         double parMax, ref NCollection_HArray1<double>? theParams, int sample)
     {
-        NCollection_DynamicArray<double> aParams = new();
+        List<double> aParams = new();
         int i = 1;
         double prevPar = parMin;
-        aParams.Append(prevPar);
+        aParams.Add(prevPar);
         // calculation the array of parametric points depending on the knots array variation and degree of
         // given surface
         for (; i < knots.Length() && knots[i] < (parMax - global::Kerf.Engine.Foundation.Precision.PConfusion()); i++)
@@ -294,13 +294,13 @@ public class GenExtPS
                 }
                 if (par > prevPar + global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
-                    aParams.Append(par);
+                    aParams.Add(par);
                     prevPar = par;
                 }
             }
         }
-        aParams.Append(parMax);
-        int nbPar = aParams.Length();
+        aParams.Add(parMax);
+        int nbPar = aParams.Count;
         // in case of an insufficient number of points the grid will be built later
         if (nbPar < sample)
         {

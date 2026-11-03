@@ -27,8 +27,8 @@ public sealed class ShapeProximity
     private double _tolerance;
     private bool _isInitS1;
     private bool _isInitS2;
-    private readonly NCollection_DynamicArray<Shape> _shapeList1 = new();
-    private readonly NCollection_DynamicArray<Shape> _shapeList2 = new();
+    private readonly List<Shape> _shapeList1 = new();
+    private readonly List<Shape> _shapeList2 = new();
     private TriangleSet _elementSet1;
     private TriangleSet _elementSet2;
     private int _nbSamples1;
@@ -88,10 +88,10 @@ public sealed class ShapeProximity
     public Dictionary<int, NCollection_PackedMapOfInteger> OverlapSubShapes2() => _overlapTool.OverlapSubShapes2();
 
     /// <summary>The sub-shape of the first shape with the given index (from 0).</summary>
-    public Shape GetSubShape1(int id) => _shapeList1.Value(id);
+    public Shape GetSubShape1(int id) => _shapeList1[id];
 
     /// <summary>The sub-shape of the second shape with the given index (from 0).</summary>
-    public Shape GetSubShape2(int id) => _shapeList2.Value(id);
+    public Shape GetSubShape2(int id) => _shapeList2[id];
 
     /// <summary>The set of all the face triangles of the first shape.</summary>
     public TriangleSet ElementSet1() => _elementSet1;
@@ -113,19 +113,19 @@ public sealed class ShapeProximity
 
     // Assign a map of sub-shapes (edges/faces) of a given shape
     private static bool InitSubShapes(in Shape shape,
-                                      NCollection_DynamicArray<Shape> subshapesList,
+                                      List<Shape> subshapesList,
                                       ref TriangleSet triangleSet)
     {
         subshapesList.Clear();
 
         for (var iter = new Explorer(shape, ShapeType.Face); iter.More(); iter.Next())
         {
-            subshapesList.Append(iter.Current());
+            subshapesList.Add(iter.Current());
         }
 
         for (var iter = new Explorer(shape, ShapeType.Edge); iter.More(); iter.Next())
         {
-            subshapesList.Append(iter.Current());
+            subshapesList.Add(iter.Current());
         }
 
         triangleSet ??= new TriangleSet();

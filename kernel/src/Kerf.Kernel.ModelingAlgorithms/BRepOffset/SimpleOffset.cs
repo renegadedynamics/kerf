@@ -392,7 +392,7 @@ public sealed class SimpleOffset : Modification
         }
 
         // Array to store offset points.
-        var offsetPointVec = new NCollection_DynamicArray<Point3D>();
+        var offsetPointVec = new List<Point3D>();
 
         double maxEdgeTol = 0.0;
 
@@ -434,14 +434,14 @@ public sealed class SimpleOffset : Modification
             NewEdgeData ned = _edgeInfo.GetValue(currEdge);
             Curve3D offsetCurve = ned.OffsetC!;
             Point3D offsetPoint = offsetCurve.Value(minParam);
-            offsetPointVec.Append(offsetPoint);
+            offsetPointVec.Add(offsetPoint);
 
             // Handle situation when edge is closed.
             Exploration.Vertices(currEdge, out Vertex v1, out Vertex v2);
             if (v1.IsSame(v2))
             {
                 Point3D offsetPointLast = offsetCurve.Value(maxParam);
-                offsetPointVec.Append(offsetPointLast);
+                offsetPointVec.Add(offsetPointLast);
             }
 
             maxEdgeTol = Max(maxEdgeTol, ned.myTol);
@@ -450,19 +450,19 @@ public sealed class SimpleOffset : Modification
         // NCollection_DynamicArray starts from 0 by default.
         // It's better to use lower() and upper() in this case instead of direct indexes range.
         Point3D center = new(0.0, 0.0, 0.0);
-        for (int i = offsetPointVec.Lower(); i <= offsetPointVec.Upper(); ++i)
+        for (int i = 0; i <= (offsetPointVec.Count - 1); ++i)
         {
-            center = center.WithXYZ(center.XYZ() + offsetPointVec.Value(i).XYZ());
+            center = center.WithXYZ(center.XYZ() + offsetPointVec[i].XYZ());
         }
         // OCCT: a vertex none of whose edges has an offset curve (only free or degenerated edges, or shared edges met
         // in the other orientation) divides by zero: its new point is NaN.
-        center = center.WithXYZ(center.XYZ() / offsetPointVec.Length());
+        center = center.WithXYZ(center.XYZ() / offsetPointVec.Count);
 
         // Compute max distance.
         double sqMaxDist = 0.0;
-        for (int i = offsetPointVec.Lower(); i <= offsetPointVec.Upper(); ++i)
+        for (int i = 0; i <= (offsetPointVec.Count - 1); ++i)
         {
-            double sqDist = center.SquareDistance(offsetPointVec.Value(i));
+            double sqDist = center.SquareDistance(offsetPointVec[i]);
             if (sqDist > sqMaxDist)
             {
                 sqMaxDist = sqDist;

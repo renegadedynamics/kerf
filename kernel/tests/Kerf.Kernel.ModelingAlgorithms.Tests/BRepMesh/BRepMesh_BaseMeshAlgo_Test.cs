@@ -163,7 +163,7 @@ public class BRepMesh_BaseMeshAlgoTest
 
         // Add a grid of internal vertices (5x5 = 25 vertices)
         const int aGridSize = 5;
-        NCollection_DynamicArray<Point3D> anInternalPts = new();
+        List<Point3D> anInternalPts = new();
         for (int i = 1; i < aGridSize; ++i)
         {
             for (int j = 1; j < aGridSize; ++j)
@@ -171,7 +171,7 @@ public class BRepMesh_BaseMeshAlgoTest
                 double aX = (aSize * i) / aGridSize;
                 double aY = (aSize * j) / aGridSize;
                 Point3D aPt = new(aX, aY, 0.0);
-                anInternalPts.Append(aPt);
+                anInternalPts.Add(aPt);
                 Vertex aVertex = addInternalVertexToFace(ref aFace, aPt);
                 Assert.False(aVertex.IsNull, $"Failed to add internal vertex at ({aX}, {aY})");
             }
@@ -200,7 +200,7 @@ public class BRepMesh_BaseMeshAlgoTest
                 ++aFoundCount;
             }
         }
-        Assert.Equal(anInternalPts.Size(), aFoundCount);
+        Assert.Equal(anInternalPts.Count, aFoundCount);
     }
 
     [Fact]

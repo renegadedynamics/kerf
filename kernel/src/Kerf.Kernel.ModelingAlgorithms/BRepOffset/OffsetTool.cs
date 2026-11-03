@@ -822,8 +822,8 @@ public static class OffsetTool
         }
         // check if vertex with index "index" is not created in VV or EE or EF interference
         // VV
-        NCollection_DynamicArray<InterfVV> vVs = pDS.InterfVV();
-        nbVVs = vVs.Length();
+        List<InterfVV> vVs = pDS.InterfVV();
+        nbVVs = vVs.Count;
         for (aInt = 0; aInt < nbVVs; aInt++)
         {
             InterfVV vv = vVs[aInt];
@@ -836,8 +836,8 @@ public static class OffsetTool
             }
         }
         // EE
-        NCollection_DynamicArray<InterfEE> eEs = pDS.InterfEE();
-        nbEEs = eEs.Length();
+        List<InterfEE> eEs = pDS.InterfEE();
+        nbEEs = eEs.Count;
         for (aInt = 0; aInt < nbEEs; aInt++)
         {
             InterfEE ee = eEs[aInt];
@@ -851,8 +851,8 @@ public static class OffsetTool
             }
         }
         // EF
-        NCollection_DynamicArray<InterfEF> eFs = pDS.InterfEF();
-        nbEFs = eFs.Length();
+        List<InterfEF> eFs = pDS.InterfEF();
+        nbEFs = eFs.Count;
         for (aInt = 0; aInt < nbEFs; aInt++)
         {
             InterfEF ef = eFs[aInt];
@@ -1197,8 +1197,8 @@ public static class OffsetTool
 
     private static void CheckIntersFF(DS pDS, in Edge refEdge, NCollection_IndexedMap<Shape> trueEdges)
     {
-        NCollection_DynamicArray<InterfFF> fFs = pDS.InterfFF();
-        int nb = fFs.Length();
+        List<InterfFF> fFs = pDS.InterfFF();
+        int nb = fFs.Count;
         int i, j, nbe = 0;
 
         Compound edges = new();
@@ -1208,8 +1208,8 @@ public static class OffsetTool
         for (i = 0; i < nb; ++i)
         {
             InterfFF fFi = fFs[i];
-            NCollection_DynamicArray<SectionCurve> bCurves = fFi.Curves();
-            int nbCurves = bCurves.Length();
+            List<SectionCurve> bCurves = fFi.Curves();
+            int nbCurves = bCurves.Count;
 
             for (j = 0; j < nbCurves; ++j)
             {
@@ -1418,8 +1418,8 @@ public static class OffsetTool
         bool addPCurve2 = true;
 
         DS pDS = pf.PDS()!;
-        NCollection_DynamicArray<InterfFF> fFs = pDS.InterfFF();
-        int nb = fFs.Length();
+        List<InterfFF> fFs = pDS.InterfFF();
+        int nb = fFs.Count;
         int i = 0, j = 0, k;
         // Store Result
         l1.Clear();
@@ -1432,9 +1432,9 @@ public static class OffsetTool
         for (i = 0; i < nb; i++)
         {
             InterfFF fFi = fFs[i];
-            NCollection_DynamicArray<SectionCurve> bCurves = fFi.Curves();
+            List<SectionCurve> bCurves = fFi.Curves();
 
-            int nbCurves = bCurves.Length();
+            int nbCurves = bCurves.Count;
 
             for (j = 0; j < nbCurves; j++)
             {

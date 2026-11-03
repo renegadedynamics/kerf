@@ -34,10 +34,10 @@ public abstract class CustomBaseMeshAlgo : ConstrainedBaseMeshAlgo
         bool isRemoveAux = newNodesNb > nodesNb;
         if (isRemoveAux)
         {
-            NCollection_DynamicArray<int> auxVertices = new(newNodesNb - nodesNb);
+            List<int> auxVertices = new(newNodesNb - nodesNb);
             for (int extNodesIt = nodesNb + 1; extNodesIt <= newNodesNb; ++extNodesIt)
             {
-                auxVertices.Append(extNodesIt);
+                auxVertices.Add(extNodesIt);
             }
 
             // Set aux vertices if there are some to clean up mesh correctly.

@@ -143,7 +143,7 @@ public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.Extre
             ext.SquareDistance = p.SquareDistance(curvePt);
             ext.IsMinimum = (i == 0); // First solution is minimum, second is maximum
 
-            _result._extrema.Append(ext);
+            _result._extrema.Add(ext);
         }
 
         _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;

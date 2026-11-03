@@ -118,22 +118,22 @@ public class BOPTools_ParallelTests
     [Fact]
     public void NCollectionVector_Overloads()
     {
-        NCollection_Vector<PureSolver> aPure = new();
+        List<PureSolver> aPure = new();
         for (int i = 0; i < 100; ++i)
         {
-            aPure.Append(new PureSolver(i));
+            aPure.Add(new PureSolver(i));
         }
         BooleanParallel.Perform(true, aPure);
         for (int i = 0; i < 100; ++i)
         {
-            Assert.Equal(i * i, aPure.Value(i).Result);
+            Assert.Equal(i * i, aPure[i].Result);
         }
 
         (List<Solver> aSolvers, _) = Solvers(30);
-        NCollection_Vector<Solver> aVector = new();
+        List<Solver> aVector = new();
         foreach (Solver aSolver in aSolvers)
         {
-            aVector.Append(aSolver);
+            aVector.Add(aSolver);
         }
         TestContext aMain = new();
         BooleanParallel.Perform(false, aVector, aMain);

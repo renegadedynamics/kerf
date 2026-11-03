@@ -560,8 +560,8 @@ public sealed class CanonicalRecognitionAnalysis
                                             NCollection_Array1<double> theParams, ref double gap, ref int status)
     {
         // Get surface list
-        NCollection_DynamicArray<Surface> surfs = new();
-        NCollection_DynamicArray<double> gaps = new();
+        List<Surface> surfs = new();
+        List<double> gaps = new();
         int j = 0;
         for (;;)
         {
@@ -589,11 +589,11 @@ public sealed class CanonicalRecognitionAnalysis
                 anaSurf.Transform(loc.Transformation()); // a new surface of the converter
             }
             //
-            gaps.Append(conv.Gap());
-            surfs.Append(anaSurf);
+            gaps.Add(conv.Gap());
+            surfs.Add(anaSurf);
         }
 
-        if (surfs.Size() == 0)
+        if (surfs.Count == 0)
         {
             status = 1;
             return null;
@@ -605,13 +605,13 @@ public sealed class CanonicalRecognitionAnalysis
 
         int ifit = -1, i;
         double minDev = RealLast();
-        if (surfs.Size() == 1)
+        if (surfs.Count == 1)
         {
             ifit = 0;
         }
         else
         {
-            for (i = 0; i < surfs.Length(); ++i)
+            for (i = 0; i < surfs.Count; ++i)
             {
                 SetSurfParams(target, surfs[i], ref aPos, aParams);
                 double dev = DeviationSurfParams(target, pos, theParams, aPos, aParams);
@@ -1093,9 +1093,9 @@ public sealed class CanonicalRecognitionAnalysis
                                         out NCollection_HArray1<Xyz>? points)
     {
         points = null; // OCCT.NET: OCCT leaves the caller's handle unchanged (null) when it returns false
-        NCollection_DynamicArray<double> lengths = new();
-        NCollection_DynamicArray<EdgeCurveAdaptor> curves = new();
-        NCollection_DynamicArray<Xyz> aPoints = new();
+        List<double> lengths = new();
+        List<EdgeCurveAdaptor> curves = new();
+        List<Xyz> aPoints = new();
         double aTol = Max(1.0e-3, tol / 10.0);
         double totalLength = 0.0;
         Iterator eIter = new(wire);
@@ -1109,8 +1109,8 @@ public sealed class CanonicalRecognitionAnalysis
             EdgeCurveAdaptor bac = new(e);
             double clength = AbscissaPoint.Length(bac, aTol);
             totalLength += clength;
-            curves.Append(bac);
-            lengths.Append(clength);
+            curves.Add(bac);
+            lengths.Add(clength);
         }
 
         if (totalLength < tol)
@@ -1118,7 +1118,7 @@ public sealed class CanonicalRecognitionAnalysis
             return false;
         }
 
-        int i, nb = lengths.Length();
+        int i, nb = lengths.Count;
         for (i = 0; i < nb; ++i)
         {
             EdgeCurveAdaptor c = curves[i];
@@ -1136,17 +1136,17 @@ public sealed class CanonicalRecognitionAnalysis
             {
                 double t = pointGen.Parameter(j);
                 Point3D p = c.Value(t);
-                aPoints.Append(p.XYZ());
+                aPoints.Add(p.XYZ());
             }
         }
 
-        if (aPoints.Length() < 1)
+        if (aPoints.Count < 1)
         {
             return false;
         }
 
-        points = new NCollection_HArray1<Xyz>(1, aPoints.Length());
-        for (i = 0; i < aPoints.Length(); ++i)
+        points = new NCollection_HArray1<Xyz>(1, aPoints.Count);
+        for (i = 0; i < aPoints.Count; ++i)
         {
             points.SetValue(i + 1, aPoints[i]);
         }

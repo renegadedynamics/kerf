@@ -402,18 +402,18 @@ public abstract class Controller : Transient
     public virtual void Customise(ExchangeWorkSession ws)
     {
         StaticSet statics = ws.Statics();
-        NCollection_DynamicArray<Transient> aParams = new NCollection_DynamicArray<Transient>();
-        NCollection_DynamicArray<int> paramUses = new NCollection_DynamicArray<int>();
-        for (int ip = 0; ip < _paramNames.Length(); ip++)
+        List<Transient> aParams = new List<Transient>();
+        List<int> paramUses = new List<int>();
+        for (int ip = 0; ip < _paramNames.Count; ip++)
         {
             // OCCT's TraceStatic keeps the statics that exist when the controller is built
-            Static val = statics.Static(_paramNames.Value(ip));
+            Static val = statics.Static(_paramNames[ip]);
             if (val is null)
             {
                 continue;
             }
-            aParams.Append(val);
-            paramUses.Append(_paramUses.Value(ip));
+            aParams.Add(val);
+            paramUses.Add(_paramUses[ip]);
         }
         ws.SetParams(aParams, paramUses);
 
@@ -550,8 +550,8 @@ public abstract class Controller : Transient
     /// </remarks>
     protected void TraceStatic(string name, int use)
     {
-        _paramNames.Append(name);
-        _paramUses.Append(use);
+        _paramNames.Add(name);
+        _paramUses.Add(use);
     }
 
     /// <summary>
@@ -574,7 +574,7 @@ public abstract class Controller : Transient
     protected ActorOfFinderProcess? _adaptorWrite;
     protected Dictionary<string, Transient> _adaptorSession = new Dictionary<string, Transient>();
     private NCollection_Sequence<Transient> _adaptorApplied = new NCollection_Sequence<Transient>();
-    private NCollection_DynamicArray<string> _paramNames = new NCollection_DynamicArray<string>(); // OCCT: myParams, the statics
-    private NCollection_DynamicArray<int> _paramUses = new NCollection_DynamicArray<int>();
+    private List<string> _paramNames = new List<string>(); // OCCT: myParams, the statics
+    private List<int> _paramUses = new List<int>();
     private NCollection_HArray1<TCollection_HAsciiString>? _modeWriteShapeN;
 }

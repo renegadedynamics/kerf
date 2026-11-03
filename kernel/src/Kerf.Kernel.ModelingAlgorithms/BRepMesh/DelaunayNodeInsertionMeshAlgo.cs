@@ -97,14 +97,14 @@ public class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshAlg
             return false;
         }
 
-        NCollection_DynamicArray<int> vertexIndexes = new(nodes.Size());
+        List<int> vertexIndexes = new(nodes.Size());
         NCollection_List<Point2D>.Iterator nodesIt = new(nodes);
         for (int nodeIt = 1; nodesIt.More(); nodesIt.Next(), ++nodeIt)
         {
             Point2D pnt2d = nodesIt.Value();
             if (GetClassifier().Perform(pnt2d) == In)
             {
-                vertexIndexes.Append(
+                vertexIndexes.Add(
                     RegisterNode(GetRangeSplitter().Point(pnt2d), pnt2d, DegreeOfFreedom.Free, false));
             }
         }
@@ -114,7 +114,7 @@ public class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshAlg
         {
             return false;
         }
-        return !vertexIndexes.IsEmpty();
+        return vertexIndexes.Count != 0;
     }
 
     // Registers surface nodes in data structure.

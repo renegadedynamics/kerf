@@ -28,15 +28,15 @@ public class DelaunayBaseMeshAlgo : ConstrainedBaseMeshAlgo
     protected override void GenerateMesh(ProgressRange range)
     {
         DataStructureOfDelaun structure = GetStructure();
-        NCollection_DynamicArray<Point3D> nodesMap = GetNodesMap();
+        List<Point3D> nodesMap = GetNodesMap();
 
-        NCollection_DynamicArray<int> verticesOrder = new(nodesMap.Length());
-        for (int i = 1; i <= nodesMap.Length(); ++i)
+        List<int> verticesOrder = new(nodesMap.Count);
+        for (int i = 1; i <= nodesMap.Count; ++i)
         {
-            verticesOrder.Append(i);
+            verticesOrder.Add(i);
         }
 
-        (int first, int second) cellsCount = GetCellsCount(verticesOrder.Length());
+        (int first, int second) cellsCount = GetCellsCount(verticesOrder.Count);
         Delaun mesher = new(structure, verticesOrder, cellsCount.first, cellsCount.second);
         MeshTool cleaner = new(structure);
         cleaner.EraseFreeLinks();

@@ -257,8 +257,8 @@ public partial class PaveFiller
     /// <summary>Makes the split edges of the pave blocks (one per common block).</summary>
     protected void MakeSplitEdges(ProgressRange range)
     {
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
-        int nbPBP = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Count;
         using var psOuter = new ProgressScope(range, null, 1);
         if (nbPBP == 0)
         {
@@ -272,12 +272,12 @@ public partial class PaveFiller
         HashSet<CommonBlock> mcb = new();
         Vertex v1, v2;
         Edge e;
-        NCollection_DynamicArray<SplitEdgeAlgorithm> vbse = new();
+        List<SplitEdgeAlgorithm> vbse = new();
 
         //
         UpdateCommonBlocksWithSDVertices();
         //
-        nbPBP = pbp.Length();
+        nbPBP = pbp.Count;
         //
         for (i = 0; i < nbPBP; ++i)
         {
@@ -371,7 +371,8 @@ public partial class PaveFiller
                 v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
                 v2.Orientation(Reversed);
                 //
-                SplitEdgeAlgorithm bse = vbse.Append(new SplitEdgeAlgorithm());
+                SplitEdgeAlgorithm bse =  new SplitEdgeAlgorithm();
+                vbse.Add(bse);
                 //
                 bse.SetData(e, v1, t1, v2, t2);
                 bse.SetPaveBlock(pb);
@@ -383,7 +384,7 @@ public partial class PaveFiller
             } // for (; aItPB.More(); aItPB.Next()) {
         } // for (i=0; i<aNbPBP; ++i) {
         //
-        nbVBSE = vbse.Length();
+        nbVBSE = vbse.Count;
         using var ps = new ProgressScope(psOuter.Next(), "Splitting edges", nbVBSE);
         for (k = 0; k < nbVBSE; k++)
         {
@@ -487,12 +488,12 @@ public partial class PaveFiller
         int j, nbPBIn, nbPBOn;
         NCollection_List<PaveBlock>.Iterator itLPB = new();
         Face f1F;
-        NCollection_DynamicArray<MPC> vmpc = new();
+        List<MPC> vmpc = new();
         //
         // 1. Process Common Blocks
-        NCollection_DynamicArray<FaceInfo> fip = _ds!.FaceInfoPool();
+        List<FaceInfo> fip = _ds!.FaceInfoPool();
         //
-        nbFI = fip.Length();
+        nbFI = fip.Count;
         for (i = 0; i < nbFI; ++i)
         {
             if (UserBreak(psOuter))
@@ -518,7 +519,8 @@ public partial class PaveFiller
                 }
                 Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                 //
-                MPC mpc = vmpc.Append(new MPC());
+                MPC mpc =  new MPC();
+                vmpc.Add(mpc);
                 mpc.SetEdge(e);
                 mpc.SetFace(f1F);
             }
@@ -537,7 +539,8 @@ public partial class PaveFiller
                     continue;
                 }
                 //
-                MPC mpc = vmpc.Append(new MPC());
+                MPC mpc =  new MPC();
+                vmpc.Add(mpc);
 
                 CommonBlock? cb = _ds.CommonBlock(pb);
 
@@ -602,15 +605,15 @@ public partial class PaveFiller
         {
             // container to remember already added edge-face pairs
             HashSet<Pair> efPairs = new();
-            NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
-            nbFF = fFs.Length();
+            List<InterfFF> fFs = _ds.InterfFF();
+            nbFF = fFs.Count;
             Span<int> nF = stackalloc int[2];
             Face[] aFf = new Face[2];
             for (i = 0; i < nbFF; ++i)
             {
                 InterfFF ff = fFs[i];
-                NCollection_DynamicArray<SectionCurve> vnc = ff.Curves();
-                nbC = vnc.Length();
+                List<SectionCurve> vnc = ff.Curves();
+                nbC = vnc.Count;
                 if (nbC == 0)
                 {
                     continue;
@@ -638,7 +641,8 @@ public partial class PaveFiller
                         {
                             if (bPCurveOnS[m] && efPairs.Add(new Pair(nE, nF[m])))
                             {
-                                MPC mpc = vmpc.Append(new MPC());
+                                MPC mpc =  new MPC();
+                                vmpc.Add(mpc);
                                 mpc.SetEdge(e);
                                 mpc.SetFace(aFf[m]);
                                 mpc.SetFlag(true);
@@ -649,8 +653,8 @@ public partial class PaveFiller
             } // for (i=0; i<aNbFF; ++i) {
         } // if (bPCurveOnS1 || bPCurveOnS2 ) {
         //
-        using var ps = new ProgressScope(psOuter.Next(), "Projecting edges on faces", vmpc.Length());
-        for (i = 0; i < vmpc.Length(); i++)
+        using var ps = new ProgressScope(psOuter.Next(), "Projecting edges on faces", vmpc.Count);
+        for (i = 0; i < vmpc.Count; i++)
         {
             MPC mpc = vmpc[i];
             mpc.SetProgressRange(ps.Next());
@@ -664,7 +668,7 @@ public partial class PaveFiller
         }
 
         // Add warnings of the failed projections and update edges with new pcurves
-        int nb = vmpc.Length();
+        int nb = vmpc.Count;
         for (i = 0; i < nb; ++i)
         {
             if (UserBreak(psOuter))
@@ -789,7 +793,7 @@ public partial class PaveFiller
         }
         //
         // Build pcurves of edges on planes; first collect pairs edge-face.
-        NCollection_DynamicArray<BPC> vbpc = new();
+        List<BPC> vbpc = new();
         //
         for (i = 1; i <= nbF; ++i)
         {
@@ -798,14 +802,15 @@ public partial class PaveFiller
             for (; exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                BPC bpc = vbpc.Append(new BPC());
+                BPC bpc =  new BPC();
+                vbpc.Add(bpc);
                 bpc.SetEdge(e);
                 bpc.SetFace(f);
             }
         }
         //
-        using var ps = new ProgressScope(psOuter.Next(), "Building 2d curves on planar faces", vbpc.Length());
-        for (i = 0; i < vbpc.Length(); i++)
+        using var ps = new ProgressScope(psOuter.Next(), "Building 2d curves on planar faces", vbpc.Count);
+        for (i = 0; i < vbpc.Count; i++)
         {
             BPC bpc = vbpc[i];
             bpc.SetRange(ps.Next());
@@ -819,7 +824,7 @@ public partial class PaveFiller
         }
         // pcurves are built, and now update edges
         BrepBuilder bb = new();
-        for (i = 0; i < vbpc.Length(); i++)
+        for (i = 0; i < vbpc.Count; i++)
         {
             if (UserBreak(psOuter))
             {

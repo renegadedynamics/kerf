@@ -362,7 +362,7 @@ public partial class BooleanBuilder
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives
         // the stored key back from its index, and the map is never iterated
         NCollection_IndexedMap<ToolSet> mst = new();
-        NCollection_DynamicArray<SplitSolid> vbs = new();
+        List<SplitSolid> vbs = new();
         //
         using var psOuter = new ProgressScope(range, null, 10);
         // 0. Find same domain solids for non-interfered solids
@@ -446,7 +446,8 @@ public partial class BooleanBuilder
             }
             //
             // 1.3 Build new solids
-            SplitSolid bs = vbs.Append(new SplitSolid());
+            SplitSolid bs =  new SplitSolid();
+            vbs.Add(bs);
             bs.SetSolid(solid);
             bs.SetShapes(sfs);
             bs.SetRunParallel(_runParallel);
@@ -454,13 +455,13 @@ public partial class BooleanBuilder
         //
         int k, nbBS;
         //
-        nbBS = vbs.Length();
+        nbBS = vbs.Count;
         // Set progress range for each task to be run in parallel
         using (var psParallel = new ProgressScope(psOuter.Next(9), "Splitting solids", nbBS))
         {
             for (int iS = 0; iS < nbBS; iS++)
             {
-                SplitSolid splitSolid = vbs.ChangeValue(iS);
+                SplitSolid splitSolid = vbs[iS];
                 splitSolid.SetProgressRange(psParallel.Next());
             }
             //

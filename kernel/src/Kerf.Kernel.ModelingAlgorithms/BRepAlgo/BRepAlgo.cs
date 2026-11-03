@@ -18,6 +18,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Healing.Checks.StatusCheck;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -80,7 +81,7 @@ public static class BRepAlgo
         Wire result = new();
         double maxTol = 0.0;
         Surface surf = Tool.Surface(face)!;
-        NCollection_DynamicArray<OrientedCurve> vecCurve = new();
+        List<OrientedCurve> vecCurve = new();
 
         WireExplorer expE = new(wire, face);
         // Explore the edges in the current wire, in their connection order
@@ -108,7 +109,8 @@ public static class BRepAlgo
                     Curve2D? crv = resultApprox[iCrv - 1];
                     if (crv is not null)
                     {
-                        ref OrientedCurve oCurve = ref vecCurve.Append(new OrientedCurve());
+                        vecCurve.Add(new OrientedCurve());
+                        ref OrientedCurve oCurve = ref CollectionsMarshal.AsSpan(vecCurve)[^1];
                         oCurve.Curve = (TrimmedCurve2D)crv;
                         oCurve.IsReverse = true;
                     }
@@ -121,7 +123,8 @@ public static class BRepAlgo
                     Curve2D? crv = resultApprox[iCrv - 1];
                     if (crv is not null)
                     {
-                        ref OrientedCurve oCurve = ref vecCurve.Append(new OrientedCurve());
+                        vecCurve.Add(new OrientedCurve());
+                        ref OrientedCurve oCurve = ref CollectionsMarshal.AsSpan(vecCurve)[^1];
                         oCurve.Curve = (TrimmedCurve2D)crv;
                         oCurve.IsReverse = false;
                     }
@@ -129,11 +132,11 @@ public static class BRepAlgo
             }
         }
 
-        if (vecCurve.Length() > 0)
+        if (vecCurve.Count > 0)
         {
             // Build the first vertex
             BrepBuilder vBuilder = new();
-            Point2D[] pnt = [vecCurve.Value(0).Point(false), vecCurve.Value(vecCurve.Length() - 1).Point(true)];
+            Point2D[] pnt = [vecCurve[0].Point(false), vecCurve[vecCurve.Count - 1].Point(true)];
             double dist = pnt[0].Distance(pnt[1]);
             if (dist > maxTol + global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -152,14 +155,14 @@ public static class BRepAlgo
             MakeWire mkWire = new();
             Edge edgeRes;
             Vertex vertex = firstVertex;
-            for (int iCrv = 0; iCrv < vecCurve.Length(); iCrv++)
+            for (int iCrv = 0; iCrv < vecCurve.Count; iCrv++)
             {
-                OrientedCurve oCurve = vecCurve.Value(iCrv);
+                OrientedCurve oCurve = vecCurve[iCrv];
                 Vertex nextVertex = new();
                 pnt[0] = oCurve.Point(true);
-                if (iCrv == vecCurve.Length() - 1)
+                if (iCrv == vecCurve.Count - 1)
                 {
-                    pnt[1] = vecCurve.Value(0).Point(false);
+                    pnt[1] = vecCurve[0].Point(false);
                     dist = pnt[0].Distance(pnt[1]);
                     if (dist > maxTol + global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
@@ -173,7 +176,7 @@ public static class BRepAlgo
                 }
                 else
                 {
-                    pnt[1] = vecCurve.Value(iCrv + 1).Point(false);
+                    pnt[1] = vecCurve[iCrv + 1].Point(false);
                     dist = 0.5 * (pnt[0].Distance(pnt[1])) + global::Kerf.Engine.Foundation.Precision.Confusion();
                     pnt[0] = new Point2D(0.5 * (pnt[0].XY() + pnt[1].XY()));
                     pnt3d = surf.Value(pnt[0].X(), pnt[0].Y());

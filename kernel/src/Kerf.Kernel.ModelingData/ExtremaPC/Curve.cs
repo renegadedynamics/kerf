@@ -423,14 +423,14 @@ public sealed class Curve
         _transformResult.Clear();
         _transformResult.Status = src.Status;
         _transformResult.InfiniteSquareDistance = src.InfiniteSquareDistance * sfSq;
-        for (int i = 0; i < src._extrema.Length(); ++i)
+        for (int i = 0; i < src._extrema.Count; ++i)
         {
             global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult ext = new();
             ext.Parameter = src[i].Parameter;
             ext.Point = src[i].Point.Transformed(_trsf);
             ext.SquareDistance = src[i].SquareDistance * sfSq;
             ext.IsMinimum = src[i].IsMinimum;
-            _transformResult._extrema.Append(ext);
+            _transformResult._extrema.Add(ext);
         }
         return _transformResult;
     }

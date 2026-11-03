@@ -76,13 +76,13 @@ public static partial class MathInteg
         }
 
         // Get Gauss points and weights for each variable
-        NCollection_DynamicArray<math_Vector> gaussPoints = new();
-        NCollection_DynamicArray<math_Vector> gaussWeights = new();
+        List<math_Vector> gaussPoints = new();
+        List<math_Vector> gaussWeights = new();
 
         for (int i = 0; i < nVars; ++i)
         {
-            gaussPoints.Append(new math_Vector(0, ord[i] - 1));
-            gaussWeights.Append(new math_Vector(0, ord[i] - 1));
+            gaussPoints.Add(new math_Vector(0, ord[i] - 1));
+            gaussWeights.Add(new math_Vector(0, ord[i] - 1));
 
             math_Vector gp = new(1, ord[i]);
             math_Vector gw = new(1, ord[i]);
@@ -94,8 +94,8 @@ public static partial class MathInteg
 
             for (int k = 0; k < ord[i]; ++k)
             {
-                gaussPoints.ChangeValue(i)[k] = gp[k + 1];
-                gaussWeights.ChangeValue(i)[k] = gw[k + 1];
+                gaussPoints[i][k] = gp[k + 1];
+                gaussWeights[i][k] = gw[k + 1];
             }
         }
 
@@ -115,7 +115,7 @@ public static partial class MathInteg
                 // Compute function value at current Gauss point
                 for (int j = 0; j < nVars; ++j)
                 {
-                    dx[j + 1] = xr[j] * gaussPoints.Value(j)[inc[j]];
+                    dx[j + 1] = xr[j] * gaussPoints[j][inc[j]];
                     x[j + 1] = xm[j] + dx[j + 1];
                 }
 
@@ -128,7 +128,7 @@ public static partial class MathInteg
                 double weight = 1.0;
                 for (int j = 0; j < nVars; ++j)
                 {
-                    weight *= gaussWeights.Value(j)[inc[j]];
+                    weight *= gaussWeights[j][inc[j]];
                 }
 
                 val += weight * f1;

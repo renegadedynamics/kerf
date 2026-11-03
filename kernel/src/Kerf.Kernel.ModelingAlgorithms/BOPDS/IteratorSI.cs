@@ -29,7 +29,7 @@ public class IteratorSI : DataIterator
         nbInterfTypes = global::Kerf.Engine.Booleans.Data.DS.InterfTypeCount;
         for (i = level + 1; i < nbInterfTypes; ++i)
         {
-            _lists.Value(i).Clear();
+            _lists[i].Clear();
         }
     }
 
@@ -98,7 +98,7 @@ public class IteratorSI : DataIterator
             }
 
             int iX = DataTools.TypeToInteger(type1, type2);
-            _lists.Value(iX).Append(new Pair(Min(pair.ID1, pair.ID2), Max(pair.ID1, pair.ID2)));
+            _lists[iX].Add(new Pair(Min(pair.ID1, pair.ID2), Max(pair.ID1, pair.ID2)));
         }
     }
 }

@@ -10,6 +10,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Topology;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans.Data;
@@ -38,11 +39,11 @@ public class DataIterator
 
     protected int _length;                                                      //!< Length of the intersection vector of particular intersection type
     protected DS? _ds;                                                    //!< Data Structure
-    protected NCollection_DynamicArray<NCollection_DynamicArray<Pair>> _lists = new(0); //!< Pairs with interfering bounding boxes
-    protected NCollection_DynamicArray<Pair>? _iteratorList;              //!< Iterator on each interfering type: its vector
+    protected List<List<Pair>> _lists = new(); //!< Pairs with interfering bounding boxes
+    protected List<Pair>? _iteratorList;              //!< Iterator on each interfering type: its vector
     protected int _iteratorIndex;                                               //!< and its position
     protected bool _runParallel;                                                //!< Flag for parallel processing
-    protected NCollection_DynamicArray<NCollection_DynamicArray<Pair>> _extLists = new(0); //!< Extra pairs of sub-shapes found after intersection of increased sub-shapes
+    protected List<List<Pair>> _extLists = new(); //!< Extra pairs of sub-shapes found after intersection of increased sub-shapes
     protected bool _useExt;                                                     //!< Information flag for using the extra lists
 
     /// <summary>An iterator without data structure.</summary>
@@ -58,12 +59,12 @@ public class DataIterator
         nb = global::Kerf.Engine.Booleans.Data.DS.InterfTypeCount;
         for (i = 0; i < nb; ++i)
         {
-            _lists.Append(new NCollection_DynamicArray<Pair>());
+            _lists.Add(new List<Pair>());
         }
         int nbExt = ExtInterfCount;
         for (i = 0; i < nbExt; ++i)
         {
-            _extLists.Append(new NCollection_DynamicArray<Pair>());
+            _extLists.Add(new List<Pair>());
         }
     }
 
@@ -109,18 +110,18 @@ public class DataIterator
         iX = DataTools.TypeToInteger(aType1, aType2);
         if (iX >= 0)
         {
-            NCollection_DynamicArray<Pair> pairs =
-                (_useExt && iX < ExtInterfCount) ? _extLists.Value(iX) : _lists.Value(iX);
+            List<Pair> pairs =
+                (_useExt && iX < ExtInterfCount) ? _extLists[iX] : _lists[iX];
             // sort interfering pairs for constant order of intersection
-            Sorting.stable_sort(pairs.AsSpan(), new Pair.LessThan());
+            Sorting.stable_sort(CollectionsMarshal.AsSpan(pairs), new Pair.LessThan());
             // initialize iterator to access the pairs
             _iteratorList = pairs;
-            _length = pairs.Length();
+            _length = pairs.Count;
         }
     }
 
     /// <summary>True if there are more pairs.</summary>
-    public bool More() => _iteratorList is not null && _iteratorIndex < _iteratorList.Length();
+    public bool More() => _iteratorList is not null && _iteratorIndex < _iteratorList.Count;
 
     /// <summary>Moves to the next pair.</summary>
     public void Next() => ++_iteratorIndex;
@@ -130,7 +131,7 @@ public class DataIterator
     {
         int iT1, iT2, n1, n2;
         //
-        Pair pair = _iteratorList!.Value(_iteratorIndex);
+        Pair pair = _iteratorList![_iteratorIndex];
         pair.Indices(out n1, out n2);
         //
         iT1 = (int)_ds!.ShapeInfo(n1).ShapeType();
@@ -157,7 +158,7 @@ public class DataIterator
         _length = 0;
         for (i = 0; i < nbInterfTypes; ++i)
         {
-            _lists.Value(i).Clear();
+            _lists[i].Clear();
         }
         //
         if (_ds is null)
@@ -181,7 +182,7 @@ public class DataIterator
         int nb = _ds.SourceShapeCount;
         BoxTree boxTree = new();
         boxTree.SetSize(nb);
-        NCollection_DynamicArray<BOPDS_TSR> vtsr = new(indices.Extent());
+        List<BOPDS_TSR> vtsr = new(indices.Extent());
         //
         for (int i = 0; i < nb; ++i)
         {
@@ -198,7 +199,8 @@ public class DataIterator
                 ShapeInfo sisd = _ds.ShapeInfo(nVSD);
                 Box box = sisd.Box();
                 boxTree.Add(i, global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(box));
-                BOPDS_TSR tsr = vtsr.Append(new BOPDS_TSR());
+                BOPDS_TSR tsr =  new BOPDS_TSR();
+                vtsr.Add(tsr);
                 tsr.SetHasBRep(true);
                 tsr.SetBVHSet(boxTree);
                 tsr.SetBox(global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(box));
@@ -220,10 +222,10 @@ public class DataIterator
         // Fence map to avoid duplicating pairs
         HashSet<Pair> mpFence = new();
 
-        int nbV = vtsr.Length();
+        int nbV = vtsr.Count;
         for (int k = 0; k < nbV; ++k)
         {
-            BOPDS_TSR tsRi = vtsr.Value(k);
+            BOPDS_TSR tsRi = vtsr[k];
             NCollection_List<int> li = tsRi.Indices();
             if (li.IsEmpty())
             {
@@ -261,7 +263,7 @@ public class DataIterator
                     int iX = DataTools.TypeToInteger(ti, tj);
                     if (iX < ExtInterfCount)
                     {
-                        _extLists.Value(iX).Append(pair);
+                        _extLists[iX].Add(pair);
                     }
                 }
             }
@@ -362,7 +364,7 @@ public class DataIterator
                 }
 
                 int iX = DataTools.TypeToInteger(type1, type2);
-                _lists.Value(iX).Append(new Pair(Min(pair.ID1, pair.ID2), Max(pair.ID1, pair.ID2)));
+                _lists[iX].Add(new Pair(Min(pair.ID1, pair.ID2), Max(pair.ID1, pair.ID2)));
             }
         }
     }

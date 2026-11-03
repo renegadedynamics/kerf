@@ -55,7 +55,7 @@ public class FaceChecker : Transient
     private readonly FaceModel _dFace;
     private readonly ToolParameters _parameters; // OCCT holds a reference; the caller's doesn't change meanwhile
 
-    private NCollection_Array1<NCollection_DynamicArray<Segment>?>? _wiresSegments;
+    private NCollection_Array1<List<Segment>?>? _wiresSegments;
     private NCollection_Array1<IndexedSpatialTree<int, Box2d>?>? _wiresBndBoxTree;
     private NCollection_Array1<HashSet<EdgeModel>?>? _wiresIntersectingEdges;
     private HashSet<EdgeModel>? _intersectingEdges;
@@ -100,7 +100,7 @@ public class FaceChecker : Transient
     // Checks wire with the given index for intersection with others.
     private void PerformCore(int wireIndex)
     {
-        NCollection_DynamicArray<Segment> segments1 = _wiresSegments!.Value(wireIndex)!;
+        List<Segment> segments1 = _wiresSegments!.Value(wireIndex)!;
         ref HashSet<EdgeModel>? intersections = ref _wiresIntersectingEdges![wireIndex];
 
         // TODO: Tolerance is set to twice value of face deflection in order to fit regressions.
@@ -108,12 +108,12 @@ public class FaceChecker : Transient
         for (int wireIt = wireIndex; wireIt < _dFace.WiresNb(); ++wireIt)
         {
             IndexedSpatialTree<int, Box2d> bndBoxTree2 = _wiresBndBoxTree!.Value(wireIt)!;
-            NCollection_DynamicArray<Segment> segments2 = _wiresSegments.Value(wireIt)!;
+            List<Segment> segments2 = _wiresSegments.Value(wireIt)!;
 
             selector.SetSegments(segments2);
-            for (int segmentIt = 0; segmentIt < segments1.Length(); ++segmentIt)
+            for (int segmentIt = 0; segmentIt < segments1.Count; ++segmentIt)
             {
-                Segment segment1 = segments1.Value(segmentIt);
+                Segment segment1 = segments1[segmentIt];
                 selector.Reset(segment1, (wireIt == wireIndex) ? segmentIt : -1);
                 if (bndBoxTree2.Select(selector) != 0)
                 {
@@ -121,10 +121,10 @@ public class FaceChecker : Transient
 
                     intersections.Add(segment1.EdgePtr!);
 
-                    NCollection_DynamicArray<int> segments = selector.Indices();
-                    for (int selIt = 0; selIt < segments.Length(); ++selIt)
+                    List<int> segments = selector.Indices();
+                    for (int selIt = 0; selIt < segments.Count; ++selIt)
                     {
-                        Segment segment2 = segments2.Value(segments.Value(selIt));
+                        Segment segment2 = segments2[segments[selIt]];
                         intersections.Add(segment2.EdgePtr!);
                     }
                 }
@@ -149,11 +149,11 @@ public class FaceChecker : Transient
     private sealed class SegmentsFiller
     {
         private readonly FaceModel _dFace;
-        private readonly NCollection_Array1<NCollection_DynamicArray<Segment>?> _wiresSegments;
+        private readonly NCollection_Array1<List<Segment>?> _wiresSegments;
         private readonly NCollection_Array1<IndexedSpatialTree<int, Box2d>?> _wiresBndBoxTree;
 
         public SegmentsFiller(FaceModel dFace,
-                              out NCollection_Array1<NCollection_DynamicArray<Segment>?> wiresSegments,
+                              out NCollection_Array1<List<Segment>?> wiresSegments,
                               out NCollection_Array1<IndexedSpatialTree<int, Box2d>?> wiresBndBoxTree)
         {
             _dFace = dFace;
@@ -166,7 +166,7 @@ public class FaceChecker : Transient
         {
             WireModel dWire = _dFace.GetWire(wireIndex);
 
-            NCollection_DynamicArray<Segment> segments = new(dWire.EdgesNb());
+            List<Segment> segments = new(dWire.EdgesNb());
             IndexedSpatialTree<int, Box2d> bndBoxTree = new();
 
             _wiresSegments[wireIndex] = segments;
@@ -191,8 +191,8 @@ public class FaceChecker : Transient
                     box.Add(pnt2);
                     box.Enlarge(global::Kerf.Engine.Foundation.Precision.Confusion());
 
-                    bndBoxTreeFiller.Add(segments.Length(), box);
-                    segments.Append(new Segment(dEdge, pnt1, pnt2));
+                    bndBoxTreeFiller.Add(segments.Count, box);
+                    segments.Add(new Segment(dEdge, pnt1, pnt2));
                 }
             }
 
@@ -205,20 +205,20 @@ public class FaceChecker : Transient
     {
         private readonly double _maxLoopSize;
         private int _selfSegmentIndex;
-        private NCollection_DynamicArray<Segment>? _segments;
+        private List<Segment>? _segments;
         private Segment _segment;
         private Box2d _box = new();
-        private readonly NCollection_DynamicArray<int> _indices;
+        private readonly List<int> _indices;
 
         public BndBox2dTreeSelector(double tolerance)
         {
             _maxLoopSize = M_PI * tolerance * tolerance;
             _selfSegmentIndex = -1;
-            _indices = new NCollection_DynamicArray<int>(256);
+            _indices = new List<int>();
         }
 
         // Sets working set of segments.
-        public void SetSegments(NCollection_DynamicArray<Segment> segments)
+        public void SetSegments(List<Segment> segments)
         {
             _segments = segments;
         }
@@ -243,7 +243,7 @@ public class FaceChecker : Transient
         // Accepts segment with the given index in case if it fits conditions.
         public override bool Accept(in int segmentIndex)
         {
-            Segment segment = _segments!.Value(segmentIndex);
+            Segment segment = _segments![segmentIndex];
 
             Point2D intPnt = new();
             GeomTool.IntFlag intStatus =
@@ -274,7 +274,7 @@ public class FaceChecker : Transient
                     Xy refPnt = intPnt.Coord();
                     for (int i = _selfSegmentIndex; i < segmentIndex; ++i)
                     {
-                        Segment currSegment = _segments.Value(i);
+                        Segment currSegment = _segments[i];
                         Xy curVec = currSegment.Point2.XY() - refPnt;
 
                         if (curVec.SquareModulus() < Constants.Resolution())
@@ -296,7 +296,7 @@ public class FaceChecker : Transient
                     }
                 }
 
-                _indices.Append(segmentIndex);
+                _indices.Add(segmentIndex);
                 return true;
             }
 
@@ -304,6 +304,6 @@ public class FaceChecker : Transient
         }
 
         // Returns indices of intersecting segments.
-        public NCollection_DynamicArray<int> Indices() => _indices;
+        public List<int> Indices() => _indices;
     }
 }

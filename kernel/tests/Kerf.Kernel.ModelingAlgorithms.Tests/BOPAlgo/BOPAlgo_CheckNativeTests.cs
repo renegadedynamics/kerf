@@ -169,7 +169,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                     p.Indices(out int n1, out int n2);
                     return $" {n1},{n2}";
                 }));
-                aB += $"\nz {aDS.InterfVZ().Length()} {aDS.InterfEZ().Length()} {aDS.InterfFZ().Length()} {aDS.InterfZZ().Length()}\n";
+                aB += $"\nz {aDS.InterfVZ().Count} {aDS.InterfEZ().Count} {aDS.InterfFZ().Count} {aDS.InterfZZ().Count}\n";
                 return aB + PaveFillerDump.Write(aDS);
             }
             case "aa":

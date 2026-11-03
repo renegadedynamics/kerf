@@ -357,7 +357,7 @@ public sealed class DistanceShapeShape
     private sealed class DistancePairFunctor
     {
         public readonly NCollection_Array1<IndexBand> BandArray;
-        public readonly NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>> PairList;
+        public readonly NCollection_Array1<List<BRepExtrema_CheckPair>> PairList;
         public NCollection_Array1<Box>? LBox1;
         public NCollection_Array1<Box>? LBox2;
         public readonly ProgressScope Scope;
@@ -368,10 +368,10 @@ public sealed class DistanceShapeShape
         public DistancePairFunctor(NCollection_Array1<IndexBand> bandArray, ProgressRange range)
         {
             BandArray = bandArray;
-            PairList = new NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>>(0, bandArray.Length() - 1);
+            PairList = new NCollection_Array1<List<BRepExtrema_CheckPair>>(0, bandArray.Length() - 1);
             for (int i = 0; i < bandArray.Length(); ++i)
             {
-                PairList[i] = new NCollection_DynamicArray<BRepExtrema_CheckPair>();
+                PairList[i] = new List<BRepExtrema_CheckPair>();
             }
             Scope = new ProgressScope(range, "Boxes distances calculating", bandArray.Length());
             Ranges = new NCollection_Array1<ProgressRange>(0, bandArray.Length() - 1);
@@ -410,7 +410,7 @@ public sealed class DistanceShapeShape
                     double dist = box1.Distance(box2);
                     if (dist - DistRef < Eps)
                     {
-                        PairList[index].Append(new BRepExtrema_CheckPair(idx1, idx2, dist));
+                        PairList[index].Add(new BRepExtrema_CheckPair(idx1, idx2, dist));
                     }
                 }
             }
@@ -421,7 +421,7 @@ public sealed class DistanceShapeShape
             int size = 0;
             for (int i = PairList.Lower(); i <= PairList.Upper(); ++i)
             {
-                size += PairList[i].Length();
+                size += PairList[i].Count;
             }
             return size;
         }
@@ -490,7 +490,7 @@ public sealed class DistanceShapeShape
         int listIndex = 0;
         for (int i = 0; i < pairFunctor.PairList.Length(); ++i)
         {
-            for (int j = 0; j < pairFunctor.PairList[i].Length(); ++j)
+            for (int j = 0; j < pairFunctor.PairList[i].Count; ++j)
             {
                 pairList[listIndex] = pairFunctor.PairList[i][j];
                 ++listIndex;

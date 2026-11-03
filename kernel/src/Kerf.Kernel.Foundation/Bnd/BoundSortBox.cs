@@ -27,7 +27,7 @@ public class BoundSortBox
     private double _coeffZ;                                  // Coefficient for Z direction.
     private int _resolution;                                 // The number of voxels in each direction.
     private readonly NCollection_List<int> _lastResult = new(); // The last result of the Compare() method.
-    private readonly NCollection_DynamicArray<int> _largeBoxes = new(); // The list of large boxes.
+    private readonly List<int> _largeBoxes = new(); // The list of large boxes.
     private Bnd_VoxelGrid? _voxelGrid;                       // The voxel grid used for sorting the boxes.
 
     /// <summary>Constructs an empty algorithm; define the boxes with one of the Initialize methods.</summary>
@@ -173,7 +173,7 @@ public class BoundSortBox
         // Checking the voxels along X-axis.
         for (int voxelX = minVoxelX; voxelX <= maxVoxelX; ++voxelX)
         {
-            NCollection_DynamicArray<int>? boxIndices = _voxelGrid!.GetSliceX(voxelX);
+            List<int>? boxIndices = _voxelGrid!.GetSliceX(voxelX);
             if (boxIndices is null)
             {
                 continue;
@@ -189,7 +189,7 @@ public class BoundSortBox
         // Checking the voxels along Y-axis.
         for (int voxelY = minVoxelY; voxelY <= maxVoxelY; ++voxelY)
         {
-            NCollection_DynamicArray<int>? boxIndices = _voxelGrid!.GetSliceY(voxelY);
+            List<int>? boxIndices = _voxelGrid!.GetSliceY(voxelY);
             if (boxIndices is null)
             {
                 continue;
@@ -205,7 +205,7 @@ public class BoundSortBox
         // Checking the voxels along Z-axis.
         for (int voxelZ = minVoxelZ; voxelZ <= maxVoxelZ; ++voxelZ)
         {
-            NCollection_DynamicArray<int>? boxIndices = _voxelGrid!.GetSliceZ(voxelZ);
+            List<int>? boxIndices = _voxelGrid!.GetSliceZ(voxelZ);
             if (boxIndices is null)
             {
                 continue;
@@ -315,7 +315,7 @@ public class BoundSortBox
         // it is more efficient to test it normally rather than using voxel-based checks.
         if (boxMinSide * 4 > _resolution)
         {
-            _largeBoxes.Append(index);
+            _largeBoxes.Add(index);
         }
         else
         {
@@ -355,22 +355,22 @@ public class BoundSortBox
     /// </summary>
     private sealed class Bnd_VoxelGrid
     {
-        private readonly NCollection_Array1<NCollection_DynamicArray<int>> _slicesX; // box indices for each X slice
-        private readonly NCollection_Array1<NCollection_DynamicArray<int>> _slicesY; // box indices for each Y slice
-        private readonly NCollection_Array1<NCollection_DynamicArray<int>> _slicesZ; // box indices for each Z slice
+        private readonly NCollection_Array1<List<int>> _slicesX; // box indices for each X slice
+        private readonly NCollection_Array1<List<int>> _slicesY; // box indices for each Y slice
+        private readonly NCollection_Array1<List<int>> _slicesZ; // box indices for each Z slice
 
         public Bnd_VoxelGrid(int resolution, int expectedBoxCount)
         {
-            _slicesX = new NCollection_Array1<NCollection_DynamicArray<int>>(0, resolution - 1);
-            _slicesY = new NCollection_Array1<NCollection_DynamicArray<int>>(0, resolution - 1);
-            _slicesZ = new NCollection_Array1<NCollection_DynamicArray<int>>(0, resolution - 1);
+            _slicesX = new NCollection_Array1<List<int>>(0, resolution - 1);
+            _slicesY = new NCollection_Array1<List<int>>(0, resolution - 1);
+            _slicesZ = new NCollection_Array1<List<int>>(0, resolution - 1);
             // Estimate boxes per slice: total boxes / resolution, with minimum of 16.
             int increment = Max(expectedBoxCount / resolution, 16);
             for (int i = 0; i < resolution; ++i)
             {
-                _slicesX[i] = new NCollection_DynamicArray<int>(increment);
-                _slicesY[i] = new NCollection_DynamicArray<int>(increment);
-                _slicesZ[i] = new NCollection_DynamicArray<int>(increment);
+                _slicesX[i] = new List<int>(increment);
+                _slicesY[i] = new List<int>(increment);
+                _slicesZ[i] = new List<int>(increment);
             }
         }
 
@@ -390,31 +390,31 @@ public class BoundSortBox
         }
 
         // The indices of the boxes occupying the X slice, or null if none.
-        public NCollection_DynamicArray<int>? GetSliceX(int voxelIndex)
+        public List<int>? GetSliceX(int voxelIndex)
         {
-            NCollection_DynamicArray<int> slice = _slicesX[voxelIndex];
-            return slice.IsEmpty() ? null : slice;
+            List<int> slice = _slicesX[voxelIndex];
+            return slice.Count == 0 ? null : slice;
         }
 
         // The indices of the boxes occupying the Y slice, or null if none.
-        public NCollection_DynamicArray<int>? GetSliceY(int voxelIndex)
+        public List<int>? GetSliceY(int voxelIndex)
         {
-            NCollection_DynamicArray<int> slice = _slicesY[voxelIndex];
-            return slice.IsEmpty() ? null : slice;
+            List<int> slice = _slicesY[voxelIndex];
+            return slice.Count == 0 ? null : slice;
         }
 
         // The indices of the boxes occupying the Z slice, or null if none.
-        public NCollection_DynamicArray<int>? GetSliceZ(int voxelIndex)
+        public List<int>? GetSliceZ(int voxelIndex)
         {
-            NCollection_DynamicArray<int> slice = _slicesZ[voxelIndex];
-            return slice.IsEmpty() ? null : slice;
+            List<int> slice = _slicesZ[voxelIndex];
+            return slice.Count == 0 ? null : slice;
         }
 
         private void AppendSliceX(int voxelIndexMin, int voxelIndexMax, int boxIndex)
         {
             for (int i = voxelIndexMin; i <= voxelIndexMax; ++i)
             {
-                _slicesX[i].Append(boxIndex);
+                _slicesX[i].Add(boxIndex);
             }
         }
 
@@ -422,7 +422,7 @@ public class BoundSortBox
         {
             for (int i = voxelIndexMin; i <= voxelIndexMax; ++i)
             {
-                _slicesY[i].Append(boxIndex);
+                _slicesY[i].Add(boxIndex);
             }
         }
 
@@ -430,7 +430,7 @@ public class BoundSortBox
         {
             for (int i = voxelIndexMin; i <= voxelIndexMax; ++i)
             {
-                _slicesZ[i].Append(boxIndex);
+                _slicesZ[i].Add(boxIndex);
             }
         }
     }

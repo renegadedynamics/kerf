@@ -169,7 +169,7 @@ public partial class BooleanBuilder
         NCollection_List<Shape>.Iterator it = new();
         NCollection_List<int> liav = new();
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
-        NCollection_DynamicArray<SplitFace> vbf = new();
+        List<SplitFace> vbf = new();
         //
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~scope f
         NCollection_List<Shape> le = new();
@@ -426,7 +426,8 @@ public partial class BooleanBuilder
                 BrepLibrary.BuildPCurveForEdgesOnPlane(le, ff);
             }
             // 3 Build split faces
-            SplitFace bf = vbf.Append(new SplitFace());
+            SplitFace bf =  new SplitFace();
+            vbf.Add(bf);
             bf.SetFace(f);
             bf.SetShapes(le);
             bf.SetRunParallel(_runParallel);
@@ -436,12 +437,12 @@ public partial class BooleanBuilder
         // close preparation task
         psOuter.Next();
         //
-        int nbBF = vbf.Length();
+        int nbBF = vbf.Count;
         // Set progress range for each task to be run in parallel
         using var psParallel = new ProgressScope(psOuter.Next(9), "Splitting faces", nbBF);
         for (int iF = 0; iF < nbBF; iF++)
         {
-            SplitFace bf = vbf.ChangeValue(iF);
+            SplitFace bf = vbf[iF];
             bf.SetProgressRange(psParallel.Next());
         }
         //===================================================
@@ -500,8 +501,8 @@ public partial class BooleanBuilder
     {
         // It is necessary to analyze all Face/Face intersections
         // and find all faces with equal sets of edges
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFFs = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFFs = fFs.Count;
         if (nbFFs == 0)
         {
             return;
@@ -557,7 +558,7 @@ public partial class BooleanBuilder
         // Vector to store the indices of faces for future sorting
         // for making the SD face for the group from the face with
         // smallest index in Data structure
-        NCollection_DynamicArray<int> fiVec = new(256);
+        List<int> fiVec = new();
         // Fence map to avoid repeated checks of the same face.
         NCollection_IntMap mFence = new(1);
 
@@ -585,7 +586,7 @@ public partial class BooleanBuilder
                     continue;
                 }
 
-                fiVec.Append(nF2[j]);
+                fiVec.Add(nF2[j]);
             }
         }
 
@@ -603,7 +604,7 @@ public partial class BooleanBuilder
         // they are considered Same domain, without additional check.
         HashSet<Shape> mfPlanar = new(ShapeHasher.Instance);
 
-        int nbF = fiVec.Length();
+        int nbF = fiVec.Count;
         for (int i = 0; i < nbF; ++i)
         {
             if (UserBreak(psOuter))
@@ -650,7 +651,7 @@ public partial class BooleanBuilder
         }
 
         // Store pairs of faces with equal set of edges to check if they are really Same Domain
-        NCollection_DynamicArray<PairOfShapeBoolean> vpsb = new();
+        List<PairOfShapeBoolean> vpsb = new();
 
         // Back and forth map of SD faces to make the blocks
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
@@ -693,7 +694,8 @@ public partial class BooleanBuilder
                         continue;
                     }
                     // Add pair for analysis
-                    PairOfShapeBoolean psb = vpsb.Append(new PairOfShapeBoolean());
+                    PairOfShapeBoolean psb =  new PairOfShapeBoolean();
+                    vpsb.Add(psb);
                     psb.Shape1() = f1;
                     psb.Shape2() = f2;
                     psb.SetFuzzyValue(_fuzzyValue);
@@ -704,11 +706,11 @@ public partial class BooleanBuilder
         psOuter.Next();
 
         // Set progress range for each task to be run in parallel
-        using (var psParallel = new ProgressScope(psOuter.Next(6), "Checking SD faces", vpsb.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(6), "Checking SD faces", vpsb.Count))
         {
-            for (int iPSB = 0; iPSB < vpsb.Length(); ++iPSB)
+            for (int iPSB = 0; iPSB < vpsb.Count; ++iPSB)
             {
-                vpsb.ChangeValue(iPSB).SetProgressRange(psParallel.Next());
+                vpsb[iPSB].SetProgressRange(psParallel.Next());
             }
             //================================================================
             // Perform analysis
@@ -722,7 +724,7 @@ public partial class BooleanBuilder
 
         NCollection_List<NCollection_List<Shape>> mBlocks = new();
         // Fill map with SD faces to make the blocks
-        int nbPairs = vpsb.Length();
+        int nbPairs = vpsb.Count;
         for (int i = 0; i < nbPairs; ++i)
         {
             PairOfShapeBoolean psb = vpsb[i];
@@ -839,7 +841,7 @@ public partial class BooleanBuilder
 
         // Vector of pairs of Vertex/Face for classification of the vertices
         // relatively faces, and adding them as internal into the faces
-        NCollection_DynamicArray<VFI> vvfi = new();
+        List<VFI> vvfi = new();
 
         int nbS = _ds!.SourceShapeCount;
         for (int i = 0; i < nbS; ++i)
@@ -877,7 +879,8 @@ public partial class BooleanBuilder
                 {
                     Face fIm = ShapeCasts.Face(itLFIm.Value());
                     // Make the pair
-                    VFI vfi = vvfi.Append(new VFI());
+                    VFI vfi =  new VFI();
+                    vvfi.Add(vfi);
                     vfi.SetVertex(v);
                     vfi.SetFace(fIm);
                     vfi.SetFuzzyValue(_fuzzyValue);
@@ -886,11 +889,11 @@ public partial class BooleanBuilder
         }
 
         // Set progress range for each task to be run in parallel
-        using (var psParallel = new ProgressScope(psOuter.Next(), "Looking for internal shapes", vvfi.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(), "Looking for internal shapes", vvfi.Count))
         {
-            for (int iVFI = 0; iVFI < vvfi.Length(); ++iVFI)
+            for (int iVFI = 0; iVFI < vvfi.Count; ++iVFI)
             {
-                vvfi.ChangeValue(iVFI).SetProgressRange(psParallel.Next());
+                vvfi[iVFI].SetProgressRange(psParallel.Next());
             }
             // Perform classification
             //================================================================
@@ -902,7 +905,7 @@ public partial class BooleanBuilder
             return;
         }
 
-        int nbVFI = vvfi.Length();
+        int nbVFI = vvfi.Count;
         for (int i = 0; i < nbVFI; ++i)
         {
             VFI vfi = vvfi[i];

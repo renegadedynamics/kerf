@@ -128,7 +128,7 @@ public partial class PaveFiller
             return;
         }
         //
-        NCollection_DynamicArray<InterfVF> vFs = _ds!.InterfVF();
+        List<InterfVF> vFs = _ds!.InterfVF();
         if (iSize == 0)
         {
             //
@@ -137,7 +137,7 @@ public partial class PaveFiller
         }
         //
         int nVSD = 0, iFlag, nVx, nbVF, k;
-        NCollection_DynamicArray<VertexFace> vvf = new();
+        List<VertexFace> vvf = new();
         //
         // Avoid repeated intersection of the same vertex with face in case
         // the group of vertices formed a single SD vertex
@@ -185,7 +185,8 @@ public partial class PaveFiller
             Vertex v = ShapeCasts.Vertex(_ds.Shape(nVx));
             Face f = ShapeCasts.Face(_ds.Shape(nF));
             //
-            VertexFace vertexFace = vvf.Append(new VertexFace());
+            VertexFace vertexFace =  new VertexFace();
+            vvf.Add(vertexFace);
             //
             vertexFace.SetIndices(nVx, nF);
             vertexFace.SetVertex(v);
@@ -194,12 +195,12 @@ public partial class PaveFiller
 
         } // for (; myIterator->More(); myIterator->Next()) {
         //
-        nbVF = vvf.Length();
+        nbVF = vvf.Count;
         using (var ps = new ProgressScope(psOuter.Next(9), "Performing Vertex-Face intersection", nbVF))
         {
             for (k = 0; k < nbVF; k++)
             {
-                VertexFace vertexFace = vvf.ChangeValue(k);
+                VertexFace vertexFace = vvf[k];
                 vertexFace.SetProgressRange(ps.Next());
             }
             //================================================================
@@ -242,7 +243,8 @@ public partial class PaveFiller
             {
                 nV = nVi;
                 // 1
-                InterfVF vf = vFs.Append(new InterfVF());
+                InterfVF vf =  new InterfVF();
+                vFs.Add(vf);
                 vf.SetIndices(nV, nF);
                 vf.SetUV(t1, t2);
                 // 2
@@ -277,8 +279,8 @@ public partial class PaveFiller
         //
         nbS = _ds!.SourceShapeCount;
         //
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        nbEEs = eEs.Length();
+        List<InterfEE> eEs = _ds.InterfEE();
+        nbEEs = eEs.Count;
         for (i = 0; i < nbEEs; ++i)
         {
             InterfEE ee = eEs[i];
@@ -310,7 +312,7 @@ public partial class PaveFiller
             return;
         }
         //-------------------------------------------------------------
-        NCollection_DynamicArray<InterfVF> vFs = _ds.InterfVF();
+        List<InterfVF> vFs = _ds.InterfVF();
         //
         SubIterator it = new();
         //
@@ -334,8 +336,9 @@ public partial class PaveFiller
                 if (iFlag == 0)
                 {
                     // 1
-                    InterfVF vf = vFs.Append(new InterfVF());
-                    i = vFs.Length() - 1;
+                    InterfVF vf =  new InterfVF();
+                    vFs.Add(vf);
+                    i = vFs.Count - 1;
                     vf.SetIndices(nV, nF);
                     vf.SetUV(t1, t2);
                     // 2

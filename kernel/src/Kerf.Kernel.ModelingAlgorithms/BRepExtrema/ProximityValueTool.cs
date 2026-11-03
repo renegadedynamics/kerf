@@ -27,7 +27,7 @@ public sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
 {
     private double _tol;
     private bool _isNeedAdd;
-    private readonly NCollection_DynamicArray<Xyz> _points = new();
+    private readonly List<Xyz> _points = new();
     private Xyz _current;
 
     public static int Dimension => 3;
@@ -44,7 +44,7 @@ public sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
     }
 
     /// <summary>Keeps a point to compare with.</summary>
-    public void Add(in Xyz pnt) => _points.Append(pnt);
+    public void Add(in Xyz pnt) => _points.Add(pnt);
 
     /// <summary>Sets the (square) tolerance of the comparison of coordinates.</summary>
     public void SetTol(double tol) => _tol = tol;
@@ -70,7 +70,7 @@ public sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
     {
         _isNeedAdd = true; // OCCT: reset for every target, so a coincidence found before a later target is forgotten
 
-        Xyz pnt = _points.Value(target - 1);
+        Xyz pnt = _points[target - 1];
         double dx, dy, dz;
         dx = _current.X() - pnt.X();
         dy = _current.Y() - pnt.Y();
@@ -94,14 +94,14 @@ public sealed class ProximityValueTool
 {
     private TriangleSet? _set1;
     private TriangleSet? _set2;
-    private NCollection_DynamicArray<Shape> _shapeList1 = new();
-    private NCollection_DynamicArray<Shape> _shapeList2 = new();
+    private List<Shape> _shapeList1 = new();
+    private List<Shape> _shapeList2 = new();
     private Shape _shape1;
     private Shape _shape2;
     private readonly NCollection_LinearVector<BVH_Vec3d> _addVertices1 = new(); //!< Additional vertices on the 1st shape if its mesh is coarser.
     private readonly NCollection_LinearVector<BVH_Vec3d> _addVertices2 = new(); //!< Additional vertices on the 2nd shape if its mesh is coarser.
-    private readonly NCollection_DynamicArray<ProxPnt_Status> _addStatus1 = new(); //!< Status of additional vertices on the 1st shape.
-    private readonly NCollection_DynamicArray<ProxPnt_Status> _addStatus2 = new(); //!< Status of additional vertices on the 2nd shape.
+    private readonly List<ProxPnt_Status> _addStatus1 = new(); //!< Status of additional vertices on the 1st shape.
+    private readonly List<ProxPnt_Status> _addStatus2 = new(); //!< Status of additional vertices on the 2nd shape.
     private bool _isInitS1; //!< Is the 1st shape initialized?
     private bool _isInitS2; //!< Is the 2nd shape initialized?
     private bool _isRefinementRequired1; //!< Flag about the need to refine the 1st shape.
@@ -137,8 +137,8 @@ public sealed class ProximityValueTool
     /// <summary>A proximity tool for the given element sets and lists of sub-shapes.</summary>
     public ProximityValueTool(TriangleSet set1,
                                           TriangleSet set2,
-                                          NCollection_DynamicArray<Shape> shapeList1,
-                                          NCollection_DynamicArray<Shape> shapeList2)
+                                          List<Shape> shapeList1,
+                                          List<Shape> shapeList2)
     {
         _isRefinementRequired1 = false;
         _isRefinementRequired2 = false;
@@ -270,10 +270,10 @@ public sealed class ProximityValueTool
     }
 
     /// <summary>Loads the lists of sub-shapes (copies, as OCCT assigns by value); the first of each is measured.</summary>
-    public void LoadShapeLists(NCollection_DynamicArray<Shape> shapeList1, NCollection_DynamicArray<Shape> shapeList2)
+    public void LoadShapeLists(List<Shape> shapeList1, List<Shape> shapeList2)
     {
-        _shapeList1 = new NCollection_DynamicArray<Shape>(shapeList1);
-        _shapeList2 = new NCollection_DynamicArray<Shape>(shapeList2);
+        _shapeList1 = new List<Shape>(shapeList1);
+        _shapeList2 = new List<Shape>(shapeList2);
 
         _shape1 = shapeList1[0];
         _isInitS1 = GetInfoForRefinement(_shape1, ref _shapeType1, ref _nbNodes1, ref _step1);
@@ -300,10 +300,10 @@ public sealed class ProximityValueTool
     private static double ComputeProximityDist(TriangleSet set1,
                                                int nbSamples1,
                                                NCollection_LinearVector<BVH_Vec3d> addVertices1,
-                                               NCollection_DynamicArray<ProxPnt_Status> addStatus1,
+                                               List<ProxPnt_Status> addStatus1,
                                                TriangleSet set2,
-                                               NCollection_DynamicArray<Shape> shapeList1,
-                                               NCollection_DynamicArray<Shape> shapeList2,
+                                               List<Shape> shapeList1,
+                                               List<Shape> shapeList2,
                                                ref BVH_Vec3d point1,
                                                ref BVH_Vec3d point2,
                                                ref ProxPnt_Status pointStatus1,
@@ -336,7 +336,7 @@ public sealed class ProximityValueTool
     private static bool GetEdgeAdditionalVertices(in Edge edge,
                                                   double step,
                                                   NCollection_LinearVector<BVH_Vec3d> addVertices,
-                                                  NCollection_DynamicArray<ProxPnt_Status> addStatuses)
+                                                  List<ProxPnt_Status> addStatuses)
     {
         var bac = new EdgeCurveAdaptor(edge);
 
@@ -362,7 +362,7 @@ public sealed class ProximityValueTool
             Point3D p = bac.Value(par);
 
             addVertices.Append(new BVH_Vec3d(p.X(), p.Y(), p.Z()));
-            addStatuses.Append(ProxPnt_Status.ProxPnt_Status_MIDDLE);
+            addStatuses.Add(ProxPnt_Status.ProxPnt_Status_MIDDLE);
         }
 
         return true;
@@ -378,7 +378,7 @@ public sealed class ProximityValueTool
                                  double tol,
                                  double step,
                                  NCollection_LinearVector<BVH_Vec3d> addVertices,
-                                 NCollection_DynamicArray<ProxPnt_Status> addStatuses)
+                                 List<ProxPnt_Status> addStatuses)
     {
         Xyz trgSide1 = trg[1].Coord() - trg[0].Coord();
         Xyz trgSide2 = trg[2].Coord() - trg[0].Coord();
@@ -407,7 +407,7 @@ public sealed class ProximityValueTool
         {
             var bisectingPnt = new BVH_Vec3d(centerOfMaxSide.X(), centerOfMaxSide.Y(), centerOfMaxSide.Z());
             addVertices.Append(bisectingPnt);
-            addStatuses.Append(edgesStatus[bisectedEdgeIdx]);
+            addStatuses.Add(edgesStatus[bisectedEdgeIdx]);
             _inspector.Add(centerOfMaxSide.Coord());
             _cells.Add(addVertices.Size(), box.CornerMin().XYZ(), box.CornerMax().XYZ());
         }
@@ -492,7 +492,7 @@ public sealed class ProximityValueTool
     private bool GetFaceAdditionalVertices(in Face face,
                                            double step,
                                            NCollection_LinearVector<BVH_Vec3d> addVertices,
-                                           NCollection_DynamicArray<ProxPnt_Status> addStatuses)
+                                           List<ProxPnt_Status> addStatuses)
     {
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 

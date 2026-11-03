@@ -105,10 +105,10 @@ public class BRepMeshWatsonDelabellaTests
         bool isRemoveAux = aNewNodesNb > aNodesNb;
         if (isRemoveAux)
         {
-            NCollection_DynamicArray<int> aAuxVertices = new(aNewNodesNb - aNodesNb);
+            List<int> aAuxVertices = new(aNewNodesNb - aNodesNb);
             for (int aExtNodesIt = aNodesNb + 1; aExtNodesIt <= aNewNodesNb; ++aExtNodesIt)
             {
-                aAuxVertices.Append(aExtNodesIt);
+                aAuxVertices.Add(aExtNodesIt);
             }
 
             aMesher.SetAuxVertices(aAuxVertices);
@@ -126,10 +126,10 @@ public class BRepMeshWatsonDelabellaTests
     // BRepMesh_DelaunayBaseMeshAlgo::generateMesh, cells (-1, -1).
     private static void WatsonMesh(DataStructureOfDelaun aStructure)
     {
-        NCollection_DynamicArray<int> aVerticesOrder = new(aStructure.NodeCount);
+        List<int> aVerticesOrder = new(aStructure.NodeCount);
         for (int i = 1; i <= aStructure.NodeCount; ++i)
         {
-            aVerticesOrder.Append(i);
+            aVerticesOrder.Add(i);
         }
 
         _ = new Delaun(aStructure, aVerticesOrder, -1, -1);

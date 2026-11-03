@@ -73,12 +73,12 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
 
     private TriangleSet? _set1;
     private TriangleSet? _set2;
-    private NCollection_DynamicArray<Shape> _shapeList1 = new();
-    private NCollection_DynamicArray<Shape> _shapeList2 = new();
+    private List<Shape> _shapeList1 = new();
+    private List<Shape> _shapeList2 = new();
     private readonly int _nbSamples1; //!< Number of samples points on the first shape
     private bool _isProxVtx1FromAddSet; //!< Is the vertex of the proximity point of the 1st shape from the additional set
     private NCollection_LinearVector<BVH_Vec3d> _addVertices1 = new(); //!< Additional vertices on the 1st shape
-    private NCollection_DynamicArray<ProxPnt_Status> _addStatus1 = new(); //!< Status of additional vertices on the 1st shape
+    private List<ProxPnt_Status> _addStatus1 = new(); //!< Status of additional vertices on the 1st shape
     private int _proxVtxIdx1; //!< Vertex index from 1st BVH corresponding to proximity point of 1st shape
     private PrjState _proxPrjState = new(); //!< Projection state from the 2nd BVH giving the proximity point of the 2nd shape
     private PrjState _extPrjState = new(); //!< Projection state from the 2nd BVH giving the extrema
@@ -99,10 +99,10 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
     public ProximityDistTool(TriangleSet set1,
                                          int nbSamples1,
                                          NCollection_LinearVector<BVH_Vec3d> addVertices1,
-                                         NCollection_DynamicArray<ProxPnt_Status> addStatus1,
+                                         List<ProxPnt_Status> addStatus1,
                                          TriangleSet set2,
-                                         NCollection_DynamicArray<Shape> shapeList1,
-                                         NCollection_DynamicArray<Shape> shapeList2)
+                                         List<Shape> shapeList1,
+                                         List<Shape> shapeList2)
     {
         _minDistance = double.MaxValue;
         _proxDist = -1.0;
@@ -123,18 +123,18 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
     }
 
     /// <summary>Loads the lists of sub-shapes (copies, as OCCT assigns by value).</summary>
-    public void LoadShapeLists(NCollection_DynamicArray<Shape> shapeList1, NCollection_DynamicArray<Shape> shapeList2)
+    public void LoadShapeLists(List<Shape> shapeList1, List<Shape> shapeList2)
     {
-        _shapeList1 = new NCollection_DynamicArray<Shape>(shapeList1);
-        _shapeList2 = new NCollection_DynamicArray<Shape>(shapeList2);
+        _shapeList1 = new List<Shape>(shapeList1);
+        _shapeList2 = new List<Shape>(shapeList2);
     }
 
     /// <summary>Loads the additional vertices of the first set and their statuses (copies).</summary>
     public void LoadAdditionalPointsFirstSet(NCollection_LinearVector<BVH_Vec3d> addVertices1,
-                                             NCollection_DynamicArray<ProxPnt_Status> addStatus1)
+                                             List<ProxPnt_Status> addStatus1)
     {
         _addVertices1 = new NCollection_LinearVector<BVH_Vec3d>(addVertices1);
-        _addStatus1 = new NCollection_DynamicArray<ProxPnt_Status>(addStatus1);
+        _addStatus1 = new List<ProxPnt_Status>(addStatus1);
     }
 
     //=======================================================================

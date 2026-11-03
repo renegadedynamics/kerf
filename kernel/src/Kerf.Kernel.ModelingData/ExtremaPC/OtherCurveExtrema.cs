@@ -77,7 +77,7 @@ public sealed class OtherCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.E
             global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.AddEndpointExtrema(result, p, _domain, this, tol, mode);
 
             // Update status if we found any extrema (including endpoints)
-            if (!result._extrema.IsEmpty())
+            if (result._extrema.Count != 0)
             {
                 result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;
             }

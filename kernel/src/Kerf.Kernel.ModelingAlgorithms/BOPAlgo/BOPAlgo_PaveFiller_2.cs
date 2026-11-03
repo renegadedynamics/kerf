@@ -185,10 +185,10 @@ public partial class PaveFiller
             return;
         }
         //
-        NCollection_DynamicArray<InterfVE> vEs = _ds!.InterfVE();
+        List<InterfVE> vEs = _ds!.InterfVE();
         //
         // Prepare for intersection.
-        NCollection_DynamicArray<VertexEdge> vve = new();
+        List<VertexEdge> vve = new();
         // Map to collect all SD connections to add interferences
         // for all vertices having the same SD vertex.
         // It will also be used as a Fence map to avoid repeated
@@ -241,7 +241,8 @@ public partial class PaveFiller
                 Vertex v = ShapeCasts.Vertex(_ds.Shape(nVSD));
                 Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                 //
-                VertexEdge veSolver = vve.Append(new VertexEdge());
+                VertexEdge veSolver =  new VertexEdge();
+                vve.Add(veSolver);
                 veSolver.SetIndices(nVSD, nE);
                 veSolver.SetVertex(v);
                 veSolver.SetEdge(e);
@@ -250,13 +251,13 @@ public partial class PaveFiller
             }
         }
         //
-        nbVE = vve.Length();
+        nbVE = vve.Count;
 
         using (var ps = new ProgressScope(psOuter.Next(9), "Performing Vertex-Edge intersection", nbVE))
         {
             for (i = 0; i < nbVE; i++)
             {
-                VertexEdge veSolver = vve.ChangeValue(i);
+                VertexEdge veSolver = vve[i];
                 veSolver.SetProgressRange(ps.Next());
             }
             // Perform intersection
@@ -332,7 +333,8 @@ public partial class PaveFiller
                 {
                     int nVOld = itLI.Value();
                     // 3. Create interference V/E
-                    InterfVE ve = vEs.Append(new InterfVE());
+                    InterfVE ve =  new InterfVE();
+                    vEs.Add(ve);
                     ve.SetIndices(nVOld, nE);
                     ve.SetParameter(t);
                     // 2. Add a pair in the whole table of interferences

@@ -216,12 +216,12 @@ public class Section : BooleanBuilder
         }
         //
         // 2. Common blocks between an edge and a face
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds.PaveBlocksPool();
+        List<NCollection_List<PaveBlock>> pbp = _ds.PaveBlocksPool();
         //
-        nb = pbp.Length();
+        nb = pbp.Count;
         for (i = 0; i < nb; ++i)
         {
-            NCollection_List<PaveBlock> lpb = pbp.Value(i);
+            NCollection_List<PaveBlock> lpb = pbp[i];
             itPB.Initialize(lpb);
             for (; itPB.More(); itPB.Next())
             {

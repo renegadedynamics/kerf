@@ -1184,7 +1184,7 @@ public static partial class BuilderTools
         private readonly NCollection_List<Shape> _inFaces = new();      //! Faces classified as IN
 
         private BoxTree? _bbTree;                                     //! BVH tree of bounding boxes
-        private NCollection_DynamicArray<BOPAlgo_ShapeBox>? _vShapeBox;        //! ShapeBoxMap
+        private List<BOPAlgo_ShapeBox>? _vShapeBox;        //! ShapeBoxMap
 
         private readonly Iterator _itF = new();                         //! Iterators
         private readonly Iterator _itW = new();
@@ -1219,7 +1219,7 @@ public static partial class BuilderTools
         public void SetBBTree(BoxTree bbTree) => _bbTree = bbTree;
 
         //! Sets the ShapeBox structure
-        public void SetShapeBoxVector(NCollection_DynamicArray<BOPAlgo_ShapeBox> shapeBox) => _vShapeBox = shapeBox;
+        public void SetShapeBoxVector(List<BOPAlgo_ShapeBox> shapeBox) => _vShapeBox = shapeBox;
 
         //! Sets the context
         public void SetContext(IntersectionContext context) => _context = context;
@@ -1255,7 +1255,7 @@ public static partial class BuilderTools
 
             // 2. Fill maps of edges and faces of the solid
 
-            NCollection_DynamicArray<BOPAlgo_ShapeBox> vShapeBox = _vShapeBox!;
+            List<BOPAlgo_ShapeBox> vShapeBox = _vShapeBox!;
 
             NCollection_IndexedMap<Shape> mse = new(ShapeHasher.Instance), msf = new(ShapeHasher.Instance);
             Exploration.MapShapes(_solid, ShapeType.Edge, mse);
@@ -1517,7 +1517,7 @@ public static partial class BuilderTools
         using var psOuter = new ProgressScope(range, null, 10);
 
         // Fill the vector of shape box with faces and its bounding boxes
-        NCollection_DynamicArray<BOPAlgo_ShapeBox> vsb = new(256);
+        List<BOPAlgo_ShapeBox> vsb = new();
 
         NCollection_List<Shape>.Iterator itLF = new(faces);
         for (; itLF.More(); itLF.Next())
@@ -1529,7 +1529,8 @@ public static partial class BuilderTools
 
             Shape f = itLF.Value();
             // Append face to the vector of shape box
-            BOPAlgo_ShapeBox sb = vsb.Append(new BOPAlgo_ShapeBox());
+            BOPAlgo_ShapeBox sb =  new BOPAlgo_ShapeBox();
+            vsb.Add(sb);
             sb.SetShape(f);
 
             // Get bounding box for the face
@@ -1549,7 +1550,7 @@ public static partial class BuilderTools
         // Prepare BVH tree of bounding boxes of the faces to classify
         // taking the bounding boxes from the just prepared vector
         BoxTree bbTree = new();
-        int nbF = vsb.Length();
+        int nbF = vsb.Count;
         bbTree.SetSize(nbF);
         for (int i = 0; i < nbF; ++i)
         {
@@ -1560,14 +1561,15 @@ public static partial class BuilderTools
         bbTree.Build();
 
         // Prepare vector of solids to classify
-        NCollection_DynamicArray<BOPAlgo_FillIn3DParts> vfip = new();
+        List<BOPAlgo_FillIn3DParts> vfip = new();
 
         NCollection_List<Shape>.Iterator itLS = new(solids);
         for (; itLS.More(); itLS.Next())
         {
             Solid solid = ShapeCasts.Solid(itLS.Value());
             // Append solid to the vector
-            BOPAlgo_FillIn3DParts fip = vfip.Append(new BOPAlgo_FillIn3DParts());
+            BOPAlgo_FillIn3DParts fip =  new BOPAlgo_FillIn3DParts();
+            vfip.Add(fip);
             fip.SetSolid(solid);
 
             // Get bounding box for the solid
@@ -1602,11 +1604,11 @@ public static partial class BuilderTools
         // Close preparation task
         psOuter.Next();
         // Set progress range for each task to be run in parallel
-        int nbS = vfip.Length();
+        int nbS = vfip.Count;
         using var psParallel = new ProgressScope(psOuter.Next(9), "Classification of faces relatively solids", nbS);
         for (int iFS = 0; iFS < nbS; ++iFS)
         {
-            vfip.ChangeValue(iFS).SetProgressRange(psParallel.Next());
+            vfip[iFS].SetProgressRange(psParallel.Next());
         }
         // Perform classification
         //================================================================

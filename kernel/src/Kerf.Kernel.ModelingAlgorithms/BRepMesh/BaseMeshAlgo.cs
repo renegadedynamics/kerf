@@ -38,7 +38,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
     private FaceModel? _dFace;
     private ToolParameters _parameters = new();
     private DataStructureOfDelaun? _structure;
-    private NCollection_DynamicArray<Point3D>? _nodesMap;
+    private List<Point3D>? _nodesMap;
     private Dictionary<int, int>? _usedNodes;
 
     /// <summary>An algorithm.</summary>
@@ -56,7 +56,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
             _dFace = dFace;
             _parameters = parameters;
             _structure = new DataStructureOfDelaun();
-            _nodesMap = new NCollection_DynamicArray<Point3D>(256);
+            _nodesMap = new List<Point3D>();
             _usedNodes = new Dictionary<int, int>();
 
             if (InitDataStructure())
@@ -89,7 +89,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
     protected DataStructureOfDelaun GetStructure() => _structure!;
 
     /// <summary>The 3D nodes, indexed by the structure's nodes' <c>Location3d</c>.</summary>
-    protected NCollection_DynamicArray<Point3D> GetNodesMap() => _nodesMap!;
+    protected List<Point3D> GetNodesMap() => _nodesMap!;
 
     /// <summary>
     /// Registers the point in the 3D nodes and adds the 2D point to the mesh structure; returns the node's index in
@@ -101,11 +101,11 @@ public abstract class BaseMeshAlgo : MeshAlgo
                                        bool isForceAdd)
     {
         int nodeIndex =
-            AddNodeToStructure(point2d, _nodesMap!.Length(), movability, isForceAdd);
+            AddNodeToStructure(point2d, _nodesMap!.Count, movability, isForceAdd);
 
-        if (nodeIndex > _nodesMap.Length())
+        if (nodeIndex > _nodesMap.Count)
         {
-            _nodesMap.Append(point);
+            _nodesMap.Add(point);
             // Pre-bind frontier and fixed nodes with identity mapping so that
             // pcurve indices (set in initDataStructure as raw structure indices)
             // remain valid as compact Poly_Triangulation indices. Free (internal)
@@ -319,14 +319,14 @@ public abstract class BaseMeshAlgo : MeshAlgo
     // Collects nodes to output data.
     private void CollectNodes(Triangulation triangulation)
     {
-        for (int i = 1; i <= _nodesMap!.Length(); ++i)
+        for (int i = 1; i <= _nodesMap!.Count; ++i)
         {
             if (_usedNodes!.ContainsKey(i))
             {
                 MeshVertex vertex = _structure!.GetNode(i);
 
                 int nodeIndex = _usedNodes.GetValue(i);
-                triangulation.SetNode(nodeIndex, _nodesMap.Value(vertex.Location3d()));
+                triangulation.SetNode(nodeIndex, _nodesMap[vertex.Location3d()]);
                 triangulation.SetUVNode(nodeIndex, GetNodePoint2d(vertex));
             }
         }

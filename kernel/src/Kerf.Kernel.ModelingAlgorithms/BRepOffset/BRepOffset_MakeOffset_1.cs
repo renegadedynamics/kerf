@@ -3927,13 +3927,13 @@ internal sealed class BuildOffsetFaces
         // get shapes connections for using in the rebuilding process
         DS pDS = builder.PDS()!;
         // analyze all Face/Face intersections
-        NCollection_DynamicArray<InterfFF> fFs = pDS.InterfFF();
-        int iInt, nbFF = fFs.Length();
+        List<InterfFF> fFs = pDS.InterfFF();
+        int iInt, nbFF = fFs.Count;
         for (iInt = 0; iInt < nbFF; ++iInt)
         {
             InterfFF ff = fFs[iInt];
-            NCollection_DynamicArray<SectionCurve> vnc = ff.Curves();
-            int nbC = vnc.Length();
+            List<SectionCurve> vnc = ff.Curves();
+            int nbC = vnc.Count;
             if (nbC == 0)
             {
                 continue;
@@ -4138,8 +4138,8 @@ internal sealed class BuildOffsetFaces
                     }
 
                     NCollection_List<Shape> lv = new();
-                    NCollection_DynamicArray<InterfEF> eFs = pDS.InterfEF();
-                    for (int iEF = 0; iEF < eFs.Length(); ++iEF)
+                    List<InterfEF> eFs = pDS.InterfEF();
+                    for (int iEF = 0; iEF < eFs.Count; ++iEF)
                     {
                         InterfEF ef = eFs[iEF];
                         if (ef.Contains(nE) && ef.Contains(nFOp))
@@ -7699,8 +7699,8 @@ internal sealed class BuildOffsetFaces
         DS pDS = sec.PDS()!;
         //
         // check edge/edge intersections
-        NCollection_DynamicArray<InterfEE> eEs = pDS.InterfEE();
-        int i, nb = eEs.Length();
+        List<InterfEE> eEs = pDS.InterfEE();
+        int i, nb = eEs.Count;
         for (i = 0; i < nb; ++i)
         {
             InterfEE ee = eEs[i];

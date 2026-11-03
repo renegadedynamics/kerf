@@ -61,8 +61,8 @@ public partial class BooleanBuilder
 
         // Analyze all types of Interferences which can produce
         // new vertices - Edge/Edge and Edge/Face
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
+        List<InterfEE> eEs = _ds.InterfEE();
+        List<InterfEF> eFs = _ds.InterfEF();
 
         // Fence map to avoid duplicates in the list of Generated;
         NCollection_IntMap mFence = new();
@@ -74,7 +74,7 @@ public partial class BooleanBuilder
 
         for (int k = isFace ? 1 : 0; k < 2; ++k)
         {
-            int nbLines = k == 0 ? eEs.Length() : eFs.Length();
+            int nbLines = k == 0 ? eEs.Count : eFs.Count;
             for (int i = 0; i < nbLines; ++i)
             {
                 Interf aInt = k == 0 ? eEs[i] : eFs[i];

@@ -24,7 +24,7 @@ namespace Kerf.Engine.Intersection.Patches;
 public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
 {
     private Polyhedron? _poly;                            //!< Reference to the wrapped polyhedron
-    private readonly NCollection_DynamicArray<int> _indexMap = new(); //!< Maps current indices to original 1-based indices
+    private readonly List<int> _indexMap = new(); //!< Maps current indices to original 1-based indices
 
     /// <summary>An empty BVH set.</summary>
     public PolyhedronBvh()
@@ -59,7 +59,7 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         {
             if (!compBnd.Value(idx).IsVoid)
             {
-                _indexMap.Append(idx); // Store 1-based original index
+                _indexMap.Add(idx); // Store 1-based original index
             }
         }
 
@@ -82,7 +82,7 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         {
             return 0;
         }
-        return _indexMap.Size();
+        return _indexMap.Count;
     }
 
     /// <summary>The box of the triangle of index <paramref name="index"/> (0-based, after reordering).</summary>
@@ -96,7 +96,7 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         }
 
         // Get original 1-based triangle index
-        int origIdx = _indexMap.Value(index);
+        int origIdx = _indexMap[index];
 
         // Use pre-computed component bounding boxes from the polyhedron.
         // These boxes include deflection enlargement, matching the behavior
@@ -123,7 +123,7 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         }
 
         // Get original 1-based triangle index
-        int origIdx = _indexMap.Value(index);
+        int origIdx = _indexMap[index];
 
         // Get triangle vertex indices
         PolyhedronTool.Triangle(_poly, origIdx, out int p1, out int p2, out int p3);
@@ -166,7 +166,7 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         {
             return 0;
         }
-        return _indexMap.Value(index);
+        return _indexMap[index];
     }
 
     /// <summary>True if the set wraps a polyhedron.</summary>

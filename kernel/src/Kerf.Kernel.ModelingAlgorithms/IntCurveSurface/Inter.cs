@@ -244,7 +244,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
         ResetFields();
         _done = true;
 
-        NCollection_DynamicArray<InterUtils.UVBounds> intervals = new();
+        List<InterUtils.UVBounds> intervals = new();
         InterUtils.DecomposeSurfaceIntervals<TheSurface, TheSurfaceTool>(surface, intervals);
 
         foreach (InterUtils.UVBounds bounds in intervals)
@@ -440,7 +440,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
         InterUtils.CollectInterferencePoints(interference, polyhedron, polygon, startPoints);
         InterUtils.SortStartPoints(startPoints);
 
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> resultPoints = new();
+        List<CurveSurfaceIntersectionPoint> resultPoints = new();
         InterUtils.ProcessSortedPoints<TheExactInter, TheCSFunction, TheCurve, TheCurveTool,
                                                        TheSurface, TheSurfaceTool>(
             intersectionExacte, rsnld, startPoints, u0, u1, v0, v1, winf, wsup, curve, surface, resultPoints);
@@ -454,7 +454,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
     /// <summary>The intersection of the curve with a quadric (IntCurveSurface_InterImpl::InternalPerformCurveQuadric).</summary>
     protected void InternalPerformCurveQuadric(in TheCurve curve, in TheSurface surface)
     {
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points = new();
+        List<CurveSurfaceIntersectionPoint> points = new();
 
         InterUtils.PerformCurveQuadric<TheQuadCurvExactInter, TheCurve, TheCurveTool, TheSurface,
                                                        TheSurfaceTool>(curve, surface, points);
@@ -544,7 +544,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
             }
             case SurfaceKind.Torus:
             {
-                NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points = new();
+                List<CurveSurfaceIntersectionPoint> points = new();
                 if (InterUtils.ProcessLinTorus<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool>(
                         line, curve, surface, points))
                 {
@@ -865,7 +865,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
     /// </summary>
     protected void AppendIntAna(in TheCurve curve, in TheSurface surface, IntConicQuad intana_ConicQuad)
     {
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points = new();
+        List<CurveSurfaceIntersectionPoint> points = new();
 
         if (InterUtils.ProcessIntAna<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool>(
                 curve, surface, intana_ConicQuad, out bool isParallel, points))

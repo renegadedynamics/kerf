@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// </remarks>
 public sealed class ToolSet : IEquatable<ToolSet>
 {
-    private NCollection_DynamicArray<Shape> _shapes;
+    private List<Shape> _shapes;
     private Shape _shape;
     private int _nbShapes;
     private ulong _sum;
@@ -40,7 +40,7 @@ public sealed class ToolSet : IEquatable<ToolSet>
     /// <summary>An empty set.</summary>
     public ToolSet()
     {
-        _shapes = new NCollection_DynamicArray<Shape>(256);
+        _shapes = new List<Shape>();
         _nbShapes = 0;
         _sum = 0;
         _upper = 432123;
@@ -53,7 +53,7 @@ public sealed class ToolSet : IEquatable<ToolSet>
         _nbShapes = other._nbShapes;
         _sum = other._sum;
         _upper = other._upper;
-        _shapes = new NCollection_DynamicArray<Shape>(other._shapes);
+        _shapes = new List<Shape>(other._shapes);
     }
 
     /// <summary>Makes this set a copy of the other (OCCT's assignment).</summary>
@@ -63,7 +63,7 @@ public sealed class ToolSet : IEquatable<ToolSet>
         _nbShapes = other._nbShapes;
         _sum = other._sum;
         _upper = other._upper;
-        _shapes = new NCollection_DynamicArray<Shape>(other._shapes);
+        _shapes = new List<Shape>(other._shapes);
         return this;
     }
 
@@ -106,26 +106,26 @@ public sealed class ToolSet : IEquatable<ToolSet>
                 sy = sx;
                 //
                 sy.Orientation(Forward);
-                _shapes.Append(sy);
+                _shapes.Add(sy);
                 //
                 sy.Orientation(Reversed);
-                _shapes.Append(sy);
+                _shapes.Add(sy);
             }
             else
             {
-                _shapes.Append(sx);
+                _shapes.Add(sx);
             }
         }
         //
-        _nbShapes = _shapes.Length();
+        _nbShapes = _shapes.Count;
         if (_nbShapes == 0)
         {
             return;
         }
         //
-        for (int i = 0; i < _shapes.Length(); ++i)
+        for (int i = 0; i < _shapes.Count; ++i)
         {
-            Shape sx = _shapes.Value(i);
+            Shape sx = _shapes[i];
             // OCCT's size_t hash; the port's is an int, taken as unsigned
             id = unchecked((ulong)(uint)ShapeHasher.Instance.GetHashCode(sx)) % (ulong)_upper + 1;
             idN = NormalizedIds(id, _nbShapes);
@@ -146,14 +146,14 @@ public sealed class ToolSet : IEquatable<ToolSet>
         //
         HashSet<Shape> m1 = new(ShapeHasher.Instance);
         //
-        for (int i = 0; i < _shapes.Length(); ++i)
+        for (int i = 0; i < _shapes.Count; ++i)
         {
-            m1.Add(_shapes.Value(i));
+            m1.Add(_shapes[i]);
         }
         //
-        for (int i = 0; i < aOther._shapes.Length(); ++i)
+        for (int i = 0; i < aOther._shapes.Count; ++i)
         {
-            if (!m1.Contains(aOther._shapes.Value(i)))
+            if (!m1.Contains(aOther._shapes[i]))
             {
                 return false;
             }

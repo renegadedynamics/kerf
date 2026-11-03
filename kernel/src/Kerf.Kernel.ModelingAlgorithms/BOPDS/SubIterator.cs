@@ -9,6 +9,7 @@ using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Topology;
 using Occt;
+using System.Runtime.InteropServices;
 
 namespace Kerf.Engine.Booleans.Data;
 
@@ -20,7 +21,7 @@ namespace Kerf.Engine.Booleans.Data;
 public class SubIterator
 {
     protected DS? _ds;
-    protected NCollection_DynamicArray<Pair> _list = new(1);
+    protected List<Pair> _list = new(1);
     protected int _iteratorIndex;
     protected NCollection_List<int>? _subSet1;
     protected NCollection_List<int>? _subSet2;
@@ -49,12 +50,12 @@ public class SubIterator
     public void Initialize()
     {
         // sort interfering pairs for constant order of intersection
-        Sorting.stable_sort(_list.AsSpan(), new Pair.LessThan());
+        Sorting.stable_sort(CollectionsMarshal.AsSpan(_list), new Pair.LessThan());
         // initialize iterator to access the pairs
         _iteratorIndex = 0;
     }
 
-    public bool More() => _iteratorIndex < _list.Length();
+    public bool More() => _iteratorIndex < _list.Count;
 
     public void Next() => ++_iteratorIndex;
 
@@ -63,7 +64,7 @@ public class SubIterator
     {
         int iT1, iT2, n1, n2;
         //
-        Pair pkb = _list.Value(_iteratorIndex);
+        Pair pkb = _list[_iteratorIndex];
         pkb.Indices(out n1, out n2);
         //
         iT1 = (int)_ds!.ShapeInfo(n1).ShapeType();
@@ -97,7 +98,7 @@ public class SubIterator
     }
 
     /// <summary>The number of interfering pairs.</summary>
-    public int ExpectedLength() => _list.Length();
+    public int ExpectedLength() => _list.Count;
 
     protected virtual void Intersect()
     {
@@ -164,7 +165,7 @@ public class SubIterator
                 continue;
             }
 
-            _list.Append(dsPair);
+            _list.Add(dsPair);
         }
     }
 }

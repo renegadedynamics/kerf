@@ -25,7 +25,7 @@ public class BvhTraversal : PairTraverse<double, BVH_Vec3d, double>
     private PolyhedronBvh? _set1;                                    //!< First BVH set
     private PolyhedronBvh? _set2;                                    //!< Second BVH set
     private bool _selfInterference;                                           //!< Self-interference mode flag
-    private readonly NCollection_DynamicArray<TrianglePair> _pairs = new();   //!< Collected triangle pairs
+    private readonly List<TrianglePair> _pairs = new();   //!< Collected triangle pairs
 
     /// <summary>An empty traversal.</summary>
     public BvhTraversal()
@@ -70,7 +70,7 @@ public class BvhTraversal : PairTraverse<double, BVH_Vec3d, double>
     }
 
     /// <summary>The collected pairs (the traversal's own array).</summary>
-    public NCollection_DynamicArray<TrianglePair> Pairs() => _pairs;
+    public List<TrianglePair> Pairs() => _pairs;
 
     /// <summary>Clears the collected pairs.</summary>
     public void Clear() => _pairs.Clear();
@@ -119,7 +119,7 @@ public class BvhTraversal : PairTraverse<double, BVH_Vec3d, double>
         }
 
         // Store the pair
-        _pairs.Append(new TrianglePair(origIdx1, origIdx2));
+        _pairs.Add(new TrianglePair(origIdx1, origIdx2));
 
         return true;
     }

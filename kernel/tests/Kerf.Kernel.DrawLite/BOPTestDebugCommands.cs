@@ -267,14 +267,14 @@ internal static class BOPTestDebugCommands
         SearchNewIndex("V/F: ", ind, pDS.InterfVF(), di);
         SearchNewIndex("E/F: ", ind, pDS.InterfEF(), di);
         bool bFound = false;
-        NCollection_DynamicArray<InterfFF> aFFs = pDS.InterfFF();
-        int aNb = aFFs.Length();
+        List<InterfFF> aFFs = pDS.InterfFF();
+        int aNb = aFFs.Count;
         for (int i = 0; i < aNb; ++i)
         {
             InterfFF anInt = aFFs[i];
             anInt.Indices(out int n1, out int n2);
-            NCollection_DynamicArray<SectionCurve> aVNC = anInt.Curves();
-            int aNbC = aVNC.Length();
+            List<SectionCurve> aVNC = anInt.Curves();
+            int aNbC = aVNC.Count;
             for (int k = 0; k < aNbC; ++k)
             {
                 SectionCurve aNC = aVNC[k];
@@ -298,8 +298,8 @@ internal static class BOPTestDebugCommands
                 di.Append("\n");
             }
             bFound = false;
-            NCollection_DynamicArray<DataPoint> aVNP = anInt.Points();
-            int aNbP = aVNP.Length();
+            List<DataPoint> aVNP = anInt.Points();
+            int aNbP = aVNP.Count;
             for (int k = 0; k < aNbP; ++k)
             {
                 DataPoint aNP = aVNP[k];
@@ -454,10 +454,10 @@ internal static class BOPTestDebugCommands
         {
             nSF2 = theDI.Atoi(a[2]);
         }
-        NCollection_DynamicArray<InterfFF> aFFs = pDS.InterfFF();
+        List<InterfFF> aFFs = pDS.InterfFF();
         int iCnt = 0;
         int iPriz = 0;
-        int aNb = aFFs.Length();
+        int aNb = aFFs.Count;
         for (int j = 0; j < aNb; ++j)
         {
             InterfFF aFF = aFFs[j];
@@ -478,8 +478,8 @@ internal static class BOPTestDebugCommands
             }
             aFF.Indices(out int nF1, out int nF2);
             int iX = 0;
-            NCollection_DynamicArray<SectionCurve> aVNC = aFF.Curves();
-            int aNbC = aVNC.Length();
+            List<SectionCurve> aVNC = aFF.Curves();
+            int aNbC = aVNC.Count;
             for (int k = 0; k < aNbC; ++k)
             {
                 SectionCurve aNC = aVNC[k];
@@ -506,8 +506,8 @@ internal static class BOPTestDebugCommands
                 di.Append("\n");
             }
             iX = 0;
-            NCollection_DynamicArray<DataPoint> aVNP = aFF.Points();
-            int aNbP = aVNP.Length();
+            List<DataPoint> aVNP = aFF.Points();
+            int aNbP = aVNP.Count;
             for (int k = 0; k < aNbP; ++k)
             {
                 DataPoint aNP = aVNP[k];
@@ -1062,9 +1062,9 @@ internal static class BOPTestDebugCommands
         _ => "Shape",
     };
 
-    private static void DumpInterfs<TInterf>(NCollection_DynamicArray<TInterf> theVInterf, DrawResult di) where TInterf : Interf
+    private static void DumpInterfs<TInterf>(List<TInterf> theVInterf, DrawResult di) where TInterf : Interf
     {
-        int aNb = theVInterf.Length();
+        int aNb = theVInterf.Count;
         if (aNb == 0)
         {
             di.Append("Not found\n");
@@ -1086,11 +1086,11 @@ internal static class BOPTestDebugCommands
         }
     }
 
-    private static void SearchNewIndex<TInterf>(string theCType, int theInd, NCollection_DynamicArray<TInterf> theVInterf, DrawResult di)
+    private static void SearchNewIndex<TInterf>(string theCType, int theInd, List<TInterf> theVInterf, DrawResult di)
         where TInterf : Interf
     {
         bool bFound = false;
-        int aNb = theVInterf.Length();
+        int aNb = theVInterf.Count;
         for (int i = 0; i < aNb; ++i)
         {
             TInterf anInt = theVInterf[i];

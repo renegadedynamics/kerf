@@ -320,11 +320,11 @@ public class BRepMeshCoreTests
     [Fact]
     public void Triangulator_triangulates_a_polygon_with_a_hole()
     {
-        NCollection_DynamicArray<Xyz> aXYZs = new();
+        List<Xyz> aXYZs = new();
         // The outer square (indices 0..3) and the hole (4..7), in the plane Z = 1, counter-clockwise and clockwise.
         foreach ((double x, double y) in new[] { (0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0), (1.0, 1.0), (1.0, 3.0), (3.0, 3.0), (3.0, 1.0) })
         {
-            aXYZs.Append(new Xyz(x, y, 1.0));
+            aXYZs.Add(new Xyz(x, y, 1.0));
         }
 
         NCollection_Sequence<int> anOuter = new();
@@ -364,10 +364,10 @@ public class BRepMeshCoreTests
     [Fact]
     public void Triangulator_simple_wires()
     {
-        NCollection_DynamicArray<Xyz> aXYZs = new();
+        List<Xyz> aXYZs = new();
         foreach ((double x, double y) in new[] { (0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0) })
         {
-            aXYZs.Append(new Xyz(x, y, 0.0));
+            aXYZs.Add(new Xyz(x, y, 0.0));
         }
 
         NCollection_Sequence<int> aWire = new();

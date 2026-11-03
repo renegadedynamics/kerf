@@ -9,6 +9,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Meshing.GeomTool.IntFlag;
 
@@ -42,7 +43,7 @@ public sealed class Delaun
 
     private DataStructureOfDelaun? _meshData;
     private readonly CircleTool _circles;
-    private readonly NCollection_DynamicArray<int> _supVert;
+    private readonly List<int> _supVert;
     private bool _initCircles;
     private Triangle _supTrian;
 
@@ -54,7 +55,7 @@ public sealed class Delaun
     {
         _meshData = oldMesh;
         _circles = new CircleTool();
-        _supVert = new NCollection_DynamicArray<int>(3);
+        _supVert = new List<int>(3);
         _initCircles = false;
         if (isFillCircles)
         {
@@ -66,7 +67,7 @@ public sealed class Delaun
     public Delaun(NCollection_Array1<MeshVertex> vertices)
     {
         _circles = new CircleTool(vertices.Length());
-        _supVert = new NCollection_DynamicArray<int>(3);
+        _supVert = new List<int>(3);
         _initCircles = false;
         if (vertices.Length() > 2)
         {
@@ -80,7 +81,7 @@ public sealed class Delaun
     {
         _meshData = oldMesh;
         _circles = new CircleTool(vertices.Length());
-        _supVert = new NCollection_DynamicArray<int>(3);
+        _supVert = new List<int>(3);
         _initCircles = false;
         if (vertices.Length() > 2)
         {
@@ -89,11 +90,11 @@ public sealed class Delaun
     }
 
     /// <summary>Triangulates the structure's nodes of the given indices; sorts <paramref name="vertexIndices"/>.</summary>
-    public Delaun(DataStructureOfDelaun oldMesh, NCollection_DynamicArray<int> vertexIndices)
+    public Delaun(DataStructureOfDelaun oldMesh, List<int> vertexIndices)
     {
         _meshData = oldMesh;
-        _circles = new CircleTool(vertexIndices.Length());
-        _supVert = new NCollection_DynamicArray<int>(3);
+        _circles = new CircleTool(vertexIndices.Count);
+        _supVert = new List<int>(3);
         _initCircles = false;
         Perform(vertexIndices);
     }
@@ -103,13 +104,13 @@ public sealed class Delaun
     /// sorts <paramref name="vertexIndices"/>.
     /// </summary>
     public Delaun(DataStructureOfDelaun oldMesh,
-                           NCollection_DynamicArray<int> vertexIndices,
+                           List<int> vertexIndices,
                            int cellsCountU,
                            int cellsCountV)
     {
         _meshData = oldMesh;
-        _circles = new CircleTool(vertexIndices.Length());
-        _supVert = new NCollection_DynamicArray<int>(3);
+        _circles = new CircleTool(vertexIndices.Count);
+        _supVert = new List<int>(3);
         _initCircles = false;
         Perform(vertexIndices, cellsCountU, cellsCountV);
     }
@@ -119,12 +120,12 @@ public sealed class Delaun
     {
         int lowerIdx = vertices.Lower();
         int upperIdx = vertices.Upper();
-        NCollection_DynamicArray<int> vertexIndexes = new(vertices.Size());
+        List<int> vertexIndexes = new(vertices.Size());
 
         int index = lowerIdx;
         for (; index <= upperIdx; ++index)
         {
-            vertexIndexes.Append(_meshData!.AddNode(vertices[index]));
+            vertexIndexes.Add(_meshData!.AddNode(vertices[index]));
         }
 
         Perform(vertexIndexes);
@@ -247,11 +248,11 @@ public sealed class Delaun
     }
 
     /// <summary>Inserts the structure's nodes of the given indices into the triangulation; sorts the vector.</summary>
-    public void AddVertices(NCollection_DynamicArray<int> vertices, ProgressRange range = default)
+    public void AddVertices(List<int> vertices, ProgressRange range = default)
     {
         ComparatorOfIndexedVertexOfDelaun cmp = new(_meshData!);
-        Heap.make_heap(vertices.AsSpan(), cmp);
-        Heap.sort_heap(vertices.AsSpan(), cmp);
+        Heap.make_heap(CollectionsMarshal.AsSpan(vertices), cmp);
+        Heap.sort_heap(CollectionsMarshal.AsSpan(vertices), cmp);
 
         CreateTrianglesOnNewVertices(vertices, range);
     }
@@ -360,9 +361,13 @@ public sealed class Delaun
     }
 
     /// <summary>Sets the indices of the auxiliary vertices (the super triangle's, or a third-party algorithm's).</summary>
-    public void SetAuxVertices(NCollection_DynamicArray<int> supVert)
+    public void SetAuxVertices(List<int> supVert)
     {
-        _supVert.Assign(supVert);
+        if (!ReferenceEquals(_supVert, supVert))
+        {
+            _supVert.Clear();
+            _supVert.AddRange(supVert);
+        }
     }
 
     /// <summary>Removes the triangles that use an auxiliary vertex, the links they leave, and the auxiliary vertices.</summary>
@@ -372,7 +377,7 @@ public sealed class Delaun
 
         // Destruction of triangles containing a top of the super triangle
         SelectorOfDataStructureOfDelaun selector = new(_meshData!);
-        for (int supVertId = 0; supVertId < _supVert.Length(); ++supVertId)
+        for (int supVertId = 0; supVertId < _supVert.Count; ++supVertId)
         {
             selector.NeighboursOfNode(_supVert[supVertId]);
         }
@@ -395,7 +400,7 @@ public sealed class Delaun
         }
 
         // The tops of the super triangle are destroyed
-        for (int supVertId = 0; supVertId < _supVert.Length(); ++supVertId)
+        for (int supVertId = 0; supVertId < _supVert.Count; ++supVertId)
         {
             _meshData!.RemoveNode(_supVert[supVertId]);
         }
@@ -514,16 +519,16 @@ public sealed class Delaun
         return result;
     }
 
-    private void Perform(NCollection_DynamicArray<int> vertexIndices, int cellsCountU = -1, int cellsCountV = -1)
+    private void Perform(List<int> vertexIndices, int cellsCountU = -1, int cellsCountV = -1)
     {
-        if (vertexIndices.Length() <= 2)
+        if (vertexIndices.Count <= 2)
         {
             return;
         }
 
         Box2d box = new();
-        int index = vertexIndices.Lower();
-        int upper = vertexIndices.Upper();
+        int index = 0;
+        int upper = vertexIndices.Count - 1;
         for (; index <= upper; ++index)
         {
             box.Add(new Point2D(GetVertex(vertexIndices[index]).Coord()));
@@ -535,8 +540,8 @@ public sealed class Delaun
         SuperMesh(box);
 
         ComparatorOfIndexedVertexOfDelaun cmp = new(_meshData!);
-        Heap.make_heap(vertexIndices.AsSpan(), cmp);
-        Heap.sort_heap(vertexIndices.AsSpan(), cmp);
+        Heap.make_heap(CollectionsMarshal.AsSpan(vertexIndices), cmp);
+        Heap.sort_heap(CollectionsMarshal.AsSpan(vertexIndices), cmp);
 
         Compute(vertexIndices);
     }
@@ -551,13 +556,13 @@ public sealed class Delaun
         double deltaMax = Max(deltaX, deltaY);
         double delta = deltaX + deltaY;
 
-        _supVert.Append(
+        _supVert.Add(
             _meshData!.AddNode(new MeshVertex((minX + maxX) / 2, maxY + deltaMax, DegreeOfFreedom.Free)));
 
-        _supVert.Append(
+        _supVert.Add(
             _meshData.AddNode(new MeshVertex(minX - delta, minY - deltaMin, DegreeOfFreedom.Free)));
 
-        _supVert.Append(
+        _supVert.Add(
             _meshData.AddNode(new MeshVertex(maxX + delta, minY - deltaMin, DegreeOfFreedom.Free)));
 
         Span<int> e = stackalloc int[3];
@@ -599,7 +604,7 @@ public sealed class Delaun
         }
     }
 
-    private void Compute(NCollection_DynamicArray<int> vertexIndexes)
+    private void Compute(List<int> vertexIndexes)
     {
         // Insertion of edges of super triangles in the list of free edges:
         NCollection_IntDataMap<bool> loopEdges = new(10);
@@ -609,10 +614,10 @@ public sealed class Delaun
         loopEdges.Bind(e[1], true);
         loopEdges.Bind(e[2], true);
 
-        if (vertexIndexes.Length() > 0)
+        if (vertexIndexes.Count > 0)
         {
             // Creation of 3 trianglers with the first node and the edges of the super triangle:
-            int vertexIdx = vertexIndexes.Lower();
+            int vertexIdx = 0;
             CreateTriangles(vertexIndexes[vertexIdx], loopEdges);
 
             // Add other nodes to the mesh
@@ -754,7 +759,7 @@ public sealed class Delaun
     /// <summary>Marks a circle of <see cref="CreateTrianglesOnNewVertices"/>'s list whose triangle was deleted.</summary>
     private const int RemovedCircle = int.MinValue;
 
-    private void CreateTrianglesOnNewVertices(NCollection_DynamicArray<int> vertexIndexes, ProgressRange range)
+    private void CreateTrianglesOnNewVertices(List<int> vertexIndexes, ProgressRange range)
     {
         _meshData!.Data().GetTolerance(out double tolU, out double tolV);
         double sqTol = tolU * tolU + tolV * tolV;
@@ -762,8 +767,8 @@ public sealed class Delaun
         // Insertion of nodes :
         bool isModify = true;
 
-        int index = vertexIndexes.Lower();
-        int upper = vertexIndexes.Upper();
+        int index = 0;
+        int upper = vertexIndexes.Count - 1;
         using ProgressScope ps = new(range, "Create triangles on new vertices", upper);
         for (; index <= upper; ++index, ps.Next())
         {
@@ -1078,7 +1083,7 @@ public sealed class Delaun
     {
         NCollection_PackedMapOfInteger frontier = Frontier();
 
-        NCollection_DynamicArray<int> failedFrontiers = new(256);
+        List<int> failedFrontiers = new();
         NCollection_IntDataMap<bool> loopEdges = new(10);
         NCollection_PackedMapOfInteger intFrontierEdges = new();
 
@@ -1150,7 +1155,7 @@ public sealed class Delaun
 
                 if (pass == 2 && !isSuccess)
                 {
-                    failedFrontiers.Append(frontierId);
+                    failedFrontiers.Add(frontierId);
                 }
             }
         }
@@ -1162,7 +1167,7 @@ public sealed class Delaun
         // situation when frontier edge has a triangle at a right side, but its free
         // links cross another frontieres  and meshLeftPolygonOf itself can't collect
         // a closed polygon.
-        for (int failedFrontiersIt = 0; failedFrontiersIt < failedFrontiers.Length(); ++failedFrontiersIt)
+        for (int failedFrontiersIt = 0; failedFrontiersIt < failedFrontiers.Count; ++failedFrontiersIt)
         {
             int frontierId = failedFrontiers[failedFrontiersIt];
             if (!_meshData!.ElementsConnectedTo(frontierId).IsEmpty)
@@ -1497,7 +1502,7 @@ public sealed class Delaun
         NCollection_IntDataMap<bool> loopEdges = new(10);
         NCollection_PackedMapOfInteger ignoredEdges = new();
         NCollection_PackedMapOfInteger polyVerticesFindMap = new();
-        NCollection_DynamicArray<int> polyVertices = new(256);
+        List<int> polyVertices = new();
         // Collect boundary vertices of the polygon
         for (int polyIt = 1; polyIt <= polyLen; ++polyIt)
         {
@@ -1550,33 +1555,33 @@ public sealed class Delaun
 
                 if (polyEdgeInfo > 0)
                 {
-                    polyVertices.Append(firstVertex);
-                    polyVertices.Append(lastVertex);
+                    polyVertices.Add(firstVertex);
+                    polyVertices.Add(lastVertex);
                 }
                 else
                 {
-                    polyVertices.Append(lastVertex);
-                    polyVertices.Append(firstVertex);
+                    polyVertices.Add(lastVertex);
+                    polyVertices.Add(firstVertex);
                 }
             }
         }
 
         // Make closed sequence
-        if (polyVertices.First() != polyVertices.Last())
+        if (polyVertices[0] != polyVertices[^1])
         {
-            polyVertices.Append(polyVertices.First());
+            polyVertices.Add(polyVertices[0]);
         }
 
         NCollection_PackedMapOfInteger survivedLinks = new NCollection_PackedMapOfInteger().Assign(ignoredEdges);
 
-        for (int polyVertIt = 0; polyVertIt < polyVertices.Length() - 1; ++polyVertIt)
+        for (int polyVertIt = 0; polyVertIt < polyVertices.Count - 1; ++polyVertIt)
         {
             StackOfFrames stackFames = new();
-            NCollection_DynamicArray<int> stackData = new();
+            List<int> stackData = new();
             for (int currentVictim = polyVertices[polyVertIt]; currentVictim != -1;
                  currentVictim = stackFames.IsEmpty ? -1 : stackData[stackFames.PopElement()])
             {
-                int prevStackDataSize = stackData.Length();
+                int prevStackDataSize = stackData.Count;
                 KillTrianglesAroundVertex(currentVictim,
                                           polyVertices,
                                           polyVerticesFindMap,
@@ -1585,7 +1590,7 @@ public sealed class Delaun
                                           survivedLinks,
                                           loopEdges,
                                           stackData);
-                int newStackDataSize = stackData.Length();
+                int newStackDataSize = stackData.Count;
                 if (newStackDataSize > prevStackDataSize)
                 {
                     stackFames.PushFrame(prevStackDataSize, newStackDataSize);
@@ -1610,13 +1615,13 @@ public sealed class Delaun
     }
 
     private void KillTrianglesAroundVertex(int zombieNodeId,
-                                           NCollection_DynamicArray<int> polyVertices,
+                                           List<int> polyVertices,
                                            NCollection_PackedMapOfInteger polyVerticesFindMap,
                                            NCollection_Sequence<int> polygon,
                                            NCollection_Sequence<B2d> polyBoxes,
                                            NCollection_PackedMapOfInteger survivedLinks,
                                            NCollection_IntDataMap<bool> loopEdges,
-                                           NCollection_DynamicArray<int> victimNodes)
+                                           List<int> victimNodes)
     {
         // The list is walked while links are removed from it (OCCT's linked-list semantics, decision 541).
         DataStructureOfDelaun.LinkedListOfInteger.Iterator neighborsIt = new(_meshData!.LinksConnectedTo(zombieNodeId));
@@ -1660,7 +1665,7 @@ public sealed class Delaun
                     if (IsVertexInsidePolygon(otherNode, polyVertices))
                     {
                         // Got you!
-                        victimNodes.Append(otherNode);
+                        victimNodes.Add(otherNode);
                     }
                     else
                     {
@@ -1685,9 +1690,9 @@ public sealed class Delaun
         }
     }
 
-    private bool IsVertexInsidePolygon(int vertexId, NCollection_DynamicArray<int> polygonVertices)
+    private bool IsVertexInsidePolygon(int vertexId, List<int> polygonVertices)
     {
-        int polyLen = polygonVertices.Length();
+        int polyLen = polygonVertices.Count;
         if (polyLen < 3)
         {
             return false;
@@ -2467,7 +2472,7 @@ public sealed class Delaun
 
     private bool IsSupVertex(int vertexIdx)
     {
-        for (int it = 0; it < _supVert.Length(); ++it)
+        for (int it = 0; it < _supVert.Count; ++it)
         {
             if (vertexIdx == _supVert[it])
             {

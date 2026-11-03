@@ -18,15 +18,15 @@ namespace Kerf.Engine.Meshing.Data;
 public class ModelData : ModelModel
 {
     private double _maxSize;
-    private readonly NCollection_DynamicArray<FaceModel> _dFaces;
-    private readonly NCollection_DynamicArray<EdgeModel> _dEdges;
+    private readonly List<FaceModel> _dFaces;
+    private readonly List<EdgeModel> _dEdges;
 
     /// <summary>An empty model of the shape.</summary>
     public ModelData(in Shape shape) : base(shape)
     {
         _maxSize = 0.0;
-        _dFaces = new NCollection_DynamicArray<FaceModel>(256);
-        _dEdges = new NCollection_DynamicArray<EdgeModel>(256);
+        _dFaces = new List<FaceModel>();
+        _dEdges = new List<EdgeModel>();
     }
 
     /// <summary>The maximum size of the shape's bounding box.</summary>
@@ -36,28 +36,30 @@ public class ModelData : ModelModel
     public void SetMaxSize(double value) => _maxSize = value;
 
     /// <inheritdoc/>
-    public override int FacesNb() => _dFaces.Length();
+    public override int FacesNb() => _dFaces.Count;
 
     /// <inheritdoc/>
     public override FaceModel AddFace(in Face face)
     {
         FaceModel aFace = new FaceData(face);
-        return _dFaces.Append(aFace);
+        _dFaces.Add(aFace);
+        return aFace;
     }
 
     /// <inheritdoc/>
-    public override FaceModel GetFace(int index) => _dFaces.Value(index);
+    public override FaceModel GetFace(int index) => _dFaces[index];
 
     /// <inheritdoc/>
-    public override int EdgesNb() => _dEdges.Length();
+    public override int EdgesNb() => _dEdges.Count;
 
     /// <inheritdoc/>
     public override EdgeModel AddEdge(in Edge edge)
     {
         EdgeModel aEdge = new EdgeData(edge);
-        return _dEdges.Append(aEdge);
+        _dEdges.Add(aEdge);
+        return aEdge;
     }
 
     /// <inheritdoc/>
-    public override EdgeModel GetEdge(int index) => _dEdges.Value(index);
+    public override EdgeModel GetEdge(int index) => _dEdges[index];
 }
