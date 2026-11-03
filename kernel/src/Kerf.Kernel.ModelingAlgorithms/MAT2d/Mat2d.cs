@@ -941,10 +941,14 @@ public sealed class Mat2d
 
         if (_bisectormap[noofbisectors - 1].BisectorNumber() == -1)
         {
-            // OCCT: with a single element (a contour of one closed edge) the main loop never runs, the only bisector
-            // is never built and its list is empty; Current() is a null handle, dereferenced (an access violation
-            // natively, a NullReferenceException here).
             _roots = _bisectormap[noofbisectors - 1].List();
+            if (_roots.IsEmpty)
+            {
+                // A single element (a contour of one closed edge): the main loop never runs and the only bisector
+                // is never built. The map fails, where OCCT dereferenced the empty list's null item (decision 1438).
+                _isDone = false;
+                return;
+            }
             _roots.First();
             _roots.Current().FirstEdge().Distance(_bisectormap[noofbisectors - 1].DistIssuePoint());
         }

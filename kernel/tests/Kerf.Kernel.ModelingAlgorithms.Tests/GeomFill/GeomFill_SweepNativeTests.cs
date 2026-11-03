@@ -20,15 +20,25 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
     {
         int aCount = SweepRecordingCases.Kinds.Single(k => k.Name == theKind).Count;
         ConcurrentBag<(int Seed, string Native, string Port)> aDiffs = [];
+        int anIntended = 0;
         Parallel.For(0, aCount, aSeed =>
         {
             string aNative = SweepRecordingCases.Native[$"{theKind} {aSeed}"];
             string aPort = SweepRecordingCases.Run(theKind, aSeed);
-            if (aNative != aPort)
+            if (aNative == aPort)
+            {
+                return;
+            }
+            if (IsPipeBetweenTwoSections(theKind, aNative, aPort))
+            {
+                Interlocked.Increment(ref anIntended);
+            }
+            else
             {
                 aDiffs.Add((aSeed, aNative, aPort));
             }
         });
+        output.WriteLine($"{theKind}: {aCount} cases, {anIntended} intended differences");
         foreach ((int aSeed, string aNative, string aPort) in aDiffs.OrderBy(d => d.Seed))
         {
             string[] aN = aNative.Split('\n'), aP = aPort.Split('\n');
@@ -42,6 +52,23 @@ public class GeomFill_SweepNativeTests(ITestOutputHelper output)
             output.WriteLine("  port:   " + (i < aP.Length ? Trim(aP[i]) : "<end>"));
         }
         Assert.True(aDiffs.IsEmpty, $"{aDiffs.Count} of {aCount} {theKind} cases differ from native");
+    }
+
+    /// <summary>
+    /// Plan 3.2's third level (occt-issues.md, unit 5L2's GeomFill_Pipe::Init row; Kerf unit 10K1, decision 1436): a
+    /// pipe between two sections, which native gave up with GeomFill_ImpossibleContact on a path the corrected Frenet
+    /// trihedron corrects, is built.
+    /// </summary>
+    private static bool IsPipeBetweenTwoSections(string theKind, string theNative, string thePort)
+    {
+        string[] aN = theNative.Split('\n'), aP = thePort.Split('\n');
+        int i = 0;
+        while (i < aN.Length && i < aP.Length && aN[i] == aP[i])
+        {
+            i++;
+        }
+        return theKind == "pipe-2sect" && i < aN.Length && i < aP.Length
+               && aN[i].StartsWith("PIPE 0 3 ", StringComparison.Ordinal) && aP[i].StartsWith("PIPE 1 0 ", StringComparison.Ordinal);
     }
 
     private static string Trim(string theLine) => theLine.Length > 300 ? theLine[..300] + "..." : theLine;

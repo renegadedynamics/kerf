@@ -14665,3 +14665,107 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        features 7 → 0); frozen-shape checks 187 → 177 (offsets 3 → 1, fillets 7 → 4: the `Locked()` tests and the frozen
        markers that now ask the overlay); the features' direct `_shapes` edit gone (50 → 49). Section 8 records 10H5's
        patterns for 10H6.
+
+## Phase 10: unit 10K1, OCCT's bugs: Booleans, boxes, distances, hangs and spurious failures
+
+1428. **BOPAlgo_BOP's fuse of solids checks every shared face** (occt-issues.md, unit 6F's first row). `BuildSolid`
+       scanned the face-to-solids map with `i < aNb`, so a solid whose only face shared with another was the map's last
+       was taken as untouched and kept apart. The scan now includes the last face. The case needs a solid adding no
+       face of its own after the shared one: a ball in a hollow ball sharing its sphere, as a compound or a compsolid,
+       fused with a box (`BOPAlgo_BuildSolidTests`: OCCT kept the two apart; now one ball and the box, with the ball's
+       volume and seven faces). No recording or corpus case moved.
+1429. **Parabola and hyperbola arc boxes contain the arc** (rows 259, 263, 264). BndLib's 3D and 2D parabola,
+       BndLib's 2D hyperbola and GeomBndLib's parabolas added only the arc's ends and vertex. Each now adds the arc's
+       coordinate extrema: for a parabola x_k(U) = O_k + U²/(4F)·X_k + U·Y_k, extreme at U = −2F·Y_k/X_k (inside the
+       arc); the 2D hyperbola uses GeomBndLib's per-coordinate code, as the 3D one did. Tested against points sampled on
+       the arcs and the analytic extrema (`BndLibTurnedConicTests`; the two pinned GeomBndLib tests rewritten). The box
+       oracle's parabolic edges (`BndLibOracleTests`, three tests) move to plan 3.2's third level: the port's box, and
+       its oriented box, contain native's.
+1430. **Extrema_ExtCS reports the point on the line** (row 265). Where a line's range, clipped to the surface's box,
+       is shorter than Precision::Confusion, OCCT passed a default Extrema_POnCurv's point (the origin) as the point on
+       the curve; it is now the range's middle, the point projected. Test: a short line against a torus
+       (`Extrema_ExtCSTests`). Two oracle replays move to the third level, accepting native's origin: BRepExtrema's twin
+       scenes (a box edge at the origin, so native's origin was within 5e-8 of the right point) and Draw-lite's
+       `distmini` on MODERN_Refrigerator_1.brep, whose contact points native reported at the origin where they are at
+       (5e-8, 70, 150) and the like.
+1431. **ShapeAnalysis_Edge::CheckOverlapping returns on a zero-length edge** (row 512). The sampling step is half the
+       shorter edge's length; for a zero-length edge it was 0 and the loop never ended. A step that no longer advances
+       ends the sampling, so the edge's one point is checked once. Test with a time limit (`HangGuard`, new in the
+       ModelingAlgorithms tests): a zero-length edge on another overlaps it, one off it doesn't.
+1432. **ShapeConstruct::ConvertSurfaceToBSpline gives up after C0** (row 702). When GeomConvert_ApproxSurface threw at
+       C0, OCCT retried C0 without end; it now returns the last result (null if none). Test: a surface whose evaluation
+       always fails returns null within the time limit.
+1433. **A fillet's radius by a law follows the law** (rows 1552, 1763). ChFiDS_FilSpine's `SetRadius(Law, IinC)`
+       built a composite law, dropped it and cleared the radii, so `BRepFilletAPI_MakeFillet.Add(law, edge)` and
+       `SetRadius(law, IC, IinC)` threw at Build. The law's range is now mapped onto the spine's, first vertex to last,
+       and sampled at 33 evenly spaced points into the spine's (parameter, radius) pairs, which the fillet interpolates
+       as it does pairs given directly (`FilSpine.LawSamples`; IinC unused, as in OCCT). `TheEvolvingRadii` checks the
+       fillets against the volume they remove, (1 − π/4)·∫r² along the edge: a linear law within 0.01, a sine law within
+       0.5. OCCT's own linear `Add(R1, R2, E)` differs from that integral by 0.18, as before.
+1434. **MakeFilling's continuities map to the plate's orders** (row 1240). BRepFill_Filling passed the GeomAbs_Shape
+       value as the plate's order: C1 (2) gave a G2 constraint and G2 (3) threw "The continuity is not G0 G1 or G2".
+       Now C0 is order 0, G1 and C1 are 1, G2 and above are 2, for edge constraints and for point constraints on faces
+       (`Add(u, v, face, order)`, the same mistake). Test: a half cylinder's filling for G1, C1, G2 and C2, its G0 and
+       G1 errors small, C1 the same face as G1, C2 as G2, G2 a different face. The MakeFilling oracle's cases with a C1,
+       G2 or C2 constraint move to the third level (their differences counted as intended). build123d.NET's
+       `MakeSurfacePatch` already mapped its C2 level to G2, which now builds; nothing there to remove. Its test patch
+       at C2 is valid and bounded by the same edges, but bulges (area 282 against 153 at C1): an order-2 plate against
+       ruled supports, worth a look when the modelling layer's patch is reviewed (10M).
+1435. **A pipe of a vertex gives the edges it swept** (row 1307). BRepFill_Pipe kept no edge table for a vertex
+       profile, so `BRepOffsetAPI_MakePipe.Generated(spine edge, profile vertex)` dereferenced null (an access violation
+       natively). The sweep's own table of the vertex's edges is kept. Test: a vertex at a polyline spine's start sweeps
+       the spine, each generated edge joining its spine edge's ends. The pipe recordings' vertex-profile cases (native
+       threw at GEN2) move to the third level: everything before agrees and the port's GEN2 line names an edge of the
+       result for each pair.
+1436. **GeomFill_Pipe between two sections no longer fails on 3D paths** (row 1156). `Init(Path, FirstSect, LastSect)`
+       read CorrectedFrenet's `SetCurve` result as a failure, but it says whether the plain Frenet frame needs no
+       correction; the pipe gave up with ImpossibleContact on most 3D paths. The result is ignored, as the other `Init`s
+       do. Test: on a 3D B-spline path the surface's iso at the end is the iso at the start scaled by 2 about the path's
+       end (the sections' radii are 1 and 2). The sweep recordings' pipe-2sect (27 of 30; native ImpossibleContact)
+       move to the third level. The corpus case bugs/modalg_7/bug31361, whose script requires tuyau's "cannot make a
+       surface", gets Draw-lite's first override of an OCCT reference (plan 3.3; `DrawCorpus.IntendedDifferences`): the
+       pipe is built. Its sections lie in the path's plane, not across it, so the surface's approximation error is 301;
+       GeomFill_Pipe reports its error and leaves the judgement to the caller, as its other constructions do.
+1437. **ShapeCustom_SweptToElementary handles the modifier's null face and faces not swept** (rows 1389, 1390).
+       `NewCurve2d` read the surface of the null face BRepTools_Modifier passes when it asks whether to copy an edge's
+       vertices, and the swept surface of a face that has none; both now skip the pcurve's shift, which applies only to
+       a swept face becoming a torus or a sphere. It failed on most shapes with a degenerated edge (29 of the dataset's
+       small brep files). Test: OCCT's bug26359_parabola.brep, a revolved parabola, converts to a valid face of the same
+       area. ShapeProcess's recordings on DSE3.rle, DSEwithTol1.rle and cts20960b.rle (the operator failed natively)
+       move to the third level.
+1438. **The medial axis of one closed edge fails cleanly** (row 1121, guarded). MAT2d_Mat2d took the roots from the
+       empty list of the one bisector never built (a null dereference). The map now reports not done. A real medial axis
+       of a single closed curve is left (touch): the 2D offset never meets it, as it cuts a one-edge contour first, so
+       only BRepMAT2d_BisectingLocus's direct callers see it. The test that pinned the exception asserts IsDone false;
+       the four recorded full-circle cases (native crashed) move to the third level.
+1439. **A loft of periodic sections with different knots unifies them** (rows 1181, 1182). GeomFill_Profiler inserted
+       each curve's knots into the others; on periodic curves BSplCLib::PrepareInsertKnots mispredicts the pole count
+       (row 82, touch), so the port threw Standard_RangeError, or the curves kept different numbers of poles. When the
+       periodic unification throws, or leaves different numbers of knots or poles, the profile is now made of the
+       sections' non-periodic forms (closed, not periodic), which unify. The test that pinned the exception checks the
+       common degree, knots and poles and each curve against its section. Two AppSurf recordings (APPSM 12, APPSP 67:
+       native stopped at its unequal profile) move to the third level.
+1440. **CorrectedFrenet's sampling is bounded** (row 1087). InitInterval's next step, max(|S|/2, LengthMin)/|S'|
+       with S = C' ^ C'', fell very low on offset curves, so a sweep's trihedron took seconds to minutes. After 2,000
+       samples on an interval (`SampleBudget`) the step is at least the interval's length over 2,000; a turn of more
+       than 60° still halves it. A bound on the step alone (1e-3 of the default step) moved regular B-spline spines'
+       frames by up to 1.5% against native; 1e-4 left the offsets as slow. With the budget, the CorrectedFrenet oracle
+       and the sweep recordings stay bit-identical. On twelve random offsets of B-splines
+       (`Offsets_of_BSplines_set_quickly`) the six turned ones took 1.3 to 4.7 s and kept 16,709 to 32,205 samples; now
+       0.1 to 0.4 s and 6,910 to 9,782 (the test asserts fewer than 12,000, and orthonormal frames).
+1441. **Three rows reclassified to touch** (rows 1122, 1296, 1565). Each needs an algorithm's deeper rework, beyond
+       this batch, and none hangs, so no guard applies. MAT2d_Tool2d::BisecFusion would need a curve/point bisector
+       (Bisector_BisecPC) extended backwards, which trimming can't do; BRepOffsetAPI_MakeOffset's failure comes from
+       Bisector_BisecAna leaving its curve unset on some arc profiles (unit 5M's rows); Draft_Modification's 24 of 870
+       recorded failures are several null dereferences, each needing its case understood. The 2D offset reports "not
+       done" for the first two; the draft still throws a NullReferenceException. They stay listed, with this reason, for
+       the modules' rewrites.
+1442. **The tests.** ModelingData 3,145 → 3,149, ModelingAlgorithms 4,802 → 4,814 (9 skipped), the oracle 383,
+       DataExchange 276 (1 skipped), the modelling layer 1,884: all pass; the new tests are the fixes' (one or two per
+       row), and the tests rewritten to the corrected behaviour are the ones the decisions above name (the GeomBndLib
+       parabola pair, `TheEvolvingRadii`, the profiler's, GeomFill_Pipe's, the medial axis's full circle). The moved
+       recordings compare at plan 3.2's third level, each with its reason, but the CorrectedFrenet oracle and the sweep
+       recordings, which stay bit-identical. Draw-lite's groups for Booleans (every fourth case), healing, offsets and
+       drafts, fillets, filling, pipes and sweeps, construction and the medial axis were run before and after: one case
+       changed by a fix (bug31361, overridden: 16509) and one by the machine's load (bugs/modalg_7/bug83's "too slow"
+       check failed before, passed after); every other case's status is unchanged.

@@ -956,11 +956,8 @@ public static class BndLib
             else
             {
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, p));
-                // OCCT: only the ends and the vertex; a turned parabola's coordinate extrema are missed (occt-issues.md)
-                if (p1 * p2 < 0)
-                {
-                    b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, p));
-                }
+                // each coordinate's extremum, where OCCT added only the vertex (decision 1429)
+                Computation.ParabolaBounds.AddCoordinateExtrema(p, p1, p2, ref b);
             }
         }
         b.Enlarge(tol);
@@ -1021,11 +1018,8 @@ public static class BndLib
             else
             {
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, p));
-                // OCCT: only the ends and the vertex; a turned parabola's coordinate extrema are missed (occt-issues.md)
-                if (p1 * p2 < 0)
-                {
-                    b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, p));
-                }
+                // each coordinate's extremum, where OCCT added only the vertex (decision 1429)
+                Computation.Parabola2dBounds.AddCoordinateExtrema(p, p1, p2, ref b);
             }
         }
         b.Enlarge(tol);
@@ -1102,8 +1096,7 @@ public static class BndLib
 
     /// <summary>
     /// Adds the arc [P1, P2] of the branch of the 2D hyperbola H to B, then enlarges B by Tol. P1 and P2 may be
-    /// infinite. Unlike the 3D overload, a finite arc is bounded by its ends and its vertex only (an OCCT bug: the box
-    /// can miss the arc's coordinate extrema).
+    /// infinite.
     /// </summary>
     /// <exception cref="FailureException">P1 and P2 are both negative infinite, or both positive infinite.</exception>
     public static void Add(in Hyperbola2D h, double p1, double p2, double tol, ref Box2d b)
@@ -1159,13 +1152,9 @@ public static class BndLib
             }
             else
             {
-                b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, h));
-                // OCCT: only the ends and the vertex, where the 3D overload adds each coordinate's extremum
-                // (ComputeBox); a turned hyperbola's extrema are missed (occt-issues.md)
-                if (p1 * p2 < 0)
-                {
-                    b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, h));
-                }
+                // the ends, the vertex and each coordinate's extremum, as the 3D overload (OCCT added only the ends and
+                // the vertex; decision 1429)
+                Computation.Hyperbola2dBounds.ComputeHyperbola2dBox(h, p1, p2, ref b);
             }
         }
         b.Enlarge(tol);

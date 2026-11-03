@@ -634,17 +634,38 @@ public class GeomFill_SweepTests
         Assert.True(anEdge.IsDone);
     }
 
+    /// <summary>
+    /// A pipe evolving between two sections on a path the corrected Frenet trihedron must correct. OCCT read
+    /// CorrectedFrenet's SetCurve flag (the plain Frenet frame needs no correction) as a failure, and gave up with
+    /// GeomFill_ImpossibleContact (occt-issues.md, unit 5L2's GeomFill_Pipe row; Kerf unit 10K1, decision 1436). The
+    /// surface's iso at the path's start goes round the start at about the first circle's radius, and the iso at the
+    /// end is the same section scaled by 2 about the end (the last circle's radius is twice the first's).
+    /// </summary>
+    [Fact]
+    public void Pipe_between_two_sections_on_a_3D_path()
+    {
+        BSplineCurve3D aPath = Path3d();
+        global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, CircleAtStart(aPath, 1), CircleAtStart(aPath, 2));
+        aPipe.Perform(1e-4, false);
+        Assert.True(aPipe.IsDone);
+        Assert.Equal(global::Kerf.Engine.Construction.Surfaces.SurfacePipeError.PipeOk, aPipe.GetStatus());
+        Surface aSurface = aPipe.Surface()!;
+        aSurface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        Point3D aStart = aPath.Value(aPath.FirstParameter()), anEnd = aPath.Value(aPath.LastParameter());
+        for (int i = 0; i <= 16; i++)
+        {
+            double u = u1 + (u2 - u1) * i / 16;
+            double aFirst = aSurface.Value(u, v1).Distance(aStart);
+            Assert.InRange(aFirst, 0.9, 1.2);
+            Assert.Equal(2.0 * aFirst, aSurface.Value(u, v2).Distance(anEnd), 1e-3);
+        }
+    }
+
     [Fact]
     public void Pipe_reports_OCCTs_failures()
     {
-        // two sections on a path the corrected Frenet trihedron must correct: OCCT reads SetCurve's flag as a
-        // failure (occt-issues.md)
         BSplineCurve3D aPath = Path3d();
-        global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, CircleAtStart(aPath, 1), CircleAtStart(aPath, 2));
-        Assert.Equal(global::Kerf.Engine.Construction.Surfaces.SurfacePipeError.ImpossibleContact, aPipe.GetStatus());
-        aPipe.Perform(1e-4, false);
-        Assert.False(aPipe.IsDone);
-        Assert.Null(aPipe.Surface());
+        global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe;
 
         // the old algorithm of a polynomial pipe on an edge: the generator's shape is the quasi-angular one
         (BSplineCurve3D aP, BSplineCurve3D aC1, BSplineCurve3D aC2) = EdgeCurves(2);

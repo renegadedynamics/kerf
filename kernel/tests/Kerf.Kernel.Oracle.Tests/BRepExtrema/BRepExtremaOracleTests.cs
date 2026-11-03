@@ -201,11 +201,11 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             string aSol = $"{aWhat} solution {i}";
             using (N.gp_Pnt aNP = aN.PointOnShape1(i))
             {
-                theOracle.Same(aNP, aP.PointOnShape1(i), aSol + " PointOnShape1");
+                SamePoint(theOracle, aNP, aP.PointOnShape1(i), aSol + " PointOnShape1");
             }
             using (N.gp_Pnt aNP = aN.PointOnShape2(i))
             {
-                theOracle.Same(aNP, aP.PointOnShape2(i), aSol + " PointOnShape2");
+                SamePoint(theOracle, aNP, aP.PointOnShape2(i), aSol + " PointOnShape2");
             }
 
             for (int aSide = 1; aSide <= 2; aSide++)
@@ -261,7 +261,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         output.WriteLine($"{myNbComputations} computations, {myNbSolutions} solutions ({myNbInner} inner); supports: "
                          + $"{mySupportKinds[0]} vertices, {mySupportKinds[1]} on edges, {mySupportKinds[2]} in faces; "
-                         + $"{myNbBuiltSupports} built by the algorithm; {myNbRacingInner} multi-threaded inner solutions checked as valid, not compared");
+                         + $"{myNbBuiltSupports} built by the algorithm; {myNbRacingInner} multi-threaded inner solutions checked as valid, not compared; "
+                         + $"{myNbOriginPoints} native points at the origin (intended differences)");
         theOracle.Report(theWhat);
     }
 
@@ -414,4 +415,23 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
 
         Summary(anOracle, "BRepExtrema_DistShapeShape on native shapes");
     }
+
+    /// <summary>
+    /// Plan 3.2's third level (occt-issues.md, unit 4A's Extrema_ExtCS row; Kerf unit 10K1, decision 1430): where an
+    /// edge's range clipped to the face's box is shorter than Precision::Confusion, native reported the origin as the
+    /// point on the edge, the port the range's middle. Native's origin is accepted for any port point.
+    /// </summary>
+    private void SamePoint(Oracle theOracle, N.gp_Pnt theNative, in Point3D thePort, string theWhat)
+    {
+        // native's coordinates read once each, in the recorded order
+        double x = theNative.X(), y = theNative.Y(), z = theNative.Z();
+        if (x == 0.0 && y == 0.0 && z == 0.0 && thePort.Distance(new Point3D(0, 0, 0)) > 0.0)
+        {
+            myNbOriginPoints++;
+            return;
+        }
+        theOracle.Same(x, y, z, thePort, theWhat);
+    }
+
+    private int myNbOriginPoints;
 }

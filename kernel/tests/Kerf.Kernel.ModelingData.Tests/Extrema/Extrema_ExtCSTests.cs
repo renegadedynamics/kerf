@@ -69,6 +69,23 @@ public class Extrema_ExtCSTests
         Assert.Equal(4.0, MinSquareDistance(anExt), Tol);
     }
 
+    /// <summary>
+    /// A line whose range is shorter than Precision::Confusion against a torus: the extrema are those of the range's
+    /// middle point. OCCT reported the origin as their point on the curve (a default Extrema_POnCurv's), with the right
+    /// parameter and distance (occt-issues.md, unit 4A's Extrema_ExtCS row; Kerf unit 10K1, decision 1430).
+    /// </summary>
+    [Fact]
+    public void ShortLineTorus_ThePointOnTheCurveIsTheMiddlePoint()
+    {
+        var aC = new CurveAdaptor(new LineCurve3D(new Point3D(10, 0, 0.5), new Direction3D(0, 0, 1)), 0, 5e-8);
+        var aS = new SurfaceAdaptor(new ToroidalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3, 1));
+        var anExt = new ExtCS(aC, aS, 1e-9, 1e-9);
+        Assert.True(anExt.ExtCount >= 1);
+        CheckSolutions(anExt, aC, aS);
+        double aDist = Math.Sqrt(49.0 + 0.25) - 1.0;
+        Assert.Equal(aDist * aDist, MinSquareDistance(anExt), 1e-7);
+    }
+
     [Fact]
     public void LinePlane_Parallel()
     {

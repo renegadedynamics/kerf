@@ -575,13 +575,9 @@ public sealed class SurfacePipe
         {
             _loc = new CurveAndTrihedron(tLaw);
 
-            // OCCT: CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction, not whether
-            // it failed, so most 3D paths end here (occt-issues.md).
-            if (!(_loc.SetCurve(_adpPath)))
-            {
-                _status = SurfacePipeError.ImpossibleContact;
-                return;
-            }
+            // CorrectedFrenet's SetCurve returns whether the plain Frenet frame needs no correction, not whether it
+            // failed: OCCT gave up on its false, so on most 3D paths (decision 1436)
+            _loc.SetCurve(_adpPath);
 
             NCollection_Sequence<Curve3D> seqC = new();
             NCollection_Sequence<double> seqP = new();

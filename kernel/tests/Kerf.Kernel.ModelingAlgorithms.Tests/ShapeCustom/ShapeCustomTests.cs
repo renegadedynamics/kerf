@@ -248,6 +248,108 @@ public class ShapeCustomTests
         Assert.Equal(4.0, ((CylindricalSurface)aNew).Radius(), 12);
     }
 
+    // OCCT's data/brep/bug26359_parabola.brep: a revolution of a parabola (a B-spline) with a degenerated edge at its
+    // apex
+    private const string RevolvedParabola = """
+        CASCADE Topology V1, (c) Matra-Datavision
+        Locations 0
+        Curve2ds 4
+        1 0 0 1 0 
+        1 0 4 1 0 
+        1 6.2831853071795862 0 0 1 
+        1 0 0 0 1 
+        Curves 2
+        2 64 0 0 1 0 -0 0 1 0 0 -0 1 16
+        7 0 0  2 3 2  0 0 0  0 8 0  64 16 0 
+         0 3 4 3
+        Polygon3D 0
+        PolygonOnTriangulations 0
+        Surfaces 1
+        7 0 0 0 1 0 -0 
+        8 0 4
+        7 0 0  2 3 2  0 0 0  0 8 0  64 16 0 
+         0 3 4 3
+        Triangulations 0
+
+        TShapes 8
+        Ve
+        1e-007
+        0 0 0
+        0 0
+
+        0101101
+        *
+        Ed
+         1e-007 1 1 1
+        2  1 1 0 0 6.28318530717959
+        0
+
+        0101000
+        +8 0 -8 0 *
+        Ve
+        1e-007
+        64 16 0
+        0 0
+
+        0101101
+        *
+        Ed
+         1e-007 1 1 0
+        1  1 0 0 6.28318530717959
+        2  2 1 0 0 6.28318530717959
+        0
+
+        0101000
+        +6 0 -6 0 *
+        Ed
+         1e-007 1 1 0
+        1  2 0 0 4
+        3  3 4CN 1 0 0 4
+        0
+
+        0101000
+        +8 0 -6 0 *
+        Wi
+
+        0101100
+        +7 0 -5 0 -4 0 +4 0 *
+        Fa
+        0  1e-007 1 0
+
+        0111000
+        +3 0 *
+        Co
+
+        1100000
+        +2 0 *
+
+        +1 0
+        """;
+
+    /// <summary>
+    /// SweptToElementary on a face of revolution with a degenerated edge (OCCT's bug26359_parabola.brep, one of many
+    /// data shapes). BRepTools_Modifier asks NewCurve2d whether to copy an edge's vertices with a null new face, which
+    /// OCCT dereferenced (an access violation natively, a NullReferenceException in the port; occt-issues.md, unit 7A's
+    /// ShapeCustom_SweptToElementary rows; Kerf unit 10K1, decision 1437). The surface isn't elementary: the result
+    /// is the same face, valid, with the same area.
+    /// </summary>
+    [Fact]
+    public void SweptToElementary_OnAFaceWithADegeneratedEdge_Succeeds()
+    {
+        BrepTools.Read(out Shape aShape, new StringReader(RevolvedParabola));
+        ShapeSnapshot aSnap = ShapeSnapshot.Of(aShape);
+
+        Shape aResult = Customize.SweptToElementary(aShape);
+
+        aSnap.AssertUnchanged(aShape);
+        Assert.True(AllFrozen(aResult));
+        Assert.True(new Analyzer(aResult).IsValid());
+        Properties aBefore = new(), anAfter = new();
+        MassPropertiesBuilder.SurfaceProperties(aShape, aBefore);
+        MassPropertiesBuilder.SurfaceProperties(aResult, anAfter);
+        Assert.Equal(aBefore.Mass(), anAfter.Mass(), 6);
+    }
+
     [Fact]
     public void ConvertToBSpline_WithThePlaneMode_ConvertsPlanes()
     {

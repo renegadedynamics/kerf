@@ -397,6 +397,10 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     public void Same(N.gp_Vec2d theNative, in Vector2D thePort, string theWhat, double theTolerance = Tolerance)
         => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
 
+    /// <summary>As <see cref="Same(N.gp_Pnt, in Point3D, string, double)"/>, for native's coordinates already read.</summary>
+    public void Same(double theNX, double theNY, double theNZ, in Point3D thePort, string theWhat, double theTolerance = Tolerance)
+        => Same3(theNX, theNY, theNZ, thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+
     private void Same3(double theNX, double theNY, double theNZ, double thePX, double thePY, double thePZ,
                        string theWhat, double theTolerance)
     {

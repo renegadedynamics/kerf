@@ -99,16 +99,40 @@ public sealed class ParabolaBounds : CurveBounds.ICurveEvaluator
             }
             else
             {
-                // OCCT adds only the ends and the vertex: the coordinate extrema of a parabola turned in its plane
-                // (at U = -2F.Yk/Xk) are missed, so the box may not contain the arc (occt-issues.md).
                 box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, parab));
-                if (u1 * u2 < 0)
-                {
-                    box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, parab));
-                }
+                AddCoordinateExtrema(parab, u1, u2, ref box);
             }
         }
         box.Enlarge(tol);
         return box;
+    }
+
+    /// <summary>
+    /// Adds the points of the arc [U1, U2] where a coordinate is extreme: x_k(U) = O_k + U^2/(4F).X_k + U.Y_k is
+    /// extreme at U = -2F.Y_k/X_k. OCCT added only the vertex (U = 0), which misses them when the parabola is turned
+    /// in its plane (occt-issues.md; decision 1429).
+    /// </summary>
+    internal static void AddCoordinateExtrema(in Parabola3D parab, double u1, double u2, ref Box box)
+    {
+        double focal = parab.Focal();
+        if (Math.Abs(focal) <= Constants.Resolution())
+        {
+            return; // a line: its ends bound it
+        }
+        Xyz xDir = parab.Position().XDirection().XYZ();
+        Xyz yDir = parab.Position().YDirection().XYZ();
+        for (int k = 1; k <= 3; k++)
+        {
+            double xk = xDir.Coord(k);
+            if (Math.Abs(xk) <= Constants.Resolution())
+            {
+                continue; // linear in U: extreme at the ends
+            }
+            double u = -2.0 * focal * yDir.Coord(k) / xk;
+            if (u > u1 && u < u2)
+            {
+                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u, parab));
+            }
+        }
     }
 }

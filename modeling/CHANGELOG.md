@@ -107,3 +107,5 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10H5: fillets, chamfers, offsets, shells, thickenings and drafts no longer copy the part at the kernel's
   entry: the results share the faces the operation left alone, and the part is never written. Results are otherwise as
   before.
+- Kerf's unit 10K1: `Face.MakeSurfacePatch` with `ContinuityLevel.C2` constraints works (the kernel's MakeFilling threw
+  on G2), and `C1` keeps meaning tangent continuity.

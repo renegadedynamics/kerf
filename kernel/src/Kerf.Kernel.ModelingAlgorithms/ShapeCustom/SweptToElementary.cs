@@ -223,51 +223,37 @@ public class SweptToElementary : CustomModification
         if (c is not null)
         {
             c = (Curve2D)c.Copy();
-            // OCCT: dereferences the null face the modifier passes when it asks whether to copy the vertices
-            // (BRepTools_Modifier::CreateOtherVertices), an access violation natively (occt-issues.md); the port's
-            // BRep_Tool throws a NullReferenceException there
-            Surface? ns = Tool.Surface(newF, out L);
-            if (ns is not null && ns is ToroidalSurface)
+            // The modifier asks with a null new face whether to copy an edge's vertices (CreateOtherVertices): no
+            // surface, no shift. A face whose surface isn't swept keeps it: no shift either. OCCT dereferenced both
+            // (decision 1437).
+            Surface? ns = newF.IsNull ? null : Tool.Surface(newF, out L);
+            if (ns is ToroidalSurface && ss is RevolutionSurface sr)
             {
-                // OCCT: SS is null when the face's surface isn't swept and only the edge was copied, an access
-                // violation natively, a NullReferenceException in the port (occt-issues.md, decision 1024)
-                if ((ss ?? throw NullSweptSurface()) is RevolutionSurface sr)
-                {
-                    sr.Bounds(out double u1, out double u2, out double v1, out double v2);
-                    sr.D0(u1, v1, out Point3D p0);
-                    SurfaceAnalysis sas = new SurfaceAnalysis(ns);
-                    Point2D p2d = sas.ValueOfUV(p0, global::Kerf.Engine.Foundation.Precision.Confusion());
-                    Vector2D shift = new Vector2D(p2d.X() - u1, p2d.Y() - v1);
-                    c.Translate(shift);
-                }
+                sr.Bounds(out double u1, out double u2, out double v1, out double v2);
+                sr.D0(u1, v1, out Point3D p0);
+                SurfaceAnalysis sas = new SurfaceAnalysis(ns);
+                Point2D p2d = sas.ValueOfUV(p0, global::Kerf.Engine.Foundation.Precision.Confusion());
+                Vector2D shift = new Vector2D(p2d.X() - u1, p2d.Y() - v1);
+                c.Translate(shift);
             }
-            if (ns is not null && ns is SphericalSurface)
+            if (ns is SphericalSurface sph && ss is RevolutionSurface sr2)
             {
-                // OCCT: as above
-                if ((ss ?? throw NullSweptSurface()) is RevolutionSurface sr)
-                {
-                    SphericalSurface sph = (SphericalSurface)ns;
-                    sph.Bounds(out double us1, out double us2, out double vs1, out double vs2);
-                    sph.D0(us1, vs1, out Point3D ps);
-                    sr.Bounds(out double ur1, out double ur2, out double vr1, out double vr2);
-                    sr.D0(ur1, vr1, out Point3D pr);
-                    Point3D p0 = sph.Location();
-                    Vector3D vs = new Vector3D(p0, ps);
-                    Vector3D vr = new Vector3D(p0, pr);
-                    double angle = vs.Angle(vr);
-                    Vector2D shift = new Vector2D(0, vs1 - vr1 + angle);
-                    c.Translate(shift);
-                }
+                sph.Bounds(out double us1, out double us2, out double vs1, out double vs2);
+                sph.D0(us1, vs1, out Point3D ps);
+                sr2.Bounds(out double ur1, out double ur2, out double vr1, out double vr2);
+                sr2.D0(ur1, vr1, out Point3D pr);
+                Point3D p0 = sph.Location();
+                Vector3D vs = new Vector3D(p0, ps);
+                Vector3D vr = new Vector3D(p0, pr);
+                double angle = vs.Angle(vr);
+                Vector2D shift = new Vector2D(0, vs1 - vr1 + angle);
+                c.Translate(shift);
             }
         }
 
         tol = Tool.Tolerance(e);
         return true;
     }
-
-    // OCCT dereferences the null swept surface: an access violation natively (decision 1024)
-    private static NullReferenceException NullSweptSurface() =>
-        new("ShapeCustom_SweptToElementary::NewCurve2d: the face's surface isn't swept (OCCT dereferences a null handle)");
 
     /// <summary>False: parameters are never modified.</summary>
     public override bool NewParameter(in Vertex v, in Edge e, ref double p, ref double tol)

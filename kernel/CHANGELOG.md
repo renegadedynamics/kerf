@@ -1817,3 +1817,18 @@ Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
 - `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
   untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
   parts).
+Phase 10 (part): OCCT's bugs in Booleans, boxes and distances, and hangs and spurious failures (unit 10K1, batches K1
+and K2 of the triage).
+- Booleans, boxes, distances: a fuse merges solids whose only shared face OCCT never checked; the boxes of parabola
+  and hyperbola arcs contain the arc (they could miss its coordinate extrema, so Booleans and distances could skip a
+  touching pair); a distance between a short edge and a face reports the point on the edge, not the origin.
+- Hangs: healing's overlap check on a zero-length edge, the B-spline conversion of a surface whose approximation
+  always fails, and the corrected Frenet trihedron on offset curves (seconds to minutes; now well under a second) all
+  return.
+- Spurious failures: a fillet whose radius follows a law (`MakeFillet.Add(law, edge)`); MakeFilling with G2 or C2
+  constraints, and C1 now meaning G1 rather than G2; a pipe of a vertex's history; a pipe between two sections on a
+  3D path; SweptToElementary on shapes with degenerated edges (most revolved shapes); a loft through closed B-spline
+  sections with different knots. The medial axis of a single closed edge reports failure instead of crashing.
+- Left for later, with reasons (decision 16514): the 2D offset's two medial-axis failures and some multi-face drafts.
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows
+  fixed.

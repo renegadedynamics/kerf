@@ -256,6 +256,18 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         "test.brep merge1v",
     };
 
+    // Plan 3.2's third level (occt-issues.md, unit 7A's ShapeCustom_SweptToElementary rows; Kerf unit 10K1, decision
+    // 16510): the operator, which failed natively with an access violation in NewCurve2d (status 0), succeeds (status
+    // 1) on these heal inputs.
+    private static readonly HashSet<string> s_sweptToElementaryNowSucceeds = new(StringComparer.Ordinal)
+    {
+        "DSE3.rle", "DSEwithTol1.rle", "cts20960b.rle",
+    };
+
+    private static bool SweptToElementarySucceeds(string theName, string theNative, string thePort) =>
+        s_sweptToElementaryNowSucceeds.Contains(theName) && theNative.StartsWith("OP:SweptToElementary 0 ", StringComparison.Ordinal)
+        && thePort.StartsWith("OP:SweptToElementary 1 ", StringComparison.Ordinal);
+
     // OP:SetTolerance runs BRepLib::UpdateTolerances in place, whose last step sets the tolerances it computed for each
     // (sub-shape, location) by iterating a map keyed by shape in hash order (TShape addresses): a TShape the input holds
     // at two locations (an instance), whose tolerances differ at each, ends with the last one OCCT iterates; the port
@@ -327,7 +339,7 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
             aPorted[i] = aRecords;
         });
 
-        int aFiles = 0, aRecordsCount = 0, anAttributed = 0;
+        int aFiles = 0, aRecordsCount = 0, anAttributed = 0, anIntended = 0;
         var aDifferences = new List<string>();
         for (int i = 0; i < aSections.Count; i++)
         {
@@ -352,11 +364,17 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
                     anAttributed++;
                     continue;
                 }
+                if (SweptToElementarySucceeds(aSections[i].Name, aNative[k], aPort[k]))
+                {
+                    anIntended++;
+                    continue;
+                }
                 aDifferences.Add($"{aSections[i].Name}:\n    native '{aNative[k]}'\n    port   '{aPort[k]}'");
             }
         }
         output.WriteLine($"{aFiles} inputs ({aMissing} not found), {aRecordsCount} records: "
-                         + $"{aRecordsCount - aDifferences.Count - anAttributed} identical, {anAttributed} attributed, {aDifferences.Count} different");
+                         + $"{aRecordsCount - aDifferences.Count - anAttributed - anIntended} identical, {anAttributed} attributed, "
+                         + $"{anIntended} intended differences, {aDifferences.Count} different");
         foreach (string aD in aDifferences.Take(300))
         {
             output.WriteLine("  " + aD);
