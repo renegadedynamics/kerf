@@ -297,11 +297,8 @@ public class ExtremaCurveCurve
         _extCC.TrimmedSquareDistances(out double d11, out double d12, out double d21, out double d22,
                                        out Point3D p11, out Point3D p12, out Point3D p21, out Point3D p22);
 
-        // OCCT compares every end distance with this first total distance, never updated, so a later end pair
-        // nearer than it but farther than an earlier one replaces the better pair
-        double totalDist2 = _totalDist * _totalDist;
-
-        if (totalDist2 > d11)
+        // each end pair is compared with the best distance so far (OCCT kept the first one: decision 16704)
+        if (_totalDist * _totalDist > d11)
         {
             _totalDist = Math.Sqrt(d11);
             _totalPoints[0] = p11;
@@ -315,7 +312,7 @@ public class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d12)
+        if (_totalDist * _totalDist > d12)
         {
             _totalDist = Math.Sqrt(d12);
             _totalPoints[0] = p11;
@@ -329,7 +326,7 @@ public class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d21)
+        if (_totalDist * _totalDist > d21)
         {
             _totalDist = Math.Sqrt(d21);
             _totalPoints[0] = p12;
@@ -343,7 +340,7 @@ public class ExtremaCurveCurve
             }
         }
 
-        if (totalDist2 > d22)
+        if (_totalDist * _totalDist > d22)
         {
             _totalDist = Math.Sqrt(d22);
             _totalPoints[0] = p12;

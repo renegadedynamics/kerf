@@ -14955,3 +14955,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        and 2D ECC appended a run's solutions to the previous run's, so an Extrema_ExtCC reused on other curves reported
        the old curves' solutions too. Perform clears them. The pinned test asserts a second run gives the first run's
        solutions only, and a reused ExtCC what a new one gives.
+16704. **GeomAPI_ExtremaCurveCurve's total distance keeps the nearest end pair** (unit 3F's TotalPerform row). Each end
+       pair was compared with the first total distance, never updated, so a later, farther pair could replace a nearer
+       one (√8 for √2 on two perpendicular segments). The comparison is with the best so far; the pinned test asserts √2
+       between (1, 0, 0) and (0, 1, 0).

@@ -146,18 +146,17 @@ public class GeomAPITests
         TrimmedCurve3D aC2 = new(Line(0, 0, 0, 0, 1, 0), 1.0, 2.0);
         ExtremaCurveCurve anExt = new(aC1, aC2);
         Assert.Equal(0, anExt.NbExtrema());
-        // OCCT (occt-issues.md): TotalPerform compares each end pair with the first total distance (RealLast here),
-        // never updated, so the last pair, (2, 0, 0) and (0, 2, 0), wins; the end points project outside the other
-        // segment, so nothing corrects it.
-        Assert.Equal(Math.Sqrt(8.0), anExt.TotalLowerDistance(), Tol);
+        // OCCT (occt-issues.md; decision 16704) compared each end pair with the first total distance (RealLast
+        // here), never updated, so the last pair, (2, 0, 0) and (0, 2, 0), won at sqrt(8).
+        Assert.Equal(Math.Sqrt(2.0), anExt.TotalLowerDistance(), Tol);
         Point3D aP1 = new(), aP2 = new();
         Assert.True(anExt.TotalNearestPoints(ref aP1, ref aP2));
-        Assert.True(aP1.IsEqual(new Point3D(2, 0, 0), Tol));
-        Assert.True(aP2.IsEqual(new Point3D(0, 2, 0), Tol));
+        Assert.True(aP1.IsEqual(new Point3D(1, 0, 0), Tol));
+        Assert.True(aP2.IsEqual(new Point3D(0, 1, 0), Tol));
         double aU1 = 0, aU2 = 0;
         Assert.True(anExt.TotalLowerDistanceParameters(ref aU1, ref aU2));
-        Assert.Equal(2.0, aU1, Tol);
-        Assert.Equal(2.0, aU2, Tol);
+        Assert.Equal(1.0, aU1, Tol);
+        Assert.Equal(1.0, aU2, Tol);
     }
 
     [Fact]
