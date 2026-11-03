@@ -182,11 +182,12 @@ public class WorkingOverlayTests
             Assert.Empty(overlay.History().Modified(v));
         }
 
-        // a write that leaves the data as it was: UpdateVertex only raises a tolerance; Modified is a cache bit
+        // a write that leaves the data as it was: UpdateVertex only raises a tolerance; Modified is a cache bit. Since
+        // unit 10H3 such a write makes no working copy (WorkingOverlay.TakesWrite)
         using (var overlay = WorkingOverlay.Begin(box))
         {
             new BrepBuilder().UpdateVertex(v, 1e-12);
-            Assert.Equal(1, overlay.WorkingCount);
+            Assert.Equal(0, overlay.WorkingCount);
             Assert.Same(box.TShape(), overlay.Finish(box).TShape());
         }
     }

@@ -160,9 +160,9 @@ public class LibraryMakeWire : LibraryMakeShape
         }
         try
         {
-            if (_shape.IsNull)
+            if (_shape.IsNull || overlay.WorkingCount == 0)
             {
-                return;
+                return; // nothing was written (a merge that moved and enlarged nothing)
             }
             // the wire's sub-shapes and the maker's state as the change left them
             var shapes = new List<Shape>();

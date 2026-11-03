@@ -70,7 +70,7 @@ public static partial class Tape
     public static void AcceptOtherArguments(string theReason) => Current.OtherArgumentsReason = theReason;
 
     /// <summary>
-    /// Decision 15907's reason: since unit 10H3, BRepLib_MakeWire merges a vertex in a working overlay and the wire keeps
+    /// Decision 15906's reason: since unit 10H3, BRepLib_MakeWire merges a vertex in a working overlay and the wire keeps
     /// the caller's edges it didn't change, which, being frozen, keep their Free flag; the copies it made before had it
     /// cleared. The wires the test builds and gives native differ only in that flag.
     /// </summary>

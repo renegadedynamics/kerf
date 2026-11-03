@@ -233,6 +233,13 @@ internal sealed class WorkingOverlay : IDisposable
         return overlay is null || overlay._isFinished;
     }
 
+    /// <summary>
+    /// True if a write into <paramref name="tShape"/> would make its working copy here: it is frozen, not locked by its
+    /// flag, and an unfinished overlay is open. A setter whose value is already the TShape's skips the write then
+    /// (unit 10H3): the working copy would be given back as the original anyway, and making it costs.
+    /// </summary>
+    internal static bool TakesWrite(TShape tShape) => tShape.IsFrozen && !IsLocked(tShape);
+
     // The working copy of a frozen TShape, made at the first write from what the operation sees of it.
     private TShape Writable(TShape tShape)
     {

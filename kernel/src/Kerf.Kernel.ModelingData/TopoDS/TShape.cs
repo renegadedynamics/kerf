@@ -100,6 +100,10 @@ public abstract class TShape : Transient
 
     internal void Modified(bool isModified)
     {
+        if (Modified() == isModified && WorkingOverlay.TakesWrite(this))
+        {
+            return; // Kerf: the flag as it is (unit 10H3)
+        }
         if (WorkingOverlay.TryWritable(this, out TShape? working))
         {
             working.Modified(isModified);
