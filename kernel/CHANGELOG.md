@@ -1656,3 +1656,11 @@ Phase 10 (part): conventions and tooling (unit 10C).
   rules the port followed.
 - A root `.editorconfig` with .NET's naming rules, inert until 10E turns them on folder by folder.
 - No change to the libraries: the pilot rename of gp and math stays on an unmerged branch.
+
+Phase 10 (part): the public API design (unit 10D).
+- `docs/api`: the design of Kerf.Kernel's public API, for review: an overview of results and diagnostics, options,
+  cancellation, values, shapes and collections, and an API review for each area (geometry, topology, construction,
+  Booleans, fillets, offsets and features, healing, measurement, meshing, exchange), each mapped from today's types.
+- Every public type classified as public API, engine or removed (`docs/api/classification.tsv`, from rules by package
+  with `tools/api-classify.cs`), and the draft name map for the rename (`docs/api/kerf.map`).
+- No change to the libraries.
