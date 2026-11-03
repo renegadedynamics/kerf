@@ -15047,3 +15047,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        chamfer, unset after a removal), so faces without holes come out as before. The MakeFillet2d oracle's
        rectangles with a hole (30 of 120) move to plan 3.2's third level: two wires where native has one, with as many
        edges and the same area.
+16718. **A distance-angle chamfer between a plane and a cylinder doesn't depend on the axis direction** (unit 7N1's
+       ChFiKPart_ComputeData_ChAsymPlnCyl row). MakeChAsym projected the guide's point on the cylinder's axis with
+       gp_XYZ::Multiplied(gp_XYZ), a product coordinate by coordinate, where the dot product is meant; right only for an
+       axis along X, Y or Z. Test: half a cylinder chamfered by 1 at 30° on a generatrix edge, about Z and about a tilted
+       axis: the same volume.

@@ -1663,7 +1663,7 @@ Found by porting ChFiKPart and ChFi3d_Builder_0. The port reproduces each (`// O
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| ChFiKPart_ComputeData_ChAsymPlnCyl `MakeChAsym` (straight guide) | Projects the guide's point on the cylinder's axis with `gp_XYZ::Multiplied(gp_XYZ)`, a product coordinate by coordinate, where a dot product is meant | The point on the axis is right only for an axis parallel to a coordinate axis; on any other the distance-angle chamfer along a generatrix is built from a wrong point | fix K3 |
+| ChFiKPart_ComputeData_ChAsymPlnCyl `MakeChAsym` (straight guide) | Projects the guide's point on the cylinder's axis with `gp_XYZ::Multiplied(gp_XYZ)`, a product coordinate by coordinate, where a dot product is meant | The point on the axis is right only for an axis parallel to a coordinate axis; on any other the distance-angle chamfer along a generatrix is built from a wrong point | fixed (decision 16718) |
 | ChFiKPart_ComputeData_FilPlnCyl `MakeFillet` (circle, sphere case) | Evaluates the sphere with the cylinder's radius | The two radii are equal within the confusion there: no effect | leave |
 | ChFi3d_Builder_0.hxx | Declares `ChFi3d_EnlargeFace`, defined nowhere | Not ported | leave |
 | ChFi3d_Builder_0 `ChFi3d_IndexPointInDS` | Writes the point and tolerance into the common point's vertex ("it is necessary to implement a mechanism controlling tolerance") | Changes the input's vertices natively (plan 2.2); the port writes the builder's working copy (decision 1087) | settled |
