@@ -102,6 +102,19 @@ public class LibraryMakePolygon : LibraryMakeShape
 
     public void Add(in Vertex v)
     {
+        WorkingOverlay? overlay = BeginResultChange(); // Kerf: a published polygon changes into a new one
+        try
+        {
+            AddCore(v);
+        }
+        finally
+        {
+            EndChange(overlay);
+        }
+    }
+
+    private void AddCore(in Vertex v)
+    {
         if (_firstVertex.IsNull)
         {
             _firstVertex = v;
@@ -124,7 +137,6 @@ public class LibraryMakePolygon : LibraryMakeShape
             }
             else
             {
-                UnfreezeResult(); // OCCT.NET: frozen
                 last = _lastVertex;
                 if (BrepTools.Compare(v, _firstVertex))
                 {
@@ -178,7 +190,7 @@ public class LibraryMakePolygon : LibraryMakeShape
             return;
         }
 
-        UnfreezeResult(); // OCCT.NET: frozen
+        WorkingOverlay? overlay = BeginResultChange(); // Kerf: a published polygon changes into a new one
 
         // build the last edge
         var b = new BrepBuilder();
@@ -189,6 +201,27 @@ public class LibraryMakePolygon : LibraryMakeShape
             _edge = me.InternalEdge();
             b.Add(_shape, _edge);
             _shape.Closed(true);
+        }
+        EndChange(overlay);
+    }
+
+    // Kerf: the end of a change of a published polygon; its first and last vertices and last edge as they stand in it
+    private void EndChange(WorkingOverlay? overlay)
+    {
+        if (overlay is null)
+        {
+            return;
+        }
+        try
+        {
+            _shape = overlay.Finish(_shape, [_firstVertex, _lastVertex, _edge]);
+            _firstVertex = ShapeCasts.Vertex(overlay.Final(_firstVertex));
+            _lastVertex = ShapeCasts.Vertex(overlay.Final(_lastVertex));
+            _edge = ShapeCasts.Edge(overlay.Final(_edge));
+        }
+        finally
+        {
+            overlay.Dispose();
         }
     }
 

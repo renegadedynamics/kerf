@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Engine.Construction.Library.LibraryShapeModification;
@@ -134,9 +135,10 @@ public class LibraryMakeSolid : LibraryMakeShape
     /// <summary>Adds a shell to the solid.</summary>
     public void Add(in Shell s)
     {
-        UnfreezeResult(); // OCCT.NET: frozen
+        WorkingOverlay? overlay = BeginResultChange(); // Kerf: a published solid changes into a new one
         var b = new BrepBuilder();
         b.Add(_shape, s);
+        EndResultChange(overlay);
     }
 
     /// <summary>The solid (frozen).</summary>

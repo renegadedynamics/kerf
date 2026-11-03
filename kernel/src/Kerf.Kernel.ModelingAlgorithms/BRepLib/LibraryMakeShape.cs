@@ -6,6 +6,7 @@
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
@@ -67,28 +68,30 @@ public abstract class LibraryMakeShape : LibraryCommand
     }
 
     /// <summary>
-    /// OCCT.NET: before a maker changes its result again (MakeWire, MakePolygon, MakeSolid and MakeFace's Add, Close),
-    /// replaces a result that a public accessor has frozen by a new TShape with the same sub-shapes, location,
-    /// orientation and flags (Closed, Orientable, Infinite, Convex), so that the published shape doesn't change. OCCT
-    /// changes the one shape in place.
+    /// Kerf: opens, before a maker changes its result again (MakePolygon's, MakeSolid's and MakeFace's Add, Close), a
+    /// working overlay when a public accessor has frozen the result (unit 10H3, in place of OCCT.NET's
+    /// UnfreezeResult): the change goes to a working copy, and <see cref="EndResultChange"/> gives the maker the new
+    /// TShape, so the shape handed out never changes. OCCT changes the one shape in place. Null when the result isn't
+    /// frozen: the maker changes its own shape in place, as OCCT.
     /// </summary>
-    private protected void UnfreezeResult()
+    private protected WorkingOverlay? BeginResultChange()
+        => !_shape.IsNull && _shape.TShape()!.IsFrozen ? WorkingOverlay.Begin(_shape) : null;
+
+    /// <summary>Ends the change <see cref="BeginResultChange"/> opened: the maker's result is the new TShape.</summary>
+    private protected void EndResultChange(WorkingOverlay? overlay)
     {
-        if (_shape.IsNull || !_shape.TShape()!.IsFrozen)
+        if (overlay is null)
         {
             return;
         }
-        Shape aNew = _shape.EmptyCopied();
-        var b = new BrepBuilder();
-        for (var it = new Iterator(_shape, false, false); it.More(); it.Next())
+        try
         {
-            b.Add(aNew, it.Value());
+            _shape = overlay.Finish(_shape);
         }
-        aNew.Closed(_shape.Closed());
-        aNew.Orientable(_shape.Orientable());
-        aNew.Infinite(_shape.Infinite());
-        aNew.Convex(_shape.Convex());
-        _shape = aNew;
+        finally
+        {
+            overlay.Dispose();
+        }
     }
 
     /// <summary>Returns the status of the face after the shape creation.</summary>

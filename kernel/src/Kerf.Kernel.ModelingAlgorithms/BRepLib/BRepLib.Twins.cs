@@ -1,5 +1,5 @@
-// OCCT.NET: the functional twins of BRepLib's in-place statics (docs/phase3-design.md, section 4.6). Not a port of
-// an OCCT file.
+// OCCT.NET: the functional twins of BRepLib's in-place statics (docs/phase3-design.md, section 4.6); in a working
+// overlay since unit 10H3. Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Topology;
@@ -7,15 +7,15 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using Schematiq.Collections;
 
 namespace Kerf.Engine.Construction.Library;
 
 public static partial class BrepLibrary
 {
-    // The twin of an in-place static: the operation on an exact copy for write, whose sub-shapes it left unchanged are
-    // the input's own again, frozen. The history records the input's sub-shapes that the result replaces.
-    private static Shape OnCopy(in Shape shape, Action<Shape> operation, out History history)
+    // The twin of an in-place static: the operation on the input itself in a working overlay (unit 10H3), so the
+    // result shares every sub-shape it left unchanged, frozen. The history records the input's sub-shapes that the
+    // result replaces.
+    private static Shape InOverlay(in Shape shape, Action<Shape> operation, out History history)
     {
         if (shape.IsNull)
         {
@@ -23,9 +23,10 @@ public static partial class BrepLibrary
             return shape;
         }
 
-        Shape copy = BrepTools.ExactCopyForWrite(shape, out _);
-        operation(copy);
-        Shape result = BrepTools.KeepUnchanged(shape, copy, out history);
+        using WorkingOverlay overlay = WorkingOverlay.Begin(shape);
+        operation(shape);
+        Shape result = overlay.Finish(shape);
+        history = overlay.History();
         result.TShape()!.FreezeGraph();
         return result;
     }
@@ -42,7 +43,7 @@ public static partial class BrepLibrary
     /// <summary>The functional twin of SameParameter, with the history from the shape to the result.</summary>
     public static Shape SameParametered(in Shape s, out History history, double tolerance = 1.0e-5,
                                                bool forced = false)
-        => OnCopy(s, aCopy => SameParameter(aCopy, tolerance, forced), out history);
+        => InOverlay(s, aShape => SameParameter(aShape, tolerance, forced), out history);
 
     /// <summary>
     /// The functional twin of <see cref="UpdateTolerances(in Shape, bool)"/>: the shape with the tolerances of its
@@ -54,7 +55,7 @@ public static partial class BrepLibrary
 
     /// <summary>The functional twin of UpdateTolerances, with the history from the shape to the result.</summary>
     public static Shape TolerancesUpdated(in Shape s, out History history, bool verifyFaceTolerance = false)
-        => OnCopy(s, aCopy => UpdateTolerances(aCopy, verifyFaceTolerance), out history);
+        => InOverlay(s, aShape => UpdateTolerances(aShape, verifyFaceTolerance), out history);
 
     /// <summary>
     /// The functional twin of <see cref="UpdateInnerTolerances"/>: the shape whose edges' and vertices' tolerances
@@ -64,7 +65,7 @@ public static partial class BrepLibrary
 
     /// <summary>The functional twin of UpdateInnerTolerances, with the history from the shape to the result.</summary>
     public static Shape InnerTolerancesUpdated(in Shape s, out History history)
-        => OnCopy(s, aCopy => UpdateInnerTolerances(aCopy), out history);
+        => InOverlay(s, aShape => UpdateInnerTolerances(aShape), out history);
 
     /// <summary>
     /// The functional twin of <see cref="BuildCurves3d(in Shape, double, Continuity, int, int)"/>: the shape
@@ -89,7 +90,7 @@ public static partial class BrepLibrary
                                              int maxSegment = 0)
     {
         bool isDone = true;
-        Shape result = OnCopy(s, aCopy => isDone = BuildCurves3d(aCopy, tolerance, continuity, maxDegree, maxSegment),
+        Shape result = InOverlay(s, aShape => isDone = BuildCurves3d(aShape, tolerance, continuity, maxDegree, maxSegment),
                                       out history);
         theIsDone = isDone;
         return result;
@@ -101,7 +102,7 @@ public static partial class BrepLibrary
     public static Shape Curves3dBuilt(in Shape s, out bool theIsDone)
     {
         bool isDone = true;
-        Shape result = OnCopy(s, aCopy => isDone = BuildCurves3d(aCopy), out _);
+        Shape result = InOverlay(s, aShape => isDone = BuildCurves3d(aShape), out _);
         theIsDone = isDone;
         return result;
     }
@@ -114,7 +115,7 @@ public static partial class BrepLibrary
 
     /// <summary>The functional twin of EncodeRegularity, with the history from the shape to the result.</summary>
     public static Shape RegularityEncoded(in Shape s, out History history, double tolAng = 1.0e-10)
-        => OnCopy(s, aCopy => EncodeRegularity(aCopy, tolAng), out history);
+        => InOverlay(s, aShape => EncodeRegularity(aShape, tolAng), out history);
 
     /// <summary>
     /// The functional twin of <see cref="EncodeRegularity(in Shape, NCollection_List{Shape}, double)"/>:
@@ -133,18 +134,12 @@ public static partial class BrepLibrary
             return s;
         }
 
-        Shape copy = BrepTools.ExactCopyForWrite(s, out History copyHistory);
-        // the listed edges, as the copy's
         var list = new NCollection_List<Shape>();
         foreach (Shape e in le)
         {
-            ISchematiqList<Shape> modified = copyHistory.Modified(e);
-            list.Append(modified.Count > 0 ? modified[0].Oriented(e.Orientation()) : e);
+            list.Append(e);
         }
-        EncodeRegularity(copy, list, tolAng);
-        Shape result = BrepTools.KeepUnchanged(s, copy, out history);
-        result.TShape()!.FreezeGraph();
-        return result;
+        return InOverlay(s, aShape => EncodeRegularity(aShape, list, tolAng), out history);
     }
 
     /// <summary>
@@ -167,7 +162,7 @@ public static partial class BrepLibrary
 
     /// <summary>The functional twin of UpdateDeflection, with the history from the shape to the result.</summary>
     public static Shape DeflectionUpdated(in Shape s, out History history)
-        => OnCopy(s, aCopy => UpdateDeflection(aCopy), out history);
+        => InOverlay(s, aShape => UpdateDeflection(aShape), out history);
 
     /// <summary>
     /// The functional twin of <see cref="EnsureNormalConsistency"/>: the shape whose faces' triangulations (copies) have
@@ -187,7 +182,7 @@ public static partial class BrepLibrary
                                                         bool forceComputeNormals = false)
     {
         bool isCorrected = false;
-        Shape result = OnCopy(s, aCopy => isCorrected = EnsureNormalConsistency(aCopy, angTol, forceComputeNormals),
+        Shape result = InOverlay(s, aShape => isCorrected = EnsureNormalConsistency(aShape, angTol, forceComputeNormals),
                                       out history);
         theIsCorrected = isCorrected;
         return result;
