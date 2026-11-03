@@ -25,8 +25,8 @@ public sealed class GeometryMakeConicalSurface : GeometryRoot
     //=============================================================================
 
     /// <summary>
-    /// A cone, its position and reference radius divided by the length factor (its semi-angle in radians); throws
-    /// Standard_DomainError when the semi-angle is negative, which STEP doesn't allow.
+    /// A cone, its position and reference radius divided by the length factor, its semi-angle by the plane angle
+    /// factor; throws Standard_DomainError when the semi-angle is negative, which STEP doesn't allow.
     /// </summary>
     public GeometryMakeConicalSurface(ConicalSurface cs, in Factors localFactors)
     {
@@ -44,8 +44,8 @@ public sealed class GeometryMakeConicalSurface : GeometryRoot
         }
 
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
-        // OCCT: the semi-angle in radians whatever the plane angle factor (occt-issues.md, 8D)
-        cSstep.Init(name, position, radius / localFactors.LengthFactor(), semiAngle);
+        // the semi-angle in the plane angle unit (OCCT wrote radians whatever the unit; Kerf decision 16826)
+        cSstep.Init(name, position, radius / localFactors.LengthFactor(), semiAngle / localFactors.PlaneAngleFactor());
         _conicalSurface = cSstep;
         _done = true;
     }

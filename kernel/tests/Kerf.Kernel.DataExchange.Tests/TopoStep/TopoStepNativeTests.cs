@@ -54,6 +54,29 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
         }
     }
 
+    // A conversion in inches and degrees ("C op i in count hash ...") whose text writes a cone, with native's count
+    private static bool IsConeInDegrees(string theNative, string thePort, List<string> theDump)
+    {
+        string[] aN = theNative.Split(' '), aP = thePort.Split(' ');
+        if (aN.Length < 6 || aP.Length < 6 || aP[3] != "in" || aN[4] != aP[4] || aN[1] != aP[1] || aN[2] != aP[2])
+        {
+            return false;
+        }
+        int aStart = theDump.IndexOf($"C {aP[1]} {aP[2]} in");
+        if (aStart < 0)
+        {
+            return false;
+        }
+        for (int i = aStart + 1; i < theDump.Count && !theDump[i].StartsWith("C ", StringComparison.Ordinal); i++)
+        {
+            if (theDump[i].Contains("CONICAL_SURFACE(", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Where the port's texts of a differing file go, for diagnosis (compare with toporec's dump)
     private static string KeepDir()
     {
@@ -141,7 +164,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     {
         global::Kerf.Engine.Healing.ShapeAlgo.Init();
         List<Block> aBlocks = Recording("TopoStep.toporec-t2s.txt.gz");
-        int aRun = 0, aConv = 0, aSame = 0;
+        int aRun = 0, aConv = 0, aSame = 0, anIntended = 0;
         var aDiffs = new List<string>();
         foreach (Block aBlock in aBlocks)
         {
@@ -162,6 +185,16 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
             List<string> aPort = TopoStepRecorder.ShapeLines(aShape, aDump);
             aConv += aBlock.Lines.Count;
             var aFileDiffs = Diffs(aBlock.Lines, aPort).ToList();
+            if (aFileDiffs.Count > 0)
+            {
+                // Plan 3.2's third level (occt-issues.md, GeomToStep_MakeConicalSurface; Kerf decision 16826): with
+                // degrees, OCCT wrote cones' semi-angles in radians, the port in degrees. A conversion in inches and
+                // degrees that writes a cone, with as many entities as native's, is taken as intended (GeomToStepTests
+                // checks a cone's semi-angle read back in either unit).
+                int aBefore = aFileDiffs.Count;
+                aFileDiffs = aFileDiffs.Where(d => !IsConeInDegrees(d.Native, d.Port, aDump)).ToList();
+                anIntended += aBefore - aFileDiffs.Count;
+            }
             aSame += aBlock.Lines.Count - aFileDiffs.Count;
             foreach (var (aN, aP) in aFileDiffs)
             {
@@ -176,7 +209,8 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
             aRun++;
         }
 
-        output.WriteLine($"{aRun} of {aBlocks.Count} shapes compared, {aConv} conversions, {aSame} identical, {aDiffs.Count} different");
+        output.WriteLine($"{aRun} of {aBlocks.Count} shapes compared, {aConv} conversions, {aSame} identical (with {anIntended} "
+                         + $"cones' semi-angles in degrees), {aDiffs.Count} different");
         foreach (string aDiff in aDiffs.Take(60))
         {
             output.WriteLine(aDiff);
