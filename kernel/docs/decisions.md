@@ -14760,3 +14760,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        recorded failures are several null dereferences, each needing its case understood. The 2D offset reports "not
        done" for the first two; the draft still throws a NullReferenceException. They stay listed, with this reason, for
        the modules' rewrites.
+16515. **The tests.** ModelingData 3,145 → 3,149, ModelingAlgorithms 4,802 → 4,814 (9 skipped), the oracle 383,
+       DataExchange 276 (1 skipped), the modelling layer 1,884: all pass; the new tests are the fixes' (one or two per
+       row), and the tests rewritten to the corrected behaviour are the ones the decisions above name (the GeomBndLib
+       parabola pair, `TheEvolvingRadii`, the profiler's, GeomFill_Pipe's, the medial axis's full circle). The moved
+       recordings compare at plan 3.2's third level, each with its reason, but the CorrectedFrenet oracle and the sweep
+       recordings, which stay bit-identical. Draw-lite's groups for Booleans (every fourth case), healing, offsets and
+       drafts, fillets, filling, pipes and sweeps, construction and the medial axis were run before and after: one case
+       changed by a fix (bug31361, overridden: 16509) and one by the machine's load (bugs/modalg_7/bug83's "too slow"
+       check failed before, passed after); every other case's status is unchanged.
