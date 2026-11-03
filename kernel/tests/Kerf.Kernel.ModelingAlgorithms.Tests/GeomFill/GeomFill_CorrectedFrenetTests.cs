@@ -59,6 +59,23 @@ public class GeomFill_CorrectedFrenetTests
         }
     }
 
+    // The laws on an offset spine use its D3 (occt-issues.md, the offset curves' CalculateD3; Kerf decision 16804):
+    // OCCT's D2 there wasn't D2's, so the frames of D1 weren't D0's, nor the derivatives theirs
+    [Fact]
+    public void Laws_on_an_offset_spine_have_the_derivatives_of_their_frames()
+    {
+        var anOffset = new OffsetCurve3D(Helix(), 0.2, new Direction3D(0, 0, 1));
+        var aFrenet = new Frenet();
+        aFrenet.SetCurve(new CurveAdaptor(anOffset));
+        foreach (TrihedronLaw aLaw in new TrihedronLaw[] { aFrenet, Law(anOffset) })
+        {
+            foreach (double u in new[] { 0.3, 1.7, 4.2, 9.5, 12.8 })
+            {
+                AssertDerivatives(aLaw, u, 1.0e-5, 1.0e-4, theCheckD2: false);
+            }
+        }
+    }
+
     [Fact]
     public void Helix_TurnsLessThanFrenet()
     {

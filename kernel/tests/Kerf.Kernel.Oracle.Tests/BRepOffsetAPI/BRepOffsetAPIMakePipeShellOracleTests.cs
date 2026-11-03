@@ -934,7 +934,31 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         Assert.Equal(aN.IsDone(), aP.IsDone);
         if (aN.IsDone())
         {
-            Assert.True(CompareShapes("offset spine", aN.Shape(), aP.Shape(), true));
+            SameTopology(aN.Shape(), aP.Shape());
         }
+    }
+
+    // Plan 3.2's third level (occt-issues.md, the offset curves' CalculateD3; Kerf decision 16804): the sweep's
+    // approximation uses the trihedron's derivatives, which OCCT computed from the offset spine's wrong D2 and D3. This
+    // offset of a twisted B-spline has cusps where the tube isn't defined (points of both shapes are up to 0.7 from
+    // the radius 0.8), so the two approximations differ by up to 0.09 and in area (native 210.5, the port 204.8, 2πrL
+    // 198.7): both are valid, with the same topology.
+    private void SameTopology(N.TopoDS_Shape theN, in Shape theP)
+    {
+        Assert.Equal(theN.IsNull(), theP.IsNull);
+        string aFile = NewFile();
+        File.WriteAllText(aFile, NativeText(theN));
+        Assert.True(BrepTools.Read(out Shape aNP, aFile));
+        File.Delete(aFile);
+        foreach (ShapeType aType in new[] { ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
+        {
+            var aNMap = new IndexedSet<Shape>();
+            var aPMap = new IndexedSet<Shape>();
+            global::Kerf.Engine.Topology.Exploration.MapShapes(aNP, aType, aNMap);
+            global::Kerf.Engine.Topology.Exploration.MapShapes(theP, aType, aPMap);
+            Assert.Equal(aNMap.Count, aPMap.Count);
+        }
+        Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(aNP).IsValid());
+        Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(theP).IsValid());
     }
 }
